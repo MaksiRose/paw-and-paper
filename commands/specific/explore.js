@@ -211,7 +211,6 @@ module.exports = {
 						energy: -energyPoints,
 						experience: +experiencePoints,
 					},
-					$set: { cooldown: false },
 				},
 			);
 
