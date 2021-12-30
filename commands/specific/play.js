@@ -173,7 +173,6 @@ module.exports = {
 					{ upsert: true, new: true },
 				);
 
-				embed.setTitle();
 				embedArray.push({
 					color: profileData.color,
 					author: { name: profileData.name, icon_url: profileData.avatarURL },
@@ -216,7 +215,8 @@ module.exports = {
 				{
 					$set: {
 						levels: newUserLevel,
-						experience: 0, inventory: emptyUserInventory,
+						experience: 0,
+						inventory: emptyUserInventory,
 					},
 				},
 				{ upsert: true, new: true },
@@ -334,8 +334,9 @@ module.exports = {
 			embedArray.push(embed);
 
 			if (partnerProfileData.injuryArray[2] > 0) {
-				const luckyvalue = Loottable(10, 1);
-				if (luckyvalue <= 3) {
+
+				const getsInfectedChance = weightedTable({ 0: 3, 1: 7 });
+				if (getsInfectedChance == 0) {
 
 					healthPoints = Loottable(5, 3);
 
@@ -344,7 +345,7 @@ module.exports = {
 						healthPoints = profileData.health;
 					}
 
-					await profileModel.findOneAndUpdate(
+					profileData = await profileModel.findOneAndUpdate(
 						{ userId: message.author.id, serverId: message.guild.id },
 						{ $inc: { health: -healthPoints } },
 						{ upsert: true, new: true },

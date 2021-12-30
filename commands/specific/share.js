@@ -1,277 +1,293 @@
 const profileModel = require('../../models/profileSchema');
-const missing = require('../../utils/checkAccountCompletion');
+const checkAccountCompletion = require('../../utils/checkAccountCompletion');
+const checkValidity = require('../../utils/checkValidity');
 const condition = require('../../utils/condition');
 
 module.exports = {
 	name: 'share',
 	async sendMessage(client, message, argumentsArray, profileData, serverData, embedArray) {
 
-		if (!profileData || profileData.name === '') return missing.missingName(message);
-		if (profileData.species === '') return missing.missingSpecies(message, profileData);
-		if (profileData.hasCooldown === true) return cooldown.cooldownMessage(message, profileData);
-		if (profileData.hasQuest == true) return quest.quest(message, profileData);
-		if (profileData.energy <= 0 || profileData.health <= 0 || profileData.hunger <= 0 || profileData.thirst <= 0) return passedout.passedOut(message, profileData);
-		if (profileData.rank != 'Elderly') {
-			const wrong_rank_embed = new Discord.MessageEmbed()
-				.setAuthor(`${profileData.name}`, `${profileData.avatarURL}`)
-				.setColor(`${profileData.color}`)
-				.setDescription(`*${profileData.name} is     about to begin sharing a story when an elderly interrupts them.* "Oh, young ${profileData.species}, you need to have a lot more adventures before you can start advising others!"`);
-			return await message.reply({ embeds: [wrong_rank_embed] });
+		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
+
+			return;
 		}
-		if (profileData.isResting === true) await isresting.isResting(message, profileData, embedArray);
-		await cooldown.commandCooldown(message);
-		condition.depleteThirst(message, profileData);
-		condition.depleteHunger(message, profileData);
-		condition.depleteEnergy(message, profileData);
 
-		function Loottable(max, min) { return Math.floor(Math.random() * max + min); }
-		let total_energy = Loottable(5, 1) + extraLostEnergyPoints;
-		if (profileData.energy - total_energy < 0) total_energy = total_energy - (total_energy - profileData.energy);
+		if (await checkValidity.isInvalid(message, profileData, embedArray)) {
 
-		const stats_profileData = await profileModel.findOneAndUpdate(
+			return;
+		}
+
+		if (profileData.rank != 'Elderly') {
+
+			embedArray.push({
+				color: profileData.color,
+				author: { name: profileData.name, icon_url: profileData.avatarURL },
+				description: `*${profileData.name} is about to begin sharing a story when an elderly interrupts them.* "Oh, young ${profileData.species}, you need to have a lot more adventures before you can start advising others!"`,
+			});
+
+			return await message.reply({ embeds: embedArray });
+		}
+
+		if (message.mentions.users.size > 0 && message.mentions.users.first().id == message.author.id) {
+
+			embedArray.push({
+				color: profileData.color,
+				author: { name: profileData.name, icon_url: profileData.avatarURL },
+				description: `*${profileData.name} is very wise from all the adventures ${profileData.pronounArray[0]} had, but also a little... quaint. Sometimes ${profileData.pronounArray[0]} sit${(profileData.pronounArray[5] == 'singular') ? 's' : ''} down at the fireplace, mumbling to ${profileData.pronounArray[4]} a story from back in the day. Busy packmates look at ${profileData.pronounArray[1]} in confusion as they pass by.*`,
+			});
+
+			await message.reply({ embeds: embedArray });
+		}
+
+		const thirstPoints = await condition.decreaseThirst(profileData);
+		const hungerPoints = await condition.decreaseHunger(profileData);
+		const extraLostEnergyPoints = await condition.decreaseEnergy(profileData);
+		let energyPoints = Loottable(5, 1) + extraLostEnergyPoints;
+
+		if (profileData.energy - energyPoints < 0) {
+
+			energyPoints = profileData.energy;
+		}
+
+		profileData = await profileModel.findOneAndUpdate(
 			{ userId: message.author.id, serverId: message.guild.id },
 			{
-				$inc: { energy: -total_energy },
+				$inc: {
+					thirst: -thirstPoints,
+					hunger: -hungerPoints,
+					energy: -energyPoints,
+				},
 				$set: { currentRegion: 'ruins' },
 			},
 			{ upsert: true, new: true },
 		);
 
-		let footertext = `-${total_energy} energy (${stats_profileData.energy}/${stats_profileData.maxEnergy})`;
-		if (hungerPoints >= 1) footertext = footertext + `\n-${hungerPoints} hunger (${stats_profileData.hunger}/${stats_profileData.maxHunger})`;
-		if (thirstPoints >= 1) footertext = footertext + `\n-${thirstPoints} thirst (${stats_profileData.thirst}/${stats_profileData.maxThirst})`;
+		let embedFooterStatsText = `-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
 
-		let total_HP = 0;
-		const playerhurtkind = [...profileData.injuryArray];
-		let gethurtlater = 0;
+		if (hungerPoints >= 1) {
 
-		const embed1 = new Discord.MessageEmbed();
-		const embed = new Discord.MessageEmbed()
-			.setAuthor(`${profileData.name}`, `${profileData.avatarURL}`)
-			.setColor(`${profileData.color}`);
-		let bot_reply;
-		let chosen_profileData;
+			embedFooterStatsText += `\n-${hungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})`;
+		}
+
+		if (thirstPoints >= 1) {
+
+			embedFooterStatsText += `\n-${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})`;
+		}
+
+		let healthPoints = 0;
+		const userInjuryArray = [...profileData.injuryArray];
+
+		const embed = {
+			color: profileData.color,
+			author: { name: profileData.name, icon_url: profileData.avatarURL },
+			description: '',
+			footer: { text: '' },
+		};
 
 		if (!message.mentions.users.size) {
-			const docs = await profileModel.find({
+
+			let allRuinsProfilesArray = await profileModel.find({
 				serverId: message.guild.id,
 				currentRegion: 'ruins',
 			});
 
-			const ruins_array_ID = docs.map(doc => doc.userId);
-			ruins_array_ID.splice(ruins_array_ID.indexOf(`${profileData.userId}`), 1);
+			allRuinsProfilesArray = allRuinsProfilesArray.map(doc => doc.userId);
+			const allRuinsProfilesArrayUserIndex = allRuinsProfilesArray.indexOf(`${profileData.userId}`);
 
-			if (ruins_array_ID != '') {
-				const index = Loottable(ruins_array_ID.length, 0);
+			if (allRuinsProfilesArrayUserIndex > -1) {
 
-				chosen_profileData = await profileModel.findOne({
-					userId: ruins_array_ID[index],
+				allRuinsProfilesArray.splice(allRuinsProfilesArrayUserIndex, 1);
+			}
+
+			if (allRuinsProfilesArray.length > 0) {
+
+				const allRuinsProfilesArrayRandomIndex = Loottable(allRuinsProfilesArray.length, 0);
+
+				const partnerProfileData = await profileModel.findOne({
+					userId: allRuinsProfilesArray[allRuinsProfilesArrayRandomIndex],
 					serverId: message.guild.id,
 				});
 
-				if (chosen_profileData.energy <= 0 || chosen_profileData.health <= 0 || chosen_profileData.hunger <= 0 || chosen_profileData.thirst <= 0) {
-					return NO_SHARING();
-				}
-				else if (chosen_profileData.name === '' || chosen_profileData.species === '') {
-					return NO_SHARING();
+				if (partnerProfileData.energy > 0 && partnerProfileData.health > 0 && partnerProfileData.hunger > 0 || partnerProfileData.thirst > 0) {
+
+					await shareStory(partnerProfileData);
 				}
 				else {
-					const found_user_XP = Loottable(41, 20);
 
-					chosen_profileData = await profileModel.findOneAndUpdate(
-						{ userId: ruins_array_ID[index], serverId: message.guild.id },
-						{ $inc: { experience: +found_user_XP } },
-						{ upsert: true, new: true },
-					);
-
-					footertext = footertext + `\n+${found_user_XP} XP for ${chosen_profileData.name} (${chosen_profileData.experience}/${chosen_profileData.levels * 50})`;
-					embed.setDescription(`*${chosen_profileData.name} comes running to the old wooden trunk at the ruins where ${profileData.name} sits, ready to tell an exciting story from long ago. Their eyes are sparkling as the ${profileData.species} recounts great adventures and the lessons to be learned from them.*`);
-					embed.setFooter(footertext);
-					if (chosen_profileData.experience >= chosen_profileData.levels * 50) {
-						chosen_profileData = await profileModel.findOneAndUpdate(
-							{ userId: ruins_array_ID[index], serverId: message.guild.id },
-							{
-								$inc: {
-									experience: -found_user_XP,
-									levels: +1,
-								},
-							},
-							{ upsert: true, new: true },
-						);
-
-						embed1.setAuthor(`${chosen_profileData.name}`, `${chosen_profileData.avatarURL}`);
-						embed1.setColor(`${chosen_profileData.color}`);
-						embed1.setTitle(`${chosen_profileData.name} just leveled up! They are now level ${chosen_profileData.levels}.`);
-						embedArray.push(embed, embed1);
-						bot_reply = await message.reply({ embeds: embedArray });
-					}
-					else {
-						embedArray.push(embed);
-						bot_reply = await message.reply({ embed: embedArray });
-					}
+					await noSharing();
 				}
 			}
 			else {
-				return NO_SHARING();
-			}
-		}
-		else if (message.mentions.users.first().id === message.author.id) {
-			if (profileData.pronounArray[5] == 'singular') {
-				embed.setDescription(`*${profileData.name} is very wise from all the adventures ${profileData.pronounArray[0]} had, but also a little... quaint. Sometimes ${profileData.pronounArray[0]} sits down at the fireplace, mumbling to ${profileData.pronounArray[4]} a story from back in the day. Busy packmates look at ${profileData.pronounArray[1]} in confusion as they pass by.*`);
-			}
-			else if (profileData.pronounArray[5] == 'plural') {
-				embed.setDescription(`*${profileData.name} is very wise from all the adventures ${profileData.pronounArray[0]} had, but also a little... quaint. Sometimes ${profileData.pronounArray[0]} sit down at the fireplace, mumbling to ${profileData.pronounArray[4]} a story from back in the day. Busy packmates look at ${profileData.pronounArray[1]} in confusion as they pass by.*`);
-			}
-			embedArray.push(embed);
-			bot_reply = await message.reply({ embeds: embedArray });
 
-			await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{
-					$inc: {
-						energy: +total_energy,
-						hunger: +hungerPoints,
-						thirst: +thirstPoints,
-						experience: -total_XP,
-					},
-				},
-				{ upsert: true, new: true },
-			);
+				await noSharing();
+			}
 		}
 		else {
-			chosen_profileData = await profileModel.findOne({
+			const partnerProfileData = await profileModel.findOne({
 				userId: message.mentions.users.first().id,
 				serverId: message.guild.id,
 			});
 
-			if (chosen_profileData.energy <= 0 || chosen_profileData.health <= 0 || chosen_profileData.hunger <= 0 || chosen_profileData.thirst <= 0) {
+			if (!partnerProfileData || partnerProfileData.name == '' || partnerProfileData.species == '' || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0) {
+
 				await profileModel.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{
 						$inc: {
-							energy: +total_energy,
-							hunger: +hungerPoints,
 							thirst: +thirstPoints,
-							experience: -total_XP,
-						}
+							hunger: +hungerPoints,
+							energy: +energyPoints,
+						},
 					},
 					{ upsert: true, new: true },
 				);
-				return passedout.passedOut(message, chosen_profileData);
-			}
-			else if (chosen_profileData.name === '' || chosen_profileData.species === '') {
-				embed.setAuthor(message.guild.name, message.guild.iconURL());
-				embed.setColor('#9d9e51');
-				embed.setTitle('The mentioned user has no account or the account was not completed!');
-				embedArray.push(embed);
-				return bot_reply = await message.reply({ embeds: embedArray });
+
+				embedArray.push({
+					color: profileData.color,
+					author: { name: profileData.name, icon_url: profileData.avatarURL },
+					title: 'You can\'t play with the mentioned user :(',
+				});
+
+				return await message.reply({ embeds: embedArray });
 			}
 			else {
-				const found_user_XP = Loottable(41, 20);
 
-				chosen_profileData = await profileModel.findOneAndUpdate(
-					{ userId: message.mentions.users.first().id, serverId: message.guild.id },
-					{ $inc: { experience: found_user_XP } },
-					{ upsert: true, new: true },
-				);
-
-				footertext = footertext + `\n\n+${found_user_XP} XP for ${chosen_profileData.name} (${chosen_profileData.experience}/${chosen_profileData.levels * 50})`;
-				embed.setDescription(`*${chosen_profileData.name} comes running to the old wooden trunk at the ruins where ${profileData.name} sits, ready to tell an exciting story from long ago. Their eyes are sparkling as the ${profileData.species} recounts great adventures and the lessons to be learned of them.*`);
-				embed.setFooter(footertext);
-				if (chosen_profileData.experience >= chosen_profileData.levels * 50) {
-					chosen_profileData = await profileModel.findOneAndUpdate(
-						{ userId: message.mentions.users.first().id, serverId: message.guild.id },
-						{
-							$inc: {
-								experience: -found_user_XP,
-								levels: +1,
-							},
-						},
-						{ upsert: true, new: true },
-					);
-
-					embed1.setAuthor(`${chosen_profileData.name}`, `${chosen_profileData.avatarURL}`);
-					embed1.setColor(`${chosen_profileData.color}`);
-					embed1.setTitle(`${chosen_profileData.name} just leveled up! They are now level ${chosen_profileData.levels}.`);
-					embedArray.push(embed, embed1);
-					bot_reply = await message.reply({ embeds: embedArray });
-				}
-				else {
-					embedArray.push(embed);
-					bot_reply = await message.reply({ embeds: embedArray });
-				}
-			}
-		}
-		if (chosen_profileData.injuryArray[2] > 0) {
-			const luckyvalue = Loottable(10, 1);
-			if (luckyvalue <= 3) {
-				gethurtlater = 1;
-
-				total_HP = Loottable(5, 3);
-				if (profileData.health - total_HP < 0) total_HP = total_HP - (total_HP - profileData.health);
-				await profileModel.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $inc: { health: -total_HP } },
-					{ upsert: true, new: true },
-				);
-
-				playerhurtkind[2] = playerhurtkind[2] + 1;
-
-				embed1.setAuthor(`${profileData.name}`, `${profileData.avatarURL}`);
-				embed1.setColor(`${profileData.color}`);
-				embed1.setDescription(`*Suddenly, ${profileData.name} starts coughing uncontrollably. Thinking back, they spent all day alongside ${tagged_profileData.name}, who was coughing as well. That was probably not the best idea!*`);
-				embed1.setFooter(`-${total_HP} HP (from cold)`);
-
-				await embedArray.push(embed1);
-				bot_reply = await bot_reply.edit({ embeds: embedArray });
+				await shareStory(partnerProfileData);
 			}
 		}
 
-		async function NO_SHARING() {
-			embed.setDescription(`*${profileData.name} sits on an old wooden trunk at the ruins, ready to tell a story to any willing listener. But to ${profileData.pronounArray[2]} disappointment, no one seems to be around.*`);
-			embed.setFooter(footertext);
-			embedArray.push(embed);
-			bot_reply = await message.reply({ embeds: embedArray });
-		}
+		const botReply = await message.reply({ embeds: embedArray });
 
-		await damage.unhealedDamage(message, profileData, bot_reply);
-		total_HP = total_HP + extra_lost_HP;
+		await condition.decrea(message, profileData, botReply);
 
-		if (gethurtlater == 1) {
-			await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { injuryArray: playerhurtkind } },
-				{ upsert: true, new: true },
-			);
-		}
+		profileData = await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{ $set: { injuryArray: userInjuryArray } },
+			{ upsert: true, new: true },
+		);
 
-		if (stats_profileData.energy === 0 || stats_profileData.maxHealth - total_HP === 0 || stats_profileData.hunger === 0 || stats_profileData.thirst === 0) {
-			passedout.passedOut(message, profileData);
+		if (checkValidity.isPassedOut(message, profileData)) {
 
-			let newlevel = profileData.levels;
-			newlevel = Math.round(newlevel - (newlevel / 10));
+			const newUserLevel = Math.round(profileData.levels - (profileData.levels / 10));
+			const emptyUserInventory = [...profileData.inventoryArray];
 
-			arrays.commonPlantNames();
-			arrays.uncommonPlantNames();
-			arrays.rarePlantNames();
-			arrays.species(profileData);
-			const profile_inventory = [[], [], [], []];
-			for (let i = 0; i < arrays.commonPlantNamesArray.length; i++) profile_inventory[0].push(0);
-			for (let i = 0; i < uncommonPlantNamesArray.length; i++) profile_inventory[1].push(0);
-			for (let i = 0; i < rarePlantNamesArray.length; i++) profile_inventory[2].push(0);
-			for (let i = 0; i < species.nameArray.length; i++) profile_inventory[3].push(0);
+			for (let i = 0; i < profileData.inventoryArray.length; i++) {
+
+				for (let j = 0; j < profileData.inventoryArray[i].length; j++) {
+
+					emptyUserInventory[i][j] = 0;
+				}
+			}
 
 			await profileModel.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{
 					$set: {
-						levels: newlevel,
+						levels: newUserLevel,
 						experience: 0,
-						inventoryArray: profile_inventory,
+						inventoryArray: emptyUserInventory,
 					},
 				},
 				{ upsert: true, new: true },
 			);
+		}
+
+
+		async function shareStory(partnerProfileData) {
+
+			const partnerExperiencePoints = Loottable(41, 20);
+
+			partnerProfileData = await profileModel.findOneAndUpdate(
+				{ userId: partnerProfileData.userId, serverId: message.guild.id },
+				{ $inc: { experience: +partnerExperiencePoints } },
+				{ upsert: true, new: true },
+			);
+
+			embed.description = `*${partnerProfileData.name} comes running to the old wooden trunk at the ruins where ${profileData.name} sits, ready to tell an exciting story from long ago. Their eyes are sparkling as the ${profileData.species} recounts great adventures and the lessons to be learned from them.*`;
+			embed.footer.text = `${embedFooterStatsText}\n+${partnerExperiencePoints} XP for ${partnerProfileData.name} (${partnerProfileData.experience}/${partnerProfileData.levels * 50})`;
+
+			if (partnerProfileData.experience >= partnerProfileData.levels * 50) {
+
+				partnerProfileData = await profileModel.findOneAndUpdate(
+					{ userId: partnerProfileData.userId, serverId: message.guild.id },
+					{
+						$inc: {
+							experience: -(partnerProfileData.levels * 50),
+							levels: +1,
+						},
+					},
+					{ upsert: true, new: true },
+				);
+
+				embedArray.push(embed, {
+					color: partnerProfileData.color,
+					author: { name: partnerProfileData.name, icon_url: partnerProfileData.avatarURL },
+					title: `${partnerProfileData.name} just leveled up! They are now level ${partnerProfileData.levels}.`,
+				});
+			}
+			else {
+
+				embedArray.push(embed);
+			}
+
+			if (partnerProfileData.injuryArray[2] > 0) {
+
+				const getsInfectedChance = weightedTable({ 0: 3, 1: 7 });
+				if (getsInfectedChance == 0) {
+
+					healthPoints = Loottable(5, 3);
+
+					if (profileData.health - healthPoints < 0) {
+
+						healthPoints = profileData.health;
+					}
+
+					profileData = await profileModel.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{ $inc: { health: -healthPoints } },
+						{ upsert: true, new: true },
+					);
+
+					userInjuryArray[2] = userInjuryArray[2] + 1;
+
+					embedArray.push({
+						color: profileData.color,
+						author: { name: profileData.name, icon_url: profileData.avatarURL },
+						description: `*Suddenly, ${profileData.name} starts coughing uncontrollably. Thinking back, they spent all day alongside ${partnerProfileData.name}, who was coughing as well. That was probably not the best idea!*`,
+						footer: { text: `-${healthPoints} HP (from cold)` },
+					});
+				}
+			}
+
+			return;
+		}
+
+		async function noSharing() {
+
+			embed.description = `*${profileData.name} sits on an old wooden trunk at the ruins, ready to tell a story to any willing listener. But to ${profileData.pronounArray[2]} disappointment, no one seems to be around.*`;
+			embed.footer.text = embedFooterStatsText;
+
+			return embedArray.push(embed);
+		}
+
+		function Loottable(max, min) {
+
+			return Math.floor(Math.random() * max) + min;
+		}
+
+		function weightedTable(values) {
+
+			const table = [];
+
+			for (const i in values) {
+
+				for (let j = 0; j < values[i]; j++) {
+
+					table.push(i);
+				}
+			}
+
+			return table[Math.floor(Math.random() * table.length)];
 		}
 	},
 };
