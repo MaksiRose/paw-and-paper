@@ -22,7 +22,7 @@ module.exports = {
 			return;
 		}
 
-		if ([].concat(...profileData.inventoryArray).filter(number => number > 0).length >= 25) {
+		if (profileData.inventoryArray.filter(number => number > 0).length >= 25) {
 
 			embedArray.push({
 				color: profileData.color,
@@ -42,7 +42,7 @@ module.exports = {
 				description: `*A hunter cuts ${profileData.name} as they see ${profileData.pronounArray[1]} running towards the pack borders.* "You don't have enough experience to go into the wilderness, ${profileData.rank}," *they say.*`,
 			});
 
-			return message.reply({ embeds: embedArray });
+			return await message.reply({ embeds: embedArray });
 		}
 
 		const species = arrays.species(profileData);
