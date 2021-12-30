@@ -213,7 +213,6 @@ module.exports = {
 					},
 					$set: { cooldown: false },
 				},
-				{ upsert: true, new: true },
 			);
 
 			const embed = {
