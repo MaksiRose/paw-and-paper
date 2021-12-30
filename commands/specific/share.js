@@ -5,7 +5,7 @@ const condition = require('../../utils/condition');
 module.exports = {
 	name: 'share',
 	async sendMessage(client, message, argumentsArray, profileData, serverData, embedArray) {
-		await message.channel.sendTyping();
+
 		if (!profileData || profileData.name === '') return missing.missingName(message);
 		if (profileData.species === '') return missing.missingSpecies(message, profileData);
 		if (profileData.hasCooldown === true) return cooldown.cooldownMessage(message, profileData);
