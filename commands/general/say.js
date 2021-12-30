@@ -54,11 +54,11 @@ module.exports = {
 			});
 
 			allRuinProfilesArray = allRuinProfilesArray.map(doc => doc.userId);
-			const userIndex = allRuinProfilesArray.indexOf(`${profileData.userId}`);
+			const allRuinProfilesArrayUserIndex = allRuinProfilesArray.indexOf(`${profileData.userId}`);
 
-			if (userIndex > -1) {
+			if (allRuinProfilesArrayUserIndex > -1) {
 
-				allRuinProfilesArray.splice(userIndex, 1);
+				allRuinProfilesArray.splice(allRuinProfilesArrayUserIndex, 1);
 			}
 
 			for (let i = 0; i < allRuinProfilesArray.length; i++) {
