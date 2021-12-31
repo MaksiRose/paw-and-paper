@@ -114,7 +114,7 @@ module.exports = {
 			const species = arrays.species(profileData);
 			const allItemNamesArray = [[...arrays.commonPlantNamesArray], [...arrays.uncommonPlantNamesArray], [...arrays.rarePlantNamesArray], [...species.nameArray]];
 
-			if (allItemNamesArray.some(nest => nest.some(elem => elem == interaction.values[0]))) {
+			if (interaction.customId == 'eat-options' && allItemNamesArray.some(nest => nest.some(elem => elem == interaction.values[0]))) {
 
 				interaction.message.delete();
 				interaction.message.embeds.splice(-1, 1);
