@@ -275,6 +275,7 @@ module.exports = {
 					botReply = await interaction.message.edit({ embeds: embedArray, components: componentArray });
 				}
 
+<<<<<<< HEAD
 				// TO DO: Fix MaksiRose/paw-and-paper#3
 				if (arrays.commonPlantNamesArray.includes(interaction.values[0]) || arrays.uncommonPlantNamesArray.includes(interaction.values[0]) || arrays.rarePlantNamesArray.includes(interaction.values[0]) || interaction.values[0] == 'water') {
 					condition.depleteThirst(message, profileData);
@@ -614,6 +615,8 @@ module.exports = {
 					await client.off('interactionCreate', heal_interaction);
 				}
 
+=======
+>>>>>>> ec6ea6b3a669c6c8a97e564ddbd59c0eb431b0ea
 				await interactionCollector();
 			});
 		}
