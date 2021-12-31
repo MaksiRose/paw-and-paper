@@ -1,8 +1,11 @@
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const profileModel = require('../../models/profileSchema');
+const serverModel = require('../../models/serverSchema');
 const config = require('../../config.json');
 const arrays = require('../../utils/arrays');
+const condition = require('../../utils/arrays');
+const levels = require('../../utils/levels');
 
 module.exports = {
 	name: 'heal',
@@ -77,6 +80,7 @@ module.exports = {
 		const embedArrayOriginalLength = embedArray.length;
 		let currentUserPage = 0;
 		let botReply;
+		let chosenProfileData;
 		let chosenUser = (!message.mentions.users.size) ? null : message.mentions.users.first();
 
 		if (!chosenUser) {
@@ -131,12 +135,12 @@ module.exports = {
 
 				if (allHurtProfilesArray.includes(interaction.values[0])) {
 
-					const partnerProfileData = await profileModel.findOne({
+					chosenProfileData = await profileModel.findOne({
 						userId: interaction.values[0],
 						serverId: message.guild.id,
 					});
 
-					if (partnerProfileData.name === '' || partnerProfileData.species === '') {
+					if (chosenProfileData.name === '' || chosenProfileData.species === '') {
 
 						embedArray.length = embedArrayOriginalLength;
 						embedArray.push({
@@ -275,348 +279,347 @@ module.exports = {
 					botReply = await interaction.message.edit({ embeds: embedArray, components: componentArray });
 				}
 
-<<<<<<< HEAD
-				// TO DO: Fix MaksiRose/paw-and-paper#3
 				if (arrays.commonPlantNamesArray.includes(interaction.values[0]) || arrays.uncommonPlantNamesArray.includes(interaction.values[0]) || arrays.rarePlantNamesArray.includes(interaction.values[0]) || interaction.values[0] == 'water') {
-					condition.depleteThirst(message, profileData);
-					condition.depleteHunger(message, profileData);
-					condition.depleteEnergy(message, profileData);
-					let gethurtlater;
-					const playerhurtkind = [...profileData.injuryArray];
-					let total_HP = 0;
 
-					let total_energy = Loottable(5, 1) + extraLostEnergyPoints;
-					if (profileData.energy - total_energy < 0) total_energy = total_energy - (total_energy - profileData.energy);
+					const thirstPoints = await condition.decreaseThirst(profileData);
+					const hungerPoints = await condition.decreaseHunger(profileData);
+					const extraLostEnergyPoints = await condition.decreaseEnergy(profileData);
+					let energyPoints = Loottable(5, 1) + extraLostEnergyPoints;
+					let experiencePoints = 0;
 
-					let total_XP = 0;
+					if (profileData.energy - energyPoints < 0) {
+
+						energyPoints = profileData.energy;
+					}
+
 					if (profileData.rank == 'Apprentice') {
-						total_XP = Loottable(11, 5);
-					}
-					if (profileData.rank == 'Healer') {
-						total_XP = Loottable(21, 10);
-					}
-					if (profileData.rank == 'Elderly') {
-						total_XP = Loottable(41, 20);
+
+						experiencePoints = Loottable(11, 5);
 					}
 
-					const stats_profileData = await profileModel.findOneAndUpdate(
+					if (profileData.rank == 'Healer') {
+
+						experiencePoints = Loottable(21, 10);
+					}
+
+					if (profileData.rank == 'Elderly') {
+
+						experiencePoints = Loottable(41, 20);
+					}
+
+					profileData = await profileModel.findOneAndUpdate(
 						{ userId: message.author.id, serverId: message.guild.id },
 						{
 							$inc: {
-								energy: -total_energy,
-								experience: +total_XP,
+								thirst: -thirstPoints,
+								hunger: -hungerPoints,
+								energy: -energyPoints,
+								experience: +experiencePoints,
 							},
 						},
 						{ upsert: true, new: true },
 					);
 
-					let footertext = `+${total_XP} XP (${stats_profileData.experience}/${stats_profileData.levels * 50})\n-${total_energy} energy (${stats_profileData.energy}/${stats_profileData.maxEnergy})`;
-					if (hungerPoints >= 1) footertext = footertext + `\n-${hungerPoints} hunger (${stats_profileData.hunger}/${stats_profileData.maxHunger})`;
-					if (thirstPoints >= 1) footertext = footertext + `\n-${thirstPoints} thirst (${stats_profileData.thirst}/${stats_profileData.maxThirst})`;
+					let embedFooterStatsText = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
 
+					if (hungerPoints >= 1) {
+
+						embedFooterStatsText = embedFooterStatsText + `\n-${hungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})`;
+					}
+
+					if (thirstPoints >= 1) {
+
+						embedFooterStatsText = embedFooterStatsText + `\n-${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})`;
+					}
+
+					let healthPoints = 0;
+					const userInjuryArray = [...profileData.injuryArray];
+
+					const embed = {
+						color: profileData.color,
+						author: { name: profileData.name, icon_url: profileData.avatarURL },
+						description: '',
+						footer: { text: '' },
+					};
 
 					if (interaction.values[0] == 'water') {
 
-						if (tagged_profileData.thirst > 0) {
+						if (chosenProfileData.thirst > 0) {
 
-							if (profileData.userId == tagged_profileData.userId) {
+							if (profileData.userId == chosenProfileData.userId) {
 
-								embed.setDescription(`*${profileData.name} thinks about just drinking some water, but that won't help with ${profileData.pronounArray[2]} issues...*"`);
+								embed.description = `*${profileData.name} thinks about just drinking some water, but that won't help with ${profileData.pronounArray[2]} issues...*"`;
 
 							}
 							else {
 
-								embed.setDescription(`*${tagged_profileData.name} looks at ${profileData.name} with indignation.* "Being hydrated is really not my biggest problem right now!"`);
+								embed.description = `*${chosenProfileData.name} looks at ${profileData.name} with indignation.* "Being hydrated is really not my biggest problem right now!"`;
 
 							}
 
-							embed.setFooter(`${footertext}`);
+							embed.footer.text = embedFooterStatsText;
 
 						}
 						else {
 
-							const tagged_thist = Loottable(10, 1);
+							const chosenUserThirstPoints = Loottable(10, 1);
 
-							final_profileData = await profileModel.findOneAndUpdate(
-								{ userId: tagged_profileData.userId, serverId: tagged_profileData.serverId },
-								{ $inc: { thirst: +tagged_thist } },
+							chosenProfileData = await profileModel.findOneAndUpdate(
+								{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
+								{ $inc: { thirst: +chosenUserThirstPoints } },
 								{ upsert: true, new: true },
 							);
 
-							embed.setDescription(`*${profileData.name} takes ${tagged_profileData.name}'s body, drags it over to the river, and positions ${tagged_profileData.pronounArray[2]} head right over the water. The ${tagged_profileData.species} sticks ${tagged_profileData.pronounArray[2]} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${tagged_profileData.pronounArray[2]} body.*`);
-							embed.setFooter(`${footertext}\n\n+${tagged_thirst} for ${tagged_profileData.name} (${tagged_profileData.thirst + tagged_thirst}/${tagged_profileData.maxThirst})`);
+							embed.description = `*${profileData.name} takes ${chosenProfileData.name}'s body, drags it over to the river, and positions ${chosenProfileData.pronounArray[2]} head right over the water. The ${chosenProfileData.species} sticks ${chosenProfileData.pronounArray[2]} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${chosenProfileData.pronounArray[2]} body.*`;
+							embed.footer.text = `${embedFooterStatsText}\n\n+${chosenUserThirstPoints} for ${chosenProfileData.name} (${chosenProfileData.thirst}/${chosenProfileData.maxThirst})`;
 
 						}
 
-						bot_reply = await bot_reply.edit({ embeds: embedArray, components: [] });
+						botReply = await interaction.message.edit({ embeds: embedArray, components: [] });
 
 					}
 					else {
-						let arrayposition;
-						let dataitem = [];
-						let plantedible = [];
-						let plantwounds = [];
-						let plantinfections = [];
-						let plantcolds = [];
-						let plantstrains = [];
-						let plantpoison = [];
-						let plantenergy = [];
+						const serverPlantInventory = [...serverData.commonPlantsArray, serverData.uncommonPlantsArray, serverData.rarePlantsArray];
+						let serverPlantInventoryIndex = -1;
+						let plantNamesArrayIndex = -1;
+						const plantEdibalityArray = [...arrays.commonPlantEdibalityArray, ...arrays.uncommonPlantEdibalityArray, ...arrays.rarePlantEdibalityArray];
+						const plantHealsWoundsArray = [...arrays.commonPlantHealsWoundsArray, ...arrays.uncommonPlantHealsWoundsArray, ...arrays.rarePlantHealsWoundsArray];
+						const plantHealsInfectionsArray = [...arrays.commonPlantHealsInfectionsArray, ...arrays.uncommonPlantHealsInfectionsArray, ...arrays.rarePlantHealsInfectionsArray];
+						const plantHealsColdsArray = [...arrays.commonPlantHealsColdsArray, ...arrays.uncommonPlantHealsColdsArray, ...arrays.rarePlantHealsColdsArray];
+						const plantHealsStrainsArray = [...arrays.commonPlantHealsStrainsArray, ...arrays.uncommonPlantHealsStrainsArray, ...arrays.rarePlantHealsStrainsArray];
+						const plantHealsPoisonArray = [...arrays.commonPlantHealsPoisonArray, ...arrays.uncommonPlantHealsPoisonArray, ...arrays.rarePlantHealsPoisonArray];
+						const plantGivesEnergyArray = [...arrays.commonPlantGivesEnergyArray, ...arrays.uncommonPlantGivesEnergyArray, ...arrays.rarePlantGivesEnergyArray];
 
 						if (arrays.commonPlantNamesArray.includes(interaction.values[0])) {
-							arrayposition = arrays.commonPlantNamesArray.findIndex((usearg) => usearg == interaction.values[0]);
-							dataitem = [...serverData.commonPlantsArray];
-							plantedible = [...arrays.commonPlantEdibalityArray];
-							plantwounds = [...arrays.commonPlantHealsWoundsArray];
-							plantinfections = [...arrays.commonPlantHealsInfectionsArray];
-							plantcolds = [...arrays.commonPlantHealsColdsArray];
-							plantstrains = [...arrays.commonPlantHealsStrainsArray];
-							plantpoison = [...arrays.commonPlantHealsPoisonArray];
-							plantenergy = [...arrays.commonPlantGivesEnergyArray];
-						}
-						else if (arrays.uncommonPlantNamesArray.includes(interaction.values[0])) {
-							arrayposition = arrays.uncommonPlantNamesArray.findIndex((usearg) => usearg == interaction.values[0]);
-							dataitem = [...serverData.uncommonPlantsArray];
-							plantedible = [...arrays.uncommonPlantEdibalityArray];
-							plantwounds = [...arrays.uncommonPlantHealsWoundsArray];
-							plantinfections = [...arrays.uncommonPlantHealsInfectionsArray];
-							plantcolds = [...arrays.uncommonPlantHealsColdsArray];
-							plantstrains = [...arrays.uncommonPlantHealsStrainsArray];
-							plantpoison = [...arrays.uncommonPlantHealsPoisonArray];
-							plantenergy = [...arrays.uncommonPlantGivesEnergyArray];
-						}
-						else if (arrays.rarePlantNamesArray.includes(interaction.values[0])) {
-							arrayposition = arrays.rarePlantNamesArray.findIndex((usearg) => usearg == interaction.values[0]);
-							dataitem = [...serverData.rarePlantsArray];
-							plantedible = [...arrays.rarePlantEdibalityArray];
-							plantwounds = [...arrays.rarePlantHealsWoundsArray];
-							plantinfections = [...arrays.rarePlantHealsInfectionsArray];
-							plantcolds = [...arrays.rarePlantHealsColdsArray];
-							plantstrains = [...arrays.rarePlantHealsStrainsArray];
-							plantpoison = [...arrays.rarePlantHealsPoisonArray];
-							plantenergy = [...arrays.rarePlantGivesEnergyArray];
-						}
-						else {
-							return console.log(`Using an item failed! Selected herb: ${interaction.values[0]}`);
-						}
-						await HERB_USE(arrayposition, dataitem, plantedible, plantwounds, plantinfections, plantcolds, plantstrains, plantpoison, plantenergy, tagged_profileData, interaction.values[0]);
-					}
 
-					async function HERB_USE(arrayposition, dataitem, plantedible, plantwounds, plantinfections, plantcolds, plantstrains, plantpoison, plantenergy, tagged_profileData, useitem) {
-						const specieskind = species.nameArray.findIndex((speciesarg) => speciesarg == profileData.species);
-						let tagged_HP = 0;
-						let tagged_energy = 0;
-						let tagged_hunger = 0;
-						let successful = 0;
-						const tagged_playerhurtkind = [...tagged_profileData.injuryArray];
-						let injurytext = '';
-						let statstext = '';
-						let hptext = '';
-
-						dataitem[arrayposition] = dataitem[arrayposition] - 1;
-
-						if (plantedible[arrayposition] == 'e') {
-							if (tagged_profileData.hunger <= 0) successful = 1;
-							if (species.diedArray[specieskind] == 'carnivore') { tagged_hunger = 1; }
-							else if (species.diedArray[specieskind] == 'herbivore' || species.diedArray[specieskind] == 'omnivore') { tagged_hunger = 5; }
-							if (tagged_profileData.hunger + tagged_hunger > 100) { tagged_hunger = tagged_hunger - ((tagged_profileData.hunger + tagged_hunger) - 100); }
-							if (tagged_hunger >= 1) { statstext = statstext + `\n+${tagged_hunger} hunger for ${tagged_profileData.name} (${tagged_profileData.hunger + tagged_hunger}/${tagged_profileData.maxHunger})`; }
-							if (tagged_profileData.hunger <= 0) { successful = 1; }
-						}
-						if (tagged_profileData.health <= 0) {
-							successful = 1;
-							tagged_HP = Loottable(10, 1);
-							hptext = `\n+${tagged_HP} HP for ${tagged_profileData.name} (${tagged_profileData.health + tagged_HP}/${tagged_profileData.maxHealth})`;
-						}
-						if (plantwounds[arrayposition] == true && tagged_playerhurtkind[0] > 0) {
-							successful = 1;
-							injurytext = injurytext + `\n-1 wound for ${tagged_profileData.name}`;
-							tagged_playerhurtkind[0] = tagged_playerhurtkind[0] - 1;
-
-							tagged_HP = Loottable(10, 1);
-							if (tagged_profileData.health + tagged_HP > 100) tagged_HP = tagged_HP - ((tagged_profileData.health + tagged_HP) - 100);
-							hptext = `\n+${tagged_HP} HP for ${tagged_profileData.name} (${tagged_profileData.health + tagged_HP}/${tagged_profileData.maxHealth})`;
-						}
-						if (plantinfections[arrayposition] == true && tagged_playerhurtkind[1] > 0) {
-							successful = 1;
-							injurytext = injurytext + `\n-1 infection for ${tagged_profileData.name}`;
-							tagged_playerhurtkind[1] = tagged_playerhurtkind[1] - 1;
-
-							tagged_HP = Loottable(10, 1);
-							if (tagged_profileData.health + tagged_HP > 100) tagged_HP = tagged_HP - ((tagged_profileData.health + tagged_HP) - 100);
-							hptext = `\n+${tagged_HP} HP for ${tagged_profileData.name} (${tagged_profileData.health + tagged_HP}/${tagged_profileData.maxHealth})`;
-						}
-						if (plantcolds[arrayposition] == true && tagged_playerhurtkind[2] > 0) {
-							successful = 1;
-							injurytext = injurytext + `\ncold healed for ${tagged_profileData.name}`;
-							tagged_playerhurtkind[2] = tagged_playerhurtkind[2] - 1;
-
-							tagged_HP = Loottable(10, 1);
-							if (tagged_profileData.health + tagged_HP > 100) tagged_HP = tagged_HP - ((tagged_profileData.health + tagged_HP) - 100);
-							hptext = `\n+${tagged_HP} HP for ${tagged_profileData.name} (${tagged_profileData.health + tagged_HP}/${tagged_profileData.maxHealth})`;
-						}
-						if (plantstrains[arrayposition] == true && tagged_playerhurtkind[3] > 0) {
-							successful = 1;
-							injurytext = injurytext + `\n-1 strain for ${tagged_profileData.name}`;
-							tagged_playerhurtkind[3] = tagged_playerhurtkind[3] - 1;
-
-							tagged_HP = Loottable(10, 1);
-							if (tagged_profileData.health + tagged_HP > 100) tagged_HP = tagged_HP - ((tagged_profileData.health + tagged_HP) - 100);
-							hptext = `\n+${tagged_HP} HP for ${tagged_profileData.name} (${tagged_profileData.health + tagged_HP}/${tagged_profileData.maxHealth})`;
-						}
-						if (plantpoison[arrayposition] == true && tagged_playerhurtkind[4] > 0) {
-							successful = 1;
-							injurytext = injurytext + `\npoison healed for ${tagged_profileData.name}`;
-							tagged_playerhurtkind[4] = tagged_playerhurtkind[4] - 1;
-
-							tagged_HP = Loottable(10, 1);
-							if (tagged_profileData.health + tagged_HP > 100) tagged_HP = tagged_HP - ((tagged_profileData.health + tagged_HP) - 100);
-							hptext = `\n+${tagged_HP} HP for ${tagged_profileData.name} (${tagged_profileData.health + tagged_HP}/${tagged_profileData.maxHealth})`;
-						}
-						if (plantenergy[arrayposition] == true) {
-							if (tagged_profileData.energy <= 0) successful = 1;
-							tagged_energy = 30;
-							if (tagged_profileData.energy + tagged_energy > 100) { tagged_energy = tagged_energy - ((tagged_profileData.energy + tagged_energy) - 100); }
-							if (tagged_energy >= 1) { statstext = statstext + `\n+${tagged_energy} energy for ${tagged_profileData.name} (${tagged_profileData.energy + tagged_energy}/${tagged_profileData.maxEnergy})`; }
+							serverPlantInventoryIndex = 0;
+							plantNamesArrayIndex = arrays.commonPlantNamesArray.findIndex((usearg) => usearg == interaction.values[0]);
 						}
 
-						if (successful == 1 && tagged_profileData.userId == profileData.userId) {
-							const level_boost = (profileData.levels - 1) * 5;
-							if (Loottable(100 + level_boost, 1) <= 60) successful = 2;
+						if (arrays.uncommonPlantNamesArray.includes(interaction.values[0])) {
+
+							serverPlantInventoryIndex = 1;
+							plantNamesArrayIndex = arrays.uncommonPlantNamesArray.findIndex((usearg) => usearg == interaction.values[0]);
+						}
+
+						if (arrays.rarePlantNamesArray.includes(interaction.values[0])) {
+
+							serverPlantInventoryIndex = 2;
+							plantNamesArrayIndex = arrays.rarePlantNamesArray.findIndex((usearg) => usearg == interaction.values[0]);
+						}
+
+						--serverPlantInventory[serverPlantInventoryIndex][plantNamesArrayIndex];
+
+						const species = arrays.species(chosenProfileData);
+						const speciesNameArrayIndex = species.nameArray.findIndex((index) => index == chosenProfileData.species);
+						const chosenUserInjuryArray = [...chosenProfileData.injuryArray];
+						let chosenUserEnergyPoints = 0;
+						let chosenUserHungerPoints = 0;
+						let isSuccessful = false;
+						let embedFooterChosenUserStatsText = '';
+						let embedFooterChosenUserInjuryText = '';
+
+						if (plantEdibalityArray[serverPlantInventoryIndex][plantNamesArrayIndex] == 'e') {
+
+							if (chosenProfileData.hunger <= 0) {
+
+								isSuccessful = true;
+							}
+
+							if (species.dietArray[speciesNameArrayIndex] == 'carnivore') {
+
+								chosenUserHungerPoints = 1;
+							}
+
+							if (species.dietArray[speciesNameArrayIndex] == 'herbivore' || species.dietArray[speciesNameArrayIndex] == 'omnivore') {
+
+								chosenUserHungerPoints = 5;
+							}
+
+							if (chosenProfileData.hunger + chosenUserHungerPoints > chosenProfileData.maxHunger) {
+
+								chosenUserHungerPoints -= (chosenProfileData.hunger + chosenUserHungerPoints) - chosenProfileData.maxHunger;
+							}
+
+							if (chosenUserHungerPoints > 0) {
+
+								embedFooterChosenUserStatsText += `\n+${chosenUserHungerPoints} hunger for ${chosenProfileData.name} (${chosenProfileData.hunger + chosenUserHungerPoints}/${chosenProfileData.maxHunger})`;
+							}
+						}
+
+						if (chosenProfileData.health <= 0) {
+
+							isSuccessful = true;
+						}
+
+						if (plantHealsWoundsArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryArray[0] > 0) {
+
+							isSuccessful = true;
+							embedFooterChosenUserInjuryText += `\n-1 wound for ${chosenProfileData.name}`;
+							--chosenUserInjuryArray[0];
+						}
+
+						if (plantHealsInfectionsArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryArray[1] > 0) {
+
+							isSuccessful = true;
+							embedFooterChosenUserInjuryText += `\n-1 infection for ${chosenProfileData.name}`;
+							--chosenUserInjuryArray[1];
+						}
+
+						if (plantHealsColdsArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryArray[2] > 0) {
+
+							isSuccessful = true;
+							embedFooterChosenUserInjuryText += `\ncold healed for ${chosenProfileData.name}`;
+							--chosenUserInjuryArray[2];
+						}
+
+						if (plantHealsStrainsArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryArray[3] > 0) {
+
+							isSuccessful = true;
+							embedFooterChosenUserInjuryText += `\n-1 strain for ${chosenProfileData.name}`;
+							--chosenUserInjuryArray[3];
+						}
+
+						if (plantHealsPoisonArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryArray[4] > 0) {
+
+							isSuccessful = true;
+							embedFooterChosenUserInjuryText += `\npoison healed for ${chosenProfileData.name}`;
+							--chosenUserInjuryArray[4];
+						}
+
+						if (plantGivesEnergyArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true) {
+
+							if (chosenProfileData.energy <= 0) {
+
+								isSuccessful = true;
+							}
+
+							chosenUserEnergyPoints = 30;
+
+							if (chosenProfileData.energy + chosenUserEnergyPoints > chosenProfileData.maxEnergy) {
+
+								chosenUserEnergyPoints -= (chosenProfileData.energy + chosenUserEnergyPoints) - chosenProfileData.maxEnergy;
+							}
+
+							if (chosenUserEnergyPoints >= 1) {
+
+								embedFooterChosenUserStatsText += `\n+${chosenUserEnergyPoints} energy for ${chosenProfileData.name} (${chosenProfileData.energy + chosenUserEnergyPoints}/${chosenProfileData.maxEnergy})`;
+							}
 						}
 
 						await serverModel.findOneAndUpdate(
 							{ serverId: message.guild.id },
-							{ $set: { commonPlantsArray: dataitem } },
-							{ upsert: true, new: true },
-						);
-
-						if (successful == 1) {
-							final_profileData = await profileModel.findOneAndUpdate(
-								{ userId: tagged_profileData.userId, serverId: tagged_profileData.serverId },
-								{
-									$set: { injuryArray: tagged_playerhurtkind },
-									$inc: {
-										health: +tagged_HP,
-										energy: +tagged_energy,
-										hunger: +tagged_hunger,
-									},
-								},
-								{ upsert: true, new: true },
-							);
-							if (tagged_profileData.userId == profileData.userId) {
-								if (profileData.pronounArray[5] == 'singular') {
-									embed.setDescription(`*${profileData.name} takes a ${useitem}. After a bit of preparation, the ${profileData.species} can apply it correctly. Immediately you can see the effect. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} feels much better!*`);
-								}
-								else if (profileData.pronounArray[5] == 'plural') {
-									embed.setDescription(`*${profileData.name} takes a ${useitem}. After a bit of preparation, the ${profileData.species} can apply it correctly. Immediately you can see the effect. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} feel much better!*`);
-								}
-							}
-							else if (profileData.pronounArray[5] == 'singular') {
-								if (tagged_profileData.pronounArray[5] == 'singular') {
-									embed.setDescription(`*${profileData.name} takes a ${useitem}. After a bit of preparation, ${profileData.pronounArray[0]} gives it to ${tagged_profileData.name}. Immediately you can see the effect. ${tagged_profileData.pronounArray[0].charAt(0).toUpperCase()}${tagged_profileData.pronounArray[0].slice(1)} feels much better!*`);
-								}
-								else if (tagged_profileData.pronounArray == 'plural') {
-									embed.setDescription(`*${profileData.name} takes a ${useitem}. After a  bit of preparation, ${profileData.pronounArray[0]} gives it to ${tagged_profileData.name}. Immediately you can see the effect. ${tagged_profileData.pronounArray[0].charAt(0).toUpperCase()}${tagged_profileData.pronounArray[0].slice(1)} feel much better!*`);
-								}
-							}
-							else if (profileData.pronounArray[5] == 'plural') {
-								if (tagged_profileData.pronounArray[5] == 'singular') {
-									embed.setDescription(`*${profileData.name} takes a ${useitem}. After a bit of preparation, ${profileData.pronounArray[0]} give it to ${tagged_profileData.name}. Immediately you can see the effect. ${tagged_profileData.pronounArray[0].charAt(0).toUpperCase()}${tagged_profileData.pronounArray[0].slice(1)} feels much better!*`);
-								}
-								else if (tagged_profileData.pronounArray == 'plural') {
-									embed.setDescription(`*${profileData.name} takes a ${useitem}. After a bit of preparation, ${profileData.pronounArray[0]} give it to ${tagged_profileData.name}. Immediately you can see the effect. ${tagged_profileData.pronounArray[0].charAt(0).toUpperCase()}${tagged_profileData.pronounArray[0].slice(1)} feel much better!*`);
-								}
-							}
-							embed.setFooter(`${footertext}\n${statstext} ${hptext} ${injurytext}\n\n-1 ${useitem} for ${message.guild.name}`);
-							embedArray.splice(-2, 2, embed);
-							bot_reply = await bot_reply.edit({ embeds: embedArray, components: [] });
-						}
-						else {
-							final_profileData = await profileModel.findOne({ userId: tagged_profileData.userId, serverId: tagged_profileData.serverId });
-							if (successful == 2) {
-								if (profileData.pronounArray[5] == 'singular') {
-									embed.setDescription(`*${profileData.name} holds the ${useitem} in ${profileData.pronounArray[2]} mouth, trying to find a way to apply it. After a few attempts, the herb breaks into little pieces, rendering it useless. Guess ${profileData.pronounArray[0]} has to try again...*`);
-								}
-								else if (profileData.pronounArray[5] == 'plural') {
-									embed.setDescription(`*${profileData.name} holds the ${useitem} in ${profileData.pronounArray[2]} mouth, trying to find a way to apply it. After a few attempts, the herb breaks into little pieces, rendering it useless. Guess ${profileData.pronounArray[0]} have to try again...*`);
-								}
-							}
-							else if (profileData.pronounArray[5] == 'singular') {
-								embed.setDescription(`*${profileData.name} takes a ${useitem}. After a bit of preparation, ${profileData.pronounArray[0]} gives it to ${tagged_profileData.name}. But no matter how long they wait, it does not seem to help. Looks like ${profileData.name} chose the wrong herb!*`);
-							}
-							else if (profileData.pronounArray[5] == 'plural') {
-								embed.setDescription(`*${profileData.name} takes a ${useitem}. After a bit of preparation, ${profileData.pronounArray[0]} give it to ${tagged_profileData.name}. But no matter how long they wait, it does not seem to help. Looks like ${profileData.name} chose the wrong herb!*`);
-							}
-							embed.setFooter(`${footertext}\n\n-1 ${useitem} for ${message.guild.name}`);
-							embedArray.splice(-2, 2, embed);
-							bot_reply = await bot_reply.edit({ embeds: embedArray, components: [] });
-						}
-						if (tagged_profileData.injuryArray[2] == 1 && tagged_profileData.userId != profileData.userId && profileData.injuryArray[2] == 0 && Loottable(10, 1 <= 3)) {
-							gethurtlater = 1;
-							total_HP = Loottable(5, 3);
-
-							if (profileData.health - total_HP < 0) total_HP = total_HP - (total_HP - profileData.health);
-
-							await profileModel.findOneAndUpdate(
-								{ userId: message.author.id, serverId: message.guild.id },
-								{ $inc: { health: -total_HP } },
-								{ upsert: true, new: true },
-							);
-
-							playerhurtkind[2] = playerhurtkind[2] + 1;
-
-							embed2.setDescription(`*Suddenly, ${profileData.name} starts coughing uncontrollably. Thinking back, they spent all day alongside ${tagged_profileData.name}, who was coughing as well. That was probably not the best idea!*`);
-							embed2.setFooter(`-${total_HP} HP (from cold)`);
-
-							await embedArray.push(embed2);
-							await bot_reply.edit({ embeds: embedArray });
-						}
-					}
-
-					await damage.unhealedDamage(message, final_profileData, bot_reply);
-					total_HP = total_HP + extra_lost_HP;
-
-					if (gethurtlater == 1) {
-						await profileModel.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
-							{ $set: { injuryArray: playerhurtkind } },
-							{ upsert: true, new: true },
-						);
-					}
-
-					await levels.levelCheck(message, profileData, total_XP, bot_reply);
-
-					if (stats_profileData.energy === 0 || stats_profileData.maxHealth - total_HP === 0 || stats_profileData.hunger === 0 || stats_profileData.thirst === 0) {
-						passedout.passedOut(message, profileData);
-
-						let newlevel = profileData.levels;
-						newlevel = Math.round(newlevel - (newlevel / 10));
-
-						arrays.species(profileData);
-						const profile_inventory = [[], [], [], []];
-						for (let i = 0; i < arrays.commonPlantNamesArray.length; i++) profile_inventory[0].push(0);
-						for (let i = 0; i < arrays.uncommonPlantNamesArray.length; i++) profile_inventory[1].push(0);
-						for (let i = 0; i < arrays.rarePlantNamesArray.length; i++) profile_inventory[2].push(0);
-						for (let i = 0; i < species.nameArray.length; i++) profile_inventory[3].push(0);
-
-						await profileModel.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
 							{
 								$set: {
-									levels: newlevel,
-									experience: 0,
-									inventoryArray: profile_inventory,
+									commonPlantsArray: serverPlantInventory[0],
+									uncommonPlantsArray: serverPlantInventory[1],
+									rarePlantsArray: serverPlantInventory[2],
 								},
 							},
 							{ upsert: true, new: true },
 						);
+
+						if (isSuccessful == 1 && chosenProfileData.userId == profileData.userId && Loottable(100 + ((profileData.levels - 1) * 5), 1) <= 60) {
+
+							isSuccessful = false;
+						}
+
+						const chosenItemName = interaction.values[0];
+
+						if (isSuccessful == 1) {
+
+							let chosenUserHealthPoints = Loottable(10, 6);
+							if (chosenProfileData.health + chosenUserHealthPoints > chosenProfileData.maxHealth) chosenUserHealthPoints = chosenUserHealthPoints - ((chosenProfileData.health + chosenUserHealthPoints) - 100);
+
+							chosenProfileData = await profileModel.findOneAndUpdate(
+								{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
+								{
+									$set: { injuryArray: chosenUserInjuryArray },
+									$inc: {
+										health: +chosenUserHealthPoints,
+										energy: +chosenUserEnergyPoints,
+										hunger: +chosenUserHungerPoints,
+									},
+								},
+								{ upsert: true, new: true },
+							);
+
+							if (chosenProfileData.userId == profileData.userId) {
+
+								embed.description = `*${profileData.name} takes a ${chosenItemName}. After a bit of preparation, the ${profileData.species} can apply it correctly. Immediately you can see the effect. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} feel${(profileData.pronounArray[5] == 'singular') ? 's' : ''} much better!*`;
+							}
+							else {
+
+								embed.description = `*${profileData.name} takes a ${chosenItemName}. After a  bit of preparation, ${profileData.pronounArray[0]} give${(profileData.pronounArray[5] == 'singular') ? 's' : ''} it to ${chosenProfileData.name}. Immediately you can see the effect. ${chosenProfileData.pronounArray[0].charAt(0).toUpperCase()}${chosenProfileData.pronounArray[0].slice(1)} feel${(chosenProfileData.pronounArray[5] == 'singular') ? 's' : ''} much better!*`;
+							}
+
+							embed.footer.text = `${embedFooterStatsText}\n${embedFooterChosenUserStatsText}\n + ${chosenUserHealthPoints} HP for ${chosenProfileData.name}(${chosenProfileData.health + chosenUserHealthPoints} / ${chosenProfileData.maxHealth})${embedFooterChosenUserInjuryText}\n\n-1 ${chosenItemName} for ${message.guild.name}`;
+						}
+						else {
+							chosenProfileData = await profileModel.findOne({
+								userId: chosenProfileData.userId,
+								serverId: chosenProfileData.serverId,
+							});
+
+							if (chosenProfileData.userId == profileData.userId) {
+
+								embed.description = `*${profileData.name} holds the ${chosenItemName} in ${profileData.pronounArray[2]} mouth, trying to find a way to apply it. After a few attempts, the herb breaks into little pieces, rendering it useless. Guess ${profileData.pronounArray[0]} ${(profileData.pronounArray[5] == 'singular') ? 'has' : 'have'} to try again...*`;
+							}
+							else {
+
+								embed.description = `*${profileData.name} takes a ${chosenItemName}. After a bit of preparation, ${profileData.pronounArray[0]} give${(profileData.pronounArray[5] == 'singular') ? 's' : ''} it to ${chosenProfileData.name}. But no matter how long they wait, it does not seem to help. Looks like ${profileData.name} chose the wrong herb!*`;
+							}
+
+							embed.footer.text = `${embedFooterStatsText}\n\n-1 ${chosenItemName} for ${message.guild.name}`;
+						}
 					}
 
-					await client.off('interactionCreate', heal_interaction);
+					embedArray.length = embedArrayOriginalLength;
+
+					if (chosenProfileData.injuryArray[2] > 0 && chosenProfileData.userId != profileData.userId && profileData.injuryArray[2] < 1 && Loottable(10, 1 <= 3)) {
+
+						healthPoints = Loottable(5, 3);
+
+						if (profileData.health - healthPoints < 0) {
+
+							healthPoints = profileData.health;
+						}
+
+						profileData = await profileModel.findOneAndUpdate(
+							{ userId: message.author.id, serverId: message.guild.id },
+							{ $inc: { health: -healthPoints } },
+							{ upsert: true, new: true },
+						);
+
+						++userInjuryArray[2];
+
+						await embedArray.push({
+							color: profileData.color,
+							description: `*Suddenly, ${profileData.name} starts coughing uncontrollably. Thinking back, they spent all day alongside ${chosenProfileData.name}, who was coughing as well. That was probably not the best idea!*`,
+							footer: { text: `-${healthPoints} HP (from cold)` },
+						});
+					}
+
+					botReply = await interaction.message.edit({ embeds: embedArray, components: [] });
+
+					await condition.decreaseHealth(message, profileData, botReply);
+
+					profileData = await profileModel.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{ $set: { injuryArray: userInjuryArray } },
+						{ upsert: true, new: true },
+					);
+
+					await levels.levelCheck(message, profileData, botReply);
+
+					if (await checkValidity.isPassedOut(message, profileData)) {
+
+						await levels.decreaseLevel(message, profileData);
+					}
+
+					return;
 				}
 
-=======
->>>>>>> ec6ea6b3a669c6c8a97e564ddbd59c0eb431b0ea
 				await interactionCollector();
 			});
 		}
@@ -642,22 +645,22 @@ module.exports = {
 
 		async function getWoundList(healUser) {
 
-			const partnerProfileData = await profileModel.findOne({
+			chosenProfileData = await profileModel.findOne({
 				userId: healUser.id,
 				serverId: message.guild.id,
 			});
 
 			let healUserConditionText = '';
 
-			healUserConditionText += (partnerProfileData.health <= 0) ? '\nHealth: 0' : '';
-			healUserConditionText += (partnerProfileData.energy <= 0) ? '\nEnergy: 0' : '';
-			healUserConditionText += (partnerProfileData.hunger <= 0) ? '\nHunger: 0' : '';
-			healUserConditionText += (partnerProfileData.thirst <= 0) ? '\nThirst: 0' : '';
-			healUserConditionText += (partnerProfileData.injuryArray[0] >= 1) ? `\nWounds: ${partnerProfileData.injuryArray[0]}` : '';
-			healUserConditionText += (partnerProfileData.injuryArray[1] >= 1) ? `\nInfections: ${partnerProfileData.injuryArray[0]}` : '';
-			healUserConditionText += (partnerProfileData.injuryArray[2] >= 1) ? '\nCold: yes' : '';
-			healUserConditionText += (partnerProfileData.injuryArray[3] >= 1) ? `\nSprains: ${partnerProfileData.injuryArray[0]}` : '';
-			healUserConditionText += (partnerProfileData.injuryArray[4] >= 1) ? '\nPoison: yes' : '';
+			healUserConditionText += (chosenProfileData.health <= 0) ? '\nHealth: 0' : '';
+			healUserConditionText += (chosenProfileData.energy <= 0) ? '\nEnergy: 0' : '';
+			healUserConditionText += (chosenProfileData.hunger <= 0) ? '\nHunger: 0' : '';
+			healUserConditionText += (chosenProfileData.thirst <= 0) ? '\nThirst: 0' : '';
+			healUserConditionText += (chosenProfileData.injuryArray[0] >= 1) ? `\nWounds: ${chosenProfileData.injuryArray[0]}` : '';
+			healUserConditionText += (chosenProfileData.injuryArray[1] >= 1) ? `\nInfections: ${chosenProfileData.injuryArray[0]}` : '';
+			healUserConditionText += (chosenProfileData.injuryArray[2] >= 1) ? '\nCold: yes' : '';
+			healUserConditionText += (chosenProfileData.injuryArray[3] >= 1) ? `\nSprains: ${chosenProfileData.injuryArray[0]}` : '';
+			healUserConditionText += (chosenProfileData.injuryArray[4] >= 1) ? '\nPoison: yes' : '';
 
 			const inventoryPageSelectMenu = {
 				type: 'ACTION_ROW',
@@ -678,24 +681,24 @@ module.exports = {
 				footer: { text: '' },
 			};
 
-			if (partnerProfileData.userId == profileData.userId) {
+			if (chosenProfileData.userId == profileData.userId) {
 
 				embed.description = `*${profileData.name} pushes aside the leaves acting as the entrance to the healer’s den. With tired eyes they inspect the rows of herbs, hoping to find one that can ease their pain.*`;
-				embed.footer.text = `${partnerProfileData.name}'s stats/illnesses/injuries:${healUserConditionText}`;
+				embed.footer.text = `${chosenProfileData.name}'s stats/illnesses/injuries:${healUserConditionText}`;
 			}
-			else if (partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0) {
+			else if (chosenProfileData.energy <= 0 || chosenProfileData.health <= 0 || chosenProfileData.hunger <= 0 || chosenProfileData.thirst <= 0) {
 
-				embed.description = `*${profileData.name} runs towards the pack borders, where ${partnerProfileData.name} lies, only barely conscious. The ${profileData.rank.toLowerCase()} immediately looks for the right herbs to help the ${partnerProfileData.species}.*`;
-				embed.footer.text = `${partnerProfileData.name}'s stats/illnesses/injuries:${healUserConditionText}`;
+				embed.description = `*${profileData.name} runs towards the pack borders, where ${chosenProfileData.name} lies, only barely conscious. The ${profileData.rank.toLowerCase()} immediately looks for the right herbs to help the ${chosenProfileData.species}.*`;
+				embed.footer.text = `${chosenProfileData.name}'s stats/illnesses/injuries:${healUserConditionText}`;
 			}
-			else if (partnerProfileData.injuryArray.some((element) => element > 0)) {
+			else if (chosenProfileData.injuryArray.some((element) => element > 0)) {
 
-				embed.description = `*${partnerProfileData.name} enters the medicine den with tired eyes.* "Please help me!" *${partnerProfileData.pronounArray[0]} say${(partnerProfileData.pronounArray[5] == 'singular') ? 's' : ''}, ${partnerProfileData.pronounArray[2]} face contorted in pain. ${profileData.name} looks up with worry.* "I'll see what I can do for you."`;
-				embed.footer.text = `${partnerProfileData.name}'s stats/illnesses/injuries:${healUserConditionText}`;
+				embed.description = `*${chosenProfileData.name} enters the medicine den with tired eyes.* "Please help me!" *${chosenProfileData.pronounArray[0]} say${(chosenProfileData.pronounArray[5] == 'singular') ? 's' : ''}, ${chosenProfileData.pronounArray[2]} face contorted in pain. ${profileData.name} looks up with worry.* "I'll see what I can do for you."`;
+				embed.footer.text = `${chosenProfileData.name}'s stats/illnesses/injuries:${healUserConditionText}`;
 			}
 			else {
 
-				embed.description = `*${profileData.name} approaches ${partnerProfileData.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${profileData.species} asks.\n${partnerProfileData.name} shakes ${partnerProfileData.pronounArray[2]} head.* "Not that I know of, no."\n*Disappointed, ${profileData.name} goes back to the medicine den.*`;
+				embed.description = `*${profileData.name} approaches ${chosenProfileData.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${profileData.species} asks.\n${chosenProfileData.name} shakes ${chosenProfileData.pronounArray[2]} head.* "Not that I know of, no."\n*Disappointed, ${profileData.name} goes back to the medicine den.*`;
 
 				embedArray.push(embed);
 
@@ -713,6 +716,11 @@ module.exports = {
 
 				return botReply = await botReply.edit({ embeds: embedArray, components: [userSelectMenu, inventoryPageSelectMenu] });
 			}
+		}
+
+		function Loottable(max, min) {
+
+			return Math.floor(Math.random() * max) + min;
 		}
 	},
 };
