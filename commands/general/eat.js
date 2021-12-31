@@ -123,7 +123,7 @@ module.exports = {
 
 			if (plantEdibalityArray[plantNamesArrayIndex] == 'e') {
 
-				if (species.diedArray[userSpeciesArrayIndex] == 'carnivore') {
+				if (species.dietArray[userSpeciesArrayIndex] == 'carnivore') {
 
 					minimumHungerPoints = 1;
 					finalHungerPoints = Loottable(5, minimumHungerPoints);
@@ -131,7 +131,7 @@ module.exports = {
 					embed.description = `*${profileData.name} plucks a ${chosenFood} from the pack storage and nibbles away at it. It has a bitter, foreign taste, not the usual meaty meal the ${profileData.species} prefers.*`;
 				}
 
-				if (species.diedArray[userSpeciesArrayIndex] == 'herbivore' || species.diedArray[userSpeciesArrayIndex] == 'omnivore') {
+				if (species.dietArray[userSpeciesArrayIndex] == 'herbivore' || species.dietArray[userSpeciesArrayIndex] == 'omnivore') {
 
 					minimumHungerPoints = 11;
 					finalHungerPoints = Loottable(20, minimumHungerPoints);
@@ -241,7 +241,7 @@ module.exports = {
 				return await message.reply({ embeds: embedArray }).catch(console.trace);
 			}
 
-			if (species.diedArray[userSpeciesArrayIndex] == 'herbivore') {
+			if (species.dietArray[userSpeciesArrayIndex] == 'herbivore') {
 
 				minimumHungerPoints = 1;
 				finalHungerPoints = Loottable(5, minimumHungerPoints);
@@ -249,7 +249,7 @@ module.exports = {
 				embed.description = `*${profileData.name} stands by the storage den, eyeing the varieties of food. A ${chosenFood} catches ${profileData.pronounArray[2]} attention. The ${profileData.species} walks over to it and begins to eat.* "This isn't very good!" *${profileData.name} whispers to ${profileData.pronounArray[4]} and leaves the den, stomach still growling, and craving for plants to grow.*`;
 			}
 
-			if (species.diedArray[userSpeciesArrayIndex] == 'carnivore' || species.diedArray[userSpeciesArrayIndex] == 'omnivore') {
+			if (species.dietArray[userSpeciesArrayIndex] == 'carnivore' || species.dietArray[userSpeciesArrayIndex] == 'omnivore') {
 
 				minimumHungerPoints = 11;
 				finalHungerPoints = Loottable(20, minimumHungerPoints);
