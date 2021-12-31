@@ -148,11 +148,9 @@ module.exports = {
 				description: `*${profileData.name} opens ${profileData.pronounArray[2]} eyes, blinking at the bright sun. After a long stretch, ${profileData.pronounArray[0]} leave${(profileData.pronounsArray[5] == 'singular') ? 's' : ''} ${profileData.pronounArray[2]} den to continue ${profileData.pronounArray[2]} day.*`,
 				footer: { text: `Current energy: ${profileData.energy}` },
 			});
-
-			return true;
 		}
 
-		return false;
+		return;
 	},
 
 	async isInvalid(message, profileData, embedArray) {
