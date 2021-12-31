@@ -74,7 +74,7 @@ module.exports = {
 
 		client.on('messageCreate', async function removeInventoryComponents(newMessage) {
 
-			if (!botReply || newMessage.author.id != message.author.id || !newMessage.content.toLowerCase().startsWith(config.PREFIX)) {
+			if (!botReply || newMessage.author.id != message.author.id || !newMessage.content.toLowerCase().startsWith(config.prefix)) {
 
 				return;
 			}
@@ -254,7 +254,7 @@ module.exports = {
 						}
 
 						embed = {
-							color: config.DEFAULT_COLOR,
+							color: config.default_color,
 							author: { name: interaction.guild.name, icon_url: interaction.guild.iconURL() },
 							title: `Inventory of ${interaction.guild.name} - Page 3.${currentPage + 1}`,
 							fields: [],
