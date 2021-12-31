@@ -40,52 +40,54 @@ module.exports = {
 				return await errorHandling.output(message, error);
 			});
 
-			serverData.save().catch(async (error) => await errorHandling.output(message, error));
+			await serverData.save().catch(async (error) => await errorHandling.output(message, error));
 		}
 
 		if (species.nameArray.length > serverData.meatArray.length) {
 
-			for (let i = serverData.meatArray.length; i < species.nameArray.length; i++) {
+			const serverDataMeatArray = [...serverData.meatArray].concat(new Array(species.nameArray.length - serverData.meatArray.length).fill(0));
 
-				serverData = await serverModel.updateOne(
-					{ serverId: message.guild.id },
-					{ $push: { meatArray: 0 } },
-				);
-			}
+			serverData = await serverModel.findOneAndUpdate(
+				{ serverId: message.guild.id },
+				{ $set: { meatArray: serverDataMeatArray } },
+				{ upsert: true, new: true },
+			);
 		}
 
 		if (arrays.commonPlantNamesArray.length > serverData.commonPlantsArray.length) {
 
-			for (let i = serverData.commonPlantsArray.length; i < arrays.commonPlantNamesArray.length; i++) {
+			const serverDataCommonPlantsArray = [...serverData.commonPlantsArray].concat(new Array(arrays.commonPlantNamesArray.length - serverData.commonPlantsArray.length).fill(0));
 
-				serverData = await serverModel.updateOne(
-					{ serverId: message.guild.id },
-					{ $push: { commonPlantsArray: 0 } },
-				);
-			}
+			serverData = await serverModel.findOneAndUpdate(
+				{ serverId: message.guild.id },
+				{ $set: { commonPlantsArray: serverDataCommonPlantsArray } },
+				{ upsert: true, new: true },
+			);
 		}
 
 		if (arrays.uncommonPlantNamesArray.length > serverData.uncommonPlantsArray.length) {
 
-			for (let i = serverData.uncommonPlantsArray.length; i < arrays.uncommonPlantNamesArray.length; i++) {
+			const serverDataUncommonPlantsArray = [...serverData.uncommonPlantsArray].concat(new Array(arrays.uncommonPlantNamesArray.length - serverData.uncommonPlantsArray.length).fill(0));
 
-				serverData = await serverModel.updateOne(
-					{ serverId: message.guild.id },
-					{ $push: { uncommonPlantsArray: 0 } },
-				);
-			}
+			serverData = await serverModel.findOneAndUpdate(
+				{ serverId: message.guild.id },
+				{ $set: { uncommonPlantsArray: serverDataUncommonPlantsArray } },
+				{ upsert: true, new: true },
+			);
 		}
 
 		if (arrays.rarePlantNamesArray.length > serverData.rarePlantsArray.length) {
 
-			for (let i = serverData.rarePlantsArray.length; i < arrays.rarePlantNamesArray.length; i++) {
+			const serverDataRarePlantsArray = [...serverData.rarePlantsArray].concat(new Array(arrays.rarePlantNamesArray.length - serverData.rarePlantsArray.length).fill(0));
 
-				serverData = await serverModel.updateOne(
-					{ serverId: message.guild.id },
-					{ $push: { rarePlantsArray: 0 } },
-				);
-			}
+			serverData = await serverModel.findOneAndUpdate(
+				{ serverId: message.guild.id },
+				{ $set: { rarePlantsArray: serverDataRarePlantsArray } },
+				{ upsert: true, new: true },
+			);
 		}
+
+		console.log(serverData);
 
 		let pingRuins = false;
 		const embedArray = [];
