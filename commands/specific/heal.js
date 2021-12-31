@@ -4,7 +4,7 @@ const profileModel = require('../../models/profileSchema');
 const serverModel = require('../../models/serverSchema');
 const config = require('../../config.json');
 const arrays = require('../../utils/arrays');
-const condition = require('../../utils/arrays');
+const condition = require('../../utils/condition');
 const levels = require('../../utils/levels');
 
 module.exports = {
@@ -379,16 +379,16 @@ module.exports = {
 
 					}
 					else {
-						const serverPlantInventory = [...serverData.commonPlantsArray, serverData.uncommonPlantsArray, serverData.rarePlantsArray];
+						const serverPlantInventory = [[...serverData.commonPlantsArray], [...serverData.uncommonPlantsArray], [...serverData.rarePlantsArray]];
 						let serverPlantInventoryIndex = -1;
 						let plantNamesArrayIndex = -1;
-						const plantEdibalityArray = [...arrays.commonPlantEdibalityArray, ...arrays.uncommonPlantEdibalityArray, ...arrays.rarePlantEdibalityArray];
-						const plantHealsWoundsArray = [...arrays.commonPlantHealsWoundsArray, ...arrays.uncommonPlantHealsWoundsArray, ...arrays.rarePlantHealsWoundsArray];
-						const plantHealsInfectionsArray = [...arrays.commonPlantHealsInfectionsArray, ...arrays.uncommonPlantHealsInfectionsArray, ...arrays.rarePlantHealsInfectionsArray];
-						const plantHealsColdsArray = [...arrays.commonPlantHealsColdsArray, ...arrays.uncommonPlantHealsColdsArray, ...arrays.rarePlantHealsColdsArray];
-						const plantHealsStrainsArray = [...arrays.commonPlantHealsStrainsArray, ...arrays.uncommonPlantHealsStrainsArray, ...arrays.rarePlantHealsStrainsArray];
-						const plantHealsPoisonArray = [...arrays.commonPlantHealsPoisonArray, ...arrays.uncommonPlantHealsPoisonArray, ...arrays.rarePlantHealsPoisonArray];
-						const plantGivesEnergyArray = [...arrays.commonPlantGivesEnergyArray, ...arrays.uncommonPlantGivesEnergyArray, ...arrays.rarePlantGivesEnergyArray];
+						const plantEdibalityArray = [[...arrays.commonPlantEdibalityArray], [...arrays.uncommonPlantEdibalityArray], [...arrays.rarePlantEdibalityArray]];
+						const plantHealsWoundsArray = [[...arrays.commonPlantHealsWoundsArray], [...arrays.uncommonPlantHealsWoundsArray], [...arrays.rarePlantHealsWoundsArray]];
+						const plantHealsInfectionsArray = [[...arrays.commonPlantHealsInfectionsArray], [...arrays.uncommonPlantHealsInfectionsArray], [...arrays.rarePlantHealsInfectionsArray]];
+						const plantHealsColdsArray = [[...arrays.commonPlantHealsColdsArray], [...arrays.uncommonPlantHealsColdsArray], [...arrays.rarePlantHealsColdsArray]];
+						const plantHealsStrainsArray = [[...arrays.commonPlantHealsStrainsArray], [...arrays.uncommonPlantHealsStrainsArray], [...arrays.rarePlantHealsStrainsArray]];
+						const plantHealsPoisonArray = [[...arrays.commonPlantHealsPoisonArray], [...arrays.uncommonPlantHealsPoisonArray], [...arrays.rarePlantHealsPoisonArray]];
+						const plantGivesEnergyArray = [[...arrays.commonPlantGivesEnergyArray], [...arrays.uncommonPlantGivesEnergyArray], [...arrays.rarePlantGivesEnergyArray]];
 
 						if (arrays.commonPlantNamesArray.includes(interaction.values[0])) {
 
@@ -529,7 +529,10 @@ module.exports = {
 						if (isSuccessful == 1) {
 
 							let chosenUserHealthPoints = Loottable(10, 6);
-							if (chosenProfileData.health + chosenUserHealthPoints > chosenProfileData.maxHealth) chosenUserHealthPoints = chosenUserHealthPoints - ((chosenProfileData.health + chosenUserHealthPoints) - 100);
+							if (chosenProfileData.health + chosenUserHealthPoints > chosenProfileData.maxHealth) {
+
+								chosenUserHealthPoints -= (chosenProfileData.health + chosenUserHealthPoints) - chosenProfileData.maxHealthW;
+							}
 
 							chosenProfileData = await profileModel.findOneAndUpdate(
 								{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
@@ -553,7 +556,7 @@ module.exports = {
 								embed.description = `*${profileData.name} takes a ${chosenItemName}. After a  bit of preparation, ${profileData.pronounArray[0]} give${(profileData.pronounArray[5] == 'singular') ? 's' : ''} it to ${chosenProfileData.name}. Immediately you can see the effect. ${chosenProfileData.pronounArray[0].charAt(0).toUpperCase()}${chosenProfileData.pronounArray[0].slice(1)} feel${(chosenProfileData.pronounArray[5] == 'singular') ? 's' : ''} much better!*`;
 							}
 
-							embed.footer.text = `${embedFooterStatsText}\n${embedFooterChosenUserStatsText}\n + ${chosenUserHealthPoints} HP for ${chosenProfileData.name}(${chosenProfileData.health + chosenUserHealthPoints} / ${chosenProfileData.maxHealth})${embedFooterChosenUserInjuryText}\n\n-1 ${chosenItemName} for ${message.guild.name}`;
+							embed.footer.text = `${embedFooterStatsText}\n${embedFooterChosenUserStatsText}\n + ${chosenUserHealthPoints} HP for ${chosenProfileData.name}(${chosenProfileData.health} / ${chosenProfileData.maxHealth})${embedFooterChosenUserInjuryText}\n\n-1 ${chosenItemName} for ${message.guild.name}`;
 						}
 						else {
 							chosenProfileData = await profileModel.findOne({
@@ -575,6 +578,7 @@ module.exports = {
 					}
 
 					embedArray.length = embedArrayOriginalLength;
+					embedArray.push(embed);
 
 					if (chosenProfileData.injuryArray[2] > 0 && chosenProfileData.userId != profileData.userId && profileData.injuryArray[2] < 1 && Loottable(10, 1 <= 3)) {
 
