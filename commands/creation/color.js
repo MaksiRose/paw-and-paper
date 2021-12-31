@@ -34,7 +34,7 @@ module.exports = {
 
 			return await message.reply({
 				embeds: [{
-					color: config.DEFAULT_COLOR,
+					color: config.default_color,
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Please send a valid hex code! Valid hex codes consist of 6 characters and contain only letters from \'a\' to \'f\' and/or numbers.',
 				}],

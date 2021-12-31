@@ -2,6 +2,7 @@ const profileModel = require('../../models/profileSchema');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const condition = require('../../utils/condition');
+const levels = require('../../utils/levels');
 
 module.exports = {
 	name: 'share',
@@ -168,28 +169,7 @@ module.exports = {
 
 		if (checkValidity.isPassedOut(message, profileData)) {
 
-			const newUserLevel = Math.round(profileData.levels - (profileData.levels / 10));
-			const emptyUserInventory = [...profileData.inventoryArray];
-
-			for (let i = 0; i < profileData.inventoryArray.length; i++) {
-
-				for (let j = 0; j < profileData.inventoryArray[i].length; j++) {
-
-					emptyUserInventory[i][j] = 0;
-				}
-			}
-
-			await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{
-					$set: {
-						levels: newUserLevel,
-						experience: 0,
-						inventoryArray: emptyUserInventory,
-					},
-				},
-				{ upsert: true, new: true },
-			);
+			await levels.decreaseLevel(message, profileData);
 		}
 
 
