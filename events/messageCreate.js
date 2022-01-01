@@ -87,8 +87,6 @@ module.exports = {
 			);
 		}
 
-		console.log(serverData);
-
 		let pingRuins = false;
 		const embedArray = [];
 
