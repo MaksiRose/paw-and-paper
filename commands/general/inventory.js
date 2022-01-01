@@ -115,6 +115,13 @@ module.exports = {
 
 					return await botReply.edit({
 						components: [],
+					}).catch((error) => {
+						if (error.httpStatus == 404) {
+							console.log('Message already deleted');
+						}
+						else {
+							throw new Error(error);
+						}
 					});
 				}
 
