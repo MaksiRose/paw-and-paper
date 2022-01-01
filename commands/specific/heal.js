@@ -531,7 +531,7 @@ module.exports = {
 							let chosenUserHealthPoints = Loottable(10, 6);
 							if (chosenProfileData.health + chosenUserHealthPoints > chosenProfileData.maxHealth) {
 
-								chosenUserHealthPoints -= (chosenProfileData.health + chosenUserHealthPoints) - chosenProfileData.maxHealthW;
+								chosenUserHealthPoints -= (chosenProfileData.health + chosenUserHealthPoints) - chosenProfileData.maxHealth;
 							}
 
 							chosenProfileData = await profileModel.findOneAndUpdate(
