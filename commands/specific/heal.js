@@ -489,7 +489,7 @@ module.exports = {
 								});
 
 							embed.description = `*${profileData.name} takes ${chosenProfileData.name}'s body, drags it over to the river, and positions ${chosenProfileData.pronounArray[2]} head right over the water. The ${chosenProfileData.species} sticks ${chosenProfileData.pronounArray[2]} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${chosenProfileData.pronounArray[2]} body.*`;
-							embed.footer.text = `${embedFooterStatsText}\n\n+${chosenUserThirstPoints} for ${chosenProfileData.name} (${chosenProfileData.thirst}/${chosenProfileData.maxThirst})`;
+							embed.footer.text = `${embedFooterStatsText}\n\n+${chosenUserThirstPoints} water for ${chosenProfileData.name} (${chosenProfileData.thirst}/${chosenProfileData.maxThirst})`;
 
 						}
 
