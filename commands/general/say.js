@@ -19,10 +19,10 @@ module.exports = {
 
 		const userText = argumentsArray.join(' ');
 
-		if (!argumentsArray.length) {
+		if (!userText) {
 
 			embedArray.push({
-				color: config.DEFAULT_COLOR,
+				color: config.default_color,
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 				title: 'Talk to your fellow packmates! Gives 1 experience point each time. Here is how to use the command:',
 				description: '\n\nrp say "text"\nReplace "text" with your text.',

@@ -22,10 +22,7 @@ module.exports = {
 			return;
 		}
 
-		if (checkValidity.isResting(message, profileData, embedArray)) {
-
-			return;
-		}
+		checkValidity.isResting(message, profileData, embedArray);
 
 		if (profileData.hasQuest == false) {
 
