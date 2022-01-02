@@ -1,6 +1,6 @@
 const profileModel = require('../models/profileSchema');
-const rest = require('../commands/general/rest');
 const arrays = require('./arrays');
+const executeResting = require('./executeResting');
 
 module.exports = {
 
@@ -140,12 +140,12 @@ module.exports = {
 				{ upsert: true, new: true },
 			);
 
-			rest.stopResting(message.author.id);
+			executeResting.stopResting(message.author.id);
 
 			embedArray.unshift({
 				color: profileData.color,
 				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*${profileData.name} opens ${profileData.pronounArray[2]} eyes, blinking at the bright sun. After a long stretch, ${profileData.pronounArray[0]} leave${(profileData.pronounsArray[5] == 'singular') ? 's' : ''} ${profileData.pronounArray[2]} den to continue ${profileData.pronounArray[2]} day.*`,
+				description: `*${profileData.name} opens ${profileData.pronounArray[2]} eyes, blinking at the bright sun. After a long stretch, ${profileData.pronounArray[0]} leave${(profileData.pronounArray[5] == 'singular') ? 's' : ''} ${profileData.pronounArray[2]} den to continue ${profileData.pronounArray[2]} day.*`,
 				footer: { text: `Current energy: ${profileData.energy}` },
 			});
 		}
