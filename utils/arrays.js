@@ -113,7 +113,7 @@ module.exports = {
 		if (profileData && profileData.species == nameArray[0]) {
 			biome1OpponentsArray = ['rabbit', 'squirrel', 'deer'];
 			biome2OpponentsArray = ['fox', 'dog'];
-			biome3OpponentsArray = ['bear'];
+			biome3OpponentsArray = ['bear', 'horse', 'elk'];
 		}
 
 		nameArray[1] = 'cat';
@@ -176,7 +176,7 @@ module.exports = {
 		if (profileData && profileData.species == nameArray[7]) {
 			biome1OpponentsArray = ['rabbit', 'squirrel', 'salmon', 'tuna'];
 			biome2OpponentsArray = ['cat', 'fox', 'dog'];
-			biome3OpponentsArray = ['wolf'];
+			biome3OpponentsArray = ['wolf', 'horse', 'elk'];
 		}
 
 		nameArray[8] = 'coyote';
@@ -329,7 +329,7 @@ module.exports = {
 		if (profileData && profileData.species == nameArray[24]) {
 			biome1OpponentsArray = ['squirrel', 'rabbit'];
 			biome2OpponentsArray = ['cat', 'weasel'];
-			biome3OpponentsArray = ['eagle', 'hawk'];
+			biome3OpponentsArray = ['eagle', 'hawk', 'cassowary'];
 		}
 
 		nameArray[25] = 'weasel';
@@ -347,7 +347,7 @@ module.exports = {
 		if (profileData && profileData.species == nameArray[26]) {
 			biome1OpponentsArray = ['squirrel', 'rabbit'];
 			biome2OpponentsArray = ['owl', 'raccoon'];
-			biome3OpponentsArray = ['eagle', 'gaboon viper'];
+			biome3OpponentsArray = ['eagle', 'gaboon viper', 'cassowary'];
 		}
 
 		nameArray[27] = 'eagle';
@@ -356,7 +356,7 @@ module.exports = {
 		if (profileData && profileData.species == nameArray[27]) {
 			biome1OpponentsArray = ['squirrel', 'rabbit'];
 			biome2OpponentsArray = ['bear', 'raccoon'];
-			biome3OpponentsArray = ['hawk', 'gaboon viper'];
+			biome3OpponentsArray = ['hawk', 'gaboon viper', 'cassowary'];
 		}
 
 		nameArray[28] = 'raccoon';
@@ -366,6 +366,33 @@ module.exports = {
 			biome1OpponentsArray = ['salmon', 'rabbit'];
 			biome2OpponentsArray = ['owl', 'fox', 'cat'];
 			biome3OpponentsArray = ['coyote', 'wolf'];
+		}
+
+		nameArray[29] = 'horse';
+		dietArray[29] = 'herbivore';
+		habitatArray[29] = 'cold';
+		if (profileData && profileData.species == nameArray[29]) {
+			biome1OpponentsArray = ['cat', 'fox'];
+			biome2OpponentsArray = ['deer', 'dog'];
+			biome3OpponentsArray = ['bear', 'wolf', 'elk'];
+		}
+
+		nameArray[30] = 'elk';
+		dietArray[30] = 'herbivore';
+		habitatArray[30] = 'cold';
+		if (profileData && profileData.species == nameArray[30]) {
+			biome1OpponentsArray = ['cat', 'fox'];
+			biome2OpponentsArray = ['deer', 'dog'];
+			biome3OpponentsArray = ['bear', 'wolf', 'horse'];
+		}
+
+		nameArray[31] = 'cassowary';
+		dietArray[31] = 'omnivore';
+		habitatArray[31] = 'warm';
+		if (profileData && profileData.species == nameArray[31]) {
+			biome1OpponentsArray = ['maned wolf', 'dog'];
+			biome2OpponentsArray = ['hoatzin', 'gaboon viper'];
+			biome3OpponentsArray = ['hawk', 'eagle'];
 		}
 
 
