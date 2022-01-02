@@ -1,5 +1,4 @@
 const profileModel = require('../models/profileSchema');
-const rest = require('../commands/general/rest');
 const arrays = require('./arrays');
 
 module.exports = {
@@ -131,6 +130,8 @@ module.exports = {
 	},
 
 	async isResting(message, profileData, embedArray) {
+
+		const rest = require('../commands/general/rest');
 
 		if (profileData.isResting == true) {
 

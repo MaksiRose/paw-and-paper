@@ -84,10 +84,9 @@ module.exports = {
 			);
 			console.log(`\x1b[32m\x1b[0m${message.author.tag} is at \x1b[33m${profileData.energy} energy \x1b[0mfrom resting in \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
+			botReply.embeds[0].footer.text = `+${profileData.energy - profileData.energy} energy (${profileData.energy}/${profileData.maxEnergy})`;
 			await botReply.edit({
-				embeds: [{
-					footer: { text: `+${profileData.energy - profileData.energy} energy (${profileData.energy}/${profileData.maxEnergy})` },
-				}],
+				embeds: botReply.embeds,
 			});
 
 			if (profileData.energy >= profileData.maxEnergy) {
