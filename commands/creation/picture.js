@@ -22,7 +22,7 @@ module.exports = {
 
 			return await message.reply({
 				embeds: [{
-					color: config.DEFAULT_COLOR,
+					color: config.default_color,
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: `The profile picture for ${profileData.name} is now the accounts profile picture!`,
 					footer: { text: 'If you want to set a new picture, just send it together in one message with this command!' },
@@ -34,7 +34,7 @@ module.exports = {
 
 			return await message.reply({
 				embeds: [{
-					color: config.DEFAULT_COLOR,
+					color: config.default_color,
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Please send an image to set as your characters profile picture!',
 				}],
@@ -47,7 +47,7 @@ module.exports = {
 
 			return await message.reply({
 				embeds: [{
-					color: config.DEFAULT_COLOR,
+					color: config.default_color,
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'This image extension is not supported! Please send a .png, .jp(e)g or .raw image.',
 				}],
@@ -62,7 +62,7 @@ module.exports = {
 
 		return await message.reply({
 			embeds: [{
-				color: config.DEFAULT_COLOR,
+				color: config.default_color,
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 				title: `Profile picture for ${profileData.name} set!`,
 				image: { url: ImageLink },

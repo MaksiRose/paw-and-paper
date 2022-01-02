@@ -41,7 +41,7 @@ module.exports = {
 
 
 		embedArray.push({
-			color: config.DEFAULT_COLOR,
+			color: config.default_color,
 			author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 			description: 'For the next 15 seconds, click the button as many times as you can!',
 		});

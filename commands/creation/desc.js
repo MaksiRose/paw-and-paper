@@ -15,7 +15,7 @@ module.exports = {
 		if (!argumentsArray.length) {
 			return await message.reply({
 				embeds: [{
-					color: config.DEFAULT_COLOR,
+					color: config.default_color,
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Tell us more about your character! Here is how to use the command:',
 					description: '\n\nrp desc [description]\nReplace [description] with your text.',
@@ -33,7 +33,7 @@ module.exports = {
 
 		return await message.reply({
 			embeds: [{
-				color: config.DEFAULT_COLOR,
+				color: config.default_color,
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 				title: `Description for ${profileData.name} set:`,
 				description: `${description}`,

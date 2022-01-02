@@ -184,7 +184,11 @@ module.exports = {
 
 		async function automaticRestingTimeoutFunction() {
 
-			profileData = await profileModel.findOne({ userId: message.author.id, serverId: message.guild.id }).catch(async (error) => await errorHandling.output(message, error));
+			profileData = await profileModel
+				.findOne({
+					userId: message.author.id,
+					serverId: message.guild.id,
+				}).catch(async (error) => await errorHandling.output(message, error));
 
 			if (profileData.resting == false && profileData.energy < profileData.maxEnergy) {
 

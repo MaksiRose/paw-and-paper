@@ -17,7 +17,7 @@ module.exports = {
 			await process.exit()
 				.then(() => {
 
-					client.login(config.DISCORD_TOKEN);
+					client.login(config.token);
 				});
 
 		}

@@ -50,7 +50,7 @@ module.exports = {
 
 				return await interaction.message.edit({
 					embeds: [{
-						color: config.DEFAULT_COLOR,
+						color: config.default_color,
 						title: 'Page 1: Character Creation',
 						description: '__Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.__',
 						fields: [
@@ -71,7 +71,7 @@ module.exports = {
 
 				return await interaction.message.edit({
 					embeds: [{
-						color: config.DEFAULT_COLOR,
+						color: config.default_color,
 						title: 'Page 2: General Commands',
 						fields: [
 							{ name: '**rp inventory**', value: 'This is a collection of all the things your pack has gathered, listed up.' },
@@ -90,14 +90,14 @@ module.exports = {
 
 			if (interaction.values[0] == 'help_page3') {
 
-				const maksi = await client.users.fetch(config.MAKSI);
-				const ezra = await client.users.fetch(config.EZRA);
-				const ren = await client.users.fetch(config.REN);
-				const jags = await client.users.fetch(config.JAGS);
+				const maksi = await client.users.fetch(config.maksi);
+				const ezra = await client.users.fetch(config.ezra);
+				const ren = await client.users.fetch(config.ren);
+				const jags = await client.users.fetch(config.jags);
 
 				await interaction.message.edit({
 					embeds: [{
-						color: config.DEFAULT_COLOR,
+						color: config.default_color,
 						title: 'Page 3: Role-specific Commands',
 						fields: [
 							{ name: '**rp play (@user)**', value: 'Playing is fun! But exhausting. Costs energy, but brings XP. Additionally, you can mention someone to play with them! __Only available to Younglings and Apprentices.__' },
@@ -131,7 +131,7 @@ module.exports = {
 
 				interaction.message.edit({ components: [] });
 
-				const owner = await client.users.fetch(config.MAKSI, false);
+				const owner = await client.users.fetch(config.maksi, false);
 				return await owner.send({
 					content: `https://discord.com/channels/${interaction.guild.id}/${interaction.message.channel.id}/${interaction.message.id}`,
 					embeds: interaction.message.embeds,

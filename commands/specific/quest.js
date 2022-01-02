@@ -352,20 +352,22 @@ module.exports = {
 
 							if (random == 0) {
 								maxHealthPoints = 10;
-								footer = '+10 maximum health';
+								footer = '+10 maximum health\n\n';
 							}
 							else if (random == 1) {
 								maxEnergyPoints = 10;
-								footer = '+10 maximum energy';
+								footer = '+10 maximum energy\n\n';
 							}
 							else if (random == 2) {
 								maxHungerPoints = 10;
-								footer = '+10 maximum hunger';
+								footer = '+10 maximum hunger\n\n';
 							}
 							else {
 								maxThirstPoints = 10;
-								footer = '+10 maximum thirst';
+								footer = '+10 maximum thirst\n\n';
 							}
+
+							footer += 'Type \'rp rank\' to rank up';
 
 							await profileModel.findOneAndUpdate(
 								{ userId: message.author.id, serverId: message.guild.id },

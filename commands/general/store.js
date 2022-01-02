@@ -82,7 +82,7 @@ module.exports = {
 
 		client.on('messageCreate', async function removeStoreComponents(newMessage) {
 
-			if (!botReply || newMessage.author.id != message.author.id || !newMessage.content.toLowerCase().startsWith(config.PREFIX)) {
+			if (!botReply || newMessage.author.id != message.author.id || !newMessage.content.toLowerCase().startsWith(config.prefix)) {
 
 				return;
 			}

@@ -17,7 +17,7 @@ module.exports = {
 
 			return await message.reply({
 				embeds: [{
-					color: config.DEFAULT_COLOR,
+					color: config.default_color,
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'You have no account!',
 				}],
@@ -26,7 +26,7 @@ module.exports = {
 
 		const botReply = await message.reply({
 			embeds: [{
-				color: config.DEFAULT_COLOR,
+				color: config.default_color,
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 				title: 'Are you sure you want to delete all your data? This will be **permanent**!!!',
 			}],

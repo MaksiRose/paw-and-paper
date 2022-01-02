@@ -36,7 +36,7 @@ module.exports = {
 					serverId: message.guild.id,
 					name: '',
 					description: '',
-					color: config.DEFAULT_COLOR,
+					color: config.default_color,
 					species: '',
 					rank: 'Youngling',
 					avatarURL: message.author.avatarURL(),
@@ -69,7 +69,7 @@ module.exports = {
 
 			return await message.reply({
 				embeds: [{
-					color: config.ERROR_COLOR,
+					color: config.error_color,
 					title: 'En error occured trying to change your name.',
 				}],
 			});
@@ -81,7 +81,7 @@ module.exports = {
 
 			return await message.reply({
 				embeds: [{
-					color: config.DEFAULT_COLOR,
+					color: config.default_color,
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Use this command to name or rename your character. Here is how to use it:',
 					description: '\n\nrp name [name]\nReplace [name] with the desired name.',
@@ -97,7 +97,7 @@ module.exports = {
 
 		await message.reply({
 			embeds: [{
-				color: config.DEFAULT_COLOR,
+				color: config.default_color,
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 				description: `*A stranger carefully steps over the pack's borders. Their face seems friendly. Curious eyes watch them as they come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n**"${name},"** *the creature responds.*`,
 				footer: { text: 'To continue setting up your profile, type "rp species"' },

@@ -8,14 +8,14 @@ module.exports = {
 
 			return message.reply({
 				embeds: [{
-					color: config.ERROR_COLOR,
+					color: config.error_color,
 					title: 'Tickets must contain text! Example:',
 					description: 'rp ticket Attacking a chicken should lead to millions of chickens spawning and attacking you back until you die!',
 				}],
 			});
 		}
 
-		const owner = await client.users.fetch(config.MAKSI, false);
+		const owner = await client.users.fetch(config.maksi, false);
 		await owner.send({
 			embeds: [{
 				author: { name: message.author.tag },
