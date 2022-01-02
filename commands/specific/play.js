@@ -28,7 +28,18 @@ module.exports = {
 				footer: { text: 'You can only hold up to 25 items in your personal inventory. Type "rp store" to put things into the pack inventory!' },
 			});
 
-			return await message.reply({ embeds: embedArray });
+			return await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
 		if (profileData.rank == 'Healer' || profileData.rank == 'Hunter' || profileData.rank == 'Elderly') {
@@ -39,7 +50,18 @@ module.exports = {
 				description: `*A packmate turns their head sideways as they see ${profileData.name} running towards the playground.* "Aren't you a little too old to play, ${profileData.rank}?" *they ask.*`,
 			});
 
-			return await message.reply({ embeds: embedArray });
+			return await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
 		if (message.mentions.users.size > 0 && message.mentions.users.first().id == message.author.id) {
@@ -50,7 +72,18 @@ module.exports = {
 				description: `*${profileData.name} plays with ${profileData.pronounArray[4]}. The rest of the pack looks away in embarrassment.*`,
 			});
 
-			return await message.reply({ embeds: embedArray });
+			return await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
 		const thirstPoints = await condition.decreaseThirst(profileData);
@@ -74,19 +107,23 @@ module.exports = {
 			experiencePoints = Loottable(11, 5);
 		}
 
-		profileData = await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{
-				$inc: {
-					thirst: -thirstPoints,
-					hunger: -hungerPoints,
-					energy: -energyPoints,
-					experience: +experiencePoints,
+		profileData = await profileModel
+			.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{
+					$inc: {
+						thirst: -thirstPoints,
+						hunger: -hungerPoints,
+						energy: -energyPoints,
+						experience: +experiencePoints,
+					},
+					$set: { currentRegion: 'prairie' },
 				},
-				$set: { currentRegion: 'prairie' },
-			},
-			{ upsert: true, new: true },
-		);
+				{ upsert: true, new: true },
+			)
+			.catch((error) => {
+				throw new Error(error);
+			});
 
 		let embedFooterStatsText = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
 
@@ -113,10 +150,14 @@ module.exports = {
 
 		if (!message.mentions.users.size) {
 
-			let allPrairieProfilesArray = await profileModel.find({
-				serverId: message.guild.id,
-				currentRegion: 'prairie',
-			});
+			let allPrairieProfilesArray = await profileModel
+				.find({
+					serverId: message.guild.id,
+					currentRegion: 'prairie',
+				})
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			allPrairieProfilesArray = allPrairieProfilesArray.map(doc => doc.userId);
 			const allPrairieProfilesArrayUserIndex = allPrairieProfilesArray.indexOf(`${profileData.userId}`);
@@ -135,10 +176,14 @@ module.exports = {
 
 				const allPrairieProfilesArrayRandomIndex = Loottable(allPrairieProfilesArray.length, 0);
 
-				const partnerProfileData = await profileModel.findOne({
-					userId: allPrairieProfilesArray[allPrairieProfilesArrayRandomIndex],
-					serverId: message.guild.id,
-				});
+				const partnerProfileData = await profileModel
+					.findOne({
+						userId: allPrairieProfilesArray[allPrairieProfilesArrayRandomIndex],
+						serverId: message.guild.id,
+					})
+					.catch((error) => {
+						throw new Error(error);
+					});
 
 				const playTogetherChance = weightedTable({ 0: 3, 1: 7 });
 				if (playTogetherChance == 1 && partnerProfileData.energy > 0 && partnerProfileData.health > 0 && partnerProfileData.hunger > 0 && partnerProfileData.thirst > 0) {
@@ -157,21 +202,33 @@ module.exports = {
 		}
 		else {
 
-			const partnerProfileData = await profileModel.findOne({ userId: message.mentions.users.first().id, serverId: message.guild.id });
+			const partnerProfileData = await profileModel
+				.findOne({
+					userId: message.mentions.users.first().id,
+					serverId: message.guild.id,
+				})
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			if (!partnerProfileData || partnerProfileData.name == '' || partnerProfileData.species == '' || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0) {
-				await profileModel.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{
-						$inc: {
-							thirst: +thirstPoints,
-							hunger: +hungerPoints,
-							energy: +energyPoints,
-							experience: -experiencePoints,
+
+				await profileModel
+					.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{
+							$inc: {
+								thirst: +thirstPoints,
+								hunger: +hungerPoints,
+								energy: +energyPoints,
+								experience: -experiencePoints,
+							},
 						},
-					},
-					{ upsert: true, new: true },
-				);
+						{ upsert: true, new: true },
+					)
+					.catch((error) => {
+						throw new Error(error);
+					});
 
 				embedArray.push({
 					color: profileData.color,
@@ -179,21 +236,47 @@ module.exports = {
 					title: 'You can\'t play with the mentioned user :(',
 				});
 
-				return await message.reply({ embeds: embedArray });
+				return await message
+					.reply({
+						embeds: embedArray,
+					})
+					.catch((error) => {
+						if (error.httpStatus == 404) {
+							console.log('Message already deleted');
+						}
+						else {
+							throw new Error(error);
+						}
+					});
 			}
 
 			await playTogether(partnerProfileData);
 		}
 
-		const botReply = await message.reply({ embeds: embedArray });
+		const botReply = await message
+			.reply({
+				embeds: embedArray,
+			})
+			.catch((error) => {
+				if (error.httpStatus == 404) {
+					console.log('Message already deleted');
+				}
+				else {
+					throw new Error(error);
+				}
+			});
 
 		await condition.decreaseHealth(message, profileData, botReply);
 
-		profileData = await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { injuryArray: userInjuryArray } },
-			{ upsert: true, new: true },
-		);
+		profileData = await profileModel
+			.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { injuryArray: userInjuryArray } },
+				{ upsert: true, new: true },
+			)
+			.catch((error) => {
+				throw new Error(error);
+			});
 
 		await levels.levelCheck(message, profileData, botReply);
 
@@ -205,11 +288,15 @@ module.exports = {
 
 		async function findQuest() {
 
-			await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { hasQuest: true } },
-				{ upsert: true, new: true },
-			);
+			await profileModel
+				.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $set: { hasQuest: true } },
+					{ upsert: true, new: true },
+				)
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			embed.description = `*${profileData.name} lifts ${profileData.pronounArray[2]} head to investigate the sound of a faint cry. Almost sure that it was someone in need of help, ${profileData.pronounArray[0]} dashes from where ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'is' : 'are')} standing and bolts for the sound. Soon ${profileData.name} comes along to the intimidating mouth of a dark cave covered by a boulder. The cries for help still ricocheting through ${profileData.pronounArray[2]} brain. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} must help them...*`;
 			embed.footer.text = `Type 'rp quest' to continue!\n\n${embedFooterStatsText}`;
@@ -240,11 +327,15 @@ module.exports = {
 					healthPoints = profileData.health;
 				}
 
-				profileData = await profileModel.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $inc: { health: -healthPoints } },
-					{ upsert: true, new: true },
-				);
+				profileData = await profileModel
+					.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{ $inc: { health: -healthPoints } },
+						{ upsert: true, new: true },
+					)
+					.catch((error) => {
+						throw new Error(error);
+					});
 
 				switch (weightedTable({ 0: 7, 1: 13 })) {
 
@@ -285,11 +376,15 @@ module.exports = {
 				partnerHealthPoints = partnerHealthPoints - ((partnerProfileData.health + partnerHealthPoints) - partnerProfileData.maxHealth);
 			}
 
-			partnerProfileData = await profileModel.findOneAndUpdate(
-				{ userId: partnerProfileData.userId, serverId: message.guild.id },
-				{ $inc: { health: partnerHealthPoints } },
-				{ upsert: true, new: true },
-			);
+			partnerProfileData = await profileModel
+				.findOneAndUpdate(
+					{ userId: partnerProfileData.userId, serverId: message.guild.id },
+					{ $inc: { health: partnerHealthPoints } },
+					{ upsert: true, new: true },
+				)
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			if (partnerHealthPoints >= 1) {
 
@@ -324,11 +419,15 @@ module.exports = {
 						healthPoints = profileData.health;
 					}
 
-					profileData = await profileModel.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{ $inc: { health: -healthPoints } },
-						{ upsert: true, new: true },
-					);
+					profileData = await profileModel
+						.findOneAndUpdate(
+							{ userId: message.author.id, serverId: message.guild.id },
+							{ $inc: { health: -healthPoints } },
+							{ upsert: true, new: true },
+						)
+						.catch((error) => {
+							throw new Error(error);
+						});
 
 					userInjuryArray[2] = userInjuryArray[2] + 1;
 

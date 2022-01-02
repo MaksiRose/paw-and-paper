@@ -117,45 +117,162 @@ module.exports = {
 
 		if (!chosenRegion) {
 
-			botReply = await message.reply({ embeds: embedArray, components: [travelSelectMenu] });
+			botReply = await message
+				.reply({
+					embeds: embedArray,
+					components: [travelSelectMenu],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
 		if (chosenRegion == 'sleeping dens') {
 
 			await sleepingDen();
-			botReply = await message.reply({ embeds: embedArray, components: [sleepingDenButtons] });
+			botReply = await message
+				.reply({
+					embeds: embedArray,
+					components: [sleepingDenButtons],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
 		if (chosenRegion == 'food den') {
 
 			await foodDen();
-			botReply = await message.reply({ embeds: embedArray, components: [foodDenButtons] });
+			botReply = await message
+				.reply({
+					embeds: embedArray,
+					components: [foodDenButtons],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
 		if (chosenRegion == 'medicine den') {
 
 			await medicineDen();
-			if (profileData.rank == 'Youngling' || profileData.rank == 'Hunter') await message.reply({ embeds: [embed] });
-			else botReply = await message.reply({ embeds: embedArray, components: [medicineDenButtons] });
+			if (profileData.rank == 'Youngling' || profileData.rank == 'Hunter') {
+
+				await message
+					.reply({
+						embeds: [embed],
+					})
+					.catch((error) => {
+						if (error.httpStatus == 404) {
+							console.log('Message already deleted');
+						}
+						else {
+							throw new Error(error);
+						}
+					});
+			}
+			else {
+
+				botReply = await message
+					.reply({
+						embeds: embedArray,
+						components: [medicineDenButtons],
+					})
+					.catch((error) => {
+						if (error.httpStatus == 404) {
+							console.log('Message already deleted');
+						}
+						else {
+							throw new Error(error);
+						}
+					});
+			}
 		}
 
 		if (chosenRegion == 'ruins') {
 
 			await ruins();
-			botReply = await message.reply({ embeds: embedArray });
+			botReply = await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
 		if (chosenRegion == 'lake') {
 
 			await lake();
-			botReply = await message.reply({ embeds: embedArray, components: [lakeButtons] });
+			botReply = await message
+				.reply({
+					embeds: embedArray,
+					components: [lakeButtons],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
 		if (chosenRegion == 'prairie') {
 
 			await prairie();
-			if (profileData.rank == 'Youngling' || profileData.rank == 'Apprentice') botReply = await message.reply({ embeds: embedArray, components: [prairieButtons] });
-			else botReply = await message.reply({ embeds: embedArray });
+			if (profileData.rank == 'Youngling' || profileData.rank == 'Apprentice') {
+
+				botReply = await message
+					.reply({
+						embeds: embedArray,
+						components: [prairieButtons],
+					})
+					.catch((error) => {
+						if (error.httpStatus == 404) {
+							console.log('Message already deleted');
+						}
+						else {
+							throw new Error(error);
+						}
+					});
+			}
+			else {
+
+				botReply = await message
+					.reply({
+						embeds: embedArray,
+					})
+					.catch((error) => {
+						if (error.httpStatus == 404) {
+							console.log('Message already deleted');
+						}
+						else {
+							throw new Error(error);
+						}
+					});
+			}
 		}
 
 
@@ -166,9 +283,19 @@ module.exports = {
 				return;
 			}
 
-			await botReply.edit({
-				components: [],
-			});
+			await botReply
+				.edit({
+					components: [],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
+
 			return client.off('messageCreate', removeGoComponents);
 		});
 
@@ -192,9 +319,18 @@ module.exports = {
 
 				if (!collected.size) {
 
-					return await botReply.edit({
-						components: [],
-					});
+					return await botReply
+						.edit({
+							components: [],
+						})
+						.catch((error) => {
+							if (error.httpStatus == 404) {
+								console.log('Message already deleted');
+							}
+							else {
+								throw new Error(error);
+							}
+						});
 				}
 
 				const interaction = collected.first();
@@ -204,13 +340,37 @@ module.exports = {
 					if (interaction.values[0] == 'sleeping_dens') {
 
 						await sleepingDen();
-						await interaction.message.edit({ embeds: embedArray, components: [travelSelectMenu, sleepingDenButtons] });
+						await interaction.message
+							.edit({
+								embeds: embedArray,
+								components: [travelSelectMenu, sleepingDenButtons],
+							})
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
 					}
 
 					if (interaction.values[0] == 'food_den') {
 
 						await foodDen();
-						await interaction.message.edit({ embeds: embedArray, components: [travelSelectMenu, foodDenButtons] });
+						await interaction.message
+							.edit({
+								embeds: embedArray,
+								components: [travelSelectMenu, foodDenButtons],
+							})
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
 					}
 
 					if (interaction.values[0] == 'medicine_den') {
@@ -219,21 +379,69 @@ module.exports = {
 
 						if (profileData.rank == 'Youngling' || profileData.rank == 'Hunter') {
 
-							await interaction.message.edit({ embeds: embedArray, components: [travelSelectMenu] });
+							await interaction.message
+								.edit({
+									embeds: embedArray,
+									components: [travelSelectMenu],
+								})
+								.catch((error) => {
+									if (error.httpStatus == 404) {
+										console.log('Message already deleted');
+									}
+									else {
+										throw new Error(error);
+									}
+								});
 						}
-						await interaction.message.edit({ embeds: embedArray, components: [travelSelectMenu, medicineDenButtons] });
+						await interaction.message
+							.edit({
+								embeds: embedArray,
+								components: [travelSelectMenu, medicineDenButtons],
+							})
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
 					}
 
 					if (interaction.values[0] == 'ruins') {
 
 						await ruins();
-						await interaction.message.edit({ embeds: embedArray, components: [travelSelectMenu] });
+						await interaction.message
+							.edit({
+								embeds: embedArray,
+								components: [travelSelectMenu],
+							})
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
 					}
 
 					if (interaction.values[0] == 'lake') {
 
 						await lake();
-						await interaction.message.edit({ embeds: embedArray, components: [travelSelectMenu, lakeButtons] });
+						await interaction.message
+							.edit({
+								embeds: embedArray,
+								components: [travelSelectMenu, lakeButtons],
+							})
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
 					}
 
 					if (interaction.values[0] == 'prairie') {
@@ -242,9 +450,33 @@ module.exports = {
 
 						if (profileData.rank == 'Youngling' || profileData.rank == 'Apprentice') {
 
-							await interaction.message.edit({ embeds: embedArray, components: [travelSelectMenu, prairieButtons] });
+							await interaction.message
+								.edit({
+									embeds: embedArray,
+									components: [travelSelectMenu, prairieButtons],
+								})
+								.catch((error) => {
+									if (error.httpStatus == 404) {
+										console.log('Message already deleted');
+									}
+									else {
+										throw new Error(error);
+									}
+								});
 						}
-						await interaction.message.edit({ embeds: embedArray, components: [travelSelectMenu] });
+						await interaction.message
+							.edit({
+								embeds: embedArray,
+								components: [travelSelectMenu],
+							})
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
 					}
 				}
 
@@ -252,45 +484,138 @@ module.exports = {
 
 					if (interaction.customId == 'execute-rest') {
 
-						profileData = await profileModel.findOne({ userId: message.author.id, serverId: message.guild.id });
-						interaction.message.delete();
+						profileData = await profileModel
+							.findOne({
+								userId: message.author.id,
+								serverId: message.guild.id,
+							})
+							.catch((error) => {
+								throw new Error(error);
+							});
+
+						interaction.message
+							.delete()
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
+
 						embedArray.splice(-1, 1);
-						return await rest.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray);
+						return await rest
+							.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
+							.catch((error) => {
+								throw new Error(error);
+							});
 					}
 
 					if (interaction.customId == 'execute-inventory') {
 
-						interaction.message.delete();
+						interaction.message
+							.delete()
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
+
 						embedArray.splice(-1, 1);
-						return await inventory.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray);
+						return await inventory
+							.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
+							.catch((error) => {
+								throw new Error(error);
+							});
 					}
 
 					if (interaction.customId == 'execute-store') {
 
-						interaction.message.delete();
+						interaction.message
+							.delete()
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
+
 						embedArray.splice(-1, 1);
-						return await store.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray);
+						return await store
+							.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
+							.catch((error) => {
+								throw new Error(error);
+							});
 					}
 
 					if (interaction.customId == 'execute-heal') {
 
-						interaction.message.delete();
+						interaction.message
+							.delete()
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
+
 						embedArray.splice(-1, 1);
-						return await heal.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray);
+						return await heal
+							.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
+							.catch((error) => {
+								throw new Error(error);
+							});
+
 					}
 
 					if (interaction.customId == 'execute-drink') {
 
-						interaction.message.delete();
+						interaction.message
+							.delete()
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
+
 						embedArray.splice(-1, 1);
-						return await drink.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray);
+						return await drink
+							.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
+							.catch((error) => {
+								throw new Error(error);
+							});
 					}
 
 					if (interaction.customId == 'execute-play') {
 
-						interaction.message.delete();
+						interaction.message
+							.delete()
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
+
 						embedArray.splice(-1, 1);
-						return await play.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray);
+						return await play
+							.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
+							.catch((error) => {
+								throw new Error(error);
+							});
 					}
 				}
 
@@ -300,11 +625,15 @@ module.exports = {
 
 		async function sleepingDen() {
 
-			await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { currentRegion: 'sleeping dens' } },
-				{ upsert: true, new: true },
-			);
+			await profileModel
+				.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $set: { currentRegion: 'sleeping dens' } },
+					{ upsert: true, new: true },
+				)
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			embed.description = `*${profileData.name} slowly trots to the sleeping dens, tired from all the hard work ${profileData.pronounArray[0]} did. For a moment, the ${profileData.species} thinks about if ${profileData.pronounArray[0]} want to rest or just a break.*`;
 			embed.fields = [];
@@ -312,19 +641,27 @@ module.exports = {
 
 		async function foodDen() {
 
-			await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { currentRegion: 'food den' } },
-				{ upsert: true, new: true },
-			);
+			await profileModel
+				.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $set: { currentRegion: 'food den' } },
+					{ upsert: true, new: true },
+				)
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			embed.description = `*${profileData.name} runs to the food den. Maybe ${profileData.pronounArray[0]} will eat something, or put ${profileData.pronounArray[2]} food onto the pile.*`;
 			embed.fields = [];
 
-			let allFoodDenProfilesArray = await profileModel.find({
-				serverId: message.guild.id,
-				currentRegion: 'food den',
-			});
+			let allFoodDenProfilesArray = await profileModel
+				.find({
+					serverId: message.guild.id,
+					currentRegion: 'food den',
+				})
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			allFoodDenProfilesArray = allFoodDenProfilesArray.map(document => document.userId);
 
@@ -341,19 +678,27 @@ module.exports = {
 
 		async function medicineDen() {
 
-			await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { currentRegion: 'medicine den' } },
-				{ upsert: true, new: true },
-			);
+			await profileModel
+				.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $set: { currentRegion: 'medicine den' } },
+					{ upsert: true, new: true },
+				)
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			embed.description = `*${profileData.name} rushes over to the medicine den. Nearby are a mix of packmates, some with illnesses and injuries, others trying to heal them.*`;
 			embed.fields = [];
 
-			let allMedicineDenProfilesArray = await profileModel.find({
-				serverId: message.guild.id,
-				currentRegion: 'medicine den',
-			});
+			let allMedicineDenProfilesArray = await profileModel
+				.find({
+					serverId: message.guild.id,
+					currentRegion: 'medicine den',
+				})
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			allMedicineDenProfilesArray = allMedicineDenProfilesArray.map(document => document.userId);
 
@@ -367,10 +712,14 @@ module.exports = {
 				embed.fields.push({ name: 'Packmates at the medicine den:', value: allMedicineDenProfilesArray.join('\n'), inline: true });
 			}
 
-			let allHealerProfilesArray = await profileModel.find({
-				serverId: message.guild.id,
-				rank: { $nin: ['Youngling', 'Hunter'] },
-			});
+			let allHealerProfilesArray = await profileModel
+				.find({
+					serverId: message.guild.id,
+					rank: { $nin: ['Youngling', 'Hunter'] },
+				})
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			allHealerProfilesArray = allHealerProfilesArray.map(document => document.userId);
 
@@ -387,19 +736,27 @@ module.exports = {
 
 		async function ruins() {
 
-			await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { currentRegion: 'ruins' } },
-				{ upsert: true, new: true },
-			);
+			await profileModel
+				.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $set: { currentRegion: 'ruins' } },
+					{ upsert: true, new: true },
+				)
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			embed.description = `*${profileData.name} walks up to the ruins, carefully stepping over broken bricks. Hopefully, ${profileData.pronounArray[0]} will find someone to talk with.*`;
 			embed.fields = [];
 
-			let allRuinProfilesArray = await profileModel.find({
-				serverId: message.guild.id,
-				currentRegion: 'ruins',
-			});
+			let allRuinProfilesArray = await profileModel
+				.find({
+					serverId: message.guild.id,
+					currentRegion: 'ruins',
+				})
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			allRuinProfilesArray = allRuinProfilesArray.map(document => document.userId);
 
@@ -416,11 +773,15 @@ module.exports = {
 
 		async function lake() {
 
-			await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { currentRegion: 'lake' } },
-				{ upsert: true, new: true },
-			);
+			await profileModel
+				.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $set: { currentRegion: 'lake' } },
+					{ upsert: true, new: true },
+				)
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			embed.description = `*${profileData.name} looks at ${profileData.pronounArray[2]} reflection as ${profileData.pronounArray[0]} pass${(profileData.pronounArray[5] == 'singular') ? 'es' : ''} the lake. Suddenly the ${profileData.species} remembers how long ${profileData.pronounArray[0]} ha${(profileData.pronounArray[5] == 'singular') ? 's' : 've'}n't drunk anything.*`;
 			embed.fields = [];
@@ -428,19 +789,27 @@ module.exports = {
 
 		async function prairie() {
 
-			await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { currentRegion: 'prairie' } },
-				{ upsert: true, new: true },
-			);
+			await profileModel
+				.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $set: { currentRegion: 'prairie' } },
+					{ upsert: true, new: true },
+				)
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			embed.description = `*${profileData.name} approaches the prairie, watching younger packmates testing their strength in playful fights. Maybe the ${profileData.species} could play with them!*`;
 			embed.fields = [];
 
-			let allPrairieProfilesArray = await profileModel.find({
-				serverId: message.guild.id,
-				currentRegion: 'prairie',
-			});
+			let allPrairieProfilesArray = await profileModel
+				.find({
+					serverId: message.guild.id,
+					currentRegion: 'prairie',
+				})
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			allPrairieProfilesArray = allPrairieProfilesArray.map(document => document.userId);
 

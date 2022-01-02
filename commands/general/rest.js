@@ -30,45 +30,76 @@ module.exports = {
 
 		if (profileData.isResting == true) {
 
-			return await message.reply({
-				embeds: [{
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: `${profileData.name} dreams of resting on a beach, out in the sun. The imaginary wind rocked the also imaginative hammock. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} must be really tired to dream of sleeping!`,
-				}],
-			});
+			return await message
+				.reply({
+					embeds: [{
+						color: profileData.color,
+						author: { name: profileData.name, icon_url: profileData.avatarURL },
+						description: `${profileData.name} dreams of resting on a beach, out in the sun. The imaginary wind rocked the also imaginative hammock. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} must be really tired to dream of sleeping!`,
+					}],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
 		if (profileData.energy >= profileData.maxEnergy) {
 
-			return await message.reply({
+			return await message
+				.reply({
+					embeds: [{
+						color: profileData.color,
+						author: { name: profileData.name, icon_url: profileData.avatarURL },
+						description: `*${profileData.name} trots around the dens eyeing ${profileData.pronounArray[2]} comfortable moss-covered bed. A nap looks nice, but ${profileData.pronounArray[0]} ha${(profileData.pronounArray[5] == 'singular') ? 's' : 've'} far too much energy to rest!*`,
+					}],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
+		}
+
+		await profileModel
+			.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{
+					$set: {
+						isResting: true,
+						currentRegion: 'sleeping dens',
+					},
+				},
+				{ upsert: true, new: true },
+			)
+			.catch((error) => {
+				throw new Error(error);
+			});
+
+		const botReply = await message
+			.reply({
 				embeds: [{
 					color: profileData.color,
 					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: `*${profileData.name} trots around the dens eyeing ${profileData.pronounArray[2]} comfortable moss-covered bed. A nap looks nice, but ${profileData.pronounArray[0]} ha${(profileData.pronounArray[5] == 'singular') ? 's' : 've'} far too much energy to rest!*`,
+					description: `*${profileData.name}'s chest rises and falls with the crickets. Snoring bounces off each wall, finally exiting the den and rising free to the clouds.*`,
+					footer: { text: `+0 energy (${profileData.energy}/${profileData.maxEnergy})` },
 				}],
+			})
+			.catch((error) => {
+				if (error.httpStatus == 404) {
+					console.log('Message already deleted');
+				}
+				else {
+					throw new Error(error);
+				}
 			});
-		}
-
-		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{
-				$set: {
-					isResting: true,
-					currentRegion: 'sleeping dens',
-				},
-			},
-			{ upsert: true, new: true },
-		);
-
-		const botReply = await message.reply({
-			embeds: [{
-				color: profileData.color,
-				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*${profileData.name}'s chest rises and falls with the crickets. Snoring bounces off each wall, finally exiting the den and rising free to the clouds.*`,
-				footer: { text: `+0 energy (${profileData.energy}/${profileData.maxEnergy})` },
-			}],
-		});
 
 		await executeResting.startResting(message, profileData, botReply);
 	},

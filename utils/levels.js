@@ -8,16 +8,20 @@ module.exports = {
 
 		if (profileData.experience >= requiredExperiencePoints) {
 
-			profileData = await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{
-					$inc: {
-						experience: -requiredExperiencePoints,
-						levels: +1,
+			profileData = await profileModel
+				.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{
+						$inc: {
+							experience: -requiredExperiencePoints,
+							levels: +1,
+						},
 					},
-				},
-				{ upsert: true, new: true },
-			);
+					{ upsert: true, new: true },
+				)
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			const embed = {
 				color: profileData.color,
@@ -25,7 +29,18 @@ module.exports = {
 			};
 
 			botReply.embeds.push(embed);
-			await botReply.edit({ embeds: botReply.embeds });
+			await botReply
+				.edit({
+					embeds: botReply.embeds,
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 	},
 
@@ -42,17 +57,21 @@ module.exports = {
 			}
 		}
 
-		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{
-				$set: {
-					levels: newUserLevel,
-					experience: 0,
-					inventory: emptyUserInventory,
+		await profileModel
+			.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{
+					$set: {
+						levels: newUserLevel,
+						experience: 0,
+						inventory: emptyUserInventory,
+					},
 				},
-			},
-			{ upsert: true, new: true },
-		);
+				{ upsert: true, new: true },
+			)
+			.catch((error) => {
+				throw new Error(error);
+			});
 	},
 
 };

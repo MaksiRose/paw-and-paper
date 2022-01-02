@@ -27,18 +27,33 @@ module.exports = {
 				description: `*${profileData.name}'s stomach bloats as ${profileData.pronounArray[0]} roll${(profileData.pronounArray[5] == 'singular') ? 's' : ''} around camp, stuffing food into ${profileData.pronounArray[2]} mouth. The ${profileData.species} might need to take a break from food before ${profileData.pronounArray[0]} go${(profileData.pronounArray[5] == 'singular') ? 'es' : ''} into a food coma.*`,
 			});
 
-			return await message.reply({ embeds: embedArray }).catch(console.trace);
+			return await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
 		if (!argumentsArray.length) {
 			return await inventory.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray);
 		}
 
-		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { currentRegion: 'food den' } },
-			{ upsert: true, new: true },
-		);
+		await profileModel
+			.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { currentRegion: 'food den' } },
+				{ upsert: true, new: true },
+			)
+			.catch((error) => {
+				throw new Error(error);
+			});
 
 		const species = arrays.species(profileData);
 
@@ -100,7 +115,18 @@ module.exports = {
 					description: `*${profileData.name} searches for a ${chosenFood} all over the pack, but couldn't find one...*`,
 				});
 
-				return await message.reply({ embeds: embedArray }).catch(console.trace);
+				return await message
+					.reply({
+						embeds: embedArray,
+					})
+					.catch((error) => {
+						if (error.httpStatus == 404) {
+							console.log('Message already deleted');
+						}
+						else {
+							throw new Error(error);
+						}
+					});
 			}
 
 			if (plantEdibalityArray[plantNamesArrayIndex] == 't') {
@@ -170,42 +196,58 @@ module.exports = {
 
 			if (arrays.commonPlantNamesArray.some(element => element == chosenFood)) {
 
-				await serverModel.findOneAndUpdate(
-					{ serverId: message.guild.id },
-					{ $set: { commonPlantsArray: serverPlantArray } },
-					{ upsert: true, new: true },
-				);
+				await serverModel
+					.findOneAndUpdate(
+						{ serverId: message.guild.id },
+						{ $set: { commonPlantsArray: serverPlantArray } },
+						{ upsert: true, new: true },
+					)
+					.catch((error) => {
+						throw new Error(error);
+					});
 			}
 
 			if (arrays.uncommonPlantNamesArray.some(element => element == chosenFood)) {
 
-				await serverModel.findOneAndUpdate(
-					{ serverId: message.guild.id },
-					{ $set: { uncommonPlantsArray: serverPlantArray } },
-					{ upsert: true, new: true },
-				);
+				await serverModel
+					.findOneAndUpdate(
+						{ serverId: message.guild.id },
+						{ $set: { uncommonPlantsArray: serverPlantArray } },
+						{ upsert: true, new: true },
+					)
+					.catch((error) => {
+						throw new Error(error);
+					});
 			}
 
 			if (arrays.rarePlantNamesArray.some(element => element == chosenFood)) {
 
-				await serverModel.findOneAndUpdate(
-					{ serverId: message.guild.id },
-					{ $set: { rarePlantsArray: serverPlantArray } },
-					{ upsert: true, new: true },
-				);
+				await serverModel
+					.findOneAndUpdate(
+						{ serverId: message.guild.id },
+						{ $set: { rarePlantsArray: serverPlantArray } },
+						{ upsert: true, new: true },
+					)
+					.catch((error) => {
+						throw new Error(error);
+					});
 			}
 
-			profileData = await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{
-					$inc: {
-						hunger: +finalHungerPoints,
-						health: +finalHealthPoints,
-						energy: +finalEnergyPoints,
+			profileData = await profileModel
+				.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{
+						$inc: {
+							hunger: +finalHungerPoints,
+							health: +finalHealthPoints,
+							energy: +finalEnergyPoints,
+						},
 					},
-				},
-				{ upsert: true, new: true },
-			);
+					{ upsert: true, new: true },
+				)
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			embed.footer.text = `${finalHungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})`;
 
@@ -222,7 +264,18 @@ module.exports = {
 			embed.footer.text += `\n\n-1 ${chosenFood} for ${message.guild.name}`;
 
 			embedArray.push(embed);
-			return await message.reply({ embeds: embedArray }).catch(console.trace);
+			return await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
 		if (species.nameArray.some(element => element == chosenFood)) {
@@ -238,7 +291,18 @@ module.exports = {
 					description: `*${profileData.name} searches for a ${chosenFood} all over the pack, but couldn't find one...*`,
 				});
 
-				return await message.reply({ embeds: embedArray }).catch(console.trace);
+				return await message
+					.reply({
+						embeds: embedArray,
+					})
+					.catch((error) => {
+						if (error.httpStatus == 404) {
+							console.log('Message already deleted');
+						}
+						else {
+							throw new Error(error);
+						}
+					});
 			}
 
 			if (species.dietArray[userSpeciesArrayIndex] == 'herbivore') {
@@ -264,28 +328,53 @@ module.exports = {
 
 			serverMeatArray[meatNameArrayIndex]--;
 
-			await serverModel.findOneAndUpdate(
-				{ serverId: message.guild.id },
-				{ $set: { meatArray: serverMeatArray } },
-				{ upsert: true, new: true },
-			);
+			await serverModel
+				.findOneAndUpdate(
+					{ serverId: message.guild.id },
+					{ $set: { meatArray: serverMeatArray } },
+					{ upsert: true, new: true },
+				)
+				.catch((error) => {
+					throw new Error(error);
+				});
 
-			profileData = await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $inc: { hunger: +finalHungerPoints } },
-				{ upsert: true, new: true },
-			);
+			profileData = await profileModel
+				.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $inc: { hunger: +finalHungerPoints } },
+					{ upsert: true, new: true },
+				)
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			embed.footer.text = `+${finalHungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})\n\n-1 ${chosenFood} for ${message.guild.name}`;
 
 			embedArray.push(embed);
-			return await message.reply({ embeds: embedArray }).catch(console.trace);
+			return await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
 		if (message.mentions.users.size > 0) {
 			let taggedProfileData;
 			try {
-				taggedProfileData = await profileModel.findOne({ userId: message.mentions.users.first().id });
+				taggedProfileData = await profileModel
+					.findOne({
+						userId: message.mentions.users.first().id,
+					})
+					.catch((error) => {
+						throw new Error(error);
+					});
 			}
 			catch (err) {
 				console.log(err);
@@ -296,7 +385,18 @@ module.exports = {
 				embed.description = `*${profileData.name} looks down at ${taggedProfileData.name} as ${profileData.pronounArray[0]} nom${(profileData.pronounArray[5] == 'singular') ? 's' : ''} on the ${taggedProfileData.species}'s leg.* "No eating packmates here!" *${taggedProfileData.name} chuckled, shaking off ${profileData.name}.*`;
 
 				embedArray.push(embed);
-				return await message.reply({ embeds: embedArray }).catch(console.trace);
+				return await message
+					.reply({
+						embeds: embedArray,
+					})
+					.catch((error) => {
+						if (error.httpStatus == 404) {
+							console.log('Message already deleted');
+						}
+						else {
+							throw new Error(error);
+						}
+					});
 			}
 		}
 

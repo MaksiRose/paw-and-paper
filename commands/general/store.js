@@ -63,7 +63,19 @@ module.exports = {
 				author: { name: profileData.name, icon_url: profileData.avatarURL },
 				description: `*${profileData.name} goes to the food den to store food away, but ${profileData.pronounArray[2]} mouth is empty...*`,
 			});
-			return await message.reply({ embeds: embedArray });
+
+			return await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
 		embedArray.push({
@@ -72,13 +84,26 @@ module.exports = {
 			description: `*${profileData.name} wanders to the food den, ready to store away ${profileData.pronounArray[2]} findings. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'circles' : 'circle')} the food pile…*`,
 			footer: { text: '' },
 		});
+
 		let componentArray = [itemSelectMenu, storeAllButton];
 
 		if (itemSelectMenu.components[0].options.length > 25) {
 			componentArray = [storeAllButton];
 		}
 
-		const botReply = await message.reply({ embeds: embedArray, components: componentArray });
+		const botReply = await message
+			.reply({
+				embeds: embedArray,
+				components: componentArray,
+			})
+			.catch((error) => {
+				if (error.httpStatus == 404) {
+					console.log('Message already deleted');
+				}
+				else {
+					throw new Error(error);
+				}
+			});
 
 		client.on('messageCreate', async function removeStoreComponents(newMessage) {
 
@@ -87,9 +112,19 @@ module.exports = {
 				return;
 			}
 
-			await botReply.edit({
-				components: [],
-			});
+			await botReply
+				.edit({
+					components: [],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
+
 			return client.off('messageCreate', removeStoreComponents);
 		});
 
@@ -104,7 +139,12 @@ module.exports = {
 					return false;
 				}
 
-				const userMessage = await i.channel.messages.fetch(i.message.reference.messageId);
+				const userMessage = await i.channel.messages
+					.fetch(i.message.reference.messageId)
+					.catch((error) => {
+						throw new Error(error);
+					});
+
 				return userMessage.id == message.id && i.user.id == message.author.id;
 			};
 
@@ -113,9 +153,18 @@ module.exports = {
 
 				if (!collected.size) {
 
-					return await botReply.edit({
-						components: [],
-					});
+					return await botReply
+						.edit({
+							components: [],
+						})
+						.catch((error) => {
+							if (error.httpStatus == 404) {
+								console.log('Message already deleted');
+							}
+							else {
+								throw new Error(error);
+							}
+						});
 				}
 
 				const interaction = collected.first();
@@ -152,7 +201,18 @@ module.exports = {
 						}
 
 						componentArray.splice(1, 1, amountSelectMenu);
-						await interaction.message.edit({ components: componentArray });
+						await interaction.message
+							.edit({
+								components: componentArray,
+							})
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
 
 						return await interactionCollector(chosenFood, foodCategoryIndex, foodNameIndex);
 					}
@@ -163,24 +223,32 @@ module.exports = {
 						userInventory[foodCategoryIndex][foodNameIndex] -= chosenAmount;
 						serverInventory[foodCategoryIndex][foodNameIndex] += chosenAmount;
 
-						profileData = await profileModel.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
-							{ $set: { inventoryArray: userInventory } },
-							{ upsert: true, new: true },
-						);
+						profileData = await profileModel
+							.findOneAndUpdate(
+								{ userId: message.author.id, serverId: message.guild.id },
+								{ $set: { inventoryArray: userInventory } },
+								{ upsert: true, new: true },
+							)
+							.catch((error) => {
+								throw new Error(error);
+							});
 
-						await serverModel.findOneAndUpdate(
-							{ serverId: message.guild.id },
-							{
-								$set: {
-									commonPlantsArray: serverInventory[0],
-									uncommonPlantsArray: serverInventory[1],
-									rarePlantsArray: serverInventory[2],
-									meatArray: serverInventory[3],
+						await serverModel
+							.findOneAndUpdate(
+								{ serverId: message.guild.id },
+								{
+									$set: {
+										commonPlantsArray: serverInventory[0],
+										uncommonPlantsArray: serverInventory[1],
+										rarePlantsArray: serverInventory[2],
+										meatArray: serverInventory[3],
+									},
 								},
-							},
-							{ upsert: true, new: true },
-						);
+								{ upsert: true, new: true },
+							)
+							.catch((error) => {
+								throw new Error(error);
+							});
 
 						itemSelectMenu.components[0].options = [];
 						for (let i = 0; i < allItemNamesArray.length; i++) {
@@ -199,18 +267,51 @@ module.exports = {
 
 						if (itemSelectMenu.components[0].options.length == 0) {
 
-							await interaction.message.edit({ embeds: embedArray, components: [] });
+							await interaction.message
+								.edit({
+									embeds: embedArray,
+									components: [],
+								})
+								.catch((error) => {
+									if (error.httpStatus == 404) {
+										console.log('Message already deleted');
+									}
+									else {
+										throw new Error(error);
+									}
+								});
+
 							return;
 						}
 
-						await interaction.message.edit({ embeds: embedArray, components: componentArray });
+						await interaction.message
+							.edit({
+								embeds: embedArray,
+								components: componentArray,
+							})
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
+
 						return await interactionCollector(null, null, null);
 					}
 				}
 
 				if (interaction.isButton() && interaction.customId == 'store-all') {
 
-					profileData = await profileModel.findOne({ userId: message.author.id, serverId: message.guild.id });
+					profileData = await profileModel
+						.findOne({
+							userId: message.author.id,
+							serverId: message.guild.id,
+						})
+						.catch((error) => {
+							throw new Error(error);
+						});
 
 					let footerText = embedArray[embedArray.length - 1].footer.text;
 					let maximumAmount = 0;
@@ -232,27 +333,48 @@ module.exports = {
 						}
 					}
 
-					await profileModel.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{ $set: { inventoryArray: userInventory } },
-						{ upsert: true, new: true },
-					);
+					await profileModel
+						.findOneAndUpdate(
+							{ userId: message.author.id, serverId: message.guild.id },
+							{ $set: { inventoryArray: userInventory } },
+							{ upsert: true, new: true },
+						)
+						.catch((error) => {
+							throw new Error(error);
+						});
 
-					await serverModel.findOneAndUpdate(
-						{ serverId: message.guild.id },
-						{
-							$set: {
-								commonPlantsArray: serverInventory[0],
-								uncommonPlantsArray: serverInventory[1],
-								rarePlantsArray: serverInventory[2],
-								meatArray: serverInventory[3],
+					await serverModel
+						.findOneAndUpdate(
+							{ serverId: message.guild.id },
+							{
+								$set: {
+									commonPlantsArray: serverInventory[0],
+									uncommonPlantsArray: serverInventory[1],
+									rarePlantsArray: serverInventory[2],
+									meatArray: serverInventory[3],
+								},
 							},
-						},
-						{ upsert: true, new: true },
-					);
+							{ upsert: true, new: true },
+						)
+						.catch((error) => {
+							throw new Error(error);
+						});
 
 					embedArray[embedArray.length - 1].footer.text = footerText;
-					await interaction.message.edit({ embeds: embedArray, components: [] });
+					await interaction.message
+						.edit({
+							embeds: embedArray,
+							components: [],
+						})
+						.catch((error) => {
+							if (error.httpStatus == 404) {
+								console.log('Message already deleted');
+							}
+							else {
+								throw new Error(error);
+							}
+						});
+
 					return;
 				}
 			});

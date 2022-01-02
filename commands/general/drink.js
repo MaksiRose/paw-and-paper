@@ -25,19 +25,37 @@ module.exports = {
 				description: `*Water sounds churned in ${profileData.name}'s ear, ${profileData.pronounArray[2]} mouth longing for just one more drink. It seems like ${profileData.pronounArray[0]} can never be as hydrated as ${profileData.pronounArray[0]} want${(profileData.pronounArray[5] == 'singular') ? '' : 's'}, but ${profileData.pronounArray[0]} ${(profileData.pronounArray[5] == 'singular') ? 's' : ''} ${profileData.pronounArray[0]} had plenty of water today.*`,
 			});
 
-			return await message.reply({ embeds: embedArray }).catch(console.trace);
+			return await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
-		profileData = await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{
-				$set: {
-					currentRegion: 'lake',
-					hasCooldown: true,
+		profileData = await profileModel
+			.findOneAndUpdate(
+				{
+					userId: message.author.id,
+					serverId: message.guild.id,
 				},
-			},
-			{ upsert: true, new: true },
-		);
+				{
+					$set: {
+						currentRegion: 'lake',
+						hasCooldown: true,
+					},
+				},
+				{ upsert: true, new: true },
+			)
+			.catch((error) => {
+				throw new Error(error);
+			});
 
 
 		embedArray.push({
@@ -46,18 +64,27 @@ module.exports = {
 			description: 'For the next 15 seconds, click the button as many times as you can!',
 		});
 
-		const botReply = await message.reply({
-			embeds: embedArray,
-			components: [{
-				type: 'ACTION_ROW',
+		const botReply = await message
+			.reply({
+				embeds: embedArray,
 				components: [{
-					type: 'BUTTON',
-					customId: 'water',
-					emoji: { name: '💧' },
-					style: 'PRIMARY',
+					type: 'ACTION_ROW',
+					components: [{
+						type: 'BUTTON',
+						customId: 'water',
+						emoji: { name: '💧' },
+						style: 'PRIMARY',
+					}],
 				}],
-			}],
-		});
+			})
+			.catch((error) => {
+				if (error.httpStatus == 404) {
+					console.log('Message already deleted');
+				}
+				else {
+					throw new Error(error);
+				}
+			});
 
 		return await new Promise((resolve) => {
 
@@ -73,14 +100,18 @@ module.exports = {
 					thirstPoints -= (profileData.thirst + thirstPoints) - profileData.maxThirst;
 				}
 
-				profileData = await profileModel.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{
-						$inc: { thirst: +thirstPoints },
-						$set: { hasCooldown: true },
-					},
-					{ upsert: true, new: true },
-				);
+				profileData = await profileModel
+					.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{
+							$inc: { thirst: +thirstPoints },
+							$set: { hasCooldown: true },
+						},
+						{ upsert: true, new: true },
+					)
+					.catch((error) => {
+						throw new Error(error);
+					});
 
 				embedArray.splice(-1, 1, {
 					color: profileData.color,
@@ -89,7 +120,17 @@ module.exports = {
 					footer: { text: `+${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})` },
 				});
 
-				await botReply.edit({ embeds: embedArray, components: [] });
+				await botReply
+					.edit({ embeds: embedArray, components: [] })
+					.catch((error) => {
+						if (error.httpStatus == 404) {
+							console.log('Message already deleted');
+						}
+						else {
+							throw new Error(error);
+						}
+					});
+
 				return resolve();
 			});
 		});

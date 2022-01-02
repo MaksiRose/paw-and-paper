@@ -68,7 +68,20 @@ module.exports = {
 			componentArray.push(foodSelectMenu);
 		}
 
-		const botReply = await message.reply({ embeds: embedArray, components: componentArray });
+		const botReply = await message
+			.reply({
+				embeds: embedArray,
+				components: componentArray,
+			})
+			.catch((error) => {
+				if (error.httpStatus == 404) {
+					console.log('Message already deleted');
+				}
+				else {
+					throw new Error(error);
+				}
+			});
+
 		let currentPage = 0;
 
 
@@ -79,16 +92,18 @@ module.exports = {
 				return;
 			}
 
-			await botReply.edit({
-				components: [],
-			}).catch((error) => {
-				if (error.httpStatus == 404) {
-					console.log('Message already deleted');
-				}
-				else {
-					throw new Error(error);
-				}
-			});
+			await botReply
+				.edit({
+					components: [],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 
 			return client.off('messageCreate', removeInventoryComponents);
 		});
@@ -104,7 +119,12 @@ module.exports = {
 					return false;
 				}
 
-				const userMessage = await i.channel.messages.fetch(i.message.reference.messageId);
+				const userMessage = await i.channel.messages
+					.fetch(i.message.reference.messageId)
+					.catch((error) => {
+						throw new Error(error);
+					});
+
 				return userMessage.id == message.id && i.user.id == message.author.id;
 			}
 
@@ -113,16 +133,18 @@ module.exports = {
 
 				if (!collected.size) {
 
-					return await botReply.edit({
-						components: [],
-					}).catch((error) => {
-						if (error.httpStatus == 404) {
-							console.log('Message already deleted');
-						}
-						else {
-							throw new Error(error);
-						}
-					});
+					return await botReply
+						.edit({
+							components: [],
+						})
+						.catch((error) => {
+							if (error.httpStatus == 404) {
+								console.log('Message already deleted');
+							}
+							else {
+								throw new Error(error);
+							}
+						});
 				}
 
 				const interaction = collected.first();
@@ -165,7 +187,19 @@ module.exports = {
 							messageComponentArray.push(foodSelectMenu);
 						}
 
-						await interaction.message.edit({ embeds: embedArray, components: messageComponentArray });
+						await interaction.message
+							.edit({
+								embeds: embedArray,
+								components: messageComponentArray,
+							})
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
 					}
 
 					if (interaction.values[0] == 'inventory_page2') {
@@ -202,7 +236,19 @@ module.exports = {
 							messageComponentArray.push(foodSelectMenu);
 						}
 
-						await interaction.message.edit({ embeds: embedArray, components: messageComponentArray });
+						await interaction.message
+							.edit({
+								embeds: embedArray,
+								components: messageComponentArray,
+							})
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
 					}
 
 					if (interaction.values[0] == 'inventory_page3') {
@@ -242,7 +288,19 @@ module.exports = {
 							messageComponentArray.push(foodSelectMenu);
 						}
 
-						await interaction.message.edit({ embeds: embedArray, components: messageComponentArray });
+						await interaction.message
+							.edit({
+								embeds: embedArray,
+								components: messageComponentArray,
+							})
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
 					}
 				}
 
@@ -292,7 +350,19 @@ module.exports = {
 							messageComponentArray.push(foodSelectMenu);
 						}
 
-						await interaction.message.edit({ embeds: embedArray, components: messageComponentArray });
+						await interaction.message
+							.edit({
+								embeds: embedArray,
+								components: messageComponentArray,
+							})
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
 					}
 
 					/* Normally, here it would call eat.js if the chosen food was available

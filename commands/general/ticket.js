@@ -6,38 +6,65 @@ module.exports = {
 
 		if (!argumentsArray.length) {
 
-			return message.reply({
-				embeds: [{
-					color: config.error_color,
-					title: 'Tickets must contain text! Example:',
-					description: 'rp ticket Attacking a chicken should lead to millions of chickens spawning and attacking you back until you die!',
-				}],
-			});
+			return message
+				.reply({
+					embeds: [{
+						color: config.error_color,
+						title: 'Tickets must contain text! Example:',
+						description: 'rp ticket Attacking a chicken should lead to millions of chickens spawning and attacking you back until you die!',
+					}],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
-		const owner = await client.users.fetch(config.maksi, false);
-		await owner.send({
-			embeds: [{
-				author: { name: message.author.tag },
-				description: argumentsArray.join(' '),
-			}],
-			components: [{
-				type: 'ACTION_ROW',
-				components: [{
-					type: 'BUTTON',
-					customId: 'ticket',
-					label: 'Resolve',
-					style: 'SUCCESS',
-				}],
-			}],
-		});
+		const owner = await client.users
+			.fetch(config.maksi, false)
+			.catch((error) => {
+				throw new Error(error);
+			});
 
-		return message.reply({
-			embeds: [{
-				color: '#9d9e51',
-				title: 'Thank you for your contribution!',
-				description: 'You help improve the bot.',
-			}],
-		});
+		await owner
+			.send({
+				embeds: [{
+					author: { name: message.author.tag },
+					description: argumentsArray.join(' '),
+				}],
+				components: [{
+					type: 'ACTION_ROW',
+					components: [{
+						type: 'BUTTON',
+						customId: 'ticket',
+						label: 'Resolve',
+						style: 'SUCCESS',
+					}],
+				}],
+			})
+			.catch((error) => {
+				throw new Error(error);
+			});
+
+		return message
+			.reply({
+				embeds: [{
+					color: '#9d9e51',
+					title: 'Thank you for your contribution!',
+					description: 'You help improve the bot.',
+				}],
+			})
+			.catch((error) => {
+				if (error.httpStatus == 404) {
+					console.log('Message already deleted');
+				}
+				else {
+					throw new Error(error);
+				}
+			});
 	},
 };

@@ -27,18 +27,41 @@ module.exports = {
 				title: 'Talk to your fellow packmates! Gives 1 experience point each time. Here is how to use the command:',
 				description: '\n\nrp say "text"\nReplace "text" with your text.',
 			});
-			return await message.reply({
-				embeds: embedArray,
-			});
+
+			return await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
-		message.delete();
+		message
+			.delete()
+			.catch((error) => {
+				if (error.httpStatus == 404) {
+					console.log('Message already deleted');
+				}
+				else {
+					throw new Error(error);
+				}
+			});
 
-		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $inc: { experience: 1 } },
-			{ upsert: true, new: true },
-		);
+		await profileModel
+			.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $inc: { experience: 1 } },
+				{ upsert: true, new: true },
+			)
+			.catch((error) => {
+				throw new Error(error);
+			});
 
 		embedArray.push({
 			color: profileData.color,
@@ -48,10 +71,14 @@ module.exports = {
 
 		if (pingRuins == true) {
 
-			let allRuinProfilesArray = await profileModel.find({
-				serverId: message.guild.id,
-				currentRegion: profileData.currentRegion,
-			});
+			let allRuinProfilesArray = await profileModel
+				.find({
+					serverId: message.guild.id,
+					currentRegion: profileData.currentRegion,
+				})
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			allRuinProfilesArray = allRuinProfilesArray.map(doc => doc.userId);
 			const allRuinProfilesArrayUserIndex = allRuinProfilesArray.indexOf(`${profileData.userId}`);
@@ -69,15 +96,23 @@ module.exports = {
 			if (allRuinProfilesArray != '') {
 
 
-				return await message.channel.send({
-					content: allRuinProfilesArray.join(' '),
-					embeds: embedArray,
-				});
+				return await message.channel
+					.send({
+						content: allRuinProfilesArray.join(' '),
+						embeds: embedArray,
+					})
+					.catch((error) => {
+						throw new Error(error);
+					});
 			}
 		}
 
-		return await message.channel.send({
-			embeds: embedArray,
-		});
+		return await message.channel
+			.send({
+				embeds: embedArray,
+			})
+			.catch((error) => {
+				throw new Error(error);
+			});
 	},
 };

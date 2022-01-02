@@ -29,21 +29,36 @@ module.exports = {
 				description: `*A healer rushes into the medicine den in fury.*\n"${profileData.name}, you are not trained to heal yourself, and especially not to heal others! I don't ever wanna see you again in here without supervision!"\n*${profileData.name} lowers ${profileData.pronounArray[2]} head and leaves in shame.*`,
 			});
 
-			return await message.reply({ embeds: embedArray });
+			return await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
-		let allHurtProfilesArray = await profileModel.find({
-			$and: [{
-				serverId: message.guild.id,
-				$or: [
-					{ energy: 0 },
-					{ health: 0 },
-					{ hunger: 0 },
-					{ thirst: 0 },
-					{ injuryArray: { $gte: 1 } },
-				],
-			}],
-		});
+		let allHurtProfilesArray = await profileModel
+			.find({
+				$and: [{
+					serverId: message.guild.id,
+					$or: [
+						{ energy: 0 },
+						{ health: 0 },
+						{ hunger: 0 },
+						{ thirst: 0 },
+						{ injuryArray: { $gte: 1 } },
+					],
+				}],
+			})
+			.catch((error) => {
+				throw new Error(error);
+			});
 
 		allHurtProfilesArray = allHurtProfilesArray.map(doc => doc.userId);
 
@@ -59,12 +74,20 @@ module.exports = {
 
 		for (let i = 0; i < allHurtProfilesArray.length; i++) {
 
-			const user = await client.users.fetch(allHurtProfilesArray[i]);
+			const user = await client.users
+				.fetch(allHurtProfilesArray[i])
+				.catch((error) => {
+					throw new Error(error);
+				});
 
-			const userProfileData = await profileModel.findOne({
-				userId: user.id,
-				serverId: message.guild.id,
-			});
+			const userProfileData = await profileModel
+				.findOne({
+					userId: user.id,
+					serverId: message.guild.id,
+				})
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			if (userSelectMenu.components[0].options.length > 25) {
 
@@ -100,9 +123,19 @@ module.exports = {
 				return;
 			}
 
-			await botReply.edit({
-				components: [],
-			});
+			await botReply
+				.edit({
+					components: [],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
+
 			return client.off('messageCreate', removeHealComponents);
 		});
 
@@ -117,7 +150,12 @@ module.exports = {
 					return false;
 				}
 
-				const userMessage = await i.channel.messages.fetch(i.message.reference.messageId);
+				const userMessage = await i.channel.messages
+					.fetch(i.message.reference.messageId)
+					.catch((error) => {
+						throw new Error(error);
+					});
+
 				return userMessage.id == message.id && i.user.id == message.author.id;
 			}
 
@@ -126,19 +164,32 @@ module.exports = {
 
 				if (!collected.size) {
 
-					return await botReply.edit({
-						components: [],
-					});
+					return await botReply
+						.edit({
+							components: [],
+						})
+						.catch((error) => {
+							if (error.httpStatus == 404) {
+								console.log('Message already deleted');
+							}
+							else {
+								throw new Error(error);
+							}
+						});
 				}
 
 				const interaction = collected.first();
 
 				if (allHurtProfilesArray.includes(interaction.values[0])) {
 
-					chosenProfileData = await profileModel.findOne({
-						userId: interaction.values[0],
-						serverId: message.guild.id,
-					});
+					chosenProfileData = await profileModel
+						.findOne({
+							userId: interaction.values[0],
+							serverId: message.guild.id,
+						})
+						.catch((error) => {
+							throw new Error(error);
+						});
 
 					if (chosenProfileData.name === '' || chosenProfileData.species === '') {
 
@@ -151,10 +202,26 @@ module.exports = {
 
 						allHurtProfilesArray.splice(allHurtProfilesArray.indexOf(interaction.values[0]), 1);
 
-						botReply = await interaction.message.edit({ embeds: embedArray });
+						botReply = await interaction.message
+							.edit({
+								embeds: embedArray,
+							})
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
 					}
 					else {
-						chosenUser = await client.users.fetch(interaction.values[0]);
+						chosenUser = await client.users
+							.fetch(interaction.values[0])
+							.catch((error) => {
+								throw new Error(error);
+							});
+
 						getWoundList(chosenUser);
 					}
 				}
@@ -173,12 +240,20 @@ module.exports = {
 
 					for (let i = 0 + (currentUserPage * 24); i < 24 + (currentUserPage * 24) && i < allHurtProfilesArray.length; i++) {
 
-						const user = await client.users.fetch(allHurtProfilesArray[i]);
+						const user = await client.users
+							.fetch(allHurtProfilesArray[i])
+							.catch((error) => {
+								throw new Error(error);
+							});
 
-						const userProfileData = await profileModel.findOne({
-							userId: user.id,
-							serverId: message.guild.id,
-						});
+						const userProfileData = await profileModel
+							.findOne({
+								userId: user.id,
+								serverId: message.guild.id,
+							})
+							.catch((error) => {
+								throw new Error(error);
+							});
 
 						userSelectMenu.components[0].options.push({ label: userProfileData.name, value: user.id });
 					}
@@ -188,7 +263,18 @@ module.exports = {
 					const componentArray = interaction.message.components;
 					await componentArray.splice(0, 1, userSelectMenu);
 
-					botReply = await interaction.message.edit({ components: componentArray });
+					botReply = await interaction.message
+						.edit({
+							components: componentArray,
+						})
+						.catch((error) => {
+							if (error.httpStatus == 404) {
+								console.log('Message already deleted');
+							}
+							else {
+								throw new Error(error);
+							}
+						});
 				}
 
 				if (interaction.values[0] == 'heal-page1') {
@@ -226,7 +312,19 @@ module.exports = {
 					const componentArray = interaction.message.components;
 					await componentArray.push(selectMenu);
 
-					botReply = await interaction.message.edit({ embeds: embedArray, components: componentArray });
+					botReply = await interaction.message
+						.edit({
+							embeds: embedArray,
+							components: componentArray,
+						})
+						.catch((error) => {
+							if (error.httpStatus == 404) {
+								console.log('Message already deleted');
+							}
+							else {
+								throw new Error(error);
+							}
+						});
 				}
 
 				if (interaction.values[0] == 'heal-page2') {
@@ -276,7 +374,19 @@ module.exports = {
 					const componentArray = interaction.message.components;
 					await componentArray.push(selectMenu);
 
-					botReply = await interaction.message.edit({ embeds: embedArray, components: componentArray });
+					botReply = await interaction.message
+						.edit({
+							embeds: embedArray,
+							components: componentArray,
+						})
+						.catch((error) => {
+							if (error.httpStatus == 404) {
+								console.log('Message already deleted');
+							}
+							else {
+								throw new Error(error);
+							}
+						});
 				}
 
 				if (arrays.commonPlantNamesArray.includes(interaction.values[0]) || arrays.uncommonPlantNamesArray.includes(interaction.values[0]) || arrays.rarePlantNamesArray.includes(interaction.values[0]) || interaction.values[0] == 'water') {
@@ -307,18 +417,22 @@ module.exports = {
 						experiencePoints = Loottable(41, 20);
 					}
 
-					profileData = await profileModel.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{
-							$inc: {
-								thirst: -thirstPoints,
-								hunger: -hungerPoints,
-								energy: -energyPoints,
-								experience: +experiencePoints,
+					profileData = await profileModel
+						.findOneAndUpdate(
+							{ userId: message.author.id, serverId: message.guild.id },
+							{
+								$inc: {
+									thirst: -thirstPoints,
+									hunger: -hungerPoints,
+									energy: -energyPoints,
+									experience: +experiencePoints,
+								},
 							},
-						},
-						{ upsert: true, new: true },
-					);
+							{ upsert: true, new: true },
+						)
+						.catch((error) => {
+							throw new Error(error);
+						});
 
 					let embedFooterStatsText = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
 
@@ -364,18 +478,29 @@ module.exports = {
 
 							const chosenUserThirstPoints = Loottable(10, 1);
 
-							chosenProfileData = await profileModel.findOneAndUpdate(
-								{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
-								{ $inc: { thirst: +chosenUserThirstPoints } },
-								{ upsert: true, new: true },
-							);
+							chosenProfileData = await profileModel
+								.findOneAndUpdate(
+									{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
+									{ $inc: { thirst: +chosenUserThirstPoints } },
+									{ upsert: true, new: true },
+								)
+								.catch((error) => {
+									throw new Error(error);
+								});
 
 							embed.description = `*${profileData.name} takes ${chosenProfileData.name}'s body, drags it over to the river, and positions ${chosenProfileData.pronounArray[2]} head right over the water. The ${chosenProfileData.species} sticks ${chosenProfileData.pronounArray[2]} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${chosenProfileData.pronounArray[2]} body.*`;
 							embed.footer.text = `${embedFooterStatsText}\n\n+${chosenUserThirstPoints} for ${chosenProfileData.name} (${chosenProfileData.thirst}/${chosenProfileData.maxThirst})`;
 
 						}
 
-						botReply = await interaction.message.edit({ embeds: embedArray, components: [] });
+						botReply = await interaction.message
+							.edit({
+								embeds: embedArray,
+								components: [],
+							})
+							.catch((error) => {
+								throw new Error(error);
+							});
 
 					}
 					else {
@@ -507,17 +632,21 @@ module.exports = {
 							}
 						}
 
-						await serverModel.findOneAndUpdate(
-							{ serverId: message.guild.id },
-							{
-								$set: {
-									commonPlantsArray: serverPlantInventory[0],
-									uncommonPlantsArray: serverPlantInventory[1],
-									rarePlantsArray: serverPlantInventory[2],
+						await serverModel
+							.findOneAndUpdate(
+								{ serverId: message.guild.id },
+								{
+									$set: {
+										commonPlantsArray: serverPlantInventory[0],
+										uncommonPlantsArray: serverPlantInventory[1],
+										rarePlantsArray: serverPlantInventory[2],
+									},
 								},
-							},
-							{ upsert: true, new: true },
-						);
+								{ upsert: true, new: true },
+							)
+							.catch((error) => {
+								throw new Error(error);
+							});
 
 						if (isSuccessful == 1 && chosenProfileData.userId == profileData.userId && Loottable(100 + ((profileData.levels - 1) * 5), 1) <= 60) {
 
@@ -534,18 +663,22 @@ module.exports = {
 								chosenUserHealthPoints -= (chosenProfileData.health + chosenUserHealthPoints) - chosenProfileData.maxHealth;
 							}
 
-							chosenProfileData = await profileModel.findOneAndUpdate(
-								{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
-								{
-									$set: { injuryArray: chosenUserInjuryArray },
-									$inc: {
-										health: +chosenUserHealthPoints,
-										energy: +chosenUserEnergyPoints,
-										hunger: +chosenUserHungerPoints,
+							chosenProfileData = await profileModel
+								.findOneAndUpdate(
+									{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
+									{
+										$set: { injuryArray: chosenUserInjuryArray },
+										$inc: {
+											health: +chosenUserHealthPoints,
+											energy: +chosenUserEnergyPoints,
+											hunger: +chosenUserHungerPoints,
+										},
 									},
-								},
-								{ upsert: true, new: true },
-							);
+									{ upsert: true, new: true },
+								)
+								.catch((error) => {
+									throw new Error(error);
+								});
 
 							if (chosenProfileData.userId == profileData.userId) {
 
@@ -559,10 +692,14 @@ module.exports = {
 							embed.footer.text = `${embedFooterStatsText}\n${embedFooterChosenUserStatsText}\n + ${chosenUserHealthPoints} HP for ${chosenProfileData.name}(${chosenProfileData.health} / ${chosenProfileData.maxHealth})${embedFooterChosenUserInjuryText}\n\n-1 ${chosenItemName} for ${message.guild.name}`;
 						}
 						else {
-							chosenProfileData = await profileModel.findOne({
-								userId: chosenProfileData.userId,
-								serverId: chosenProfileData.serverId,
-							});
+							chosenProfileData = await profileModel
+								.findOne({
+									userId: chosenProfileData.userId,
+									serverId: chosenProfileData.serverId,
+								})
+								.catch((error) => {
+									throw new Error(error);
+								});
 
 							if (chosenProfileData.userId == profileData.userId) {
 
@@ -589,11 +726,15 @@ module.exports = {
 							healthPoints = profileData.health;
 						}
 
-						profileData = await profileModel.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
-							{ $inc: { health: -healthPoints } },
-							{ upsert: true, new: true },
-						);
+						profileData = await profileModel
+							.findOneAndUpdate(
+								{ userId: message.author.id, serverId: message.guild.id },
+								{ $inc: { health: -healthPoints } },
+								{ upsert: true, new: true },
+							)
+							.catch((error) => {
+								throw new Error(error);
+							});
 
 						++userInjuryArray[2];
 
@@ -604,15 +745,31 @@ module.exports = {
 						});
 					}
 
-					botReply = await interaction.message.edit({ embeds: embedArray, components: [] });
+					botReply = await interaction.message
+						.edit({
+							embeds: embedArray,
+							components: [],
+						})
+						.catch((error) => {
+							if (error.httpStatus == 404) {
+								console.log('Message already deleted');
+							}
+							else {
+								throw new Error(error);
+							}
+						});
 
 					await condition.decreaseHealth(message, profileData, botReply);
 
-					profileData = await profileModel.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{ $set: { injuryArray: userInjuryArray } },
-						{ upsert: true, new: true },
-					);
+					profileData = await profileModel
+						.findOneAndUpdate(
+							{ userId: message.author.id, serverId: message.guild.id },
+							{ $set: { injuryArray: userInjuryArray } },
+							{ upsert: true, new: true },
+						)
+						.catch((error) => {
+							throw new Error(error);
+						});
 
 					await levels.levelCheck(message, profileData, botReply);
 

@@ -10,11 +10,15 @@ module.exports = {
 
 		++userInventoryArray[0][randomCommonPlantArrayIndex];
 
-		profileData = await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { inventoryArray: userInventoryArray } },
-			{ upsert: true, new: true },
-		);
+		profileData = await profileModel
+			.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { inventoryArray: userInventoryArray } },
+				{ upsert: true, new: true },
+			)
+			.catch((error) => {
+				throw new Error(error);
+			});
 
 		return arrays.commonPlantNamesArray[randomCommonPlantArrayIndex];
 	},
@@ -26,11 +30,20 @@ module.exports = {
 
 		++userInventoryArray[1][randomUncommonPlantArrayIndex];
 
-		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { inventoryArray: userInventoryArray } },
-			{ upsert: true, new: true },
-		);
+		profileData = await profileModel
+			.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { inventoryArray: userInventoryArray } },
+				{ upsert: true, new: true },
+			)
+			.catch((error) => {
+				if (error.httpStatus == 404) {
+					console.log('Message already deleted');
+				}
+				else {
+					throw new Error(error);
+				}
+			});
 
 		return arrays.uncommonPlantNamesArray[randomUncommonPlantArrayIndex];
 	},
@@ -42,11 +55,20 @@ module.exports = {
 
 		++userInventoryArray[2][randomRarePlantArrayIndex];
 
-		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { inventoryArray: userInventoryArray } },
-			{ upsert: true, new: true },
-		);
+		profileData = await profileModel
+			.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { inventoryArray: userInventoryArray } },
+				{ upsert: true, new: true },
+			)
+			.catch((error) => {
+				if (error.httpStatus == 404) {
+					console.log('Message already deleted');
+				}
+				else {
+					throw new Error(error);
+				}
+			});
 
 		return arrays.rarePlantNamesArray[randomRarePlantArrayIndex];
 	},

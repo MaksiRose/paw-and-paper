@@ -13,31 +13,53 @@ module.exports = {
 		}
 
 		if (!argumentsArray.length) {
-			return await message.reply({
-				embeds: [{
-					color: config.default_color,
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-					title: 'Tell us more about your character! Here is how to use the command:',
-					description: '\n\nrp desc [description]\nReplace [description] with your text.',
-				}],
-			});
+			return await message
+				.reply({
+					embeds: [{
+						color: config.default_color,
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+						title: 'Tell us more about your character! Here is how to use the command:',
+						description: '\n\nrp desc [description]\nReplace [description] with your text.',
+					}],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
 		const description = argumentsArray.join(' ');
 
-		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { description: `${description}` } },
-			{ upsert: true, new: true },
-		);
+		await profileModel
+			.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { description: `${description}` } },
+				{ upsert: true, new: true },
+			)
+			.catch((error) => {
+				throw new Error(error);
+			});
 
-		return await message.reply({
-			embeds: [{
-				color: config.default_color,
-				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-				title: `Description for ${profileData.name} set:`,
-				description: `${description}`,
-			}],
-		});
+		return await message
+			.reply({
+				embeds: [{
+					color: config.default_color,
+					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+					title: `Description for ${profileData.name} set:`,
+					description: `${description}`,
+				}],
+			})
+			.catch((error) => {
+				if (error.httpStatus == 404) {
+					console.log('Message already deleted');
+				}
+				else {
+					throw new Error(error);
+				}
+			});
 	},
 };

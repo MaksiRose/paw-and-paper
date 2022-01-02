@@ -33,16 +33,29 @@ module.exports = {
 				footer: 'Go playing or exploring to get quests!',
 			});
 
-			return await message.reply({
-				embeds: embedArray,
-			});
+			return await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
-		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { hasQuest: false } },
-			{ upsert: true, new: true },
-		);
+		await profileModel
+			.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { hasQuest: false } },
+				{ upsert: true, new: true },
+			)
+			.catch((error) => {
+				throw new Error(error);
+			});
 
 		let hitEmoji = '';
 		let missEmoji = '';
@@ -247,23 +260,41 @@ module.exports = {
 
 			if (first) {
 
-				botReply = await message.reply({
-					embeds: embedArray,
-					components: [{
-						type: 'ACTION_ROW',
-						components: finalComponentArray,
-					}],
-				});
+				botReply = await message
+					.reply({
+						embeds: embedArray,
+						components: [{
+							type: 'ACTION_ROW',
+							components: finalComponentArray,
+						}],
+					})
+					.catch((error) => {
+						if (error.httpStatus == 404) {
+							console.log('Message already deleted');
+						}
+						else {
+							throw new Error(error);
+						}
+					});
 			}
 			else {
 
-				botReply = await botReply.edit({
-					embeds: embedArray,
-					components: [{
-						type: 'ACTION_ROW',
-						components: finalComponentArray,
-					}],
-				});
+				botReply = await botReply
+					.edit({
+						embeds: embedArray,
+						components: [{
+							type: 'ACTION_ROW',
+							components: finalComponentArray,
+						}],
+					})
+					.catch((error) => {
+						if (error.httpStatus == 404) {
+							console.log('Message already deleted');
+						}
+						else {
+							throw new Error(error);
+						}
+					});
 			}
 
 			return await new Promise((resolve) => {
@@ -285,11 +316,15 @@ module.exports = {
 					if (hitValue >= 10) {
 
 						if (profileData.unlockedranks < 3) {
-							await profileModel.findOneAndUpdate(
-								{ userId: message.author.id, serverId: message.guild.id },
-								{ $inc: { unlockedRanks: +1 } },
-								{ upsert: true, new: true },
-							);
+
+							await profileModel
+								.findOneAndUpdate(
+									{ userId: message.author.id, serverId: message.guild.id },
+									{ $inc: { unlockedRanks: +1 } },
+									{ upsert: true, new: true },
+								).catch((error) => {
+									throw new Error(error);
+								});
 						}
 
 						let description = '';
@@ -369,18 +404,21 @@ module.exports = {
 
 							footer += 'Type \'rp rank\' to rank up';
 
-							await profileModel.findOneAndUpdate(
-								{ userId: message.author.id, serverId: message.guild.id },
-								{
-									$inc: {
-										maxHealth: maxHealthPoints,
-										maxEnergy: maxEnergyPoints,
-										maxHunger: maxHungerPoints,
-										maxThirst: maxThirstPoints,
+							await profileModel
+								.findOneAndUpdate(
+									{ userId: message.author.id, serverId: message.guild.id },
+									{
+										$inc: {
+											maxHealth: maxHealthPoints,
+											maxEnergy: maxEnergyPoints,
+											maxHunger: maxHungerPoints,
+											maxThirst: maxThirstPoints,
+										},
 									},
-								},
-								{ upsert: true, new: true },
-							);
+									{ upsert: true, new: true },
+								).catch((error) => {
+									throw new Error(error);
+								});
 						}
 
 						embedArray.push({
@@ -390,10 +428,20 @@ module.exports = {
 							footer: footer,
 						});
 
-						botReply = await botReply.edit({
-							embeds: embedArray,
-							components: [],
-						});
+						botReply = await botReply
+							.edit({
+								embeds: embedArray,
+								components: [],
+							})
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
+
 						return resolve();
 					}
 					else if (missValue >= 10) {
@@ -455,10 +503,20 @@ module.exports = {
 							description: description,
 						});
 
-						botReply = await botReply.edit({
-							embeds: embedArray,
-							components: [],
-						});
+						botReply = await botReply
+							.edit({
+								embeds: embedArray,
+								components: [],
+							})
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
+
 						return resolve();
 					}
 					else {

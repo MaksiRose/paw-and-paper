@@ -14,13 +14,22 @@ module.exports = {
 
 		if (!argumentsArray.length) {
 
-			return await message.reply({
-				embeds: [{
-					color: config.default_color,
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-					title: 'Enter a valid hex code to give your messages and profile that color!',
-				}],
-			}).catch(console.trace);
+			return await message
+				.reply({
+					embeds: [{
+						color: config.default_color,
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+						title: 'Enter a valid hex code to give your messages and profile that color!',
+					}],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
 		let hexColor = argumentsArray[0].toLowerCase();
@@ -32,30 +41,52 @@ module.exports = {
 
 		if (!isHexValid(hexColor)) {
 
-			return await message.reply({
-				embeds: [{
-					color: config.default_color,
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-					title: 'Please send a valid hex code! Valid hex codes consist of 6 characters and contain only letters from \'a\' to \'f\' and/or numbers.',
-				}],
-			});
+			return await message
+				.reply({
+					embeds: [{
+						color: config.default_color,
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+						title: 'Please send a valid hex code! Valid hex codes consist of 6 characters and contain only letters from \'a\' to \'f\' and/or numbers.',
+					}],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
 		hexColor = '#' + hexColor;
 
-		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { color: hexColor } },
-			{ upsert: true, new: true },
-		);
+		await profileModel
+			.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { color: hexColor } },
+				{ upsert: true, new: true },
+			)
+			.catch((error) => {
+				throw new Error(error);
+			});
 
-		return await message.reply({
-			embeds: [{
-				color: `${hexColor}`,
-				author: { name: `${message.guild.name}`, icon_url: message.guild.iconURL() },
-				title: `Profile color set to ${hexColor}!`,
-			}],
-		});
+		return await message
+			.reply({
+				embeds: [{
+					color: `${hexColor}`,
+					author: { name: `${message.guild.name}`, icon_url: message.guild.iconURL() },
+					title: `Profile color set to ${hexColor}!`,
+				}],
+			})
+			.catch((error) => {
+				if (error.httpStatus == 404) {
+					console.log('Message already deleted');
+				}
+				else {
+					throw new Error(error);
+				}
+			});
 	},
 };
 

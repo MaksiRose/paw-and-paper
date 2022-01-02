@@ -186,19 +186,34 @@ module.exports = {
 			extraLostHealthPoints = profileData.health;
 		}
 
-		profileData = await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{
-				$inc: { health: -extraLostHealthPoints },
-				$set: { injuryArray: userInjuryArray },
-			},
-			{ upsert: true, new: true },
-		);
+		profileData = await profileModel
+			.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{
+					$inc: { health: -extraLostHealthPoints },
+					$set: { injuryArray: userInjuryArray },
+				},
+				{ upsert: true, new: true },
+			)
+			.catch((error) => {
+				throw new Error(error);
+			});
 
 		embed.footer.text = `-${extraLostHealthPoints} HP (${profileData.health}/${profileData.maxHealth})`;
 
 		botReply.embeds.push(embed);
-		await botReply.edit({ embeds: botReply.embeds });
+		await botReply
+			.edit({
+				embeds: botReply.embeds,
+			})
+			.catch((error) => {
+				if (error.httpStatus == 404) {
+					console.log('Message already deleted');
+				}
+				else {
+					throw new Error(error);
+				}
+			});
 
 		function weightedTable(values) {
 

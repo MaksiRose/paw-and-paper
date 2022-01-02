@@ -31,7 +31,14 @@ module.exports = {
 
 			try {
 
-				profileData = await profileModel.findOne({ userId: message.mentions.users.first().id, serverId: message.guild.id });
+				profileData = await profileModel
+					.findOne({
+						userId: message.mentions.users.first().id,
+						serverId: message.guild.id,
+					})
+					.catch((error) => {
+						throw new Error(error);
+					});
 			}
 			catch (err) {
 
@@ -40,13 +47,22 @@ module.exports = {
 
 			if (!profileData || profileData.species === '') {
 
-				return await message.reply({
-					embeds: [{
-						color: '#9d9e51',
-						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						description: 'This user has no roleplay account, or the account setup process was not completed!',
-					}],
-				});
+				return await message
+					.reply({
+						embeds: [{
+							color: '#9d9e51',
+							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+							description: 'This user has no roleplay account, or the account setup process was not completed!',
+						}],
+					})
+					.catch((error) => {
+						if (error.httpStatus == 404) {
+							console.log('Message already deleted');
+						}
+						else {
+							throw new Error(error);
+						}
+					});
 			}
 
 			components = [{
@@ -77,27 +93,40 @@ module.exports = {
 		}
 
 		const description = (profileData.description == '') ? '' : `*${profileData.description}*`;
-		const user = await client.users.fetch(profileData.userId);
+		const user = await client.users
+			.fetch(profileData.userId)
+			.catch((error) => {
+				throw new Error(error);
+			});
 
-		return await message.reply({
-			embeds: [{
-				color: profileData.color,
-				title: `Profile - ${user.tag}`,
-				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: description,
-				thumbnail: { url: profileData.avatarURL },
-				fields: [
-					{ name: '**🦑 Species**', value: profileData.species.charAt(0).toUpperCase() + profileData.species.slice(1), inline: true },
-					{ name: '**🏷️ Rank**', value: profileData.rank, inline: true },
-					{ name: '**🍂 Pronouns**', value: `${profileData.pronounArray[0]}/${profileData.pronounArray[1]} (${profileData.pronounArray[2]}/${profileData.pronounArray[3]}/${profileData.pronounArray[4]})` },
-					{ name: '**🗺️ Region**', value: profileData.currentRegion },
-					{ name: '**🚩 Levels**', value: `\`${profileData.levels}\``, inline: true },
-					{ name: '**✨ XP**', value: `\`${profileData.experience}/${profileData.levels * 50}\``, inline: true },
-					{ name: '**Condition**', value: `❤️ Health: \`${profileData.health}/${profileData.maxHealth}\`\n⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\`\n🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`` },
-					{ name: '**🩹 Injuries/Illnesses**', value: injuryText },
-				],
-			}],
-			components: components,
-		});
+		return await message
+			.reply({
+				embeds: [{
+					color: profileData.color,
+					title: `Profile - ${user.tag}`,
+					author: { name: profileData.name, icon_url: profileData.avatarURL },
+					description: description,
+					thumbnail: { url: profileData.avatarURL },
+					fields: [
+						{ name: '**🦑 Species**', value: profileData.species.charAt(0).toUpperCase() + profileData.species.slice(1), inline: true },
+						{ name: '**🏷️ Rank**', value: profileData.rank, inline: true },
+						{ name: '**🍂 Pronouns**', value: `${profileData.pronounArray[0]}/${profileData.pronounArray[1]} (${profileData.pronounArray[2]}/${profileData.pronounArray[3]}/${profileData.pronounArray[4]})` },
+						{ name: '**🗺️ Region**', value: profileData.currentRegion },
+						{ name: '**🚩 Levels**', value: `\`${profileData.levels}\``, inline: true },
+						{ name: '**✨ XP**', value: `\`${profileData.experience}/${profileData.levels * 50}\``, inline: true },
+						{ name: '**Condition**', value: `❤️ Health: \`${profileData.health}/${profileData.maxHealth}\`\n⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\`\n🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`` },
+						{ name: '**🩹 Injuries/Illnesses**', value: injuryText },
+					],
+				}],
+				components: components,
+			})
+			.catch((error) => {
+				if (error.httpStatus == 404) {
+					console.log('Message already deleted');
+				}
+				else {
+					throw new Error(error);
+				}
+			});
 	},
 };

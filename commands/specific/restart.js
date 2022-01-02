@@ -10,9 +10,18 @@ module.exports = {
 
 		try {
 
-			await message.reply({
-				content: 'Restarted!',
-			});
+			await message
+				.reply({
+					content: 'Restarted!',
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 
 			await process.exit()
 				.then(() => {
@@ -22,7 +31,11 @@ module.exports = {
 
 		}
 		catch (error) {
-			message.channel.send({ content: `ERROR: ${error.message}` });
+			message.channel
+				.send({ content: `ERROR: ${error.message}` })
+				.catch((newError) => {
+					throw new Error(newError);
+				});
 		}
 	},
 };

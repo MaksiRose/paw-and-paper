@@ -8,13 +8,22 @@ module.exports = {
 
 		if (profileData.energy <= 0 || profileData.health <= 0 || profileData.hunger <= 0 || profileData.thirst <= 0) {
 
-			await message.reply({
-				embeds: [{
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: `*${profileData.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${profileData.pronounArray[0]} screech${(profileData.pronounArray[5] == 'singular') ? 'es' : ''} with ${profileData.pronounArray[2]} last energy. Without help, ${profileData.pronounArray[0]} will not be able to continue.*`,
-				}],
-			});
+			await message
+				.reply({
+					embeds: [{
+						color: profileData.color,
+						author: { name: profileData.name, icon_url: profileData.avatarURL },
+						description: `*${profileData.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${profileData.pronounArray[0]} screech${(profileData.pronounArray[5] == 'singular') ? 'es' : ''} with ${profileData.pronounArray[2]} last energy. Without help, ${profileData.pronounArray[0]} will not be able to continue.*`,
+					}],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 
 			return true;
 		}
@@ -26,17 +35,37 @@ module.exports = {
 
 		if (profileData.hasCooldown == true) {
 
-			await message.reply({
-				embeds: [{
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: `*${profileData.name} is so eager to get things done today that ${profileData.pronounArray[0]} ${(profileData.pronounArray[5] == 'singular') ? 'is' : 'are'} somersaulting. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} should probably take a few seconds to calm down.*`,
-				}],
-			}).then(reply => {
-				setTimeout(async function() {
-					await reply.delete();
-				}, 10000);
-			});
+			await message
+				.reply({
+					embeds: [{
+						color: profileData.color,
+						author: { name: profileData.name, icon_url: profileData.avatarURL },
+						description: `*${profileData.name} is so eager to get things done today that ${profileData.pronounArray[0]} ${(profileData.pronounArray[5] == 'singular') ? 'is' : 'are'} somersaulting. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} should probably take a few seconds to calm down.*`,
+					}],
+				})
+				.then(reply => {
+					setTimeout(async function() {
+
+						await reply
+							.delete()
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
+					}, 10000);
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 
 			return true;
 		}
@@ -111,18 +140,38 @@ module.exports = {
 				}
 			}
 
-			await message.reply({
-				embeds: [{
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: description,
-					footer: { text: 'Type \'rp quest\' to continue!' },
-				}],
-			}).then(reply => {
-				setTimeout(async function() {
-					await reply.delete();
-				}, 10000);
-			});
+			await message
+				.reply({
+					embeds: [{
+						color: profileData.color,
+						author: { name: profileData.name, icon_url: profileData.avatarURL },
+						description: description,
+						footer: { text: 'Type \'rp quest\' to continue!' },
+					}],
+				})
+				.then(reply => {
+					setTimeout(async function() {
+
+						await reply
+							.delete()
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
+					}, 10000);
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 
 			return true;
 		}
@@ -134,11 +183,14 @@ module.exports = {
 
 		if (profileData.isResting == true) {
 
-			profileData = await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { isResting: false } },
-				{ upsert: true, new: true },
-			);
+			profileData = await profileModel
+				.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $set: { isResting: false } },
+					{ upsert: true, new: true },
+				).catch((error) => {
+					throw new Error(error);
+				});
 
 			executeResting.stopResting(message.author.id);
 

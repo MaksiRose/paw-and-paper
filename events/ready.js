@@ -3,6 +3,10 @@ module.exports = {
 	once: true,
 	execute(client) {
 		console.log('Paw and Paper is online!');
-		client.user.setActivity('this awesome RPG :)\nrp help', { type: 'PLAYING' });
+		client.user
+			.setActivity('this awesome RPG :)\nrp help', { type: 'PLAYING' })
+			.catch((error) => {
+				console.error(error);
+			});
 	},
 };

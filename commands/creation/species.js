@@ -14,13 +14,22 @@ module.exports = {
 
 		if (profileData.species != '') {
 
-			return await message.reply({
-				embeds: [{
-					color: '#9d9e51',
-					author: { name: `${message.guild.name}`, icon_url: message.guild.iconURL() },
-					title: `${profileData.name} is a ${profileData.species}! You cannot change ${profileData.pronounArray[2]} species unless you reset your account.`,
-				}],
-			});
+			return await message
+				.reply({
+					embeds: [{
+						color: '#9d9e51',
+						author: { name: `${message.guild.name}`, icon_url: message.guild.iconURL() },
+						title: `${profileData.name} is a ${profileData.species}! You cannot change ${profileData.pronounArray[2]} species unless you reset your account.`,
+					}],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
 		const species = arrays.species(profileData);
@@ -42,40 +51,67 @@ module.exports = {
 
 		if (chosenSpecies != null && species.nameArray.includes(chosenSpecies)) {
 
-			await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { species: chosenSpecies } },
-				{ upsert: true, new: true },
-			);
+			await profileModel
+				.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $set: { species: chosenSpecies } },
+					{ upsert: true, new: true },
+				)
+				.catch((error) => {
+					throw new Error(error);
+				});
 
-			return await message.reply({
-				embeds: [{
-					color: config.default_color,
-					author: { name: `${message.guild.name}`, icon_url: message.guild.iconURL() },
-					description: `*The Alpha took a friendly step towards the ${chosenSpecies}.* "It's nice to have you here, ${profileData.name}," *they said. More and more packmates came closer to greet the newcomer.*`,
-					footer: { text: 'You are now done setting up your account! Type "rp profile" to look at it. With "rp help" you can see how else you can customize your profile, as well as your other options.' },
-				}],
-			});
+			return await message
+				.reply({
+					embeds: [{
+						color: config.default_color,
+						author: { name: `${message.guild.name}`, icon_url: message.guild.iconURL() },
+						description: `*The Alpha took a friendly step towards the ${chosenSpecies}.* "It's nice to have you here, ${profileData.name}," *they said. More and more packmates came closer to greet the newcomer.*`,
+						footer: { text: 'You are now done setting up your account! Type "rp profile" to look at it. With "rp help" you can see how else you can customize your profile, as well as your other options.' },
+					}],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
-		const maksi = await client.users.fetch(config.maksi);
-		const botReply = await message.reply({
-			embeds: [{
-				color: config.default_color,
-				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-				title: `What species is ${profileData.name}?`,
-				footer: { text: `If you want an earthly species that is not on the list, contact ${maksi.tag}. Seriously, just ask. It takes one minute and I'll be happy to do it.` },
-			}],
-			components: [{
-				type: 'ACTION_ROW',
-				components: [{
-					type: 'SELECT_MENU',
-					customId: 'species-options',
-					placeholder: 'Select a species',
-					options: selectMenuOptionsArray,
+		const maksi = await client.users
+			.fetch(config.maksi)
+			.catch((error) => {
+				throw new Error(error);
+			});
+
+		const botReply = await message
+			.reply({
+				embeds: [{
+					color: config.default_color,
+					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+					title: `What species is ${profileData.name}?`,
+					footer: { text: `If you want an earthly species that is not on the list, contact ${maksi.tag}. Seriously, just ask. It takes one minute and I'll be happy to do it.` },
 				}],
-			}],
-		});
+				components: [{
+					type: 'ACTION_ROW',
+					components: [{
+						type: 'SELECT_MENU',
+						customId: 'species-options',
+						placeholder: 'Select a species',
+						options: selectMenuOptionsArray,
+					}],
+				}],
+			})
+			.catch((error) => {
+				if (error.httpStatus == 404) {
+					console.log('Message already deleted');
+				}
+				else {
+					throw new Error(error);
+				}
+			});
 
 		client.on('messageCreate', async function removeSpeciesComponents(newMessage) {
 
@@ -89,9 +125,19 @@ module.exports = {
 				return client.off('messageCreate', removeSpeciesComponents);
 			}
 
-			await botReply.edit({
-				components: [],
-			});
+			await botReply
+				.edit({
+					components: [],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
+
 			return client.off('messageCreate', removeSpeciesComponents);
 		});
 
@@ -115,9 +161,18 @@ module.exports = {
 
 				if (!collected.size) {
 
-					return await botReply.edit({
-						components: [],
-					});
+					return await botReply
+						.edit({
+							components: [],
+						})
+						.catch((error) => {
+							if (error.httpStatus == 404) {
+								console.log('Message already deleted');
+							}
+							else {
+								throw new Error(error);
+							}
+						});
 				}
 
 				const interaction = collected.first();
@@ -138,38 +193,60 @@ module.exports = {
 
 					selectMenuOptionsArray.push({ label: 'Show more species options', value: 'species_page', description: `You are currently on page ${speciesPage + 1}`, emoji: '📋' });
 
-					await interaction.message.edit({
-						components: [{
-							type: 'ACTION_ROW',
+					await interaction.message
+						.edit({
 							components: [{
-								type: 'SELECT_MENU',
-								customId: 'species-options',
-								placeholder: 'Select a species',
-								options: selectMenuOptionsArray,
+								type: 'ACTION_ROW',
+								components: [{
+									type: 'SELECT_MENU',
+									customId: 'species-options',
+									placeholder: 'Select a species',
+									options: selectMenuOptionsArray,
+								}],
 							}],
-						}],
-					});
+						})
+						.catch((error) => {
+							if (error.httpStatus == 404) {
+								console.log('Message already deleted');
+							}
+							else {
+								throw new Error(error);
+							}
+						});
 
 					return await interactionCollector();
 				}
 
 				if (species.nameArray.includes(interaction.values[0])) {
 
-					await profileModel.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{ $set: { species: interaction.values[0] } },
-						{ upsert: true, new: true },
-					);
+					await profileModel
+						.findOneAndUpdate(
+							{ userId: message.author.id, serverId: message.guild.id },
+							{ $set: { species: interaction.values[0] } },
+							{ upsert: true, new: true },
+						)
+						.catch((error) => {
+							throw new Error(error);
+						});
 
-					return await interaction.message.edit({
-						embeds: [{
-							color: '#9d9e51',
-							author: { name: `${message.guild.name}`, icon_url: message.guild.iconURL() },
-							description: `*The Alpha took a friendly step towards the ${interaction.values[0]}.* "It's nice to have you here, ${profileData.name}" *they said. More and more packmates came closer to greet the newcomer.*`,
-							footer: { text: 'You are now done setting up your account! Type "rp profile" to can look at it. With "rp help" you can see how else you can customize your profile, as well as your other options.' },
-						}],
-						components: [],
-					});
+					return await interaction.message
+						.edit({
+							embeds: [{
+								color: '#9d9e51',
+								author: { name: `${message.guild.name}`, icon_url: message.guild.iconURL() },
+								description: `*The Alpha took a friendly step towards the ${interaction.values[0]}.* "It's nice to have you here, ${profileData.name}" *they said. More and more packmates came closer to greet the newcomer.*`,
+								footer: { text: 'You are now done setting up your account! Type "rp profile" to can look at it. With "rp help" you can see how else you can customize your profile, as well as your other options.' },
+							}],
+							components: [],
+						})
+						.catch((error) => {
+							if (error.httpStatus == 404) {
+								console.log('Message already deleted');
+							}
+							else {
+								throw new Error(error);
+							}
+						});
 				}
 			});
 		}

@@ -20,11 +20,23 @@ module.exports = {
 			return;
 		}
 
-		let profileData = await profileModel.findOne({ userId: message.author.id, serverId: message.guild.id }).catch(async (error) => await errorHandling.output(message, error));
+		let profileData = await profileModel
+			.findOne({
+				userId: message.author.id,
+				serverId: message.guild.id,
+			}).catch(async (error) => {
+				return await errorHandling.output(message, error);
+			});
 
 		const species = arrays.species(profileData);
 
-		let serverData = await serverModel.findOne({ serverId: message.guild.id }).catch(async (error) => await errorHandling.output(message, error));
+		let serverData = await serverModel
+			.findOne({
+				serverId: message.guild.id,
+			})
+			.catch(async (error) => {
+				return await errorHandling.output(message, error);
+			});
 
 		if (!serverData) {
 
@@ -36,55 +48,74 @@ module.exports = {
 				rarePlantsArray: Array(arrays.rarePlantNamesArray.length).fill(0),
 				meatArray: Array(species.nameArray.length).fill(0),
 			}).catch(async (error) => {
-
 				return await errorHandling.output(message, error);
 			});
 
-			await serverData.save().catch(async (error) => await errorHandling.output(message, error));
+			await serverData
+				.save()
+				.catch(async (error) => {
+					return await errorHandling.output(message, error);
+				});
 		}
 
 		if (species.nameArray.length > serverData.meatArray.length) {
 
 			const serverDataMeatArray = [...serverData.meatArray].concat(new Array(species.nameArray.length - serverData.meatArray.length).fill(0));
 
-			serverData = await serverModel.findOneAndUpdate(
-				{ serverId: message.guild.id },
-				{ $set: { meatArray: serverDataMeatArray } },
-				{ upsert: true, new: true },
-			);
+			serverData = await serverModel
+				.findOneAndUpdate(
+					{ serverId: message.guild.id },
+					{ $set: { meatArray: serverDataMeatArray } },
+					{ upsert: true, new: true },
+				)
+				.catch(async (error) => {
+					return await errorHandling.output(message, error);
+				});
 		}
 
 		if (arrays.commonPlantNamesArray.length > serverData.commonPlantsArray.length) {
 
 			const serverDataCommonPlantsArray = [...serverData.commonPlantsArray].concat(new Array(arrays.commonPlantNamesArray.length - serverData.commonPlantsArray.length).fill(0));
 
-			serverData = await serverModel.findOneAndUpdate(
-				{ serverId: message.guild.id },
-				{ $set: { commonPlantsArray: serverDataCommonPlantsArray } },
-				{ upsert: true, new: true },
-			);
+			serverData = await serverModel
+				.findOneAndUpdate(
+					{ serverId: message.guild.id },
+					{ $set: { commonPlantsArray: serverDataCommonPlantsArray } },
+					{ upsert: true, new: true },
+				)
+				.catch(async (error) => {
+					return await errorHandling.output(message, error);
+				});
 		}
 
 		if (arrays.uncommonPlantNamesArray.length > serverData.uncommonPlantsArray.length) {
 
 			const serverDataUncommonPlantsArray = [...serverData.uncommonPlantsArray].concat(new Array(arrays.uncommonPlantNamesArray.length - serverData.uncommonPlantsArray.length).fill(0));
 
-			serverData = await serverModel.findOneAndUpdate(
-				{ serverId: message.guild.id },
-				{ $set: { uncommonPlantsArray: serverDataUncommonPlantsArray } },
-				{ upsert: true, new: true },
-			);
+			serverData = await serverModel
+				.findOneAndUpdate(
+					{ serverId: message.guild.id },
+					{ $set: { uncommonPlantsArray: serverDataUncommonPlantsArray } },
+					{ upsert: true, new: true },
+				)
+				.catch(async (error) => {
+					return await errorHandling.output(message, error);
+				});
 		}
 
 		if (arrays.rarePlantNamesArray.length > serverData.rarePlantsArray.length) {
 
 			const serverDataRarePlantsArray = [...serverData.rarePlantsArray].concat(new Array(arrays.rarePlantNamesArray.length - serverData.rarePlantsArray.length).fill(0));
 
-			serverData = await serverModel.findOneAndUpdate(
-				{ serverId: message.guild.id },
-				{ $set: { rarePlantsArray: serverDataRarePlantsArray } },
-				{ upsert: true, new: true },
-			);
+			serverData = await serverModel
+				.findOneAndUpdate(
+					{ serverId: message.guild.id },
+					{ $set: { rarePlantsArray: serverDataRarePlantsArray } },
+					{ upsert: true, new: true },
+				)
+				.catch(async (error) => {
+					return await errorHandling.output(message, error);
+				});
 		}
 
 		let pingRuins = false;
@@ -97,12 +128,21 @@ module.exports = {
 
 		if (!command) {
 
-			await message.reply({
-				embeds: [{
-					title: 'This command doesn\'t exist!',
-					description: 'Please check \'rp help\' to review your options.',
-				}],
-			});
+			await message
+				.reply({
+					embeds: [{
+						title: 'This command doesn\'t exist!',
+						description: 'Please check \'rp help\' to review your options.',
+					}],
+				})
+				.catch(async (error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						return await errorHandling.output(message, error);
+					}
+				});
 
 			return console.log(`\x1b[32m\x1b[0m${message.author.tag} unsuccessfully tried to execute \x1b[33m${message.content} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 		}
@@ -147,7 +187,12 @@ module.exports = {
 			}
 			usersActiveCommandsAmountMap.get(message.author.id).activeCommands++;
 
-			await message.channel.sendTyping();
+			await message.channel
+				.sendTyping()
+				.catch(async (error) => {
+					return await errorHandling.output(message, error);
+				});
+
 			await command
 				.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray, pingRuins)
 				.then(async () => {
@@ -171,14 +216,18 @@ module.exports = {
 		}
 		catch (error) {
 
-			errorHandling.output(message, error);
+			await errorHandling.output(message, error);
 		}
 
-		profileData = await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { hasCooldown: true } },
-			{ upsert: true, new: true },
-		).catch(async (error) => await errorHandling.output(message, error));
+		profileData = await profileModel
+			.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { hasCooldown: true } },
+				{ upsert: true, new: true },
+			)
+			.catch(async (error) => {
+				return await errorHandling.output(message, error);
+			});
 
 		automaticRestingTimeoutArray[message.author.id] = setTimeout(automaticRestingTimeoutFunction, 600000);
 
@@ -188,11 +237,18 @@ module.exports = {
 				.findOne({
 					userId: message.author.id,
 					serverId: message.guild.id,
-				}).catch(async (error) => await errorHandling.output(message, error));
+				})
+				.catch(async (error) => {
+					return await errorHandling.output(message, error);
+				});
 
 			if (profileData.resting == false && profileData.energy < profileData.maxEnergy) {
 
-				await rest.sendMessage(client, message, [], profileData, serverData, embedArray).catch(async (error) => await errorHandling.output(message, error));
+				await rest
+					.sendMessage(client, message, [], profileData, serverData, embedArray)
+					.catch(async (error) => {
+						return await errorHandling.output(message, error);
+					});
 			}
 		}
 	},

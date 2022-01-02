@@ -31,7 +31,18 @@ module.exports = {
 				footer: { text: 'You can only hold up to 25 items in your personal inventory. Type "rp store" to put things into the pack inventory!' },
 			});
 
-			return await message.reply({ embeds: embedArray });
+			return await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
 		if (profileData.rank == 'Youngling') {
@@ -42,7 +53,18 @@ module.exports = {
 				description: `*A hunter cuts ${profileData.name} as they see ${profileData.pronounArray[1]} running towards the pack borders.* "You don't have enough experience to go into the wilderness, ${profileData.rank}," *they say.*`,
 			});
 
-			return await message.reply({ embeds: embedArray });
+			return await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		}
 
 		const species = arrays.species(profileData);
@@ -92,7 +114,18 @@ module.exports = {
 				description: `*${profileData.name} slips out of camp, ${profileData.pronounArray[2]} body disappearing in the morning mist. For a while ${profileData.pronounArray[0]} will look around in the ${chosenBiome}, searching for anything of use…*`,
 			});
 
-			botReply = await message.reply({ embeds: embedArray });
+			botReply = await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 
 			return setTimeout(async function() { startExploring(); }, 15000);
 		}
@@ -119,7 +152,19 @@ module.exports = {
 			description: `*${profileData.name} is longing for adventure as ${profileData.pronounArray[0]} look${(profileData.pronounArray[5] == 'singular') ? 's' : ''} into the wild outside of camp. All there is to decide is where the journey will lead ${profileData.pronounArray[1]}.*`,
 		});
 
-		botReply = await message.reply({ embeds: embedArray, components: [selectBiomeComponent] });
+		botReply = await message
+			.reply({
+				embeds: embedArray,
+				components: [selectBiomeComponent],
+			})
+			.catch((error) => {
+				if (error.httpStatus == 404) {
+					console.log('Message already deleted');
+				}
+				else {
+					throw new Error(error);
+				}
+			});
 
 		client.on('messageCreate', async function removeExploreComponents(newMessage) {
 
@@ -128,9 +173,19 @@ module.exports = {
 				return;
 			}
 
-			await botReply.edit({
-				components: [],
-			});
+			await botReply
+				.edit({
+					components: [],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
+
 			return client.off('messageCreate', removeExploreComponents);
 		});
 
@@ -141,7 +196,12 @@ module.exports = {
 				return false;
 			}
 
-			const userMessage = await i.channel.messages.fetch(i.message.reference.messageId);
+			const userMessage = await i.channel.messages
+				.fetch(i.message.reference.messageId)
+				.catch((error) => {
+					throw new Error(error);
+				});
+
 			return userMessage.id == message.id && i.customId == 'biome-travel' && i.user.id == message.author.id;
 		}
 
@@ -150,9 +210,18 @@ module.exports = {
 
 			if (!collected.size) {
 
-				return await botReply.edit({
-					components: [],
-				});
+				return await botReply
+					.edit({
+						components: [],
+					})
+					.catch((error) => {
+						if (error.httpStatus == 404) {
+							console.log('Message already deleted');
+						}
+						else {
+							throw new Error(error);
+						}
+					});
 			}
 
 			const interaction = collected.first();
@@ -166,7 +235,19 @@ module.exports = {
 				description: `*${profileData.name} slips out of camp, ${profileData.pronounArray[2]} body disappearing in the morning mist. For a while ${profileData.pronounArray[0]} will look around in the ${chosenBiome}, searching for anything of use…*`,
 			});
 
-			botReply = await interaction.message.edit({ embeds: embedArray, components: [] });
+			botReply = await interaction.message
+				.edit({
+					embeds: embedArray,
+					components: [],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 
 			return setTimeout(async function() { startExploring(); }, 15000);
 		});
@@ -202,17 +283,21 @@ module.exports = {
 			}
 
 
-			profileData = await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{
-					$inc: {
-						thirst: -thirstPoints,
-						hunger: -hungerPoints,
-						energy: -energyPoints,
-						experience: +experiencePoints,
+			profileData = await profileModel
+				.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{
+						$inc: {
+							thirst: -thirstPoints,
+							hunger: -hungerPoints,
+							energy: -energyPoints,
+							experience: +experiencePoints,
+						},
 					},
-				},
-			);
+				)
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			const embed = {
 				color: profileData.color,
@@ -234,7 +319,11 @@ module.exports = {
 			}
 
 
-			await message.channel.sendTyping();
+			await message.channel
+				.sendTyping()
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			if (Loottable(200, 1) <= 1 && chosenBiomeNumber == (profileData.unlockedRanks - 1)) {
 				await findQuest();
@@ -246,11 +335,15 @@ module.exports = {
 
 			await condition.decreaseHealth(message, profileData, botReply);
 
-			profileData = await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { injuryArray: userInjuryArray } },
-				{ upsert: true, new: true },
-			);
+			profileData = await profileModel
+				.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $set: { injuryArray: userInjuryArray } },
+					{ upsert: true, new: true },
+				)
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			await levels.levelCheck(message, profileData, botReply);
 
@@ -262,11 +355,15 @@ module.exports = {
 
 			async function findQuest() {
 
-				await profileModel.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $set: { hasQuest: true } },
-					{ upsert: true, new: true },
-				);
+				await profileModel
+					.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{ $set: { hasQuest: true } },
+						{ upsert: true, new: true },
+					)
+					.catch((error) => {
+						throw new Error(error);
+					});
 
 				if (profileData.rank == 'Apprentice') {
 
@@ -325,7 +422,14 @@ module.exports = {
 				embed.footer.text = `Type 'rp quest' to continue!\n\n${embed.footer.text}`;
 
 				embedArray.splice(-1, 1, embed);
-				botReply = await message.reply({ embeds: embedArray, allowedMentions: { repliedUser: true } });
+				botReply = await message
+					.reply({
+						embeds: embedArray,
+						allowedMentions: { repliedUser: true },
+					})
+					.catch((error) => {
+						throw new Error(error);
+					});
 			}
 
 			async function findSomething() {
@@ -340,7 +444,14 @@ module.exports = {
 					embed.footer.text = embedFooterStatsText;
 
 					embedArray.splice(-1, 1, embed);
-					return botReply = await message.reply({ embeds: embedArray, allowedMentions: { repliedUser: true } });
+					return botReply = await message
+						.reply({
+							embeds: embedArray,
+							allowedMentions: { repliedUser: true },
+						})
+						.catch((error) => {
+							throw new Error(error);
+						});
 				}
 
 				const findHerbChance = weightedTable({ 0: 1, 1: 1 });
@@ -356,11 +467,15 @@ module.exports = {
 							healthPoints = profileData.health;
 						}
 
-						profileData = await profileModel.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
-							{ $inc: { health: -healthPoints } },
-							{ upsert: true, new: true },
-						);
+						profileData = await profileModel
+							.findOneAndUpdate(
+								{ userId: message.author.id, serverId: message.guild.id },
+								{ $inc: { health: -healthPoints } },
+								{ upsert: true, new: true },
+							)
+							.catch((error) => {
+								throw new Error(error);
+							});
 
 						switch (weightedTable({ 0: 5, 1: 5, 2: 90 })) {
 
@@ -461,7 +576,19 @@ module.exports = {
 						}
 
 						embedArray.splice(-1, 1, embed);
-						return botReply = await message.reply({ embeds: embedArray, allowedMentions: { repliedUser: true } });
+						return botReply = await message
+							.reply({
+								embeds: embedArray,
+								allowedMentions: { repliedUser: true },
+							})
+							.catch((error) => {
+								if (error.httpStatus == 404) {
+									console.log('Message already deleted');
+								}
+								else {
+									throw new Error(error);
+								}
+							});
 					}
 
 					let foundItem = null;
@@ -508,7 +635,19 @@ module.exports = {
 					embed.footer.text = `${embedFooterStatsText}\n\n+1 ${foundItem}`;
 
 					embedArray.splice(-1, 1, embed);
-					return botReply = await message.reply({ embeds: embedArray, allowedMentions: { repliedUser: true } });
+					return botReply = await message
+						.reply({
+							embeds: embedArray,
+							allowedMentions: { repliedUser: true },
+						})
+						.catch((error) => {
+							if (error.httpStatus == 404) {
+								console.log('Message already deleted');
+							}
+							else {
+								throw new Error(error);
+							}
+						});
 				}
 
 				let opponentLevel = Loottable(10, 1);
@@ -547,26 +686,35 @@ module.exports = {
 				embed.footer.text = `The ${opponentSpecies} is level ${opponentLevel}.`;
 
 				embedArray.splice(-1, 1, embed);
-				botReply = await message.reply({
-					embeds: embedArray,
-					components: [{
-						type: 'ACTION_ROW',
+				botReply = await message
+					.reply({
+						embeds: embedArray,
 						components: [{
-							type: 'BUTTON',
-							customId: 'enemy-fight',
-							label: 'Fight',
-							emoji: { name: '⚔️' },
-							style: 'PRIMARY',
-						}, {
-							type: 'BUTTON',
-							customId: 'enemy-flee',
-							label: 'Flee',
-							emoji: { name: '💨' },
-							style: 'PRIMARY',
+							type: 'ACTION_ROW',
+							components: [{
+								type: 'BUTTON',
+								customId: 'enemy-fight',
+								label: 'Fight',
+								emoji: { name: '⚔️' },
+								style: 'PRIMARY',
+							}, {
+								type: 'BUTTON',
+								customId: 'enemy-flee',
+								label: 'Flee',
+								emoji: { name: '💨' },
+								style: 'PRIMARY',
+							}],
 						}],
-					}],
-					allowedMentions: { repliedUser: true },
-				});
+						allowedMentions: { repliedUser: true },
+					})
+					.catch((error) => {
+						if (error.httpStatus == 404) {
+							console.log('Message already deleted');
+						}
+						else {
+							throw new Error(error);
+						}
+					});
 
 				return await new Promise((resolve) => {
 
@@ -577,7 +725,12 @@ module.exports = {
 							return false;
 						}
 
-						const userMessage = await i.channel.messages.fetch(i.message.reference.messageId);
+						const userMessage = await i.channel.messages
+							.fetch(i.message.reference.messageId)
+							.catch((error) => {
+								throw new Error(error);
+							});
+
 						return userMessage.id == message.id && (i.customId === 'enemy-flee' || i.customId === 'enemy-fight') && i.user.id == message.author.id;
 					};
 
@@ -604,7 +757,15 @@ module.exports = {
 							embed.footer.text = `${embedFooterStatsText}`;
 
 							embedArray.splice(-1, 1, embed);
-							botReply = await botReply.edit({ embeds: embedArray, components: [] });
+							botReply = await botReply
+								.edit({
+									embeds: embedArray,
+									components: [],
+								})
+								.catch((error) => {
+									throw new Error(error);
+								});
+
 							return resolve();
 						}
 
@@ -647,7 +808,12 @@ module.exports = {
 									return false;
 								}
 
-								const userMessage = await i.channel.messages.fetch(i.message.reference.messageId);
+								const userMessage = await i.channel.messages
+									.fetch(i.message.reference.messageId)
+									.catch((error) => {
+										throw new Error(error);
+									});
+
 								return userMessage.id == message.id && (i.customId == 'fight-attack' || i.customId == 'fight-defend' || i.customId == 'fight-dodge') && i.user.id == message.author.id;
 							};
 
@@ -721,7 +887,19 @@ module.exports = {
 							}
 
 							embedArray.splice(-1, 1, embed);
-							botReply = await botReply.edit({ embeds: embedArray, components: [fightComponents] });
+							botReply = await botReply
+								.edit({
+									embeds: embedArray,
+									components: [fightComponents],
+								})
+								.catch((error) => {
+									if (error.httpStatus == 404) {
+										console.log('Message already deleted');
+									}
+									else {
+										throw new Error(error);
+									}
+								});
 						}
 
 						async function fightResult() {
@@ -770,11 +948,15 @@ module.exports = {
 
 								embed.footer.text = `${embedFooterStatsText}\n+1 ${opponentSpecies}`;
 
-								await profileModel.findOneAndUpdate(
-									{ userId: message.author.id, serverId: message.guild.id },
-									{ $set: { inventoryArray: userIventoryArray } },
-									{ upsert: true, new: true },
-								);
+								await profileModel
+									.findOneAndUpdate(
+										{ userId: message.author.id, serverId: message.guild.id },
+										{ $set: { inventoryArray: userIventoryArray } },
+										{ upsert: true, new: true },
+									)
+									.catch((error) => {
+										throw new Error(error);
+									});
 							}
 							else if (opponentLevel > playerLevel) {
 
@@ -785,11 +967,15 @@ module.exports = {
 									healthPoints = profileData.health;
 								}
 
-								await profileModel.findOneAndUpdate(
-									{ userId: message.author.id, serverId: message.guild.id },
-									{ $inc: { health: -healthPoints } },
-									{ upsert: true, new: true },
-								);
+								await profileModel
+									.findOneAndUpdate(
+										{ userId: message.author.id, serverId: message.guild.id },
+										{ $inc: { health: -healthPoints } },
+										{ upsert: true, new: true },
+									)
+									.catch((error) => {
+										throw new Error(error);
+									});
 
 								switch (weightedTable({ 0: 1, 1: 9 })) {
 
@@ -840,7 +1026,20 @@ module.exports = {
 							}
 
 							embedArray.splice(-1, 1, embed);
-							botReply = await botReply.edit({ embeds: embedArray, components: [] });
+							botReply = await botReply
+								.edit({
+									embeds: embedArray,
+									components: [],
+								})
+								.catch((error) => {
+									if (error.httpStatus == 404) {
+										console.log('Message already deleted');
+									}
+									else {
+										throw new Error(error);
+									}
+								});
+
 							return resolve();
 						}
 					});
