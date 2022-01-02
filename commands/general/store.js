@@ -227,7 +227,7 @@ module.exports = {
 							.findOneAndUpdate(
 								{ userId: message.author.id, serverId: message.guild.id },
 								{ $set: { inventoryArray: userInventory } },
-								{ upsert: true, new: true },
+								{ new: true },
 							)
 							.catch((error) => {
 								throw new Error(error);
@@ -244,7 +244,7 @@ module.exports = {
 										meatArray: serverInventory[3],
 									},
 								},
-								{ upsert: true, new: true },
+								{ new: true },
 							)
 							.catch((error) => {
 								throw new Error(error);
@@ -337,7 +337,7 @@ module.exports = {
 						.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
 							{ $set: { inventoryArray: userInventory } },
-							{ upsert: true, new: true },
+							{ new: true },
 						)
 						.catch((error) => {
 							throw new Error(error);
@@ -354,7 +354,7 @@ module.exports = {
 									meatArray: serverInventory[3],
 								},
 							},
-							{ upsert: true, new: true },
+							{ new: true },
 						)
 						.catch((error) => {
 							throw new Error(error);

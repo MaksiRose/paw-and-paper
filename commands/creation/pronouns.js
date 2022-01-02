@@ -14,12 +14,32 @@ module.exports = {
 		argumentsArray = await argumentsArray.join(' ').replace(/\/ /g, '/').replace(/ \//g, '/').split('/');
 		const [subjectPronoun, objectPronoun, possessiveAdjective, possessivePronoun, reflexivePronoun, pronounNumber] = argumentsArray.map(arg => arg.toLowerCase());
 
+		if (subjectPronoun.length > 25 || objectPronoun.length > 25 || possessiveAdjective.length > 25 || possessivePronoun.length > 25 || reflexivePronoun.length > 25) {
+
+			return await message
+				.reply({
+					embeds: [{
+						color: config.error_color,
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+						title: 'The longest pronoun can only be up to 25 characters long.',
+					}],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
+		}
+
 		if (argumentsArray.length == 6 && (pronounNumber == 'plural' || pronounNumber == 'singular')) {
 			await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { pronounArray: [subjectPronoun, objectPronoun, possessiveAdjective, possessivePronoun, reflexivePronoun, pronounNumber] } },
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -28,7 +48,7 @@ module.exports = {
 			return await message
 				.reply({
 					embeds: [{
-						color: config.default_color,
+						color: profileData.color,
 						author: { name: `${message.guild.name}`, icon_url: message.guild.iconURL() },
 						title: `You set ${profileData.name}'s pronouns to ${subjectPronoun}/${objectPronoun}/${possessiveAdjective}/${possessivePronoun}/${reflexivePronoun} (${pronounNumber})!`,
 					}],

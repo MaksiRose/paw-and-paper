@@ -44,7 +44,7 @@ module.exports = {
 			return await message
 				.reply({
 					embeds: [{
-						color: config.default_color,
+						color: config.error_color,
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: 'Please send a valid hex code! Valid hex codes consist of 6 characters and contain only letters from \'a\' to \'f\' and/or numbers.',
 					}],
@@ -65,7 +65,7 @@ module.exports = {
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $set: { color: hexColor } },
-				{ upsert: true, new: true },
+				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);

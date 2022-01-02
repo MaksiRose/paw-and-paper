@@ -66,7 +66,7 @@ module.exports = {
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
 					{ $set: { meatArray: serverDataMeatArray } },
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch(async (error) => {
 					return await errorHandling.output(message, error);
@@ -81,7 +81,7 @@ module.exports = {
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
 					{ $set: { commonPlantsArray: serverDataCommonPlantsArray } },
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch(async (error) => {
 					return await errorHandling.output(message, error);
@@ -96,7 +96,7 @@ module.exports = {
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
 					{ $set: { uncommonPlantsArray: serverDataUncommonPlantsArray } },
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch(async (error) => {
 					return await errorHandling.output(message, error);
@@ -111,7 +111,7 @@ module.exports = {
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
 					{ $set: { rarePlantsArray: serverDataRarePlantsArray } },
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch(async (error) => {
 					return await errorHandling.output(message, error);
@@ -199,13 +199,13 @@ module.exports = {
 
 					--usersActiveCommandsAmountMap.get(message.author.id).activeCommands;
 
-					if (usersActiveCommandsAmountMap.get(message.author.id).activeCommands <= 0) {
+					if (profileData && usersActiveCommandsAmountMap.get(message.author.id).activeCommands <= 0) {
 
 						automaticCooldownTimeoutArray[message.author.id] = setTimeout(async function() {
 							profileData = await profileModel.findOneAndUpdate(
 								{ userId: message.author.id, serverId: message.guild.id },
 								{ $set: { hasCooldown: false } },
-								{ upsert: true, new: true },
+								{ new: true },
 							).catch(async (error) => await errorHandling.output(message, error));
 						}, 3000);
 					}
@@ -219,15 +219,18 @@ module.exports = {
 			await errorHandling.output(message, error);
 		}
 
-		profileData = await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { hasCooldown: true } },
-				{ upsert: true, new: true },
-			)
-			.catch(async (error) => {
-				return await errorHandling.output(message, error);
-			});
+		if (profileData) {
+
+			profileData = await profileModel
+				.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $set: { hasCooldown: true } },
+					{ new: true },
+				)
+				.catch(async (error) => {
+					return await errorHandling.output(message, error);
+				});
+		}
 
 		automaticRestingTimeoutArray[message.author.id] = setTimeout(automaticRestingTimeoutFunction, 600000);
 
@@ -242,7 +245,7 @@ module.exports = {
 					return await errorHandling.output(message, error);
 				});
 
-			if (profileData.resting == false && profileData.energy < profileData.maxEnergy) {
+			if (profileData && profileData.resting == false && profileData.energy < profileData.maxEnergy) {
 
 				await rest
 					.sendMessage(client, message, [], profileData, serverData, embedArray)

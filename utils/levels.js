@@ -17,7 +17,7 @@ module.exports = {
 							levels: +1,
 						},
 					},
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -67,7 +67,7 @@ module.exports = {
 						inventory: emptyUserInventory,
 					},
 				},
-				{ upsert: true, new: true },
+				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);

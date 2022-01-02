@@ -51,7 +51,7 @@ module.exports = {
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $set: { hasQuest: false } },
-				{ upsert: true, new: true },
+				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);
@@ -321,7 +321,7 @@ module.exports = {
 								.findOneAndUpdate(
 									{ userId: message.author.id, serverId: message.guild.id },
 									{ $inc: { unlockedRanks: +1 } },
-									{ upsert: true, new: true },
+									{ new: true },
 								).catch((error) => {
 									throw new Error(error);
 								});
@@ -415,7 +415,7 @@ module.exports = {
 											maxThirst: maxThirstPoints,
 										},
 									},
-									{ upsert: true, new: true },
+									{ new: true },
 								).catch((error) => {
 									throw new Error(error);
 								});

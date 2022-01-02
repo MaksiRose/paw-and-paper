@@ -24,7 +24,7 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { rank: 'Apprentice' } },
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -115,7 +115,7 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { rank: 'Elderly' } },
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -202,7 +202,7 @@ module.exports = {
 						.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
 							{ $set: { rank: 'Healer' } },
-							{ upsert: true, new: true },
+							{ new: true },
 						)
 						.catch((error) => {
 							throw new Error(error);
@@ -233,7 +233,7 @@ module.exports = {
 						.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
 							{ $set: { rank: 'Hunter' } },
-							{ upsert: true, new: true },
+							{ new: true },
 						)
 						.catch((error) => {
 							throw new Error(error);

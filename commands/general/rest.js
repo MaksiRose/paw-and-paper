@@ -77,7 +77,7 @@ module.exports = {
 						currentRegion: 'sleeping dens',
 					},
 				},
-				{ upsert: true, new: true },
+				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);

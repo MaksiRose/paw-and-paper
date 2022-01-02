@@ -629,7 +629,7 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { currentRegion: 'sleeping dens' } },
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -645,7 +645,7 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { currentRegion: 'food den' } },
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -682,7 +682,7 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { currentRegion: 'medicine den' } },
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -740,7 +740,7 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { currentRegion: 'ruins' } },
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -777,7 +777,7 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { currentRegion: 'lake' } },
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -793,7 +793,7 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { currentRegion: 'prairie' } },
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);

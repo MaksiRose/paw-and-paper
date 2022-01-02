@@ -15,7 +15,7 @@ module.exports = {
 			await message
 				.reply({
 					embeds: [{
-						color: config.default_color,
+						color: config.error_color,
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: 'Please type "rp name [name] to begin setting up your account!',
 					}],
@@ -48,7 +48,7 @@ module.exports = {
 			await message
 				.reply({
 					embeds: [{
-						color: config.default_color,
+						color: config.error_color,
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: `Please choose ${profileData.name}'s species!!`,
 					}],

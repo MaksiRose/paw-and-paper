@@ -49,7 +49,7 @@ module.exports = {
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $set: { currentRegion: 'food den' } },
-				{ upsert: true, new: true },
+				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);
@@ -200,7 +200,7 @@ module.exports = {
 					.findOneAndUpdate(
 						{ serverId: message.guild.id },
 						{ $set: { commonPlantsArray: serverPlantArray } },
-						{ upsert: true, new: true },
+						{ new: true },
 					)
 					.catch((error) => {
 						throw new Error(error);
@@ -213,7 +213,7 @@ module.exports = {
 					.findOneAndUpdate(
 						{ serverId: message.guild.id },
 						{ $set: { uncommonPlantsArray: serverPlantArray } },
-						{ upsert: true, new: true },
+						{ new: true },
 					)
 					.catch((error) => {
 						throw new Error(error);
@@ -226,7 +226,7 @@ module.exports = {
 					.findOneAndUpdate(
 						{ serverId: message.guild.id },
 						{ $set: { rarePlantsArray: serverPlantArray } },
-						{ upsert: true, new: true },
+						{ new: true },
 					)
 					.catch((error) => {
 						throw new Error(error);
@@ -243,7 +243,7 @@ module.exports = {
 							energy: +finalEnergyPoints,
 						},
 					},
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -332,7 +332,7 @@ module.exports = {
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
 					{ $set: { meatArray: serverMeatArray } },
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -342,7 +342,7 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $inc: { hunger: +finalHungerPoints } },
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);

@@ -83,7 +83,7 @@ module.exports = {
 					},
 					$set: { currentRegion: 'ruins' },
 				},
-				{ upsert: true, new: true },
+				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);
@@ -179,7 +179,7 @@ module.exports = {
 								energy: +energyPoints,
 							},
 						},
-						{ upsert: true, new: true },
+						{ new: true },
 					)
 					.catch((error) => {
 						throw new Error(error);
@@ -229,7 +229,7 @@ module.exports = {
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $set: { injuryArray: userInjuryArray } },
-				{ upsert: true, new: true },
+				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);
@@ -249,7 +249,7 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: partnerProfileData.userId, serverId: message.guild.id },
 					{ $inc: { experience: +partnerExperiencePoints } },
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -269,7 +269,7 @@ module.exports = {
 								levels: +1,
 							},
 						},
-						{ upsert: true, new: true },
+						{ new: true },
 					)
 					.catch((error) => {
 						throw new Error(error);
@@ -302,7 +302,7 @@ module.exports = {
 						.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
 							{ $inc: { health: -healthPoints } },
-							{ upsert: true, new: true },
+							{ new: true },
 						)
 						.catch((error) => {
 							throw new Error(error);

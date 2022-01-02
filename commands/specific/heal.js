@@ -195,7 +195,7 @@ module.exports = {
 
 						embedArray.length = embedArrayOriginalLength;
 						embedArray.push({
-							color: config.default_color,
+							color: config.error_color,
 							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 							title: 'The mentioned user has no account or the account was not completed!',
 						});
@@ -428,7 +428,7 @@ module.exports = {
 									experience: +experiencePoints,
 								},
 							},
-							{ upsert: true, new: true },
+							{ new: true },
 						)
 						.catch((error) => {
 							throw new Error(error);
@@ -482,7 +482,7 @@ module.exports = {
 								.findOneAndUpdate(
 									{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
 									{ $inc: { thirst: +chosenUserThirstPoints } },
-									{ upsert: true, new: true },
+									{ new: true },
 								)
 								.catch((error) => {
 									throw new Error(error);
@@ -642,7 +642,7 @@ module.exports = {
 										rarePlantsArray: serverPlantInventory[2],
 									},
 								},
-								{ upsert: true, new: true },
+								{ new: true },
 							)
 							.catch((error) => {
 								throw new Error(error);
@@ -674,7 +674,7 @@ module.exports = {
 											hunger: +chosenUserHungerPoints,
 										},
 									},
-									{ upsert: true, new: true },
+									{ new: true },
 								)
 								.catch((error) => {
 									throw new Error(error);
@@ -730,7 +730,7 @@ module.exports = {
 							.findOneAndUpdate(
 								{ userId: message.author.id, serverId: message.guild.id },
 								{ $inc: { health: -healthPoints } },
-								{ upsert: true, new: true },
+								{ new: true },
 							)
 							.catch((error) => {
 								throw new Error(error);
@@ -765,7 +765,7 @@ module.exports = {
 						.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
 							{ $set: { injuryArray: userInjuryArray } },
-							{ upsert: true, new: true },
+							{ new: true },
 						)
 						.catch((error) => {
 							throw new Error(error);

@@ -18,7 +18,7 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { avatarURL: message.author.avatarURL() } },
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -27,7 +27,7 @@ module.exports = {
 			return await message
 				.reply({
 					embeds: [{
-						color: config.default_color,
+						color: profileData.color,
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: `The profile picture for ${profileData.name} is now the accounts profile picture!`,
 						footer: { text: 'If you want to set a new picture, just send it together in one message with this command!' },
@@ -48,7 +48,7 @@ module.exports = {
 			return await message
 				.reply({
 					embeds: [{
-						color: config.default_color,
+						color: config.error_color,
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: 'Please send an image to set as your characters profile picture!',
 					}],
@@ -70,7 +70,7 @@ module.exports = {
 			return await message
 				.reply({
 					embeds: [{
-						color: config.default_color,
+						color: config.error_color,
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: 'This image extension is not supported! Please send a .png, .jp(e)g or .raw image.',
 					}],
@@ -89,7 +89,7 @@ module.exports = {
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $set: { avatarURL: ImageLink } },
-				{ upsert: true, new: true },
+				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);
@@ -98,7 +98,7 @@ module.exports = {
 		return await message
 			.reply({
 				embeds: [{
-					color: config.default_color,
+					color: profileData.color,
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: `Profile picture for ${profileData.name} set!`,
 					image: { url: ImageLink },

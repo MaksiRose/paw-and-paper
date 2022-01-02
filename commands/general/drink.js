@@ -51,7 +51,7 @@ module.exports = {
 						hasCooldown: true,
 					},
 				},
-				{ upsert: true, new: true },
+				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);
@@ -107,7 +107,7 @@ module.exports = {
 							$inc: { thirst: +thirstPoints },
 							$set: { hasCooldown: true },
 						},
-						{ upsert: true, new: true },
+						{ new: true },
 					)
 					.catch((error) => {
 						throw new Error(error);

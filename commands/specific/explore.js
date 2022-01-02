@@ -339,7 +339,7 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { injuryArray: userInjuryArray } },
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -359,7 +359,7 @@ module.exports = {
 					.findOneAndUpdate(
 						{ userId: message.author.id, serverId: message.guild.id },
 						{ $set: { hasQuest: true } },
-						{ upsert: true, new: true },
+						{ new: true },
 					)
 					.catch((error) => {
 						throw new Error(error);
@@ -471,7 +471,7 @@ module.exports = {
 							.findOneAndUpdate(
 								{ userId: message.author.id, serverId: message.guild.id },
 								{ $inc: { health: -healthPoints } },
-								{ upsert: true, new: true },
+								{ new: true },
 							)
 							.catch((error) => {
 								throw new Error(error);
@@ -952,7 +952,7 @@ module.exports = {
 									.findOneAndUpdate(
 										{ userId: message.author.id, serverId: message.guild.id },
 										{ $set: { inventoryArray: userIventoryArray } },
-										{ upsert: true, new: true },
+										{ new: true },
 									)
 									.catch((error) => {
 										throw new Error(error);
@@ -971,7 +971,7 @@ module.exports = {
 									.findOneAndUpdate(
 										{ userId: message.author.id, serverId: message.guild.id },
 										{ $inc: { health: -healthPoints } },
-										{ upsert: true, new: true },
+										{ new: true },
 									)
 									.catch((error) => {
 										throw new Error(error);

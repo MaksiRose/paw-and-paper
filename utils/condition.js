@@ -193,7 +193,7 @@ module.exports = {
 					$inc: { health: -extraLostHealthPoints },
 					$set: { injuryArray: userInjuryArray },
 				},
-				{ upsert: true, new: true },
+				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);

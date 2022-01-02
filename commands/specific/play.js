@@ -119,7 +119,7 @@ module.exports = {
 					},
 					$set: { currentRegion: 'prairie' },
 				},
-				{ upsert: true, new: true },
+				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);
@@ -224,7 +224,7 @@ module.exports = {
 								experience: -experiencePoints,
 							},
 						},
-						{ upsert: true, new: true },
+						{ new: true },
 					)
 					.catch((error) => {
 						throw new Error(error);
@@ -272,7 +272,7 @@ module.exports = {
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $set: { injuryArray: userInjuryArray } },
-				{ upsert: true, new: true },
+				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);
@@ -292,7 +292,7 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { hasQuest: true } },
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -331,7 +331,7 @@ module.exports = {
 					.findOneAndUpdate(
 						{ userId: message.author.id, serverId: message.guild.id },
 						{ $inc: { health: -healthPoints } },
-						{ upsert: true, new: true },
+						{ new: true },
 					)
 					.catch((error) => {
 						throw new Error(error);
@@ -380,7 +380,7 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: partnerProfileData.userId, serverId: message.guild.id },
 					{ $inc: { health: partnerHealthPoints } },
-					{ upsert: true, new: true },
+					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -423,7 +423,7 @@ module.exports = {
 						.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
 							{ $inc: { health: -healthPoints } },
-							{ upsert: true, new: true },
+							{ new: true },
 						)
 						.catch((error) => {
 							throw new Error(error);

@@ -102,7 +102,7 @@ module.exports = {
 
 		const name = argumentsArray.join(' ').charAt(0).toUpperCase() + argumentsArray.join(' ').slice(1);
 
-		if (!argumentsArray.length) {
+		if (!name.length) {
 
 			return await message
 				.reply({
@@ -123,11 +123,31 @@ module.exports = {
 				});
 		}
 
+		if (name.length > 25) {
+
+			return await message
+				.reply({
+					embeds: [{
+						color: config.error_color,
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+						title: 'Names can only be up to 25 characters long.',
+					}],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
+		}
+
 		await profileModel
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $set: { name: name } },
-				{ upsert: true, new: true },
+				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);

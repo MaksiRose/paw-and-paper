@@ -1,23 +1,17 @@
 const config = require('../../config.json');
 const profileModel = require('../../models/profileSchema');
-const checkValidity = require('../../utils/checkValidity');
 
 module.exports = {
 	name: 'delete',
 	aliases: ['purge', 'remove', 'reset'],
 	async sendMessage(client, message, argumentsArray, profileData) {
 
-		if (await checkValidity.hasCooldown(message, profileData)) {
-
-			return;
-		}
-
 		if (!profileData) {
 
 			return await message
 				.reply({
 					embeds: [{
-						color: config.default_color,
+						color: config.error_color,
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: 'You have no account!',
 					}],
@@ -133,9 +127,12 @@ module.exports = {
 			if (interaction.customId == 'delete-confirm') {
 
 				profileModel
-					.deleteOne({
-						userId: interaction.user.id,
-						serverId: interaction.guild.id,
+					.findOneAndDelete({
+						userId: message.author.id,
+						serverId: message.guild.id,
+					})
+					.then((value) => {
+						console.log('Deleted User: ' + value);
 					})
 					.catch((error) => {
 						throw new Error(error);

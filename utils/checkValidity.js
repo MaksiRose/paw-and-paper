@@ -187,7 +187,7 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { isResting: false } },
-					{ upsert: true, new: true },
+					{ new: true },
 				).catch((error) => {
 					throw new Error(error);
 				});

@@ -38,7 +38,7 @@ module.exports = {
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $set: { description: `${description}` } },
-				{ upsert: true, new: true },
+				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);
@@ -47,7 +47,7 @@ module.exports = {
 		return await message
 			.reply({
 				embeds: [{
-					color: config.default_color,
+					color: profileData.color,
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: `Description for ${profileData.name} set:`,
 					description: `${description}`,

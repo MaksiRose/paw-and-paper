@@ -55,7 +55,7 @@ module.exports = {
 			.findOneAndUpdate(
 				{ userId: interaction.user.id, serverId: interaction.guild.id },
 				{ $set: { hasCooldown: false } },
-				{ upsert: true, new: true },
+				{ new: true },
 			)
 			.catch(async (error) => {
 				return await errorHandling.output(interaction.message, error);

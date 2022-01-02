@@ -14,7 +14,7 @@ module.exports = {
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $set: { inventoryArray: userInventoryArray } },
-				{ upsert: true, new: true },
+				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);
@@ -34,7 +34,7 @@ module.exports = {
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $set: { inventoryArray: userInventoryArray } },
-				{ upsert: true, new: true },
+				{ new: true },
 			)
 			.catch((error) => {
 				if (error.httpStatus == 404) {
@@ -59,7 +59,7 @@ module.exports = {
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $set: { inventoryArray: userInventoryArray } },
-				{ upsert: true, new: true },
+				{ new: true },
 			)
 			.catch((error) => {
 				if (error.httpStatus == 404) {
