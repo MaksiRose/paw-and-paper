@@ -20,7 +20,7 @@ module.exports = {
 		// this is a DM interaction and doesnt have a referenced Message, so it gets processed before everything else
 		if (interaction.customId == 'ticket') {
 
-			return interaction.message
+			return await interaction.message
 				.delete()
 				.catch(async (error) => {
 					return await errorHandling.output(interaction.message, error);
