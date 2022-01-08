@@ -478,9 +478,10 @@ module.exports = {
 								throw new Error(error);
 							});
 
-						switch (weightedTable({ 0: 5, 1: 5, 2: 90 })) {
+						const weightedHurtChance = weightedTable({ 0: 5, 1: 5, 2: 90 });
+						switch (true) {
 
-							case 0:
+							case (weightedHurtChance == 0):
 
 								userInjuryArray[3] = userInjuryArray[3] + 1;
 
@@ -503,7 +504,7 @@ module.exports = {
 
 								break;
 
-							case 1 && profileData.injuryArray[4] <= 0:
+							case (weightedHurtChance == 1 && profileData.injuryArray[4] <= 0):
 
 								userInjuryArray[4] = userInjuryArray[4] + 1;
 
@@ -528,9 +529,9 @@ module.exports = {
 
 							default:
 
-								switch (weightedTable({ 0: 13, 1: 7 })) {
+								switch (true) {
 
-									case 0 && profileData.injuryArray <= 0:
+									case (weightedTable({ 0: 13, 1: 7 }) == 0 && profileData.injuryArray <= 0):
 
 										userInjuryArray[2] = userInjuryArray[2] + 1;
 
@@ -594,20 +595,23 @@ module.exports = {
 
 					let foundItem = null;
 
-					switch (weightedTable({ 0: 40, 1: 60 + betterLuckValue })) {
+					switch (true) {
 
-						case 1 && chosenBiomeNumber > 0:
+						case (weightedTable({ 0: 40, 1: 60 + betterLuckValue }) == 1 && chosenBiomeNumber > 0):
 
-							switch (weightedTable({ 0: 40, 1: 60 + betterLuckValue })) {
+							console.log(chosenBiomeNumber);
+							switch (true) {
 
-								case 1 && chosenBiomeNumber == 2:
+								case (weightedTable({ 0: 40, 1: 60 + betterLuckValue }) == 1 && chosenBiomeNumber == 2):
 
+									console.log(chosenBiomeNumber);
 									foundItem = await items.randomRarePlant(message, profileData);
 
 									break;
 
 								default:
 
+									console.log('default uncommon!');
 									foundItem = await items.randomUncommonPlant(message, profileData);
 							}
 
@@ -615,6 +619,7 @@ module.exports = {
 
 						default:
 
+							console.log('default common!');
 							foundItem = await items.randomCommonPlant(message, profileData);
 					}
 

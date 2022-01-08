@@ -337,9 +337,9 @@ module.exports = {
 						throw new Error(error);
 					});
 
-				switch (weightedTable({ 0: 7, 1: 13 })) {
+				switch (true) {
 
-					case 0 && userInjuryArray[2] < 1:
+					case (weightedTable({ 0: 7, 1: 13 }) == 0 && userInjuryArray[2] < 1):
 
 						++userInjuryArray[2];
 
