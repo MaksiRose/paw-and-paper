@@ -34,4 +34,4 @@ mongoose
 		console.log(err);
 	});
 
-client.login(config.test_token);
+client.login(config.token);
