@@ -84,7 +84,7 @@ module.exports = {
 		let injuryText = (profileData.injuryArray.every(item => item == 0)) ? 'none' : '';
 		const injuryNameArray = ['Wound', 'Infection', 'Cold', 'Sprain', 'Poison'];
 
-		for (let i; i < profileData.injuryArray; i++) {
+		for (let i = 0; i < profileData.injuryArray.length; i++) {
 
 			if (profileData.injuryArray[i] > 0) {
 
