@@ -294,6 +294,7 @@ module.exports = {
 							experience: +experiencePoints,
 						},
 					},
+					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -697,6 +698,7 @@ module.exports = {
 								label: 'Fight',
 								emoji: { name: '⚔️' },
 								style: 'PRIMARY',
+								disabled: (profileData.rank == 'Healer') ? true : false,
 							}, {
 								type: 'BUTTON',
 								customId: 'enemy-flee',

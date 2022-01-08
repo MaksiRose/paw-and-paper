@@ -14,27 +14,28 @@ module.exports = {
 		argumentsArray = await argumentsArray.join(' ').replace(/\/ /g, '/').replace(/ \//g, '/').split('/');
 		const [subjectPronoun, objectPronoun, possessiveAdjective, possessivePronoun, reflexivePronoun, pronounNumber] = argumentsArray.map(arg => arg.toLowerCase());
 
-		if (subjectPronoun.length > 25 || objectPronoun.length > 25 || possessiveAdjective.length > 25 || possessivePronoun.length > 25 || reflexivePronoun.length > 25) {
-
-			return await message
-				.reply({
-					embeds: [{
-						color: config.error_color,
-						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						title: 'The longest pronoun can only be up to 25 characters long.',
-					}],
-				})
-				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
-				});
-		}
-
 		if (argumentsArray.length == 6 && (pronounNumber == 'plural' || pronounNumber == 'singular')) {
+
+			if (subjectPronoun.length > 25 || objectPronoun.length > 25 || possessiveAdjective.length > 25 || possessivePronoun.length > 25 || reflexivePronoun.length > 25) {
+
+				return await message
+					.reply({
+						embeds: [{
+							color: config.error_color,
+							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+							title: 'The longest pronoun can only be up to 25 characters long.',
+						}],
+					})
+					.catch((error) => {
+						if (error.httpStatus == 404) {
+							console.log('Message already deleted');
+						}
+						else {
+							throw new Error(error);
+						}
+					});
+			}
+
 			await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },

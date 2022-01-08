@@ -315,6 +315,8 @@ module.exports = {
 						}
 					});
 
+				embedArray.pop();
+
 				await store
 					.sendMessage(client, referencedMessage, interaction.values, profileData, serverData, embedArray)
 					.catch(async (error) => {

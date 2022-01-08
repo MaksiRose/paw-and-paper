@@ -325,7 +325,24 @@ module.exports = {
 		async function noSharing() {
 
 			embed.description = `*${profileData.name} sits on an old wooden trunk at the ruins, ready to tell a story to any willing listener. But to ${profileData.pronounArray[2]} disappointment, no one seems to be around.*`;
-			embed.footer.text = embedFooterStatsText;
+			embed.footer.text = '';
+
+			profileData = await profileModel
+				.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{
+						$inc: {
+							thirst: +thirstPoints,
+							hunger: +hungerPoints,
+							energy: +energyPoints,
+						},
+						$set: { currentRegion: 'ruins' },
+					},
+					{ new: true },
+				)
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			return embedArray.push(embed);
 		}

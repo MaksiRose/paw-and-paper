@@ -202,7 +202,7 @@ module.exports = {
 			});
 		}
 
-		return;
+		return profileData;
 	},
 
 	async isInvalid(message, profileData, embedArray) {

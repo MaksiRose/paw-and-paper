@@ -23,6 +23,13 @@ module.exports = {
 
 			return;
 		}
+		profileData = await profileModel
+			.findOne({
+				userId: message.author.id,
+				serverId: message.guild.id,
+			}).catch(async (error) => {
+				throw new Error(error);
+			});
 
 		const chosenRegion = argumentsArray.join(' ').toLowerCase();
 
