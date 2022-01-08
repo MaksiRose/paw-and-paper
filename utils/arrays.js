@@ -158,7 +158,7 @@ module.exports = {
 		if (profileData && profileData.species == nameArray[5]) {
 			biome1OpponentsArray = ['salmon', 'tuna', 'squid'];
 			biome2OpponentsArray = ['seal', 'crab'];
-			biome3OpponentsArray = ['orca'];
+			biome3OpponentsArray = ['orca', 'humpback whale'];
 		}
 
 		nameArray[6] = 'caracal';
@@ -266,7 +266,7 @@ module.exports = {
 		if (profileData && profileData.species == nameArray[17]) {
 			biome1OpponentsArray = ['salmon', 'tuna', 'squid'];
 			biome2OpponentsArray = ['seal', 'crab'];
-			biome3OpponentsArray = ['shark'];
+			biome3OpponentsArray = ['shark', 'humpback whale'];
 		}
 
 		nameArray[18] = 'maned wolf';
@@ -393,6 +393,15 @@ module.exports = {
 			biome1OpponentsArray = ['maned wolf', 'dog'];
 			biome2OpponentsArray = ['hoatzin', 'gaboon viper'];
 			biome3OpponentsArray = ['hawk', 'eagle'];
+		}
+
+		nameArray[32] = 'humpback whale';
+		dietArray[32] = 'omnivore';
+		habitatArray[32] = 'water';
+		if (profileData && profileData.species == nameArray[32]) {
+			biome1OpponentsArray = ['salmon', 'tuna', 'squid'];
+			biome2OpponentsArray = ['seal', 'crab'];
+			biome3OpponentsArray = ['orca', 'shark'];
 		}
 
 
