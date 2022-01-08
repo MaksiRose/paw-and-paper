@@ -790,7 +790,7 @@ module.exports = {
 
 			const componentArray = [];
 
-			if (allHurtProfilesArray > 0) {
+			if (allHurtProfilesArray.length > 0) {
 
 				componentArray.push(userSelectMenu);
 			}
