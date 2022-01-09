@@ -315,7 +315,7 @@ module.exports = {
 					embedArray.splice(-1, 1);
 					if (hitValue >= 10) {
 
-						if (profileData.unlockedranks < 3) {
+						if (profileData.unlockedRanks < 3) {
 
 							await profileModel
 								.findOneAndUpdate(
@@ -328,7 +328,7 @@ module.exports = {
 						}
 
 						let description = '';
-						let footer = '';
+						let footer = 'Type \'rp rank\' to rank up';
 
 						if (profileData.rank == 'Youngling') {
 
@@ -402,8 +402,6 @@ module.exports = {
 								footer = '+10 maximum thirst\n\n';
 							}
 
-							footer += 'Type \'rp rank\' to rank up';
-
 							await profileModel
 								.findOneAndUpdate(
 									{ userId: message.author.id, serverId: message.guild.id },
@@ -425,7 +423,7 @@ module.exports = {
 							color: `${profileData.color}`,
 							author: { name: `${profileData.name}`, icon_url: `${profileData.avatarURL}` },
 							description: description,
-							footer: footer,
+							footer: { text: footer },
 						});
 
 						botReply = await botReply
@@ -450,7 +448,7 @@ module.exports = {
 
 						if (profileData.rank == 'Youngling') {
 
-							description = `"I can't... I can't do it," *${profileData.name} heaves, ${profileData.chest[2]} chest struggling to fall and rise.\nSuddenly the boulder shakes and falls away from the cave entrance.*\n"You are too weak for a task like this. Come back to camp, Youngling." *The Elderly turns around and slowly walks back towards camp, not dwelling long by the exhausted ${profileData.species}.*`;
+							description = `"I can't... I can't do it," *${profileData.name} heaves, ${profileData.pronounArray[2]} chest struggling to fall and rise.\nSuddenly the boulder shakes and falls away from the cave entrance.*\n"You are too weak for a task like this. Come back to camp, Youngling." *The Elderly turns around and slowly walks back towards camp, not dwelling long by the exhausted ${profileData.species}.*`;
 						}
 
 						if (profileData.rank == 'Apprentice') {
