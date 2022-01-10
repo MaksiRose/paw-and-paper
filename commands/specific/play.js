@@ -168,7 +168,7 @@ module.exports = {
 			}
 
 			const getsQuestChance = weightedTable({ 0: 19, 1: 1 });
-			if (getsQuestChance == 1 && profileData.hasQuest == false && profileData.rank == 'Youngling') {
+			if (getsQuestChance == 1 && profileData.unlockedRanks == 0 && profileData.rank == 'Youngling') {
 
 				await findQuest();
 			}

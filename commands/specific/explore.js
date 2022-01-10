@@ -326,7 +326,7 @@ module.exports = {
 					throw new Error(error);
 				});
 
-			if (Loottable(200, 1) <= 1 && chosenBiomeNumber == (profileData.unlockedRanks - 1)) {
+			if (Loottable(200, 1) <= 1 && chosenBiomeNumber == (profileData.unlockedRanks - 1) && chosenBiomeNumber == (allBiomesArray.length - 1)) {
 				await findQuest();
 			}
 			else {
