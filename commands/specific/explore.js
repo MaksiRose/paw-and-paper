@@ -605,19 +605,16 @@ module.exports = {
 
 						case (weightedTable({ 0: 40, 1: 60 + betterLuckValue }) == 1 && chosenBiomeNumber > 0):
 
-							console.log(chosenBiomeNumber);
 							switch (true) {
 
 								case (weightedTable({ 0: 40, 1: 60 + betterLuckValue }) == 1 && chosenBiomeNumber == 2):
 
-									console.log(chosenBiomeNumber);
 									foundItem = await items.randomRarePlant(message, profileData);
 
 									break;
 
 								default:
 
-									console.log('default uncommon!');
 									foundItem = await items.randomUncommonPlant(message, profileData);
 							}
 
@@ -625,7 +622,6 @@ module.exports = {
 
 						default:
 
-							console.log('default common!');
 							foundItem = await items.randomCommonPlant(message, profileData);
 					}
 
