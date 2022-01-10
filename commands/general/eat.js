@@ -84,7 +84,7 @@ module.exports = {
 
 			if (arrays.commonPlantNamesArray.some(element => element == chosenFood)) {
 
-				serverPlantArray = serverData.commonPlantsArray;
+				serverPlantArray = [...serverData.commonPlantsArray];
 				plantNamesArray = [...arrays.commonPlantNamesArray];
 				plantEdibalityArray = [...arrays.commonPlantEdibalityArray];
 				plantGivesEnergyArray = [...arrays.commonPlantGivesEnergyArray];
@@ -92,7 +92,7 @@ module.exports = {
 
 			if (arrays.uncommonPlantNamesArray.some(element => element == chosenFood)) {
 
-				serverPlantArray = serverData.uncommonPlantsArray;
+				serverPlantArray = [...serverData.uncommonPlantsArray];
 				plantNamesArray = [...arrays.uncommonPlantNamesArray];
 				plantEdibalityArray = [...arrays.uncommonPlantEdibalityArray];
 				plantGivesEnergyArray = [...arrays.uncommonPlantGivesEnergyArray];
@@ -100,7 +100,7 @@ module.exports = {
 
 			if (arrays.rarePlantNamesArray.some(element => element == chosenFood)) {
 
-				serverPlantArray = serverData.rarePlantsArray;
+				serverPlantArray = [...serverData.rarePlantsArray];
 				plantNamesArray = [...arrays.rarePlantNamesArray];
 				plantEdibalityArray = [...arrays.rarePlantEdibalityArray];
 				plantGivesEnergyArray = [...arrays.rarePlantGivesEnergyArray];
@@ -287,7 +287,7 @@ module.exports = {
 
 		if (species.nameArray.some(element => element == chosenFood)) {
 
-			const serverMeatArray = serverData.meatArray;
+			const serverMeatArray = [...serverData.meatArray];
 			const meatNameArrayIndex = species.nameArray.findIndex((index) => index == chosenFood);
 
 			if (serverMeatArray[meatNameArrayIndex] <= 0) {

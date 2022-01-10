@@ -49,7 +49,7 @@ module.exports = {
 				});
 		}
 
-		if (profileData.unlockedranks == 2 && profileData.rank == 'Apprentice') {
+		if (profileData.unlockedRanks == 2 && profileData.rank == 'Apprentice') {
 
 			const botReply = await message
 				.reply({
@@ -110,7 +110,7 @@ module.exports = {
 			await interactionCollector(botReply);
 		}
 
-		if (profileData.unlockedranks == 3 && (profileData.rank == 'Hunter' || profileData.rank == 'Healer')) {
+		if (profileData.unlockedRanks == 3 && (profileData.rank == 'Hunter' || profileData.rank == 'Healer')) {
 
 			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): rank changed from \x1b[33m${profileData.rank} \x1b[0mto \x1b[33mElderly \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			await profileModel
