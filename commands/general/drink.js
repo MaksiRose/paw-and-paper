@@ -118,7 +118,7 @@ module.exports = {
 					color: profileData.color,
 					author: { name: profileData.name, icon_url: profileData.avatarURL },
 					description: `*${profileData.name} scurries over to the river and takes hasty gulps. The fresh water runs down ${profileData.pronounArray[2]} throat and fills ${profileData.pronounArray[2]} body with new energy.*`,
-					footer: { text: `+${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})` },
+					footer: { text: `+${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})\n\nDon't forget to stay hydrated in real life too!` },
 				});
 
 				await botReply
