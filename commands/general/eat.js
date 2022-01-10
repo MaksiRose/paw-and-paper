@@ -268,7 +268,7 @@ module.exports = {
 				embed.footer.text += `\n${finalHealthPoints} health (${profileData.health}/${profileData.maxHealth})`;
 			}
 
-			embed.footer.text += `\n\n-1 ${chosenFood} for ${message.guild.name}`;
+			embed.footer.text += `\nYou are now at the food den\n\n-1 ${chosenFood} for ${message.guild.name}`;
 
 			embedArray.push(embed);
 			return await message
@@ -357,7 +357,7 @@ module.exports = {
 					throw new Error(error);
 				});
 
-			embed.footer.text = `+${finalHungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})\n\n-1 ${chosenFood} for ${message.guild.name}`;
+			embed.footer.text = `+${finalHungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})\nYou are now at the food den\n\n-1 ${chosenFood} for ${message.guild.name}`;
 
 			embedArray.push(embed);
 			return await message
@@ -392,6 +392,7 @@ module.exports = {
 			if (taggedProfileData) {
 
 				embed.description = `*${profileData.name} looks down at ${taggedProfileData.name} as ${profileData.pronounArray[0]} nom${(profileData.pronounArray[5] == 'singular') ? 's' : ''} on the ${taggedProfileData.species}'s leg.* "No eating packmates here!" *${taggedProfileData.name} chuckled, shaking off ${profileData.name}.*`;
+				embed.footer.text = 'You are now at the food den';
 
 				embedArray.push(embed);
 				return await message
