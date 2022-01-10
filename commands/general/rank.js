@@ -20,6 +20,7 @@ module.exports = {
 
 		if (profileData.unlockedRanks == 1 && profileData.rank == 'Youngling') {
 
+			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): rank changed from \x1b[33m${profileData.rank} \x1b[0mto \x1b[33mApprentice \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
@@ -111,6 +112,7 @@ module.exports = {
 
 		if (profileData.unlockedranks == 3 && (profileData.rank == 'Hunter' || profileData.rank == 'Healer')) {
 
+			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): rank changed from \x1b[33m${profileData.rank} \x1b[0mto \x1b[33mElderly \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
@@ -198,6 +200,7 @@ module.exports = {
 
 				if (interaction.customId == 'rank-healer') {
 
+					console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): rank changed from \x1b[33m${profileData.rank} \x1b[0mto \x1b[33mHealer \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 					await profileModel
 						.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
@@ -229,6 +232,7 @@ module.exports = {
 
 				if (interaction.customId == 'rank-hunter') {
 
+					console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): rank changed from \x1b[33m${profileData.rank} \x1b[0mto \x1b[33mHunter \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 					await profileModel
 						.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },

@@ -60,6 +60,7 @@ module.exports = {
 			.catch(async (error) => {
 				return await errorHandling.output(interaction.message, error);
 			});
+		console.log(`\x1b[32m\x1b[0m${interaction.user.tag} (${interaction.user.id}): hasCooldown changed \x1b[0mto \x1b[33m${profileData.hasCooldown} \x1b[0min \x1b[32m${interaction.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 		const embedArray = interaction.message.embeds;
 

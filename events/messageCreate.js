@@ -62,6 +62,7 @@ module.exports = {
 
 			const serverDataMeatArray = [...serverData.meatArray].concat(new Array(species.nameArray.length - serverData.meatArray.length).fill(0));
 
+			console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): meatArray changed from \x1b[33m${serverData.meatArray} \x1b[0mto \x1b[33m${serverDataMeatArray} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			serverData = await serverModel
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
@@ -77,6 +78,7 @@ module.exports = {
 
 			const serverDataCommonPlantsArray = [...serverData.commonPlantsArray].concat(new Array(arrays.commonPlantNamesArray.length - serverData.commonPlantsArray.length).fill(0));
 
+			console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): commonPlantsArray changed from \x1b[33m${serverData.commonPlantsArray} \x1b[0mto \x1b[33m${serverDataCommonPlantsArray} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			serverData = await serverModel
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
@@ -92,6 +94,7 @@ module.exports = {
 
 			const serverDataUncommonPlantsArray = [...serverData.uncommonPlantsArray].concat(new Array(arrays.uncommonPlantNamesArray.length - serverData.uncommonPlantsArray.length).fill(0));
 
+			console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): uncommonPlantsArray changed from \x1b[33m${serverData.uncommonPlantsArray} \x1b[0mto \x1b[33m${serverDataUncommonPlantsArray} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			serverData = await serverModel
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
@@ -107,6 +110,7 @@ module.exports = {
 
 			const serverDataRarePlantsArray = [...serverData.rarePlantsArray].concat(new Array(arrays.rarePlantNamesArray.length - serverData.rarePlantsArray.length).fill(0));
 
+			console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): rarePlantsArray changed from \x1b[33m${serverData.rarePlantsArray} \x1b[0mto \x1b[33m${serverDataRarePlantsArray} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			serverData = await serverModel
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
@@ -202,11 +206,17 @@ module.exports = {
 					if (profileData && usersActiveCommandsAmountMap.get(message.author.id).activeCommands <= 0) {
 
 						automaticCooldownTimeoutArray[message.author.id] = setTimeout(async function() {
-							profileData = await profileModel.findOneAndUpdate(
-								{ userId: message.author.id, serverId: message.guild.id },
-								{ $set: { hasCooldown: false } },
-								{ new: true },
-							).catch(async (error) => await errorHandling.output(message, error));
+
+							console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							profileData = await profileModel
+								.findOneAndUpdate(
+									{ userId: message.author.id, serverId: message.guild.id },
+									{ $set: { hasCooldown: false } },
+									{ new: true },
+								)
+								.catch(async (error) => {
+									await errorHandling.output(message, error);
+								});
 						}, 3000);
 					}
 				})
@@ -221,6 +231,7 @@ module.exports = {
 
 		if (profileData) {
 
+			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mtrue \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			profileData = await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },

@@ -282,7 +282,10 @@ module.exports = {
 				experiencePoints = Loottable(41, 20);
 			}
 
-
+			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): thirst changed from \x1b[33m${profileData.thirst} \x1b[0mto \x1b[33m${profileData.thirst - thirstPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hunger changed from \x1b[33m${profileData.hunger} \x1b[0mto \x1b[33m${profileData.hunger - hungerPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): energy changed from \x1b[33m${profileData.energy} \x1b[0mto \x1b[33m${profileData.energy - energyPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): experience changed from \x1b[33m${profileData.experience} \x1b[0mto \x1b[33m${profileData.experience + experiencePoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			profileData = await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
@@ -336,6 +339,7 @@ module.exports = {
 
 			await condition.decreaseHealth(message, profileData, botReply);
 
+			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): injuryArray changed from \x1b[33m${profileData.injuryArray} \x1b[0mto \x1b[33m${userInjuryArray} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			profileData = await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
@@ -356,6 +360,7 @@ module.exports = {
 
 			async function findQuest() {
 
+				console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasQuest changed from \x1b[33m${profileData.hasQuest} \x1b[0mto \x1b[33mtrue \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 				await profileModel
 					.findOneAndUpdate(
 						{ userId: message.author.id, serverId: message.guild.id },
@@ -435,7 +440,7 @@ module.exports = {
 
 			async function findSomething() {
 
-				const userIventoryArray = [...profileData.inventoryArray];
+				const userInventoryArray = [...profileData.inventoryArray];
 				const betterLuckValue = (profileData.levels - 1) * 5;
 
 				const findSomethingChance = weightedTable({ 0: 10, 1: 90 + betterLuckValue });
@@ -468,6 +473,7 @@ module.exports = {
 							healthPoints = profileData.health;
 						}
 
+						console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): health changed from \x1b[33m${profileData.health} \x1b[0mto \x1b[33m${profileData.health - healthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 						profileData = await profileModel
 							.findOneAndUpdate(
 								{ userId: message.author.id, serverId: message.guild.id },
@@ -936,7 +942,7 @@ module.exports = {
 							else if (playerLevel > opponentLevel) {
 
 								const speciesNameArrayIndex = species.nameArray.indexOf(opponentSpecies);
-								++userIventoryArray[3][speciesNameArrayIndex];
+								++userInventoryArray[3][speciesNameArrayIndex];
 
 								if (species.habitatArray[speciesNamesArrayIndex] == 'warm') {
 
@@ -955,10 +961,11 @@ module.exports = {
 
 								embed.footer.text = `${embedFooterStatsText}\n+1 ${opponentSpecies}`;
 
+								console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): inventoryArray changed from \x1b[33m${profileData.inventoryArray} \x1b[0mto \x1b[33m${userInventoryArray} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 								await profileModel
 									.findOneAndUpdate(
 										{ userId: message.author.id, serverId: message.guild.id },
-										{ $set: { inventoryArray: userIventoryArray } },
+										{ $set: { inventoryArray: userInventoryArray } },
 										{ new: true },
 									)
 									.catch((error) => {
@@ -974,6 +981,7 @@ module.exports = {
 									healthPoints = profileData.health;
 								}
 
+								console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): health changed from \x1b[33m${profileData.health} \x1b[0mto \x1b[33m${profileData.health - healthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 								await profileModel
 									.findOneAndUpdate(
 										{ userId: message.author.id, serverId: message.guild.id },

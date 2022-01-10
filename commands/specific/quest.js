@@ -47,6 +47,7 @@ module.exports = {
 				});
 		}
 
+		console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasQuest changed from \x1b[33m${profileData.hasQuest} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 		await profileModel
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
@@ -317,6 +318,7 @@ module.exports = {
 
 						if (profileData.unlockedRanks < 3) {
 
+							console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): unlockedRanks changed from \x1b[33m${profileData.unlockedRanks} \x1b[0mto \x1b[33m${profileData.unlockedRanks + 1} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							await profileModel
 								.findOneAndUpdate(
 									{ userId: message.author.id, serverId: message.guild.id },
@@ -402,6 +404,10 @@ module.exports = {
 								footer = '+10 maximum thirst\n\n';
 							}
 
+							console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): maxHealth changed from \x1b[33m${profileData.maxHealth} \x1b[0mto \x1b[33m${profileData.maxHealth + maxHealthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): maxEnergy changed from \x1b[33m${profileData.maxEnergy} \x1b[0mto \x1b[33m${profileData.maxEnergy + maxEnergyPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): maxHunger changed from \x1b[33m${profileData.maxHunger} \x1b[0mto \x1b[33m${profileData.maxHunger + maxHungerPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): maxThirst changed from \x1b[33m${profileData.maxThirst} \x1b[0mto \x1b[33m${profileData.maxThirst + maxThirstPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							await profileModel
 								.findOneAndUpdate(
 									{ userId: message.author.id, serverId: message.guild.id },
