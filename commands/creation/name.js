@@ -39,7 +39,7 @@ module.exports = {
 					profileInventoryArray[3].push(0);
 				}
 
-				const profile = await profileModel
+				profileData = await profileModel
 					.create({
 						userId: message.author.id,
 						serverId: message.guild.id,
@@ -72,7 +72,7 @@ module.exports = {
 						throw new Error(error);
 					});
 
-				profile
+				profileData
 					.save()
 					.catch((error) => {
 						throw new Error(error);
