@@ -107,19 +107,20 @@ module.exports = {
 			experiencePoints = Loottable(11, 5);
 		}
 
-		console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): thirst changed from \x1b[33m${profileData.thirst} \x1b[0mto \x1b[33m${profileData.thirst - thirstPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hunger changed from \x1b[33m${profileData.hunger} \x1b[0mto \x1b[33m${profileData.hunger - hungerPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): energy changed from \x1b[33m${profileData.energy} \x1b[0mto \x1b[33m${profileData.energy - energyPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 		console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): experience changed from \x1b[33m${profileData.experience} \x1b[0mto \x1b[33m${profileData.experience + experiencePoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+		console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): energy changed from \x1b[33m${profileData.energy} \x1b[0mto \x1b[33m${profileData.energy - energyPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+		console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hunger changed from \x1b[33m${profileData.hunger} \x1b[0mto \x1b[33m${profileData.hunger - hungerPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+		console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): thirst changed from \x1b[33m${profileData.thirst} \x1b[0mto \x1b[33m${profileData.thirst - thirstPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+		console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): currentRegion changed from \x1b[33m${profileData.currentRegion} \x1b[0mto \x1b[33m${profileData.currentRegion} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 		profileData = await profileModel
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{
 					$inc: {
-						thirst: -thirstPoints,
-						hunger: -hungerPoints,
-						energy: -energyPoints,
 						experience: +experiencePoints,
+						energy: -energyPoints,
+						hunger: -hungerPoints,
+						thirst: -thirstPoints,
 					},
 					$set: { currentRegion: 'prairie' },
 				},
@@ -174,7 +175,7 @@ module.exports = {
 			}
 
 			const getsQuestChance = weightedTable({ 0: 19, 1: 1 });
-			if (getsQuestChance == 1 && profileData.unlockedRanks == 0 && profileData.rank == 'Youngling') {
+			if (getsQuestChance == 1 && profileData.unlockedRanks == 0 && profileData.rank == 'Youngling' && profileData.levels > 1) {
 
 				await findQuest();
 			}
