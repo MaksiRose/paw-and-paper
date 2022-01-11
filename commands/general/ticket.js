@@ -1,4 +1,5 @@
 const config = require('../../config.json');
+const { Octokit } = require('@octokit/rest');
 
 module.exports = {
 	name: 'ticket',
@@ -23,6 +24,22 @@ module.exports = {
 					}
 				});
 		}
+
+		const octokit = new Octokit({
+
+			auth: config.github_token,
+			userAgent: 'paw-and-paper',
+		});
+
+		octokit.rest.issues
+			.create({
+				owner: 'MaksiRose',
+				repo: 'paw-and-paper',
+				title: argumentsArray.join(' '),
+			})
+			.catch((error) => {
+				throw new Error(error);
+			});
 
 		const owner = await client.users
 			.fetch(config.maksi, false)
