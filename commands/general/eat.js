@@ -4,6 +4,7 @@ const inventory = require('./inventory');
 const profileModel = require('../../models/profileSchema');
 const serverModel = require('../../models/serverSchema');
 const arrays = require('../../utils/arrays');
+const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
 	name: 'eat',
@@ -18,6 +19,8 @@ module.exports = {
 
 			return;
 		}
+
+		profileData = await startCooldown(message, profileData);
 
 		if (profileData.hunger >= 100) {
 

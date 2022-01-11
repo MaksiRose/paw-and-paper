@@ -2,6 +2,7 @@ const profileModel = require('../../models/profileSchema');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const executeResting = require('../../utils/executeResting');
+const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
 	name: 'rest',
@@ -27,6 +28,8 @@ module.exports = {
 
 			return true;
 		}
+
+		profileData = await startCooldown(message, profileData);
 
 		if (profileData.isResting == true) {
 

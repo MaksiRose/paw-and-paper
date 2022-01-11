@@ -1,6 +1,7 @@
 const config = require('../../config.json');
 const profileModel = require('../../models/profileSchema');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
+const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
 	name: 'color',
@@ -11,6 +12,8 @@ module.exports = {
 
 			return;
 		}
+
+		profileData = await startCooldown(message, profileData);
 
 		if (!argumentsArray.length) {
 

@@ -2,6 +2,7 @@ const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const arrays = require('../../utils/arrays');
 const config = require('../../config.json');
+const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
 	name: 'inventory',
@@ -17,6 +18,8 @@ module.exports = {
 
 			return;
 		}
+
+		profileData = await startCooldown(message, profileData);
 
 		const species = arrays.species();
 

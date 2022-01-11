@@ -2,6 +2,7 @@ const config = require('../../config.json');
 const profileModel = require('../../models/profileSchema');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
+const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
 	name: 'drink',
@@ -16,6 +17,8 @@ module.exports = {
 
 			return;
 		}
+
+		profileData = await startCooldown(message, profileData);
 
 		if (profileData.thirst >= profileData.maxThirst) {
 

@@ -2,6 +2,7 @@ const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const arrays = require('../../utils/arrays');
 const profileModel = require('../../models/profileSchema');
+const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
 	name: 'quest',
@@ -23,6 +24,8 @@ module.exports = {
 		}
 
 		await checkValidity.isResting(message, profileData, embedArray);
+
+		profileData = await startCooldown(message, profileData);
 
 		if (profileData.hasQuest == false) {
 

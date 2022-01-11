@@ -4,6 +4,7 @@ const checkValidity = require('../../utils/checkValidity');
 const profileModel = require('../../models/profileSchema');
 const serverModel = require('../../models/serverSchema');
 const config = require('../../config.json');
+const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
 	name: 'store',
@@ -18,6 +19,8 @@ module.exports = {
 
 			return;
 		}
+
+		profileData = await startCooldown(message, profileData);
 
 		const species = arrays.species(profileData);
 

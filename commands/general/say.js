@@ -2,6 +2,7 @@ const profileModel = require('../../models/profileSchema');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const config = require('../../config.json');
+const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
 	name: 'say',
@@ -16,6 +17,8 @@ module.exports = {
 
 			return;
 		}
+
+		profileData = await startCooldown(message, profileData);
 
 		const userText = argumentsArray.join(' ');
 

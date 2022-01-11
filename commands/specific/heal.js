@@ -6,6 +6,7 @@ const config = require('../../config.json');
 const arrays = require('../../utils/arrays');
 const condition = require('../../utils/condition');
 const levels = require('../../utils/levels');
+const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
 	name: 'heal',
@@ -20,6 +21,8 @@ module.exports = {
 
 			return;
 		}
+
+		profileData = await startCooldown(message, profileData);
 
 		if (profileData.rank === 'Youngling' || profileData.rank === 'Hunter') {
 

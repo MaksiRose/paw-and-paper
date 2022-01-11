@@ -6,6 +6,7 @@ const condition = require('../../utils/condition');
 const items = require('../../utils/items');
 const levels = require('../../utils/levels');
 const config = require('../../config.json');
+const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
 	name: 'explore',
@@ -21,6 +22,8 @@ module.exports = {
 
 			return;
 		}
+
+		profileData = await startCooldown(message, profileData);
 
 		if (profileData.inventoryArray.filter(number => number > 0).length >= 25) {
 

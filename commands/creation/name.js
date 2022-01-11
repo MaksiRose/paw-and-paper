@@ -1,6 +1,7 @@
 const config = require('../../config.json');
 const profileModel = require('../../models/profileSchema');
 const arrays = require('../../utils/arrays');
+const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
 	name: 'name',
@@ -99,6 +100,8 @@ module.exports = {
 					}
 				});
 		}
+
+		profileData = await startCooldown(message, profileData);
 
 		const name = argumentsArray.join(' ').charAt(0).toUpperCase() + argumentsArray.join(' ').slice(1);
 

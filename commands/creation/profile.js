@@ -1,6 +1,7 @@
 const profileModel = require('../../models/profileSchema');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
+const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
 	name: 'profile',
@@ -16,6 +17,8 @@ module.exports = {
 
 			return;
 		}
+
+		profileData = await startCooldown(message, profileData);
 
 		let components = [{
 			type: 'ACTION_ROW',

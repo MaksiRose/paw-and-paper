@@ -8,6 +8,7 @@ const play = require('../specific/play');
 const store = require('./store');
 const heal = require('../specific/heal');
 const config = require('../../config.json');
+const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
 	name: 'go',
@@ -23,6 +24,9 @@ module.exports = {
 
 			return;
 		}
+
+		profileData = await startCooldown(message, profileData);
+
 		profileData = await profileModel
 			.findOne({
 				userId: message.author.id,

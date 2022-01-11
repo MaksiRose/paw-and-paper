@@ -2,6 +2,7 @@ const config = require('../../config.json');
 const profileModel = require('../../models/profileSchema');
 const arrays = require('../../utils/arrays');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
+const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
 	name: 'species',
@@ -11,6 +12,8 @@ module.exports = {
 
 			return;
 		}
+
+		profileData = await startCooldown(message, profileData);
 
 		if (profileData.species != '') {
 
