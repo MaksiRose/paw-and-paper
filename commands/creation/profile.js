@@ -7,6 +7,11 @@ module.exports = {
 	aliases: ['info', 'about'],
 	async sendMessage(client, message, argumentsArray, profileData) {
 
+		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
+
+			return;
+		}
+
 		if (await checkValidity.hasCooldown(message, profileData)) {
 
 			return;
@@ -74,11 +79,6 @@ module.exports = {
 					style: 'SECONDARY',
 				}],
 			}];
-		}
-
-		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
-
-			return;
 		}
 
 		let injuryText = (profileData.injuryArray.every(item => item == 0)) ? 'none' : '';
