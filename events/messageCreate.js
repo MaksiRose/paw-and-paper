@@ -240,7 +240,7 @@ module.exports = {
 		automaticRestingTimeoutArray[message.author.id] = setTimeout(async () => {
 
 			await automaticRestingTimeoutFunction();
-		}, 60000);
+		}, 600000);
 
 		async function automaticRestingTimeoutFunction() {
 
