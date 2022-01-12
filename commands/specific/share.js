@@ -14,7 +14,7 @@ module.exports = {
 			return;
 		}
 
-		if (await checkValidity.isInvalid(message, profileData, embedArray)) {
+		if (await checkValidity.isInvalid(message, profileData, embedArray, module.exports.name)) {
 
 			return;
 		}

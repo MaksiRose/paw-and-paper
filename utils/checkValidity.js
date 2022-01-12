@@ -1,6 +1,7 @@
 const profileModel = require('../models/profileSchema');
 const arrays = require('./arrays');
 const executeResting = require('./executeResting');
+const config = require('../config.json');
 
 module.exports = {
 
@@ -31,9 +32,11 @@ module.exports = {
 		return false;
 	},
 
-	async hasCooldown(message, profileData) {
+	async hasCooldown(message, profileData, callerName) {
 
-		if (profileData.hasCooldown == true) {
+		const commandName = message.content.slice(config.prefix.length).trim().split(/ +/).shift().toLowerCase();
+
+		if (profileData.hasCooldown == true && commandName == callerName) {
 
 			await message
 				.reply({
@@ -206,14 +209,14 @@ module.exports = {
 		return profileData;
 	},
 
-	async isInvalid(message, profileData, embedArray) {
+	async isInvalid(message, profileData, embedArray, callerName) {
 
 		if (await module.exports.isPassedOut(message, profileData)) {
 
 			return true;
 		}
 
-		if (await module.exports.hasCooldown(message, profileData)) {
+		if (await module.exports.hasCooldown(message, profileData, callerName)) {
 
 			return true;
 		}

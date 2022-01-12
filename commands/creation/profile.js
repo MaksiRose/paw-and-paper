@@ -13,7 +13,7 @@ module.exports = {
 			return;
 		}
 
-		if (await checkValidity.hasCooldown(message, profileData)) {
+		if (await checkValidity.hasCooldown(message, profileData, module.exports.name)) {
 
 			return;
 		}
