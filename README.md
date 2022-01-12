@@ -51,7 +51,7 @@ If you don't use pm2, make sure to keep the terminal window open, otherwise the 
 If you turn off the PC that is running the Bot, the Bot will go offline. I recommend running it on a server or on a raspberry pi for this reason.
 ## Lessons Learned
 
-I created this Bot because I was looking for an RPG that didn't center humans or human-like creatures as its player character, but animals instead. I didn't find one, so I decided to create one myself. My goal was it to make something that is fun to play, creates a roleplay vibe, and keeps things fairly realistic.
+I created this Bot because I was looking for an RPG that didn't center humans or human-like creatures as its player character, but non-human animals instead. I didn't find one, so I decided to create one myself. My goal was it to make something that is fun to play, creates a roleplay vibe, and keeps things fairly realistic.
 
 Since this was my first serious programming project, I had to rework my code several times. But the more time I spent optimizing, the more confident I feel about what I created. I believe this bot can serve as a great template for anyone who doesn't just want to make a simple Utility Bot, but a serious text-based game.
 
