@@ -31,11 +31,12 @@ module.exports = {
 			userAgent: 'paw-and-paper',
 		});
 
-		octokit.rest.issues
+		const githubIssue = await octokit.rest.issues
 			.create({
 				owner: 'MaksiRose',
 				repo: 'paw-and-paper',
 				title: argumentsArray.join(' '),
+				body: `Created by: ${message.author.tag} (${message.author.id})\n[Link to original Discord message](https://discord.com/channels/${message.guild.id}/${message.channel.id}/${message.id})`,
 			})
 			.catch((error) => {
 				throw new Error(error);
@@ -51,6 +52,8 @@ module.exports = {
 			.send({
 				embeds: [{
 					author: { name: message.author.tag },
+					title: `Ticket #${githubIssue.data.number}`,
+					url: `https://discord.com/channels/${message.guild.id}/${message.channel.id}/${message.id}`,
 					description: argumentsArray.join(' '),
 				}],
 				components: [{
@@ -72,7 +75,7 @@ module.exports = {
 				embeds: [{
 					color: '#9d9e51',
 					title: 'Thank you for your contribution!',
-					description: 'You help improve the bot.',
+					description: `You help improve the bot.\n[View ticket on GitHub](https://github.com/MaksiRose/paw-and-paper/issues/${githubIssue.data.number})`,
 				}],
 			})
 			.catch((error) => {
