@@ -458,7 +458,7 @@ module.exports = {
 			async function findSomething() {
 
 				const userInventoryArray = profileData.inventoryArray;
-				const betterLuckValue = (profileData.levels - 1) * 5;
+				const betterLuckValue = (profileData.levels - 1) * 2;
 
 				const findSomethingChance = weightedTable({ 0: 10, 1: 90 + betterLuckValue });
 				if (findSomethingChance == 0) {
@@ -620,11 +620,11 @@ module.exports = {
 
 					switch (true) {
 
-						case (weightedTable({ 0: 40, 1: 60 + betterLuckValue }) == 1 && chosenBiomeNumber > 0):
+						case (weightedTable({ 0: 20, 1: 80 + betterLuckValue }) == 1 && chosenBiomeNumber > 0):
 
 							switch (true) {
 
-								case (weightedTable({ 0: 40, 1: 60 + betterLuckValue }) == 1 && chosenBiomeNumber == 2):
+								case (weightedTable({ 0: 20, 1: 80 + betterLuckValue }) == 1 && chosenBiomeNumber == 2):
 
 									foundItem = await items.randomRarePlant(message, profileData);
 

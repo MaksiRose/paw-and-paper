@@ -165,7 +165,7 @@ module.exports = {
 				if (species.dietArray[userSpeciesArrayIndex] == 'herbivore' || species.dietArray[userSpeciesArrayIndex] == 'omnivore') {
 
 					minimumHungerPoints = 11;
-					finalHungerPoints = Loottable(20, minimumHungerPoints);
+					finalHungerPoints = Loottable(10, minimumHungerPoints);
 
 					embed.description = `*Leaves flutter into the storage den, landing near ${profileData.name}'s feet. The ${profileData.species} searches around the inventory determined to find the perfect meal, and that ${profileData.pronounArray[0]} do${(profileData.pronounArray[5] == 'singular') ? 'es' : ''}. ${profileData.name} plucks a ${chosenFood} from the pile and eats until ${profileData.pronounArray[2]} stomach is pleased.*`;
 				}
@@ -327,7 +327,7 @@ module.exports = {
 			if (species.dietArray[userSpeciesArrayIndex] == 'carnivore' || species.dietArray[userSpeciesArrayIndex] == 'omnivore') {
 
 				minimumHungerPoints = 11;
-				finalHungerPoints = Loottable(20, minimumHungerPoints);
+				finalHungerPoints = Loottable(10, minimumHungerPoints);
 
 				embed.description = `*${profileData.name} sits chewing maliciously on a ${chosenFood}. A dribble of blood escapes out of ${profileData.pronounArray[2]} jaw as the ${profileData.species} finishes off the meal. It was a delicious feast, but very messy!*`;
 			}
