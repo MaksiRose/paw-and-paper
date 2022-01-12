@@ -674,6 +674,7 @@ module.exports = {
 								chosenUserHealthPoints -= (chosenProfileData.health + chosenUserHealthPoints) - chosenProfileData.maxHealth;
 							}
 
+							console.log(`\x1b[32m\x1b[0m${chosenProfileData.name} (${chosenProfileData.userId}): injuryArray changed from \x1b[33m${chosenProfileData.injuryArray} \x1b[0mto \x1b[33m${chosenUserInjuryArray} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							console.log(`\x1b[32m\x1b[0m${chosenProfileData.name} (${chosenProfileData.userId}): health changed from \x1b[33m${chosenProfileData.health} \x1b[0mto \x1b[33m${chosenProfileData.health + chosenUserHealthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							console.log(`\x1b[32m\x1b[0m${chosenProfileData.name} (${chosenProfileData.userId}): energy changed from \x1b[33m${chosenProfileData.energy} \x1b[0mto \x1b[33m${chosenProfileData.energy + chosenUserEnergyPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							console.log(`\x1b[32m\x1b[0m${chosenProfileData.name} (${chosenProfileData.userId}): hunger changed from \x1b[33m${chosenProfileData.hunger} \x1b[0mto \x1b[33m${chosenProfileData.hunger + chosenUserHungerPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
@@ -834,9 +835,9 @@ module.exports = {
 			healUserConditionText += (chosenProfileData.hunger <= 0) ? '\nHunger: 0' : '';
 			healUserConditionText += (chosenProfileData.thirst <= 0) ? '\nThirst: 0' : '';
 			healUserConditionText += (chosenProfileData.injuryArray[0] >= 1) ? `\nWounds: ${chosenProfileData.injuryArray[0]}` : '';
-			healUserConditionText += (chosenProfileData.injuryArray[1] >= 1) ? `\nInfections: ${chosenProfileData.injuryArray[0]}` : '';
+			healUserConditionText += (chosenProfileData.injuryArray[1] >= 1) ? `\nInfections: ${chosenProfileData.injuryArray[1]}` : '';
 			healUserConditionText += (chosenProfileData.injuryArray[2] >= 1) ? '\nCold: yes' : '';
-			healUserConditionText += (chosenProfileData.injuryArray[3] >= 1) ? `\nSprains: ${chosenProfileData.injuryArray[0]}` : '';
+			healUserConditionText += (chosenProfileData.injuryArray[3] >= 1) ? `\nSprains: ${chosenProfileData.injuryArray[3]}` : '';
 			healUserConditionText += (chosenProfileData.injuryArray[4] >= 1) ? '\nPoison: yes' : '';
 
 			const inventoryPageSelectMenu = {
