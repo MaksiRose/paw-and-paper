@@ -853,7 +853,7 @@ module.exports = {
 									opponentLevel = opponentLevel + 3;
 								}
 
-								if ((newCollected.first().customId == 'fight-attack' && lastRoundKind == 'defend') || (newCollected.first().customId == 'fight-defend' && lastRoundKind == 'dodge') || (newCollected.first().customId == 'fight-dodge' && lastRoundKind == 'attack')) {
+								if (newCollected.size > 0 && ((newCollected.first().customId == 'fight-attack' && lastRoundKind == 'defend') || (newCollected.first().customId == 'fight-defend' && lastRoundKind == 'dodge') || (newCollected.first().customId == 'fight-dodge' && lastRoundKind == 'attack'))) {
 
 									playerLevel = playerLevel + 3;
 								}

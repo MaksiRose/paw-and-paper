@@ -247,7 +247,7 @@ module.exports = {
 				throw new Error(error);
 			});
 
-		if (checkValidity.isPassedOut(message, profileData)) {
+		if (await checkValidity.isPassedOut(message, profileData)) {
 
 			await levels.decreaseLevel(message, profileData);
 		}
