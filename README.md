@@ -22,7 +22,7 @@ npm install @octokit/rest
 ```
 
 Keep the terminal open, you will need it later.
-In the folder, create a config.json file
+In the folder, create a config.json file.
 This needs to include the following information:
 
 ```
