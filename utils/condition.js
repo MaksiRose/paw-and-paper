@@ -104,6 +104,16 @@ module.exports = {
 			embed.description += `\n*One of ${profileData.name}'s wounds is bleeding!*`;
 		}
 
+		// this is done to keep the profileData.injuryArray in the next for loop accurate - otherwise it models userInjuryArray
+		// in the previous for loop, there is a chance an infection was added in userInjuryArray, so this is necessary
+		profileData = await profileModel
+			.findOne({
+				userId: message.author.id,
+				serverId: message.guild.id,
+			}).catch(async (error) => {
+				throw new Error(error);
+			});
+
 		for (let i = 0; i < profileData.injuryArray[1]; i++) {
 
 			const getsHealed = weightedTable({ 0: 1, 1: 4 });
@@ -185,6 +195,15 @@ module.exports = {
 
 			extraLostHealthPoints = profileData.health;
 		}
+
+		// this is done to keep the console logs injury Array correct
+		profileData = await profileModel
+			.findOne({
+				userId: message.author.id,
+				serverId: message.guild.id,
+			}).catch(async (error) => {
+				throw new Error(error);
+			});
 
 		console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): health changed from \x1b[33m${profileData.health} \x1b[0mto \x1b[33m${profileData.health - extraLostHealthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 		console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): injuryArray changed from \x1b[33m${profileData.injuryArray} \x1b[0mto \x1b[33m${userInjuryArray} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
