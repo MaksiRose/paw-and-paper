@@ -130,7 +130,12 @@ module.exports = {
 					}
 				});
 
-			return setTimeout(async function() { startExploring(); }, 15000);
+			return await new Promise((resolve) => {
+				setTimeout(async function() {
+					await startExploring();
+					return resolve();
+				}, 15000);
+			});
 		}
 
 
@@ -192,29 +197,57 @@ module.exports = {
 			return client.off('messageCreate', removeExploreComponents);
 		});
 
-		async function filter(i) {
+		return await new Promise((resolve) => {
 
-			if (!i.message.reference || !i.message.reference.messageId) {
+			async function filter(i) {
 
-				return false;
+				if (!i.message.reference || !i.message.reference.messageId) {
+
+					return false;
+				}
+
+				const userMessage = await i.channel.messages
+					.fetch(i.message.reference.messageId)
+					.catch((error) => {
+						throw new Error(error);
+					});
+
+				return userMessage.id == message.id && i.customId == 'biome-travel' && i.user.id == message.author.id;
 			}
 
-			const userMessage = await i.channel.messages
-				.fetch(i.message.reference.messageId)
-				.catch((error) => {
-					throw new Error(error);
+			const collector = message.channel.createMessageComponentCollector({ filter, max: 1, time: 120000 });
+			collector.on('end', async (collected) => {
+
+				if (!collected.size) {
+
+					return await botReply
+						.edit({
+							components: [],
+						})
+						.catch((error) => {
+							if (error.httpStatus == 404) {
+								console.log('Message already deleted');
+							}
+							else {
+								throw new Error(error);
+							}
+						});
+				}
+
+				const interaction = collected.first();
+
+				chosenBiome = interaction.values[0];
+				chosenBiomeNumber = allBiomesArray.findIndex(index => index == interaction.values[0]);
+
+				embedArray.splice(-1, 1, {
+					color: profileData.color,
+					author: { name: profileData.name, icon_url: profileData.avatarURL },
+					description: `*${profileData.name} slips out of camp, ${profileData.pronounArray[2]} body disappearing in the morning mist. For a while ${profileData.pronounArray[0]} will look around in the ${chosenBiome}, searching for anything of use…*`,
 				});
 
-			return userMessage.id == message.id && i.customId == 'biome-travel' && i.user.id == message.author.id;
-		}
-
-		const collector = message.channel.createMessageComponentCollector({ filter, max: 1, time: 120000 });
-		collector.on('end', async (collected) => {
-
-			if (!collected.size) {
-
-				return await botReply
+				botReply = await interaction.message
 					.edit({
+						embeds: embedArray,
 						components: [],
 					})
 					.catch((error) => {
@@ -225,34 +258,15 @@ module.exports = {
 							throw new Error(error);
 						}
 					});
-			}
 
-			const interaction = collected.first();
-
-			chosenBiome = interaction.values[0];
-			chosenBiomeNumber = allBiomesArray.findIndex(index => index == interaction.values[0]);
-
-			embedArray.splice(-1, 1, {
-				color: profileData.color,
-				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*${profileData.name} slips out of camp, ${profileData.pronounArray[2]} body disappearing in the morning mist. For a while ${profileData.pronounArray[0]} will look around in the ${chosenBiome}, searching for anything of use…*`,
-			});
-
-			botReply = await interaction.message
-				.edit({
-					embeds: embedArray,
-					components: [],
-				})
-				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+				await new Promise((resolve) => {
+					setTimeout(async function() {
+						await startExploring();
+						return resolve();
+					}, 15000);
 				});
-
-			return setTimeout(async function() { startExploring(); }, 15000);
+				return resolve();
+			});
 		});
 
 		async function startExploring() {
