@@ -110,7 +110,7 @@ module.exports = {
 				return client.off('messageCreate', removeRankComponents);
 			});
 
-			await interactionCollector(botReply);
+			return await interactionCollector(botReply);
 		}
 
 		if (profileData.unlockedRanks == 3 && (profileData.rank == 'Hunter' || profileData.rank == 'Healer')) {
@@ -177,7 +177,7 @@ module.exports = {
 						throw new Error(error);
 					});
 
-				return userMessage.id == message.id && i.isButton() && (i.customId == 'rank-healer' || i.customid == 'rank-hunter') && i.user.id == message.author.id;
+				return userMessage.id == message.id && i.isButton() && (i.customId == 'rank-healer' || i.customId == 'rank-hunter') && i.user.id == message.author.id;
 			};
 
 			const collector = message.channel.createMessageComponentCollector({ filter, max: 1, time: 30000 });
