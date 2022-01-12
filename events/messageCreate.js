@@ -237,7 +237,10 @@ module.exports = {
 			await errorHandling.output(message, error);
 		}
 
-		automaticRestingTimeoutArray[message.author.id] = setTimeout(automaticRestingTimeoutFunction, 600000);
+		automaticRestingTimeoutArray[message.author.id] = setTimeout(async () => {
+
+			await automaticRestingTimeoutFunction();
+		}, 60000);
 
 		async function automaticRestingTimeoutFunction() {
 
@@ -250,7 +253,7 @@ module.exports = {
 					return await errorHandling.output(message, error);
 				});
 
-			if (profileData && profileData.resting == false && profileData.energy < profileData.maxEnergy) {
+			if (profileData && profileData.isResting == false && profileData.energy < profileData.maxEnergy) {
 
 				await rest
 					.sendMessage(client, message, [], profileData, serverData, embedArray)
