@@ -477,7 +477,7 @@ module.exports = {
 						});
 				}
 
-				const findHerbChance = weightedTable({ 0: 1, 1: 1 });
+				const findHerbChance = weightedTable({ 0: 7, 1: 13 });
 				if (findHerbChance == 0) {
 
 					const getHurtChance = weightedTable({ 0: 5, 1: 95 + betterLuckValue });
