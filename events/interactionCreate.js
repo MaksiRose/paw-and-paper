@@ -18,7 +18,7 @@ module.exports = {
 				return await errorHandling.output(interaction.message, error);
 			});
 
-		// this is a DM interaction and doesnt have a referenced Message, so it gets processed before everything else
+		// there are DM interactions and dont have referenced messages, so thet get processed before everything else
 		if (interaction.customId == 'ticket') {
 
 			return await interaction.message
@@ -26,6 +26,54 @@ module.exports = {
 				.catch(async (error) => {
 					return await errorHandling.output(interaction.message, error);
 				});
+		}
+
+		if (interaction.customId.includes('delete-account')) {
+
+			const guildId = interaction.customId.split('-').pop();
+
+			const serverData = await serverModel
+				.findOne({
+					serverId: guildId,
+				})
+				.catch((error) => {
+					console.error(error);
+				});
+
+			await profileModel
+				.findOneAndDelete({
+					userId: interaction.user.id,
+					serverId: guildId,
+				})
+				.then((value) => {
+					console.log('Deleted User: ' + value);
+				})
+				.catch((error) => {
+					console.error(error);
+				});
+
+			const accountDeletionValues = serverData.accountsToDelete.get(`${interaction.user.id}`);
+			const user = await client.users.fetch(interaction.user.id);
+			const botReply = await user.dmChannel.messages.fetch(accountDeletionValues.privateMessageId);
+
+			await botReply
+				.edit({
+					embeds: [{
+						color: config.default_color,
+						author: { name: `${interaction.guild.name}`, icon_url: interaction.guild.iconURL() },
+						title: 'Your account was deleted permanently!',
+						description: '',
+					}],
+					components: [],
+				})
+				.catch((error) => {
+					console.error(error);
+				});
+
+			await serverData.accountsToDelete.delete(`${interaction.user.id}`);
+			await serverData.save();
+
+			return;
 		}
 
 		if (!interaction.message.reference && !interaction.message.reference.messageId) {

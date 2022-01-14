@@ -1,8 +1,69 @@
+const serverModel = require('../models/serverSchema');
+const profileModel = require('../models/profileSchema');
+const config = require('../config.json');
+
 module.exports = {
 	name: 'ready',
 	once: true,
-	execute(client) {
+	async execute(client) {
+
 		console.log('Paw and Paper is online!');
 		client.user.setActivity('this awesome RPG :)\nrp help', { type: 'PLAYING' });
+
+		// eslint-disable-next-line no-unused-vars
+		for (const [guild_key, guild] of client.guilds.cache) {
+
+			const serverData = await serverModel
+				.findOne({
+					serverId: guild.id,
+				})
+				.catch((error) => {
+					console.error(error);
+				});
+
+			if (!serverData) {
+
+				return;
+			}
+
+			// eslint-disable-next-line no-unused-vars
+			for (const [account_id, account] of serverData.accountsToDelete) {
+
+				setTimeout(async () => {
+
+					await profileModel
+						.findOneAndDelete({
+							userId: account.userId,
+							serverId: guild.id,
+						})
+						.then((value) => {
+							console.log('Deleted User: ' + value);
+						})
+						.catch((error) => {
+							console.error(error);
+						});
+
+					await serverData.accountsToDelete.delete(account_id);
+					await serverData.save();
+
+					const user = await client.users.fetch(account.userId);
+					const botReply = await user.dmChannel.messages.fetch(account.privateMessageId);
+
+					return await botReply
+						.edit({
+							embeds: [{
+								color: config.default_color,
+								author: { name: `${guild.name}`, icon_url: guild.iconURL() },
+								title: 'Your account was deleted permanently!',
+								description: '',
+							}],
+							components: [],
+						})
+						.catch((error) => {
+							console.error(error);
+						});
+				}, new Date().getTime() - account.deletionTimestamp);
+			}
+		}
 	},
 };
