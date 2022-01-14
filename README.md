@@ -29,14 +29,10 @@ This needs to include the following information:
 {
     "token": "your discord token",
     "mongodb_srv": "your mongodb srv",
-	"github_token": "your github token",
+    "github_token": "your github token",
     "prefix": "rp ",
     "default_color": "#9d9e51",
     "error_color": "#d0342c",
-    "maksi": "268402976844939266",
-    "ezra": "669725936840736840",
-    "ren": "794320272723410955",
-    "jags": "840108230176145410"
 }
 ```
 
