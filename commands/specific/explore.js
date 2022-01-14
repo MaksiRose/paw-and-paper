@@ -658,7 +658,7 @@ module.exports = {
 
 				if (chosenBiomeNumber == 2) {
 
-					opponentLevel = Loottable(25, 26);
+					opponentLevel = Loottable((profileData.levels > 40) ? profileData.levels - 15 : 25, 26);
 					opponentsArray = [...species.biome1OpponentsArray, ...species.biome2OpponentsArray, ...species.biome3OpponentsArray];
 				}
 

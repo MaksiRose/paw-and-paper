@@ -196,6 +196,22 @@ module.exports = {
 
 				return await eat
 					.sendMessage(client, referencedMessage, interaction.values, profileData, serverData, interaction.message.embeds)
+					.then(async () => {
+
+						setTimeout(async function() {
+
+							console.log(`\x1b[32m\x1b[0m${interaction.user.tag} (${interaction.user.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${interaction.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							profileData = await profileModel
+								.findOneAndUpdate(
+									{ userId: interaction.user.id, serverId: interaction.guild.id },
+									{ $set: { hasCooldown: false } },
+									{ new: true },
+								)
+								.catch(async (error) => {
+									await errorHandling.output(referencedMessage, error);
+								});
+						}, 3000);
+					})
 					.catch(async (error) => {
 						return await errorHandling.output(interaction.message, error);
 					});
@@ -319,6 +335,22 @@ module.exports = {
 
 				await store
 					.sendMessage(client, referencedMessage, interaction.values, profileData, serverData, embedArray)
+					.then(async () => {
+
+						setTimeout(async function() {
+
+							console.log(`\x1b[32m\x1b[0m${interaction.user.tag} (${interaction.user.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${interaction.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							profileData = await profileModel
+								.findOneAndUpdate(
+									{ userId: interaction.user.id, serverId: interaction.guild.id },
+									{ $set: { hasCooldown: false } },
+									{ new: true },
+								)
+								.catch(async (error) => {
+									await errorHandling.output(referencedMessage, error);
+								});
+						}, 3000);
+					})
 					.catch(async (error) => {
 						return await errorHandling.output(interaction.message, error);
 					});
