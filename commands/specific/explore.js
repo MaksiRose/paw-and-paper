@@ -716,7 +716,7 @@ module.exports = {
 
 				return await new Promise((resolve) => {
 
-					const filter2 = async (i) => {
+					let filter = async (i) => {
 
 						if (!i.message.reference || !i.message.reference.messageId) {
 
@@ -729,11 +729,12 @@ module.exports = {
 								throw new Error(error);
 							});
 
-						return userMessage.id == message.id && (i.customId === 'enemy-flee' || i.customId === 'enemy-fight') && i.user.id == message.author.id;
+						return i.user.id == message.author.id && userMessage.id == message.id && (i.customId === 'enemy-flee' || i.customId === 'enemy-fight');
 					};
 
-					const collector2 = message.channel.createMessageComponentCollector({ filter2, max: 1, time: 30000 });
+					const collector2 = message.channel.createMessageComponentCollector({ filter, max: 1, time: 30000 });
 					collector2.on('end', async (collected) => {
+						console.log(collected);
 
 						if (!collected.size || collected.first().customId == 'enemy-flee') {
 
@@ -799,7 +800,7 @@ module.exports = {
 
 							await newRound();
 
-							const filter3 = async (i) => {
+							filter = async (i) => {
 
 								if (!i.message.reference || !i.message.reference.messageId) {
 
@@ -815,7 +816,7 @@ module.exports = {
 								return userMessage.id == message.id && (i.customId == 'fight-attack' || i.customId == 'fight-defend' || i.customId == 'fight-dodge') && i.user.id == message.author.id;
 							};
 
-							const collector3 = message.channel.createMessageComponentCollector({ filter3, max: 1, time: 5000 });
+							const collector3 = message.channel.createMessageComponentCollector({ filter, max: 1, time: 5000 });
 							collector3.on('end', async (newCollected) => {
 
 								++totalRounds;
