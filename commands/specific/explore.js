@@ -480,7 +480,7 @@ module.exports = {
 				const findHerbChance = weightedTable({ 0: 1, 1: 1 });
 				if (findHerbChance == 0) {
 
-					const getHurtChance = weightedTable({ 0: 10, 1: 90 + betterLuckValue });
+					const getHurtChance = weightedTable({ 0: 10, 1: 90 });
 					if (getHurtChance == 0) {
 
 						healthPoints = Loottable(5, 3);
@@ -592,11 +592,11 @@ module.exports = {
 
 					switch (true) {
 
-						case (weightedTable({ 0: 20, 1: 80 + betterLuckValue }) == 1 && chosenBiomeNumber > 0):
+						case (weightedTable({ 0: 60, 1: 40 + betterLuckValue }) == 1 && chosenBiomeNumber > 0):
 
 							switch (true) {
 
-								case (weightedTable({ 0: 20, 1: 80 + betterLuckValue }) == 1 && chosenBiomeNumber == 2):
+								case (weightedTable({ 0: 70, 1: 30 + betterLuckValue }) == 1 && chosenBiomeNumber == 2):
 
 									foundItem = await items.randomRarePlant(message, profileData);
 
