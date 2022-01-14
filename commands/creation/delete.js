@@ -126,7 +126,7 @@ module.exports = {
 
 			if (interaction.customId == 'delete-confirm') {
 
-				profileModel
+				await profileModel
 					.findOneAndDelete({
 						userId: message.author.id,
 						serverId: message.guild.id,
