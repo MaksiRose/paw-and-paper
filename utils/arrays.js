@@ -1,70 +1,70 @@
 const commonPlantNamesArray = ['raspberry', 'garlic', 'herb Robert', 'field scabious', 'henna', 'elderberry', 'comfrey', 'marigold', 'common hollyhock', 'neem', 'clover', 'passion fruit', 'bergamot orange', 'cicely', 'acorn', 'rhodiola'];
 const commonPlantEdibalityArray = ['e', 'e', 'i', 'i', 'i', 't', 't', 'e', 'i', 'i', 'e', 'e', 'e', 'e', 'e', 'e'];
-const commonPlantHealsWoundsArray = [false, false, true, true, false, false, false, true, false, false, false, false, false, false, false, false];
+const commonPlantHealsWoundsArray = [false, false, true, true, false, false, false, true, false, false, false, false, true, false, false, false];
 const commonPlantHealsInfectionsArray = [false, false, false, false, true, true, true, false, true, true, false, false, false, false, false, false];
-const commonPlantHealsColdsArray = [false, true, false, true, false, true, false, false, false, false, false, false, false, true, false, false];
+const commonPlantHealsColdsArray = [true, true, false, false, false, false, false, false, false, false, true, false, false, true, false, false];
+const commonPlantHealsSprainsArray = [false, false, false, false, false, false, false, false, false, false, false, true, false, false, true, false];
 const commonPlantHealsPoisonArray = [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false];
-const commonPlantHealsStrainsArray = [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false];
 
 const commonPlantGivesEnergyArray = [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true];
 
 const commonPlantDescriptionsArray = [];
 
-commonPlantDescriptionsArray[0] = 'A tasty berry! Good for the quick hunger.';
+commonPlantDescriptionsArray[0] = 'A tasty berry! Good for the quick hunger, and helps fight common colds as well.';
 commonPlantDescriptionsArray[1] = 'A flowering plant in the onion genus. Nourishing and good against colds.';
 commonPlantDescriptionsArray[2] = 'The herb Robert is a common species of plants useful for healing wounds.';
-commonPlantDescriptionsArray[3] = 'This flower is used to fight coughs, sore throats and common colds as well as wounds.';
+commonPlantDescriptionsArray[3] = 'This pretty flower is used to fight wounds.';
 commonPlantDescriptionsArray[4] = 'A flowering plant often used as dye, but also used against infections, bruises and swelling.';
-commonPlantDescriptionsArray[5] = 'This berry is poisonous when uncooked, but it helps against infections and colds when used as a medicine.';
+commonPlantDescriptionsArray[5] = 'This berry is poisonous when uncooked, but it helps against infections when used as a medicine.';
 commonPlantDescriptionsArray[6] = 'Comfrey is a flowering plant that is toxic when eaten, but heals infections when applied directly.';
 commonPlantDescriptionsArray[7] = 'This flowering plant is not only tasty, but also able to heal wounds.';
 commonPlantDescriptionsArray[8] = 'A flower frequently used to fight infections and inflammations.';
 commonPlantDescriptionsArray[9] = 'As a tree in the mahogany family, this is not a good foodsource, but it can be processed to help with infections.';
-commonPlantDescriptionsArray[10] = 'Several plants of the genus Trifolium. A common source of nourishment.';
-commonPlantDescriptionsArray[11] = 'Vine species of the passion flower. Very nutritious.';
-commonPlantDescriptionsArray[12] = 'A citrus fruit the size of an orange. Tastes less sour then lemon, but more bitter than grapefruit.';
+commonPlantDescriptionsArray[10] = 'Several plants of the genus Trifolium. A common source of nourishment, and healing for coughs and colds.';
+commonPlantDescriptionsArray[11] = 'Vine species of the passion flower. Very nutritious, its minerals even help fight sprains.';
+commonPlantDescriptionsArray[12] = 'A citrus fruit the size of an orange. Its fluids have a healing effect on wounds. ';
 commonPlantDescriptionsArray[13] = 'This plant grows 6ft 6in (2m) high. Both the leaves and the roots are edible, and it\'s effective against coughs and colds.';
-commonPlantDescriptionsArray[14] = 'This nut is highly nutritious and therefore serves as an excellent source of food.';
+commonPlantDescriptionsArray[14] = 'This nut is highly nutritious and therefore serves as an excellent source of food, and can even help fight sprains.';
 commonPlantDescriptionsArray[15] = 'The root of a perennial plant, searched after as a food source and for its ability to help fight fatigue and exhaustion.';
 
 
 const uncommonPlantNamesArray = ['solomon\'s seal', 'gotu kola', 'great mullein', 'purple coneflower', 'field horsetail', 'bay laurel', 'chick weed', 'yerba mate'];
 const uncommonPlantEdibalityArray = ['e', 'e', 'e', 'e', 't', 'e', 'e', 'e'];
-const uncommonPlantHealsWoundsArray = [false, true, false, true, true, true, false, true];
-const uncommonPlantHealsInfectionsArray = [false, false, false, true, true, true, true, true];
+const uncommonPlantHealsWoundsArray = [true, true, false, false, true, true, true, false];
+const uncommonPlantHealsInfectionsArray = [false, false, false, false, false, false, false, false];
 const uncommonPlantHealsColdsArray = [false, false, true, true, false, false, false, false];
+const uncommonPlantHealsSprainsArray = [true, false, true, true, true, true, true, true];
 const uncommonPlantHealsPoisonArray = [false, false, false, false, false, false, false, false];
-const uncommonPlantHealsStrainsArray = [true, true, true, false, false, false, false, false];
 
 const uncommonPlantGivesEnergyArray = [false, true, false, false, false, false, false, true];
 
 const uncommonPlantDescriptionsArray = [];
 
-uncommonPlantDescriptionsArray[0] = 'This flowering plant is a great source of food, but also excellent for healing strains!';
-uncommonPlantDescriptionsArray[1] = 'A vegetable often used to treat wounds and strains, as well as being very energizing!';
-uncommonPlantDescriptionsArray[2] = 'The great mullein is a high growing biennal plant not only used for consumption but also for colds and strains.';
-uncommonPlantDescriptionsArray[3] = 'This flower is not only part of the sunflower family, but also a treatment against wounds, infections, colds, and hunger!';
-uncommonPlantDescriptionsArray[4] = 'A perenniel plant that is useful against wounds and infections, but toxic if consumed.';
-uncommonPlantDescriptionsArray[5] = 'An aromatic large shrub used to treat wounds and infections!';
-uncommonPlantDescriptionsArray[6] = 'The chick weed is not only very tasty, but also able to heal infections.';
-uncommonPlantDescriptionsArray[7] = 'This plants leaves are useful for healing wounds and infections, but also energizing due to it containing caffeine.';
+uncommonPlantDescriptionsArray[0] = 'This flowering plant is a great source of food, but also excellent for healing sprains as well as wounds!';
+uncommonPlantDescriptionsArray[1] = 'A vegetable often used to treat wounds, as well as being very energizing!';
+uncommonPlantDescriptionsArray[2] = 'The great mullein is a high growing biennal plant not only used for consumption but also for colds and sprains.';
+uncommonPlantDescriptionsArray[3] = 'This flower is not only part of the sunflower family, but also a treatment against, sprains, colds, and hunger!';
+uncommonPlantDescriptionsArray[4] = 'A perenniel plant that is useful against wounds and sprains, but toxic if consumed.';
+uncommonPlantDescriptionsArray[5] = 'An aromatic large shrub used to treat wounds and sprains!';
+uncommonPlantDescriptionsArray[6] = 'The chick weed is not only very tasty, but also able to heal wounds and sprains.';
+uncommonPlantDescriptionsArray[7] = 'This plants leaves are useful for healing sprains, but also energizing due to it containing caffeine.';
 
 
 const rarePlantNamesArray = ['ribwort plantain', 'charcoal-tree leaves', 'marsh mallow'];
 const rarePlantEdibalityArray = ['e', 'e', 'e'];
-const rarePlantHealsWoundsArray = [false, false, true];
-const rarePlantHealsInfectionsArray = [true, true, true];
+const rarePlantHealsWoundsArray = [false, true, true];
+const rarePlantHealsInfectionsArray = [false, false, false];
 const rarePlantHealsColdsArray = [true, true, true];
+const rarePlantHealsSprainsArray = [true, false, true];
 const rarePlantHealsPoisonArray = [true, true, false];
-const rarePlantHealsStrainsArray = [false, false, true];
 
 const rarePlantGivesEnergyArray = [false, false, false];
 
 const rarePlantDescriptionsArray = [];
 
-rarePlantDescriptionsArray[0] = 'A weed for treating infections, colds and poison! Highly nutritious.';
-rarePlantDescriptionsArray[1] = 'These leaves do wonders against poison, infections and colds, as well as being very tasty.';
-rarePlantDescriptionsArray[2] = 'This sweet tasting plant is very effective against colds, wounds, strains and infections!';
+rarePlantDescriptionsArray[0] = 'A weed for treating sprains, colds and poison! Highly nutritious.';
+rarePlantDescriptionsArray[1] = 'These leaves do wonders against poison, wounds and colds, as well as being very tasty.';
+rarePlantDescriptionsArray[2] = 'This sweet tasting plant is very effective against colds, sprains and wounds!';
 
 module.exports = {
 
@@ -74,7 +74,7 @@ module.exports = {
 	commonPlantHealsInfectionsArray: commonPlantHealsInfectionsArray,
 	commonPlantHealsColdsArray: commonPlantHealsColdsArray,
 	commonPlantHealsPoisonArray: commonPlantHealsPoisonArray,
-	commonPlantHealsStrainsArray: commonPlantHealsStrainsArray,
+	commonPlantHealsSprainsArray: commonPlantHealsSprainsArray,
 	commonPlantGivesEnergyArray: commonPlantGivesEnergyArray,
 	commonPlantDescriptionsArray: commonPlantDescriptionsArray,
 
@@ -84,7 +84,7 @@ module.exports = {
 	uncommonPlantHealsInfectionsArray: uncommonPlantHealsInfectionsArray,
 	uncommonPlantHealsColdsArray: uncommonPlantHealsColdsArray,
 	uncommonPlantHealsPoisonArray: uncommonPlantHealsPoisonArray,
-	uncommonPlantHealsStrainsArray: uncommonPlantHealsStrainsArray,
+	uncommonPlantHealsSprainsArray: uncommonPlantHealsSprainsArray,
 	uncommonPlantGivesEnergyArray: uncommonPlantGivesEnergyArray,
 	uncommonPlantDescriptionsArray: uncommonPlantDescriptionsArray,
 
@@ -94,7 +94,7 @@ module.exports = {
 	rarePlantHealsInfectionsArray: rarePlantHealsInfectionsArray,
 	rarePlantHealsColdsArray: rarePlantHealsColdsArray,
 	rarePlantHealsPoisonArray: rarePlantHealsPoisonArray,
-	rarePlantHealsStrainsArray: rarePlantHealsStrainsArray,
+	rarePlantHealsSprainsArray: rarePlantHealsSprainsArray,
 	rarePlantGivesEnergyArray: rarePlantGivesEnergyArray,
 	rarePlantDescriptionsArray: rarePlantDescriptionsArray,
 

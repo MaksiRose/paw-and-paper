@@ -519,7 +519,7 @@ module.exports = {
 						const plantHealsWoundsArray = [[...arrays.commonPlantHealsWoundsArray], [...arrays.uncommonPlantHealsWoundsArray], [...arrays.rarePlantHealsWoundsArray]];
 						const plantHealsInfectionsArray = [[...arrays.commonPlantHealsInfectionsArray], [...arrays.uncommonPlantHealsInfectionsArray], [...arrays.rarePlantHealsInfectionsArray]];
 						const plantHealsColdsArray = [[...arrays.commonPlantHealsColdsArray], [...arrays.uncommonPlantHealsColdsArray], [...arrays.rarePlantHealsColdsArray]];
-						const plantHealsStrainsArray = [[...arrays.commonPlantHealsStrainsArray], [...arrays.uncommonPlantHealsStrainsArray], [...arrays.rarePlantHealsStrainsArray]];
+						const plantHealsSprainsArray = [[...arrays.commonPlantHealsSprainsArray], [...arrays.uncommonPlantHealsSprainsArray], [...arrays.rarePlantHealsSprainsArray]];
 						const plantHealsPoisonArray = [[...arrays.commonPlantHealsPoisonArray], [...arrays.uncommonPlantHealsPoisonArray], [...arrays.rarePlantHealsPoisonArray]];
 						const plantGivesEnergyArray = [[...arrays.commonPlantGivesEnergyArray], [...arrays.uncommonPlantGivesEnergyArray], [...arrays.rarePlantGivesEnergyArray]];
 
@@ -606,10 +606,10 @@ module.exports = {
 							--chosenUserInjuryArray[2];
 						}
 
-						if (plantHealsStrainsArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryArray[3] > 0) {
+						if (plantHealsSprainsArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryArray[3] > 0) {
 
 							isSuccessful = true;
-							embedFooterChosenUserInjuryText += `\n-1 strain for ${chosenProfileData.name}`;
+							embedFooterChosenUserInjuryText += `\n-1 sprain for ${chosenProfileData.name}`;
 							--chosenUserInjuryArray[3];
 						}
 
