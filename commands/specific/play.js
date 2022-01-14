@@ -322,7 +322,7 @@ module.exports = {
 
 		async function findSomething() {
 
-			const betterLuckValue = (profileData.levels - 1) * 5;
+			const betterLuckValue = (profileData.levels - 1) * 2;
 
 			const findSomethingChance = weightedTable({ 0: 90, 1: 10 + betterLuckValue });
 			if (findSomethingChance == 0) {
@@ -333,8 +333,8 @@ module.exports = {
 				return embedArray.push(embed);
 			}
 
-			const getHurtChance = weightedTable({ 0: 1, 1: 99 + betterLuckValue });
-			if (getHurtChance == 0) {
+			const getHurtChance = weightedTable({ 0: 10, 1: 90 + betterLuckValue });
+			if (getHurtChance == 0 && profileData.rank != 'Youngling') {
 
 				healthPoints = Loottable(5, 3);
 
