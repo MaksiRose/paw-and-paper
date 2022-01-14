@@ -94,7 +94,7 @@ module.exports = {
 					color: profileData.color,
 					author: { name: profileData.name, icon_url: profileData.avatarURL },
 					description: `*${profileData.name}'s chest rises and falls with the crickets. Snoring bounces off each wall, finally exiting the den and rising free to the clouds.*`,
-					footer: { text: `+0 energy (${profileData.energy}/${profileData.maxEnergy})\nYou are now at the sleeping dens` },
+					footer: { text: `+0 energy (${profileData.energy}/${profileData.maxEnergy})${(profileData.currentRegion != 'sleeping dens') ? '\nYou are now at the sleeping dens' : ''}` },
 				}],
 			})
 			.catch((error) => {

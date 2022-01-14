@@ -107,7 +107,10 @@ module.exports = {
 			embedFooterStatsText += `\n-${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})`;
 		}
 
-		embedFooterStatsText += '\nYou are now at the ruins';
+		if (profileData.currentRegion != 'ruins') {
+
+			embedFooterStatsText += '\nYou are now at the ruins';
+		}
 
 		let healthPoints = 0;
 		const userInjuryArray = [...profileData.injuryArray];

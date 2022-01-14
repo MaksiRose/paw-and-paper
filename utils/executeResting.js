@@ -28,7 +28,7 @@ module.exports = {
 					throw new Error(error);
 				});
 
-			botReply.embeds[0].footer.text = `+${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})\nYou are now at the sleeping dens`;
+			botReply.embeds[0].footer.text = `+${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})${(profileData.currentRegion != 'sleeping dens') ? '\nYou are now at the sleeping dens' : ''}`;
 			await botReply
 				.edit({
 					embeds: botReply.embeds,
