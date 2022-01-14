@@ -477,10 +477,10 @@ module.exports = {
 						});
 				}
 
-				const findHerbChance = weightedTable({ 0: 7, 1: 13 });
+				const findHerbChance = weightedTable({ 0: 1, 1: 1 });
 				if (findHerbChance == 0) {
 
-					const getHurtChance = weightedTable({ 0: 5, 1: 95 + betterLuckValue });
+					const getHurtChance = weightedTable({ 0: 10, 1: 90 + betterLuckValue });
 					if (getHurtChance == 0) {
 
 						healthPoints = Loottable(5, 3);
@@ -501,33 +501,10 @@ module.exports = {
 								throw new Error(error);
 							});
 
-						const weightedHurtChance = weightedTable({ 0: 5, 1: 5, 2: 90 });
+						const weightedHurtChance = weightedTable({ 0: 15, 1: 78, 2: 7 });
 						switch (true) {
 
-							case (weightedHurtChance == 0):
-
-								userInjuryArray[3] = userInjuryArray[3] + 1;
-
-								if (species.habitatArray[speciesNamesArrayIndex] == 'warm') {
-
-									embed.description = `*${profileData.name} looks to ${profileData.pronounArray[2]} side, where something is glimmering through a pile of dead plants. The ${profileData.species} does not hesitate and sprints into a dead tree trunk while in pursuit of the unknown item! ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} ${((profileData.pronounArray[5] == 'singular') ? 'stands' : 'stand')} up, ${((profileData.pronounArray[5] == 'singular') ? 'brushes' : 'brush')} the bark and sand off ${profileData.pronounArray[4]} and ${((profileData.pronounArray[5] == 'singular') ? 'limps' : 'limp')} back to camp.*`;
-								}
-
-								if (species.habitatArray[speciesNamesArrayIndex] == 'cold') {
-
-									embed.description = `*${profileData.name} looks to ${profileData.pronounArray[2]} side, where something is glimmering through a shrub. The ${profileData.species} does not hesitate and crashes into a rock while in pursuit of the unknown item! ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'stands' : 'stand')} up, limping back to camp.*`;
-								}
-
-								if (species.habitatArray[speciesNamesArrayIndex] == 'water') {
-
-									embed.description = `*${profileData.name} looks to ${profileData.pronounArray[2]} side, where something is glimmering through the coral surrounding ${profileData.pronounArray[1]}. The ${profileData.species} does not hesitate and crashes into a finger coral, getting ${profileData.pronounArray[2]} foot caught while in pursuit of the unknown item! ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} ${profileData.pronounArray[0]} carefully ${((profileData.pronounArray[5] == 'singular') ? 'twists' : 'twist')} ${profileData.pronounArray[2]} foot free and slowly ${((profileData.pronounArray[5] == 'singular') ? 'swims' : 'swim')} back to camp, pausing to let the pain in ${profileData.pronounArray[2]} foot die down before continuing.*`;
-								}
-
-								embed.footer.text = `-${healthPoints} HP (from sprain)\n${embedFooterStatsText}`;
-
-								break;
-
-							case (weightedHurtChance == 1 && profileData.injuryArray[4] <= 0):
+							case (weightedHurtChance == 0 && profileData.injuryArray[4] <= 0):
 
 								userInjuryArray[4] = userInjuryArray[4] + 1;
 
@@ -550,54 +527,49 @@ module.exports = {
 
 								break;
 
+							case (weightedHurtChance == 1 && profileData.injuryArray[2] <= 0):
+
+								userInjuryArray[2] = userInjuryArray[2] + 1;
+
+								if (species.habitatArray[speciesNamesArrayIndex] == 'warm') {
+
+									embed.description = `*${profileData.name} pads along the ground, dashing from bush to bush, inspecting every corner for something ${profileData.pronounArray[0]} could add to the inventory. Suddenly, the ${profileData.species} sways, feeling tired and feeble. A coughing fit grew louder, escaping ${profileData.pronounArray[2]} throat.*`;
+								}
+
+								if (species.habitatArray[speciesNamesArrayIndex] == 'cold') {
+
+									embed.description = `*${profileData.name} plots around the forest, dashing from tree to tree, inspecting every corner for something ${profileData.pronounArray[0]} could add to the inventory. Suddenly, the ${profileData.species} sways, feeling tired and feeble. A coughing fit grew louder, escaping ${profileData.pronounArray[2]} throat.*`;
+								}
+
+								if (species.habitatArray[speciesNamesArrayIndex] == 'water') {
+
+									embed.description = `*${profileData.name} flips around in the water, swimming from rock to rock, inspecting every nook for something ${profileData.pronounArray[0]} could add to the inventory. Suddenly, the ${profileData.species} falters in ${profileData.pronounArray[2]} stroke, feeling tired and feeble. A coughing fit grew louder, bubbles escaping ${profileData.pronounArray[2]} throat to rise to the surface.*`;
+								}
+
+								embed.footer.text = `-${healthPoints} HP (from cold)\n${embedFooterStatsText}`;
+
+								break;
+
 							default:
 
-								switch (true) {
+								userInjuryArray[0] = userInjuryArray[0] + 1;
 
-									case (weightedTable({ 0: 13, 1: 7 }) == 0 && profileData.injuryArray <= 0):
+								if (species.habitatArray[speciesNamesArrayIndex] == 'warm') {
 
-										userInjuryArray[2] = userInjuryArray[2] + 1;
-
-										if (species.habitatArray[speciesNamesArrayIndex] == 'warm') {
-
-											embed.description = `*${profileData.name} pads along the ground, dashing from bush to bush, inspecting every corner for something ${profileData.pronounArray[0]} could add to the inventory. Suddenly, the ${profileData.species} sways, feeling tired and feeble. A coughing fit grew louder, escaping ${profileData.pronounArray[2]} throat.*`;
-										}
-
-										if (species.habitatArray[speciesNamesArrayIndex] == 'cold') {
-
-											embed.description = `*${profileData.name} plots around the forest, dashing from tree to tree, inspecting every corner for something ${profileData.pronounArray[0]} could add to the inventory. Suddenly, the ${profileData.species} sways, feeling tired and feeble. A coughing fit grew louder, escaping ${profileData.pronounArray[2]} throat.*`;
-										}
-
-										if (species.habitatArray[speciesNamesArrayIndex] == 'water') {
-
-											embed.description = `*${profileData.name} flips around in the water, swimming from rock to rock, inspecting every nook for something ${profileData.pronounArray[0]} could add to the inventory. Suddenly, the ${profileData.species} falters in ${profileData.pronounArray[2]} stroke, feeling tired and feeble. A coughing fit grew louder, bubbles escaping ${profileData.pronounArray[2]} throat to rise to the surface.*`;
-										}
-
-										embed.footer.text = `-${healthPoints} HP (from cold)\n${embedFooterStatsText}`;
-
-										break;
-
-									default:
-
-										userInjuryArray[0] = userInjuryArray[0] + 1;
-
-										if (species.habitatArray[speciesNamesArrayIndex] == 'warm') {
-
-											embed.description = `*The soft noise of sand shifting on the ground spooks ${profileData.name} as ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'walks' : 'walk')} around the area, searching for something useful for ${profileData.pronounArray[2]} pack. A warm wind brushes against ${profileData.pronounArray[2]} side, and a cactus bush sweeps atop ${profileData.pronounArray[2]} path, going unnoticed. A needle pricks into ${profileData.pronounArray[2]} skin, sending pain waves through ${profileData.pronounArray[2]} body.*`;
-										}
-
-										if (species.habitatArray[speciesNamesArrayIndex] == 'cold') {
-
-											embed.description = `*The thunks of acorns falling from trees spook ${profileData.name} as ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'prances' : 'prance')} around the forest, searching for something useful for ${profileData.pronounArray[2]} pack. A warm wind brushes against ${profileData.pronounArray[2]} side, and a thorn bush sweeps atop ${profileData.pronounArray[2]} path, going unnoticed. A thorn pricks into ${profileData.pronounArray[2]} skin, sending pain waves through ${profileData.pronounArray[2]} body.*`;
-										}
-
-										if (species.habitatArray[speciesNamesArrayIndex] == 'water') {
-
-											embed.description = `*The sudden silence in the water spooks ${profileData.name} as ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'swims' : 'swim')} around in the water, searching for something useful for their pack. A rocky outcropping appears next to ${profileData.pronounArray[1]}, unnoticed. The rocks scrape into ${profileData.pronounArray[2]} side, sending shockwaves of pain up ${profileData.pronounArray[2]} flank.*`;
-										}
-
-										embed.footer.text = `-${healthPoints} HP (from wound)\n${embedFooterStatsText}`;
+									embed.description = `*The soft noise of sand shifting on the ground spooks ${profileData.name} as ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'walks' : 'walk')} around the area, searching for something useful for ${profileData.pronounArray[2]} pack. A warm wind brushes against ${profileData.pronounArray[2]} side, and a cactus bush sweeps atop ${profileData.pronounArray[2]} path, going unnoticed. A needle pricks into ${profileData.pronounArray[2]} skin, sending pain waves through ${profileData.pronounArray[2]} body.*`;
 								}
+
+								if (species.habitatArray[speciesNamesArrayIndex] == 'cold') {
+
+									embed.description = `*The thunks of acorns falling from trees spook ${profileData.name} as ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'prances' : 'prance')} around the forest, searching for something useful for ${profileData.pronounArray[2]} pack. A warm wind brushes against ${profileData.pronounArray[2]} side, and a thorn bush sweeps atop ${profileData.pronounArray[2]} path, going unnoticed. A thorn pricks into ${profileData.pronounArray[2]} skin, sending pain waves through ${profileData.pronounArray[2]} body.*`;
+								}
+
+								if (species.habitatArray[speciesNamesArrayIndex] == 'water') {
+
+									embed.description = `*The sudden silence in the water spooks ${profileData.name} as ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'swims' : 'swim')} around in the water, searching for something useful for their pack. A rocky outcropping appears next to ${profileData.pronounArray[1]}, unnoticed. The rocks scrape into ${profileData.pronounArray[2]} side, sending shockwaves of pain up ${profileData.pronounArray[2]} flank.*`;
+								}
+								// THIS IS CHANGED FROM WOUND TO INFECTION LATER
+								embed.footer.text = `-${healthPoints} HP (from wound)\n${embedFooterStatsText}`;
 						}
 
 						embedArray.splice(-1, 1, embed);
@@ -1014,7 +986,7 @@ module.exports = {
 										throw new Error(error);
 									});
 
-								switch (weightedTable({ 0: 1, 1: 9 })) {
+								switch (weightedTable({ 0: 1, 1: 1 })) {
 
 									case 0:
 
