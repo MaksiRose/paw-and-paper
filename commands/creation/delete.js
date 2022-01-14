@@ -40,13 +40,13 @@ module.exports = {
 						customId: 'delete-confirm',
 						label: 'Confirm',
 						emoji: { name: '✔' },
-						style: 'SUCCESS',
+						style: 'DANGER',
 					}, {
 						type: 'BUTTON',
 						customId: 'delete-cancel',
 						label: 'Cancel',
 						emoji: { name: '✖' },
-						style: 'DANGER',
+						style: 'SECONDARY',
 					}],
 				}],
 			})
