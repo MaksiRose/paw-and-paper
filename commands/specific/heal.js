@@ -313,7 +313,11 @@ module.exports = {
 
 					interaction.message.components.length = 2;
 					const componentArray = interaction.message.components;
-					await componentArray.push(selectMenu);
+
+					if (selectMenu.components[0].options.length > 0) {
+
+						await componentArray.push(selectMenu);
+					}
 
 					botReply = await interaction.message
 						.edit({
@@ -761,10 +765,21 @@ module.exports = {
 						});
 					}
 
-					botReply = await interaction.message
-						.edit({
+					interaction.message
+						.delete()
+						.catch((error) => {
+							if (error.httpStatus == 404) {
+								console.log('Message already deleted');
+							}
+							else {
+								throw new Error(error);
+							}
+						});
+
+					botReply = await message
+						.reply({
+							content: (chosenProfileData.userId != profileData.userId) ? `<@!${chosenProfileData.userId}>` : '',
 							embeds: embedArray,
-							components: [],
 						})
 						.catch((error) => {
 							if (error.httpStatus == 404) {
