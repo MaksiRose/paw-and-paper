@@ -271,7 +271,16 @@ module.exports = {
 
 		async function startExploring() {
 
-			botReply.delete();
+			await botReply
+				.delete()
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 
 			const thirstPoints = await condition.decreaseThirst(profileData);
 			const hungerPoints = await condition.decreaseHunger(profileData);
