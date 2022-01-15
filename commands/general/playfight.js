@@ -2,6 +2,7 @@ const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const startCooldown = require('../../utils/startCooldown');
 const config = require('../../config.json');
+const profileModel = require('../../models/profileSchema');
 
 module.exports = {
 	name: 'playfight',
@@ -62,5 +63,82 @@ module.exports = {
 					}
 				});
 		}
+
+		const partnerProfileData = await profileModel
+			.findOne({
+				userId: message.mentions.users.first().id,
+				serverId: message.guild.id,
+			})
+			.catch((error) => {
+				throw new Error(error);
+			});
+
+		embedArray.push({
+			color: config.default_color,
+			author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+			title: `${partnerProfileData.name}, you were challenged to a playfight by ${profileData.name}. Do you accept?`,
+			footer: { text: 'You have 30 seconds to click the button before the invitation expires.' },
+		});
+
+		const botReply = await message
+			.reply({
+				embeds: embedArray,
+				components: [{
+					type: 'ACTION_ROW',
+					components: [{
+						type: 'BUTTON',
+						customId: 'playfight-confirm',
+						label: 'Accept challenge',
+						emoji: { name: '🎭' },
+						style: 'SUCCESS',
+					}],
+				}],
+			})
+			.catch((error) => {
+				if (error.httpStatus == 404) {
+					console.log('Message already deleted');
+				}
+				else {
+					throw new Error(error);
+				}
+			});
+
+		const filter = async (i) => {
+
+			if (!i.message.reference || !i.message.reference.messageId) {
+
+				return false;
+			}
+
+			const userMessage = await i.channel.messages
+				.fetch(i.message.reference.messageId)
+				.catch((error) => {
+					throw new Error(error);
+				});
+
+			return userMessage.id == message.id && (i.customId == 'playfight-confirm') && i.user.id == message.mentions.users.first().id;
+		};
+
+		const collector = message.channel.createMessageComponentCollector({ filter, max: 1, time: 30000 });
+		collector.on('end', async function collectorEnd(collected) {
+
+			if (!collected.size) {
+
+				return await botReply
+					.edit({
+						components: [],
+					})
+					.catch((error) => {
+						if (error.httpStatus == 404) {
+							console.log('Message already deleted');
+						}
+						else {
+							throw new Error(error);
+						}
+					});
+			}
+
+
+		});
 	},
 };
