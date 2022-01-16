@@ -80,8 +80,9 @@ module.exports = {
 			footer: { text: 'You have 30 seconds to click the button before the invitation expires.' },
 		});
 
-		const botReply = await message
+		let botReply = await message
 			.reply({
+				content: `<@!${partnerProfileData.id}>`,
 				embeds: embedArray,
 				components: [{
 					type: 'ACTION_ROW',
@@ -138,7 +139,27 @@ module.exports = {
 					});
 			}
 
+			await botReply
+				.delete()
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 
+			botReply = await message
+				.reply()
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
 		});
 	},
 };
