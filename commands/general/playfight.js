@@ -20,27 +20,27 @@ module.exports = {
 
 		profileData = await startCooldown(message, profileData);
 
-		// if (message.mentions.users.size > 0 && message.mentions.users.first().id == message.author.id) {
+		if (message.mentions.users.size > 0 && message.mentions.users.first().id == message.author.id) {
 
-		// 	embedArray.push({
-		// 		color: profileData.color,
-		// 		author: { name: profileData.name, icon_url: profileData.avatarURL },
-		// 		description: `*${profileData.name} believes that ${profileData.pronouns[0]} ${(profileData.pronouns[5] == 'singular') ? 'is' : 'are'} so unmatched that only ${profileData.pronouns[0]} could defeat ${profileData.pronouns[4]}. But it doesn't take ${profileData.pronouns[1]} long to realize that it is more fun to fight a partner after all.*`,
-		// 	});
+			embedArray.push({
+				color: profileData.color,
+				author: { name: profileData.name, icon_url: profileData.avatarURL },
+				description: `*${profileData.name} believes that ${profileData.pronounArray[0]} ${(profileData.pronounArray[5] == 'singular') ? 'is' : 'are'} so unmatched that only ${profileData.pronounArray[0]} could defeat ${profileData.pronounArray[4]}. But it doesn't take ${profileData.pronounArray[1]} long to realize that it is more fun to fight a partner after all.*`,
+			});
 
-		// 	return await message
-		// 		.reply({
-		// 			embeds: embedArray,
-		// 		})
-		// 		.catch((error) => {
-		// 			if (error.httpStatus == 404) {
-		// 				console.log('Message already deleted');
-		// 			}
-		// 			else {
-		// 				throw new Error(error);
-		// 			}
-		// 		});
-		// }
+			return await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
+		}
 
 		if (!message.mentions.users.size) {
 
@@ -173,11 +173,14 @@ module.exports = {
 			},
 		];
 
+		// to do: if second player accepts, their cooldown has to be changed to true until the game is over!!!
+
 		await newRound((Math.floor(Math.random() * 2) == 0) ? true : false);
 
 		async function newRound(isPartner) {
 
 			const currentProfileData = (isPartner == true) ? partnerProfileData : profileData;
+			const otherProfileData = (isPartner == true) ? profileData : partnerProfileData;
 
 			return await new Promise((resolve) => {
 
@@ -280,14 +283,14 @@ module.exports = {
 					}
 
 					embedArray.push({
-						color: currentProfileData.color,
-						author: { name: currentProfileData.name, icon_url: currentProfileData.avatarURL },
-						description: `${currentProfileData.name}, it is your turn`,
+						color: otherProfileData.color,
+						author: { name: otherProfileData.name, icon_url: otherProfileData.avatarURL },
+						description: `${otherProfileData.name}, it is your turn`,
 					});
 
 					botReply = await message
 						.reply({
-							content: `<@!${currentProfileData.userId}>`,
+							content: `<@!${otherProfileData.userId}>`,
 							embeds: embedArray,
 							components: componentArray,
 						})
