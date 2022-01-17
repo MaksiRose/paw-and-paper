@@ -601,7 +601,7 @@ module.exports = {
 
 					switch (true) {
 
-						case (weightedTable({ 0: 60, 1: 40 + betterLuckValue }) == 1 && chosenBiomeNumber > 0):
+						case (weightedTable({ 0: 70, 1: 30 + betterLuckValue }) == 1 && chosenBiomeNumber > 0):
 
 							switch (true) {
 
