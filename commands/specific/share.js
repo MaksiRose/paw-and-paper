@@ -51,7 +51,7 @@ module.exports = {
 				description: `*${profileData.name} is very wise from all the adventures ${profileData.pronounArray[0]} had, but also a little... quaint. Sometimes ${profileData.pronounArray[0]} sit${(profileData.pronounArray[5] == 'singular') ? 's' : ''} down at the fireplace, mumbling to ${profileData.pronounArray[4]} a story from back in the day. Busy packmates look at ${profileData.pronounArray[1]} in confusion as they pass by.*`,
 			});
 
-			await message
+			return await message
 				.reply({
 					embeds: embedArray,
 				})
