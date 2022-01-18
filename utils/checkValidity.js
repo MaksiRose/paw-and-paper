@@ -36,7 +36,7 @@ module.exports = {
 
 		const commandName = message.content.slice(config.prefix.length).trim().split(/ +/).shift().toLowerCase();
 
-		if (profileData.hasCooldown == true && commandName == callerNameArray) {
+		if (profileData.hasCooldown == true && callerNameArray.includes(commandName)) {
 
 			await message
 				.reply({

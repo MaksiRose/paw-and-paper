@@ -13,7 +13,7 @@ module.exports = {
 			return;
 		}
 
-		if (await checkValidity.isInvalid(message, profileData, [module.exports.name])) {
+		if (await checkValidity.isInvalid(message, profileData, embedArray, [module.exports.name])) {
 
 			return;
 		}
@@ -64,7 +64,7 @@ module.exports = {
 				});
 		}
 
-		const partnerProfileData = await profileModel
+		let partnerProfileData = await profileModel
 			.findOne({
 				userId: message.mentions.users.first().id,
 				serverId: message.guild.id,
@@ -74,8 +74,8 @@ module.exports = {
 			});
 
 		embedArray.push({
-			color: config.default_color,
-			author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+			color: profileData.color,
+			author: { name: profileData.name, icon_url: profileData.avatarURL },
 			title: `${partnerProfileData.name}, you were challenged to a playfight by ${profileData.name}. Do you accept?`,
 			footer: { text: 'You have 30 seconds to click the button before the invitation expires.' },
 		});
@@ -177,7 +177,18 @@ module.exports = {
 			},
 		];
 
-		// to do: if second player accepts, their cooldown has to be changed to true until the game is over!!!
+		/* to do:
+		experience points & hurtchance have to be added
+		text has to be updated:
+			-challenge text
+			-its your turn text
+			-you won text
+			-hurt text (sprain, cold)
+			-draw text
+			-game didnt start text
+			-game was abandoned text
+		delete button if i do another command
+		*/
 
 		await newRound((Math.floor(Math.random() * 2) == 0) ? true : false);
 
@@ -207,12 +218,72 @@ module.exports = {
 				const collector = message.channel.createMessageComponentCollector({ filter, max: 1, time: 30000 });
 				collector.on('end', async function collectorEnd(collected) {
 
+					let isEmptyBoard = false;
+					for (const columnArray of componentArray) {
+
+						for (const rowArray of columnArray.components) {
+
+							if (rowArray.emoji.name === emptyField) {
+
+								isEmptyBoard = true;
+								break;
+							}
+						}
+					}
+
+					await botReply
+						.delete()
+						.catch((error) => {
+							if (error.httpStatus == 404) {
+								console.log('Message already deleted');
+							}
+							else {
+								throw new Error(error);
+							}
+						});
+
+					embedArray.splice(-1, 1);
+
 					if (!collected.size) {
 
-						embedArray.push({
-							color: config.default_color,
-							title: 'The match was cancelled due to inactivity.',
-						});
+						if (isEmptyBoard) {
+
+							// text for when the match didnt start
+							embedArray.push({
+								color: config.default_color,
+								title: 'The match was cancelled due to inactivity.',
+							});
+						}
+						else {
+
+							console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							profileData = await profileModel
+								.findOneAndUpdate(
+									{ userId: message.author.id, serverId: message.guild.id },
+									{ $set: { hasCooldown: false } },
+									{ new: true },
+								)
+								.catch(async (error) => {
+									throw new Error(error);
+								});
+
+							console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): hasCooldown changed from \x1b[33m${partnerProfileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							partnerProfileData = await profileModel
+								.findOneAndUpdate(
+									{ userId: message.mentions.users.first().id, serverId: message.guild.id },
+									{ $set: { hasCooldown: false } },
+									{ new: true },
+								)
+								.catch(async (error) => {
+									throw new Error(error);
+								});
+
+							// text for when the match was abandoned
+							embedArray.push({
+								color: config.default_color,
+								title: 'The match was cancelled due to inactivity.',
+							});
+						}
 
 						await botReply
 							.edit({
@@ -231,18 +302,30 @@ module.exports = {
 						return resolve();
 					}
 
-					await botReply
-						.delete()
-						.catch((error) => {
-							if (error.httpStatus == 404) {
-								console.log('Message already deleted');
-							}
-							else {
-								throw new Error(error);
-							}
-						});
+					if (isEmptyBoard) {
 
-					embedArray.splice(-1, 1);
+						console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mtrue \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						profileData = await profileModel
+							.findOneAndUpdate(
+								{ userId: message.author.id, serverId: message.guild.id },
+								{ $set: { hasCooldown: true } },
+								{ new: true },
+							)
+							.catch(async (error) => {
+								throw new Error(error);
+							});
+
+						console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): hasCooldown changed from \x1b[33m${partnerProfileData.hasCooldown} \x1b[0mto \x1b[33mtrue \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						partnerProfileData = await profileModel
+							.findOneAndUpdate(
+								{ userId: message.mentions.users.first().id, serverId: message.guild.id },
+								{ $set: { hasCooldown: true } },
+								{ new: true },
+							)
+							.catch(async (error) => {
+								throw new Error(error);
+							});
+					}
 
 					if (collected.first().customId.includes('board')) {
 
@@ -262,9 +345,31 @@ module.exports = {
 								}
 							}
 
+							console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							profileData = await profileModel
+								.findOneAndUpdate(
+									{ userId: message.author.id, serverId: message.guild.id },
+									{ $set: { hasCooldown: false } },
+									{ new: true },
+								)
+								.catch(async (error) => {
+									throw new Error(error);
+								});
+
+							console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): hasCooldown changed from \x1b[33m${partnerProfileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							partnerProfileData = await profileModel
+								.findOneAndUpdate(
+									{ userId: message.mentions.users.first().id, serverId: message.guild.id },
+									{ $set: { hasCooldown: false } },
+									{ new: true },
+								)
+								.catch(async (error) => {
+									throw new Error(error);
+								});
+
 							embedArray.push({
-								color: currentProfileData.color,
-								author: { name: currentProfileData.name, icon_url: currentProfileData.avatarURL },
+								color: profileData.color,
+								author: { name: profileData.name, icon_url: profileData.avatarURL },
 								description: `${currentProfileData.name}, you won!`,
 							});
 
@@ -286,6 +391,28 @@ module.exports = {
 						}
 
 						if (isDraw()) {
+
+							console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							profileData = await profileModel
+								.findOneAndUpdate(
+									{ userId: message.author.id, serverId: message.guild.id },
+									{ $set: { hasCooldown: false } },
+									{ new: true },
+								)
+								.catch(async (error) => {
+									throw new Error(error);
+								});
+
+							console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): hasCooldown changed from \x1b[33m${partnerProfileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							partnerProfileData = await profileModel
+								.findOneAndUpdate(
+									{ userId: message.mentions.users.first().id, serverId: message.guild.id },
+									{ $set: { hasCooldown: false } },
+									{ new: true },
+								)
+								.catch(async (error) => {
+									throw new Error(error);
+								});
 
 							embedArray.push({
 								color: config.default_color,
@@ -311,8 +438,8 @@ module.exports = {
 					}
 
 					embedArray.push({
-						color: otherProfileData.color,
-						author: { name: otherProfileData.name, icon_url: otherProfileData.avatarURL },
+						color: profileData.color,
+						author: { name: profileData.name, icon_url: profileData.avatarURL },
 						description: `${otherProfileData.name}, it is your turn`,
 					});
 
