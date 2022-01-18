@@ -20,7 +20,7 @@ module.exports = {
 			return;
 		}
 
-		if (await checkValidity.isInvalid(message, profileData, embedArray, module.exports.name)) {
+		if (await checkValidity.isInvalid(message, profileData, embedArray, [module.exports.name].concat(module.exporsts.aliases))) {
 
 			return;
 		}

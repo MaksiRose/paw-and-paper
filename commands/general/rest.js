@@ -19,7 +19,7 @@ module.exports = {
 			return;
 		}
 
-		if (await checkValidity.hasCooldown(message, profileData, module.exports.name)) {
+		if (await checkValidity.hasCooldown(message, profileData, [module.exports.name].concat(module.exports.aliases))) {
 
 			return;
 		}

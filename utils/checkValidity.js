@@ -32,11 +32,11 @@ module.exports = {
 		return false;
 	},
 
-	async hasCooldown(message, profileData, callerName) {
+	async hasCooldown(message, profileData, callerNameArray) {
 
 		const commandName = message.content.slice(config.prefix.length).trim().split(/ +/).shift().toLowerCase();
 
-		if (profileData.hasCooldown == true && commandName == callerName) {
+		if (profileData.hasCooldown == true && callerNameArray.includes(commandName)) {
 
 			await message
 				.reply({
@@ -209,14 +209,14 @@ module.exports = {
 		return profileData;
 	},
 
-	async isInvalid(message, profileData, embedArray, callerName) {
+	async isInvalid(message, profileData, embedArray, callerNameArray) {
 
 		if (await module.exports.isPassedOut(message, profileData)) {
 
 			return true;
 		}
 
-		if (await module.exports.hasCooldown(message, profileData, callerName)) {
+		if (await module.exports.hasCooldown(message, profileData, callerNameArray)) {
 
 			return true;
 		}
