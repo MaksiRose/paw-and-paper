@@ -104,25 +104,29 @@ module.exports = {
 				}
 			});
 
+		const emptyField = '◻️';
+		const player1Field = '⭕';
+		const player2Field = '❌';
+
 		const componentArray = [
 			{
 				type: 'ACTION_ROW',
 				components: [{
 					type: 'BUTTON',
 					customId: 'board-1-1',
-					emoji: { name: '◻️' },
+					emoji: { name: emptyField },
 					disabled: false,
 					style: 'SECONDARY',
 				}, {
 					type: 'BUTTON',
 					customId: 'board-1-2',
-					emoji: { name: '◻️' },
+					emoji: { name: emptyField },
 					disabled: false,
 					style: 'SECONDARY',
 				}, {
 					type: 'BUTTON',
 					customId: 'board-1-3',
-					emoji: { name: '◻️' },
+					emoji: { name: emptyField },
 					disabled: false,
 					style: 'SECONDARY',
 				}],
@@ -132,19 +136,19 @@ module.exports = {
 				components: [{
 					type: 'BUTTON',
 					customId: 'board-2-1',
-					emoji: { name: '◻️' },
+					emoji: { name: emptyField },
 					disabled: false,
 					style: 'SECONDARY',
 				}, {
 					type: 'BUTTON',
 					customId: 'board-2-2',
-					emoji: { name: '◻️' },
+					emoji: { name: emptyField },
 					disabled: false,
 					style: 'SECONDARY',
 				}, {
 					type: 'BUTTON',
 					customId: 'board-2-3',
-					emoji: { name: '◻️' },
+					emoji: { name: emptyField },
 					disabled: false,
 					style: 'SECONDARY',
 				}],
@@ -154,19 +158,19 @@ module.exports = {
 				components: [{
 					type: 'BUTTON',
 					customId: 'board-3-1',
-					emoji: { name: '◻️' },
+					emoji: { name: emptyField },
 					disabled: false,
 					style: 'SECONDARY',
 				}, {
 					type: 'BUTTON',
 					customId: 'board-3-2',
-					emoji: { name: '◻️' },
+					emoji: { name: emptyField },
 					disabled: false,
 					style: 'SECONDARY',
 				}, {
 					type: 'BUTTON',
 					customId: 'board-3-3',
-					emoji: { name: '◻️' },
+					emoji: { name: emptyField },
 					disabled: false,
 					style: 'SECONDARY',
 				}],
@@ -245,7 +249,7 @@ module.exports = {
 						const column = collected.first().customId.split('-', 2).pop() - 1;
 						const row = collected.first().customId.split('-').pop() - 1;
 
-						componentArray[column].components[row].emoji.name = (isPartner == true) ? '⭕' : '❌';
+						componentArray[column].components[row].emoji.name = (isPartner == true) ? player1Field : player2Field;
 						componentArray[column].components[row].disabled = true;
 
 						if (hasWon()) {
@@ -262,6 +266,30 @@ module.exports = {
 								color: currentProfileData.color,
 								author: { name: currentProfileData.name, icon_url: currentProfileData.avatarURL },
 								description: `${currentProfileData.name}, you won!`,
+							});
+
+							await message
+								.reply({
+									embeds: embedArray,
+									components: componentArray,
+								})
+								.catch((error) => {
+									if (error.httpStatus == 404) {
+										console.log('Message already deleted');
+									}
+									else {
+										throw new Error(error);
+									}
+								});
+
+							return resolve();
+						}
+
+						if (isDraw()) {
+
+							embedArray.push({
+								color: config.default_color,
+								description: 'It\'s a draw!',
 							});
 
 							await message
@@ -317,7 +345,7 @@ module.exports = {
 						const diagonal_0_2 = componentArray[0].components[2].emoji.name;
 						const diagonal_2_0 = componentArray[2].components[0].emoji.name;
 
-						if (diagonal_1_1 !== '◻️' && ((diagonal_1_1 === diagonal_0_0 && diagonal_1_1 === diagonal_2_2) || (diagonal_1_1 === diagonal_0_2 && diagonal_1_1 === diagonal_2_0))) {
+						if (diagonal_1_1 !== emptyField && ((diagonal_1_1 === diagonal_0_0 && diagonal_1_1 === diagonal_2_2) || (diagonal_1_1 === diagonal_0_2 && diagonal_1_1 === diagonal_2_0))) {
 
 							return true;
 						}
@@ -332,13 +360,29 @@ module.exports = {
 							const row_2 = componentArray[1].components[value].emoji.name;
 							const row_3 = componentArray[2].components[value].emoji.name;
 
-							if ((column_1 === column_2 && column_1 === column_3 && column_1 !== '◻️') || (row_1 === row_2 && row_1 === row_3 && row_1 !== '◻️')) {
+							if ((column_1 === column_2 && column_1 === column_3 && column_1 !== emptyField) || (row_1 === row_2 && row_1 === row_3 && row_1 !== emptyField)) {
 
 								return true;
 							}
 						}
 
 						return false;
+					}
+
+					function isDraw() {
+
+						for (const columnArray of componentArray) {
+
+							for (const rowArray of columnArray.components) {
+
+								if (rowArray.emoji.name === emptyField) {
+
+									return false;
+								}
+							}
+						}
+
+						return true;
 					}
 				});
 			});
