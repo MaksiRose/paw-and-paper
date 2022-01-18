@@ -3,6 +3,8 @@ const checkValidity = require('../../utils/checkValidity');
 const startCooldown = require('../../utils/startCooldown');
 const config = require('../../config.json');
 const profileModel = require('../../models/profileSchema');
+const condition = require('../../utils/condition');
+const levels = require('../../utils/levels');
 
 module.exports = {
 	name: 'playfight',
@@ -178,7 +180,6 @@ module.exports = {
 		];
 
 		/* to do:
-		experience points & hurtchance have to be added
 		text has to be updated:
 			-challenge text
 			-its your turn text
@@ -188,6 +189,52 @@ module.exports = {
 			-game didnt start text
 			-game was abandoned text
 		*/
+
+		const thirstPointsPlayer1 = await condition.decreaseThirst(profileData);
+		const hungerPointsPlayer1 = await condition.decreaseHunger(profileData);
+		const extraLostEnergyPointsPlayer1 = await condition.decreaseEnergy(profileData);
+		let energyPointsPlayer1 = Loottable(5, 1) + extraLostEnergyPointsPlayer1;
+		const userInjuryArrayPlayer1 = [...profileData.injuryArray];
+
+		if (profileData.energy - energyPointsPlayer1 < 0) {
+
+			energyPointsPlayer1 = profileData.energy;
+		}
+
+		let embedFooterStatsTextPlayer1 = `-${energyPointsPlayer1} energy (${profileData.energy}/${profileData.maxEnergy}) for ${profileData.name}`;
+
+		if (hungerPointsPlayer1 >= 1) {
+
+			embedFooterStatsTextPlayer1 += `\n-${hungerPointsPlayer1} hunger (${profileData.hunger}/${profileData.maxHunger}) for ${profileData.name}`;
+		}
+
+		if (thirstPointsPlayer1 >= 1) {
+
+			embedFooterStatsTextPlayer1 += `\n-${thirstPointsPlayer1} thirst (${profileData.thirst}/${profileData.maxThirst}) for ${profileData.name}`;
+		}
+
+		const thirstPointsPlayer2 = await condition.decreaseThirst(partnerProfileData);
+		const hungerPointsPlayer2 = await condition.decreaseHunger(partnerProfileData);
+		const extraLostEnergyPointsPlayer2 = await condition.decreaseEnergy(partnerProfileData);
+		let energyPointsPlayer2 = Loottable(5, 1) + extraLostEnergyPointsPlayer2;
+		const userInjuryArrayPlayer2 = [...partnerProfileData.injuryArray];
+
+		if (partnerProfileData.energy - energyPointsPlayer2 < 0) {
+
+			energyPointsPlayer2 = partnerProfileData.energy;
+		}
+
+		let embedFooterStatsTextPlayer2 = `-${energyPointsPlayer1} energy (${partnerProfileData.energy}/${partnerProfileData.maxEnergy}) for ${partnerProfileData.name}`;
+
+		if (hungerPointsPlayer1 >= 1) {
+
+			embedFooterStatsTextPlayer2 += `\n-${hungerPointsPlayer1} hunger (${partnerProfileData.hunger}/${partnerProfileData.maxHunger}) for ${partnerProfileData.name}`;
+		}
+
+		if (thirstPointsPlayer1 >= 1) {
+
+			embedFooterStatsTextPlayer2 += `\n-${thirstPointsPlayer1} thirst (${partnerProfileData.thirst}/${partnerProfileData.maxThirst}) for ${partnerProfileData.name}`;
+		}
 
 		client.on('messageCreate', async function removePlayfightComponents(newMessage) {
 
@@ -229,8 +276,8 @@ module.exports = {
 
 		async function newRound(isPartner) {
 
-			const currentProfileData = (isPartner == true) ? partnerProfileData : profileData;
-			const otherProfileData = (isPartner == true) ? profileData : partnerProfileData;
+			let currentProfileData = (isPartner == true) ? partnerProfileData : profileData;
+			let otherProfileData = (isPartner == true) ? profileData : partnerProfileData;
 
 			return await new Promise((resolve) => {
 
@@ -288,6 +335,20 @@ module.exports = {
 								color: config.default_color,
 								title: 'The match was cancelled due to inactivity.',
 							});
+
+							await botReply
+								.edit({
+									embeds: embedArray,
+									components: [],
+								})
+								.catch((error) => {
+									if (error.httpStatus == 404) {
+										console.log('Message already deleted');
+									}
+									else {
+										throw new Error(error);
+									}
+								});
 						}
 						else {
 
@@ -315,49 +376,81 @@ module.exports = {
 
 							// text for when the match was abandoned
 							embedArray.push({
-								color: config.default_color,
+								color: profileData.color,
+								author: { name: profileData.name, icon_url: profileData.avatarURL },
 								title: 'The match was cancelled due to inactivity.',
+								footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
 							});
-						}
 
-						await botReply
-							.edit({
-								embeds: embedArray,
-								components: [],
-							})
-							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
-							});
+							await botReply
+								.edit({
+									embeds: embedArray,
+									components: [],
+								})
+								.catch((error) => {
+									if (error.httpStatus == 404) {
+										console.log('Message already deleted');
+									}
+									else {
+										throw new Error(error);
+									}
+								});
+
+							await extraEmbeds();
+						}
 
 						return resolve();
 					}
 
 					if (isEmptyBoard) {
 
+						console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): energy changed from \x1b[33m${profileData.energy} \x1b[0mto \x1b[33m${profileData.energy - energyPointsPlayer1} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hunger changed from \x1b[33m${profileData.hunger} \x1b[0mto \x1b[33m${profileData.hunger - hungerPointsPlayer1} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): thirst changed from \x1b[33m${profileData.thirst} \x1b[0mto \x1b[33m${profileData.thirst - thirstPointsPlayer1} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): currentRegion changed from \x1b[33m${profileData.currentRegion} \x1b[0mto \x1b[33mprairie \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 						console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mtrue \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 						profileData = await profileModel
 							.findOneAndUpdate(
 								{ userId: message.author.id, serverId: message.guild.id },
-								{ $set: { hasCooldown: true } },
+								{
+									$inc: {
+										energy: -energyPointsPlayer1,
+										hunger: -hungerPointsPlayer1,
+										thirst: -thirstPointsPlayer1,
+									},
+									$set: {
+										currentRegion: 'prairie',
+										hasCooldown: true,
+									},
+								},
 								{ new: true },
 							)
-							.catch(async (error) => {
+							.catch((error) => {
 								throw new Error(error);
 							});
 
+						console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): energy changed from \x1b[33m${partnerProfileData.energy} \x1b[0mto \x1b[33m${partnerProfileData.energy - energyPointsPlayer2} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): hunger changed from \x1b[33m${partnerProfileData.hunger} \x1b[0mto \x1b[33m${partnerProfileData.hunger - hungerPointsPlayer2} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): thirst changed from \x1b[33m${partnerProfileData.thirst} \x1b[0mto \x1b[33m${partnerProfileData.thirst - thirstPointsPlayer2} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): currentRegion changed from \x1b[33m${partnerProfileData.currentRegion} \x1b[0mto \x1b[33mprairie \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 						console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): hasCooldown changed from \x1b[33m${partnerProfileData.hasCooldown} \x1b[0mto \x1b[33mtrue \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 						partnerProfileData = await profileModel
 							.findOneAndUpdate(
 								{ userId: message.mentions.users.first().id, serverId: message.guild.id },
-								{ $set: { hasCooldown: true } },
+								{
+									$inc: {
+										energy: -energyPointsPlayer2,
+										hunger: -hungerPointsPlayer2,
+										thirst: -thirstPointsPlayer2,
+									},
+									$set: {
+										currentRegion: 'prairie',
+										hasCooldown: true,
+									},
+								},
 								{ new: true },
 							)
-							.catch(async (error) => {
+							.catch((error) => {
 								throw new Error(error);
 							});
 					}
@@ -402,10 +495,106 @@ module.exports = {
 									throw new Error(error);
 								});
 
+							const experiencePoints = Loottable(10, 1);
+
+							if (currentProfileData.userId === profileData.userId) {
+
+								embedFooterStatsTextPlayer1 = `+${experiencePoints} XP (${currentProfileData.experience}/${currentProfileData.levels * 50}) for ${currentProfileData.name}\n${embedFooterStatsTextPlayer1}`;
+
+								console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): experience changed from \x1b[33m${currentProfileData.experience} \x1b[0mto \x1b[33m${currentProfileData.experience + experiencePoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							}
+							else {
+
+								embedFooterStatsTextPlayer2 = `+${experiencePoints} XP (${currentProfileData.experience}/${currentProfileData.levels * 50}) for ${currentProfileData.name}\n${embedFooterStatsTextPlayer2}`;
+
+								console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): experience changed from \x1b[33m${currentProfileData.experience} \x1b[0mto \x1b[33m${currentProfileData.experience + experiencePoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							}
+
+							currentProfileData = await profileModel
+								.findOneAndUpdate(
+									{ userId: currentProfileData.userId, serverId: message.guild.id },
+									{ $inc: { experience: experiencePoints } },
+									{ new: true },
+								)
+								.catch(async (error) => {
+									throw new Error(error);
+								});
+
+							let getHurtText = '';
+							const betterLuckValue = (otherProfileData.levels - 1) * 2;
+							const getHurtChance = weightedTable({ 0: 10, 1: 90 + betterLuckValue });
+							if (getHurtChance == 0) {
+
+								let healthPoints = Loottable(5, 3);
+								let userInjuryArray = [];
+
+								if (otherProfileData.health - healthPoints < 0) {
+
+									healthPoints = otherProfileData.health;
+								}
+
+								if (otherProfileData.userId === profileData.userId) {
+
+									userInjuryArray = userInjuryArrayPlayer1;
+									console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): health changed from \x1b[33m${otherProfileData.health} \x1b[0mto \x1b[33m${otherProfileData.health - healthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+								}
+								else {
+
+									userInjuryArray = userInjuryArrayPlayer2;
+									console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): health changed from \x1b[33m${otherProfileData.health} \x1b[0mto \x1b[33m${otherProfileData.health - healthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+								}
+
+								otherProfileData = await profileModel
+									.findOneAndUpdate(
+										{ userId: otherProfileData.userId, serverId: message.guild.id },
+										{ $inc: { health: -healthPoints } },
+										{ new: true },
+									)
+									.catch((error) => {
+										throw new Error(error);
+									});
+
+								switch (true) {
+
+									case (weightedTable({ 0: 1, 1: 1 }) == 0 && userInjuryArray[2] < 1):
+
+										++userInjuryArray[2];
+
+										getHurtText += '';
+
+										if (otherProfileData.userId === profileData.userId) {
+
+											embedFooterStatsTextPlayer1 = `-${healthPoints} HP (from cold)\n${embedFooterStatsTextPlayer1}`;
+										}
+										else {
+
+											embedFooterStatsTextPlayer2 = `-${healthPoints} HP (from cold)\n${embedFooterStatsTextPlayer2}`;
+										}
+
+										break;
+
+									default:
+
+										++userInjuryArray[3];
+
+										getHurtText += '';
+
+										if (otherProfileData.userId === profileData.userId) {
+
+											embedFooterStatsTextPlayer1 = `-${healthPoints} HP (from sprain)\n${embedFooterStatsTextPlayer1}`;
+										}
+										else {
+
+											embedFooterStatsTextPlayer2 = `-${healthPoints} HP (from sprain)\n${embedFooterStatsTextPlayer2}`;
+										}
+								}
+							}
+
 							embedArray.push({
 								color: profileData.color,
 								author: { name: profileData.name, icon_url: profileData.avatarURL },
-								description: `${currentProfileData.name}, you won!`,
+								description: `${currentProfileData.name}, you won!\n\n${getHurtText}`,
+								footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
 							});
 
 							await message
@@ -421,6 +610,8 @@ module.exports = {
 										throw new Error(error);
 									}
 								});
+
+							await extraEmbeds();
 
 							return resolve();
 						}
@@ -449,9 +640,40 @@ module.exports = {
 									throw new Error(error);
 								});
 
+							const experiencePoints = Loottable(5, 1);
+
+							embedFooterStatsTextPlayer1 = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50}) for ${profileData.name}\n${embedFooterStatsTextPlayer1}`;
+							embedFooterStatsTextPlayer2 = `+${experiencePoints} XP (${partnerProfileData.experience}/${partnerProfileData.levels * 50}) for ${partnerProfileData.name}\n${embedFooterStatsTextPlayer2}`;
+
+							console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): experience changed from \x1b[33m${profileData.experience} \x1b[0mto \x1b[33m${profileData.experience + experiencePoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+
+							profileData = await profileModel
+								.findOneAndUpdate(
+									{ userId: message.author.id, serverId: message.guild.id },
+									{ $inc: { experience: experiencePoints } },
+									{ new: true },
+								)
+								.catch(async (error) => {
+									throw new Error(error);
+								});
+
+							console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): experience changed from \x1b[33m${partnerProfileData.experience} \x1b[0mto \x1b[33m${partnerProfileData.experience + experiencePoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+
+							partnerProfileData = await profileModel
+								.findOneAndUpdate(
+									{ userId: message.mentions.users.first().id, serverId: message.guild.id },
+									{ $inc: { experience: experiencePoints } },
+									{ new: true },
+								)
+								.catch(async (error) => {
+									throw new Error(error);
+								});
+
 							embedArray.push({
-								color: config.default_color,
+								color: profileData.color,
+								author: { name: profileData.name, icon_url: profileData.avatarURL },
 								description: 'It\'s a draw!',
+								footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
 							});
 
 							await message
@@ -467,6 +689,8 @@ module.exports = {
 										throw new Error(error);
 									}
 								});
+
+							await extraEmbeds();
 
 							return resolve();
 						}
@@ -496,6 +720,47 @@ module.exports = {
 					await newRound(!isPartner);
 
 					return resolve();
+
+					async function extraEmbeds() {
+
+						await condition.decreaseHealth(message, profileData, botReply);
+						await condition.decreaseHealth(message, partnerProfileData, botReply);
+
+						console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): injuryArray changed from \x1b[33m${profileData.injuryArray} \x1b[0mto \x1b[33m${userInjuryArrayPlayer1} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						profileData = await profileModel
+							.findOneAndUpdate(
+								{ userId: message.author.id, serverId: message.guild.id },
+								{ $set: { injuryArray: userInjuryArrayPlayer1 } },
+								{ new: true },
+							)
+							.catch((error) => {
+								throw new Error(error);
+							});
+
+						console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): injuryArray changed from \x1b[33m${partnerProfileData.injuryArray} \x1b[0mto \x1b[33m${userInjuryArrayPlayer2} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						partnerProfileData = await profileModel
+							.findOneAndUpdate(
+								{ userId: message.mentions.users.first().id, serverId: message.guild.id },
+								{ $set: { injuryArray: userInjuryArrayPlayer2 } },
+								{ new: true },
+							)
+							.catch((error) => {
+								throw new Error(error);
+							});
+
+						await levels.levelCheck(message, profileData, botReply);
+						await levels.levelCheck(message, partnerProfileData, botReply);
+
+						if (await checkValidity.isPassedOut(message, profileData)) {
+
+							await levels.decreaseLevel(message, profileData);
+						}
+
+						if (await checkValidity.isPassedOut(message, partnerProfileData)) {
+
+							await levels.decreaseLevel(message, partnerProfileData);
+						}
+					}
 
 					function hasWon() {
 
@@ -548,6 +813,26 @@ module.exports = {
 					}
 				});
 			});
+		}
+
+		function Loottable(max, min) {
+
+			return Math.floor(Math.random() * max) + min;
+		}
+
+		function weightedTable(values) {
+
+			const table = [];
+
+			for (const i in values) {
+
+				for (let j = 0; j < values[i]; j++) {
+
+					table.push(i);
+				}
+			}
+
+			return table[Math.floor(Math.random() * table.length)];
 		}
 	},
 };
