@@ -187,8 +187,43 @@ module.exports = {
 			-draw text
 			-game didnt start text
 			-game was abandoned text
-		delete button if i do another command
 		*/
+
+		client.on('messageCreate', async function removePlayfightComponents(newMessage) {
+
+			let isEmptyBoard = false;
+			for (const columnArray of componentArray) {
+
+				for (const rowArray of columnArray.components) {
+
+					if (rowArray.emoji.name === emptyField) {
+
+						isEmptyBoard = true;
+						break;
+					}
+				}
+			}
+
+			if (!botReply || newMessage.author.id != message.author.id || !newMessage.content.toLowerCase().startsWith(config.prefix) || profileData.hasCooldown || isEmptyBoard === false) {
+
+				return;
+			}
+
+			await botReply
+				.edit({
+					components: [],
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
+
+			return client.off('messageCreate', removePlayfightComponents);
+		});
 
 		await newRound((Math.floor(Math.random() * 2) == 0) ? true : false);
 
