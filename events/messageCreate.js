@@ -8,6 +8,8 @@ let lastMessageEpochTime = 0;
 const automaticRestingTimeoutArray = new Array();
 const automaticCooldownTimeoutArray = new Array();
 const usersActiveCommandsAmountMap = new Map();
+const serversActiveUsersAmountMap = new Map();
+const serversActiveUsersCooldownTimeoutArray = new Array();
 
 module.exports = {
 	name: 'messageCreate',
@@ -189,7 +191,27 @@ module.exports = {
 
 				usersActiveCommandsAmountMap.set(message.author.id, { activeCommands: 0 });
 			}
-			usersActiveCommandsAmountMap.get(message.author.id).activeCommands++;
+			usersActiveCommandsAmountMap.get(message.author.id).activeCommands += 1;
+
+			if (serversActiveUsersAmountMap.has(message.guild.id) == false) {
+
+				serversActiveUsersAmountMap.set(message.guild.id, { activeUsersArray: [] });
+			}
+
+			if (serversActiveUsersAmountMap.get(message.guild.id).activeUsersArray.includes(message.author.id)) {
+
+				const userIndex = serversActiveUsersAmountMap.get(message.guild.id).activeUsersArray.indexOf(message.author.id);
+				serversActiveUsersAmountMap.get(message.guild.id).activeUsersArray.splice(userIndex, 1);
+				clearTimeout(serversActiveUsersCooldownTimeoutArray[message.author.id]);
+			}
+
+			serversActiveUsersAmountMap.get(message.guild.id).activeUsersArray.push(message.author.id);
+
+			serversActiveUsersCooldownTimeoutArray[message.author.id] = setTimeout(async function() {
+
+				const userIndex = serversActiveUsersAmountMap.get(message.guild.id).activeUsersArray.indexOf(message.author.id);
+				serversActiveUsersAmountMap.get(message.guild.id).activeUsersArray.splice(userIndex, 1);
+			}, 120000);
 
 			await message.channel
 				.sendTyping()
