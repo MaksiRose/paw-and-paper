@@ -1,5 +1,6 @@
 const arrays = require('../../utils/arrays');
 const profileModel = require('../../models/profileSchema');
+const serverModel = require('../../models/serverSchema');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const condition = require('../../utils/condition');
@@ -351,6 +352,48 @@ module.exports = {
 			}
 			else {
 				await findSomething();
+			}
+
+			serverData = await serverModel
+				.findOne({
+					serverId: message.guild.id,
+				})
+				.catch(async (error) => {
+					throw new Error(error);
+				});
+
+			if (serverData.activeUsersArray.length >= 2 && (Date.now() - serverData.lastHumanAttack) > 86400000) {
+
+				console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): lastHumanAttack changed from \x1b[33m${serverData.lastHumanAttack} \x1b[0mto \x1b[33m${Date.now()} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+				serverData = await serverModel
+					.findOneAndUpdate(
+						{ serverId: message.guild.id },
+						{ $set: { lastHumanAttack: Date.now() } },
+						{ new: true },
+					)
+					.catch(async (error) => {
+						throw new Error(error);
+					});
+
+				embedArray.push({
+					color: profileData.color,
+					description: '*Humans are attacking the pack! You have one minute to prepare.* (WIP)',
+				});
+
+				await message
+					.edit({
+						embeds: embedArray,
+					})
+					.catch((error) => {
+						if (error.httpStatus == 404) {
+							console.log('Message already deleted');
+						}
+						else {
+							throw new Error(error);
+						}
+					});
+
+				// initiate attack start in one minute timeout
 			}
 
 
@@ -734,7 +777,6 @@ module.exports = {
 
 					const collector2 = message.channel.createMessageComponentCollector({ filter, max: 1, time: 30000 });
 					collector2.on('end', async (collected) => {
-						console.log(collected);
 
 						if (!collected.size || collected.first().customId == 'enemy-flee') {
 

@@ -96,7 +96,7 @@ module.exports = {
 					color: config.default_color,
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: `What species is ${profileData.name}?`,
-					footer: { text: `If you want an earthly species that is not on the list, contact ${maksi.tag}. Seriously, just ask. It takes one minute and I'll be happy to do it.` },
+					footer: { text: `If you want an earthly species that is not on the list, contact ${maksi.tag}. Seriously, just ask. I'll be happy to do it.` },
 				}],
 				components: [{
 					type: 'ACTION_ROW',

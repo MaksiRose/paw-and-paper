@@ -13,7 +13,7 @@ module.exports = {
 		// eslint-disable-next-line no-unused-vars
 		for (const [guild_key, guild] of client.guilds.cache) {
 
-			const serverData = await serverModel
+			let serverData = await serverModel
 				.findOne({
 					serverId: guild.id,
 				})
@@ -26,7 +26,16 @@ module.exports = {
 				return;
 			}
 
-			// eslint-disable-next-line no-unused-vars
+			serverData = await serverModel
+				.findOneAndUpdate(
+					{ serverId: guild.id },
+					{ $set: { activeUsersArray: [] } },
+					{ new: true },
+				)
+				.catch(async (error) => {
+					console.error(error);
+				});
+
 			for (const [account_id, account] of serverData.accountsToDelete) {
 
 				setTimeout(async () => {

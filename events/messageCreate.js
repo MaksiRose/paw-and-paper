@@ -8,7 +8,6 @@ let lastMessageEpochTime = 0;
 const automaticRestingTimeoutArray = new Array();
 const automaticCooldownTimeoutArray = new Array();
 const usersActiveCommandsAmountMap = new Map();
-const serversActiveUsersAmountMap = new Map();
 const serversActiveUsersCooldownTimeoutArray = new Array();
 
 module.exports = {
@@ -187,31 +186,57 @@ module.exports = {
 
 			console.log(`\x1b[32m\x1b[0m${message.author.tag} successfully executed \x1b[33m${message.content} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
+
 			if (usersActiveCommandsAmountMap.has(message.author.id) == false) {
 
 				usersActiveCommandsAmountMap.set(message.author.id, { activeCommands: 0 });
 			}
 			usersActiveCommandsAmountMap.get(message.author.id).activeCommands += 1;
 
-			if (serversActiveUsersAmountMap.has(message.guild.id) == false) {
 
-				serversActiveUsersAmountMap.set(message.guild.id, { activeUsersArray: [] });
-			}
+			if (serverData.activeUsersArray.includes(message.author.id)) {
 
-			if (serversActiveUsersAmountMap.get(message.guild.id).activeUsersArray.includes(message.author.id)) {
-
-				const userIndex = serversActiveUsersAmountMap.get(message.guild.id).activeUsersArray.indexOf(message.author.id);
-				serversActiveUsersAmountMap.get(message.guild.id).activeUsersArray.splice(userIndex, 1);
 				clearTimeout(serversActiveUsersCooldownTimeoutArray[message.author.id]);
 			}
+			else {
 
-			serversActiveUsersAmountMap.get(message.guild.id).activeUsersArray.push(message.author.id);
+				console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): activeUsersArray changed from \x1b[33m[${serverData.activeUsersArray}] \x1b[0mto \x1b[33m[${[...serverData.activeUsersArray, message.author.id]}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+				serverData = await serverModel
+					.findOneAndUpdate(
+						{ serverId: message.guild.id },
+						{ $push: { activeUsersArray: message.author.id } },
+						{ new: true },
+					)
+					.catch(async (error) => {
+						return await errorHandling.output(message, error);
+					});
+			}
 
 			serversActiveUsersCooldownTimeoutArray[message.author.id] = setTimeout(async function() {
 
-				const userIndex = serversActiveUsersAmountMap.get(message.guild.id).activeUsersArray.indexOf(message.author.id);
-				serversActiveUsersAmountMap.get(message.guild.id).activeUsersArray.splice(userIndex, 1);
+				serverData = await serverModel
+					.findOne({
+						serverId: message.guild.id,
+					})
+					.catch(async (error) => {
+						return await errorHandling.output(message, error);
+					});
+
+				const userIndex = serverData.activeUsersArray.indexOf(message.author.id);
+				serverData.activeUsersArray.splice(userIndex, 1);
+
+				console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): activeUsersArray changed from \x1b[33m[${[...serverData.activeUsersArray, message.author.id]}] \x1b[0mto \x1b[33m[${serverData.activeUsersArray}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+				serverData = await serverModel
+					.findOneAndUpdate(
+						{ serverId: message.guild.id },
+						{ $set: { activeUsersArray: serverData.activeUsersArray } },
+						{ new: true },
+					)
+					.catch(async (error) => {
+						return await errorHandling.output(message, error);
+					});
 			}, 120000);
+
 
 			await message.channel
 				.sendTyping()
