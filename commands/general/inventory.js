@@ -77,12 +77,7 @@ module.exports = {
 				components: componentArray,
 			})
 			.catch((error) => {
-				if (error.httpStatus == 404) {
-					console.log('Message already deleted');
-				}
-				else {
-					throw new Error(error);
-				}
+				throw new Error(error);
 			});
 
 		let currentPage = 0;
@@ -100,12 +95,7 @@ module.exports = {
 					components: [],
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 
 			return client.off('messageCreate', removeInventoryComponents);
@@ -141,12 +131,7 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							if (error.httpStatus == 404) {
-								console.log('Message already deleted');
-							}
-							else {
-								throw new Error(error);
-							}
+							throw new Error(error);
 						});
 				}
 
@@ -196,12 +181,7 @@ module.exports = {
 								components: messageComponentArray,
 							})
 							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
+								throw new Error(error);
 							});
 					}
 
@@ -245,12 +225,7 @@ module.exports = {
 								components: messageComponentArray,
 							})
 							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
+								throw new Error(error);
 							});
 					}
 
@@ -297,12 +272,7 @@ module.exports = {
 								components: messageComponentArray,
 							})
 							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
+								throw new Error(error);
 							});
 					}
 				}
@@ -359,12 +329,7 @@ module.exports = {
 								components: messageComponentArray,
 							})
 							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
+								throw new Error(error);
 							});
 					}
 

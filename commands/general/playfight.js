@@ -35,12 +35,7 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 		}
 
@@ -57,12 +52,7 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 		}
 
@@ -98,12 +88,7 @@ module.exports = {
 				}],
 			})
 			.catch((error) => {
-				if (error.httpStatus == 404) {
-					console.log('Message already deleted');
-				}
-				else {
-					throw new Error(error);
-				}
+				throw new Error(error);
 			});
 
 		const emptyField = '◻️';
@@ -261,12 +246,7 @@ module.exports = {
 					components: [],
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 
 			return client.off('messageCreate', removePlayfightComponents);
@@ -316,12 +296,7 @@ module.exports = {
 					await botReply
 						.delete()
 						.catch((error) => {
-							if (error.httpStatus == 404) {
-								console.log('Message already deleted');
-							}
-							else {
-								throw new Error(error);
-							}
+							throw new Error(error);
 						});
 
 					embedArray.splice(-1, 1);
@@ -342,17 +317,12 @@ module.exports = {
 									components: [],
 								})
 								.catch((error) => {
-									if (error.httpStatus == 404) {
-										console.log('Message already deleted');
-									}
-									else {
-										throw new Error(error);
-									}
+									throw new Error(error);
 								});
 						}
 						else {
 
-							console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							(profileData.hasCooldown != false) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							profileData = await profileModel
 								.findOneAndUpdate(
 									{ userId: message.author.id, serverId: message.guild.id },
@@ -363,7 +333,7 @@ module.exports = {
 									throw new Error(error);
 								});
 
-							console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): hasCooldown changed from \x1b[33m${partnerProfileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							(partnerProfileData.hasCooldown != false) && console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): hasCooldown changed from \x1b[33m${partnerProfileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							partnerProfileData = await profileModel
 								.findOneAndUpdate(
 									{ userId: message.mentions.users.first().id, serverId: message.guild.id },
@@ -388,12 +358,7 @@ module.exports = {
 									components: [],
 								})
 								.catch((error) => {
-									if (error.httpStatus == 404) {
-										console.log('Message already deleted');
-									}
-									else {
-										throw new Error(error);
-									}
+									throw new Error(error);
 								});
 
 							await extraEmbeds();
@@ -404,11 +369,11 @@ module.exports = {
 
 					if (isEmptyBoard) {
 
-						console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): energy changed from \x1b[33m${profileData.energy} \x1b[0mto \x1b[33m${profileData.energy - energyPointsPlayer1} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-						console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hunger changed from \x1b[33m${profileData.hunger} \x1b[0mto \x1b[33m${profileData.hunger - hungerPointsPlayer1} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-						console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): thirst changed from \x1b[33m${profileData.thirst} \x1b[0mto \x1b[33m${profileData.thirst - thirstPointsPlayer1} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-						console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): currentRegion changed from \x1b[33m${profileData.currentRegion} \x1b[0mto \x1b[33mprairie \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-						console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mtrue \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						(energyPointsPlayer1 != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): energy changed from \x1b[33m${profileData.energy} \x1b[0mto \x1b[33m${profileData.energy - energyPointsPlayer1} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						(hungerPointsPlayer1 != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hunger changed from \x1b[33m${profileData.hunger} \x1b[0mto \x1b[33m${profileData.hunger - hungerPointsPlayer1} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						(thirstPointsPlayer1 != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): thirst changed from \x1b[33m${profileData.thirst} \x1b[0mto \x1b[33m${profileData.thirst - thirstPointsPlayer1} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						(profileData.region != 'prairie') && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): currentRegion changed from \x1b[33m${profileData.currentRegion} \x1b[0mto \x1b[33mprairie \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						(profileData.hasCooldown != true) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mtrue \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 						profileData = await profileModel
 							.findOneAndUpdate(
 								{ userId: message.author.id, serverId: message.guild.id },
@@ -429,11 +394,11 @@ module.exports = {
 								throw new Error(error);
 							});
 
-						console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): energy changed from \x1b[33m${partnerProfileData.energy} \x1b[0mto \x1b[33m${partnerProfileData.energy - energyPointsPlayer2} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-						console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): hunger changed from \x1b[33m${partnerProfileData.hunger} \x1b[0mto \x1b[33m${partnerProfileData.hunger - hungerPointsPlayer2} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-						console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): thirst changed from \x1b[33m${partnerProfileData.thirst} \x1b[0mto \x1b[33m${partnerProfileData.thirst - thirstPointsPlayer2} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-						console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): currentRegion changed from \x1b[33m${partnerProfileData.currentRegion} \x1b[0mto \x1b[33mprairie \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-						console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): hasCooldown changed from \x1b[33m${partnerProfileData.hasCooldown} \x1b[0mto \x1b[33mtrue \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						(energyPointsPlayer2 != 0) && console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): energy changed from \x1b[33m${partnerProfileData.energy} \x1b[0mto \x1b[33m${partnerProfileData.energy - energyPointsPlayer2} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						(hungerPointsPlayer2 != 0) && console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): hunger changed from \x1b[33m${partnerProfileData.hunger} \x1b[0mto \x1b[33m${partnerProfileData.hunger - hungerPointsPlayer2} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						(thirstPointsPlayer2 != 0) && console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): thirst changed from \x1b[33m${partnerProfileData.thirst} \x1b[0mto \x1b[33m${partnerProfileData.thirst - thirstPointsPlayer2} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						(partnerProfileData.currentRegion != 'prairie') && console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): currentRegion changed from \x1b[33m${partnerProfileData.currentRegion} \x1b[0mto \x1b[33mprairie \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						(partnerProfileData.hasCooldown != true) && console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): hasCooldown changed from \x1b[33m${partnerProfileData.hasCooldown} \x1b[0mto \x1b[33mtrue \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 						partnerProfileData = await profileModel
 							.findOneAndUpdate(
 								{ userId: message.mentions.users.first().id, serverId: message.guild.id },
@@ -473,7 +438,7 @@ module.exports = {
 								}
 							}
 
-							console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							(profileData.hasCooldown != false) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							profileData = await profileModel
 								.findOneAndUpdate(
 									{ userId: message.author.id, serverId: message.guild.id },
@@ -484,7 +449,7 @@ module.exports = {
 									throw new Error(error);
 								});
 
-							console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): hasCooldown changed from \x1b[33m${partnerProfileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							(partnerProfileData.hasCooldown != false) && console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): hasCooldown changed from \x1b[33m${partnerProfileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							partnerProfileData = await profileModel
 								.findOneAndUpdate(
 									{ userId: message.mentions.users.first().id, serverId: message.guild.id },
@@ -501,13 +466,13 @@ module.exports = {
 
 								embedFooterStatsTextPlayer1 = `+${experiencePoints} XP (${currentProfileData.experience}/${currentProfileData.levels * 50}) for ${currentProfileData.name}\n${embedFooterStatsTextPlayer1}`;
 
-								console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): experience changed from \x1b[33m${currentProfileData.experience} \x1b[0mto \x1b[33m${currentProfileData.experience + experiencePoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+								(experiencePoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): experience changed from \x1b[33m${currentProfileData.experience} \x1b[0mto \x1b[33m${currentProfileData.experience + experiencePoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							}
 							else {
 
 								embedFooterStatsTextPlayer2 = `+${experiencePoints} XP (${currentProfileData.experience}/${currentProfileData.levels * 50}) for ${currentProfileData.name}\n${embedFooterStatsTextPlayer2}`;
 
-								console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): experience changed from \x1b[33m${currentProfileData.experience} \x1b[0mto \x1b[33m${currentProfileData.experience + experiencePoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+								(experiencePoints != 0) && console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): experience changed from \x1b[33m${currentProfileData.experience} \x1b[0mto \x1b[33m${currentProfileData.experience + experiencePoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							}
 
 							currentProfileData = await profileModel
@@ -536,12 +501,12 @@ module.exports = {
 								if (otherProfileData.userId === profileData.userId) {
 
 									userInjuryArray = userInjuryArrayPlayer1;
-									console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): health changed from \x1b[33m${otherProfileData.health} \x1b[0mto \x1b[33m${otherProfileData.health - healthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+									(healthPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): health changed from \x1b[33m${otherProfileData.health} \x1b[0mto \x1b[33m${otherProfileData.health - healthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 								}
 								else {
 
 									userInjuryArray = userInjuryArrayPlayer2;
-									console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): health changed from \x1b[33m${otherProfileData.health} \x1b[0mto \x1b[33m${otherProfileData.health - healthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+									(healthPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): health changed from \x1b[33m${otherProfileData.health} \x1b[0mto \x1b[33m${otherProfileData.health - healthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 								}
 
 								otherProfileData = await profileModel
@@ -603,12 +568,7 @@ module.exports = {
 									components: componentArray,
 								})
 								.catch((error) => {
-									if (error.httpStatus == 404) {
-										console.log('Message already deleted');
-									}
-									else {
-										throw new Error(error);
-									}
+									throw new Error(error);
 								});
 
 							await extraEmbeds();
@@ -618,7 +578,7 @@ module.exports = {
 
 						if (isDraw()) {
 
-							console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							(profileData.hasCooldown != false) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							profileData = await profileModel
 								.findOneAndUpdate(
 									{ userId: message.author.id, serverId: message.guild.id },
@@ -629,7 +589,7 @@ module.exports = {
 									throw new Error(error);
 								});
 
-							console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): hasCooldown changed from \x1b[33m${partnerProfileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							(partnerProfileData.hasCooldown != false) && console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): hasCooldown changed from \x1b[33m${partnerProfileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							partnerProfileData = await profileModel
 								.findOneAndUpdate(
 									{ userId: message.mentions.users.first().id, serverId: message.guild.id },
@@ -645,7 +605,7 @@ module.exports = {
 							embedFooterStatsTextPlayer1 = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50}) for ${profileData.name}\n${embedFooterStatsTextPlayer1}`;
 							embedFooterStatsTextPlayer2 = `+${experiencePoints} XP (${partnerProfileData.experience}/${partnerProfileData.levels * 50}) for ${partnerProfileData.name}\n${embedFooterStatsTextPlayer2}`;
 
-							console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): experience changed from \x1b[33m${profileData.experience} \x1b[0mto \x1b[33m${profileData.experience + experiencePoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							(experiencePoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): experience changed from \x1b[33m${profileData.experience} \x1b[0mto \x1b[33m${profileData.experience + experiencePoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 							profileData = await profileModel
 								.findOneAndUpdate(
@@ -657,7 +617,7 @@ module.exports = {
 									throw new Error(error);
 								});
 
-							console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): experience changed from \x1b[33m${partnerProfileData.experience} \x1b[0mto \x1b[33m${partnerProfileData.experience + experiencePoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							(experiencePoints != 0) && console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): experience changed from \x1b[33m${partnerProfileData.experience} \x1b[0mto \x1b[33m${partnerProfileData.experience + experiencePoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 							partnerProfileData = await profileModel
 								.findOneAndUpdate(
@@ -682,12 +642,7 @@ module.exports = {
 									components: componentArray,
 								})
 								.catch((error) => {
-									if (error.httpStatus == 404) {
-										console.log('Message already deleted');
-									}
-									else {
-										throw new Error(error);
-									}
+									throw new Error(error);
 								});
 
 							await extraEmbeds();
@@ -709,12 +664,7 @@ module.exports = {
 							components: componentArray,
 						})
 						.catch((error) => {
-							if (error.httpStatus == 404) {
-								console.log('Message already deleted');
-							}
-							else {
-								throw new Error(error);
-							}
+							throw new Error(error);
 						});
 
 					await newRound(!isPartner);
@@ -726,7 +676,7 @@ module.exports = {
 						await condition.decreaseHealth(message, profileData, botReply);
 						await condition.decreaseHealth(message, partnerProfileData, botReply);
 
-						console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): injuryArray changed from \x1b[33m${profileData.injuryArray} \x1b[0mto \x1b[33m${userInjuryArrayPlayer1} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						(profileData.injuryArray != userInjuryArrayPlayer1) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): injuryArray changed from \x1b[33m[${profileData.injuryArray}] \x1b[0mto \x1b[33m[${userInjuryArrayPlayer1}] \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 						profileData = await profileModel
 							.findOneAndUpdate(
 								{ userId: message.author.id, serverId: message.guild.id },
@@ -737,7 +687,7 @@ module.exports = {
 								throw new Error(error);
 							});
 
-						console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): injuryArray changed from \x1b[33m${partnerProfileData.injuryArray} \x1b[0mto \x1b[33m${userInjuryArrayPlayer2} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						(partnerProfileData.injuryArray != userInjuryArrayPlayer1) && console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): injuryArray changed from \x1b[33m[${partnerProfileData.injuryArray}] \x1b[0mto \x1b[33m[${userInjuryArrayPlayer2}] \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 						partnerProfileData = await profileModel
 							.findOneAndUpdate(
 								{ userId: message.mentions.users.first().id, serverId: message.guild.id },

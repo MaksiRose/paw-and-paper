@@ -37,21 +37,14 @@ module.exports = {
 
 		if (message.mentions.users.size) {
 
-			try {
-
-				profileData = await profileModel
-					.findOne({
-						userId: message.mentions.users.first().id,
-						serverId: message.guild.id,
-					})
-					.catch((error) => {
-						throw new Error(error);
-					});
-			}
-			catch (err) {
-
-				console.log(err);
-			}
+			profileData = await profileModel
+				.findOne({
+					userId: message.mentions.users.first().id,
+					serverId: message.guild.id,
+				})
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			if (!profileData || profileData.species === '') {
 
@@ -64,12 +57,7 @@ module.exports = {
 						}],
 					})
 					.catch((error) => {
-						if (error.httpStatus == 404) {
-							console.log('Message already deleted');
-						}
-						else {
-							throw new Error(error);
-						}
+						throw new Error(error);
 					});
 			}
 
@@ -124,12 +112,7 @@ module.exports = {
 				components: components,
 			})
 			.catch((error) => {
-				if (error.httpStatus == 404) {
-					console.log('Message already deleted');
-				}
-				else {
-					throw new Error(error);
-				}
+				throw new Error(error);
 			});
 	},
 };

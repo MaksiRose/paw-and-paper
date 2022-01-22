@@ -39,12 +39,7 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 		}
 
@@ -61,12 +56,7 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 		}
 
@@ -122,12 +112,7 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 
 			return await new Promise((resolve) => {
@@ -166,12 +151,7 @@ module.exports = {
 				components: [selectBiomeComponent],
 			})
 			.catch((error) => {
-				if (error.httpStatus == 404) {
-					console.log('Message already deleted');
-				}
-				else {
-					throw new Error(error);
-				}
+				throw new Error(error);
 			});
 
 		client.on('messageCreate', async function removeExploreComponents(newMessage) {
@@ -186,12 +166,7 @@ module.exports = {
 					components: [],
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 
 			return client.off('messageCreate', removeExploreComponents);
@@ -225,12 +200,7 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							if (error.httpStatus == 404) {
-								console.log('Message already deleted');
-							}
-							else {
-								throw new Error(error);
-							}
+							throw new Error(error);
 						});
 				}
 
@@ -251,12 +221,7 @@ module.exports = {
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus == 404) {
-							console.log('Message already deleted');
-						}
-						else {
-							throw new Error(error);
-						}
+						throw new Error(error);
 					});
 
 				await new Promise((resolve) => {
@@ -274,12 +239,7 @@ module.exports = {
 			await botReply
 				.delete()
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 
 			const thirstPoints = await condition.decreaseThirst(profileData);
@@ -308,10 +268,10 @@ module.exports = {
 				experiencePoints = Loottable(41, 20);
 			}
 
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): experience changed from \x1b[33m${profileData.experience} \x1b[0mto \x1b[33m${profileData.experience + experiencePoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): energy changed from \x1b[33m${profileData.energy} \x1b[0mto \x1b[33m${profileData.energy - energyPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hunger changed from \x1b[33m${profileData.hunger} \x1b[0mto \x1b[33m${profileData.hunger - hungerPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): thirst changed from \x1b[33m${profileData.thirst} \x1b[0mto \x1b[33m${profileData.thirst - thirstPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			(experiencePoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): experience changed from \x1b[33m${profileData.experience} \x1b[0mto \x1b[33m${profileData.experience + experiencePoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			(energyPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): energy changed from \x1b[33m${profileData.energy} \x1b[0mto \x1b[33m${profileData.energy - energyPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			(hungerPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hunger changed from \x1b[33m${profileData.hunger} \x1b[0mto \x1b[33m${profileData.hunger - hungerPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			(thirstPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): thirst changed from \x1b[33m${profileData.thirst} \x1b[0mto \x1b[33m${profileData.thirst - thirstPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			profileData = await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
@@ -365,7 +325,7 @@ module.exports = {
 
 			await condition.decreaseHealth(message, profileData, botReply);
 
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): injuryArray changed from \x1b[33m${profileData.injuryArray} \x1b[0mto \x1b[33m${userInjuryArray} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			(profileData.injuryArray != userInjuryArray) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): injuryArray changed from \x1b[33m[${profileData.injuryArray}] \x1b[0mto \x1b[33m[${userInjuryArray}] \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			profileData = await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
@@ -386,7 +346,7 @@ module.exports = {
 
 			async function findQuest() {
 
-				console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasQuest changed from \x1b[33m${profileData.hasQuest} \x1b[0mto \x1b[33mtrue \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+				(profileData.hasQuest != true) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasQuest changed from \x1b[33m${profileData.hasQuest} \x1b[0mto \x1b[33mtrue \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 				await profileModel
 					.findOneAndUpdate(
 						{ userId: message.author.id, serverId: message.guild.id },
@@ -466,7 +426,7 @@ module.exports = {
 
 			async function findSomething() {
 
-				const userInventoryArray = profileData.inventoryArray;
+				const userInventoryArray = [[...profileData.inventoryArray[0]], [...profileData.inventoryArray[1]], [...profileData.inventoryArray[2]], [...profileData.inventoryArray[3]]];
 				const betterLuckValue = (profileData.levels - 1) * 2;
 
 				const findSomethingChance = weightedTable({ 0: 10, 1: 90 + betterLuckValue });
@@ -499,7 +459,7 @@ module.exports = {
 							healthPoints = profileData.health;
 						}
 
-						console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): health changed from \x1b[33m${profileData.health} \x1b[0mto \x1b[33m${profileData.health - healthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						(healthPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): health changed from \x1b[33m${profileData.health} \x1b[0mto \x1b[33m${profileData.health - healthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 						profileData = await profileModel
 							.findOneAndUpdate(
 								{ userId: message.author.id, serverId: message.guild.id },
@@ -588,12 +548,7 @@ module.exports = {
 								allowedMentions: { repliedUser: true },
 							})
 							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
+								throw new Error(error);
 							});
 					}
 
@@ -647,12 +602,7 @@ module.exports = {
 							allowedMentions: { repliedUser: true },
 						})
 						.catch((error) => {
-							if (error.httpStatus == 404) {
-								console.log('Message already deleted');
-							}
-							else {
-								throw new Error(error);
-							}
+							throw new Error(error);
 						});
 				}
 
@@ -715,12 +665,7 @@ module.exports = {
 						allowedMentions: { repliedUser: true },
 					})
 					.catch((error) => {
-						if (error.httpStatus == 404) {
-							console.log('Message already deleted');
-						}
-						else {
-							throw new Error(error);
-						}
+						throw new Error(error);
 					});
 
 				return await new Promise((resolve) => {
@@ -743,7 +688,6 @@ module.exports = {
 
 					const collector2 = message.channel.createMessageComponentCollector({ filter, max: 1, time: 30000 });
 					collector2.on('end', async (collected) => {
-						console.log(collected);
 
 						if (!collected.size || collected.first().customId == 'enemy-flee') {
 
@@ -901,12 +845,7 @@ module.exports = {
 									components: [fightComponents],
 								})
 								.catch((error) => {
-									if (error.httpStatus == 404) {
-										console.log('Message already deleted');
-									}
-									else {
-										throw new Error(error);
-									}
+									throw new Error(error);
 								});
 						}
 
@@ -956,16 +895,7 @@ module.exports = {
 
 								embed.footer.text = `${embedFooterStatsText}\n+1 ${opponentSpecies}`;
 
-								// this is done to keep the console logs inventory Array correct
-								profileData = await profileModel
-									.findOne({
-										userId: message.author.id,
-										serverId: message.guild.id,
-									}).catch(async (error) => {
-										throw new Error(error);
-									});
-
-								console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): inventoryArray changed from \x1b[33m${profileData.inventoryArray} \x1b[0mto \x1b[33m${userInventoryArray} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+								(profileData.inventoryArray != userInventoryArray) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): inventoryArray changed from \x1b[33m[${profileData.inventoryArray}] \x1b[0mto \x1b[33m[${userInventoryArray}] \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 								profileData = await profileModel
 									.findOneAndUpdate(
 										{ userId: message.author.id, serverId: message.guild.id },
@@ -985,7 +915,7 @@ module.exports = {
 									healthPoints = profileData.health;
 								}
 
-								console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): health changed from \x1b[33m${profileData.health} \x1b[0mto \x1b[33m${profileData.health - healthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+								(healthPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): health changed from \x1b[33m${profileData.health} \x1b[0mto \x1b[33m${profileData.health - healthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 								await profileModel
 									.findOneAndUpdate(
 										{ userId: message.author.id, serverId: message.guild.id },
@@ -1051,12 +981,7 @@ module.exports = {
 									components: [],
 								})
 								.catch((error) => {
-									if (error.httpStatus == 404) {
-										console.log('Message already deleted');
-									}
-									else {
-										throw new Error(error);
-									}
+									throw new Error(error);
 								});
 
 							return resolve();

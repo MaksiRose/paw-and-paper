@@ -1,12 +1,6 @@
 const profileModel = require('../../models/profileSchema');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
-const rest = require('./rest');
-const inventory = require('./inventory');
-const drink = require('./drink');
-const play = require('../specific/play');
-const store = require('./store');
-const heal = require('../specific/heal');
 const config = require('../../config.json');
 const startCooldown = require('../../utils/startCooldown');
 
@@ -20,7 +14,7 @@ module.exports = {
 			return;
 		}
 
-		if (await checkValidity.isInvalid(message, profileData, embedArray, [module.exports.name].concat(module.exporsts.aliases))) {
+		if (await checkValidity.isInvalid(message, profileData, embedArray, [module.exports.name].concat(module.exports.aliases))) {
 
 			return;
 		}
@@ -134,12 +128,7 @@ module.exports = {
 					components: [travelSelectMenu],
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 		}
 
@@ -152,12 +141,7 @@ module.exports = {
 					components: [sleepingDenButtons],
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 		}
 
@@ -170,12 +154,7 @@ module.exports = {
 					components: [foodDenButtons],
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 		}
 
@@ -189,12 +168,7 @@ module.exports = {
 						embeds: [embed],
 					})
 					.catch((error) => {
-						if (error.httpStatus == 404) {
-							console.log('Message already deleted');
-						}
-						else {
-							throw new Error(error);
-						}
+						throw new Error(error);
 					});
 			}
 			else {
@@ -205,12 +179,7 @@ module.exports = {
 						components: [medicineDenButtons],
 					})
 					.catch((error) => {
-						if (error.httpStatus == 404) {
-							console.log('Message already deleted');
-						}
-						else {
-							throw new Error(error);
-						}
+						throw new Error(error);
 					});
 			}
 		}
@@ -223,12 +192,7 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 		}
 
@@ -241,12 +205,7 @@ module.exports = {
 					components: [lakeButtons],
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 		}
 
@@ -261,12 +220,7 @@ module.exports = {
 						components: [prairieButtons],
 					})
 					.catch((error) => {
-						if (error.httpStatus == 404) {
-							console.log('Message already deleted');
-						}
-						else {
-							throw new Error(error);
-						}
+						throw new Error(error);
 					});
 			}
 			else {
@@ -276,12 +230,7 @@ module.exports = {
 						embeds: embedArray,
 					})
 					.catch((error) => {
-						if (error.httpStatus == 404) {
-							console.log('Message already deleted');
-						}
-						else {
-							throw new Error(error);
-						}
+						throw new Error(error);
 					});
 			}
 		}
@@ -299,12 +248,7 @@ module.exports = {
 					components: [],
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 
 			return client.off('messageCreate', removeGoComponents);
@@ -335,12 +279,7 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							if (error.httpStatus == 404) {
-								console.log('Message already deleted');
-							}
-							else {
-								throw new Error(error);
-							}
+							throw new Error(error);
 						});
 				}
 
@@ -357,12 +296,7 @@ module.exports = {
 								components: [travelSelectMenu, sleepingDenButtons],
 							})
 							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
+								throw new Error(error);
 							});
 					}
 
@@ -375,12 +309,7 @@ module.exports = {
 								components: [travelSelectMenu, foodDenButtons],
 							})
 							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
+								throw new Error(error);
 							});
 					}
 
@@ -396,12 +325,7 @@ module.exports = {
 									components: [travelSelectMenu],
 								})
 								.catch((error) => {
-									if (error.httpStatus == 404) {
-										console.log('Message already deleted');
-									}
-									else {
-										throw new Error(error);
-									}
+									throw new Error(error);
 								});
 						}
 						await interaction.message
@@ -410,12 +334,7 @@ module.exports = {
 								components: [travelSelectMenu, medicineDenButtons],
 							})
 							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
+								throw new Error(error);
 							});
 					}
 
@@ -428,12 +347,7 @@ module.exports = {
 								components: [travelSelectMenu],
 							})
 							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
+								throw new Error(error);
 							});
 					}
 
@@ -446,18 +360,22 @@ module.exports = {
 								components: [travelSelectMenu, lakeButtons],
 							})
 							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
+								throw new Error(error);
 							});
 					}
 
 					if (interaction.values[0] == 'prairie') {
 
 						await prairie();
+
+						await interaction.message
+							.edit({
+								embeds: embedArray,
+								components: [travelSelectMenu],
+							})
+							.catch((error) => {
+								throw new Error(error);
+							});
 
 						if (profileData.rank == 'Youngling' || profileData.rank == 'Apprentice') {
 
@@ -467,33 +385,18 @@ module.exports = {
 									components: [travelSelectMenu, prairieButtons],
 								})
 								.catch((error) => {
-									if (error.httpStatus == 404) {
-										console.log('Message already deleted');
-									}
-									else {
-										throw new Error(error);
-									}
+									throw new Error(error);
 								});
 						}
-						await interaction.message
-							.edit({
-								embeds: embedArray,
-								components: [travelSelectMenu],
-							})
-							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
-							});
 					}
 				}
 
 				if (interaction.isButton()) {
 
-					if (interaction.customId == 'execute-rest') {
+					if (interaction.customId.includes('execute')) {
+
+						const cmd = interaction.customId.split('-').pop();
+						const command = client.commands.get(cmd) || client.commands.find(cmnd => cmnd.aliases && cmnd.aliases.includes(cmd));
 
 						profileData = await profileModel
 							.findOne({
@@ -507,208 +410,26 @@ module.exports = {
 						interaction.message
 							.delete()
 							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
-							});
-
-						embedArray.splice(-1, 1);
-						return await rest
-							.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
-							.then(async () => {
-
-								setTimeout(async function() {
-
-									console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-									profileData = await profileModel
-										.findOneAndUpdate(
-											{ userId: message.author.id, serverId: message.guild.id },
-											{ $set: { hasCooldown: false } },
-											{ new: true },
-										)
-										.catch(async (error) => {
-											throw new Error(error);
-										});
-								}, 3000);
-							})
-							.catch((error) => {
-								throw new Error(error);
-							});
-					}
-
-					if (interaction.customId == 'execute-inventory') {
-
-						interaction.message
-							.delete()
-							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
-							});
-
-						embedArray.splice(-1, 1);
-						return await inventory
-							.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
-							.then(async () => {
-
-								setTimeout(async function() {
-
-									console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-									profileData = await profileModel
-										.findOneAndUpdate(
-											{ userId: message.author.id, serverId: message.guild.id },
-											{ $set: { hasCooldown: false } },
-											{ new: true },
-										)
-										.catch(async (error) => {
-											throw new Error(error);
-										});
-								}, 3000);
-							})
-							.catch((error) => {
-								throw new Error(error);
-							});
-					}
-
-					if (interaction.customId == 'execute-store') {
-
-						interaction.message
-							.delete()
-							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
-							});
-
-						embedArray.splice(-1, 1);
-						return await store
-							.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
-							.then(async () => {
-
-								setTimeout(async function() {
-
-									console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-									profileData = await profileModel
-										.findOneAndUpdate(
-											{ userId: message.author.id, serverId: message.guild.id },
-											{ $set: { hasCooldown: false } },
-											{ new: true },
-										)
-										.catch(async (error) => {
-											throw new Error(error);
-										});
-								}, 3000);
-							})
-							.catch((error) => {
-								throw new Error(error);
-							});
-					}
-
-					if (interaction.customId == 'execute-heal') {
-
-						interaction.message
-							.delete()
-							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
-							});
-
-						embedArray.splice(-1, 1);
-						return await heal
-							.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
-							.then(async () => {
-
-								setTimeout(async function() {
-
-									console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-									profileData = await profileModel
-										.findOneAndUpdate(
-											{ userId: message.author.id, serverId: message.guild.id },
-											{ $set: { hasCooldown: false } },
-											{ new: true },
-										)
-										.catch(async (error) => {
-											throw new Error(error);
-										});
-								}, 3000);
-							})
-							.catch((error) => {
 								throw new Error(error);
 							});
 
-					}
-
-					if (interaction.customId == 'execute-drink') {
-
-						interaction.message
-							.delete()
-							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
-							});
-
 						embedArray.splice(-1, 1);
-						return await drink
+						return await command
 							.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
 							.then(async () => {
 
-								setTimeout(async function() {
-
-									console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-									profileData = await profileModel
-										.findOneAndUpdate(
-											{ userId: message.author.id, serverId: message.guild.id },
-											{ $set: { hasCooldown: false } },
-											{ new: true },
-										)
-										.catch(async (error) => {
-											throw new Error(error);
-										});
-								}, 3000);
-							})
-							.catch((error) => {
-								throw new Error(error);
-							});
-					}
-
-					if (interaction.customId == 'execute-play') {
-
-						interaction.message
-							.delete()
-							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
-							});
-
-						embedArray.splice(-1, 1);
-						return await play
-							.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
-							.then(async () => {
+								profileData = await profileModel
+									.findOne({
+										userId: message.author.id,
+										serverId: message.guild.id,
+									})
+									.catch((error) => {
+										throw new Error(error);
+									});
 
 								setTimeout(async function() {
 
-									console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+									(profileData.hasCooldown != false) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 									profileData = await profileModel
 										.findOneAndUpdate(
 											{ userId: message.author.id, serverId: message.guild.id },
@@ -732,7 +453,7 @@ module.exports = {
 
 		async function sleepingDen() {
 
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): currentRegion changed from \x1b[33m${profileData.currentRegion} \x1b[0mto \x1b[33msleeping dens \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			(profileData.currentRegion != 'sleeping dens') && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): currentRegion changed from \x1b[33m${profileData.currentRegion} \x1b[0mto \x1b[33msleeping dens \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
@@ -749,7 +470,7 @@ module.exports = {
 
 		async function foodDen() {
 
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): currentRegion changed from \x1b[33m${profileData.currentRegion} \x1b[0mto \x1b[33mfood den \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			(profileData.currentRegion != 'food den') && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): currentRegion changed from \x1b[33m${profileData.currentRegion} \x1b[0mto \x1b[33mfood den \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
@@ -787,7 +508,7 @@ module.exports = {
 
 		async function medicineDen() {
 
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): currentRegion changed from \x1b[33m${profileData.currentRegion} \x1b[0mto \x1b[33mmedicine den \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			(profileData.currentRegion != 'medicine den') && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): currentRegion changed from \x1b[33m${profileData.currentRegion} \x1b[0mto \x1b[33mmedicine den \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
@@ -846,7 +567,7 @@ module.exports = {
 
 		async function ruins() {
 
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): currentRegion changed from \x1b[33m${profileData.currentRegion} \x1b[0mto \x1b[33mruins \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			(profileData.currentRegion != 'ruins') && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): currentRegion changed from \x1b[33m${profileData.currentRegion} \x1b[0mto \x1b[33mruins \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
@@ -884,7 +605,7 @@ module.exports = {
 
 		async function lake() {
 
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): currentRegion changed from \x1b[33m${profileData.currentRegion} \x1b[0mto \x1b[33mlake \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			(profileData.currentRegion != 'lake') && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): currentRegion changed from \x1b[33m${profileData.currentRegion} \x1b[0mto \x1b[33mlake \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
@@ -901,7 +622,7 @@ module.exports = {
 
 		async function prairie() {
 
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): currentRegion changed from \x1b[33m${profileData.currentRegion} \x1b[0mto \x1b[33mprairie \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			(profileData.currentRegion != 'prairie') && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): currentRegion changed from \x1b[33m${profileData.currentRegion} \x1b[0mto \x1b[33mprairie \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
