@@ -22,7 +22,7 @@ module.exports = {
 
 		profileData = await startCooldown(message, profileData);
 
-		if (profileData.inventoryArray.filter(number => number > 0).length >= 25) {
+		if ([...Object.values(profileData.inventoryObject).map(type => Object.values(type))].filter(value => value > 0).length > 25) {
 
 			embedArray.push({
 				color: profileData.color,
@@ -147,7 +147,7 @@ module.exports = {
 		}
 
 		let healthPoints = 0;
-		const userInjuryArray = [...profileData.injuryArray];
+		const userInjuryObject = [...profileData.injuryObject];
 
 		const embed = {
 			color: profileData.color,
@@ -271,11 +271,11 @@ module.exports = {
 
 		await condition.decreaseHealth(message, profileData, botReply);
 
-		(profileData.injuryArray != userInjuryArray) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): injuryArray changed from \x1b[33m[${profileData.injuryArray}] \x1b[0mto \x1b[33m[${userInjuryArray}] \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+		(profileData.injuryObject != userInjuryObject) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): injuryObject changed from \x1b[33m${JSON.stringify(profileData.injuryObject)} \x1b[0mto \x1b[33m${JSON.stringify(userInjuryObject)} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 		profileData = await profileModel
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { injuryArray: userInjuryArray } },
+				{ $set: { injuryObject: userInjuryObject } },
 				{ new: true },
 			)
 			.catch((error) => {
@@ -345,9 +345,9 @@ module.exports = {
 
 				switch (true) {
 
-					case (weightedTable({ 0: 7, 1: 13 }) == 0 && userInjuryArray[2] < 1):
+					case (weightedTable({ 0: 7, 1: 13 }) == 0 && userInjuryObject.cold == false):
 
-						++userInjuryArray[2];
+						userInjuryObject.cold = true;
 
 						embed.description = `*${profileData.name} tumbles around camp, weaving through dens and packmates at work. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} pause${(profileData.pronounArray[5] == 'singular') ? 's' : ''} for a moment, having a sneezing and coughing fit. It looks like ${profileData.name} has caught a cold.*`;
 						embed.footer.text = `-${healthPoints} HP (from cold)\n${embedFooterStatsText}`;
@@ -356,7 +356,7 @@ module.exports = {
 
 					default:
 
-						++userInjuryArray[0];
+						userInjuryObject.wounds += 1;
 
 						embed.description = `*${profileData.name} strays from camp, playing near the pack borders. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} hop${(profileData.pronounArray[5] == 'singular') ? 's' : ''} on rocks and pebbles, trying to keep ${profileData.pronounArray[2]} balance, but the rock ahead of ${profileData.pronounArray[1]} is steeper and more jagged. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} land${(profileData.pronounArray[5] == 'singular') ? 's' : ''} with an oomph and a gash slicing through ${profileData.pronounArray[2]} feet from the sharp edges.*`;
 						embed.footer.text = `-${healthPoints} HP (from wound)\n${embedFooterStatsText}`;
@@ -414,7 +414,7 @@ module.exports = {
 
 			embedArray.push(embed);
 
-			if (partnerProfileData.injuryArray[2] > 0) {
+			if (partnerProfileData.injuryObject.cold == true && profileData.injuryObject.cold == false) {
 
 				const getsInfectedChance = weightedTable({ 0: 3, 1: 7 });
 				if (getsInfectedChance == 0) {
@@ -437,7 +437,7 @@ module.exports = {
 							throw new Error(error);
 						});
 
-					userInjuryArray[2] = userInjuryArray[2] + 1;
+					userInjuryObject.cold = true;
 
 					embedArray.push({
 						color: profileData.color,

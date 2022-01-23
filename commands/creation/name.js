@@ -21,30 +21,30 @@ module.exports = {
 			if (!profileData) {
 
 				const profileInventoryObject = {
-					commonPlants: new Map(),
-					uncommonPlants: new Map(),
-					rarePlants: new Map(),
-					meat: new Map(),
+					commonPlants: {},
+					uncommonPlants: {},
+					rarePlants: {},
+					meat: {},
 				};
 
 				for (const [commonPlantName] of maps.commonPlantMap) {
 
-					profileInventoryObject.commonPlants.set(commonPlantName, 0);
+					profileInventoryObject.commonPlants[commonPlantName] = 0;
 				}
 
 				for (const [uncommonPlantName] of maps.uncommonPlantMap) {
 
-					profileInventoryObject.uncommonPlants.set(uncommonPlantName, 0);
+					profileInventoryObject.uncommonPlants[uncommonPlantName] = 0;
 				}
 
 				for (const [rarePlantName] of maps.rarePlantMap) {
 
-					profileInventoryObject.rarePlants.set(rarePlantName, 0);
+					profileInventoryObject.rarePlants[rarePlantName] = 0;
 				}
 
 				for (const [speciesName] of maps.speciesMap) {
 
-					profileInventoryObject.meat.set(speciesName, 0);
+					profileInventoryObject.meat[speciesName] = 0;
 				}
 
 				profileData = await profileModel

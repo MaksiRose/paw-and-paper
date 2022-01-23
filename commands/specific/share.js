@@ -103,7 +103,7 @@ module.exports = {
 		}
 
 		let healthPoints = 0;
-		const userInjuryArray = [...profileData.injuryArray];
+		const userInjuryObject = [...profileData.injuryObject];
 
 		const embed = {
 			color: profileData.color,
@@ -219,11 +219,11 @@ module.exports = {
 
 		await condition.decreaseHealth(message, profileData, botReply);
 
-		(profileData.injuryArray != userInjuryArray) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): injuryArray changed from \x1b[33m[${profileData.injuryArray}] \x1b[0mto \x1b[33m[${userInjuryArray}] \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+		(profileData.injuryObject != userInjuryObject) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): injuryObject changed from \x1b[33m${JSON.stringify(profileData.injuryObject)} \x1b[0mto \x1b[33m${JSON.stringify(userInjuryObject)} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 		profileData = await profileModel
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { injuryArray: userInjuryArray } },
+				{ $set: { injuryObject: userInjuryObject } },
 				{ new: true },
 			)
 			.catch((error) => {
@@ -284,7 +284,7 @@ module.exports = {
 				embedArray.push(embed);
 			}
 
-			if (partnerProfileData.injuryArray[2] > 0) {
+			if (partnerProfileData.injuryObject.cold == true && profileData.injuryObject.cold == false) {
 
 				const getsInfectedChance = weightedTable({ 0: 3, 1: 7 });
 				if (getsInfectedChance == 0) {
@@ -307,7 +307,7 @@ module.exports = {
 							throw new Error(error);
 						});
 
-					userInjuryArray[2] = userInjuryArray[2] + 1;
+					userInjuryObject.cold = true;
 
 					embedArray.push({
 						color: profileData.color,

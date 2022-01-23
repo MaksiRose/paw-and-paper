@@ -72,14 +72,14 @@ module.exports = {
 			}];
 		}
 
-		let injuryText = (profileData.injuryArray.every(item => item == 0)) ? 'none' : '';
-		const injuryNameArray = ['Wound', 'Infection', 'Cold', 'Sprain', 'Poison'];
+		let injuryText = (Object.values(profileData.injuryObject).every(item => item == 0)) ? 'none' : '';
 
-		for (let i = 0; i < profileData.injuryArray.length; i++) {
+		for (const [injuryKey, injuryAmount] of Object.entries(profileData.injuryObject)) {
 
-			if (profileData.injuryArray[i] > 0) {
+			if (injuryAmount > 0) {
 
-				injuryText += `${profileData.injuryArray[i]} ${injuryNameArray[i]}${(profileData.injuryArray[i] > 1) ? 's' : ''}\n`;
+				const injuryName = injuryKey.charAt(0).toUpperCase() + injuryKey.slice(1);
+				injuryText += `${injuryAmount} ${(injuryAmount > 1) ? injuryName.slice(0, -1) : injuryName}\n`;
 			}
 		}
 

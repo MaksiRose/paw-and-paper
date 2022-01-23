@@ -39,30 +39,30 @@ module.exports = {
 		if (!serverData) {
 
 			const serverInventoryObject = {
-				commonPlants: new Map(),
-				uncommonPlants: new Map(),
-				rarePlants: new Map(),
-				meat: new Map(),
+				commonPlants: {},
+				uncommonPlants: {},
+				rarePlants: {},
+				meat: {},
 			};
 
 			for (const [commonPlantName] of maps.commonPlantMap) {
 
-				serverInventoryObject.commonPlants.set(commonPlantName, 0);
+				serverInventoryObject.commonPlants[commonPlantName] = 0;
 			}
 
 			for (const [uncommonPlantName] of maps.uncommonPlantMap) {
 
-				serverInventoryObject.uncommonPlants.set(uncommonPlantName, 0);
+				serverInventoryObject.uncommonPlants[uncommonPlantName] = 0;
 			}
 
 			for (const [rarePlantName] of maps.rarePlantMap) {
 
-				serverInventoryObject.rarePlants.set(rarePlantName, 0);
+				serverInventoryObject.rarePlants[rarePlantName] = 0;
 			}
 
 			for (const [speciesName] of maps.speciesMap) {
 
-				serverInventoryObject.meat.set(speciesName, 0);
+				serverInventoryObject.meat[speciesName] = 0;
 			}
 
 			serverData = await serverModel.create({
@@ -81,23 +81,23 @@ module.exports = {
 				});
 		}
 
-		if (maps.speciesMap.size > serverData.inventoryObject.meat.size) {
+		if (maps.speciesMap.size > Object.keys(serverData.inventoryObject.meat).length) {
 
-			const serverMeatMap = new Map(JSON.parse(JSON.stringify([...serverData.inventoryObject.meat])));
+			const serverMeatObject = { ...serverData.inventoryObject.meat };
 
 			for (const [speciesName] of maps.speciesMap) {
 
-				if (!serverMeatMap.has(speciesName)) {
+				if (speciesName in serverMeatObject) {
 
-					serverMeatMap.set(speciesName, 0);
+					serverMeatObject[speciesName] = 0;
 				}
 			}
 
-			console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): inventoryObject.meat changed from \x1b[33m${JSON.stringify(Object.fromEntries(serverData.inventoryObject.meat))} \x1b[0mto \x1b[33m${JSON.stringify(Object.fromEntries(serverMeatMap))} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): inventoryObject.meat changed from \x1b[33m${JSON.stringify(serverData.inventoryObject.meat)} \x1b[0mto \x1b[33m${JSON.stringify(serverMeatObject)} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			serverData = await serverModel
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
-					{ $set: { 'inventoryObject.meat': serverMeatMap } },
+					{ $set: { 'inventoryObject.meat': serverMeatObject } },
 					{ new: true },
 				)
 				.catch(async (error) => {
@@ -105,7 +105,7 @@ module.exports = {
 				});
 		}
 
-		if (maps.commonPlantMap.size > serverData.inventoryObject.commonPlants.size) {
+		if (maps.commonPlantMap.size > Object.keys(serverData.inventoryObject.commonPlants).length) {
 
 			const serverCommonPlantMap = new Map(JSON.parse(JSON.stringify([...serverData.inventoryObject.commonPlants])));
 
@@ -117,7 +117,7 @@ module.exports = {
 				}
 			}
 
-			console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): inventoryObject.commonPlants changed from \x1b[33m${JSON.stringify(Object.fromEntries(serverData.inventoryObject.commonPlants))} \x1b[0mto \x1b[33m${JSON.stringify(Object.fromEntries(serverCommonPlantMap))} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): inventoryObject.commonPlants changed from \x1b[33m${JSON.stringify(serverData.inventoryObject.commonPlants)} \x1b[0mto \x1b[33m${JSON.stringify(serverCommonPlantMap)} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			serverData = await serverModel
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
@@ -129,7 +129,7 @@ module.exports = {
 				});
 		}
 
-		if (maps.uncommonPlantMap.size > serverData.inventoryObject.uncommonPlants.size) {
+		if (maps.uncommonPlantMap.size > Object.keys(serverData.inventoryObject.uncommonPlants).length) {
 
 			const serverUncommonPlantMap = new Map(JSON.parse(JSON.stringify([...serverData.inventoryObject.uncommonPlants])));
 
@@ -141,7 +141,7 @@ module.exports = {
 				}
 			}
 
-			console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): inventoryObject.uncommonPlants changed from \x1b[33m${JSON.stringify(Object.fromEntries(serverData.inventoryObject.uncommonPlants))} \x1b[0mto \x1b[33m${JSON.stringify(Object.fromEntries(serverUncommonPlantMap.entries))} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): inventoryObject.uncommonPlants changed from \x1b[33m${JSON.stringify(serverData.inventoryObject.uncommonPlants)} \x1b[0mto \x1b[33m${JSON.stringify(serverUncommonPlantMap.entries)} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			serverData = await serverModel
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
@@ -153,7 +153,7 @@ module.exports = {
 				});
 		}
 
-		if (maps.rarePlantMap.size > serverData.inventoryObject.rarePlants.size) {
+		if (maps.rarePlantMap.size > Object.keys(serverData.inventoryObject.rarePlants).length) {
 
 			const serverRarePlantMap = new Map(JSON.parse(JSON.stringify([...serverData.inventoryObject.rarePlants])));
 
@@ -165,7 +165,7 @@ module.exports = {
 				}
 			}
 
-			console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): inventoryObject.rarePlants changed from \x1b[33m${JSON.stringify(Object.fromEntries(serverData.inventoryObject.rarePlants))} \x1b[0mto \x1b[33m${JSON.stringify(Object.fromEntries(serverRarePlantMap))} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): inventoryObject.rarePlants changed from \x1b[33m${JSON.stringify(serverData.inventoryObject.rarePlants)} \x1b[0mto \x1b[33m${JSON.stringify(serverRarePlantMap)} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			serverData = await serverModel
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
@@ -198,7 +198,9 @@ module.exports = {
 					throw new Error(error);
 				});
 
-			return console.log(`\x1b[32m\x1b[0m${message.author.tag} unsuccessfully tried to execute \x1b[33m${message.content} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			console.log(`\x1b[32m\x1b[0m${message.author.tag} unsuccessfully tried to execute \x1b[33m${message.content} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+
+			return;
 		}
 
 		if (command == 'say') {

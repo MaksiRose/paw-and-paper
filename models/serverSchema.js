@@ -8,10 +8,10 @@ const serverSchema = new mongoose.Schema({
 	rarePlantsArray: [{ type: Number, default: 0 }],
 	meatArray: [{ type: Number, default: 0 }],
 	inventoryObject: {
-		commonPlants: { type: Map, of: Number },
-		uncommonPlants: { type: Map, of: Number },
-		rarePlants: { type: Map, of: Number },
-		meat: { type: Map, of: Number },
+		commonPlants: { type: Object },
+		uncommonPlants: { type: Object },
+		rarePlants: { type: Object },
+		meat: { type: Object },
 	},
 	accountsToDelete: { type: Map, of: Number },
 });

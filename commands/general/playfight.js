@@ -179,7 +179,7 @@ module.exports = {
 		const hungerPointsPlayer1 = await condition.decreaseHunger(profileData);
 		const extraLostEnergyPointsPlayer1 = await condition.decreaseEnergy(profileData);
 		let energyPointsPlayer1 = Loottable(5, 1) + extraLostEnergyPointsPlayer1;
-		const userInjuryArrayPlayer1 = [...profileData.injuryArray];
+		const userInjuryObjectPlayer1 = { ...profileData.injuryObject };
 
 		if (profileData.energy - energyPointsPlayer1 < 0) {
 
@@ -202,7 +202,7 @@ module.exports = {
 		const hungerPointsPlayer2 = await condition.decreaseHunger(partnerProfileData);
 		const extraLostEnergyPointsPlayer2 = await condition.decreaseEnergy(partnerProfileData);
 		let energyPointsPlayer2 = Loottable(5, 1) + extraLostEnergyPointsPlayer2;
-		const userInjuryArrayPlayer2 = [...partnerProfileData.injuryArray];
+		const userInjuryObjectPlayer2 = { ...partnerProfileData.injuryObject };
 
 		if (partnerProfileData.energy - energyPointsPlayer2 < 0) {
 
@@ -491,7 +491,7 @@ module.exports = {
 							if (getHurtChance == 0) {
 
 								let healthPoints = Loottable(5, 3);
-								let userInjuryArray = [];
+								let userInjuryObject = {};
 
 								if (otherProfileData.health - healthPoints < 0) {
 
@@ -500,12 +500,12 @@ module.exports = {
 
 								if (otherProfileData.userId === profileData.userId) {
 
-									userInjuryArray = userInjuryArrayPlayer1;
+									userInjuryObject = userInjuryObjectPlayer1;
 									(healthPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): health changed from \x1b[33m${otherProfileData.health} \x1b[0mto \x1b[33m${otherProfileData.health - healthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 								}
 								else {
 
-									userInjuryArray = userInjuryArrayPlayer2;
+									userInjuryObject = userInjuryObjectPlayer2;
 									(healthPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): health changed from \x1b[33m${otherProfileData.health} \x1b[0mto \x1b[33m${otherProfileData.health - healthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 								}
 
@@ -521,9 +521,9 @@ module.exports = {
 
 								switch (true) {
 
-									case (weightedTable({ 0: 1, 1: 1 }) == 0 && userInjuryArray[2] < 1):
+									case (weightedTable({ 0: 1, 1: 1 }) == 0 && userInjuryObject.cold == false):
 
-										++userInjuryArray[2];
+										userInjuryObject.cold = true;
 
 										getHurtText += '';
 
@@ -540,7 +540,7 @@ module.exports = {
 
 									default:
 
-										++userInjuryArray[3];
+										userInjuryObject.sprain += 1;
 
 										getHurtText += '';
 
@@ -676,22 +676,22 @@ module.exports = {
 						await condition.decreaseHealth(message, profileData, botReply);
 						await condition.decreaseHealth(message, partnerProfileData, botReply);
 
-						(profileData.injuryArray != userInjuryArrayPlayer1) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): injuryArray changed from \x1b[33m[${profileData.injuryArray}] \x1b[0mto \x1b[33m[${userInjuryArrayPlayer1}] \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						(profileData.injuryObject != userInjuryObjectPlayer1) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): injuryObject changed from \x1b[33m${JSON.stringify(profileData.injuryObject)} \x1b[0mto \x1b[33m${JSON.stringify(userInjuryObjectPlayer1)} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 						profileData = await profileModel
 							.findOneAndUpdate(
 								{ userId: message.author.id, serverId: message.guild.id },
-								{ $set: { injuryArray: userInjuryArrayPlayer1 } },
+								{ $set: { injuryObject: userInjuryObjectPlayer1 } },
 								{ new: true },
 							)
 							.catch((error) => {
 								throw new Error(error);
 							});
 
-						(partnerProfileData.injuryArray != userInjuryArrayPlayer1) && console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): injuryArray changed from \x1b[33m[${partnerProfileData.injuryArray}] \x1b[0mto \x1b[33m[${userInjuryArrayPlayer2}] \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						(partnerProfileData.injuryObject != userInjuryObjectPlayer1) && console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): injuryObject changed from \x1b[33m${JSON.stringify(partnerProfileData.injuryObject)} \x1b[0mto \x1b[33m${JSON.stringify(userInjuryObjectPlayer2)} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 						partnerProfileData = await profileModel
 							.findOneAndUpdate(
 								{ userId: message.mentions.users.first().id, serverId: message.guild.id },
-								{ $set: { injuryArray: userInjuryArrayPlayer2 } },
+								{ $set: { injuryObject: userInjuryObjectPlayer2 } },
 								{ new: true },
 							)
 							.catch((error) => {

@@ -1,6 +1,6 @@
 const serverModel = require('../models/serverSchema');
 const profileModel = require('../models/profileSchema');
-const arrays = require('../utils/maps');
+const maps = require('../utils/maps');
 const store = require('../commands/general/store');
 const eat = require('../commands/general/eat');
 const config = require('../config.json');
@@ -209,10 +209,14 @@ module.exports = {
 					});
 			}
 
-			const species = arrays.species(profileData);
-			const allItemNamesArray = [[...arrays.commonPlantNamesArray], [...arrays.uncommonPlantNamesArray], [...arrays.rarePlantNamesArray], [...species.nameArray]];
+			const inventoryMaps = {
+				commonPlants: new Map(maps.commonPlantMap),
+				uncommonPlants: new Map(maps.uncommonPlantMap),
+				rarePlants: new Map(maps.rarePlantMap),
+				meat: new Map(maps.speciesMap),
+			};
 
-			if (interaction.customId == 'eat-options' && allItemNamesArray.some(nest => nest.some(elem => elem == interaction.values[0]))) {
+			if (interaction.customId == 'eat-options' && [].concat(...Object.values(inventoryMaps).map(value => [...value.keys()])).some(elem => elem == interaction.values[0])) {
 
 				interaction.message
 					.delete()
@@ -301,14 +305,14 @@ module.exports = {
 						});
 				}
 
-				let injuryText = (profileData.injuryArray.every(item => item == 0)) ? 'none' : '';
-				const injuryNameArray = ['Wound', 'Infection', 'Cold', 'Sprain', 'Poison'];
+				let injuryText = (Object.values(profileData.injuryObject).every(item => item == 0)) ? 'none' : '';
 
-				for (let i; i < profileData.injuryArray; i++) {
+				for (const [injuryKey, injuryAmount] of Object.entries(profileData.injuryObject)) {
 
-					if (profileData.injuryArray[i] > 0) {
+					if (injuryAmount > 0) {
 
-						injuryText += `${profileData.injuryArray[i]} ${injuryNameArray[i]}${(profileData.injuryArray[i] > 1) ? 's' : ''}\n`;
+						const injuryName = injuryKey.charAt(0).toUpperCase() + injuryKey.slice(1);
+						injuryText += `${injuryAmount} ${(injuryAmount > 1) ? injuryName.slice(0, -1) : injuryName}\n`;
 					}
 				}
 

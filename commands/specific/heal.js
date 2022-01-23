@@ -50,7 +50,17 @@ module.exports = {
 						{ health: 0 },
 						{ hunger: 0 },
 						{ thirst: 0 },
-						{ injuryArray: { $gte: 1 } },
+						{
+							injuryObject: {
+								$or: [
+									{ wounds: { $gt: 0 } },
+									{ infections: { $gt: 0 } },
+									{ cold: true },
+									{ sprains: { $gt: 0 } },
+									{ poison: true },
+								],
+							},
+						},
 					],
 				}],
 			})
@@ -423,7 +433,7 @@ module.exports = {
 					}
 
 					let healthPoints = 0;
-					const userInjuryArray = [...profileData.injuryArray];
+					const userInjuryObject = [...profileData.injuryObject];
 
 					const embed = {
 						color: profileData.color,
@@ -514,7 +524,7 @@ module.exports = {
 
 						const species = arrays.species(chosenProfileData);
 						const speciesNameArrayIndex = species.nameArray.findIndex((index) => index == chosenProfileData.species);
-						const chosenUserInjuryArray = [...chosenProfileData.injuryArray];
+						const chosenUserInjuryObject = [...chosenProfileData.injuryObject];
 						let chosenUserEnergyPoints = 0;
 						let chosenUserHungerPoints = 0;
 						let isSuccessful = false;
@@ -554,39 +564,39 @@ module.exports = {
 							isSuccessful = true;
 						}
 
-						if (plantHealsWoundsArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryArray[0] > 0) {
+						if (plantHealsWoundsArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryObject.wounds > 0) {
 
 							isSuccessful = true;
 							embedFooterChosenUserInjuryText += `\n-1 wound for ${chosenProfileData.name}`;
-							--chosenUserInjuryArray[0];
+							chosenUserInjuryObject.wounds -= 1;
 						}
 
-						if (plantHealsInfectionsArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryArray[1] > 0) {
+						if (plantHealsInfectionsArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryObject.infections > 0) {
 
 							isSuccessful = true;
 							embedFooterChosenUserInjuryText += `\n-1 infection for ${chosenProfileData.name}`;
-							--chosenUserInjuryArray[1];
+							chosenUserInjuryObject.infections -= 1;
 						}
 
-						if (plantHealsColdsArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryArray[2] > 0) {
+						if (plantHealsColdsArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryObject.wound == true) {
 
 							isSuccessful = true;
 							embedFooterChosenUserInjuryText += `\ncold healed for ${chosenProfileData.name}`;
-							--chosenUserInjuryArray[2];
+							chosenUserInjuryObject.cold = false;
 						}
 
-						if (plantHealsSprainsArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryArray[3] > 0) {
+						if (plantHealsSprainsArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryObject.sprains > 0) {
 
 							isSuccessful = true;
 							embedFooterChosenUserInjuryText += `\n-1 sprain for ${chosenProfileData.name}`;
-							--chosenUserInjuryArray[3];
+							chosenUserInjuryObject.sprains -= 1;
 						}
 
-						if (plantHealsPoisonArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryArray[4] > 0) {
+						if (plantHealsPoisonArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryObject.poison == true) {
 
 							isSuccessful = true;
 							embedFooterChosenUserInjuryText += `\npoison healed for ${chosenProfileData.name}`;
-							--chosenUserInjuryArray[4];
+							chosenUserInjuryObject.slice.poison = false;
 						}
 
 						if (plantGivesEnergyArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true) {
@@ -646,7 +656,7 @@ module.exports = {
 							(chosenUserHungerPoints != 0) && console.log(`\x1b[32m\x1b[0m${chosenProfileData.name} (${chosenProfileData.userId}): hunger changed from \x1b[33m${chosenProfileData.hunger} \x1b[0mto \x1b[33m${chosenProfileData.hunger + chosenUserHungerPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							(chosenUserEnergyPoints != 0) && console.log(`\x1b[32m\x1b[0m${chosenProfileData.name} (${chosenProfileData.userId}): energy changed from \x1b[33m${chosenProfileData.energy} \x1b[0mto \x1b[33m${chosenProfileData.energy + chosenUserEnergyPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							(chosenUserHealthPoints != 0) && console.log(`\x1b[32m\x1b[0m${chosenProfileData.name} (${chosenProfileData.userId}): health changed from \x1b[33m${chosenProfileData.health} \x1b[0mto \x1b[33m${chosenProfileData.health + chosenUserHealthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-							(chosenProfileData.injuryArray != chosenUserInjuryArray) && console.log(`\x1b[32m\x1b[0m${chosenProfileData.name} (${chosenProfileData.userId}): injuryArray changed from \x1b[33m[${chosenProfileData.injuryArray}] \x1b[0mto \x1b[33m[${chosenUserInjuryArray}] \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							(chosenProfileData.injuryObject != chosenUserInjuryObject) && console.log(`\x1b[32m\x1b[0m${chosenProfileData.name} (${chosenProfileData.userId}): injuryObject changed from \x1b[33m${JSON.stringify(chosenProfileData.injuryObject)} \x1b[0mto \x1b[33m${JSON.stringify(chosenUserInjuryObject)} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							chosenProfileData = await profileModel
 								.findOneAndUpdate(
 									{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
@@ -656,7 +666,7 @@ module.exports = {
 											energy: +chosenUserEnergyPoints,
 											health: +chosenUserHealthPoints,
 										},
-										$set: { injuryArray: chosenUserInjuryArray },
+										$set: { injuryObject: chosenUserInjuryObject },
 									},
 									{ new: true },
 								)
@@ -704,7 +714,7 @@ module.exports = {
 					embedArray.length = embedArrayOriginalLength;
 					embedArray.push(embed);
 
-					if (chosenProfileData.injuryArray[2] > 0 && chosenProfileData.userId != profileData.userId && profileData.injuryArray[2] < 1 && Loottable(10, 1 <= 3)) {
+					if (chosenProfileData.injuryObject.cold == true && chosenProfileData.userId != profileData.userId && profileData.injuryObject.cold == false && Loottable(10, 1 <= 3)) {
 
 						healthPoints = Loottable(5, 3);
 
@@ -724,7 +734,7 @@ module.exports = {
 								throw new Error(error);
 							});
 
-						++userInjuryArray[2];
+						userInjuryObject.cold = true;
 
 						await embedArray.push({
 							color: profileData.color,
@@ -750,11 +760,11 @@ module.exports = {
 
 					await condition.decreaseHealth(message, profileData, botReply);
 
-					(profileData.injuryArray != userInjuryArray) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): injuryArray changed from \x1b[33m[${profileData.injuryArray}] \x1b[0mto \x1b[33m[${userInjuryArray}] \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+					(profileData.injuryObject != userInjuryObject) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): injuryObject changed from \x1b[33m${JSON.stringify(profileData.injuryObject)} \x1b[0mto \x1b[33m${JSON.stringify(userInjuryObject)} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 					profileData = await profileModel
 						.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
-							{ $set: { injuryArray: userInjuryArray } },
+							{ $set: { injuryObject: userInjuryObject } },
 							{ new: true },
 						)
 						.catch((error) => {
@@ -807,11 +817,11 @@ module.exports = {
 			healUserConditionText += (chosenProfileData.energy <= 0) ? '\nEnergy: 0' : '';
 			healUserConditionText += (chosenProfileData.hunger <= 0) ? '\nHunger: 0' : '';
 			healUserConditionText += (chosenProfileData.thirst <= 0) ? '\nThirst: 0' : '';
-			healUserConditionText += (chosenProfileData.injuryArray[0] >= 1) ? `\nWounds: ${chosenProfileData.injuryArray[0]}` : '';
-			healUserConditionText += (chosenProfileData.injuryArray[1] >= 1) ? `\nInfections: ${chosenProfileData.injuryArray[1]}` : '';
-			healUserConditionText += (chosenProfileData.injuryArray[2] >= 1) ? '\nCold: yes' : '';
-			healUserConditionText += (chosenProfileData.injuryArray[3] >= 1) ? `\nSprains: ${chosenProfileData.injuryArray[3]}` : '';
-			healUserConditionText += (chosenProfileData.injuryArray[4] >= 1) ? '\nPoison: yes' : '';
+			healUserConditionText += (chosenProfileData.injuryObject.wounds > 0) ? `\nWounds: ${chosenProfileData.injuryObject.wounds}` : '';
+			healUserConditionText += (chosenProfileData.injuryObject.infections > 0) ? `\nInfections: ${chosenProfileData.injuryObject.infections}` : '';
+			healUserConditionText += (chosenProfileData.injuryObject.cold == true) ? '\nCold: yes' : '';
+			healUserConditionText += (chosenProfileData.injuryObject.sprains > 0) ? `\nSprains: ${chosenProfileData.injuryObject.sprains}` : '';
+			healUserConditionText += (chosenProfileData.injuryObject.poison == true) ? '\nPoison: yes' : '';
 
 			const inventoryPageSelectMenu = {
 				type: 'ACTION_ROW',
@@ -842,7 +852,7 @@ module.exports = {
 				embed.description = `*${profileData.name} runs towards the pack borders, where ${chosenProfileData.name} lies, only barely conscious. The ${profileData.rank.toLowerCase()} immediately looks for the right herbs to help the ${chosenProfileData.species}.*`;
 				embed.footer.text = `${chosenProfileData.name}'s stats/illnesses/injuries:${healUserConditionText}`;
 			}
-			else if (chosenProfileData.injuryArray.some((element) => element > 0)) {
+			else if (Object.values(chosenProfileData.injuryObject).some((element) => element > 0)) {
 
 				embed.description = `*${chosenProfileData.name} enters the medicine den with tired eyes.* "Please help me!" *${chosenProfileData.pronounArray[0]} say${(chosenProfileData.pronounArray[5] == 'singular') ? 's' : ''}, ${chosenProfileData.pronounArray[2]} face contorted in pain. ${profileData.name} looks up with worry.* "I'll see what I can do for you."`;
 				embed.footer.text = `${chosenProfileData.name}'s stats/illnesses/injuries:${healUserConditionText}`;

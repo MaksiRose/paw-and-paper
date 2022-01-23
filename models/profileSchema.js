@@ -25,8 +25,6 @@ const profileSchema = new mongoose.Schema({
 	currentRegion: { type: String, default: 'sleeping dens' },
 	unlockedRanks: { type: Number, default: 0 },
 	pronounArray: { type: Array },
-	injuryArray: [{ type: Number }],
-	inventoryArray: [{ type: Array }],
 	injuryObject: {
 		wounds: { type: Number, default: 0 },
 		infections: { type: Number, default: 0 },
@@ -35,10 +33,10 @@ const profileSchema = new mongoose.Schema({
 		poison: { type: Boolean, default: false },
 	},
 	inventoryObject: {
-		commonPlants: { type: Map, of: Number },
-		uncommonPlants: { type: Map, of: Number },
-		rarePlants: { type: Map, of: Number },
-		meat: { type: Map, of: Number },
+		commonPlants: { type: Object },
+		uncommonPlants: { type: Object },
+		rarePlants: { type: Object },
+		meat: { type: Object },
 	},
 });
 
