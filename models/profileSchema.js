@@ -27,6 +27,19 @@ const profileSchema = new mongoose.Schema({
 	pronounArray: { type: Array },
 	injuryArray: [{ type: Number }],
 	inventoryArray: [{ type: Array }],
+	injuryObject: {
+		wounds: { type: Number, default: 0 },
+		infections: { type: Number, default: 0 },
+		cold: { type: Boolean, default: false },
+		sprains: { type: Number, default: 0 },
+		poison: { type: Boolean, default: false },
+	},
+	inventoryObject: {
+		commonPlants: { type: Map, of: Number },
+		uncommonPlants: { type: Map, of: Number },
+		rarePlants: { type: Map, of: Number },
+		meat: { type: Map, of: Number },
+	},
 });
 
 const model1 = mongoose.model('profileModel', profileSchema);

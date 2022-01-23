@@ -1,4 +1,4 @@
-const arrays = require('../../utils/arrays');
+const arrays = require('../../utils/maps');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const profileModel = require('../../models/profileSchema');

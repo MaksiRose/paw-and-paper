@@ -3,7 +3,7 @@ const checkValidity = require('../../utils/checkValidity');
 const inventory = require('./inventory');
 const profileModel = require('../../models/profileSchema');
 const serverModel = require('../../models/serverSchema');
-const arrays = require('../../utils/arrays');
+const arrays = require('../../utils/maps');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {

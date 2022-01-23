@@ -1,6 +1,6 @@
 const config = require('../../config.json');
 const profileModel = require('../../models/profileSchema');
-const arrays = require('../../utils/arrays');
+const arrays = require('../../utils/maps');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
 

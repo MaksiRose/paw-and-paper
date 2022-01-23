@@ -1,6 +1,6 @@
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
-const arrays = require('../../utils/arrays');
+const arrays = require('../../utils/maps');
 const config = require('../../config.json');
 const startCooldown = require('../../utils/startCooldown');
 

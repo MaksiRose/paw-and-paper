@@ -1,13 +1,11 @@
 const config = require('../../config.json');
 const profileModel = require('../../models/profileSchema');
-const arrays = require('../../utils/arrays');
+const maps = require('../../utils/maps');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
 	name: 'name',
 	async sendMessage(client, message, argumentsArray, profileData) {
-
-		const species = arrays.species(profileData);
 
 		try {
 
@@ -20,24 +18,33 @@ module.exports = {
 					throw new Error(error);
 				});
 
-			const profileInventoryArray = [[], [], [], []];
 			if (!profileData) {
 
-				for (let i = 0; i < arrays.commonPlantNamesArray.length; i++) {
+				const profileInventoryObject = {
+					commonPlants: new Map(),
+					uncommonPlants: new Map(),
+					rarePlants: new Map(),
+					meat: new Map(),
+				};
 
-					profileInventoryArray[0].push(0);
+				for (const [commonPlantName] of maps.commonPlantMap) {
+
+					profileInventoryObject.commonPlants.set(commonPlantName, 0);
 				}
 
-				for (let i = 0; i < arrays.uncommonPlantNamesArray.length; i++) {
-					profileInventoryArray[1].push(0);
+				for (const [uncommonPlantName] of maps.uncommonPlantMap) {
+
+					profileInventoryObject.uncommonPlants.set(uncommonPlantName, 0);
 				}
 
-				for (let i = 0; i < arrays.rarePlantNamesArray.length; i++) {
-					profileInventoryArray[2].push(0);
+				for (const [rarePlantName] of maps.rarePlantMap) {
+
+					profileInventoryObject.rarePlants.set(rarePlantName, 0);
 				}
 
-				for (let i = 0; i < species.nameArray.length; i++) {
-					profileInventoryArray[3].push(0);
+				for (const [speciesName] of maps.speciesMap) {
+
+					profileInventoryObject.meat.set(speciesName, 0);
 				}
 
 				profileData = await profileModel
@@ -66,8 +73,8 @@ module.exports = {
 						currentRegion: 'sleeping dens',
 						unlockedRanks: 0,
 						pronounArray: ['they', 'them', 'their', 'theirs', 'themselves', 'plural'],
-						injuryArray: [0, 0, 0, 0, 0],
-						inventoryArray: profileInventoryArray,
+						injuryObject: { wounds: 0, infections: 0, cold: false, sprains: 0, poison: false },
+						inventoryObject: profileInventoryObject,
 					})
 					.catch((error) => {
 						throw new Error(error);

@@ -7,10 +7,13 @@ const serverSchema = new mongoose.Schema({
 	uncommonPlantsArray: [{ type: Number, default: 0 }],
 	rarePlantsArray: [{ type: Number, default: 0 }],
 	meatArray: [{ type: Number, default: 0 }],
-	accountsToDelete: {
-		type: Map,
-		of: Number,
+	inventoryObject: {
+		commonPlants: { type: Map, of: Number },
+		uncommonPlants: { type: Map, of: Number },
+		rarePlants: { type: Map, of: Number },
+		meat: { type: Map, of: Number },
 	},
+	accountsToDelete: { type: Map, of: Number },
 });
 
 const model2 = mongoose.model('serverModel', serverSchema);

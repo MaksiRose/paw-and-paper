@@ -1,5 +1,5 @@
 const profileModel = require('../models/profileSchema');
-const arrays = require('./arrays');
+const arrays = require('./maps');
 const executeResting = require('./executeResting');
 const config = require('../config.json');
 

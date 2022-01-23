@@ -1,6 +1,6 @@
 const serverModel = require('../models/serverSchema');
 const profileModel = require('../models/profileSchema');
-const arrays = require('../utils/arrays');
+const arrays = require('../utils/maps');
 const store = require('../commands/general/store');
 const eat = require('../commands/general/eat');
 const config = require('../config.json');
