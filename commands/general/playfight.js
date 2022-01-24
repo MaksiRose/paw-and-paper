@@ -75,6 +75,28 @@ module.exports = {
 				throw new Error(error);
 			});
 
+		if (!partnerProfileData || partnerProfileData.name == '' || partnerProfileData.species == '' || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0) {
+
+			embedArray.push({
+				color: config.error_color,
+				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+				title: 'The mentioned user has no account or is passed out :(',
+			});
+
+			return await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
+		}
+
 		embedArray.push({
 			color: profileData.color,
 			author: { name: profileData.name, icon_url: profileData.avatarURL },
