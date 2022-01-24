@@ -582,7 +582,7 @@ module.exports = {
 
 										++userInjuryArray[2];
 
-										getHurtText += '';
+										getHurtText += `${otherProfileData.name} has enjoyed playing with the ${currentProfileData.species} a lot, but is really tired now. After taking a short nap, ${otherProfileData.pronounArray[0]} notice${(otherProfileData.pronounArray[5] == 'singular') ? 's' : ''} ${otherProfileData.pronounArray[2]} sweaty back and sore throat. Oh no! The ${otherProfileData.species} has caught a cold while playing!`;
 
 										if (otherProfileData.userId === profileData.userId) {
 
@@ -694,7 +694,7 @@ module.exports = {
 							embedArray.push({
 								color: profileData.color,
 								author: { name: profileData.name, icon_url: profileData.avatarURL },
-								description: 'It\'s a draw!',
+								description: `The two animals wrestle with each other until ${profileData.name} falls over the ${partnerProfileData.species} and both of them land on the ground. They pant and glare at each other, but ${partnerProfileData.name} can't contain ${partnerProfileData.pronounArray[2]} laughter. The ${profileData.species} starts to giggle as well. The fight has been fun, even though no one won.`,
 								footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
 							});
 
