@@ -13,6 +13,7 @@ module.exports = {
 	name: 'messageCreate',
 	once: false,
 	async execute(client, message) {
+
 		const prefix = config.prefix;
 
 		if (!message.content.toLowerCase().startsWith(prefix) || message.author.bot || message.channel.type === 'dm') {

@@ -50,4 +50,32 @@ module.exports = {
 			return;
 		}
 	},
+
+	async findOneAndUpdate(filterObject, updateObject) {
+
+		const dataObject = module.exports.findOne(filterObject);
+
+		if (!dataObject) {
+
+			return null;
+		}
+
+		for (const [updateKey, updateValue] of Object.entries(updateObject)) {
+
+			if (updateKey == '$set') {
+
+				for (const [key, value] of Object.entries(updateValue)) {
+
+					if (dataObject[key] && typeof dataObject[key] == typeof value) {
+
+						dataObject[key] = value;
+					}
+				}
+			}
+		}
+
+		fs.writeFileSync(`./database/servers/${dataObject.uuid}.json`, JSON.stringify(dataObject, null, '\t'));
+
+		return dataObject;
+	},
 };
