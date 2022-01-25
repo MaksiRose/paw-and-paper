@@ -1,3 +1,7 @@
 node_modules
 config.json
 .DS_Store
+database/profiles/*
+!database/profiles/.gitkeep
+database/servers/*
+!database/servers/.gitkeep
