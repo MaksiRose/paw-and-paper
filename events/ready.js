@@ -1,4 +1,4 @@
-const serverModel = require('../models/serverSchema');
+const serverModel = require('../models/serverModel');
 const profileModel = require('../models/profileSchema');
 const config = require('../config.json');
 

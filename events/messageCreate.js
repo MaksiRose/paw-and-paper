@@ -1,6 +1,6 @@
 const config = require('../config.json');
 const profileModel = require('../models/profileSchema');
-const serverModel = require('../models/serverSchema');
+const serverModel = require('../models/serverModel');
 const errorHandling = require('../utils/errorHandling');
 const maps = require('../utils/maps');
 const rest = require('../commands/general/rest');
@@ -73,12 +73,6 @@ module.exports = {
 			}).catch(async (error) => {
 				return await errorHandling.output(message, error);
 			});
-
-			await serverData
-				.save()
-				.catch(async (error) => {
-					return await errorHandling.output(message, error);
-				});
 		}
 
 		if (maps.speciesMap.size > Object.keys(serverData.inventoryObject.meat).length) {
