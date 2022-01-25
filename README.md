@@ -17,7 +17,6 @@ There is a few things you need to install:
 
 ```bash
 npm install discord.js
-npm install mongoose
 npm install @octokit/rest
 ```
 
@@ -28,7 +27,6 @@ This needs to include the following information:
 ```
 {
     "token": "your discord token",
-    "mongodb_srv": "your mongodb srv",
     "github_token": "your github token",
     "prefix": "rp ",
     "default_color": "#9d9e51",
@@ -37,7 +35,6 @@ This needs to include the following information:
 ```
 
 To get a Discord Token, [create a Discord Application](https://discordjs.guide/preparations/setting-up-a-bot-application.html).
-To get a MongoDB SRV, [create a MongoDB Cluster](https://www.mongodb.com/basics/create-database).
 Generate a GitHub Token [here](https://github.com/settings/tokens).
 The prefix and the colors can be modified by will.
 
@@ -73,8 +70,9 @@ project
 │   │   ...
 │   
 └───models
-│   │   profileSchema.js
-│   │   serverSchema.js
+│   │   modelConstructor.js
+│   │   profileModel.js
+│   │   serverModel.js
 │   
 └───commands
 │   └───creation
@@ -91,15 +89,24 @@ project
 │   │
 │   
 └───utils
+│   ...
+│
+└───database
+│   └───profiles
+│	│	...
+│	│
+│   └───servers
+│	│	...
 ```
 
 - `paw.js` is the main file. This is where mongoDB and discord js are started, and the handlers are called.
 - `handlers`
     - `event.js` basically creates a client.on() function for every file that is in the `events` file
     - `commands.js`: In `paw.js`, a [Discord Collection](https://discordjs.guide/additional-info/collections.html#array-like-methods) was created. All the files within the subfolders of the `commands` folder are added to that collection.
-- `models`: These contain the mongoDB Schemas we need for the project. They are called in the `events`, `utils` and `commands` folders whenever a document needs to be found or updated.
+- `models`: This contains the `modelConstructor.js`, which is called in `profileModel.js` and `serverModel.js`. They are called in the `events`, `utils` and `commands` folders whenever a document needs to be found or updated.
 - `commands` is separated into `creation`, `general` and `specific` based on how the commands are used: `creation` contains all the commands needed to create an account, `specific` contains all the commands that are limited to certain users, and `general` contains all other commands.
 - `utils` contains files with code that is used in several files to reduce code length and increase consistency.
+- `database` contains `profiles` and `servers`, which then contain the documents of all servers and users.
 
 
 #### Create a new issue
@@ -116,26 +123,26 @@ If you find a smaller issue like a typo, you can open the file from within GitHu
 
 #### Add a species
 
-If you want to add a species, you can find the arrays on `utils/arrays.js`.
+If you want to add a species, you can find the maps on `utils/maps.js`.
 
 Go to the bottom of the file, and then paste this "species block" behind the last one of those species blocks:
 ```
-nameArray[x] = 'XYZ';
-dietArray[x] = 'herbivore/omnivore/carnivore';
-habitatArray[x] = 'cold/warm/water';
-if (profileData && profileData.species == nameArray[x]) {
-	biome1OpponentsArray = ['ABC', 'DEF', 'GHI'];
-	biome2OpponentsArray = ['JKL', 'MNO'];
-	biome3OpponentsArray = ['PQR', 'STU'];
-}
+speciesMap.set('NAME', {
+	name: 'NAME',
+	diet: 'herbivore/omnivore/carnivore',
+	habitat: 'cold/warm/water',
+	biome1OpponentArray: ['ABC', 'DEF', 'GHI'],
+	biome2OpponentArray: ['JKL', 'MNO'],
+	biome3OpponentArray: ['PQR', 'STU'],
+});
 ```
-Replace the small x within the square braces with the number one higher than the number that was used in the last species block. Replace XYZ with the name of your species. Make sure to always use lowercase.
+Replace NAME with the name of your species. Make sure to always use lowercase.
 
 **Note:** Species should not be extinct, mythical, and should not be too specific, for example a breed of dog, or they will not be accepted. Rule of thumb is that if it is so similar to another animal that they can be grouped together without changing anything in that block, they should be grouped together.
 
 Keep either herbivore, omnivore or carnivore depending on the diet of that species. Choose whether the species prefers cold or warm environments, or if it lives in the water.
 
-In the three following Arrays, reference 2-4 animals each. Make sure that you use the exact name used for an animal in one of the previous species blocks. Make sure that the animals are those that your animal would actually meet and interact with. Biome1 should contain animals that are easy to defeat, Biome2 should contain animals that are just as strong, and Biome3 should contain animals that would most likely defeat your animal.
+In the three following Arrays, reference 2-4 animals each. Make sure that you use the exact name used for an animal in one of the previous species blocks. Make sure that the animals are those that your animal would actually meet and interact with. Biome1 should contain animals that are easy to defeat, Biome2 should contain animals that are equally strong, and Biome3 should contain animals that would most likely defeat your animal.
 
 You should also make sure to go to the species blocks of the animals you referenced, and paste in your animal into the appropriate one of their biome opponent arrays. You don't have to do this for every animal you referenced.
 ## Feedback
