@@ -72,6 +72,17 @@ module.exports = {
 					}
 				}
 			}
+
+			if (updateKey == '$inc') {
+
+				for (const [key, value] of Object.entries(updateValue)) {
+
+					if (dataObject[key] && typeof dataObject[key] == typeof value) {
+
+						dataObject[key] += value;
+					}
+				}
+			}
 		}
 
 		fs.writeFileSync(`./database/servers/${dataObject.uuid}.json`, JSON.stringify(dataObject, null, '\t'));
