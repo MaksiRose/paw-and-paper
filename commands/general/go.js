@@ -1,4 +1,4 @@
-const profileModel = require('../../models/profileSchema');
+const profileModel = require('../../models/profileModel');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const config = require('../../config.json');
@@ -434,7 +434,6 @@ module.exports = {
 										.findOneAndUpdate(
 											{ userId: message.author.id, serverId: message.guild.id },
 											{ $set: { hasCooldown: false } },
-											{ new: true },
 										)
 										.catch(async (error) => {
 											throw new Error(error);
@@ -458,7 +457,6 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { currentRegion: 'sleeping dens' } },
-					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -475,7 +473,6 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { currentRegion: 'food den' } },
-					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -513,7 +510,6 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { currentRegion: 'medicine den' } },
-					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -572,7 +568,6 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { currentRegion: 'ruins' } },
-					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -610,7 +605,6 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { currentRegion: 'lake' } },
-					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -627,7 +621,6 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { currentRegion: 'prairie' } },
-					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);

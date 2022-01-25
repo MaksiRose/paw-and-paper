@@ -1,4 +1,4 @@
-const profileModel = require('../models/profileSchema');
+const profileModel = require('../models/profileModel');
 const maps = require('./maps');
 
 module.exports = {
@@ -20,7 +20,6 @@ module.exports = {
 							levels: +1,
 						},
 					},
-					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -85,7 +84,6 @@ module.exports = {
 						inventoryObject: emptyUserInventory,
 					},
 				},
-				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);

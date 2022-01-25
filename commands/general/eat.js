@@ -1,8 +1,8 @@
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const inventory = require('./inventory');
-const profileModel = require('../../models/profileSchema');
-const serverModel = require('../../models/serverSchema');
+const profileModel = require('../../models/profileModel');
+const serverModel = require('../../models/serverModel');
 const arrays = require('../../utils/maps');
 const startCooldown = require('../../utils/startCooldown');
 
@@ -183,7 +183,6 @@ module.exports = {
 					.findOneAndUpdate(
 						{ serverId: message.guild.id },
 						{ $set: { commonPlantsArray: serverPlantArray } },
-						{ new: true },
 					)
 					.catch((error) => {
 						throw new Error(error);
@@ -197,7 +196,6 @@ module.exports = {
 					.findOneAndUpdate(
 						{ serverId: message.guild.id },
 						{ $set: { uncommonPlantsArray: serverPlantArray } },
-						{ new: true },
 					)
 					.catch((error) => {
 						throw new Error(error);
@@ -211,7 +209,6 @@ module.exports = {
 					.findOneAndUpdate(
 						{ serverId: message.guild.id },
 						{ $set: { rarePlantsArray: serverPlantArray } },
-						{ new: true },
 					)
 					.catch((error) => {
 						throw new Error(error);
@@ -231,7 +228,6 @@ module.exports = {
 							health: +finalHealthPoints,
 						},
 					},
-					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -244,7 +240,6 @@ module.exports = {
 					.findOneAndUpdate(
 						{ userId: message.author.id, serverId: message.guild.id },
 						{ $set: { currentRegion: 'food den' } },
-						{ new: true },
 					)
 					.catch((error) => {
 						throw new Error(error);
@@ -325,7 +320,6 @@ module.exports = {
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
 					{ $set: { meatArray: serverMeatArray } },
-					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -336,7 +330,6 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $inc: { hunger: +finalHungerPoints } },
-					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);

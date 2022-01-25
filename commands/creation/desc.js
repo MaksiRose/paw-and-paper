@@ -1,5 +1,5 @@
 const config = require('../../config.json');
-const profileModel = require('../../models/profileSchema');
+const profileModel = require('../../models/profileModel');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
 
@@ -37,7 +37,6 @@ module.exports = {
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $set: { description: `${description}` } },
-				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);

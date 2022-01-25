@@ -1,4 +1,4 @@
-const profileModel = require('../../models/profileSchema');
+const profileModel = require('../../models/profileModel');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const executeResting = require('../../utils/executeResting');
@@ -72,7 +72,6 @@ module.exports = {
 						currentRegion: 'sleeping dens',
 					},
 				},
-				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);

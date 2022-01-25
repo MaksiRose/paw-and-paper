@@ -1,5 +1,5 @@
 const config = require('../../config.json');
-const profileModel = require('../../models/profileSchema');
+const profileModel = require('../../models/profileModel');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const startCooldown = require('../../utils/startCooldown');
@@ -48,7 +48,6 @@ module.exports = {
 							currentRegion: 'lake',
 						},
 					},
-					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -99,7 +98,6 @@ module.exports = {
 						{
 							$inc: { thirst: +thirstPoints },
 						},
-						{ new: true },
 					)
 					.catch((error) => {
 						throw new Error(error);

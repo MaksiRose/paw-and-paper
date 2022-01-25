@@ -2,7 +2,7 @@ const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const startCooldown = require('../../utils/startCooldown');
 const config = require('../../config.json');
-const profileModel = require('../../models/profileSchema');
+const profileModel = require('../../models/profileModel');
 const condition = require('../../utils/condition');
 const levels = require('../../utils/levels');
 
@@ -327,7 +327,6 @@ module.exports = {
 								.findOneAndUpdate(
 									{ userId: message.author.id, serverId: message.guild.id },
 									{ $set: { hasCooldown: false } },
-									{ new: true },
 								)
 								.catch(async (error) => {
 									throw new Error(error);
@@ -338,7 +337,6 @@ module.exports = {
 								.findOneAndUpdate(
 									{ userId: message.mentions.users.first().id, serverId: message.guild.id },
 									{ $set: { hasCooldown: false } },
-									{ new: true },
 								)
 								.catch(async (error) => {
 									throw new Error(error);
@@ -388,7 +386,6 @@ module.exports = {
 										hasCooldown: true,
 									},
 								},
-								{ new: true },
 							)
 							.catch((error) => {
 								throw new Error(error);
@@ -413,7 +410,6 @@ module.exports = {
 										hasCooldown: true,
 									},
 								},
-								{ new: true },
 							)
 							.catch((error) => {
 								throw new Error(error);
@@ -443,7 +439,6 @@ module.exports = {
 								.findOneAndUpdate(
 									{ userId: message.author.id, serverId: message.guild.id },
 									{ $set: { hasCooldown: false } },
-									{ new: true },
 								)
 								.catch(async (error) => {
 									throw new Error(error);
@@ -454,7 +449,6 @@ module.exports = {
 								.findOneAndUpdate(
 									{ userId: message.mentions.users.first().id, serverId: message.guild.id },
 									{ $set: { hasCooldown: false } },
-									{ new: true },
 								)
 								.catch(async (error) => {
 									throw new Error(error);
@@ -479,7 +473,6 @@ module.exports = {
 								.findOneAndUpdate(
 									{ userId: currentProfileData.userId, serverId: message.guild.id },
 									{ $inc: { experience: experiencePoints } },
-									{ new: true },
 								)
 								.catch(async (error) => {
 									throw new Error(error);
@@ -513,7 +506,6 @@ module.exports = {
 									.findOneAndUpdate(
 										{ userId: otherProfileData.userId, serverId: message.guild.id },
 										{ $inc: { health: -healthPoints } },
-										{ new: true },
 									)
 									.catch((error) => {
 										throw new Error(error);
@@ -583,7 +575,6 @@ module.exports = {
 								.findOneAndUpdate(
 									{ userId: message.author.id, serverId: message.guild.id },
 									{ $set: { hasCooldown: false } },
-									{ new: true },
 								)
 								.catch(async (error) => {
 									throw new Error(error);
@@ -594,7 +585,6 @@ module.exports = {
 								.findOneAndUpdate(
 									{ userId: message.mentions.users.first().id, serverId: message.guild.id },
 									{ $set: { hasCooldown: false } },
-									{ new: true },
 								)
 								.catch(async (error) => {
 									throw new Error(error);
@@ -611,7 +601,6 @@ module.exports = {
 								.findOneAndUpdate(
 									{ userId: message.author.id, serverId: message.guild.id },
 									{ $inc: { experience: experiencePoints } },
-									{ new: true },
 								)
 								.catch(async (error) => {
 									throw new Error(error);
@@ -623,7 +612,6 @@ module.exports = {
 								.findOneAndUpdate(
 									{ userId: message.mentions.users.first().id, serverId: message.guild.id },
 									{ $inc: { experience: experiencePoints } },
-									{ new: true },
 								)
 								.catch(async (error) => {
 									throw new Error(error);
@@ -681,7 +669,6 @@ module.exports = {
 							.findOneAndUpdate(
 								{ userId: message.author.id, serverId: message.guild.id },
 								{ $set: { injuryObject: userInjuryObjectPlayer1 } },
-								{ new: true },
 							)
 							.catch((error) => {
 								throw new Error(error);
@@ -692,7 +679,6 @@ module.exports = {
 							.findOneAndUpdate(
 								{ userId: message.mentions.users.first().id, serverId: message.guild.id },
 								{ $set: { injuryObject: userInjuryObjectPlayer2 } },
-								{ new: true },
 							)
 							.catch((error) => {
 								throw new Error(error);

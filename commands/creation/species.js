@@ -1,5 +1,5 @@
 const config = require('../../config.json');
-const profileModel = require('../../models/profileSchema');
+const profileModel = require('../../models/profileModel');
 const maps = require('../../utils/maps');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
@@ -53,7 +53,6 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { species: chosenSpecies } },
-					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -198,7 +197,6 @@ module.exports = {
 						.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
 							{ $set: { species: interaction.values[0] } },
-							{ new: true },
 						)
 						.catch((error) => {
 							throw new Error(error);

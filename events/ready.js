@@ -1,5 +1,5 @@
 const serverModel = require('../models/serverModel');
-const profileModel = require('../models/profileSchema');
+const profileModel = require('../models/profileModel');
 const config = require('../config.json');
 
 module.exports = {
@@ -27,7 +27,7 @@ module.exports = {
 			}
 
 			// eslint-disable-next-line no-unused-vars
-			for (const [account_id, account] of serverData.accountsToDelete) {
+			for (const [account_id, account] of Object.entries(serverData.accountsToDelete)) {
 
 				setTimeout(async () => {
 

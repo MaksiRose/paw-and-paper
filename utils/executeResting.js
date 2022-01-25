@@ -1,5 +1,5 @@
 const restingTimeoutArray = new Array();
-const profileModel = require('../models/profileSchema');
+const profileModel = require('../models/profileModel');
 
 module.exports = {
 
@@ -22,7 +22,6 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $inc: { energy: 1 } },
-					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -50,7 +49,6 @@ module.exports = {
 					.findOneAndUpdate(
 						{ userId: message.author.id, serverId: message.guild.id },
 						{ $set: { isResting: false } },
-						{ new: true },
 					)
 					.catch((error) => {
 						throw new Error(error);

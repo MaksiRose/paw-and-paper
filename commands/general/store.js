@@ -1,8 +1,8 @@
 const maps = require('../../utils/maps');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
-const profileModel = require('../../models/profileSchema');
-const serverModel = require('../../models/serverSchema');
+const profileModel = require('../../models/profileModel');
+const serverModel = require('../../models/serverModel');
 const config = require('../../config.json');
 const startCooldown = require('../../utils/startCooldown');
 
@@ -218,7 +218,6 @@ module.exports = {
 							.findOneAndUpdate(
 								{ userId: message.author.id, serverId: message.guild.id },
 								{ $set: { inventoryObject: userInventory } },
-								{ new: true },
 							)
 							.catch((error) => {
 								throw new Error(error);
@@ -233,7 +232,6 @@ module.exports = {
 										inventoryObject: serverInventory,
 									},
 								},
-								{ new: true },
 							)
 							.catch((error) => {
 								throw new Error(error);
@@ -315,7 +313,6 @@ module.exports = {
 						.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
 							{ $set: { inventoryObject: userInventory } },
-							{ new: true },
 						)
 						.catch((error) => {
 							throw new Error(error);
@@ -330,7 +327,6 @@ module.exports = {
 									inventoryObject: serverInventory,
 								},
 							},
-							{ new: true },
 						)
 						.catch((error) => {
 							throw new Error(error);

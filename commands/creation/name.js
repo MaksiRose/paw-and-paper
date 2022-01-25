@@ -1,5 +1,5 @@
 const config = require('../../config.json');
-const profileModel = require('../../models/profileSchema');
+const profileModel = require('../../models/profileModel');
 const maps = require('../../utils/maps');
 const startCooldown = require('../../utils/startCooldown');
 
@@ -79,12 +79,6 @@ module.exports = {
 					.catch((error) => {
 						throw new Error(error);
 					});
-
-				profileData
-					.save()
-					.catch((error) => {
-						throw new Error(error);
-					});
 			}
 		}
 		catch (error) {
@@ -132,7 +126,6 @@ module.exports = {
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $set: { name: name } },
-				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);

@@ -1,97 +1,100 @@
 const fs = require('fs');
 const crypto = require('crypto');
 
-module.exports = class Model {
-
+class model {
 	constructor(path) {
 
-		this.path = path;
-	}
+		this.findOne = async function(filterObject) {
 
-	async findOne(filterObject) {
+			file_iteration: for (const file of fs.readdirSync(path)) {
 
-		file_iteration:
-		for (const file of fs.readdirSync(this.path)) {
+				if (!file.endsWith('.json')) {
 
-			const dataObject = JSON.parse(fs.readFileSync(`${this.path}/${file}`));
-
-			for (const [key, value] of Object.entries(filterObject)) {
-
-				if (!dataObject[key] || dataObject[key] != value) {
-
-					continue file_iteration;
+					continue;
 				}
 
-				return dataObject;
-			}
-		}
+				const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`));
 
-		return null;
-	}
+				for (const [key, value] of Object.entries(filterObject)) {
 
-	async create(dataObject) {
+					if (!dataObject[key] || dataObject[key] != value) {
 
-		let uuid = crypto.randomUUID();
-		checkNewUUID();
+						continue file_iteration;
+					}
 
-		dataObject.uuid = uuid;
-
-		fs.writeFileSync(`${this.path}/${uuid}.json`, JSON.stringify(dataObject, null, '\t'));
-
-		return dataObject;
-
-
-		function checkNewUUID() {
-
-			for (const file of fs.readdirSync(this.path)) {
-
-				if (file == uuid) {
-
-					uuid = crypto.randomUUID();
-					return checkNewUUID();
+					return dataObject;
 				}
 			}
-
-			return;
-		}
-	}
-
-	async findOneAndUpdate(filterObject, updateObject) {
-
-		const dataObject = module.exports.findOne(filterObject);
-
-		if (!dataObject) {
 
 			return null;
-		}
+		};
 
-		for (const [updateKey, updateValue] of Object.entries(updateObject)) {
+		this.create = async function(dataObject) {
 
-			if (updateKey == '$set') {
+			let uuid = crypto.randomUUID();
+			checkNewUUID();
 
-				for (const [key, value] of Object.entries(updateValue)) {
+			dataObject.uuid = uuid;
 
-					if (dataObject[key] && typeof dataObject[key] == typeof value) {
+			fs.writeFileSync(`${path}/${uuid}.json`, JSON.stringify(dataObject, null, '\t'));
 
-						dataObject[key] = value;
+			return dataObject;
+
+
+			function checkNewUUID() {
+
+				for (const file of fs.readdirSync(path)) {
+
+					if (file == uuid) {
+
+						uuid = crypto.randomUUID();
+						return checkNewUUID();
+					}
+				}
+
+				return;
+			}
+		};
+
+		this.findOneAndUpdate = async function(filterObject, updateObject) {
+
+			const dataObject = await this.findOne(filterObject);
+
+			if (!dataObject) {
+
+				return null;
+			}
+
+			for (const [updateKey, updateValue] of Object.entries(updateObject)) {
+
+				if (updateKey == '$set') {
+
+					for (const [key, value] of Object.entries(updateValue)) {
+
+						if (dataObject[key] != undefined && typeof dataObject[key] == typeof value) {
+
+							dataObject[key] = value;
+						}
+					}
+				}
+
+				if (updateKey == '$inc') {
+
+					for (const [key, value] of Object.entries(updateValue)) {
+
+						if (dataObject[key] && typeof dataObject[key] == typeof value) {
+
+							dataObject[key] += value;
+						}
 					}
 				}
 			}
 
-			if (updateKey == '$inc') {
+			fs.writeFileSync(`${path}/${dataObject.uuid}.json`, JSON.stringify(dataObject, null, '\t'));
 
-				for (const [key, value] of Object.entries(updateValue)) {
-
-					if (dataObject[key] && typeof dataObject[key] == typeof value) {
-
-						dataObject[key] += value;
-					}
-				}
-			}
-		}
-
-		fs.writeFileSync(`${this.path}/${dataObject.uuid}.json`, JSON.stringify(dataObject, null, '\t'));
-
-		return dataObject;
+			return dataObject;
+		};
 	}
-};
+}
+
+module.exports.model = model;

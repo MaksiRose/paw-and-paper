@@ -1,7 +1,7 @@
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
-const profileModel = require('../../models/profileSchema');
-const serverModel = require('../../models/serverSchema');
+const profileModel = require('../../models/profileModel');
+const serverModel = require('../../models/serverModel');
 const config = require('../../config.json');
 const arrays = require('../../utils/maps');
 const condition = require('../../utils/condition');
@@ -414,7 +414,6 @@ module.exports = {
 									thirst: -thirstPoints,
 								},
 							},
-							{ new: true },
 						)
 						.catch((error) => {
 							throw new Error(error);
@@ -469,7 +468,6 @@ module.exports = {
 								.findOneAndUpdate(
 									{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
 									{ $inc: { thirst: +chosenUserThirstPoints } },
-									{ new: true },
 								)
 								.catch((error) => {
 									throw new Error(error);
@@ -632,7 +630,6 @@ module.exports = {
 										rarePlantsArray: serverPlantInventory[2],
 									},
 								},
-								{ new: true },
 							)
 							.catch((error) => {
 								throw new Error(error);
@@ -668,7 +665,6 @@ module.exports = {
 										},
 										$set: { injuryObject: chosenUserInjuryObject },
 									},
-									{ new: true },
 								)
 								.catch((error) => {
 									throw new Error(error);
@@ -728,7 +724,6 @@ module.exports = {
 							.findOneAndUpdate(
 								{ userId: message.author.id, serverId: message.guild.id },
 								{ $inc: { health: -healthPoints } },
-								{ new: true },
 							)
 							.catch((error) => {
 								throw new Error(error);
@@ -765,7 +760,6 @@ module.exports = {
 						.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
 							{ $set: { injuryObject: userInjuryObject } },
-							{ new: true },
 						)
 						.catch((error) => {
 							throw new Error(error);

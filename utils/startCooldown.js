@@ -1,4 +1,4 @@
-const profileModel = require('../models/profileSchema');
+const profileModel = require('../models/profileModel');
 
 module.exports = async (message, profileData) => {
 
@@ -9,7 +9,6 @@ module.exports = async (message, profileData) => {
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $set: { hasCooldown: true } },
-				{ new: true },
 			)
 			.catch(async (error) => {
 				throw new Error(error);

@@ -1,5 +1,5 @@
-const profileModel = require('../models/profileSchema');
-const serverModel = require('../models/serverSchema');
+const profileModel = require('../models/profileModel');
+const serverModel = require('../models/serverModel');
 const config = require('../config.json');
 
 module.exports = {
@@ -32,7 +32,6 @@ module.exports = {
 			.findOneAndUpdate(
 				{ userId: member.id, serverId: member.guild.id },
 				{ $set: { currenRegion: 'sleeping dens' } },
-				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);

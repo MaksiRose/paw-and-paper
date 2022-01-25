@@ -1,5 +1,5 @@
 const config = require('../../config.json');
-const profileModel = require('../../models/profileSchema');
+const profileModel = require('../../models/profileModel');
 
 module.exports = {
 	name: 'delete',

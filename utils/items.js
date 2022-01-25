@@ -1,4 +1,4 @@
-const profileModel = require('../models/profileSchema');
+const profileModel = require('../models/profileModel');
 const maps = require('./maps');
 
 module.exports = {
@@ -21,7 +21,6 @@ module.exports = {
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $set: { inventoryObject: userInventory } },
-				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);
@@ -48,7 +47,6 @@ module.exports = {
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $set: { inventoryObject: userInventory } },
-				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);
@@ -75,7 +73,6 @@ module.exports = {
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $set: { inventoryObject: userInventory } },
-				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);

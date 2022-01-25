@@ -1,5 +1,5 @@
 const config = require('../config.json');
-const profileModel = require('../models/profileSchema');
+const profileModel = require('../models/profileModel');
 const serverModel = require('../models/serverModel');
 const errorHandling = require('../utils/errorHandling');
 const maps = require('../utils/maps');
@@ -93,7 +93,6 @@ module.exports = {
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
 					{ $set: { 'inventoryObject.meat': serverMeatObject } },
-					{ new: true },
 				)
 				.catch(async (error) => {
 					return await errorHandling.output(message, error);
@@ -117,7 +116,6 @@ module.exports = {
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
 					{ $set: { 'inventoryObject.commonPlants': serverCommonPlantMap } },
-					{ new: true },
 				)
 				.catch(async (error) => {
 					return await errorHandling.output(message, error);
@@ -141,7 +139,6 @@ module.exports = {
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
 					{ $set: { 'inventoryObject.uncommonPlants': serverUncommonPlantMap } },
-					{ new: true },
 				)
 				.catch(async (error) => {
 					return await errorHandling.output(message, error);
@@ -165,7 +162,6 @@ module.exports = {
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
 					{ $set: { 'inventoryObject.rarePlants': serverRarePlantMap } },
-					{ new: true },
 				)
 				.catch(async (error) => {
 					return await errorHandling.output(message, error);
@@ -267,7 +263,6 @@ module.exports = {
 								.findOneAndUpdate(
 									{ userId: message.author.id, serverId: message.guild.id },
 									{ $set: { hasCooldown: false } },
-									{ new: true },
 								)
 								.catch(async (error) => {
 									await errorHandling.output(message, error);
@@ -313,7 +308,6 @@ module.exports = {
 								.findOneAndUpdate(
 									{ userId: message.author.id, serverId: message.guild.id },
 									{ $set: { hasCooldown: false } },
-									{ new: true },
 								)
 								.catch(async (error) => {
 									await errorHandling.output(message, error);

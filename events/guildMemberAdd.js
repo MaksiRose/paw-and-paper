@@ -1,5 +1,5 @@
-const profileModel = require('../models/profileSchema');
-const serverModel = require('../models/serverSchema');
+const profileModel = require('../models/profileModel');
+const serverModel = require('../models/serverModel');
 const config = require('../config.json');
 
 module.exports = {

@@ -1,7 +1,7 @@
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const arrays = require('../../utils/maps');
-const profileModel = require('../../models/profileSchema');
+const profileModel = require('../../models/profileModel');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
@@ -50,7 +50,6 @@ module.exports = {
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $set: { hasQuest: false } },
-				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);
@@ -311,7 +310,6 @@ module.exports = {
 								.findOneAndUpdate(
 									{ userId: message.author.id, serverId: message.guild.id },
 									{ $inc: { unlockedRanks: +1 } },
-									{ new: true },
 								).catch((error) => {
 									throw new Error(error);
 								});
@@ -407,7 +405,6 @@ module.exports = {
 											maxThirst: maxThirstPoints,
 										},
 									},
-									{ new: true },
 								).catch((error) => {
 									throw new Error(error);
 								});

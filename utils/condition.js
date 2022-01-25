@@ -1,4 +1,4 @@
-const profileModel = require('../models/profileSchema');
+const profileModel = require('../models/profileModel');
 
 module.exports = {
 
@@ -206,7 +206,6 @@ module.exports = {
 					$inc: { health: -extraLostHealthPoints },
 					$set: { injuryObject: userInjuryObject },
 				},
-				{ new: true },
 			)
 			.catch((error) => {
 				throw new Error(error);

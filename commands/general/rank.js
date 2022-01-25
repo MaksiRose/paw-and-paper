@@ -1,4 +1,4 @@
-const profileModel = require('../../models/profileSchema');
+const profileModel = require('../../models/profileModel');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const config = require('../../config.json');
@@ -28,7 +28,6 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { rank: 'Apprentice' } },
-					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -105,7 +104,6 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { rank: 'Elderly' } },
-					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -178,7 +176,6 @@ module.exports = {
 						.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
 							{ $set: { rank: 'Healer' } },
-							{ new: true },
 						)
 						.catch((error) => {
 							throw new Error(error);
@@ -205,7 +202,6 @@ module.exports = {
 						.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
 							{ $set: { rank: 'Hunter' } },
-							{ new: true },
 						)
 						.catch((error) => {
 							throw new Error(error);

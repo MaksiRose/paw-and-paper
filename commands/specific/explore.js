@@ -1,5 +1,5 @@
 const maps = require('../../utils/maps');
-const profileModel = require('../../models/profileSchema');
+const profileModel = require('../../models/profileModel');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const condition = require('../../utils/condition');
@@ -280,7 +280,6 @@ module.exports = {
 							thirst: -thirstPoints,
 						},
 					},
-					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -327,7 +326,6 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { injuryObject: userInjuryObject } },
-					{ new: true },
 				)
 				.catch((error) => {
 					throw new Error(error);
@@ -348,7 +346,6 @@ module.exports = {
 					.findOneAndUpdate(
 						{ userId: message.author.id, serverId: message.guild.id },
 						{ $set: { hasQuest: true } },
-						{ new: true },
 					)
 					.catch((error) => {
 						throw new Error(error);
@@ -460,7 +457,6 @@ module.exports = {
 							.findOneAndUpdate(
 								{ userId: message.author.id, serverId: message.guild.id },
 								{ $inc: { health: -healthPoints } },
-								{ new: true },
 							)
 							.catch((error) => {
 								throw new Error(error);
@@ -901,7 +897,6 @@ module.exports = {
 									.findOneAndUpdate(
 										{ userId: message.author.id, serverId: message.guild.id },
 										{ $set: { inventoryObject: userInventory } },
-										{ new: true },
 									)
 									.catch((error) => {
 										throw new Error(error);
@@ -921,7 +916,6 @@ module.exports = {
 									.findOneAndUpdate(
 										{ userId: message.author.id, serverId: message.guild.id },
 										{ $inc: { health: -healthPoints } },
-										{ new: true },
 									)
 									.catch((error) => {
 										throw new Error(error);

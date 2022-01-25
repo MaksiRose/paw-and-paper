@@ -1,5 +1,5 @@
-const serverModel = require('../models/serverSchema');
-const profileModel = require('../models/profileSchema');
+const serverModel = require('../models/serverModel');
+const profileModel = require('../models/profileModel');
 const maps = require('../utils/maps');
 const store = require('../commands/general/store');
 const eat = require('../commands/general/eat');
@@ -245,7 +245,6 @@ module.exports = {
 								.findOneAndUpdate(
 									{ userId: interaction.user.id, serverId: interaction.guild.id },
 									{ $set: { hasCooldown: false } },
-									{ new: true },
 								)
 								.catch(async (error) => {
 									await errorHandling.output(referencedMessage, error);
@@ -377,7 +376,6 @@ module.exports = {
 								.findOneAndUpdate(
 									{ userId: interaction.user.id, serverId: interaction.guild.id },
 									{ $set: { hasCooldown: false } },
-									{ new: true },
 								)
 								.catch(async (error) => {
 									await errorHandling.output(referencedMessage, error);

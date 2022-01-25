@@ -1,4 +1,4 @@
-const profileModel = require('../models/profileSchema');
+const profileModel = require('../models/profileModel');
 const arrays = require('./maps');
 const executeResting = require('./executeResting');
 const config = require('../config.json');
@@ -166,7 +166,6 @@ module.exports = {
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { isResting: false } },
-					{ new: true },
 				).catch((error) => {
 					throw new Error(error);
 				});
