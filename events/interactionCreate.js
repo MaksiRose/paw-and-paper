@@ -155,6 +155,7 @@ module.exports = {
 								{ name: '**rp rest**', value: 'Zzz... get some sleep and fill up your energy meter.' },
 								{ name: '**rp eat (item)**', value: 'Yummy! Take the appropriate food for your species out of the packs food pile and fill up your hunger meter.' },
 								{ name: '**rp drink**', value: 'Refreshing! Drink some water and fill up your thirst meter.' },
+								{ name: '**rp playfight [@user]**', value: 'Playfully fight with another packmate!' },
 								{ name: '**rp rank**', value: 'Once you successfully finished a quest, you can move up a rank!' },
 								{ name: '**rp ticket [text]**', value: 'Report a bug, give feedback, suggest a feature!' },
 							],
@@ -187,6 +188,11 @@ module.exports = {
 					.catch(async (error) => {
 						return await errorHandling.output(interaction.message, error);
 					});
+				const elliott = await client.users
+					.fetch(config.eliott)
+					.catch(async (error) => {
+						return await errorHandling.output(interaction.message, error);
+					});
 
 				await interaction.message
 					.edit({
@@ -199,7 +205,7 @@ module.exports = {
 								{ name: '**rp heal @user**', value: 'Heal your packmates! Costs energy, but gives XP. __Only available to Apprentices, Healers and Elderlies.__' },
 								{ name: '**rp share (@user)**', value: 'Storytime! So interesting, but tiring too. Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person. __Only available to Elderlies.__' },
 								{ name: '**rp quest**', value: 'Get quests by playing and exploring. Start them with this command. If you are successful, you can move up a rank.' },
-								{ name: '\n**__CREDITS:__**', value: `This bot was made with love by ${maksi.tag}. Special thanks goes out to ${ezra.tag} and ${ren.tag}, who did a lot of the custom bot responses, and ${jags.tag} who did the profile picture. Thank you also to everyone who tested the bot and gave feedback.` },
+								{ name: '\n**__CREDITS:__**', value: `This bot was made with love by ${maksi.tag}. Special thanks goes out to ${ezra.tag}, ${ren.tag} and ${elliott.tag}, who did a lot of the custom bot responses, and ${jags.tag} who did the profile picture. Thank you also to everyone who tested the bot and gave feedback.` },
 								{ name: '\n**__OTHER:__**', value: `If you want to support me, you can donate [here](https://streamlabs.com/maksirose/tip)! :)\nYou can find the GitHub repository for this project [here](https://github.com/MaksiRose/paw-and-paper)\nThe bot is currently running on version ${pjson.version}` },
 							],
 						}],

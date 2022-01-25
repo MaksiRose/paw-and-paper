@@ -65,6 +65,28 @@ module.exports = {
 				throw new Error(error);
 			});
 
+		if (!partnerProfileData || partnerProfileData.name == '' || partnerProfileData.species == '' || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0) {
+
+			embedArray.push({
+				color: config.error_color,
+				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+				title: 'The mentioned user has no account or is passed out :(',
+			});
+
+			return await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus == 404) {
+						console.log('Message already deleted');
+					}
+					else {
+						throw new Error(error);
+					}
+				});
+		}
+
 		embedArray.push({
 			color: profileData.color,
 			author: { name: profileData.name, icon_url: profileData.avatarURL },
@@ -525,7 +547,7 @@ module.exports = {
 
 										++userInjuryArray[2];
 
-										getHurtText += '';
+										getHurtText += `${otherProfileData.name} has enjoyed playing with the ${currentProfileData.species} a lot, but is really tired now. After taking a short nap, ${otherProfileData.pronounArray[0]} notice${(otherProfileData.pronounArray[5] == 'singular') ? 's' : ''} ${otherProfileData.pronounArray[2]} sweaty back and sore throat. Oh no! The ${otherProfileData.species} has caught a cold while playing!`;
 
 										if (otherProfileData.userId === profileData.userId) {
 
@@ -632,7 +654,7 @@ module.exports = {
 							embedArray.push({
 								color: profileData.color,
 								author: { name: profileData.name, icon_url: profileData.avatarURL },
-								description: 'It\'s a draw!',
+								description: `The two animals wrestle with each other until ${profileData.name} falls over the ${partnerProfileData.species} and both of them land on the ground. They pant and glare at each other, but ${partnerProfileData.name} can't contain ${partnerProfileData.pronounArray[2]} laughter. The ${profileData.species} starts to giggle as well. The fight has been fun, even though no one won.`,
 								footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
 							});
 
