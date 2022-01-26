@@ -186,17 +186,6 @@ module.exports = {
 			},
 		];
 
-		/* to do:
-		text has to be updated:
-			-challenge text
-			-its your turn text
-			-you won text
-			-hurt text (sprain, cold)
-			-draw text
-			-game didnt start text
-			-game was abandoned text
-		*/
-
 		const thirstPointsPlayer1 = await condition.decreaseThirst(profileData);
 		const hungerPointsPlayer1 = await condition.decreaseHunger(profileData);
 		const extraLostEnergyPointsPlayer1 = await condition.decreaseEnergy(profileData);
@@ -330,7 +319,7 @@ module.exports = {
 							// text for when the match didnt start
 							embedArray.push({
 								color: config.default_color,
-								title: 'The match was cancelled due to inactivity.',
+								title: `${partnerProfileData.name} would rather playfight another time. ${partnerProfileData.pronounArray[0].charAt(0).toUpperCase + partnerProfileData.pronounArray[0].slice(1)} is too busy right now.`,
 							});
 
 							await botReply
@@ -580,7 +569,7 @@ module.exports = {
 							embedArray.push({
 								color: profileData.color,
 								author: { name: profileData.name, icon_url: profileData.avatarURL },
-								description: `${currentProfileData.name}, you won!\n\n${getHurtText}`,
+								description: `The two animals are pressing against each other with all their might. It seems like the fight will never end this way, but ${currentProfileData.name} has one more trick up ${currentProfileData.pronounArray[2]} sleeve: ${currentProfileData.pronounArray[0]} simply moves out of the way, letting ${otherProfileData.name} crash into the ground. ${otherProfileData.pronounArray[0].charAt(0).toUpperCase + otherProfileData.pronounArray[0].slice(0)} has a wry grin on ${otherProfileData.pronounArray[2]} face as ${otherProfileData.pronounArray[0]} looks up at the ${currentProfileData.species}. ${currentProfileData.name} wins this fight, but who knows about the next one?\n\n${getHurtText}`,
 								footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
 							});
 
