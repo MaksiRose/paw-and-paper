@@ -11,8 +11,6 @@ const serverSchema = new mongoose.Schema({
 		type: Map,
 		of: Number,
 	},
-	activeUsersArray: { type: Array },
-	lastHumanAttack: { type: Number, default: 0 },
 });
 
 const model2 = mongoose.model('serverModel', serverSchema);
