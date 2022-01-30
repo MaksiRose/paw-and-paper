@@ -90,7 +90,7 @@ module.exports = {
 		embedArray.push({
 			color: profileData.color,
 			author: { name: profileData.name, icon_url: profileData.avatarURL },
-			title: `${partnerProfileData.name}, you were challenged to a playfight by ${profileData.name}. Do you accept?`,
+			title: `${profileData.name} hangs around the prairie when ${partnerProfileData.species} comes by. The ${partnerProfileData.species} has things to do but ${profileData.name}'s smug expression implies ${partnerProfileData.pronounArray[0]} wouldn't be able to beat the ${profileData.species}.`,
 			footer: { text: 'You have 30 seconds to click the button before the invitation expires.' },
 		});
 
@@ -319,7 +319,7 @@ module.exports = {
 							// text for when the match didnt start
 							embedArray.push({
 								color: config.default_color,
-								title: `${partnerProfileData.name} would rather playfight another time. ${partnerProfileData.pronounArray[0].charAt(0).toUpperCase + partnerProfileData.pronounArray[0].slice(1)} is too busy right now.`,
+								description: `${partnerProfileData.name} wouldn't give in so easily and simply passed the pleading looks of the ${profileData.species}.`,
 							});
 
 							await botReply
@@ -359,7 +359,7 @@ module.exports = {
 							embedArray.push({
 								color: profileData.color,
 								author: { name: profileData.name, icon_url: profileData.avatarURL },
-								title: 'The match was cancelled due to inactivity.',
+								description: `${currentProfileData.name} took so long with ${currentProfileData.pronounArray[2]} decision on how to attack that ${otherProfileData.name} got impatient and left.`,
 								footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
 							});
 
