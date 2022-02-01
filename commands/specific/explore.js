@@ -315,7 +315,9 @@ module.exports = {
 					throw new Error(error);
 				});
 
-			if (Loottable(300, 1) <= 1 && chosenBiomeNumber == (profileData.unlockedRanks - 1) && chosenBiomeNumber == (allBiomesArray.length - 1)) {
+			const questChance = Loottable((profileData.rank == 'Elderly') ? 500 : (profileData.rank == 'Hunter' || profileData.rank == 'Healer') ? 400 : 300, 1);
+
+			if (questChance <= 1 && chosenBiomeNumber == (profileData.unlockedRanks - 1) && chosenBiomeNumber == (allBiomesArray.length - 1)) {
 				await findQuest();
 			}
 			else {
