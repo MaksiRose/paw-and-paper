@@ -340,7 +340,7 @@ module.exports = {
 							await depleteStats();
 
 							const x = (otherProfileData.levels - currentProfileData.levels < 0) ? 0 : otherProfileData.levels - currentProfileData.levels;
-							const extraExperience = (40 / (1 + Math.pow(Math.E, -0.125 * x))) - 20;
+							const extraExperience = Math.round((40 / (1 + Math.pow(Math.E, -0.125 * x))) - 20);
 							const experiencePoints = Loottable(11, 10) + extraExperience;
 
 							if (currentProfileData.userId === profileData.userId) {
