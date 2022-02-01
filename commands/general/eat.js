@@ -15,7 +15,7 @@ module.exports = {
 			return;
 		}
 
-		if (await checkValidity.isInvalid(message, profileData, embedArray, module.exports.name)) {
+		if (await checkValidity.isInvalid(message, profileData, embedArray, [module.exports.name])) {
 
 			return;
 		}
@@ -35,12 +35,7 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 		}
 
@@ -48,37 +43,10 @@ module.exports = {
 
 			return await inventory
 				.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
-				.then(async () => {
-
-					setTimeout(async function() {
-
-						console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-						profileData = await profileModel
-							.findOneAndUpdate(
-								{ userId: message.author.id, serverId: message.guild.id },
-								{ $set: { hasCooldown: false } },
-								{ new: true },
-							)
-							.catch(async (error) => {
-								throw new Error(error);
-							});
-					}, 3000);
-				})
 				.catch((error) => {
 					throw new Error(error);
 				});
 		}
-
-		console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): currentRegion changed from \x1b[33m${profileData.currentRegion} \x1b[0mto \x1b[33mfood den \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { currentRegion: 'food den' } },
-				{ new: true },
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
 
 		const species = arrays.species(profileData);
 
@@ -145,12 +113,7 @@ module.exports = {
 						embeds: embedArray,
 					})
 					.catch((error) => {
-						if (error.httpStatus == 404) {
-							console.log('Message already deleted');
-						}
-						else {
-							throw new Error(error);
-						}
+						throw new Error(error);
 					});
 			}
 
@@ -211,17 +174,11 @@ module.exports = {
 				finalHungerPoints -= (profileData.hunger + finalHungerPoints) - profileData.maxHunger;
 			}
 
-			finalHungerPoints.toString();
-			if (finalHungerPoints >= 0) {
-
-				finalHungerPoints = '+' + finalHungerPoints;
-			}
-
 			--serverPlantArray[plantNamesArrayIndex];
 
 			if (arrays.commonPlantNamesArray.some(element => element == chosenFood)) {
 
-				console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): commonPlantsArray changed from \x1b[33m${serverData.commonPlantsArray} \x1b[0mto \x1b[33m${serverPlantArray} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+				(serverData.commonPlantsArray != serverPlantArray) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): commonPlantsArray changed from \x1b[33m[${serverData.commonPlantsArray}] \x1b[0mto \x1b[33m[${serverPlantArray}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 				await serverModel
 					.findOneAndUpdate(
 						{ serverId: message.guild.id },
@@ -235,7 +192,7 @@ module.exports = {
 
 			if (arrays.uncommonPlantNamesArray.some(element => element == chosenFood)) {
 
-				console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): uncommonPlantsArray changed from \x1b[33m${serverData.uncommonPlantsArray} \x1b[0mto \x1b[33m${serverPlantArray} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+				(serverData.uncommonPlantsArray != serverPlantArray) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): uncommonPlantsArray changed from \x1b[33m[${serverData.uncommonPlantsArray}] \x1b[0mto \x1b[33m[${serverPlantArray}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 				await serverModel
 					.findOneAndUpdate(
 						{ serverId: message.guild.id },
@@ -249,7 +206,7 @@ module.exports = {
 
 			if (arrays.rarePlantNamesArray.some(element => element == chosenFood)) {
 
-				console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): rarePlantsArray changed from \x1b[33m${serverData.rarePlantsArray} \x1b[0mto \x1b[33m${serverPlantArray} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+				(serverData.rarePlantsArray != serverPlantArray) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): rarePlantsArray changed from \x1b[33m[${serverData.rarePlantsArray}] \x1b[0mto \x1b[33m[${serverPlantArray}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 				await serverModel
 					.findOneAndUpdate(
 						{ serverId: message.guild.id },
@@ -261,17 +218,17 @@ module.exports = {
 					});
 			}
 
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hunger changed from \x1b[33m${profileData.hunger} \x1b[0mto \x1b[33m${profileData.hunger + finalHungerPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): health changed from \x1b[33m${profileData.health} \x1b[0mto \x1b[33m${profileData.health + finalHealthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): energy changed from \x1b[33m${profileData.energy} \x1b[0mto \x1b[33m${profileData.energy + finalEnergyPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			(finalHungerPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hunger changed from \x1b[33m${profileData.hunger} \x1b[0mto \x1b[33m${profileData.hunger + finalHungerPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			(finalEnergyPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): energy changed from \x1b[33m${profileData.energy} \x1b[0mto \x1b[33m${profileData.energy + finalEnergyPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			(finalHealthPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): health changed from \x1b[33m${profileData.health} \x1b[0mto \x1b[33m${profileData.health + finalHealthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			profileData = await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{
 						$inc: {
 							hunger: +finalHungerPoints,
-							health: +finalHealthPoints,
 							energy: +finalEnergyPoints,
+							health: +finalHealthPoints,
 						},
 					},
 					{ new: true },
@@ -280,7 +237,21 @@ module.exports = {
 					throw new Error(error);
 				});
 
-			embed.footer.text = `${finalHungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})`;
+			if (profileData.currentRegion != 'food den') {
+
+				console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): currentRegion changed from \x1b[33m${profileData.currentRegion} \x1b[0mto \x1b[33mfood den \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+				await profileModel
+					.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{ $set: { currentRegion: 'food den' } },
+						{ new: true },
+					)
+					.catch((error) => {
+						throw new Error(error);
+					});
+			}
+
+			embed.footer.text = `+${finalHungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})`;
 
 			if (plantGivesEnergyArray[plantNamesArrayIndex] == true) {
 
@@ -300,12 +271,7 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 		}
 
@@ -327,12 +293,7 @@ module.exports = {
 						embeds: embedArray,
 					})
 					.catch((error) => {
-						if (error.httpStatus == 404) {
-							console.log('Message already deleted');
-						}
-						else {
-							throw new Error(error);
-						}
+						throw new Error(error);
 					});
 			}
 
@@ -359,7 +320,7 @@ module.exports = {
 
 			serverMeatArray[meatNameArrayIndex]--;
 
-			console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): meatArray changed from \x1b[33m${serverData.meatArray} \x1b[0mto \x1b[33m${serverMeatArray} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			(serverData.meatArray != serverMeatArray) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): meatArray changed from \x1b[33m[${serverData.meatArray}] \x1b[0mto \x1b[33m[${serverMeatArray}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			await serverModel
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
@@ -370,7 +331,7 @@ module.exports = {
 					throw new Error(error);
 				});
 
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hunger changed from \x1b[33m${profileData.hunger} \x1b[0mto \x1b[33m${profileData.hunger + finalHungerPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			(finalHungerPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hunger changed from \x1b[33m${profileData.hunger} \x1b[0mto \x1b[33m${profileData.hunger + finalHungerPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			profileData = await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
@@ -389,29 +350,18 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 		}
 
 		if (message.mentions.users.size > 0) {
-			let taggedProfileData;
-			try {
-				taggedProfileData = await profileModel
-					.findOne({
-						userId: message.mentions.users.first().id,
-					})
-					.catch((error) => {
-						throw new Error(error);
-					});
-			}
-			catch (err) {
-				console.log(err);
-			}
+			const taggedProfileData = await profileModel
+				.findOne({
+					userId: message.mentions.users.first().id,
+				})
+				.catch((error) => {
+					throw new Error(error);
+				});
 
 			if (taggedProfileData) {
 
@@ -424,34 +374,13 @@ module.exports = {
 						embeds: embedArray,
 					})
 					.catch((error) => {
-						if (error.httpStatus == 404) {
-							console.log('Message already deleted');
-						}
-						else {
-							throw new Error(error);
-						}
+						throw new Error(error);
 					});
 			}
 		}
 
 		return await inventory
 			.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
-			.then(async () => {
-
-				setTimeout(async function() {
-
-					console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-					profileData = await profileModel
-						.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
-							{ $set: { hasCooldown: false } },
-							{ new: true },
-						)
-						.catch(async (error) => {
-							throw new Error(error);
-						});
-				}, 3000);
-			})
 			.catch((error) => {
 				throw new Error(error);
 			});

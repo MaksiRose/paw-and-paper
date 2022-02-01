@@ -28,6 +28,16 @@ module.exports = {
 			return;
 		}
 
+		await profileModel
+			.findOneAndUpdate(
+				{ userId: member.id, serverId: member.guild.id },
+				{ $set: { currenRegion: 'sleeping dens' } },
+				{ new: true },
+			)
+			.catch((error) => {
+				throw new Error(error);
+			});
+
 		await member.createDM();
 		const botReply = await member
 			.send({

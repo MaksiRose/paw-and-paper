@@ -21,12 +21,7 @@ module.exports = {
 				}],
 			})
 			.catch((newError) => {
-				if (newError.httpStatus == 404) {
-					console.log('Message already deleted');
-				}
-				else {
-					console.error(newError);
-				}
+				throw new Error(newError);
 			});
 	},
 };

@@ -18,12 +18,7 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 
 			return true;
@@ -32,11 +27,11 @@ module.exports = {
 		return false;
 	},
 
-	async hasCooldown(message, profileData, callerName) {
+	async hasCooldown(message, profileData, callerNameArray) {
 
 		const commandName = message.content.slice(config.prefix.length).trim().split(/ +/).shift().toLowerCase();
 
-		if (profileData.hasCooldown == true && commandName == callerName) {
+		if (profileData.hasCooldown == true && callerNameArray.includes(commandName)) {
 
 			await message
 				.reply({
@@ -52,22 +47,12 @@ module.exports = {
 						await reply
 							.delete()
 							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
+								throw new Error(error);
 							});
 					}, 10000);
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 
 			return true;
@@ -158,22 +143,12 @@ module.exports = {
 						await reply
 							.delete()
 							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
+								throw new Error(error);
 							});
 					}, 10000);
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 
 			return true;
@@ -186,7 +161,7 @@ module.exports = {
 
 		if (profileData.isResting == true) {
 
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): isResting changed from \x1b[33m${profileData.isResting} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			(profileData.isResting != false) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): isResting changed from \x1b[33m${profileData.isResting} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			profileData = await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
@@ -209,14 +184,14 @@ module.exports = {
 		return profileData;
 	},
 
-	async isInvalid(message, profileData, embedArray, callerName) {
+	async isInvalid(message, profileData, embedArray, callerNameArray) {
 
 		if (await module.exports.isPassedOut(message, profileData)) {
 
 			return true;
 		}
 
-		if (await module.exports.hasCooldown(message, profileData, callerName)) {
+		if (await module.exports.hasCooldown(message, profileData, callerNameArray)) {
 
 			return true;
 		}

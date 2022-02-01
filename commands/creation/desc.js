@@ -26,18 +26,13 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 		}
 
 		const description = argumentsArray.join(' ');
 
-		console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): description changed from \x1b[33m${profileData.description} \x1b[0mto \x1b[33m${description} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+		(profileData.description != description) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): description changed from \x1b[33m${profileData.description} \x1b[0mto \x1b[33m${description} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 		await profileModel
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
@@ -58,12 +53,7 @@ module.exports = {
 				}],
 			})
 			.catch((error) => {
-				if (error.httpStatus == 404) {
-					console.log('Message already deleted');
-				}
-				else {
-					throw new Error(error);
-				}
+				throw new Error(error);
 			});
 	},
 };

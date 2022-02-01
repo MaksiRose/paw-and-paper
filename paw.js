@@ -30,8 +30,8 @@ mongoose
 	.then(() => {
 		console.log('Connected to database!');
 	})
-	.catch((err) => {
-		console.log(err);
+	.catch((error) => {
+		console.error(error);
 	});
 
-client.login(config.token);
+client.login(config.test_token);

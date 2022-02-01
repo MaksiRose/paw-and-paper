@@ -15,7 +15,7 @@ module.exports = {
 			return;
 		}
 
-		if (await checkValidity.isInvalid(message, profileData, embedArray, module.exports.name)) {
+		if (await checkValidity.isInvalid(message, profileData, embedArray, [module.exports.name])) {
 
 			return;
 		}
@@ -72,12 +72,7 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 		}
 
@@ -100,12 +95,7 @@ module.exports = {
 				components: componentArray,
 			})
 			.catch((error) => {
-				if (error.httpStatus == 404) {
-					console.log('Message already deleted');
-				}
-				else {
-					throw new Error(error);
-				}
+				throw new Error(error);
 			});
 
 		client.on('messageCreate', async function removeStoreComponents(newMessage) {
@@ -120,12 +110,7 @@ module.exports = {
 					components: [],
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 
 			return client.off('messageCreate', removeStoreComponents);
@@ -161,12 +146,7 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							if (error.httpStatus == 404) {
-								console.log('Message already deleted');
-							}
-							else {
-								throw new Error(error);
-							}
+							throw new Error(error);
 						});
 				}
 
@@ -209,12 +189,7 @@ module.exports = {
 								components: componentArray,
 							})
 							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
+								throw new Error(error);
 							});
 
 						return await interactionCollector(chosenFood, foodCategoryIndex, foodNameIndex);
@@ -226,7 +201,7 @@ module.exports = {
 						userInventory[foodCategoryIndex][foodNameIndex] -= chosenAmount;
 						serverInventory[foodCategoryIndex][foodNameIndex] += chosenAmount;
 
-						console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): inventoryArray changed from \x1b[33m${profileData.inventoryArray} \x1b[0mto \x1b[33m${userInventory} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						(profileData.inventoryArray != userInventory) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): inventoryArray changed from \x1b[33m[${profileData.inventoryArray}] \x1b[0mto \x1b[33m[${userInventory}] \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 						profileData = await profileModel
 							.findOneAndUpdate(
 								{ userId: message.author.id, serverId: message.guild.id },
@@ -237,10 +212,10 @@ module.exports = {
 								throw new Error(error);
 							});
 
-						console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): commonPlantsArray changed from \x1b[33m${serverData.commonPlantsArray} \x1b[0mto \x1b[33m${serverInventory[0]} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-						console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): uncommonPlantsArray changed from \x1b[33m${serverData.uncommonPlantsArray} \x1b[0mto \x1b[33m${serverInventory[1]} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-						console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): rarePlantsArray changed from \x1b[33m${serverData.rarePlantsArray} \x1b[0mto \x1b[33m${serverInventory[2]} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-						console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): meatArray changed from \x1b[33m${serverData.meatArray} \x1b[0mto \x1b[33m${serverInventory[3]} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						(serverData.commonPlantsArray != serverInventory[0]) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): commonPlantsArray changed from \x1b[33m[${serverData.commonPlantsArray}] \x1b[0mto \x1b[33m[${serverInventory[0]}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						(serverData.uncommonPlantsArray != serverInventory[1]) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): uncommonPlantsArray changed from \x1b[33m[${serverData.uncommonPlantsArray}] \x1b[0mto \x1b[33m[${serverInventory[1]}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						(serverData.rarePlantsArray != serverInventory[2]) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): rarePlantsArray changed from \x1b[33m[${serverData.rarePlantsArray}] \x1b[0mto \x1b[33m[${serverInventory[2]}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						(serverData.meatArray != serverInventory[3]) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): meatArray changed from \x1b[33m[${serverData.meatArray}] \x1b[0mto \x1b[33m[${serverInventory[3]}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 						await serverModel
 							.findOneAndUpdate(
 								{ serverId: message.guild.id },
@@ -281,12 +256,7 @@ module.exports = {
 									components: [],
 								})
 								.catch((error) => {
-									if (error.httpStatus == 404) {
-										console.log('Message already deleted');
-									}
-									else {
-										throw new Error(error);
-									}
+									throw new Error(error);
 								});
 
 							return;
@@ -298,12 +268,7 @@ module.exports = {
 								components: componentArray,
 							})
 							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
+								throw new Error(error);
 							});
 
 						return await interactionCollector(null, null, null);
@@ -341,7 +306,7 @@ module.exports = {
 						}
 					}
 
-					console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): inventoryArray changed from \x1b[33m${profileData.inventoryArray} \x1b[0mto \x1b[33m${userInventory} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+					(profileData.inventoryArray != userInventory) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): inventoryArray changed from \x1b[33m[${profileData.inventoryArray}] \x1b[0mto \x1b[33m[${userInventory}] \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 					await profileModel
 						.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
@@ -352,10 +317,10 @@ module.exports = {
 							throw new Error(error);
 						});
 
-					console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): commonPlantsArray changed from \x1b[33m${serverData.commonPlantsArray} \x1b[0mto \x1b[33m${serverInventory[0]} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-					console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): uncommonPlantsArray changed from \x1b[33m${serverData.uncommonPlantsArray} \x1b[0mto \x1b[33m${serverInventory[1]} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-					console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): rarePlantsArray changed from \x1b[33m${serverData.rarePlantsArray} \x1b[0mto \x1b[33m${serverInventory[2]} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-					console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): meatArray changed from \x1b[33m${serverData.meatArray} \x1b[0mto \x1b[33m${serverInventory[3]} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+					(serverData.commonPlantsArray != serverInventory[0]) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): commonPlantsArray changed from \x1b[33m[${serverData.commonPlantsArray}] \x1b[0mto \x1b[33m[${serverInventory[0]}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+					(serverData.uncommonPlantsArray != serverInventory[1]) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): uncommonPlantsArray changed from \x1b[33m[${serverData.uncommonPlantsArray}] \x1b[0mto \x1b[33m[${serverInventory[1]}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+					(serverData.rarePlantsArray != serverInventory[2]) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): rarePlantsArray changed from \x1b[33m[${serverData.rarePlantsArray}] \x1b[0mto \x1b[33m[${serverInventory[2]}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+					(serverData.meatArray != serverInventory[3]) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): meatArray changed from \x1b[33m[${serverData.meatArray}] \x1b[0mto \x1b[33m[${serverInventory[3]}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 					await serverModel
 						.findOneAndUpdate(
 							{ serverId: message.guild.id },
@@ -380,12 +345,7 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							if (error.httpStatus == 404) {
-								console.log('Message already deleted');
-							}
-							else {
-								throw new Error(error);
-							}
+							throw new Error(error);
 						});
 
 					return;

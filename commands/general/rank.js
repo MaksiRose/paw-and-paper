@@ -14,7 +14,7 @@ module.exports = {
 			return;
 		}
 
-		if (await checkValidity.hasCooldown(message, profileData, module.exports.name)) {
+		if (await checkValidity.hasCooldown(message, profileData, [module.exports.name].concat(module.exports.aliases))) {
 
 			return;
 		}
@@ -23,7 +23,7 @@ module.exports = {
 
 		if (profileData.unlockedRanks == 1 && profileData.rank == 'Youngling') {
 
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): rank changed from \x1b[33m${profileData.rank} \x1b[0mto \x1b[33mApprentice \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			(profileData.rank != 'Apprentice') && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): rank changed from \x1b[33m${profileData.rank} \x1b[0mto \x1b[33mApprentice \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
@@ -43,12 +43,7 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 		}
 
@@ -79,12 +74,7 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 
 			client.on('messageCreate', async function removeRankComponents(newMessage) {
@@ -99,12 +89,7 @@ module.exports = {
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus == 404) {
-							console.log('Message already deleted');
-						}
-						else {
-							throw new Error(error);
-						}
+						throw new Error(error);
 					});
 
 				return client.off('messageCreate', removeRankComponents);
@@ -115,7 +100,7 @@ module.exports = {
 
 		if (profileData.unlockedRanks == 3 && (profileData.rank == 'Hunter' || profileData.rank == 'Healer')) {
 
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): rank changed from \x1b[33m${profileData.rank} \x1b[0mto \x1b[33mElderly \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			(profileData.rank != 'Elderly') && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): rank changed from \x1b[33m${profileData.rank} \x1b[0mto \x1b[33mElderly \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
@@ -135,12 +120,7 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 		}
 
@@ -154,12 +134,7 @@ module.exports = {
 				}],
 			})
 			.catch((error) => {
-				if (error.httpStatus == 404) {
-					console.log('Message already deleted');
-				}
-				else {
-					throw new Error(error);
-				}
+				throw new Error(error);
 			});
 
 		async function interactionCollector(botReply) {
@@ -190,12 +165,7 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							if (error.httpStatus == 404) {
-								console.log('Message already deleted');
-							}
-							else {
-								throw new Error(error);
-							}
+							throw new Error(error);
 						});
 				}
 
@@ -203,7 +173,7 @@ module.exports = {
 
 				if (interaction.customId == 'rank-healer') {
 
-					console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): rank changed from \x1b[33m${profileData.rank} \x1b[0mto \x1b[33mHealer \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+					(profileData.rank != 'Healer') && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): rank changed from \x1b[33m${profileData.rank} \x1b[0mto \x1b[33mHealer \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 					await profileModel
 						.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
@@ -224,18 +194,13 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							if (error.httpStatus == 404) {
-								console.log('Message already deleted');
-							}
-							else {
-								throw new Error(error);
-							}
+							throw new Error(error);
 						});
 				}
 
 				if (interaction.customId == 'rank-hunter') {
 
-					console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): rank changed from \x1b[33m${profileData.rank} \x1b[0mto \x1b[33mHunter \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+					(profileData.rank != 'Hunter') && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): rank changed from \x1b[33m${profileData.rank} \x1b[0mto \x1b[33mHunter \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 					await profileModel
 						.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
@@ -256,12 +221,7 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							if (error.httpStatus == 404) {
-								console.log('Message already deleted');
-							}
-							else {
-								throw new Error(error);
-							}
+							throw new Error(error);
 						});
 				}
 

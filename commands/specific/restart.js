@@ -15,12 +15,7 @@ module.exports = {
 					content: 'Restarted!',
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 
 			await process.exit()

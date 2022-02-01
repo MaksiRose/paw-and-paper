@@ -41,16 +41,11 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 		}
 
-		console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasQuest changed from \x1b[33m${profileData.hasQuest} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+		(profileData.hasQuest != false) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasQuest changed from \x1b[33m${profileData.hasQuest} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 		await profileModel
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
@@ -273,12 +268,7 @@ module.exports = {
 						}],
 					})
 					.catch((error) => {
-						if (error.httpStatus == 404) {
-							console.log('Message already deleted');
-						}
-						else {
-							throw new Error(error);
-						}
+						throw new Error(error);
 					});
 			}
 			else {
@@ -292,12 +282,7 @@ module.exports = {
 						}],
 					})
 					.catch((error) => {
-						if (error.httpStatus == 404) {
-							console.log('Message already deleted');
-						}
-						else {
-							throw new Error(error);
-						}
+						throw new Error(error);
 					});
 			}
 
@@ -308,7 +293,9 @@ module.exports = {
 				const collector = message.channel.createMessageComponentCollector({ filter, max: 1, time: 5000 });
 				collector.on('end', async collected => {
 
-					if (collected.size == 0 || !collected.first().customId.includes(`${buttonColorKind}${buttonTextOrColor}`) || Math.floor(Math.random() * 100) + 1 > sigmoidFunction(profileData.levels, 2)) {
+					const winChance = sigmoidFunction(profileData.levels, (profileData.rank == 'Elderly') ? 35 : (profileData.rank == 'Hunter' || profileData.rank == 'Healer') ? 20 : (profileData.rank == 'Apprentice') ? 10 : 2);
+
+					if (collected.size == 0 || !collected.first().customId.includes(`${buttonColorKind}${buttonTextOrColor}`) || Math.floor(Math.random() * 100) + 1 > winChance) {
 
 						++missValue;
 					}
@@ -407,10 +394,8 @@ module.exports = {
 								footer = '+10 maximum thirst\n\n';
 							}
 
-							console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): maxHealth changed from \x1b[33m${profileData.maxHealth} \x1b[0mto \x1b[33m${profileData.maxHealth + maxHealthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-							console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): maxEnergy changed from \x1b[33m${profileData.maxEnergy} \x1b[0mto \x1b[33m${profileData.maxEnergy + maxEnergyPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-							console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): maxHunger changed from \x1b[33m${profileData.maxHunger} \x1b[0mto \x1b[33m${profileData.maxHunger + maxHungerPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-							console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): maxThirst changed from \x1b[33m${profileData.maxThirst} \x1b[0mto \x1b[33m${profileData.maxThirst + maxThirstPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							(maxHealthPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): maxHealth changed from \x1b[33m${profileData.maxHealth} \x1b[0mto \x1b[33m${profileData.maxHealth + maxHealthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							(maxEnergyPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): maxEnergy changed from \x1b[33m${profileData.maxEnergy} \x1b[0mto \x1b[33m100 / (1 + Math.pow(Math.E, -5.11 * x))m${profileData.maxThirst + maxThirstPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							await profileModel
 								.findOneAndUpdate(
 									{ userId: message.author.id, serverId: message.guild.id },
@@ -441,12 +426,7 @@ module.exports = {
 								components: [],
 							})
 							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
+								throw new Error(error);
 							});
 
 						return resolve();
@@ -516,12 +496,7 @@ module.exports = {
 								components: [],
 							})
 							.catch((error) => {
-								if (error.httpStatus == 404) {
-									console.log('Message already deleted');
-								}
-								else {
-									throw new Error(error);
-								}
+								throw new Error(error);
 							});
 
 						return resolve();

@@ -136,12 +136,7 @@ module.exports = {
 						}],
 					})
 					.catch(async (error) => {
-						if (error.httpStatus == 404) {
-							console.log('Message already deleted');
-						}
-						else {
-							return await errorHandling.output(interaction.message, error);
-						}
+						throw new Error(error);
 					});
 			}
 
@@ -160,18 +155,14 @@ module.exports = {
 								{ name: '**rp rest**', value: 'Zzz... get some sleep and fill up your energy meter.' },
 								{ name: '**rp eat (item)**', value: 'Yummy! Take the appropriate food for your species out of the packs food pile and fill up your hunger meter.' },
 								{ name: '**rp drink**', value: 'Refreshing! Drink some water and fill up your thirst meter.' },
+								{ name: '**rp playfight [@user]**', value: 'Playfully fight with another packmate!' },
 								{ name: '**rp rank**', value: 'Once you successfully finished a quest, you can move up a rank!' },
 								{ name: '**rp ticket [text]**', value: 'Report a bug, give feedback, suggest a feature!' },
 							],
 						}],
 					})
 					.catch(async (error) => {
-						if (error.httpStatus == 404) {
-							console.log('Message already deleted');
-						}
-						else {
-							return await errorHandling.output(interaction.message, error);
-						}
+						throw new Error(error);
 					});
 			}
 
@@ -197,6 +188,11 @@ module.exports = {
 					.catch(async (error) => {
 						return await errorHandling.output(interaction.message, error);
 					});
+				const elliott = await client.users
+					.fetch(config.eliott)
+					.catch(async (error) => {
+						return await errorHandling.output(interaction.message, error);
+					});
 
 				await interaction.message
 					.edit({
@@ -209,18 +205,13 @@ module.exports = {
 								{ name: '**rp heal @user**', value: 'Heal your packmates! Costs energy, but gives XP. __Only available to Apprentices, Healers and Elderlies.__' },
 								{ name: '**rp share (@user)**', value: 'Storytime! So interesting, but tiring too. Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person. __Only available to Elderlies.__' },
 								{ name: '**rp quest**', value: 'Get quests by playing and exploring. Start them with this command. If you are successful, you can move up a rank.' },
-								{ name: '\n**__CREDITS:__**', value: `This bot was made with love by ${maksi.tag}. Special thanks goes out to ${ezra.tag} and ${ren.tag}, who did a lot of the custom bot responses, and ${jags.tag} who did the profile picture. Thank you also to everyone who tested the bot and gave feedback.` },
+								{ name: '\n**__CREDITS:__**', value: `This bot was made with love by ${maksi.tag}. Special thanks goes out to ${ezra.tag}, ${ren.tag} and ${elliott.tag}, who did a lot of the custom bot responses, and ${jags.tag} who did the profile picture. Thank you also to everyone who tested the bot and gave feedback.` },
 								{ name: '\n**__OTHER:__**', value: `If you want to support me, you can donate [here](https://streamlabs.com/maksirose/tip)! :)\nYou can find the GitHub repository for this project [here](https://github.com/MaksiRose/paw-and-paper)\nThe bot is currently running on version ${pjson.version}` },
 							],
 						}],
 					})
 					.catch(async (error) => {
-						if (error.httpStatus == 404) {
-							console.log('Message already deleted');
-						}
-						else {
-							return await errorHandling.output(interaction.message, error);
-						}
+						throw new Error(error);
 					});
 			}
 
@@ -232,12 +223,7 @@ module.exports = {
 				interaction.message
 					.delete()
 					.catch(async (error) => {
-						if (error.httpStatus == 404) {
-							console.log('Message already deleted');
-						}
-						else {
-							return await errorHandling.output(interaction.message, error);
-						}
+						throw new Error(error);
 					});
 
 				interaction.message.embeds.splice(-1, 1);
@@ -246,9 +232,17 @@ module.exports = {
 					.sendMessage(client, referencedMessage, interaction.values, profileData, serverData, interaction.message.embeds)
 					.then(async () => {
 
+						profileData = await profileModel
+							.findOne({
+								userId: interaction.user.id,
+								serverId: interaction.guild.id,
+							}).catch(async (error) => {
+								return await errorHandling.output(interaction.message, error);
+							});
+
 						setTimeout(async function() {
 
-							console.log(`\x1b[32m\x1b[0m${interaction.user.tag} (${interaction.user.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${interaction.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							(profileData.hasCooldown != false) && console.log(`\x1b[32m\x1b[0m${interaction.user.tag} (${interaction.user.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${interaction.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							profileData = await profileModel
 								.findOneAndUpdate(
 									{ userId: interaction.user.id, serverId: interaction.guild.id },
@@ -276,12 +270,7 @@ module.exports = {
 				interaction.message
 					.edit({ components: [] })
 					.catch(async (error) => {
-						if (error.httpStatus == 404) {
-							console.log('Message already deleted');
-						}
-						else {
-							return await errorHandling.output(interaction.message, error);
-						}
+						throw new Error(error);
 					});
 
 				const maksi = await client.users.fetch(config.maksi, false);
@@ -357,12 +346,7 @@ module.exports = {
 						}],
 					})
 					.catch(async (error) => {
-						if (error.httpStatus == 404) {
-							console.log('Message already deleted');
-						}
-						else {
-							return await errorHandling.output(interaction.message, error);
-						}
+						throw new Error(error);
 					});
 			}
 
@@ -371,12 +355,7 @@ module.exports = {
 				interaction.message
 					.delete()
 					.catch(async (error) => {
-						if (error.httpStatus == 404) {
-							console.log('Message already deleted');
-						}
-						else {
-							return await errorHandling.output(interaction.message, error);
-						}
+						throw new Error(error);
 					});
 
 				embedArray.pop();
@@ -385,9 +364,17 @@ module.exports = {
 					.sendMessage(client, referencedMessage, interaction.values, profileData, serverData, embedArray)
 					.then(async () => {
 
+						profileData = await profileModel
+							.findOne({
+								userId: interaction.user.id,
+								serverId: interaction.guild.id,
+							}).catch(async (error) => {
+								return await errorHandling.output(interaction.message, error);
+							});
+
 						setTimeout(async function() {
 
-							console.log(`\x1b[32m\x1b[0m${interaction.user.tag} (${interaction.user.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${interaction.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							(profileData.hasCooldown != false) && console.log(`\x1b[32m\x1b[0m${interaction.user.tag} (${interaction.user.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${interaction.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							profileData = await profileModel
 								.findOneAndUpdate(
 									{ userId: interaction.user.id, serverId: interaction.guild.id },

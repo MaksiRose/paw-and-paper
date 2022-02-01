@@ -26,12 +26,7 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 		}
 
@@ -54,7 +49,7 @@ module.exports = {
 
 		if (chosenSpecies != null && species.nameArray.includes(chosenSpecies)) {
 
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): species changed from \x1b[33m${profileData.species} \x1b[0mto \x1b[33m${chosenSpecies} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			(profileData.species != chosenSpecies) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): species changed from \x1b[33m${profileData.species} \x1b[0mto \x1b[33m${chosenSpecies} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
@@ -75,12 +70,7 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 		}
 
@@ -109,12 +99,7 @@ module.exports = {
 				}],
 			})
 			.catch((error) => {
-				if (error.httpStatus == 404) {
-					console.log('Message already deleted');
-				}
-				else {
-					throw new Error(error);
-				}
+				throw new Error(error);
 			});
 
 		client.on('messageCreate', async function removeSpeciesComponents(newMessage) {
@@ -134,12 +119,7 @@ module.exports = {
 					components: [],
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 
 			return client.off('messageCreate', removeSpeciesComponents);
@@ -170,12 +150,7 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							if (error.httpStatus == 404) {
-								console.log('Message already deleted');
-							}
-							else {
-								throw new Error(error);
-							}
+							throw new Error(error);
 						});
 				}
 
@@ -210,12 +185,7 @@ module.exports = {
 							}],
 						})
 						.catch((error) => {
-							if (error.httpStatus == 404) {
-								console.log('Message already deleted');
-							}
-							else {
-								throw new Error(error);
-							}
+							throw new Error(error);
 						});
 
 					return await interactionCollector();
@@ -223,7 +193,7 @@ module.exports = {
 
 				if (species.nameArray.includes(interaction.values[0])) {
 
-					console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): species changed from \x1b[33m${profileData.species} \x1b[0mto \x1b[33m${interaction.values[0]} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+					(profileData.species != interaction.values[0]) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): species changed from \x1b[33m${profileData.species} \x1b[0mto \x1b[33m${interaction.values[0]} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 					await profileModel
 						.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
@@ -245,12 +215,7 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							if (error.httpStatus == 404) {
-								console.log('Message already deleted');
-							}
-							else {
-								throw new Error(error);
-							}
+							throw new Error(error);
 						});
 				}
 			});
