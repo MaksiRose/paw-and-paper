@@ -11,7 +11,8 @@ module.exports = {
 			.findOne({
 				userId: member.id,
 				serverId: member.guild.id,
-			}).catch((error) => {
+			})
+			.catch((error) => {
 				console.error(error);
 			});
 
