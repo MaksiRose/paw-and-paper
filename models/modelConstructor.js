@@ -29,6 +29,31 @@ class model {
 			return null;
 		};
 
+		this.find = async function(filterObject) {
+
+			const dataObjectsArray = [];
+
+			for (const file of fs.readdirSync(path)) {
+
+				if (!file.endsWith('.json')) {
+
+					continue;
+				}
+
+				const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`));
+
+				for (const [key, value] of Object.entries(filterObject)) {
+
+					if (dataObject[key] && dataObject[key] == value) {
+
+						dataObjectsArray.push(dataObject);
+					}
+				}
+			}
+
+			return dataObjectsArray;
+		};
+
 		this.create = async function(dataObject) {
 
 			let uuid = crypto.randomUUID();
