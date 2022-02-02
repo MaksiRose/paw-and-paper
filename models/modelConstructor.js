@@ -113,7 +113,7 @@ class model {
 
 						if (dataObject[key] != undefined && typeof dataObject[key] == typeof value) {
 
-							(dataObject[key] != value) && console.log(`\x1b[32m${(user != null) ? `${user.tag} (${user.id}): ` : ''}\x1b[0m${key} changed from \x1b[33m${logOutputter(dataObject[key])} \x1b[0mto \x1b[33m${logOutputter(value)} \x1b[0min \x1b[32m${guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							(logOutputter(dataObject[key]) != logOutputter(value)) && console.log(`\x1b[32m${(user != null) ? `${user.tag} (${user.id}): ` : ''}\x1b[0m${key} changed from \x1b[33m${logOutputter(objectReducer(dataObject[key], value))} \x1b[0mto \x1b[33m${logOutputter(objectReducer(value, dataObject[key]))} \x1b[0min \x1b[32m${guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 							dataObject[key] = value;
 						}
@@ -138,19 +138,53 @@ class model {
 
 			return dataObject;
 
-			function logOutputter(obj) {
+			function logOutputter(variable) {
 
-				if (typeof obj != 'object') {
+				if (variable !== Object(variable) || Array.isArray(variable)) {
 
-					return obj;
+					return variable;
 				}
 
-				let result = JSON.stringify(obj, null, 1);
+				let result = JSON.stringify(variable, null, 1);
 				result = result.replace(/^ +/gm, ' ');
 				result = result.replace(/\n/g, '');
 				result = result.replace(/{ /g, '{').replace(/ }/g, '}');
 				result = result.replace(/\[ /g, '[').replace(/ \]/g, ']');
 				return result;
+			}
+
+			function objectReducer(mainObject, compareObject) {
+
+				if (mainObject !== Object(mainObject) || Array.isArray(mainObject)) {
+
+					return mainObject;
+				}
+
+				let newObject = {};
+
+				for (const key in mainObject) {
+
+					if (!Object.prototype.hasOwnProperty.call(compareObject, key)) {
+
+						continue;
+					}
+
+					if (mainObject[key] !== Object(mainObject[key]) || Array.isArray(mainObject[key])) {
+
+						if (mainObject[key] != compareObject[key]) {
+
+							newObject[key] = mainObject[key];
+						}
+
+						continue;
+					}
+					else {
+
+						newObject = objectReducer(mainObject[key], compareObject[key]);
+					}
+				}
+
+				return newObject;
 			}
 		};
 	}
