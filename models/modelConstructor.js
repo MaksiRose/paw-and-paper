@@ -113,7 +113,7 @@ class model {
 
 						if (dataObject[key] != undefined && typeof dataObject[key] == typeof value) {
 
-							(dataObject[key] != value) && console.log(`\x1b[32m${(user != null) && `${user.tag} (${user.id}): `}\x1b[0m${key} changed from \x1b[33m${logOutputter(dataObject[key])} \x1b[0mto \x1b[33m${logOutputter(value)} \x1b[0min \x1b[32m${guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							(dataObject[key] != value) && console.log(`\x1b[32m${(user != null) ? `${user.tag} (${user.id}): ` : ''}\x1b[0m${key} changed from \x1b[33m${logOutputter(dataObject[key])} \x1b[0mto \x1b[33m${logOutputter(value)} \x1b[0min \x1b[32m${guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 							dataObject[key] = value;
 						}
@@ -126,7 +126,7 @@ class model {
 
 						if (dataObject[key] != undefined && typeof dataObject[key] == typeof value) {
 
-							(value != 0) && console.log(`\x1b[32m${(user != null) && `${user.tag} (${user.id}): `}\x1b[0m${key} changed from \x1b[33m${dataObject[key]} \x1b[0mto \x1b[33m${dataObject[key] + value} \x1b[0min \x1b[32m${guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							(value != 0) && console.log(`\x1b[32m${(user != null) ? `${user.tag} (${user.id}): ` : ''}\x1b[0m${key} changed from \x1b[33m${dataObject[key]} \x1b[0mto \x1b[33m${dataObject[key] + value} \x1b[0min \x1b[32m${guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 							dataObject[key] += value;
 						}
