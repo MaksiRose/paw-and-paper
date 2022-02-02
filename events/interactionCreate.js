@@ -112,7 +112,7 @@ module.exports = {
 
 		if (interaction.isSelectMenu()) {
 
-			console.log(`\x1b[32m\x1b[0m${referencedMessage.author.tag} successfully selected \x1b[33m${interaction.values[0]} \x1b[0mfrom the menu \x1b[33m${interaction.customId} \x1b[0min \x1b[32m${referencedMessage.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			console.log(`\x1b[32m${referencedMessage.author.tag}\x1b[0m successfully selected \x1b[33m${interaction.values[0]} \x1b[0mfrom the menu \x1b[33m${interaction.customId} \x1b[0min \x1b[32m${referencedMessage.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 
 			if (interaction.values[0] == 'help_page1') {
@@ -240,7 +240,6 @@ module.exports = {
 
 						setTimeout(async function() {
 
-							(profileData.hasCooldown != false) && console.log(`\x1b[32m\x1b[0m${interaction.user.tag} (${interaction.user.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${interaction.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							profileData = await profileModel
 								.findOneAndUpdate(
 									{ userId: interaction.user.id, serverId: interaction.guild.id },
@@ -259,7 +258,7 @@ module.exports = {
 
 		if (interaction.isButton()) {
 
-			console.log(`\x1b[32m\x1b[0m${referencedMessage.author.tag} successfully clicked the button \x1b[33m${interaction.customId} \x1b[0min \x1b[32m${referencedMessage.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			console.log(`\x1b[32m${referencedMessage.author.tag}\x1b[0m successfully clicked the button \x1b[33m${interaction.customId} \x1b[0min \x1b[32m${referencedMessage.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 
 			if (interaction.customId == 'report') {
@@ -371,7 +370,6 @@ module.exports = {
 
 						setTimeout(async function() {
 
-							(profileData.hasCooldown != false) && console.log(`\x1b[32m\x1b[0m${interaction.user.tag} (${interaction.user.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${interaction.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							profileData = await profileModel
 								.findOneAndUpdate(
 									{ userId: interaction.user.id, serverId: interaction.guild.id },

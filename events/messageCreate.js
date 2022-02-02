@@ -88,7 +88,6 @@ module.exports = {
 				}
 			}
 
-			console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): inventoryObject.meat changed from \x1b[33m${JSON.stringify(serverData.inventoryObject.meat)} \x1b[0mto \x1b[33m${JSON.stringify(serverMeatObject)} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			serverData = await serverModel
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
@@ -111,7 +110,6 @@ module.exports = {
 				}
 			}
 
-			console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): inventoryObject.commonPlants changed from \x1b[33m${JSON.stringify(serverData.inventoryObject.commonPlants)} \x1b[0mto \x1b[33m${JSON.stringify(serverCommonPlantMap)} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			serverData = await serverModel
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
@@ -134,7 +132,6 @@ module.exports = {
 				}
 			}
 
-			console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): inventoryObject.uncommonPlants changed from \x1b[33m${JSON.stringify(serverData.inventoryObject.uncommonPlants)} \x1b[0mto \x1b[33m${JSON.stringify(serverUncommonPlantMap.entries)} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			serverData = await serverModel
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
@@ -157,7 +154,6 @@ module.exports = {
 				}
 			}
 
-			console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): inventoryObject.rarePlants changed from \x1b[33m${JSON.stringify(serverData.inventoryObject.rarePlants)} \x1b[0mto \x1b[33m${JSON.stringify(serverRarePlantMap)} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			serverData = await serverModel
 				.findOneAndUpdate(
 					{ serverId: message.guild.id },
@@ -189,7 +185,7 @@ module.exports = {
 					throw new Error(error);
 				});
 
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} unsuccessfully tried to execute \x1b[33m${message.content} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			console.log(`\x1b[32m${message.author.tag}\x1b[0m unsuccessfully tried to execute \x1b[33m${message.content} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 			return;
 		}
@@ -226,7 +222,7 @@ module.exports = {
 
 		try {
 
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} successfully executed \x1b[33m${message.content} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			console.log(`\x1b[32m${message.author.tag}\x1b[0m successfully executed \x1b[33m${message.content} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 			if (usersActiveCommandsAmountMap.has(message.author.id) == false) {
 
@@ -258,7 +254,6 @@ module.exports = {
 
 						automaticCooldownTimeoutArray[message.author.id] = setTimeout(async function() {
 
-							(profileData.hasCooldown != false) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							profileData = await profileModel
 								.findOneAndUpdate(
 									{ userId: message.author.id, serverId: message.guild.id },
@@ -303,7 +298,6 @@ module.exports = {
 
 						automaticCooldownTimeoutArray[message.author.id] = setTimeout(async function() {
 
-							(profileData.hasCooldown != false) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 							profileData = await profileModel
 								.findOneAndUpdate(
 									{ userId: message.author.id, serverId: message.guild.id },

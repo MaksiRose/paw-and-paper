@@ -213,7 +213,6 @@ module.exports = {
 						userInventory[foodCategory][chosenFood] -= chosenAmount;
 						serverInventory[foodCategory][chosenFood] += chosenAmount;
 
-						(profileData.inventoryObject != userInventory) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): inventoryObject changed from \x1b[33m${JSON.stringify(profileData.inventoryObject)} \x1b[0mto \x1b[33m${JSON.stringify(userInventory)} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 						profileData = await profileModel
 							.findOneAndUpdate(
 								{ userId: message.author.id, serverId: message.guild.id },
@@ -223,7 +222,6 @@ module.exports = {
 								throw new Error(error);
 							});
 
-						(serverData.inventoryObject[foodCategory] != serverInventory[foodCategory]) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): inventoryObject.${foodCategory} changed from \x1b[33m${JSON.stringify(serverData.inventoryObject[foodCategory])} \x1b[0mto \x1b[33m${JSON.stringify(serverInventory[foodCategory])} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 						await serverModel
 							.findOneAndUpdate(
 								{ serverId: message.guild.id },
@@ -308,7 +306,6 @@ module.exports = {
 						}
 					}
 
-					(profileData.inventoryObject != userInventory) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): inventoryObject changed from \x1b[33m${JSON.stringify(profileData.inventoryObject)} \x1b[0mto \x1b[33m${JSON.stringify(userInventory)} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 					await profileModel
 						.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
@@ -318,7 +315,6 @@ module.exports = {
 							throw new Error(error);
 						});
 
-					(serverData.inventoryObject != serverInventory) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): inventoryObject changed from \x1b[33m${JSON.stringify(serverData.inventoryObject)} \x1b[0mto \x1b[33m${JSON.stringify(serverInventory)} \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 					await serverModel
 						.findOneAndUpdate(
 							{ serverId: message.guild.id },

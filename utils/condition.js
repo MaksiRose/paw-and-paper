@@ -197,8 +197,6 @@ module.exports = {
 				throw new Error(error);
 			});
 
-		(extraLostHealthPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): health changed from \x1b[33m${profileData.health} \x1b[0mto \x1b[33m${profileData.health - extraLostHealthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		(profileData.injuryObject != userInjuryObject) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): injuryObject changed from \x1b[33m${JSON.stringify(profileData.injuryObject)} \x1b[0mto \x1b[33m${JSON.stringify(userInjuryObject)} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 		profileData = await profileModel
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },

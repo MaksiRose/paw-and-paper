@@ -17,7 +17,6 @@ module.exports = {
 
 		if (!argumentsArray.length && message.attachments.size <= 0) {
 
-			(profileData.avatarURL != message.author.avatarURL()) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): avatarURL changed from \x1b[33m${profileData.avatarURL} \x1b[0mto \x1b[33m${message.author.avatarURL()} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
@@ -73,7 +72,6 @@ module.exports = {
 				});
 		}
 
-		(profileData.avatarURL != ImageLink) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): avatarURL changed from \x1b[33m${profileData.avatarURL} \x1b[0mto \x1b[33m${ImageLink} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 		await profileModel
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },

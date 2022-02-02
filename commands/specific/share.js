@@ -65,9 +65,6 @@ module.exports = {
 			energyPoints = profileData.energy;
 		}
 
-		(energyPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): energy changed from \x1b[33m${profileData.energy} \x1b[0mto \x1b[33m${profileData.energy - energyPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		(hungerPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hunger changed from \x1b[33m${profileData.hunger} \x1b[0mto \x1b[33m${profileData.hunger - hungerPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		(thirstPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): thirst changed from \x1b[33m${profileData.thirst} \x1b[0mto \x1b[33m${profileData.thirst - thirstPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 		profileData = await profileModel
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
@@ -169,9 +166,6 @@ module.exports = {
 
 			if (!partnerProfileData || partnerProfileData.name == '' || partnerProfileData.species == '' || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0) {
 
-				(energyPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): energy changed from \x1b[33m${profileData.energy} \x1b[0mto \x1b[33m${profileData.energy + energyPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-				(hungerPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hunger changed from \x1b[33m${profileData.hunger} \x1b[0mto \x1b[33m${profileData.hunger + hungerPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-				(thirstPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): thirst changed from \x1b[33m${profileData.thirst} \x1b[0mto \x1b[33m${profileData.thirst + thirstPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 				await profileModel
 					.findOneAndUpdate(
 						{ userId: message.author.id, serverId: message.guild.id },
@@ -217,7 +211,6 @@ module.exports = {
 
 		await condition.decreaseHealth(message, profileData, botReply);
 
-		(profileData.injuryObject != userInjuryObject) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): injuryObject changed from \x1b[33m${JSON.stringify(profileData.injuryObject)} \x1b[0mto \x1b[33m${JSON.stringify(userInjuryObject)} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 		profileData = await profileModel
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
@@ -237,7 +230,6 @@ module.exports = {
 
 			const partnerExperiencePoints = Loottable(41, 20);
 
-			(partnerExperiencePoints != 0) && console.log(`\x1b[32m\x1b[0m${partnerProfileData.name} (${partnerProfileData.userId}): experience changed from \x1b[33m${partnerProfileData.experience} \x1b[0mto \x1b[33m${partnerProfileData.experience + partnerExperiencePoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			partnerProfileData = await profileModel
 				.findOneAndUpdate(
 					{ userId: partnerProfileData.userId, serverId: message.guild.id },
@@ -252,8 +244,6 @@ module.exports = {
 
 			if (partnerProfileData.experience >= partnerProfileData.levels * 50) {
 
-				console.log(`\x1b[32m\x1b[0m${partnerProfileData.name} (${partnerProfileData.userId}): experience changed from \x1b[33m${partnerProfileData.experience} \x1b[0mto \x1b[33m${partnerProfileData.experience - (partnerProfileData.levels * 50)} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-				console.log(`\x1b[32m\x1b[0m${partnerProfileData.name} (${partnerProfileData.userId}): levels changed from \x1b[33m${partnerProfileData.levels} \x1b[0mto \x1b[33m${partnerProfileData.levels + 1} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 				partnerProfileData = await profileModel
 					.findOneAndUpdate(
 						{ userId: partnerProfileData.userId, serverId: message.guild.id },
@@ -291,7 +281,6 @@ module.exports = {
 						healthPoints = profileData.health;
 					}
 
-					(healthPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): health changed from \x1b[33m${profileData.health} \x1b[0mto \x1b[33m${profileData.health - healthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 					profileData = await profileModel
 						.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
@@ -320,9 +309,6 @@ module.exports = {
 			embed.description = `*${profileData.name} sits on an old wooden trunk at the ruins, ready to tell a story to any willing listener. But to ${profileData.pronounArray[2]} disappointment, no one seems to be around.*`;
 			embed.footer.text = '';
 
-			(energyPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): energy changed from \x1b[33m${profileData.energy} \x1b[0mto \x1b[33m${profileData.energy + energyPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			(hungerPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hunger changed from \x1b[33m${profileData.hunger} \x1b[0mto \x1b[33m${profileData.hunger + hungerPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			(thirstPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): thirst changed from \x1b[33m${profileData.thirst} \x1b[0mto \x1b[33m${profileData.thirst + thirstPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			profileData = await profileModel
 				.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },

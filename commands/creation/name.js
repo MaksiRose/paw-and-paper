@@ -121,7 +121,6 @@ module.exports = {
 				});
 		}
 
-		(profileData.name != name) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): name changed from \x1b[33m${profileData.name} \x1b[0mto \x1b[33m${name} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 		await profileModel
 			.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
