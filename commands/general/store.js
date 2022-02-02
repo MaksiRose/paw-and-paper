@@ -301,7 +301,7 @@ module.exports = {
 
 								maximumAmount = profileData.inventoryObject[mapName][itemName];
 
-								footerText += `+${maximumAmount} ${inventoryMaps[mapName][itemName]} for ${message.guild.name}\n`;
+								footerText += `+${maximumAmount} ${itemName} for ${message.guild.name}\n`;
 								userInventory[mapName][itemName] -= maximumAmount;
 								serverInventory[mapName][itemName] += maximumAmount;
 							}
