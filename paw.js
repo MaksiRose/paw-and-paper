@@ -14,6 +14,8 @@ const client = new Discord.Client({
 	},
 });
 
+module.exports.client = client;
+
 client.commands = new Discord.Collection();
 
 for (const file of fs.readdirSync('./handlers/')) {
