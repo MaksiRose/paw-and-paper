@@ -326,18 +326,6 @@ module.exports = {
 
 
 			await condition.decreaseHealth(message, profileData, botReply);
-
-			(profileData.injuryArray != userInjuryArray) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): injuryArray changed from \x1b[33m[${profileData.injuryArray}] \x1b[0mto \x1b[33m[${userInjuryArray}] \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			profileData = await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $set: { injuryArray: userInjuryArray } },
-					{ new: true },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
-
 			await levels.levelCheck(message, profileData, botReply);
 
 			if (await checkValidity.isPassedOut(message, profileData)) {
