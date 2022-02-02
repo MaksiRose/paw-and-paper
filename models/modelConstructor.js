@@ -17,7 +17,7 @@ class model {
 
 				for (const [key, value] of Object.entries(filterObject)) {
 
-					if (!dataObject[key] || dataObject[key] != value) {
+					if (dataObject[key] != undefined || dataObject[key] != value) {
 
 						continue file_iteration;
 					}
@@ -44,7 +44,7 @@ class model {
 
 				for (const [key, value] of Object.entries(filterObject)) {
 
-					if (!dataObject[key] || dataObject[key] != value) {
+					if (dataObject[key] != undefined || dataObject[key] != value) {
 
 						continue file_iteration;
 					}
@@ -109,7 +109,7 @@ class model {
 
 					for (const [key, value] of Object.entries(updateValue)) {
 
-						if (dataObject[key] && typeof dataObject[key] == typeof value) {
+						if (dataObject[key] != undefined && typeof dataObject[key] == typeof value) {
 
 							dataObject[key] += value;
 						}
