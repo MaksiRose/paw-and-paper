@@ -197,7 +197,7 @@ module.exports = {
 
 					if (interaction.customId == 'store-amount') {
 
-						const chosenAmount = interaction.values[0];
+						const chosenAmount = parseInt(interaction.values[0], 10);
 						userInventory[foodCategoryIndex][foodNameIndex] -= chosenAmount;
 						serverInventory[foodCategoryIndex][foodNameIndex] += chosenAmount;
 

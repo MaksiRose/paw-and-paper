@@ -220,7 +220,10 @@ module.exports = {
 				throw new Error(error);
 			});
 
-		embed.footer.text = `-${extraLostHealthPoints} HP (${profileData.health}/${profileData.maxHealth})`;
+		if (extraLostHealthPoints > 0) {
+
+			embed.footer.text = `-${extraLostHealthPoints} HP (${profileData.health}/${profileData.maxHealth})`;
+		}
 
 		botReply.embeds.push(embed);
 		await botReply

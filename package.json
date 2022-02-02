@@ -1,6 +1,6 @@
 {
 	"name": "paw-and-paper",
-	"version": "2.5.1",
+	"version": "2.5.2",
 	"description": "An RPG Bot in which you play as an animal in a pack",
 	"main": "paw.js",
 	"scripts": {
@@ -11,7 +11,6 @@
 	"dependencies": {
 		"@octokit/rest": "^18.12.0",
 		"discord.js": "^13.6.0",
-		"fs": "^0.0.1-security",
 		"mongoose": "^6.1.9"
 	},
 	"devDependencies": {

@@ -274,6 +274,7 @@ module.exports = {
 							// text for when the match didnt start
 							embedArray.push({
 								color: config.default_color,
+								author: { name: profileData.name, icon_url: profileData.avatarURL },
 								description: `*${partnerProfileData.name} wouldn't give in so easily and simply passes the pleading looks of the ${profileData.species}.*`,
 							});
 
