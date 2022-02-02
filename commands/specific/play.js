@@ -145,7 +145,7 @@ module.exports = {
 		}
 
 		let healthPoints = 0;
-		const userInjuryObject = [...profileData.injuryObject];
+		const userInjuryObject = { ...profileData.injuryObject };
 
 		const embed = {
 			color: profileData.color,
