@@ -33,7 +33,7 @@ class model {
 
 			const dataObjectsArray = [];
 
-			for (const file of fs.readdirSync(path)) {
+			file_iteration: for (const file of fs.readdirSync(path)) {
 
 				if (!file.endsWith('.json')) {
 
@@ -44,11 +44,13 @@ class model {
 
 				for (const [key, value] of Object.entries(filterObject)) {
 
-					if (dataObject[key] && dataObject[key] == value) {
+					if (!dataObject[key] || dataObject[key] != value) {
 
-						dataObjectsArray.push(dataObject);
+						continue file_iteration;
 					}
 				}
+
+				dataObjectsArray.push(dataObject);
 			}
 
 			return dataObjectsArray;
