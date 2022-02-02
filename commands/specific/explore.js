@@ -154,25 +154,25 @@ module.exports = {
 				throw new Error(error);
 			});
 
-		client.on('messageCreate', async function removeExploreComponents(newMessage) {
-
-			if (!botReply || newMessage.author.id != message.author.id || !newMessage.content.toLowerCase().startsWith(config.prefix)) {
-
-				return;
-			}
-
-			await botReply
-				.edit({
-					components: [],
-				})
-				.catch((error) => {
-					throw new Error(error);
-				});
-
-			return client.off('messageCreate', removeExploreComponents);
-		});
-
 		return await new Promise((resolve) => {
+
+			client.on('messageCreate', async function removeExploreComponents(newMessage) {
+
+				if (!botReply || newMessage.author.id != message.author.id || !newMessage.content.toLowerCase().startsWith(config.prefix)) {
+
+					return;
+				}
+
+				await botReply
+					.edit({
+						components: [],
+					})
+					.catch((error) => {
+						throw new Error(error);
+					});
+
+				return client.off('messageCreate', removeExploreComponents), resolve();
+			});
 
 			async function filter(i) {
 
