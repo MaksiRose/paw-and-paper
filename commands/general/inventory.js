@@ -57,7 +57,7 @@ module.exports = {
 			if (serverData.inventoryObject.commonPlants[commonPlantName] > 0) {
 
 				embed.fields.push({ name: `${commonPlantName}: ${serverData.inventoryObject.commonPlants[commonPlantName]}`, value: commonPlantObject.description, inline: true });
-				foodSelectMenu.components[0].options.push({ label: commonPlantName, value: commonPlantName, description: commonPlantObject.description });
+				foodSelectMenu.components[0].options.push({ label: commonPlantName, value: commonPlantName, description: serverData.inventoryObject.commonPlants[commonPlantName] });
 			}
 		}
 
@@ -161,7 +161,7 @@ module.exports = {
 							if (serverData.inventoryObject.commonPlants[commonPlantName] > 0) {
 
 								embed.fields.push({ name: `${commonPlantName}: ${serverData.inventoryObject.commonPlants[commonPlantName]}`, value: commonPlantObject.description, inline: true });
-								foodSelectMenu.components[0].options.push({ label: commonPlantName, value: commonPlantName, description: commonPlantObject.description });
+								foodSelectMenu.components[0].options.push({ label: commonPlantName, value: commonPlantName, description: serverData.inventoryObject.commonPlants[commonPlantName] });
 							}
 						}
 
@@ -196,7 +196,7 @@ module.exports = {
 							if (serverData.inventoryObject.uncommonPlants[uncommonPlantName] > 0) {
 
 								embed.fields.push({ name: `${uncommonPlantName}: ${serverData.inventoryObject.uncommonPlants[uncommonPlantName]}`, value: uncommonPlantObject.description, inline: true });
-								foodSelectMenu.components[0].options.push({ label: uncommonPlantName, value: uncommonPlantName, description: uncommonPlantObject.description });
+								foodSelectMenu.components[0].options.push({ label: uncommonPlantName, value: uncommonPlantName, description: serverData.inventoryObject.uncommonPlants[uncommonPlantName] });
 							}
 						}
 
@@ -205,7 +205,7 @@ module.exports = {
 							if (serverData.inventoryObject.rarePlants[rarePlantName] > 0) {
 
 								embed.fields.push({ name: `${rarePlantName}: ${serverData.inventoryObject.rarePlants[rarePlantName]}`, value: rarePlantObject.description, inline: true });
-								foodSelectMenu.components[0].options.push({ label: rarePlantName, value: rarePlantName, description: rarePlantObject.description });
+								foodSelectMenu.components[0].options.push({ label: rarePlantName, value: rarePlantName, description: serverData.inventoryObject.rarePlants[rarePlantName] });
 							}
 						}
 
