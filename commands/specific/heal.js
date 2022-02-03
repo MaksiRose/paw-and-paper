@@ -3,7 +3,7 @@ const checkValidity = require('../../utils/checkValidity');
 const profileModel = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
 const config = require('../../config.json');
-const arrays = require('../../utils/maps');
+const maps = require('../../utils/maps');
 const condition = require('../../utils/condition');
 const levels = require('../../utils/levels');
 const startCooldown = require('../../utils/startCooldown');
@@ -278,12 +278,12 @@ module.exports = {
 						}],
 					};
 
-					for (let i = 0; i < arrays.commonPlantNamesArray.length; i++) {
+					for (const [commonPlantName, commonPlantObject] of maps.commonPlantMap) {
 
-						if (serverData.commonPlantsArray[i] > 0) {
+						if (serverData.inventoryObject.commonPlants[commonPlantName] > 0) {
 
-							embed.fields.push({ name: `${arrays.commonPlantNamesArray[i]}: ${serverData.commonPlantsArray[i]}`, value: `${arrays.commonPlantDescriptionsArray[i]}`, inline: true });
-							selectMenu.components[0].options.push({ label: arrays.commonPlantNamesArray[i], value: arrays.commonPlantNamesArray[i], description: `${serverData.commonPlantsArray[i]}` });
+							embed.fields.push({ name: `${commonPlantName}: ${serverData.inventoryObject.commonPlants[commonPlantName]}`, value: commonPlantObject.description, inline: true });
+							selectMenu.components[0].options.push({ label: commonPlantName, value: commonPlantName, description: `${serverData.inventoryObject.commonPlants[commonPlantName]}` });
 						}
 					}
 
@@ -329,21 +329,21 @@ module.exports = {
 						}],
 					};
 
-					for (let i = 0; i < arrays.uncommonPlantNamesArray.length; i++) {
+					for (const [uncommonPlantName, uncommonPlantObject] of maps.uncommonPlantMap) {
 
-						if (serverData.uncommonPlantsArray[i] > 0) {
+						if (serverData.inventoryObject.uncommonPlants[uncommonPlantName] > 0) {
 
-							embed.fields.push({ name: `${arrays.uncommonPlantNamesArray[i]}: ${serverData.uncommonPlantsArray[i]}`, value: `${arrays.uncommonPlantDescriptionsArray[i]}`, inline: true });
-							selectMenu.components[0].options.push({ label: arrays.uncommonPlantNamesArray[i], value: arrays.uncommonPlantNamesArray[i], description: `${serverData.uncommonPlantsArray[i]}` });
+							embed.fields.push({ name: `${uncommonPlantName}: ${serverData.inventoryObject.uncommonPlants[uncommonPlantName]}`, value: uncommonPlantObject.description, inline: true });
+							selectMenu.components[0].options.push({ label: uncommonPlantName, value: uncommonPlantName, description: `${serverData.inventoryObject.uncommonPlants[uncommonPlantName]}` });
 						}
 					}
 
-					for (let i = 0; i < arrays.rarePlantNamesArray.length; i++) {
+					for (const [rarePlantName, rarePlantObject] of maps.rarePlantMap) {
 
-						if (serverData.rarePlantsArray[i] > 0) {
+						if (serverData.inventoryObject.rarePlants[rarePlantName] > 0) {
 
-							embed.fields.push({ name: `${arrays.rarePlantNamesArray[i]}: ${serverData.rarePlantsArray[i]}`, value: `${arrays.rarePlantDescriptionsArray[i]}`, inline: true });
-							selectMenu.components[0].options.push({ label: arrays.rarePlantNamesArray[i], value: arrays.rarePlantNamesArray[i], description: `${serverData.rarePlantsArray[i]}` });
+							embed.fields.push({ name: `${rarePlantName}: ${serverData.inventoryObject.rarePlants[rarePlantName]}`, value: rarePlantObject.description, inline: true });
+							selectMenu.components[0].options.push({ label: rarePlantName, value: rarePlantName, description: `${serverData.inventoryObject.rarePlants[rarePlantName]}` });
 						}
 					}
 
@@ -369,7 +369,7 @@ module.exports = {
 						});
 				}
 
-				if (arrays.commonPlantNamesArray.includes(interaction.values[0]) || arrays.uncommonPlantNamesArray.includes(interaction.values[0]) || arrays.rarePlantNamesArray.includes(interaction.values[0]) || interaction.values[0] == 'water') {
+				if (maps.commonPlantMap.has(interaction.values[0]) || maps.uncommonPlantMap.has(interaction.values[0]) || maps.rarePlantMap.has(interaction.values[0]) || interaction.values[0] == 'water') {
 
 					const thirstPoints = await condition.decreaseThirst(profileData);
 					const hungerPoints = await condition.decreaseHunger(profileData);
@@ -476,59 +476,44 @@ module.exports = {
 
 					}
 					else {
-						const serverPlantInventory = [[...serverData.commonPlantsArray], [...serverData.uncommonPlantsArray], [...serverData.rarePlantsArray]];
-						let serverPlantInventoryIndex = -1;
-						let plantNamesArrayIndex = -1;
-						const plantEdibalityArray = [[...arrays.commonPlantEdibalityArray], [...arrays.uncommonPlantEdibalityArray], [...arrays.rarePlantEdibalityArray]];
-						const plantHealsWoundsArray = [[...arrays.commonPlantHealsWoundsArray], [...arrays.uncommonPlantHealsWoundsArray], [...arrays.rarePlantHealsWoundsArray]];
-						const plantHealsInfectionsArray = [[...arrays.commonPlantHealsInfectionsArray], [...arrays.uncommonPlantHealsInfectionsArray], [...arrays.rarePlantHealsInfectionsArray]];
-						const plantHealsColdsArray = [[...arrays.commonPlantHealsColdsArray], [...arrays.uncommonPlantHealsColdsArray], [...arrays.rarePlantHealsColdsArray]];
-						const plantHealsSprainsArray = [[...arrays.commonPlantHealsSprainsArray], [...arrays.uncommonPlantHealsSprainsArray], [...arrays.rarePlantHealsSprainsArray]];
-						const plantHealsPoisonArray = [[...arrays.commonPlantHealsPoisonArray], [...arrays.uncommonPlantHealsPoisonArray], [...arrays.rarePlantHealsPoisonArray]];
-						const plantGivesEnergyArray = [[...arrays.commonPlantGivesEnergyArray], [...arrays.uncommonPlantGivesEnergyArray], [...arrays.rarePlantGivesEnergyArray]];
 
-						if (arrays.commonPlantNamesArray.includes(interaction.values[0])) {
+						const plantMap = new Map([...maps.commonPlantMap, ...maps.uncommonPlantMap, ...maps.rarePlantMap]);
 
-							serverPlantInventoryIndex = 0;
-							plantNamesArrayIndex = arrays.commonPlantNamesArray.findIndex((usearg) => usearg == interaction.values[0]);
+						if (maps.commonPlantMap.has(interaction.values[0])) {
+
+							serverData.inventoryObject.commonPlants[interaction.values[0]] -= 1;
 						}
 
-						if (arrays.uncommonPlantNamesArray.includes(interaction.values[0])) {
+						if (maps.uncommonPlantMap.has(interaction.values[0])) {
 
-							serverPlantInventoryIndex = 1;
-							plantNamesArrayIndex = arrays.uncommonPlantNamesArray.findIndex((usearg) => usearg == interaction.values[0]);
+							serverData.inventoryObject.uncommonPlants[interaction.values[0]] -= 1;
 						}
 
-						if (arrays.rarePlantNamesArray.includes(interaction.values[0])) {
+						if (maps.rarePlantMap.has(interaction.values[0])) {
 
-							serverPlantInventoryIndex = 2;
-							plantNamesArrayIndex = arrays.rarePlantNamesArray.findIndex((usearg) => usearg == interaction.values[0]);
+							serverData.inventoryObject.rarePlants[interaction.values[0]] -= 1;
 						}
 
-						--serverPlantInventory[serverPlantInventoryIndex][plantNamesArrayIndex];
-
-						const species = arrays.species(chosenProfileData);
-						const speciesNameArrayIndex = species.nameArray.findIndex((index) => index == chosenProfileData.species);
-						const chosenUserInjuryObject = [...chosenProfileData.injuryObject];
+						const chosenUserInjuryObject = { ...chosenProfileData.injuryObject };
 						let chosenUserEnergyPoints = 0;
 						let chosenUserHungerPoints = 0;
 						let isSuccessful = false;
 						let embedFooterChosenUserStatsText = '';
 						let embedFooterChosenUserInjuryText = '';
 
-						if (plantEdibalityArray[serverPlantInventoryIndex][plantNamesArrayIndex] == 'e') {
+						if (plantMap.get(interaction.values[0]).edibality == 'e') {
 
 							if (chosenProfileData.hunger <= 0) {
 
 								isSuccessful = true;
 							}
 
-							if (species.dietArray[speciesNameArrayIndex] == 'carnivore') {
+							if (maps.speciesMap.get(profileData.species).diet == 'carnivore') {
 
 								chosenUserHungerPoints = 1;
 							}
 
-							if (species.dietArray[speciesNameArrayIndex] == 'herbivore' || species.dietArray[speciesNameArrayIndex] == 'omnivore') {
+							if (maps.speciesMap.get(profileData.species).diet == 'herbivore' || maps.speciesMap.get(profileData.species).diet == 'omnivore') {
 
 								chosenUserHungerPoints = 5;
 							}
@@ -549,42 +534,42 @@ module.exports = {
 							isSuccessful = true;
 						}
 
-						if (plantHealsWoundsArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryObject.wounds > 0) {
+						if (plantMap.get(interaction.values[0]).healsWounds == true && chosenUserInjuryObject.wounds > 0) {
 
 							isSuccessful = true;
 							embedFooterChosenUserInjuryText += `\n-1 wound for ${chosenProfileData.name}`;
 							chosenUserInjuryObject.wounds -= 1;
 						}
 
-						if (plantHealsInfectionsArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryObject.infections > 0) {
+						if (plantMap.get(interaction.values[0]).healsInfections == true && chosenUserInjuryObject.infections > 0) {
 
 							isSuccessful = true;
 							embedFooterChosenUserInjuryText += `\n-1 infection for ${chosenProfileData.name}`;
 							chosenUserInjuryObject.infections -= 1;
 						}
 
-						if (plantHealsColdsArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryObject.wound == true) {
+						if (plantMap.get(interaction.values[0]).healsColds == true && chosenUserInjuryObject.wound == true) {
 
 							isSuccessful = true;
 							embedFooterChosenUserInjuryText += `\ncold healed for ${chosenProfileData.name}`;
 							chosenUserInjuryObject.cold = false;
 						}
 
-						if (plantHealsSprainsArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryObject.sprains > 0) {
+						if (plantMap.get(interaction.values[0]).healsSprains == true && chosenUserInjuryObject.sprains > 0) {
 
 							isSuccessful = true;
 							embedFooterChosenUserInjuryText += `\n-1 sprain for ${chosenProfileData.name}`;
 							chosenUserInjuryObject.sprains -= 1;
 						}
 
-						if (plantHealsPoisonArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true && chosenUserInjuryObject.poison == true) {
+						if (plantMap.get(interaction.values[0]).healsPoison == true && chosenUserInjuryObject.poison == true) {
 
 							isSuccessful = true;
 							embedFooterChosenUserInjuryText += `\npoison healed for ${chosenProfileData.name}`;
-							chosenUserInjuryObject.slice.poison = false;
+							chosenUserInjuryObject.poison = false;
 						}
 
-						if (plantGivesEnergyArray[serverPlantInventoryIndex][plantNamesArrayIndex] == true) {
+						if (plantMap.get(interaction.values[0]).givesEnergy == true) {
 
 							if (chosenProfileData.energy <= 0) {
 
@@ -604,15 +589,9 @@ module.exports = {
 							}
 						}
 
-						await serverModel.findOneAndUpdate(
+						serverData = await serverModel.findOneAndUpdate(
 							{ serverId: message.guild.id },
-							{
-								$set: {
-									commonPlantsArray: serverPlantInventory[0],
-									uncommonPlantsArray: serverPlantInventory[1],
-									rarePlantsArray: serverPlantInventory[2],
-								},
-							},
+							{ $set: { inventoryObject: serverData.inventoryObject } },
 						);
 
 						if (isSuccessful == 1 && chosenProfileData.userId == profileData.userId && Loottable(100 + ((profileData.levels - 1) * 5), 1) <= 60) {
@@ -808,7 +787,7 @@ module.exports = {
 
 			if (chosenProfileData.userId == profileData.userId) {
 
-				embed.description = `*${profileData.name} pushes aside the leaves acting as the entrance to the healer’s den. With tired eyes they inspect the rows of herbs, hoping to find one that can ease their pain.*`;
+				embed.description = `*${profileData.name} pushes aside the leaves acting as the entrance to the healer's den. With tired eyes they inspect the rows of herbs, hoping to find one that can ease their pain.*`;
 				embed.footer.text = `${chosenProfileData.name}'s stats/illnesses/injuries:${healUserConditionText}`;
 			}
 			else if (chosenProfileData.energy <= 0 || chosenProfileData.health <= 0 || chosenProfileData.hunger <= 0 || chosenProfileData.thirst <= 0) {
