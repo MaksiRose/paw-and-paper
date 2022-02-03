@@ -4,6 +4,7 @@ const checkValidity = require('../../utils/checkValidity');
 const condition = require('../../utils/condition');
 const levels = require('../../utils/levels');
 const startCooldown = require('../../utils/startCooldown');
+const config = require('../../config.json');
 
 module.exports = {
 	name: 'share',
@@ -166,9 +167,9 @@ module.exports = {
 				);
 
 				embedArray.push({
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					title: 'You can\'t play with the mentioned user :(',
+					color: config.error_color,
+					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+					title: 'The mentioned user has no account or is passed out :(',
 				});
 
 				return await message
@@ -198,11 +199,6 @@ module.exports = {
 			});
 
 		await condition.decreaseHealth(message, profileData, botReply);
-
-		profileData = await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { injuryObject: userInjuryObject } },
-		);
 
 		if (await checkValidity.isPassedOut(message, profileData)) {
 

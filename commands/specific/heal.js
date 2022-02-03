@@ -700,12 +700,6 @@ module.exports = {
 						});
 
 					await condition.decreaseHealth(message, profileData, botReply);
-
-					profileData = await profileModel.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{ $set: { injuryObject: userInjuryObject } },
-					);
-
 					await levels.levelCheck(message, profileData, botReply);
 
 					if (await checkValidity.isPassedOut(message, profileData)) {

@@ -25,7 +25,7 @@ module.exports = {
 			embedArray.push({
 				color: profileData.color,
 				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*Water sounds churned in ${profileData.name}'s ear, ${profileData.pronounArray[2]} mouth longing for just one more drink. It seems like ${profileData.pronounArray[0]} can never be as hydrated as ${profileData.pronounArray[0]} want${(profileData.pronounArray[5] == 'singular') ? '' : 's'}, but ${profileData.pronounArray[0]} ${(profileData.pronounArray[5] == 'singular') ? 's' : ''} ${profileData.pronounArray[0]} had plenty of water today.*`,
+				description: `*Water sounds churned in ${profileData.name}'s ear, ${profileData.pronounArray[2]} mouth longing for just one more drink. It seems like ${profileData.pronounArray[0]} can never be as hydrated as ${profileData.pronounArray[0]} want${(profileData.pronounArray[5] == 'singular') ? 's' : ''}, but  ${profileData.pronounArray[0]} had plenty of water today.*`,
 			});
 
 			return await message

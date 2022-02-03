@@ -159,27 +159,27 @@ module.exports = {
 				}
 			});
 
-		client.on('messageCreate', async function removeExploreComponents(newMessage) {
-
-			if (!botReply || newMessage.author.id != message.author.id || !newMessage.content.toLowerCase().startsWith(config.prefix)) {
-
-				return;
-			}
-
-			await botReply
-				.edit({
-					components: [],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-
-			return client.off('messageCreate', removeExploreComponents);
-		});
-
 		return await new Promise((resolve) => {
+
+			client.on('messageCreate', async function removeExploreComponents(newMessage) {
+
+				if (!botReply || newMessage.author.id != message.author.id || !newMessage.content.toLowerCase().startsWith(config.prefix)) {
+
+					return;
+				}
+
+				await botReply
+					.edit({
+						components: [],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
+				return client.off('messageCreate', removeExploreComponents), resolve();
+			});
 
 			async function filter(i) {
 
@@ -319,7 +319,9 @@ module.exports = {
 					throw new Error(error);
 				});
 
-			if (Loottable(300, 1) <= 1 && chosenBiomeNumber == (profileData.unlockedRanks - 1) && chosenBiomeNumber == (allBiomesArray.length - 1)) {
+			const questChance = Loottable((profileData.rank == 'Elderly') ? 500 : (profileData.rank == 'Hunter' || profileData.rank == 'Healer') ? 400 : 300, 1);
+
+			if (questChance <= 1 && chosenBiomeNumber == (profileData.unlockedRanks - 1) && chosenBiomeNumber == (allBiomesArray.length - 1)) {
 				await findQuest();
 			}
 			else {
@@ -328,12 +330,6 @@ module.exports = {
 
 
 			await condition.decreaseHealth(message, profileData, botReply);
-
-			profileData = await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { injuryObject: userInjuryObject } },
-			);
-
 			await levels.levelCheck(message, profileData, botReply);
 
 			if (await checkValidity.isPassedOut(message, profileData)) {
@@ -468,12 +464,12 @@ module.exports = {
 
 								if (userSpeciesMap.habitat == 'warm') {
 
-									embed.description = `*Piles of sand and lone, scraggly bushes are dotting the landscape all around ${profileData.name}. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'pads' : 'pad')} through the scattered branches from long-dead trees, carefully avoiding the cacti, trying to reach a ribwort plantain they saw. The ${profileData.species} steps on a root but feels it twist and pulse before it leaps from its camouflage and latches onto ${profileData.pronounArray[2]} body. The snake pumps poison into ${profileData.pronounArray[1]} while ${profileData.pronounArray[0]} lash around, trying to throw it off, finally succeeding and rushing away.*`;
+									embed.description = `*Piles of sand and lone, scraggly bushes are dotting the landscape all around ${profileData.name}, ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'pads' : 'pad')} through the scattered branches from long-dead trees, carefully avoiding the cacti, trying to reach a ribwort plantain they saw. The ${profileData.species} steps on a root but feels it twist and pulse before it leaps from its camouflage and latches onto ${profileData.pronounArray[2]} body. The snake pumps poison into ${profileData.pronounArray[1]} while ${profileData.pronounArray[0]} lash around, trying to throw it off, finally succeeding and rushing away.*`;
 								}
 
 								if (userSpeciesMap.habitat == 'cold') {
 
-									embed.description = `*Many sticks and roots are popping up all around ${profileData.name}, ${profileData.pronounArray[0]} ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'shuffles' : 'shuffle')} through the fallen branches and twisting vines, trying to reach a ribwort plantain ${profileData.pronounArray[0]} found. The ${profileData.species} steps on a root but feels it weave and pulse before it leaps from its camouflage and latches onto ${profileData.pronounArray[2]} body. The snake pumps poison into ${profileData.pronounArray[1]} while ${profileData.pronounArray[0]} ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'lashes' : 'lash')} around, trying to throw it off, finally succeeding and rushing away.*`;
+									embed.description = `*Many sticks and roots are popping up all around ${profileData.name}, ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'shuffles' : 'shuffle')} through the fallen branches and twisting vines, trying to reach a ribwort plantain ${profileData.pronounArray[0]} found. The ${profileData.species} steps on a root but feels it weave and pulse before it leaps from its camouflage and latches onto ${profileData.pronounArray[2]} body. The snake pumps poison into ${profileData.pronounArray[1]} while ${profileData.pronounArray[0]} ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'lashes' : 'lash')} around, trying to throw it off, finally succeeding and rushing away.*`;
 								}
 
 								if (userSpeciesMap.habitat == 'water') {

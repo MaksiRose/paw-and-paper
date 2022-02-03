@@ -290,7 +290,9 @@ module.exports = {
 				const collector = message.channel.createMessageComponentCollector({ filter, max: 1, time: 5000 });
 				collector.on('end', async collected => {
 
-					if (collected.size == 0 || !collected.first().customId.includes(`${buttonColorKind}${buttonTextOrColor}`) || Math.floor(Math.random() * 100) + 1 > sigmoidFunction(profileData.levels, 2)) {
+					const winChance = sigmoidFunction(profileData.levels, (profileData.rank == 'Elderly') ? 35 : (profileData.rank == 'Hunter' || profileData.rank == 'Healer') ? 20 : (profileData.rank == 'Apprentice') ? 10 : 2);
+
+					if (collected.size == 0 || !collected.first().customId.includes(`${buttonColorKind}${buttonTextOrColor}`) || Math.floor(Math.random() * 100) + 1 > winChance) {
 
 						++missValue;
 					}
