@@ -1,8 +1,8 @@
-const arrays = require('../../utils/arrays');
+const maps = require('../../utils/maps');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
-const profileModel = require('../../models/profileSchema');
-const serverModel = require('../../models/serverSchema');
+const profileModel = require('../../models/profileModel');
+const serverModel = require('../../models/serverModel');
 const config = require('../../config.json');
 const startCooldown = require('../../utils/startCooldown');
 
@@ -22,11 +22,24 @@ module.exports = {
 
 		profileData = await startCooldown(message, profileData);
 
-		const species = arrays.species(profileData);
-
-		const userInventory = [...profileData.inventoryArray];
-		const serverInventory = [[...serverData.commonPlantsArray], [...serverData.uncommonPlantsArray], [...serverData.rarePlantsArray], [...serverData.meatArray]];
-		const allItemNamesArray = [[...arrays.commonPlantNamesArray], [...arrays.uncommonPlantNamesArray], [...arrays.rarePlantNamesArray], [...species.nameArray]];
+		const userInventory = {
+			commonPlants: { ...profileData.inventoryObject.commonPlants },
+			uncommonPlants: { ...profileData.inventoryObject.uncommonPlants },
+			rarePlants: { ...profileData.inventoryObject.rarePlants },
+			meat: { ...profileData.inventoryObject.meat },
+		};
+		const serverInventory = {
+			commonPlants: { ...serverData.inventoryObject.commonPlants },
+			uncommonPlants: { ...serverData.inventoryObject.uncommonPlants },
+			rarePlants: { ...serverData.inventoryObject.rarePlants },
+			meat: { ...serverData.inventoryObject.meat },
+		};
+		const inventoryMaps = {
+			commonPlants: new Map(maps.commonPlantMap),
+			uncommonPlants: new Map(maps.uncommonPlantMap),
+			rarePlants: new Map(maps.rarePlantMap),
+			meat: new Map(maps.speciesMap),
+		};
 
 		const itemSelectMenu = {
 			type: 'ACTION_ROW',
@@ -38,13 +51,13 @@ module.exports = {
 			}],
 		};
 
-		for (let i = 0; i < allItemNamesArray.length; i++) {
+		for (const [mapName, mapEntries] of Object.entries(inventoryMaps)) {
 
-			for (let j = 0; j < allItemNamesArray[i].length; j++) {
+			for (const [itemName] of mapEntries) {
 
-				if (profileData.inventoryArray[i][j] > 0) {
+				if (profileData.inventoryObject[mapName][itemName] > 0) {
 
-					itemSelectMenu.components[0].options.push({ label: allItemNamesArray[i][j], value: allItemNamesArray[i][j], description: `${profileData.inventoryArray[i][j]}` });
+					itemSelectMenu.components[0].options.push({ label: itemName, value: itemName, description: `${profileData.inventoryObject[mapName][itemName]}` });
 				}
 			}
 		}
@@ -72,7 +85,9 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -95,7 +110,9 @@ module.exports = {
 				components: componentArray,
 			})
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 
 		client.on('messageCreate', async function removeStoreComponents(newMessage) {
@@ -110,15 +127,17 @@ module.exports = {
 					components: [],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 
 			return client.off('messageCreate', removeStoreComponents);
 		});
 
-		await interactionCollector(null, null, null);
+		await interactionCollector(null, null);
 
-		async function interactionCollector(chosenFood, foodCategoryIndex, foodNameIndex) {
+		async function interactionCollector(chosenFood, foodCategory) {
 
 			const filter = async (i) => {
 
@@ -146,7 +165,9 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 				}
 
@@ -154,17 +175,16 @@ module.exports = {
 
 				if (interaction.isSelectMenu()) {
 
-					if (interaction.customId == 'store-options' && allItemNamesArray.some(nest => nest.some(elem => elem == interaction.values[0]))) {
+					if (interaction.customId == 'store-options') {
 
 						chosenFood = interaction.values[0];
 						let maximumAmount = 0;
 
-						for (let i = 0; i < allItemNamesArray.length; i++) {
+						for (const [mapName, mapEntries] of Object.entries(inventoryMaps)) {
 
-							if (allItemNamesArray[i].includes(chosenFood)) {
-								foodCategoryIndex = i;
-								foodNameIndex = allItemNamesArray[i].indexOf(chosenFood);
-								maximumAmount = profileData.inventoryArray[i][foodNameIndex];
+							if (inventoryMaps[mapEntries].has(chosenFood)) {
+								foodCategory = mapName;
+								maximumAmount = profileData.inventoryObject[mapEntries][chosenFood];
 							}
 						}
 
@@ -189,58 +209,42 @@ module.exports = {
 								components: componentArray,
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 
-						return await interactionCollector(chosenFood, foodCategoryIndex, foodNameIndex);
+						return await interactionCollector(chosenFood, foodCategory);
 					}
 
 					if (interaction.customId == 'store-amount') {
 
 						const chosenAmount = parseInt(interaction.values[0], 10);
-						userInventory[foodCategoryIndex][foodNameIndex] -= chosenAmount;
-						serverInventory[foodCategoryIndex][foodNameIndex] += chosenAmount;
+						userInventory[foodCategory][chosenFood] -= chosenAmount;
+						serverInventory[foodCategory][chosenFood] += chosenAmount;
 
-						(profileData.inventoryArray != userInventory) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): inventoryArray changed from \x1b[33m[${profileData.inventoryArray}] \x1b[0mto \x1b[33m[${userInventory}] \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-						profileData = await profileModel
-							.findOneAndUpdate(
-								{ userId: message.author.id, serverId: message.guild.id },
-								{ $set: { inventoryArray: userInventory } },
-								{ new: true },
-							)
-							.catch((error) => {
-								throw new Error(error);
-							});
+						profileData = await profileModel.findOneAndUpdate(
+							{ userId: message.author.id, serverId: message.guild.id },
+							{ $set: { inventoryObject: userInventory } },
+						);
 
-						(serverData.commonPlantsArray != serverInventory[0]) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): commonPlantsArray changed from \x1b[33m[${serverData.commonPlantsArray}] \x1b[0mto \x1b[33m[${serverInventory[0]}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-						(serverData.uncommonPlantsArray != serverInventory[1]) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): uncommonPlantsArray changed from \x1b[33m[${serverData.uncommonPlantsArray}] \x1b[0mto \x1b[33m[${serverInventory[1]}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-						(serverData.rarePlantsArray != serverInventory[2]) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): rarePlantsArray changed from \x1b[33m[${serverData.rarePlantsArray}] \x1b[0mto \x1b[33m[${serverInventory[2]}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-						(serverData.meatArray != serverInventory[3]) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): meatArray changed from \x1b[33m[${serverData.meatArray}] \x1b[0mto \x1b[33m[${serverInventory[3]}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-						await serverModel
-							.findOneAndUpdate(
-								{ serverId: message.guild.id },
-								{
-									$set: {
-										commonPlantsArray: serverInventory[0],
-										uncommonPlantsArray: serverInventory[1],
-										rarePlantsArray: serverInventory[2],
-										meatArray: serverInventory[3],
-									},
+						await serverModel.findOneAndUpdate(
+							{ serverId: message.guild.id },
+							{
+								$set: {
+									inventoryObject: serverInventory,
 								},
-								{ new: true },
-							)
-							.catch((error) => {
-								throw new Error(error);
-							});
+							},
+						);
 
 						itemSelectMenu.components[0].options = [];
-						for (let i = 0; i < allItemNamesArray.length; i++) {
+						for (const [mapName, mapEntries] of Object.entries(inventoryMaps)) {
 
-							for (let j = 0; j < allItemNamesArray[i].length; j++) {
+							for (const [itemName] of mapEntries) {
 
-								if (profileData.inventoryArray[i][j] > 0) {
+								if (profileData.inventoryObject[mapName][itemName] > 0) {
 
-									itemSelectMenu.components[0].options.push({ label: allItemNamesArray[i][j], value: allItemNamesArray[i][j], description: `${profileData.inventoryArray[i][j]}` });
+									itemSelectMenu.components[0].options.push({ label: itemName, value: itemName, description: `${profileData.inventoryObject[mapName][itemName]}` });
 								}
 							}
 						}
@@ -256,7 +260,9 @@ module.exports = {
 									components: [],
 								})
 								.catch((error) => {
-									throw new Error(error);
+									if (error.httpStatus !== 404) {
+										throw new Error(error);
+									}
 								});
 
 							return;
@@ -268,75 +274,53 @@ module.exports = {
 								components: componentArray,
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 
-						return await interactionCollector(null, null, null);
+						return await interactionCollector(null, null);
 					}
 				}
 
 				if (interaction.isButton() && interaction.customId == 'store-all') {
 
-					profileData = await profileModel
-						.findOne({
-							userId: message.author.id,
-							serverId: message.guild.id,
-						})
-						.catch((error) => {
-							throw new Error(error);
-						});
+					profileData = await profileModel.findOne({
+						userId: message.author.id,
+						serverId: message.guild.id,
+					});
 
 					let footerText = embedArray[embedArray.length - 1].footer.text;
 					let maximumAmount = 0;
 
-					for (let i = 0; i < allItemNamesArray.length; i++) {
+					for (const [mapName, mapEntries] of Object.entries(inventoryMaps)) {
 
-						for (let j = 0; j < allItemNamesArray[i].length; j++) {
+						for (const [itemName] of mapEntries) {
 
-							if (profileData.inventoryArray[i][j] > 0) {
+							if (profileData.inventoryObject[mapName][itemName] > 0) {
 
-								foodCategoryIndex = i;
-								foodNameIndex = j;
-								maximumAmount = profileData.inventoryArray[i][j];
+								maximumAmount = profileData.inventoryObject[mapName][itemName];
 
-								footerText += `+${maximumAmount} ${allItemNamesArray[i][j]} for ${message.guild.name}\n`;
-								userInventory[foodCategoryIndex][foodNameIndex] -= maximumAmount;
-								serverInventory[foodCategoryIndex][foodNameIndex] += maximumAmount;
+								footerText += `+${maximumAmount} ${itemName} for ${message.guild.name}\n`;
+								userInventory[mapName][itemName] -= maximumAmount;
+								serverInventory[mapName][itemName] += maximumAmount;
 							}
 						}
 					}
 
-					(profileData.inventoryArray != userInventory) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): inventoryArray changed from \x1b[33m[${profileData.inventoryArray}] \x1b[0mto \x1b[33m[${userInventory}] \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-					await profileModel
-						.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
-							{ $set: { inventoryArray: userInventory } },
-							{ new: true },
-						)
-						.catch((error) => {
-							throw new Error(error);
-						});
+					await profileModel.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{ $set: { inventoryObject: userInventory } },
+					);
 
-					(serverData.commonPlantsArray != serverInventory[0]) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): commonPlantsArray changed from \x1b[33m[${serverData.commonPlantsArray}] \x1b[0mto \x1b[33m[${serverInventory[0]}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-					(serverData.uncommonPlantsArray != serverInventory[1]) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): uncommonPlantsArray changed from \x1b[33m[${serverData.uncommonPlantsArray}] \x1b[0mto \x1b[33m[${serverInventory[1]}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-					(serverData.rarePlantsArray != serverInventory[2]) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): rarePlantsArray changed from \x1b[33m[${serverData.rarePlantsArray}] \x1b[0mto \x1b[33m[${serverInventory[2]}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-					(serverData.meatArray != serverInventory[3]) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): meatArray changed from \x1b[33m[${serverData.meatArray}] \x1b[0mto \x1b[33m[${serverInventory[3]}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-					await serverModel
-						.findOneAndUpdate(
-							{ serverId: message.guild.id },
-							{
-								$set: {
-									commonPlantsArray: serverInventory[0],
-									uncommonPlantsArray: serverInventory[1],
-									rarePlantsArray: serverInventory[2],
-									meatArray: serverInventory[3],
-								},
+					await serverModel.findOneAndUpdate(
+						{ serverId: message.guild.id },
+						{
+							$set: {
+								inventoryObject: serverInventory,
 							},
-							{ new: true },
-						)
-						.catch((error) => {
-							throw new Error(error);
-						});
+						},
+					);
 
 					embedArray[embedArray.length - 1].footer.text = footerText;
 					await interaction.message
@@ -345,7 +329,9 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 
 					return;

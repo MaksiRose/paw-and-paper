@@ -1,6 +1,6 @@
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
-const arrays = require('../../utils/arrays');
+const maps = require('../../utils/maps');
 const config = require('../../config.json');
 const startCooldown = require('../../utils/startCooldown');
 
@@ -20,8 +20,6 @@ module.exports = {
 		}
 
 		profileData = await startCooldown(message, profileData);
-
-		const species = arrays.species();
 
 		const inventorySelectMenu = {
 			type: 'ACTION_ROW',
@@ -54,19 +52,19 @@ module.exports = {
 			fields: [],
 		};
 
-		for (let i = 0; i < arrays.commonPlantNamesArray.length; i++) {
+		for (const [commonPlantName, commonPlantObject] of maps.commonPlantMap) {
 
-			if (serverData.commonPlantsArray[i] > 0) {
+			if (serverData.inventoryObject.commonPlants[commonPlantName] > 0) {
 
-				embed.fields.push({ name: `${arrays.commonPlantNamesArray[i]}: ${serverData.commonPlantsArray[i]}`, value: `${arrays.commonPlantDescriptionsArray[i]}`, inline: true });
-				foodSelectMenu.components[0].options.push({ label: arrays.commonPlantNamesArray[i], value: arrays.commonPlantNamesArray[i], description: `${serverData.commonPlantsArray[i]}` });
+				embed.fields.push({ name: `${commonPlantName}: ${serverData.inventoryObject.commonPlants[commonPlantName]}`, value: commonPlantObject.description, inline: true });
+				foodSelectMenu.components[0].options.push({ label: commonPlantName, value: commonPlantName, description: `${serverData.inventoryObject.commonPlants[commonPlantName]}` });
 			}
 		}
 
 		embedArray.push(embed);
 		const componentArray = [inventorySelectMenu];
 
-		if (profileData.hunger < profileData.maxHunger && serverData.commonPlantsArray.reduce((a, b) => a + b) > 0) {
+		if (profileData.hunger < profileData.maxHunger && foodSelectMenu.components[0].options.length > 0) {
 
 			componentArray.push(foodSelectMenu);
 		}
@@ -77,7 +75,9 @@ module.exports = {
 				components: componentArray,
 			})
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 
 		let currentPage = 0;
@@ -95,7 +95,9 @@ module.exports = {
 					components: [],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 
 			return client.off('messageCreate', removeInventoryComponents);
@@ -131,7 +133,9 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 				}
 
@@ -140,7 +144,6 @@ module.exports = {
 				foodSelectMenu.components[0].options = [];
 
 				if (interaction.customId == 'inventory-page') {
-
 
 					for (const row of interaction.message.components) {
 
@@ -159,18 +162,18 @@ module.exports = {
 							fields: [],
 						};
 
-						for (let i = 0; i < arrays.commonPlantNamesArray.length; i++) {
+						for (const [commonPlantName, commonPlantObject] of maps.commonPlantMap) {
 
-							if (serverData.commonPlantsArray[i] > 0) {
+							if (serverData.inventoryObject.commonPlants[commonPlantName] > 0) {
 
-								embed.fields.push({ name: `${arrays.commonPlantNamesArray[i]}: ${serverData.commonPlantsArray[i]}`, value: `${arrays.commonPlantDescriptionsArray[i]}`, inline: true });
-								foodSelectMenu.components[0].options.push({ label: arrays.commonPlantNamesArray[i], value: arrays.commonPlantNamesArray[i], description: `${serverData.commonPlantsArray[i]}` });
+								embed.fields.push({ name: `${commonPlantName}: ${serverData.inventoryObject.commonPlants[commonPlantName]}`, value: commonPlantObject.description, inline: true });
+								foodSelectMenu.components[0].options.push({ label: commonPlantName, value: commonPlantName, description: `${serverData.inventoryObject.commonPlants[commonPlantName]}` });
 							}
 						}
 
 						embedArray.splice(-1, 1, embed);
 
-						if (profileData.hunger < profileData.maxHunger && serverData.commonPlantsArray.reduce((a, b) => a + b) > 0) {
+						if (profileData.hunger < profileData.maxHunger && foodSelectMenu.components[0].options.length > 0) {
 
 							messageComponentArray.push(foodSelectMenu);
 						}
@@ -181,7 +184,9 @@ module.exports = {
 								components: messageComponentArray,
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 					}
 
@@ -194,27 +199,27 @@ module.exports = {
 							fields: [],
 						};
 
-						for (let i = 0; i < arrays.uncommonPlantNamesArray.length; i++) {
+						for (const [uncommonPlantName, uncommonPlantObject] of maps.uncommonPlantMap) {
 
-							if (serverData.uncommonPlantsArray[i] > 0) {
+							if (serverData.inventoryObject.uncommonPlants[uncommonPlantName] > 0) {
 
-								embed.fields.push({ name: `${arrays.uncommonPlantNamesArray[i]}: ${serverData.uncommonPlantsArray[i]}`, value: `${arrays.uncommonPlantDescriptionsArray[i]}`, inline: true });
-								foodSelectMenu.components[0].options.push({ label: arrays.uncommonPlantNamesArray[i], value: arrays.uncommonPlantNamesArray[i], description: `${serverData.uncommonPlantsArray[i]}` });
+								embed.fields.push({ name: `${uncommonPlantName}: ${serverData.inventoryObject.uncommonPlants[uncommonPlantName]}`, value: uncommonPlantObject.description, inline: true });
+								foodSelectMenu.components[0].options.push({ label: uncommonPlantName, value: uncommonPlantName, description: `${serverData.inventoryObject.uncommonPlants[uncommonPlantName]}` });
 							}
 						}
 
-						for (let i = 0; i < arrays.rarePlantNamesArray.length; i++) {
+						for (const [rarePlantName, rarePlantObject] of maps.rarePlantMap) {
 
-							if (serverData.rarePlantsArray[i] > 0) {
+							if (serverData.inventoryObject.rarePlants[rarePlantName] > 0) {
 
-								embed.fields.push({ name: `${arrays.rarePlantNamesArray[i]}: ${serverData.rarePlantsArray[i]}`, value: `${arrays.rarePlantDescriptionsArray[i]}`, inline: true });
-								foodSelectMenu.components[0].options.push({ label: arrays.rarePlantNamesArray[i], value: arrays.rarePlantNamesArray[i], description: `${serverData.rarePlantsArray[i]}` });
+								embed.fields.push({ name: `${rarePlantName}: ${serverData.inventoryObject.rarePlants[rarePlantName]}`, value: rarePlantObject.description, inline: true });
+								foodSelectMenu.components[0].options.push({ label: rarePlantName, value: rarePlantName, description: `${serverData.inventoryObject.rarePlants[rarePlantName]}` });
 							}
 						}
 
 						embedArray.splice(-1, 1, embed);
 
-						if (profileData.hunger < profileData.maxHunger && (serverData.uncommonPlantsArray.reduce((a, b) => a + b) + serverData.rarePlantsArray.reduce((a, b) => a + b)) > 0) {
+						if (profileData.hunger < profileData.maxHunger && foodSelectMenu.components[0].options.length > 0) {
 
 							messageComponentArray.push(foodSelectMenu);
 						}
@@ -225,7 +230,9 @@ module.exports = {
 								components: messageComponentArray,
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 					}
 
@@ -238,30 +245,27 @@ module.exports = {
 							fields: [],
 						};
 
-						for (let i = 0; i < species.nameArray.length; i++) {
+						for (const [speciesName] of maps.speciesMap) {
 
-							if (serverData.meatArray[i] > 0) {
+							if (serverData.inventoryObject.meat[speciesName] > 0) {
 
-								if (embed.fields.length > 25 || foodSelectMenu.components[0].options.length > 25) {
-
-									// In case there are exactly 25 meat options, only once a 26th option is detected, it would set the arrays back to 24 and add the Page Switcher.
-									// Otherwise, if there are exactly 25 meat options, it would split it up onto two pages unnecessarily
-									embed.fields.length = 24;
-									foodSelectMenu.components[0].options.length = 24;
-
-									embed.title = `Inventory of ${interaction.guild.name} - Page 3.1`;
-									foodSelectMenu.components[0].options.push({ label: 'Show more meat options', value: 'inventory_meat_page', description: 'You are currently on page 1', emoji: '📋' });
-									break;
-								}
-
-								embed.fields.push({ name: `${species.nameArray[i]}:`, value: `${serverData.meatArray[i]}`, inline: true });
-								foodSelectMenu.components[0].options.push({ label: species.nameArray[i], value: species.nameArray[i], description: `${serverData.meatArray[i]}` });
+								embed.fields.push({ name: `${speciesName}:`, value: `${serverData.inventoryObject.meat[speciesName]}`, inline: true });
+								foodSelectMenu.components[0].options.push({ label: speciesName, value: speciesName, description: `${serverData.inventoryObject.meat[speciesName]}` });
 							}
+						}
+
+						if (embed.fields.length > 25 || foodSelectMenu.components[0].options.length > 25) {
+
+							embed.fields.length = 24;
+							foodSelectMenu.components[0].options.length = 24;
+
+							embed.title = `Inventory of ${interaction.guild.name} - Page 3.1`;
+							foodSelectMenu.components[0].options.push({ label: 'Show more meat options', value: 'inventory_meat_page', description: 'You are currently on page 1', emoji: '📋' });
 						}
 
 						embedArray.splice(-1, 1, embed);
 
-						if (profileData.hunger < profileData.maxHunger && serverData.meatArray.reduce((a, b) => a + b) > 0) {
+						if (profileData.hunger < profileData.maxHunger && foodSelectMenu.components[0].options.length > 0) {
 
 							messageComponentArray.push(foodSelectMenu);
 						}
@@ -272,7 +276,9 @@ module.exports = {
 								components: messageComponentArray,
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 					}
 				}
@@ -283,11 +289,11 @@ module.exports = {
 
 						let serverMeatOptionsAmount = 0;
 
-						for (let i = 0; i < serverData.meatArray.length; i++) {
+						for (const meatAmount of Object.keys(serverData.inventoryObject.meat)) {
 
-							if (serverData.meatArray[i] > 0) {
+							if (meatAmount > 0) {
 
-								serverMeatOptionsAmount++;
+								serverMeatOptionsAmount += 1;
 							}
 						}
 
@@ -306,19 +312,29 @@ module.exports = {
 							fields: [],
 						};
 
-						for (let i = 0 + (currentPage * 24); i < 24 + (currentPage * 24) && i < species.nameArray.length; i++) {
+						for (const [speciesName] of maps.speciesMap) {
 
-							if (serverData.meatArray[i] > 0) {
+							if (serverData.inventoryObject.meat[speciesName] > 0) {
 
-								embed.fields.push({ name: `${species.nameArray[i]}:`, value: `${serverData.meatArray[i]}`, inline: true });
-								foodSelectMenu.components[0].options.push({ label: species.nameArray[i], value: species.nameArray[i], description: `${serverData.meatArray[i]}` });
+								embed.fields.push({ name: `${speciesName}:`, value: `${serverData.inventoryObject.meat[speciesName]}`, inline: true });
+								foodSelectMenu.components[0].options.push({ label: speciesName, value: speciesName, description: `${serverData.inventoryObject.meat[speciesName]}` });
 							}
+						}
+
+						embed.fields.splice(0, pagesAmount * 24);
+						foodSelectMenu.components[0].options.splice(0, pagesAmount * 24);
+
+						// this is length > 24 rather than length > 25 because a page switcher is now a definite part
+						if (embed.fields.length > 24 || foodSelectMenu.components[0].options.length > 24) {
+
+							embed.fields.length = 24;
+							foodSelectMenu.components[0].options.length = 24;
 						}
 
 						foodSelectMenu.components[0].options.push({ label: 'Show more meat options', value: 'inventory_meat_page', description: 'You are currently on page 1', emoji: '📋' });
 						embedArray.splice(-1, 1, embed);
 
-						if (profileData.hunger < profileData.maxHunger && serverData.meatArray.reduce((a, b) => a + b) > 0) {
+						if (profileData.hunger < profileData.maxHunger && foodSelectMenu.components[0].options.length > 0) {
 
 							messageComponentArray.push(foodSelectMenu);
 						}
@@ -329,7 +345,9 @@ module.exports = {
 								components: messageComponentArray,
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 					}
 

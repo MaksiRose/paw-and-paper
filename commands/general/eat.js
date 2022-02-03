@@ -1,9 +1,9 @@
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const inventory = require('./inventory');
-const profileModel = require('../../models/profileSchema');
-const serverModel = require('../../models/serverSchema');
-const arrays = require('../../utils/arrays');
+const profileModel = require('../../models/profileModel');
+const serverModel = require('../../models/serverModel');
+const maps = require('../../utils/maps');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
@@ -35,7 +35,9 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -47,8 +49,6 @@ module.exports = {
 					throw new Error(error);
 				});
 		}
-
-		const species = arrays.species(profileData);
 
 		const chosenFood = argumentsArray.join(' ');
 		let finalHungerPoints = 0;
@@ -64,43 +64,31 @@ module.exports = {
 			footer: { text: '' },
 		};
 
-		const userSpeciesArrayIndex = species.nameArray.findIndex((index) => index == profileData.species);
+		const allPlantMaps = new Map([...maps.commonPlantMap, ...maps.uncommonPlantMap, ...maps.rarePlantMap]);
+		if (allPlantMaps.has(chosenFood) == true) {
 
-		const allPlantNamesArray = [].concat(arrays.commonPlantNamesArray, arrays.uncommonPlantNamesArray, arrays.rarePlantNamesArray);
-		if (allPlantNamesArray.some(element => element == chosenFood)) {
+			let plantType;
+			let plantMap;
 
-			let serverPlantArray;
-			let plantNamesArray;
-			let plantEdibalityArray;
-			let plantGivesEnergyArray;
+			if (maps.commonPlantMap.has(chosenFood) == true) {
 
-			if (arrays.commonPlantNamesArray.some(element => element == chosenFood)) {
-
-				serverPlantArray = [...serverData.commonPlantsArray];
-				plantNamesArray = [...arrays.commonPlantNamesArray];
-				plantEdibalityArray = [...arrays.commonPlantEdibalityArray];
-				plantGivesEnergyArray = [...arrays.commonPlantGivesEnergyArray];
+				plantType = 'commonPlants';
+				plantMap = new Map([...maps.commonPlantMap]);
 			}
 
-			if (arrays.uncommonPlantNamesArray.some(element => element == chosenFood)) {
+			if (maps.uncommonPlantMap.has(chosenFood) == true) {
 
-				serverPlantArray = [...serverData.uncommonPlantsArray];
-				plantNamesArray = [...arrays.uncommonPlantNamesArray];
-				plantEdibalityArray = [...arrays.uncommonPlantEdibalityArray];
-				plantGivesEnergyArray = [...arrays.uncommonPlantGivesEnergyArray];
+				plantType = 'uncommonPlants';
+				plantMap = new Map([...maps.uncommonPlantMap]);
 			}
 
-			if (arrays.rarePlantNamesArray.some(element => element == chosenFood)) {
+			if (maps.rarePlantMap.has(chosenFood) == true) {
 
-				serverPlantArray = [...serverData.rarePlantsArray];
-				plantNamesArray = [...arrays.rarePlantNamesArray];
-				plantEdibalityArray = [...arrays.rarePlantEdibalityArray];
-				plantGivesEnergyArray = [...arrays.rarePlantGivesEnergyArray];
+				plantType = 'rarePlants';
+				plantMap = new Map([...maps.rarePlantMap]);
 			}
 
-			const plantNamesArrayIndex = plantNamesArray.findIndex((index) => index == chosenFood);
-
-			if (serverPlantArray[plantNamesArrayIndex] <= 0) {
+			if (serverData.inventoryObject[plantType][chosenFood] <= 0) {
 
 				embedArray.push({
 					color: profileData.color,
@@ -113,11 +101,13 @@ module.exports = {
 						embeds: embedArray,
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 
-			if (plantEdibalityArray[plantNamesArrayIndex] == 't') {
+			if (plantMap.get(chosenFood).edibality == 't') {
 
 				minimumHungerPoints = -5;
 				minimumHealthPoints = -10;
@@ -127,7 +117,7 @@ module.exports = {
 				embed.description = `*A yucky feeling drifts down ${profileData.name}'s throat. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} shake${(profileData.pronounArray[5] == 'singular') ? 's' : ''} and spit${(profileData.pronounArray[5] == 'singular') ? 's' : ''} it out, trying to rid ${profileData.pronounArray[2]} mouth of the taste. The plant is poisonous!*`;
 			}
 
-			if (plantEdibalityArray[plantNamesArrayIndex] == 'i') {
+			if (plantMap.get(chosenFood).edibality == 'i') {
 
 				minimumHungerPoints = -1;
 				finalHungerPoints = Loottable(3, minimumHungerPoints);
@@ -135,9 +125,9 @@ module.exports = {
 				embed.description = `*${profileData.name} slowly opens ${profileData.pronounArray[2]} mouth and chomps onto the ${chosenFood}. The ${profileData.species} swallows it, but ${profileData.pronounArray[2]} face has a look of disgust. That wasn't very tasty!*`;
 			}
 
-			if (plantEdibalityArray[plantNamesArrayIndex] == 'e') {
+			if (plantMap.get(chosenFood).edibality == 'e') {
 
-				if (species.dietArray[userSpeciesArrayIndex] == 'carnivore') {
+				if (maps.speciesMap.get(profileData.species).diet == 'carnivore') {
 
 					minimumHungerPoints = 1;
 					finalHungerPoints = Loottable(5, minimumHungerPoints);
@@ -145,7 +135,7 @@ module.exports = {
 					embed.description = `*${profileData.name} plucks a ${chosenFood} from the pack storage and nibbles away at it. It has a bitter, foreign taste, not the usual meaty meal the ${profileData.species} prefers.*`;
 				}
 
-				if (species.dietArray[userSpeciesArrayIndex] == 'herbivore' || species.dietArray[userSpeciesArrayIndex] == 'omnivore') {
+				if (maps.speciesMap.get(profileData.species).diet == 'herbivore' || maps.speciesMap.get(profileData.species).diet == 'omnivore') {
 
 					minimumHungerPoints = 11;
 					finalHungerPoints = Loottable(10, minimumHungerPoints);
@@ -154,7 +144,7 @@ module.exports = {
 				}
 			}
 
-			if (plantGivesEnergyArray[plantNamesArrayIndex] == true) {
+			if (plantMap.get(chosenFood).givesEnergy == true) {
 
 				finalEnergyPoints = 20;
 
@@ -174,96 +164,38 @@ module.exports = {
 				finalHungerPoints -= (profileData.hunger + finalHungerPoints) - profileData.maxHunger;
 			}
 
-			--serverPlantArray[plantNamesArrayIndex];
+			serverData.inventoryObject[plantType][chosenFood] -= 1;
 
-			if (arrays.commonPlantNamesArray.some(element => element == chosenFood)) {
+			embed.footer.text = `+${finalHungerPoints} hunger (${finalHungerPoints + profileData.hunger}/${profileData.maxHunger})`;
 
-				(serverData.commonPlantsArray != serverPlantArray) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): commonPlantsArray changed from \x1b[33m[${serverData.commonPlantsArray}] \x1b[0mto \x1b[33m[${serverPlantArray}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-				await serverModel
-					.findOneAndUpdate(
-						{ serverId: message.guild.id },
-						{ $set: { commonPlantsArray: serverPlantArray } },
-						{ new: true },
-					)
-					.catch((error) => {
-						throw new Error(error);
-					});
+			if (plantMap[chosenFood] == true) {
+
+				embed.footer.text += `\n+${finalEnergyPoints} energy (${finalEnergyPoints + profileData.energy}/${profileData.maxHunger})`;
 			}
 
-			if (arrays.uncommonPlantNamesArray.some(element => element == chosenFood)) {
+			if (plantMap[chosenFood] == 't') {
 
-				(serverData.uncommonPlantsArray != serverPlantArray) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): uncommonPlantsArray changed from \x1b[33m[${serverData.uncommonPlantsArray}] \x1b[0mto \x1b[33m[${serverPlantArray}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-				await serverModel
-					.findOneAndUpdate(
-						{ serverId: message.guild.id },
-						{ $set: { uncommonPlantsArray: serverPlantArray } },
-						{ new: true },
-					)
-					.catch((error) => {
-						throw new Error(error);
-					});
-			}
-
-			if (arrays.rarePlantNamesArray.some(element => element == chosenFood)) {
-
-				(serverData.rarePlantsArray != serverPlantArray) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): rarePlantsArray changed from \x1b[33m[${serverData.rarePlantsArray}] \x1b[0mto \x1b[33m[${serverPlantArray}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-				await serverModel
-					.findOneAndUpdate(
-						{ serverId: message.guild.id },
-						{ $set: { rarePlantsArray: serverPlantArray } },
-						{ new: true },
-					)
-					.catch((error) => {
-						throw new Error(error);
-					});
-			}
-
-			(finalHungerPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hunger changed from \x1b[33m${profileData.hunger} \x1b[0mto \x1b[33m${profileData.hunger + finalHungerPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			(finalEnergyPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): energy changed from \x1b[33m${profileData.energy} \x1b[0mto \x1b[33m${profileData.energy + finalEnergyPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			(finalHealthPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): health changed from \x1b[33m${profileData.health} \x1b[0mto \x1b[33m${profileData.health + finalHealthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			profileData = await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{
-						$inc: {
-							hunger: +finalHungerPoints,
-							energy: +finalEnergyPoints,
-							health: +finalHealthPoints,
-						},
-					},
-					{ new: true },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
-
-			if (profileData.currentRegion != 'food den') {
-
-				console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): currentRegion changed from \x1b[33m${profileData.currentRegion} \x1b[0mto \x1b[33mfood den \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-				await profileModel
-					.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{ $set: { currentRegion: 'food den' } },
-						{ new: true },
-					)
-					.catch((error) => {
-						throw new Error(error);
-					});
-			}
-
-			embed.footer.text = `+${finalHungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})`;
-
-			if (plantGivesEnergyArray[plantNamesArrayIndex] == true) {
-
-				embed.footer.text += `\n+${finalEnergyPoints} energy (${profileData.energy}/${profileData.maxHunger})`;
-			}
-
-			if (plantEdibalityArray[plantNamesArrayIndex] == 't') {
-
-				embed.footer.text += `\n${finalHealthPoints} health (${profileData.health}/${profileData.maxHealth})`;
+				embed.footer.text += `\n${finalHealthPoints} health (${finalHealthPoints + profileData.health}/${profileData.maxHealth})`;
 			}
 
 			embed.footer.text += `${(profileData.currentRegion != 'food den') ? '\nYou are now at the food den' : ''}\n\n-1 ${chosenFood} for ${message.guild.name}`;
+
+			profileData = await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{
+					$inc: {
+						hunger: +finalHungerPoints,
+						energy: +finalEnergyPoints,
+						health: +finalHealthPoints,
+					},
+					$set: { currentRegion: 'food den' },
+				},
+			);
+
+			serverData = await serverModel.findOneAndUpdate(
+				{ serverId: message.guild.id },
+				{ $set: { inventoryObject: serverData.inventoryObject } },
+			);
 
 			embedArray.push(embed);
 			return await message
@@ -271,16 +203,15 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
-		if (species.nameArray.some(element => element == chosenFood)) {
+		if (maps.speciesMap.has(chosenFood) == true) {
 
-			const serverMeatArray = [...serverData.meatArray];
-			const meatNameArrayIndex = species.nameArray.findIndex((index) => index == chosenFood);
-
-			if (serverMeatArray[meatNameArrayIndex] <= 0) {
+			if (serverData.inventoryObject.meat[chosenFood] <= 0) {
 
 				embedArray.push({
 					color: profileData.color,
@@ -293,11 +224,13 @@ module.exports = {
 						embeds: embedArray,
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 
-			if (species.dietArray[userSpeciesArrayIndex] == 'herbivore') {
+			if (maps.speciesMap.get(profileData.species).diet == 'herbivore') {
 
 				minimumHungerPoints = 1;
 				finalHungerPoints = Loottable(5, minimumHungerPoints);
@@ -305,7 +238,7 @@ module.exports = {
 				embed.description = `*${profileData.name} stands by the storage den, eyeing the varieties of food. A ${chosenFood} catches ${profileData.pronounArray[2]} attention. The ${profileData.species} walks over to it and begins to eat.* "This isn't very good!" *${profileData.name} whispers to ${profileData.pronounArray[4]} and leaves the den, stomach still growling, and craving for plants to grow.*`;
 			}
 
-			if (species.dietArray[userSpeciesArrayIndex] == 'carnivore' || species.dietArray[userSpeciesArrayIndex] == 'omnivore') {
+			if (maps.speciesMap.get(profileData.species).diet == 'carnivore' || maps.speciesMap.get(profileData.species).diet == 'omnivore') {
 
 				minimumHungerPoints = 11;
 				finalHungerPoints = Loottable(10, minimumHungerPoints);
@@ -318,31 +251,19 @@ module.exports = {
 				finalHungerPoints -= (profileData.hunger + finalHungerPoints) - profileData.maxHunger;
 			}
 
-			serverMeatArray[meatNameArrayIndex]--;
-
-			(serverData.meatArray != serverMeatArray) && console.log(`\x1b[32m\x1b[0m${message.guild.name} (${message.guild.id}): meatArray changed from \x1b[33m[${serverData.meatArray}] \x1b[0mto \x1b[33m[${serverMeatArray}] \x1b[0mthrough \x1b[32m${message.author.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			await serverModel
-				.findOneAndUpdate(
-					{ serverId: message.guild.id },
-					{ $set: { meatArray: serverMeatArray } },
-					{ new: true },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
-
-			(finalHungerPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hunger changed from \x1b[33m${profileData.hunger} \x1b[0mto \x1b[33m${profileData.hunger + finalHungerPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			profileData = await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $inc: { hunger: +finalHungerPoints } },
-					{ new: true },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			serverData.inventoryObject.meat[chosenFood] -= 1;
 
 			embed.footer.text = `+${finalHungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})${(profileData.currentRegion != 'food den') ? '\nYou are now at the food den' : ''}\n\n-1 ${chosenFood} for ${message.guild.name}`;
+
+			profileData = await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $inc: { hunger: +finalHungerPoints } },
+			);
+
+			serverData = await serverModel.findOneAndUpdate(
+				{ serverId: message.guild.id },
+				{ $set: { inventoryObject: serverData.inventoryObject } },
+			);
 
 			embedArray.push(embed);
 			return await message
@@ -350,18 +271,17 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
 		if (message.mentions.users.size > 0) {
-			const taggedProfileData = await profileModel
-				.findOne({
-					userId: message.mentions.users.first().id,
-				})
-				.catch((error) => {
-					throw new Error(error);
-				});
+
+			const taggedProfileData = await profileModel.findOne({
+				userId: message.mentions.users.first().id,
+			});
 
 			if (taggedProfileData) {
 
@@ -374,7 +294,9 @@ module.exports = {
 						embeds: embedArray,
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 		}

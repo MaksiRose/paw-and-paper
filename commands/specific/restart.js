@@ -15,7 +15,9 @@ module.exports = {
 					content: 'Restarted!',
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 
 			await process.exit()

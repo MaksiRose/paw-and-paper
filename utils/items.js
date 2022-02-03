@@ -1,69 +1,69 @@
-const profileModel = require('../models/profileSchema');
-const arrays = require('./arrays');
+const profileModel = require('../models/profileModel');
+const maps = require('./maps');
 
 module.exports = {
 
 	async randomCommonPlant(message, profileData) {
 
-		const userInventoryArray = [[...profileData.inventoryArray[0]], [...profileData.inventoryArray[1]], [...profileData.inventoryArray[2]], [...profileData.inventoryArray[3]]];
-		const randomCommonPlantArrayIndex = Math.floor(Math.random() * arrays.commonPlantNamesArray.length);
+		const userInventory = {
+			commonPlants: { ...profileData.inventoryObject.commonPlants },
+			uncommonPlants: { ...profileData.inventoryObject.uncommonPlants },
+			rarePlants: { ...profileData.inventoryObject.rarePlants },
+			meat: { ...profileData.inventoryObject.meat },
+		};
 
-		userInventoryArray[0][randomCommonPlantArrayIndex] += 1;
+		const randomCommonPlant = Array.from(maps.commonPlantMap.keys())[Math.floor(Math.random() * Array.from(maps.commonPlantMap.keys()).length)];
 
-		(profileData.inventoryArray != userInventoryArray) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): inventoryArray[0] changed from \x1b[33m[${profileData.inventoryArray[0]}] \x1b[0mto \x1b[33m[${userInventoryArray[0]}] \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		profileData = await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { inventoryArray: userInventoryArray } },
-				{ new: true },
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+		userInventory.commonPlants[randomCommonPlant] += 1;
 
-		return arrays.commonPlantNamesArray[randomCommonPlantArrayIndex];
+		profileData = await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{ $set: { inventoryObject: userInventory } },
+		);
+
+		return randomCommonPlant;
 	},
 
 	async randomUncommonPlant(message, profileData) {
 
-		const userInventoryArray = [[...profileData.inventoryArray[0]], [...profileData.inventoryArray[1]], [...profileData.inventoryArray[2]], [...profileData.inventoryArray[3]]];
-		const randomUncommonPlantArrayIndex = Math.floor(Math.random() * arrays.uncommonPlantNamesArray.length);
+		const userInventory = {
+			commonPlants: { ...profileData.inventoryObject.commonPlants },
+			uncommonPlants: { ...profileData.inventoryObject.uncommonPlants },
+			rarePlants: { ...profileData.inventoryObject.rarePlants },
+			meat: { ...profileData.inventoryObject.meat },
+		};
 
-		++userInventoryArray[1][randomUncommonPlantArrayIndex];
+		const randomUncommonPlant = Array.from(maps.uncommonPlantMap.keys())[Math.floor(Math.random() * Array.from(maps.uncommonPlantMap.keys()).length)];
 
-		(profileData.inventoryArray != userInventoryArray) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): inventoryArray[1] changed from \x1b[33m[${profileData.inventoryArray[1]}] \x1b[0mto \x1b[33m[${userInventoryArray[1]}] \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		profileData = await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { inventoryArray: userInventoryArray } },
-				{ new: true },
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+		userInventory.uncommonPlants[randomUncommonPlant] += 1;
 
-		return arrays.uncommonPlantNamesArray[randomUncommonPlantArrayIndex];
+		profileData = await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{ $set: { inventoryObject: userInventory } },
+		);
+
+		return randomUncommonPlant;
 	},
 
 	async randomRarePlant(message, profileData) {
 
-		const userInventoryArray = [[...profileData.inventoryArray[0]], [...profileData.inventoryArray[1]], [...profileData.inventoryArray[2]], [...profileData.inventoryArray[3]]];
-		const randomRarePlantArrayIndex = Math.floor(Math.random() * arrays.rarePlantNamesArray.length);
+		const userInventory = {
+			commonPlants: { ...profileData.inventoryObject.commonPlants },
+			uncommonPlants: { ...profileData.inventoryObject.uncommonPlants },
+			rarePlants: { ...profileData.inventoryObject.rarePlants },
+			meat: { ...profileData.inventoryObject.meat },
+		};
 
-		++userInventoryArray[2][randomRarePlantArrayIndex];
+		const randomRarePlant = Array.from(maps.rarePlantMap.keys())[Math.floor(Math.random() * Array.from(maps.rarePlantMap.keys()).length)];
 
-		(profileData.inventoryArray != userInventoryArray) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): inventoryArray[3] changed from \x1b[33m[${profileData.inventoryArray[3]}] \x1b[0mto \x1b[33m[${userInventoryArray[3]}] \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		profileData = await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { inventoryArray: userInventoryArray } },
-				{ new: true },
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+		userInventory.rarePlants[randomRarePlant] += 1;
 
-		return arrays.rarePlantNamesArray[randomRarePlantArrayIndex];
+		profileData = await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{ $set: { inventoryObject: userInventory } },
+		);
+
+		return randomRarePlant;
 	},
 
 };
