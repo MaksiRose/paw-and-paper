@@ -164,6 +164,7 @@ class model {
 				let result = JSON.stringify(variable, null, 1);
 				result = result.replace(/^ +/gm, ' ');
 				result = result.replace(/\n/g, '');
+				result = result.replace(/"/g, '');
 				result = result.replace(/{ /g, '{').replace(/ }/g, '}');
 				result = result.replace(/\[ /g, '[').replace(/ \]/g, ']');
 				return result;
@@ -196,7 +197,7 @@ class model {
 					}
 					else {
 
-						newObject = objectReducer(mainObject[key], compareObject[key]);
+						newObject = { ...newObject, ...objectReducer(mainObject[key], compareObject[key]) };
 					}
 				}
 
