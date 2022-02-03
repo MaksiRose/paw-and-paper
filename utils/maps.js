@@ -420,7 +420,7 @@ speciesMap.set('wolf', {
 	diet: 'carnivore',
 	habitat: 'cold',
 	biome1OpponentArray: ['rabbit', 'squirrel', 'deer'],
-	biome2OpponentArray: ['fox', 'dog'],
+	biome2OpponentArray: ['fox', 'dog', 'goat'],
 	biome3OpponentArray: ['bear', 'horse', 'elk'],
 });
 
@@ -564,7 +564,7 @@ speciesMap.set('coyote', {
 	diet: 'omnivore',
 	habitat: 'warm',
 	biome1OpponentArray: ['caracal', 'maned wolf'],
-	biome2OpponentArray: ['leopard'],
+	biome2OpponentArray: ['leopard', 'goat'],
 	biome3OpponentArray: ['tiger', 'lion'],
 });
 
@@ -744,7 +744,7 @@ speciesMap.set('maned wolf', {
 	diet: 'omnivore',
 	habitat: 'warm',
 	biome1OpponentArray: ['caracal', 'coyote'],
-	biome2OpponentArray: ['leopard'],
+	biome2OpponentArray: ['leopard', 'goat'],
 	biome3OpponentArray: ['tiger', 'lion'],
 });
 
@@ -851,7 +851,7 @@ speciesMap.set('hoatzin', {
 	name: 'hoatzin',
 	diet: 'herbivore',
 	habitat: 'warm',
-	biome1OpponentArray: ['squirrel', 'rabbit'],
+	biome1OpponentArray: ['squirrel', 'rabbit', 'goat'],
 	biome2OpponentArray: ['cat', 'weasel'],
 	biome3OpponentArray: ['eagle', 'hawk', 'cassowary'],
 });
@@ -887,7 +887,7 @@ speciesMap.set('hawk', {
 	name: 'hawk',
 	diet: 'carnivore',
 	habitat: 'warm',
-	biome1OpponentArray: ['squirrel', 'rabbit'],
+	biome1OpponentArray: ['squirrel', 'rabbit', 'goat'],
 	biome2OpponentArray: ['owl', 'raccoon'],
 	biome3OpponentArray: ['eagle', 'gaboon viper', 'cassowary'],
 });
@@ -905,7 +905,7 @@ speciesMap.set('eagle', {
 	name: 'eagle',
 	diet: 'carnivore',
 	habitat: 'warm',
-	biome1OpponentArray: ['squirrel', 'rabbit'],
+	biome1OpponentArray: ['squirrel', 'rabbit', 'goat'],
 	biome2OpponentArray: ['bear', 'raccoon'],
 	biome3OpponentArray: ['hawk', 'gaboon viper', 'cassowary'],
 });
@@ -998,6 +998,15 @@ speciesMap.set('humpback whale', {
 	biome1OpponentArray: ['salmon', 'tuna', 'squid'],
 	biome2OpponentArray: ['seal', 'crab'],
 	biome3OpponentArray: ['orca', 'shark'],
+});
+
+speciesMap.set('goat', {
+	name: 'goat',
+	diet: 'herbivore',
+	habitat: 'cold',
+	biome1OpponentArray: ['wolf', 'bear', 'maned wolf'],
+	biome2OpponentArray: ['fox', 'eagle'],
+	biome3OpponentArray: ['dog', 'coyote'],
 });
 
 
