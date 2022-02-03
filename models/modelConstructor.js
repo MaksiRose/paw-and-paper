@@ -22,9 +22,9 @@ class model {
 
 						continue file_iteration;
 					}
-
-					return dataObject;
 				}
+
+				return dataObject;
 			}
 
 			return null;
