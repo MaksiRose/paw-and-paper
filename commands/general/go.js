@@ -21,13 +21,10 @@ module.exports = {
 
 		profileData = await startCooldown(message, profileData);
 
-		profileData = await profileModel
-			.findOne({
-				userId: message.author.id,
-				serverId: message.guild.id,
-			}).catch(async (error) => {
-				throw new Error(error);
-			});
+		profileData = await profileModel.findOne({
+			userId: message.author.id,
+			serverId: message.guild.id,
+		});
 
 		const chosenRegion = argumentsArray.join(' ').toLowerCase();
 
@@ -128,7 +125,9 @@ module.exports = {
 					components: [travelSelectMenu],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -141,7 +140,9 @@ module.exports = {
 					components: [sleepingDenButtons],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -154,7 +155,9 @@ module.exports = {
 					components: [foodDenButtons],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -168,7 +171,9 @@ module.exports = {
 						embeds: [embed],
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 			else {
@@ -179,7 +184,9 @@ module.exports = {
 						components: [medicineDenButtons],
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 		}
@@ -192,7 +199,9 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -205,7 +214,9 @@ module.exports = {
 					components: [lakeButtons],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -220,7 +231,9 @@ module.exports = {
 						components: [prairieButtons],
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 			else {
@@ -230,7 +243,9 @@ module.exports = {
 						embeds: embedArray,
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 		}
@@ -248,7 +263,9 @@ module.exports = {
 					components: [],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 
 			return client.off('messageCreate', removeGoComponents);
@@ -279,7 +296,9 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 				}
 
@@ -296,7 +315,9 @@ module.exports = {
 								components: [travelSelectMenu, sleepingDenButtons],
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 					}
 
@@ -309,7 +330,9 @@ module.exports = {
 								components: [travelSelectMenu, foodDenButtons],
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 					}
 
@@ -325,7 +348,9 @@ module.exports = {
 									components: [travelSelectMenu],
 								})
 								.catch((error) => {
-									throw new Error(error);
+									if (error.httpStatus !== 404) {
+										throw new Error(error);
+									}
 								});
 						}
 						await interaction.message
@@ -334,7 +359,9 @@ module.exports = {
 								components: [travelSelectMenu, medicineDenButtons],
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 					}
 
@@ -347,7 +374,9 @@ module.exports = {
 								components: [travelSelectMenu],
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 					}
 
@@ -360,7 +389,9 @@ module.exports = {
 								components: [travelSelectMenu, lakeButtons],
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 					}
 
@@ -374,7 +405,9 @@ module.exports = {
 								components: [travelSelectMenu],
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 
 						if (profileData.rank == 'Youngling' || profileData.rank == 'Apprentice') {
@@ -385,7 +418,9 @@ module.exports = {
 									components: [travelSelectMenu, prairieButtons],
 								})
 								.catch((error) => {
-									throw new Error(error);
+									if (error.httpStatus !== 404) {
+										throw new Error(error);
+									}
 								});
 						}
 					}
@@ -398,19 +433,17 @@ module.exports = {
 						const cmd = interaction.customId.split('-').pop();
 						const command = client.commands.get(cmd) || client.commands.find(cmnd => cmnd.aliases && cmnd.aliases.includes(cmd));
 
-						profileData = await profileModel
-							.findOne({
-								userId: message.author.id,
-								serverId: message.guild.id,
-							})
-							.catch((error) => {
-								throw new Error(error);
-							});
+						profileData = await profileModel.findOne({
+							userId: message.author.id,
+							serverId: message.guild.id,
+						});
 
 						interaction.message
 							.delete()
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 
 						embedArray.splice(-1, 1);
@@ -418,25 +451,17 @@ module.exports = {
 							.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
 							.then(async () => {
 
-								profileData = await profileModel
-									.findOne({
-										userId: message.author.id,
-										serverId: message.guild.id,
-									})
-									.catch((error) => {
-										throw new Error(error);
-									});
+								profileData = await profileModel.findOne({
+									userId: message.author.id,
+									serverId: message.guild.id,
+								});
 
 								setTimeout(async function() {
 
-									profileData = await profileModel
-										.findOneAndUpdate(
-											{ userId: message.author.id, serverId: message.guild.id },
-											{ $set: { hasCooldown: false } },
-										)
-										.catch(async (error) => {
-											throw new Error(error);
-										});
+									profileData = await profileModel.findOneAndUpdate(
+										{ userId: message.author.id, serverId: message.guild.id },
+										{ $set: { hasCooldown: false } },
+									);
 								}, 3000);
 							})
 							.catch((error) => {
@@ -451,14 +476,10 @@ module.exports = {
 
 		async function sleepingDen() {
 
-			await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $set: { currentRegion: 'sleeping dens' } },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { currentRegion: 'sleeping dens' } },
+			);
 
 			embed.description = `*${profileData.name} slowly trots to the sleeping dens, tired from all the hard work ${profileData.pronounArray[0]} did. For a moment, the ${profileData.species} thinks about if ${profileData.pronounArray[0]} want to rest or just a break.*`;
 			embed.fields = [];
@@ -466,26 +487,18 @@ module.exports = {
 
 		async function foodDen() {
 
-			await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $set: { currentRegion: 'food den' } },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { currentRegion: 'food den' } },
+			);
 
 			embed.description = `*${profileData.name} runs to the food den. Maybe ${profileData.pronounArray[0]} will eat something, or put ${profileData.pronounArray[2]} food onto the pile.*`;
 			embed.fields = [];
 
-			let allFoodDenProfilesArray = await profileModel
-				.find({
-					serverId: message.guild.id,
-					currentRegion: 'food den',
-				})
-				.catch((error) => {
-					throw new Error(error);
-				});
+			let allFoodDenProfilesArray = await profileModel.find({
+				serverId: message.guild.id,
+				currentRegion: 'food den',
+			});
 
 			allFoodDenProfilesArray = allFoodDenProfilesArray.map(document => document.userId);
 
@@ -502,26 +515,18 @@ module.exports = {
 
 		async function medicineDen() {
 
-			await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $set: { currentRegion: 'medicine den' } },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { currentRegion: 'medicine den' } },
+			);
 
 			embed.description = `*${profileData.name} rushes over to the medicine den. Nearby are a mix of packmates, some with illnesses and injuries, others trying to heal them.*`;
 			embed.fields = [];
 
-			let allMedicineDenProfilesArray = await profileModel
-				.find({
-					serverId: message.guild.id,
-					currentRegion: 'medicine den',
-				})
-				.catch((error) => {
-					throw new Error(error);
-				});
+			let allMedicineDenProfilesArray = await profileModel.find({
+				serverId: message.guild.id,
+				currentRegion: 'medicine den',
+			});
 
 			allMedicineDenProfilesArray = allMedicineDenProfilesArray.map(document => document.userId);
 
@@ -535,14 +540,10 @@ module.exports = {
 				embed.fields.push({ name: 'Packmates at the medicine den:', value: allMedicineDenProfilesArray.join('\n'), inline: true });
 			}
 
-			let allHealerProfilesArray = await profileModel
-				.find({
-					serverId: message.guild.id,
-					rank: { $nin: ['Youngling', 'Hunter'] },
-				})
-				.catch((error) => {
-					throw new Error(error);
-				});
+			let allHealerProfilesArray = await profileModel.find({
+				serverId: message.guild.id,
+				rank: { $nin: ['Youngling', 'Hunter'] },
+			});
 
 			allHealerProfilesArray = allHealerProfilesArray.map(document => document.userId);
 
@@ -559,26 +560,18 @@ module.exports = {
 
 		async function ruins() {
 
-			await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $set: { currentRegion: 'ruins' } },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { currentRegion: 'ruins' } },
+			);
 
 			embed.description = `*${profileData.name} walks up to the ruins, carefully stepping over broken bricks. Hopefully, ${profileData.pronounArray[0]} will find someone to talk with.*`;
 			embed.fields = [];
 
-			let allRuinProfilesArray = await profileModel
-				.find({
-					serverId: message.guild.id,
-					currentRegion: 'ruins',
-				})
-				.catch((error) => {
-					throw new Error(error);
-				});
+			let allRuinProfilesArray = await profileModel.find({
+				serverId: message.guild.id,
+				currentRegion: 'ruins',
+			});
 
 			allRuinProfilesArray = allRuinProfilesArray.map(document => document.userId);
 
@@ -595,14 +588,10 @@ module.exports = {
 
 		async function lake() {
 
-			await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $set: { currentRegion: 'lake' } },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { currentRegion: 'lake' } },
+			);
 
 			embed.description = `*${profileData.name} looks at ${profileData.pronounArray[2]} reflection as ${profileData.pronounArray[0]} pass${(profileData.pronounArray[5] == 'singular') ? 'es' : ''} the lake. Suddenly the ${profileData.species} remembers how long ${profileData.pronounArray[0]} ha${(profileData.pronounArray[5] == 'singular') ? 's' : 've'}n't drunk anything.*`;
 			embed.fields = [];
@@ -610,26 +599,18 @@ module.exports = {
 
 		async function prairie() {
 
-			await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $set: { currentRegion: 'prairie' } },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { currentRegion: 'prairie' } },
+			);
 
 			embed.description = `*${profileData.name} approaches the prairie, watching younger packmates testing their strength in playful fights. Maybe the ${profileData.species} could play with them!*`;
 			embed.fields = [];
 
-			let allPrairieProfilesArray = await profileModel
-				.find({
-					serverId: message.guild.id,
-					currentRegion: 'prairie',
-				})
-				.catch((error) => {
-					throw new Error(error);
-				});
+			let allPrairieProfilesArray = await profileModel.find({
+				serverId: message.guild.id,
+				currentRegion: 'prairie',
+			});
 
 			allPrairieProfilesArray = allPrairieProfilesArray.map(document => document.userId);
 

@@ -35,7 +35,9 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -52,18 +54,16 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
-		let partnerProfileData = await profileModel
-			.findOne({
-				userId: message.mentions.users.first().id,
-				serverId: message.guild.id,
-			})
-			.catch((error) => {
-				throw new Error(error);
-			});
+		let partnerProfileData = await profileModel.findOne({
+			userId: message.mentions.users.first().id,
+			serverId: message.guild.id,
+		});
 
 		embedArray.push({
 			color: profileData.color,
@@ -88,7 +88,9 @@ module.exports = {
 				}],
 			})
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 
 		const emptyField = '◻️';
@@ -246,7 +248,9 @@ module.exports = {
 					components: [],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 
 			return client.off('messageCreate', removePlayfightComponents);
@@ -296,7 +300,9 @@ module.exports = {
 					await botReply
 						.delete()
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 
 					embedArray.splice(-1, 1);
@@ -317,28 +323,22 @@ module.exports = {
 									components: [],
 								})
 								.catch((error) => {
-									throw new Error(error);
+									if (error.httpStatus !== 404) {
+										throw new Error(error);
+									}
 								});
 						}
 						else {
 
-							profileData = await profileModel
-								.findOneAndUpdate(
-									{ userId: message.author.id, serverId: message.guild.id },
-									{ $set: { hasCooldown: false } },
-								)
-								.catch(async (error) => {
-									throw new Error(error);
-								});
+							profileData = await profileModel.findOneAndUpdate(
+								{ userId: message.author.id, serverId: message.guild.id },
+								{ $set: { hasCooldown: false } },
+							);
 
-							partnerProfileData = await profileModel
-								.findOneAndUpdate(
-									{ userId: message.mentions.users.first().id, serverId: message.guild.id },
-									{ $set: { hasCooldown: false } },
-								)
-								.catch(async (error) => {
-									throw new Error(error);
-								});
+							partnerProfileData = await profileModel.findOneAndUpdate(
+								{ userId: message.mentions.users.first().id, serverId: message.guild.id },
+								{ $set: { hasCooldown: false } },
+							);
 
 							// text for when the match was abandoned
 							embedArray.push({
@@ -354,7 +354,9 @@ module.exports = {
 									components: [],
 								})
 								.catch((error) => {
-									throw new Error(error);
+									if (error.httpStatus !== 404) {
+										throw new Error(error);
+									}
 								});
 
 							await extraEmbeds();
@@ -365,43 +367,35 @@ module.exports = {
 
 					if (isEmptyBoard) {
 
-						profileData = await profileModel
-							.findOneAndUpdate(
-								{ userId: message.author.id, serverId: message.guild.id },
-								{
-									$inc: {
-										energy: -energyPointsPlayer1,
-										hunger: -hungerPointsPlayer1,
-										thirst: -thirstPointsPlayer1,
-									},
-									$set: {
-										currentRegion: 'prairie',
-										hasCooldown: true,
-									},
+						profileData = await profileModel.findOneAndUpdate(
+							{ userId: message.author.id, serverId: message.guild.id },
+							{
+								$inc: {
+									energy: -energyPointsPlayer1,
+									hunger: -hungerPointsPlayer1,
+									thirst: -thirstPointsPlayer1,
 								},
-							)
-							.catch((error) => {
-								throw new Error(error);
-							});
+								$set: {
+									currentRegion: 'prairie',
+									hasCooldown: true,
+								},
+							},
+						);
 
-						partnerProfileData = await profileModel
-							.findOneAndUpdate(
-								{ userId: message.mentions.users.first().id, serverId: message.guild.id },
-								{
-									$inc: {
-										energy: -energyPointsPlayer2,
-										hunger: -hungerPointsPlayer2,
-										thirst: -thirstPointsPlayer2,
-									},
-									$set: {
-										currentRegion: 'prairie',
-										hasCooldown: true,
-									},
+						partnerProfileData = await profileModel.findOneAndUpdate(
+							{ userId: message.mentions.users.first().id, serverId: message.guild.id },
+							{
+								$inc: {
+									energy: -energyPointsPlayer2,
+									hunger: -hungerPointsPlayer2,
+									thirst: -thirstPointsPlayer2,
 								},
-							)
-							.catch((error) => {
-								throw new Error(error);
-							});
+								$set: {
+									currentRegion: 'prairie',
+									hasCooldown: true,
+								},
+							},
+						);
 					}
 
 					if (collected.first().customId.includes('board')) {
@@ -422,23 +416,15 @@ module.exports = {
 								}
 							}
 
-							profileData = await profileModel
-								.findOneAndUpdate(
-									{ userId: message.author.id, serverId: message.guild.id },
-									{ $set: { hasCooldown: false } },
-								)
-								.catch(async (error) => {
-									throw new Error(error);
-								});
+							profileData = await profileModel.findOneAndUpdate(
+								{ userId: message.author.id, serverId: message.guild.id },
+								{ $set: { hasCooldown: false } },
+							);
 
-							partnerProfileData = await profileModel
-								.findOneAndUpdate(
-									{ userId: message.mentions.users.first().id, serverId: message.guild.id },
-									{ $set: { hasCooldown: false } },
-								)
-								.catch(async (error) => {
-									throw new Error(error);
-								});
+							partnerProfileData = await profileModel.findOneAndUpdate(
+								{ userId: message.mentions.users.first().id, serverId: message.guild.id },
+								{ $set: { hasCooldown: false } },
+							);
 
 							const experiencePoints = Loottable(10, 1);
 
@@ -451,14 +437,10 @@ module.exports = {
 								embedFooterStatsTextPlayer2 = `+${experiencePoints} XP (${currentProfileData.experience}/${currentProfileData.levels * 50}) for ${currentProfileData.name}\n${embedFooterStatsTextPlayer2}`;
 							}
 
-							currentProfileData = await profileModel
-								.findOneAndUpdate(
-									{ userId: currentProfileData.userId, serverId: message.guild.id },
-									{ $inc: { experience: experiencePoints } },
-								)
-								.catch(async (error) => {
-									throw new Error(error);
-								});
+							currentProfileData = await profileModel.findOneAndUpdate(
+								{ userId: currentProfileData.userId, serverId: message.guild.id },
+								{ $inc: { experience: experiencePoints } },
+							);
 
 							let getHurtText = '';
 							const betterLuckValue = (otherProfileData.levels - 1) * 2;
@@ -473,14 +455,10 @@ module.exports = {
 									healthPoints = otherProfileData.health;
 								}
 
-								otherProfileData = await profileModel
-									.findOneAndUpdate(
-										{ userId: otherProfileData.userId, serverId: message.guild.id },
-										{ $inc: { health: -healthPoints } },
-									)
-									.catch((error) => {
-										throw new Error(error);
-									});
+								otherProfileData = await profileModel.findOneAndUpdate(
+									{ userId: otherProfileData.userId, serverId: message.guild.id },
+									{ $inc: { health: -healthPoints } },
+								);
 
 								switch (true) {
 
@@ -531,7 +509,9 @@ module.exports = {
 									components: componentArray,
 								})
 								.catch((error) => {
-									throw new Error(error);
+									if (error.httpStatus !== 404) {
+										throw new Error(error);
+									}
 								});
 
 							await extraEmbeds();
@@ -541,46 +521,30 @@ module.exports = {
 
 						if (isDraw()) {
 
-							profileData = await profileModel
-								.findOneAndUpdate(
-									{ userId: message.author.id, serverId: message.guild.id },
-									{ $set: { hasCooldown: false } },
-								)
-								.catch(async (error) => {
-									throw new Error(error);
-								});
+							profileData = await profileModel.findOneAndUpdate(
+								{ userId: message.author.id, serverId: message.guild.id },
+								{ $set: { hasCooldown: false } },
+							);
 
-							partnerProfileData = await profileModel
-								.findOneAndUpdate(
-									{ userId: message.mentions.users.first().id, serverId: message.guild.id },
-									{ $set: { hasCooldown: false } },
-								)
-								.catch(async (error) => {
-									throw new Error(error);
-								});
+							partnerProfileData = await profileModel.findOneAndUpdate(
+								{ userId: message.mentions.users.first().id, serverId: message.guild.id },
+								{ $set: { hasCooldown: false } },
+							);
 
 							const experiencePoints = Loottable(5, 1);
 
 							embedFooterStatsTextPlayer1 = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50}) for ${profileData.name}\n${embedFooterStatsTextPlayer1}`;
 							embedFooterStatsTextPlayer2 = `+${experiencePoints} XP (${partnerProfileData.experience}/${partnerProfileData.levels * 50}) for ${partnerProfileData.name}\n${embedFooterStatsTextPlayer2}`;
 
-							profileData = await profileModel
-								.findOneAndUpdate(
-									{ userId: message.author.id, serverId: message.guild.id },
-									{ $inc: { experience: experiencePoints } },
-								)
-								.catch(async (error) => {
-									throw new Error(error);
-								});
+							profileData = await profileModel.findOneAndUpdate(
+								{ userId: message.author.id, serverId: message.guild.id },
+								{ $inc: { experience: experiencePoints } },
+							);
 
-							partnerProfileData = await profileModel
-								.findOneAndUpdate(
-									{ userId: message.mentions.users.first().id, serverId: message.guild.id },
-									{ $inc: { experience: experiencePoints } },
-								)
-								.catch(async (error) => {
-									throw new Error(error);
-								});
+							partnerProfileData = await profileModel.findOneAndUpdate(
+								{ userId: message.mentions.users.first().id, serverId: message.guild.id },
+								{ $inc: { experience: experiencePoints } },
+							);
 
 							embedArray.push({
 								color: profileData.color,
@@ -595,7 +559,9 @@ module.exports = {
 									components: componentArray,
 								})
 								.catch((error) => {
-									throw new Error(error);
+									if (error.httpStatus !== 404) {
+										throw new Error(error);
+									}
 								});
 
 							await extraEmbeds();
@@ -617,7 +583,9 @@ module.exports = {
 							components: componentArray,
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 
 					await newRound(!isPartner);
@@ -629,23 +597,15 @@ module.exports = {
 						await condition.decreaseHealth(message, profileData, botReply);
 						await condition.decreaseHealth(message, partnerProfileData, botReply);
 
-						profileData = await profileModel
-							.findOneAndUpdate(
-								{ userId: message.author.id, serverId: message.guild.id },
-								{ $set: { injuryObject: userInjuryObjectPlayer1 } },
-							)
-							.catch((error) => {
-								throw new Error(error);
-							});
+						profileData = await profileModel.findOneAndUpdate(
+							{ userId: message.author.id, serverId: message.guild.id },
+							{ $set: { injuryObject: userInjuryObjectPlayer1 } },
+						);
 
-						partnerProfileData = await profileModel
-							.findOneAndUpdate(
-								{ userId: message.mentions.users.first().id, serverId: message.guild.id },
-								{ $set: { injuryObject: userInjuryObjectPlayer2 } },
-							)
-							.catch((error) => {
-								throw new Error(error);
-							});
+						partnerProfileData = await profileModel.findOneAndUpdate(
+							{ userId: message.mentions.users.first().id, serverId: message.guild.id },
+							{ $set: { injuryObject: userInjuryObjectPlayer2 } },
+						);
 
 						await levels.levelCheck(message, profileData, botReply);
 						await levels.levelCheck(message, partnerProfileData, botReply);

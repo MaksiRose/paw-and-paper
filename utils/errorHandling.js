@@ -21,7 +21,9 @@ module.exports = {
 				}],
 			})
 			.catch((newError) => {
-				throw new Error(newError);
+				if (newError.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 	},
 };

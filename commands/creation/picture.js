@@ -17,14 +17,10 @@ module.exports = {
 
 		if (!argumentsArray.length && message.attachments.size <= 0) {
 
-			await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $set: { avatarURL: message.author.avatarURL() } },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { avatarURL: message.author.avatarURL() } },
+			);
 
 			return await message
 				.reply({
@@ -36,7 +32,9 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -51,7 +49,9 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -68,18 +68,16 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
-		await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { avatarURL: ImageLink } },
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+		await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{ $set: { avatarURL: ImageLink } },
+		);
 
 		return await message
 			.reply({
@@ -91,7 +89,9 @@ module.exports = {
 				}],
 			})
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 	},
 };

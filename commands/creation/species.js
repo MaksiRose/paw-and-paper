@@ -26,7 +26,9 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -48,14 +50,10 @@ module.exports = {
 
 		if (chosenSpecies != null && maps.speciesMap.has(chosenSpecies)) {
 
-			await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $set: { species: chosenSpecies } },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { species: chosenSpecies } },
+			);
 
 			return await message
 				.reply({
@@ -67,7 +65,9 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -96,7 +96,9 @@ module.exports = {
 				}],
 			})
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 
 		client.on('messageCreate', async function removeSpeciesComponents(newMessage) {
@@ -116,7 +118,9 @@ module.exports = {
 					components: [],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 
 			return client.off('messageCreate', removeSpeciesComponents);
@@ -147,7 +151,9 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 				}
 
@@ -183,7 +189,9 @@ module.exports = {
 							}],
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 
 					return await interactionCollector();
@@ -191,14 +199,10 @@ module.exports = {
 
 				if (maps.speciesMap.has(interaction.values[0])) {
 
-					await profileModel
-						.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
-							{ $set: { species: interaction.values[0] } },
-						)
-						.catch((error) => {
-							throw new Error(error);
-						});
+					await profileModel.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{ $set: { species: interaction.values[0] } },
+					);
 
 					return await interaction.message
 						.edit({
@@ -211,7 +215,9 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 				}
 			});

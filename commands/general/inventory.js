@@ -75,7 +75,9 @@ module.exports = {
 				components: componentArray,
 			})
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 
 		let currentPage = 0;
@@ -93,7 +95,9 @@ module.exports = {
 					components: [],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 
 			return client.off('messageCreate', removeInventoryComponents);
@@ -129,7 +133,9 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 				}
 
@@ -178,7 +184,9 @@ module.exports = {
 								components: messageComponentArray,
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 					}
 
@@ -222,7 +230,9 @@ module.exports = {
 								components: messageComponentArray,
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 					}
 
@@ -266,7 +276,9 @@ module.exports = {
 								components: messageComponentArray,
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 					}
 				}
@@ -333,7 +345,9 @@ module.exports = {
 								components: messageComponentArray,
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 					}
 

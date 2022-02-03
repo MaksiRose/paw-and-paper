@@ -39,7 +39,9 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -56,7 +58,9 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -109,7 +113,9 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 
 			return await new Promise((resolve) => {
@@ -148,7 +154,9 @@ module.exports = {
 				components: [selectBiomeComponent],
 			})
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 
 		client.on('messageCreate', async function removeExploreComponents(newMessage) {
@@ -163,7 +171,9 @@ module.exports = {
 					components: [],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 
 			return client.off('messageCreate', removeExploreComponents);
@@ -197,7 +207,9 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 				}
 
@@ -218,7 +230,9 @@ module.exports = {
 						components: [],
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 
 				await new Promise((resolve) => {
@@ -236,7 +250,9 @@ module.exports = {
 			await botReply
 				.delete()
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 
 			const thirstPoints = await condition.decreaseThirst(profileData);
@@ -265,21 +281,17 @@ module.exports = {
 				experiencePoints = Loottable(41, 20);
 			}
 
-			profileData = await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{
-						$inc: {
-							experience: +experiencePoints,
-							energy: -energyPoints,
-							hunger: -hungerPoints,
-							thirst: -thirstPoints,
-						},
+			profileData = await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{
+					$inc: {
+						experience: +experiencePoints,
+						energy: -energyPoints,
+						hunger: -hungerPoints,
+						thirst: -thirstPoints,
 					},
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+				},
+			);
 
 			const embed = {
 				color: profileData.color,
@@ -317,14 +329,10 @@ module.exports = {
 
 			await condition.decreaseHealth(message, profileData, botReply);
 
-			profileData = await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $set: { injuryObject: userInjuryObject } },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			profileData = await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { injuryObject: userInjuryObject } },
+			);
 
 			await levels.levelCheck(message, profileData, botReply);
 
@@ -336,14 +344,10 @@ module.exports = {
 
 			async function findQuest() {
 
-				await profileModel
-					.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{ $set: { hasQuest: true } },
-					)
-					.catch((error) => {
-						throw new Error(error);
-					});
+				await profileModel.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $set: { hasQuest: true } },
+				);
 
 				if (profileData.rank == 'Apprentice') {
 
@@ -408,7 +412,9 @@ module.exports = {
 						allowedMentions: { repliedUser: true },
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 
@@ -429,7 +435,9 @@ module.exports = {
 							allowedMentions: { repliedUser: true },
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 				}
 
@@ -446,14 +454,10 @@ module.exports = {
 							healthPoints = profileData.health;
 						}
 
-						profileData = await profileModel
-							.findOneAndUpdate(
-								{ userId: message.author.id, serverId: message.guild.id },
-								{ $inc: { health: -healthPoints } },
-							)
-							.catch((error) => {
-								throw new Error(error);
-							});
+						profileData = await profileModel.findOneAndUpdate(
+							{ userId: message.author.id, serverId: message.guild.id },
+							{ $inc: { health: -healthPoints } },
+						);
 
 						const weightedHurtChance = weightedTable({ 0: 15, 1: 78, 2: 7 });
 						switch (true) {
@@ -533,7 +537,9 @@ module.exports = {
 								allowedMentions: { repliedUser: true },
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 					}
 
@@ -587,7 +593,9 @@ module.exports = {
 							allowedMentions: { repliedUser: true },
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 				}
 
@@ -650,7 +658,9 @@ module.exports = {
 						allowedMentions: { repliedUser: true },
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 
 				return await new Promise((resolve) => {
@@ -700,7 +710,9 @@ module.exports = {
 									components: [],
 								})
 								.catch((error) => {
-									throw new Error(error);
+									if (error.httpStatus !== 404) {
+										throw new Error(error);
+									}
 								});
 
 							return resolve();
@@ -830,7 +842,9 @@ module.exports = {
 									components: [fightComponents],
 								})
 								.catch((error) => {
-									throw new Error(error);
+									if (error.httpStatus !== 404) {
+										throw new Error(error);
+									}
 								});
 						}
 
@@ -885,14 +899,10 @@ module.exports = {
 
 								embed.footer.text = `${embedFooterStatsText}\n+1 ${opponentSpecies}`;
 
-								profileData = await profileModel
-									.findOneAndUpdate(
-										{ userId: message.author.id, serverId: message.guild.id },
-										{ $set: { inventoryObject: userInventory } },
-									)
-									.catch((error) => {
-										throw new Error(error);
-									});
+								profileData = await profileModel.findOneAndUpdate(
+									{ userId: message.author.id, serverId: message.guild.id },
+									{ $set: { inventoryObject: userInventory } },
+								);
 							}
 							else if (opponentLevel > playerLevel) {
 
@@ -903,14 +913,10 @@ module.exports = {
 									healthPoints = profileData.health;
 								}
 
-								await profileModel
-									.findOneAndUpdate(
-										{ userId: message.author.id, serverId: message.guild.id },
-										{ $inc: { health: -healthPoints } },
-									)
-									.catch((error) => {
-										throw new Error(error);
-									});
+								await profileModel.findOneAndUpdate(
+									{ userId: message.author.id, serverId: message.guild.id },
+									{ $inc: { health: -healthPoints } },
+								);
 
 								switch (weightedTable({ 0: 1, 1: 1 })) {
 
@@ -967,7 +973,9 @@ module.exports = {
 									components: [],
 								})
 								.catch((error) => {
-									throw new Error(error);
+									if (error.httpStatus !== 404) {
+										throw new Error(error);
+									}
 								});
 
 							return resolve();

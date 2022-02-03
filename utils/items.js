@@ -16,14 +16,10 @@ module.exports = {
 
 		userInventory.commonPlants[randomCommonPlant] += 1;
 
-		profileData = await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { inventoryObject: userInventory } },
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+		profileData = await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{ $set: { inventoryObject: userInventory } },
+		);
 
 		return randomCommonPlant;
 	},
@@ -41,14 +37,10 @@ module.exports = {
 
 		userInventory.uncommonPlants[randomUncommonPlant] += 1;
 
-		profileData = await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { inventoryObject: userInventory } },
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+		profileData = await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{ $set: { inventoryObject: userInventory } },
+		);
 
 		return randomUncommonPlant;
 	},
@@ -66,14 +58,10 @@ module.exports = {
 
 		userInventory.rarePlants[randomRarePlant] += 1;
 
-		profileData = await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { inventoryObject: userInventory } },
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+		profileData = await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{ $set: { inventoryObject: userInventory } },
+		);
 
 		return randomRarePlant;
 	},

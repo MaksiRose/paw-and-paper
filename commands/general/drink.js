@@ -33,20 +33,18 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
 		if (profileData.currentRegion != 'lake') {
 
-			await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $set: { currentRegion: 'lake' } },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { currentRegion: 'lake' } },
+			);
 		}
 
 		embedArray.push({
@@ -69,7 +67,9 @@ module.exports = {
 				}],
 			})
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 
 		return await new Promise((resolve) => {
@@ -86,17 +86,12 @@ module.exports = {
 					thirstPoints -= (profileData.thirst + thirstPoints) - profileData.maxThirst;
 				}
 
-				profileData = await profileModel
-					.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{
-							$inc: { thirst: +thirstPoints },
-						},
-					)
-					.catch((error) => {
-						throw new Error(error);
-					});
-
+				profileData = await profileModel.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{
+						$inc: { thirst: +thirstPoints },
+					},
+				);
 				embedArray.splice(-1, 1, {
 					color: profileData.color,
 					author: { name: profileData.name, icon_url: profileData.avatarURL },
@@ -105,9 +100,13 @@ module.exports = {
 				});
 
 				await botReply
-					.edit({ embeds: embedArray, components: [] })
+					.edit({
+						embeds: embedArray, components: [],
+					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 
 				return resolve();

@@ -17,7 +17,9 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -46,7 +48,9 @@ module.exports = {
 				}],
 			})
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 
 		client.on('messageCreate', async function removeDeleteMessageComponents(newMessage) {
@@ -66,7 +70,9 @@ module.exports = {
 					components: [],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 
 			return client.off('messageCreate', removeDeleteMessageComponents);
@@ -98,7 +104,9 @@ module.exports = {
 						components: [],
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 
@@ -106,17 +114,10 @@ module.exports = {
 
 			if (interaction.customId == 'delete-confirm') {
 
-				await profileModel
-					.findOneAndDelete({
-						userId: message.author.id,
-						serverId: message.guild.id,
-					})
-					.then((value) => {
-						console.log('Deleted User: ' + value);
-					})
-					.catch((error) => {
-						throw new Error(error);
-					});
+				await profileModel.findOneAndDelete({
+					userId: message.author.id,
+					serverId: message.guild.id,
+				});
 
 				return await interaction.message
 					.edit({
@@ -128,7 +129,9 @@ module.exports = {
 						components: [],
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 
@@ -144,7 +147,9 @@ module.exports = {
 						components: [],
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 		});

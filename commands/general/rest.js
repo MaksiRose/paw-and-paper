@@ -42,7 +42,9 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -57,23 +59,21 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
-		await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{
-					$set: {
-						isResting: true,
-						currentRegion: 'sleeping dens',
-					},
+		await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{
+				$set: {
+					isResting: true,
+					currentRegion: 'sleeping dens',
 				},
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+			},
+		);
 
 		const botReply = await message
 			.reply({
@@ -85,7 +85,9 @@ module.exports = {
 				}],
 			})
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 
 		await executeResting.startResting(message, profileData, botReply);

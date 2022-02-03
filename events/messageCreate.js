@@ -21,21 +21,14 @@ module.exports = {
 			return;
 		}
 
-		let profileData = await profileModel
-			.findOne({
-				userId: message.author.id,
-				serverId: message.guild.id,
-			}).catch(async (error) => {
-				return await errorHandling.output(message, error);
-			});
+		let profileData = await profileModel.findOne({
+			userId: message.author.id,
+			serverId: message.guild.id,
+		});
 
-		let serverData = await serverModel
-			.findOne({
-				serverId: message.guild.id,
-			})
-			.catch(async (error) => {
-				return await errorHandling.output(message, error);
-			});
+		let serverData = await serverModel.findOne({
+			serverId: message.guild.id,
+		});
 
 		if (!serverData) {
 
@@ -71,8 +64,6 @@ module.exports = {
 				name: message.guild.name,
 				inventoryObject: serverInventoryObject,
 				accountsToDelete: {},
-			}).catch(async (error) => {
-				return await errorHandling.output(message, error);
 			});
 		}
 
@@ -88,14 +79,10 @@ module.exports = {
 				}
 			}
 
-			serverData = await serverModel
-				.findOneAndUpdate(
-					{ serverId: message.guild.id },
-					{ $set: { 'inventoryObject.meat': serverMeatObject } },
-				)
-				.catch(async (error) => {
-					return await errorHandling.output(message, error);
-				});
+			serverData = await serverModel.findOneAndUpdate(
+				{ serverId: message.guild.id },
+				{ $set: { 'inventoryObject.meat': serverMeatObject } },
+			);
 		}
 
 		if (maps.commonPlantMap.size > Object.keys(serverData.inventoryObject.commonPlants).length) {
@@ -110,14 +97,10 @@ module.exports = {
 				}
 			}
 
-			serverData = await serverModel
-				.findOneAndUpdate(
-					{ serverId: message.guild.id },
-					{ $set: { 'inventoryObject.commonPlants': serverCommonPlantMap } },
-				)
-				.catch(async (error) => {
-					return await errorHandling.output(message, error);
-				});
+			serverData = await serverModel.findOneAndUpdate(
+				{ serverId: message.guild.id },
+				{ $set: { 'inventoryObject.commonPlants': serverCommonPlantMap } },
+			);
 		}
 
 		if (maps.uncommonPlantMap.size > Object.keys(serverData.inventoryObject.uncommonPlants).length) {
@@ -132,14 +115,10 @@ module.exports = {
 				}
 			}
 
-			serverData = await serverModel
-				.findOneAndUpdate(
-					{ serverId: message.guild.id },
-					{ $set: { 'inventoryObject.uncommonPlants': serverUncommonPlantMap } },
-				)
-				.catch(async (error) => {
-					return await errorHandling.output(message, error);
-				});
+			serverData = await serverModel.findOneAndUpdate(
+				{ serverId: message.guild.id },
+				{ $set: { 'inventoryObject.uncommonPlants': serverUncommonPlantMap } },
+			);
 		}
 
 		if (maps.rarePlantMap.size > Object.keys(serverData.inventoryObject.rarePlants).length) {
@@ -154,14 +133,10 @@ module.exports = {
 				}
 			}
 
-			serverData = await serverModel
-				.findOneAndUpdate(
-					{ serverId: message.guild.id },
-					{ $set: { 'inventoryObject.rarePlants': serverRarePlantMap } },
-				)
-				.catch(async (error) => {
-					return await errorHandling.output(message, error);
-				});
+			serverData = await serverModel.findOneAndUpdate(
+				{ serverId: message.guild.id },
+				{ $set: { 'inventoryObject.rarePlants': serverRarePlantMap } },
+			);
 		}
 
 		let pingRuins = false;
@@ -182,7 +157,9 @@ module.exports = {
 					}],
 				})
 				.catch(async (error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 
 			console.log(`\x1b[32m${message.author.tag}\x1b[0m unsuccessfully tried to execute \x1b[33m${message.content} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
@@ -244,29 +221,23 @@ module.exports = {
 
 					if (profileData && usersActiveCommandsAmountMap.get(message.author.id).activeCommands <= 0) {
 
-						profileData = await profileModel
-							.findOne({
-								userId: message.author.id,
-								serverId: message.guild.id,
-							}).catch(async (error) => {
-								return await errorHandling.output(message, error);
-							});
+						profileData = await profileModel.findOne({
+							userId: message.author.id,
+							serverId: message.guild.id,
+						});
 
 						automaticCooldownTimeoutArray[message.author.id] = setTimeout(async function() {
 
-							profileData = await profileModel
-								.findOneAndUpdate(
-									{ userId: message.author.id, serverId: message.guild.id },
-									{ $set: { hasCooldown: false } },
-								)
-								.catch(async (error) => {
-									await errorHandling.output(message, error);
-								});
+							profileData = await profileModel.findOneAndUpdate(
+								{ userId: message.author.id, serverId: message.guild.id },
+								{ $set: { hasCooldown: false } },
+							);
 						}, 3000);
 					}
 				})
-				.catch(() => {
+				.catch(async (error) => {
 					--usersActiveCommandsAmountMap.get(message.author.id).activeCommands;
+					await errorHandling.output(message, error);
 				});
 		}
 		catch (error) {
@@ -281,14 +252,10 @@ module.exports = {
 
 		async function automaticRestingTimeoutFunction() {
 
-			profileData = await profileModel
-				.findOne({
-					userId: message.author.id,
-					serverId: message.guild.id,
-				})
-				.catch(async (error) => {
-					return await errorHandling.output(message, error);
-				});
+			profileData = await profileModel.findOne({
+				userId: message.author.id,
+				serverId: message.guild.id,
+			});
 
 			if (profileData && profileData.isResting == false && profileData.energy < profileData.maxEnergy) {
 
@@ -298,14 +265,10 @@ module.exports = {
 
 						automaticCooldownTimeoutArray[message.author.id] = setTimeout(async function() {
 
-							profileData = await profileModel
-								.findOneAndUpdate(
-									{ userId: message.author.id, serverId: message.guild.id },
-									{ $set: { hasCooldown: false } },
-								)
-								.catch(async (error) => {
-									await errorHandling.output(message, error);
-								});
+							profileData = await profileModel.findOneAndUpdate(
+								{ userId: message.author.id, serverId: message.guild.id },
+								{ $set: { hasCooldown: false } },
+							);
 						}, 3000);
 					})
 					.catch(async (error) => {

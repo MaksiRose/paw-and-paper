@@ -36,7 +36,9 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -53,7 +55,9 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -70,7 +74,9 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -95,21 +101,17 @@ module.exports = {
 			experiencePoints = Loottable(11, 5);
 		}
 
-		profileData = await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{
-					$inc: {
-						experience: +experiencePoints,
-						energy: -energyPoints,
-						hunger: -hungerPoints,
-						thirst: -thirstPoints,
-					},
+		profileData = await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{
+				$inc: {
+					experience: +experiencePoints,
+					energy: -energyPoints,
+					hunger: -hungerPoints,
+					thirst: -thirstPoints,
 				},
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+			},
+		);
 
 		let embedFooterStatsText = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
 
@@ -125,16 +127,12 @@ module.exports = {
 
 		if (profileData.currentRegion != 'prairie') {
 
-			await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{
-						$set: { currentRegion: 'prairie' },
-					},
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{
+					$set: { currentRegion: 'prairie' },
+				},
+			);
 
 			embedFooterStatsText += '\nYou are now at the prairie';
 		}
@@ -152,14 +150,10 @@ module.exports = {
 
 		if (!message.mentions.users.size) {
 
-			let allPrairieProfilesArray = await profileModel
-				.find({
-					serverId: message.guild.id,
-					currentRegion: 'prairie',
-				})
-				.catch((error) => {
-					throw new Error(error);
-				});
+			let allPrairieProfilesArray = await profileModel.find({
+				serverId: message.guild.id,
+				currentRegion: 'prairie',
+			});
 
 			allPrairieProfilesArray = allPrairieProfilesArray.map(doc => doc.userId);
 			const allPrairieProfilesArrayUserIndex = allPrairieProfilesArray.indexOf(`${profileData.userId}`);
@@ -178,14 +172,10 @@ module.exports = {
 
 				const allPrairieProfilesArrayRandomIndex = Loottable(allPrairieProfilesArray.length, 0);
 
-				const partnerProfileData = await profileModel
-					.findOne({
-						userId: allPrairieProfilesArray[allPrairieProfilesArrayRandomIndex],
-						serverId: message.guild.id,
-					})
-					.catch((error) => {
-						throw new Error(error);
-					});
+				const partnerProfileData = await profileModel.findOne({
+					userId: allPrairieProfilesArray[allPrairieProfilesArrayRandomIndex],
+					serverId: message.guild.id,
+				});
 
 				const playTogetherChance = weightedTable({ 0: 3, 1: 7 });
 				if (playTogetherChance == 1 && partnerProfileData.energy > 0 && partnerProfileData.health > 0 && partnerProfileData.hunger > 0 && partnerProfileData.thirst > 0) {
@@ -204,32 +194,24 @@ module.exports = {
 		}
 		else {
 
-			const partnerProfileData = await profileModel
-				.findOne({
-					userId: message.mentions.users.first().id,
-					serverId: message.guild.id,
-				})
-				.catch((error) => {
-					throw new Error(error);
-				});
+			const partnerProfileData = await profileModel.findOne({
+				userId: message.mentions.users.first().id,
+				serverId: message.guild.id,
+			});
 
 			if (!partnerProfileData || partnerProfileData.name == '' || partnerProfileData.species == '' || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0) {
 
-				await profileModel
-					.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{
-							$inc: {
-								experience: -experiencePoints,
-								energy: +energyPoints,
-								hunger: +hungerPoints,
-								thirst: +thirstPoints,
-							},
+				await profileModel.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{
+						$inc: {
+							experience: -experiencePoints,
+							energy: +energyPoints,
+							hunger: +hungerPoints,
+							thirst: +thirstPoints,
 						},
-					)
-					.catch((error) => {
-						throw new Error(error);
-					});
+					},
+				);
 
 				embedArray.push({
 					color: profileData.color,
@@ -242,7 +224,9 @@ module.exports = {
 						embeds: embedArray,
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 
@@ -254,19 +238,17 @@ module.exports = {
 				embeds: embedArray,
 			})
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 
 		await condition.decreaseHealth(message, profileData, botReply);
 
-		profileData = await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { injuryObject: userInjuryObject } },
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+		profileData = await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{ $set: { injuryObject: userInjuryObject } },
+		);
 
 		await levels.levelCheck(message, profileData, botReply);
 
@@ -278,14 +260,10 @@ module.exports = {
 
 		async function findQuest() {
 
-			await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $set: { hasQuest: true } },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { hasQuest: true } },
+			);
 
 			embed.description = `*${profileData.name} lifts ${profileData.pronounArray[2]} head to investigate the sound of a faint cry. Almost sure that it was someone in need of help, ${profileData.pronounArray[0]} dashes from where ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'is' : 'are')} standing and bolts for the sound. Soon ${profileData.name} comes along to the intimidating mouth of a dark cave covered by a boulder. The cries for help still ricocheting through ${profileData.pronounArray[2]} brain. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} must help them...*`;
 			embed.footer.text = `Type 'rp quest' to continue!\n\n${embedFooterStatsText}`;
@@ -316,14 +294,10 @@ module.exports = {
 					healthPoints = profileData.health;
 				}
 
-				profileData = await profileModel
-					.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{ $inc: { health: -healthPoints } },
-					)
-					.catch((error) => {
-						throw new Error(error);
-					});
+				profileData = await profileModel.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $inc: { health: -healthPoints } },
+				);
 
 				switch (true) {
 
@@ -364,14 +338,10 @@ module.exports = {
 				partnerHealthPoints = partnerHealthPoints - ((partnerProfileData.health + partnerHealthPoints) - partnerProfileData.maxHealth);
 			}
 
-			partnerProfileData = await profileModel
-				.findOneAndUpdate(
-					{ userId: partnerProfileData.userId, serverId: message.guild.id },
-					{ $inc: { health: partnerHealthPoints } },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			partnerProfileData = await profileModel.findOneAndUpdate(
+				{ userId: partnerProfileData.userId, serverId: message.guild.id },
+				{ $inc: { health: partnerHealthPoints } },
+			);
 
 			if (partnerHealthPoints >= 1) {
 
@@ -406,14 +376,10 @@ module.exports = {
 						healthPoints = profileData.health;
 					}
 
-					profileData = await profileModel
-						.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
-							{ $inc: { health: -healthPoints } },
-						)
-						.catch((error) => {
-							throw new Error(error);
-						});
+					profileData = await profileModel.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{ $inc: { health: -healthPoints } },
+					);
 
 					userInjuryObject.cold = true;
 

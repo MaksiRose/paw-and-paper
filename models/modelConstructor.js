@@ -84,6 +84,22 @@ class model {
 			}
 		};
 
+		this.findOneAndDelete = async function(filterObject) {
+
+			const dataObject = await this.findOne(filterObject);
+
+			if (!dataObject) {
+
+				return null;
+			}
+
+			fs.unlinkSync(`${path}/${dataObject.uuid}.json`);
+
+			console.log('Deleted File: ', dataObject);
+
+			return;
+		};
+
 		this.findOneAndUpdate = async function(filterObject, updateObject) {
 
 			const dataObject = await this.findOne(filterObject);

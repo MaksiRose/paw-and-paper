@@ -41,18 +41,16 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
-		await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { hasQuest: false } },
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+		await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{ $set: { hasQuest: false } },
+		);
 
 		let hitEmoji = '';
 		let missEmoji = '';
@@ -266,7 +264,9 @@ module.exports = {
 						}],
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 			else {
@@ -280,7 +280,9 @@ module.exports = {
 						}],
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 
@@ -304,13 +306,10 @@ module.exports = {
 
 						if (profileData.unlockedRanks < 3) {
 
-							await profileModel
-								.findOneAndUpdate(
-									{ userId: message.author.id, serverId: message.guild.id },
-									{ $inc: { unlockedRanks: +1 } },
-								).catch((error) => {
-									throw new Error(error);
-								});
+							await profileModel.findOneAndUpdate(
+								{ userId: message.author.id, serverId: message.guild.id },
+								{ $inc: { unlockedRanks: +1 } },
+							);
 						}
 
 						let description = '';
@@ -388,20 +387,17 @@ module.exports = {
 								footer = '+10 maximum thirst\n\n';
 							}
 
-							await profileModel
-								.findOneAndUpdate(
-									{ userId: message.author.id, serverId: message.guild.id },
-									{
-										$inc: {
-											maxHealth: maxHealthPoints,
-											maxEnergy: maxEnergyPoints,
-											maxHunger: maxHungerPoints,
-											maxThirst: maxThirstPoints,
-										},
+							await profileModel.findOneAndUpdate(
+								{ userId: message.author.id, serverId: message.guild.id },
+								{
+									$inc: {
+										maxHealth: maxHealthPoints,
+										maxEnergy: maxEnergyPoints,
+										maxHunger: maxHungerPoints,
+										maxThirst: maxThirstPoints,
 									},
-								).catch((error) => {
-									throw new Error(error);
-								});
+								},
+							);
 						}
 
 						embedArray.push({
@@ -417,7 +413,9 @@ module.exports = {
 								components: [],
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 
 						return resolve();
@@ -487,7 +485,9 @@ module.exports = {
 								components: [],
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 
 						return resolve();

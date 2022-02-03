@@ -37,36 +37,34 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
-		let allHurtProfilesArray = await profileModel
-			.find({
-				$and: [{
-					serverId: message.guild.id,
-					$or: [
-						{ energy: 0 },
-						{ health: 0 },
-						{ hunger: 0 },
-						{ thirst: 0 },
-						{
-							injuryObject: {
-								$or: [
-									{ wounds: { $gt: 0 } },
-									{ infections: { $gt: 0 } },
-									{ cold: true },
-									{ sprains: { $gt: 0 } },
-									{ poison: true },
-								],
-							},
+		let allHurtProfilesArray = await profileModel.find({
+			$and: [{
+				serverId: message.guild.id,
+				$or: [
+					{ energy: 0 },
+					{ health: 0 },
+					{ hunger: 0 },
+					{ thirst: 0 },
+					{
+						injuryObject: {
+							$or: [
+								{ wounds: { $gt: 0 } },
+								{ infections: { $gt: 0 } },
+								{ cold: true },
+								{ sprains: { $gt: 0 } },
+								{ poison: true },
+							],
 						},
-					],
-				}],
-			})
-			.catch((error) => {
-				throw new Error(error);
-			});
+					},
+				],
+			}],
+		});
 
 		allHurtProfilesArray = allHurtProfilesArray.map(doc => doc.userId);
 
@@ -88,14 +86,10 @@ module.exports = {
 					throw new Error(error);
 				});
 
-			const userProfileData = await profileModel
-				.findOne({
-					userId: user.id,
-					serverId: message.guild.id,
-				})
-				.catch((error) => {
-					throw new Error(error);
-				});
+			const userProfileData = await profileModel.findOne({
+				userId: user.id,
+				serverId: message.guild.id,
+			});
 
 			if (userSelectMenu.components[0].options.length > 25) {
 
@@ -136,7 +130,9 @@ module.exports = {
 					components: [],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 
 			return client.off('messageCreate', removeHealComponents);
@@ -172,7 +168,9 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 				}
 
@@ -180,14 +178,10 @@ module.exports = {
 
 				if (allHurtProfilesArray.includes(interaction.values[0])) {
 
-					chosenProfileData = await profileModel
-						.findOne({
-							userId: interaction.values[0],
-							serverId: message.guild.id,
-						})
-						.catch((error) => {
-							throw new Error(error);
-						});
+					chosenProfileData = await profileModel.findOne({
+						userId: interaction.values[0],
+						serverId: message.guild.id,
+					});
 
 					if (chosenProfileData.name === '' || chosenProfileData.species === '') {
 
@@ -205,7 +199,9 @@ module.exports = {
 								embeds: embedArray,
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 					}
 					else {
@@ -239,14 +235,10 @@ module.exports = {
 								throw new Error(error);
 							});
 
-						const userProfileData = await profileModel
-							.findOne({
-								userId: user.id,
-								serverId: message.guild.id,
-							})
-							.catch((error) => {
-								throw new Error(error);
-							});
+						const userProfileData = await profileModel.findOne({
+							userId: user.id,
+							serverId: message.guild.id,
+						});
 
 						userSelectMenu.components[0].options.push({ label: userProfileData.name, value: user.id });
 					}
@@ -261,7 +253,9 @@ module.exports = {
 							components: componentArray,
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 				}
 
@@ -310,7 +304,9 @@ module.exports = {
 							components: componentArray,
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 				}
 
@@ -367,7 +363,9 @@ module.exports = {
 							components: componentArray,
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 				}
 
@@ -399,21 +397,17 @@ module.exports = {
 						experiencePoints = Loottable(41, 20);
 					}
 
-					profileData = await profileModel
-						.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
-							{
-								$inc: {
-									experience: +experiencePoints,
-									energy: -energyPoints,
-									hunger: -hungerPoints,
-									thirst: -thirstPoints,
-								},
+					profileData = await profileModel.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{
+							$inc: {
+								experience: +experiencePoints,
+								energy: -energyPoints,
+								hunger: -hungerPoints,
+								thirst: -thirstPoints,
 							},
-						)
-						.catch((error) => {
-							throw new Error(error);
-						});
+						},
+					);
 
 					let embedFooterStatsText = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
 
@@ -459,14 +453,10 @@ module.exports = {
 
 							const chosenUserThirstPoints = Loottable(10, 1);
 
-							chosenProfileData = await profileModel
-								.findOneAndUpdate(
-									{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
-									{ $inc: { thirst: +chosenUserThirstPoints } },
-								)
-								.catch((error) => {
-									throw new Error(error);
-								});
+							chosenProfileData = await profileModel.findOneAndUpdate(
+								{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
+								{ $inc: { thirst: +chosenUserThirstPoints } },
+							);
 
 							embed.description = `*${profileData.name} takes ${chosenProfileData.name}'s body, drags it over to the river, and positions ${chosenProfileData.pronounArray[2]} head right over the water. The ${chosenProfileData.species} sticks ${chosenProfileData.pronounArray[2]} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${chosenProfileData.pronounArray[2]} body.*`;
 							embed.footer.text = `${embedFooterStatsText}\n\n+${chosenUserThirstPoints} thirst for ${chosenProfileData.name} (${chosenProfileData.thirst}/${chosenProfileData.maxThirst})`;
@@ -479,7 +469,9 @@ module.exports = {
 								components: [],
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 
 					}
@@ -612,20 +604,16 @@ module.exports = {
 							}
 						}
 
-						await serverModel
-							.findOneAndUpdate(
-								{ serverId: message.guild.id },
-								{
-									$set: {
-										commonPlantsArray: serverPlantInventory[0],
-										uncommonPlantsArray: serverPlantInventory[1],
-										rarePlantsArray: serverPlantInventory[2],
-									},
+						await serverModel.findOneAndUpdate(
+							{ serverId: message.guild.id },
+							{
+								$set: {
+									commonPlantsArray: serverPlantInventory[0],
+									uncommonPlantsArray: serverPlantInventory[1],
+									rarePlantsArray: serverPlantInventory[2],
 								},
-							)
-							.catch((error) => {
-								throw new Error(error);
-							});
+							},
+						);
 
 						if (isSuccessful == 1 && chosenProfileData.userId == profileData.userId && Loottable(100 + ((profileData.levels - 1) * 5), 1) <= 60) {
 
@@ -642,21 +630,17 @@ module.exports = {
 								chosenUserHealthPoints -= (chosenProfileData.health + chosenUserHealthPoints) - chosenProfileData.maxHealth;
 							}
 
-							chosenProfileData = await profileModel
-								.findOneAndUpdate(
-									{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
-									{
-										$inc: {
-											hunger: +chosenUserHungerPoints,
-											energy: +chosenUserEnergyPoints,
-											health: +chosenUserHealthPoints,
-										},
-										$set: { injuryObject: chosenUserInjuryObject },
+							chosenProfileData = await profileModel.findOneAndUpdate(
+								{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
+								{
+									$inc: {
+										hunger: +chosenUserHungerPoints,
+										energy: +chosenUserEnergyPoints,
+										health: +chosenUserHealthPoints,
 									},
-								)
-								.catch((error) => {
-									throw new Error(error);
-								});
+									$set: { injuryObject: chosenUserInjuryObject },
+								},
+							);
 
 							if (chosenProfileData.userId == profileData.userId) {
 
@@ -673,14 +657,10 @@ module.exports = {
 							}
 						}
 						else {
-							chosenProfileData = await profileModel
-								.findOne({
-									userId: chosenProfileData.userId,
-									serverId: chosenProfileData.serverId,
-								})
-								.catch((error) => {
-									throw new Error(error);
-								});
+							chosenProfileData = await profileModel.findOne({
+								userId: chosenProfileData.userId,
+								serverId: chosenProfileData.serverId,
+							});
 
 							if (chosenProfileData.userId == profileData.userId) {
 
@@ -707,14 +687,10 @@ module.exports = {
 							healthPoints = profileData.health;
 						}
 
-						profileData = await profileModel
-							.findOneAndUpdate(
-								{ userId: message.author.id, serverId: message.guild.id },
-								{ $inc: { health: -healthPoints } },
-							)
-							.catch((error) => {
-								throw new Error(error);
-							});
+						profileData = await profileModel.findOneAndUpdate(
+							{ userId: message.author.id, serverId: message.guild.id },
+							{ $inc: { health: -healthPoints } },
+						);
 
 						userInjuryObject.cold = true;
 
@@ -728,7 +704,9 @@ module.exports = {
 					interaction.message
 						.delete()
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 
 					botReply = await message
@@ -737,19 +715,17 @@ module.exports = {
 							embeds: embedArray,
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 
 					await condition.decreaseHealth(message, profileData, botReply);
 
-					profileData = await profileModel
-						.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
-							{ $set: { injuryObject: userInjuryObject } },
-						)
-						.catch((error) => {
-							throw new Error(error);
-						});
+					profileData = await profileModel.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{ $set: { injuryObject: userInjuryObject } },
+					);
 
 					await levels.levelCheck(message, profileData, botReply);
 
@@ -781,7 +757,15 @@ module.exports = {
 				description: `*${profileData.name} sits in front of the medicine den, looking if anyone needs help with injuries or illnesses.*`,
 			});
 
-			botReply = await message.reply({ embeds: embedArray, components: componentArray });
+			botReply = await message
+				.reply({
+					embeds: embedArray, components: componentArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
 		}
 
 		async function getWoundList(healUser) {
@@ -843,7 +827,15 @@ module.exports = {
 
 				embedArray.push(embed);
 
-				return botReply = await message.reply({ embeds: embedArray, components: [userSelectMenu] });
+				return botReply = await message
+					.reply({
+						embeds: embedArray, components: [userSelectMenu],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
 			}
 
 			embedArray.length = embedArrayOriginalLength;
@@ -851,11 +843,27 @@ module.exports = {
 
 			if (!botReply) {
 
-				return botReply = await message.reply({ embeds: embedArray, components: [userSelectMenu, inventoryPageSelectMenu] });
+				return botReply = await message
+					.reply({
+						embeds: embedArray, components: [userSelectMenu, inventoryPageSelectMenu],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
 			}
 			else {
 
-				return botReply = await botReply.edit({ embeds: embedArray, components: [userSelectMenu, inventoryPageSelectMenu] });
+				return botReply = await botReply
+					.edit({
+						embeds: embedArray, components: [userSelectMenu, inventoryPageSelectMenu],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
 			}
 		}
 

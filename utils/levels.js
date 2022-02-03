@@ -9,19 +9,15 @@ module.exports = {
 
 		if (profileData.experience >= requiredExperiencePoints) {
 
-			profileData = await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{
-						$inc: {
-							experience: -requiredExperiencePoints,
-							levels: +1,
-						},
+			profileData = await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{
+					$inc: {
+						experience: -requiredExperiencePoints,
+						levels: +1,
 					},
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+				},
+			);
 
 			const embed = {
 				color: profileData.color,
@@ -34,7 +30,9 @@ module.exports = {
 					embeds: botReply.embeds,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 	},
@@ -69,20 +67,16 @@ module.exports = {
 			emptyUserInventory.meat[speciesName] = 0;
 		}
 
-		await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{
-					$set: {
-						levels: newUserLevel,
-						experience: 0,
-						inventoryObject: emptyUserInventory,
-					},
+		await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{
+				$set: {
+					levels: newUserLevel,
+					experience: 0,
+					inventoryObject: emptyUserInventory,
 				},
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+			},
+		);
 	},
 
 };

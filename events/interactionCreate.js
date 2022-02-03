@@ -24,7 +24,9 @@ module.exports = {
 			return await interaction.message
 				.delete()
 				.catch(async (error) => {
-					return await errorHandling.output(interaction.message, error);
+					if (error.httpStatus !== 404) {
+						return await errorHandling.output(interaction.message, error);
+					}
 				});
 		}
 
@@ -32,25 +34,14 @@ module.exports = {
 
 			const guildId = interaction.customId.split('-').pop();
 
-			const serverData = await serverModel
-				.findOne({
-					serverId: guildId,
-				})
-				.catch((error) => {
-					console.error(error);
-				});
+			const serverData = await serverModel.findOne({
+				serverId: guildId,
+			});
 
-			await profileModel
-				.findOneAndDelete({
-					userId: interaction.user.id,
-					serverId: guildId,
-				})
-				.then((value) => {
-					console.log('Deleted User: ' + value);
-				})
-				.catch((error) => {
-					console.error(error);
-				});
+			await profileModel.findOneAndDelete({
+				userId: interaction.user.id,
+				serverId: guildId,
+			});
 
 			const accountDeletionValues = serverData.accountsToDelete.get(`${interaction.user.id}`);
 			const user = await client.users.fetch(interaction.user.id);
@@ -67,7 +58,9 @@ module.exports = {
 					components: [],
 				})
 				.catch((error) => {
-					console.error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 
 			await serverData.accountsToDelete.delete(`${interaction.user.id}`);
@@ -92,21 +85,13 @@ module.exports = {
 			return;
 		}
 
-		const serverData = await serverModel
-			.findOne(
-				{ serverId: interaction.guild.id },
-			)
-			.catch(async (error) => {
-				return await errorHandling.output(interaction.message, error);
-			});
+		const serverData = await serverModel.findOne(
+			{ serverId: interaction.guild.id },
+		);
 
-		let profileData = await profileModel
-			.findOne(
-				{ userId: interaction.user.id, serverId: interaction.guild.id },
-			)
-			.catch(async (error) => {
-				return await errorHandling.output(interaction.message, error);
-			});
+		let profileData = await profileModel.findOne(
+			{ userId: interaction.user.id, serverId: interaction.guild.id },
+		);
 
 		const embedArray = interaction.message.embeds;
 
@@ -136,7 +121,9 @@ module.exports = {
 						}],
 					})
 					.catch(async (error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 
@@ -161,7 +148,9 @@ module.exports = {
 						}],
 					})
 					.catch(async (error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 
@@ -205,7 +194,9 @@ module.exports = {
 						}],
 					})
 					.catch(async (error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 
@@ -221,7 +212,9 @@ module.exports = {
 				interaction.message
 					.delete()
 					.catch(async (error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 
 				interaction.message.embeds.splice(-1, 1);
@@ -230,24 +223,17 @@ module.exports = {
 					.sendMessage(client, referencedMessage, interaction.values, profileData, serverData, interaction.message.embeds)
 					.then(async () => {
 
-						profileData = await profileModel
-							.findOne({
-								userId: interaction.user.id,
-								serverId: interaction.guild.id,
-							}).catch(async (error) => {
-								return await errorHandling.output(interaction.message, error);
-							});
+						profileData = await profileModel.findOne({
+							userId: interaction.user.id,
+							serverId: interaction.guild.id,
+						});
 
 						setTimeout(async function() {
 
-							profileData = await profileModel
-								.findOneAndUpdate(
-									{ userId: interaction.user.id, serverId: interaction.guild.id },
-									{ $set: { hasCooldown: false } },
-								)
-								.catch(async (error) => {
-									await errorHandling.output(referencedMessage, error);
-								});
+							profileData = await profileModel.findOneAndUpdate(
+								{ userId: interaction.user.id, serverId: interaction.guild.id },
+								{ $set: { hasCooldown: false } },
+							);
 						}, 3000);
 					})
 					.catch(async (error) => {
@@ -264,9 +250,13 @@ module.exports = {
 			if (interaction.customId == 'report') {
 
 				interaction.message
-					.edit({ components: [] })
+					.edit({
+						components: [],
+					})
 					.catch(async (error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 
 				const maksi = await client.users.fetch(config.maksi, false);
@@ -293,14 +283,10 @@ module.exports = {
 
 				if (referencedMessage.mentions.users.size > 0) {
 
-					profileData = await profileModel
-						.findOne({
-							userId: referencedMessage.mentions.users.first().id,
-							serverId: referencedMessage.guild.id,
-						})
-						.catch(async (error) => {
-							return await errorHandling.output(interaction.message, error);
-						});
+					profileData = await profileModel.findOne({
+						userId: referencedMessage.mentions.users.first().id,
+						serverId: referencedMessage.guild.id,
+					});
 				}
 
 				let injuryText = (Object.values(profileData.injuryObject).every(item => item == 0)) ? 'none' : '';
@@ -342,7 +328,9 @@ module.exports = {
 						}],
 					})
 					.catch(async (error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 
@@ -351,7 +339,9 @@ module.exports = {
 				interaction.message
 					.delete()
 					.catch(async (error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 
 				embedArray.pop();
@@ -360,24 +350,17 @@ module.exports = {
 					.sendMessage(client, referencedMessage, interaction.values, profileData, serverData, embedArray)
 					.then(async () => {
 
-						profileData = await profileModel
-							.findOne({
-								userId: interaction.user.id,
-								serverId: interaction.guild.id,
-							}).catch(async (error) => {
-								return await errorHandling.output(interaction.message, error);
-							});
+						profileData = await profileModel.findOne({
+							userId: interaction.user.id,
+							serverId: interaction.guild.id,
+						});
 
 						setTimeout(async function() {
 
-							profileData = await profileModel
-								.findOneAndUpdate(
-									{ userId: interaction.user.id, serverId: interaction.guild.id },
-									{ $set: { hasCooldown: false } },
-								)
-								.catch(async (error) => {
-									await errorHandling.output(referencedMessage, error);
-								});
+							profileData = await profileModel.findOneAndUpdate(
+								{ userId: interaction.user.id, serverId: interaction.guild.id },
+								{ $set: { hasCooldown: false } },
+							);
 						}, 3000);
 					})
 					.catch(async (error) => {

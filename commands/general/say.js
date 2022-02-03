@@ -36,24 +36,24 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
 		message
 			.delete()
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 
-		await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $inc: { experience: 1 } },
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+		await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{ $inc: { experience: 1 } },
+		);
 
 		embedArray.push({
 			color: profileData.color,
@@ -63,14 +63,10 @@ module.exports = {
 
 		if (pingRuins == true) {
 
-			let allRuinProfilesArray = await profileModel
-				.find({
-					serverId: message.guild.id,
-					currentRegion: profileData.currentRegion,
-				})
-				.catch((error) => {
-					throw new Error(error);
-				});
+			let allRuinProfilesArray = await profileModel.find({
+				serverId: message.guild.id,
+				currentRegion: profileData.currentRegion,
+			});
 
 			allRuinProfilesArray = allRuinProfilesArray.map(doc => doc.userId);
 			const allRuinProfilesArrayUserIndex = allRuinProfilesArray.indexOf(`${profileData.userId}`);

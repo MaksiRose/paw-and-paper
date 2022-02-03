@@ -189,25 +189,18 @@ module.exports = {
 		}
 
 		// this is done to keep the console logs injury Array correct
-		profileData = await profileModel
-			.findOne({
-				userId: message.author.id,
-				serverId: message.guild.id,
-			}).catch(async (error) => {
-				throw new Error(error);
-			});
+		profileData = await profileModel.findOne({
+			userId: message.author.id,
+			serverId: message.guild.id,
+		});
 
-		profileData = await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{
-					$inc: { health: -extraLostHealthPoints },
-					$set: { injuryObject: userInjuryObject },
-				},
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+		profileData = await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{
+				$inc: { health: -extraLostHealthPoints },
+				$set: { injuryObject: userInjuryObject },
+			},
+		);
 
 		embed.footer.text = `-${extraLostHealthPoints} HP (${profileData.health}/${profileData.maxHealth})`;
 
@@ -217,7 +210,9 @@ module.exports = {
 				embeds: botReply.embeds,
 			})
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 
 		function weightedTable(values) {

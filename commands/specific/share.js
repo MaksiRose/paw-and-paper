@@ -34,7 +34,9 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -51,7 +53,9 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -65,21 +69,17 @@ module.exports = {
 			energyPoints = profileData.energy;
 		}
 
-		profileData = await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{
-					$inc: {
-						energy: -energyPoints,
-						hunger: -hungerPoints,
-						thirst: -thirstPoints,
-					},
-					$set: { currentRegion: 'ruins' },
+		profileData = await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{
+				$inc: {
+					energy: -energyPoints,
+					hunger: -hungerPoints,
+					thirst: -thirstPoints,
 				},
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+				$set: { currentRegion: 'ruins' },
+			},
+		);
 
 		let embedFooterStatsText = `-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
 
@@ -110,14 +110,10 @@ module.exports = {
 
 		if (!message.mentions.users.size) {
 
-			let allRuinsProfilesArray = await profileModel
-				.find({
-					serverId: message.guild.id,
-					currentRegion: 'ruins',
-				})
-				.catch((error) => {
-					throw new Error(error);
-				});
+			let allRuinsProfilesArray = await profileModel.find({
+				serverId: message.guild.id,
+				currentRegion: 'ruins',
+			});
 
 			allRuinsProfilesArray = allRuinsProfilesArray.map(doc => doc.userId);
 			const allRuinsProfilesArrayUserIndex = allRuinsProfilesArray.indexOf(`${profileData.userId}`);
@@ -131,14 +127,10 @@ module.exports = {
 
 				const allRuinsProfilesArrayRandomIndex = Loottable(allRuinsProfilesArray.length, 0);
 
-				const partnerProfileData = await profileModel
-					.findOne({
-						userId: allRuinsProfilesArray[allRuinsProfilesArrayRandomIndex],
-						serverId: message.guild.id,
-					})
-					.catch((error) => {
-						throw new Error(error);
-					});
+				const partnerProfileData = await profileModel.findOne({
+					userId: allRuinsProfilesArray[allRuinsProfilesArrayRandomIndex],
+					serverId: message.guild.id,
+				});
 
 				if (partnerProfileData.energy > 0 && partnerProfileData.health > 0 && partnerProfileData.hunger > 0 || partnerProfileData.thirst > 0) {
 
@@ -155,31 +147,23 @@ module.exports = {
 			}
 		}
 		else {
-			const partnerProfileData = await profileModel
-				.findOne({
-					userId: message.mentions.users.first().id,
-					serverId: message.guild.id,
-				})
-				.catch((error) => {
-					throw new Error(error);
-				});
+			const partnerProfileData = await profileModel.findOne({
+				userId: message.mentions.users.first().id,
+				serverId: message.guild.id,
+			});
 
 			if (!partnerProfileData || partnerProfileData.name == '' || partnerProfileData.species == '' || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0) {
 
-				await profileModel
-					.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{
-							$inc: {
-								energy: +energyPoints,
-								hunger: +hungerPoints,
-								thirst: +thirstPoints,
-							},
+				await profileModel.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{
+						$inc: {
+							energy: +energyPoints,
+							hunger: +hungerPoints,
+							thirst: +thirstPoints,
 						},
-					)
-					.catch((error) => {
-						throw new Error(error);
-					});
+					},
+				);
 
 				embedArray.push({
 					color: profileData.color,
@@ -192,7 +176,9 @@ module.exports = {
 						embeds: embedArray,
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 			else {
@@ -206,19 +192,17 @@ module.exports = {
 				embeds: embedArray,
 			})
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 
 		await condition.decreaseHealth(message, profileData, botReply);
 
-		profileData = await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { injuryObject: userInjuryObject } },
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+		profileData = await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{ $set: { injuryObject: userInjuryObject } },
+		);
 
 		if (await checkValidity.isPassedOut(message, profileData)) {
 
@@ -230,33 +214,25 @@ module.exports = {
 
 			const partnerExperiencePoints = Loottable(41, 20);
 
-			partnerProfileData = await profileModel
-				.findOneAndUpdate(
-					{ userId: partnerProfileData.userId, serverId: message.guild.id },
-					{ $inc: { experience: +partnerExperiencePoints } },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			partnerProfileData = await profileModel.findOneAndUpdate(
+				{ userId: partnerProfileData.userId, serverId: message.guild.id },
+				{ $inc: { experience: +partnerExperiencePoints } },
+			);
 
 			embed.description = `*${partnerProfileData.name} comes running to the old wooden trunk at the ruins where ${profileData.name} sits, ready to tell an exciting story from long ago. Their eyes are sparkling as the ${profileData.species} recounts great adventures and the lessons to be learned from them.*`;
 			embed.footer.text = `${embedFooterStatsText}\n+${partnerExperiencePoints} XP for ${partnerProfileData.name} (${partnerProfileData.experience}/${partnerProfileData.levels * 50})`;
 
 			if (partnerProfileData.experience >= partnerProfileData.levels * 50) {
 
-				partnerProfileData = await profileModel
-					.findOneAndUpdate(
-						{ userId: partnerProfileData.userId, serverId: message.guild.id },
-						{
-							$inc: {
-								experience: -(partnerProfileData.levels * 50),
-								levels: +1,
-							},
+				partnerProfileData = await profileModel.findOneAndUpdate(
+					{ userId: partnerProfileData.userId, serverId: message.guild.id },
+					{
+						$inc: {
+							experience: -(partnerProfileData.levels * 50),
+							levels: +1,
 						},
-					)
-					.catch((error) => {
-						throw new Error(error);
-					});
+					},
+				);
 
 				embedArray.push(embed, {
 					color: partnerProfileData.color,
@@ -281,14 +257,10 @@ module.exports = {
 						healthPoints = profileData.health;
 					}
 
-					profileData = await profileModel
-						.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
-							{ $inc: { health: -healthPoints } },
-						)
-						.catch((error) => {
-							throw new Error(error);
-						});
+					profileData = await profileModel.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{ $inc: { health: -healthPoints } },
+					);
 
 					userInjuryObject.cold = true;
 
@@ -309,21 +281,17 @@ module.exports = {
 			embed.description = `*${profileData.name} sits on an old wooden trunk at the ruins, ready to tell a story to any willing listener. But to ${profileData.pronounArray[2]} disappointment, no one seems to be around.*`;
 			embed.footer.text = '';
 
-			profileData = await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{
-						$inc: {
-							energy: +energyPoints,
-							hunger: +hungerPoints,
-							thirst: +thirstPoints,
-						},
-						$set: { currentRegion: 'ruins' },
+			profileData = await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{
+					$inc: {
+						energy: +energyPoints,
+						hunger: +hungerPoints,
+						thirst: +thirstPoints,
 					},
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+					$set: { currentRegion: 'ruins' },
+				},
+			);
 
 			return embedArray.push(embed);
 		}

@@ -35,7 +35,9 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -99,7 +101,9 @@ module.exports = {
 						embeds: embedArray,
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 
@@ -176,30 +180,22 @@ module.exports = {
 
 			embed.footer.text += `${(profileData.currentRegion != 'food den') ? '\nYou are now at the food den' : ''}\n\n-1 ${chosenFood} for ${message.guild.name}`;
 
-			profileData = await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{
-						$inc: {
-							hunger: +finalHungerPoints,
-							energy: +finalEnergyPoints,
-							health: +finalHealthPoints,
-						},
-						$set: { currentRegion: 'food den' },
+			profileData = await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{
+					$inc: {
+						hunger: +finalHungerPoints,
+						energy: +finalEnergyPoints,
+						health: +finalHealthPoints,
 					},
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+					$set: { currentRegion: 'food den' },
+				},
+			);
 
-			serverData = await serverModel
-				.findOneAndUpdate(
-					{ serverId: message.guild.id },
-					{ $set: { inventoryObject: serverData.inventoryObject } },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			serverData = await serverModel.findOneAndUpdate(
+				{ serverId: message.guild.id },
+				{ $set: { inventoryObject: serverData.inventoryObject } },
+			);
 
 			embedArray.push(embed);
 			return await message
@@ -207,7 +203,9 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -226,7 +224,9 @@ module.exports = {
 						embeds: embedArray,
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 
@@ -255,23 +255,15 @@ module.exports = {
 
 			embed.footer.text = `+${finalHungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})${(profileData.currentRegion != 'food den') ? '\nYou are now at the food den' : ''}\n\n-1 ${chosenFood} for ${message.guild.name}`;
 
-			profileData = await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $inc: { hunger: +finalHungerPoints } },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			profileData = await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $inc: { hunger: +finalHungerPoints } },
+			);
 
-			serverData = await serverModel
-				.findOneAndUpdate(
-					{ serverId: message.guild.id },
-					{ $set: { inventoryObject: serverData.inventoryObject } },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			serverData = await serverModel.findOneAndUpdate(
+				{ serverId: message.guild.id },
+				{ $set: { inventoryObject: serverData.inventoryObject } },
+			);
 
 			embedArray.push(embed);
 			return await message
@@ -279,19 +271,17 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
 		if (message.mentions.users.size > 0) {
 
-			const taggedProfileData = await profileModel
-				.findOne({
-					userId: message.mentions.users.first().id,
-				})
-				.catch((error) => {
-					throw new Error(error);
-				});
+			const taggedProfileData = await profileModel.findOne({
+				userId: message.mentions.users.first().id,
+			});
 
 			if (taggedProfileData) {
 
@@ -304,7 +294,9 @@ module.exports = {
 						embeds: embedArray,
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 		}

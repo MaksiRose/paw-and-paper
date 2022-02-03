@@ -7,35 +7,24 @@ module.exports = {
 	once: false,
 	async execute(client, member) {
 
-		const profileData = await profileModel
-			.findOne({
-				userId: member.id,
-				serverId: member.guild.id,
-			}).catch((error) => {
-				console.error(error);
-			});
+		const profileData = await profileModel.findOne({
+			userId: member.id,
+			serverId: member.guild.id,
+		});
 
-		const serverData = await serverModel
-			.findOne({
-				serverId: member.guild.id,
-			})
-			.catch((error) => {
-				console.error(error);
-			});
+		const serverData = await serverModel.findOne({
+			serverId: member.guild.id,
+		});
 
 		if (!profileData || !serverData) {
 
 			return;
 		}
 
-		await profileModel
-			.findOneAndUpdate(
-				{ userId: member.id, serverId: member.guild.id },
-				{ $set: { currenRegion: 'sleeping dens' } },
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+		await profileModel.findOneAndUpdate(
+			{ userId: member.id, serverId: member.guild.id },
+			{ $set: { currenRegion: 'sleeping dens' } },
+		);
 
 		await member.createDM();
 		const botReply = await member
@@ -72,17 +61,10 @@ module.exports = {
 
 		setTimeout(async () => {
 
-			await profileModel
-				.findOneAndDelete({
-					userId: member.id,
-					serverId: member.guild.id,
-				})
-				.then((value) => {
-					console.log('Deleted User: ' + value);
-				})
-				.catch((error) => {
-					console.error(error);
-				});
+			await profileModel.findOneAndDelete({
+				userId: member.id,
+				serverId: member.guild.id,
+			});
 
 			await serverData.accountsToDelete.delete(`${member.id}`);
 			await serverData.save();
@@ -98,7 +80,9 @@ module.exports = {
 					components: [],
 				})
 				.catch((error) => {
-					console.error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}, 2592000000);
 	},

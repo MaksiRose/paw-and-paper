@@ -18,7 +18,9 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 
 			return true;
@@ -47,12 +49,16 @@ module.exports = {
 						await reply
 							.delete()
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 					}, 10000);
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 
 			return true;
@@ -143,12 +149,16 @@ module.exports = {
 						await reply
 							.delete()
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 					}, 10000);
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 
 			return true;
@@ -161,13 +171,10 @@ module.exports = {
 
 		if (profileData.isResting == true) {
 
-			profileData = await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $set: { isResting: false } },
-				).catch((error) => {
-					throw new Error(error);
-				});
+			profileData = await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { isResting: false } },
+			);
 
 			executeResting.stopResting(message.author.id);
 

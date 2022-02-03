@@ -85,7 +85,9 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -108,7 +110,9 @@ module.exports = {
 				components: componentArray,
 			})
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 
 		client.on('messageCreate', async function removeStoreComponents(newMessage) {
@@ -123,7 +127,9 @@ module.exports = {
 					components: [],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 
 			return client.off('messageCreate', removeStoreComponents);
@@ -159,7 +165,9 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 				}
 
@@ -201,7 +209,9 @@ module.exports = {
 								components: componentArray,
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 
 						return await interactionCollector(chosenFood, foodCategory);
@@ -213,27 +223,19 @@ module.exports = {
 						userInventory[foodCategory][chosenFood] -= chosenAmount;
 						serverInventory[foodCategory][chosenFood] += chosenAmount;
 
-						profileData = await profileModel
-							.findOneAndUpdate(
-								{ userId: message.author.id, serverId: message.guild.id },
-								{ $set: { inventoryObject: userInventory } },
-							)
-							.catch((error) => {
-								throw new Error(error);
-							});
+						profileData = await profileModel.findOneAndUpdate(
+							{ userId: message.author.id, serverId: message.guild.id },
+							{ $set: { inventoryObject: userInventory } },
+						);
 
-						await serverModel
-							.findOneAndUpdate(
-								{ serverId: message.guild.id },
-								{
-									$set: {
-										inventoryObject: serverInventory,
-									},
+						await serverModel.findOneAndUpdate(
+							{ serverId: message.guild.id },
+							{
+								$set: {
+									inventoryObject: serverInventory,
 								},
-							)
-							.catch((error) => {
-								throw new Error(error);
-							});
+							},
+						);
 
 						itemSelectMenu.components[0].options = [];
 						for (const [mapName, mapEntries] of Object.entries(inventoryMaps)) {
@@ -258,7 +260,9 @@ module.exports = {
 									components: [],
 								})
 								.catch((error) => {
-									throw new Error(error);
+									if (error.httpStatus !== 404) {
+										throw new Error(error);
+									}
 								});
 
 							return;
@@ -270,7 +274,9 @@ module.exports = {
 								components: componentArray,
 							})
 							.catch((error) => {
-								throw new Error(error);
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
 							});
 
 						return await interactionCollector(null, null);
@@ -279,14 +285,10 @@ module.exports = {
 
 				if (interaction.isButton() && interaction.customId == 'store-all') {
 
-					profileData = await profileModel
-						.findOne({
-							userId: message.author.id,
-							serverId: message.guild.id,
-						})
-						.catch((error) => {
-							throw new Error(error);
-						});
+					profileData = await profileModel.findOne({
+						userId: message.author.id,
+						serverId: message.guild.id,
+					});
 
 					let footerText = embedArray[embedArray.length - 1].footer.text;
 					let maximumAmount = 0;
@@ -306,27 +308,19 @@ module.exports = {
 						}
 					}
 
-					await profileModel
-						.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
-							{ $set: { inventoryObject: userInventory } },
-						)
-						.catch((error) => {
-							throw new Error(error);
-						});
+					await profileModel.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{ $set: { inventoryObject: userInventory } },
+					);
 
-					await serverModel
-						.findOneAndUpdate(
-							{ serverId: message.guild.id },
-							{
-								$set: {
-									inventoryObject: serverInventory,
-								},
+					await serverModel.findOneAndUpdate(
+						{ serverId: message.guild.id },
+						{
+							$set: {
+								inventoryObject: serverInventory,
 							},
-						)
-						.catch((error) => {
-							throw new Error(error);
-						});
+						},
+					);
 
 					embedArray[embedArray.length - 1].footer.text = footerText;
 					await interaction.message
@@ -335,7 +329,9 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 
 					return;

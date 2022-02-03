@@ -17,14 +17,10 @@ module.exports = {
 
 			++energyPoints;
 
-			profileData = await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $inc: { energy: 1 } },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			profileData = await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $inc: { energy: 1 } },
+			);
 
 			botReply.embeds[0].footer.text = `+${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})${(profileData.currentRegion != 'sleeping dens') ? '\nYou are now at the sleeping dens' : ''}`;
 			await botReply
@@ -32,7 +28,9 @@ module.exports = {
 					embeds: botReply.embeds,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 
 			if (profileData.energy >= profileData.maxEnergy) {
@@ -43,19 +41,17 @@ module.exports = {
 						throw new Error(error);
 					});
 
-				await profileModel
-					.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{ $set: { isResting: false } },
-					)
-					.catch((error) => {
-						throw new Error(error);
-					});
+				await profileModel.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $set: { isResting: false } },
+				);
 
 				await botReply
 					.delete()
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 
 				return await message
@@ -70,7 +66,9 @@ module.exports = {
 						},
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 

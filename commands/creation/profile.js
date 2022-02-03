@@ -37,14 +37,10 @@ module.exports = {
 
 		if (message.mentions.users.size) {
 
-			profileData = await profileModel
-				.findOne({
-					userId: message.mentions.users.first().id,
-					serverId: message.guild.id,
-				})
-				.catch((error) => {
-					throw new Error(error);
-				});
+			profileData = await profileModel.findOne({
+				userId: message.mentions.users.first().id,
+				serverId: message.guild.id,
+			});
 
 			if (!profileData || profileData.species === '') {
 
@@ -57,7 +53,9 @@ module.exports = {
 						}],
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 
@@ -112,7 +110,9 @@ module.exports = {
 				components: components,
 			})
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 	},
 };

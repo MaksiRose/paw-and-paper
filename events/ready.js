@@ -13,13 +13,9 @@ module.exports = {
 		// eslint-disable-next-line no-unused-vars
 		for (const [guild_key, guild] of client.guilds.cache) {
 
-			const serverData = await serverModel
-				.findOne({
-					serverId: guild.id,
-				})
-				.catch((error) => {
-					console.error(error);
-				});
+			const serverData = await serverModel.findOne({
+				serverId: guild.id,
+			});
 
 			if (!serverData) {
 
@@ -31,17 +27,10 @@ module.exports = {
 
 				setTimeout(async () => {
 
-					await profileModel
-						.findOneAndDelete({
-							userId: account.userId,
-							serverId: guild.id,
-						})
-						.then((value) => {
-							console.log('Deleted User: ' + value);
-						})
-						.catch((error) => {
-							console.error(error);
-						});
+					await profileModel.findOneAndDelete({
+						userId: account.userId,
+						serverId: guild.id,
+					});
 
 					await serverData.accountsToDelete.delete(account_id);
 					await serverData.save();
@@ -60,7 +49,9 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							console.error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 				}, new Date().getTime() - account.deletionTimestamp);
 			}

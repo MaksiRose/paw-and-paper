@@ -9,14 +9,10 @@ module.exports = {
 
 		try {
 
-			profileData = await profileModel
-				.findOne({
-					userId: message.author.id,
-					serverId: message.guild.id,
-				})
-				.catch((error) => {
-					throw new Error(error);
-				});
+			profileData = await profileModel.findOne({
+				userId: message.author.id,
+				serverId: message.guild.id,
+			});
 
 			if (!profileData) {
 
@@ -47,38 +43,34 @@ module.exports = {
 					profileInventoryObject.meat[speciesName] = 0;
 				}
 
-				profileData = await profileModel
-					.create({
-						userId: message.author.id,
-						serverId: message.guild.id,
-						name: '',
-						description: '',
-						color: config.default_color,
-						species: '',
-						rank: 'Youngling',
-						avatarURL: message.author.avatarURL(),
-						levels: 1,
-						experience: 0,
-						health: 100,
-						energy: 100,
-						hunger: 100,
-						thirst: 100,
-						maxHealth: 100,
-						maxEnergy: 100,
-						maxHunger: 100,
-						maxThirst: 100,
-						isResting: false,
-						hasCooldown: false,
-						hasQuest: false,
-						currentRegion: 'sleeping dens',
-						unlockedRanks: 0,
-						pronounArray: ['they', 'them', 'their', 'theirs', 'themselves', 'plural'],
-						injuryObject: { wounds: 0, infections: 0, cold: false, sprains: 0, poison: false },
-						inventoryObject: profileInventoryObject,
-					})
-					.catch((error) => {
-						throw new Error(error);
-					});
+				profileData = await profileModel.create({
+					userId: message.author.id,
+					serverId: message.guild.id,
+					name: '',
+					description: '',
+					color: config.default_color,
+					species: '',
+					rank: 'Youngling',
+					avatarURL: message.author.avatarURL(),
+					levels: 1,
+					experience: 0,
+					health: 100,
+					energy: 100,
+					hunger: 100,
+					thirst: 100,
+					maxHealth: 100,
+					maxEnergy: 100,
+					maxHunger: 100,
+					maxThirst: 100,
+					isResting: false,
+					hasCooldown: false,
+					hasQuest: false,
+					currentRegion: 'sleeping dens',
+					unlockedRanks: 0,
+					pronounArray: ['they', 'them', 'their', 'theirs', 'themselves', 'plural'],
+					injuryObject: { wounds: 0, infections: 0, cold: false, sprains: 0, poison: false },
+					inventoryObject: profileInventoryObject,
+				});
 			}
 		}
 		catch (error) {
@@ -102,7 +94,9 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -117,18 +111,16 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
-		await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { name: name } },
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+		await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{ $set: { name: name } },
+		);
 
 		await message
 			.reply({
@@ -140,7 +132,9 @@ module.exports = {
 				}],
 			})
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 	},
 };
