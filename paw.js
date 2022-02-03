@@ -13,7 +13,8 @@ const client = new Discord.Client({
 		repliedUser: false,
 	},
 });
-const mongoose = require('mongoose');
+
+module.exports.client = client;
 
 client.commands = new Discord.Collection();
 
@@ -21,17 +22,5 @@ for (const file of fs.readdirSync('./handlers/')) {
 
 	require(`./handlers/${file}`).execute(client);
 }
-
-mongoose
-	.connect(config.mongodb_srv, {
-		useNewUrlParser: true,
-		useUnifiedTopology: true,
-	})
-	.then(() => {
-		console.log('Connected to database!');
-	})
-	.catch((error) => {
-		console.error(error);
-	});
 
 client.login(config.token);

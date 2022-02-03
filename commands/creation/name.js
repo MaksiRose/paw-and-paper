@@ -1,83 +1,76 @@
 const config = require('../../config.json');
-const profileModel = require('../../models/profileSchema');
-const arrays = require('../../utils/arrays');
+const profileModel = require('../../models/profileModel');
+const maps = require('../../utils/maps');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
 	name: 'name',
 	async sendMessage(client, message, argumentsArray, profileData) {
 
-		const species = arrays.species(profileData);
-
 		try {
 
-			profileData = await profileModel
-				.findOne({
-					userId: message.author.id,
-					serverId: message.guild.id,
-				})
-				.catch((error) => {
-					throw new Error(error);
-				});
+			profileData = await profileModel.findOne({
+				userId: message.author.id,
+				serverId: message.guild.id,
+			});
 
-			const profileInventoryArray = [[], [], [], []];
 			if (!profileData) {
 
-				for (let i = 0; i < arrays.commonPlantNamesArray.length; i++) {
+				const profileInventoryObject = {
+					commonPlants: {},
+					uncommonPlants: {},
+					rarePlants: {},
+					meat: {},
+				};
 
-					profileInventoryArray[0].push(0);
+				for (const [commonPlantName] of maps.commonPlantMap) {
+
+					profileInventoryObject.commonPlants[commonPlantName] = 0;
 				}
 
-				for (let i = 0; i < arrays.uncommonPlantNamesArray.length; i++) {
-					profileInventoryArray[1].push(0);
+				for (const [uncommonPlantName] of maps.uncommonPlantMap) {
+
+					profileInventoryObject.uncommonPlants[uncommonPlantName] = 0;
 				}
 
-				for (let i = 0; i < arrays.rarePlantNamesArray.length; i++) {
-					profileInventoryArray[2].push(0);
+				for (const [rarePlantName] of maps.rarePlantMap) {
+
+					profileInventoryObject.rarePlants[rarePlantName] = 0;
 				}
 
-				for (let i = 0; i < species.nameArray.length; i++) {
-					profileInventoryArray[3].push(0);
+				for (const [speciesName] of maps.speciesMap) {
+
+					profileInventoryObject.meat[speciesName] = 0;
 				}
 
-				profileData = await profileModel
-					.create({
-						userId: message.author.id,
-						serverId: message.guild.id,
-						name: '',
-						description: '',
-						color: config.default_color,
-						species: '',
-						rank: 'Youngling',
-						avatarURL: message.author.avatarURL(),
-						levels: 1,
-						experience: 0,
-						health: 100,
-						energy: 100,
-						hunger: 100,
-						thirst: 100,
-						maxHealth: 100,
-						maxEnergy: 100,
-						maxHunger: 100,
-						maxThirst: 100,
-						isResting: false,
-						hasCooldown: false,
-						hasQuest: false,
-						currentRegion: 'sleeping dens',
-						unlockedRanks: 0,
-						pronounArray: ['they', 'them', 'their', 'theirs', 'themselves', 'plural'],
-						injuryArray: [0, 0, 0, 0, 0],
-						inventoryArray: profileInventoryArray,
-					})
-					.catch((error) => {
-						throw new Error(error);
-					});
-
-				profileData
-					.save()
-					.catch((error) => {
-						throw new Error(error);
-					});
+				profileData = await profileModel.create({
+					userId: message.author.id,
+					serverId: message.guild.id,
+					name: '',
+					description: '',
+					color: config.default_color,
+					species: '',
+					rank: 'Youngling',
+					avatarURL: message.author.avatarURL(),
+					levels: 1,
+					experience: 0,
+					health: 100,
+					energy: 100,
+					hunger: 100,
+					thirst: 100,
+					maxHealth: 100,
+					maxEnergy: 100,
+					maxHunger: 100,
+					maxThirst: 100,
+					isResting: false,
+					hasCooldown: false,
+					hasQuest: false,
+					currentRegion: 'sleeping dens',
+					unlockedRanks: 0,
+					pronounArray: ['they', 'them', 'their', 'theirs', 'themselves', 'plural'],
+					injuryObject: { wounds: 0, infections: 0, cold: false, sprains: 0, poison: false },
+					inventoryObject: profileInventoryObject,
+				});
 			}
 		}
 		catch (error) {
@@ -101,7 +94,9 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -116,20 +111,16 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
-		(profileData.name != name) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): name changed from \x1b[33m${profileData.name} \x1b[0mto \x1b[33m${name} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { name: name } },
-				{ new: true },
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+		await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{ $set: { name: name } },
+		);
 
 		await message
 			.reply({
@@ -141,7 +132,9 @@ module.exports = {
 				}],
 			})
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 	},
 };

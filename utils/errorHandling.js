@@ -1,7 +1,7 @@
 module.exports = {
 	async output(message, error) {
 
-		console.log(`\x1b[32m\x1b[0m${message.author.tag} unsuccessfully tried to execute \x1b[33m${message.content} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+		console.log(`\x1b[32m${message.author.tag}\x1b[0m unsuccessfully tried to execute \x1b[33m${message.content} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 		console.error(error);
 
 		await message
@@ -21,7 +21,9 @@ module.exports = {
 				}],
 			})
 			.catch((newError) => {
-				throw new Error(newError);
+				if (newError.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 	},
 };

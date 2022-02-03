@@ -1,4 +1,4 @@
-const profileModel = require('../../models/profileSchema');
+const profileModel = require('../../models/profileModel');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const config = require('../../config.json');
@@ -23,16 +23,10 @@ module.exports = {
 
 		if (profileData.unlockedRanks == 1 && profileData.rank == 'Youngling') {
 
-			(profileData.rank != 'Apprentice') && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): rank changed from \x1b[33m${profileData.rank} \x1b[0mto \x1b[33mApprentice \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $set: { rank: 'Apprentice' } },
-					{ new: true },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { rank: 'Apprentice' } },
+			);
 
 			return await message
 				.reply({
@@ -43,7 +37,9 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -74,7 +70,9 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 
 			client.on('messageCreate', async function removeRankComponents(newMessage) {
@@ -89,7 +87,9 @@ module.exports = {
 						components: [],
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 
 				return client.off('messageCreate', removeRankComponents);
@@ -100,16 +100,10 @@ module.exports = {
 
 		if (profileData.unlockedRanks == 3 && (profileData.rank == 'Hunter' || profileData.rank == 'Healer')) {
 
-			(profileData.rank != 'Elderly') && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): rank changed from \x1b[33m${profileData.rank} \x1b[0mto \x1b[33mElderly \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $set: { rank: 'Elderly' } },
-					{ new: true },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { rank: 'Elderly' } },
+			);
 
 			return await message
 				.reply({
@@ -120,7 +114,9 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -134,7 +130,9 @@ module.exports = {
 				}],
 			})
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 
 		async function interactionCollector(botReply) {
@@ -165,7 +163,9 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 				}
 
@@ -173,16 +173,10 @@ module.exports = {
 
 				if (interaction.customId == 'rank-healer') {
 
-					(profileData.rank != 'Healer') && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): rank changed from \x1b[33m${profileData.rank} \x1b[0mto \x1b[33mHealer \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-					await profileModel
-						.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
-							{ $set: { rank: 'Healer' } },
-							{ new: true },
-						)
-						.catch((error) => {
-							throw new Error(error);
-						});
+					await profileModel.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{ $set: { rank: 'Healer' } },
+					);
 
 					return await botReply
 						.edit({
@@ -194,22 +188,18 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 				}
 
 				if (interaction.customId == 'rank-hunter') {
 
-					(profileData.rank != 'Hunter') && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): rank changed from \x1b[33m${profileData.rank} \x1b[0mto \x1b[33mHunter \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-					await profileModel
-						.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
-							{ $set: { rank: 'Hunter' } },
-							{ new: true },
-						)
-						.catch((error) => {
-							throw new Error(error);
-						});
+					await profileModel.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{ $set: { rank: 'Hunter' } },
+					);
 
 					return await botReply
 						.edit({
@@ -221,7 +211,9 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							throw new Error(error);
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 				}
 

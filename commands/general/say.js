@@ -1,4 +1,4 @@
-const profileModel = require('../../models/profileSchema');
+const profileModel = require('../../models/profileModel');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const config = require('../../config.json');
@@ -36,26 +36,24 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
 		message
 			.delete()
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 
-		console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): experience changed from \x1b[33m${profileData.experience} \x1b[0mto \x1b[33m${profileData.experience + 1} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $inc: { experience: 1 } },
-				{ new: true },
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+		await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{ $inc: { experience: 1 } },
+		);
 
 		embedArray.push({
 			color: profileData.color,
@@ -65,14 +63,10 @@ module.exports = {
 
 		if (pingRuins == true) {
 
-			let allRuinProfilesArray = await profileModel
-				.find({
-					serverId: message.guild.id,
-					currentRegion: profileData.currentRegion,
-				})
-				.catch((error) => {
-					throw new Error(error);
-				});
+			let allRuinProfilesArray = await profileModel.find({
+				serverId: message.guild.id,
+				currentRegion: profileData.currentRegion,
+			});
 
 			allRuinProfilesArray = allRuinProfilesArray.map(doc => doc.userId);
 			const allRuinProfilesArrayUserIndex = allRuinProfilesArray.indexOf(`${profileData.userId}`);

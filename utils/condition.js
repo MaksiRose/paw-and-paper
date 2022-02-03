@@ -1,4 +1,4 @@
-const profileModel = require('../models/profileSchema');
+const profileModel = require('../models/profileModel');
 
 module.exports = {
 
@@ -59,7 +59,7 @@ module.exports = {
 
 	async decreaseHealth(message, profileData, botReply) {
 
-		if (profileData.injuryArray.every((value) => value == 0)) {
+		if (Object.values(profileData.injuryObject).every((value) => value == 0)) {
 
 			return;
 		}
@@ -70,21 +70,21 @@ module.exports = {
 		let coldHealthPoints = 0;
 		let sprainHealthPoints = 0;
 		let poisonHealthPoints = 0;
-		const userInjuryArray = [...profileData.injuryArray];
+		const userInjuryObject = { ...profileData.injuryObject };
 		const embed = {
 			color: profileData.color,
 			description: '',
 			footer: { text: '' },
 		};
 
-		for (let i = 0; i < profileData.injuryArray[0]; i++) {
+		for (let i = 0; i < profileData.injuryObject.wounds; i++) {
 
 			const getsHealed = weightedTable({ 0: 1, 1: 4 });
 			const becomesInfection = weightedTable({ 0: 1, 1: 1 });
 
 			if (getsHealed == 0) {
 
-				--userInjuryArray[0];
+				userInjuryObject.wounds -= 1;
 
 				embed.description += `\n*One of ${profileData.name}'s wounds healed! What luck!*`;
 				continue;
@@ -94,8 +94,8 @@ module.exports = {
 
 			if (becomesInfection == 0) {
 
-				--userInjuryArray[0];
-				++userInjuryArray[1];
+				userInjuryObject.wounds -= 1;
+				userInjuryObject.infections += 1;
 
 				embed.description += `\n*One of ${profileData.name}'s wounds turned into an infection!*`;
 				continue;
@@ -104,23 +104,13 @@ module.exports = {
 			embed.description += `\n*One of ${profileData.name}'s wounds is bleeding!*`;
 		}
 
-		// this is done to keep the profileData.injuryArray in the next for loop accurate - otherwise it models userInjuryArray
-		// in the previous for loop, there is a chance an infection was added in userInjuryArray, so this is necessary
-		profileData = await profileModel
-			.findOne({
-				userId: message.author.id,
-				serverId: message.guild.id,
-			}).catch(async (error) => {
-				throw new Error(error);
-			});
-
-		for (let i = 0; i < profileData.injuryArray[1]; i++) {
+		for (let i = 0; i < profileData.injuryObject.infections; i++) {
 
 			const getsHealed = weightedTable({ 0: 1, 1: 4 });
 
 			if (getsHealed == 0) {
 
-				--userInjuryArray[1];
+				userInjuryObject.infections -= 1;
 
 				embed.description += `\n*One of ${profileData.name}'s infections healed! What luck!*`;
 				continue;
@@ -137,31 +127,32 @@ module.exports = {
 			embed.description += `\n*One of ${profileData.name}'s infections is getting worse!*`;
 		}
 
-		for (let i = 0; i < profileData.injuryArray[2]; i++) {
+		if (profileData.injuryObject.cold == true) {
 
 			const getsHealed = weightedTable({ 0: 1, 1: 4 });
 
 			if (getsHealed == 0) {
 
-				--userInjuryArray[2];
+				userInjuryObject.cold = false;
 
 				embed.description += `\n*${profileData.name} recovered from ${profileData.pronounArray[2]} cold! What luck!*`;
-				continue;
 			}
+			else {
 
-			const minimumColdHealthPoints = Math.round(10 - (profileData.health / 10));
+				const minimumColdHealthPoints = Math.round(10 - (profileData.health / 10));
 
-			coldHealthPoints = coldHealthPoints + Loottable(5, minimumColdHealthPoints);
-			embed.description += `\n*${profileData.name}'s cold is getting worse!*`;
+				coldHealthPoints = coldHealthPoints + Loottable(5, minimumColdHealthPoints);
+				embed.description += `\n*${profileData.name}'s cold is getting worse!*`;
+			}
 		}
 
-		for (let i = 0; i < profileData.injuryArray[3]; i++) {
+		for (let i = 0; i < profileData.injuryObject.sprains; i++) {
 
 			const getsHealed = weightedTable({ 0: 1, 1: 4 });
 
 			if (getsHealed == 0) {
 
-				--userInjuryArray[3];
+				userInjuryObject.sprains -= 1;
 
 				embed.description += `\n*One of ${profileData.name}'s sprains healed! What luck!*`;
 				continue;
@@ -171,22 +162,23 @@ module.exports = {
 			embed.description += `\n*One of ${profileData.name}'s sprains is getting worse!*`;
 		}
 
-		for (let i = 0; i < profileData.injuryArray[4]; i++) {
+		if (profileData.injuryObject.poison == true) {
 
 			const getsHealed = weightedTable({ 0: 1, 1: 4 });
 
 			if (getsHealed == 0) {
 
-				--userInjuryArray[4];
+				userInjuryObject.poison = false;
 
 				embed.description += `\n*${profileData.name} recovered from ${profileData.pronounArray[2]} poisoning! What luck!*`;
-				continue;
 			}
+			else {
 
-			const minimumPoisonHealthPoints = Math.round(21 - (profileData.health / 10));
+				const minimumPoisonHealthPoints = Math.round(21 - (profileData.health / 10));
 
-			poisonHealthPoints = poisonHealthPoints + Loottable(5, minimumPoisonHealthPoints);
-			embed.description += `\n*The poison in ${profileData.name}'s body is spreading!*`;
+				poisonHealthPoints = poisonHealthPoints + Loottable(5, minimumPoisonHealthPoints);
+				embed.description += `\n*The poison in ${profileData.name}'s body is spreading!*`;
+			}
 		}
 
 		extraLostHealthPoints = woundHealthPoints + infectionHealthPoints + coldHealthPoints + sprainHealthPoints + poisonHealthPoints;
@@ -197,28 +189,18 @@ module.exports = {
 		}
 
 		// this is done to keep the console logs injury Array correct
-		profileData = await profileModel
-			.findOne({
-				userId: message.author.id,
-				serverId: message.guild.id,
-			}).catch(async (error) => {
-				throw new Error(error);
-			});
+		profileData = await profileModel.findOne({
+			userId: message.author.id,
+			serverId: message.guild.id,
+		});
 
-		(extraLostHealthPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): health changed from \x1b[33m${profileData.health} \x1b[0mto \x1b[33m${profileData.health - extraLostHealthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		(profileData.injuryArray != userInjuryArray) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): injuryArray changed from \x1b[33m[${profileData.injuryArray}] \x1b[0mto \x1b[33m[${userInjuryArray}] \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		profileData = await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{
-					$inc: { health: -extraLostHealthPoints },
-					$set: { injuryArray: userInjuryArray },
-				},
-				{ new: true },
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+		profileData = await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{
+				$inc: { health: -extraLostHealthPoints },
+				$set: { injuryObject: userInjuryObject },
+			},
+		);
 
 		if (extraLostHealthPoints > 0) {
 
@@ -231,7 +213,9 @@ module.exports = {
 				embeds: botReply.embeds,
 			})
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 
 		function weightedTable(values) {

@@ -1,4 +1,5 @@
-const profileModel = require('../models/profileSchema');
+const profileModel = require('../models/profileModel');
+const maps = require('./maps');
 
 module.exports = {
 
@@ -8,22 +9,15 @@ module.exports = {
 
 		if (profileData.experience >= requiredExperiencePoints) {
 
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): experience changed from \x1b[33m${profileData.experience} \x1b[0mto \x1b[33m${profileData.experience - requiredExperiencePoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): levels changed from \x1b[33m${profileData.levels} \x1b[0mto \x1b[33m${profileData.levels + 1} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			profileData = await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{
-						$inc: {
-							experience: -requiredExperiencePoints,
-							levels: +1,
-						},
+			profileData = await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{
+					$inc: {
+						experience: -requiredExperiencePoints,
+						levels: +1,
 					},
-					{ new: true },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+				},
+			);
 
 			const embed = {
 				color: profileData.color,
@@ -36,7 +30,9 @@ module.exports = {
 					embeds: botReply.embeds,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 	},
@@ -44,34 +40,43 @@ module.exports = {
 	async decreaseLevel(message, profileData) {
 
 		const newUserLevel = Math.round(profileData.levels - (profileData.levels / 10));
-		const emptyUserInventoryArray = [...profileData.inventoryArray];
+		const emptyUserInventory = {
+			commonPlants: {},
+			uncommonPlants: {},
+			rarePlants: {},
+			meat: {},
+		};
 
-		for (let i = 0; i < profileData.inventoryArray.length; i++) {
+		for (const [commonPlantName] of maps.commonPlantMap) {
 
-			for (let j = 0; j < profileData.inventoryArray[i].length; j++) {
-
-				emptyUserInventoryArray[i][j] = 0;
-			}
+			emptyUserInventory.commonPlants[commonPlantName] = 0;
 		}
 
-		(profileData.levels != newUserLevel) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): levels changed from \x1b[33m${profileData.levels} \x1b[0mto \x1b[33m${newUserLevel} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		(profileData.experience != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): experience changed from \x1b[33m${profileData.experience} \x1b[0mto \x1b[33m0 \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		(profileData.inventoryArray != emptyUserInventoryArray) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): inventoryArray changed from \x1b[33m[${profileData.inventoryArray}] \x1b[0mto \x1b[33m[${emptyUserInventoryArray}] \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{
-					$set: {
-						levels: newUserLevel,
-						experience: 0,
-						inventoryArray: emptyUserInventoryArray,
-					},
+		for (const [uncommonPlantName] of maps.uncommonPlantMap) {
+
+			emptyUserInventory.uncommonPlants[uncommonPlantName] = 0;
+		}
+
+		for (const [rarePlantName] of maps.rarePlantMap) {
+
+			emptyUserInventory.rarePlants[rarePlantName] = 0;
+		}
+
+		for (const [speciesName] of maps.speciesMap) {
+
+			emptyUserInventory.meat[speciesName] = 0;
+		}
+
+		await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{
+				$set: {
+					levels: newUserLevel,
+					experience: 0,
+					inventoryObject: emptyUserInventory,
 				},
-				{ new: true },
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+			},
+		);
 	},
 
 };

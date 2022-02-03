@@ -1,4 +1,4 @@
-const profileModel = require('../../models/profileSchema');
+const profileModel = require('../../models/profileModel');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const levels = require('../../utils/levels');
@@ -23,7 +23,7 @@ module.exports = {
 
 		profileData = await startCooldown(message, profileData);
 
-		if (profileData.inventoryArray.filter(number => number > 0).length >= 25) {
+		if ([...Object.values(profileData.inventoryObject).map(type => Object.values(type))].filter(value => value > 0).length > 25) {
 
 			embedArray.push({
 				color: profileData.color,
@@ -37,7 +37,9 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -54,7 +56,9 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -71,7 +75,9 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
 		}
 
@@ -96,27 +102,17 @@ module.exports = {
 			experiencePoints = Loottable(11, 5);
 		}
 
-		(experiencePoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): experience changed from \x1b[33m${profileData.experience} \x1b[0mto \x1b[33m${profileData.experience + experiencePoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		(energyPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): energy changed from \x1b[33m${profileData.energy} \x1b[0mto \x1b[33m${profileData.energy - energyPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		(hungerPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hunger changed from \x1b[33m${profileData.hunger} \x1b[0mto \x1b[33m${profileData.hunger - hungerPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		(thirstPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): thirst changed from \x1b[33m${profileData.thirst} \x1b[0mto \x1b[33m${profileData.thirst - thirstPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		(profileData.currentRegion != 'prairie') && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): currentRegion changed from \x1b[33m${profileData.currentRegion} \x1b[0mto \x1b[33mprairie \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		profileData = await profileModel
-			.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{
-					$inc: {
-						experience: +experiencePoints,
-						energy: -energyPoints,
-						hunger: -hungerPoints,
-						thirst: -thirstPoints,
-					},
+		profileData = await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{
+				$inc: {
+					experience: +experiencePoints,
+					energy: -energyPoints,
+					hunger: -hungerPoints,
+					thirst: -thirstPoints,
 				},
-				{ new: true },
-			)
-			.catch((error) => {
-				throw new Error(error);
-			});
+			},
+		);
 
 		let embedFooterStatsText = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
 
@@ -132,23 +128,18 @@ module.exports = {
 
 		if (profileData.currentRegion != 'prairie') {
 
-			await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{
-						$set: { currentRegion: 'prairie' },
-					},
-					{ new: true },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{
+					$set: { currentRegion: 'prairie' },
+				},
+			);
 
 			embedFooterStatsText += '\nYou are now at the prairie';
 		}
 
 		let healthPoints = 0;
-		const userInjuryArray = [...profileData.injuryArray];
+		const userInjuryObject = { ...profileData.injuryObject };
 
 		const embed = {
 			color: profileData.color,
@@ -160,14 +151,10 @@ module.exports = {
 
 		if (!message.mentions.users.size) {
 
-			let allPrairieProfilesArray = await profileModel
-				.find({
-					serverId: message.guild.id,
-					currentRegion: 'prairie',
-				})
-				.catch((error) => {
-					throw new Error(error);
-				});
+			let allPrairieProfilesArray = await profileModel.find({
+				serverId: message.guild.id,
+				currentRegion: 'prairie',
+			});
 
 			allPrairieProfilesArray = allPrairieProfilesArray.map(doc => doc.userId);
 			const allPrairieProfilesArrayUserIndex = allPrairieProfilesArray.indexOf(`${profileData.userId}`);
@@ -186,14 +173,10 @@ module.exports = {
 
 				const allPrairieProfilesArrayRandomIndex = Loottable(allPrairieProfilesArray.length, 0);
 
-				const partnerProfileData = await profileModel
-					.findOne({
-						userId: allPrairieProfilesArray[allPrairieProfilesArrayRandomIndex],
-						serverId: message.guild.id,
-					})
-					.catch((error) => {
-						throw new Error(error);
-					});
+				const partnerProfileData = await profileModel.findOne({
+					userId: allPrairieProfilesArray[allPrairieProfilesArrayRandomIndex],
+					serverId: message.guild.id,
+				});
 
 				const playTogetherChance = weightedTable({ 0: 3, 1: 7 });
 				if (playTogetherChance == 1 && partnerProfileData.energy > 0 && partnerProfileData.health > 0 && partnerProfileData.hunger > 0 && partnerProfileData.thirst > 0) {
@@ -212,37 +195,24 @@ module.exports = {
 		}
 		else {
 
-			const partnerProfileData = await profileModel
-				.findOne({
-					userId: message.mentions.users.first().id,
-					serverId: message.guild.id,
-				})
-				.catch((error) => {
-					throw new Error(error);
-				});
+			const partnerProfileData = await profileModel.findOne({
+				userId: message.mentions.users.first().id,
+				serverId: message.guild.id,
+			});
 
 			if (!partnerProfileData || partnerProfileData.name == '' || partnerProfileData.species == '' || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0) {
 
-				(experiencePoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): experience changed from \x1b[33m${profileData.experience} \x1b[0mto \x1b[33m${profileData.experience - experiencePoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-				(energyPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): energy changed from \x1b[33m${profileData.energy} \x1b[0mto \x1b[33m${profileData.energy + energyPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-				(hungerPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hunger changed from \x1b[33m${profileData.hunger} \x1b[0mto \x1b[33m${profileData.hunger + hungerPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-				(thirstPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): thirst changed from \x1b[33m${profileData.thirst} \x1b[0mto \x1b[33m${profileData.thirst + thirstPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-				await profileModel
-					.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{
-							$inc: {
-								experience: -experiencePoints,
-								energy: +energyPoints,
-								hunger: +hungerPoints,
-								thirst: +thirstPoints,
-							},
+				await profileModel.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{
+						$inc: {
+							experience: -experiencePoints,
+							energy: +energyPoints,
+							hunger: +hungerPoints,
+							thirst: +thirstPoints,
 						},
-						{ new: true },
-					)
-					.catch((error) => {
-						throw new Error(error);
-					});
+					},
+				);
 
 				embedArray.push({
 					color: config.error_color,
@@ -255,7 +225,9 @@ module.exports = {
 						embeds: embedArray,
 					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
 			}
 
@@ -267,7 +239,9 @@ module.exports = {
 				embeds: embedArray,
 			})
 			.catch((error) => {
-				throw new Error(error);
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
 			});
 
 		await condition.decreaseHealth(message, profileData, botReply);
@@ -281,16 +255,10 @@ module.exports = {
 
 		async function findQuest() {
 
-			(profileData.hasQuest != true) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasQuest changed from \x1b[33m${profileData.hasQuest} \x1b[0mto \x1b[33mtrue \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $set: { hasQuest: true } },
-					{ new: true },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { hasQuest: true } },
+			);
 
 			embed.description = `*${profileData.name} lifts ${profileData.pronounArray[2]} head to investigate the sound of a faint cry. Almost sure that it was someone in need of help, ${profileData.pronounArray[0]} dashes from where ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'is' : 'are')} standing and bolts for the sound. Soon ${profileData.name} comes along to the intimidating mouth of a dark cave covered by a boulder. The cries for help still ricocheting through ${profileData.pronounArray[2]} brain. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} must help them...*`;
 			embed.footer.text = `Type 'rp quest' to continue!\n\n${embedFooterStatsText}`;
@@ -321,22 +289,16 @@ module.exports = {
 					healthPoints = profileData.health;
 				}
 
-				(healthPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): health changed from \x1b[33m${profileData.health} \x1b[0mto \x1b[33m${profileData.health - healthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-				profileData = await profileModel
-					.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{ $inc: { health: -healthPoints } },
-						{ new: true },
-					)
-					.catch((error) => {
-						throw new Error(error);
-					});
+				profileData = await profileModel.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $inc: { health: -healthPoints } },
+				);
 
 				switch (true) {
 
-					case (weightedTable({ 0: 7, 1: 13 }) == 0 && userInjuryArray[2] < 1):
+					case (weightedTable({ 0: 7, 1: 13 }) == 0 && userInjuryObject.cold == false):
 
-						++userInjuryArray[2];
+						userInjuryObject.cold = true;
 
 						embed.description = `*${profileData.name} tumbles around camp, weaving through dens and packmates at work. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} pause${(profileData.pronounArray[5] == 'singular') ? 's' : ''} for a moment, having a sneezing and coughing fit. It looks like ${profileData.name} has caught a cold.*`;
 						embed.footer.text = `-${healthPoints} HP (from cold)\n${embedFooterStatsText}`;
@@ -345,7 +307,7 @@ module.exports = {
 
 					default:
 
-						++userInjuryArray[0];
+						userInjuryObject.wounds += 1;
 
 						embed.description = `*${profileData.name} strays from camp, playing near the pack borders. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} hop${(profileData.pronounArray[5] == 'singular') ? 's' : ''} on rocks and pebbles, trying to keep ${profileData.pronounArray[2]} balance, but the rock ahead of ${profileData.pronounArray[1]} is steeper and more jagged. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} land${(profileData.pronounArray[5] == 'singular') ? 's' : ''} with an oomph and a gash slicing through ${profileData.pronounArray[2]} feet from the sharp edges.*`;
 						embed.footer.text = `-${healthPoints} HP (from wound)\n${embedFooterStatsText}`;
@@ -371,16 +333,10 @@ module.exports = {
 				partnerHealthPoints = partnerHealthPoints - ((partnerProfileData.health + partnerHealthPoints) - partnerProfileData.maxHealth);
 			}
 
-			(partnerHealthPoints != 0) && console.log(`\x1b[32m\x1b[0m${partnerProfileData.name} (${partnerProfileData.userId}): health changed from \x1b[33m${partnerProfileData.health} \x1b[0mto \x1b[33m${partnerProfileData.health + partnerHealthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			partnerProfileData = await profileModel
-				.findOneAndUpdate(
-					{ userId: partnerProfileData.userId, serverId: message.guild.id },
-					{ $inc: { health: partnerHealthPoints } },
-					{ new: true },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			partnerProfileData = await profileModel.findOneAndUpdate(
+				{ userId: partnerProfileData.userId, serverId: message.guild.id },
+				{ $inc: { health: partnerHealthPoints } },
+			);
 
 			if (partnerHealthPoints >= 1) {
 
@@ -403,7 +359,7 @@ module.exports = {
 
 			embedArray.push(embed);
 
-			if (partnerProfileData.injuryArray[2] > 0) {
+			if (partnerProfileData.injuryObject.cold == true && profileData.injuryObject.cold == false) {
 
 				const getsInfectedChance = weightedTable({ 0: 3, 1: 7 });
 				if (getsInfectedChance == 0) {
@@ -415,18 +371,12 @@ module.exports = {
 						healthPoints = profileData.health;
 					}
 
-					(healthPoints != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): health changed from \x1b[33m${profileData.health} \x1b[0mto \x1b[33m${profileData.health - healthPoints} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-					profileData = await profileModel
-						.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
-							{ $inc: { health: -healthPoints } },
-							{ new: true },
-						)
-						.catch((error) => {
-							throw new Error(error);
-						});
+					profileData = await profileModel.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{ $inc: { health: -healthPoints } },
+					);
 
-					userInjuryArray[2] = userInjuryArray[2] + 1;
+					userInjuryObject.cold = true;
 
 					embedArray.push({
 						color: profileData.color,
