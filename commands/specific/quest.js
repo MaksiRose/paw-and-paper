@@ -108,19 +108,19 @@ module.exports = {
 
 			if (profileData.rank == 'Youngling') {
 
-				embedFooterText += 'push the rock! But watch out for your energy bar.';
+				embedFooterText += 'push the rock!';
 			}
 
 			if (profileData.rank == 'Apprentice') {
 
 				if (maps.speciesMap.get(profileData.species).habitat == 'warm') {
 
-					embedFooterText += 'push the root! But watch out for your energy bar.';
+					embedFooterText += 'push the root!';
 				}
 
 				if (maps.speciesMap.get(profileData.species).habitat == 'cold' || maps.speciesMap.get(profileData.species).habitat == 'water') {
 
-					embedFooterText += 'push the tree! But watch out for your energy bar.';
+					embedFooterText += 'push the tree!';
 				}
 			}
 
@@ -128,12 +128,12 @@ module.exports = {
 
 				if (maps.speciesMap.get(profileData.species).habitat == 'warm' || maps.speciesMap.get(profileData.species).habitat == 'cold') {
 
-					embedFooterText += 'run from the humans! But watch out for your energy bar.';
+					embedFooterText += 'run from the humans!';
 				}
 
 				if (maps.speciesMap.get(profileData.species).habitat == 'water') {
 
-					embedFooterText += 'swim from the humans! But watch out for your energy bar.';
+					embedFooterText += 'swim from the humans!';
 				}
 			}
 
@@ -141,26 +141,28 @@ module.exports = {
 
 				if (maps.speciesMap.get(profileData.species).habitat == 'warm') {
 
-					embedFooterText += 'run from the sandstorm! But watch out for your energy bar.';
+					embedFooterText += 'run from the sandstorm!';
 				}
 
 				if (maps.speciesMap.get(profileData.species).habitat == 'cold') {
 
-					embedFooterText += 'run from the snowstorm! But watch out for your energy bar.';
+					embedFooterText += 'run from the snowstorm!';
 				}
 
 				if (maps.speciesMap.get(profileData.species).habitat == 'water') {
 
-					embedFooterText += 'swim from the underwater landslide! But watch out for your energy bar.';
+					embedFooterText += 'swim from the underwater landslide!';
 				}
 			}
+
+			embedFooterText += 'But watch out for your energy bar.\nSometimes you will lose energy even if choose right, depending on how many levels you have.';
 
 			embedArray.push({
 				color: `${profileData.color}`,
 				author: { name: `${profileData.name}`, icon_url: `${profileData.avatarURL}` },
 				description: `${progressbar(hitValue, hitEmoji)}\n${progressbar(missValue, missEmoji)}`,
 				footer: {
-					text: `${embedFooterText}`,
+					text: embedFooterText,
 				},
 			});
 
