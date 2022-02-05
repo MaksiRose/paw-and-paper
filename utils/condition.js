@@ -57,7 +57,7 @@ module.exports = {
 		return extraLostEnergyPoints;
 	},
 
-	async decreaseHealth(message, profileData, botReply) {
+	async decreaseHealth(message, profileData, botReply, modifiedUserInjuryObject) {
 
 		if (Object.values(profileData.injuryObject).every((value) => value == 0)) {
 
@@ -85,6 +85,7 @@ module.exports = {
 			if (getsHealed == 0) {
 
 				userInjuryObject.wounds -= 1;
+				modifiedUserInjuryObject.wounds -= 1;
 
 				embed.description += `\n*One of ${profileData.name}'s wounds healed! What luck!*`;
 				continue;
@@ -95,7 +96,10 @@ module.exports = {
 			if (becomesInfection == 0) {
 
 				userInjuryObject.wounds -= 1;
+				modifiedUserInjuryObject.wounds -= 1;
+
 				userInjuryObject.infections += 1;
+				modifiedUserInjuryObject.infections += 1;
 
 				embed.description += `\n*One of ${profileData.name}'s wounds turned into an infection!*`;
 				continue;
@@ -111,6 +115,7 @@ module.exports = {
 			if (getsHealed == 0) {
 
 				userInjuryObject.infections -= 1;
+				modifiedUserInjuryObject.infections -= 1;
 
 				embed.description += `\n*One of ${profileData.name}'s infections healed! What luck!*`;
 				continue;
@@ -134,6 +139,7 @@ module.exports = {
 			if (getsHealed == 0) {
 
 				userInjuryObject.cold = false;
+				modifiedUserInjuryObject.cold = false;
 
 				embed.description += `\n*${profileData.name} recovered from ${profileData.pronounArray[2]} cold! What luck!*`;
 			}
@@ -153,6 +159,7 @@ module.exports = {
 			if (getsHealed == 0) {
 
 				userInjuryObject.sprains -= 1;
+				modifiedUserInjuryObject.sprains -= 1;
 
 				embed.description += `\n*One of ${profileData.name}'s sprains healed! What luck!*`;
 				continue;
@@ -169,6 +176,7 @@ module.exports = {
 			if (getsHealed == 0) {
 
 				userInjuryObject.poison = false;
+				modifiedUserInjuryObject.poison = false;
 
 				embed.description += `\n*${profileData.name} recovered from ${profileData.pronounArray[2]} poisoning! What luck!*`;
 			}
@@ -217,6 +225,8 @@ module.exports = {
 					throw new Error(error);
 				}
 			});
+
+		return modifiedUserInjuryObject;
 
 		function weightedTable(values) {
 

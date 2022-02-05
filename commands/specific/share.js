@@ -100,7 +100,7 @@ module.exports = {
 		}
 
 		let healthPoints = 0;
-		const userInjuryObject = [...profileData.injuryObject];
+		let userInjuryObject = [...profileData.injuryObject];
 
 		const embed = {
 			color: profileData.color,
@@ -198,7 +198,12 @@ module.exports = {
 				}
 			});
 
-		await condition.decreaseHealth(message, profileData, botReply);
+		userInjuryObject = await condition.decreaseHealth(message, profileData, botReply, userInjuryObject);
+
+		profileData = await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{ $set: { injuryObject: userInjuryObject } },
+		);
 
 		if (await checkValidity.isPassedOut(message, profileData)) {
 
