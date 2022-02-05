@@ -64,6 +64,7 @@ module.exports = {
 				name: message.guild.name,
 				inventoryObject: serverInventoryObject,
 				accountsToDelete: {},
+				activeUsersArray: [],
 			});
 		}
 

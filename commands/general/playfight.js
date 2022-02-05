@@ -187,10 +187,10 @@ module.exports = {
 			},
 		];
 
-		const userInjuryObjectPlayer1 = { ...profileData.injuryObject };
+		let userInjuryObjectPlayer1 = { ...profileData.injuryObject };
 		let embedFooterStatsTextPlayer1 = '';
 
-		const userInjuryObjectPlayer2 = { ...partnerProfileData.injuryObject };
+		let userInjuryObjectPlayer2 = { ...partnerProfileData.injuryObject };
 		let embedFooterStatsTextPlayer2 = '';
 
 		let newTurnEmbedTextArrayIndex = -1;
@@ -526,8 +526,8 @@ module.exports = {
 
 					async function extraEmbeds() {
 
-						await condition.decreaseHealth(message, profileData, botReply);
-						await condition.decreaseHealth(message, partnerProfileData, botReply);
+						userInjuryObjectPlayer1 = await condition.decreaseHealth(message, profileData, botReply, userInjuryObjectPlayer1);
+						userInjuryObjectPlayer2 = await condition.decreaseHealth(message, partnerProfileData, botReply, userInjuryObjectPlayer2);
 
 						profileData = await profileModel.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
