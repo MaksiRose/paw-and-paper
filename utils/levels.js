@@ -10,7 +10,7 @@ module.exports = {
 		if (profileData.experience >= requiredExperiencePoints) {
 
 			profileData = await profileModel.findOneAndUpdate(
-				{ userId: profileData.userId, serverId: profileData.guildId },
+				{ userId: profileData.userId, serverId: profileData.serverId },
 				{
 					$inc: {
 						experience: -requiredExperiencePoints,
@@ -68,7 +68,7 @@ module.exports = {
 		}
 
 		await profileModel.findOneAndUpdate(
-			{ userId: profileData.userId, serverId: profileData.guildId },
+			{ userId: profileData.userId, serverId: profileData.serverId },
 			{
 				$set: {
 					levels: newUserLevel,
