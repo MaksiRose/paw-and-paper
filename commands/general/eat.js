@@ -253,8 +253,6 @@ module.exports = {
 
 			serverData.inventoryObject.meat[chosenFood] -= 1;
 
-			embed.footer.text = `+${finalHungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})${(profileData.currentRegion != 'food den') ? '\nYou are now at the food den' : ''}\n\n-1 ${chosenFood} for ${message.guild.name}`;
-
 			profileData = await profileModel.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $inc: { hunger: +finalHungerPoints } },
@@ -264,6 +262,8 @@ module.exports = {
 				{ serverId: message.guild.id },
 				{ $set: { inventoryObject: serverData.inventoryObject } },
 			);
+
+			embed.footer.text = `+${finalHungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})${(profileData.currentRegion != 'food den') ? '\nYou are now at the food den' : ''}\n\n-1 ${chosenFood} for ${message.guild.name}`;
 
 			embedArray.push(embed);
 			return await message
