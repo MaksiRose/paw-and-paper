@@ -207,7 +207,7 @@ module.exports = {
 
 		if (await checkValidity.isPassedOut(message, profileData)) {
 
-			await levels.decreaseLevel(message, profileData);
+			await levels.decreaseLevel(profileData);
 		}
 
 

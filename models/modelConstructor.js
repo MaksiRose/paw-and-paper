@@ -34,7 +34,7 @@ class model {
 
 			const dataObjectsArray = [];
 
-			file_iteration: for (const file of fs.readdirSync(path)) {
+			for (const file of fs.readdirSync(path)) {
 
 				if (!file.endsWith('.json')) {
 
@@ -43,15 +43,50 @@ class model {
 
 				const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`));
 
-				for (const [key, value] of Object.entries(filterObject)) {
+				if (allObjectsMatch(filterObject, dataObject) === true) {
 
-					if (dataObject[key] == undefined || dataObject[key] != value) {
+					dataObjectsArray.push(dataObject);
+				}
+			}
 
-						continue file_iteration;
+			function allObjectsMatch(testObject, compareObject) {
+
+				for (const [key, value] of Object.entries(testObject)) {
+
+					if (key == '$or') {
+
+						if (oneElementMatches(value, compareObject) === true) continue;
+					}
+					else if (key == '$gt') {
+
+						if (compareObject != undefined && compareObject > value) continue;
+					}
+					else if (value === Object(value)) {
+
+						if (allObjectsMatch(value, compareObject[key]) === true) continue;
+					}
+					else if (compareObject[key] != undefined && compareObject[key] == value) {
+
+						continue;
+					}
+
+					return false;
+				}
+
+				return true;
+			}
+
+			function oneElementMatches(array, compareObject) {
+
+				for (const element of array) {
+
+					if (allObjectsMatch(element, compareObject) === true) {
+
+						return true;
 					}
 				}
 
-				dataObjectsArray.push(dataObject);
+				return false;
 			}
 
 			return dataObjectsArray;
