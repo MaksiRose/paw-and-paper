@@ -76,8 +76,14 @@ module.exports = {
 
 			if (injuryAmount > 0) {
 
-				const injuryName = injuryKey.charAt(0).toUpperCase() + injuryKey.slice(1);
-				injuryText += `${injuryAmount} ${(injuryAmount > 1) ? injuryName.slice(0, -1) : injuryName}\n`;
+				if (typeof injuryAmount === 'number') {
+
+					injuryText += `${injuryAmount} ${(injuryAmount < 2) ? injuryKey.slice(0, -1) : injuryKey}\n`;
+				}
+				else {
+
+					injuryText += `${injuryKey}: yes\n`;
+				}
 			}
 		}
 
