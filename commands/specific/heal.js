@@ -44,26 +44,23 @@ module.exports = {
 		}
 
 		let allHurtProfilesArray = await profileModel.find({
-			$and: [{
-				serverId: message.guild.id,
-				$or: [
-					{ energy: 0 },
-					{ health: 0 },
-					{ hunger: 0 },
-					{ thirst: 0 },
-					{
-						injuryObject: {
-							$or: [
-								{ wounds: { $gt: 0 } },
-								{ infections: { $gt: 0 } },
-								{ cold: true },
-								{ sprains: { $gt: 0 } },
-								{ poison: true },
-							],
-						},
-					},
-				],
-			}],
+			serverId: message.guild.id,
+			$or: [
+				{ energy: 0 },
+				{ health: 0 },
+				{ hunger: 0 },
+				{ thirst: 0 },
+				{ injuryObject: {
+					$or: [
+						{ wounds: { $gt: 0 } },
+						{ infections: { $gt: 0 } },
+						{ cold: true },
+						{ sprains: { $gt: 0 } },
+						{ poison: true },
+					],
+				},
+				},
+			],
 		});
 
 		allHurtProfilesArray = allHurtProfilesArray.map(doc => doc.userId);
@@ -422,7 +419,7 @@ module.exports = {
 					}
 
 					let healthPoints = 0;
-					let userInjuryObject = [...profileData.injuryObject];
+					let userInjuryObject = { ...profileData.injuryObject };
 
 					const embed = {
 						color: profileData.color,
@@ -594,14 +591,14 @@ module.exports = {
 							{ $set: { inventoryObject: serverData.inventoryObject } },
 						);
 
-						if (isSuccessful == 1 && chosenProfileData.userId == profileData.userId && Loottable(100 + ((profileData.levels - 1) * 5), 1) <= 60) {
+						if (isSuccessful == true && chosenProfileData.userId == profileData.userId && Loottable(100 + ((profileData.levels - 1) * 5), 1) <= 60) {
 
 							isSuccessful = false;
 						}
 
 						const chosenItemName = interaction.values[0];
 
-						if (isSuccessful == 1) {
+						if (isSuccessful == true) {
 
 							let chosenUserHealthPoints = Loottable(10, 6);
 							if (chosenProfileData.health + chosenUserHealthPoints > chosenProfileData.maxHealth) {
@@ -622,6 +619,13 @@ module.exports = {
 							);
 
 							if (chosenProfileData.userId == profileData.userId) {
+
+								userInjuryObject = chosenUserInjuryObject;
+
+								profileData = await profileModel.findOne({
+									userId: message.author.id,
+									serverId: message.guild.id,
+								});
 
 								embed.description = `*${profileData.name} takes a ${chosenItemName}. After a bit of preparation, the ${profileData.species} can apply it correctly. Immediately you can see the effect. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} feel${(profileData.pronounArray[5] == 'singular') ? 's' : ''} much better!*`;
 							}
@@ -690,7 +694,7 @@ module.exports = {
 
 					botReply = await message
 						.reply({
-							content: (chosenProfileData.userId != profileData.userId) ? `<@!${chosenProfileData.userId}>` : '',
+							content: (chosenProfileData.userId != profileData.userId) ? `<@!${chosenProfileData.userId}>` : null,
 							embeds: embedArray,
 						})
 						.catch((error) => {
