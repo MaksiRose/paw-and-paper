@@ -3,14 +3,14 @@ const maps = require('./maps');
 
 module.exports = {
 
-	async levelCheck(message, profileData, botReply) {
+	async levelCheck(profileData, botReply) {
 
 		const requiredExperiencePoints = profileData.levels * 50;
 
 		if (profileData.experience >= requiredExperiencePoints) {
 
 			profileData = await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
+				{ userId: profileData.userId, serverId: profileData.guildId },
 				{
 					$inc: {
 						experience: -requiredExperiencePoints,
@@ -37,7 +37,7 @@ module.exports = {
 		}
 	},
 
-	async decreaseLevel(message, profileData) {
+	async decreaseLevel(profileData) {
 
 		const newUserLevel = Math.round(profileData.levels - (profileData.levels / 10));
 		const emptyUserInventory = {
@@ -68,7 +68,7 @@ module.exports = {
 		}
 
 		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
+			{ userId: profileData.userId, serverId: profileData.guildId },
 			{
 				$set: {
 					levels: newUserLevel,

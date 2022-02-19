@@ -336,11 +336,11 @@ module.exports = {
 				{ $set: { injuryObject: userInjuryObject } },
 			);
 
-			await levels.levelCheck(message, profileData, botReply);
+			await levels.levelCheck(profileData, botReply);
 
 			if (await checkValidity.isPassedOut(message, profileData)) {
 
-				await levels.decreaseLevel(message, profileData);
+				await levels.decreaseLevel(profileData);
 			}
 
 
