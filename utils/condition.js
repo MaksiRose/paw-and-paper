@@ -61,7 +61,7 @@ module.exports = {
 
 		if (Object.values(profileData.injuryObject).every((value) => value == 0)) {
 
-			return;
+			return modifiedUserInjuryObject;
 		}
 
 		let extraLostHealthPoints = 0;
