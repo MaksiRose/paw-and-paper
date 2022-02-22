@@ -123,7 +123,7 @@ If you find a smaller issue like a typo, you can open the file from within GitHu
 
 #### Add a species
 
-If you want to add a species, you can find the maps on `utils/maps.js`.
+If you want to add a species, the file to add it to is at the path `utils/maps.js`.
 
 Go to the bottom of the file, and then paste this "species block" behind the last one of those species blocks:
 ```
