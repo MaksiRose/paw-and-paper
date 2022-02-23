@@ -640,6 +640,15 @@ speciesMap.set('goat', {
 	biome3OpponentArray: ['dog', 'coyote'],
 });
 
+speciesMap.set('kinkajou', {
+	name: 'kinkajou',
+	diet: 'omnivore',
+	habitat: 'warm',
+	biome1OpponentArray: ['crab', 'hoatzin', 'salmon'],
+	biome2OpponentArray: ['hawk', 'eagle'],
+	biome3OpponentArray: ['gaboon viper', 'lion'],
+});
+
 
 module.exports = {
 	
@@ -649,11 +658,3 @@ module.exports = {
 	speciesMap: speciesMap,
 
 };
-speciesMap.set('kinkajou', {
-	name: 'kinkajou',
-	diet: 'omnivore',
-	habitat: 'warm',
-	biome1OpponentArray: ['crab', 'hoatzin', 'salmon'],
-	biome2OpponentArray: ['hawk', 'owl'],
-	biome3OpponentArray: ['elk', 'manned wolf'],
-});
