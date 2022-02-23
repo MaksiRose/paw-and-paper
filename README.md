@@ -123,9 +123,11 @@ If you find a smaller issue like a typo, you can open the file from within GitHu
 
 #### Add a species
 
-If you want to add a species, you can find the maps on `utils/maps.js`.
+First of all: Don't worry, you don't have to do actual coding! All you have copy, paste, and replace per the instructions below.
 
-Go to the bottom of the file, and then paste this "species block" behind the last one of those species blocks:
+If you want to add a species, [click here to open the appropriate file.](https://github.com/MaksiRose/paw-and-paper/blob/main/utils/maps.js)
+
+First click the edit button (in form of a pencil) at the top right of the screen. Then go to the bottom of the file, and paste this "species block" behind the last one of those species blocks:
 ```
 speciesMap.set('NAME', {
 	name: 'NAME',

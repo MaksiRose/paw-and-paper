@@ -71,19 +71,13 @@ module.exports = {
 				});
 		}
 
-		const maksi = await client.users
-			.fetch(config.maksi)
-			.catch((error) => {
-				throw new Error(error);
-			});
-
 		const botReply = await message
 			.reply({
 				embeds: [{
 					color: config.default_color,
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: `What species is ${profileData.name}?`,
-					footer: { text: `If you want an earthly species that is not on the list, contact ${maksi.tag}. Seriously, just ask. It takes one minute and I'll be happy to do it.` },
+					description: `If you want an earthly, extant species that is not on the list, open a ticket. Alternatively, you can [learn how to add it yourself here](https://github.com/MaksiRose/paw-and-paper#add-a-species)`,
 				}],
 				components: [{
 					type: 'ACTION_ROW',
