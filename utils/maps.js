@@ -400,7 +400,7 @@ speciesMap.set('bear', {
 	name: 'bear',
 	diet: 'omnivore',
 	habitat: 'cold',
-	biome1OpponentArray: ['rabbit', 'squirrel', 'salmon', 'tuna'],
+	biome1OpponentArray: ['rabbit', 'bee', 'salmon', 'tuna'],
 	biome2OpponentArray: ['cat', 'fox', 'dog'],
 	biome3OpponentArray: ['wolf', 'horse', 'elk'],
 });
@@ -517,7 +517,7 @@ speciesMap.set('owl', {
 	name: 'owl',
 	diet: 'carnivore',
 	habitat: 'cold',
-	biome1OpponentArray: ['rabbit', 'squirrel'],
+	biome1OpponentArray: ['rabbit', 'squirrel', 'moth', 'beetle'],
 	biome2OpponentArray: ['cat', 'fox'],
 	biome3OpponentArray: ['wolf', 'bear'],
 });
@@ -562,7 +562,7 @@ speciesMap.set('weasel', {
 	name: 'weasel',
 	diet: 'carnivore',
 	habitat: 'warm',
-	biome1OpponentArray: ['squirrel', 'rabbit'],
+	biome1OpponentArray: ['squirrel', 'rabbit', 'cricket', 'praying mantis'],
 	biome2OpponentArray: ['cat', 'fox'],
 	biome3OpponentArray: ['owl', 'gaboon viper'],
 });
@@ -572,7 +572,7 @@ speciesMap.set('hawk', {
 	diet: 'carnivore',
 	habitat: 'warm',
 	biome1OpponentArray: ['squirrel', 'rabbit', 'goat'],
-	biome2OpponentArray: ['owl', 'raccoon'],
+	biome2OpponentArray: ['owl', 'raccoon', 'kinkajou'],
 	biome3OpponentArray: ['eagle', 'gaboon viper', 'cassowary'],
 });
 
@@ -581,7 +581,7 @@ speciesMap.set('eagle', {
 	diet: 'carnivore',
 	habitat: 'warm',
 	biome1OpponentArray: ['squirrel', 'rabbit', 'goat'],
-	biome2OpponentArray: ['bear', 'raccoon'],
+	biome2OpponentArray: ['bear', 'raccoon', 'kinkajou'],
 	biome3OpponentArray: ['hawk', 'gaboon viper', 'cassowary'],
 });
 
@@ -589,7 +589,7 @@ speciesMap.set('raccoon', {
 	name: 'raccoon',
 	diet: 'omnivore',
 	habitat: 'cold',
-	biome1OpponentArray: ['salmon', 'rabbit'],
+	biome1OpponentArray: ['salmon', 'rabbit', 'praying mantis'],
 	biome2OpponentArray: ['owl', 'fox', 'cat'],
 	biome3OpponentArray: ['coyote', 'wolf'],
 });
@@ -647,6 +647,51 @@ speciesMap.set('kinkajou', {
 	biome1OpponentArray: ['crab', 'hoatzin', 'salmon'],
 	biome2OpponentArray: ['hawk', 'eagle'],
 	biome3OpponentArray: ['gaboon viper', 'lion'],
+});
+
+speciesMap.set('praying mantis', {
+	name: 'praying mantis',
+	diet: 'carnivore',
+	habitat: 'cold',
+	biome1OpponentArray: ['cricket', 'beetle'],
+	biome2OpponentArray: ['moth', 'bee'],
+	biome3OpponentArray: ['weasel', 'raccoon'],
+});
+
+speciesMap.set('cricket', {
+	name: 'cricket',
+	diet: 'omnivore',
+	habitat: 'cold',
+	biome1OpponentArray: ['moth', 'beetle'],
+	biome2OpponentArray: ['praying mantis', 'bee'],
+	biome3OpponentArray: ['weasel', 'owl'],
+});
+
+speciesMap.set('beetle', {
+	name: 'beetle',
+	diet: 'omnivore',
+	habitat: 'cold',
+	biome1OpponentArray: ['cricket', 'moth'],
+	biome2OpponentArray: ['praying mantis', 'bee'],
+	biome3OpponentArray: ['weasel', 'owl'],
+});
+
+speciesMap.set('moth', {
+	name: 'moth',
+	diet: 'omnivore',
+	habitat: 'cold',
+	biome1OpponentArray: ['moth', 'praying mantis'],
+	biome2OpponentArray: ['cricket', 'beetle'],
+	biome3OpponentArray: ['bee', 'owl'],
+});
+
+speciesMap.set('bee', {
+	name: 'bee',
+	diet: 'herbivore',
+	habitat: 'warm',
+	biome1OpponentArray: ['cricket', 'beetle'],
+	biome2OpponentArray: ['moth', 'praying mantis'],
+	biome3OpponentArray: ['bear', 'owl'],
 });
 
 
