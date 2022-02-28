@@ -696,7 +696,7 @@ speciesMap.set('bee', {
 
 
 module.exports = {
-	
+
 	commonPlantMap: commonPlantMap,
 	uncommonPlantMap: uncommonPlantMap,
 	rarePlantMap: rarePlantMap,
