@@ -545,7 +545,7 @@ module.exports = {
 							chosenUserInjuryObject.infections -= 1;
 						}
 
-						if (plantMap.get(interaction.values[0]).healsColds == true && chosenUserInjuryObject.wound == true) {
+						if (plantMap.get(interaction.values[0]).healsColds == true && chosenUserInjuryObject.cold == true) {
 
 							isSuccessful = true;
 							embedFooterChosenUserInjuryText += `\ncold healed for ${chosenProfileData.name}`;
