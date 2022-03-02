@@ -182,7 +182,7 @@ module.exports = {
 
 						for (const [mapName, mapEntries] of Object.entries(inventoryMaps)) {
 
-							if (inventoryMaps[mapEntries].has(chosenFood)) {
+							if (inventoryMaps[mapName].has(chosenFood)) {
 								foodCategory = mapName;
 								maximumAmount = profileData.inventoryObject[mapEntries][chosenFood];
 							}
