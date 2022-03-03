@@ -150,7 +150,7 @@ module.exports = {
 			await medicineDen();
 			if (profileData.rank == 'Youngling' || profileData.rank == 'Hunter') {
 
-				await message
+				botReply = await message
 					.reply({
 						embeds: [embed],
 					})
@@ -285,7 +285,7 @@ module.exports = {
 
 				if (!collected.size) {
 
-					return await botReply
+					return await interaction.message
 						.edit({
 							components: [],
 						})
