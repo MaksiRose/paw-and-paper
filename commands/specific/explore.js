@@ -5,7 +5,7 @@ const checkValidity = require('../../utils/checkValidity');
 const condition = require('../../utils/condition');
 const items = require('../../utils/items');
 const levels = require('../../utils/levels');
-const config = require('../../config.json');
+const messageCollector = require('../../utils/messageCollector');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
@@ -161,25 +161,7 @@ module.exports = {
 
 		return await new Promise((resolve) => {
 
-			client.on('messageCreate', async function removeExploreComponents(newMessage) {
-
-				if (!botReply || newMessage.author.id != message.author.id || !newMessage.content.toLowerCase().startsWith(config.prefix)) {
-
-					return;
-				}
-
-				await botReply
-					.edit({
-						components: [],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-
-				return client.off('messageCreate', removeExploreComponents), resolve();
-			});
+			messageCollector(message, botReply);
 
 			async function filter(i) {
 

@@ -62,11 +62,11 @@ commonPlantMap.set('henna', {
 
 commonPlantMap.set('elderberry', {
 	name: 'elderberry',
-	description: 'This berry is poisonous when uncooked, but it helps against infections when used as a medicine.',
+	description: 'This berry is poisonous when uncooked, but it helps against colds when used as a medicine.',
 	edibality: 't',
 	healsWounds: false,
-	healsInfections: true,
-	healsColds: false,
+	healsInfections: false,
+	healsColds: true,
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
@@ -233,11 +233,11 @@ uncommonPlantMap.set('great mullein', {
 
 uncommonPlantMap.set('purple coneflower', {
 	name: 'purple coneflower',
-	description: 'This flower is not only part of the sunflower family, but also a treatment against, sprains, colds, and hunger!',
+	description: 'This flower is not only part of the sunflower family, but also a treatment against sprains, infections, and hunger!',
 	edibality: 'e',
 	healsWounds: false,
-	healsInfections: false,
-	healsColds: true,
+	healsInfections: true,
+	healsColds: false,
 	healsSprains: true,
 	healsPoison: false,
 	givesEnergy: false,

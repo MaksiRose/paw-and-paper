@@ -3,7 +3,7 @@ const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
 const profileModel = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
-const config = require('../../config.json');
+const messageCollector = require('../../utils/messageCollector');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
@@ -115,26 +115,7 @@ module.exports = {
 				}
 			});
 
-		client.on('messageCreate', async function removeStoreComponents(newMessage) {
-
-			if (!botReply || newMessage.author.id != message.author.id || !newMessage.content.toLowerCase().startsWith(config.prefix)) {
-
-				return;
-			}
-
-			await botReply
-				.edit({
-					components: [],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-
-			return client.off('messageCreate', removeStoreComponents);
-		});
-
+		await messageCollector(message, botReply);
 		await interactionCollector(null, null);
 
 		async function interactionCollector(chosenFood, foodCategory) {
@@ -182,7 +163,7 @@ module.exports = {
 
 						for (const [mapName, mapEntries] of Object.entries(inventoryMaps)) {
 
-							if (inventoryMaps[mapEntries].has(chosenFood)) {
+							if (inventoryMaps[mapName].has(chosenFood)) {
 								foodCategory = mapName;
 								maximumAmount = profileData.inventoryObject[mapEntries][chosenFood];
 							}

@@ -78,10 +78,7 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					if (error.httpStatus == 404) {
-						console.log('Message already deleted');
-					}
-					else {
+					if (error.httpStatus != 404) {
 						throw new Error(error);
 					}
 				});
@@ -212,7 +209,7 @@ module.exports = {
 
 			if (!botReply || newMessage.author.id != message.author.id || !newMessage.content.toLowerCase().startsWith(config.prefix) || profileData.hasCooldown || isEmptyBoard === false) {
 
-				return;
+				return client.off('messageCreate', removePlayfightComponents);
 			}
 
 			await botReply
@@ -227,6 +224,34 @@ module.exports = {
 
 			return client.off('messageCreate', removePlayfightComponents);
 		});
+
+		messageCollector();
+
+		async function messageCollector() {
+
+			if (!botReply) {
+
+				return;
+			}
+
+			const filter = m => m.author.id === message.mentions.users.first().id && m.content.toLowerCase().startsWith(config.prefix);
+
+			const collector = message.channel.createMessageCollector({ filter, max: 1, time: 120000 });
+			collector.on('end', async () => {
+
+				await botReply
+					.edit({
+						components: [],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
+				return;
+			});
+		}
 
 		await newRound((Math.floor(Math.random() * 2) == 0) ? true : false);
 
@@ -405,7 +430,7 @@ module.exports = {
 
 									default:
 
-										userInjuryObject.sprain += 1;
+										userInjuryObject.sprains += 1;
 
 										getHurtText += `*${otherProfileData.name} tries to get up with ${currentProfileData.name}'s help, but the ${otherProfileData.species} feels a horrible pain as ${otherProfileData.pronounArray[0]} get up. Ironically, ${otherProfileData.name} got a sprain from getting up after the fight.*`;
 
@@ -418,6 +443,9 @@ module.exports = {
 											embedFooterStatsTextPlayer2 = `-${healthPoints} HP (from sprain)\n${embedFooterStatsTextPlayer2}`;
 										}
 								}
+
+								userInjuryObjectPlayer1 = (otherProfileData.userId === profileData.userId) ? userInjuryObject : userInjuryObjectPlayer1;
+								userInjuryObjectPlayer2 = (otherProfileData.userId === profileData.userId) ? userInjuryObjectPlayer2 : userInjuryObject;
 							}
 
 							embedArray.push({
@@ -644,30 +672,21 @@ module.exports = {
 				energyPointsPlayer1 = profileData.energy;
 			}
 
-			(energyPointsPlayer1 != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): energy changed from \x1b[33m${profileData.energy} \x1b[0mto \x1b[33m${profileData.energy - energyPointsPlayer1} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			(hungerPointsPlayer1 != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hunger changed from \x1b[33m${profileData.hunger} \x1b[0mto \x1b[33m${profileData.hunger - hungerPointsPlayer1} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			(thirstPointsPlayer1 != 0) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): thirst changed from \x1b[33m${profileData.thirst} \x1b[0mto \x1b[33m${profileData.thirst - thirstPointsPlayer1} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			(profileData.region != 'prairie') && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): currentRegion changed from \x1b[33m${profileData.currentRegion} \x1b[0mto \x1b[33mprairie \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			(profileData.hasCooldown != false) && console.log(`\x1b[32m\x1b[0m${message.author.tag} (${message.author.id}): hasCooldown changed from \x1b[33m${profileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			profileData = await profileModel
-				.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{
-						$inc: {
-							energy: -energyPointsPlayer1,
-							hunger: -hungerPointsPlayer1,
-							thirst: -thirstPointsPlayer1,
-						},
-						$set: {
-							currentRegion: 'prairie',
-							hasCooldown: false,
-						},
+			profileData = await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{
+					$inc: {
+						energy: -energyPointsPlayer1,
+						hunger: -hungerPointsPlayer1,
+						thirst: -thirstPointsPlayer1,
 					},
-					{ new: true },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+					$set: {
+						currentRegion: 'prairie',
+						hasCooldown: false,
+					},
+				},
+				{ new: true },
+			);
 
 			embedFooterStatsTextPlayer1 = `-${energyPointsPlayer1} energy (${profileData.energy}/${profileData.maxEnergy}) for ${profileData.name}`;
 
@@ -692,30 +711,21 @@ module.exports = {
 				energyPointsPlayer2 = partnerProfileData.energy;
 			}
 
-			(energyPointsPlayer2 != 0) && console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): energy changed from \x1b[33m${partnerProfileData.energy} \x1b[0mto \x1b[33m${partnerProfileData.energy - energyPointsPlayer2} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			(hungerPointsPlayer2 != 0) && console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): hunger changed from \x1b[33m${partnerProfileData.hunger} \x1b[0mto \x1b[33m${partnerProfileData.hunger - hungerPointsPlayer2} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			(thirstPointsPlayer2 != 0) && console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): thirst changed from \x1b[33m${partnerProfileData.thirst} \x1b[0mto \x1b[33m${partnerProfileData.thirst - thirstPointsPlayer2} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			(partnerProfileData.currentRegion != 'prairie') && console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): currentRegion changed from \x1b[33m${partnerProfileData.currentRegion} \x1b[0mto \x1b[33mprairie \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			(partnerProfileData.hasCooldown != false) && console.log(`\x1b[32m\x1b[0m${message.mentions.users.first().tag} (${message.mentions.users.first().id}): hasCooldown changed from \x1b[33m${partnerProfileData.hasCooldown} \x1b[0mto \x1b[33mfalse \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			partnerProfileData = await profileModel
-				.findOneAndUpdate(
-					{ userId: message.mentions.users.first().id, serverId: message.guild.id },
-					{
-						$inc: {
-							energy: -energyPointsPlayer2,
-							hunger: -hungerPointsPlayer2,
-							thirst: -thirstPointsPlayer2,
-						},
-						$set: {
-							currentRegion: 'prairie',
-							hasCooldown: false,
-						},
+			partnerProfileData = await profileModel.findOneAndUpdate(
+				{ userId: message.mentions.users.first().id, serverId: message.guild.id },
+				{
+					$inc: {
+						energy: -energyPointsPlayer2,
+						hunger: -hungerPointsPlayer2,
+						thirst: -thirstPointsPlayer2,
 					},
-					{ new: true },
-				)
-				.catch((error) => {
-					throw new Error(error);
-				});
+					$set: {
+						currentRegion: 'prairie',
+						hasCooldown: false,
+					},
+				},
+				{ new: true },
+			);
 
 			embedFooterStatsTextPlayer2 = `-${energyPointsPlayer2} energy (${partnerProfileData.energy}/${partnerProfileData.maxEnergy}) for ${partnerProfileData.name}`;
 

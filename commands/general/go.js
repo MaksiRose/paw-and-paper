@@ -1,8 +1,8 @@
 const profileModel = require('../../models/profileModel');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
-const config = require('../../config.json');
 const startCooldown = require('../../utils/startCooldown');
+const messageCollector = require('../../utils/messageCollector');
 
 module.exports = {
 	name: 'go',
@@ -117,20 +117,6 @@ module.exports = {
 
 		let botReply;
 
-		if (!chosenRegion) {
-
-			botReply = await message
-				.reply({
-					embeds: embedArray,
-					components: [travelSelectMenu],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-		}
-
 		if (chosenRegion == 'sleeping dens') {
 
 			await sleepingDen();
@@ -145,8 +131,7 @@ module.exports = {
 					}
 				});
 		}
-
-		if (chosenRegion == 'food den') {
+		else if (chosenRegion == 'food den') {
 
 			await foodDen();
 			botReply = await message
@@ -160,13 +145,12 @@ module.exports = {
 					}
 				});
 		}
-
-		if (chosenRegion == 'medicine den') {
+		else if (chosenRegion == 'medicine den') {
 
 			await medicineDen();
 			if (profileData.rank == 'Youngling' || profileData.rank == 'Hunter') {
 
-				await message
+				botReply = await message
 					.reply({
 						embeds: [embed],
 					})
@@ -190,8 +174,7 @@ module.exports = {
 					});
 			}
 		}
-
-		if (chosenRegion == 'ruins') {
+		else if (chosenRegion == 'ruins') {
 
 			await ruins();
 			botReply = await message
@@ -204,8 +187,7 @@ module.exports = {
 					}
 				});
 		}
-
-		if (chosenRegion == 'lake') {
+		else if (chosenRegion == 'lake') {
 
 			await lake();
 			botReply = await message
@@ -219,8 +201,7 @@ module.exports = {
 					}
 				});
 		}
-
-		if (chosenRegion == 'prairie') {
+		else if (chosenRegion == 'prairie') {
 
 			await prairie();
 			if (profileData.rank == 'Youngling' || profileData.rank == 'Apprentice') {
@@ -249,28 +230,22 @@ module.exports = {
 					});
 			}
 		}
+		else {
 
-
-		client.on('messageCreate', async function removeGoComponents(newMessage) {
-
-			if (!botReply || newMessage.author.id != message.author.id || !newMessage.content.toLowerCase().startsWith(config.prefix)) {
-
-				return;
-			}
-
-			await botReply
-				.edit({
-					components: [],
+			botReply = await message
+				.reply({
+					embeds: embedArray,
+					components: [travelSelectMenu],
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
 						throw new Error(error);
 					}
 				});
+		}
 
-			return client.off('messageCreate', removeGoComponents);
-		});
 
+		await messageCollector(message, botReply);
 		await interactionCollector();
 
 		async function interactionCollector() {
@@ -291,7 +266,7 @@ module.exports = {
 
 				if (!collected.size) {
 
-					return await botReply
+					return await interaction.message
 						.edit({
 							components: [],
 						})

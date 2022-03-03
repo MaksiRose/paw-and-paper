@@ -3,6 +3,7 @@ const checkValidity = require('../../utils/checkValidity');
 const maps = require('../../utils/maps');
 const config = require('../../config.json');
 const startCooldown = require('../../utils/startCooldown');
+const messageCollector = require('../../utils/messageCollector');
 
 module.exports = {
 	name: 'inventory',
@@ -83,26 +84,7 @@ module.exports = {
 		let currentPage = 0;
 
 
-		client.on('messageCreate', async function removeInventoryComponents(newMessage) {
-
-			if (!botReply || newMessage.author.id != message.author.id || !newMessage.content.toLowerCase().startsWith(config.prefix)) {
-
-				return;
-			}
-
-			await botReply
-				.edit({
-					components: [],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-
-			return client.off('messageCreate', removeInventoryComponents);
-		});
-
+		await messageCollector(message, botReply);
 		await interactionCollector();
 
 		async function interactionCollector() {
