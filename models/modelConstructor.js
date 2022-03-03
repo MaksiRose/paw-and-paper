@@ -61,6 +61,10 @@ class model {
 
 						if (compareObject != undefined && compareObject > value) continue;
 					}
+					else if (key == '$nin') {
+
+						if (oneElementMatches(value, compareObject) === false) continue;
+					}
 					else if (value === Object(value)) {
 
 						if (allObjectsMatch(value, compareObject[key]) === true) continue;
@@ -80,7 +84,11 @@ class model {
 
 				for (const element of array) {
 
-					if (allObjectsMatch(element, compareObject) === true) {
+					if (element === Object(element) && allObjectsMatch(element, compareObject) === true) {
+
+						return true;
+					}
+					else if (compareObject != undefined && compareObject == element) {
 
 						return true;
 					}
