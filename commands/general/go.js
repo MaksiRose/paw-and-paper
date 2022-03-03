@@ -1,8 +1,8 @@
 const profileModel = require('../../models/profileModel');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
-const config = require('../../config.json');
 const startCooldown = require('../../utils/startCooldown');
+const messageCollector = require('../../utils/messageCollector');
 
 module.exports = {
 	name: 'go',
@@ -245,26 +245,7 @@ module.exports = {
 		}
 
 
-		client.on('messageCreate', async function removeGoComponents(newMessage) {
-
-			if (!botReply || newMessage.author.id != message.author.id || !newMessage.content.toLowerCase().startsWith(config.prefix)) {
-
-				return;
-			}
-
-			await botReply
-				.edit({
-					components: [],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-
-			return client.off('messageCreate', removeGoComponents);
-		});
-
+		await messageCollector(message, botReply);
 		await interactionCollector();
 
 		async function interactionCollector() {

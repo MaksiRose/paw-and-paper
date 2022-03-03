@@ -212,7 +212,7 @@ module.exports = {
 
 			if (!botReply || newMessage.author.id != message.author.id || !newMessage.content.toLowerCase().startsWith(config.prefix) || profileData.hasCooldown || isEmptyBoard === false) {
 
-				return;
+				return client.off('messageCreate', removePlayfightComponents);
 			}
 
 			await botReply
@@ -227,6 +227,34 @@ module.exports = {
 
 			return client.off('messageCreate', removePlayfightComponents);
 		});
+
+		messageCollector();
+
+		async function messageCollector() {
+
+			if (!botReply) {
+
+				return;
+			}
+
+			const filter = m => m.author.id === message.mentions.users.first().id && m.content.toLowerCase().startsWith(config.prefix);
+
+			const collector = message.channel.createMessageCollector({ filter, max: 1, time: 120000 });
+			collector.on('end', async () => {
+
+				await botReply
+					.edit({
+						components: [],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
+				return;
+			});
+		}
 
 		await newRound((Math.floor(Math.random() * 2) == 0) ? true : false);
 

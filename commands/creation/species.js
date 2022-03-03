@@ -3,6 +3,7 @@ const profileModel = require('../../models/profileModel');
 const maps = require('../../utils/maps');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
+const messageCollector = require('../../utils/messageCollector');
 
 module.exports = {
 	name: 'species',
@@ -77,7 +78,7 @@ module.exports = {
 					color: config.default_color,
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: `What species is ${profileData.name}?`,
-					description: `If you want an earthly, extant species that is not on the list, open a ticket. Alternatively, you can [learn how to add it yourself here](https://github.com/MaksiRose/paw-and-paper#add-a-species)`,
+					description: 'If you want an earthly, extant species that is not on the list, open a ticket. Alternatively, you can [learn how to add it yourself here](https://github.com/MaksiRose/paw-and-paper#add-a-species)',
 				}],
 				components: [{
 					type: 'ACTION_ROW',
@@ -95,31 +96,7 @@ module.exports = {
 				}
 			});
 
-		client.on('messageCreate', async function removeSpeciesComponents(newMessage) {
-
-			if (!botReply || newMessage.author.id != message.author.id || newMessage.content.startsWith(config.prefix)) {
-
-				return;
-			}
-
-			if (!newMessage.channel.messages.cache.get(botReply.id)) {
-
-				return client.off('messageCreate', removeSpeciesComponents);
-			}
-
-			await botReply
-				.edit({
-					components: [],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-
-			return client.off('messageCreate', removeSpeciesComponents);
-		});
-
+		await messageCollector(message, botReply);
 		await interactionCollector();
 
 		async function interactionCollector() {

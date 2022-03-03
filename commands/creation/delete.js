@@ -1,5 +1,6 @@
 const config = require('../../config.json');
 const profileModel = require('../../models/profileModel');
+const messageCollector = require('../../utils/messageCollector');
 
 module.exports = {
 	name: 'delete',
@@ -53,31 +54,7 @@ module.exports = {
 				}
 			});
 
-		client.on('messageCreate', async function removeDeleteMessageComponents(newMessage) {
-
-			if (!botReply || newMessage.author.id != message.author.id || !newMessage.content.startsWith(config.prefix)) {
-
-				return;
-			}
-
-			if (!newMessage.channel.messages.cache.get(botReply.id)) {
-
-				return client.off('messageCreate', removeDeleteMessageComponents);
-			}
-
-			await botReply
-				.edit({
-					components: [],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-
-			return client.off('messageCreate', removeDeleteMessageComponents);
-		});
-
+		await messageCollector(message, botReply);
 		const filter = async (i) => {
 
 			if (!i.message.reference || !i.message.reference.messageId) {

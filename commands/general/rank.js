@@ -1,7 +1,7 @@
 const profileModel = require('../../models/profileModel');
 const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const checkValidity = require('../../utils/checkValidity');
-const config = require('../../config.json');
+const messageCollector = require('../../utils/messageCollector');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
@@ -75,26 +75,7 @@ module.exports = {
 					}
 				});
 
-			client.on('messageCreate', async function removeRankComponents(newMessage) {
-
-				if (!botReply || newMessage.author.id != message.author.id || !newMessage.content.toLowerCase().startsWith(config.prefix)) {
-
-					return;
-				}
-
-				await botReply
-					.edit({
-						components: [],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-
-				return client.off('messageCreate', removeRankComponents);
-			});
-
+			await messageCollector(message, botReply);
 			return await interactionCollector(botReply);
 		}
 
