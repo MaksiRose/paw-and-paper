@@ -202,11 +202,11 @@ module.exports = {
 
 			console.log(`\x1b[32m${message.author.tag}\x1b[0m successfully executed \x1b[33m${message.content} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
-			if (usersActiveCommandsAmountMap.has(message.author.id) == false) {
+			if (usersActiveCommandsAmountMap.has('nr' + message.author.id + message.guild.id) == false) {
 
-				usersActiveCommandsAmountMap.set(message.author.id, { activeCommands: 0 });
+				usersActiveCommandsAmountMap.set('nr' + message.author.id + message.guild.id, { activeCommands: 0 });
 			}
-			usersActiveCommandsAmountMap.get(message.author.id).activeCommands += 1;
+			usersActiveCommandsAmountMap.get('nr' + message.author.id + message.guild.id).activeCommands += 1;
 
 			await message.channel
 				.sendTyping()
@@ -218,9 +218,9 @@ module.exports = {
 				.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray, pingRuins)
 				.then(async () => {
 
-					usersActiveCommandsAmountMap.get(message.author.id).activeCommands -= 1;
+					usersActiveCommandsAmountMap.get('nr' + message.author.id + message.guild.id).activeCommands -= 1;
 
-					if (profileData && usersActiveCommandsAmountMap.get(message.author.id).activeCommands <= 0) {
+					if (profileData && usersActiveCommandsAmountMap.get('nr' + message.author.id + message.guild.id).activeCommands <= 0) {
 
 						profileData = await profileModel.findOne({
 							userId: message.author.id,
@@ -233,9 +233,9 @@ module.exports = {
 		}
 		catch (error) {
 
-			usersActiveCommandsAmountMap.get(message.author.id).activeCommands -= 1;
+			usersActiveCommandsAmountMap.get('nr' + message.author.id + message.guild.id).activeCommands -= 1;
 
-			if (profileData && usersActiveCommandsAmountMap.get(message.author.id).activeCommands <= 0) {
+			if (profileData && usersActiveCommandsAmountMap.get('nr' + message.author.id + message.guild.id).activeCommands <= 0) {
 
 				profileData = await profileModel.findOne({
 					userId: message.author.id,
