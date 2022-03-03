@@ -229,13 +229,21 @@ module.exports = {
 
 						automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await automaticCoooldownTimeoutFunction, 3000));
 					}
-				})
-				.catch(async (error) => {
-					usersActiveCommandsAmountMap.get(message.author.id).activeCommands -= 1;
-					await errorHandling.output(message, error);
 				});
 		}
 		catch (error) {
+
+			usersActiveCommandsAmountMap.get(message.author.id).activeCommands -= 1;
+
+			if (profileData && usersActiveCommandsAmountMap.get(message.author.id).activeCommands <= 0) {
+
+				profileData = await profileModel.findOne({
+					userId: message.author.id,
+					serverId: message.guild.id,
+				});
+
+				automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await automaticCoooldownTimeoutFunction, 3000));
+			}
 
 			await errorHandling.output(message, error);
 		}
