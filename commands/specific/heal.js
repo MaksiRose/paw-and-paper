@@ -634,10 +634,7 @@ module.exports = {
 								embed.description = `*${profileData.name} takes a ${chosenItemName}. After a  bit of preparation, ${profileData.pronounArray[0]} give${(profileData.pronounArray[5] == 'singular') ? 's' : ''} it to ${chosenProfileData.name}. Immediately you can see the effect. ${chosenProfileData.pronounArray[0].charAt(0).toUpperCase()}${chosenProfileData.pronounArray[0].slice(1)} feel${(chosenProfileData.pronounArray[5] == 'singular') ? 's' : ''} much better!*`;
 							}
 
-							if (chosenProfileData.health < chosenProfileData.maxHealth) {
-
-								embed.footer.text = `${embedFooterStatsText}\n${embedFooterChosenUserStatsText}\n+${chosenUserHealthPoints} HP for ${chosenProfileData.name} (${chosenProfileData.health}/${chosenProfileData.maxHealth})${embedFooterChosenUserInjuryText}\n\n-1 ${chosenItemName} for ${message.guild.name}`;
-							}
+							embed.footer.text = `${embedFooterStatsText}\n${embedFooterChosenUserStatsText}\n+${chosenUserHealthPoints} HP for ${chosenProfileData.name} (${chosenProfileData.health}/${chosenProfileData.maxHealth})${embedFooterChosenUserInjuryText}\n\n-1 ${chosenItemName} for ${message.guild.name}`;
 						}
 						else {
 							chosenProfileData = await profileModel.findOne({
