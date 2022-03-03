@@ -405,7 +405,7 @@ module.exports = {
 
 									default:
 
-										userInjuryObject.sprain += 1;
+										userInjuryObject.sprains += 1;
 
 										getHurtText += `*${otherProfileData.name} tries to get up with ${currentProfileData.name}'s help, but the ${otherProfileData.species} feels a horrible pain as ${otherProfileData.pronounArray[0]} get up. Ironically, ${otherProfileData.name} got a sprain from getting up after the fight.*`;
 
@@ -418,6 +418,9 @@ module.exports = {
 											embedFooterStatsTextPlayer2 = `-${healthPoints} HP (from sprain)\n${embedFooterStatsTextPlayer2}`;
 										}
 								}
+
+								userInjuryObjectPlayer1 = (otherProfileData.userId === profileData.userId) ? userInjuryObject : userInjuryObjectPlayer1;
+								userInjuryObjectPlayer2 = (otherProfileData.userId === profileData.userId) ? userInjuryObjectPlayer2 : userInjuryObject;
 							}
 
 							embedArray.push({
