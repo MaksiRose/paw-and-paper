@@ -227,7 +227,7 @@ module.exports = {
 							serverId: message.guild.id,
 						});
 
-						automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await automaticCoooldownTimeoutFunction, 3000));
+						automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await automaticCooldownTimeoutFunction, 500));
 					}
 				});
 		}
@@ -242,7 +242,7 @@ module.exports = {
 					serverId: message.guild.id,
 				});
 
-				automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await automaticCoooldownTimeoutFunction, 3000));
+				automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await automaticCooldownTimeoutFunction, 500));
 			}
 
 			await errorHandling.output(message, error);
@@ -250,7 +250,7 @@ module.exports = {
 
 		automaticRestingTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await automaticRestingTimeoutFunction, 600000));
 
-		async function automaticCoooldownTimeoutFunction() {
+		async function automaticCooldownTimeoutFunction() {
 
 			profileData = await profileModel.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
@@ -271,7 +271,7 @@ module.exports = {
 					.sendMessage(client, message, [], profileData, serverData, embedArray)
 					.then(async () => {
 
-						automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await automaticCoooldownTimeoutFunction, 3000));
+						automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await automaticCooldownTimeoutFunction, 500));
 					})
 					.catch(async (error) => {
 						return await errorHandling.output(message, error);
