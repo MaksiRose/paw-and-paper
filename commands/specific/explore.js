@@ -184,7 +184,7 @@ module.exports = {
 
 				if (!collected.size) {
 
-					return await botReply
+					await botReply
 						.edit({
 							components: [],
 						})
@@ -193,6 +193,8 @@ module.exports = {
 								throw new Error(error);
 							}
 						});
+
+					return resolve();
 				}
 
 				const interaction = collected.first();
@@ -218,7 +220,9 @@ module.exports = {
 					});
 
 				await new Promise((resolve) => {
+
 					setTimeout(async function() {
+
 						await startExploring();
 						return resolve();
 					}, 15000);
