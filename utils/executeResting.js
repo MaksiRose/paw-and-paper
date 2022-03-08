@@ -1,4 +1,4 @@
-const restingTimeoutArray = new Array();
+const restingTimeoutArray = [];
 const profileModel = require('../models/profileModel');
 
 module.exports = {

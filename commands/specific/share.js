@@ -5,6 +5,8 @@ const { generateRandomNumber, pullFromWeightedTable } = require('../../utils/ran
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
+const { checkLevelUp } = require('../../utils/levelHandling');
+const sharingCooldownAccountsMap = new Map();
 
 module.exports = {
 	name: 'share',
@@ -18,6 +20,24 @@ module.exports = {
 		if (await isInvalid(message, profileData, embedArray, [module.exports.name])) {
 
 			return;
+		}
+
+		if (sharingCooldownAccountsMap.has(profileData.userId) && Date.now() - sharingCooldownAccountsMap.get(profileData.userId) < 7200000) {
+
+			return await message
+				.reply({
+					embeds: [{
+						color: profileData.color,
+						author: { name: profileData.name, icon_url: profileData.avatarURL },
+						title: 'You can only share every 2 hours!',
+						description: `You can share again <t:${Math.floor((sharingCooldownAccountsMap.get(profileData.userId) + 7200000) / 1000)}:R>`,
+					}],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
 		}
 
 		profileData = await startCooldown(message, profileData);
@@ -109,6 +129,8 @@ module.exports = {
 			footer: { text: '' },
 		};
 
+		let partnerProfileData;
+
 		if (!message.mentions.users.size) {
 
 			let allRuinsProfilesArray = await profileModel.find({
@@ -122,14 +144,14 @@ module.exports = {
 
 				const allRuinsProfilesArrayRandomIndex = generateRandomNumber(allRuinsProfilesArray.length, 0);
 
-				const partnerProfileData = await profileModel.findOne({
+				partnerProfileData = await profileModel.findOne({
 					userId: allRuinsProfilesArray[allRuinsProfilesArrayRandomIndex],
 					serverId: message.guild.id,
 				});
 
 				if (partnerProfileData.energy > 0 && partnerProfileData.health > 0 && partnerProfileData.hunger > 0 || partnerProfileData.thirst > 0) {
 
-					await shareStory(partnerProfileData);
+					await shareStory();
 				}
 				else {
 
@@ -142,7 +164,8 @@ module.exports = {
 			}
 		}
 		else {
-			const partnerProfileData = await profileModel.findOne({
+
+			partnerProfileData = await profileModel.findOne({
 				userId: message.mentions.users.first().id,
 				serverId: message.guild.id,
 			});
@@ -178,11 +201,11 @@ module.exports = {
 			}
 			else {
 
-				await shareStory(partnerProfileData);
+				await shareStory();
 			}
 		}
 
-		const botReply = await message
+		let botReply = await message
 			.reply({
 				embeds: embedArray,
 			})
@@ -192,13 +215,16 @@ module.exports = {
 				}
 			});
 
+		botReply = await checkLevelUp(partnerProfileData, botReply);
 		await decreaseHealth(message, profileData, botReply, userInjuryObject);
 		await isPassedOut(message, profileData, false);
 
 
-		async function shareStory(partnerProfileData) {
+		async function shareStory() {
 
-			const partnerExperiencePoints = generateRandomNumber(41, 20);
+			sharingCooldownAccountsMap.set(profileData.userId, Date.now());
+
+			const partnerExperiencePoints = generateRandomNumber(Math.round((partnerProfileData.levels * 50) * 0.15), Math.round((partnerProfileData.levels * 50) * 0.05));
 
 			partnerProfileData = await profileModel.findOneAndUpdate(
 				{ userId: partnerProfileData.userId, serverId: message.guild.id },
@@ -259,7 +285,7 @@ module.exports = {
 				}
 			}
 
-			return;
+			return embedArray;
 		}
 
 		async function noSharing() {
@@ -279,7 +305,8 @@ module.exports = {
 				},
 			);
 
-			return embedArray.push(embed);
+			embedArray.push(embed);
+			return embedArray;
 		}
 	},
 };
