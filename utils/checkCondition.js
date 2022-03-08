@@ -41,12 +41,12 @@ module.exports = {
 	},
 
 	async decreaseEnergy(profileData) {
-		let minimumEnergyPoints = Math.round(10 - (profileData.health / 10));
+
+		const minimumEnergyPoints = Math.round((10 - (profileData.health / 10)) / 2);
 		let extraLostEnergyPoints = 0;
 
 		if (minimumEnergyPoints > 0) {
 
-			minimumEnergyPoints = Math.round(minimumEnergyPoints / 1.5);
 			extraLostEnergyPoints = Math.floor(Math.random() * 2) + minimumEnergyPoints;
 
 			if (profileData.energy - extraLostEnergyPoints < 0) {
