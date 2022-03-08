@@ -68,13 +68,7 @@ module.exports = {
 				currentRegion: profileData.currentRegion,
 			});
 
-			allRuinProfilesArray = allRuinProfilesArray.map(doc => doc.userId);
-			const allRuinProfilesArrayUserIndex = allRuinProfilesArray.indexOf(`${profileData.userId}`);
-
-			if (allRuinProfilesArrayUserIndex > -1) {
-
-				allRuinProfilesArray.splice(allRuinProfilesArrayUserIndex, 1);
-			}
+			allRuinProfilesArray = allRuinProfilesArray.map(doc => doc.userId).filter(async userId => await message.guild.members.cache.has(userId) && userId != profileData.userId);
 
 			for (let i = 0; i < allRuinProfilesArray.length; i++) {
 
