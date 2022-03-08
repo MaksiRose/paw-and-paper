@@ -6,7 +6,7 @@ const { pickRandomCommonPlant } = require('../../utils/pickRandomPlant');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
-const { checkLevelUp, decreaseLevel } = require('../../utils/levelHandling');
+const { checkLevelUp } = require('../../utils/levelHandling');
 
 module.exports = {
 	name: 'play',
@@ -140,7 +140,7 @@ module.exports = {
 		}
 
 		let healthPoints = 0;
-		let userInjuryObject = { ...profileData.injuryObject };
+		const userInjuryObject = { ...profileData.injuryObject };
 
 		const embed = {
 			color: profileData.color,
@@ -229,7 +229,7 @@ module.exports = {
 			await playTogether(partnerProfileData);
 		}
 
-		const botReply = await message
+		let botReply = await message
 			.reply({
 				embeds: embedArray,
 			})
@@ -239,19 +239,9 @@ module.exports = {
 				}
 			});
 
-		userInjuryObject = await decreaseHealth(message, profileData, botReply, userInjuryObject);
-
-		profileData = await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { injuryObject: userInjuryObject } },
-		);
-
+		botReply = await decreaseHealth(message, profileData, botReply, userInjuryObject);
 		await checkLevelUp(profileData, botReply);
-
-		if (await isPassedOut(message, profileData)) {
-
-			await decreaseLevel(profileData);
-		}
+		await isPassedOut(message, profileData, true);
 
 
 		async function findQuest() {

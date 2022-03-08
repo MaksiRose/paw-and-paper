@@ -8,7 +8,7 @@ const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = requir
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseHealth } = require('../../utils/checkCondition');
-const { checkLevelUp, decreaseLevel } = require('../../utils/levelHandling');
+const { checkLevelUp } = require('../../utils/levelHandling');
 
 module.exports = {
 	name: 'heal',
@@ -683,19 +683,9 @@ module.exports = {
 							}
 						});
 
-					userInjuryObject = await decreaseHealth(message, profileData, botReply, userInjuryObject);
-
-					profileData = await profileModel.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{ $set: { injuryObject: userInjuryObject } },
-					);
-
-					await checkLevelUp(profileData, botReply);
-
-					if (await isPassedOut(message, profileData)) {
-
-						await decreaseLevel(profileData);
-					}
+					botReply = await decreaseHealth(message, profileData, botReply, userInjuryObject);
+					botReply = await checkLevelUp(profileData, botReply);
+					await isPassedOut(message, profileData, true);
 
 					return;
 				}

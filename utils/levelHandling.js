@@ -1,5 +1,4 @@
 const profileModel = require('../models/profileModel');
-const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('./itemsInfo');
 
 module.exports = {
 
@@ -34,38 +33,30 @@ module.exports = {
 						throw new Error(error);
 					}
 				});
+
+			return botReply;
 		}
 	},
 
-	async decreaseLevel(profileData) {
+	async decreaseLevel(profileData, botReply) {
 
 		const newUserLevel = Math.round(profileData.levels - (profileData.levels / 10));
-		const emptyUserInventory = {
-			commonPlants: {},
-			uncommonPlants: {},
-			rarePlants: {},
-			meat: {},
-		};
 
-		for (const [commonPlantName] of commonPlantsMap) {
+		botReply.embeds[0].footer = `${(profileData.experience > 0) ? `-${profileData.experience} XP` : ''}\n${(newUserLevel != profileData.levels) ? `-${profileData.levels - newUserLevel} level${(profileData.levels - newUserLevel > 1) ? 's' : ''}` : ''}`;
 
-			emptyUserInventory.commonPlants[commonPlantName] = 0;
+		const newUserInventory = { ...profileData.inventoryObject };
+		for (const itemType of Object.keys(newUserInventory)) {
+
+			for (const item of Object.keys(newUserInventory[itemType])) {
+
+				if (newUserInventory[itemType][item] > 0) {
+
+					botReply.embeds[0].footer += `\n-${newUserInventory[itemType][item]} ${item}`;
+					newUserInventory[itemType][item] = 0;
+				}
+			}
 		}
 
-		for (const [uncommonPlantName] of uncommonPlantsMap) {
-
-			emptyUserInventory.uncommonPlants[uncommonPlantName] = 0;
-		}
-
-		for (const [rarePlantName] of rarePlantsMap) {
-
-			emptyUserInventory.rarePlants[rarePlantName] = 0;
-		}
-
-		for (const [speciesName] of speciesMap) {
-
-			emptyUserInventory.meat[speciesName] = 0;
-		}
 
 		await profileModel.findOneAndUpdate(
 			{ userId: profileData.userId, serverId: profileData.serverId },
@@ -73,10 +64,22 @@ module.exports = {
 				$set: {
 					levels: newUserLevel,
 					experience: 0,
-					inventoryObject: emptyUserInventory,
+					inventoryObject: newUserInventory,
 				},
 			},
 		);
+
+		botReply = await botReply
+			.edit({
+				embeds: botReply.embeds,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
+			});
+
+		return botReply;
 	},
 
 };

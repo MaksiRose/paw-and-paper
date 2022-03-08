@@ -101,7 +101,7 @@ module.exports = {
 		}
 
 		let healthPoints = 0;
-		let userInjuryObject = { ...profileData.injuryObject };
+		const userInjuryObject = { ...profileData.injuryObject };
 
 		const embed = {
 			color: profileData.color,
@@ -193,17 +193,8 @@ module.exports = {
 				}
 			});
 
-		userInjuryObject = await decreaseHealth(message, profileData, botReply, userInjuryObject);
-
-		profileData = await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { injuryObject: userInjuryObject } },
-		);
-
-		if (await isPassedOut(message, profileData)) {
-
-			await decreaseLevel(profileData);
-		}
+		await decreaseHealth(message, profileData, botReply, userInjuryObject);
+		await isPassedOut(message, profileData, false);
 
 
 		async function shareStory(partnerProfileData) {

@@ -2,14 +2,15 @@ const profileModel = require('../models/profileModel');
 const config = require('../config.json');
 const { speciesMap } = require('./itemsInfo');
 const { stopResting } = require('./executeResting');
+const { decreaseLevel } = require('./levelHandling');
 
 module.exports = {
 
-	async isPassedOut(message, profileData) {
+	async isPassedOut(message, profileData, isNew) {
 
 		if (profileData.energy <= 0 || profileData.health <= 0 || profileData.hunger <= 0 || profileData.thirst <= 0) {
 
-			await message
+			const botReply = await message
 				.reply({
 					embeds: [{
 						color: profileData.color,
@@ -22,6 +23,11 @@ module.exports = {
 						throw new Error(error);
 					}
 				});
+
+			if (isNew === true) {
+
+				decreaseLevel(profileData, botReply);
+			}
 
 			return true;
 		}
@@ -188,7 +194,7 @@ module.exports = {
 
 	async isInvalid(message, profileData, embedArray, callerNameArray) {
 
-		if (await module.exports.isPassedOut(message, profileData)) {
+		if (await module.exports.isPassedOut(message, profileData, false)) {
 
 			return true;
 		}

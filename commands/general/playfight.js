@@ -5,7 +5,7 @@ const { generateRandomNumber, generateRandomNumberWithException, pullFromWeighte
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseHealth, decreaseThirst, decreaseHunger, decreaseEnergy } = require('../../utils/checkCondition');
-const { checkLevelUp, decreaseLevel } = require('../../utils/levelHandling');
+const { checkLevelUp } = require('../../utils/levelHandling');
 
 module.exports = {
 	name: 'playfight',
@@ -555,31 +555,14 @@ module.exports = {
 
 					async function checkHealthAndLevel() {
 
-						userInjuryObjectPlayer1 = await decreaseHealth(message, profileData, botReply, userInjuryObjectPlayer1);
-						userInjuryObjectPlayer2 = await decreaseHealth(message, partnerProfileData, botReply, userInjuryObjectPlayer2);
+						botReply = await decreaseHealth(message, profileData, botReply, userInjuryObjectPlayer1);
+						botReply = await decreaseHealth(message, partnerProfileData, botReply, userInjuryObjectPlayer2);
 
-						profileData = await profileModel.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
-							{ $set: { injuryObject: userInjuryObjectPlayer1 } },
-						);
+						botReply = await checkLevelUp(profileData, botReply);
+						botReply = await checkLevelUp(partnerProfileData, botReply);
 
-						partnerProfileData = await profileModel.findOneAndUpdate(
-							{ userId: message.mentions.users.first().id, serverId: message.guild.id },
-							{ $set: { injuryObject: userInjuryObjectPlayer2 } },
-						);
-
-						await checkLevelUp(profileData, botReply);
-						await checkLevelUp(partnerProfileData, botReply);
-
-						if (await isPassedOut(message, profileData)) {
-
-							await decreaseLevel(profileData);
-						}
-
-						if (await isPassedOut(message, partnerProfileData)) {
-
-							await decreaseLevel(partnerProfileData);
-						}
+						await isPassedOut(message, profileData, true);
+						await isPassedOut(message, partnerProfileData, true);
 					}
 
 					function isWin() {

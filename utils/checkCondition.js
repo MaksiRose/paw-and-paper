@@ -66,12 +66,6 @@ module.exports = {
 		}
 
 		let extraLostHealthPoints = 0;
-		let woundHealthPoints = 0;
-		let infectionHealthPoints = 0;
-		let coldHealthPoints = 0;
-		let sprainHealthPoints = 0;
-		let poisonHealthPoints = 0;
-		const userInjuryObject = { ...profileData.injuryObject };
 		const embed = {
 			color: profileData.color,
 			description: '',
@@ -85,21 +79,17 @@ module.exports = {
 
 			if (getsHealed == 0) {
 
-				userInjuryObject.wounds -= 1;
 				modifiedUserInjuryObject.wounds -= 1;
 
 				embed.description += `\n*One of ${profileData.name}'s wounds healed! What luck!*`;
 				continue;
 			}
 
-			woundHealthPoints += generateRandomNumber(5, 1);
+			extraLostHealthPoints += generateRandomNumber(5, 1);
 
 			if (becomesInfection == 0) {
 
-				userInjuryObject.wounds -= 1;
 				modifiedUserInjuryObject.wounds -= 1;
-
-				userInjuryObject.infections += 1;
 				modifiedUserInjuryObject.infections += 1;
 
 				embed.description += `\n*One of ${profileData.name}'s wounds turned into an infection!*`;
@@ -115,21 +105,15 @@ module.exports = {
 
 			if (getsHealed == 0) {
 
-				userInjuryObject.infections -= 1;
 				modifiedUserInjuryObject.infections -= 1;
 
 				embed.description += `\n*One of ${profileData.name}'s infections healed! What luck!*`;
 				continue;
 			}
 
-			let minimumInfectionHealthPoints = Math.round(10 - (profileData.health / 10));
+			const minimumInfectionHealthPoints = Math.round((10 - (profileData.health / 10)) / 3);
+			extraLostHealthPoints += generateRandomNumber(5, (minimumInfectionHealthPoints > 0) ? minimumInfectionHealthPoints : 0);
 
-			if (minimumInfectionHealthPoints > 0) {
-
-				minimumInfectionHealthPoints = Math.round(minimumInfectionHealthPoints / 2);
-			}
-
-			infectionHealthPoints += generateRandomNumber(5, minimumInfectionHealthPoints);
 			embed.description += `\n*One of ${profileData.name}'s infections is getting worse!*`;
 		}
 
@@ -139,16 +123,15 @@ module.exports = {
 
 			if (getsHealed == 0) {
 
-				userInjuryObject.cold = false;
 				modifiedUserInjuryObject.cold = false;
 
 				embed.description += `\n*${profileData.name} recovered from ${profileData.pronounArray[2]} cold! What luck!*`;
 			}
 			else {
 
-				const minimumColdHealthPoints = Math.round(10 - (profileData.health / 10));
+				const minimumColdHealthPoints = Math.round((10 - (profileData.health / 10)) / 1.5);
+				extraLostHealthPoints += generateRandomNumber(3, (minimumColdHealthPoints > 0) ? minimumColdHealthPoints : 0);
 
-				coldHealthPoints = coldHealthPoints + generateRandomNumber(5, minimumColdHealthPoints);
 				embed.description += `\n*${profileData.name}'s cold is getting worse!*`;
 			}
 		}
@@ -159,14 +142,14 @@ module.exports = {
 
 			if (getsHealed == 0) {
 
-				userInjuryObject.sprains -= 1;
 				modifiedUserInjuryObject.sprains -= 1;
 
 				embed.description += `\n*One of ${profileData.name}'s sprains healed! What luck!*`;
 				continue;
 			}
 
-			sprainHealthPoints += generateRandomNumber(5, 6);
+			extraLostHealthPoints += generateRandomNumber(5, 4);
+
 			embed.description += `\n*One of ${profileData.name}'s sprains is getting worse!*`;
 		}
 
@@ -176,38 +159,29 @@ module.exports = {
 
 			if (getsHealed == 0) {
 
-				userInjuryObject.poison = false;
 				modifiedUserInjuryObject.poison = false;
 
 				embed.description += `\n*${profileData.name} recovered from ${profileData.pronounArray[2]} poisoning! What luck!*`;
 			}
 			else {
 
-				const minimumPoisonHealthPoints = Math.round(21 - (profileData.health / 10));
+				const minimumPoisonHealthPoints = Math.round(10 - (profileData.health / 10));
+				extraLostHealthPoints += generateRandomNumber(5, minimumPoisonHealthPoints);
 
-				poisonHealthPoints = poisonHealthPoints + generateRandomNumber(5, minimumPoisonHealthPoints);
 				embed.description += `\n*The poison in ${profileData.name}'s body is spreading!*`;
 			}
 		}
-
-		extraLostHealthPoints = woundHealthPoints + infectionHealthPoints + coldHealthPoints + sprainHealthPoints + poisonHealthPoints;
 
 		if (profileData.health - extraLostHealthPoints < 0) {
 
 			extraLostHealthPoints = profileData.health;
 		}
 
-		// this is done to keep the console logs injury Array correct
-		profileData = await profileModel.findOne({
-			userId: message.author.id,
-			serverId: message.guild.id,
-		});
-
 		profileData = await profileModel.findOneAndUpdate(
 			{ userId: message.author.id, serverId: message.guild.id },
 			{
 				$inc: { health: -extraLostHealthPoints },
-				$set: { injuryObject: userInjuryObject },
+				$set: { injuryObject: modifiedUserInjuryObject },
 			},
 		);
 
@@ -217,7 +191,7 @@ module.exports = {
 		}
 
 		botReply.embeds.push(embed);
-		await botReply
+		botReply = await botReply
 			.edit({
 				embeds: botReply.embeds,
 			})
@@ -227,7 +201,7 @@ module.exports = {
 				}
 			});
 
-		return modifiedUserInjuryObject;
+		return botReply;
 	},
 
 };

@@ -14,7 +14,7 @@ module.exports = {
 			return;
 		}
 
-		if (await isPassedOut(message, profileData)) {
+		if (await isPassedOut(message, profileData, false)) {
 
 			return;
 		}
