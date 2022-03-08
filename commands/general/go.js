@@ -475,7 +475,7 @@ module.exports = {
 				currentRegion: 'food den',
 			});
 
-			allFoodDenProfilesArray = allFoodDenProfilesArray.map(document => document.userId);
+			allFoodDenProfilesArray = allFoodDenProfilesArray.map(document => document.userId).filter(async userId => await message.guild.members.cache.has(userId));
 
 			for (let i = 0; i < allFoodDenProfilesArray.length; i++) {
 
@@ -503,7 +503,7 @@ module.exports = {
 				currentRegion: 'medicine den',
 			});
 
-			allMedicineDenProfilesArray = allMedicineDenProfilesArray.map(document => document.userId);
+			allMedicineDenProfilesArray = allMedicineDenProfilesArray.map(document => document.userId).filter(async userId => await message.guild.members.cache.has(userId));
 
 			for (let i = 0; i < allMedicineDenProfilesArray.length; i++) {
 
@@ -520,7 +520,7 @@ module.exports = {
 				rank: { $nin: ['Youngling', 'Hunter'] },
 			});
 
-			allHealerProfilesArray = allHealerProfilesArray.map(document => document.userId);
+			allHealerProfilesArray = allHealerProfilesArray.map(document => document.userId).filter(async userId => await message.guild.members.cache.has(userId));
 
 			for (let i = 0; i < allHealerProfilesArray.length; i++) {
 
@@ -548,7 +548,7 @@ module.exports = {
 				currentRegion: 'ruins',
 			});
 
-			allRuinProfilesArray = allRuinProfilesArray.map(document => document.userId);
+			allRuinProfilesArray = allRuinProfilesArray.map(document => document.userId).filter(async userId => await message.guild.members.cache.has(userId));
 
 			for (let i = 0; i < allRuinProfilesArray.length; i++) {
 
@@ -587,7 +587,7 @@ module.exports = {
 				currentRegion: 'prairie',
 			});
 
-			allPrairieProfilesArray = allPrairieProfilesArray.map(document => document.userId);
+			allPrairieProfilesArray = allPrairieProfilesArray.map(document => document.userId).filter(async userId => await message.guild.members.cache.has(userId));
 
 			for (let i = 0; i < allPrairieProfilesArray.length; i++) {
 

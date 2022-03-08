@@ -157,13 +157,7 @@ module.exports = {
 				currentRegion: 'prairie',
 			});
 
-			allPrairieProfilesArray = allPrairieProfilesArray.map(doc => doc.userId);
-			const allPrairieProfilesArrayUserIndex = allPrairieProfilesArray.indexOf(`${profileData.userId}`);
-
-			if (allPrairieProfilesArrayUserIndex > -1) {
-
-				allPrairieProfilesArray.splice(allPrairieProfilesArrayUserIndex, 1);
-			}
+			allPrairieProfilesArray = allPrairieProfilesArray.map(doc => doc.userId).filter(async userId => await message.guild.members.cache.has(userId) && userId != profileData.userId);
 
 			const getsQuestChance = pullFromWeightedTable({ 0: 19, 1: 1 });
 			if (getsQuestChance == 1 && profileData.unlockedRanks == 0 && profileData.rank == 'Youngling' && profileData.levels > 1) {

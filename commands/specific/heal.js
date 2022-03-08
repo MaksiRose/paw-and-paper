@@ -65,7 +65,7 @@ module.exports = {
 			],
 		});
 
-		allHurtProfilesArray = allHurtProfilesArray.map(doc => doc.userId);
+		allHurtProfilesArray = allHurtProfilesArray.map(doc => doc.userId).filter(async userId => await message.guild.members.cache.has(userId));
 
 		const userSelectMenu = {
 			type: 'ACTION_ROW',
