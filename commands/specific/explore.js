@@ -401,7 +401,7 @@ module.exports = {
 
 			async function findPlantOrEnemy() {
 
-				const betterLuckValue = (profileData.levels - 1) * 2;
+				const betterLuckValue = (profileData.levels - 1);
 
 				const findSomethingChance = pullFromWeightedTable({ 0: 10, 1: 90 + betterLuckValue });
 				if (findSomethingChance == 0) {
