@@ -1,6 +1,6 @@
 const config = require('../../config.json');
 const profileModel = require('../../models/profileModel');
-const maps = require('../../utils/maps');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
@@ -23,22 +23,22 @@ module.exports = {
 					meat: {},
 				};
 
-				for (const [commonPlantName] of maps.commonPlantMap) {
+				for (const [commonPlantName] of commonPlantsMap) {
 
 					profileInventoryObject.commonPlants[commonPlantName] = 0;
 				}
 
-				for (const [uncommonPlantName] of maps.uncommonPlantMap) {
+				for (const [uncommonPlantName] of uncommonPlantsMap) {
 
 					profileInventoryObject.uncommonPlants[uncommonPlantName] = 0;
 				}
 
-				for (const [rarePlantName] of maps.rarePlantMap) {
+				for (const [rarePlantName] of rarePlantsMap) {
 
 					profileInventoryObject.rarePlants[rarePlantName] = 0;
 				}
 
-				for (const [speciesName] of maps.speciesMap) {
+				for (const [speciesName] of speciesMap) {
 
 					profileInventoryObject.meat[speciesName] = 0;
 				}

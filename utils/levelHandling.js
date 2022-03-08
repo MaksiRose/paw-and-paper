@@ -1,9 +1,9 @@
 const profileModel = require('../models/profileModel');
-const maps = require('./maps');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('./itemsInfo');
 
 module.exports = {
 
-	async levelCheck(profileData, botReply) {
+	async checkLevelUp(profileData, botReply) {
 
 		const requiredExperiencePoints = profileData.levels * 50;
 
@@ -47,22 +47,22 @@ module.exports = {
 			meat: {},
 		};
 
-		for (const [commonPlantName] of maps.commonPlantMap) {
+		for (const [commonPlantName] of commonPlantsMap) {
 
 			emptyUserInventory.commonPlants[commonPlantName] = 0;
 		}
 
-		for (const [uncommonPlantName] of maps.uncommonPlantMap) {
+		for (const [uncommonPlantName] of uncommonPlantsMap) {
 
 			emptyUserInventory.uncommonPlants[uncommonPlantName] = 0;
 		}
 
-		for (const [rarePlantName] of maps.rarePlantMap) {
+		for (const [rarePlantName] of rarePlantsMap) {
 
 			emptyUserInventory.rarePlants[rarePlantName] = 0;
 		}
 
-		for (const [speciesName] of maps.speciesMap) {
+		for (const [speciesName] of speciesMap) {
 
 			emptyUserInventory.meat[speciesName] = 0;
 		}

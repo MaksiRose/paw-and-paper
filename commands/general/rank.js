@@ -1,6 +1,6 @@
 const profileModel = require('../../models/profileModel');
-const checkAccountCompletion = require('../../utils/checkAccountCompletion');
-const checkValidity = require('../../utils/checkValidity');
+const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCooldown } = require('../../utils/checkValidity');
 const messageCollector = require('../../utils/messageCollector');
 const startCooldown = require('../../utils/startCooldown');
 
@@ -9,12 +9,12 @@ module.exports = {
 	aliases: ['role'],
 	async sendMessage(client, message, argumentsArray, profileData) {
 
-		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
+		if (await hasNotCompletedAccount(message, profileData)) {
 
 			return;
 		}
 
-		if (await checkValidity.hasCooldown(message, profileData, [module.exports.name].concat(module.exports.aliases))) {
+		if (await hasCooldown(message, profileData, [module.exports.name].concat(module.exports.aliases))) {
 
 			return;
 		}

@@ -1,7 +1,7 @@
 const profileModel = require('../../models/profileModel');
-const checkAccountCompletion = require('../../utils/checkAccountCompletion');
-const checkValidity = require('../../utils/checkValidity');
-const executeResting = require('../../utils/executeResting');
+const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { isPassedOut, hasCooldown, hasQuest } = require('../../utils/checkValidity');
+const { startResting } = require('../../utils/executeResting');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
@@ -9,22 +9,22 @@ module.exports = {
 	aliases: ['sleep'],
 	async sendMessage(client, message, argumentsArray, profileData) {
 
-		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
+		if (await hasNotCompletedAccount(message, profileData)) {
 
 			return;
 		}
 
-		if (await checkValidity.isPassedOut(message, profileData)) {
+		if (await isPassedOut(message, profileData)) {
 
 			return;
 		}
 
-		if (await checkValidity.hasCooldown(message, profileData, [module.exports.name].concat(module.exports.aliases))) {
+		if (await hasCooldown(message, profileData, [module.exports.name].concat(module.exports.aliases))) {
 
 			return;
 		}
 
-		if (await checkValidity.hasQuest(message, profileData)) {
+		if (await hasQuest(message, profileData)) {
 
 			return true;
 		}
@@ -90,6 +90,6 @@ module.exports = {
 				}
 			});
 
-		await executeResting.startResting(message, profileData, botReply);
+		await startResting(message, profileData, botReply);
 	},
 };

@@ -1,21 +1,22 @@
-const checkAccountCompletion = require('../../utils/checkAccountCompletion');
-const checkValidity = require('../../utils/checkValidity');
 const startCooldown = require('../../utils/startCooldown');
 const config = require('../../config.json');
 const profileModel = require('../../models/profileModel');
-const condition = require('../../utils/condition');
-const levels = require('../../utils/levels');
+const { generateRandomNumber, generateRandomNumberWithException, pullFromWeightedTable } = require('../../utils/randomizers');
+const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
+const { decreaseHealth, decreaseThirst, decreaseHunger, decreaseEnergy } = require('../../utils/checkCondition');
+const { checkLevelUp, decreaseLevel } = require('../../utils/levelHandling');
 
 module.exports = {
 	name: 'playfight',
 	async sendMessage(client, message, argumentsArray, profileData, serverData, embedArray) {
 
-		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
+		if (await hasNotCompletedAccount(message, profileData)) {
 
 			return;
 		}
 
-		if (await checkValidity.isInvalid(message, profileData, embedArray, [module.exports.name])) {
+		if (await isInvalid(message, profileData, embedArray, [module.exports.name])) {
 
 			return;
 		}
@@ -253,9 +254,9 @@ module.exports = {
 			});
 		}
 
-		await newRound((Math.floor(Math.random() * 2) == 0) ? true : false);
+		await startNewRound((generateRandomNumber(2, 0) == 0) ? true : false);
 
-		async function newRound(isPartner) {
+		async function startNewRound(isPartner) {
 
 			let currentProfileData = (isPartner == true) ? partnerProfileData : profileData;
 			let otherProfileData = (isPartner == true) ? profileData : partnerProfileData;
@@ -320,7 +321,7 @@ module.exports = {
 						}
 						else {
 
-							await depleteStats();
+							await decreaseStats();
 
 							// text for when the match was abandoned
 							embedArray.push({
@@ -341,7 +342,7 @@ module.exports = {
 									}
 								});
 
-							await extraEmbeds();
+							await checkHealthAndLevel();
 						}
 
 						return resolve();
@@ -361,7 +362,7 @@ module.exports = {
 						componentArray[column].components[row].emoji.name = (isPartner == true) ? player1Field : player2Field;
 						componentArray[column].components[row].disabled = true;
 
-						if (hasWon()) {
+						if (isWin()) {
 
 							for (const columnArray of componentArray) {
 
@@ -371,11 +372,11 @@ module.exports = {
 								}
 							}
 
-							await depleteStats();
+							await decreaseStats();
 
 							const x = (otherProfileData.levels - currentProfileData.levels < 0) ? 0 : otherProfileData.levels - currentProfileData.levels;
 							const extraExperience = Math.round((40 / (1 + Math.pow(Math.E, -0.125 * x))) - 20);
-							const experiencePoints = Loottable(11, 10) + extraExperience;
+							const experiencePoints = generateRandomNumber(11, 10) + extraExperience;
 
 							if (currentProfileData.userId === profileData.userId) {
 
@@ -393,10 +394,10 @@ module.exports = {
 
 							let getHurtText = '';
 							const betterLuckValue = (otherProfileData.levels - 1) * 2;
-							const getHurtChance = weightedTable({ 0: 10, 1: 90 + betterLuckValue });
+							const getHurtChance = pullFromWeightedTable({ 0: 10, 1: 90 + betterLuckValue });
 							if (getHurtChance == 0) {
 
-								let healthPoints = Loottable(5, 3);
+								let healthPoints = generateRandomNumber(5, 3);
 								const userInjuryObject = (otherProfileData.userId === profileData.userId) ? userInjuryObjectPlayer1 : userInjuryObjectPlayer2;
 
 								if (otherProfileData.health - healthPoints < 0) {
@@ -411,7 +412,7 @@ module.exports = {
 
 								switch (true) {
 
-									case (weightedTable({ 0: 1, 1: 1 }) == 0 && userInjuryObject.cold == false):
+									case (pullFromWeightedTable({ 0: 1, 1: 1 }) == 0 && userInjuryObject.cold == false):
 
 										userInjuryObject.cold = true;
 
@@ -466,7 +467,7 @@ module.exports = {
 									}
 								});
 
-							await extraEmbeds();
+							await checkHealthAndLevel();
 
 							return resolve();
 						}
@@ -481,9 +482,9 @@ module.exports = {
 								}
 							}
 
-							await depleteStats();
+							await decreaseStats();
 
-							const experiencePoints = Loottable(11, 5);
+							const experiencePoints = generateRandomNumber(11, 5);
 
 							embedFooterStatsTextPlayer1 = `+${experiencePoints} XP (${profileData.experience + experiencePoints}/${profileData.levels * 50}) for ${profileData.name}\n${embedFooterStatsTextPlayer1}`;
 							embedFooterStatsTextPlayer2 = `+${experiencePoints} XP (${partnerProfileData.experience + experiencePoints}/${partnerProfileData.levels * 50}) for ${partnerProfileData.name}\n${embedFooterStatsTextPlayer2}`;
@@ -516,7 +517,7 @@ module.exports = {
 									}
 								});
 
-							await extraEmbeds();
+							await checkHealthAndLevel();
 
 							return resolve();
 						}
@@ -528,7 +529,7 @@ module.exports = {
 						`*${otherProfileData.name} has gotten hold of ${currentProfileData.name}, but the ${currentProfileData.species} manages to get ${otherProfileData.pronounArray[1]} off, sending the ${otherProfileData.species} slamming into the ground. ${otherProfileData.name} needs to get up and try a new strategy.*`,
 					];
 
-					newTurnEmbedTextArrayIndex = generateRandomNumber(newTurnEmbedTextArray.length - 1, 0, newTurnEmbedTextArrayIndex);
+					newTurnEmbedTextArrayIndex = generateRandomNumberWithException(newTurnEmbedTextArray.length - 1, 0, newTurnEmbedTextArrayIndex);
 
 					embedArray.push({
 						color: profileData.color,
@@ -548,14 +549,14 @@ module.exports = {
 							}
 						});
 
-					await newRound(!isPartner);
+					await startNewRound(!isPartner);
 
 					return resolve();
 
-					async function extraEmbeds() {
+					async function checkHealthAndLevel() {
 
-						userInjuryObjectPlayer1 = await condition.decreaseHealth(message, profileData, botReply, userInjuryObjectPlayer1);
-						userInjuryObjectPlayer2 = await condition.decreaseHealth(message, partnerProfileData, botReply, userInjuryObjectPlayer2);
+						userInjuryObjectPlayer1 = await decreaseHealth(message, profileData, botReply, userInjuryObjectPlayer1);
+						userInjuryObjectPlayer2 = await decreaseHealth(message, partnerProfileData, botReply, userInjuryObjectPlayer2);
 
 						profileData = await profileModel.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
@@ -567,21 +568,21 @@ module.exports = {
 							{ $set: { injuryObject: userInjuryObjectPlayer2 } },
 						);
 
-						await levels.levelCheck(profileData, botReply);
-						await levels.levelCheck(partnerProfileData, botReply);
+						await checkLevelUp(profileData, botReply);
+						await checkLevelUp(partnerProfileData, botReply);
 
-						if (await checkValidity.isPassedOut(message, profileData)) {
+						if (await isPassedOut(message, profileData)) {
 
-							await levels.decreaseLevel(profileData);
+							await decreaseLevel(profileData);
 						}
 
-						if (await checkValidity.isPassedOut(message, partnerProfileData)) {
+						if (await isPassedOut(message, partnerProfileData)) {
 
-							await levels.decreaseLevel(partnerProfileData);
+							await decreaseLevel(partnerProfileData);
 						}
 					}
 
-					function hasWon() {
+					function isWin() {
 
 						const diagonal_1_1 = componentArray[1].components[1].emoji.name;
 
@@ -634,38 +635,12 @@ module.exports = {
 			});
 		}
 
-		function Loottable(max, min) {
+		async function decreaseStats() {
 
-			return Math.floor(Math.random() * max) + min;
-		}
-
-		function weightedTable(values) {
-
-			const table = [];
-
-			for (const i in values) {
-
-				for (let j = 0; j < values[i]; j++) {
-
-					table.push(i);
-				}
-			}
-
-			return table[Math.floor(Math.random() * table.length)];
-		}
-
-		function generateRandomNumber(max, min, exception) {
-
-			const randomNumber = Loottable(max, min);
-			return (randomNumber == exception) ? generateRandomNumber(min, max, exception) : randomNumber;
-		}
-
-		async function depleteStats() {
-
-			const thirstPointsPlayer1 = await condition.decreaseThirst(profileData);
-			const hungerPointsPlayer1 = await condition.decreaseHunger(profileData);
-			const extraLostEnergyPointsPlayer1 = await condition.decreaseEnergy(profileData);
-			let energyPointsPlayer1 = Loottable(5, 1) + extraLostEnergyPointsPlayer1;
+			const thirstPointsPlayer1 = await decreaseThirst(profileData);
+			const hungerPointsPlayer1 = await decreaseHunger(profileData);
+			const extraLostEnergyPointsPlayer1 = await decreaseEnergy(profileData);
+			let energyPointsPlayer1 = generateRandomNumber(5, 1) + extraLostEnergyPointsPlayer1;
 
 			if (profileData.energy - energyPointsPlayer1 < 0) {
 
@@ -701,10 +676,10 @@ module.exports = {
 			}
 
 
-			const thirstPointsPlayer2 = await condition.decreaseThirst(partnerProfileData);
-			const hungerPointsPlayer2 = await condition.decreaseHunger(partnerProfileData);
-			const extraLostEnergyPointsPlayer2 = await condition.decreaseEnergy(partnerProfileData);
-			let energyPointsPlayer2 = Loottable(5, 1) + extraLostEnergyPointsPlayer2;
+			const thirstPointsPlayer2 = await decreaseThirst(partnerProfileData);
+			const hungerPointsPlayer2 = await decreaseHunger(partnerProfileData);
+			const extraLostEnergyPointsPlayer2 = await decreaseEnergy(partnerProfileData);
+			let energyPointsPlayer2 = generateRandomNumber(5, 1) + extraLostEnergyPointsPlayer2;
 
 			if (partnerProfileData.energy - energyPointsPlayer2 < 0) {
 

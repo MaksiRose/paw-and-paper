@@ -1,24 +1,25 @@
-const checkAccountCompletion = require('../../utils/checkAccountCompletion');
-const checkValidity = require('../../utils/checkValidity');
 const profileModel = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
 const config = require('../../config.json');
-const maps = require('../../utils/maps');
-const condition = require('../../utils/condition');
-const levels = require('../../utils/levels');
 const startCooldown = require('../../utils/startCooldown');
 const messageCollector = require('../../utils/messageCollector');
+const { generateRandomNumber } = require('../../utils/randomizers');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
+const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
+const { decreaseThirst, decreaseHunger, decreaseHealth } = require('../../utils/checkCondition');
+const { checkLevelUp, decreaseLevel } = require('../../utils/levelHandling');
 
 module.exports = {
 	name: 'heal',
 	async sendMessage(client, message, argumentsArray, profileData, serverData, embedArray) {
 
-		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
+		if (await hasNotCompletedAccount(message, profileData)) {
 
 			return;
 		}
 
-		if (await checkValidity.isInvalid(message, profileData, embedArray, [module.exports.name])) {
+		if (await isInvalid(message, profileData, embedArray, [module.exports.name])) {
 
 			return;
 		}
@@ -257,7 +258,7 @@ module.exports = {
 						}],
 					};
 
-					for (const [commonPlantName, commonPlantObject] of maps.commonPlantMap) {
+					for (const [commonPlantName, commonPlantObject] of commonPlantsMap) {
 
 						if (serverData.inventoryObject.commonPlants[commonPlantName] > 0) {
 
@@ -308,7 +309,7 @@ module.exports = {
 						}],
 					};
 
-					for (const [uncommonPlantName, uncommonPlantObject] of maps.uncommonPlantMap) {
+					for (const [uncommonPlantName, uncommonPlantObject] of uncommonPlantsMap) {
 
 						if (serverData.inventoryObject.uncommonPlants[uncommonPlantName] > 0) {
 
@@ -317,7 +318,7 @@ module.exports = {
 						}
 					}
 
-					for (const [rarePlantName, rarePlantObject] of maps.rarePlantMap) {
+					for (const [rarePlantName, rarePlantObject] of rarePlantsMap) {
 
 						if (serverData.inventoryObject.rarePlants[rarePlantName] > 0) {
 
@@ -348,12 +349,12 @@ module.exports = {
 						});
 				}
 
-				if (maps.commonPlantMap.has(interaction.values[0]) || maps.uncommonPlantMap.has(interaction.values[0]) || maps.rarePlantMap.has(interaction.values[0]) || interaction.values[0] == 'water') {
+				if (commonPlantsMap.has(interaction.values[0]) || uncommonPlantsMap.has(interaction.values[0]) || rarePlantsMap.has(interaction.values[0]) || interaction.values[0] == 'water') {
 
-					const thirstPoints = await condition.decreaseThirst(profileData);
-					const hungerPoints = await condition.decreaseHunger(profileData);
-					const extraLostEnergyPoints = await condition.decreaseEnergy(profileData);
-					let energyPoints = Loottable(5, 1) + extraLostEnergyPoints;
+					const thirstPoints = await decreaseThirst(profileData);
+					const hungerPoints = await decreaseHunger(profileData);
+					const extraLostEnergyPoints = await decreaseHunger(profileData);
+					let energyPoints = generateRandomNumber(5, 1) + extraLostEnergyPoints;
 					let experiencePoints = 0;
 
 					if (profileData.energy - energyPoints < 0) {
@@ -363,17 +364,17 @@ module.exports = {
 
 					if (profileData.rank == 'Apprentice') {
 
-						experiencePoints = Loottable(11, 5);
+						experiencePoints = generateRandomNumber(11, 5);
 					}
 
 					if (profileData.rank == 'Healer') {
 
-						experiencePoints = Loottable(21, 10);
+						experiencePoints = generateRandomNumber(21, 10);
 					}
 
 					if (profileData.rank == 'Elderly') {
 
-						experiencePoints = Loottable(41, 20);
+						experiencePoints = generateRandomNumber(41, 20);
 					}
 
 					profileData = await profileModel.findOneAndUpdate(
@@ -430,7 +431,7 @@ module.exports = {
 						}
 						else {
 
-							const chosenUserThirstPoints = Loottable(10, 1);
+							const chosenUserThirstPoints = generateRandomNumber(10, 1);
 
 							chosenProfileData = await profileModel.findOneAndUpdate(
 								{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
@@ -456,19 +457,19 @@ module.exports = {
 					}
 					else {
 
-						const plantMap = new Map([...maps.commonPlantMap, ...maps.uncommonPlantMap, ...maps.rarePlantMap]);
+						const plantMap = new Map([...commonPlantsMap, ...uncommonPlantsMap, ...rarePlantsMap]);
 
-						if (maps.commonPlantMap.has(interaction.values[0])) {
+						if (commonPlantsMap.has(interaction.values[0])) {
 
 							serverData.inventoryObject.commonPlants[interaction.values[0]] -= 1;
 						}
 
-						if (maps.uncommonPlantMap.has(interaction.values[0])) {
+						if (uncommonPlantsMap.has(interaction.values[0])) {
 
 							serverData.inventoryObject.uncommonPlants[interaction.values[0]] -= 1;
 						}
 
-						if (maps.rarePlantMap.has(interaction.values[0])) {
+						if (rarePlantsMap.has(interaction.values[0])) {
 
 							serverData.inventoryObject.rarePlants[interaction.values[0]] -= 1;
 						}
@@ -487,12 +488,12 @@ module.exports = {
 								isSuccessful = true;
 							}
 
-							if (maps.speciesMap.get(profileData.species).diet == 'carnivore') {
+							if (speciesMap.get(profileData.species).diet == 'carnivore') {
 
 								chosenUserHungerPoints = 1;
 							}
 
-							if (maps.speciesMap.get(profileData.species).diet == 'herbivore' || maps.speciesMap.get(profileData.species).diet == 'omnivore') {
+							if (speciesMap.get(profileData.species).diet == 'herbivore' || speciesMap.get(profileData.species).diet == 'omnivore') {
 
 								chosenUserHungerPoints = 5;
 							}
@@ -573,7 +574,7 @@ module.exports = {
 							{ $set: { inventoryObject: serverData.inventoryObject } },
 						);
 
-						if (isSuccessful == true && chosenProfileData.userId == profileData.userId && Loottable(100 + ((profileData.levels - 1) * 5), 1) <= 60) {
+						if (isSuccessful == true && chosenProfileData.userId == profileData.userId && generateRandomNumber(100 + ((profileData.levels - 1) * 5), 1) <= 60) {
 
 							isSuccessful = false;
 						}
@@ -582,7 +583,7 @@ module.exports = {
 
 						if (isSuccessful == true) {
 
-							let chosenUserHealthPoints = Loottable(10, 6);
+							let chosenUserHealthPoints = generateRandomNumber(10, 6);
 							if (chosenProfileData.health + chosenUserHealthPoints > chosenProfileData.maxHealth) {
 
 								chosenUserHealthPoints -= (chosenProfileData.health + chosenUserHealthPoints) - chosenProfileData.maxHealth;
@@ -640,9 +641,9 @@ module.exports = {
 					embedArray.length = embedArrayOriginalLength;
 					embedArray.push(embed);
 
-					if (chosenProfileData.injuryObject.cold == true && chosenProfileData.userId != profileData.userId && profileData.injuryObject.cold == false && Loottable(10, 1 <= 3)) {
+					if (chosenProfileData.injuryObject.cold == true && chosenProfileData.userId != profileData.userId && profileData.injuryObject.cold == false && generateRandomNumber(10, 1 <= 3)) {
 
-						healthPoints = Loottable(5, 3);
+						healthPoints = generateRandomNumber(5, 3);
 
 						if (profileData.health - healthPoints < 0) {
 
@@ -682,18 +683,18 @@ module.exports = {
 							}
 						});
 
-					userInjuryObject = await condition.decreaseHealth(message, profileData, botReply, userInjuryObject);
+					userInjuryObject = await decreaseHealth(message, profileData, botReply, userInjuryObject);
 
 					profileData = await profileModel.findOneAndUpdate(
 						{ userId: message.author.id, serverId: message.guild.id },
 						{ $set: { injuryObject: userInjuryObject } },
 					);
 
-					await levels.levelCheck(profileData, botReply);
+					await checkLevelUp(profileData, botReply);
 
-					if (await checkValidity.isPassedOut(message, profileData)) {
+					if (await isPassedOut(message, profileData)) {
 
-						await levels.decreaseLevel(profileData);
+						await decreaseLevel(profileData);
 					}
 
 					return;
@@ -827,11 +828,6 @@ module.exports = {
 						}
 					});
 			}
-		}
-
-		function Loottable(max, min) {
-
-			return Math.floor(Math.random() * max) + min;
 		}
 	},
 };

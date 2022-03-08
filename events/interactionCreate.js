@@ -1,11 +1,11 @@
 const serverModel = require('../models/serverModel');
 const profileModel = require('../models/profileModel');
-const maps = require('../utils/maps');
 const store = require('../commands/general/store');
 const eat = require('../commands/general/eat');
 const config = require('../config.json');
 const errorHandling = require('../utils/errorHandling');
 const pjson = require('../package.json');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 
 module.exports = {
 	name: 'interactionCreate',
@@ -207,10 +207,10 @@ module.exports = {
 			}
 
 			const inventoryMaps = {
-				commonPlants: new Map(maps.commonPlantMap),
-				uncommonPlants: new Map(maps.uncommonPlantMap),
-				rarePlants: new Map(maps.rarePlantMap),
-				meat: new Map(maps.speciesMap),
+				commonPlants: new Map(commonPlantsMap),
+				uncommonPlants: new Map(uncommonPlantsMap),
+				rarePlants: new Map(rarePlantsMap),
+				meat: new Map(speciesMap),
 			};
 
 			if (interaction.customId == 'eat-options' && [].concat(...Object.values(inventoryMaps).map(value => [...value.keys()])).some(elem => elem == interaction.values[0])) {

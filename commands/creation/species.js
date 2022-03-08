@@ -1,15 +1,15 @@
 const config = require('../../config.json');
 const profileModel = require('../../models/profileModel');
-const maps = require('../../utils/maps');
-const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
 const messageCollector = require('../../utils/messageCollector');
+const { speciesMap } = require('../../utils/itemsInfo');
+const { hasNoName } = require('../../utils/checkAccountCompletion');
 
 module.exports = {
 	name: 'species',
 	async sendMessage(client, message, argumentsArray, profileData) {
 
-		if (await checkAccountCompletion.hasNoName(message, profileData)) {
+		if (await hasNoName(message, profileData)) {
 
 			return;
 		}
@@ -34,7 +34,7 @@ module.exports = {
 		}
 
 		const chosenSpecies = argumentsArray.join(' ').toLowerCase();
-		const speciesNameArray = [...maps.speciesMap.keys()].sort();
+		const speciesNameArray = [...speciesMap.keys()].sort();
 		let selectMenuOptionsArray = new Array();
 		let speciesPage = 0;
 
@@ -49,7 +49,7 @@ module.exports = {
 		}
 
 
-		if (chosenSpecies != null && maps.speciesMap.has(chosenSpecies)) {
+		if (chosenSpecies != null && speciesMap.has(chosenSpecies)) {
 
 			await profileModel.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
@@ -109,7 +109,7 @@ module.exports = {
 				}
 
 				const userMessage = await i.channel.messages.fetch(i.message.reference.messageId);
-				return userMessage.id == message.id && (i.values[0] == 'species_page' || maps.speciesMap.has(i.values[0])) && i.user.id == message.author.id;
+				return userMessage.id == message.id && (i.values[0] == 'species_page' || speciesMap.has(i.values[0])) && i.user.id == message.author.id;
 			};
 
 			const collector = message.channel.createMessageComponentCollector({ filter, max: 1, time: 120000 });
@@ -168,7 +168,7 @@ module.exports = {
 					return await interactionCollector();
 				}
 
-				if (maps.speciesMap.has(interaction.values[0])) {
+				if (speciesMap.has(interaction.values[0])) {
 
 					await profileModel.findOneAndUpdate(
 						{ userId: message.author.id, serverId: message.guild.id },
