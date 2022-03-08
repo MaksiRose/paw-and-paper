@@ -1,21 +1,22 @@
 const profileModel = require('../../models/profileModel');
-const checkAccountCompletion = require('../../utils/checkAccountCompletion');
-const checkValidity = require('../../utils/checkValidity');
-const condition = require('../../utils/condition');
-const levels = require('../../utils/levels');
 const startCooldown = require('../../utils/startCooldown');
 const config = require('../../config.json');
+const { generateRandomNumber, pullFromWeightedTable } = require('../../utils/randomizers');
+const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
+const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
+const { decreaseLevel } = require('../../utils/levelHandling');
 
 module.exports = {
 	name: 'share',
 	async sendMessage(client, message, argumentsArray, profileData, serverData, embedArray) {
 
-		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
+		if (await hasNotCompletedAccount(message, profileData)) {
 
 			return;
 		}
 
-		if (await checkValidity.isInvalid(message, profileData, embedArray, [module.exports.name])) {
+		if (await isInvalid(message, profileData, embedArray, [module.exports.name])) {
 
 			return;
 		}
@@ -60,10 +61,10 @@ module.exports = {
 				});
 		}
 
-		const thirstPoints = await condition.decreaseThirst(profileData);
-		const hungerPoints = await condition.decreaseHunger(profileData);
-		const extraLostEnergyPoints = await condition.decreaseEnergy(profileData);
-		let energyPoints = Loottable(5, 1) + extraLostEnergyPoints;
+		const thirstPoints = await decreaseThirst(profileData);
+		const hungerPoints = await decreaseHunger(profileData);
+		const extraLostEnergyPoints = await decreaseEnergy(profileData);
+		let energyPoints = generateRandomNumber(5, 1) + extraLostEnergyPoints;
 
 		if (profileData.energy - energyPoints < 0) {
 
@@ -126,7 +127,7 @@ module.exports = {
 
 			if (allRuinsProfilesArray.length > 0) {
 
-				const allRuinsProfilesArrayRandomIndex = Loottable(allRuinsProfilesArray.length, 0);
+				const allRuinsProfilesArrayRandomIndex = generateRandomNumber(allRuinsProfilesArray.length, 0);
 
 				const partnerProfileData = await profileModel.findOne({
 					userId: allRuinsProfilesArray[allRuinsProfilesArrayRandomIndex],
@@ -198,22 +199,22 @@ module.exports = {
 				}
 			});
 
-		userInjuryObject = await condition.decreaseHealth(message, profileData, botReply, userInjuryObject);
+		userInjuryObject = await decreaseHealth(message, profileData, botReply, userInjuryObject);
 
 		profileData = await profileModel.findOneAndUpdate(
 			{ userId: message.author.id, serverId: message.guild.id },
 			{ $set: { injuryObject: userInjuryObject } },
 		);
 
-		if (await checkValidity.isPassedOut(message, profileData)) {
+		if (await isPassedOut(message, profileData)) {
 
-			await levels.decreaseLevel(profileData);
+			await decreaseLevel(profileData);
 		}
 
 
 		async function shareStory(partnerProfileData) {
 
-			const partnerExperiencePoints = Loottable(41, 20);
+			const partnerExperiencePoints = generateRandomNumber(41, 20);
 
 			partnerProfileData = await profileModel.findOneAndUpdate(
 				{ userId: partnerProfileData.userId, serverId: message.guild.id },
@@ -248,10 +249,10 @@ module.exports = {
 
 			if (partnerProfileData.injuryObject.cold == true && profileData.injuryObject.cold == false) {
 
-				const getsInfectedChance = weightedTable({ 0: 3, 1: 7 });
+				const getsInfectedChance = pullFromWeightedTable({ 0: 3, 1: 7 });
 				if (getsInfectedChance == 0) {
 
-					healthPoints = Loottable(5, 3);
+					healthPoints = generateRandomNumber(5, 3);
 
 					if (profileData.health - healthPoints < 0) {
 
@@ -295,26 +296,6 @@ module.exports = {
 			);
 
 			return embedArray.push(embed);
-		}
-
-		function Loottable(max, min) {
-
-			return Math.floor(Math.random() * max) + min;
-		}
-
-		function weightedTable(values) {
-
-			const table = [];
-
-			for (const i in values) {
-
-				for (let j = 0; j < values[i]; j++) {
-
-					table.push(i);
-				}
-			}
-
-			return table[Math.floor(Math.random() * table.length)];
 		}
 	},
 };

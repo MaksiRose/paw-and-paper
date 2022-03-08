@@ -1,21 +1,21 @@
-const checkAccountCompletion = require('../../utils/checkAccountCompletion');
-const checkValidity = require('../../utils/checkValidity');
-const maps = require('../../utils/maps');
 const config = require('../../config.json');
 const startCooldown = require('../../utils/startCooldown');
 const messageCollector = require('../../utils/messageCollector');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
+const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCooldown } = require('../../utils/checkValidity');
 
 module.exports = {
 	name: 'inventory',
 	aliases: ['storage'],
 	async sendMessage(client, message, argumentsArray, profileData, serverData, embedArray) {
 
-		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
+		if (await hasNotCompletedAccount(message, profileData)) {
 
 			return;
 		}
 
-		if (await checkValidity.hasCooldown(message, profileData, [module.exports.name].concat(module.exports.aliases))) {
+		if (await hasCooldown(message, profileData, [module.exports.name].concat(module.exports.aliases))) {
 
 			return;
 		}
@@ -53,7 +53,7 @@ module.exports = {
 			fields: [],
 		};
 
-		for (const [commonPlantName, commonPlantObject] of maps.commonPlantMap) {
+		for (const [commonPlantName, commonPlantObject] of commonPlantsMap) {
 
 			if (serverData.inventoryObject.commonPlants[commonPlantName] > 0) {
 
@@ -144,7 +144,7 @@ module.exports = {
 							fields: [],
 						};
 
-						for (const [commonPlantName, commonPlantObject] of maps.commonPlantMap) {
+						for (const [commonPlantName, commonPlantObject] of commonPlantsMap) {
 
 							if (serverData.inventoryObject.commonPlants[commonPlantName] > 0) {
 
@@ -181,7 +181,7 @@ module.exports = {
 							fields: [],
 						};
 
-						for (const [uncommonPlantName, uncommonPlantObject] of maps.uncommonPlantMap) {
+						for (const [uncommonPlantName, uncommonPlantObject] of uncommonPlantsMap) {
 
 							if (serverData.inventoryObject.uncommonPlants[uncommonPlantName] > 0) {
 
@@ -190,7 +190,7 @@ module.exports = {
 							}
 						}
 
-						for (const [rarePlantName, rarePlantObject] of maps.rarePlantMap) {
+						for (const [rarePlantName, rarePlantObject] of rarePlantsMap) {
 
 							if (serverData.inventoryObject.rarePlants[rarePlantName] > 0) {
 
@@ -227,7 +227,7 @@ module.exports = {
 							fields: [],
 						};
 
-						for (const [speciesName] of maps.speciesMap) {
+						for (const [speciesName] of speciesMap) {
 
 							if (serverData.inventoryObject.meat[speciesName] > 0) {
 
@@ -294,7 +294,7 @@ module.exports = {
 							fields: [],
 						};
 
-						for (const [speciesName] of maps.speciesMap) {
+						for (const [speciesName] of speciesMap) {
 
 							if (serverData.inventoryObject.meat[speciesName] > 0) {
 

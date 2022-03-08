@@ -1,6 +1,6 @@
 const config = require('../../config.json');
 const profileModel = require('../../models/profileModel');
-const checkAccountCompletion = require('../../utils/checkAccountCompletion');
+const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
@@ -8,7 +8,7 @@ module.exports = {
 	aliases: ['description'],
 	async sendMessage(client, message, argumentsArray, profileData) {
 
-		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
+		if (await hasNotCompletedAccount(message, profileData)) {
 
 			return;
 		}

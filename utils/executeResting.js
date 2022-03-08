@@ -11,9 +11,9 @@ module.exports = {
 	async startResting(message, profileData, botReply) {
 
 		let energyPoints = 0;
-		restingTimeoutArray[message.author.id] = setTimeout(timerfunction, 30000);
+		restingTimeoutArray[message.author.id] = setTimeout(addEnergy, 30000);
 
-		async function timerfunction() {
+		async function addEnergy() {
 
 			++energyPoints;
 
@@ -72,7 +72,7 @@ module.exports = {
 					});
 			}
 
-			return restingTimeoutArray[message.author.id] = setTimeout(timerfunction, 30000);
+			return restingTimeoutArray[message.author.id] = setTimeout(addEnergy, 30000);
 		}
 	},
 

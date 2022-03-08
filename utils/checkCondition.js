@@ -1,4 +1,5 @@
 const profileModel = require('../models/profileModel');
+const { generateRandomNumber, pullFromWeightedTable } = require('./randomizers');
 
 module.exports = {
 
@@ -79,8 +80,8 @@ module.exports = {
 
 		for (let i = 0; i < profileData.injuryObject.wounds; i++) {
 
-			const getsHealed = weightedTable({ 0: 1, 1: 4 });
-			const becomesInfection = weightedTable({ 0: 1, 1: 1 });
+			const getsHealed = pullFromWeightedTable({ 0: 1, 1: 4 });
+			const becomesInfection = pullFromWeightedTable({ 0: 1, 1: 1 });
 
 			if (getsHealed == 0) {
 
@@ -91,7 +92,7 @@ module.exports = {
 				continue;
 			}
 
-			woundHealthPoints += Loottable(5, 1);
+			woundHealthPoints += generateRandomNumber(5, 1);
 
 			if (becomesInfection == 0) {
 
@@ -110,7 +111,7 @@ module.exports = {
 
 		for (let i = 0; i < profileData.injuryObject.infections; i++) {
 
-			const getsHealed = weightedTable({ 0: 1, 1: 4 });
+			const getsHealed = pullFromWeightedTable({ 0: 1, 1: 4 });
 
 			if (getsHealed == 0) {
 
@@ -128,13 +129,13 @@ module.exports = {
 				minimumInfectionHealthPoints = Math.round(minimumInfectionHealthPoints / 2);
 			}
 
-			infectionHealthPoints += Loottable(5, minimumInfectionHealthPoints);
+			infectionHealthPoints += generateRandomNumber(5, minimumInfectionHealthPoints);
 			embed.description += `\n*One of ${profileData.name}'s infections is getting worse!*`;
 		}
 
 		if (profileData.injuryObject.cold == true) {
 
-			const getsHealed = weightedTable({ 0: 1, 1: 4 });
+			const getsHealed = pullFromWeightedTable({ 0: 1, 1: 4 });
 
 			if (getsHealed == 0) {
 
@@ -147,14 +148,14 @@ module.exports = {
 
 				const minimumColdHealthPoints = Math.round(10 - (profileData.health / 10));
 
-				coldHealthPoints = coldHealthPoints + Loottable(5, minimumColdHealthPoints);
+				coldHealthPoints = coldHealthPoints + generateRandomNumber(5, minimumColdHealthPoints);
 				embed.description += `\n*${profileData.name}'s cold is getting worse!*`;
 			}
 		}
 
 		for (let i = 0; i < profileData.injuryObject.sprains; i++) {
 
-			const getsHealed = weightedTable({ 0: 1, 1: 4 });
+			const getsHealed = pullFromWeightedTable({ 0: 1, 1: 4 });
 
 			if (getsHealed == 0) {
 
@@ -165,13 +166,13 @@ module.exports = {
 				continue;
 			}
 
-			sprainHealthPoints += Loottable(5, 6);
+			sprainHealthPoints += generateRandomNumber(5, 6);
 			embed.description += `\n*One of ${profileData.name}'s sprains is getting worse!*`;
 		}
 
 		if (profileData.injuryObject.poison == true) {
 
-			const getsHealed = weightedTable({ 0: 1, 1: 4 });
+			const getsHealed = pullFromWeightedTable({ 0: 1, 1: 4 });
 
 			if (getsHealed == 0) {
 
@@ -184,7 +185,7 @@ module.exports = {
 
 				const minimumPoisonHealthPoints = Math.round(21 - (profileData.health / 10));
 
-				poisonHealthPoints = poisonHealthPoints + Loottable(5, minimumPoisonHealthPoints);
+				poisonHealthPoints = poisonHealthPoints + generateRandomNumber(5, minimumPoisonHealthPoints);
 				embed.description += `\n*The poison in ${profileData.name}'s body is spreading!*`;
 			}
 		}
@@ -227,26 +228,6 @@ module.exports = {
 			});
 
 		return modifiedUserInjuryObject;
-
-		function weightedTable(values) {
-
-			const table = [];
-
-			for (const i in values) {
-
-				for (let j = 0; j < values[i]; j++) {
-
-					table.push(i);
-				}
-			}
-
-			return table[Math.floor(Math.random() * table.length)];
-		}
-
-		function Loottable(max, min) {
-
-			return Math.floor(Math.random() * max) + min;
-		}
 	},
 
 };

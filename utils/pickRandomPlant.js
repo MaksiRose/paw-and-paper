@@ -1,9 +1,9 @@
 const profileModel = require('../models/profileModel');
-const maps = require('./maps');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap } = require('./itemsInfo');
 
 module.exports = {
 
-	async randomCommonPlant(message, profileData) {
+	async pickRandomCommonPlant(message, profileData) {
 
 		const userInventory = {
 			commonPlants: { ...profileData.inventoryObject.commonPlants },
@@ -12,7 +12,7 @@ module.exports = {
 			meat: { ...profileData.inventoryObject.meat },
 		};
 
-		const randomCommonPlant = Array.from(maps.commonPlantMap.keys())[Math.floor(Math.random() * Array.from(maps.commonPlantMap.keys()).length)];
+		const randomCommonPlant = Array.from(commonPlantsMap.keys())[Math.floor(Math.random() * Array.from(commonPlantsMap.keys()).length)];
 
 		userInventory.commonPlants[randomCommonPlant] += 1;
 
@@ -24,7 +24,7 @@ module.exports = {
 		return randomCommonPlant;
 	},
 
-	async randomUncommonPlant(message, profileData) {
+	async pickRandomUncommonPlant(message, profileData) {
 
 		const userInventory = {
 			commonPlants: { ...profileData.inventoryObject.commonPlants },
@@ -33,7 +33,7 @@ module.exports = {
 			meat: { ...profileData.inventoryObject.meat },
 		};
 
-		const randomUncommonPlant = Array.from(maps.uncommonPlantMap.keys())[Math.floor(Math.random() * Array.from(maps.uncommonPlantMap.keys()).length)];
+		const randomUncommonPlant = Array.from(uncommonPlantsMap.keys())[Math.floor(Math.random() * Array.from(uncommonPlantsMap.keys()).length)];
 
 		userInventory.uncommonPlants[randomUncommonPlant] += 1;
 
@@ -45,7 +45,7 @@ module.exports = {
 		return randomUncommonPlant;
 	},
 
-	async randomRarePlant(message, profileData) {
+	async pickRandomRarePlant(message, profileData) {
 
 		const userInventory = {
 			commonPlants: { ...profileData.inventoryObject.commonPlants },
@@ -54,7 +54,7 @@ module.exports = {
 			meat: { ...profileData.inventoryObject.meat },
 		};
 
-		const randomRarePlant = Array.from(maps.rarePlantMap.keys())[Math.floor(Math.random() * Array.from(maps.rarePlantMap.keys()).length)];
+		const randomRarePlant = Array.from(rarePlantsMap.keys())[Math.floor(Math.random() * Array.from(rarePlantsMap.keys()).length)];
 
 		userInventory.rarePlants[randomRarePlant] += 1;
 

@@ -1,21 +1,21 @@
-const maps = require('../../utils/maps');
-const checkAccountCompletion = require('../../utils/checkAccountCompletion');
-const checkValidity = require('../../utils/checkValidity');
 const profileModel = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
 const messageCollector = require('../../utils/messageCollector');
 const startCooldown = require('../../utils/startCooldown');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
+const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { isInvalid } = require('../../utils/checkValidity');
 
 module.exports = {
 	name: 'store',
 	async sendMessage(client, message, argumentsArray, profileData, serverData, embedArray) {
 
-		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
+		if (await hasNotCompletedAccount(message, profileData)) {
 
 			return;
 		}
 
-		if (await checkValidity.isInvalid(message, profileData, embedArray, [module.exports.name])) {
+		if (await isInvalid(message, profileData, embedArray, [module.exports.name])) {
 
 			return;
 		}
@@ -35,10 +35,10 @@ module.exports = {
 			meat: { ...serverData.inventoryObject.meat },
 		};
 		const inventoryMaps = {
-			commonPlants: new Map(maps.commonPlantMap),
-			uncommonPlants: new Map(maps.uncommonPlantMap),
-			rarePlants: new Map(maps.rarePlantMap),
-			meat: new Map(maps.speciesMap),
+			commonPlants: new Map(commonPlantsMap),
+			uncommonPlants: new Map(uncommonPlantsMap),
+			rarePlants: new Map(rarePlantsMap),
+			meat: new Map(speciesMap),
 		};
 
 		const itemSelectMenu = {

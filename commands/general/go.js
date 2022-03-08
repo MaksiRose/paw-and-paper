@@ -1,20 +1,20 @@
 const profileModel = require('../../models/profileModel');
-const checkAccountCompletion = require('../../utils/checkAccountCompletion');
-const checkValidity = require('../../utils/checkValidity');
 const startCooldown = require('../../utils/startCooldown');
 const messageCollector = require('../../utils/messageCollector');
+const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { isInvalid } = require('../../utils/checkValidity');
 
 module.exports = {
 	name: 'go',
 	aliases: ['region'],
 	async sendMessage(client, message, argumentsArray, profileData, serverData, embedArray) {
 
-		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
+		if (await hasNotCompletedAccount(message, profileData)) {
 
 			return;
 		}
 
-		if (await checkValidity.isInvalid(message, profileData, embedArray, [module.exports.name].concat(module.exports.aliases))) {
+		if (await isInvalid(message, profileData, embedArray, [module.exports.name].concat(module.exports.aliases))) {
 
 			return;
 		}

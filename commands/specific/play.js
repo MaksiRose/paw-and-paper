@@ -1,22 +1,23 @@
 const profileModel = require('../../models/profileModel');
-const checkAccountCompletion = require('../../utils/checkAccountCompletion');
-const checkValidity = require('../../utils/checkValidity');
-const levels = require('../../utils/levels');
-const items = require('../../utils/items');
-const condition = require('../../utils/condition');
 const startCooldown = require('../../utils/startCooldown');
 const config = require('../../config.json');
+const { generateRandomNumber, pullFromWeightedTable } = require('../../utils/randomizers');
+const { pickRandomCommonPlant } = require('../../utils/pickRandomPlant');
+const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
+const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
+const { checkLevelUp, decreaseLevel } = require('../../utils/levelHandling');
 
 module.exports = {
 	name: 'play',
 	async sendMessage(client, message, argumentsArray, profileData, serverData, embedArray) {
 
-		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
+		if (await hasNotCompletedAccount(message, profileData)) {
 
 			return;
 		}
 
-		if (await checkValidity.isInvalid(message, profileData, embedArray, [module.exports.name])) {
+		if (await isInvalid(message, profileData, embedArray, [module.exports.name])) {
 
 			return;
 		}
@@ -81,10 +82,10 @@ module.exports = {
 				});
 		}
 
-		const thirstPoints = await condition.decreaseThirst(profileData);
-		const hungerPoints = await condition.decreaseHunger(profileData);
-		const extraLostEnergyPoints = await condition.decreaseEnergy(profileData);
-		let energyPoints = Loottable(5, 1) + extraLostEnergyPoints;
+		const thirstPoints = await decreaseThirst(profileData);
+		const hungerPoints = await decreaseHunger(profileData);
+		const extraLostEnergyPoints = await decreaseEnergy(profileData);
+		let energyPoints = generateRandomNumber(5, 1) + extraLostEnergyPoints;
 		let experiencePoints = 0;
 
 		if (profileData.energy - energyPoints < 0) {
@@ -94,12 +95,12 @@ module.exports = {
 
 		if (profileData.rank == 'Youngling') {
 
-			experiencePoints = Loottable(9, 1);
+			experiencePoints = generateRandomNumber(9, 1);
 		}
 
 		if (profileData.rank == 'Apprentice') {
 
-			experiencePoints = Loottable(11, 5);
+			experiencePoints = generateRandomNumber(11, 5);
 		}
 
 		profileData = await profileModel.findOneAndUpdate(
@@ -164,33 +165,33 @@ module.exports = {
 				allPrairieProfilesArray.splice(allPrairieProfilesArrayUserIndex, 1);
 			}
 
-			const getsQuestChance = weightedTable({ 0: 19, 1: 1 });
+			const getsQuestChance = pullFromWeightedTable({ 0: 19, 1: 1 });
 			if (getsQuestChance == 1 && profileData.unlockedRanks == 0 && profileData.rank == 'Youngling' && profileData.levels > 1) {
 
 				await findQuest();
 			}
 			else if (allPrairieProfilesArray.length > 0) {
 
-				const allPrairieProfilesArrayRandomIndex = Loottable(allPrairieProfilesArray.length, 0);
+				const allPrairieProfilesArrayRandomIndex = generateRandomNumber(allPrairieProfilesArray.length, 0);
 
 				const partnerProfileData = await profileModel.findOne({
 					userId: allPrairieProfilesArray[allPrairieProfilesArrayRandomIndex],
 					serverId: message.guild.id,
 				});
 
-				const playTogetherChance = weightedTable({ 0: 3, 1: 7 });
+				const playTogetherChance = pullFromWeightedTable({ 0: 3, 1: 7 });
 				if (playTogetherChance == 1 && partnerProfileData.energy > 0 && partnerProfileData.health > 0 && partnerProfileData.hunger > 0 && partnerProfileData.thirst > 0) {
 
 					await playTogether(partnerProfileData);
 				}
 				else {
 
-					await findSomething();
+					await findPlant();
 				}
 			}
 			else {
 
-				await findSomething();
+				await findPlant();
 			}
 		}
 		else {
@@ -244,18 +245,18 @@ module.exports = {
 				}
 			});
 
-		userInjuryObject = await condition.decreaseHealth(message, profileData, botReply, userInjuryObject);
+		userInjuryObject = await decreaseHealth(message, profileData, botReply, userInjuryObject);
 
 		profileData = await profileModel.findOneAndUpdate(
 			{ userId: message.author.id, serverId: message.guild.id },
 			{ $set: { injuryObject: userInjuryObject } },
 		);
 
-		await levels.levelCheck(profileData, botReply);
+		await checkLevelUp(profileData, botReply);
 
-		if (await checkValidity.isPassedOut(message, profileData)) {
+		if (await isPassedOut(message, profileData)) {
 
-			await levels.decreaseLevel(profileData);
+			await decreaseLevel(profileData);
 		}
 
 
@@ -272,11 +273,11 @@ module.exports = {
 			embedArray.push(embed);
 		}
 
-		async function findSomething() {
+		async function findPlant() {
 
 			const betterLuckValue = (profileData.levels - 1) * 2;
 
-			const findSomethingChance = weightedTable({ 0: 90, 1: 10 + betterLuckValue });
+			const findSomethingChance = pullFromWeightedTable({ 0: 90, 1: 10 + betterLuckValue });
 			if (findSomethingChance == 0) {
 
 				embed.description = `*${profileData.name} bounces around camp, watching the busy hustle and blurs of hunters and healers at work. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} splash${(profileData.pronounArray[5] == 'singular') ? 'es' : ''} into the stream that split the pack in half, chasing the minnows with ${profileData.pronounArray[2]} eyes.*`;
@@ -285,10 +286,10 @@ module.exports = {
 				return embedArray.push(embed);
 			}
 
-			const getHurtChance = weightedTable({ 0: 10, 1: 90 + betterLuckValue });
+			const getHurtChance = pullFromWeightedTable({ 0: 10, 1: 90 + betterLuckValue });
 			if (getHurtChance == 0 && profileData.rank != 'Youngling') {
 
-				healthPoints = Loottable(5, 3);
+				healthPoints = generateRandomNumber(5, 3);
 
 				if (profileData.health - healthPoints < 0) {
 
@@ -302,7 +303,7 @@ module.exports = {
 
 				switch (true) {
 
-					case (weightedTable({ 0: 7, 1: 13 }) == 0 && userInjuryObject.cold == false):
+					case (pullFromWeightedTable({ 0: 7, 1: 13 }) == 0 && userInjuryObject.cold == false):
 
 						userInjuryObject.cold = true;
 
@@ -322,7 +323,7 @@ module.exports = {
 				return embedArray.push(embed);
 			}
 
-			const foundItem = await items.randomCommonPlant(message, profileData);
+			const foundItem = await pickRandomCommonPlant(message, profileData);
 
 			embed.description = `*${profileData.name} bounds across the den territory, chasing a bee that is just out of reach. Without looking, the ${profileData.species} crashes into a Hunter, loses sight of the bee, and scurries away into the forest. On ${profileData.pronounArray[2]} way back to the pack border, ${profileData.name} sees something special on the ground. It's a ${foundItem}!*`;
 			embed.footer.text = `${embedFooterStatsText}\n\n+1 ${foundItem} for ${message.guild.name}`;
@@ -332,7 +333,7 @@ module.exports = {
 
 		async function playTogether(partnerProfileData) {
 
-			let partnerHealthPoints = Loottable(5, 1);
+			let partnerHealthPoints = generateRandomNumber(5, 1);
 
 			if (partnerProfileData.health + partnerHealthPoints > partnerProfileData.maxHealth) {
 
@@ -349,7 +350,7 @@ module.exports = {
 				embedFooterStatsText += `\n\n+${partnerHealthPoints} HP for ${partnerProfileData.name} (${partnerProfileData.health}/${partnerProfileData.maxHealth})`;
 			}
 
-			const whoWinsChance = weightedTable({ 0: 1, 1: 1 });
+			const whoWinsChance = pullFromWeightedTable({ 0: 1, 1: 1 });
 			if (whoWinsChance == 0) {
 
 				embed.description = `*${profileData.name} trails behind ${partnerProfileData.name}'s rear end, preparing for a play attack. The ${profileData.species} launches forward, landing on top of ${partnerProfileData.name}.* "I got you, ${partnerProfileData.name}!" *${profileData.pronounArray[0]} say${(profileData.pronounArray[5] == 'singular') ? 's' : ''}. Both creatures bounce away from each other, laughing.*`;
@@ -367,10 +368,10 @@ module.exports = {
 
 			if (partnerProfileData.injuryObject.cold == true && profileData.injuryObject.cold == false) {
 
-				const getsInfectedChance = weightedTable({ 0: 3, 1: 7 });
+				const getsInfectedChance = pullFromWeightedTable({ 0: 3, 1: 7 });
 				if (getsInfectedChance == 0) {
 
-					healthPoints = Loottable(5, 3);
+					healthPoints = generateRandomNumber(5, 3);
 
 					if (profileData.health - healthPoints < 0) {
 
@@ -394,26 +395,6 @@ module.exports = {
 			}
 
 			return;
-		}
-
-		function Loottable(max, min) {
-
-			return Math.floor(Math.random() * max) + min;
-		}
-
-		function weightedTable(values) {
-
-			const table = [];
-
-			for (const i in values) {
-
-				for (let j = 0; j < values[i]; j++) {
-
-					table.push(i);
-				}
-			}
-
-			return table[Math.floor(Math.random() * table.length)];
 		}
 	},
 };

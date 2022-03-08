@@ -2,8 +2,8 @@ const config = require('../config.json');
 const profileModel = require('../models/profileModel');
 const serverModel = require('../models/serverModel');
 const errorHandling = require('../utils/errorHandling');
-const maps = require('../utils/maps');
 const rest = require('../commands/general/rest');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 let lastMessageEpochTime = 0;
 const automaticRestingTimeoutMap = new Map;
 const automaticCooldownTimeoutMap = new Map();
@@ -39,22 +39,22 @@ module.exports = {
 				meat: {},
 			};
 
-			for (const [commonPlantName] of maps.commonPlantMap) {
+			for (const [commonPlantName] of commonPlantsMap) {
 
 				serverInventoryObject.commonPlants[commonPlantName] = 0;
 			}
 
-			for (const [uncommonPlantName] of maps.uncommonPlantMap) {
+			for (const [uncommonPlantName] of uncommonPlantsMap) {
 
 				serverInventoryObject.uncommonPlants[uncommonPlantName] = 0;
 			}
 
-			for (const [rarePlantName] of maps.rarePlantMap) {
+			for (const [rarePlantName] of rarePlantsMap) {
 
 				serverInventoryObject.rarePlants[rarePlantName] = 0;
 			}
 
-			for (const [speciesName] of maps.speciesMap) {
+			for (const [speciesName] of speciesMap) {
 
 				serverInventoryObject.meat[speciesName] = 0;
 			}
@@ -68,11 +68,11 @@ module.exports = {
 			});
 		}
 
-		if (maps.speciesMap.size > Object.keys(serverData.inventoryObject.meat).length) {
+		if (speciesMap.size > Object.keys(serverData.inventoryObject.meat).length) {
 
 			const serverMeatObject = { ...serverData.inventoryObject.meat };
 
-			for (const [speciesName] of maps.speciesMap) {
+			for (const [speciesName] of speciesMap) {
 
 				if (speciesName in serverMeatObject) {
 
@@ -86,11 +86,11 @@ module.exports = {
 			);
 		}
 
-		if (maps.commonPlantMap.size > Object.keys(serverData.inventoryObject.commonPlants).length) {
+		if (commonPlantsMap.size > Object.keys(serverData.inventoryObject.commonPlants).length) {
 
 			const serverCommonPlantMap = new Map(JSON.parse(JSON.stringify([...serverData.inventoryObject.commonPlants])));
 
-			for (const [speciesName] of maps.commonPlantMap) {
+			for (const [speciesName] of commonPlantsMap) {
 
 				if (!serverCommonPlantMap.has(speciesName)) {
 
@@ -104,11 +104,11 @@ module.exports = {
 			);
 		}
 
-		if (maps.uncommonPlantMap.size > Object.keys(serverData.inventoryObject.uncommonPlants).length) {
+		if (uncommonPlantsMap.size > Object.keys(serverData.inventoryObject.uncommonPlants).length) {
 
 			const serverUncommonPlantMap = new Map(JSON.parse(JSON.stringify([...serverData.inventoryObject.uncommonPlants])));
 
-			for (const [speciesName] of maps.uncommonPlantMap) {
+			for (const [speciesName] of uncommonPlantsMap) {
 
 				if (!serverUncommonPlantMap.has(speciesName)) {
 
@@ -122,11 +122,11 @@ module.exports = {
 			);
 		}
 
-		if (maps.rarePlantMap.size > Object.keys(serverData.inventoryObject.rarePlants).length) {
+		if (rarePlantsMap.size > Object.keys(serverData.inventoryObject.rarePlants).length) {
 
 			const serverRarePlantMap = new Map(JSON.parse(JSON.stringify([...serverData.inventoryObject.rarePlants])));
 
-			for (const [speciesName] of maps.rarePlantMap) {
+			for (const [speciesName] of rarePlantsMap) {
 
 				if (!serverRarePlantMap.has(speciesName)) {
 
@@ -227,7 +227,7 @@ module.exports = {
 							serverId: message.guild.id,
 						});
 
-						automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await automaticCooldownTimeoutFunction, 500));
+						automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await removeCooldown, 500));
 					}
 				});
 		}
@@ -242,15 +242,15 @@ module.exports = {
 					serverId: message.guild.id,
 				});
 
-				automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await automaticCooldownTimeoutFunction, 500));
+				automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await removeCooldown, 500));
 			}
 
 			await errorHandling.output(message, error);
 		}
 
-		automaticRestingTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await automaticRestingTimeoutFunction, 600000));
+		automaticRestingTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await startResting, 600000));
 
-		async function automaticCooldownTimeoutFunction() {
+		async function removeCooldown() {
 
 			profileData = await profileModel.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
@@ -258,7 +258,7 @@ module.exports = {
 			);
 		}
 
-		async function automaticRestingTimeoutFunction() {
+		async function startResting() {
 
 			profileData = await profileModel.findOne({
 				userId: message.author.id,
@@ -271,7 +271,7 @@ module.exports = {
 					.sendMessage(client, message, [], profileData, serverData, embedArray)
 					.then(async () => {
 
-						automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await automaticCooldownTimeoutFunction, 500));
+						automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await removeCooldown, 500));
 					})
 					.catch(async (error) => {
 						return await errorHandling.output(message, error);

@@ -1,29 +1,30 @@
-const checkAccountCompletion = require('../../utils/checkAccountCompletion');
-const checkValidity = require('../../utils/checkValidity');
-const maps = require('../../utils/maps');
 const profileModel = require('../../models/profileModel');
 const startCooldown = require('../../utils/startCooldown');
+const { generateRandomNumber, generateWinChance } = require('../../utils/randomizers');
+const { speciesMap } = require('../../utils/itemsInfo');
+const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { isPassedOut, hasCooldown, isResting } = require('../../utils/checkValidity');
 
 module.exports = {
 	name: 'quest',
 	async sendMessage(client, message, argumentsArray, profileData, serverData, embedArray) {
 
-		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
+		if (await hasNotCompletedAccount(message, profileData)) {
 
 			return;
 		}
 
-		if (await checkValidity.isPassedOut(message, profileData)) {
+		if (await isPassedOut(message, profileData)) {
 
 			return;
 		}
 
-		if (await checkValidity.hasCooldown(message, profileData, module.exports.name)) {
+		if (await hasCooldown(message, profileData, module.exports.name)) {
 
 			return;
 		}
 
-		await checkValidity.isResting(message, profileData, embedArray);
+		await isResting(message, profileData, embedArray);
 
 		profileData = await startCooldown(message, profileData);
 
@@ -81,26 +82,26 @@ module.exports = {
 
 			hitEmoji = '💨';
 
-			if (maps.speciesMap.get(profileData.species).habitat == 'warm') {
+			if (speciesMap.get(profileData.species).habitat == 'warm') {
 
 				missEmoji = '🏜️';
 			}
 
-			if (maps.speciesMap.get(profileData.species).habitat == 'cold') {
+			if (speciesMap.get(profileData.species).habitat == 'cold') {
 
 				missEmoji = '🌨️';
 			}
 
-			if (maps.speciesMap.get(profileData.species).habitat == 'water') {
+			if (speciesMap.get(profileData.species).habitat == 'water') {
 
 				missEmoji = '⛰️';
 			}
 		}
 
 		let botReply;
-		await quest(true);
+		await startNewRound(true);
 
-		async function quest(first) {
+		async function startNewRound(isFirstRound) {
 
 			const buttonTextOrColor = ((Math.floor(Math.random() * 2) == 0) ? 'color' : 'text');
 			const buttonColorKind = ((Math.floor(Math.random() * 3) == 0) ? 'green' : ((Math.floor(Math.random() * 2) == 0) ? 'blue' : 'red'));
@@ -113,12 +114,12 @@ module.exports = {
 
 			if (profileData.rank == 'Apprentice') {
 
-				if (maps.speciesMap.get(profileData.species).habitat == 'warm') {
+				if (speciesMap.get(profileData.species).habitat == 'warm') {
 
 					embedFooterText += 'push the root!';
 				}
 
-				if (maps.speciesMap.get(profileData.species).habitat == 'cold' || maps.speciesMap.get(profileData.species).habitat == 'water') {
+				if (speciesMap.get(profileData.species).habitat == 'cold' || speciesMap.get(profileData.species).habitat == 'water') {
 
 					embedFooterText += 'push the tree!';
 				}
@@ -126,12 +127,12 @@ module.exports = {
 
 			if (profileData.rank == 'Hunter' || profileData.rank == 'Healer') {
 
-				if (maps.speciesMap.get(profileData.species).habitat == 'warm' || maps.speciesMap.get(profileData.species).habitat == 'cold') {
+				if (speciesMap.get(profileData.species).habitat == 'warm' || speciesMap.get(profileData.species).habitat == 'cold') {
 
 					embedFooterText += 'run from the humans!';
 				}
 
-				if (maps.speciesMap.get(profileData.species).habitat == 'water') {
+				if (speciesMap.get(profileData.species).habitat == 'water') {
 
 					embedFooterText += 'swim from the humans!';
 				}
@@ -139,17 +140,17 @@ module.exports = {
 
 			if (profileData.rank == 'Elderly') {
 
-				if (maps.speciesMap.get(profileData.species).habitat == 'warm') {
+				if (speciesMap.get(profileData.species).habitat == 'warm') {
 
 					embedFooterText += 'run from the sandstorm!';
 				}
 
-				if (maps.speciesMap.get(profileData.species).habitat == 'cold') {
+				if (speciesMap.get(profileData.species).habitat == 'cold') {
 
 					embedFooterText += 'run from the snowstorm!';
 				}
 
-				if (maps.speciesMap.get(profileData.species).habitat == 'water') {
+				if (speciesMap.get(profileData.species).habitat == 'water') {
 
 					embedFooterText += 'swim from the underwater landslide!';
 				}
@@ -160,7 +161,7 @@ module.exports = {
 			embedArray.push({
 				color: `${profileData.color}`,
 				author: { name: `${profileData.name}`, icon_url: `${profileData.avatarURL}` },
-				description: `${progressbar(hitValue, hitEmoji)}\n${progressbar(missValue, missEmoji)}`,
+				description: `${drawProgressbar(hitValue, hitEmoji)}\n${drawProgressbar(missValue, missEmoji)}`,
 				footer: {
 					text: embedFooterText,
 				},
@@ -250,7 +251,7 @@ module.exports = {
 				highestArrayIndex -= 1;
 			}
 
-			if (first) {
+			if (isFirstRound) {
 
 				botReply = await message
 					.reply({
@@ -290,9 +291,9 @@ module.exports = {
 				const collector = message.channel.createMessageComponentCollector({ filter, max: 1, time: 5000 });
 				collector.on('end', async collected => {
 
-					const winChance = sigmoidFunction(profileData.levels, (profileData.rank == 'Elderly') ? 35 : (profileData.rank == 'Hunter' || profileData.rank == 'Healer') ? 20 : (profileData.rank == 'Apprentice') ? 10 : 2);
+					const winChance = generateWinChance(profileData.levels, (profileData.rank == 'Elderly') ? 35 : (profileData.rank == 'Hunter' || profileData.rank == 'Healer') ? 20 : (profileData.rank == 'Apprentice') ? 10 : 2);
 
-					if (collected.size == 0 || !collected.first().customId.includes(`${buttonColorKind}${buttonTextOrColor}`) || Math.floor(Math.random() * 100) + 1 > winChance) {
+					if (collected.size == 0 || !collected.first().customId.includes(`${buttonColorKind}${buttonTextOrColor}`) || generateRandomNumber(100, 1) > winChance) {
 
 						++missValue;
 					}
@@ -321,17 +322,17 @@ module.exports = {
 
 						if (profileData.rank == 'Apprentice') {
 
-							if (maps.speciesMap.get(profileData.species).habitat == 'warm') {
+							if (speciesMap.get(profileData.species).habitat == 'warm') {
 
 								description = `*After fighting with the trunk for a while, the ${profileData.species} now slips out with slightly ruffled fur. ${profileData.name} shakes ${profileData.pronounArray[4]}. Just at this moment, a worried Elderly comes running.*\n"Is everything alright? You've been gone for a while, and we heard cries of pain, so we were worried!" *They look over to the tree trunk.*\n"Oh, looks like you've already solved the problem yourself! Very well done! I think you're ready to become a Hunter or Healer if you're ever interested."`;
 							}
 
-							if (maps.speciesMap.get(profileData.species).habitat == 'cold') {
+							if (speciesMap.get(profileData.species).habitat == 'cold') {
 
 								description = `*After fighting with the root for a while, the ${profileData.species} now slips out with slightly ruffled fur. ${profileData.name} shakes ${profileData.pronounArray[4]}. Just at this moment, a worried Elderly comes running.*\n"Is everything alright? You've been gone for a while, and we heard cries of pain, so we were worried!" *They look over to the bush.*\n"Oh, looks like you've already solved the problem yourself! Very well done! I think you're ready to become a Hunter or Healer if you're ever interested."`;
 							}
 
-							if (maps.speciesMap.get(profileData.species).habitat == 'water') {
+							if (speciesMap.get(profileData.species).habitat == 'water') {
 
 								description = `*After fighting with the trunk for a while, the ${profileData.species} now slips out. ${profileData.name} shakes ${profileData.pronounArray[4]}. Just at this moment, a worried Elderly comes swimming.*\n"Is everything alright? You've been gone for a while, and we heard cries of pain, so we were worried!" *They look over to the bush.*\n"Oh, looks like you've already solved the problem yourself! Very well done! I think you're ready to become a Hunter or Healer if you're ever interested."`;
 							}
@@ -339,12 +340,12 @@ module.exports = {
 
 						if (profileData.rank == 'Hunter' || profileData.rank == 'Healer') {
 
-							if (maps.speciesMap.get(profileData.species).habitat == 'warm' || maps.speciesMap.get(profileData.species).habitat == 'cold') {
+							if (speciesMap.get(profileData.species).habitat == 'warm' || speciesMap.get(profileData.species).habitat == 'cold') {
 
 								description = `*The engine noise became quieter and quieter before it finally disappeared entirely after endless maneuvers. Relieved, the ${profileData.species} runs to the pack, which is not far away. An Elderly is already coming towards ${profileData.pronounArray[1]}.*\n"You're alright! We heard the humans. And you didn't lead them straight to us, very good! Your wisdom, skill, and experience qualify you as an Elderly, ${profileData.name}. I'll talk to the other Elderlies about it. Just let me know if you want to join us."`;
 							}
 
-							if (maps.speciesMap.get(profileData.species).habitat == 'water') {
+							if (speciesMap.get(profileData.species).habitat == 'water') {
 
 								description = `*The engine noise became quieter and quieter before it finally disappeared entirely after endless maneuvers. Relieved, the ${profileData.species} swims to the pack, which is not far away. An Elderly is already swimming towards ${profileData.pronounArray[1]}.*\n"You're alright! We heard the humans. And you didn't lead them straight to us, very good! Your wisdom, skill, and experience qualify you as an Elderly, ${profileData.name}. I'll talk to the other Elderlies about it. Just let me know if you want to join us."`;
 							}
@@ -352,12 +353,12 @@ module.exports = {
 
 						if (profileData.rank == 'Elderly') {
 
-							if (maps.speciesMap.get(profileData.species).habitat == 'warm' || maps.speciesMap.get(profileData.species).habitat == 'cold') {
+							if (speciesMap.get(profileData.species).habitat == 'warm' || speciesMap.get(profileData.species).habitat == 'cold') {
 
 								description = `*The ${profileData.species} runs for a while before the situation seems to clear up. ${profileData.name} gasps in exhaustion. That was close. Full of adrenaline, ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'goes' : 'go')} back to the pack. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} feels strangely stronger than before.*`;
 							}
 
-							if (maps.speciesMap.get(profileData.species).habitat == 'water') {
+							if (speciesMap.get(profileData.species).habitat == 'water') {
 
 								description = `*The ${profileData.species} runs for a while before the situation seems to clear up. ${profileData.name} gasps in exhaustion. That was close. Full of adrenaline, ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'swims' : 'swim')} back to the pack. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} feels strangely stronger than before.*`;
 							}
@@ -430,17 +431,17 @@ module.exports = {
 
 						if (profileData.rank == 'Apprentice') {
 
-							if (maps.speciesMap.get(profileData.species).habitat == 'warm') {
+							if (speciesMap.get(profileData.species).habitat == 'warm') {
 
 								description = `*No matter how long the ${profileData.species} pulls and tugs, ${profileData.pronounArray[0]} just can't break free. ${profileData.name} lies there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's ${profileData.pronounArray[1]}!" *the Elderly shouts. The other two run to the ${profileData.species} and bite away the root.*\n"Are you all right? Thank goodness we found you!" *the Elderly asks.*`;
 							}
 
-							if (maps.speciesMap.get(profileData.species).habitat == 'cold') {
+							if (speciesMap.get(profileData.species).habitat == 'cold') {
 
 								description = `*No matter how long the ${profileData.species} pulls and tugs, ${profileData.pronounArray[0]} just can't break free. ${profileData.name} lies there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's ${profileData.pronounArray[1]}!" *the Elderly shouts. The other two run to the ${profileData.species} and pull him out from under the log with their mouths.*\n"Are you all right? Thank goodness we found you!" *the Elderly asks.*`;
 							}
 
-							if (maps.speciesMap.get(profileData.species).habitat == 'water') {
+							if (speciesMap.get(profileData.species).habitat == 'water') {
 
 								description = `*No matter how long the ${profileData.species} pulls and tugs, ${profileData.pronounArray[0]} just can't break free. ${profileData.name} lies there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's ${profileData.pronounArray[1]}!" *the Elderly shouts. The other two run to the ${profileData.species} and push him away from the log with their heads.*\n"Are you all right? Thank goodness we found you!" *the Elderly asks.*`;
 							}
@@ -448,12 +449,12 @@ module.exports = {
 
 						if (profileData.rank == 'Hunter' || profileData.rank == 'Healer') {
 
-							if (maps.speciesMap.get(profileData.species).habitat == 'warm' || maps.speciesMap.get(profileData.species).habitat == 'cold') {
+							if (speciesMap.get(profileData.species).habitat == 'warm' || speciesMap.get(profileData.species).habitat == 'cold') {
 
 								description = `*It almost looks like the humans are catching up to the ${profileData.species} when suddenly a larger ${profileData.species} comes running from the side. They pick up ${profileData.name} and run sideways as fast as lightning. Before ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'knows' : 'know')} what has happened to ${profileData.pronounArray[1]}, they are already out of reach.*\n"That was close," *the Elderly says.* "Good thing I was nearby."`;
 							}
 
-							if (maps.speciesMap.get(profileData.species).habitat == 'water') {
+							if (speciesMap.get(profileData.species).habitat == 'water') {
 
 								description = `*It almost looks like the humans are catching up to the ${profileData.species} when suddenly a larger ${profileData.species} comes swimming from the side. They push away ${profileData.name} with their head and swim sideways as fast as lightning. Before ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'knows' : 'know')} what has happened to ${profileData.pronounArray[1]}, they are already out of reach.*\n"That was close," *the Elderly says.* "Good thing I was nearby."`;
 							}
@@ -461,12 +462,12 @@ module.exports = {
 
 						if (profileData.rank == 'Elderly') {
 
-							if (maps.speciesMap.get(profileData.species).habitat == 'warm' || maps.speciesMap.get(profileData.species).habitat == 'cold') {
+							if (speciesMap.get(profileData.species).habitat == 'warm' || speciesMap.get(profileData.species).habitat == 'cold') {
 
 								description = `*The ${profileData.species} gasps as ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'drops' : 'drop')} down to the ground, defeated. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)}'${((profileData.pronounArray[5] == 'singular') ? 's' : 're')} just not fast enough... Suddenly ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'is' : 'are')} lifted by the neck. Another ${profileData.species} has ${profileData.pronounArray[1]} in their mouth and runs as fast as they can. ${profileData.name} is saved!*`;
 							}
 
-							if (maps.speciesMap.get(profileData.species).habitat == 'water') {
+							if (speciesMap.get(profileData.species).habitat == 'water') {
 
 								description = `*The ${profileData.species} gasps as ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'stops' : 'stop')} swimming, defeated. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)}'${((profileData.pronounArray[5] == 'singular') ? 's' : 're')} just not fast enough... Suddenly ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'feels' : 'feel')} a thrust from the side. Another ${profileData.species} pushes into them with their head and swims as fast as they can. ${profileData.name} is saved!*`;
 							}
@@ -493,27 +494,17 @@ module.exports = {
 					}
 					else {
 
-						await quest(false);
+						await startNewRound(false);
 						return resolve();
 					}
 				});
 			});
 		}
 
-		function progressbar(index, replacement) {
+		function drawProgressbar(index, replacement) {
 
 			const barEmoji = '◻️';
 			return barEmoji.repeat(index - 1) + replacement + barEmoji.repeat(10 - index);
-		}
-
-		// Logistic function
-		function sigmoidFunction(currentLevel, recommendedLevel) {
-
-			// 1.58 is the x value where y reaches 50%
-			const x = (currentLevel / (0.5 * recommendedLevel)) - 1.58;
-
-			// 5.11 is the steepness level
-			return 100 / (1 + Math.pow(Math.E, -5.11 * x));
 		}
 	},
 };

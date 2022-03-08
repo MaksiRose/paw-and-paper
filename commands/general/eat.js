@@ -1,21 +1,22 @@
-const checkAccountCompletion = require('../../utils/checkAccountCompletion');
-const checkValidity = require('../../utils/checkValidity');
 const inventory = require('./inventory');
 const profileModel = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
-const maps = require('../../utils/maps');
 const startCooldown = require('../../utils/startCooldown');
+const { generateRandomNumber } = require('../../utils/randomizers');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
+const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { isInvalid } = require('../../utils/checkValidity');
 
 module.exports = {
 	name: 'eat',
 	async sendMessage(client, message, argumentsArray, profileData, serverData, embedArray) {
 
-		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
+		if (await hasNotCompletedAccount(message, profileData)) {
 
 			return;
 		}
 
-		if (await checkValidity.isInvalid(message, profileData, embedArray, [module.exports.name])) {
+		if (await isInvalid(message, profileData, embedArray, [module.exports.name])) {
 
 			return;
 		}
@@ -64,28 +65,28 @@ module.exports = {
 			footer: { text: '' },
 		};
 
-		const allPlantMaps = new Map([...maps.commonPlantMap, ...maps.uncommonPlantMap, ...maps.rarePlantMap]);
+		const allPlantMaps = new Map([...commonPlantsMap, ...uncommonPlantsMap, ...rarePlantsMap]);
 		if (allPlantMaps.has(chosenFood) == true) {
 
 			let plantType;
 			let plantMap;
 
-			if (maps.commonPlantMap.has(chosenFood) == true) {
+			if (commonPlantsMap.has(chosenFood) == true) {
 
 				plantType = 'commonPlants';
-				plantMap = new Map([...maps.commonPlantMap]);
+				plantMap = new Map([...commonPlantsMap]);
 			}
 
-			if (maps.uncommonPlantMap.has(chosenFood) == true) {
+			if (uncommonPlantsMap.has(chosenFood) == true) {
 
 				plantType = 'uncommonPlants';
-				plantMap = new Map([...maps.uncommonPlantMap]);
+				plantMap = new Map([...uncommonPlantsMap]);
 			}
 
-			if (maps.rarePlantMap.has(chosenFood) == true) {
+			if (rarePlantsMap.has(chosenFood) == true) {
 
 				plantType = 'rarePlants';
-				plantMap = new Map([...maps.rarePlantMap]);
+				plantMap = new Map([...rarePlantsMap]);
 			}
 
 			if (serverData.inventoryObject[plantType][chosenFood] <= 0) {
@@ -111,8 +112,8 @@ module.exports = {
 
 				minimumHungerPoints = -5;
 				minimumHealthPoints = -10;
-				finalHungerPoints = Loottable(5, minimumHungerPoints);
-				finalHealthPoints = Loottable(3, minimumHealthPoints);
+				finalHungerPoints = generateRandomNumber(5, minimumHungerPoints);
+				finalHealthPoints = generateRandomNumber(3, minimumHealthPoints);
 
 				embed.description = `*A yucky feeling drifts down ${profileData.name}'s throat. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} shake${(profileData.pronounArray[5] == 'singular') ? 's' : ''} and spit${(profileData.pronounArray[5] == 'singular') ? 's' : ''} it out, trying to rid ${profileData.pronounArray[2]} mouth of the taste. The plant is poisonous!*`;
 			}
@@ -120,25 +121,25 @@ module.exports = {
 			if (plantMap.get(chosenFood).edibality == 'i') {
 
 				minimumHungerPoints = -1;
-				finalHungerPoints = Loottable(3, minimumHungerPoints);
+				finalHungerPoints = generateRandomNumber(3, minimumHungerPoints);
 
 				embed.description = `*${profileData.name} slowly opens ${profileData.pronounArray[2]} mouth and chomps onto the ${chosenFood}. The ${profileData.species} swallows it, but ${profileData.pronounArray[2]} face has a look of disgust. That wasn't very tasty!*`;
 			}
 
 			if (plantMap.get(chosenFood).edibality == 'e') {
 
-				if (maps.speciesMap.get(profileData.species).diet == 'carnivore') {
+				if (speciesMap.get(profileData.species).diet == 'carnivore') {
 
 					minimumHungerPoints = 1;
-					finalHungerPoints = Loottable(5, minimumHungerPoints);
+					finalHungerPoints = generateRandomNumber(5, minimumHungerPoints);
 
 					embed.description = `*${profileData.name} plucks a ${chosenFood} from the pack storage and nibbles away at it. It has a bitter, foreign taste, not the usual meaty meal the ${profileData.species} prefers.*`;
 				}
 
-				if (maps.speciesMap.get(profileData.species).diet == 'herbivore' || maps.speciesMap.get(profileData.species).diet == 'omnivore') {
+				if (speciesMap.get(profileData.species).diet == 'herbivore' || speciesMap.get(profileData.species).diet == 'omnivore') {
 
 					minimumHungerPoints = 11;
-					finalHungerPoints = Loottable(10, minimumHungerPoints);
+					finalHungerPoints = generateRandomNumber(10, minimumHungerPoints);
 
 					embed.description = `*Leaves flutter into the storage den, landing near ${profileData.name}'s feet. The ${profileData.species} searches around the inventory determined to find the perfect meal, and that ${profileData.pronounArray[0]} do${(profileData.pronounArray[5] == 'singular') ? 'es' : ''}. ${profileData.name} plucks a ${chosenFood} from the pile and eats until ${profileData.pronounArray[2]} stomach is pleased.*`;
 				}
@@ -209,7 +210,7 @@ module.exports = {
 				});
 		}
 
-		if (maps.speciesMap.has(chosenFood) == true) {
+		if (speciesMap.has(chosenFood) == true) {
 
 			if (serverData.inventoryObject.meat[chosenFood] <= 0) {
 
@@ -230,18 +231,18 @@ module.exports = {
 					});
 			}
 
-			if (maps.speciesMap.get(profileData.species).diet == 'herbivore') {
+			if (speciesMap.get(profileData.species).diet == 'herbivore') {
 
 				minimumHungerPoints = 1;
-				finalHungerPoints = Loottable(5, minimumHungerPoints);
+				finalHungerPoints = generateRandomNumber(5, minimumHungerPoints);
 
 				embed.description = `*${profileData.name} stands by the storage den, eyeing the varieties of food. A ${chosenFood} catches ${profileData.pronounArray[2]} attention. The ${profileData.species} walks over to it and begins to eat.* "This isn't very good!" *${profileData.name} whispers to ${profileData.pronounArray[4]} and leaves the den, stomach still growling, and craving for plants to grow.*`;
 			}
 
-			if (maps.speciesMap.get(profileData.species).diet == 'carnivore' || maps.speciesMap.get(profileData.species).diet == 'omnivore') {
+			if (speciesMap.get(profileData.species).diet == 'carnivore' || speciesMap.get(profileData.species).diet == 'omnivore') {
 
 				minimumHungerPoints = 11;
-				finalHungerPoints = Loottable(10, minimumHungerPoints);
+				finalHungerPoints = generateRandomNumber(10, minimumHungerPoints);
 
 				embed.description = `*${profileData.name} sits chewing maliciously on a ${chosenFood}. A dribble of blood escapes out of ${profileData.pronounArray[2]} jaw as the ${profileData.species} finishes off the meal. It was a delicious feast, but very messy!*`;
 			}
@@ -306,7 +307,5 @@ module.exports = {
 			.catch((error) => {
 				throw new Error(error);
 			});
-
-		function Loottable(max, min) { return Math.floor(Math.random() * max + min); }
 	},
 };
