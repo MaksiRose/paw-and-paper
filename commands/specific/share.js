@@ -5,7 +5,6 @@ const { generateRandomNumber, pullFromWeightedTable } = require('../../utils/ran
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
-const { decreaseLevel } = require('../../utils/levelHandling');
 
 module.exports = {
 	name: 'share',
