@@ -287,7 +287,7 @@ module.exports = {
 
 				switch (true) {
 
-					case (pullFromWeightedTable({ 0: 7, 1: 13 }) == 0 && userInjuryObject.cold == false):
+					case (pullFromWeightedTable({ 0: 1, 1: 1 }) == 0 && userInjuryObject.cold == false):
 
 						userInjuryObject.cold = true;
 
