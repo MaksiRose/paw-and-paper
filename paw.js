@@ -1,7 +1,6 @@
 const Discord = require('discord.js');
 const config = require('./config.json');
 const fs = require('fs');
-const profileModel = require('./models/profileModel');
 
 const client = new Discord.Client({
 	intents: [
@@ -24,23 +23,4 @@ for (const file of fs.readdirSync('./handlers/')) {
 	require(`./handlers/${file}`).execute(client);
 }
 
-for (const account of profileModel.find({})) {
-
-	if (account.hasCooldown == true) {
-
-		profileModel.findOneAndUpdate(
-			{ userId: account.userId, serverId: account.serverId },
-			{ $set: { hasCooldown: false } },
-		);
-	}
-
-	if (account.isResting == true) {
-
-		profileModel.findOneAndUpdate(
-			{ userId: account.userId, serverId: account.serverId },
-			{ $set: { isResting: false, energy: account.maxEnergy } },
-		);
-	}
-}
-
-client.login(config.token);
+client.login(config.test_token);

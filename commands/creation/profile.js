@@ -14,7 +14,7 @@ module.exports = {
 
 		profileData = await startCooldown(message, profileData);
 
-		let components = [{
+		const components = [{
 			type: 'ACTION_ROW',
 			components: [{
 				type: 'BUTTON',
@@ -29,7 +29,7 @@ module.exports = {
 			}],
 		}];
 
-		if (message.mentions.users.size) {
+		if (message.mentions.users.size > 0) {
 
 			profileData = await profileModel.findOne({
 				userId: message.mentions.users.first().id,
@@ -53,15 +53,11 @@ module.exports = {
 					});
 			}
 
-			components = [{
-				type: 'ACTION_ROW',
-				components: [{
-					type: 'BUTTON',
-					customId: 'profile-refresh',
-					emoji: { name: '🔁' },
-					style: 'SECONDARY',
-				}],
-			}];
+			components[0].components.pop();
+		}
+		else if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
+
+			components[0].components.pop();
 		}
 
 		let injuryText = (Object.values(profileData.injuryObject).every(item => item == 0)) ? 'none' : '';
