@@ -57,6 +57,11 @@ module.exports = {
 			}
 		}
 
+		if (botReply.embeds[0].footer == '') {
+
+			botReply.embeds[0].footer = null;
+		}
+
 
 		await profileModel.findOneAndUpdate(
 			{ userId: profileData.userId, serverId: profileData.serverId },

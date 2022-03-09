@@ -84,7 +84,7 @@ module.exports = {
 		let currentPage = 0;
 
 
-		await messageCollector(message, botReply);
+		messageCollector(message, botReply);
 		await interactionCollector();
 
 		async function interactionCollector() {

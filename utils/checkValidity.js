@@ -179,7 +179,7 @@ module.exports = {
 				{ $set: { isResting: false } },
 			);
 
-			stopResting(message.author.id);
+			stopResting(message.author.id, message.guild.id);
 
 			embedArray.unshift({
 				color: profileData.color,

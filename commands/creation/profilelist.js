@@ -69,7 +69,7 @@ module.exports = {
 
 		components = [components.pop()];
 
-		await messageCollector(message, botReply);
+		messageCollector(message, botReply);
 		await interactionCollector();
 
 		async function interactionCollector() {

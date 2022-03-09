@@ -1,7 +1,7 @@
 const profileModel = require('../../models/profileModel');
 const messageCollector = require('../../utils/messageCollector');
 const startCooldown = require('../../utils/startCooldown');
-const { generateRandomNumber, pullFromWeightedTable } = require('../../utils/randomizers');
+const { generateRandomNumber, pullFromWeightedTable, generateRandomNumberWithException } = require('../../utils/randomizers');
 const { pickRandomRarePlant, pickRandomUncommonPlant, pickRandomCommonPlant } = require('../../utils/pickRandomPlant');
 const { speciesMap } = require('../../utils/itemsInfo');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
@@ -728,39 +728,29 @@ module.exports = {
 							}],
 						};
 
-						let totalRounds = 0;
-						let lastRoundKind = '';
+						let totalCycles = 0;
+						let cycleKind = '';
 
 						await interactionCollector();
 
 						async function interactionCollector() {
 
-							const newRoundArray = ['attack', 'dodge', 'defend'];
-							const newRoundArrayIndex = newRoundArray.indexOf(lastRoundKind);
+							const newCycleArray = ['attack', 'dodge', 'defend'];
+							cycleKind = newCycleArray[generateRandomNumberWithException(newCycleArray.length, 0, newCycleArray.indexOf(cycleKind))];
 
-							if (newRoundArrayIndex !== -1) {
-
-								newRoundArray.splice(newRoundArrayIndex, 1);
-							}
-
-							const newRoundKind = newRoundArray[Math.floor(Math.random() * newRoundArray.length)];
-
-							if (newRoundKind == 'attack') {
+							if (cycleKind == 'attack') {
 
 								embed.description = `⏫ *The ${opponentSpecies} gets ready to attack. ${profileData.name} must think quickly about how ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'wants' : 'want')} to react.*`;
-								lastRoundKind = 'attack';
 							}
 
-							if (newRoundKind == 'dodge') {
+							if (cycleKind == 'dodge') {
 
 								embed.description = `↪️ *Looks like the ${opponentSpecies} is preparing a maneuver for ${profileData.name}'s next move. The ${profileData.species} must think quickly about how ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'wants' : 'want')} to react.*`;
-								lastRoundKind = 'dodge';
 							}
 
-							if (newRoundKind == 'defend') {
+							if (cycleKind == 'defend') {
 
 								embed.description = `⏺️ *The ${opponentSpecies} gets into position to oppose an attack. ${profileData.name} must think quickly about how ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'wants' : 'want')} to react.*`;
-								lastRoundKind = 'defend';
 							}
 
 							embedArray.splice(-1, 1, embed);
@@ -794,19 +784,19 @@ module.exports = {
 							const collector3 = message.channel.createMessageComponentCollector({ filter, max: 1, time: 5000 });
 							collector3.on('end', async (newCollected) => {
 
-								++totalRounds;
+								totalCycles += 1;
 
-								if (!newCollected.size || (newCollected.first().customId == 'fight-attack' && lastRoundKind == 'dodge') || (newCollected.first().customId == 'fight-defend' && lastRoundKind == 'attack') || (newCollected.first().customId == 'fight-dodge' && lastRoundKind == 'defend')) {
+								if (!newCollected.size || (newCollected.first().customId == 'fight-attack' && cycleKind == 'dodge') || (newCollected.first().customId == 'fight-defend' && cycleKind == 'attack') || (newCollected.first().customId == 'fight-dodge' && cycleKind == 'defend')) {
 
-									opponentLevel = opponentLevel + 3;
+									opponentLevel += Math.ceil(profileData.levels / 10) * 2;
 								}
 
-								if (newCollected.size > 0 && ((newCollected.first().customId == 'fight-attack' && lastRoundKind == 'defend') || (newCollected.first().customId == 'fight-defend' && lastRoundKind == 'dodge') || (newCollected.first().customId == 'fight-dodge' && lastRoundKind == 'attack'))) {
+								if (newCollected.size > 0 && ((newCollected.first().customId == 'fight-attack' && cycleKind == 'defend') || (newCollected.first().customId == 'fight-defend' && cycleKind == 'dodge') || (newCollected.first().customId == 'fight-dodge' && cycleKind == 'attack'))) {
 
-									playerLevel = playerLevel + 3;
+									playerLevel += Math.ceil(profileData.levels / 10);
 								}
 
-								if (totalRounds < 3) {
+								if (totalCycles < 3) {
 
 									return await interactionCollector();
 								}
@@ -858,7 +848,7 @@ module.exports = {
 										embed.description = `*The ${profileData.species} swims quickly to the surface, trying to stay as stealthy and unnoticed as possible. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} ${((profileData.pronounArray[5] == 'singular') ? 'break' : 'breaks')} the surface, gain ${profileData.pronounArray[2]} bearing, and the ${profileData.species} begins swimming to the shore, dragging the dead ${opponentSpecies} up the shore to the camp.*`;
 									}
 
-									embed.footer.text = `${embedFooterStatsText}\n+1 ${opponentSpecies}`;
+									embed.footer.text = `${embedFooterStatsText}\n\n+1 ${opponentSpecies}`;
 
 									profileData = await profileModel.findOneAndUpdate(
 										{ userId: message.author.id, serverId: message.guild.id },

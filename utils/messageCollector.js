@@ -1,6 +1,6 @@
 const config = require('../config.json');
 
-module.exports = async (message, botReply) => {
+module.exports = (message, botReply) => {
 
 	if (!botReply) {
 

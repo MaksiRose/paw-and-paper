@@ -245,7 +245,7 @@ module.exports = {
 		}
 
 
-		await messageCollector(message, botReply);
+		messageCollector(message, botReply);
 		await interactionCollector();
 
 		async function interactionCollector() {
