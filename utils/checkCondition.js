@@ -62,6 +62,11 @@ module.exports = {
 
 		if (Object.values(profileData.injuryObject).every((value) => value == 0)) {
 
+			profileData = await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { injuryObject: modifiedUserInjuryObject } },
+			);
+
 			return modifiedUserInjuryObject;
 		}
 
