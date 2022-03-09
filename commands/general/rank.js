@@ -75,7 +75,7 @@ module.exports = {
 					}
 				});
 
-			await messageCollector(message, botReply);
+			messageCollector(message, botReply);
 			return await interactionCollector(botReply);
 		}
 

@@ -54,7 +54,7 @@ module.exports = {
 				}
 			});
 
-		await messageCollector(message, botReply);
+		messageCollector(message, botReply);
 		const filter = async (i) => {
 
 			if (!i.message.reference || !i.message.reference.messageId) {

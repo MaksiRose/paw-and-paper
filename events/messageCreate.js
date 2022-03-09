@@ -5,7 +5,7 @@ const errorHandling = require('../utils/errorHandling');
 const rest = require('../commands/general/rest');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 let lastMessageEpochTime = 0;
-const automaticRestingTimeoutMap = new Map;
+const automaticRestingTimeoutMap = new Map();
 const automaticCooldownTimeoutMap = new Map();
 const usersActiveCommandsAmountMap = new Map();
 

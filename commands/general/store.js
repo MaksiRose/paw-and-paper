@@ -115,7 +115,7 @@ module.exports = {
 				}
 			});
 
-		await messageCollector(message, botReply);
+		messageCollector(message, botReply);
 		await interactionCollector(null, null);
 
 		async function interactionCollector(chosenFood, foodCategory) {

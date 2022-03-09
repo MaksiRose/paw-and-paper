@@ -310,7 +310,7 @@ module.exports = {
 			const foundItem = await pickRandomCommonPlant(message, profileData);
 
 			embed.description = `*${profileData.name} bounds across the den territory, chasing a bee that is just out of reach. Without looking, the ${profileData.species} crashes into a Hunter, loses sight of the bee, and scurries away into the forest. On ${profileData.pronounArray[2]} way back to the pack border, ${profileData.name} sees something special on the ground. It's a ${foundItem}!*`;
-			embed.footer.text = `${embedFooterStatsText}\n\n+1 ${foundItem} for ${message.guild.name}`;
+			embed.footer.text = `${embedFooterStatsText}\n\n+1 ${foundItem}`;
 
 			return embedArray.push(embed);
 		}

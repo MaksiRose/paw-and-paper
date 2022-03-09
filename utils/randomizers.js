@@ -6,7 +6,7 @@ function generateRandomNumber(max, min) {
 function generateRandomNumberWithException(max, min, exception) {
 
 	const randomNumber = generateRandomNumber(max, min);
-	return (randomNumber == exception) ? generateRandomNumberWithException(min, max, exception) : randomNumber;
+	return (randomNumber == exception) ? generateRandomNumberWithException(max, min, exception) : randomNumber;
 }
 
 function pullFromWeightedTable(values) {

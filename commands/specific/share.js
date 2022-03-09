@@ -22,7 +22,7 @@ module.exports = {
 			return;
 		}
 
-		if (sharingCooldownAccountsMap.has(profileData.userId) && Date.now() - sharingCooldownAccountsMap.get(profileData.userId) < 7200000) {
+		if (sharingCooldownAccountsMap.has('nr' + message.author.id + message.guild.id) && Date.now() - sharingCooldownAccountsMap.get('nr' + message.author.id + message.guild.id) < 7200000) {
 
 			return await message
 				.reply({
@@ -30,7 +30,7 @@ module.exports = {
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
 						title: 'You can only share every 2 hours!',
-						description: `You can share again <t:${Math.floor((sharingCooldownAccountsMap.get(profileData.userId) + 7200000) / 1000)}:R>`,
+						description: `You can share again <t:${Math.floor((sharingCooldownAccountsMap.get('nr' + message.author.id + message.guild.id) + 7200000) / 1000)}:R>.`,
 					}],
 				})
 				.catch((error) => {
@@ -222,7 +222,7 @@ module.exports = {
 
 		async function shareStory() {
 
-			sharingCooldownAccountsMap.set(profileData.userId, Date.now());
+			sharingCooldownAccountsMap.set('nr' + message.author.id + message.guild.id, Date.now());
 
 			const partnerExperiencePoints = generateRandomNumber(Math.round((partnerProfileData.levels * 50) * 0.15), Math.round((partnerProfileData.levels * 50) * 0.05));
 
