@@ -28,6 +28,18 @@ module.exports = {
 					{ $set: { isResting: false, energy: dataObject.maxEnergy } },
 				);
 			}
+
+			if (Object.hasOwn(dataObject.inventoryObject.commonPlants, 'neem')) {
+
+				dataObject.inventoryObject.commonPlants = Object.fromEntries(
+					Object.entries(dataObject.inventoryObject.commonPlants).map(([key, value]) => (key == 'neem') ? ['arnica', value] : [key, value]),
+				);
+
+				profileModel.findOneAndUpdate(
+					{ userId: dataObject.userId, serverId: dataObject.serverId },
+					{ $set: { inventoryObject: dataObject.inventoryObject } },
+				);
+			}
 		}
 	},
 };
