@@ -307,7 +307,27 @@ module.exports = {
 				return embedArray.push(embed);
 			}
 
-			const foundItem = await pickRandomCommonPlant(message, profileData);
+			const foundItem = await pickRandomCommonPlant();
+
+			const userInventory = {
+				commonPlants: { ...profileData.inventoryObject.commonPlants },
+				uncommonPlants: { ...profileData.inventoryObject.uncommonPlants },
+				rarePlants: { ...profileData.inventoryObject.rarePlants },
+				meat: { ...profileData.inventoryObject.meat },
+			};
+
+			for (const itemCategory of Object.keys(userInventory)) {
+
+				if (Object.hasOwn(userInventory[itemCategory], foundItem)) {
+
+					userInventory[itemCategory][foundItem] += 1;
+				}
+			}
+
+			profileData = await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { inventoryObject: userInventory } },
+			);
 
 			embed.description = `*${profileData.name} bounds across the den territory, chasing a bee that is just out of reach. Without looking, the ${profileData.species} crashes into a Hunter, loses sight of the bee, and scurries away into the forest. On ${profileData.pronounArray[2]} way back to the pack border, ${profileData.name} sees something special on the ground. It's a ${foundItem}!*`;
 			embed.footer.text = `${embedFooterStatsText}\n\n+1 ${foundItem}`;

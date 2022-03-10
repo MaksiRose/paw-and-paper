@@ -67,7 +67,7 @@ module.exports = {
 				{ $set: { injuryObject: modifiedUserInjuryObject } },
 			);
 
-			return modifiedUserInjuryObject;
+			return botReply;
 		}
 
 		let extraLostHealthPoints = 0;
@@ -90,7 +90,7 @@ module.exports = {
 				continue;
 			}
 
-			extraLostHealthPoints += generateRandomNumber(5, 1);
+			extraLostHealthPoints += generateRandomNumber(3, 3);
 
 			if (becomesInfection == 0) {
 
@@ -117,7 +117,7 @@ module.exports = {
 			}
 
 			const minimumInfectionHealthPoints = Math.round((10 - (profileData.health / 10)) / 3);
-			extraLostHealthPoints += generateRandomNumber(5, (minimumInfectionHealthPoints > 0) ? minimumInfectionHealthPoints : 0);
+			extraLostHealthPoints += generateRandomNumber(3, (minimumInfectionHealthPoints < 0) ? 3 : minimumInfectionHealthPoints + 3);
 
 			embed.description += `\n*One of ${profileData.name}'s infections is getting worse!*`;
 		}
@@ -135,7 +135,7 @@ module.exports = {
 			else {
 
 				const minimumColdHealthPoints = Math.round((10 - (profileData.health / 10)) / 1.5);
-				extraLostHealthPoints += generateRandomNumber(3, (minimumColdHealthPoints > 0) ? minimumColdHealthPoints : 0);
+				extraLostHealthPoints += generateRandomNumber(3, (minimumColdHealthPoints > 0) ? minimumColdHealthPoints : 1);
 
 				embed.description += `\n*${profileData.name}'s cold is getting worse!*`;
 			}
@@ -153,7 +153,7 @@ module.exports = {
 				continue;
 			}
 
-			extraLostHealthPoints += generateRandomNumber(5, 4);
+			extraLostHealthPoints += generateRandomNumber(5, (Math.round(profileData.levels / 2) < 11) ? Math.round(profileData.levels / 2) : 11);
 
 			embed.description += `\n*One of ${profileData.name}'s sprains is getting worse!*`;
 		}
@@ -170,8 +170,8 @@ module.exports = {
 			}
 			else {
 
-				const minimumPoisonHealthPoints = Math.round(10 - (profileData.health / 10));
-				extraLostHealthPoints += generateRandomNumber(5, minimumPoisonHealthPoints);
+				const minimumPoisonHealthPoints = Math.round((10 - (profileData.health / 10)) * 1.5) ;
+				extraLostHealthPoints += generateRandomNumber(5, (minimumPoisonHealthPoints > 0) ? minimumPoisonHealthPoints : 1);
 
 				embed.description += `\n*The poison in ${profileData.name}'s body is spreading!*`;
 			}

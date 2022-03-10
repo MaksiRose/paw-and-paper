@@ -1,12 +1,12 @@
-function generateRandomNumber(max, min) {
+function generateRandomNumber(size, minimum) {
 
-	return Math.floor(Math.random() * max) + min;
+	return Math.floor(Math.random() * size) + minimum;
 }
 
-function generateRandomNumberWithException(max, min, exception) {
+function generateRandomNumberWithException(size, minimum, exception) {
 
-	const randomNumber = generateRandomNumber(max, min);
-	return (randomNumber == exception) ? generateRandomNumberWithException(max, min, exception) : randomNumber;
+	const randomNumber = generateRandomNumber(size, minimum);
+	return (randomNumber == exception) ? generateRandomNumberWithException(size, minimum, exception) : randomNumber;
 }
 
 function pullFromWeightedTable(values) {

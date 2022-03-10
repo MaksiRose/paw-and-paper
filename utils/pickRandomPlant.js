@@ -1,69 +1,21 @@
-const profileModel = require('../models/profileModel');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap } = require('./itemsInfo');
+const { generateRandomNumber } = require('./randomizers');
 
 module.exports = {
 
-	async pickRandomCommonPlant(message, profileData) {
+	async pickRandomCommonPlant() {
 
-		const userInventory = {
-			commonPlants: { ...profileData.inventoryObject.commonPlants },
-			uncommonPlants: { ...profileData.inventoryObject.uncommonPlants },
-			rarePlants: { ...profileData.inventoryObject.rarePlants },
-			meat: { ...profileData.inventoryObject.meat },
-		};
-
-		const randomCommonPlant = Array.from(commonPlantsMap.keys())[Math.floor(Math.random() * Array.from(commonPlantsMap.keys()).length)];
-
-		userInventory.commonPlants[randomCommonPlant] += 1;
-
-		profileData = await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { inventoryObject: userInventory } },
-		);
-
-		return randomCommonPlant;
+		return Array.from(commonPlantsMap.keys())[generateRandomNumber(Array.from(commonPlantsMap.keys()).length, 0)];
 	},
 
-	async pickRandomUncommonPlant(message, profileData) {
+	async pickRandomUncommonPlant() {
 
-		const userInventory = {
-			commonPlants: { ...profileData.inventoryObject.commonPlants },
-			uncommonPlants: { ...profileData.inventoryObject.uncommonPlants },
-			rarePlants: { ...profileData.inventoryObject.rarePlants },
-			meat: { ...profileData.inventoryObject.meat },
-		};
-
-		const randomUncommonPlant = Array.from(uncommonPlantsMap.keys())[Math.floor(Math.random() * Array.from(uncommonPlantsMap.keys()).length)];
-
-		userInventory.uncommonPlants[randomUncommonPlant] += 1;
-
-		profileData = await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { inventoryObject: userInventory } },
-		);
-
-		return randomUncommonPlant;
+		return Array.from(uncommonPlantsMap.keys())[generateRandomNumber(Array.from(uncommonPlantsMap.keys()).length, 0)];
 	},
 
-	async pickRandomRarePlant(message, profileData) {
+	async pickRandomRarePlant() {
 
-		const userInventory = {
-			commonPlants: { ...profileData.inventoryObject.commonPlants },
-			uncommonPlants: { ...profileData.inventoryObject.uncommonPlants },
-			rarePlants: { ...profileData.inventoryObject.rarePlants },
-			meat: { ...profileData.inventoryObject.meat },
-		};
-
-		const randomRarePlant = Array.from(rarePlantsMap.keys())[Math.floor(Math.random() * Array.from(rarePlantsMap.keys()).length)];
-
-		userInventory.rarePlants[randomRarePlant] += 1;
-
-		profileData = await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { inventoryObject: userInventory } },
-		);
-
-		return randomRarePlant;
+		return Array.from(rarePlantsMap.keys())[generateRandomNumber(Array.from(rarePlantsMap.keys()).length, 0)];
 	},
 
 };
