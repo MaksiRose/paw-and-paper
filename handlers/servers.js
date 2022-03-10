@@ -1,34 +1,18 @@
 const fs = require('fs');
-const profileModel = require('../models/profileModel');
+const serverModel = require('../models/serverModel');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 
 module.exports = {
 	execute() {
 
-		for (const file of fs.readdirSync('./database/profiles')) {
+		for (const file of fs.readdirSync('./database/servers')) {
 
 			if (!file.endsWith('.json')) {
 
 				continue;
 			}
 
-			const dataObject = JSON.parse(fs.readFileSync(`./database/profiles/${file}`));
-
-			if (dataObject.hasCooldown == true) {
-
-				profileModel.findOneAndUpdate(
-					{ userId: dataObject.userId, serverId: dataObject.serverId },
-					{ $set: { hasCooldown: false } },
-				);
-			}
-
-			if (dataObject.isResting == true) {
-
-				profileModel.findOneAndUpdate(
-					{ userId: dataObject.userId, serverId: dataObject.serverId },
-					{ $set: { isResting: false, energy: dataObject.maxEnergy } },
-				);
-			}
+			const dataObject = JSON.parse(fs.readFileSync(`./database/servers/${file}`));
 
 			if (Object.hasOwn(dataObject.inventoryObject.commonPlants, 'neem')) {
 
@@ -44,8 +28,8 @@ module.exports = {
 				meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, dataObject.inventoryObject.meat[key] || 0])),
 			};
 
-			profileModel.findOneAndUpdate(
-				{ userId: dataObject.userId, serverId: dataObject.serverId },
+			serverModel.findOneAndUpdate(
+				{ serverId: dataObject.serverId },
 				{ $set: { inventoryObject: dataObject.inventoryObject } },
 			);
 		}

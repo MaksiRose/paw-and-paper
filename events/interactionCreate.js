@@ -206,14 +206,9 @@ module.exports = {
 					});
 			}
 
-			const inventoryMaps = {
-				commonPlants: new Map(commonPlantsMap),
-				uncommonPlants: new Map(uncommonPlantsMap),
-				rarePlants: new Map(rarePlantsMap),
-				meat: new Map(speciesMap),
-			};
+			const plantNamesArray = [...commonPlantsMap.keys(), ...uncommonPlantsMap.keys(), ...rarePlantsMap.keys(), ...speciesMap.keys() ].sort();
 
-			if (interaction.customId == 'eat-options' && [].concat(...Object.values(inventoryMaps).map(value => [...value.keys()])).some(elem => elem == interaction.values[0])) {
+			if (interaction.customId == 'eat-options' && plantNamesArray.some(elem => elem == interaction.values[0])) {
 
 				interaction.message
 					.delete()

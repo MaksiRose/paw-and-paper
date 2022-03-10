@@ -34,12 +34,12 @@ module.exports = {
 			rarePlants: { ...serverData.inventoryObject.rarePlants },
 			meat: { ...serverData.inventoryObject.meat },
 		};
-		const inventoryMaps = {
-			commonPlants: new Map(commonPlantsMap),
-			uncommonPlants: new Map(uncommonPlantsMap),
-			rarePlants: new Map(rarePlantsMap),
-			meat: new Map(speciesMap),
-		};
+		const inventoryArray = [
+			['commonPlants', [...commonPlantsMap.keys()].sort()],
+			['uncommonPlants', [...uncommonPlantsMap.keys()].sort()],
+			['rarePlants', [...rarePlantsMap.keys()].sort()],
+			['meat', [...speciesMap.keys()].sort()],
+		];
 
 		const itemSelectMenu = {
 			type: 'ACTION_ROW',
@@ -51,13 +51,13 @@ module.exports = {
 			}],
 		};
 
-		for (const [mapName, mapEntries] of Object.entries(inventoryMaps)) {
+		for (const [itemType, itemsArray] of inventoryArray) {
 
-			for (const [itemName] of mapEntries) {
+			for (const itemName of itemsArray) {
 
-				if (profileData.inventoryObject[mapName][itemName] > 0) {
+				if (profileData.inventoryObject[itemType][itemName] > 0) {
 
-					itemSelectMenu.components[0].options.push({ label: itemName, value: itemName, description: `${profileData.inventoryObject[mapName][itemName]}` });
+					itemSelectMenu.components[0].options.push({ label: itemName, value: itemName, description: `${profileData.inventoryObject[itemType][itemName]}` });
 				}
 			}
 		}
@@ -161,11 +161,11 @@ module.exports = {
 						chosenFood = interaction.values[0];
 						let maximumAmount = 0;
 
-						for (const [mapName, mapEntries] of Object.entries(inventoryMaps)) {
+						for (const [itemType, itemsArray] of inventoryArray) {
 
-							if (inventoryMaps[mapName].has(chosenFood)) {
-								foodCategory = mapName;
-								maximumAmount = profileData.inventoryObject[mapEntries][chosenFood];
+							if (itemsArray.includes(chosenFood)) {
+								foodCategory = itemType;
+								maximumAmount = profileData.inventoryObject[itemsArray][chosenFood];
 							}
 						}
 
@@ -219,13 +219,13 @@ module.exports = {
 						);
 
 						itemSelectMenu.components[0].options = [];
-						for (const [mapName, mapEntries] of Object.entries(inventoryMaps)) {
+						for (const [itemType, itemsArray] of inventoryArray) {
 
-							for (const [itemName] of mapEntries) {
+							for (const itemName of itemsArray) {
 
-								if (profileData.inventoryObject[mapName][itemName] > 0) {
+								if (profileData.inventoryObject[itemType][itemName] > 0) {
 
-									itemSelectMenu.components[0].options.push({ label: itemName, value: itemName, description: `${profileData.inventoryObject[mapName][itemName]}` });
+									itemSelectMenu.components[0].options.push({ label: itemName, value: itemName, description: `${profileData.inventoryObject[itemType][itemName]}` });
 								}
 							}
 						}
@@ -274,17 +274,17 @@ module.exports = {
 					let footerText = embedArray[embedArray.length - 1].footer.text;
 					let maximumAmount = 0;
 
-					for (const [mapName, mapEntries] of Object.entries(inventoryMaps)) {
+					for (const [itemType, itemsArray] of inventoryArray) {
 
-						for (const [itemName] of mapEntries) {
+						for (const itemName of itemsArray) {
 
-							if (profileData.inventoryObject[mapName][itemName] > 0) {
+							if (profileData.inventoryObject[itemType][itemName] > 0) {
 
-								maximumAmount = profileData.inventoryObject[mapName][itemName];
+								maximumAmount = profileData.inventoryObject[itemType][itemName];
 
 								footerText += `+${maximumAmount} ${itemName} for ${message.guild.name}\n`;
-								userInventory[mapName][itemName] -= maximumAmount;
-								serverInventory[mapName][itemName] += maximumAmount;
+								userInventory[itemType][itemName] -= maximumAmount;
+								serverInventory[itemType][itemName] += maximumAmount;
 							}
 						}
 					}

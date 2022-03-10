@@ -33,31 +33,11 @@ module.exports = {
 		if (!serverData) {
 
 			const serverInventoryObject = {
-				commonPlants: {},
-				uncommonPlants: {},
-				rarePlants: {},
-				meat: {},
+				commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, 0])),
+				uncommonPlants: Object.fromEntries([...uncommonPlantsMap.keys()].sort().map(key => [key, 0])),
+				rarePlants: Object.fromEntries([...rarePlantsMap.keys()].sort().map(key => [key, 0])),
+				meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, 0])),
 			};
-
-			for (const [commonPlantName] of commonPlantsMap) {
-
-				serverInventoryObject.commonPlants[commonPlantName] = 0;
-			}
-
-			for (const [uncommonPlantName] of uncommonPlantsMap) {
-
-				serverInventoryObject.uncommonPlants[uncommonPlantName] = 0;
-			}
-
-			for (const [rarePlantName] of rarePlantsMap) {
-
-				serverInventoryObject.rarePlants[rarePlantName] = 0;
-			}
-
-			for (const [speciesName] of speciesMap) {
-
-				serverInventoryObject.meat[speciesName] = 0;
-			}
 
 			serverData = await serverModel.create({
 				serverId: message.guild.id,
@@ -66,78 +46,6 @@ module.exports = {
 				accountsToDelete: {},
 				activeUsersArray: [],
 			});
-		}
-
-		if (speciesMap.size > Object.keys(serverData.inventoryObject.meat).length) {
-
-			const serverMeatObject = { ...serverData.inventoryObject.meat };
-
-			for (const [speciesName] of speciesMap) {
-
-				if (speciesName in serverMeatObject) {
-
-					serverMeatObject[speciesName] = 0;
-				}
-			}
-
-			serverData = await serverModel.findOneAndUpdate(
-				{ serverId: message.guild.id },
-				{ $set: { 'inventoryObject.meat': serverMeatObject } },
-			);
-		}
-
-		if (commonPlantsMap.size > Object.keys(serverData.inventoryObject.commonPlants).length) {
-
-			const serverCommonPlantMap = new Map(JSON.parse(JSON.stringify([...serverData.inventoryObject.commonPlants])));
-
-			for (const [speciesName] of commonPlantsMap) {
-
-				if (!serverCommonPlantMap.has(speciesName)) {
-
-					serverCommonPlantMap.set(speciesName, 0);
-				}
-			}
-
-			serverData = await serverModel.findOneAndUpdate(
-				{ serverId: message.guild.id },
-				{ $set: { 'inventoryObject.commonPlants': serverCommonPlantMap } },
-			);
-		}
-
-		if (uncommonPlantsMap.size > Object.keys(serverData.inventoryObject.uncommonPlants).length) {
-
-			const serverUncommonPlantMap = new Map(JSON.parse(JSON.stringify([...serverData.inventoryObject.uncommonPlants])));
-
-			for (const [speciesName] of uncommonPlantsMap) {
-
-				if (!serverUncommonPlantMap.has(speciesName)) {
-
-					serverUncommonPlantMap.set(speciesName, 0);
-				}
-			}
-
-			serverData = await serverModel.findOneAndUpdate(
-				{ serverId: message.guild.id },
-				{ $set: { 'inventoryObject.uncommonPlants': serverUncommonPlantMap } },
-			);
-		}
-
-		if (rarePlantsMap.size > Object.keys(serverData.inventoryObject.rarePlants).length) {
-
-			const serverRarePlantMap = new Map(JSON.parse(JSON.stringify([...serverData.inventoryObject.rarePlants])));
-
-			for (const [speciesName] of rarePlantsMap) {
-
-				if (!serverRarePlantMap.has(speciesName)) {
-
-					serverRarePlantMap.set(speciesName, 0);
-				}
-			}
-
-			serverData = await serverModel.findOneAndUpdate(
-				{ serverId: message.guild.id },
-				{ $set: { 'inventoryObject.rarePlants': serverRarePlantMap } },
-			);
 		}
 
 		let pingRuins = false;

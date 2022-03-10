@@ -53,7 +53,7 @@ module.exports = {
 			fields: [],
 		};
 
-		for (const [commonPlantName, commonPlantObject] of commonPlantsMap) {
+		for (const [commonPlantName, commonPlantObject] of [...commonPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
 			if (serverData.inventoryObject.commonPlants[commonPlantName] > 0) {
 
@@ -144,7 +144,7 @@ module.exports = {
 							fields: [],
 						};
 
-						for (const [commonPlantName, commonPlantObject] of commonPlantsMap) {
+						for (const [commonPlantName, commonPlantObject] of [...commonPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
 							if (serverData.inventoryObject.commonPlants[commonPlantName] > 0) {
 
@@ -181,7 +181,7 @@ module.exports = {
 							fields: [],
 						};
 
-						for (const [uncommonPlantName, uncommonPlantObject] of uncommonPlantsMap) {
+						for (const [uncommonPlantName, uncommonPlantObject] of [...uncommonPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
 							if (serverData.inventoryObject.uncommonPlants[uncommonPlantName] > 0) {
 
@@ -190,7 +190,7 @@ module.exports = {
 							}
 						}
 
-						for (const [rarePlantName, rarePlantObject] of rarePlantsMap) {
+						for (const [rarePlantName, rarePlantObject] of [...rarePlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
 							if (serverData.inventoryObject.rarePlants[rarePlantName] > 0) {
 
@@ -227,7 +227,7 @@ module.exports = {
 							fields: [],
 						};
 
-						for (const [speciesName] of speciesMap) {
+						for (const [speciesName] of [...speciesMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
 							if (serverData.inventoryObject.meat[speciesName] > 0) {
 

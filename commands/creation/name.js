@@ -17,31 +17,11 @@ module.exports = {
 			if (!profileData) {
 
 				const profileInventoryObject = {
-					commonPlants: {},
-					uncommonPlants: {},
-					rarePlants: {},
-					meat: {},
+					commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, 0])),
+					uncommonPlants: Object.fromEntries([...uncommonPlantsMap.keys()].sort().map(key => [key, 0])),
+					rarePlants: Object.fromEntries([...rarePlantsMap.keys()].sort().map(key => [key, 0])),
+					meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, 0])),
 				};
-
-				for (const [commonPlantName] of commonPlantsMap) {
-
-					profileInventoryObject.commonPlants[commonPlantName] = 0;
-				}
-
-				for (const [uncommonPlantName] of uncommonPlantsMap) {
-
-					profileInventoryObject.uncommonPlants[uncommonPlantName] = 0;
-				}
-
-				for (const [rarePlantName] of rarePlantsMap) {
-
-					profileInventoryObject.rarePlants[rarePlantName] = 0;
-				}
-
-				for (const [speciesName] of speciesMap) {
-
-					profileInventoryObject.meat[speciesName] = 0;
-				}
 
 				profileData = await profileModel.create({
 					userId: message.author.id,
