@@ -1,7 +1,7 @@
 const profileModel = require('../../models/profileModel');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { hasCooldown } = require('../../utils/checkValidity');
-const messageCollector = require('../../utils/messageCollector');
+const { createCommandCollector } = require('../../utils/commandCollector');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
@@ -75,7 +75,7 @@ module.exports = {
 					}
 				});
 
-			messageCollector(message, botReply);
+			createCommandCollector(message.author.id, message.guild.id, botReply);
 			return await interactionCollector(botReply);
 		}
 

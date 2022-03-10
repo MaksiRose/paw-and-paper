@@ -1,5 +1,4 @@
 const profileModel = require('../../models/profileModel');
-const messageCollector = require('../../utils/messageCollector');
 const startCooldown = require('../../utils/startCooldown');
 const { generateRandomNumber, pullFromWeightedTable, generateRandomNumberWithException } = require('../../utils/randomizers');
 const { pickRandomRarePlant, pickRandomUncommonPlant, pickRandomCommonPlant } = require('../../utils/pickRandomPlant');
@@ -429,8 +428,6 @@ module.exports = {
 						throw new Error(error);
 					}
 				});
-
-			messageCollector(message, botReply);
 
 			async function filter(i) {
 
@@ -934,7 +931,6 @@ module.exports = {
 				components: [],
 			};
 
-
 			for (let i = 0; i < allBiomesArray.length; i++) {
 
 				selectBiomeComponent.components.push({ type: 'BUTTON', customId: allBiomesArray[i], label: allBiomesArray[i].charAt(0).toUpperCase() + allBiomesArray[i].slice(1), style: 'PRIMARY' });
@@ -958,8 +954,6 @@ module.exports = {
 				});
 
 			embedArray.splice(-1, 1);
-
-			messageCollector(message, getBiomeMessage);
 
 			async function filter(i) {
 

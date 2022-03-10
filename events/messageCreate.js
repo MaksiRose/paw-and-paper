@@ -4,6 +4,7 @@ const serverModel = require('../models/serverModel');
 const errorHandling = require('../utils/errorHandling');
 const rest = require('../commands/general/rest');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
+const { activeCommandsObject } = require('../utils/commandCollector');
 let lastMessageEpochTime = 0;
 const automaticRestingTimeoutMap = new Map();
 const automaticCooldownTimeoutMap = new Map();
@@ -106,6 +107,11 @@ module.exports = {
 		clearTimeout(automaticCooldownTimeoutMap.get('nr' + message.author.id + message.guild.id));
 		clearTimeout(automaticRestingTimeoutMap.get('nr' + message.author.id + message.guild.id));
 
+		if (Object.hasOwn(activeCommandsObject, 'nr' + message.author.id + message.guild.id)) {
+
+			await activeCommandsObject['nr' + message.author.id + message.guild.id]();
+		}
+
 		try {
 
 			console.log(`\x1b[32m${message.author.tag}\x1b[0m successfully executed \x1b[33m${message.content} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
@@ -135,7 +141,7 @@ module.exports = {
 							serverId: message.guild.id,
 						});
 
-						automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await removeCooldown, 500));
+						automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await removeCooldown, 1000));
 					}
 				});
 		}
@@ -150,21 +156,13 @@ module.exports = {
 					serverId: message.guild.id,
 				});
 
-				automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await removeCooldown, 500));
+				automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await removeCooldown, 1000));
 			}
 
 			await errorHandling.output(message, error);
 		}
 
 		automaticRestingTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await startResting, 600000));
-
-		async function removeCooldown() {
-
-			profileData = await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { hasCooldown: false } },
-			);
-		}
 
 		async function startResting() {
 
@@ -179,12 +177,20 @@ module.exports = {
 					.sendMessage(client, message, [], profileData, serverData, embedArray)
 					.then(async () => {
 
-						automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await removeCooldown, 500));
+						automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await removeCooldown, 1000));
 					})
 					.catch(async (error) => {
 						return await errorHandling.output(message, error);
 					});
 			}
+		}
+
+		async function removeCooldown() {
+
+			profileData = await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { hasCooldown: false } },
+			);
 		}
 	},
 };

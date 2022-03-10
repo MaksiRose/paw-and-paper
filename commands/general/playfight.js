@@ -6,6 +6,7 @@ const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion')
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseHealth, decreaseThirst, decreaseHunger, decreaseEnergy } = require('../../utils/checkCondition');
 const { checkLevelUp } = require('../../utils/levelHandling');
+const { createCommandCollector, activeCommandsObject } = require('../../utils/commandCollector');
 
 module.exports = {
 	name: 'playfight',
@@ -66,12 +67,12 @@ module.exports = {
 			serverId: message.guild.id,
 		});
 
-		if (!partnerProfileData || partnerProfileData.name == '' || partnerProfileData.species == '' || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0) {
+		if (!partnerProfileData || partnerProfileData.name == '' || partnerProfileData.species == '' || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0 || partnerProfileData.hasCooldown == true) {
 
 			embedArray.push({
 				color: config.error_color,
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-				title: 'The mentioned user has no account or is passed out :(',
+				title: 'The mentioned user has no account, is passed out or busy :(',
 			});
 
 			return await message
@@ -193,66 +194,8 @@ module.exports = {
 
 		let newTurnEmbedTextArrayIndex = -1;
 
-		client.on('messageCreate', async function removePlayfightComponents(newMessage) {
-
-			let isEmptyBoard = true;
-			forLoop: for (const columnArray of componentArray) {
-
-				for (const rowArray of columnArray.components) {
-
-					if (rowArray.emoji.name === player1Field || rowArray.emoji.name === player2Field) {
-
-						isEmptyBoard = false;
-						break forLoop;
-					}
-				}
-			}
-
-			if (!botReply || newMessage.author.id != message.author.id || !newMessage.content.toLowerCase().startsWith(config.prefix) || profileData.hasCooldown || isEmptyBoard === false) {
-
-				return client.off('messageCreate', removePlayfightComponents);
-			}
-
-			await botReply
-				.edit({
-					components: [],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-
-			return client.off('messageCreate', removePlayfightComponents);
-		});
-
-		messageCollector();
-
-		async function messageCollector() {
-
-			if (!botReply) {
-
-				return;
-			}
-
-			const filter = m => m.author.id === message.mentions.users.first().id && m.content.toLowerCase().startsWith(config.prefix);
-
-			const collector = message.channel.createMessageCollector({ filter, max: 1, time: 120000 });
-			collector.on('end', async () => {
-
-				await botReply
-					.edit({
-						components: [],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-
-				return;
-			});
-		}
+		createCommandCollector(message.author.id, message.guild.id, botReply);
+		createCommandCollector(message.mentions.users.first().id, message.guild.id, botReply);
 
 		await startNewRound((generateRandomNumber(2, 0) == 0) ? true : false);
 
@@ -521,6 +464,11 @@ module.exports = {
 
 							return resolve();
 						}
+					}
+
+					if (Object.hasOwn(activeCommandsObject, 'nr' + message.mentions.first().id + message.guild.id)) {
+
+						await activeCommandsObject['nr' + message.mentions.first().id + message.guild.id]();
 					}
 
 					const newTurnEmbedTextArray = [

@@ -1,9 +1,9 @@
 const { decreaseThirst, decreaseHunger, decreaseEnergy } = require('../../utils/checkCondition');
-const messageCollector = require('../../utils/messageCollector');
 const { generateRandomNumber, generateRandomNumberWithException } = require('../../utils/randomizers');
 const profileModel = require('../../models/profileModel');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
+const { createCommandCollector } = require('../../utils/commandCollector');
 const practicingCooldownAccountsMap = new Map();
 
 module.exports = {
@@ -71,7 +71,7 @@ module.exports = {
 				}
 			});
 
-		messageCollector(message, botReply);
+		createCommandCollector(message.author.id, message.guild.id, botReply);
 
 		let filter = async (i) => {
 

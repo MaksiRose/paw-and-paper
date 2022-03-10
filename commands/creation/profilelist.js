@@ -1,6 +1,5 @@
 const profileModel = require('../../models/profileModel');
 const config = require('../../config.json');
-const messageCollector = require('../../utils/messageCollector');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
 
@@ -69,8 +68,7 @@ module.exports = {
 
 		components = [components.pop()];
 
-		messageCollector(message, botReply);
-		await interactionCollector();
+		interactionCollector();
 
 		async function interactionCollector() {
 
@@ -85,10 +83,9 @@ module.exports = {
 				return userMessage.id == message.id && i.customId.includes('profilelist') && i.user.id == message.author.id;
 			};
 
-			const collector = message.channel.createMessageComponentCollector({ filter, max: 1, time: 120000 });
-			collector.on('end', async (collected) => {
-
-				if (!collected.size) {
+			const interaction = await botReply
+				.awaitMessageComponent({ filter, time: 120000 })
+				.catch(async () => {
 
 					return await botReply
 						.edit({
@@ -99,78 +96,75 @@ module.exports = {
 								throw new Error(error);
 							}
 						});
+				});
+
+			if (interaction.customId == 'profilelist-rank') {
+
+				const rankName = (interaction.values[0] == 'profilelist-elderlies') ? 'Elderly' : (interaction.values[0] == 'profilelist-huntershealers') ? { $or: ['Hunter', 'Healer'] } : (interaction.values[0] == 'profilelist-apprentices') ? 'Apprentice' : 'Youngling';
+
+				rankProfilesPages = await getRank(rankName);
+
+				if (rankProfilesPages.length > 1) {
+
+					components.unshift({
+						type: 'ACTION_ROW',
+						components: [{
+							type: 'BUTTON',
+							customId: 'profilelist-left',
+							emoji: { name: '⬅️' },
+							style: 'SECONDARY',
+						}, {
+							type: 'BUTTON',
+							customId: 'profilelist-right',
+							emoji: { name: '➡️' },
+							style: 'SECONDARY',
+						}],
+					});
 				}
 
-				const interaction = collected.first();
+				pageNumber = 0;
+				botReply.embeds[0].title = `Profiles - ${interaction.component.options.find(element => element.value == interaction.values[0]).label}`;
+				botReply.embeds[0].description = rankProfilesPages[pageNumber];
+			}
 
-				if (interaction.customId == 'profilelist-rank') {
+			if (interaction.customid == 'profilelist-left') {
 
-					const rankName = (interaction.values[0] == 'profilelist-elderlies') ? 'Elderly' : (interaction.values[0] == 'profilelist-huntershealers') ? { $or: ['Hunter', 'Healer'] } : (interaction.values[0] == 'profilelist-apprentices') ? 'Apprentice' : 'Youngling';
+				pageNumber -= 1;
 
-					rankProfilesPages = await getRank(rankName);
+				if (pageNumber < 0) {
 
-					if (rankProfilesPages.length > 1) {
+					pageNumber = rankProfilesPages.length - 1;
+				}
 
-						components.unshift({
-							type: 'ACTION_ROW',
-							components: [{
-								type: 'BUTTON',
-								customId: 'profilelist-left',
-								emoji: { name: '⬅️' },
-								style: 'SECONDARY',
-							}, {
-								type: 'BUTTON',
-								customId: 'profilelist-right',
-								emoji: { name: '➡️' },
-								style: 'SECONDARY',
-							}],
-						});
-					}
+				botReply.embeds[0].description = rankProfilesPages[pageNumber];
+			}
+
+			if (interaction.customId == 'profilelist-right') {
+
+				pageNumber += 1;
+
+				if (pageNumber >= rankProfilesPages.length) {
 
 					pageNumber = 0;
-					botReply.embeds[0].title = `Profiles - ${interaction.component.options.find(element => element.value == interaction.values[0]).label}`;
-					botReply.embeds[0].description = rankProfilesPages[pageNumber];
 				}
 
-				if (interaction.customid == 'profilelist-left') {
+				botReply.embeds[0].description = rankProfilesPages[pageNumber];
+			}
 
-					pageNumber -= 1;
-
-					if (pageNumber < 0) {
-
-						pageNumber = rankProfilesPages.length - 1;
+			botReply = await botReply
+				.edit({
+					embeds: botReply.embeds,
+					components: components,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
 					}
+				});
 
-					botReply.embeds[0].description = rankProfilesPages[pageNumber];
-				}
+			components = [components.pop()];
 
-				if (interaction.customId == 'profilelist-right') {
-
-					pageNumber += 1;
-
-					if (pageNumber >= rankProfilesPages.length) {
-
-						pageNumber = 0;
-					}
-
-					botReply.embeds[0].description = rankProfilesPages[pageNumber];
-				}
-
-				botReply = await botReply
-					.edit({
-						embeds: botReply.embeds,
-						components: components,
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-
-				components = [components.pop()];
-
-				await interactionCollector();
-			});
+			interactionCollector();
 		}
 
 		async function getRank(rankName) {

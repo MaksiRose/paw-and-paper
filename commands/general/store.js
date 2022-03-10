@@ -1,10 +1,10 @@
 const profileModel = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
-const messageCollector = require('../../utils/messageCollector');
 const startCooldown = require('../../utils/startCooldown');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
+const { createCommandCollector } = require('../../utils/commandCollector');
 
 module.exports = {
 	name: 'store',
@@ -115,7 +115,7 @@ module.exports = {
 				}
 			});
 
-		messageCollector(message, botReply);
+		createCommandCollector(message.author.id, message.guild.id, botReply);
 		await interactionCollector(null, null);
 
 		async function interactionCollector(chosenFood, foodCategory) {

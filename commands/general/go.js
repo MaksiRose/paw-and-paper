@@ -1,8 +1,8 @@
 const profileModel = require('../../models/profileModel');
 const startCooldown = require('../../utils/startCooldown');
-const messageCollector = require('../../utils/messageCollector');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
+const { createCommandCollector } = require('../../utils/commandCollector');
 
 module.exports = {
 	name: 'go',
@@ -245,7 +245,7 @@ module.exports = {
 		}
 
 
-		messageCollector(message, botReply);
+		createCommandCollector(message.author.id, message.guild.id, botReply);
 		await interactionCollector();
 
 		async function interactionCollector() {
@@ -266,7 +266,7 @@ module.exports = {
 
 				if (!collected.size) {
 
-					return await interaction.message
+					return await botReply
 						.edit({
 							components: [],
 						})

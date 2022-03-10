@@ -1,6 +1,6 @@
 const config = require('../../config.json');
 const profileModel = require('../../models/profileModel');
-const messageCollector = require('../../utils/messageCollector');
+const { createCommandCollector } = require('../../utils/commandCollector');
 
 module.exports = {
 	name: 'delete',
@@ -54,7 +54,7 @@ module.exports = {
 				}
 			});
 
-		messageCollector(message, botReply);
+		createCommandCollector(message.author.id, message.guild.id, botReply);
 		const filter = async (i) => {
 
 			if (!i.message.reference || !i.message.reference.messageId) {

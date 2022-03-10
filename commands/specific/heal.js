@@ -2,13 +2,13 @@ const profileModel = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
 const config = require('../../config.json');
 const startCooldown = require('../../utils/startCooldown');
-const messageCollector = require('../../utils/messageCollector');
 const { generateRandomNumber } = require('../../utils/randomizers');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseHealth } = require('../../utils/checkCondition');
 const { checkLevelUp } = require('../../utils/levelHandling');
+const { createCommandCollector } = require('../../utils/commandCollector');
 
 module.exports = {
 	name: 'heal',
@@ -117,7 +117,7 @@ module.exports = {
 		}
 
 
-		messageCollector(message, botReply);
+		createCommandCollector(message.author.id, message.guild.id, botReply);
 		await interactionCollector();
 
 		async function interactionCollector() {

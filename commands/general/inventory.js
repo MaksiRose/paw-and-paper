@@ -1,9 +1,9 @@
 const config = require('../../config.json');
 const startCooldown = require('../../utils/startCooldown');
-const messageCollector = require('../../utils/messageCollector');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { hasCooldown } = require('../../utils/checkValidity');
+const { createCommandCollector } = require('../../utils/commandCollector');
 
 module.exports = {
 	name: 'inventory',
@@ -84,7 +84,7 @@ module.exports = {
 		let currentPage = 0;
 
 
-		messageCollector(message, botReply);
+		createCommandCollector(message.author.id, message.guild.id, botReply);
 		await interactionCollector();
 
 		async function interactionCollector() {
