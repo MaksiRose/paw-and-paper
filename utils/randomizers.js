@@ -1,3 +1,9 @@
+/**
+ *
+ * @param {number} size
+ * @param {number} minimum
+ * @returns number
+ */
 function generateRandomNumber(size, minimum) {
 
 	return Math.floor(Math.random() * size) + minimum;

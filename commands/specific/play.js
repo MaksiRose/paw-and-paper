@@ -159,8 +159,8 @@ module.exports = {
 
 			allPrairieProfilesArray = allPrairieProfilesArray.map(doc => doc.userId).filter(async userId => await message.guild.members.cache.has(userId) && userId != profileData.userId);
 
-			const getsQuestChance = pullFromWeightedTable({ 0: 19, 1: 1 });
-			if (getsQuestChance == 1 && profileData.unlockedRanks == 0 && profileData.rank == 'Youngling' && profileData.levels > 1) {
+			const getsQuestChance = generateRandomNumber(20, 0);
+			if (getsQuestChance == 0 && profileData.unlockedRanks == 0 && profileData.rank == 'Youngling' && profileData.levels > 1) {
 
 				await findQuest();
 			}
@@ -252,7 +252,7 @@ module.exports = {
 			);
 
 			embed.description = `*${profileData.name} lifts ${profileData.pronounArray[2]} head to investigate the sound of a faint cry. Almost sure that it was someone in need of help, ${profileData.pronounArray[0]} dashes from where ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'is' : 'are')} standing and bolts for the sound. Soon ${profileData.name} comes along to the intimidating mouth of a dark cave covered by a boulder. The cries for help still ricocheting through ${profileData.pronounArray[2]} brain. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} must help them...*`;
-			embed.footer.text = `Type 'rp quest' to continue!\n\n${embedFooterStatsText}`;
+			embed.footer.text = `${embedFooterStatsText}\n\nType 'rp quest' to continue!`;
 
 			embedArray.push(embed);
 		}
