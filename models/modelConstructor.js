@@ -43,6 +43,19 @@ class model {
 
 				const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`));
 
+				const guild = (dataObject.serverId != undefined) ? await client.guilds
+					.fetch(dataObject.serverId)
+					.catch((error) => {
+						if (error.httpStatus != 403 && error.httpStatus != 404) {
+							console.error(error);
+						}
+					}) : null;
+
+				if (guild != null && await guild.members.fetch(dataObject.userId).catch(() => null) == null) {
+
+					continue;
+				}
+
 				if (allObjectsMatch(filterObject, dataObject) === true) {
 
 					dataObjectsArray.push(dataObject);
@@ -155,7 +168,7 @@ class model {
 			const user = (dataObject.userId != undefined) ? await client.users
 				.fetch(dataObject.userId)
 				.catch((error) => {
-					if (error.httpStatus != 403) {
+					if (error.httpStatus != 403 && error.httpStatus != 404) {
 						console.error(error);
 					}
 				}) : null;
@@ -163,7 +176,7 @@ class model {
 			const guild = (dataObject.serverId != undefined) ? await client.guilds
 				.fetch(dataObject.serverId)
 				.catch((error) => {
-					if (error.httpStatus != 403) {
+					if (error.httpStatus != 403 && error.httpStatus != 404) {
 						console.error(error);
 					}
 				}) : null;

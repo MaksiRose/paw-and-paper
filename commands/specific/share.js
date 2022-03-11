@@ -133,12 +133,13 @@ module.exports = {
 
 		if (!message.mentions.users.size) {
 
-			let allRuinsProfilesArray = await profileModel.find({
-				serverId: message.guild.id,
-				currentRegion: 'ruins',
-			});
-
-			allRuinsProfilesArray = allRuinsProfilesArray.map(doc => doc.userId).filter(async userId => await message.guild.members.cache.has(userId) && userId != profileData.userId);
+			const allRuinsProfilesArray = await profileModel
+				.find({
+					serverId: message.guild.id,
+					currentRegion: 'ruins',
+				})
+				.map(user => user.userId)
+				.filter(userId => userId != profileData.userId);
 
 			if (allRuinsProfilesArray.length > 0) {
 

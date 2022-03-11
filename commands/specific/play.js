@@ -152,12 +152,13 @@ module.exports = {
 
 		if (!message.mentions.users.size) {
 
-			let allPrairieProfilesArray = await profileModel.find({
-				serverId: message.guild.id,
-				currentRegion: 'prairie',
-			});
-
-			allPrairieProfilesArray = allPrairieProfilesArray.map(doc => doc.userId).filter(async userId => await message.guild.members.cache.has(userId) && userId != profileData.userId);
+			const allPrairieProfilesArray = await profileModel
+				.find({
+					serverId: message.guild.id,
+					currentRegion: 'prairie',
+				})
+				.filter(user => user.userId != profileData.userId && user.injuryObject.cold == false)
+				.map(user => user.userId);
 
 			const getsQuestChance = generateRandomNumber(20, 0);
 			if (getsQuestChance == 0 && profileData.unlockedRanks == 0 && profileData.rank == 'Youngling' && profileData.levels > 1) {

@@ -567,12 +567,10 @@ module.exports = {
 						{ $inc: { health: -healthPoints } },
 					);
 
-					let allElderlyProfilesArray = await profileModel.find({
+					const allElderlyProfilesArray = await profileModel.find({
 						serverId: message.guild.id,
 						rank: 'Elderly',
-					});
-
-					allElderlyProfilesArray = allElderlyProfilesArray.map(doc => doc.userId).filter(async userId => await message.guild.members.cache.has(userId));
+					}).map(user => user.userId);
 
 					switch (true) {
 
