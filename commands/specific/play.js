@@ -7,6 +7,7 @@ const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion')
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
 const { checkLevelUp } = require('../../utils/levelHandling');
+const { introduceQuest } = require('./quest');
 
 module.exports = {
 	name: 'play',
@@ -150,6 +151,8 @@ module.exports = {
 			image: { url: '' },
 		};
 
+		let botReply;
+
 		if (!message.mentions.users.size) {
 
 			const allPrairieProfilesArray = (await profileModel
@@ -230,16 +233,6 @@ module.exports = {
 			await playTogether(partnerProfileData);
 		}
 
-		let botReply = await message
-			.reply({
-				embeds: embedArray,
-			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
-			});
-
 		botReply = await decreaseHealth(message, profileData, botReply, userInjuryObject);
 		await checkLevelUp(profileData, botReply);
 		await isPassedOut(message, profileData, true);
@@ -252,10 +245,7 @@ module.exports = {
 				{ $set: { hasQuest: true } },
 			);
 
-			embed.description = `*${profileData.name} lifts ${profileData.pronounArray[2]} head to investigate the sound of a faint cry. Almost sure that it was someone in need of help, ${profileData.pronounArray[0]} dashes from where ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'is' : 'are')} standing and bolts for the sound. Soon ${profileData.name} comes along to the intimidating mouth of a dark cave covered by a boulder. The cries for help still ricocheting through ${profileData.pronounArray[2]} brain. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} must help them...*`;
-			embed.footer.text = `${embedFooterStatsText}\n\nType 'rp quest' to continue!`;
-
-			embedArray.push(embed);
+			return botReply = await introduceQuest(message, profileData, embedArray, embedFooterStatsText);
 		}
 
 		async function findPlant() {
@@ -268,7 +258,17 @@ module.exports = {
 				embed.description = `*${profileData.name} bounces around camp, watching the busy hustle and blurs of hunters and healers at work. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} splash${(profileData.pronounArray[5] == 'singular') ? 'es' : ''} into the stream that split the pack in half, chasing the minnows with ${profileData.pronounArray[2]} eyes.*`;
 				embed.footer.text = embedFooterStatsText;
 
-				return embedArray.push(embed);
+				embedArray.push(embed);
+
+				return botReply = await message
+					.reply({
+						embeds: embedArray,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
 			}
 
 			const getHurtChance = pullFromWeightedTable({ 0: 10, 1: 90 + betterLuckValue });
@@ -305,7 +305,17 @@ module.exports = {
 						embed.footer.text = `-${healthPoints} HP (from wound)\n${embedFooterStatsText}`;
 				}
 
-				return embedArray.push(embed);
+				embedArray.push(embed);
+
+				return botReply = await message
+					.reply({
+						embeds: embedArray,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
 			}
 
 			const foundItem = await pickRandomCommonPlant();
@@ -333,7 +343,17 @@ module.exports = {
 			embed.description = `*${profileData.name} bounds across the den territory, chasing a bee that is just out of reach. Without looking, the ${profileData.species} crashes into a Hunter, loses sight of the bee, and scurries away into the forest. On ${profileData.pronounArray[2]} way back to the pack border, ${profileData.name} sees something special on the ground. It's a ${foundItem}!*`;
 			embed.footer.text = `${embedFooterStatsText}\n\n+1 ${foundItem}`;
 
-			return embedArray.push(embed);
+			embedArray.push(embed);
+
+			return botReply = await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
 		}
 
 		async function playTogether(partnerProfileData) {
@@ -399,7 +419,15 @@ module.exports = {
 				}
 			}
 
-			return;
+			return botReply = await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
 		}
 	},
 };
