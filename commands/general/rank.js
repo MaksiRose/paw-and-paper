@@ -134,72 +134,70 @@ module.exports = {
 				return userMessage.id == message.id && i.isButton() && (i.customId == 'rank-healer' || i.customId == 'rank-hunter') && i.user.id == message.author.id;
 			};
 
-			const collector = message.channel.createMessageComponentCollector({ filter, max: 1, time: 30000 });
-			collector.on('end', async (collected) => {
+			const interaction = await botReply
+				.awaitMessageComponent({ filter, time: 30000 })
+				.catch(() => {return null;});
 
-				if (!collected.size) {
+			if (interaction == null) {
 
-					return await botReply
-						.edit({
-							components: [],
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
-						});
-				}
+				return await botReply
+					.edit({
+						components: [],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
 
-				const interaction = collected.first();
+			if (interaction.customId == 'rank-healer') {
 
-				if (interaction.customId == 'rank-healer') {
+				await profileModel.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $set: { rank: 'Healer' } },
+				);
 
-					await profileModel.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{ $set: { rank: 'Healer' } },
-					);
+				return await botReply
+					.edit({
+						embeds: [{
+							color: profileData.color,
+							author: { name: profileData.name, icon_url: profileData.avatarURL },
+							description: `*${profileData.name} stands before one of the eldest, excited to hear their following words.* "Congratulations, ${profileData.name}, you are now a fully-fledged Healer. I am certain you will contribute greatly to the pack in this role."\n*The ${profileData.species} grins from ear to ear.*`,
+						}],
+						components: [],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
 
-					return await botReply
-						.edit({
-							embeds: [{
-								color: profileData.color,
-								author: { name: profileData.name, icon_url: profileData.avatarURL },
-								description: `*${profileData.name} stands before one of the eldest, excited to hear their following words.* "Congratulations, ${profileData.name}, you are now a fully-fledged Healer. I am certain you will contribute greatly to the pack in this role."\n*The ${profileData.species} grins from ear to ear.*`,
-							}],
-							components: [],
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
-						});
-				}
+			if (interaction.customId == 'rank-hunter') {
 
-				if (interaction.customId == 'rank-hunter') {
+				await profileModel.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $set: { rank: 'Hunter' } },
+				);
 
-					await profileModel.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{ $set: { rank: 'Hunter' } },
-					);
+				return await botReply
+					.edit({
+						embeds: [{
+							color: profileData.color,
+							author: { name: profileData.name, icon_url: profileData.avatarURL },
+							description: `*${profileData.name} stands before one of the eldest, excited to hear their following words.* "Congratulations, ${profileData.name}, you are now a fully-fledged Hunter. I am certain you will contribute greatly to the pack in this role."\n*The ${profileData.species} grins from ear to ear.*`,
+						}],
+						components: [],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
 
-					return await botReply
-						.edit({
-							embeds: [{
-								color: profileData.color,
-								author: { name: profileData.name, icon_url: profileData.avatarURL },
-								description: `*${profileData.name} stands before one of the eldest, excited to hear their following words.* "Congratulations, ${profileData.name}, you are now a fully-fledged Hunter. I am certain you will contribute greatly to the pack in this role."\n*The ${profileData.species} grins from ear to ear.*`,
-							}],
-							components: [],
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
-						});
-				}
-
-				return await interactionCollector();
-			});
+			return await interactionCollector();
 		}
 	},
 };

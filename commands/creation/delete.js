@@ -71,64 +71,62 @@ module.exports = {
 			return userMessage.id == message.id && (i.customId == 'delete-confirm' || i.customId == 'delete-cancel') && i.user.id == message.author.id;
 		};
 
-		const collector = message.channel.createMessageComponentCollector({ filter, max: 1, time: 120000 });
-		collector.on('end', async function collectorEnd(collected) {
+		const interaction = await botReply
+			.awaitMessageComponent({ filter, time: 120000 })
+			.catch(async () => {return null;});
 
-			if (!collected.size) {
+		if (interaction == null) {
 
-				return await botReply
-					.edit({
-						components: [],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-			}
-
-			const interaction = collected.first();
-
-			if (interaction.customId == 'delete-confirm') {
-
-				await profileModel.findOneAndDelete({
-					userId: message.author.id,
-					serverId: message.guild.id,
+			return await botReply
+				.edit({
+					components: [],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
+		}
 
-				return await interaction.message
-					.edit({
-						embeds: [{
-							color: '#9d9e51',
-							author: { name: `${interaction.guild.name}`, icon_url: interaction.guild.iconURL() },
-							title: 'Your account was deleted permanently! Type "rp name [name]" to start again.',
-						}],
-						components: [],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-			}
+		if (interaction.customId == 'delete-confirm') {
 
-			if (interaction.customId == 'delete-cancel') {
+			await profileModel.findOneAndDelete({
+				userId: message.author.id,
+				serverId: message.guild.id,
+			});
 
-				return await interaction.message
-					.edit({
-						embeds: [{
-							color: '#9d9e51',
-							author: { name: `${interaction.guild.name}`, icon_url: interaction.guild.iconURL() },
-							title: 'Account deletion canceled.',
-						}],
-						components: [],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-			}
-		});
+			return await interaction.message
+				.edit({
+					embeds: [{
+						color: '#9d9e51',
+						author: { name: `${interaction.guild.name}`, icon_url: interaction.guild.iconURL() },
+						title: 'Your account was deleted permanently! Type "rp name [name]" to start again.',
+					}],
+					components: [],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
+		}
+
+		if (interaction.customId == 'delete-cancel') {
+
+			return await interaction.message
+				.edit({
+					embeds: [{
+						color: '#9d9e51',
+						author: { name: `${interaction.guild.name}`, icon_url: interaction.guild.iconURL() },
+						title: 'Account deletion canceled.',
+					}],
+					components: [],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
+		}
 	},
 };

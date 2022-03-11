@@ -136,160 +136,74 @@ module.exports = {
 				return userMessage.id == message.id && i.user.id == message.author.id;
 			};
 
-			const collector = message.channel.createMessageComponentCollector({ filter, max: 1, time: 30000 });
-			collector.on('end', async (collected) => {
+			const interaction = await botReply
+				.awaitMessageComponent({ filter, time: 30000 })
+				.catch(() => { return null;});
 
-				if (!collected.size) {
+			if (interaction == null) {
 
-					return await botReply
+				return await botReply
+					.edit({
+						components: [],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
+
+			if (interaction.isSelectMenu()) {
+
+				if (interaction.customId == 'store-options') {
+
+					chosenFood = interaction.values[0];
+					let maximumAmount = 0;
+
+					for (const [itemType, itemsArray] of inventoryArray) {
+
+						if (itemsArray.includes(chosenFood)) {
+							foodCategory = itemType;
+							maximumAmount = profileData.inventoryObject[itemsArray][chosenFood];
+						}
+					}
+
+					const amountSelectMenu = {
+						type: 'ACTION_ROW',
+						components: [{
+							type: 'SELECT_MENU',
+							customId: 'store-amount',
+							placeholder: 'Select the amount to store away',
+							options: [],
+						}],
+					};
+
+					for (let i = 0; i < maximumAmount; i++) {
+
+						amountSelectMenu.components[0].options.push({ label: `${i + 1}`, value: `${i + 1}` });
+					}
+
+					componentArray.splice(1, 1, amountSelectMenu);
+					await interaction.message
 						.edit({
-							components: [],
+							components: componentArray,
 						})
 						.catch((error) => {
 							if (error.httpStatus !== 404) {
 								throw new Error(error);
 							}
 						});
+
+					return await interactionCollector(chosenFood, foodCategory);
 				}
 
-				const interaction = collected.first();
+				if (interaction.customId == 'store-amount') {
 
-				if (interaction.isSelectMenu()) {
+					const chosenAmount = parseInt(interaction.values[0], 10);
+					userInventory[foodCategory][chosenFood] -= chosenAmount;
+					serverInventory[foodCategory][chosenFood] += chosenAmount;
 
-					if (interaction.customId == 'store-options') {
-
-						chosenFood = interaction.values[0];
-						let maximumAmount = 0;
-
-						for (const [itemType, itemsArray] of inventoryArray) {
-
-							if (itemsArray.includes(chosenFood)) {
-								foodCategory = itemType;
-								maximumAmount = profileData.inventoryObject[itemsArray][chosenFood];
-							}
-						}
-
-						const amountSelectMenu = {
-							type: 'ACTION_ROW',
-							components: [{
-								type: 'SELECT_MENU',
-								customId: 'store-amount',
-								placeholder: 'Select the amount to store away',
-								options: [],
-							}],
-						};
-
-						for (let i = 0; i < maximumAmount; i++) {
-
-							amountSelectMenu.components[0].options.push({ label: `${i + 1}`, value: `${i + 1}` });
-						}
-
-						componentArray.splice(1, 1, amountSelectMenu);
-						await interaction.message
-							.edit({
-								components: componentArray,
-							})
-							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
-							});
-
-						return await interactionCollector(chosenFood, foodCategory);
-					}
-
-					if (interaction.customId == 'store-amount') {
-
-						const chosenAmount = parseInt(interaction.values[0], 10);
-						userInventory[foodCategory][chosenFood] -= chosenAmount;
-						serverInventory[foodCategory][chosenFood] += chosenAmount;
-
-						profileData = await profileModel.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
-							{ $set: { inventoryObject: userInventory } },
-						);
-
-						await serverModel.findOneAndUpdate(
-							{ serverId: message.guild.id },
-							{
-								$set: {
-									inventoryObject: serverInventory,
-								},
-							},
-						);
-
-						itemSelectMenu.components[0].options = [];
-						for (const [itemType, itemsArray] of inventoryArray) {
-
-							for (const itemName of itemsArray) {
-
-								if (profileData.inventoryObject[itemType][itemName] > 0) {
-
-									itemSelectMenu.components[0].options.push({ label: itemName, value: itemName, description: `${profileData.inventoryObject[itemType][itemName]}` });
-								}
-							}
-						}
-
-						embedArray[embedArray.length - 1].footer.text += `+${chosenAmount} ${chosenFood} for ${message.guild.name}\n`;
-						componentArray = [itemSelectMenu, storeAllButton];
-
-						if (itemSelectMenu.components[0].options.length == 0) {
-
-							await interaction.message
-								.edit({
-									embeds: embedArray,
-									components: [],
-								})
-								.catch((error) => {
-									if (error.httpStatus !== 404) {
-										throw new Error(error);
-									}
-								});
-
-							return;
-						}
-
-						await interaction.message
-							.edit({
-								embeds: embedArray,
-								components: componentArray,
-							})
-							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
-							});
-
-						return await interactionCollector(null, null);
-					}
-				}
-
-				if (interaction.isButton() && interaction.customId == 'store-all') {
-
-					profileData = await profileModel.findOne({
-						userId: message.author.id,
-						serverId: message.guild.id,
-					});
-
-					let footerText = embedArray[embedArray.length - 1].footer.text;
-					let maximumAmount = 0;
-
-					for (const [itemType, itemsArray] of inventoryArray) {
-
-						for (const itemName of itemsArray) {
-
-							if (profileData.inventoryObject[itemType][itemName] > 0) {
-
-								maximumAmount = profileData.inventoryObject[itemType][itemName];
-
-								footerText += `+${maximumAmount} ${itemName} for ${message.guild.name}\n`;
-								userInventory[itemType][itemName] -= maximumAmount;
-								serverInventory[itemType][itemName] += maximumAmount;
-							}
-						}
-					}
-
-					await profileModel.findOneAndUpdate(
+					profileData = await profileModel.findOneAndUpdate(
 						{ userId: message.author.id, serverId: message.guild.id },
 						{ $set: { inventoryObject: userInventory } },
 					);
@@ -303,11 +217,41 @@ module.exports = {
 						},
 					);
 
-					embedArray[embedArray.length - 1].footer.text = footerText;
+					itemSelectMenu.components[0].options = [];
+					for (const [itemType, itemsArray] of inventoryArray) {
+
+						for (const itemName of itemsArray) {
+
+							if (profileData.inventoryObject[itemType][itemName] > 0) {
+
+								itemSelectMenu.components[0].options.push({ label: itemName, value: itemName, description: `${profileData.inventoryObject[itemType][itemName]}` });
+							}
+						}
+					}
+
+					embedArray[embedArray.length - 1].footer.text += `+${chosenAmount} ${chosenFood} for ${message.guild.name}\n`;
+					componentArray = [itemSelectMenu, storeAllButton];
+
+					if (itemSelectMenu.components[0].options.length == 0) {
+
+						await interaction.message
+							.edit({
+								embeds: embedArray,
+								components: [],
+							})
+							.catch((error) => {
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
+							});
+
+						return;
+					}
+
 					await interaction.message
 						.edit({
 							embeds: embedArray,
-							components: [],
+							components: componentArray,
 						})
 						.catch((error) => {
 							if (error.httpStatus !== 404) {
@@ -315,9 +259,63 @@ module.exports = {
 							}
 						});
 
-					return;
+					return await interactionCollector(null, null);
 				}
-			});
+			}
+
+			if (interaction.isButton() && interaction.customId == 'store-all') {
+
+				profileData = await profileModel.findOne({
+					userId: message.author.id,
+					serverId: message.guild.id,
+				});
+
+				let footerText = embedArray[embedArray.length - 1].footer.text;
+				let maximumAmount = 0;
+
+				for (const [itemType, itemsArray] of inventoryArray) {
+
+					for (const itemName of itemsArray) {
+
+						if (profileData.inventoryObject[itemType][itemName] > 0) {
+
+							maximumAmount = profileData.inventoryObject[itemType][itemName];
+
+							footerText += `+${maximumAmount} ${itemName} for ${message.guild.name}\n`;
+							userInventory[itemType][itemName] -= maximumAmount;
+							serverInventory[itemType][itemName] += maximumAmount;
+						}
+					}
+				}
+
+				await profileModel.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $set: { inventoryObject: userInventory } },
+				);
+
+				await serverModel.findOneAndUpdate(
+					{ serverId: message.guild.id },
+					{
+						$set: {
+							inventoryObject: serverInventory,
+						},
+					},
+				);
+
+				embedArray[embedArray.length - 1].footer.text = footerText;
+				await interaction.message
+					.edit({
+						embeds: embedArray,
+						components: [],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
+				return;
+			}
 		}
 	},
 };

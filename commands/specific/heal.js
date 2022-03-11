@@ -136,13 +136,313 @@ module.exports = {
 				return userMessage.id == message.id && i.user.id == message.author.id;
 			}
 
-			const collector = message.channel.createMessageComponentCollector({ filter, max: 1, time: 60000 });
-			collector.on('end', async (collected) => {
+			const interaction = await botReply
+				.awaitMessageComponent({ filter, time: 60000 })
+				.catch(() => { return null; });
 
-				if (!collected.size) {
+			if (interaction == null) {
 
-					return await botReply
+				return await botReply
+					.edit({
+						components: [],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
+
+			if (allHurtProfilesArray.includes(interaction.values[0])) {
+
+				chosenProfileData = await profileModel.findOne({
+					userId: interaction.values[0],
+					serverId: message.guild.id,
+				});
+
+				if (chosenProfileData.name === '' || chosenProfileData.species === '') {
+
+					embedArray.length = embedArrayOriginalLength;
+					embedArray.push({
+						color: config.error_color,
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+						title: 'The mentioned user has no account or the account was not completed!',
+					});
+
+					allHurtProfilesArray.splice(allHurtProfilesArray.indexOf(interaction.values[0]), 1);
+
+					botReply = await interaction.message
 						.edit({
+							embeds: embedArray,
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+				}
+				else {
+					chosenUser = await client.users
+						.fetch(interaction.values[0])
+						.catch((error) => {
+							throw new Error(error);
+						});
+
+					getWoundList(chosenUser);
+				}
+			}
+
+			if (interaction.values[0] == 'heal_user_page') {
+
+				const pagesAmount = Math.ceil(allHurtProfilesArray.length / 24);
+
+				currentUserPage++;
+				if (currentUserPage >= pagesAmount) {
+
+					currentUserPage = 0;
+				}
+
+				userSelectMenu.components[0].options.length = 0;
+
+				for (let i = 0 + (currentUserPage * 24); i < 24 + (currentUserPage * 24) && i < allHurtProfilesArray.length; i++) {
+
+					const user = await client.users
+						.fetch(allHurtProfilesArray[i])
+						.catch((error) => {
+							throw new Error(error);
+						});
+
+					const userProfileData = await profileModel.findOne({
+						userId: user.id,
+						serverId: message.guild.id,
+					});
+
+					userSelectMenu.components[0].options.push({ label: userProfileData.name, value: user.id });
+				}
+
+				userSelectMenu.components[0].options.push({ lavel: 'Show more user options', value: 'heal_user_page', description: `You are currently on page ${currentUserPage + 1}`, emoji: '📋' });
+
+				const componentArray = interaction.message.components;
+				await componentArray.splice(0, 1, userSelectMenu);
+
+				botReply = await interaction.message
+					.edit({
+						components: componentArray,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
+
+			if (interaction.values[0] == 'heal-page1') {
+
+				const embed = {
+					color: profileData.color,
+					title: `Inventory of ${message.guild.name} - Page 1`,
+					fields: [],
+					footer: { text: 'Choose one of the herbs above to heal the player with it!' },
+				};
+
+				const selectMenu = {
+					type: 'ACTION_ROW',
+					components: [{
+						type: 'SELECT_MENU',
+						customId: 'heal-options1',
+						placeholder: 'Select an item',
+						options: [],
+					}],
+				};
+
+				for (const [commonPlantName, commonPlantObject] of [...commonPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
+
+					if (serverData.inventoryObject.commonPlants[commonPlantName] > 0) {
+
+						embed.fields.push({ name: `${commonPlantName}: ${serverData.inventoryObject.commonPlants[commonPlantName]}`, value: commonPlantObject.description, inline: true });
+						selectMenu.components[0].options.push({ label: commonPlantName, value: commonPlantName, description: `${serverData.inventoryObject.commonPlants[commonPlantName]}` });
+					}
+				}
+
+				embedArray.length = embedArrayOriginalLength + 1;
+				embedArray.push(embed);
+
+				interaction.message.components.length = 2;
+				const componentArray = interaction.message.components;
+
+				if (selectMenu.components[0].options.length > 0) {
+
+					await componentArray.push(selectMenu);
+				}
+
+				botReply = await interaction.message
+					.edit({
+						embeds: embedArray,
+						components: componentArray,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
+
+			if (interaction.values[0] == 'heal-page2') {
+
+				const embed = {
+					color: profileData.color,
+					title: `Inventory of ${message.guild.name} - Page 2`,
+					fields: [],
+					footer: { text: 'Choose one of the herbs above to heal the player with it!' },
+				};
+
+				const selectMenu = {
+					type: 'ACTION_ROW',
+					components: [{
+						type: 'SELECT_MENU',
+						customId: 'heal-options2',
+						placeholder: 'Select an item',
+						options: [],
+					}],
+				};
+
+				for (const [uncommonPlantName, uncommonPlantObject] of [...uncommonPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
+
+					if (serverData.inventoryObject.uncommonPlants[uncommonPlantName] > 0) {
+
+						embed.fields.push({ name: `${uncommonPlantName}: ${serverData.inventoryObject.uncommonPlants[uncommonPlantName]}`, value: uncommonPlantObject.description, inline: true });
+						selectMenu.components[0].options.push({ label: uncommonPlantName, value: uncommonPlantName, description: `${serverData.inventoryObject.uncommonPlants[uncommonPlantName]}` });
+					}
+				}
+
+				for (const [rarePlantName, rarePlantObject] of [...rarePlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
+
+					if (serverData.inventoryObject.rarePlants[rarePlantName] > 0) {
+
+						embed.fields.push({ name: `${rarePlantName}: ${serverData.inventoryObject.rarePlants[rarePlantName]}`, value: rarePlantObject.description, inline: true });
+						selectMenu.components[0].options.push({ label: rarePlantName, value: rarePlantName, description: `${serverData.inventoryObject.rarePlants[rarePlantName]}` });
+					}
+				}
+
+				embed.fields.push({ name: 'water', value: 'Found lots and lots of in the river that flows through the pack!', inline: true });
+				selectMenu.components[0].options.push({ label: 'water', value: 'water' });
+
+				embedArray.length = embedArrayOriginalLength + 1;
+				embedArray.push(embed);
+
+				interaction.message.components.length = 2;
+				const componentArray = interaction.message.components;
+				await componentArray.push(selectMenu);
+
+				botReply = await interaction.message
+					.edit({
+						embeds: embedArray,
+						components: componentArray,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
+
+			if (commonPlantsMap.has(interaction.values[0]) || uncommonPlantsMap.has(interaction.values[0]) || rarePlantsMap.has(interaction.values[0]) || interaction.values[0] == 'water') {
+
+				const thirstPoints = await decreaseThirst(profileData);
+				const hungerPoints = await decreaseHunger(profileData);
+				const extraLostEnergyPoints = await decreaseHunger(profileData);
+				let energyPoints = generateRandomNumber(5, 1) + extraLostEnergyPoints;
+				let experiencePoints = 0;
+
+				if (profileData.energy - energyPoints < 0) {
+
+					energyPoints = profileData.energy;
+				}
+
+				if (profileData.rank == 'Apprentice') {
+
+					experiencePoints = generateRandomNumber(11, 5);
+				}
+
+				if (profileData.rank == 'Healer') {
+
+					experiencePoints = generateRandomNumber(21, 10);
+				}
+
+				if (profileData.rank == 'Elderly') {
+
+					experiencePoints = generateRandomNumber(41, 20);
+				}
+
+				profileData = await profileModel.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{
+						$inc: {
+							experience: +experiencePoints,
+							energy: -energyPoints,
+							hunger: -hungerPoints,
+							thirst: -thirstPoints,
+						},
+					},
+				);
+
+				let embedFooterStatsText = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
+
+				if (hungerPoints >= 1) {
+
+					embedFooterStatsText = embedFooterStatsText + `\n-${hungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})`;
+				}
+
+				if (thirstPoints >= 1) {
+
+					embedFooterStatsText = embedFooterStatsText + `\n-${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})`;
+				}
+
+				let healthPoints = 0;
+				let userInjuryObject = { ...profileData.injuryObject };
+
+				const embed = {
+					color: profileData.color,
+					author: { name: profileData.name, icon_url: profileData.avatarURL },
+					description: '',
+					footer: { text: '' },
+				};
+
+				if (interaction.values[0] == 'water') {
+
+					if (chosenProfileData.thirst > 0) {
+
+						if (profileData.userId == chosenProfileData.userId) {
+
+							embed.description = `*${profileData.name} thinks about just drinking some water, but that won't help with ${profileData.pronounArray[2]} issues...*"`;
+
+						}
+						else {
+
+							embed.description = `*${chosenProfileData.name} looks at ${profileData.name} with indignation.* "Being hydrated is really not my biggest problem right now!"`;
+
+						}
+
+						embed.footer.text = embedFooterStatsText;
+
+					}
+					else {
+
+						const chosenUserThirstPoints = generateRandomNumber(10, 1);
+
+						chosenProfileData = await profileModel.findOneAndUpdate(
+							{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
+							{ $inc: { thirst: +chosenUserThirstPoints } },
+						);
+
+						embed.description = `*${profileData.name} takes ${chosenProfileData.name}'s body, drags it over to the river, and positions ${chosenProfileData.pronounArray[2]} head right over the water. The ${chosenProfileData.species} sticks ${chosenProfileData.pronounArray[2]} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${chosenProfileData.pronounArray[2]} body.*`;
+						embed.footer.text = `${embedFooterStatsText}\n\n+${chosenUserThirstPoints} thirst for ${chosenProfileData.name} (${chosenProfileData.thirst}/${chosenProfileData.maxThirst})`;
+
+					}
+
+					botReply = await interaction.message
+						.edit({
+							embeds: embedArray,
 							components: [],
 						})
 						.catch((error) => {
@@ -150,548 +450,245 @@ module.exports = {
 								throw new Error(error);
 							}
 						});
+
 				}
+				else {
 
-				const interaction = collected.first();
+					const plantMap = new Map([...commonPlantsMap, ...uncommonPlantsMap, ...rarePlantsMap]);
 
-				if (allHurtProfilesArray.includes(interaction.values[0])) {
+					if (commonPlantsMap.has(interaction.values[0])) {
 
-					chosenProfileData = await profileModel.findOne({
-						userId: interaction.values[0],
-						serverId: message.guild.id,
-					});
+						serverData.inventoryObject.commonPlants[interaction.values[0]] -= 1;
+					}
 
-					if (chosenProfileData.name === '' || chosenProfileData.species === '') {
+					if (uncommonPlantsMap.has(interaction.values[0])) {
 
-						embedArray.length = embedArrayOriginalLength;
-						embedArray.push({
-							color: config.error_color,
-							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-							title: 'The mentioned user has no account or the account was not completed!',
-						});
+						serverData.inventoryObject.uncommonPlants[interaction.values[0]] -= 1;
+					}
 
-						allHurtProfilesArray.splice(allHurtProfilesArray.indexOf(interaction.values[0]), 1);
+					if (rarePlantsMap.has(interaction.values[0])) {
 
-						botReply = await interaction.message
-							.edit({
-								embeds: embedArray,
-							})
-							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
+						serverData.inventoryObject.rarePlants[interaction.values[0]] -= 1;
+					}
+
+					const chosenUserInjuryObject = { ...chosenProfileData.injuryObject };
+					let chosenUserEnergyPoints = 0;
+					let chosenUserHungerPoints = 0;
+					let isSuccessful = false;
+					let embedFooterChosenUserStatsText = '';
+					let embedFooterChosenUserInjuryText = '';
+
+					if (plantMap.get(interaction.values[0]).edibality == 'e') {
+
+						if (chosenProfileData.hunger <= 0) {
+
+							isSuccessful = true;
+						}
+
+						if (speciesMap.get(profileData.species).diet == 'carnivore') {
+
+							chosenUserHungerPoints = 1;
+						}
+
+						if (speciesMap.get(profileData.species).diet == 'herbivore' || speciesMap.get(profileData.species).diet == 'omnivore') {
+
+							chosenUserHungerPoints = 5;
+						}
+
+						if (chosenProfileData.hunger + chosenUserHungerPoints > chosenProfileData.maxHunger) {
+
+							chosenUserHungerPoints -= (chosenProfileData.hunger + chosenUserHungerPoints) - chosenProfileData.maxHunger;
+						}
+
+						if (chosenUserHungerPoints > 0) {
+
+							embedFooterChosenUserStatsText += `\n+${chosenUserHungerPoints} hunger for ${chosenProfileData.name} (${chosenProfileData.hunger + chosenUserHungerPoints}/${chosenProfileData.maxHunger})`;
+						}
+					}
+
+					if (chosenProfileData.health <= 0) {
+
+						isSuccessful = true;
+					}
+
+					if (plantMap.get(interaction.values[0]).healsWounds == true && chosenUserInjuryObject.wounds > 0) {
+
+						isSuccessful = true;
+						embedFooterChosenUserInjuryText += `\n-1 wound for ${chosenProfileData.name}`;
+						chosenUserInjuryObject.wounds -= 1;
+					}
+
+					if (plantMap.get(interaction.values[0]).healsInfections == true && chosenUserInjuryObject.infections > 0) {
+
+						isSuccessful = true;
+						embedFooterChosenUserInjuryText += `\n-1 infection for ${chosenProfileData.name}`;
+						chosenUserInjuryObject.infections -= 1;
+					}
+
+					if (plantMap.get(interaction.values[0]).healsColds == true && chosenUserInjuryObject.cold == true) {
+
+						isSuccessful = true;
+						embedFooterChosenUserInjuryText += `\ncold healed for ${chosenProfileData.name}`;
+						chosenUserInjuryObject.cold = false;
+					}
+
+					if (plantMap.get(interaction.values[0]).healsSprains == true && chosenUserInjuryObject.sprains > 0) {
+
+						isSuccessful = true;
+						embedFooterChosenUserInjuryText += `\n-1 sprain for ${chosenProfileData.name}`;
+						chosenUserInjuryObject.sprains -= 1;
+					}
+
+					if (plantMap.get(interaction.values[0]).healsPoison == true && chosenUserInjuryObject.poison == true) {
+
+						isSuccessful = true;
+						embedFooterChosenUserInjuryText += `\npoison healed for ${chosenProfileData.name}`;
+						chosenUserInjuryObject.poison = false;
+					}
+
+					if (plantMap.get(interaction.values[0]).givesEnergy == true) {
+
+						if (chosenProfileData.energy <= 0) {
+
+							isSuccessful = true;
+						}
+
+						chosenUserEnergyPoints = 30;
+
+						if (chosenProfileData.energy + chosenUserEnergyPoints > chosenProfileData.maxEnergy) {
+
+							chosenUserEnergyPoints -= (chosenProfileData.energy + chosenUserEnergyPoints) - chosenProfileData.maxEnergy;
+						}
+
+						if (chosenUserEnergyPoints >= 1) {
+
+							embedFooterChosenUserStatsText += `\n+${chosenUserEnergyPoints} energy for ${chosenProfileData.name} (${chosenProfileData.energy + chosenUserEnergyPoints}/${chosenProfileData.maxEnergy})`;
+						}
+					}
+
+					serverData = await serverModel.findOneAndUpdate(
+						{ serverId: message.guild.id },
+						{ $set: { inventoryObject: serverData.inventoryObject } },
+					);
+
+					if (isSuccessful == true && chosenProfileData.userId == profileData.userId && generateRandomNumber(100 + ((profileData.levels - 1) * 5), 1) <= 60) {
+
+						isSuccessful = false;
+					}
+
+					const chosenItemName = interaction.values[0];
+
+					if (isSuccessful == true) {
+
+						let chosenUserHealthPoints = generateRandomNumber(10, 6);
+						if (chosenProfileData.health + chosenUserHealthPoints > chosenProfileData.maxHealth) {
+
+							chosenUserHealthPoints -= (chosenProfileData.health + chosenUserHealthPoints) - chosenProfileData.maxHealth;
+						}
+
+						chosenProfileData = await profileModel.findOneAndUpdate(
+							{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
+							{
+								$inc: {
+									hunger: +chosenUserHungerPoints,
+									energy: +chosenUserEnergyPoints,
+									health: +chosenUserHealthPoints,
+								},
+								$set: { injuryObject: chosenUserInjuryObject },
+							},
+						);
+
+						if (chosenProfileData.userId == profileData.userId) {
+
+							userInjuryObject = chosenUserInjuryObject;
+
+							profileData = await profileModel.findOne({
+								userId: message.author.id,
+								serverId: message.guild.id,
 							});
+
+							embed.description = `*${profileData.name} takes a ${chosenItemName}. After a bit of preparation, the ${profileData.species} can apply it correctly. Immediately you can see the effect. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} feel${(profileData.pronounArray[5] == 'singular') ? 's' : ''} much better!*`;
+						}
+						else {
+
+							embed.description = `*${profileData.name} takes a ${chosenItemName}. After a  bit of preparation, ${profileData.pronounArray[0]} give${(profileData.pronounArray[5] == 'singular') ? 's' : ''} it to ${chosenProfileData.name}. Immediately you can see the effect. ${chosenProfileData.pronounArray[0].charAt(0).toUpperCase()}${chosenProfileData.pronounArray[0].slice(1)} feel${(chosenProfileData.pronounArray[5] == 'singular') ? 's' : ''} much better!*`;
+						}
+
+						embed.footer.text = `${embedFooterStatsText}\n${embedFooterChosenUserStatsText}\n+${chosenUserHealthPoints} HP for ${chosenProfileData.name} (${chosenProfileData.health}/${chosenProfileData.maxHealth})${embedFooterChosenUserInjuryText}\n\n-1 ${chosenItemName} for ${message.guild.name}`;
 					}
 					else {
-						chosenUser = await client.users
-							.fetch(interaction.values[0])
-							.catch((error) => {
-								throw new Error(error);
-							});
-
-						getWoundList(chosenUser);
-					}
-				}
-
-				if (interaction.values[0] == 'heal_user_page') {
-
-					const pagesAmount = Math.ceil(allHurtProfilesArray.length / 24);
-
-					currentUserPage++;
-					if (currentUserPage >= pagesAmount) {
-
-						currentUserPage = 0;
-					}
-
-					userSelectMenu.components[0].options.length = 0;
-
-					for (let i = 0 + (currentUserPage * 24); i < 24 + (currentUserPage * 24) && i < allHurtProfilesArray.length; i++) {
-
-						const user = await client.users
-							.fetch(allHurtProfilesArray[i])
-							.catch((error) => {
-								throw new Error(error);
-							});
-
-						const userProfileData = await profileModel.findOne({
-							userId: user.id,
-							serverId: message.guild.id,
+						chosenProfileData = await profileModel.findOne({
+							userId: chosenProfileData.userId,
+							serverId: chosenProfileData.serverId,
 						});
 
-						userSelectMenu.components[0].options.push({ label: userProfileData.name, value: user.id });
-					}
+						if (chosenProfileData.userId == profileData.userId) {
 
-					userSelectMenu.components[0].options.push({ lavel: 'Show more user options', value: 'heal_user_page', description: `You are currently on page ${currentUserPage + 1}`, emoji: '📋' });
-
-					const componentArray = interaction.message.components;
-					await componentArray.splice(0, 1, userSelectMenu);
-
-					botReply = await interaction.message
-						.edit({
-							components: componentArray,
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
-						});
-				}
-
-				if (interaction.values[0] == 'heal-page1') {
-
-					const embed = {
-						color: profileData.color,
-						title: `Inventory of ${message.guild.name} - Page 1`,
-						fields: [],
-						footer: { text: 'Choose one of the herbs above to heal the player with it!' },
-					};
-
-					const selectMenu = {
-						type: 'ACTION_ROW',
-						components: [{
-							type: 'SELECT_MENU',
-							customId: 'heal-options1',
-							placeholder: 'Select an item',
-							options: [],
-						}],
-					};
-
-					for (const [commonPlantName, commonPlantObject] of [...commonPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
-
-						if (serverData.inventoryObject.commonPlants[commonPlantName] > 0) {
-
-							embed.fields.push({ name: `${commonPlantName}: ${serverData.inventoryObject.commonPlants[commonPlantName]}`, value: commonPlantObject.description, inline: true });
-							selectMenu.components[0].options.push({ label: commonPlantName, value: commonPlantName, description: `${serverData.inventoryObject.commonPlants[commonPlantName]}` });
+							embed.description = `*${profileData.name} holds the ${chosenItemName} in ${profileData.pronounArray[2]} mouth, trying to find a way to apply it. After a few attempts, the herb breaks into little pieces, rendering it useless. Guess ${profileData.pronounArray[0]} ${(profileData.pronounArray[5] == 'singular') ? 'has' : 'have'} to try again...*`;
 						}
+						else {
+
+							embed.description = `*${profileData.name} takes a ${chosenItemName}. After a bit of preparation, ${profileData.pronounArray[0]} give${(profileData.pronounArray[5] == 'singular') ? 's' : ''} it to ${chosenProfileData.name}. But no matter how long they wait, it does not seem to help. Looks like ${profileData.name} chose the wrong herb!*`;
+						}
+
+						embed.footer.text = `${embedFooterStatsText}\n\n-1 ${chosenItemName} for ${message.guild.name}`;
 					}
-
-					embedArray.length = embedArrayOriginalLength + 1;
-					embedArray.push(embed);
-
-					interaction.message.components.length = 2;
-					const componentArray = interaction.message.components;
-
-					if (selectMenu.components[0].options.length > 0) {
-
-						await componentArray.push(selectMenu);
-					}
-
-					botReply = await interaction.message
-						.edit({
-							embeds: embedArray,
-							components: componentArray,
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
-						});
 				}
 
-				if (interaction.values[0] == 'heal-page2') {
+				embedArray.length = embedArrayOriginalLength;
+				embedArray.push(embed);
 
-					const embed = {
-						color: profileData.color,
-						title: `Inventory of ${message.guild.name} - Page 2`,
-						fields: [],
-						footer: { text: 'Choose one of the herbs above to heal the player with it!' },
-					};
+				if (chosenProfileData.injuryObject.cold == true && chosenProfileData.userId != profileData.userId && profileData.injuryObject.cold == false && generateRandomNumber(10, 1 <= 3)) {
 
-					const selectMenu = {
-						type: 'ACTION_ROW',
-						components: [{
-							type: 'SELECT_MENU',
-							customId: 'heal-options2',
-							placeholder: 'Select an item',
-							options: [],
-						}],
-					};
+					healthPoints = generateRandomNumber(5, 3);
 
-					for (const [uncommonPlantName, uncommonPlantObject] of [...uncommonPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
+					if (profileData.health - healthPoints < 0) {
 
-						if (serverData.inventoryObject.uncommonPlants[uncommonPlantName] > 0) {
-
-							embed.fields.push({ name: `${uncommonPlantName}: ${serverData.inventoryObject.uncommonPlants[uncommonPlantName]}`, value: uncommonPlantObject.description, inline: true });
-							selectMenu.components[0].options.push({ label: uncommonPlantName, value: uncommonPlantName, description: `${serverData.inventoryObject.uncommonPlants[uncommonPlantName]}` });
-						}
-					}
-
-					for (const [rarePlantName, rarePlantObject] of [...rarePlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
-
-						if (serverData.inventoryObject.rarePlants[rarePlantName] > 0) {
-
-							embed.fields.push({ name: `${rarePlantName}: ${serverData.inventoryObject.rarePlants[rarePlantName]}`, value: rarePlantObject.description, inline: true });
-							selectMenu.components[0].options.push({ label: rarePlantName, value: rarePlantName, description: `${serverData.inventoryObject.rarePlants[rarePlantName]}` });
-						}
-					}
-
-					embed.fields.push({ name: 'water', value: 'Found lots and lots of in the river that flows through the pack!', inline: true });
-					selectMenu.components[0].options.push({ label: 'water', value: 'water' });
-
-					embedArray.length = embedArrayOriginalLength + 1;
-					embedArray.push(embed);
-
-					interaction.message.components.length = 2;
-					const componentArray = interaction.message.components;
-					await componentArray.push(selectMenu);
-
-					botReply = await interaction.message
-						.edit({
-							embeds: embedArray,
-							components: componentArray,
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
-						});
-				}
-
-				if (commonPlantsMap.has(interaction.values[0]) || uncommonPlantsMap.has(interaction.values[0]) || rarePlantsMap.has(interaction.values[0]) || interaction.values[0] == 'water') {
-
-					const thirstPoints = await decreaseThirst(profileData);
-					const hungerPoints = await decreaseHunger(profileData);
-					const extraLostEnergyPoints = await decreaseHunger(profileData);
-					let energyPoints = generateRandomNumber(5, 1) + extraLostEnergyPoints;
-					let experiencePoints = 0;
-
-					if (profileData.energy - energyPoints < 0) {
-
-						energyPoints = profileData.energy;
-					}
-
-					if (profileData.rank == 'Apprentice') {
-
-						experiencePoints = generateRandomNumber(11, 5);
-					}
-
-					if (profileData.rank == 'Healer') {
-
-						experiencePoints = generateRandomNumber(21, 10);
-					}
-
-					if (profileData.rank == 'Elderly') {
-
-						experiencePoints = generateRandomNumber(41, 20);
+						healthPoints = profileData.health;
 					}
 
 					profileData = await profileModel.findOneAndUpdate(
 						{ userId: message.author.id, serverId: message.guild.id },
-						{
-							$inc: {
-								experience: +experiencePoints,
-								energy: -energyPoints,
-								hunger: -hungerPoints,
-								thirst: -thirstPoints,
-							},
-						},
+						{ $inc: { health: -healthPoints } },
 					);
 
-					let embedFooterStatsText = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
+					userInjuryObject.cold = true;
 
-					if (hungerPoints >= 1) {
-
-						embedFooterStatsText = embedFooterStatsText + `\n-${hungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})`;
-					}
-
-					if (thirstPoints >= 1) {
-
-						embedFooterStatsText = embedFooterStatsText + `\n-${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})`;
-					}
-
-					let healthPoints = 0;
-					let userInjuryObject = { ...profileData.injuryObject };
-
-					const embed = {
+					await embedArray.push({
 						color: profileData.color,
-						author: { name: profileData.name, icon_url: profileData.avatarURL },
-						description: '',
-						footer: { text: '' },
-					};
-
-					if (interaction.values[0] == 'water') {
-
-						if (chosenProfileData.thirst > 0) {
-
-							if (profileData.userId == chosenProfileData.userId) {
-
-								embed.description = `*${profileData.name} thinks about just drinking some water, but that won't help with ${profileData.pronounArray[2]} issues...*"`;
-
-							}
-							else {
-
-								embed.description = `*${chosenProfileData.name} looks at ${profileData.name} with indignation.* "Being hydrated is really not my biggest problem right now!"`;
-
-							}
-
-							embed.footer.text = embedFooterStatsText;
-
-						}
-						else {
-
-							const chosenUserThirstPoints = generateRandomNumber(10, 1);
-
-							chosenProfileData = await profileModel.findOneAndUpdate(
-								{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
-								{ $inc: { thirst: +chosenUserThirstPoints } },
-							);
-
-							embed.description = `*${profileData.name} takes ${chosenProfileData.name}'s body, drags it over to the river, and positions ${chosenProfileData.pronounArray[2]} head right over the water. The ${chosenProfileData.species} sticks ${chosenProfileData.pronounArray[2]} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${chosenProfileData.pronounArray[2]} body.*`;
-							embed.footer.text = `${embedFooterStatsText}\n\n+${chosenUserThirstPoints} thirst for ${chosenProfileData.name} (${chosenProfileData.thirst}/${chosenProfileData.maxThirst})`;
-
-						}
-
-						botReply = await interaction.message
-							.edit({
-								embeds: embedArray,
-								components: [],
-							})
-							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
-							});
-
-					}
-					else {
-
-						const plantMap = new Map([...commonPlantsMap, ...uncommonPlantsMap, ...rarePlantsMap]);
-
-						if (commonPlantsMap.has(interaction.values[0])) {
-
-							serverData.inventoryObject.commonPlants[interaction.values[0]] -= 1;
-						}
-
-						if (uncommonPlantsMap.has(interaction.values[0])) {
-
-							serverData.inventoryObject.uncommonPlants[interaction.values[0]] -= 1;
-						}
-
-						if (rarePlantsMap.has(interaction.values[0])) {
-
-							serverData.inventoryObject.rarePlants[interaction.values[0]] -= 1;
-						}
-
-						const chosenUserInjuryObject = { ...chosenProfileData.injuryObject };
-						let chosenUserEnergyPoints = 0;
-						let chosenUserHungerPoints = 0;
-						let isSuccessful = false;
-						let embedFooterChosenUserStatsText = '';
-						let embedFooterChosenUserInjuryText = '';
-
-						if (plantMap.get(interaction.values[0]).edibality == 'e') {
-
-							if (chosenProfileData.hunger <= 0) {
-
-								isSuccessful = true;
-							}
-
-							if (speciesMap.get(profileData.species).diet == 'carnivore') {
-
-								chosenUserHungerPoints = 1;
-							}
-
-							if (speciesMap.get(profileData.species).diet == 'herbivore' || speciesMap.get(profileData.species).diet == 'omnivore') {
-
-								chosenUserHungerPoints = 5;
-							}
-
-							if (chosenProfileData.hunger + chosenUserHungerPoints > chosenProfileData.maxHunger) {
-
-								chosenUserHungerPoints -= (chosenProfileData.hunger + chosenUserHungerPoints) - chosenProfileData.maxHunger;
-							}
-
-							if (chosenUserHungerPoints > 0) {
-
-								embedFooterChosenUserStatsText += `\n+${chosenUserHungerPoints} hunger for ${chosenProfileData.name} (${chosenProfileData.hunger + chosenUserHungerPoints}/${chosenProfileData.maxHunger})`;
-							}
-						}
-
-						if (chosenProfileData.health <= 0) {
-
-							isSuccessful = true;
-						}
-
-						if (plantMap.get(interaction.values[0]).healsWounds == true && chosenUserInjuryObject.wounds > 0) {
-
-							isSuccessful = true;
-							embedFooterChosenUserInjuryText += `\n-1 wound for ${chosenProfileData.name}`;
-							chosenUserInjuryObject.wounds -= 1;
-						}
-
-						if (plantMap.get(interaction.values[0]).healsInfections == true && chosenUserInjuryObject.infections > 0) {
-
-							isSuccessful = true;
-							embedFooterChosenUserInjuryText += `\n-1 infection for ${chosenProfileData.name}`;
-							chosenUserInjuryObject.infections -= 1;
-						}
-
-						if (plantMap.get(interaction.values[0]).healsColds == true && chosenUserInjuryObject.cold == true) {
-
-							isSuccessful = true;
-							embedFooterChosenUserInjuryText += `\ncold healed for ${chosenProfileData.name}`;
-							chosenUserInjuryObject.cold = false;
-						}
-
-						if (plantMap.get(interaction.values[0]).healsSprains == true && chosenUserInjuryObject.sprains > 0) {
-
-							isSuccessful = true;
-							embedFooterChosenUserInjuryText += `\n-1 sprain for ${chosenProfileData.name}`;
-							chosenUserInjuryObject.sprains -= 1;
-						}
-
-						if (plantMap.get(interaction.values[0]).healsPoison == true && chosenUserInjuryObject.poison == true) {
-
-							isSuccessful = true;
-							embedFooterChosenUserInjuryText += `\npoison healed for ${chosenProfileData.name}`;
-							chosenUserInjuryObject.poison = false;
-						}
-
-						if (plantMap.get(interaction.values[0]).givesEnergy == true) {
-
-							if (chosenProfileData.energy <= 0) {
-
-								isSuccessful = true;
-							}
-
-							chosenUserEnergyPoints = 30;
-
-							if (chosenProfileData.energy + chosenUserEnergyPoints > chosenProfileData.maxEnergy) {
-
-								chosenUserEnergyPoints -= (chosenProfileData.energy + chosenUserEnergyPoints) - chosenProfileData.maxEnergy;
-							}
-
-							if (chosenUserEnergyPoints >= 1) {
-
-								embedFooterChosenUserStatsText += `\n+${chosenUserEnergyPoints} energy for ${chosenProfileData.name} (${chosenProfileData.energy + chosenUserEnergyPoints}/${chosenProfileData.maxEnergy})`;
-							}
-						}
-
-						serverData = await serverModel.findOneAndUpdate(
-							{ serverId: message.guild.id },
-							{ $set: { inventoryObject: serverData.inventoryObject } },
-						);
-
-						if (isSuccessful == true && chosenProfileData.userId == profileData.userId && generateRandomNumber(100 + ((profileData.levels - 1) * 5), 1) <= 60) {
-
-							isSuccessful = false;
-						}
-
-						const chosenItemName = interaction.values[0];
-
-						if (isSuccessful == true) {
-
-							let chosenUserHealthPoints = generateRandomNumber(10, 6);
-							if (chosenProfileData.health + chosenUserHealthPoints > chosenProfileData.maxHealth) {
-
-								chosenUserHealthPoints -= (chosenProfileData.health + chosenUserHealthPoints) - chosenProfileData.maxHealth;
-							}
-
-							chosenProfileData = await profileModel.findOneAndUpdate(
-								{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
-								{
-									$inc: {
-										hunger: +chosenUserHungerPoints,
-										energy: +chosenUserEnergyPoints,
-										health: +chosenUserHealthPoints,
-									},
-									$set: { injuryObject: chosenUserInjuryObject },
-								},
-							);
-
-							if (chosenProfileData.userId == profileData.userId) {
-
-								userInjuryObject = chosenUserInjuryObject;
-
-								profileData = await profileModel.findOne({
-									userId: message.author.id,
-									serverId: message.guild.id,
-								});
-
-								embed.description = `*${profileData.name} takes a ${chosenItemName}. After a bit of preparation, the ${profileData.species} can apply it correctly. Immediately you can see the effect. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} feel${(profileData.pronounArray[5] == 'singular') ? 's' : ''} much better!*`;
-							}
-							else {
-
-								embed.description = `*${profileData.name} takes a ${chosenItemName}. After a  bit of preparation, ${profileData.pronounArray[0]} give${(profileData.pronounArray[5] == 'singular') ? 's' : ''} it to ${chosenProfileData.name}. Immediately you can see the effect. ${chosenProfileData.pronounArray[0].charAt(0).toUpperCase()}${chosenProfileData.pronounArray[0].slice(1)} feel${(chosenProfileData.pronounArray[5] == 'singular') ? 's' : ''} much better!*`;
-							}
-
-							embed.footer.text = `${embedFooterStatsText}\n${embedFooterChosenUserStatsText}\n+${chosenUserHealthPoints} HP for ${chosenProfileData.name} (${chosenProfileData.health}/${chosenProfileData.maxHealth})${embedFooterChosenUserInjuryText}\n\n-1 ${chosenItemName} for ${message.guild.name}`;
-						}
-						else {
-							chosenProfileData = await profileModel.findOne({
-								userId: chosenProfileData.userId,
-								serverId: chosenProfileData.serverId,
-							});
-
-							if (chosenProfileData.userId == profileData.userId) {
-
-								embed.description = `*${profileData.name} holds the ${chosenItemName} in ${profileData.pronounArray[2]} mouth, trying to find a way to apply it. After a few attempts, the herb breaks into little pieces, rendering it useless. Guess ${profileData.pronounArray[0]} ${(profileData.pronounArray[5] == 'singular') ? 'has' : 'have'} to try again...*`;
-							}
-							else {
-
-								embed.description = `*${profileData.name} takes a ${chosenItemName}. After a bit of preparation, ${profileData.pronounArray[0]} give${(profileData.pronounArray[5] == 'singular') ? 's' : ''} it to ${chosenProfileData.name}. But no matter how long they wait, it does not seem to help. Looks like ${profileData.name} chose the wrong herb!*`;
-							}
-
-							embed.footer.text = `${embedFooterStatsText}\n\n-1 ${chosenItemName} for ${message.guild.name}`;
-						}
-					}
-
-					embedArray.length = embedArrayOriginalLength;
-					embedArray.push(embed);
-
-					if (chosenProfileData.injuryObject.cold == true && chosenProfileData.userId != profileData.userId && profileData.injuryObject.cold == false && generateRandomNumber(10, 1 <= 3)) {
-
-						healthPoints = generateRandomNumber(5, 3);
-
-						if (profileData.health - healthPoints < 0) {
-
-							healthPoints = profileData.health;
-						}
-
-						profileData = await profileModel.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
-							{ $inc: { health: -healthPoints } },
-						);
-
-						userInjuryObject.cold = true;
-
-						await embedArray.push({
-							color: profileData.color,
-							description: `*Suddenly, ${profileData.name} starts coughing uncontrollably. Thinking back, they spent all day alongside ${chosenProfileData.name}, who was coughing as well. That was probably not the best idea!*`,
-							footer: { text: `-${healthPoints} HP (from cold)` },
-						});
-					}
-
-					interaction.message
-						.delete()
-						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
-						});
-
-					botReply = await message
-						.reply({
-							content: (chosenProfileData.userId != profileData.userId) ? `<@!${chosenProfileData.userId}>` : null,
-							embeds: embedArray,
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
-						});
-
-					botReply = await decreaseHealth(message, profileData, botReply, userInjuryObject);
-					botReply = await checkLevelUp(profileData, botReply);
-					await isPassedOut(message, profileData, true);
-
-					return;
+						description: `*Suddenly, ${profileData.name} starts coughing uncontrollably. Thinking back, they spent all day alongside ${chosenProfileData.name}, who was coughing as well. That was probably not the best idea!*`,
+						footer: { text: `-${healthPoints} HP (from cold)` },
+					});
 				}
 
-				await interactionCollector();
-			});
-		}
+				interaction.message
+					.delete()
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
 
+				botReply = await message
+					.reply({
+						content: (chosenProfileData.userId != profileData.userId) ? `<@!${chosenProfileData.userId}>` : null,
+						embeds: embedArray,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
+				botReply = await decreaseHealth(message, profileData, botReply, userInjuryObject);
+				botReply = await checkLevelUp(profileData, botReply);
+				await isPassedOut(message, profileData, true);
+
+				return;
+			}
+
+			await interactionCollector();
+		}
 
 		async function getUserList() {
 

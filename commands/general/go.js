@@ -261,14 +261,33 @@ module.exports = {
 				return userMessage.id == message.id && i.user.id == message.author.id;
 			};
 
-			const collector = message.channel.createMessageComponentCollector({ filter, max: 1, time: 30000 });
-			collector.on('end', async (collected) => {
+			const interaction = await botReply
+				.awaitMessageComponent({ filter, time: 120000 })
+				.catch(() => {return null;});
 
-				if (!collected.size) {
 
-					return await botReply
+			if (interaction == null) {
+
+				return await botReply
+					.edit({
+						components: [],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
+
+			if (interaction.isSelectMenu()) {
+
+				if (interaction.values[0] == 'sleeping_dens') {
+
+					await sleepingDen();
+					await interaction.message
 						.edit({
-							components: [],
+							embeds: embedArray,
+							components: [travelSelectMenu, sleepingDenButtons],
 						})
 						.catch((error) => {
 							if (error.httpStatus !== 404) {
@@ -277,176 +296,156 @@ module.exports = {
 						});
 				}
 
-				const interaction = collected.first();
+				if (interaction.values[0] == 'food_den') {
 
-				if (interaction.isSelectMenu()) {
-
-					if (interaction.values[0] == 'sleeping_dens') {
-
-						await sleepingDen();
-						await interaction.message
-							.edit({
-								embeds: embedArray,
-								components: [travelSelectMenu, sleepingDenButtons],
-							})
-							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
-							});
-					}
-
-					if (interaction.values[0] == 'food_den') {
-
-						await foodDen();
-						await interaction.message
-							.edit({
-								embeds: embedArray,
-								components: [travelSelectMenu, foodDenButtons],
-							})
-							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
-							});
-					}
-
-					if (interaction.values[0] == 'medicine_den') {
-
-						await medicineDen();
-
-						if (profileData.rank == 'Youngling' || profileData.rank == 'Hunter') {
-
-							await interaction.message
-								.edit({
-									embeds: embedArray,
-									components: [travelSelectMenu],
-								})
-								.catch((error) => {
-									if (error.httpStatus !== 404) {
-										throw new Error(error);
-									}
-								});
-						}
-						await interaction.message
-							.edit({
-								embeds: embedArray,
-								components: [travelSelectMenu, medicineDenButtons],
-							})
-							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
-							});
-					}
-
-					if (interaction.values[0] == 'ruins') {
-
-						await ruins();
-						await interaction.message
-							.edit({
-								embeds: embedArray,
-								components: [travelSelectMenu],
-							})
-							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
-							});
-					}
-
-					if (interaction.values[0] == 'lake') {
-
-						await lake();
-						await interaction.message
-							.edit({
-								embeds: embedArray,
-								components: [travelSelectMenu, lakeButtons],
-							})
-							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
-							});
-					}
-
-					if (interaction.values[0] == 'prairie') {
-
-						await prairie();
-
-						await interaction.message
-							.edit({
-								embeds: embedArray,
-								components: [travelSelectMenu],
-							})
-							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
-							});
-
-						if (profileData.rank == 'Youngling' || profileData.rank == 'Apprentice') {
-
-							await interaction.message
-								.edit({
-									embeds: embedArray,
-									components: [travelSelectMenu, prairieButtons],
-								})
-								.catch((error) => {
-									if (error.httpStatus !== 404) {
-										throw new Error(error);
-									}
-								});
-						}
-					}
+					await foodDen();
+					await interaction.message
+						.edit({
+							embeds: embedArray,
+							components: [travelSelectMenu, foodDenButtons],
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
 				}
 
-				if (interaction.isButton()) {
+				if (interaction.values[0] == 'medicine_den') {
 
-					if (interaction.customId.includes('execute')) {
+					await medicineDen();
 
-						const cmd = interaction.customId.split('-').pop();
-						const command = client.commands.get(cmd) || client.commands.find(cmnd => cmnd.aliases && cmnd.aliases.includes(cmd));
+					if (profileData.rank == 'Youngling' || profileData.rank == 'Hunter') {
 
-						profileData = await profileModel.findOne({
-							userId: message.author.id,
-							serverId: message.guild.id,
+						await interaction.message
+							.edit({
+								embeds: embedArray,
+								components: [travelSelectMenu],
+							})
+							.catch((error) => {
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
+							});
+					}
+					await interaction.message
+						.edit({
+							embeds: embedArray,
+							components: [travelSelectMenu, medicineDenButtons],
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+				}
+
+				if (interaction.values[0] == 'ruins') {
+
+					await ruins();
+					await interaction.message
+						.edit({
+							embeds: embedArray,
+							components: [travelSelectMenu],
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+				}
+
+				if (interaction.values[0] == 'lake') {
+
+					await lake();
+					await interaction.message
+						.edit({
+							embeds: embedArray,
+							components: [travelSelectMenu, lakeButtons],
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+				}
+
+				if (interaction.values[0] == 'prairie') {
+
+					await prairie();
+
+					await interaction.message
+						.edit({
+							embeds: embedArray,
+							components: [travelSelectMenu],
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 
-						interaction.message
-							.delete()
+					if (profileData.rank == 'Youngling' || profileData.rank == 'Apprentice') {
+
+						await interaction.message
+							.edit({
+								embeds: embedArray,
+								components: [travelSelectMenu, prairieButtons],
+							})
 							.catch((error) => {
 								if (error.httpStatus !== 404) {
 									throw new Error(error);
 								}
 							});
-
-						embedArray.splice(-1, 1);
-						return await command
-							.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
-							.then(async () => {
-
-								profileData = await profileModel.findOne({
-									userId: message.author.id,
-									serverId: message.guild.id,
-								});
-
-								setTimeout(async function() {
-
-									profileData = await profileModel.findOneAndUpdate(
-										{ userId: message.author.id, serverId: message.guild.id },
-										{ $set: { hasCooldown: false } },
-									);
-								}, 3000);
-							})
-							.catch((error) => {
-								throw new Error(error);
-							});
 					}
 				}
+			}
 
-				return await interactionCollector();
-			});
+			if (interaction.isButton()) {
+
+				if (interaction.customId.includes('execute')) {
+
+					const cmd = interaction.customId.split('-').pop();
+					const command = client.commands.get(cmd) || client.commands.find(cmnd => cmnd.aliases && cmnd.aliases.includes(cmd));
+
+					profileData = await profileModel.findOne({
+						userId: message.author.id,
+						serverId: message.guild.id,
+					});
+
+					interaction.message
+						.delete()
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+
+					embedArray.splice(-1, 1);
+					return await command
+						.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
+						.then(async () => {
+
+							profileData = await profileModel.findOne({
+								userId: message.author.id,
+								serverId: message.guild.id,
+							});
+
+							setTimeout(async function() {
+
+								profileData = await profileModel.findOneAndUpdate(
+									{ userId: message.author.id, serverId: message.guild.id },
+									{ $set: { hasCooldown: false } },
+								);
+							}, 3000);
+						})
+						.catch((error) => {
+							throw new Error(error);
+						});
+				}
+			}
+
+			return await interactionCollector();
 		}
 
 		async function sleepingDen() {
