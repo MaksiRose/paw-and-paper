@@ -105,7 +105,7 @@ module.exports = {
 
 			const buttonTextOrColor = ((Math.floor(Math.random() * 2) == 0) ? 'color' : 'text');
 			const buttonColorKind = ((Math.floor(Math.random() * 3) == 0) ? 'green' : ((Math.floor(Math.random() * 2) == 0) ? 'blue' : 'red'));
-			let embedFooterText = `Click the ${((buttonTextOrColor == 'color') ? `${buttonColorKind} button` : `button labeled "${buttonColorKind.charAt(0).toUpperCase()}${buttonColorKind.slice(1)}"`)} to `;
+			let embedFooterText = `Click the ${((buttonTextOrColor == 'color') ? `${buttonColorKind} button` : `button labeled as ${buttonColorKind}`)} to `;
 
 			if (profileData.rank == 'Youngling') {
 
@@ -156,7 +156,7 @@ module.exports = {
 				}
 			}
 
-			embedFooterText += 'But watch out for your energy bar.\nSometimes you will lose energy even if choose right, depending on how many levels you have.';
+			embedFooterText += ' But watch out for your energy bar.\nSometimes you will lose energy even if choose right, depending on how many levels you have.';
 
 			embedArray.push({
 				color: `${profileData.color}`,
