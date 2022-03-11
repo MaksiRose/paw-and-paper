@@ -719,32 +719,34 @@ module.exports = {
 					embed.description = `⏺️ *The ${opponentSpecies} gets into position to oppose an attack. ${profileData.name} must think quickly about how ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'wants' : 'want')} to react.*`;
 				}
 
+				const fightButtons = [{
+					type: 'ACTION_ROW',
+					components: [{
+						type: 'BUTTON',
+						customId: 'fight-attack',
+						label: 'Attack',
+						emoji: { name: '⏫' },
+						style: 'PRIMARY',
+					}, {
+						type: 'BUTTON',
+						customId: 'fight-defend',
+						label: 'Defend',
+						emoji: { name: '⏺️' },
+						style: 'PRIMARY',
+					}, {
+						type: 'BUTTON',
+						customId: 'fight-dodge',
+						label: 'Dodge',
+						emoji: { name: '↪️' },
+						style: 'PRIMARY',
+					}],
+				}].sort(() => Math.random() - 0.5);
+
 				embedArray.splice(-1, 1, embed);
 				botReply = await botReply
 					.edit({
 						embeds: embedArray,
-						components: [{
-							type: 'ACTION_ROW',
-							components: [{
-								type: 'BUTTON',
-								customId: 'fight-attack',
-								label: 'Attack',
-								emoji: { name: '⏫' },
-								style: 'PRIMARY',
-							}, {
-								type: 'BUTTON',
-								customId: 'fight-defend',
-								label: 'Defend',
-								emoji: { name: '⏺️' },
-								style: 'PRIMARY',
-							}, {
-								type: 'BUTTON',
-								customId: 'fight-dodge',
-								label: 'Dodge',
-								emoji: { name: '↪️' },
-								style: 'PRIMARY',
-							}],
-						}],
+						components: fightButtons,
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) {
