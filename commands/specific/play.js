@@ -152,11 +152,11 @@ module.exports = {
 
 		if (!message.mentions.users.size) {
 
-			const allPrairieProfilesArray = await profileModel
+			const allPrairieProfilesArray = (await profileModel
 				.find({
 					serverId: message.guild.id,
 					currentRegion: 'prairie',
-				})
+				}))
 				.filter(user => user.userId != profileData.userId && user.injuryObject.cold == false)
 				.map(user => user.userId);
 

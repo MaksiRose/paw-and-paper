@@ -469,10 +469,10 @@ module.exports = {
 			embed.description = `*${profileData.name} runs to the food den. Maybe ${profileData.pronounArray[0]} will eat something, or put ${profileData.pronounArray[2]} food onto the pile.*`;
 			embed.fields = [];
 
-			const allFoodDenProfilesArray = await profileModel.find({
+			const allFoodDenProfilesArray = (await profileModel.find({
 				serverId: message.guild.id,
 				currentRegion: 'food den',
-			}).map(user => user.userId);
+			})).map(user => user.userId);
 
 			for (let i = 0; i < allFoodDenProfilesArray.length; i++) {
 
@@ -495,10 +495,10 @@ module.exports = {
 			embed.description = `*${profileData.name} rushes over to the medicine den. Nearby are a mix of packmates, some with illnesses and injuries, others trying to heal them.*`;
 			embed.fields = [];
 
-			const allMedicineDenProfilesArray = await profileModel.find({
+			const allMedicineDenProfilesArray = (await profileModel.find({
 				serverId: message.guild.id,
 				currentRegion: 'medicine den',
-			}).map(user => user.userId);
+			})).map(user => user.userId);
 
 			for (let i = 0; i < allMedicineDenProfilesArray.length; i++) {
 
@@ -510,10 +510,10 @@ module.exports = {
 				embed.fields.push({ name: 'Packmates at the medicine den:', value: allMedicineDenProfilesArray.join('\n'), inline: true });
 			}
 
-			const allHealerProfilesArray = await profileModel.find({
+			const allHealerProfilesArray = (await profileModel.find({
 				serverId: message.guild.id,
 				rank: { $nin: ['Youngling', 'Hunter'] },
-			}).map(user => user.userId);
+			})).map(user => user.userId);
 
 			for (let i = 0; i < allHealerProfilesArray.length; i++) {
 
@@ -536,10 +536,10 @@ module.exports = {
 			embed.description = `*${profileData.name} walks up to the ruins, carefully stepping over broken bricks. Hopefully, ${profileData.pronounArray[0]} will find someone to talk with.*`;
 			embed.fields = [];
 
-			const allRuinProfilesArray = await profileModel.find({
+			const allRuinProfilesArray = (await profileModel.find({
 				serverId: message.guild.id,
 				currentRegion: 'ruins',
-			}).map(user => user.userId);
+			})).map(user => user.userId);
 
 			for (let i = 0; i < allRuinProfilesArray.length; i++) {
 
@@ -573,10 +573,10 @@ module.exports = {
 			embed.description = `*${profileData.name} approaches the prairie, watching younger packmates testing their strength in playful fights. Maybe the ${profileData.species} could play with them!*`;
 			embed.fields = [];
 
-			const allPrairieProfilesArray = await profileModel.find({
+			const allPrairieProfilesArray = (await profileModel.find({
 				serverId: message.guild.id,
 				currentRegion: 'prairie',
-			}).map(user => user.userId);
+			})).map(user => user.userId);
 
 			for (let i = 0; i < allPrairieProfilesArray.length; i++) {
 
