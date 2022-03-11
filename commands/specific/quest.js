@@ -167,7 +167,7 @@ module.exports = {
 				},
 			});
 
-			const allComponentsArray = [
+			const buttonArray = [
 				[
 					{
 						type: 'BUTTON',
@@ -228,28 +228,7 @@ module.exports = {
 						style: 'SUCCESS',
 					},
 				],
-			];
-
-			/*
-			allComponentsArray has three Arrays of different Buttons
-			finalComponentArray is assigned one of those three Arrays, containing three Buttons
-			In the while Loop, the Buttons are randomly rearranged
-			This is done by assigning the highest Array Index to highestArrayIndex, then swapping that Array position with any position lower or equal to itself, and then lowering highestArrayIndex
-			*/
-			const finalComponentArray = allComponentsArray[Math.floor((Math.random() * 3))];
-
-			let highestArrayIndex = finalComponentArray.length - 1;
-			while (highestArrayIndex != 0) {
-
-				const randomArrayIndex = Math.floor(Math.random() * highestArrayIndex);
-
-				// this swaps positions of highestArrayIndex with randomArrayIndex
-				const temporaryElement = finalComponentArray[highestArrayIndex];
-				finalComponentArray[highestArrayIndex] = finalComponentArray[randomArrayIndex];
-				finalComponentArray[randomArrayIndex] = temporaryElement;
-
-				highestArrayIndex -= 1;
-			}
+			][generateRandomNumber(3, 0)].sort(() => Math.random() - 0.5);
 
 			if (isFirstRound) {
 
@@ -258,7 +237,7 @@ module.exports = {
 						embeds: embedArray,
 						components: [{
 							type: 'ACTION_ROW',
-							components: finalComponentArray,
+							components: buttonArray,
 						}],
 					})
 					.catch((error) => {
@@ -274,7 +253,7 @@ module.exports = {
 						embeds: embedArray,
 						components: [{
 							type: 'ACTION_ROW',
-							components: finalComponentArray,
+							components: buttonArray,
 						}],
 					})
 					.catch((error) => {
