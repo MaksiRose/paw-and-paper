@@ -23,7 +23,7 @@ module.exports = {
 
 		await profileModel.findOneAndUpdate(
 			{ userId: member.id, serverId: member.guild.id },
-			{ $set: { currenRegion: 'sleeping dens' } },
+			{ $set: { currentRegion: 'sleeping dens' } },
 		);
 
 		await member.createDM();

@@ -45,7 +45,7 @@ module.exports = {
 				});
 		}
 
-		let allHurtProfilesArray = await profileModel.find({
+		const allHurtProfilesArray = await profileModel.find({
 			serverId: message.guild.id,
 			$or: [
 				{ energy: 0 },
@@ -63,9 +63,7 @@ module.exports = {
 				},
 				},
 			],
-		});
-
-		allHurtProfilesArray = allHurtProfilesArray.map(doc => doc.userId).filter(async userId => await message.guild.members.cache.has(userId));
+		}).map(user => user.userId);
 
 		const userSelectMenu = {
 			type: 'ACTION_ROW',

@@ -63,12 +63,13 @@ module.exports = {
 
 		if (pingRuins == true) {
 
-			let allRuinProfilesArray = await profileModel.find({
-				serverId: message.guild.id,
-				currentRegion: profileData.currentRegion,
-			});
-
-			allRuinProfilesArray = allRuinProfilesArray.map(doc => doc.userId).filter(async userId => await message.guild.members.cache.has(userId) && userId != profileData.userId);
+			const allRuinProfilesArray = await profileModel
+				.find({
+					serverId: message.guild.id,
+					currentRegion: profileData.currentRegion,
+				})
+				.map(user => user.userId)
+				.filter(userId => userId != profileData.userId);
 
 			for (let i = 0; i < allRuinProfilesArray.length; i++) {
 
