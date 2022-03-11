@@ -169,11 +169,11 @@ module.exports = {
 
 		async function getRank(rankName) {
 
-			const allRankProfilesArray = await profileModel
+			const allRankProfilesArray = (await profileModel
 				.find({
 					serverId: message.guild.id,
 					rank: rankName,
-				})
+				}))
 				.sort((a, b) => (a.name.toUpperCase() < b.name.toUpperCase()) ? -1 : (a.name.toUpperCase() > b.name.toUpperCase()) ? 1 : 0)
 				.map(doc => `${doc.name} - <@${doc.userId}>`);
 

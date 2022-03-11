@@ -10,7 +10,7 @@ module.exports = {
 			serverId: guild.id,
 		});
 
-		for (const profile of await profileModel.find({ serverId: guild.id })) {
+		for (const profile of (await profileModel.find({ serverId: guild.id }))) {
 
 			await profileModel.findOneAndDelete(profile);
 		}

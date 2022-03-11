@@ -122,8 +122,6 @@ module.exports = {
 				return false;
 			});
 
-		console.log(shouldContinue);
-
 		if (shouldContinue == false) {
 
 			return;

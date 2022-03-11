@@ -196,7 +196,7 @@ module.exports = {
 				throw new Error(error);
 			});
 
-		const experiencePoints = (chosenBiomeNumber == 2) ? generateRandomNumber(41, 20) : (chosenBiomeNumber == 1) ? generateRandomNumber(21, 10) : generateRandomNumber(11, 5);
+		const experiencePoints = chosenBiomeNumber == 2 ? generateRandomNumber(41, 20) : chosenBiomeNumber == 1 ? generateRandomNumber(21, 10) : generateRandomNumber(11, 5);
 		const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(5, 1) + await decreaseEnergy(profileData));
 		const hungerPoints = await decreaseHunger(profileData);
 		const thirstPoints = await decreaseThirst(profileData);
@@ -567,10 +567,10 @@ module.exports = {
 						{ $inc: { health: -healthPoints } },
 					);
 
-					const allElderlyProfilesArray = await profileModel.find({
+					const allElderlyProfilesArray = (await profileModel.find({
 						serverId: message.guild.id,
 						rank: 'Elderly',
-					}).map(user => user.userId);
+					})).map(user => user.userId);
 
 					switch (true) {
 
