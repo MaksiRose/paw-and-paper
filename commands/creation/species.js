@@ -3,7 +3,6 @@ const profileModel = require('../../models/profileModel');
 const startCooldown = require('../../utils/startCooldown');
 const { speciesMap } = require('../../utils/itemsInfo');
 const { hasNoName } = require('../../utils/checkAccountCompletion');
-const { createCommandCollector } = require('../../utils/commandCollector');
 
 module.exports = {
 	name: 'species',
@@ -96,7 +95,6 @@ module.exports = {
 				}
 			});
 
-		createCommandCollector(message.author.id, message.guild.id, botReply);
 		await interactionCollector();
 
 		async function interactionCollector() {

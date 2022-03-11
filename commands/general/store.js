@@ -116,7 +116,7 @@ module.exports = {
 			});
 
 		createCommandCollector(message.author.id, message.guild.id, botReply);
-		await interactionCollector(null, null);
+		interactionCollector(null, null);
 
 		async function interactionCollector(chosenFood, foodCategory) {
 

@@ -85,7 +85,7 @@ module.exports = {
 
 
 		createCommandCollector(message.author.id, message.guild.id, botReply);
-		await interactionCollector();
+		interactionCollector();
 
 		async function interactionCollector() {
 
