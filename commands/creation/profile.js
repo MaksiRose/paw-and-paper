@@ -60,19 +60,19 @@ module.exports = {
 			components[0].components.pop();
 		}
 
-		let injuryText = (Object.values(profileData.injuryObject).every(item => item == 0)) ? 'none' : '';
+		let injuryText = Object.values(profileData.injuryObject).every(item => item == 0) ? 'none' : '';
 
-		for (const [injuryKey, injuryAmount] of Object.entries(profileData.injuryObject)) {
+		for (const [injuryKind, injuryAmount] of Object.entries(profileData.injuryObject)) {
 
 			if (injuryAmount > 0) {
 
 				if (typeof injuryAmount === 'number') {
 
-					injuryText += `${injuryAmount} ${(injuryAmount < 2) ? injuryKey.slice(0, -1) : injuryKey}\n`;
+					injuryText += `${injuryAmount} ${(injuryAmount < 2) ? injuryKind.slice(0, -1) : injuryKind}\n`;
 				}
 				else {
 
-					injuryText += `${injuryKey}: yes\n`;
+					injuryText += `${injuryKind}: yes\n`;
 				}
 			}
 		}
