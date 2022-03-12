@@ -112,7 +112,7 @@ module.exports = {
 				missEmoji = '💂';
 			}
 
-      if (profileData.rank == 'Elderly') {
+			if (profileData.rank == 'Elderly') {
 
 				hitEmoji = '💨';
 

@@ -5,9 +5,7 @@ const errorHandling = require('../utils/errorHandling');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 const { activeCommandsObject } = require('../utils/commandCollector');
 let lastMessageEpochTime = 0;
-const automaticRestingTimeoutMap = new Map();
-const automaticCooldownTimeoutMap = new Map();
-const usersActiveCommandsAmountMap = new Map();
+const userMap = new Map();
 
 module.exports = {
 	name: 'messageCreate',
@@ -103,8 +101,14 @@ module.exports = {
 			}
 		}
 
-		clearTimeout(automaticCooldownTimeoutMap.get('nr' + message.author.id + message.guild.id));
-		clearTimeout(automaticRestingTimeoutMap.get('nr' + message.author.id + message.guild.id));
+		if (userMap.has('nr' + message.author.id + message.guild.id) == false) {
+
+			userMap.set('nr' + message.author.id + message.guild.id, { activeCommands: 0, activityTimeout: null, cooldownTimeout: null, restingTimeout: null });
+		}
+
+		clearTimeout(userMap.get('nr' + message.author.id + message.guild.id).activityTimeout);
+		clearTimeout(userMap.get('nr' + message.author.id + message.guild.id).cooldownTimeout);
+		clearTimeout(userMap.get('nr' + message.author.id + message.guild.id).restingTimeout);
 
 		if (Object.hasOwn(activeCommandsObject, 'nr' + message.author.id + message.guild.id)) {
 
@@ -115,11 +119,18 @@ module.exports = {
 
 			console.log(`\x1b[32m${message.author.tag}\x1b[0m successfully executed \x1b[33m${message.content} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
-			if (usersActiveCommandsAmountMap.has('nr' + message.author.id + message.guild.id) == false) {
+			if (serverData.activeUsersArray.findIndex(element => element == message.author.id) == -1) {
 
-				usersActiveCommandsAmountMap.set('nr' + message.author.id + message.guild.id, { activeCommands: 0 });
+				serverData.activeUsersArray.push(message.author.id);
+
+				serverData = await serverModel.findOneAndUpdate(
+					{ serverId: message.guild.id },
+					{ $set: { activeUsersArray: serverData.activeUsersArray } },
+				);
 			}
-			usersActiveCommandsAmountMap.get('nr' + message.author.id + message.guild.id).activeCommands += 1;
+
+			userMap.get('nr' + message.author.id + message.guild.id).activeCommands += 1;
+			userMap.get('nr' + message.author.id + message.guild.id).activityTimeout = setTimeout(removeActiveUser, 30000);
 
 			await message.channel
 				.sendTyping()
@@ -131,37 +142,37 @@ module.exports = {
 				.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray, pingRuins)
 				.then(async () => {
 
-					usersActiveCommandsAmountMap.get('nr' + message.author.id + message.guild.id).activeCommands -= 1;
+					userMap.get('nr' + message.author.id + message.guild.id).activeCommands -= 1;
 
-					if (profileData && usersActiveCommandsAmountMap.get('nr' + message.author.id + message.guild.id).activeCommands <= 0) {
+					if (profileData && userMap.get('nr' + message.author.id + message.guild.id).activeCommands <= 0) {
 
 						profileData = await profileModel.findOne({
 							userId: message.author.id,
 							serverId: message.guild.id,
 						});
 
-						automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(removeCooldown, 1000));
+						userMap.get('nr' + message.author.id + message.guild.id).cooldownTimeout = setTimeout(removeCooldown, 1000);
 					}
 				});
 		}
 		catch (error) {
 
-			usersActiveCommandsAmountMap.get('nr' + message.author.id + message.guild.id).activeCommands -= 1;
+			userMap.get('nr' + message.author.id + message.guild.id).activeCommands -= 1;
 
-			if (profileData && usersActiveCommandsAmountMap.get('nr' + message.author.id + message.guild.id).activeCommands <= 0) {
+			if (profileData && userMap.get('nr' + message.author.id + message.guild.id).activeCommands <= 0) {
 
 				profileData = await profileModel.findOne({
 					userId: message.author.id,
 					serverId: message.guild.id,
 				});
 
-				automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(removeCooldown, 1000));
+				userMap.get('nr' + message.author.id + message.guild.id).cooldownTimeout = setTimeout(removeCooldown, 1000);
 			}
 
 			await errorHandling.output(message, error);
 		}
 
-		automaticRestingTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(startResting, 600000));
+		userMap.get('nr' + message.author.id + message.guild.id).restingTimeout = setTimeout(startResting, 600000);
 
 		async function startResting() {
 
@@ -184,6 +195,22 @@ module.exports = {
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $set: { hasCooldown: false } },
 			);
+		}
+
+		async function removeActiveUser() {
+
+			serverData = await serverModel.findOne({ serverId: message.guild.id });
+			const authorIndex = serverData.activeUsersArray.findIndex(element => element == message.author.id);
+
+			if (authorIndex >= 0) {
+
+				serverData.activeUsersArray.splice(authorIndex, 1);
+
+				serverData = await serverModel.findOneAndUpdate(
+					{ serverId: message.guild.id },
+					{ $set: { activeUsersArray: serverData.activeUsersArray } },
+				);
+			}
 		}
 	},
 };
