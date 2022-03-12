@@ -2,7 +2,6 @@ const config = require('../config.json');
 const profileModel = require('../models/profileModel');
 const serverModel = require('../models/serverModel');
 const errorHandling = require('../utils/errorHandling');
-const rest = require('../commands/general/rest');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 const { activeCommandsObject } = require('../utils/commandCollector');
 let lastMessageEpochTime = 0;
@@ -141,7 +140,7 @@ module.exports = {
 							serverId: message.guild.id,
 						});
 
-						automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await removeCooldown, 1000));
+						automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(removeCooldown, 1000));
 					}
 				});
 		}
@@ -156,13 +155,13 @@ module.exports = {
 					serverId: message.guild.id,
 				});
 
-				automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await removeCooldown, 1000));
+				automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(removeCooldown, 1000));
 			}
 
 			await errorHandling.output(message, error);
 		}
 
-		automaticRestingTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await startResting, 600000));
+		automaticRestingTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(startResting, 600000));
 
 		async function startResting() {
 
@@ -173,15 +172,9 @@ module.exports = {
 
 			if (profileData && profileData.isResting == false && profileData.energy < profileData.maxEnergy) {
 
-				await rest
-					.sendMessage(client, message, [], profileData, serverData, embedArray)
-					.then(async () => {
+				message.content = `${config.prefix}rest`;
 
-						automaticCooldownTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await removeCooldown, 1000));
-					})
-					.catch(async (error) => {
-						return await errorHandling.output(message, error);
-					});
+				await this.execute(client, message);
 			}
 		}
 
