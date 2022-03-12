@@ -1,4 +1,3 @@
-const inventory = require('./inventory');
 const profileModel = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
 const startCooldown = require('../../utils/startCooldown');
@@ -6,6 +5,8 @@ const { generateRandomNumber } = require('../../utils/randomizers');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
+const { execute } = require('../../events/messageCreate');
+const config = require('../../config.json');
 
 module.exports = {
 	name: 'eat',
@@ -44,11 +45,9 @@ module.exports = {
 
 		if (!argumentsArray.length) {
 
-			return await inventory
-				.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			message.content = `${config.prefix}inventory`;
+
+			return await execute(client, message);
 		}
 
 		const chosenFood = argumentsArray.join(' ');
@@ -302,10 +301,8 @@ module.exports = {
 			}
 		}
 
-		return await inventory
-			.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
-			.catch((error) => {
-				throw new Error(error);
-			});
+		message.content = `${config.prefix}inventory`;
+
+		return await execute(client, message);
 	},
 };

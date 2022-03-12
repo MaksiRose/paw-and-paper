@@ -1,11 +1,10 @@
 const serverModel = require('../models/serverModel');
 const profileModel = require('../models/profileModel');
-const store = require('../commands/general/store');
-const eat = require('../commands/general/eat');
 const config = require('../config.json');
 const errorHandling = require('../utils/errorHandling');
 const pjson = require('../package.json');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
+const { execute } = require('./messageCreate');
 
 module.exports = {
 	name: 'interactionCreate',
@@ -85,15 +84,9 @@ module.exports = {
 			return;
 		}
 
-		const serverData = await serverModel.findOne(
-			{ serverId: interaction.guild.id },
-		);
-
 		let profileData = await profileModel.findOne(
 			{ userId: interaction.user.id, serverId: interaction.guild.id },
 		);
-
-		const embedArray = interaction.message.embeds;
 
 		if (interaction.isSelectMenu()) {
 
@@ -218,28 +211,9 @@ module.exports = {
 						}
 					});
 
-				interaction.message.embeds.splice(-1, 1);
+				referencedMessage.content = `${config.prefix}eat ${interaction.values[0]}`;
 
-				return await eat
-					.sendMessage(client, referencedMessage, interaction.values, profileData, serverData, interaction.message.embeds)
-					.then(async () => {
-
-						profileData = await profileModel.findOne({
-							userId: interaction.user.id,
-							serverId: interaction.guild.id,
-						});
-
-						setTimeout(async function() {
-
-							profileData = await profileModel.findOneAndUpdate(
-								{ userId: interaction.user.id, serverId: interaction.guild.id },
-								{ $set: { hasCooldown: false } },
-							);
-						}, 3000);
-					})
-					.catch(async (error) => {
-						return await errorHandling.output(interaction.message, error);
-					});
+				return await execute(client, referencedMessage);
 			}
 		}
 
@@ -347,6 +321,7 @@ module.exports = {
 								{ name: '**Condition**', value: `❤️ Health: \`${profileData.health}/${profileData.maxHealth}\`\n⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\`\n🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`` },
 								{ name: '**🩹 Injuries/Illnesses**', value: injuryText },
 							],
+							footer: { text: profileData.hasQuest == true ? 'There is one open quest!' : null },
 						}],
 						components: components,
 					})
@@ -418,28 +393,9 @@ module.exports = {
 						}
 					});
 
-				embedArray.pop();
+				referencedMessage.content = `${config.prefix}store`;
 
-				await store
-					.sendMessage(client, referencedMessage, interaction.values, profileData, serverData, embedArray)
-					.then(async () => {
-
-						profileData = await profileModel.findOne({
-							userId: interaction.user.id,
-							serverId: interaction.guild.id,
-						});
-
-						setTimeout(async function() {
-
-							profileData = await profileModel.findOneAndUpdate(
-								{ userId: interaction.user.id, serverId: interaction.guild.id },
-								{ $set: { hasCooldown: false } },
-							);
-						}, 3000);
-					})
-					.catch(async (error) => {
-						return await errorHandling.output(interaction.message, error);
-					});
+				return await execute(client, referencedMessage);
 			}
 		}
 	},

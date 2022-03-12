@@ -3,6 +3,8 @@ const startCooldown = require('../../utils/startCooldown');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
+const config = require('../../config.json');
+const { execute } = require('../../events/messageCreate');
 
 module.exports = {
 	name: 'go',
@@ -250,16 +252,7 @@ module.exports = {
 
 		async function interactionCollector() {
 
-			const filter = async (i) => {
-
-				if (!i.message.reference || !i.message.reference.messageId) {
-
-					return false;
-				}
-
-				const userMessage = await i.channel.messages.fetch(i.message.reference.messageId);
-				return userMessage.id == message.id && i.user.id == message.author.id;
-			};
+			const filter = i => i.user.id == message.author.id;
 
 			const interaction = await botReply
 				.awaitMessageComponent({ filter, time: 120000 })
@@ -405,15 +398,7 @@ module.exports = {
 
 				if (interaction.customId.includes('execute')) {
 
-					const cmd = interaction.customId.split('-').pop();
-					const command = client.commands.get(cmd) || client.commands.find(cmnd => cmnd.aliases && cmnd.aliases.includes(cmd));
-
-					profileData = await profileModel.findOne({
-						userId: message.author.id,
-						serverId: message.guild.id,
-					});
-
-					interaction.message
+					await interaction.message
 						.delete()
 						.catch((error) => {
 							if (error.httpStatus !== 404) {
@@ -421,27 +406,9 @@ module.exports = {
 							}
 						});
 
-					embedArray.splice(-1, 1);
-					return await command
-						.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
-						.then(async () => {
+					message.content = `${config.prefix}${interaction.customId.split('-').pop()}`;
 
-							profileData = await profileModel.findOne({
-								userId: message.author.id,
-								serverId: message.guild.id,
-							});
-
-							setTimeout(async function() {
-
-								profileData = await profileModel.findOneAndUpdate(
-									{ userId: message.author.id, serverId: message.guild.id },
-									{ $set: { hasCooldown: false } },
-								);
-							}, 3000);
-						})
-						.catch((error) => {
-							throw new Error(error);
-						});
+					return await execute(client, message);
 				}
 			}
 

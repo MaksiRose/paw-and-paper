@@ -102,6 +102,7 @@ module.exports = {
 						{ name: '**Condition**', value: `❤️ Health: \`${profileData.health}/${profileData.maxHealth}\`\n⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\`\n🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`` },
 						{ name: '**🩹 Injuries/Illnesses**', value: injuryText },
 					],
+					footer: { text: profileData.hasQuest == true ? 'There is one open quest!' : null },
 				}],
 				components: components,
 			})
