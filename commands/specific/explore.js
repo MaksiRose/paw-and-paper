@@ -10,6 +10,7 @@ const { checkLevelUp } = require('../../utils/levelHandling');
 const { introduceQuest } = require('./quest');
 const config = require('../../config.json');
 const { execute } = require('../../events/messageCreate');
+const { remindOfAttack, startAttack } = require('./attack');
 
 module.exports = {
 	name: 'explore',
@@ -27,6 +28,7 @@ module.exports = {
 		}
 
 		profileData = await startCooldown(message, profileData);
+		const messageContent = remindOfAttack(message);
 
 		if ([...Object.values(profileData.inventoryObject).map(type => Object.values(type))].filter(value => value > 0).length > 25) {
 
@@ -228,7 +230,11 @@ module.exports = {
 		const userInjuryObject = { ...profileData.injuryObject };
 
 
-		if (chosenBiomeNumber == (profileData.unlockedRanks - 1) && chosenBiomeNumber == (allBiomesArray.length - 1) && generateRandomNumber((profileData.rank == 'Elderly') ? 500 : (profileData.rank == 'Hunter' || profileData.rank == 'Healer') ? 400 : 300, 1) === 1) {
+		if (serverData.activeUsersArray.length >= 3 && messageContent == null) {
+
+			await findHumans();
+		}
+		else if (chosenBiomeNumber == (profileData.unlockedRanks - 1) && chosenBiomeNumber == (allBiomesArray.length - 1) && generateRandomNumber((profileData.rank == 'Elderly') ? 500 : (profileData.rank == 'Hunter' || profileData.rank == 'Healer') ? 400 : 300, 1) === 1) {
 
 			await findQuest();
 		}
@@ -249,6 +255,27 @@ module.exports = {
 		botReply = await checkLevelUp(profileData, botReply);
 		await isPassedOut(message, profileData, true);
 
+
+		async function findHumans() {
+
+			startAttack(message);
+
+			embed.description = '*Maksi hat sich nur nach Futter umgeschaut, als sie plötzlich Stimmen zu ihrer Rechten hört. Vorsichtig schleicht sie sich heran, und tatsächlich: eine Gruppe Menschen! Sie scheinen etwas zu besprechen, und zeigen immer wieder herueber in die Richtung, in der das Pack liegt. Erschrocken rennt die Katze davon. Sie muss so viele Packmates wie möglich zusammenrufen, um das Pack zu beschuetzen!*';
+			embed.footer.text = `${embedFooterStatsText}\n\nYou have one minute to prepare before the humans will attack!`;
+
+			embedArray.splice(-1, 1, embed);
+			return botReply = await message
+				.reply({
+					content: serverData.activeUsersArray.map(user => `<@${user}>`).join(''),
+					embeds: embedArray,
+					allowedMentions: { repliedUser: true },
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
+		}
 
 		async function findQuest() {
 
