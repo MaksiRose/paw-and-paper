@@ -185,7 +185,7 @@ module.exports = {
 
 				message.content = `${config.prefix}rest`;
 
-				await this.execute(client, message);
+				await module.exports.execute(client, message);
 			}
 		}
 

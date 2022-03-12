@@ -96,19 +96,18 @@ module.exports = {
 
 	async isInvalid(message, profileData, embedArray, callerNameArray) {
 
-		if (await this.isPassedOut(message, profileData, false)) {
+		if (await module.exports.isPassedOut(message, profileData, false)) {
 
 			return true;
 		}
 
-		if (await this.hasCooldown(message, profileData, callerNameArray)) {
+		if (await module.exports.hasCooldown(message, profileData, callerNameArray)) {
 
 			return true;
 		}
 
-		await this.isResting(message, profileData, embedArray);
+		await module.exports.isResting(message, profileData, embedArray);
 
 		return false;
 	},
-
 };
