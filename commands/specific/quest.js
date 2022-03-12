@@ -66,7 +66,7 @@ module.exports = {
 			return await startQuest();
 		}
 
-		botReply = await this.introduceQuest(message, profileData, embedArray, '');
+		botReply = await module.exports.introduceQuest(message, profileData, embedArray, '');
 		embedArray.pop();
 
 		return await botReply
