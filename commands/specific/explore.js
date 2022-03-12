@@ -7,7 +7,7 @@ const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion')
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
 const { checkLevelUp } = require('../../utils/levelHandling');
-const { introduceQuest } = require('./quest');
+const { introduceQuest, startQuest } = require('./quest');
 
 module.exports = {
 	name: 'explore',
@@ -255,7 +255,24 @@ module.exports = {
 				{ $set: { hasQuest: true } },
 			);
 
-			return botReply = introduceQuest(message, profileData, embedArray.slice(0, -1), embedFooterStatsText);
+			botReply = introduceQuest(message, profileData, embedArray.slice(0, -1), embedFooterStatsText);
+
+			const filter = i => i.customId === 'quest-start' && i.user.id === message.author.id;
+
+			botReply
+				.awaitMessageComponent({ filter, time: 30000 })
+				.then(async () => await startQuest(message, profileData, embedArray, botReply))
+				.catch(async () => {
+					return await botReply
+						.edit({ components: [] })
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+				});
+
+			return botReply;
 		}
 
 		async function findNothing() {

@@ -7,7 +7,7 @@ const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion')
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
 const { checkLevelUp } = require('../../utils/levelHandling');
-const { introduceQuest } = require('./quest');
+const { introduceQuest, startQuest } = require('./quest');
 
 module.exports = {
 	name: 'play',
@@ -245,14 +245,29 @@ module.exports = {
 				{ $set: { hasQuest: true } },
 			);
 
-			return botReply = await introduceQuest(message, profileData, embedArray, embedFooterStatsText);
+			botReply = await introduceQuest(message, profileData, embedArray, embedFooterStatsText);
+
+			const filter = i => i.customId === 'quest-start' && i.user.id === message.author.id;
+
+			botReply
+				.awaitMessageComponent({ filter, time: 30000 })
+				.then(async () => await startQuest(message, profileData, embedArray, botReply))
+				.catch(async () => {
+					return await botReply
+						.edit({ components: [] })
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+				});
+
+			return botReply;
 		}
 
 		async function findPlant() {
 
-			const betterLuckValue = (profileData.levels - 1) * 2;
-
-			const findSomethingChance = pullFromWeightedTable({ 0: 90, 1: 10 + betterLuckValue });
+			const findSomethingChance = pullFromWeightedTable({ 0: 90, 1: 10 });
 			if (findSomethingChance == 0) {
 
 				embed.description = `*${profileData.name} bounces around camp, watching the busy hustle and blurs of hunters and healers at work. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} splash${(profileData.pronounArray[5] == 'singular') ? 'es' : ''} into the stream that split the pack in half, chasing the minnows with ${profileData.pronounArray[2]} eyes.*`;
@@ -271,7 +286,7 @@ module.exports = {
 					});
 			}
 
-			const getHurtChance = pullFromWeightedTable({ 0: 10, 1: 90 + betterLuckValue });
+			const getHurtChance = pullFromWeightedTable({ 0: 10, 1: 90 });
 			if (getHurtChance == 0 && profileData.rank != 'Youngling') {
 
 				healthPoints = generateRandomNumber(5, 3);
