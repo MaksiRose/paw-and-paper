@@ -30,7 +30,12 @@ module.exports = {
 
 			serverModel.findOneAndUpdate(
 				{ serverId: dataObject.serverId },
-				{ $set: { inventoryObject: dataObject.inventoryObject } },
+				{
+					$set: {
+						inventoryObject: dataObject.inventoryObject,
+						activeUsersArray: [],
+					},
+				},
 			);
 		}
 	},
