@@ -1,6 +1,6 @@
 const profileModel = require('../../models/profileModel');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
-const { isPassedOut, hasCooldown, hasQuest } = require('../../utils/checkValidity');
+const { isPassedOut, hasCooldown } = require('../../utils/checkValidity');
 const { startResting } = require('../../utils/executeResting');
 const startCooldown = require('../../utils/startCooldown');
 
@@ -22,11 +22,6 @@ module.exports = {
 		if (await hasCooldown(message, profileData, [module.exports.name].concat(module.exports.aliases))) {
 
 			return;
-		}
-
-		if (await hasQuest(message, profileData)) {
-
-			return true;
 		}
 
 		profileData = await startCooldown(message, profileData);
