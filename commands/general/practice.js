@@ -73,21 +73,7 @@ module.exports = {
 				}
 			});
 
-		let filter = async (i) => {
-
-			if (!i.message.reference || !i.message.reference.messageId) {
-
-				return false;
-			}
-
-			const userMessage = await i.channel.messages
-				.fetch(i.message.reference.messageId)
-				.catch((error) => {
-					throw new Error(error);
-				});
-
-			return i.user.id == message.author.id && userMessage.id == message.id && (i.customId === 'practice-accept' || i.customId === 'practice-decline');
-		};
+		let filter = i => (i.customId === 'practice-accept' || i.customId === 'practice-decline') && i.user.id == message.author.id;
 
 		const shouldContinue = await botReply
 			.awaitMessageComponent({ filter, time: 15000 })
@@ -235,21 +221,7 @@ module.exports = {
 					}
 				});
 
-			filter = async (i) => {
-
-				if (!i.message.reference || !i.message.reference.messageId) {
-
-					return false;
-				}
-
-				const userMessage = await i.channel.messages
-					.fetch(i.message.reference.messageId)
-					.catch((error) => {
-						throw new Error(error);
-					});
-
-				return userMessage.id == message.id && (i.customId == 'practice-attack' || i.customId == 'practice-defend' || i.customId == 'practice-dodge') && i.user.id == message.author.id;
-			};
+			filter = i => (i.customId == 'practice-attack' || i.customId == 'practice-defend' || i.customId == 'practice-dodge') && i.user.id == message.author.id;
 
 			await botReply
 				.awaitMessageComponent({ filter, time: 5000 })

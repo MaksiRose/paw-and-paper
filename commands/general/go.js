@@ -252,16 +252,7 @@ module.exports = {
 
 		async function interactionCollector() {
 
-			const filter = async (i) => {
-
-				if (!i.message.reference || !i.message.reference.messageId) {
-
-					return false;
-				}
-
-				const userMessage = await i.channel.messages.fetch(i.message.reference.messageId);
-				return userMessage.id == message.id && i.user.id == message.author.id;
-			};
+			const filter = i => i.user.id == message.author.id;
 
 			const interaction = await botReply
 				.awaitMessageComponent({ filter, time: 120000 })

@@ -118,21 +118,7 @@ module.exports = {
 
 		async function interactionCollector(botReply) {
 
-			const filter = async (i) => {
-
-				if (!i.message.reference || !i.message.reference.messageId) {
-
-					return false;
-				}
-
-				const userMessage = await i.channel.messages
-					.fetch(i.message.reference.messageId)
-					.catch((error) => {
-						throw new Error(error);
-					});
-
-				return userMessage.id == message.id && i.isButton() && (i.customId == 'rank-healer' || i.customId == 'rank-hunter') && i.user.id == message.author.id;
-			};
+			const filter = i => i.isButton() && (i.customId == 'rank-healer' || i.customId == 'rank-hunter') && i.user.id == message.author.id;
 
 			const interaction = await botReply
 				.awaitMessageComponent({ filter, time: 30000 })

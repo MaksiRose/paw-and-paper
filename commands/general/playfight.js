@@ -204,21 +204,7 @@ module.exports = {
 			let currentProfileData = (isPartner == true) ? partnerProfileData : profileData;
 			let otherProfileData = (isPartner == true) ? profileData : partnerProfileData;
 
-			const filter = async (i) => {
-
-				if (!i.message.reference || !i.message.reference.messageId) {
-
-					return false;
-				}
-
-				const userMessage = await i.channel.messages
-					.fetch(i.message.reference.messageId)
-					.catch((error) => {
-						throw new Error(error);
-					});
-
-				return userMessage.id == message.id && ((i.customId == 'playfight-confirm' && i.user.id == message.mentions.users.first().id) || (i.customId.includes('board') && i.user.id == currentProfileData.userId));
-			};
+			const filter = i => (i.customId == 'playfight-confirm' && i.user.id == message.mentions.users.first().id) || (i.customId.includes('board') && i.user.id == currentProfileData.userId);
 
 			const interaction = await botReply
 				.awaitMessageComponent({ filter, time: 30000 })

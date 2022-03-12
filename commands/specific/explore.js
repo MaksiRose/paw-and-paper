@@ -406,21 +406,7 @@ module.exports = {
 					}
 				});
 
-			const filter = async (i) => {
-
-				if (!i.message.reference || !i.message.reference.messageId) {
-
-					return false;
-				}
-
-				const userMessage = await i.channel.messages
-					.fetch(i.message.reference.messageId)
-					.catch((error) => {
-						throw new Error(error);
-					});
-
-				return i.user.id == message.author.id && userMessage.id == message.id && (i.customId.includes('plant'));
-			};
+			const filter = i => i.customId.includes('plant') && i.user.id == message.author.id;
 
 			const interaction = await botReply
 				.awaitMessageComponent({ filter, time: 15000 })
@@ -677,21 +663,7 @@ module.exports = {
 					}
 				});
 
-			let filter = async (i) => {
-
-				if (!i.message.reference || !i.message.reference.messageId) {
-
-					return false;
-				}
-
-				const userMessage = await i.channel.messages
-					.fetch(i.message.reference.messageId)
-					.catch((error) => {
-						throw new Error(error);
-					});
-
-				return i.user.id == message.author.id && userMessage.id == message.id && (i.customId === 'enemy-flee' || i.customId === 'enemy-fight');
-			};
+			let filter = i => (i.customId === 'enemy-flee' || i.customId === 'enemy-fight') && i.user.id == message.author.id;
 
 			const interaction = await botReply
 				.awaitMessageComponent({ filter, time: 15000 })
@@ -786,21 +758,7 @@ module.exports = {
 						}
 					});
 
-				filter = async (i) => {
-
-					if (!i.message.reference || !i.message.reference.messageId) {
-
-						return false;
-					}
-
-					const userMessage = await i.channel.messages
-						.fetch(i.message.reference.messageId)
-						.catch((error) => {
-							throw new Error(error);
-						});
-
-					return userMessage.id == message.id && (i.customId == 'fight-attack' || i.customId == 'fight-defend' || i.customId == 'fight-dodge') && i.user.id == message.author.id;
-				};
+				filter = i => (i.customId == 'fight-attack' || i.customId == 'fight-defend' || i.customId == 'fight-dodge') && i.user.id == message.author.id;
 
 				const { customId } = await botReply
 					.awaitMessageComponent({ filter, time: 4000 })
@@ -980,21 +938,7 @@ module.exports = {
 
 			embedArray.splice(-1, 1);
 
-			async function filter(i) {
-
-				if (!i.message.reference || !i.message.reference.messageId) {
-
-					return false;
-				}
-
-				const userMessage = await i.channel.messages
-					.fetch(i.message.reference.messageId)
-					.catch((error) => {
-						throw new Error(error);
-					});
-
-				return userMessage.id == message.id && allBiomesArray.includes(i.customId) && i.user.id == message.author.id;
-			}
+			const filter = i => allBiomesArray.includes(i.customId) && i.user.id == message.author.id;
 
 			return await getBiomeMessage
 				.awaitMessageComponent({ filter, time: 30000 })

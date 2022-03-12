@@ -55,21 +55,7 @@ module.exports = {
 			});
 
 		createCommandCollector(message.author.id, message.guild.id, botReply);
-		const filter = async (i) => {
-
-			if (!i.message.reference || !i.message.reference.messageId) {
-
-				return false;
-			}
-
-			const userMessage = await i.channel.messages
-				.fetch(i.message.reference.messageId)
-				.catch((error) => {
-					throw new Error(error);
-				});
-
-			return userMessage.id == message.id && (i.customId == 'delete-confirm' || i.customId == 'delete-cancel') && i.user.id == message.author.id;
-		};
+		const filter = i => (i.customId == 'delete-confirm' || i.customId == 'delete-cancel') && i.user.id == message.author.id;
 
 		const interaction = await botReply
 			.awaitMessageComponent({ filter, time: 120000 })
