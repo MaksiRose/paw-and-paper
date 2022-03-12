@@ -7,7 +7,8 @@ const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion')
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
 const { checkLevelUp } = require('../../utils/levelHandling');
-const { introduceQuest, startQuest } = require('./quest');
+const { introduceQuest } = require('./quest');
+const { execute } = require('../../events/messageCreate');
 
 module.exports = {
 	name: 'play',
@@ -251,7 +252,20 @@ module.exports = {
 
 			botReply
 				.awaitMessageComponent({ filter, time: 30000 })
-				.then(async () => await startQuest(message, profileData, embedArray, botReply))
+				.then(async interaction => {
+
+					await interaction.message
+						.delete()
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+
+					message.content = `${config.prefix}quest start`;
+
+					return await execute(client, message);
+				})
 				.catch(async () => {
 					return await botReply
 						.edit({ components: [] })

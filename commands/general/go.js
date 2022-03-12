@@ -407,7 +407,7 @@ module.exports = {
 
 				if (interaction.customId.includes('execute')) {
 
-					interaction.message
+					await interaction.message
 						.delete()
 						.catch((error) => {
 							if (error.httpStatus !== 404) {
