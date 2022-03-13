@@ -131,7 +131,7 @@ module.exports = {
 			}
 
 			userMap.get('nr' + message.author.id + message.guild.id).activeCommands += 1;
-			userMap.get('nr' + message.author.id + message.guild.id).activityTimeout = setTimeout(removeActiveUser, 30000);
+			userMap.get('nr' + message.author.id + message.guild.id).activityTimeout = setTimeout(removeActiveUser, 300000);
 
 			await message.channel
 				.sendTyping()
