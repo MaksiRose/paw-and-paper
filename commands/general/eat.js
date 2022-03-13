@@ -5,8 +5,7 @@ const { generateRandomNumber } = require('../../utils/randomizers');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
-const { execute } = require('../../events/messageCreate');
-const config = require('../../config.json');
+const { sendMessage } = require('./inventory');
 
 module.exports = {
 	name: 'eat',
@@ -45,9 +44,8 @@ module.exports = {
 
 		if (!argumentsArray.length) {
 
-			message.content = `${config.prefix}inventory`;
-
-			return await execute(client, message);
+			// I have to call the inventory command directly here instead of executing messageCreate.js, since doing otherwise would always return profileData.hasCooldown as true
+			return await sendMessage(client, message, argumentsArray, profileData, serverData, embedArray);
 		}
 
 		const chosenFood = argumentsArray.join(' ');
@@ -301,8 +299,7 @@ module.exports = {
 			}
 		}
 
-		message.content = `${config.prefix}inventory`;
-
-		return await execute(client, message);
+		// I have to call the inventory command directly here instead of executing messageCreate.js, since doing otherwise would always return profileData.hasCooldown as true
+		return await sendMessage(client, message, argumentsArray, profileData, serverData, embedArray);
 	},
 };
