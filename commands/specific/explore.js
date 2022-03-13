@@ -1,4 +1,5 @@
 const profileModel = require('../../models/profileModel');
+const serverModel = require('../../models/serverModel');
 const startCooldown = require('../../utils/startCooldown');
 const { generateRandomNumber, pullFromWeightedTable, generateRandomNumberWithException } = require('../../utils/randomizers');
 const { pickRandomRarePlant, pickRandomUncommonPlant, pickRandomCommonPlant } = require('../../utils/pickRandomPlant');
@@ -28,7 +29,6 @@ module.exports = {
 		}
 
 		profileData = await startCooldown(message, profileData);
-		const messageContent = remindOfAttack(message);
 
 		if ([...Object.values(profileData.inventoryObject).map(type => Object.values(type))].filter(value => value > 0).length > 25) {
 
@@ -230,6 +230,9 @@ module.exports = {
 		const userInjuryObject = { ...profileData.injuryObject };
 
 
+		serverData = await serverModel.findOne({ serverId: message.guild.id });
+		const messageContent = remindOfAttack(message);
+
 		if (serverData.activeUsersArray.length >= 3 && messageContent == null && serverData.nextPossibleAttack <= Date.now()) {
 
 			await findHumans();
@@ -260,15 +263,14 @@ module.exports = {
 
 			startAttack(message, serverData);
 
-			embed.description = `*${profileData.name} has just been looking around for food when ${profileData.pronouns[0]} suddenly hear${profileData.pronouns[5] == 'singular' ? 's' : ''} voices to ${profileData.pronouns[2]} right. Cautiously ${profileData.pronouns[0]} creep${profileData.pronouns[5] == 'singular' ? 's' : ''} up, and sure enough: a group of humans! They seem to be discussing something, and keep pointing over towards where the pack is lying. Alarmed, the ${profileData.species} runs away. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} must gather as many packmates as possible to protect the pack!*`;
+			embed.description = `*${profileData.name} has just been looking around for food when ${profileData.pronounArray[0]} suddenly hear${profileData.pronounArray[5] == 'singular' ? 's' : ''} voices to ${profileData.pronounArray[2]} right. Cautiously ${profileData.pronounArray[0]} creep${profileData.pronounArray[5] == 'singular' ? 's' : ''} up, and sure enough: a group of humans! They seem to be discussing something, and keep pointing over towards where the pack is lying. Alarmed, the ${profileData.species} runs away. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} must gather as many packmates as possible to protect the pack!*`;
 			embed.footer.text = `${embedFooterStatsText}\n\nYou have one minute to prepare before the humans will attack!`;
 
 			embedArray.splice(-1, 1, embed);
 			return botReply = await message
 				.reply({
-					content: serverData.activeUsersArray.map(user => `<@${user}>`).join(''),
+					content: serverData.activeUsersArray.map(user => `<@${user}>`).join(' '),
 					embeds: embedArray,
-					allowedMentions: { repliedUser: true },
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
