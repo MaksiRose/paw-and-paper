@@ -27,11 +27,13 @@ module.exports = {
 		if (!serverMap.has('nr' + message.guild.id) || serverMap.get('nr' + message.guild.id).startsTimestamp != null) {
 
 			// text that there is no attack
+			return;
 		}
 
 		if (serverMap.get('nr' + message.guild.id).humans <= 0) {
 
 			// text that there all humans are in a fight right now
+			return;
 		}
 
 		profileData = await startCooldown(message, profileData);
@@ -95,7 +97,7 @@ module.exports = {
 
 			if (totalCycles == 0) {
 
-				botReply = await botReply
+				botReply = await message
 					.reply({
 						embeds: embedArray,
 						components: [{
@@ -129,7 +131,7 @@ module.exports = {
 			const filter = i => (i.customId == 'fight-attack' || i.customId == 'fight-defend' || i.customId == 'fight-dodge') && i.user.id == message.author.id;
 
 			const { customId } = await botReply
-				.awaitMessageComponent({ filter, time: 3000 })
+				.awaitMessageComponent({ filter, time: 4000 })
 				.catch(() => { return { customId: null }; });
 
 			if (customId == null || (customId == 'fight-attack' && cycleKind == 'dodge') || (customId == 'fight-defend' && cycleKind == 'attack') || (customId == 'fight-dodge' && cycleKind == 'defend')) {
@@ -189,8 +191,8 @@ module.exports = {
 
 				if (inventoryObject[itemType][itemName] > 0) {
 
-					inventoryObject[itemType][itemName] -= Math.round(inventoryObject[itemType][itemName]);
-					embedFooterStatsText += `\n-${inventoryObject[itemType][itemName]} ${itemType} for ${message.guild.name}`;
+					embedFooterStatsText += `\n\n-${Math.round(inventoryObject[itemType][itemName] / 10)} ${itemName} for ${message.guild.name}`;
+					inventoryObject[itemType][itemName] -= Math.round(inventoryObject[itemType][itemName] / 10);
 				}
 
 				await serverModel.findOneAndUpdate(
@@ -262,7 +264,7 @@ module.exports = {
 			await message.channel
 				.send({
 					embeds: [{
-						color: config.default,
+						color: config.default_color,
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: 'The attack is over!',
 						description: '*The packmates howl, dance and cheer as the humans run back into the woods. The battle wasn\'t easy, but they were victorious nonetheless.*',
@@ -301,9 +303,9 @@ module.exports = {
 
 			await message.channel
 				.send({
-					content: serverData.activeUsersArray.map(user => `<@${user}>`).join(''),
+					content: serverData.activeUsersArray.map(user => `<@!${user}>`).join(' '),
 					embeds: [{
-						color: config.default,
+						color: config.default_color,
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						description: `*The packmates get ready as ${serverMap.get('nr' + message.guild.id).humans} humans run over the borders. Now it is up to them to defend their land.*`,
 						footer: { text: 'You have 5 minutes to defeat all the humans. Type \'rp attack\' to attack one.' },
@@ -344,7 +346,7 @@ module.exports = {
 async function remainingHumans(message, serverData) {
 
 	const embed = {
-		color: config.default,
+		color: config.default_color,
 		author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 		title: 'The attack is over!',
 		description: `*Before anyone could stop them, the last ${serverMap.get('nr' + message.guild.id).humans} humans run into the food den, take whatever they can grab and run away. The battle wasn't easy, but it is over at last.*`,
@@ -358,8 +360,8 @@ async function remainingHumans(message, serverData) {
 
 		if (inventoryObject[itemType][itemName] > 0) {
 
-			inventoryObject[itemType][itemName] -= Math.round(inventoryObject[itemType][itemName]);
-			embed.footer.text += `\n-${inventoryObject[itemType][itemName]} ${itemType} for ${message.guild.name}`;
+			embed.footer.text += `\n-${Math.round(inventoryObject[itemType][itemName] / 10)} ${itemName} for ${message.guild.name}`;
+			inventoryObject[itemType][itemName] -= Math.round(inventoryObject[itemType][itemName] / 10);
 		}
 
 		serverMap.get('nr' + message.guild.id).humans -= 1;
