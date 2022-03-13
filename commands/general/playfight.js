@@ -344,7 +344,7 @@ module.exports = {
 
 								userInjuryObject.infections += 1;
 
-								getHurtText += `PLACEHOLDER *${otherProfileData.name} has enjoyed playing with the ${currentProfileData.species} a lot, but is really tired now. After taking a short nap, ${otherProfileData.pronounArray[0]} notice${(otherProfileData.pronounArray[5] == 'singular') ? 's' : ''} ${otherProfileData.pronounArray[2]} sweaty back and sore throat. Oh no! The ${otherProfileData.species} has caught a cold while playing!* PLACEHOLDER`;
+								getHurtText += `*${otherProfileData.name} has enjoyed the roughhousing, but ${otherProfileData.pronounArray[0]} ${(otherProfileData.pronounArray[5] == 'singular') ? 'is' : 'are'} struck by exhaustion. After taking a short nap, ${otherProfileData.pronounArray[0]} notice${(otherProfileData.pronounArray[5] == 'singular') ? 's' : ''} the rash creeping along ${otherProfileData.pronounArray[2]} back. Oh no! The ${otherProfileData.species} has gotten an infection while playing!*`;
 
 								if (otherProfileData.userId === profileData.userId) {
 
