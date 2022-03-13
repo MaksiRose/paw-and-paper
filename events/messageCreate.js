@@ -43,6 +43,7 @@ module.exports = {
 				inventoryObject: serverInventoryObject,
 				accountsToDelete: {},
 				activeUsersArray: [],
+				nextPossibleAttack: Date.now(),
 			});
 		}
 
