@@ -1,8 +1,12 @@
 const serverModel = require('../../models/serverModel');
+const profileModel = require('../../models/profileModel');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
-const { isInvalid } = require('../../utils/checkValidity');
-const { generateRandomNumberWithException, pullFromWeightedTable } = require('../../utils/randomizers');
+const { decreaseEnergy, decreaseHunger, decreaseThirst, decreaseHealth } = require('../../utils/checkCondition');
+const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
+const { generateRandomNumberWithException, pullFromWeightedTable, generateRandomNumber } = require('../../utils/randomizers');
 const startCooldown = require('../../utils/startCooldown');
+const { checkLevelUp } = require('../../utils/levelHandling');
+const config = require('../../config.json');
 const serverMap = new Map();
 
 
@@ -145,6 +149,28 @@ module.exports = {
 				return await fightCycle(totalCycles, cycleKind);
 			}
 
+			const experiencePoints = generateRandomNumber(10, 11);
+			const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(5, 1) + await decreaseEnergy(profileData));
+			const hungerPoints = await decreaseHunger(profileData);
+			const thirstPoints = await decreaseThirst(profileData);
+
+			profileData = await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{
+					$inc: {
+						experience: +experiencePoints,
+						energy: -energyPoints,
+						hunger: -hungerPoints,
+						thirst: -thirstPoints,
+					},
+				},
+			);
+
+			let embedFooterStatsText = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})${hungerPoints > 0 ? `\n-${hungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})` : ''}${thirstPoints > 0 ? `\n-${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})` : ''}`;
+
+			const userInjuryObject = { ...profileData.injuryObject };
+
+
 			if (winPoints < 0) {
 
 				winPoints = 0;
@@ -154,25 +180,64 @@ module.exports = {
 
 			if (winPoints == 2) {
 
-				// they leave
-				// win-text
+				embed.description = 'Placeholder for winning';
 			}
 			else {
 
-				// take 1-2 things out of inventory
-				// neutral-text
+				const inventoryObject = { ...serverData.inventoryObject };
+				const { itemType, itemName } = getHighestItem(inventoryObject);
+
+				if (inventoryObject[itemType][itemName] > 0) {
+
+					inventoryObject[itemType][itemName] -= Math.round(inventoryObject[itemType][itemName]);
+					embedFooterStatsText += `\n-${inventoryObject[itemType][itemName]} ${itemType} for ${message.guild.name}`;
+				}
+
+				await serverModel.findOneAndUpdate(
+					{ serverId: message.guild.id },
+					{ $set: { inventoryObject: inventoryObject } },
+				);
+
+				embed.description = 'Placeholder for neutral';
 
 				if (winPoints == 0) {
 
-					// get wound or sprain 50/50
-					// loose-text
+					const healthPoints = function(health) { return (profileData.health - health < 0) ? profileData.health : health; }(generateRandomNumber(5, 3));
+
+					await profileModel.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{ $inc: { health: -healthPoints } },
+					);
+
+					switch (pullFromWeightedTable({ 0: 1, 1: 1 })) {
+
+						case 0:
+
+							userInjuryObject.wounds += 1;
+
+							embed.description = 'Placeholder for getting a wound';
+
+							embedFooterStatsText = `-${healthPoints} HP (from wound)\n${embedFooterStatsText}`;
+
+							break;
+
+						default:
+
+							userInjuryObject.sprains += 1;
+
+							embed.description = 'Placeholder for getting a wound';
+
+							embedFooterStatsText = `-${healthPoints} HP (from sprain)\n${embedFooterStatsText}`;
+					}
 				}
 
 				serverMap.get('nr' + message.guild.id).humans += 1;
 			}
 
+			embed.footer.text = embedFooterStatsText + `\n${serverMap.get('nr' + message.guild.id).humans} humans remaining`;
+
 			embedArray.splice(-1, 1, embed);
-			return botReply = await botReply
+			botReply = await botReply
 				.edit({
 					embeds: embedArray,
 					components: [],
@@ -182,25 +247,44 @@ module.exports = {
 						throw new Error(error);
 					}
 				});
+
+			botReply = await decreaseHealth(message, profileData, botReply, userInjuryObject);
+			botReply = await checkLevelUp(profileData, botReply);
+			await isPassedOut(message, profileData, true);
+
+			return;
 		}
 
 		serverMap.get('nr' + message.guild.id).currentFights -= 1;
 
 		if (serverMap.get('nr' + message.guild.id).humans <= 0 && serverMap.get('nr' + message.guild.id).currentFights <= 0) {
 
-			// text that event ended
+			await message.channel
+				.send({
+					embeds: [{
+						color: config.default,
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+						title: 'The attack is over!',
+						description: '*The packmates howl, dance and cheer as the humans run back into the woods. The battle wasn\'t easy, but they were victorious nonetheless.*',
+					}],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
 
 			clearTimeout(serverMap.get('nr' + message.guild.id).endingTimeout);
 			serverMap.delete('nr' + message.guild.id);
 
-			serverModel.findOneAndUpdate(
+			await serverModel.findOneAndUpdate(
 				{ serverId: message.guild.id },
 				{ $set: { nextPossibleAttack: Date.now() + 86400000 } },
 			);
 		}
 		else if (serverMap.get('nr' + message.guild.id).endingTimeout == null && serverMap.get('nr' + message.guild.id).currentFights <= 0) {
 
-			remainingHumans(message);
+			remainingHumans(message, serverData);
 		}
 	},
 	startAttack(message, serverData) {
@@ -208,17 +292,22 @@ module.exports = {
 		serverMap.set('nr' + message.guild.id, { startsTimestamp: Date.now() + 60000, humans: serverData.activeUsersArray.length, endingTimeout: null, currentFights: 0 });
 		setTimeout(async function() {
 
-			serverData = serverModel.findOne({ serverId: message.guild.id });
+			serverData = await serverModel.findOne({ serverId: message.guild.id });
 
 			if (serverData.activeUsersArray.length > serverMap.get('nr' + message.guild.id).humans) {
 
 				serverMap.get('nr' + message.guild.id).humans = serverData.activeUsersArray.length;
 			}
 
-			// change from content to embed, and add mentions of active users to content
 			await message.channel
 				.send({
-					content: `${serverMap.get('nr' + message.guild.id).humans} humans are attacking the pack! You have 5 minutes to defeat them. Type 'rp attack' to attack.`,
+					content: serverData.activeUsersArray.map(user => `<@${user}>`).join(''),
+					embeds: [{
+						color: config.default,
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+						description: `*The packmates get ready as ${serverMap.get('nr' + message.guild.id).humans} humans run over the borders. Now it is up to them to defend their land.*`,
+						footer: { text: 'You have 5 minutes to defeat all the humans. Type \'rp attack\' to attack one.' },
+					}],
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -232,7 +321,7 @@ module.exports = {
 				serverMap.get('nr' + message.guild.id).endingTimeout = null;
 				if (serverMap.get('nr' + message.guild.id).currentFights <= 0) {
 
-					remainingHumans(message);
+					remainingHumans(message, serverData);
 				}
 			}, 300000);
 		}, 60000);
@@ -252,16 +341,62 @@ module.exports = {
 	},
 };
 
-function remainingHumans(message) {
+async function remainingHumans(message, serverData) {
 
-	// for each remaining humans, take 2-3 things out of the inventory
+	const embed = {
+		color: config.default,
+		author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+		title: 'The attack is over!',
+		description: `*Before anyone could stop them, the last ${serverMap.get('nr' + message.guild.id).humans} humans run into the food den, take whatever they can grab and run away. The battle wasn't easy, but it is over at last.*`,
+		footer: { text: '' },
+	};
 
-	// text that event ended and that the remaining humans stole stuff
+	const inventoryObject = { ...serverData.inventoryObject };
+	while (serverMap.get('nr' + message.guild.id).humans > 0) {
+
+		const { itemType, itemName } = getHighestItem(inventoryObject);
+
+		if (inventoryObject[itemType][itemName] > 0) {
+
+			inventoryObject[itemType][itemName] -= Math.round(inventoryObject[itemType][itemName]);
+			embed.footer.text += `\n-${inventoryObject[itemType][itemName]} ${itemType} for ${message.guild.name}`;
+		}
+
+		serverMap.get('nr' + message.guild.id).humans -= 1;
+	}
+
+	if (embed.footer.text == '') {
+
+		embed.footer.text = null;
+	}
+
+	await serverModel.findOneAndUpdate(
+		{ serverId: message.guild.id },
+		{
+			$set: {
+				inventoryObject: inventoryObject,
+				nextPossibleAttack: Date.now() + 86400000,
+			},
+		},
+	);
+
+	await message.channel
+		.send({ embeds: [embed] })
+		.catch((error) => {
+			if (error.httpStatus !== 404) {
+				throw new Error(error);
+			}
+		});
 
 	serverMap.delete('nr' + message.guild.id);
+}
 
-	serverModel.findOneAndUpdate(
-		{ serverId: message.guild.id },
-		{ $set: { nextPossibleAttack: Date.now() + 86400000 } },
-	);
+function getHighestItem(inventoryObject) {
+
+	const inventoryReduced = {};
+	Object.entries(inventoryObject).map(([itemType, items]) => inventoryReduced[itemType] = Math.max(...Object.values(items)));
+	const itemType = Object.keys(inventoryReduced).reduce((a, b) => inventoryReduced[a] > inventoryReduced[b] ? a : b);
+	const itemName = Object.keys(inventoryObject[itemType]).reduce((a, b) => inventoryObject[itemType][a] > inventoryObject[itemType][b] ? a : b);
+
+	return { itemType, itemName };
 }
