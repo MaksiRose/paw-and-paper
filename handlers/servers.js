@@ -35,6 +35,9 @@ module.exports = {
 						inventoryObject: dataObject.inventoryObject,
 						activeUsersArray: [],
 					},
+					$add: {
+						nextPossibleAttack: Date.now(),
+					},
 				},
 			);
 		}

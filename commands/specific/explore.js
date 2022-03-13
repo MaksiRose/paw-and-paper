@@ -230,7 +230,7 @@ module.exports = {
 		const userInjuryObject = { ...profileData.injuryObject };
 
 
-		if (serverData.activeUsersArray.length >= 3 && messageContent == null) {
+		if (serverData.activeUsersArray.length >= 3 && messageContent == null && serverData.nextPossibleAttack <= Date.now()) {
 
 			await findHumans();
 		}
@@ -258,9 +258,9 @@ module.exports = {
 
 		async function findHumans() {
 
-			startAttack(message);
+			startAttack(message, serverData);
 
-			embed.description = '*Maksi hat sich nur nach Futter umgeschaut, als sie plötzlich Stimmen zu ihrer Rechten hört. Vorsichtig schleicht sie sich heran, und tatsächlich: eine Gruppe Menschen! Sie scheinen etwas zu besprechen, und zeigen immer wieder herueber in die Richtung, in der das Pack liegt. Erschrocken rennt die Katze davon. Sie muss so viele Packmates wie möglich zusammenrufen, um das Pack zu beschuetzen!*';
+			embed.description = `*${profileData.name} has just been looking around for food when ${profileData.pronouns[0]} suddenly hear${profileData.pronouns[5] == 'singular' ? 's' : ''} voices to ${profileData.pronouns[2]} right. Cautiously ${profileData.pronouns[0]} creep${profileData.pronouns[5] == 'singular' ? 's' : ''} up, and sure enough: a group of humans! They seem to be discussing something, and keep pointing over towards where the pack is lying. Alarmed, the ${profileData.species} runs away. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} must gather as many packmates as possible to protect the pack!*`;
 			embed.footer.text = `${embedFooterStatsText}\n\nYou have one minute to prepare before the humans will attack!`;
 
 			embedArray.splice(-1, 1, embed);
