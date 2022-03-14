@@ -1,6 +1,5 @@
 const profileModel = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
-const config = require('../../config.json');
 const startCooldown = require('../../utils/startCooldown');
 const { generateRandomNumber } = require('../../utils/randomizers');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
@@ -48,44 +47,39 @@ module.exports = {
 				});
 		}
 
-		let allHurtProfilesArray = (await profileModel.find({
-			serverId: message.guild.id,
-			$or: [
-				{ energy: 0 },
-				{ health: 0 },
-				{ hunger: 0 },
-				{ thirst: 0 },
-				{ injuryObject: {
-					$or: [
-						{ wounds: { $gt: 0 } },
-						{ infections: { $gt: 0 } },
-						{ cold: true },
-						{ sprains: { $gt: 0 } },
-						{ poison: true },
-					],
-				},
-				},
-			],
-		})).map(user => user.userId);
+		let
+			allHurtProfilesList = null,
+			currentUserPage = 0,
+			userSelectMenu = await getUserSelectMenu(),
+			chosenUser = message.mentions.users.size > 0 ? message.mentions.users.first() : allHurtProfilesList.length == 1 ? await client.users.fetch(allHurtProfilesList[0]).catch((error) => { throw new Error(error); }) : null,
+			botReply = null,
+			chosenProfileData = null;
 
-		let userSelectMenu = await getUserSelectMenu();
+		if (chosenUser === null) {
 
-		const embedArrayOriginalLength = embedArray.length;
-		let currentUserPage = 0;
-		let botReply;
-		let chosenProfileData;
-		let chosenUser = message.mentions.users.size > 0 ? message.mentions.users.first() : allHurtProfilesArray.length == 1 ? await client.users.fetch(allHurtProfilesArray[0]).catch((error) => {throw new Error(error);}) : null;
-
-		if (!chosenUser) {
-
-			await getUserList();
+			botReply = await message
+				.reply({
+					content: messageContent,
+					embeds: [...embedArray, {
+						color: profileData.color,
+						author: { name: profileData.name, icon_url: profileData.avatarURL },
+						description: `*${profileData.name} sits in front of the medicine den, looking if anyone needs help with injuries or illnesses.*`,
+					}],
+					components: allHurtProfilesList.length > 0 ? [userSelectMenu] : [],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
 		}
 		else {
 
 			await getWoundList(chosenUser);
 		}
 
-		if (userSelectMenu.components[0].options.length == 0) {
+
+		if (userSelectMenu.components[0].options.length === 0) {
 
 			return;
 		}
@@ -95,18 +89,44 @@ module.exports = {
 
 		async function interactionCollector() {
 
-			const filter = i => i.user.id == message.author.id;
+			const filter = i => i.user.id === message.author.id;
 
 			const interaction = await botReply
 				.awaitMessageComponent({ filter, time: 60000 })
 				.catch(() => { return null; });
 
-			if (interaction == null) {
+			if (interaction === null) {
 
-				return await botReply
+				await botReply
 					.edit({
 						components: [],
 					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
+				return;
+			}
+
+			if (interaction.values[0] === 'heal_user_page') {
+
+				const pagesAmount = Math.ceil(allHurtProfilesList.length / 24);
+
+				currentUserPage++;
+				if (currentUserPage >= pagesAmount) {
+
+					currentUserPage = 0;
+				}
+
+				userSelectMenu = await getUserSelectMenu();
+
+				const componentArray = interaction.message.components;
+				await componentArray.splice(0, 1, userSelectMenu);
+
+				botReply = await interaction.message
+					.edit({ components: componentArray })
 					.catch((error) => {
 						if (error.httpStatus !== 404) {
 							throw new Error(error);
@@ -116,108 +136,33 @@ module.exports = {
 
 			userSelectMenu = await getUserSelectMenu();
 
-			if (allHurtProfilesArray.includes(interaction.values[0])) {
+			if (allHurtProfilesList.includes(interaction.values[0])) {
 
 				chosenProfileData = await profileModel.findOne({
 					userId: interaction.values[0],
 					serverId: message.guild.id,
 				});
 
-				if (chosenProfileData.name === '' || chosenProfileData.species === '') {
-
-					embedArray.length = embedArrayOriginalLength;
-					embedArray.push({
-						color: config.error_color,
-						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						title: 'The mentioned user has no account or the account was not completed!',
-					});
-
-					allHurtProfilesArray.splice(allHurtProfilesArray.indexOf(interaction.values[0]), 1);
-
-					botReply = await interaction.message
-						.edit({
-							embeds: embedArray,
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
-						});
-				}
-				else {
-					chosenUser = await client.users
-						.fetch(interaction.values[0])
-						.catch((error) => {
-							throw new Error(error);
-						});
-
-					getWoundList(chosenUser);
-				}
-			}
-
-			if (interaction.values[0] == 'heal_user_page') {
-
-				const pagesAmount = Math.ceil(allHurtProfilesArray.length / 24);
-
-				currentUserPage++;
-				if (currentUserPage >= pagesAmount) {
-
-					currentUserPage = 0;
-				}
-
-				userSelectMenu.components[0].options.length = 0;
-
-				for (let i = 0 + (currentUserPage * 24); i < 24 + (currentUserPage * 24) && i < allHurtProfilesArray.length; i++) {
-
-					const user = await client.users
-						.fetch(allHurtProfilesArray[i])
-						.catch((error) => {
-							throw new Error(error);
-						});
-
-					const userProfileData = await profileModel.findOne({
-						userId: user.id,
-						serverId: message.guild.id,
-					});
-
-					userSelectMenu.components[0].options.push({ label: userProfileData.name, value: user.id });
-				}
-
-				userSelectMenu.components[0].options.push({ lavel: 'Show more user options', value: 'heal_user_page', description: `You are currently on page ${currentUserPage + 1}`, emoji: '📋' });
-
-				const componentArray = interaction.message.components;
-				await componentArray.splice(0, 1, userSelectMenu);
-
-				botReply = await interaction.message
-					.edit({
-						components: componentArray,
-					})
+				chosenUser = await client.users
+					.fetch(interaction.values[0])
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						throw new Error(error);
 					});
+
+				getWoundList(chosenUser);
 			}
 
-			if (interaction.values[0] == 'heal-page1') {
+			if (interaction.customId === 'healpage-1') {
 
 				const { embed, selectMenu } = getFirstHealPage();
-
-				embedArray.length = embedArrayOriginalLength + 1;
-				embedArray.push(embed);
 
 				interaction.message.components.length = 2;
 				const componentArray = interaction.message.components;
 
-				if (selectMenu.components[0].options.length > 0) {
-
-					await componentArray.push(selectMenu);
-				}
-
 				botReply = await interaction.message
 					.edit({
-						embeds: embedArray,
-						components: componentArray,
+						embeds: [...embedArray, embed],
+						components: selectMenu.components[0].options.length > 0 ? [...componentArray, selectMenu] : componentArray,
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) {
@@ -226,7 +171,7 @@ module.exports = {
 					});
 			}
 
-			if (interaction.values[0] == 'heal-page2') {
+			if (interaction.customId === 'healpage-2') {
 
 				const embed = {
 					color: profileData.color,
@@ -239,11 +184,14 @@ module.exports = {
 					type: 'ACTION_ROW',
 					components: [{
 						type: 'SELECT_MENU',
-						customId: 'heal-options2',
+						customId: 'heal-options-2',
 						placeholder: 'Select an item',
 						options: [],
 					}],
 				};
+
+				embed.fields.push({ name: 'water', value: 'Found lots and lots of in the river that flows through the pack!', inline: true });
+				selectMenu.components[0].options.push({ label: 'water', value: 'water' });
 
 				for (const [uncommonPlantName, uncommonPlantObject] of [...uncommonPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
@@ -263,20 +211,13 @@ module.exports = {
 					}
 				}
 
-				embed.fields.push({ name: 'water', value: 'Found lots and lots of in the river that flows through the pack!', inline: true });
-				selectMenu.components[0].options.push({ label: 'water', value: 'water' });
-
-				embedArray.length = embedArrayOriginalLength + 1;
-				embedArray.push(embed);
-
 				interaction.message.components.length = 2;
 				const componentArray = interaction.message.components;
-				await componentArray.push(selectMenu);
 
 				botReply = await interaction.message
 					.edit({
-						embeds: embedArray,
-						components: componentArray,
+						embeds: [...embedArray, embed],
+						components: [...componentArray, selectMenu],
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) {
@@ -285,18 +226,18 @@ module.exports = {
 					});
 			}
 
-			if (commonPlantsMap.has(interaction.values[0]) || uncommonPlantsMap.has(interaction.values[0]) || rarePlantsMap.has(interaction.values[0]) || interaction.values[0] == 'water') {
+			if (commonPlantsMap.has(interaction.values[0]) || uncommonPlantsMap.has(interaction.values[0]) || rarePlantsMap.has(interaction.values[0]) || interaction.values[0] === 'water') {
 
-				if (!allHurtProfilesArray.includes(chosenProfileData.userId)) {
-
-					embedArray.length = embedArrayOriginalLength;
-					embedArray.push({
-						color: profileData.color,
-						title: `${chosenProfileData.name} doesn't need to be healed anymore. Please select another user to heal if available.`,
-					});
+				if (allHurtProfilesList.includes(chosenProfileData.userId) === false) {
 
 					botReply = await interaction.message
-						.edit({ embeds: embedArray, components: userSelectMenu.components[0].options.length > 0 ? [userSelectMenu] : [] })
+						.edit({
+							embeds: [...embedArray, {
+								color: profileData.color,
+								title: `${chosenProfileData.name} doesn't need to be healed anymore. Please select another user to heal if available.`,
+							}],
+							components: userSelectMenu.components[0].options.length > 0 ? [userSelectMenu] : [],
+						})
 						.catch((error) => {
 							if (error.httpStatus !== 404) {
 								throw new Error(error);
@@ -324,7 +265,7 @@ module.exports = {
 					footer: { text: '' },
 				};
 
-				if (interaction.values[0] == 'water') {
+				if (interaction.values[0] === 'water') {
 
 					if (chosenProfileData.thirst > 0) {
 
@@ -333,7 +274,7 @@ module.exports = {
 							userHasChangedCondition = true;
 						}
 
-						if (profileData.userId == chosenProfileData.userId) {
+						if (profileData.userId === chosenProfileData.userId) {
 
 							embed.description = `*${profileData.name} thinks about just drinking some water, but that won't help with ${profileData.pronounArray[2]} issues...*"`;
 
@@ -399,7 +340,7 @@ module.exports = {
 					let embedFooterChosenUserStatsText = '';
 					let embedFooterChosenUserInjuryText = '';
 
-					if (plantMap.get(interaction.values[0]).edibality == 'e') {
+					if (plantMap.get(interaction.values[0]).edibality === 'e') {
 
 						if (chosenProfileData.hunger <= 0) {
 
@@ -410,12 +351,12 @@ module.exports = {
 							userHasChangedCondition = true;
 						}
 
-						if (speciesMap.get(profileData.species).diet == 'carnivore') {
+						if (speciesMap.get(profileData.species).diet === 'carnivore') {
 
 							chosenUserHungerPoints = 1;
 						}
 
-						if (speciesMap.get(profileData.species).diet == 'herbivore' || speciesMap.get(profileData.species).diet == 'omnivore') {
+						if (speciesMap.get(profileData.species).diet === 'herbivore' || speciesMap.get(profileData.species).diet === 'omnivore') {
 
 							chosenUserHungerPoints = 5;
 						}
@@ -440,7 +381,7 @@ module.exports = {
 						userHasChangedCondition = true;
 					}
 
-					if (plantMap.get(interaction.values[0]).healsWounds == true) {
+					if (plantMap.get(interaction.values[0]).healsWounds === true) {
 
 						if (chosenUserInjuryObject.wounds > 0) {
 
@@ -454,7 +395,7 @@ module.exports = {
 						}
 					}
 
-					if (plantMap.get(interaction.values[0]).healsInfections == true) {
+					if (plantMap.get(interaction.values[0]).healsInfections === true) {
 
 						if (chosenUserInjuryObject.infections > 0) {
 
@@ -468,7 +409,7 @@ module.exports = {
 						}
 					}
 
-					if (plantMap.get(interaction.values[0]).healsColds == true) {
+					if (plantMap.get(interaction.values[0]).healsColds === true) {
 
 						if (chosenUserInjuryObject.cold == true) {
 
@@ -482,7 +423,7 @@ module.exports = {
 						}
 					}
 
-					if (plantMap.get(interaction.values[0]).healsSprains == true) {
+					if (plantMap.get(interaction.values[0]).healsSprains === true) {
 
 						if (chosenUserInjuryObject.sprains > 0) {
 
@@ -496,7 +437,7 @@ module.exports = {
 						}
 					}
 
-					if (plantMap.get(interaction.values[0]).healsPoison == true) {
+					if (plantMap.get(interaction.values[0]).healsPoison === true) {
 
 						if (chosenUserInjuryObject.poison == true) {
 
@@ -510,7 +451,7 @@ module.exports = {
 						}
 					}
 
-					if (plantMap.get(interaction.values[0]).givesEnergy == true) {
+					if (plantMap.get(interaction.values[0]).givesEnergy === true) {
 
 						if (chosenProfileData.energy <= 0) {
 
@@ -536,20 +477,20 @@ module.exports = {
 						{ $set: { inventoryObject: serverData.inventoryObject } },
 					);
 
-					if (isSuccessful == true && chosenProfileData.userId == profileData.userId && generateRandomNumber(100 + ((profileData.levels - 1) * 5), 1) <= 60) {
+					if (isSuccessful === true && chosenProfileData.userId === profileData.userId && generateRandomNumber(100 + ((profileData.levels - 1) * 5), 1) <= 60) {
 
 						isSuccessful = false;
 					}
-					else if (isSuccessful == false && userHasChangedCondition == true) {
-
-						embedArray.length = embedArrayOriginalLength;
-						embedArray.push({
-							color: profileData.color,
-							title: `${chosenProfileData.name}'s stats/illnesses/injuries changed before you healed them. Please try again.`,
-						});
+					else if (isSuccessful === false && userHasChangedCondition === true) {
 
 						botReply = await interaction.message
-							.edit({ embeds: embedArray, components: userSelectMenu.components[0].options.length > 0 ? [userSelectMenu] : [] })
+							.edit({
+								embeds: [...embedArray, {
+									color: profileData.color,
+									title: `${chosenProfileData.name}'s stats/illnesses/injuries changed before you healed them. Please try again.`,
+								}],
+								components: userSelectMenu.components[0].options.length > 0 ? [userSelectMenu] : [],
+							})
 							.catch((error) => {
 								if (error.httpStatus !== 404) {
 									throw new Error(error);
@@ -562,7 +503,7 @@ module.exports = {
 					const embedFooterStatsText = await decreaseStats();
 					const chosenItemName = interaction.values[0];
 
-					if (isSuccessful == true) {
+					if (isSuccessful === true) {
 
 						let chosenUserHealthPoints = generateRandomNumber(10, 6);
 						if (chosenProfileData.health + chosenUserHealthPoints > chosenProfileData.maxHealth) {
@@ -582,7 +523,7 @@ module.exports = {
 							},
 						);
 
-						if (chosenProfileData.userId == profileData.userId) {
+						if (chosenProfileData.userId === profileData.userId) {
 
 							userInjuryObject = chosenUserInjuryObject;
 
@@ -602,7 +543,7 @@ module.exports = {
 					}
 					else {
 
-						if (chosenProfileData.userId == profileData.userId) {
+						if (chosenProfileData.userId === profileData.userId) {
 
 							embed.description = `*${profileData.name} holds the ${chosenItemName} in ${profileData.pronounArray[2]} mouth, trying to find a way to apply it. After a few attempts, the herb breaks into little pieces, rendering it useless. Guess ${profileData.pronounArray[0]} ${(profileData.pronounArray[5] == 'singular') ? 'has' : 'have'} to try again...*`;
 						}
@@ -615,10 +556,9 @@ module.exports = {
 					}
 				}
 
-				embedArray.length = embedArrayOriginalLength;
 				embedArray.push(embed);
 
-				if (chosenProfileData.injuryObject.cold == true && chosenProfileData.userId != profileData.userId && profileData.injuryObject.cold == false && generateRandomNumber(10, 1 <= 3)) {
+				if (chosenProfileData.injuryObject.cold === true && chosenProfileData.userId !== profileData.userId && profileData.injuryObject.cold === false && generateRandomNumber(10, 1 <= 3)) {
 
 					healthPoints = generateRandomNumber(5, 3);
 
@@ -651,7 +591,7 @@ module.exports = {
 
 				botReply = await message
 					.reply({
-						content: (chosenProfileData.userId != profileData.userId ? `<@!${chosenProfileData.userId}>\n` : null) + (messageContent == null ? '' : messageContent),
+						content: (chosenProfileData.userId != profileData.userId ? `<@!${chosenProfileData.userId}>\n` : '') + (messageContent === null ? '' : messageContent),
 						embeds: embedArray,
 					})
 					.catch((error) => {
@@ -704,9 +644,13 @@ module.exports = {
 			return footerStats;
 		}
 
+		/**
+		 * updates allHurtProfilesArray, then iterates through it to find users who need to be healed
+		 * @returns {object} selectMenu - object for message component
+		 */
 		async function getUserSelectMenu() {
 
-			allHurtProfilesArray = (await profileModel.find({
+			allHurtProfilesList = (await profileModel.find({
 				serverId: message.guild.id,
 				$or: [
 					{ energy: 0 },
@@ -736,16 +680,10 @@ module.exports = {
 				}],
 			};
 
-			for (let i = 0; i < allHurtProfilesArray.length; i++) {
-
-				const user = await client.users
-					.fetch(allHurtProfilesArray[i])
-					.catch((error) => {
-						throw new Error(error);
-					});
+			for (let i = currentUserPage * 24; i < allHurtProfilesList.length; i++) {
 
 				const userProfileData = await profileModel.findOne({
-					userId: user.id,
+					userId: allHurtProfilesList[i],
 					serverId: message.guild.id,
 				});
 
@@ -757,40 +695,31 @@ module.exports = {
 					selectMenu.components[0].options.push({ lavel: 'Show more user options', value: 'heal_user_page', description: 'You are currently on page 1', emoji: '📋' });
 				}
 
-				selectMenu.components[0].options.push({ label: userProfileData.name, value: user.id });
+				selectMenu.components[0].options.push({ label: userProfileData.name, value: allHurtProfilesList[i] });
 			}
 
 			return selectMenu;
 		}
 
-		async function getUserList() {
-
-			const componentArray = [];
-
-			if (allHurtProfilesArray.length > 0) {
-
-				componentArray.push(userSelectMenu);
-			}
-
-			embedArray.push({
-				color: profileData.color,
-				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*${profileData.name} sits in front of the medicine den, looking if anyone needs help with injuries or illnesses.*`,
-			});
-
-			botReply = await message
-				.reply({
-					content: messageContent,
-					embeds: embedArray, components: componentArray,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-		}
 
 		async function getWoundList(healUser) {
+
+			const pageButtons = {
+				type: 'ACTION_ROW',
+				components: [{
+					type: 'BUTTON',
+					customId: 'healpage-1',
+					label: 'Page 1',
+					emoji: { name: '🌱' },
+					style: 'SECONDARY',
+				}, {
+					type: 'BUTTON',
+					customId: 'healpage-2',
+					label: 'Page 2',
+					emoji: { name: '🍀' },
+					style: 'SECONDARY',
+				}],
+			};
 
 			chosenProfileData = await profileModel.findOne({
 				userId: healUser.id,
@@ -809,28 +738,15 @@ module.exports = {
 			healUserConditionText += (chosenProfileData.injuryObject.sprains > 0) ? `\nSprains: ${chosenProfileData.injuryObject.sprains}` : '';
 			healUserConditionText += (chosenProfileData.injuryObject.poison == true) ? '\nPoison: yes' : '';
 
-			const inventoryPageSelectMenu = {
-				type: 'ACTION_ROW',
-				components: [{
-					type: 'SELECT_MENU',
-					customId: 'heal-pages',
-					placeholder: 'Select an inventory page',
-					options: [
-						{ label: 'Page 1', value: 'heal-page1', description: 'common herbs', emoji: '🌱' },
-						{ label: 'Page 2', value: 'heal-page2', description: 'uncommon & rare herbs', emoji: '🍀' },
-					],
-				}],
-			};
-
 			const embed = {
 				color: profileData.color,
 				description: '',
 				footer: { text: '' },
 			};
 
-			if (chosenProfileData.userId == profileData.userId) {
+			if (chosenProfileData.userId === profileData.userId) {
 
-				embed.description = `*${profileData.name} pushes aside the leaves acting as the entrance to the healer's den. With tired eyes they inspect the rows of herbs, hoping to find one that can ease their pain.*`;
+				embed.description = `*${profileData.name} pushes aside the leaves acting as the entrance to the healer's den. With tired eyes ${profileData.pronounArray[0]} inspect${profileData.pronounArray[5] == 'singular' ? 's' : ''} the rows of herbs, hoping to find one that can ease ${profileData.pronounArray[2]} pain.*`;
 				embed.footer.text = `${chosenProfileData.name}'s stats/illnesses/injuries:${healUserConditionText}`;
 			}
 			else if (chosenProfileData.energy <= 0 || chosenProfileData.health <= 0 || chosenProfileData.hunger <= 0 || chosenProfileData.thirst <= 0) {
@@ -838,7 +754,7 @@ module.exports = {
 				embed.description = `*${profileData.name} runs towards the pack borders, where ${chosenProfileData.name} lies, only barely conscious. The ${profileData.rank.toLowerCase()} immediately looks for the right herbs to help the ${chosenProfileData.species}.*`;
 				embed.footer.text = `${chosenProfileData.name}'s stats/illnesses/injuries:${healUserConditionText}`;
 			}
-			else if (Object.values(chosenProfileData.injuryObject).some((element) => element > 0)) {
+			else if (Object.values(chosenProfileData.injuryObject).some(element => element > 0)) {
 
 				embed.description = `*${chosenProfileData.name} enters the medicine den with tired eyes.* "Please help me!" *${chosenProfileData.pronounArray[0]} say${(chosenProfileData.pronounArray[5] == 'singular') ? 's' : ''}, ${chosenProfileData.pronounArray[2]} face contorted in pain. ${profileData.name} looks up with worry.* "I'll see what I can do for you."`;
 				embed.footer.text = `${chosenProfileData.name}'s stats/illnesses/injuries:${healUserConditionText}`;
@@ -847,31 +763,30 @@ module.exports = {
 
 				embed.description = `*${profileData.name} approaches ${chosenProfileData.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${profileData.species} asks.\n${chosenProfileData.name} shakes ${chosenProfileData.pronounArray[2]} head.* "Not that I know of, no."\n*Disappointed, ${profileData.name} goes back to the medicine den.*`;
 
-				embedArray.push(embed);
-
-				return botReply = await message
+				botReply = await message
 					.reply({
 						content: messageContent,
-						embeds: embedArray, components: [userSelectMenu],
+						embeds: [...embedArray, embed],
+						components: [userSelectMenu],
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) {
 							throw new Error(error);
 						}
 					});
+
+				return;
 			}
 
 			const { embed: embed2, selectMenu } = getFirstHealPage();
 
-			embedArray.length = embedArrayOriginalLength;
-			embedArray.push(embed, embed2);
+			if (botReply === null) {
 
-			if (!botReply) {
-
-				return botReply = await message
+				botReply = await message
 					.reply({
 						content: messageContent,
-						embeds: embedArray, components: [userSelectMenu, inventoryPageSelectMenu, selectMenu],
+						embeds: [...embedArray, embed, embed2],
+						components: [userSelectMenu, pageButtons, selectMenu],
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) {
@@ -881,9 +796,10 @@ module.exports = {
 			}
 			else {
 
-				return botReply = await botReply
+				botReply = await botReply
 					.edit({
-						embeds: embedArray, components: [userSelectMenu, inventoryPageSelectMenu, selectMenu],
+						embeds: [...embedArray, embed, embed2],
+						components: [userSelectMenu, pageButtons, selectMenu],
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) {
@@ -891,6 +807,8 @@ module.exports = {
 						}
 					});
 			}
+
+			return;
 		}
 
 		function getFirstHealPage() {
@@ -906,7 +824,7 @@ module.exports = {
 				type: 'ACTION_ROW',
 				components: [{
 					type: 'SELECT_MENU',
-					customId: 'heal-options1',
+					customId: 'heal-options-1',
 					placeholder: 'Select an item',
 					options: [],
 				}],
