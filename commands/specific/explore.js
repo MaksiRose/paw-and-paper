@@ -443,21 +443,7 @@ module.exports = {
 
 			if (interaction == null || interaction.customId === 'plant-leave') {
 
-				if (userSpeciesMap.habitat == 'warm') {
-
-					embed.description = '*Placeholder*';
-				}
-
-				if (userSpeciesMap.habitat == 'cold') {
-
-					embed.description = '*Placeholder*';
-				}
-
-				if (userSpeciesMap.habitat == 'water') {
-
-					embed.description = '*Placeholder*';
-				}
-
+				embed.description = `*After thinking about it for a moment, ${profileData.name} decides ${profileData.pronounArray[0]} ${profileData.pronounArray[5] == 'singular' ? 'is' : 'are'} too tired to focus on picking up the plant. It's better to leave it there in case another pack member comes along.*`;
 				embed.footer.text = `${embedFooterStatsText}`;
 
 				embedArray.splice(-1, 1, embed);
