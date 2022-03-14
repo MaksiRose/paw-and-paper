@@ -52,7 +52,7 @@ module.exports = {
 				.send({
 					embeds: [{
 						color: config.default_color,
-						title: `**New release: ${pjson.version} 🎉🥳🎈**`,
+						title: `**New release: ${pjson.version} 🎉🥳🎈🎊**`,
 						description: argumentsArray.join(' '),
 						footer: { text: 'You can change if you want updates for new releases by clicking the button below.' },
 					}],
@@ -72,5 +72,13 @@ module.exports = {
 					}
 				});
 		}
+
+		await message
+			.reply({ content: 'Yaay! 🎉🥳🎈🎊' })
+			.catch((error) => {
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
+			});
 	},
 };
