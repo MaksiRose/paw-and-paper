@@ -5,13 +5,13 @@ module.exports = {
 
 	stopResting(userId, guildId) {
 
-		clearTimeout(restingTimeoutMap.set('nr' + userId + guildId));
+		clearTimeout(restingTimeoutMap.get('nr' + userId + guildId));
 	},
 
 	async startResting(message, profileData, botReply) {
 
 		let energyPoints = 0;
-		restingTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await addEnergy, 30000));
+		restingTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(addEnergy, 30000));
 
 		async function addEnergy() {
 
