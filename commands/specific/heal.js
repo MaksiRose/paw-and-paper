@@ -589,9 +589,11 @@ module.exports = {
 						}
 					});
 
+				const content = (chosenProfileData.userId != profileData.userId ? `<@!${chosenProfileData.userId}>\n` : '') + (messageContent === null ? '' : messageContent);
+
 				botReply = await message
 					.reply({
-						content: (chosenProfileData.userId != profileData.userId ? `<@!${chosenProfileData.userId}>\n` : '') + (messageContent === null ? '' : messageContent),
+						content: content === '' ? null : content,
 						embeds: embedArray,
 					})
 					.catch((error) => {
