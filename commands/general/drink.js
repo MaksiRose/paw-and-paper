@@ -4,6 +4,7 @@ const startCooldown = require('../../utils/startCooldown');
 const { generateRandomNumber } = require('../../utils/randomizers');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
+const { remindOfAttack } = require('../specific/attack');
 
 module.exports = {
 	name: 'drink',
@@ -20,6 +21,7 @@ module.exports = {
 		}
 
 		profileData = await startCooldown(message, profileData);
+		const messageContent = remindOfAttack(message);
 
 		if (profileData.thirst >= profileData.maxThirst) {
 
@@ -31,6 +33,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -56,6 +59,7 @@ module.exports = {
 
 		const botReply = await message
 			.reply({
+				content: messageContent,
 				embeds: embedArray,
 				components: [{
 					type: 'ACTION_ROW',

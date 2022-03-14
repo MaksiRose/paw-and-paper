@@ -9,6 +9,7 @@ const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = requi
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { introduceQuest } = require('./quest');
 const { execute } = require('../../events/messageCreate');
+const { remindOfAttack } = require('./attack');
 
 module.exports = {
 	name: 'play',
@@ -25,6 +26,7 @@ module.exports = {
 		}
 
 		profileData = await startCooldown(message, profileData);
+		const messageContent = remindOfAttack(message);
 
 		if ([...Object.values(profileData.inventoryObject).map(type => Object.values(type))].filter(value => value > 0).length > 25) {
 
@@ -37,6 +39,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -56,6 +59,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -75,6 +79,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -222,6 +227,7 @@ module.exports = {
 
 				return await message
 					.reply({
+						content: messageContent,
 						embeds: embedArray,
 					})
 					.catch((error) => {
@@ -291,6 +297,7 @@ module.exports = {
 
 				return botReply = await message
 					.reply({
+						content: messageContent,
 						embeds: embedArray,
 					})
 					.catch((error) => {
@@ -338,6 +345,7 @@ module.exports = {
 
 				return botReply = await message
 					.reply({
+						content: messageContent,
 						embeds: embedArray,
 					})
 					.catch((error) => {
@@ -376,6 +384,7 @@ module.exports = {
 
 			return botReply = await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -450,6 +459,7 @@ module.exports = {
 
 			return botReply = await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {

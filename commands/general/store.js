@@ -5,6 +5,7 @@ const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = requir
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
+const { remindOfAttack } = require('../specific/attack');
 
 module.exports = {
 	name: 'store',
@@ -21,6 +22,7 @@ module.exports = {
 		}
 
 		profileData = await startCooldown(message, profileData);
+		const messageContent = remindOfAttack(message);
 
 		const userInventory = {
 			commonPlants: { ...profileData.inventoryObject.commonPlants },
@@ -82,6 +84,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -106,6 +109,7 @@ module.exports = {
 
 		const botReply = await message
 			.reply({
+				content: messageContent,
 				embeds: embedArray,
 				components: componentArray,
 			})

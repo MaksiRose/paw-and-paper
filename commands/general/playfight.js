@@ -7,6 +7,7 @@ const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseHealth, decreaseThirst, decreaseHunger, decreaseEnergy } = require('../../utils/checkCondition');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { createCommandCollector } = require('../../utils/commandCollector');
+const { remindOfAttack } = require('../specific/attack');
 
 module.exports = {
 	name: 'playfight',
@@ -23,6 +24,7 @@ module.exports = {
 		}
 
 		profileData = await startCooldown(message, profileData);
+		const messageContent = remindOfAttack(message);
 
 		if (message.mentions.users.size > 0 && message.mentions.users.first().id == message.author.id) {
 
@@ -34,6 +36,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -53,6 +56,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -77,6 +81,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -95,6 +100,7 @@ module.exports = {
 
 		let botReply = await message
 			.reply({
+				content: messageContent,
 				embeds: embedArray,
 				components: [{
 					type: 'ACTION_ROW',
@@ -386,6 +392,7 @@ module.exports = {
 
 					botReply = await message
 						.reply({
+							content: messageContent,
 							embeds: embedArray,
 							components: componentArray,
 						})
@@ -436,6 +443,7 @@ module.exports = {
 
 					botReply = await message
 						.reply({
+							content: messageContent,
 							embeds: embedArray,
 							components: componentArray,
 						})
@@ -467,7 +475,7 @@ module.exports = {
 
 			botReply = await message
 				.reply({
-					content: `<@${otherProfileData.userId}>`,
+					content: `<@${otherProfileData.userId}>` + (messageContent == null ? '' : messageContent),
 					embeds: embedArray,
 					components: componentArray,
 				})

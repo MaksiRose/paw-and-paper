@@ -5,6 +5,7 @@ const { speciesMap } = require('../../utils/itemsInfo');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isPassedOut, hasCooldown, isResting } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
+const { remindOfAttack } = require('./attack');
 
 module.exports = {
 	name: 'quest',
@@ -26,6 +27,7 @@ module.exports = {
 		}
 
 		profileData = await startCooldown(message, profileData);
+		const messageContent = remindOfAttack(message);
 
 		await isResting(message, profileData, embedArray);
 
@@ -40,6 +42,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -56,6 +59,7 @@ module.exports = {
 
 			botReply = await message
 				.reply({
+					content: messageContent,
 					embeds: [{
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
@@ -492,6 +496,8 @@ module.exports = {
 	},
 	async introduceQuest(message, profileData, embedArray, footerText) {
 
+		const messageContent = remindOfAttack(message);
+
 		const embed = {
 			color: profileData.color,
 			author: { name: profileData.name, icon_url: profileData.avatarURL },
@@ -564,7 +570,7 @@ module.exports = {
 		embedArray.push(embed);
 		const botReply = await message
 			.reply({
-				content: `<@${message.author.id}>`,
+				content: `<@${message.author.id}>` + (messageContent == null ? '' : messageContent),
 				embeds: embedArray,
 				components: [{
 					type: 'ACTION_ROW',

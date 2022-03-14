@@ -29,6 +29,7 @@ module.exports = {
 		}
 
 		profileData = await startCooldown(message, profileData);
+		let messageContent = remindOfAttack(message);
 
 		if ([...Object.values(profileData.inventoryObject).map(type => Object.values(type))].filter(value => value > 0).length > 25) {
 
@@ -41,6 +42,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -60,6 +62,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -119,7 +122,10 @@ module.exports = {
 		});
 
 		let botReply = await message
-			.reply({ embeds: embedArray })
+			.reply({
+				content: messageContent,
+				embeds: embedArray,
+			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {
 					throw new Error(error);
@@ -231,7 +237,7 @@ module.exports = {
 
 
 		serverData = await serverModel.findOne({ serverId: message.guild.id });
-		const messageContent = remindOfAttack(message);
+		messageContent = remindOfAttack(message);
 
 		if (serverData.activeUsersArray.length >= 3 && messageContent == null && serverData.nextPossibleAttack <= Date.now()) {
 
@@ -327,6 +333,7 @@ module.exports = {
 			embedArray.splice(-1, 1, embed);
 			return botReply = await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 					allowedMentions: { repliedUser: true },
 				})
@@ -409,6 +416,7 @@ module.exports = {
 			embedArray.splice(-1, 1, embed);
 			botReply = await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 					components: [{
 						type: 'ACTION_ROW',
@@ -652,6 +660,7 @@ module.exports = {
 			embedArray.splice(-1, 1, embed);
 			botReply = await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 					components: [{
 						type: 'ACTION_ROW',
@@ -942,6 +951,7 @@ module.exports = {
 
 			const getBiomeMessage = await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 					components: [selectBiomeComponent],
 				})

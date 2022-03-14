@@ -5,6 +5,7 @@ const { isInvalid } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const config = require('../../config.json');
 const { execute } = require('../../events/messageCreate');
+const { remindOfAttack } = require('../specific/attack');
 
 module.exports = {
 	name: 'go',
@@ -22,6 +23,7 @@ module.exports = {
 		}
 
 		profileData = await startCooldown(message, profileData);
+		const messageContent = remindOfAttack(message);
 
 		profileData = await profileModel.findOne({
 			userId: message.author.id,
@@ -124,6 +126,7 @@ module.exports = {
 			await sleepingDen();
 			botReply = await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 					components: [sleepingDenButtons],
 				})
@@ -138,6 +141,7 @@ module.exports = {
 			await foodDen();
 			botReply = await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 					components: [foodDenButtons],
 				})
@@ -154,6 +158,7 @@ module.exports = {
 
 				botReply = await message
 					.reply({
+						content: messageContent,
 						embeds: [embed],
 					})
 					.catch((error) => {
@@ -166,6 +171,7 @@ module.exports = {
 
 				botReply = await message
 					.reply({
+						content: messageContent,
 						embeds: embedArray,
 						components: [medicineDenButtons],
 					})
@@ -181,6 +187,7 @@ module.exports = {
 			await ruins();
 			botReply = await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -194,6 +201,7 @@ module.exports = {
 			await lake();
 			botReply = await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 					components: [lakeButtons],
 				})
@@ -210,6 +218,7 @@ module.exports = {
 
 				botReply = await message
 					.reply({
+						content: messageContent,
 						embeds: embedArray,
 						components: [prairieButtons],
 					})
@@ -223,6 +232,7 @@ module.exports = {
 
 				botReply = await message
 					.reply({
+						content: messageContent,
 						embeds: embedArray,
 					})
 					.catch((error) => {
@@ -236,6 +246,7 @@ module.exports = {
 
 			botReply = await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 					components: [travelSelectMenu],
 				})

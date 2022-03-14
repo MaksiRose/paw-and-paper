@@ -9,6 +9,7 @@ const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseHealth, decreaseEnergy } = require('../../utils/checkCondition');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { createCommandCollector } = require('../../utils/commandCollector');
+const { remindOfAttack } = require('./attack');
 
 module.exports = {
 	name: 'heal',
@@ -25,6 +26,7 @@ module.exports = {
 		}
 
 		profileData = await startCooldown(message, profileData);
+		const messageContent = remindOfAttack(message);
 
 		if (profileData.rank === 'Youngling' || profileData.rank === 'Hunter') {
 
@@ -36,6 +38,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -648,7 +651,7 @@ module.exports = {
 
 				botReply = await message
 					.reply({
-						content: (chosenProfileData.userId != profileData.userId) ? `<@!${chosenProfileData.userId}>` : null,
+						content: (chosenProfileData.userId != profileData.userId ? `<@!${chosenProfileData.userId}>\n` : null) + (messageContent == null ? '' : messageContent),
 						embeds: embedArray,
 					})
 					.catch((error) => {
@@ -777,6 +780,7 @@ module.exports = {
 
 			botReply = await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray, components: componentArray,
 				})
 				.catch((error) => {
@@ -847,6 +851,7 @@ module.exports = {
 
 				return botReply = await message
 					.reply({
+						content: messageContent,
 						embeds: embedArray, components: [userSelectMenu],
 					})
 					.catch((error) => {
@@ -865,6 +870,7 @@ module.exports = {
 
 				return botReply = await message
 					.reply({
+						content: messageContent,
 						embeds: embedArray, components: [userSelectMenu, inventoryPageSelectMenu, selectMenu],
 					})
 					.catch((error) => {

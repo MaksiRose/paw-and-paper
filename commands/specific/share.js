@@ -6,6 +6,7 @@ const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion')
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
 const { checkLevelUp } = require('../../utils/levelHandling');
+const { remindOfAttack } = require('./attack');
 const sharingCooldownAccountsMap = new Map();
 
 module.exports = {
@@ -22,10 +23,14 @@ module.exports = {
 			return;
 		}
 
+		profileData = await startCooldown(message, profileData);
+		const messageContent = remindOfAttack(message);
+
 		if (sharingCooldownAccountsMap.has('nr' + message.author.id + message.guild.id) && Date.now() - sharingCooldownAccountsMap.get('nr' + message.author.id + message.guild.id) < 7200000) {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: [{
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
@@ -40,8 +45,6 @@ module.exports = {
 				});
 		}
 
-		profileData = await startCooldown(message, profileData);
-
 		if (profileData.rank != 'Elderly') {
 
 			embedArray.push({
@@ -52,6 +55,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -71,6 +75,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -192,6 +197,7 @@ module.exports = {
 
 				return await message
 					.reply({
+						content: messageContent,
 						embeds: embedArray,
 					})
 					.catch((error) => {
@@ -208,6 +214,7 @@ module.exports = {
 
 		let botReply = await message
 			.reply({
+				content: messageContent,
 				embeds: embedArray,
 			})
 			.catch((error) => {

@@ -6,6 +6,7 @@ const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = requir
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
 const { sendMessage } = require('./inventory');
+const { remindOfAttack } = require('../specific/attack');
 
 module.exports = {
 	name: 'eat',
@@ -22,6 +23,7 @@ module.exports = {
 		}
 
 		profileData = await startCooldown(message, profileData);
+		const messageContent = remindOfAttack(message);
 
 		if (profileData.hunger >= 100) {
 
@@ -33,6 +35,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -96,6 +99,7 @@ module.exports = {
 
 				return await message
 					.reply({
+						content: messageContent,
 						embeds: embedArray,
 					})
 					.catch((error) => {
@@ -198,6 +202,7 @@ module.exports = {
 			embedArray.push(embed);
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -219,6 +224,7 @@ module.exports = {
 
 				return await message
 					.reply({
+						content: messageContent,
 						embeds: embedArray,
 					})
 					.catch((error) => {
@@ -266,6 +272,7 @@ module.exports = {
 			embedArray.push(embed);
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -289,6 +296,7 @@ module.exports = {
 				embedArray.push(embed);
 				return await message
 					.reply({
+						content: messageContent,
 						embeds: embedArray,
 					})
 					.catch((error) => {

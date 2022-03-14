@@ -2,6 +2,7 @@ const profileModel = require('../models/profileModel');
 const config = require('../config.json');
 const { stopResting } = require('./executeResting');
 const { decreaseLevel } = require('./levelHandling');
+const { remindOfAttack } = require('../commands/specific/attack');
 
 module.exports = {
 
@@ -37,11 +38,13 @@ module.exports = {
 	async hasCooldown(message, profileData, callerNameArray) {
 
 		const commandName = message.content.slice(config.prefix.length).trim().split(/ +/).shift().toLowerCase();
+		const messageContent = remindOfAttack(message);
 
 		if (profileData.hasCooldown == true && callerNameArray.includes(commandName)) {
 
 			await message
 				.reply({
+					content: messageContent,
 					embeds: [{
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },

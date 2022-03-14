@@ -3,6 +3,7 @@ const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion')
 const { isPassedOut, hasCooldown } = require('../../utils/checkValidity');
 const { startResting } = require('../../utils/executeResting');
 const startCooldown = require('../../utils/startCooldown');
+const { remindOfAttack } = require('../specific/attack');
 
 module.exports = {
 	name: 'rest',
@@ -25,11 +26,13 @@ module.exports = {
 		}
 
 		profileData = await startCooldown(message, profileData);
+		const messageContent = remindOfAttack(message);
 
 		if (profileData.isResting == true) {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: [{
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
@@ -47,6 +50,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: [{
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
@@ -72,6 +76,7 @@ module.exports = {
 
 		const botReply = await message
 			.reply({
+				content: messageContent,
 				embeds: [{
 					color: profileData.color,
 					author: { name: profileData.name, icon_url: profileData.avatarURL },

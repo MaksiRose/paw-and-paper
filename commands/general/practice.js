@@ -4,6 +4,7 @@ const profileModel = require('../../models/profileModel');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
 const startCooldown = require('../../utils/startCooldown');
+const { remindOfAttack } = require('../specific/attack');
 const practicingCooldownAccountsMap = new Map();
 
 module.exports = {
@@ -22,11 +23,13 @@ module.exports = {
 		}
 
 		profileData = await startCooldown(message, profileData);
+		const messageContent = remindOfAttack(message);
 
 		if (practicingCooldownAccountsMap.has('nr' + message.author.id + message.guild.id) && Date.now() - practicingCooldownAccountsMap.get('nr' + message.author.id + message.guild.id) < 300000) {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: [{
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
@@ -49,6 +52,7 @@ module.exports = {
 
 		let botReply = await message
 			.reply({
+				content: messageContent,
 				embeds: embedArray,
 				components: [{
 					type: 'ACTION_ROW',

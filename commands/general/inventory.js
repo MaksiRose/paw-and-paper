@@ -4,6 +4,7 @@ const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = requir
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { hasCooldown } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
+const { remindOfAttack } = require('../specific/attack');
 
 module.exports = {
 	name: 'inventory',
@@ -21,6 +22,7 @@ module.exports = {
 		}
 
 		profileData = await startCooldown(message, profileData);
+		const messageContent = remindOfAttack(message);
 
 		const inventorySelectMenu = {
 			type: 'ACTION_ROW',
@@ -72,6 +74,7 @@ module.exports = {
 
 		const botReply = await message
 			.reply({
+				content: messageContent,
 				embeds: embedArray,
 				components: componentArray,
 			})

@@ -3,6 +3,7 @@ const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion')
 const { hasCooldown } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const startCooldown = require('../../utils/startCooldown');
+const { remindOfAttack } = require('../specific/attack');
 
 module.exports = {
 	name: 'rank',
@@ -20,6 +21,7 @@ module.exports = {
 		}
 
 		profileData = await startCooldown(message, profileData);
+		const messageContent = remindOfAttack(message);
 
 		if (profileData.unlockedRanks == 1 && profileData.rank == 'Youngling') {
 
@@ -30,6 +32,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: [{
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
@@ -47,6 +50,7 @@ module.exports = {
 
 			const botReply = await message
 				.reply({
+					content: messageContent,
 					embeds: [{
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
@@ -88,6 +92,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: [{
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
@@ -103,6 +108,7 @@ module.exports = {
 
 		return await message
 			.reply({
+				content: messageContent,
 				embeds: [{
 					color: profileData.color,
 					author: { name: profileData.name, icon_url: profileData.avatarURL },
