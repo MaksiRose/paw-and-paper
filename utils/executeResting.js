@@ -1,5 +1,4 @@
 const restingTimeoutMap = new Map();
-const { remindOfAttack } = require('../commands/specific/attack');
 const profileModel = require('../models/profileModel');
 
 module.exports = {
@@ -42,8 +41,6 @@ module.exports = {
 						throw new Error(error);
 					});
 
-				const messageContent = remindOfAttack(message);
-
 				await profileModel.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $set: { isResting: false } },
@@ -59,7 +56,6 @@ module.exports = {
 
 				return await message
 					.reply({
-						content: messageContent,
 						embeds: [{
 							color: profileData.color,
 							author: { name: profileData.name, icon_url: profileData.avatarURL },
