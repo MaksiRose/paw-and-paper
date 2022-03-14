@@ -413,6 +413,8 @@ module.exports = {
 				embed.description = `*For a while, ${profileData.name} has been swimming through the water, searching in vain for something useful. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} ${((profileData.pronounArray[5] == 'singular') ? 'was' : 'were')} about to give up when ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'discovers' : 'discover')} a ${foundItem} among large algae. Now ${profileData.pronounArray[0]} just need to pick it up gently...*`;
 			}
 
+			embed.footer.text = 'You will be presented five buttons with five emojis each. The footer will show you an emoji, and you have to find the button with that emoji, but without the campsite (🏕️).';
+
 			embedArray.splice(-1, 1, embed);
 			botReply = await message
 				.reply({
@@ -655,7 +657,7 @@ module.exports = {
 				embed.description = `*${profileData.name} hides behind some kelp, looking around the clear water for any prey. A lone ${opponentSpecies} swims around aimlessly, not alarmed of any potential attacks. The ${profileData.species} gets in position, contemplating an ambush.*`;
 			}
 
-			embed.footer.text = `The ${opponentSpecies} is level ${opponentLevel}.`;
+			embed.footer.text = `The ${opponentSpecies} is level ${opponentLevel}.\nYou will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response.`;
 
 			embedArray.splice(-1, 1, embed);
 			botReply = await message

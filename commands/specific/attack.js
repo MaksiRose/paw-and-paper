@@ -99,6 +99,8 @@ module.exports = {
 				embed.description = `⏺️ *The human gets into position to oppose an attack. ${profileData.name} must think quickly about how ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'wants' : 'want')} to react.*`;
 			}
 
+			embed.footer.text = 'You will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response.';
+
 			const fightButtons = [{
 				type: 'BUTTON',
 				customId: 'fight-attack',

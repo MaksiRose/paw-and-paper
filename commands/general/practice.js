@@ -48,6 +48,7 @@ module.exports = {
 			color: profileData.color,
 			author: { name: profileData.name, icon_url: profileData.avatarURL },
 			description: `*A very experienced Elderly approaches ${profileData.name}.* "I've seen that you have not performed well in fights lately. Do you want to practice with me for a bit to strengthen your skills?"`,
+			footer: { text: 'You will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response. The footer will provide hints as to which button you should click.' },
 		});
 
 		let botReply = await message
