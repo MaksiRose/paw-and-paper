@@ -1,4 +1,5 @@
 const config = require('../../config.json');
+const pjson = require('../../package.json');
 const profileModel = require('../../models/profileModel');
 
 module.exports = {
@@ -51,6 +52,7 @@ module.exports = {
 				.send({
 					embeds: [{
 						color: config.default_color,
+						title: `**New release: ${pjson.version} 🎉🥳🎈**`,
 						description: argumentsArray.join(' '),
 						footer: { text: 'You can change if you want updates for new releases by clicking the button below.' },
 					}],
