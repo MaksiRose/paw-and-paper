@@ -1,24 +1,27 @@
 const config = require('../../config.json');
 const profileModel = require('../../models/profileModel');
-const checkAccountCompletion = require('../../utils/checkAccountCompletion');
-const checkValidity = require('../../utils/checkValidity');
 const startCooldown = require('../../utils/startCooldown');
+const { generateRandomNumber } = require('../../utils/randomizers');
+const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { isInvalid } = require('../../utils/checkValidity');
+const { remindOfAttack } = require('../specific/attack');
 
 module.exports = {
 	name: 'drink',
 	async sendMessage(client, message, argumentsArray, profileData, serverData, embedArray) {
 
-		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
+		if (await hasNotCompletedAccount(message, profileData)) {
 
 			return;
 		}
 
-		if (await checkValidity.isInvalid(message, profileData, embedArray, [module.exports.name])) {
+		if (await isInvalid(message, profileData, embedArray, [module.exports.name])) {
 
 			return;
 		}
 
 		profileData = await startCooldown(message, profileData);
+		const messageContent = remindOfAttack(message);
 
 		if (profileData.thirst >= profileData.maxThirst) {
 
@@ -30,6 +33,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -55,6 +59,7 @@ module.exports = {
 
 		const botReply = await message
 			.reply({
+				content: messageContent,
 				embeds: embedArray,
 				components: [{
 					type: 'ACTION_ROW',
@@ -79,7 +84,7 @@ module.exports = {
 			const collector = message.channel.createMessageComponentCollector({ filter, time: 15000 });
 			collector.on('end', async collected => {
 
-				let thirstPoints = Loottable(3, collected.size);
+				let thirstPoints = generateRandomNumber(3, collected.size);
 
 				if (profileData.thirst + thirstPoints > profileData.maxThirst) {
 
@@ -112,7 +117,5 @@ module.exports = {
 				return resolve();
 			});
 		});
-
-		function Loottable(max, min) { return Math.floor(Math.random() * max + min); }
 	},
 };

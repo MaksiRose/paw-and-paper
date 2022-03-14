@@ -1,19 +1,19 @@
-const restingTimeoutArray = new Array();
+const restingTimeoutMap = new Map();
 const profileModel = require('../models/profileModel');
 
 module.exports = {
 
-	stopResting(userId) {
+	stopResting(userId, guildId) {
 
-		clearTimeout(restingTimeoutArray[userId]);
+		clearTimeout(restingTimeoutMap.set('nr' + userId + guildId));
 	},
 
 	async startResting(message, profileData, botReply) {
 
 		let energyPoints = 0;
-		restingTimeoutArray[message.author.id] = setTimeout(timerfunction, 30000);
+		restingTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await addEnergy, 30000));
 
-		async function timerfunction() {
+		async function addEnergy() {
 
 			++energyPoints;
 
@@ -72,7 +72,7 @@ module.exports = {
 					});
 			}
 
-			return restingTimeoutArray[message.author.id] = setTimeout(timerfunction, 30000);
+			return restingTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(await addEnergy, 30000));
 		}
 	},
 

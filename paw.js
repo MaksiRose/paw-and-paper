@@ -23,4 +23,4 @@ for (const file of fs.readdirSync('./handlers/')) {
 	require(`./handlers/${file}`).execute(client);
 }
 
-client.login(config.token);
+client.login(config.test_token);

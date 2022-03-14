@@ -1,19 +1,19 @@
 const profileModel = require('../../models/profileModel');
-const checkAccountCompletion = require('../../utils/checkAccountCompletion');
-const checkValidity = require('../../utils/checkValidity');
 const config = require('../../config.json');
 const startCooldown = require('../../utils/startCooldown');
+const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { isInvalid } = require('../../utils/checkValidity');
 
 module.exports = {
 	name: 'say',
 	async sendMessage(client, message, argumentsArray, profileData, serverData, embedArray, pingRuins) {
 
-		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
+		if (await hasNotCompletedAccount(message, profileData)) {
 
 			return;
 		}
 
-		if (await checkValidity.isInvalid(message, profileData, embedArray, [module.exports.name])) {
+		if (await isInvalid(message, profileData, embedArray, [module.exports.name])) {
 
 			return;
 		}
@@ -63,18 +63,13 @@ module.exports = {
 
 		if (pingRuins == true) {
 
-			let allRuinProfilesArray = await profileModel.find({
-				serverId: message.guild.id,
-				currentRegion: profileData.currentRegion,
-			});
-
-			allRuinProfilesArray = allRuinProfilesArray.map(doc => doc.userId);
-			const allRuinProfilesArrayUserIndex = allRuinProfilesArray.indexOf(`${profileData.userId}`);
-
-			if (allRuinProfilesArrayUserIndex > -1) {
-
-				allRuinProfilesArray.splice(allRuinProfilesArrayUserIndex, 1);
-			}
+			const allRuinProfilesArray = (await profileModel
+				.find({
+					serverId: message.guild.id,
+					currentRegion: profileData.currentRegion,
+				}))
+				.map(user => user.userId)
+				.filter(userId => userId != profileData.userId);
 
 			for (let i = 0; i < allRuinProfilesArray.length; i++) {
 

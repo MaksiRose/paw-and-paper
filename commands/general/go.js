@@ -1,25 +1,29 @@
 const profileModel = require('../../models/profileModel');
-const checkAccountCompletion = require('../../utils/checkAccountCompletion');
-const checkValidity = require('../../utils/checkValidity');
 const startCooldown = require('../../utils/startCooldown');
-const messageCollector = require('../../utils/messageCollector');
+const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { isInvalid } = require('../../utils/checkValidity');
+const { createCommandCollector } = require('../../utils/commandCollector');
+const config = require('../../config.json');
+const { execute } = require('../../events/messageCreate');
+const { remindOfAttack } = require('../specific/attack');
 
 module.exports = {
 	name: 'go',
 	aliases: ['region'],
 	async sendMessage(client, message, argumentsArray, profileData, serverData, embedArray) {
 
-		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
+		if (await hasNotCompletedAccount(message, profileData)) {
 
 			return;
 		}
 
-		if (await checkValidity.isInvalid(message, profileData, embedArray, [module.exports.name].concat(module.exports.aliases))) {
+		if (await isInvalid(message, profileData, embedArray, [module.exports.name].concat(module.exports.aliases))) {
 
 			return;
 		}
 
 		profileData = await startCooldown(message, profileData);
+		const messageContent = remindOfAttack(message);
 
 		profileData = await profileModel.findOne({
 			userId: message.author.id,
@@ -122,6 +126,7 @@ module.exports = {
 			await sleepingDen();
 			botReply = await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 					components: [sleepingDenButtons],
 				})
@@ -136,6 +141,7 @@ module.exports = {
 			await foodDen();
 			botReply = await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 					components: [foodDenButtons],
 				})
@@ -152,6 +158,7 @@ module.exports = {
 
 				botReply = await message
 					.reply({
+						content: messageContent,
 						embeds: [embed],
 					})
 					.catch((error) => {
@@ -164,6 +171,7 @@ module.exports = {
 
 				botReply = await message
 					.reply({
+						content: messageContent,
 						embeds: embedArray,
 						components: [medicineDenButtons],
 					})
@@ -179,6 +187,7 @@ module.exports = {
 			await ruins();
 			botReply = await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -192,6 +201,7 @@ module.exports = {
 			await lake();
 			botReply = await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 					components: [lakeButtons],
 				})
@@ -208,6 +218,7 @@ module.exports = {
 
 				botReply = await message
 					.reply({
+						content: messageContent,
 						embeds: embedArray,
 						components: [prairieButtons],
 					})
@@ -221,6 +232,7 @@ module.exports = {
 
 				botReply = await message
 					.reply({
+						content: messageContent,
 						embeds: embedArray,
 					})
 					.catch((error) => {
@@ -234,6 +246,7 @@ module.exports = {
 
 			botReply = await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 					components: [travelSelectMenu],
 				})
@@ -245,30 +258,40 @@ module.exports = {
 		}
 
 
-		await messageCollector(message, botReply);
-		await interactionCollector();
+		createCommandCollector(message.author.id, message.guild.id, botReply);
+		interactionCollector();
 
 		async function interactionCollector() {
 
-			const filter = async (i) => {
+			const filter = i => i.user.id == message.author.id;
 
-				if (!i.message.reference || !i.message.reference.messageId) {
+			const interaction = await botReply
+				.awaitMessageComponent({ filter, time: 120000 })
+				.catch(() => {return null;});
 
-					return false;
-				}
 
-				const userMessage = await i.channel.messages.fetch(i.message.reference.messageId);
-				return userMessage.id == message.id && i.user.id == message.author.id;
-			};
+			if (interaction == null) {
 
-			const collector = message.channel.createMessageComponentCollector({ filter, max: 1, time: 30000 });
-			collector.on('end', async (collected) => {
+				return await botReply
+					.edit({
+						components: [],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
 
-				if (!collected.size) {
+			if (interaction.isSelectMenu()) {
 
-					return await interaction.message
+				if (interaction.values[0] == 'sleeping_dens') {
+
+					await sleepingDen();
+					await interaction.message
 						.edit({
-							components: [],
+							embeds: embedArray,
+							components: [travelSelectMenu, sleepingDenButtons],
 						})
 						.catch((error) => {
 							if (error.httpStatus !== 404) {
@@ -277,176 +300,130 @@ module.exports = {
 						});
 				}
 
-				const interaction = collected.first();
+				if (interaction.values[0] == 'food_den') {
 
-				if (interaction.isSelectMenu()) {
-
-					if (interaction.values[0] == 'sleeping_dens') {
-
-						await sleepingDen();
-						await interaction.message
-							.edit({
-								embeds: embedArray,
-								components: [travelSelectMenu, sleepingDenButtons],
-							})
-							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
-							});
-					}
-
-					if (interaction.values[0] == 'food_den') {
-
-						await foodDen();
-						await interaction.message
-							.edit({
-								embeds: embedArray,
-								components: [travelSelectMenu, foodDenButtons],
-							})
-							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
-							});
-					}
-
-					if (interaction.values[0] == 'medicine_den') {
-
-						await medicineDen();
-
-						if (profileData.rank == 'Youngling' || profileData.rank == 'Hunter') {
-
-							await interaction.message
-								.edit({
-									embeds: embedArray,
-									components: [travelSelectMenu],
-								})
-								.catch((error) => {
-									if (error.httpStatus !== 404) {
-										throw new Error(error);
-									}
-								});
-						}
-						await interaction.message
-							.edit({
-								embeds: embedArray,
-								components: [travelSelectMenu, medicineDenButtons],
-							})
-							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
-							});
-					}
-
-					if (interaction.values[0] == 'ruins') {
-
-						await ruins();
-						await interaction.message
-							.edit({
-								embeds: embedArray,
-								components: [travelSelectMenu],
-							})
-							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
-							});
-					}
-
-					if (interaction.values[0] == 'lake') {
-
-						await lake();
-						await interaction.message
-							.edit({
-								embeds: embedArray,
-								components: [travelSelectMenu, lakeButtons],
-							})
-							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
-							});
-					}
-
-					if (interaction.values[0] == 'prairie') {
-
-						await prairie();
-
-						await interaction.message
-							.edit({
-								embeds: embedArray,
-								components: [travelSelectMenu],
-							})
-							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
-							});
-
-						if (profileData.rank == 'Youngling' || profileData.rank == 'Apprentice') {
-
-							await interaction.message
-								.edit({
-									embeds: embedArray,
-									components: [travelSelectMenu, prairieButtons],
-								})
-								.catch((error) => {
-									if (error.httpStatus !== 404) {
-										throw new Error(error);
-									}
-								});
-						}
-					}
+					await foodDen();
+					await interaction.message
+						.edit({
+							embeds: embedArray,
+							components: [travelSelectMenu, foodDenButtons],
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
 				}
 
-				if (interaction.isButton()) {
+				if (interaction.values[0] == 'medicine_den') {
 
-					if (interaction.customId.includes('execute')) {
+					await medicineDen();
 
-						const cmd = interaction.customId.split('-').pop();
-						const command = client.commands.get(cmd) || client.commands.find(cmnd => cmnd.aliases && cmnd.aliases.includes(cmd));
+					if (profileData.rank == 'Youngling' || profileData.rank == 'Hunter') {
 
-						profileData = await profileModel.findOne({
-							userId: message.author.id,
-							serverId: message.guild.id,
+						await interaction.message
+							.edit({
+								embeds: embedArray,
+								components: [travelSelectMenu],
+							})
+							.catch((error) => {
+								if (error.httpStatus !== 404) {
+									throw new Error(error);
+								}
+							});
+					}
+					await interaction.message
+						.edit({
+							embeds: embedArray,
+							components: [travelSelectMenu, medicineDenButtons],
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+				}
+
+				if (interaction.values[0] == 'ruins') {
+
+					await ruins();
+					await interaction.message
+						.edit({
+							embeds: embedArray,
+							components: [travelSelectMenu],
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+				}
+
+				if (interaction.values[0] == 'lake') {
+
+					await lake();
+					await interaction.message
+						.edit({
+							embeds: embedArray,
+							components: [travelSelectMenu, lakeButtons],
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+				}
+
+				if (interaction.values[0] == 'prairie') {
+
+					await prairie();
+
+					await interaction.message
+						.edit({
+							embeds: embedArray,
+							components: [travelSelectMenu],
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
 						});
 
-						interaction.message
-							.delete()
+					if (profileData.rank == 'Youngling' || profileData.rank == 'Apprentice') {
+
+						await interaction.message
+							.edit({
+								embeds: embedArray,
+								components: [travelSelectMenu, prairieButtons],
+							})
 							.catch((error) => {
 								if (error.httpStatus !== 404) {
 									throw new Error(error);
 								}
 							});
-
-						embedArray.splice(-1, 1);
-						return await command
-							.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
-							.then(async () => {
-
-								profileData = await profileModel.findOne({
-									userId: message.author.id,
-									serverId: message.guild.id,
-								});
-
-								setTimeout(async function() {
-
-									profileData = await profileModel.findOneAndUpdate(
-										{ userId: message.author.id, serverId: message.guild.id },
-										{ $set: { hasCooldown: false } },
-									);
-								}, 3000);
-							})
-							.catch((error) => {
-								throw new Error(error);
-							});
 					}
 				}
+			}
 
-				return await interactionCollector();
-			});
+			if (interaction.isButton()) {
+
+				if (interaction.customId.includes('execute')) {
+
+					await interaction.message
+						.delete()
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+
+					message.content = `${config.prefix}${interaction.customId.split('-').pop()}`;
+
+					return await execute(client, message);
+				}
+			}
+
+			return await interactionCollector();
 		}
 
 		async function sleepingDen() {
@@ -470,12 +447,10 @@ module.exports = {
 			embed.description = `*${profileData.name} runs to the food den. Maybe ${profileData.pronounArray[0]} will eat something, or put ${profileData.pronounArray[2]} food onto the pile.*`;
 			embed.fields = [];
 
-			let allFoodDenProfilesArray = await profileModel.find({
+			const allFoodDenProfilesArray = (await profileModel.find({
 				serverId: message.guild.id,
 				currentRegion: 'food den',
-			});
-
-			allFoodDenProfilesArray = allFoodDenProfilesArray.map(document => document.userId);
+			})).map(user => user.userId);
 
 			for (let i = 0; i < allFoodDenProfilesArray.length; i++) {
 
@@ -498,12 +473,10 @@ module.exports = {
 			embed.description = `*${profileData.name} rushes over to the medicine den. Nearby are a mix of packmates, some with illnesses and injuries, others trying to heal them.*`;
 			embed.fields = [];
 
-			let allMedicineDenProfilesArray = await profileModel.find({
+			const allMedicineDenProfilesArray = (await profileModel.find({
 				serverId: message.guild.id,
 				currentRegion: 'medicine den',
-			});
-
-			allMedicineDenProfilesArray = allMedicineDenProfilesArray.map(document => document.userId);
+			})).map(user => user.userId);
 
 			for (let i = 0; i < allMedicineDenProfilesArray.length; i++) {
 
@@ -515,12 +488,10 @@ module.exports = {
 				embed.fields.push({ name: 'Packmates at the medicine den:', value: allMedicineDenProfilesArray.join('\n'), inline: true });
 			}
 
-			let allHealerProfilesArray = await profileModel.find({
+			const allHealerProfilesArray = (await profileModel.find({
 				serverId: message.guild.id,
 				rank: { $nin: ['Youngling', 'Hunter'] },
-			});
-
-			allHealerProfilesArray = allHealerProfilesArray.map(document => document.userId);
+			})).map(user => user.userId);
 
 			for (let i = 0; i < allHealerProfilesArray.length; i++) {
 
@@ -543,12 +514,10 @@ module.exports = {
 			embed.description = `*${profileData.name} walks up to the ruins, carefully stepping over broken bricks. Hopefully, ${profileData.pronounArray[0]} will find someone to talk with.*`;
 			embed.fields = [];
 
-			let allRuinProfilesArray = await profileModel.find({
+			const allRuinProfilesArray = (await profileModel.find({
 				serverId: message.guild.id,
 				currentRegion: 'ruins',
-			});
-
-			allRuinProfilesArray = allRuinProfilesArray.map(document => document.userId);
+			})).map(user => user.userId);
 
 			for (let i = 0; i < allRuinProfilesArray.length; i++) {
 
@@ -582,12 +551,10 @@ module.exports = {
 			embed.description = `*${profileData.name} approaches the prairie, watching younger packmates testing their strength in playful fights. Maybe the ${profileData.species} could play with them!*`;
 			embed.fields = [];
 
-			let allPrairieProfilesArray = await profileModel.find({
+			const allPrairieProfilesArray = (await profileModel.find({
 				serverId: message.guild.id,
 				currentRegion: 'prairie',
-			});
-
-			allPrairieProfilesArray = allPrairieProfilesArray.map(document => document.userId);
+			})).map(user => user.userId);
 
 			for (let i = 0; i < allPrairieProfilesArray.length; i++) {
 

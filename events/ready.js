@@ -22,7 +22,6 @@ module.exports = {
 				return;
 			}
 
-			// eslint-disable-next-line no-unused-vars
 			for (const [account_id, account] of Object.entries(serverData.accountsToDelete)) {
 
 				setTimeout(async () => {

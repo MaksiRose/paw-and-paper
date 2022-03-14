@@ -1,26 +1,30 @@
-const checkAccountCompletion = require('../../utils/checkAccountCompletion');
-const checkValidity = require('../../utils/checkValidity');
 const startCooldown = require('../../utils/startCooldown');
 const config = require('../../config.json');
 const profileModel = require('../../models/profileModel');
-const condition = require('../../utils/condition');
-const levels = require('../../utils/levels');
+const { generateRandomNumber, generateRandomNumberWithException, pullFromWeightedTable } = require('../../utils/randomizers');
+const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
+const { decreaseHealth, decreaseThirst, decreaseHunger, decreaseEnergy } = require('../../utils/checkCondition');
+const { checkLevelUp } = require('../../utils/levelHandling');
+const { createCommandCollector } = require('../../utils/commandCollector');
+const { remindOfAttack } = require('../specific/attack');
 
 module.exports = {
 	name: 'playfight',
 	async sendMessage(client, message, argumentsArray, profileData, serverData, embedArray) {
 
-		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
+		if (await hasNotCompletedAccount(message, profileData)) {
 
 			return;
 		}
 
-		if (await checkValidity.isInvalid(message, profileData, embedArray, [module.exports.name])) {
+		if (await isInvalid(message, profileData, embedArray, [module.exports.name])) {
 
 			return;
 		}
 
 		profileData = await startCooldown(message, profileData);
+		const messageContent = remindOfAttack(message);
 
 		if (message.mentions.users.size > 0 && message.mentions.users.first().id == message.author.id) {
 
@@ -32,6 +36,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -51,6 +56,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -65,16 +71,17 @@ module.exports = {
 			serverId: message.guild.id,
 		});
 
-		if (!partnerProfileData || partnerProfileData.name == '' || partnerProfileData.species == '' || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0) {
+		if (!partnerProfileData || partnerProfileData.name == '' || partnerProfileData.species == '' || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0 || partnerProfileData.hasCooldown == true) {
 
 			embedArray.push({
 				color: config.error_color,
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-				title: 'The mentioned user has no account or is passed out :(',
+				title: 'The mentioned user has no account, is passed out or busy :(',
 			});
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: embedArray,
 				})
 				.catch((error) => {
@@ -93,6 +100,7 @@ module.exports = {
 
 		let botReply = await message
 			.reply({
+				content: messageContent,
 				embeds: embedArray,
 				components: [{
 					type: 'ACTION_ROW',
@@ -192,7 +200,21 @@ module.exports = {
 
 		let newTurnEmbedTextArrayIndex = -1;
 
-		client.on('messageCreate', async function removePlayfightComponents(newMessage) {
+		await startNewRound((generateRandomNumber(2, 0) == 0) ? true : false);
+
+		async function startNewRound(isPartner) {
+
+			createCommandCollector(message.author.id, message.guild.id, botReply);
+			createCommandCollector(message.mentions.users.first().id, message.guild.id, botReply);
+
+			let currentProfileData = (isPartner == true) ? partnerProfileData : profileData;
+			let otherProfileData = (isPartner == true) ? profileData : partnerProfileData;
+
+			const filter = i => (i.customId == 'playfight-confirm' && i.user.id == message.mentions.users.first().id) || (i.customId.includes('board') && i.user.id == currentProfileData.userId);
+
+			const interaction = await botReply
+				.awaitMessageComponent({ filter, time: 30000 })
+				.catch(() => { return null; });
 
 			let isEmptyBoard = true;
 			forLoop: for (const columnArray of componentArray) {
@@ -207,338 +229,170 @@ module.exports = {
 				}
 			}
 
-			if (!botReply || newMessage.author.id != message.author.id || !newMessage.content.toLowerCase().startsWith(config.prefix) || profileData.hasCooldown || isEmptyBoard === false) {
+			embedArray.splice(-1, 1);
 
-				return client.off('messageCreate', removePlayfightComponents);
+			if (interaction == null) {
+
+				if (isEmptyBoard) {
+
+					// text for when the match didnt start
+					embedArray.push({
+						color: config.default_color,
+						author: { name: profileData.name, icon_url: profileData.avatarURL },
+						description: `*${partnerProfileData.name} wouldn't give in so easily and simply passes the pleading looks of the ${profileData.species}.*`,
+					});
+
+					botReply = await botReply
+						.edit({
+							embeds: embedArray,
+							components: [],
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+				}
+				else {
+
+					await decreaseStats();
+
+					// text for when the match was abandoned
+					embedArray.push({
+						color: profileData.color,
+						author: { name: profileData.name, icon_url: profileData.avatarURL },
+						description: `*${currentProfileData.name} takes so long with ${currentProfileData.pronounArray[2]} decision on how to attack that ${otherProfileData.name} gets impatient and leaves.*`,
+						footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
+					});
+
+					botReply = await botReply
+						.edit({
+							embeds: embedArray,
+							components: [],
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+
+					await checkHealthAndLevel();
+				}
+
+				return;
 			}
 
 			await botReply
-				.edit({
-					components: [],
-				})
+				.delete()
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					throw new Error(error);
 				});
 
-			return client.off('messageCreate', removePlayfightComponents);
-		});
+			if (interaction.customId.includes('board')) {
 
-		messageCollector();
+				const column = interaction.customId.split('-', 2).pop() - 1;
+				const row = interaction.customId.split('-').pop() - 1;
 
-		async function messageCollector() {
+				componentArray[column].components[row].emoji.name = (isPartner == true) ? player1Field : player2Field;
+				componentArray[column].components[row].disabled = true;
 
-			if (!botReply) {
+				if (isWin()) {
 
-				return;
-			}
-
-			const filter = m => m.author.id === message.mentions.users.first().id && m.content.toLowerCase().startsWith(config.prefix);
-
-			const collector = message.channel.createMessageCollector({ filter, max: 1, time: 120000 });
-			collector.on('end', async () => {
-
-				await botReply
-					.edit({
-						components: [],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-
-				return;
-			});
-		}
-
-		await newRound((Math.floor(Math.random() * 2) == 0) ? true : false);
-
-		async function newRound(isPartner) {
-
-			let currentProfileData = (isPartner == true) ? partnerProfileData : profileData;
-			let otherProfileData = (isPartner == true) ? profileData : partnerProfileData;
-
-			return await new Promise((resolve) => {
-
-				const filter = async (i) => {
-
-					if (!i.message.reference || !i.message.reference.messageId) {
-
-						return false;
-					}
-
-					const userMessage = await i.channel.messages
-						.fetch(i.message.reference.messageId)
-						.catch((error) => {
-							throw new Error(error);
-						});
-
-					return userMessage.id == message.id && ((i.customId == 'playfight-confirm' && i.user.id == message.mentions.users.first().id) || (i.customId.includes('board') && i.user.id == currentProfileData.userId));
-				};
-
-				const collector = message.channel.createMessageComponentCollector({ filter, max: 1, time: 30000 });
-				collector.on('end', async function collectorEnd(collected) {
-
-					let isEmptyBoard = true;
-					forLoop: for (const columnArray of componentArray) {
+					for (const columnArray of componentArray) {
 
 						for (const rowArray of columnArray.components) {
 
-							if (rowArray.emoji.name === player1Field || rowArray.emoji.name === player2Field) {
-
-								isEmptyBoard = false;
-								break forLoop;
-							}
+							rowArray.disabled = true;
 						}
 					}
 
-					embedArray.splice(-1, 1);
+					await decreaseStats();
 
-					if (!collected.size) {
+					const x = (otherProfileData.levels - currentProfileData.levels < 0) ? 0 : otherProfileData.levels - currentProfileData.levels;
+					const extraExperience = Math.round((40 / (1 + Math.pow(Math.E, -0.125 * x))) - 20);
+					const experiencePoints = generateRandomNumber(11, 10) + extraExperience;
 
-						if (isEmptyBoard) {
+					if (currentProfileData.userId === profileData.userId) {
 
-							// text for when the match didnt start
-							embedArray.push({
-								color: config.default_color,
-								author: { name: profileData.name, icon_url: profileData.avatarURL },
-								description: `*${partnerProfileData.name} wouldn't give in so easily and simply passes the pleading looks of the ${profileData.species}.*`,
-							});
+						embedFooterStatsTextPlayer1 = `+${experiencePoints} XP (${currentProfileData.experience + experiencePoints}/${currentProfileData.levels * 50}) for ${currentProfileData.name}\n${embedFooterStatsTextPlayer1}`;
+					}
+					else {
 
-							botReply = await botReply
-								.edit({
-									embeds: embedArray,
-									components: [],
-								})
-								.catch((error) => {
-									if (error.httpStatus !== 404) {
-										throw new Error(error);
-									}
-								});
-						}
-						else {
-
-							await depleteStats();
-
-							// text for when the match was abandoned
-							embedArray.push({
-								color: profileData.color,
-								author: { name: profileData.name, icon_url: profileData.avatarURL },
-								description: `*${currentProfileData.name} takes so long with ${currentProfileData.pronounArray[2]} decision on how to attack that ${otherProfileData.name} gets impatient and leaves.*`,
-								footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
-							});
-
-							botReply = await botReply
-								.edit({
-									embeds: embedArray,
-									components: [],
-								})
-								.catch((error) => {
-									if (error.httpStatus !== 404) {
-										throw new Error(error);
-									}
-								});
-
-							await extraEmbeds();
-						}
-
-						return resolve();
+						embedFooterStatsTextPlayer2 = `+${experiencePoints} XP (${currentProfileData.experience + experiencePoints}/${currentProfileData.levels * 50}) for ${currentProfileData.name}\n${embedFooterStatsTextPlayer2}`;
 					}
 
-					await botReply
-						.delete()
-						.catch((error) => {
-							throw new Error(error);
-						});
+					currentProfileData = await profileModel.findOneAndUpdate(
+						{ userId: currentProfileData.userId, serverId: message.guild.id },
+						{ $inc: { experience: experiencePoints } },
+					);
 
-					if (collected.first().customId.includes('board')) {
+					let getHurtText = '';
+					const betterLuckValue = (otherProfileData.levels - 1) * 2;
+					const getHurtChance = pullFromWeightedTable({ 0: 10, 1: 90 + betterLuckValue });
+					if (getHurtChance == 0) {
 
-						const column = collected.first().customId.split('-', 2).pop() - 1;
-						const row = collected.first().customId.split('-').pop() - 1;
+						let healthPoints = generateRandomNumber(5, 3);
+						const userInjuryObject = (otherProfileData.userId === profileData.userId) ? userInjuryObjectPlayer1 : userInjuryObjectPlayer2;
 
-						componentArray[column].components[row].emoji.name = (isPartner == true) ? player1Field : player2Field;
-						componentArray[column].components[row].disabled = true;
+						if (otherProfileData.health - healthPoints < 0) {
 
-						if (hasWon()) {
-
-							for (const columnArray of componentArray) {
-
-								for (const rowArray of columnArray.components) {
-
-									rowArray.disabled = true;
-								}
-							}
-
-							await depleteStats();
-
-							const x = (otherProfileData.levels - currentProfileData.levels < 0) ? 0 : otherProfileData.levels - currentProfileData.levels;
-							const extraExperience = Math.round((40 / (1 + Math.pow(Math.E, -0.125 * x))) - 20);
-							const experiencePoints = Loottable(11, 10) + extraExperience;
-
-							if (currentProfileData.userId === profileData.userId) {
-
-								embedFooterStatsTextPlayer1 = `+${experiencePoints} XP (${currentProfileData.experience + experiencePoints}/${currentProfileData.levels * 50}) for ${currentProfileData.name}\n${embedFooterStatsTextPlayer1}`;
-							}
-							else {
-
-								embedFooterStatsTextPlayer2 = `+${experiencePoints} XP (${currentProfileData.experience + experiencePoints}/${currentProfileData.levels * 50}) for ${currentProfileData.name}\n${embedFooterStatsTextPlayer2}`;
-							}
-
-							currentProfileData = await profileModel.findOneAndUpdate(
-								{ userId: currentProfileData.userId, serverId: message.guild.id },
-								{ $inc: { experience: experiencePoints } },
-							);
-
-							let getHurtText = '';
-							const betterLuckValue = (otherProfileData.levels - 1) * 2;
-							const getHurtChance = weightedTable({ 0: 10, 1: 90 + betterLuckValue });
-							if (getHurtChance == 0) {
-
-								let healthPoints = Loottable(5, 3);
-								const userInjuryObject = (otherProfileData.userId === profileData.userId) ? userInjuryObjectPlayer1 : userInjuryObjectPlayer2;
-
-								if (otherProfileData.health - healthPoints < 0) {
-
-									healthPoints = otherProfileData.health;
-								}
-
-								otherProfileData = await profileModel.findOneAndUpdate(
-									{ userId: otherProfileData.userId, serverId: message.guild.id },
-									{ $inc: { health: -healthPoints } },
-								);
-
-								switch (true) {
-
-									case (weightedTable({ 0: 1, 1: 1 }) == 0 && userInjuryObject.cold == false):
-
-										userInjuryObject.cold = true;
-
-										getHurtText += `*${otherProfileData.name} has enjoyed playing with the ${currentProfileData.species} a lot, but is really tired now. After taking a short nap, ${otherProfileData.pronounArray[0]} notice${(otherProfileData.pronounArray[5] == 'singular') ? 's' : ''} ${otherProfileData.pronounArray[2]} sweaty back and sore throat. Oh no! The ${otherProfileData.species} has caught a cold while playing!*`;
-
-										if (otherProfileData.userId === profileData.userId) {
-
-											embedFooterStatsTextPlayer1 = `-${healthPoints} HP (from cold)\n${embedFooterStatsTextPlayer1}`;
-										}
-										else {
-
-											embedFooterStatsTextPlayer2 = `-${healthPoints} HP (from cold)\n${embedFooterStatsTextPlayer2}`;
-										}
-
-										break;
-
-									default:
-
-										userInjuryObject.sprains += 1;
-
-										getHurtText += `*${otherProfileData.name} tries to get up with ${currentProfileData.name}'s help, but the ${otherProfileData.species} feels a horrible pain as ${otherProfileData.pronounArray[0]} get up. Ironically, ${otherProfileData.name} got a sprain from getting up after the fight.*`;
-
-										if (otherProfileData.userId === profileData.userId) {
-
-											embedFooterStatsTextPlayer1 = `-${healthPoints} HP (from sprain)\n${embedFooterStatsTextPlayer1}`;
-										}
-										else {
-
-											embedFooterStatsTextPlayer2 = `-${healthPoints} HP (from sprain)\n${embedFooterStatsTextPlayer2}`;
-										}
-								}
-
-								userInjuryObjectPlayer1 = (otherProfileData.userId === profileData.userId) ? userInjuryObject : userInjuryObjectPlayer1;
-								userInjuryObjectPlayer2 = (otherProfileData.userId === profileData.userId) ? userInjuryObjectPlayer2 : userInjuryObject;
-							}
-
-							embedArray.push({
-								color: profileData.color,
-								author: { name: profileData.name, icon_url: profileData.avatarURL },
-								description: `*The two animals are pressing against each other with all their might. It seems like the fight will never end this way, but ${currentProfileData.name} has one more trick up ${currentProfileData.pronounArray[2]} sleeve: ${currentProfileData.pronounArray[0]} simply moves out of the way, letting ${otherProfileData.name} crash into the ground. ${otherProfileData.pronounArray[0].charAt(0).toUpperCase() + otherProfileData.pronounArray[0].slice(1)} has a wry grin on ${otherProfileData.pronounArray[2]} face as ${otherProfileData.pronounArray[0]} looks up at the ${currentProfileData.species}. ${currentProfileData.name} wins this fight, but who knows about the next one?*\n\n${getHurtText}`,
-								footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
-							});
-
-							botReply = await message
-								.reply({
-									embeds: embedArray,
-									components: componentArray,
-								})
-								.catch((error) => {
-									if (error.httpStatus !== 404) {
-										throw new Error(error);
-									}
-								});
-
-							await extraEmbeds();
-
-							return resolve();
+							healthPoints = otherProfileData.health;
 						}
 
-						if (isDraw()) {
+						otherProfileData = await profileModel.findOneAndUpdate(
+							{ userId: otherProfileData.userId, serverId: message.guild.id },
+							{ $inc: { health: -healthPoints } },
+						);
 
-							for (const columnArray of componentArray) {
+						switch (pullFromWeightedTable({ 0: 1, 1: 1 })) {
 
-								for (const rowArray of columnArray.components) {
+							case 0:
 
-									rowArray.disabled = true;
+								userInjuryObject.infections += 1;
+
+								getHurtText += `*${otherProfileData.name} has enjoyed the roughhousing, but ${otherProfileData.pronounArray[0]} ${(otherProfileData.pronounArray[5] == 'singular') ? 'is' : 'are'} struck by exhaustion. After taking a short nap, ${otherProfileData.pronounArray[0]} notice${(otherProfileData.pronounArray[5] == 'singular') ? 's' : ''} the rash creeping along ${otherProfileData.pronounArray[2]} back. Oh no! The ${otherProfileData.species} has gotten an infection while playing!*`;
+
+								if (otherProfileData.userId === profileData.userId) {
+
+									embedFooterStatsTextPlayer1 = `-${healthPoints} HP (from infection)\n${embedFooterStatsTextPlayer1}`;
 								}
-							}
+								else {
 
-							await depleteStats();
+									embedFooterStatsTextPlayer2 = `-${healthPoints} HP (from infection)\n${embedFooterStatsTextPlayer2}`;
+								}
 
-							const experiencePoints = Loottable(11, 5);
+								break;
 
-							embedFooterStatsTextPlayer1 = `+${experiencePoints} XP (${profileData.experience + experiencePoints}/${profileData.levels * 50}) for ${profileData.name}\n${embedFooterStatsTextPlayer1}`;
-							embedFooterStatsTextPlayer2 = `+${experiencePoints} XP (${partnerProfileData.experience + experiencePoints}/${partnerProfileData.levels * 50}) for ${partnerProfileData.name}\n${embedFooterStatsTextPlayer2}`;
+							default:
 
-							profileData = await profileModel.findOneAndUpdate(
-								{ userId: message.author.id, serverId: message.guild.id },
-								{ $inc: { experience: experiencePoints } },
-							);
+								userInjuryObject.sprains += 1;
 
-							partnerProfileData = await profileModel.findOneAndUpdate(
-								{ userId: message.mentions.users.first().id, serverId: message.guild.id },
-								{ $inc: { experience: experiencePoints } },
-							);
+								getHurtText += `*${otherProfileData.name} tries to get up with ${currentProfileData.name}'s help, but the ${otherProfileData.species} feels a horrible pain as ${otherProfileData.pronounArray[0]} get up. Ironically, ${otherProfileData.name} got a sprain from getting up after the fight.*`;
 
-							embedArray.push({
-								color: profileData.color,
-								author: { name: profileData.name, icon_url: profileData.avatarURL },
-								description: `*The two animals wrestle with each other until ${profileData.name} falls over the ${partnerProfileData.species} and both of them land on the ground. They pant and glare at each other, but ${partnerProfileData.name} can't contain ${partnerProfileData.pronounArray[2]} laughter. The ${profileData.species} starts to giggle as well. The fight has been fun, even though no one won.*`,
-								footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
-							});
+								if (otherProfileData.userId === profileData.userId) {
 
-							botReply = await message
-								.reply({
-									embeds: embedArray,
-									components: componentArray,
-								})
-								.catch((error) => {
-									if (error.httpStatus !== 404) {
-										throw new Error(error);
-									}
-								});
+									embedFooterStatsTextPlayer1 = `-${healthPoints} HP (from sprain)\n${embedFooterStatsTextPlayer1}`;
+								}
+								else {
 
-							await extraEmbeds();
-
-							return resolve();
+									embedFooterStatsTextPlayer2 = `-${healthPoints} HP (from sprain)\n${embedFooterStatsTextPlayer2}`;
+								}
 						}
+
+						userInjuryObjectPlayer1 = (otherProfileData.userId === profileData.userId) ? userInjuryObject : userInjuryObjectPlayer1;
+						userInjuryObjectPlayer2 = (otherProfileData.userId === profileData.userId) ? userInjuryObjectPlayer2 : userInjuryObject;
 					}
-
-					const newTurnEmbedTextArray = [
-						`*${currentProfileData.name} bites into ${otherProfileData.name}, not very deep, but deep enough to hang onto the ${otherProfileData.species}. ${otherProfileData.name} needs to get the ${currentProfileData.species} off of ${otherProfileData.pronounArray[1]}.*`,
-						`*${currentProfileData.name} slams into ${otherProfileData.name}, leaving the ${otherProfileData.species} disoriented. ${otherProfileData.name} needs to start an attack of ${otherProfileData.pronounArray[2]} own now.*`,
-						`*${otherProfileData.name} has gotten hold of ${currentProfileData.name}, but the ${currentProfileData.species} manages to get ${otherProfileData.pronounArray[1]} off, sending the ${otherProfileData.species} slamming into the ground. ${otherProfileData.name} needs to get up and try a new strategy.*`,
-					];
-
-					newTurnEmbedTextArrayIndex = generateRandomNumber(newTurnEmbedTextArray.length - 1, 0, newTurnEmbedTextArrayIndex);
 
 					embedArray.push({
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
-						description: newTurnEmbedTextArray[newTurnEmbedTextArrayIndex],
+						description: `*The two animals are pressing against each other with all their might. It seems like the fight will never end this way, but ${currentProfileData.name} has one more trick up ${currentProfileData.pronounArray[2]} sleeve: ${currentProfileData.pronounArray[0]} simply moves out of the way, letting ${otherProfileData.name} crash into the ground. ${otherProfileData.pronounArray[0].charAt(0).toUpperCase() + otherProfileData.pronounArray[0].slice(1)} has a wry grin on ${otherProfileData.pronounArray[2]} face as ${otherProfileData.pronounArray[0]} looks up at the ${currentProfileData.species}. ${currentProfileData.name} wins this fight, but who knows about the next one?*\n\n${getHurtText}`,
+						footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
 					});
 
 					botReply = await message
 						.reply({
-							content: `<@!${otherProfileData.userId}>`,
+							content: messageContent,
 							embeds: embedArray,
 							components: componentArray,
 						})
@@ -548,124 +402,160 @@ module.exports = {
 							}
 						});
 
-					await newRound(!isPartner);
+					await checkHealthAndLevel();
 
-					return resolve();
+					return;
+				}
 
-					async function extraEmbeds() {
+				if (isDraw()) {
 
-						userInjuryObjectPlayer1 = await condition.decreaseHealth(message, profileData, botReply, userInjuryObjectPlayer1);
-						userInjuryObjectPlayer2 = await condition.decreaseHealth(message, partnerProfileData, botReply, userInjuryObjectPlayer2);
+					for (const columnArray of componentArray) {
 
-						profileData = await profileModel.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
-							{ $set: { injuryObject: userInjuryObjectPlayer1 } },
-						);
+						for (const rowArray of columnArray.components) {
 
-						partnerProfileData = await profileModel.findOneAndUpdate(
-							{ userId: message.mentions.users.first().id, serverId: message.guild.id },
-							{ $set: { injuryObject: userInjuryObjectPlayer2 } },
-						);
-
-						await levels.levelCheck(profileData, botReply);
-						await levels.levelCheck(partnerProfileData, botReply);
-
-						if (await checkValidity.isPassedOut(message, profileData)) {
-
-							await levels.decreaseLevel(profileData);
-						}
-
-						if (await checkValidity.isPassedOut(message, partnerProfileData)) {
-
-							await levels.decreaseLevel(partnerProfileData);
+							rowArray.disabled = true;
 						}
 					}
 
-					function hasWon() {
+					await decreaseStats();
 
-						const diagonal_1_1 = componentArray[1].components[1].emoji.name;
+					const experiencePoints = generateRandomNumber(11, 5);
 
-						const diagonal_0_0 = componentArray[0].components[0].emoji.name;
-						const diagonal_2_2 = componentArray[2].components[2].emoji.name;
+					embedFooterStatsTextPlayer1 = `+${experiencePoints} XP (${profileData.experience + experiencePoints}/${profileData.levels * 50}) for ${profileData.name}\n${embedFooterStatsTextPlayer1}`;
+					embedFooterStatsTextPlayer2 = `+${experiencePoints} XP (${partnerProfileData.experience + experiencePoints}/${partnerProfileData.levels * 50}) for ${partnerProfileData.name}\n${embedFooterStatsTextPlayer2}`;
 
-						const diagonal_0_2 = componentArray[0].components[2].emoji.name;
-						const diagonal_2_0 = componentArray[2].components[0].emoji.name;
+					profileData = await profileModel.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{ $inc: { experience: experiencePoints } },
+					);
 
-						if (diagonal_1_1 !== emptyField && ((diagonal_1_1 === diagonal_0_0 && diagonal_1_1 === diagonal_2_2) || (diagonal_1_1 === diagonal_0_2 && diagonal_1_1 === diagonal_2_0))) {
+					partnerProfileData = await profileModel.findOneAndUpdate(
+						{ userId: message.mentions.users.first().id, serverId: message.guild.id },
+						{ $inc: { experience: experiencePoints } },
+					);
 
-							return true;
-						}
+					embedArray.push({
+						color: profileData.color,
+						author: { name: profileData.name, icon_url: profileData.avatarURL },
+						description: `*The two animals wrestle with each other until ${profileData.name} falls over the ${partnerProfileData.species} and both of them land on the ground. They pant and glare at each other, but ${partnerProfileData.name} can't contain ${partnerProfileData.pronounArray[2]} laughter. The ${profileData.species} starts to giggle as well. The fight has been fun, even though no one won.*`,
+						footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
+					});
 
-						for (const value of [0, 1, 2]) {
-
-							const column_1 = componentArray[value].components[0].emoji.name;
-							const column_2 = componentArray[value].components[1].emoji.name;
-							const column_3 = componentArray[value].components[2].emoji.name;
-
-							const row_1 = componentArray[0].components[value].emoji.name;
-							const row_2 = componentArray[1].components[value].emoji.name;
-							const row_3 = componentArray[2].components[value].emoji.name;
-
-							if ((column_1 === column_2 && column_1 === column_3 && column_1 !== emptyField) || (row_1 === row_2 && row_1 === row_3 && row_1 !== emptyField)) {
-
-								return true;
+					botReply = await message
+						.reply({
+							content: messageContent,
+							embeds: embedArray,
+							components: componentArray,
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
 							}
-						}
+						});
 
-						return false;
-					}
+					await checkHealthAndLevel();
 
-					function isDraw() {
-
-						for (const columnArray of componentArray) {
-
-							for (const rowArray of columnArray.components) {
-
-								if (rowArray.emoji.name === emptyField) {
-
-									return false;
-								}
-							}
-						}
-
-						return true;
-					}
-				});
-			});
-		}
-
-		function Loottable(max, min) {
-
-			return Math.floor(Math.random() * max) + min;
-		}
-
-		function weightedTable(values) {
-
-			const table = [];
-
-			for (const i in values) {
-
-				for (let j = 0; j < values[i]; j++) {
-
-					table.push(i);
+					return;
 				}
 			}
 
-			return table[Math.floor(Math.random() * table.length)];
+			const newTurnEmbedTextArray = [
+				`*${currentProfileData.name} bites into ${otherProfileData.name}, not very deep, but deep enough to hang onto the ${otherProfileData.species}. ${otherProfileData.name} needs to get the ${currentProfileData.species} off of ${otherProfileData.pronounArray[1]}.*`,
+				`*${currentProfileData.name} slams into ${otherProfileData.name}, leaving the ${otherProfileData.species} disoriented. ${otherProfileData.name} needs to start an attack of ${otherProfileData.pronounArray[2]} own now.*`,
+				`*${otherProfileData.name} has gotten hold of ${currentProfileData.name}, but the ${currentProfileData.species} manages to get ${otherProfileData.pronounArray[1]} off, sending the ${otherProfileData.species} slamming into the ground. ${otherProfileData.name} needs to get up and try a new strategy.*`,
+			];
+
+			newTurnEmbedTextArrayIndex = generateRandomNumberWithException(newTurnEmbedTextArray.length, 0, newTurnEmbedTextArrayIndex);
+
+			embedArray.push({
+				color: profileData.color,
+				author: { name: profileData.name, icon_url: profileData.avatarURL },
+				description: newTurnEmbedTextArray[newTurnEmbedTextArrayIndex],
+			});
+
+			botReply = await message
+				.reply({
+					content: `<@${otherProfileData.userId}>` + (messageContent == null ? '' : messageContent),
+					embeds: embedArray,
+					components: componentArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
+
+			return await startNewRound(!isPartner);
 		}
 
-		function generateRandomNumber(max, min, exception) {
+		async function checkHealthAndLevel() {
 
-			const randomNumber = Loottable(max, min);
-			return (randomNumber == exception) ? generateRandomNumber(min, max, exception) : randomNumber;
+			botReply = await decreaseHealth(message, profileData, botReply, userInjuryObjectPlayer1);
+			botReply = await decreaseHealth(message, partnerProfileData, botReply, userInjuryObjectPlayer2);
+
+			botReply = await checkLevelUp(profileData, botReply);
+			botReply = await checkLevelUp(partnerProfileData, botReply);
+
+			await isPassedOut(message, profileData, true);
+			await isPassedOut(message, partnerProfileData, true);
 		}
 
-		async function depleteStats() {
+		function isWin() {
 
-			const thirstPointsPlayer1 = await condition.decreaseThirst(profileData);
-			const hungerPointsPlayer1 = await condition.decreaseHunger(profileData);
-			const extraLostEnergyPointsPlayer1 = await condition.decreaseEnergy(profileData);
-			let energyPointsPlayer1 = Loottable(5, 1) + extraLostEnergyPointsPlayer1;
+			const diagonal_1_1 = componentArray[1].components[1].emoji.name;
+
+			const diagonal_0_0 = componentArray[0].components[0].emoji.name;
+			const diagonal_2_2 = componentArray[2].components[2].emoji.name;
+
+			const diagonal_0_2 = componentArray[0].components[2].emoji.name;
+			const diagonal_2_0 = componentArray[2].components[0].emoji.name;
+
+			if (diagonal_1_1 !== emptyField && ((diagonal_1_1 === diagonal_0_0 && diagonal_1_1 === diagonal_2_2) || (diagonal_1_1 === diagonal_0_2 && diagonal_1_1 === diagonal_2_0))) {
+
+				return true;
+			}
+
+			for (const value of [0, 1, 2]) {
+
+				const column_1 = componentArray[value].components[0].emoji.name;
+				const column_2 = componentArray[value].components[1].emoji.name;
+				const column_3 = componentArray[value].components[2].emoji.name;
+
+				const row_1 = componentArray[0].components[value].emoji.name;
+				const row_2 = componentArray[1].components[value].emoji.name;
+				const row_3 = componentArray[2].components[value].emoji.name;
+
+				if ((column_1 === column_2 && column_1 === column_3 && column_1 !== emptyField) || (row_1 === row_2 && row_1 === row_3 && row_1 !== emptyField)) {
+
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		function isDraw() {
+
+			for (const columnArray of componentArray) {
+
+				for (const rowArray of columnArray.components) {
+
+					if (rowArray.emoji.name === emptyField) {
+
+						return false;
+					}
+				}
+			}
+
+			return true;
+		}
+
+		async function decreaseStats() {
+
+			const thirstPointsPlayer1 = await decreaseThirst(profileData);
+			const hungerPointsPlayer1 = await decreaseHunger(profileData);
+			const extraLostEnergyPointsPlayer1 = await decreaseEnergy(profileData);
+			let energyPointsPlayer1 = generateRandomNumber(5, 1) + extraLostEnergyPointsPlayer1;
 
 			if (profileData.energy - energyPointsPlayer1 < 0) {
 
@@ -701,10 +591,10 @@ module.exports = {
 			}
 
 
-			const thirstPointsPlayer2 = await condition.decreaseThirst(partnerProfileData);
-			const hungerPointsPlayer2 = await condition.decreaseHunger(partnerProfileData);
-			const extraLostEnergyPointsPlayer2 = await condition.decreaseEnergy(partnerProfileData);
-			let energyPointsPlayer2 = Loottable(5, 1) + extraLostEnergyPointsPlayer2;
+			const thirstPointsPlayer2 = await decreaseThirst(partnerProfileData);
+			const hungerPointsPlayer2 = await decreaseHunger(partnerProfileData);
+			const extraLostEnergyPointsPlayer2 = await decreaseEnergy(partnerProfileData);
+			let energyPointsPlayer2 = generateRandomNumber(5, 1) + extraLostEnergyPointsPlayer2;
 
 			if (partnerProfileData.energy - energyPointsPlayer2 < 0) {
 

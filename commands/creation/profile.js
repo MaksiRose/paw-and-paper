@@ -1,6 +1,5 @@
 const profileModel = require('../../models/profileModel');
-const checkAccountCompletion = require('../../utils/checkAccountCompletion');
-const checkValidity = require('../../utils/checkValidity');
+const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports = {
@@ -8,19 +7,14 @@ module.exports = {
 	aliases: ['info', 'about'],
 	async sendMessage(client, message, argumentsArray, profileData) {
 
-		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
-
-			return;
-		}
-
-		if (await checkValidity.hasCooldown(message, profileData, [module.exports.name].concat(module.exports.aliases))) {
+		if (await hasNotCompletedAccount(message, profileData)) {
 
 			return;
 		}
 
 		profileData = await startCooldown(message, profileData);
 
-		let components = [{
+		const components = [{
 			type: 'ACTION_ROW',
 			components: [{
 				type: 'BUTTON',
@@ -35,7 +29,7 @@ module.exports = {
 			}],
 		}];
 
-		if (message.mentions.users.size) {
+		if (message.mentions.users.size > 0) {
 
 			profileData = await profileModel.findOne({
 				userId: message.mentions.users.first().id,
@@ -59,30 +53,26 @@ module.exports = {
 					});
 			}
 
-			components = [{
-				type: 'ACTION_ROW',
-				components: [{
-					type: 'BUTTON',
-					customId: 'profile-refresh',
-					emoji: { name: '🔁' },
-					style: 'SECONDARY',
-				}],
-			}];
+			components[0].components.pop();
+		}
+		else if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
+
+			components[0].components.pop();
 		}
 
-		let injuryText = (Object.values(profileData.injuryObject).every(item => item == 0)) ? 'none' : '';
+		let injuryText = Object.values(profileData.injuryObject).every(item => item == 0) ? 'none' : '';
 
-		for (const [injuryKey, injuryAmount] of Object.entries(profileData.injuryObject)) {
+		for (const [injuryKind, injuryAmount] of Object.entries(profileData.injuryObject)) {
 
 			if (injuryAmount > 0) {
 
 				if (typeof injuryAmount === 'number') {
 
-					injuryText += `${injuryAmount} ${(injuryAmount < 2) ? injuryKey.slice(0, -1) : injuryKey}\n`;
+					injuryText += `${injuryAmount} ${(injuryAmount < 2) ? injuryKind.slice(0, -1) : injuryKind}\n`;
 				}
 				else {
 
-					injuryText += `${injuryKey}: yes\n`;
+					injuryText += `${injuryKind}: yes\n`;
 				}
 			}
 		}
@@ -112,6 +102,7 @@ module.exports = {
 						{ name: '**Condition**', value: `❤️ Health: \`${profileData.health}/${profileData.maxHealth}\`\n⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\`\n🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`` },
 						{ name: '**🩹 Injuries/Illnesses**', value: injuryText },
 					],
+					footer: { text: profileData.hasQuest == true ? 'There is one open quest!' : null },
 				}],
 				components: components,
 			})

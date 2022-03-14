@@ -1,15 +1,14 @@
 const config = require('../../config.json');
 const profileModel = require('../../models/profileModel');
-const maps = require('../../utils/maps');
-const checkAccountCompletion = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
-const messageCollector = require('../../utils/messageCollector');
+const { speciesMap } = require('../../utils/itemsInfo');
+const { hasNoName } = require('../../utils/checkAccountCompletion');
 
 module.exports = {
 	name: 'species',
 	async sendMessage(client, message, argumentsArray, profileData) {
 
-		if (await checkAccountCompletion.hasNoName(message, profileData)) {
+		if (await hasNoName(message, profileData)) {
 
 			return;
 		}
@@ -34,7 +33,7 @@ module.exports = {
 		}
 
 		const chosenSpecies = argumentsArray.join(' ').toLowerCase();
-		const speciesNameArray = [...maps.speciesMap.keys()].sort();
+		const speciesNameArray = [...speciesMap.keys()].sort();
 		let selectMenuOptionsArray = new Array();
 		let speciesPage = 0;
 
@@ -49,7 +48,7 @@ module.exports = {
 		}
 
 
-		if (chosenSpecies != null && maps.speciesMap.has(chosenSpecies)) {
+		if (chosenSpecies != null && speciesMap.has(chosenSpecies)) {
 
 			await profileModel.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
@@ -96,102 +95,90 @@ module.exports = {
 				}
 			});
 
-		await messageCollector(message, botReply);
 		await interactionCollector();
 
 		async function interactionCollector() {
 
-			const filter = async (i) => {
+			const filter = i => (i.values[0] == 'species_page' || speciesMap.has(i.values[0])) && i.user.id == message.author.id;
 
-				if (!i.message.reference || !i.message.reference.messageId) {
+			const interaction = await botReply
+				.awaitMessageComponent({ filter, time: 120000 })
+				.catch(() => {return null;});
 
-					return false;
+			if (interaction == null) {
+
+				return await botReply
+					.edit({
+						components: [],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
+
+			if (interaction.values[0] == 'species_page') {
+
+				speciesPage++;
+				if (speciesPage >= Math.ceil(speciesNameArray.length / 24)) {
+
+					speciesPage = 0;
 				}
 
-				const userMessage = await i.channel.messages.fetch(i.message.reference.messageId);
-				return userMessage.id == message.id && (i.values[0] == 'species_page' || maps.speciesMap.has(i.values[0])) && i.user.id == message.author.id;
-			};
+				selectMenuOptionsArray = [];
 
-			const collector = message.channel.createMessageComponentCollector({ filter, max: 1, time: 120000 });
-			collector.on('end', async (collected) => {
+				for (const speciesName of speciesNameArray.slice((speciesPage * 24), 24 + (speciesPage * 24))) {
 
-				if (!collected.size) {
-
-					return await botReply
-						.edit({
-							components: [],
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
-						});
+					selectMenuOptionsArray.push({ label: speciesName, value: speciesName });
 				}
 
-				const interaction = collected.first();
+				selectMenuOptionsArray.push({ label: 'Show more species options', value: 'species_page', description: `You are currently on page ${speciesPage + 1}`, emoji: '📋' });
 
-				if (interaction.values[0] == 'species_page') {
-
-					speciesPage++;
-					if (speciesPage >= Math.ceil(speciesNameArray.length / 24)) {
-
-						speciesPage = 0;
-					}
-
-					selectMenuOptionsArray = [];
-
-					for (const speciesName of speciesNameArray.slice((speciesPage * 24), 24 + (speciesPage * 24))) {
-
-						selectMenuOptionsArray.push({ label: speciesName, value: speciesName });
-					}
-
-					selectMenuOptionsArray.push({ label: 'Show more species options', value: 'species_page', description: `You are currently on page ${speciesPage + 1}`, emoji: '📋' });
-
-					await interaction.message
-						.edit({
+				await interaction.message
+					.edit({
+						components: [{
+							type: 'ACTION_ROW',
 							components: [{
-								type: 'ACTION_ROW',
-								components: [{
-									type: 'SELECT_MENU',
-									customId: 'species-options',
-									placeholder: 'Select a species',
-									options: selectMenuOptionsArray,
-								}],
+								type: 'SELECT_MENU',
+								customId: 'species-options',
+								placeholder: 'Select a species',
+								options: selectMenuOptionsArray,
 							}],
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
-						});
+						}],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
 
-					return await interactionCollector();
-				}
+				return await interactionCollector();
+			}
 
-				if (maps.speciesMap.has(interaction.values[0])) {
+			if (speciesMap.has(interaction.values[0])) {
 
-					await profileModel.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{ $set: { species: interaction.values[0] } },
-					);
+				await profileModel.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $set: { species: interaction.values[0] } },
+				);
 
-					return await interaction.message
-						.edit({
-							embeds: [{
-								color: '#9d9e51',
-								author: { name: `${message.guild.name}`, icon_url: message.guild.iconURL() },
-								description: `*The Alpha took a friendly step towards the ${interaction.values[0]}.* "It's nice to have you here, ${profileData.name}" *they said. More and more packmates came closer to greet the newcomer.*`,
-								footer: { text: 'You are now done setting up your account! Type "rp profile" to can look at it. With "rp help" you can see how else you can customize your profile, as well as your other options.' },
-							}],
-							components: [],
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
-						});
-				}
-			});
+				return await interaction.message
+					.edit({
+						embeds: [{
+							color: '#9d9e51',
+							author: { name: `${message.guild.name}`, icon_url: message.guild.iconURL() },
+							description: `*The Alpha took a friendly step towards the ${interaction.values[0]}.* "It's nice to have you here, ${profileData.name}" *they said. More and more packmates came closer to greet the newcomer.*`,
+							footer: { text: 'You are now done setting up your account! Type "rp profile" to look at it. With "rp help" you can see how else you can customize your profile, as well as your other options.' },
+						}],
+						components: [],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
 		}
 	},
 };

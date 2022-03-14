@@ -1,11 +1,11 @@
 const serverModel = require('../models/serverModel');
 const profileModel = require('../models/profileModel');
-const maps = require('../utils/maps');
-const store = require('../commands/general/store');
-const eat = require('../commands/general/eat');
 const config = require('../config.json');
 const errorHandling = require('../utils/errorHandling');
 const pjson = require('../package.json');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
+const { execute } = require('./messageCreate');
+const fs = require('fs');
 
 module.exports = {
 	name: 'interactionCreate',
@@ -21,11 +21,128 @@ module.exports = {
 		// there are DM interactions and dont have referenced messages, so thet get processed before everything else
 		if (interaction.customId == 'ticket') {
 
-			return await interaction.message
+			const user = await client.users.fetch(interaction.user.id);
+			const message = await user.dmChannel.messages.fetch(interaction.message.id);
+
+			return await message
 				.delete()
 				.catch(async (error) => {
 					if (error.httpStatus !== 404) {
 						return await errorHandling.output(interaction.message, error);
+					}
+				});
+		}
+
+		if (interaction.customId.includes('updates-off')) {
+
+			const user = await client.users.fetch(interaction.user.id);
+			let dataObject = {
+				usersArray: [user.id],
+			};
+
+			if (fs.existsSync('./database/noUpdatesUserList.json')) {
+
+				dataObject = JSON.parse(fs.readFileSync('./database/noUpdatesUserList.json'));
+
+				if (dataObject.usersArray.findIndex(userId => userId == user.id) == -1) {
+
+					dataObject.usersArray.push(user.id);
+				}
+			}
+
+			fs.writeFileSync('./database/noUpdatesUserList.json', JSON.stringify(dataObject, null, '\t'));
+
+			await user
+				.createDM()
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
+
+			await interaction
+				.followUp({
+					content: 'You turned updates for new releases off!',
+					ephemeral: true,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
+
+			return await interaction
+				.editReply({
+					components: [{
+						type: 'ACTION_ROW',
+						components: [{
+							type: 'BUTTON',
+							customId: 'updates-on',
+							label: 'Turn updates on',
+							style: 'SECONDARY',
+						}],
+					}],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
+		}
+
+		if (interaction.customId.includes('updates-on')) {
+
+			const user = await client.users.fetch(interaction.user.id);
+			let dataObject = {
+				usersArray: [],
+			};
+
+			if (fs.existsSync('./database/noUpdatesUserList.json')) {
+
+				dataObject = JSON.parse(fs.readFileSync('./database/noUpdatesUserList.json'));
+
+				if (dataObject.usersArray.findIndex(userId => userId == user.id) != -1) {
+
+					dataObject.usersArray.splice(dataObject.usersArray.findIndex(userId => userId == user.id), 1);
+				}
+			}
+
+			fs.writeFileSync('./database/noUpdatesUserList.json', JSON.stringify(dataObject, null, '\t'));
+
+			await user
+				.createDM()
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
+
+			await interaction
+				.followUp({
+					content: 'You turned updates for new releases on!',
+					ephemeral: true,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
+
+			return await interaction
+				.editReply({
+					components: [{
+						type: 'ACTION_ROW',
+						components: [{
+							type: 'BUTTON',
+							customId: 'updates-off',
+							label: 'Turn updates off',
+							style: 'SECONDARY',
+						}],
+					}],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
 					}
 				});
 		}
@@ -43,9 +160,8 @@ module.exports = {
 				serverId: guildId,
 			});
 
-			const accountDeletionValues = serverData.accountsToDelete.get(`${interaction.user.id}`);
 			const user = await client.users.fetch(interaction.user.id);
-			const botReply = await user.dmChannel.messages.fetch(accountDeletionValues.privateMessageId);
+			const botReply = await user.dmChannel.messages.fetch(interaction.message.id);
 
 			await botReply
 				.edit({
@@ -63,8 +179,11 @@ module.exports = {
 					}
 				});
 
-			await serverData.accountsToDelete.delete(`${interaction.user.id}`);
-			await serverData.save();
+			serverData.accountsToDelete = await serverData.accountsToDelete.delete(`${interaction.user.id}`);
+			await serverModel.findOneAndUpdate(
+				{ serverId: serverData.serverId },
+				{ $set: { accountsToDelete: serverData.accountsToDelete } },
+			);
 
 			return;
 		}
@@ -85,15 +204,9 @@ module.exports = {
 			return;
 		}
 
-		const serverData = await serverModel.findOne(
-			{ serverId: interaction.guild.id },
-		);
-
 		let profileData = await profileModel.findOne(
 			{ userId: interaction.user.id, serverId: interaction.guild.id },
 		);
-
-		const embedArray = interaction.message.embeds;
 
 		if (interaction.isSelectMenu()) {
 
@@ -112,10 +225,12 @@ module.exports = {
 								{ name: '**rp name [name]**', value: '__START YOUR ADVENTURE!__ Name your character.' },
 								{ name: '**rp species [species]**', value: 'Specify the species of your character. If you don\'t specify a species, it will give you an overview of the available ones.' },
 								{ name: '**rp profile (@user)**', value: 'Look up all the available info about a character.' },
+								{ name: '**rp stats**', value: 'Quick view of your characters condition.' },
 								{ name: '**rp desc [description text]**', value: 'Give a more detailed description of your character.' },
 								{ name: '**rp pronouns**', value: 'Display the pronouns you are using during roleplay.' },
 								{ name: '**rp picture [attachment of the desired image]**', value: 'Choose a picture for your character.' },
 								{ name: '**rp color [hex code]**', value: 'Enter a valid hex code to give your messages and profile that color!' },
+								{ name: '**rp profilelist**', value: 'View a list of all the profiles that exist on this server.' },
 								{ name: '**rp delete**', value: 'Delete your account and reset your data permanently.' },
 							],
 						}],
@@ -135,14 +250,15 @@ module.exports = {
 							color: config.default_color,
 							title: 'Page 2: General Commands',
 							fields: [
+								{ name: '**rp practice**', value: 'Practice fighting wild animals! You cannot get hurt here.' },
+								{ name: '**rp rest**', value: 'Zzz... get some sleep and fill up your energy meter. Takes some time to refill.' },
 								{ name: '**rp inventory**', value: 'This is a collection of all the things your pack has gathered, listed up.' },
 								{ name: '**rp store**', value: 'Take items you have gathered for your pack, and put them in the pack inventory.' },
-								{ name: '**rp say [text]**', value: 'Talk to your fellow packmates! Gives 1 experience point each time.' },
-								{ name: '**rp go (region)**', value: 'Go to a specific region in your pack!' },
-								{ name: '**rp rest**', value: 'Zzz... get some sleep and fill up your energy meter.' },
 								{ name: '**rp eat (item)**', value: 'Yummy! Take the appropriate food for your species out of the packs food pile and fill up your hunger meter.' },
 								{ name: '**rp drink**', value: 'Refreshing! Drink some water and fill up your thirst meter.' },
 								{ name: '**rp playfight [@user]**', value: 'Playfully fight with another packmate!' },
+								{ name: '**rp say [text]**', value: 'Talk to your fellow packmates! Gives 1 experience point each time.' },
+								{ name: '**rp go (region)**', value: 'Go to a specific region in your pack!' },
 								{ name: '**rp rank**', value: 'Once you successfully finished a quest, you can move up a rank!' },
 								{ name: '**rp ticket [text]**', value: 'Report a bug, give feedback, suggest a feature!' },
 							],
@@ -193,7 +309,8 @@ module.exports = {
 								{ name: '**rp explore**', value: 'Go out into the wild! Find different animals and herbs. Costs energy, but gives XP. __Not available to Younglings.__' },
 								{ name: '**rp heal @user**', value: 'Heal your packmates! Costs energy, but gives XP. __Only available to Apprentices, Healers and Elderlies.__' },
 								{ name: '**rp share (@user)**', value: 'Storytime! So interesting, but tiring too. Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person. __Only available to Elderlies.__' },
-								{ name: '**rp quest**', value: 'Get quests by playing and exploring. Start them with this command. If you are successful, you can move up a rank.' },
+								{ name: '**rp attack**', value: 'If humans are attacking the pack, you can fight back using this command.' },
+								{ name: '**rp quest**', value: 'Get quests by playing (as Youngling) and exploring. Start them with this command. If you are successful, you can move up a rank.' },
 								{ name: '\n**__CREDITS:__**', value: `This bot was made with love by ${maksi.tag}. Special thanks goes out to ${ezra.tag}, ${ren.tag} and ${elliott.tag}, who did a lot of the custom bot responses, and ${jags.tag} who did the profile picture. Thank you also to everyone who tested the bot and gave feedback.\nThis bot was originally created for a Discord server called [Rushing River Pack](https://disboard.org/server/854522091328110595). If you are otherkin, therian, or supporter of those, you are welcome to join.` },
 								{ name: '\n**__OTHER:__**', value: `If you want to support me, you can donate [here](https://streamlabs.com/maksirose/tip)! :)\nYou can find the GitHub repository for this project [here](https://github.com/MaksiRose/paw-and-paper)\nThe bot is currently running on version ${pjson.version}.` },
 							],
@@ -206,14 +323,9 @@ module.exports = {
 					});
 			}
 
-			const inventoryMaps = {
-				commonPlants: new Map(maps.commonPlantMap),
-				uncommonPlants: new Map(maps.uncommonPlantMap),
-				rarePlants: new Map(maps.rarePlantMap),
-				meat: new Map(maps.speciesMap),
-			};
+			const plantNamesArray = [...commonPlantsMap.keys(), ...uncommonPlantsMap.keys(), ...rarePlantsMap.keys(), ...speciesMap.keys() ].sort();
 
-			if (interaction.customId == 'eat-options' && [].concat(...Object.values(inventoryMaps).map(value => [...value.keys()])).some(elem => elem == interaction.values[0])) {
+			if (interaction.customId == 'eat-options' && plantNamesArray.some(elem => elem == interaction.values[0])) {
 
 				interaction.message
 					.delete()
@@ -223,28 +335,9 @@ module.exports = {
 						}
 					});
 
-				interaction.message.embeds.splice(-1, 1);
+				referencedMessage.content = `${config.prefix}eat ${interaction.values[0]}`;
 
-				return await eat
-					.sendMessage(client, referencedMessage, interaction.values, profileData, serverData, interaction.message.embeds)
-					.then(async () => {
-
-						profileData = await profileModel.findOne({
-							userId: interaction.user.id,
-							serverId: interaction.guild.id,
-						});
-
-						setTimeout(async function() {
-
-							profileData = await profileModel.findOneAndUpdate(
-								{ userId: interaction.user.id, serverId: interaction.guild.id },
-								{ $set: { hasCooldown: false } },
-							);
-						}, 3000);
-					})
-					.catch(async (error) => {
-						return await errorHandling.output(interaction.message, error);
-					});
+				return await execute(client, referencedMessage);
 			}
 		}
 
@@ -287,12 +380,33 @@ module.exports = {
 
 			if (interaction.customId == 'profile-refresh') {
 
+				const components = [{
+					type: 'ACTION_ROW',
+					components: [{
+						type: 'BUTTON',
+						customId: 'profile-refresh',
+						emoji: { name: '🔁' },
+						style: 'SECONDARY',
+					}, {
+						type: 'BUTTON',
+						customId: 'profile-store',
+						label: 'Store food away',
+						style: 'SECONDARY',
+					}],
+				}];
+
 				if (referencedMessage.mentions.users.size > 0) {
 
 					profileData = await profileModel.findOne({
 						userId: referencedMessage.mentions.users.first().id,
 						serverId: referencedMessage.guild.id,
 					});
+
+					components[0].components.pop();
+				}
+				else if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
+
+					components[0].components.pop();
 				}
 
 				let injuryText = (Object.values(profileData.injuryObject).every(item => item == 0)) ? 'none' : '';
@@ -331,9 +445,62 @@ module.exports = {
 								{ name: '**Condition**', value: `❤️ Health: \`${profileData.health}/${profileData.maxHealth}\`\n⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\`\n🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`` },
 								{ name: '**🩹 Injuries/Illnesses**', value: injuryText },
 							],
+							footer: { text: profileData.hasQuest == true ? 'There is one open quest!' : null },
 						}],
+						components: components,
 					})
 					.catch(async (error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
+
+			if (interaction.customId == 'stats-refresh') {
+
+				let injuryText = (Object.values(profileData.injuryObject).every(item => item == 0)) ? null : '';
+
+				for (const [injuryKey, injuryAmount] of Object.entries(profileData.injuryObject)) {
+
+					if (injuryAmount > 0) {
+
+						if (typeof injuryAmount === 'number') {
+
+							injuryText += `, ${injuryAmount} ${(injuryAmount < 2) ? injuryKey.slice(0, -1) : injuryKey}`;
+						}
+						else {
+
+							injuryText += `${injuryKey}: yes\n`;
+						}
+					}
+				}
+
+				const components = [{
+					type: 'ACTION_ROW',
+					components: [{
+						type: 'BUTTON',
+						customId: 'stats-refresh',
+						emoji: { name: '🔁' },
+						style: 'SECONDARY',
+					}, {
+						type: 'BUTTON',
+						customId: 'profile-store',
+						label: 'Store food away',
+						style: 'SECONDARY',
+					}],
+				}];
+
+				if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
+
+					components[0].components.pop();
+				}
+
+				await interaction.message
+					.edit({
+						content: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\` - ⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\` - 🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`${(injuryText == null) ? '' : `🩹 Injuries/Illnesses: ${injuryText.slice(2)}`}`,
+						components: components,
+					})
+					.catch((error) => {
 						if (error.httpStatus !== 404) {
 							throw new Error(error);
 						}
@@ -350,28 +517,9 @@ module.exports = {
 						}
 					});
 
-				embedArray.pop();
+				referencedMessage.content = `${config.prefix}store`;
 
-				await store
-					.sendMessage(client, referencedMessage, interaction.values, profileData, serverData, embedArray)
-					.then(async () => {
-
-						profileData = await profileModel.findOne({
-							userId: interaction.user.id,
-							serverId: interaction.guild.id,
-						});
-
-						setTimeout(async function() {
-
-							profileData = await profileModel.findOneAndUpdate(
-								{ userId: interaction.user.id, serverId: interaction.guild.id },
-								{ $set: { hasCooldown: false } },
-							);
-						}, 3000);
-					})
-					.catch(async (error) => {
-						return await errorHandling.output(interaction.message, error);
-					});
+				return await execute(client, referencedMessage);
 			}
 		}
 	},

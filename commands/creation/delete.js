@@ -1,6 +1,6 @@
 const config = require('../../config.json');
 const profileModel = require('../../models/profileModel');
-const messageCollector = require('../../utils/messageCollector');
+const { createCommandCollector } = require('../../utils/commandCollector');
 
 module.exports = {
 	name: 'delete',
@@ -54,81 +54,65 @@ module.exports = {
 				}
 			});
 
-		await messageCollector(message, botReply);
-		const filter = async (i) => {
+		createCommandCollector(message.author.id, message.guild.id, botReply);
+		const filter = i => (i.customId == 'delete-confirm' || i.customId == 'delete-cancel') && i.user.id == message.author.id;
 
-			if (!i.message.reference || !i.message.reference.messageId) {
+		const interaction = await botReply
+			.awaitMessageComponent({ filter, time: 120000 })
+			.catch(async () => {return null;});
 
-				return false;
-			}
+		if (interaction == null) {
 
-			const userMessage = await i.channel.messages
-				.fetch(i.message.reference.messageId)
+			return await botReply
+				.edit({
+					components: [],
+				})
 				.catch((error) => {
-					throw new Error(error);
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
+		}
 
-			return userMessage.id == message.id && (i.customId == 'delete-confirm' || i.customId == 'delete-cancel') && i.user.id == message.author.id;
-		};
+		if (interaction.customId == 'delete-confirm') {
 
-		const collector = message.channel.createMessageComponentCollector({ filter, max: 1, time: 120000 });
-		collector.on('end', async function collectorEnd(collected) {
+			await profileModel.findOneAndDelete({
+				userId: message.author.id,
+				serverId: message.guild.id,
+			});
 
-			if (!collected.size) {
-
-				return await botReply
-					.edit({
-						components: [],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-			}
-
-			const interaction = collected.first();
-
-			if (interaction.customId == 'delete-confirm') {
-
-				await profileModel.findOneAndDelete({
-					userId: message.author.id,
-					serverId: message.guild.id,
+			return await interaction.message
+				.edit({
+					embeds: [{
+						color: '#9d9e51',
+						author: { name: `${interaction.guild.name}`, icon_url: interaction.guild.iconURL() },
+						title: 'Your account was deleted permanently! Type "rp name [name]" to start again.',
+					}],
+					components: [],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
 				});
+		}
 
-				return await interaction.message
-					.edit({
-						embeds: [{
-							color: '#9d9e51',
-							author: { name: `${interaction.guild.name}`, icon_url: interaction.guild.iconURL() },
-							title: 'Your account was deleted permanently! Type "rp name [name]" to start again.',
-						}],
-						components: [],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-			}
+		if (interaction.customId == 'delete-cancel') {
 
-			if (interaction.customId == 'delete-cancel') {
-
-				return await interaction.message
-					.edit({
-						embeds: [{
-							color: '#9d9e51',
-							author: { name: `${interaction.guild.name}`, icon_url: interaction.guild.iconURL() },
-							title: 'Account deletion canceled.',
-						}],
-						components: [],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-			}
-		});
+			return await interaction.message
+				.edit({
+					embeds: [{
+						color: '#9d9e51',
+						author: { name: `${interaction.guild.name}`, icon_url: interaction.guild.iconURL() },
+						title: 'Account deletion canceled.',
+					}],
+					components: [],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
+		}
 	},
 };

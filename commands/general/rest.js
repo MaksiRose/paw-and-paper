@@ -1,40 +1,38 @@
 const profileModel = require('../../models/profileModel');
-const checkAccountCompletion = require('../../utils/checkAccountCompletion');
-const checkValidity = require('../../utils/checkValidity');
-const executeResting = require('../../utils/executeResting');
+const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { isPassedOut, hasCooldown } = require('../../utils/checkValidity');
+const { startResting } = require('../../utils/executeResting');
 const startCooldown = require('../../utils/startCooldown');
+const { remindOfAttack } = require('../specific/attack');
 
 module.exports = {
 	name: 'rest',
 	aliases: ['sleep'],
 	async sendMessage(client, message, argumentsArray, profileData) {
 
-		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
+		if (await hasNotCompletedAccount(message, profileData)) {
 
 			return;
 		}
 
-		if (await checkValidity.isPassedOut(message, profileData)) {
+		if (await isPassedOut(message, profileData, false)) {
 
 			return;
 		}
 
-		if (await checkValidity.hasCooldown(message, profileData, [module.exports.name].concat(module.exports.aliases))) {
+		if (await hasCooldown(message, profileData, [module.exports.name].concat(module.exports.aliases))) {
 
 			return;
-		}
-
-		if (await checkValidity.hasQuest(message, profileData)) {
-
-			return true;
 		}
 
 		profileData = await startCooldown(message, profileData);
+		const messageContent = remindOfAttack(message);
 
 		if (profileData.isResting == true) {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: [{
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
@@ -52,6 +50,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: [{
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
@@ -77,6 +76,7 @@ module.exports = {
 
 		const botReply = await message
 			.reply({
+				content: messageContent,
 				embeds: [{
 					color: profileData.color,
 					author: { name: profileData.name, icon_url: profileData.avatarURL },
@@ -90,6 +90,6 @@ module.exports = {
 				}
 			});
 
-		await executeResting.startResting(message, profileData, botReply);
+		await startResting(message, profileData, botReply);
 	},
 };

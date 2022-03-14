@@ -1,10 +1,13 @@
 {
 	"name": "paw-and-paper",
-	"version": "2.6.6",
+	"version": "2.7.0",
 	"description": "An RPG Bot in which you play as an animal in a pack",
 	"main": "paw.js",
 	"scripts": {
-		"start": "node paw.js"
+		"start": "git pull origin stable && pm2 start paw && pm2 logs --lines 0 --timestamp paw",
+		"stop": "pm2 stop paw",
+		"localstart": "node .",
+		"logs": "pm2 logs --timestamp --lines 0 paw"
 	},
 	"author": "Maksi",
 	"license": "ISC",

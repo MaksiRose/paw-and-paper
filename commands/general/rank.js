@@ -1,25 +1,27 @@
 const profileModel = require('../../models/profileModel');
-const checkAccountCompletion = require('../../utils/checkAccountCompletion');
-const checkValidity = require('../../utils/checkValidity');
-const messageCollector = require('../../utils/messageCollector');
+const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCooldown } = require('../../utils/checkValidity');
+const { createCommandCollector } = require('../../utils/commandCollector');
 const startCooldown = require('../../utils/startCooldown');
+const { remindOfAttack } = require('../specific/attack');
 
 module.exports = {
 	name: 'rank',
 	aliases: ['role'],
 	async sendMessage(client, message, argumentsArray, profileData) {
 
-		if (await checkAccountCompletion.hasNotCompletedAccount(message, profileData)) {
+		if (await hasNotCompletedAccount(message, profileData)) {
 
 			return;
 		}
 
-		if (await checkValidity.hasCooldown(message, profileData, [module.exports.name].concat(module.exports.aliases))) {
+		if (await hasCooldown(message, profileData, [module.exports.name].concat(module.exports.aliases))) {
 
 			return;
 		}
 
 		profileData = await startCooldown(message, profileData);
+		const messageContent = remindOfAttack(message);
 
 		if (profileData.unlockedRanks == 1 && profileData.rank == 'Youngling') {
 
@@ -30,6 +32,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: [{
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
@@ -47,6 +50,7 @@ module.exports = {
 
 			const botReply = await message
 				.reply({
+					content: messageContent,
 					embeds: [{
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
@@ -75,7 +79,7 @@ module.exports = {
 					}
 				});
 
-			await messageCollector(message, botReply);
+			createCommandCollector(message.author.id, message.guild.id, botReply);
 			return await interactionCollector(botReply);
 		}
 
@@ -88,6 +92,7 @@ module.exports = {
 
 			return await message
 				.reply({
+					content: messageContent,
 					embeds: [{
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
@@ -103,6 +108,7 @@ module.exports = {
 
 		return await message
 			.reply({
+				content: messageContent,
 				embeds: [{
 					color: profileData.color,
 					author: { name: profileData.name, icon_url: profileData.avatarURL },
@@ -118,88 +124,72 @@ module.exports = {
 
 		async function interactionCollector(botReply) {
 
-			const filter = async (i) => {
+			const filter = i => i.isButton() && (i.customId == 'rank-healer' || i.customId == 'rank-hunter') && i.user.id == message.author.id;
 
-				if (!i.message.reference || !i.message.reference.messageId) {
+			const interaction = await botReply
+				.awaitMessageComponent({ filter, time: 30000 })
+				.catch(() => {return null;});
 
-					return false;
-				}
+			if (interaction == null) {
 
-				const userMessage = await i.channel.messages
-					.fetch(i.message.reference.messageId)
+				return await botReply
+					.edit({
+						components: [],
+					})
 					.catch((error) => {
-						throw new Error(error);
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
 					});
+			}
 
-				return userMessage.id == message.id && i.isButton() && (i.customId == 'rank-healer' || i.customId == 'rank-hunter') && i.user.id == message.author.id;
-			};
+			if (interaction.customId == 'rank-healer') {
 
-			const collector = message.channel.createMessageComponentCollector({ filter, max: 1, time: 30000 });
-			collector.on('end', async (collected) => {
+				await profileModel.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $set: { rank: 'Healer' } },
+				);
 
-				if (!collected.size) {
+				return await botReply
+					.edit({
+						embeds: [{
+							color: profileData.color,
+							author: { name: profileData.name, icon_url: profileData.avatarURL },
+							description: `*${profileData.name} stands before one of the eldest, excited to hear their following words.* "Congratulations, ${profileData.name}, you are now a fully-fledged Healer. I am certain you will contribute greatly to the pack in this role."\n*The ${profileData.species} grins from ear to ear.*`,
+						}],
+						components: [],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
 
-					return await botReply
-						.edit({
-							components: [],
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
-						});
-				}
+			if (interaction.customId == 'rank-hunter') {
 
-				const interaction = collected.first();
+				await profileModel.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $set: { rank: 'Hunter' } },
+				);
 
-				if (interaction.customId == 'rank-healer') {
+				return await botReply
+					.edit({
+						embeds: [{
+							color: profileData.color,
+							author: { name: profileData.name, icon_url: profileData.avatarURL },
+							description: `*${profileData.name} stands before one of the eldest, excited to hear their following words.* "Congratulations, ${profileData.name}, you are now a fully-fledged Hunter. I am certain you will contribute greatly to the pack in this role."\n*The ${profileData.species} grins from ear to ear.*`,
+						}],
+						components: [],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
 
-					await profileModel.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{ $set: { rank: 'Healer' } },
-					);
-
-					return await botReply
-						.edit({
-							embeds: [{
-								color: profileData.color,
-								author: { name: profileData.name, icon_url: profileData.avatarURL },
-								description: `*${profileData.name} stands before one of the eldest, excited to hear their following words.* "Congratulations, ${profileData.name}, you are now a fully-fledged Healer. I am certain you will contribute greatly to the pack in this role."\n*The ${profileData.species} grins from ear to ear.*`,
-							}],
-							components: [],
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
-						});
-				}
-
-				if (interaction.customId == 'rank-hunter') {
-
-					await profileModel.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{ $set: { rank: 'Hunter' } },
-					);
-
-					return await botReply
-						.edit({
-							embeds: [{
-								color: profileData.color,
-								author: { name: profileData.name, icon_url: profileData.avatarURL },
-								description: `*${profileData.name} stands before one of the eldest, excited to hear their following words.* "Congratulations, ${profileData.name}, you are now a fully-fledged Hunter. I am certain you will contribute greatly to the pack in this role."\n*The ${profileData.species} grins from ear to ear.*`,
-							}],
-							components: [],
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
-						});
-				}
-
-				return await interactionCollector();
-			});
+			return await interactionCollector();
 		}
 	},
 };
