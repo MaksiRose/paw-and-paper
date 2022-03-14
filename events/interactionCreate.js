@@ -5,6 +5,7 @@ const errorHandling = require('../utils/errorHandling');
 const pjson = require('../package.json');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 const { execute } = require('./messageCreate');
+const fs = require('fs');
 
 module.exports = {
 	name: 'interactionCreate',
@@ -20,11 +21,128 @@ module.exports = {
 		// there are DM interactions and dont have referenced messages, so thet get processed before everything else
 		if (interaction.customId == 'ticket') {
 
-			return await interaction.message
+			const user = await client.users.fetch(interaction.user.id);
+			const message = await user.dmChannel.messages.fetch(interaction.message.id);
+
+			return await message
 				.delete()
 				.catch(async (error) => {
 					if (error.httpStatus !== 404) {
 						return await errorHandling.output(interaction.message, error);
+					}
+				});
+		}
+
+		if (interaction.customId.includes('updates-off')) {
+
+			const user = await client.users.fetch(interaction.user.id);
+			let dataObject = {
+				usersArray: [user.id],
+			};
+
+			if (fs.existsSync('./database/noUpdatesUserList.json')) {
+
+				dataObject = JSON.parse(fs.readFileSync('./database/noUpdatesUserList.json'));
+
+				if (dataObject.usersArray.findIndex(userId => userId == user.id) == -1) {
+
+					dataObject.usersArray.push(user.id);
+				}
+			}
+
+			fs.writeFileSync('./database/noUpdatesUserList.json', JSON.stringify(dataObject, null, '\t'));
+
+			await user
+				.createDM()
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
+
+			await interaction
+				.followUp({
+					content: 'You turned updates for new releases off!',
+					ephemeral: true,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
+
+			return await interaction
+				.editReply({
+					components: [{
+						type: 'ACTION_ROW',
+						components: [{
+							type: 'BUTTON',
+							customId: 'updates-on',
+							label: 'Turn updates on',
+							style: 'SECONDARY',
+						}],
+					}],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
+		}
+
+		if (interaction.customId.includes('updates-on')) {
+
+			const user = await client.users.fetch(interaction.user.id);
+			let dataObject = {
+				usersArray: [],
+			};
+
+			if (fs.existsSync('./database/noUpdatesUserList.json')) {
+
+				dataObject = JSON.parse(fs.readFileSync('./database/noUpdatesUserList.json'));
+
+				if (dataObject.usersArray.findIndex(userId => userId == user.id) != -1) {
+
+					dataObject.usersArray.splice(dataObject.usersArray.findIndex(userId => userId == user.id), 1);
+				}
+			}
+
+			fs.writeFileSync('./database/noUpdatesUserList.json', JSON.stringify(dataObject, null, '\t'));
+
+			await user
+				.createDM()
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
+
+			await interaction
+				.followUp({
+					content: 'You turned updates for new releases on!',
+					ephemeral: true,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
+
+			return await interaction
+				.editReply({
+					components: [{
+						type: 'ACTION_ROW',
+						components: [{
+							type: 'BUTTON',
+							customId: 'updates-off',
+							label: 'Turn updates off',
+							style: 'SECONDARY',
+						}],
+					}],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
 					}
 				});
 		}
@@ -42,9 +160,8 @@ module.exports = {
 				serverId: guildId,
 			});
 
-			const accountDeletionValues = serverData.accountsToDelete.get(`${interaction.user.id}`);
 			const user = await client.users.fetch(interaction.user.id);
-			const botReply = await user.dmChannel.messages.fetch(accountDeletionValues.privateMessageId);
+			const botReply = await user.dmChannel.messages.fetch(interaction.message.id);
 
 			await botReply
 				.edit({
@@ -62,8 +179,11 @@ module.exports = {
 					}
 				});
 
-			await serverData.accountsToDelete.delete(`${interaction.user.id}`);
-			await serverData.save();
+			serverData.accountsToDelete = await serverData.accountsToDelete.delete(`${interaction.user.id}`);
+			await serverModel.findOneAndUpdate(
+				{ serverId: serverData.serverId },
+				{ $set: { accountsToDelete: serverData.accountsToDelete } },
+			);
 
 			return;
 		}

@@ -229,9 +229,14 @@ class model {
 
 			function logOutputter(variable) {
 
-				if (variable !== Object(variable) || Array.isArray(variable)) {
+				if (variable !== Object(variable)) {
 
 					return variable;
+				}
+
+				if (Array.isArray(variable)) {
+
+					return variable.toString();
 				}
 
 				let result = JSON.stringify(variable, null, 1);
@@ -245,9 +250,14 @@ class model {
 
 			function objectReducer(mainObject, compareObject) {
 
-				if (mainObject !== Object(mainObject) || Array.isArray(mainObject)) {
+				if (mainObject !== Object(mainObject)) {
 
 					return mainObject;
+				}
+
+				if (Array.isArray(mainObject)) {
+
+					return '[' + mainObject.join(', ') + ']';
 				}
 
 				let newObject = {};
