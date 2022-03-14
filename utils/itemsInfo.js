@@ -721,6 +721,15 @@ speciesMap.set('crow', {
 	biome3OpponentArray: ['hawk', 'eagle'],
 });
 
+speciesMap.set('king cobra', {
+	name: 'king cobra',
+	diet: 'carnivore',
+	habitat: 'cold',
+	biome1OpponentArray: ['frog', 'rabbit'],
+	biome2OpponentArray: ['gaboon viper', 'cassowary', 'hoatzin'],
+	biome3OpponentArray: ['hawk', 'eagle'],
+});
+
 
 module.exports = {
 
