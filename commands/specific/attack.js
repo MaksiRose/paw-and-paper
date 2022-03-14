@@ -26,14 +26,40 @@ module.exports = {
 
 		if (!serverMap.has('nr' + message.guild.id) || serverMap.get('nr' + message.guild.id).startsTimestamp != null) {
 
-			// text that there is no attack
-			return;
+			embedArray.push({
+				color: profileData.color,
+				author: { name: profileData.name, icon_url: profileData.avatarURL },
+				description: `*${profileData.name} is ready to attack any intruder. But no matter how far ${profileData.pronounArray[0]} look${profileData.pronounArray[5] == 'singular' ? 's' : ''}, ${profileData.pronounArray[0]} can't see anyone. It seems that the pack is not under attack at the moment.*`,
+			});
+
+			return await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
 		}
 
 		if (serverMap.get('nr' + message.guild.id).humans <= 0) {
 
-			// text that there all humans are in a fight right now
-			return;
+			embedArray.push({
+				color: profileData.color,
+				author: { name: profileData.name, icon_url: profileData.avatarURL },
+				description: `*${profileData.name} looks around, searching for a human to attack. It looks like everyone is already being attacked by other pack members. The ${profileData.species} better not interfere before ${profileData.pronounArray[0]} hurt${profileData.pronounArray[5] == 'singular' ? 's' : ''} her friends.*`,
+			});
+
+			return await message
+				.reply({
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
 		}
 
 		profileData = await startCooldown(message, profileData);
@@ -182,7 +208,7 @@ module.exports = {
 
 			if (winPoints == 2) {
 
-				embed.description = 'Placeholder for winning';
+				embed.description = `*For a moment it looks like the human might get the upper hand before ${profileData.name} jumps on them with a big hop. The human falls to the ground and crawls away with a terrified look on their face. It looks like their not coming back.*`;
 			}
 			else {
 
@@ -200,7 +226,7 @@ module.exports = {
 					{ $set: { inventoryObject: inventoryObject } },
 				);
 
-				embed.description = 'Placeholder for neutral';
+				embed.description = `*The battle between the human and ${profileData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${profileData.species} tries to jump at them, but the human manages to dodge. Quickly they run in the direction of the food den. They escaped from ${profileData.pronounArray[1]}!*`;
 
 				if (winPoints == 0) {
 
@@ -217,7 +243,7 @@ module.exports = {
 
 							userInjuryObject.wounds += 1;
 
-							embed.description = 'Placeholder for getting a wound';
+							embed.description = `*The battle between the human and ${profileData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${profileData.species} tries to jump at them, but the human manages to dodge. Unfortunately, a rock is directly in ${profileData.name}'s jump line. A sharp pain runs through ${profileData.pronounArray[2]} hip. A red spot slowly spreads where ${profileData.pronounArray[0]} hit the rock. Meanwhile, the human runs into the food den.*`;
 
 							embedFooterStatsText = `-${healthPoints} HP (from wound)\n${embedFooterStatsText}`;
 
@@ -227,7 +253,7 @@ module.exports = {
 
 							userInjuryObject.sprains += 1;
 
-							embed.description = 'Placeholder for getting a wound';
+							embed.description = `*The battle between the human and ${profileData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${profileData.species} tries to jump at them, but the human manages to dodge. ${profileData.name} is not prepared for the fall. A sharp pain runs through ${profileData.pronounArray[2]} arm as it bends in the fall. Meanwhile, the human runs into the food den.*`;
 
 							embedFooterStatsText = `-${healthPoints} HP (from sprain)\n${embedFooterStatsText}`;
 					}
