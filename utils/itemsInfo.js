@@ -703,6 +703,15 @@ speciesMap.set('cougar', {
 	biome3OpponentArray: ['bear', 'wolf'],
 });
 
+speciesMap.set('frog', {
+	name: 'frog',
+	diet: 'carnivore',
+	habitat: 'cold',
+	biome1OpponentArray: ['beetle', 'cricket', 'praying mantis'],
+	biome2OpponentArray: ['raccoon', 'fox'],
+	biome3OpponentArray: ['owl', 'crow'],
+});
+
 
 module.exports = {
 
