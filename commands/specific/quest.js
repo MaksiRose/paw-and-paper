@@ -313,17 +313,17 @@ module.exports = {
 
 						if (speciesMap.get(profileData.species).habitat == 'warm') {
 
-							description = `*After fighting with the trunk for a while, the ${profileData.species} now slips out with slightly ruffled fur. ${profileData.name} shakes ${profileData.pronounArray[4]}. Just at this moment, a worried Elderly comes running.*\n"Is everything alright? You've been gone for a while, and we heard cries of pain, so we were worried!" *They look over to the tree trunk.*\n"Oh, looks like you've already solved the problem yourself! Very well done! I think you're ready to become a Hunter or Healer if you're ever interested."`;
+							description = `*After fighting with the trunk for a while, the Apprentice now slips out with slightly ruffled fur. Just at this moment, a worried Elderly comes running.*\n"Is everything alright? You've been gone for a while, and we heard cries of pain, so we were worried!" *They look over to the tree trunk.*\n"Oh, looks like you've already solved the problem, ${profileData.name}! Very well done! I think you're ready to become a Hunter or Healer if you're ever interested."`;
 						}
 
 						if (speciesMap.get(profileData.species).habitat == 'cold') {
 
-							description = `*After fighting with the root for a while, the ${profileData.species} now slips out with slightly ruffled fur. ${profileData.name} shakes ${profileData.pronounArray[4]}. Just at this moment, a worried Elderly comes running.*\n"Is everything alright? You've been gone for a while, and we heard cries of pain, so we were worried!" *They look over to the bush.*\n"Oh, looks like you've already solved the problem yourself! Very well done! I think you're ready to become a Hunter or Healer if you're ever interested."`;
+							description = `*After fighting with the root for a while, the Apprentice now slips out with slightly ruffled fur. Just at this moment, a worried Elderly comes running.*\n"Is everything alright? You've been gone for a while, and we heard cries of pain, so we were worried!" *They look over to the bush.*\n"Oh, looks like you've already solved the problem, ${profileData.name}! Very well done! I think you're ready to become a Hunter or Healer if you're ever interested."`;
 						}
 
 						if (speciesMap.get(profileData.species).habitat == 'water') {
 
-							description = `*After fighting with the trunk for a while, the ${profileData.species} now slips out. ${profileData.name} shakes ${profileData.pronounArray[4]}. Just at this moment, a worried Elderly comes swimming.*\n"Is everything alright? You've been gone for a while, and we heard cries of pain, so we were worried!" *They look over to the bush.*\n"Oh, looks like you've already solved the problem yourself! Very well done! I think you're ready to become a Hunter or Healer if you're ever interested."`;
+							description = `*After fighting with the trunk for a while, the Apprentice now slips out. Just at this moment, a worried Elderly comes swimming.*\n"Is everything alright? You've been gone for a while, and we heard cries of pain, so we were worried!" *They look over to the bush.*\n"Oh, looks like you've already solved the problem, ${profileData.name}! Very well done! I think you're ready to become a Hunter or Healer if you're ever interested."`;
 						}
 					}
 
@@ -331,12 +331,12 @@ module.exports = {
 
 						if (speciesMap.get(profileData.species).habitat == 'warm' || speciesMap.get(profileData.species).habitat == 'cold') {
 
-							description = `*The engine noise became quieter and quieter before it finally disappeared entirely after endless maneuvers. Relieved, the ${profileData.species} runs to the pack, which is not far away. An Elderly is already coming towards ${profileData.pronounArray[1]}.*\n"You're alright! We heard the humans. And you didn't lead them straight to us, very good! Your wisdom, skill, and experience qualify you as an Elderly, ${profileData.name}. I'll talk to the other Elderlies about it. Just let me know if you want to join us."`;
+							description = `*The engine noise became quieter and quieter before it finally disappeared entirely after endless maneuvers. Relieved, the ${profileData.species} runs to the pack, the other ${profileData.rank} in ${profileData.pronounArray[2]} mouth. An Elderly is already coming towards ${profileData.pronounArray[1]}.*\n"You're alright! We heard the humans. And you didn't lead them straight to us, very good! Your wisdom, skill, and experience qualify you as an Elderly, ${profileData.name}. I'll talk to the other Elderlies about it. Just let me know if you want to join us."`;
 						}
 
 						if (speciesMap.get(profileData.species).habitat == 'water') {
 
-							description = `*The engine noise became quieter and quieter before it finally disappeared entirely after endless maneuvers. Relieved, the ${profileData.species} swims to the pack, which is not far away. An Elderly is already swimming towards ${profileData.pronounArray[1]}.*\n"You're alright! We heard the humans. And you didn't lead them straight to us, very good! Your wisdom, skill, and experience qualify you as an Elderly, ${profileData.name}. I'll talk to the other Elderlies about it. Just let me know if you want to join us."`;
+							description = `*The engine noise became quieter and quieter before it finally disappeared entirely after endless maneuvers. Relieved, the ${profileData.species} swims to the pack, the other ${profileData.rank} in ${profileData.pronounArray[2]} mouth. An Elderly is already swimming towards ${profileData.pronounArray[1]}.*\n"You're alright! We heard the humans. And you didn't lead them straight to us, very good! Your wisdom, skill, and experience qualify you as an Elderly, ${profileData.name}. I'll talk to the other Elderlies about it. Just let me know if you want to join us."`;
 						}
 					}
 
@@ -344,12 +344,12 @@ module.exports = {
 
 						if (speciesMap.get(profileData.species).habitat == 'warm' || speciesMap.get(profileData.species).habitat == 'cold') {
 
-							description = `*The ${profileData.species} runs for a while before the situation seems to clear up. ${profileData.name} gasps in exhaustion. That was close. Full of adrenaline, ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'goes' : 'go')} back to the pack. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} feels strangely stronger than before.*`;
+							description = `*The ${profileData.species} runs for a while before the situation seems to clear up. ${profileData.name} gasps in exhaustion. That was close. Full of adrenaline, ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'goes' : 'go')} back to the pack, another pack member in ${profileData.pronounArray[2]} mouth. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} feels strangely stronger than before.*`;
 						}
 
 						if (speciesMap.get(profileData.species).habitat == 'water') {
 
-							description = `*The ${profileData.species} runs for a while before the situation seems to clear up. ${profileData.name} gasps in exhaustion. That was close. Full of adrenaline, ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'swims' : 'swim')} back to the pack. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} feels strangely stronger than before.*`;
+							description = `*The ${profileData.species} runs for a while before the situation seems to clear up. ${profileData.name} gasps in exhaustion. That was close. Full of adrenaline, ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'swims' : 'swim')} back to the pack, another pack member in ${profileData.pronounArray[2]} mouth. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} feels strangely stronger than before.*`;
 						}
 
 						let maxHealthPoints = 0;
@@ -420,17 +420,17 @@ module.exports = {
 
 						if (speciesMap.get(profileData.species).habitat == 'warm') {
 
-							description = `*No matter how long the ${profileData.species} pulls and tugs, ${profileData.pronounArray[0]} just can't break free. ${profileData.name} lies there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's ${profileData.pronounArray[1]}!" *the Elderly shouts. The other two run to the ${profileData.species} and bite away the root.*\n"Are you all right? Thank goodness we found you!" *the Elderly asks.*`;
+							description = `*No matter how long the ${profileData.species} pulls and tugs, ${profileData.pronounArray[0]} just can't break the Apprentice free. They both lie there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's them!" *the Elderly shouts. The other two run to the Apprentice and bite away the root.*\n"Thanks for trying, ${profileData.name}. But thank goodness we found you!" *the Elderly says.*`;
 						}
 
 						if (speciesMap.get(profileData.species).habitat == 'cold') {
 
-							description = `*No matter how long the ${profileData.species} pulls and tugs, ${profileData.pronounArray[0]} just can't break free. ${profileData.name} lies there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's ${profileData.pronounArray[1]}!" *the Elderly shouts. The other two run to the ${profileData.species} and pull him out from under the log with their mouths.*\n"Are you all right? Thank goodness we found you!" *the Elderly asks.*`;
+							description = `*No matter how long the ${profileData.species} pulls and tugs, ${profileData.pronounArray[0]} just can't break the Apprentice free. They both lie there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's them!" *the Elderly shouts. The other two run to the Apprentice and pull them out from under the log with their mouths.*\n"Thanks for trying, ${profileData.name}. But thank goodness we found you!" *the Elderly says.*`;
 						}
 
 						if (speciesMap.get(profileData.species).habitat == 'water') {
 
-							description = `*No matter how long the ${profileData.species} pulls and tugs, ${profileData.pronounArray[0]} just can't break free. ${profileData.name} lies there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's ${profileData.pronounArray[1]}!" *the Elderly shouts. The other two run to the ${profileData.species} and push him away from the log with their heads.*\n"Are you all right? Thank goodness we found you!" *the Elderly asks.*`;
+							description = `*No matter how long the ${profileData.species} pulls and tugs, ${profileData.pronounArray[0]} just can't break the Apprentice free. They both lie there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's them!" *the Elderly shouts. The other two run to the Apprentice and push them away from the log with their heads.*\n"Thanks for trying, ${profileData.name}. But thank goodness we found you!" *the Elderly says.*`;
 						}
 					}
 
@@ -438,12 +438,12 @@ module.exports = {
 
 						if (speciesMap.get(profileData.species).habitat == 'warm' || speciesMap.get(profileData.species).habitat == 'cold') {
 
-							description = `*It almost looks like the humans are catching up to the ${profileData.species} when suddenly a larger ${profileData.species} comes running from the side. They pick up ${profileData.name} and run sideways as fast as lightning. Before ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'knows' : 'know')} what has happened to ${profileData.pronounArray[1]}, they are already out of reach.*\n"That was close," *the Elderly says.* "Good thing I was nearby."`;
+							description = `*It almost looks like the humans are catching up to the other ${profileData.rank} when suddenly two larger ${profileData.species}s come running from the side. They pick both of them up and run sideways as fast as lightning. Before ${profileData.pronounArray[0]} know${profileData.pronounArray[5] == 'singular' ? 's' : ''} what has happened to ${profileData.pronounArray[1]}, they are already out of reach.*\n"That was close," *the Elderly says.* "Good thing I was nearby."`;
 						}
 
 						if (speciesMap.get(profileData.species).habitat == 'water') {
 
-							description = `*It almost looks like the humans are catching up to the ${profileData.species} when suddenly a larger ${profileData.species} comes swimming from the side. They push away ${profileData.name} with their head and swim sideways as fast as lightning. Before ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'knows' : 'know')} what has happened to ${profileData.pronounArray[1]}, they are already out of reach.*\n"That was close," *the Elderly says.* "Good thing I was nearby."`;
+							description = `*It almost looks like the humans are catching up to the other ${profileData.rank} when suddenly two larger ${profileData.species}s come swimming from the side. They push them both away with their head and swim sideways as fast as lightning. Before ${profileData.pronounArray[0]} know${profileData.pronounArray[5] == 'singular' ? 's' : ''} what has happened to ${profileData.pronounArray[1]}, they are already out of reach.*\n"That was close," *the Elderly says.* "Good thing I was nearby."`;
 						}
 					}
 
@@ -451,12 +451,12 @@ module.exports = {
 
 						if (speciesMap.get(profileData.species).habitat == 'warm' || speciesMap.get(profileData.species).habitat == 'cold') {
 
-							description = `*The ${profileData.species} gasps as ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'drops' : 'drop')} down to the ground, defeated. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)}'${((profileData.pronounArray[5] == 'singular') ? 's' : 're')} just not fast enough... Suddenly ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'is' : 'are')} lifted by the neck. Another ${profileData.species} has ${profileData.pronounArray[1]} in their mouth and runs as fast as they can. ${profileData.name} is saved!*`;
+							description = `*The ${profileData.species} gasps as ${profileData.pronounArray[0]} drop${profileData.pronounArray[5] == 'singular' ? 's' : ''} down to the ground, defeated. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)}'${((profileData.pronounArray[5] == 'singular') ? 's' : 're')} just not fast enough... Suddenly a bunch of Elderlies come running and lift the pack members by their necks. Another ${profileData.species} has ${profileData.name} in their mouth and runs as fast as they can. Everyone is saved!*`;
 						}
 
 						if (speciesMap.get(profileData.species).habitat == 'water') {
 
-							description = `*The ${profileData.species} gasps as ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'stops' : 'stop')} swimming, defeated. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)}'${((profileData.pronounArray[5] == 'singular') ? 's' : 're')} just not fast enough... Suddenly ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'feels' : 'feel')} a thrust from the side. Another ${profileData.species} pushes into them with their head and swims as fast as they can. ${profileData.name} is saved!*`;
+							description = `*The ${profileData.species} gasps as ${profileData.pronounArray[0]} stop${profileData.pronounArray[5] == 'singular' ? 's' : ''} swimming, defeated. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)}'${((profileData.pronounArray[5] == 'singular') ? 's' : 're')} just not fast enough... Suddenly a bunch of Elderlies come running and thrust the pack members from the side. Another ${profileData.species} pushes into ${profileData.name} with their head and swims as fast as they can. Everyone is saved!*`;
 						}
 					}
 
@@ -508,17 +508,17 @@ module.exports = {
 
 			if (speciesMap.get(profileData.species).habitat == 'warm') {
 
-				embed.description = `*The ${profileData.species} wanders through the peaceful shrubland, carefully surveying the undergrowth around ${profileData.pronounArray[1]}. To ${profileData.pronounArray[2]} left are thick bushes at the bottom of a lone tree. Suddenly ${profileData.name} sees something pink that seems to glisten between the shrubs. Could this be a particularly precious plant? Curious, ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'trots' : 'trot')} over to it, but even a closer look doesn't reveal what it is. Determined, ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'pushes' : 'push')} into the shrubs but ${((profileData.pronounArray[5] == 'singular') ? 'is' : 'are')} disappointed. It was just an ordinary dog rose. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} ${((profileData.pronounArray[5] == 'singular') ? 'tries' : 'try')} to climb back out, but ${profileData.pronounArray[2]} paw won't move. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} ${((profileData.pronounArray[5] == 'singular') ? 'is' : 'are')} stuck under a bulky root! Now ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'has' : 'have')} to gather all ${profileData.pronounArray[2]} strength in order not to have to stay here forever.*`;
+				embed.description = `*The ${profileData.species} wanders through the peaceful shrubbery, carefully surveying the undergrowth around ${profileData.pronounArray[1]}. To ${profileData.pronounArray[2]} left are thick bushes at the base of a lone tree. Suddenly, ${profileData.name} hears a pained yowl that seems to come from between the bushes. Could this be a pack member? Curious, ${profileData.pronounArray[0]} trot${profileData.pronounArray[5] == 'singular' ? 's' : ''} over, and sure enough, another apprentice seems to be trapped. Now ${profileData.pronounArray[0]} must show all ${profileData.pronounArray[2]} strength and pull out ${profileData.pronounArray[2]} friend.*`;
 			}
 
 			if (speciesMap.get(profileData.species).habitat == 'cold') {
 
-				embed.description = `*The ${profileData.species} wanders through the peaceful forest, carefully surveying the undergrowth around ${profileData.pronounArray[1]}. To ${profileData.pronounArray[2]} left is a long, thick tree trunk overgrown with sodden moss. Suddenly ${profileData.name} sees something pink that seems to glisten under the trunk. Could this be a particularly precious plant? Curious, ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'trots' : 'trot')} over to it, but even a closer look doesn't reveal what it is. Determined, ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'squeezes' : 'squeeze')} down but ${((profileData.pronounArray[5] == 'singular') ? 'is' : 'are')} disappointed. It was just an ordinary dog rose. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} ${((profileData.pronounArray[5] == 'singular') ? 'tries' : 'try')} to climb back out, but the opening is too narrow. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} ${((profileData.pronounArray[5] == 'singular') ? 'is' : 'are')} stuck! Now ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'has' : 'have')} to gather all ${profileData.pronounArray[2]} strength in order not to have to stay here forever.*`;
+				embed.description = `*The ${profileData.species} wanders through the peaceful forest, carefully surveying the undergrowth around ${profileData.pronounArray[1]}. To ${profileData.pronounArray[2]} left is a long, thick tree trunk overgrown with sodden moss. Suddenly, ${profileData.name} hears a pained yowl that seems to come from between the bushes. Could this be a pack member? Curious, ${profileData.pronounArray[0]} trot${profileData.pronounArray[5] == 'singular' ? 's' : ''} over, and sure enough, another apprentice seems to be trapped. Now ${profileData.pronounArray[0]} must show all ${profileData.pronounArray[2]} strength and pull out ${profileData.pronounArray[2]} friend.*`;
 			}
 
 			if (speciesMap.get(profileData.species).habitat == 'water') {
 
-				embed.description = `*The ${profileData.species} swims through the peaceful river, carefully surveying the algae around ${profileData.pronounArray[1]}. In front of ${profileData.pronounArray[1]} is a thick strainer, which through the leaves is barely passable even underneath. Suddenly ${profileData.name} sees something pink that seems to glisten at the bottom of the fallen trunk. Could this be a particularly precious plant? Curious, ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'swims' : 'swim')} over to it, but even a closer look doesn't reveal what it is. Determined, ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'pushes' : 'push')} underneath but ${((profileData.pronounArray[5] == 'singular') ? 'is' : 'are')} disappointed. It was just an ordinary dog rose. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} ${((profileData.pronounArray[5] == 'singular') ? 'tries' : 'try')} to climb back out, but ${profileData.pronounArray[2]} fin won't move. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} ${((profileData.pronounArray[5] == 'singular') ? 'is' : 'are')} stuck! Now ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'has' : 'have')} to gather all ${profileData.pronounArray[2]} strength in order not to have to stay here forever.*`;
+				embed.description = `*The ${profileData.species} swims through the peaceful river, carefully surveying the algae around ${profileData.pronounArray[1]}. In front of ${profileData.pronounArray[2]} is a thick strainer, which through the leaves is barely passable even underneath. Suddenly, ${profileData.name} hears a pained yowl that seems to come from between the bushes. Could this be a pack member? Curious, ${profileData.pronounArray[0]} trot${profileData.pronounArray[5] == 'singular' ? 's' : ''} over, and sure enough, another apprentice seems to be trapped. Now ${profileData.pronounArray[0]} must show all ${profileData.pronounArray[2]} strength and pull out ${profileData.pronounArray[2]} friend.*`;
 			}
 		}
 
@@ -526,17 +526,17 @@ module.exports = {
 
 			if (speciesMap.get(profileData.species).habitat == 'warm') {
 
-				embed.description = `*It is a quiet morning in the savanna. Only the rustling of the scarce bushes and trees breaks the silence. ${profileData.name} meanders between the trees, looking for food for ${profileData.pronounArray[2]} pack. But suddenly, the ${profileData.species} hears a motor. Frightened, ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'looks' : 'look')} into the distance: indeed, there is a jeep in front of ${profileData.pronounArray[1]}, and it is heading straight for ${profileData.pronounArray[1]}! Now every second counts.*`;
+				embed.description = `*It is a quiet morning in the savanna. Only the rustling of the scarce bushes and trees breaks the silence. ${profileData.name} meanders over the sand, looking for food for ${profileData.pronounArray[2]} pack. But suddenly the cat hears a motor. Frightened, ${profileData.pronounArray[0]} look${profileData.pronounArray[5] == 'singular' ? 's' : ''} into the distance: indeed, a jeep is in front of ${profileData.pronounArray[1]}, and the humans inside have another ${profileData.rank} of ${profileData.pronounArray[2]} pack in their crosshairs! The sooner ${profileData.pronounArray[0]} get${profileData.pronounArray[5] == 'singular' ? 's' : ''} to the rescue, the better.*`;
 			}
 
 			if (speciesMap.get(profileData.species).habitat == 'cold') {
 
-				embed.description = `*It is a quiet morning in the taiga. Only the chirping of birds in the trees breaks the silence. ${profileData.name} meanders over the sand, looking for food for ${profileData.pronounArray[2]} pack. But suddenly, the ${profileData.species} hears a motor. Frightened, ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'looks' : 'look')} into the distance: indeed, there is a jeep in front of ${profileData.pronounArray[1]}, and it is heading straight for ${profileData.pronounArray[1]}! Now every second counts.*`;
+				embed.description = `*It is a quiet morning in the taiga. Only the chirping of birds in the trees breaks the silence. ${profileData.name} meanders between the trees, looking for food for ${profileData.pronounArray[2]} pack. But suddenly the cat hears a motor. Frightened, ${profileData.pronounArray[0]} look${profileData.pronounArray[5] == 'singular' ? 's' : ''} into the distance: indeed, a jeep is in front of ${profileData.pronounArray[1]}, and the humans inside have another ${profileData.rank} of ${profileData.pronounArray[2]} pack in their crosshairs! The sooner ${profileData.pronounArray[0]} get${profileData.pronounArray[5] == 'singular' ? 's' : ''} to the rescue, the better.*`;
 			}
 
 			if (speciesMap.get(profileData.species).habitat == 'water') {
 
-				embed.description = `*It is a quiet morning in the coral reef. Only once in a while a fish passes by. ${profileData.name} floats through the water, looking for food for ${profileData.pronounArray[2]} pack. But suddenly, the ${profileData.species} hears a motor. Frightened, ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'looks' : 'look')} to the surface: indeed, there is a motorboat in front of ${profileData.pronounArray[1]}, and it is heading straight for ${profileData.pronounArray[1]}! Now every second counts.*`;
+				embed.description = `*It is a quiet morning in the coral reef. Only once in a while a fish passes by. ${profileData.name} floats through the water, looking for food for ${profileData.pronounArray[2]} pack. But suddenly the cat hears a motor. Frightened, ${profileData.pronounArray[0]} look${profileData.pronounArray[5] == 'singular' ? 's' : ''} to the surface: indeed, a motorboat is in front of ${profileData.pronounArray[1]}, and the humans inside have another ${profileData.rank} of ${profileData.pronounArray[2]} pack in their crosshairs! The sooner ${profileData.pronounArray[0]} get${profileData.pronounArray[5] == 'singular' ? 's' : ''} to the rescue, the better.*`;
 			}
 		}
 
@@ -544,17 +544,17 @@ module.exports = {
 
 			if (speciesMap.get(profileData.species).habitat == 'warm') {
 
-				embed.description = `*Something is off, the ${profileData.speices} senses it. In the desert, it was strangely quiet, not this peaceful silence, but as if ${profileData.pronounArray[0]} were all alone. ${profileData.name} looks around and can't see a soul far and wide. Then it dawns on ${profileData.pronounArray[1]}. A glance over ${profileData.pronounArray[2]} shoulder confirms ${profileData.pronounArray[2]} fear, a big sandstorm is approaching and coming ${profileData.pronounArray[2]} way. If ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'doesn\'t' : 'don\'t')} hurry now, ${profileData.pronounArray[0]} may never find ${profileData.pronounArray[2]} way back.*`;
+				embed.description = `*Something is off, the ${profileData.species} senses it. In the desert, it was strangely quiet, not this peaceful silence, but as if ${profileData.pronounArray[0]} were all alone. ${profileData.name} looks around and can't see a soul far and wide. Then it dawns on ${profileData.pronounArray[1]}. A glance over ${profileData.pronounArray[2]} shoulder confirms ${profileData.pronounArray[2]} fear, a big sandstorm is approaching. ${profileData.name} is out of range, but other pack members might be in danger. If ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'doesn\'t' : 'don\'t')} hurry now, ${profileData.pronounArray[2]} friends may never find their way back.*`;
 			}
 
 			if (speciesMap.get(profileData.species).habitat == 'cold') {
 
-				embed.description = `*Something is off, the ${profileData.speices} senses it. In the tundra, it was strangely quiet, not this peaceful silence, but as if ${profileData.pronounArray[0]} were all alone. ${profileData.name} looks around and can't see a soul far and wide. Then it dawns on ${profileData.pronounArray[1]}. A glance over ${profileData.pronounArray[2]} shoulder confirms ${profileData.pronounArray[2]} fear, a big snowstorm is approaching and coming ${profileData.pronounArray[2]} way. If ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'doesn\'t' : 'don\'t')} hurry now, ${profileData.pronounArray[0]} may never find ${profileData.pronounArray[2]} way back.*`;
+				embed.description = `*Something is off, the ${profileData.species} senses it. In the tundra, it was strangely quiet, not this peaceful silence, but as if ${profileData.pronounArray[0]} were all alone. ${profileData.name} looks around and can't see a soul far and wide. Then it dawns on ${profileData.pronounArray[1]}. A glance over ${profileData.pronounArray[2]} shoulder confirms ${profileData.pronounArray[2]} fear, a big snowstorm is approaching. ${profileData.name} is out of range, but other pack members might be in danger. If ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'doesn\'t' : 'don\'t')} hurry now, ${profileData.pronounArray[2]} friends may never find their way back.*`;
 			}
 
 			if (speciesMap.get(profileData.species).habitat == 'water') {
 
-				embed.description = `*Something is off, the ${profileData.speices} senses it. In the ocean, it was strangely quiet, not this peaceful silence, but as if ${profileData.pronounArray[0]} were all alone. ${profileData.name} looks around and can't see a soul far and wide. Then it dawns on ${profileData.pronounArray[1]}. A glance over ${profileData.pronounArray[2]} shoulder confirms ${profileData.pronounArray[2]} fear, a big landslide is approaching and coming ${profileData.pronounArray[2]} way. If ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'doesn\'t' : 'don\'t')} hurry now, ${profileData.pronounArray[0]} may never find ${profileData.pronounArray[2]} way back.*`;
+				embed.description = `*Something is off, the ${profileData.species} senses it. In the ocean, it was strangely quiet, not this peaceful silence, but as if ${profileData.pronounArray[0]} were all alone. ${profileData.name} looks around and can't see a soul far and wide. Then it dawns on ${profileData.pronounArray[1]}. A glance over ${profileData.pronounArray[2]} shoulder confirms ${profileData.pronounArray[2]} fear, a big landslide is approaching. ${profileData.name} is out of range, but other pack members might be in danger. If ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'doesn\'t' : 'don\'t')} hurry now, ${profileData.pronounArray[2]} friends may never find their way back.*`;
 			}
 		}
 
