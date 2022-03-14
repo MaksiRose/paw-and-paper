@@ -712,6 +712,15 @@ speciesMap.set('frog', {
 	biome3OpponentArray: ['owl', 'crow'],
 });
 
+speciesMap.set('crow', {
+	name: 'crow',
+	diet: 'omnivore',
+	habitat: 'cold',
+	biome1OpponentArray: ['beetle', 'moth', 'cricket'],
+	biome2OpponentArray: ['squirrel', 'rabbit'],
+	biome3OpponentArray: ['hawk', 'eagle'],
+});
+
 
 module.exports = {
 
