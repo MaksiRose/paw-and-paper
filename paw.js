@@ -50,7 +50,7 @@ for (const [id, object] of Object.entries(toDeleteList)) {
 			delete toDeleteList[id];
 			fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
 		}
-	}, Date.now() - object.deletionTimestamp);
+	}, object.deletionTimestamp - Date.now());
 }
 
 client.login(config.token);
