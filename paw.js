@@ -14,13 +14,40 @@ const client = new Discord.Client({
 	},
 });
 
+client.commands = new Discord.Collection();
+
 module.exports.client = client;
 
-client.commands = new Discord.Collection();
+if (fs.existsSync('./database/noUpdatesUserList.json') == false) {
+
+	fs.writeFileSync('./database/noUpdatesUserList.json', JSON.stringify({
+		usersArray: [],
+	}, null, '\t'));
+}
+
+if (fs.existsSync('./database/toDeleteList.json') == false) {
+
+	fs.writeFileSync('./database/toDeleteList.json', JSON.stringify({}, null, '\t'));
+}
 
 for (const file of fs.readdirSync('./handlers/')) {
 
 	require(`./handlers/${file}`).execute(client);
+}
+
+const toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
+
+for (const object of Object.values(toDeleteList)) {
+
+	setTimeout(async () => {
+
+		if (fs.existsSync(`./database/toDelete/${object.fileName}.json`) == true) {
+
+			const dataObject = JSON.parse(fs.readFileSync(`./database/toDelete/${object.fileName}.json`));
+			fs.unlinkSync(`./database/toDelete/${object.fileName}.json`);
+			console.log('Deleted File: ', dataObject);
+		}
+	}, Date.now() - object.deletionTimestamp);
 }
 
 client.login(config.token);

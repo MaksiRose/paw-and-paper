@@ -34,27 +34,11 @@ class model {
 
 			const dataObjectsArray = [];
 
-			for (const file of fs.readdirSync(path)) {
+			const files = fs.readdirSync(path).filter(file => file.endsWith('.json'));
 
-				if (!file.endsWith('.json')) {
-
-					continue;
-				}
+			for (const file of files) {
 
 				const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`));
-
-				const guild = (dataObject.serverId != undefined) ? await client.guilds
-					.fetch(dataObject.serverId)
-					.catch((error) => {
-						if (error.httpStatus != 403 && error.httpStatus != 404) {
-							console.error(error);
-						}
-					}) : null;
-
-				if (guild != null && await guild.members.fetch(dataObject.userId).catch(() => null) == null) {
-
-					continue;
-				}
 
 				if (allObjectsMatch(filterObject, dataObject) === true) {
 

@@ -1,6 +1,6 @@
 const profileModel = require('../models/profileModel');
 const serverModel = require('../models/serverModel');
-const config = require('../config.json');
+const fs = require('fs');
 
 module.exports = {
 	name: 'guildMemberRemove',
@@ -16,7 +16,7 @@ module.exports = {
 			serverId: member.guild.id,
 		});
 
-		if (!profileData || !serverData) {
+		if (profileData === null || serverData === null) {
 
 			return;
 		}
@@ -26,64 +26,19 @@ module.exports = {
 			{ $set: { currentRegion: 'sleeping dens' } },
 		);
 
-		await member.createDM();
-		const botReply = await member
-			.send({
-				embeds: [{
-					color: config.default_color,
-					author: { name: member.guild.name, icon_url: member.guild.iconURL() },
-					title: 'You have an undeleted account on a server you left!',
-					description: 'Click the button below to delete the account. This will be **permanent**!\nYour account will be deleted automatically in 30 days.',
-				}],
-				components: [{
-					type: 'ACTION_ROW',
-					components: [{
-						type: 'BUTTON',
-						customId: `delete-account-${member.guild.id}`,
-						label: 'Delete',
-						emoji: { name: '🗑️' },
-						style: 'DANGER',
-					}],
-				}],
-			})
-			.catch((error) => {
-				console.error(error);
-			});
-
-		let currentDate = new Date();
-		currentDate = currentDate.setDate(currentDate.getDate() + 30);
-
-		if (serverData.accountsToDelete.get(`${member.id}`) == undefined) {
-
-			await serverData.accountsToDelete.set(`${member.id}`, { deletionTimestamp: currentDate, userId: member.id, privateMessageId: botReply.id });
-			await serverData.save();
-		}
+		fs.renameSync(`./database/profiles/${profileData.uuid}.json`, `./database/toDelete/${profileData.uuid}.json`);
+		const toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
+		toDeleteList[`${member.id}${member.guild.id}`] = { fileName: `${profileData.uuid}.json`, deletionTimestamp: Date.now() + 2592000000 };
+		fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
 
 		setTimeout(async () => {
 
-			await profileModel.findOneAndDelete({
-				userId: member.id,
-				serverId: member.guild.id,
-			});
+			if (fs.existsSync(`./database/toDelete/${profileData.uuid}.json`) == true) {
 
-			await serverData.accountsToDelete.delete(`${member.id}`);
-			await serverData.save();
-
-			return await botReply
-				.edit({
-					embeds: [{
-						color: config.default_color,
-						author: { name: `${member.guild.name}`, icon_url: member.guild.iconURL() },
-						title: 'Your account was deleted permanently!',
-						description: '',
-					}],
-					components: [],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
+				const dataObject = JSON.parse(fs.readFileSync(`./database/toDelete/${profileData.uuid}.json`));
+				fs.unlinkSync(`./database/toDelete/${profileData.uuid}.json`);
+				console.log('Deleted File: ', dataObject);
+			}
 		}, 2592000000);
 	},
 };
