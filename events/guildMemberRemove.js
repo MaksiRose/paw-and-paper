@@ -38,6 +38,9 @@ module.exports = {
 				const dataObject = JSON.parse(fs.readFileSync(`./database/toDelete/${profileData.uuid}.json`));
 				fs.unlinkSync(`./database/toDelete/${profileData.uuid}.json`);
 				console.log('Deleted File: ', dataObject);
+
+				delete toDeleteList[`${profileData.userId}${profileData.serverId}`];
+				fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
 			}
 		}, 2592000000);
 	},
