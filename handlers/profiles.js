@@ -48,7 +48,7 @@ module.exports = {
 								validGuilds.set(dataObject.serverId, guild);
 								guild.members
 									.fetch(dataObject.userId)
-									.catch(() => Promise.reject());
+									.catch(() => moveFile(file, `${dataObject.serverId}${dataObject.userId}`));
 							})
 							.catch(error => {
 
