@@ -70,6 +70,6 @@ module.exports = {
 function moveFile(file, id) {
 	fs.renameSync(`./database/profiles/${file}`, `./database/toDelete/${file}`);
 	const toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
-	toDeleteList[id] = { fileName: file, deletionTimestamp: Date.now() + 2592000000 };
+	toDeleteList[id] = { fileName: file, deletionTimestamp: Date.now() + 2073600000 };
 	fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
 }

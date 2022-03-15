@@ -25,7 +25,7 @@ module.exports = {
 
 			fs.renameSync(`./database/servers/${profileData.uuid}.json`, `./database/toDelete/${profileData.uuid}.json`);
 			toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
-			toDeleteList[`${profileData.userId}${profileData.serverId}`] = { fileName: `${profileData.uuid}.json`, deletionTimestamp: Date.now() + 2592000000 };
+			toDeleteList[`${profileData.userId}${profileData.serverId}`] = { fileName: `${profileData.uuid}.json`, deletionTimestamp: Date.now() + 2073600000 };
 			fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
 
 			setTimeout(async () => {
