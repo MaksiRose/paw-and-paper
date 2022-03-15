@@ -37,15 +37,18 @@ for (const file of fs.readdirSync('./handlers/')) {
 
 const toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
 
-for (const object of Object.values(toDeleteList)) {
+for (const [id, object] of Object.entries(toDeleteList)) {
 
 	setTimeout(async () => {
 
-		if (fs.existsSync(`./database/toDelete/${object.fileName}.json`) == true) {
+		if (fs.existsSync(`./database/toDelete/${object.fileName}`) == true) {
 
-			const dataObject = JSON.parse(fs.readFileSync(`./database/toDelete/${object.fileName}.json`));
-			fs.unlinkSync(`./database/toDelete/${object.fileName}.json`);
+			const dataObject = JSON.parse(fs.readFileSync(`./database/toDelete/${object.fileName}`));
+			fs.unlinkSync(`./database/toDelete/${object.fileName}`);
 			console.log('Deleted File: ', dataObject);
+
+			delete toDeleteList[id];
+			fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
 		}
 	}, Date.now() - object.deletionTimestamp);
 }
