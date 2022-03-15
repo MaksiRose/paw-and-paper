@@ -1,4 +1,3 @@
-const serverModel = require('../models/serverModel');
 const profileModel = require('../models/profileModel');
 const config = require('../config.json');
 const errorHandling = require('../utils/errorHandling');
@@ -93,18 +92,11 @@ module.exports = {
 		if (interaction.customId.includes('updates-on')) {
 
 			const user = await client.users.fetch(interaction.user.id);
-			let dataObject = {
-				usersArray: [],
-			};
+			const dataObject = JSON.parse(fs.readFileSync('./database/noUpdatesUserList.json'));
 
-			if (fs.existsSync('./database/noUpdatesUserList.json')) {
+			if (dataObject.usersArray.findIndex(userId => userId == user.id) !== -1) {
 
-				dataObject = JSON.parse(fs.readFileSync('./database/noUpdatesUserList.json'));
-
-				if (dataObject.usersArray.findIndex(userId => userId == user.id) != -1) {
-
-					dataObject.usersArray.splice(dataObject.usersArray.findIndex(userId => userId == user.id), 1);
-				}
+				dataObject.usersArray.splice(dataObject.usersArray.findIndex(userId => userId == user.id), 1);
 			}
 
 			fs.writeFileSync('./database/noUpdatesUserList.json', JSON.stringify(dataObject, null, '\t'));
@@ -145,47 +137,6 @@ module.exports = {
 						throw new Error(error);
 					}
 				});
-		}
-
-		if (interaction.customId.includes('delete-account')) {
-
-			const guildId = interaction.customId.split('-').pop();
-
-			const serverData = await serverModel.findOne({
-				serverId: guildId,
-			});
-
-			await profileModel.findOneAndDelete({
-				userId: interaction.user.id,
-				serverId: guildId,
-			});
-
-			const user = await client.users.fetch(interaction.user.id);
-			const botReply = await user.dmChannel.messages.fetch(interaction.message.id);
-
-			await botReply
-				.edit({
-					embeds: [{
-						color: config.default_color,
-						author: { name: `${interaction.guild.name}`, icon_url: interaction.guild.iconURL() },
-						title: 'Your account was deleted permanently!',
-						description: '',
-					}],
-					components: [],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-
-			serverData.accountsToDelete = await serverData.accountsToDelete.delete(`${interaction.user.id}`);
-			await serverModel.findOneAndUpdate(
-				{ serverId: serverData.serverId },
-				{ $set: { accountsToDelete: serverData.accountsToDelete } },
-			);
-
-			return;
 		}
 
 		if (!interaction.message.reference && !interaction.message.reference.messageId) {

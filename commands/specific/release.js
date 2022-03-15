@@ -17,14 +17,7 @@ module.exports = {
 			return;
 		}
 
-		let dataObject = {
-			usersArray: [],
-		};
-
-		if (fs.existsSync('./database/noUpdatesUserList.json')) {
-
-			dataObject = JSON.parse(fs.readFileSync('./database/noUpdatesUserList.json'));
-		}
+		const dataObject = JSON.parse(fs.readFileSync('./database/noUpdatesUserList.json'));
 
 		const allProfiles = [...new Set((await profileModel
 			.find({}))

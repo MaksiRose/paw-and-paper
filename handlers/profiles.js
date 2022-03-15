@@ -3,39 +3,16 @@ const profileModel = require('../models/profileModel');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 
 module.exports = {
-	execute() {
+	execute(client) {
 
-		for (const file of fs.readdirSync('./database/profiles')) {
+		const validGuilds = new Map();
+		const invalidGuilds = [];
 
-			if (!file.endsWith('.json')) {
+		const files = fs.readdirSync('./database/profiles').filter(file => file.endsWith('.json'));
 
-				continue;
-			}
+		for (const file of files) {
 
 			const dataObject = JSON.parse(fs.readFileSync(`./database/profiles/${file}`));
-
-			if (dataObject.hasCooldown == true) {
-
-				profileModel.findOneAndUpdate(
-					{ userId: dataObject.userId, serverId: dataObject.serverId },
-					{ $set: { hasCooldown: false } },
-				);
-			}
-
-			if (dataObject.isResting == true) {
-
-				profileModel.findOneAndUpdate(
-					{ userId: dataObject.userId, serverId: dataObject.serverId },
-					{ $set: { isResting: false, energy: dataObject.maxEnergy } },
-				);
-			}
-
-			if (Object.hasOwn(dataObject.inventoryObject.commonPlants, 'neem')) {
-
-				dataObject.inventoryObject.commonPlants = Object.fromEntries(
-					Object.entries(dataObject.inventoryObject.commonPlants).map(([key, value]) => (key == 'neem') ? ['arnica', value] : [key, value]),
-				);
-			}
 
 			dataObject.inventoryObject = {
 				commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, dataObject.inventoryObject.commonPlants[key] || 0])),
@@ -44,10 +21,55 @@ module.exports = {
 				meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, dataObject.inventoryObject.meat[key] || 0])),
 			};
 
-			profileModel.findOneAndUpdate(
-				{ userId: dataObject.userId, serverId: dataObject.serverId },
-				{ $set: { inventoryObject: dataObject.inventoryObject } },
-			);
+			profileModel
+				.findOneAndUpdate(
+					{ userId: dataObject.userId, serverId: dataObject.serverId },
+					{
+						$set: {
+							inventoryObject: dataObject.inventoryObject,
+							hasCooldown: false,
+							isResting: false,
+							energy: dataObject.maxEnergy,
+						},
+					},
+				)
+				.then(() => {
+
+					if (invalidGuilds.includes(dataObject.serverId)) {
+
+						moveFile(file, `${dataObject.serverId}${dataObject.userId}`);
+					}
+					else if (validGuilds.has(dataObject.serverId) == false) {
+
+						client.guilds
+							.fetch(dataObject.serverId)
+							.then(guild => {
+
+								validGuilds.set(dataObject.serverId, guild);
+								guild.members
+									.fetch(dataObject.userId)
+									.catch(() => Promise.reject());
+							})
+							.catch(error => {
+
+								invalidGuilds.push(dataObject.serverId);
+								if (error.httpStatus === 403) {
+
+									moveFile(file, `${dataObject.serverId}${dataObject.userId}`);
+								}
+								else {
+									console.error(error);
+								}
+							});
+					}
+				});
 		}
 	},
 };
+
+function moveFile(file, id) {
+	fs.renameSync(`./database/profiles/${file}`, `./database/toDelete/${file}`);
+	const toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
+	toDeleteList[id] = { fileName: file, deletionTimestamp: Date.now() + 2592000000 };
+	fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
+}
