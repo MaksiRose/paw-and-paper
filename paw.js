@@ -41,10 +41,10 @@ for (const object of Object.values(toDeleteList)) {
 
 	setTimeout(async () => {
 
-		if (fs.existsSync(`./database/toDelete/${object.fileName}.json`) == true) {
+		if (fs.existsSync(`./database/toDelete/${object.fileName}`) == true) {
 
-			const dataObject = JSON.parse(fs.readFileSync(`./database/toDelete/${object.fileName}.json`));
-			fs.unlinkSync(`./database/toDelete/${object.fileName}.json`);
+			const dataObject = JSON.parse(fs.readFileSync(`./database/toDelete/${object.fileName}`));
+			fs.unlinkSync(`./database/toDelete/${object.fileName}`);
 			console.log('Deleted File: ', dataObject);
 		}
 	}, Date.now() - object.deletionTimestamp);
