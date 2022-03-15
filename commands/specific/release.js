@@ -1,6 +1,7 @@
 const config = require('../../config.json');
 const pjson = require('../../package.json');
 const profileModel = require('../../models/profileModel');
+const fs = require('fs');
 
 module.exports = {
 	name: 'release',
@@ -16,9 +17,19 @@ module.exports = {
 			return;
 		}
 
+		let dataObject = {
+			usersArray: [],
+		};
+
+		if (fs.existsSync('./database/noUpdatesUserList.json')) {
+
+			dataObject = JSON.parse(fs.readFileSync('./database/noUpdatesUserList.json'));
+		}
+
 		const allProfiles = [...new Set((await profileModel
-			.find({ userId: '268402976844939266' }))
-			.map(user => user.userId))];
+			.find({}))
+			.map(user => user.userId))]
+			.filter(userId => dataObject.usersArray.includes(userId) === false);
 
 		for (const userId of allProfiles) {
 
@@ -67,15 +78,15 @@ module.exports = {
 								});
 						}
 					}
+
+					console.log(`\x1b[32mNew release message\x1b[0m successfully sent to \x1b[33m${user.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404 && error.httpStatus !== 403) {
 						throw new Error(error);
 					}
-					console.log(`\x1b[32m$New release message\x1b[0m could not be sent to \x1b[33m${user.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+					console.log(`\x1b[32mNew release message\x1b[0m could not be sent to \x1b[33m${user.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 				});
-
-			console.log(`\x1b[32m$New release message\x1b[0m successfully sent to \x1b[33m${user.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 		}
 
 		await message
