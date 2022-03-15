@@ -1,6 +1,7 @@
 const config = require('../../config.json');
 const pjson = require('../../package.json');
 const profileModel = require('../../models/profileModel');
+const fs = require('fs');
 
 module.exports = {
 	name: 'release',
@@ -16,9 +17,19 @@ module.exports = {
 			return;
 		}
 
+		let dataObject = {
+			usersArray: [],
+		};
+
+		if (fs.existsSync('./database/noUpdatesUserList.json')) {
+
+			dataObject = JSON.parse(fs.readFileSync('./database/noUpdatesUserList.json'));
+		}
+
 		const allProfiles = [...new Set((await profileModel
 			.find({}))
-			.map(user => user.userId))];
+			.map(user => user.userId))]
+			.filter(userId => dataObject.usersArray.includes(userId) === false);
 
 		for (const userId of allProfiles) {
 
@@ -27,26 +38,10 @@ module.exports = {
 			await user
 				.createDM()
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
+					if (error.httpStatus !== 404 && error.httpStatus !== 403) {
 						throw new Error(error);
 					}
 				});
-
-			const oldMessages = await user.dmChannel.messages.fetch({ limit: 100 });
-
-			for (const [, msg] of oldMessages) {
-
-				if (msg.author.bot && msg.components.length > 0) {
-
-					await msg
-						.edit({ components: [] })
-						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
-						});
-				}
-			}
 
 			await user
 				.send({
@@ -66,10 +61,31 @@ module.exports = {
 						}],
 					}],
 				})
+				.then(async newMessage => {
+
+					const oldMessages = await user.dmChannel.messages.fetch({ limit: 100, before: newMessage.id });
+
+					for (const [, msg] of oldMessages) {
+
+						if (msg.author.bot && msg.components.length > 0 && msg.components[0].components[0].customId.includes('updates')) {
+
+							await msg
+								.edit({ components: [] })
+								.catch((error) => {
+									if (error.httpStatus !== 404 && error.httpStatus !== 403) {
+										throw new Error(error);
+									}
+								});
+						}
+					}
+
+					console.log(`\x1b[32mNew release message\x1b[0m successfully sent to \x1b[33m${user.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
+					if (error.httpStatus !== 404 && error.httpStatus !== 403) {
 						throw new Error(error);
 					}
+					console.log(`\x1b[32mNew release message\x1b[0m could not be sent to \x1b[33m${user.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 				});
 		}
 
