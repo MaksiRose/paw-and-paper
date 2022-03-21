@@ -110,48 +110,6 @@ module.exports = {
 				return;
 			}
 
-			if (interaction.values[0] === 'heal_user_page') {
-
-				const pagesAmount = Math.ceil(allHurtProfilesList.length / 24);
-
-				currentUserPage++;
-				if (currentUserPage >= pagesAmount) {
-
-					currentUserPage = 0;
-				}
-
-				userSelectMenu = await getUserSelectMenu();
-
-				const componentArray = interaction.message.components;
-				await componentArray.splice(0, 1, userSelectMenu);
-
-				botReply = await interaction.message
-					.edit({ components: componentArray })
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-			}
-
-			userSelectMenu = await getUserSelectMenu();
-
-			if (allHurtProfilesList.includes(interaction.values[0])) {
-
-				chosenProfileData = await profileModel.findOne({
-					userId: interaction.values[0],
-					serverId: message.guild.id,
-				});
-
-				chosenUser = await client.users
-					.fetch(interaction.values[0])
-					.catch((error) => {
-						throw new Error(error);
-					});
-
-				getWoundList(chosenUser);
-			}
-
 			if (interaction.customId === 'healpage-1') {
 
 				const { embed, selectMenu } = getFirstHealPage();
@@ -224,6 +182,48 @@ module.exports = {
 							throw new Error(error);
 						}
 					});
+			}
+
+			if (interaction.values[0] === 'heal_user_page') {
+
+				const pagesAmount = Math.ceil(allHurtProfilesList.length / 24);
+
+				currentUserPage++;
+				if (currentUserPage >= pagesAmount) {
+
+					currentUserPage = 0;
+				}
+
+				userSelectMenu = await getUserSelectMenu();
+
+				const componentArray = interaction.message.components;
+				await componentArray.splice(0, 1, userSelectMenu);
+
+				botReply = await interaction.message
+					.edit({ components: componentArray })
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
+
+			userSelectMenu = await getUserSelectMenu();
+
+			if (allHurtProfilesList.includes(interaction.values[0])) {
+
+				chosenProfileData = await profileModel.findOne({
+					userId: interaction.values[0],
+					serverId: message.guild.id,
+				});
+
+				chosenUser = await client.users
+					.fetch(interaction.values[0])
+					.catch((error) => {
+						throw new Error(error);
+					});
+
+				getWoundList(chosenUser);
 			}
 
 			if (commonPlantsMap.has(interaction.values[0]) || uncommonPlantsMap.has(interaction.values[0]) || rarePlantsMap.has(interaction.values[0]) || interaction.values[0] === 'water') {
