@@ -75,7 +75,19 @@ module.exports = {
 		}
 		else {
 
-			await getWoundList(chosenUser);
+			const { embeds: woundEmbeds, components: woundComponents } = await getWoundList(chosenUser);
+
+			botReply = await message
+				.reply({
+					content: messageContent,
+					embeds: woundEmbeds,
+					components: woundComponents,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
 		}
 
 
@@ -109,19 +121,23 @@ module.exports = {
 
 				return;
 			}
-			
+
 			if (interaction.isButton()) {
+
+				const { embeds: woundEmbeds } = await getWoundList(chosenUser);
 
 				if (interaction.customId === 'healpage-1') {
 
 					const { embed, selectMenu } = getFirstHealPage();
+
+					woundEmbeds.splice(-1, 1, embed);
 
 					interaction.message.components.length = 2;
 					const componentArray = interaction.message.components;
 
 					botReply = await interaction.message
 						.edit({
-							embeds: [...embedArray, embed],
+							embeds: woundEmbeds,
 							components: selectMenu.components[0].options.length > 0 ? [...componentArray, selectMenu] : componentArray,
 						})
 						.catch((error) => {
@@ -171,12 +187,14 @@ module.exports = {
 						}
 					}
 
+					woundEmbeds.splice(-1, 1, embed);
+
 					interaction.message.components.length = 2;
 					const componentArray = interaction.message.components;
 
 					botReply = await interaction.message
 						.edit({
-							embeds: [...embedArray, embed],
+							embeds: woundEmbeds,
 							components: [...componentArray, selectMenu],
 						})
 						.catch((error) => {
@@ -186,7 +204,7 @@ module.exports = {
 						});
 				}
 			}
-			
+
 			if (interaction.isSelectMenu()) {
 
 				if (interaction.values[0] === 'heal_user_page') {
@@ -228,7 +246,18 @@ module.exports = {
 							throw new Error(error);
 						});
 
-					getWoundList(chosenUser);
+					const { embeds: woundEmbeds, components: woundComponents } = getWoundList(chosenUser);
+
+					botReply = await botReply
+						.edit({
+							embeds: woundEmbeds,
+							components: woundComponents,
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
 				}
 
 				if (commonPlantsMap.has(interaction.values[0]) || uncommonPlantsMap.has(interaction.values[0]) || rarePlantsMap.has(interaction.values[0]) || interaction.values[0] === 'water') {
@@ -788,35 +817,7 @@ module.exports = {
 
 			const { embed: embed2, selectMenu } = getFirstHealPage();
 
-			if (botReply === null) {
-
-				botReply = await message
-					.reply({
-						content: messageContent,
-						embeds: [...embedArray, embed, embed2],
-						components: [userSelectMenu, pageButtons, selectMenu],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-			}
-			else {
-
-				botReply = await botReply
-					.edit({
-						embeds: [...embedArray, embed, embed2],
-						components: [userSelectMenu, pageButtons, selectMenu],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-			}
-
-			return;
+			return { embeds: [...embedArray, embed, embed2], components: [userSelectMenu, pageButtons, selectMenu] };
 		}
 
 		function getFirstHealPage() {
