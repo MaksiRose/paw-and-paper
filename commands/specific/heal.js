@@ -246,7 +246,9 @@ module.exports = {
 							throw new Error(error);
 						});
 
-					const { embeds: woundEmbeds, components: woundComponents } = getWoundList(chosenUser);
+					const { embeds: woundEmbeds, components: woundComponents } = await getWoundList(chosenUser);
+
+					console.log(woundEmbeds);
 
 					botReply = await botReply
 						.edit({
@@ -815,9 +817,14 @@ module.exports = {
 				return;
 			}
 
-			const { embed: embed2, selectMenu } = getFirstHealPage();
+			const
+				{ embed: embed2, selectMenu } = getFirstHealPage(),
+				embeds = [...embedArray, embed, embed2],
+				components = [userSelectMenu, pageButtons, selectMenu];
 
-			return { embeds: [...embedArray, embed, embed2], components: [userSelectMenu, pageButtons, selectMenu] };
+			console.log(embeds);
+
+			return { embeds, components };
 		}
 
 		function getFirstHealPage() {
