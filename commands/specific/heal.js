@@ -121,8 +121,6 @@ module.exports = {
 
 				return;
 			}
-			
-			if (interaction.isButton()) {
 
 			if (interaction.isButton()) {
 
@@ -206,8 +204,6 @@ module.exports = {
 						});
 				}
 			}
-			
-			if (interaction.isSelectMenu()) {
 
 			if (interaction.isSelectMenu()) {
 
@@ -416,8 +412,7 @@ module.exports = {
 						}
 						else if (userCondition.includes('health')) {
 
-								userHasChangedCondition = true;
-							}
+							userHasChangedCondition = true;
 						}
 
 						if (plantMap.get(interaction.values[0]).healsWounds === true) {
@@ -456,7 +451,7 @@ module.exports = {
 								embedFooterChosenUserInjuryText += `\ncold healed for ${chosenProfileData.name}`;
 								chosenUserInjuryObject.cold = false;
 							}
-							else if (userCondition.includes('cold')) 
+							else if (userCondition.includes('cold')) {
 
 								userHasChangedCondition = true;
 							}
@@ -509,7 +504,6 @@ module.exports = {
 								embedFooterChosenUserStatsText += `\n+${chosenUserEnergyPoints} energy for ${chosenProfileData.name} (${chosenProfileData.energy + chosenUserEnergyPoints}/${chosenProfileData.maxEnergy})`;
 							}
 						}
-						else if (isSuccessful === false && userHasChangedCondition === true) {
 
 
 						serverData = await serverModel.findOneAndUpdate(
