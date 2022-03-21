@@ -248,8 +248,6 @@ module.exports = {
 
 					const { embeds: woundEmbeds, components: woundComponents } = await getWoundList(chosenUser);
 
-					console.log(woundEmbeds);
-
 					botReply = await botReply
 						.edit({
 							embeds: woundEmbeds,
@@ -821,8 +819,6 @@ module.exports = {
 				{ embed: embed2, selectMenu } = getFirstHealPage(),
 				embeds = [...embedArray, embed, embed2],
 				components = [userSelectMenu, pageButtons, selectMenu];
-
-			console.log(embeds);
 
 			return { embeds, components };
 		}
