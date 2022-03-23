@@ -153,8 +153,9 @@ module.exports = {
 					for (const [itemType, itemsArray] of inventoryArray) {
 
 						if (itemsArray.includes(chosenFood)) {
+
 							foodCategory = itemType;
-							maximumAmount = profileData.inventoryObject[itemsArray][chosenFood];
+							maximumAmount = profileData.inventoryObject[itemType][chosenFood];
 						}
 					}
 
