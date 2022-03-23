@@ -9,6 +9,7 @@ const { decreaseThirst, decreaseHunger, decreaseHealth, decreaseEnergy } = requi
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { remindOfAttack } = require('./attack');
+const { pronoun, upperCasePronounAndPlural, pronounAndPlural } = require('../../utils/getPronouns');
 
 module.exports = {
 	name: 'heal',
@@ -32,7 +33,7 @@ module.exports = {
 			embedArray.push({
 				color: profileData.color,
 				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*A healer rushes into the medicine den in fury.*\n"${profileData.name}, you are not trained to heal yourself, and especially not to heal others! I don't ever wanna see you again in here without supervision!"\n*${profileData.name} lowers ${profileData.pronounArray[2]} head and leaves in shame.*`,
+				description: `*A healer rushes into the medicine den in fury.*\n"${profileData.name}, you are not trained to heal yourself, and especially not to heal others! I don't ever wanna see you again in here without supervision!"\n*${profileData.name} lowers ${pronoun(profileData, 2)} head and leaves in shame.*`,
 			});
 
 			return await message
@@ -310,7 +311,7 @@ module.exports = {
 
 							if (profileData.userId === chosenProfileData.userId) {
 
-								embed.description = `*${profileData.name} thinks about just drinking some water, but that won't help with ${profileData.pronounArray[2]} issues...*"`;
+								embed.description = `*${profileData.name} thinks about just drinking some water, but that won't help with ${pronoun(profileData, 2)} issues...*"`;
 
 							}
 							else {
@@ -332,7 +333,7 @@ module.exports = {
 								{ $inc: { thirst: +chosenUserThirstPoints } },
 							);
 
-							embed.description = `*${profileData.name} takes ${chosenProfileData.name}'s body, drags it over to the river, and positions ${chosenProfileData.pronounArray[2]} head right over the water. The ${chosenProfileData.species} sticks ${chosenProfileData.pronounArray[2]} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${chosenProfileData.pronounArray[2]} body.*`;
+							embed.description = `*${profileData.name} takes ${chosenProfileData.name}'s body, drags it over to the river, and positions ${pronoun(chosenProfileData, 2)} head right over the water. The ${chosenProfileData.species} sticks ${pronoun(chosenProfileData, 2)} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${pronoun(chosenProfileData, 2)} body.*`;
 							embed.footer.text = `${embedFooterStatsText}\n\n+${chosenUserThirstPoints} thirst for ${chosenProfileData.name} (${chosenProfileData.thirst}/${chosenProfileData.maxThirst})`;
 
 						}
@@ -566,11 +567,11 @@ module.exports = {
 									serverId: message.guild.id,
 								});
 
-								embed.description = `*${profileData.name} takes a ${chosenItemName}. After a bit of preparation, the ${profileData.species} can apply it correctly. Immediately you can see the effect. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} feel${(profileData.pronounArray[5] == 'singular') ? 's' : ''} much better!*`;
+								embed.description = `*${profileData.name} takes a ${chosenItemName}. After a bit of preparation, the ${profileData.species} can apply it correctly. Immediately you can see the effect. ${upperCasePronounAndPlural(profileData, 0, 'feel')} much better!*`;
 							}
 							else {
 
-								embed.description = `*${profileData.name} takes a ${chosenItemName}. After a  bit of preparation, ${profileData.pronounArray[0]} give${(profileData.pronounArray[5] == 'singular') ? 's' : ''} it to ${chosenProfileData.name}. Immediately you can see the effect. ${chosenProfileData.pronounArray[0].charAt(0).toUpperCase()}${chosenProfileData.pronounArray[0].slice(1)} feel${(chosenProfileData.pronounArray[5] == 'singular') ? 's' : ''} much better!*`;
+								embed.description = `*${profileData.name} takes a ${chosenItemName}. After a  bit of preparation, ${pronounAndPlural(profileData, 0, 'give')} it to ${chosenProfileData.name}. Immediately you can see the effect. ${upperCasePronounAndPlural(chosenProfileData, 0, 'feel')} much better!*`;
 							}
 
 							embed.footer.text = `${embedFooterStatsText}\n${embedFooterChosenUserStatsText}\n+${chosenUserHealthPoints} HP for ${chosenProfileData.name} (${chosenProfileData.health}/${chosenProfileData.maxHealth})${embedFooterChosenUserInjuryText}\n\n-1 ${chosenItemName} for ${message.guild.name}`;
@@ -579,11 +580,11 @@ module.exports = {
 
 							if (chosenProfileData.userId === profileData.userId) {
 
-								embed.description = `*${profileData.name} holds the ${chosenItemName} in ${profileData.pronounArray[2]} mouth, trying to find a way to apply it. After a few attempts, the herb breaks into little pieces, rendering it useless. Guess ${profileData.pronounArray[0]} ${(profileData.pronounArray[5] == 'singular') ? 'has' : 'have'} to try again...*`;
+								embed.description = `*${profileData.name} holds the ${chosenItemName} in ${pronoun(profileData, 2)} mouth, trying to find a way to apply it. After a few attempts, the herb breaks into little pieces, rendering it useless. Guess ${pronounAndPlural(profileData, 0, 'has', 'have')} to try again...*`;
 							}
 							else {
 
-								embed.description = `*${profileData.name} takes a ${chosenItemName}. After a bit of preparation, ${profileData.pronounArray[0]} give${(profileData.pronounArray[5] == 'singular') ? 's' : ''} it to ${chosenProfileData.name}. But no matter how long they wait, it does not seem to help. Looks like ${profileData.name} chose the wrong herb!*`;
+								embed.description = `*${profileData.name} takes a ${chosenItemName}. After a bit of preparation, ${pronounAndPlural(profileData, 0, 'give')} it to ${chosenProfileData.name}. But no matter how long they wait, it does not seem to help. Looks like ${profileData.name} chose the wrong herb!*`;
 							}
 
 							embed.footer.text = `${embedFooterStatsText}\n\n-1 ${chosenItemName} for ${message.guild.name}`;
@@ -783,22 +784,22 @@ module.exports = {
 
 			if (chosenProfileData.userId === profileData.userId) {
 
-				embed.description = `*${profileData.name} pushes aside the leaves acting as the entrance to the healer's den. With tired eyes ${profileData.pronounArray[0]} inspect${profileData.pronounArray[5] == 'singular' ? 's' : ''} the rows of herbs, hoping to find one that can ease ${profileData.pronounArray[2]} pain.*`;
+				embed.description = `*${profileData.name} pushes aside the leaves acting as the entrance to the healer's den. With tired eyes ${pronounAndPlural(profileData, 0, 'inspect')} the rows of herbs, hoping to find one that can ease ${pronoun(profileData, 2)} pain.*`;
 				embed.footer.text = `${chosenProfileData.name}'s stats/illnesses/injuries:${healUserConditionText}`;
 			}
 			else if (chosenProfileData.energy <= 0 || chosenProfileData.health <= 0 || chosenProfileData.hunger <= 0 || chosenProfileData.thirst <= 0) {
 
-				embed.description = `*${profileData.name} runs towards the pack borders, where ${chosenProfileData.name} lies, only barely conscious. The ${profileData.rank.toLowerCase()} immediately looks for the right herbs to help the ${chosenProfileData.species}.*`;
+				embed.description = `*${profileData.name} runs towards the pack borders, where ${chosenProfileData.name} lies, only barely conscious. The ${profileData.rank} immediately looks for the right herbs to help the ${chosenProfileData.species}.*`;
 				embed.footer.text = `${chosenProfileData.name}'s stats/illnesses/injuries:${healUserConditionText}`;
 			}
 			else if (Object.values(chosenProfileData.injuryObject).some(element => element > 0)) {
 
-				embed.description = `*${chosenProfileData.name} enters the medicine den with tired eyes.* "Please help me!" *${chosenProfileData.pronounArray[0]} say${(chosenProfileData.pronounArray[5] == 'singular') ? 's' : ''}, ${chosenProfileData.pronounArray[2]} face contorted in pain. ${profileData.name} looks up with worry.* "I'll see what I can do for you."`;
+				embed.description = `*${chosenProfileData.name} enters the medicine den with tired eyes.* "Please help me!" *${pronounAndPlural(chosenProfileData, 0, 'say')}, ${pronoun(chosenProfileData, 2)} face contorted in pain. ${profileData.name} looks up with worry.* "I'll see what I can do for you."`;
 				embed.footer.text = `${chosenProfileData.name}'s stats/illnesses/injuries:${healUserConditionText}`;
 			}
 			else {
 
-				embed.description = `*${profileData.name} approaches ${chosenProfileData.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${profileData.species} asks.\n${chosenProfileData.name} shakes ${chosenProfileData.pronounArray[2]} head.* "Not that I know of, no."\n*Disappointed, ${profileData.name} goes back to the medicine den.*`;
+				embed.description = `*${profileData.name} approaches ${chosenProfileData.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${profileData.species} asks.\n${chosenProfileData.name} shakes ${pronoun(chosenProfileData, 2)} head.* "Not that I know of, no."\n*Disappointed, ${profileData.name} goes back to the medicine den.*`;
 
 				botReply = await message
 					.reply({

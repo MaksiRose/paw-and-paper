@@ -7,6 +7,7 @@ const { generateRandomNumberWithException, pullFromWeightedTable, generateRandom
 const startCooldown = require('../../utils/startCooldown');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const config = require('../../config.json');
+const { pronounAndPlural, pronoun } = require('../../utils/getPronouns');
 const serverMap = new Map();
 
 
@@ -29,7 +30,7 @@ module.exports = {
 			embedArray.push({
 				color: profileData.color,
 				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*${profileData.name} is ready to attack any intruder. But no matter how far ${profileData.pronounArray[0]} look${profileData.pronounArray[5] == 'singular' ? 's' : ''}, ${profileData.pronounArray[0]} can't see anyone. It seems that the pack is not under attack at the moment.*`,
+				description: `*${profileData.name} is ready to attack any intruder. But no matter how far ${pronounAndPlural(profileData, 0, 'look')}, ${pronoun(profileData, 0)} can't see anyone. It seems that the pack is not under attack at the moment.*`,
 			});
 
 			return await message
@@ -48,7 +49,7 @@ module.exports = {
 			embedArray.push({
 				color: profileData.color,
 				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*${profileData.name} looks around, searching for a human to attack. It looks like everyone is already being attacked by other pack members. The ${profileData.species} better not interfere before ${profileData.pronounArray[0]} hurt${profileData.pronounArray[5] == 'singular' ? 's' : ''} her friends.*`,
+				description: `*${profileData.name} looks around, searching for a human to attack. It looks like everyone is already being attacked by other pack members. The ${profileData.species} better not interfere before ${pronounAndPlural(profileData, 0, 'hurt')} ${pronoun(profileData, 2)} friends.*`,
 			});
 
 			return await message
@@ -86,17 +87,17 @@ module.exports = {
 
 			if (cycleKind == 'attack') {
 
-				embed.description = `⏫ *The human gets ready to attack. ${profileData.name} must think quickly about how ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'wants' : 'want')} to react.*`;
+				embed.description = `⏫ *The human gets ready to attack. ${profileData.name} must think quickly about how ${pronounAndPlural(profileData, 0, 'want')} to react.*`;
 			}
 
 			if (cycleKind == 'dodge') {
 
-				embed.description = `↪️ *Looks like the human is preparing a maneuver for ${profileData.name}'s next move. The ${profileData.species} must think quickly about how ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'wants' : 'want')} to react.*`;
+				embed.description = `↪️ *Looks like the human is preparing a maneuver for ${profileData.name}'s next move. The ${profileData.species} must think quickly about how ${pronounAndPlural(profileData, 0, 'want')} to react.*`;
 			}
 
 			if (cycleKind == 'defend') {
 
-				embed.description = `⏺️ *The human gets into position to oppose an attack. ${profileData.name} must think quickly about how ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'wants' : 'want')} to react.*`;
+				embed.description = `⏺️ *The human gets into position to oppose an attack. ${profileData.name} must think quickly about how ${pronounAndPlural(profileData, 0, 'want')} to react.*`;
 			}
 
 			embed.footer.text = 'You will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response.';
@@ -228,7 +229,7 @@ module.exports = {
 					{ $set: { inventoryObject: inventoryObject } },
 				);
 
-				embed.description = `*The battle between the human and ${profileData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${profileData.species} tries to jump at them, but the human manages to dodge. Quickly they run in the direction of the food den. They escaped from ${profileData.pronounArray[1]}!*`;
+				embed.description = `*The battle between the human and ${profileData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${profileData.species} tries to jump at them, but the human manages to dodge. Quickly they run in the direction of the food den. They escaped from ${pronoun(profileData, 1)}!*`;
 
 				if (winPoints == 0) {
 
@@ -245,7 +246,7 @@ module.exports = {
 
 							userInjuryObject.wounds += 1;
 
-							embed.description = `*The battle between the human and ${profileData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${profileData.species} tries to jump at them, but the human manages to dodge. Unfortunately, a rock is directly in ${profileData.name}'s jump line. A sharp pain runs through ${profileData.pronounArray[2]} hip. A red spot slowly spreads where ${profileData.pronounArray[0]} hit the rock. Meanwhile, the human runs into the food den.*`;
+							embed.description = `*The battle between the human and ${profileData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${profileData.species} tries to jump at them, but the human manages to dodge. Unfortunately, a rock is directly in ${profileData.name}'s jump line. A sharp pain runs through ${pronoun(profileData, 2)} hip. A red spot slowly spreads where ${pronoun(profileData, 0)} hit the rock. Meanwhile, the human runs into the food den.*`;
 
 							embedFooterStatsText = `-${healthPoints} HP (from wound)\n${embedFooterStatsText}`;
 
@@ -255,7 +256,7 @@ module.exports = {
 
 							userInjuryObject.sprains += 1;
 
-							embed.description = `*The battle between the human and ${profileData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${profileData.species} tries to jump at them, but the human manages to dodge. ${profileData.name} is not prepared for the fall. A sharp pain runs through ${profileData.pronounArray[2]} arm as it bends in the fall. Meanwhile, the human runs into the food den.*`;
+							embed.description = `*The battle between the human and ${profileData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${profileData.species} tries to jump at them, but the human manages to dodge. ${profileData.name} is not prepared for the fall. A sharp pain runs through ${pronoun(profileData, 2)} arm as it bends in the fall. Meanwhile, the human runs into the food den.*`;
 
 							embedFooterStatsText = `-${healthPoints} HP (from sprain)\n${embedFooterStatsText}`;
 					}

@@ -6,6 +6,7 @@ const { createCommandCollector } = require('../../utils/commandCollector');
 const config = require('../../config.json');
 const { execute } = require('../../events/messageCreate');
 const { remindOfAttack } = require('../specific/attack');
+const { pronoun, pronounAndPlural } = require('../../utils/getPronouns');
 
 module.exports = {
 	name: 'go',
@@ -433,7 +434,7 @@ module.exports = {
 				{ $set: { currentRegion: 'sleeping dens' } },
 			);
 
-			embed.description = `*${profileData.name} slowly trots to the sleeping dens, tired from all the hard work ${profileData.pronounArray[0]} did. For a moment, the ${profileData.species} thinks about if ${profileData.pronounArray[0]} want to rest or just a break.*`;
+			embed.description = `*${profileData.name} slowly trots to the sleeping dens, tired from all the hard work ${pronoun(profileData, 0)} did. For a moment, the ${profileData.species} thinks about if ${pronounAndPlural(profileData, 0, 'want')} to rest or just a break.*`;
 			embed.fields = [];
 		}
 
@@ -444,7 +445,7 @@ module.exports = {
 				{ $set: { currentRegion: 'food den' } },
 			);
 
-			embed.description = `*${profileData.name} runs to the food den. Maybe ${profileData.pronounArray[0]} will eat something, or put ${profileData.pronounArray[2]} food onto the pile.*`;
+			embed.description = `*${profileData.name} runs to the food den. Maybe ${pronoun(profileData, 0)} will eat something, or put ${pronoun(profileData, 2)} food onto the pile.*`;
 			embed.fields = [];
 
 			const allFoodDenProfilesArray = (await profileModel.find({
@@ -511,7 +512,7 @@ module.exports = {
 				{ $set: { currentRegion: 'ruins' } },
 			);
 
-			embed.description = `*${profileData.name} walks up to the ruins, carefully stepping over broken bricks. Hopefully, ${profileData.pronounArray[0]} will find someone to talk with.*`;
+			embed.description = `*${profileData.name} walks up to the ruins, carefully stepping over broken bricks. Hopefully, ${pronoun(profileData, 0)} will find someone to talk with.*`;
 			embed.fields = [];
 
 			const allRuinProfilesArray = (await profileModel.find({
@@ -537,7 +538,7 @@ module.exports = {
 				{ $set: { currentRegion: 'lake' } },
 			);
 
-			embed.description = `*${profileData.name} looks at ${profileData.pronounArray[2]} reflection as ${profileData.pronounArray[0]} pass${(profileData.pronounArray[5] == 'singular') ? 'es' : ''} the lake. Suddenly the ${profileData.species} remembers how long ${profileData.pronounArray[0]} ha${(profileData.pronounArray[5] == 'singular') ? 's' : 've'}n't drunk anything.*`;
+			embed.description = `*${profileData.name} looks at ${pronoun(profileData, 2)} reflection as ${pronounAndPlural(profileData, 0, 'passes', 'pass')} the lake. Suddenly the ${profileData.species} remembers how long ${pronounAndPlural(profileData, 0, 'has', 'have')}n't drunk anything.*`;
 			embed.fields = [];
 		}
 

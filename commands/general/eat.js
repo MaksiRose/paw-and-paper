@@ -7,6 +7,7 @@ const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion')
 const { isInvalid } = require('../../utils/checkValidity');
 const { sendMessage } = require('./inventory');
 const { remindOfAttack } = require('../specific/attack');
+const { pronounAndPlural, pronoun, upperCasePronounAndPlural } = require('../../utils/getPronouns');
 
 module.exports = {
 	name: 'eat',
@@ -30,7 +31,7 @@ module.exports = {
 			embedArray.push({
 				color: profileData.color,
 				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*${profileData.name}'s stomach bloats as ${profileData.pronounArray[0]} roll${(profileData.pronounArray[5] == 'singular') ? 's' : ''} around camp, stuffing food into ${profileData.pronounArray[2]} mouth. The ${profileData.species} might need to take a break from food before ${profileData.pronounArray[0]} go${(profileData.pronounArray[5] == 'singular') ? 'es' : ''} into a food coma.*`,
+				description: `*${profileData.name}'s stomach bloats as ${pronounAndPlural(profileData, 0, 'roll')} around camp, stuffing food into ${pronoun(profileData, 2)} mouth. The ${profileData.species} might need to take a break from food before ${pronounAndPlural(profileData, 0, 'goes', 'go')} into a food coma.*`,
 			});
 
 			return await message
@@ -116,7 +117,7 @@ module.exports = {
 				finalHungerPoints = generateRandomNumber(5, minimumHungerPoints);
 				finalHealthPoints = generateRandomNumber(3, minimumHealthPoints);
 
-				embed.description = `*A yucky feeling drifts down ${profileData.name}'s throat. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} shake${(profileData.pronounArray[5] == 'singular') ? 's' : ''} and spit${(profileData.pronounArray[5] == 'singular') ? 's' : ''} it out, trying to rid ${profileData.pronounArray[2]} mouth of the taste. The plant is poisonous!*`;
+				embed.description = `*A yucky feeling drifts down ${profileData.name}'s throat. ${upperCasePronounAndPlural(profileData, 0, 'shakes and spits', 'shake and spit')} it out, trying to rid ${pronoun(profileData, 2)} mouth of the taste. The plant is poisonous!*`;
 			}
 
 			if (plantMap.get(chosenFood).edibality == 'i') {
@@ -124,7 +125,7 @@ module.exports = {
 				minimumHungerPoints = -1;
 				finalHungerPoints = generateRandomNumber(3, minimumHungerPoints);
 
-				embed.description = `*${profileData.name} slowly opens ${profileData.pronounArray[2]} mouth and chomps onto the ${chosenFood}. The ${profileData.species} swallows it, but ${profileData.pronounArray[2]} face has a look of disgust. That wasn't very tasty!*`;
+				embed.description = `*${profileData.name} slowly opens ${pronoun(profileData, 2)} mouth and chomps onto the ${chosenFood}. The ${profileData.species} swallows it, but ${pronoun(profileData, 2)} face has a look of disgust. That wasn't very tasty!*`;
 			}
 
 			if (plantMap.get(chosenFood).edibality == 'e') {
@@ -142,7 +143,7 @@ module.exports = {
 					minimumHungerPoints = 11;
 					finalHungerPoints = generateRandomNumber(10, minimumHungerPoints);
 
-					embed.description = `*Leaves flutter into the storage den, landing near ${profileData.name}'s feet. The ${profileData.species} searches around the inventory determined to find the perfect meal, and that ${profileData.pronounArray[0]} do${(profileData.pronounArray[5] == 'singular') ? 'es' : ''}. ${profileData.name} plucks a ${chosenFood} from the pile and eats until ${profileData.pronounArray[2]} stomach is pleased.*`;
+					embed.description = `*Leaves flutter into the storage den, landing near ${profileData.name}'s feet. The ${profileData.species} searches around the inventory determined to find the perfect meal, and that ${pronounAndPlural(profileData, 0, 'does', 'do')}. ${profileData.name} plucks a ${chosenFood} from the pile and eats until ${pronoun(profileData, 2)} stomach is pleased.*`;
 				}
 			}
 
@@ -239,7 +240,7 @@ module.exports = {
 				minimumHungerPoints = 1;
 				finalHungerPoints = generateRandomNumber(5, minimumHungerPoints);
 
-				embed.description = `*${profileData.name} stands by the storage den, eyeing the varieties of food. A ${chosenFood} catches ${profileData.pronounArray[2]} attention. The ${profileData.species} walks over to it and begins to eat.* "This isn't very good!" *${profileData.name} whispers to ${profileData.pronounArray[4]} and leaves the den, stomach still growling, and craving for plants to grow.*`;
+				embed.description = `*${profileData.name} stands by the storage den, eyeing the varieties of food. A ${chosenFood} catches ${pronoun(profileData, 2)} attention. The ${profileData.species} walks over to it and begins to eat.* "This isn't very good!" *${profileData.name} whispers to ${pronoun(profileData, 4)} and leaves the den, stomach still growling, and craving for plants to grow.*`;
 			}
 
 			if (speciesMap.get(profileData.species).diet == 'carnivore' || speciesMap.get(profileData.species).diet == 'omnivore') {
@@ -247,7 +248,7 @@ module.exports = {
 				minimumHungerPoints = 11;
 				finalHungerPoints = generateRandomNumber(10, minimumHungerPoints);
 
-				embed.description = `*${profileData.name} sits chewing maliciously on a ${chosenFood}. A dribble of blood escapes out of ${profileData.pronounArray[2]} jaw as the ${profileData.species} finishes off the meal. It was a delicious feast, but very messy!*`;
+				embed.description = `*${profileData.name} sits chewing maliciously on a ${chosenFood}. A dribble of blood escapes out of ${pronoun(profileData, 2)} jaw as the ${profileData.species} finishes off the meal. It was a delicious feast, but very messy!*`;
 			}
 
 			if (profileData.hunger + finalHungerPoints > profileData.maxHunger) {
@@ -290,7 +291,7 @@ module.exports = {
 
 			if (taggedProfileData) {
 
-				embed.description = `*${profileData.name} looks down at ${taggedProfileData.name} as ${profileData.pronounArray[0]} nom${(profileData.pronounArray[5] == 'singular') ? 's' : ''} on the ${taggedProfileData.species}'s leg.* "No eating packmates here!" *${taggedProfileData.name} chuckled, shaking off ${profileData.name}.*`;
+				embed.description = `*${profileData.name} looks down at ${taggedProfileData.name} as ${pronounAndPlural(profileData, 0, 'nom')} on the ${taggedProfileData.species}'s leg.* "No eating packmates here!" *${taggedProfileData.name} chuckled, shaking off ${profileData.name}.*`;
 				embed.footer.text = (profileData.currentRegion != 'food den') ? '\nYou are now at the food den' : '';
 
 				embedArray.push(embed);

@@ -2,6 +2,7 @@ const profileModel = require('../../models/profileModel');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isPassedOut, hasCooldown } = require('../../utils/checkValidity');
 const { startResting } = require('../../utils/executeResting');
+const { upperCasePronoun, pronoun, pronounAndPlural } = require('../../utils/getPronouns');
 const startCooldown = require('../../utils/startCooldown');
 const { remindOfAttack } = require('../specific/attack');
 
@@ -36,7 +37,7 @@ module.exports = {
 					embeds: [{
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
-						description: `${profileData.name} dreams of resting on a beach, out in the sun. The imaginary wind rocked the also imaginative hammock. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} must be really tired to dream of sleeping!`,
+						description: `${profileData.name} dreams of resting on a beach, out in the sun. The imaginary wind rocked the also imaginative hammock. ${upperCasePronoun(profileData, 0)} must be really tired to dream of sleeping!`,
 					}],
 				})
 				.catch((error) => {
@@ -54,7 +55,7 @@ module.exports = {
 					embeds: [{
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
-						description: `*${profileData.name} trots around the dens eyeing ${profileData.pronounArray[2]} comfortable moss-covered bed. A nap looks nice, but ${profileData.pronounArray[0]} ha${(profileData.pronounArray[5] == 'singular') ? 's' : 've'} far too much energy to rest!*`,
+						description: `*${profileData.name} trots around the dens eyeing ${pronoun(profileData, 2)} comfortable moss-covered bed. A nap looks nice, but ${pronounAndPlural(profileData, 0, 'has', 'have')} far too much energy to rest!*`,
 					}],
 				})
 				.catch((error) => {

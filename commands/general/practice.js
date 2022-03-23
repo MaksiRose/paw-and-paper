@@ -5,6 +5,7 @@ const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion')
 const { isInvalid } = require('../../utils/checkValidity');
 const startCooldown = require('../../utils/startCooldown');
 const { remindOfAttack } = require('../specific/attack');
+const { pronoun, pronounAndPlural } = require('../../utils/getPronouns');
 const practicingCooldownAccountsMap = new Map();
 
 module.exports = {
@@ -116,7 +117,7 @@ module.exports = {
 				embedArray.splice(-1, 1, {
 					color: profileData.color,
 					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: `*After a bit of thinking, ${profileData.name} decides that now is not a good time to practice ${profileData.pronounArray[2]} fighting skills. Politely, ${profileData.pronounArray[0]} decline${profileData.pronounArray[5] == 'singular' ? 's' : ''} the Elderlies offer.*`,
+					description: `*After a bit of thinking, ${profileData.name} decides that now is not a good time to practice ${pronoun(profileData, 2)} fighting skills. Politely, ${pronounAndPlural(profileData, 0, 'decline')} the Elderlies offer.*`,
 				});
 
 				botReply = await botReply
@@ -218,19 +219,19 @@ module.exports = {
 
 			if (cycleKind == 'attack') {
 
-				embed.description = `⏫ *The Elderly gets ready to attack. ${profileData.name} must think quickly about how ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'wants' : 'want')} to react.*`;
+				embed.description = `⏫ *The Elderly gets ready to attack. ${profileData.name} must think quickly about how ${pronounAndPlural(profileData, 0, 'want')} to react.*`;
 				embed.footer.text = 'Tip: Dodging an attack surprises the opponent and puts you in the perfect position for a counterattack.';
 			}
 
 			if (cycleKind == 'dodge') {
 
-				embed.description = `↪️ *Looks like the Elderly is preparing a maneuver for ${profileData.name}'s next move. The ${profileData.species} must think quickly about how ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'wants' : 'want')} to react.*`;
+				embed.description = `↪️ *Looks like the Elderly is preparing a maneuver for ${profileData.name}'s next move. The ${profileData.species} must think quickly about how ${pronounAndPlural(profileData, 0, 'want')} to react.*`;
 				embed.footer.text = 'Tip: Defending a maneuver blocks it effectively, which prevents your opponent from hurting you.';
 			}
 
 			if (cycleKind == 'defend') {
 
-				embed.description = `⏺️ *The Elderly gets into position to oppose an attack. ${profileData.name} must think quickly about how ${profileData.pronounArray[0]} ${((profileData.pronounArray[5] == 'singular') ? 'wants' : 'want')} to react.*`;
+				embed.description = `⏺️ *The Elderly gets into position to oppose an attack. ${profileData.name} must think quickly about how ${pronounAndPlural(profileData, 0, 'want')} to react.*`;
 				embed.footer.text = 'Tip: Attacks come with a lot of force, making them difficult to defend against.';
 			}
 

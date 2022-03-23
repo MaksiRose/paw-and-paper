@@ -389,7 +389,7 @@ module.exports = {
 							fields: [
 								{ name: '**🦑 Species**', value: profileData.species.charAt(0).toUpperCase() + profileData.species.slice(1), inline: true },
 								{ name: '**🏷️ Rank**', value: profileData.rank, inline: true },
-								{ name: '**🍂 Pronouns**', value: `${profileData.pronounArray[0]}/${profileData.pronounArray[1]} (${profileData.pronounArray[2]}/${profileData.pronounArray[3]}/${profileData.pronounArray[4]})` },
+								{ name: '**🍂 Pronouns**', value: profileData.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n') },
 								{ name: '**🗺️ Region**', value: profileData.currentRegion },
 								{ name: '**🚩 Levels**', value: `\`${profileData.levels}\``, inline: true },
 								{ name: '**✨ XP**', value: `\`${profileData.experience}/${profileData.levels * 50}\``, inline: true },

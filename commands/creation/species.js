@@ -3,6 +3,7 @@ const profileModel = require('../../models/profileModel');
 const startCooldown = require('../../utils/startCooldown');
 const { speciesMap } = require('../../utils/itemsInfo');
 const { hasNoName } = require('../../utils/checkAccountCompletion');
+const { pronoun } = require('../../utils/getPronouns');
 
 module.exports = {
 	name: 'species',
@@ -22,7 +23,7 @@ module.exports = {
 					embeds: [{
 						color: '#9d9e51',
 						author: { name: `${message.guild.name}`, icon_url: message.guild.iconURL() },
-						title: `${profileData.name} is a ${profileData.species}! You cannot change ${profileData.pronounArray[2]} species unless you reset your account.`,
+						title: `${profileData.name} is a ${profileData.species}! You cannot change ${pronoun(profileData, 2)} species unless you reset your account.`,
 					}],
 				})
 				.catch((error) => {
