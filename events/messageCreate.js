@@ -20,11 +20,6 @@ module.exports = {
 			return;
 		}
 
-		let profileData = await profileModel.findOne({
-			userId: message.author.id,
-			serverId: message.guild.id,
-		});
-
 		let serverData = await serverModel.findOne({
 			serverId: message.guild.id,
 		});
@@ -46,6 +41,11 @@ module.exports = {
 				nextPossibleAttack: Date.now(),
 			});
 		}
+
+		let profileData = await profileModel.findOne({
+			userId: message.author.id,
+			serverId: message.guild.id,
+		});
 
 		let pingRuins = false;
 		const embedArray = [];
