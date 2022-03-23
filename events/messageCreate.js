@@ -53,7 +53,6 @@ module.exports = {
 		const commandName = argumentsArray.shift().toLowerCase();
 
 		const command = client.commands[commandName] || client.commands[Object.keys(client.commands).find(cmnd => client.commands[cmnd].aliases !== undefined && client.commands[cmnd].aliases.includes(commandName))];
-		console.log(command);
 
 		if (command === undefined) {
 
