@@ -18,7 +18,7 @@ module.exports = {
 				meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, 0])),
 			};
 
-			await serverModel.create({
+			return await serverModel.create({
 				serverId: guild.id,
 				name: guild.name,
 				inventoryObject: serverInventoryObject,
