@@ -4,6 +4,7 @@ const serverModel = require('../models/serverModel');
 const errorHandling = require('../utils/errorHandling');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 const { activeCommandsObject } = require('../utils/commandCollector');
+const { isPassedOut } = require('../utils/checkValidity');
 let lastMessageEpochTime = 0;
 const userMap = new Map();
 
@@ -181,7 +182,7 @@ module.exports = {
 				serverId: message.guild.id,
 			});
 
-			if (profileData && profileData.isResting == false && profileData.energy < profileData.maxEnergy) {
+			if (await isPassedOut(message, profileData, false) === false && profileData && profileData.isResting == false && profileData.energy < profileData.maxEnergy) {
 
 				message.content = `${config.prefix}rest`;
 
