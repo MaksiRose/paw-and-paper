@@ -271,6 +271,11 @@ class model {
 				return newObject;
 			}
 		};
+
+		this.save = async function(updateObject) {
+
+			fs.writeFileSync(`${path}/${updateObject.uuid}.json`, JSON.stringify(updateObject, null, '\t'));
+		};
 	}
 }
 
