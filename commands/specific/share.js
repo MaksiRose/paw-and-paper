@@ -7,6 +7,7 @@ const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { remindOfAttack } = require('./attack');
+const { pronounAndPlural, pronoun } = require('../../utils/getPronouns');
 const sharingCooldownAccountsMap = new Map();
 
 module.exports = {
@@ -70,7 +71,7 @@ module.exports = {
 			embedArray.push({
 				color: profileData.color,
 				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*${profileData.name} is very wise from all the adventures ${profileData.pronounArray[0]} had, but also a little... quaint. Sometimes ${profileData.pronounArray[0]} sit${(profileData.pronounArray[5] == 'singular') ? 's' : ''} down at the fireplace, mumbling to ${profileData.pronounArray[4]} a story from back in the day. Busy packmates look at ${profileData.pronounArray[1]} in confusion as they pass by.*`,
+				description: `*${profileData.name} is very wise from all the adventures ${pronoun(profileData, 0)} had, but also a little... quaint. Sometimes ${pronounAndPlural(profileData, 0, 'sit')} down at the fireplace, mumbling to ${pronoun(profileData, 4)} a story from back in the day. Busy packmates look at ${pronoun(profileData, 1)} in confusion as they pass by.*`,
 			});
 
 			return await message
@@ -298,7 +299,7 @@ module.exports = {
 
 		async function noSharing() {
 
-			embed.description = `*${profileData.name} sits on an old wooden trunk at the ruins, ready to tell a story to any willing listener. But to ${profileData.pronounArray[2]} disappointment, no one seems to be around.*`;
+			embed.description = `*${profileData.name} sits on an old wooden trunk at the ruins, ready to tell a story to any willing listener. But to ${pronoun(profileData, 2)} disappointment, no one seems to be around.*`;
 			embed.footer.text = '';
 
 			profileData = await profileModel.findOneAndUpdate(

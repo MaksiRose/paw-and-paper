@@ -38,7 +38,7 @@ module.exports = {
 
 			await profileModel.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { pronounArray: [subjectPronoun, objectPronoun, possessiveAdjective, possessivePronoun, reflexivePronoun, pronounNumber] } },
+				{ $set: { pronounSets: [[subjectPronoun, objectPronoun, possessiveAdjective, possessivePronoun, reflexivePronoun, pronounNumber]] } },
 			);
 
 			return await message

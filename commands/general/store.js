@@ -6,6 +6,7 @@ const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion')
 const { isInvalid } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { remindOfAttack } = require('../specific/attack');
+const { pronoun, upperCasePronounAndPlural } = require('../../utils/getPronouns');
 
 module.exports = {
 	name: 'store',
@@ -79,7 +80,7 @@ module.exports = {
 			embedArray.push({
 				color: profileData.color,
 				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*${profileData.name} goes to the food den to store food away, but ${profileData.pronounArray[2]} mouth is empty...*`,
+				description: `*${profileData.name} goes to the food den to store food away, but ${pronoun(profileData, 2)} mouth is empty...*`,
 			});
 
 			return await message
@@ -97,7 +98,7 @@ module.exports = {
 		embedArray.push({
 			color: profileData.color,
 			author: { name: profileData.name, icon_url: profileData.avatarURL },
-			description: `*${profileData.name} wanders to the food den, ready to store away ${profileData.pronounArray[2]} findings. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} ${((profileData.pronounArray[5] == 'singular') ? 'circles' : 'circle')} the food pile…*`,
+			description: `*${profileData.name} wanders to the food den, ready to store away ${pronoun(profileData, 2)} findings. ${upperCasePronounAndPlural(profileData, 0, 'circle')} the food pile…*`,
 			footer: { text: '' },
 		});
 

@@ -8,6 +8,7 @@ const { decreaseHealth, decreaseThirst, decreaseHunger, decreaseEnergy } = requi
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { remindOfAttack } = require('../specific/attack');
+const { pronoun, pronounAndPlural, upperCasePronounAndPlural } = require('../../utils/getPronouns');
 
 module.exports = {
 	name: 'playfight',
@@ -31,7 +32,7 @@ module.exports = {
 			embedArray.push({
 				color: profileData.color,
 				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*${profileData.name} believes that ${profileData.pronounArray[0]} ${(profileData.pronounArray[5] == 'singular') ? 'is' : 'are'} so unmatched that only ${profileData.pronounArray[0]} could defeat ${profileData.pronounArray[4]}. But it doesn't take ${profileData.pronounArray[1]} long to realize that it is more fun to fight a partner after all.*`,
+				description: `*${profileData.name} believes that ${pronounAndPlural(profileData, 0, 'is', 'are')} so unmatched that only ${pronoun(profileData, 0)} could defeat ${pronoun(profileData, 4)}. But it doesn't take ${pronoun(profileData, 1)} long to realize that it is more fun to fight a partner after all.*`,
 			});
 
 			return await message
@@ -94,7 +95,7 @@ module.exports = {
 		embedArray.push({
 			color: profileData.color,
 			author: { name: profileData.name, icon_url: profileData.avatarURL },
-			description: `*${profileData.name} hangs around the prairie when ${partnerProfileData.name} comes by. The ${partnerProfileData.species} has things to do but ${profileData.name}'s smug expression implies ${partnerProfileData.pronounArray[0]} wouldn't be able to beat the ${profileData.species}.*`,
+			description: `*${profileData.name} hangs around the prairie when ${partnerProfileData.name} comes by. The ${partnerProfileData.species} has things to do but ${profileData.name}'s smug expression implies ${pronoun(partnerProfileData, 0)} wouldn't be able to beat the ${profileData.species}.*`,
 			footer: { text: 'You have 30 seconds to click the button before the invitation expires.' },
 		});
 
@@ -261,7 +262,7 @@ module.exports = {
 					embedArray.push({
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
-						description: `*${currentProfileData.name} takes so long with ${currentProfileData.pronounArray[2]} decision on how to attack that ${otherProfileData.name} gets impatient and leaves.*`,
+						description: `*${currentProfileData.name} takes so long with ${pronoun(currentProfileData, 2)} decision on how to attack that ${otherProfileData.name} gets impatient and leaves.*`,
 						footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
 					});
 
@@ -350,7 +351,7 @@ module.exports = {
 
 								userInjuryObject.infections += 1;
 
-								getHurtText += `*${otherProfileData.name} has enjoyed the roughhousing, but ${otherProfileData.pronounArray[0]} ${(otherProfileData.pronounArray[5] == 'singular') ? 'is' : 'are'} struck by exhaustion. After taking a short nap, ${otherProfileData.pronounArray[0]} notice${(otherProfileData.pronounArray[5] == 'singular') ? 's' : ''} the rash creeping along ${otherProfileData.pronounArray[2]} back. Oh no! The ${otherProfileData.species} has gotten an infection while playing!*`;
+								getHurtText += `*${otherProfileData.name} has enjoyed the roughhousing, but ${pronounAndPlural(otherProfileData, 0, 'is', 'are')} struck by exhaustion. After taking a short nap, ${pronounAndPlural(otherProfileData, 0, 'notice')} the rash creeping along ${pronoun(otherProfileData, 2)} back. Oh no! The ${otherProfileData.species} has gotten an infection while playing!*`;
 
 								if (otherProfileData.userId === profileData.userId) {
 
@@ -367,7 +368,7 @@ module.exports = {
 
 								userInjuryObject.sprains += 1;
 
-								getHurtText += `*${otherProfileData.name} tries to get up with ${currentProfileData.name}'s help, but the ${otherProfileData.species} feels a horrible pain as ${otherProfileData.pronounArray[0]} get up. Ironically, ${otherProfileData.name} got a sprain from getting up after the fight.*`;
+								getHurtText += `*${otherProfileData.name} tries to get up with ${currentProfileData.name}'s help, but the ${otherProfileData.species} feels a horrible pain as ${pronoun(otherProfileData, 0)} get up. Ironically, ${otherProfileData.name} got a sprain from getting up after the fight.*`;
 
 								if (otherProfileData.userId === profileData.userId) {
 
@@ -386,7 +387,7 @@ module.exports = {
 					embedArray.push({
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
-						description: `*The two animals are pressing against each other with all their might. It seems like the fight will never end this way, but ${currentProfileData.name} has one more trick up ${currentProfileData.pronounArray[2]} sleeve: ${currentProfileData.pronounArray[0]} simply moves out of the way, letting ${otherProfileData.name} crash into the ground. ${otherProfileData.pronounArray[0].charAt(0).toUpperCase() + otherProfileData.pronounArray[0].slice(1)} has a wry grin on ${otherProfileData.pronounArray[2]} face as ${otherProfileData.pronounArray[0]} looks up at the ${currentProfileData.species}. ${currentProfileData.name} wins this fight, but who knows about the next one?*\n\n${getHurtText}`,
+						description: `*The two animals are pressing against each other with all their might. It seems like the fight will never end this way, but ${currentProfileData.name} has one more trick up ${pronoun(currentProfileData, 2)} sleeve: ${pronoun(currentProfileData, 0)} simply moves out of the way, letting ${otherProfileData.name} crash into the ground. ${upperCasePronounAndPlural(otherProfileData, 0, 'has', 'have')} a wry grin on ${pronoun(otherProfileData, 2)} face as ${pronounAndPlural(otherProfileData, 0, 'look')} up at the ${currentProfileData.species}. ${currentProfileData.name} wins this fight, but who knows about the next one?*\n\n${getHurtText}`,
 						footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
 					});
 
@@ -437,7 +438,7 @@ module.exports = {
 					embedArray.push({
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
-						description: `*The two animals wrestle with each other until ${profileData.name} falls over the ${partnerProfileData.species} and both of them land on the ground. They pant and glare at each other, but ${partnerProfileData.name} can't contain ${partnerProfileData.pronounArray[2]} laughter. The ${profileData.species} starts to giggle as well. The fight has been fun, even though no one won.*`,
+						description: `*The two animals wrestle with each other until ${profileData.name} falls over the ${partnerProfileData.species} and both of them land on the ground. They pant and glare at each other, but ${partnerProfileData.name} can't contain ${pronoun(partnerProfileData, 2)} laughter. The ${profileData.species} starts to giggle as well. The fight has been fun, even though no one won.*`,
 						footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
 					});
 
@@ -460,9 +461,9 @@ module.exports = {
 			}
 
 			const newTurnEmbedTextArray = [
-				`*${currentProfileData.name} bites into ${otherProfileData.name}, not very deep, but deep enough to hang onto the ${otherProfileData.species}. ${otherProfileData.name} needs to get the ${currentProfileData.species} off of ${otherProfileData.pronounArray[1]}.*`,
-				`*${currentProfileData.name} slams into ${otherProfileData.name}, leaving the ${otherProfileData.species} disoriented. ${otherProfileData.name} needs to start an attack of ${otherProfileData.pronounArray[2]} own now.*`,
-				`*${otherProfileData.name} has gotten hold of ${currentProfileData.name}, but the ${currentProfileData.species} manages to get ${otherProfileData.pronounArray[1]} off, sending the ${otherProfileData.species} slamming into the ground. ${otherProfileData.name} needs to get up and try a new strategy.*`,
+				`*${currentProfileData.name} bites into ${otherProfileData.name}, not very deep, but deep enough to hang onto the ${otherProfileData.species}. ${otherProfileData.name} needs to get the ${currentProfileData.species} off of ${pronoun(otherProfileData, 1)}.*`,
+				`*${currentProfileData.name} slams into ${otherProfileData.name}, leaving the ${otherProfileData.species} disoriented. ${otherProfileData.name} needs to start an attack of ${pronoun(otherProfileData, 2)} own now.*`,
+				`*${otherProfileData.name} has gotten hold of ${currentProfileData.name}, but the ${currentProfileData.species} manages to get ${pronoun(otherProfileData, 1)} off, sending the ${otherProfileData.species} slamming into the ground. ${otherProfileData.name} needs to get up and try a new strategy.*`,
 			];
 
 			newTurnEmbedTextArrayIndex = generateRandomNumberWithException(newTurnEmbedTextArray.length, 0, newTurnEmbedTextArrayIndex);

@@ -10,6 +10,7 @@ const { checkLevelUp } = require('../../utils/levelHandling');
 const { introduceQuest } = require('./quest');
 const { execute } = require('../../events/messageCreate');
 const { remindOfAttack } = require('./attack');
+const { pronoun, pronounAndPlural, upperCasePronounAndPlural } = require('../../utils/getPronouns');
 
 module.exports = {
 	name: 'play',
@@ -33,7 +34,7 @@ module.exports = {
 			embedArray.push({
 				color: profileData.color,
 				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*${profileData.name} approaches the prairie, ${profileData.pronounArray[2]} mouth filled with various things. As eager as ${profileData.pronounArray[0]} ${(profileData.pronounArray[5] == 'singular') ? 'is' : 'are'} to go playing, ${profileData.pronounArray[0]} decide${(profileData.pronounArray[5] == 'singular') ? 's' : ''} to store some things away first.*`,
+				description: `*${profileData.name} approaches the prairie, ${pronoun(profileData, 2)} mouth filled with various things. As eager as ${pronounAndPlural(profileData, 0, 'is', 'are')} to go playing, ${pronounAndPlural(profileData, 0, 'decide')} to store some things away first.*`,
 				footer: { text: 'You can only hold up to 25 items in your personal inventory. Type "rp store" to put things into the pack inventory!' },
 			});
 
@@ -74,7 +75,7 @@ module.exports = {
 			embedArray.push({
 				color: profileData.color,
 				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*${profileData.name} plays with ${profileData.pronounArray[4]}. The rest of the pack looks away in embarrassment.*`,
+				description: `*${profileData.name} plays with ${pronoun(profileData, 4)}. The rest of the pack looks away in embarrassment.*`,
 			});
 
 			return await message
@@ -290,7 +291,7 @@ module.exports = {
 			const findSomethingChance = pullFromWeightedTable({ 0: 90, 1: 10 });
 			if (findSomethingChance == 0) {
 
-				embed.description = `*${profileData.name} bounces around camp, watching the busy hustle and blurs of hunters and healers at work. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} splash${(profileData.pronounArray[5] == 'singular') ? 'es' : ''} into the stream that split the pack in half, chasing the minnows with ${profileData.pronounArray[2]} eyes.*`;
+				embed.description = `*${profileData.name} bounces around camp, watching the busy hustle and blurs of hunters and healers at work. ${upperCasePronounAndPlural(profileData, 0, 'splashes', 'splash')} into the stream that split the pack in half, chasing the minnows with ${pronoun(profileData, 2)} eyes.*`;
 				embed.footer.text = embedFooterStatsText;
 
 				embedArray.push(embed);
@@ -328,7 +329,7 @@ module.exports = {
 
 						userInjuryObject.cold = true;
 
-						embed.description = `*${profileData.name} tumbles around camp, weaving through dens and packmates at work. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} pause${(profileData.pronounArray[5] == 'singular') ? 's' : ''} for a moment, having a sneezing and coughing fit. It looks like ${profileData.name} has caught a cold.*`;
+						embed.description = `*${profileData.name} tumbles around camp, weaving through dens and packmates at work. ${upperCasePronounAndPlural(profileData, 0, 'pause')} for a moment, having a sneezing and coughing fit. It looks like ${profileData.name} has caught a cold.*`;
 						embed.footer.text = `-${healthPoints} HP (from cold)\n${embedFooterStatsText}`;
 
 						break;
@@ -337,7 +338,7 @@ module.exports = {
 
 						userInjuryObject.wounds += 1;
 
-						embed.description = `*${profileData.name} strays from camp, playing near the pack borders. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} hop${(profileData.pronounArray[5] == 'singular') ? 's' : ''} on rocks and pebbles, trying to keep ${profileData.pronounArray[2]} balance, but the rock ahead of ${profileData.pronounArray[1]} is steeper and more jagged. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} land${(profileData.pronounArray[5] == 'singular') ? 's' : ''} with an oomph and a gash slicing through ${profileData.pronounArray[2]} feet from the sharp edges.*`;
+						embed.description = `*${profileData.name} strays from camp, playing near the pack borders. ${upperCasePronounAndPlural(profileData, 0, 'hop')} on rocks and pebbles, trying to keep ${pronoun(profileData, 2)} balance, but the rock ahead of ${pronoun(profileData, 1)} is steeper and more jagged. ${upperCasePronounAndPlural(profileData, 0, 'land')} with an oomph and a gash slicing through ${pronoun(profileData, 2)} feet from the sharp edges.*`;
 						embed.footer.text = `-${healthPoints} HP (from wound)\n${embedFooterStatsText}`;
 				}
 
@@ -377,7 +378,7 @@ module.exports = {
 				{ $set: { inventoryObject: userInventory } },
 			);
 
-			embed.description = `*${profileData.name} bounds across the den territory, chasing a bee that is just out of reach. Without looking, the ${profileData.species} crashes into a Hunter, loses sight of the bee, and scurries away into the forest. On ${profileData.pronounArray[2]} way back to the pack border, ${profileData.name} sees something special on the ground. It's a ${foundItem}!*`;
+			embed.description = `*${profileData.name} bounds across the den territory, chasing a bee that is just out of reach. Without looking, the ${profileData.species} crashes into a Hunter, loses sight of the bee, and scurries away into the forest. On ${pronoun(profileData, 2)} way back to the pack border, ${profileData.name} sees something special on the ground. It's a ${foundItem}!*`;
 			embed.footer.text = `${embedFooterStatsText}\n\n+1 ${foundItem}`;
 
 			embedArray.push(embed);
@@ -416,12 +417,12 @@ module.exports = {
 			const whoWinsChance = pullFromWeightedTable({ 0: 1, 1: 1 });
 			if (whoWinsChance == 0) {
 
-				embed.description = `*${profileData.name} trails behind ${partnerProfileData.name}'s rear end, preparing for a play attack. The ${profileData.species} launches forward, landing on top of ${partnerProfileData.name}.* "I got you, ${partnerProfileData.name}!" *${profileData.pronounArray[0]} say${(profileData.pronounArray[5] == 'singular') ? 's' : ''}. Both creatures bounce away from each other, laughing.*`;
+				embed.description = `*${profileData.name} trails behind ${partnerProfileData.name}'s rear end, preparing for a play attack. The ${profileData.species} launches forward, landing on top of ${partnerProfileData.name}.* "I got you, ${partnerProfileData.name}!" *${pronounAndPlural(profileData, 0, 'say')}. Both creatures bounce away from each other, laughing.*`;
 				embed.image.url = 'https://external-preview.redd.it/iUqJpDGv2YSDitYREfnTvsUkl9GG6oPMCRogvilkIrg.gif?s=9b0ea7faad7624ec00b5f8975e2cf3636f689e27';
 			}
 			else {
 
-				embed.description = `*${profileData.name} trails behind ${partnerProfileData.name}'s rear end, preparing for a play attack. Right when the ${profileData.species} launches forward, ${partnerProfileData.name} dashes sideways, followed by a precise jump right on top of ${profileData.name}.* "I got you, ${profileData.name}!" *${partnerProfileData.pronounArray[0]} say${(partnerProfileData.pronounArray[5] == 'singular') ? 's' : ''}. Both creatures bounce away from each other, laughing.*`;
+				embed.description = `*${profileData.name} trails behind ${partnerProfileData.name}'s rear end, preparing for a play attack. Right when the ${profileData.species} launches forward, ${partnerProfileData.name} dashes sideways, followed by a precise jump right on top of ${profileData.name}.* "I got you, ${profileData.name}!" *${pronounAndPlural(profileData, 0, 'say')}. Both creatures bounce away from each other, laughing.*`;
 				embed.image.url = 'https://i.pinimg.com/originals/7e/e4/01/7ee4017f0152c7b7c573a3dfe2c6673f.gif';
 			}
 

@@ -2,6 +2,7 @@ const profileModel = require('../../models/profileModel');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { hasCooldown } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
+const { pronoun } = require('../../utils/getPronouns');
 const startCooldown = require('../../utils/startCooldown');
 const { remindOfAttack } = require('../specific/attack');
 
@@ -96,7 +97,7 @@ module.exports = {
 					embeds: [{
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
-						description: `"We are here to celebrate the nomination of ${profileData.name} to the highest rank, Elderly. The ${profileData.species} has shown incredible skills and persistence, and we congratulate ${profileData.pronounArray[1]} to their new title." *A mixture of howls, crows, meows, roars and squeaks are heard all around the hill, on which the Alpha stoof to announce this special event. It is not every day that a packmate gets the title of Elderly.*`,
+						description: `"We are here to celebrate the nomination of ${profileData.name} to the highest rank, Elderly. The ${profileData.species} has shown incredible skills and persistence, and we congratulate ${pronoun(profileData, 1)} to their new title." *A mixture of howls, crows, meows, roars and squeaks are heard all around the hill, on which the Alpha stoof to announce this special event. It is not every day that a packmate gets the title of Elderly.*`,
 					}],
 				})
 				.catch((error) => {

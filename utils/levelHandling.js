@@ -1,4 +1,5 @@
 const profileModel = require('../models/profileModel');
+const { upperCasePronounAndPlural } = require('./getPronouns');
 
 module.exports = {
 
@@ -20,7 +21,7 @@ module.exports = {
 
 			const embed = {
 				color: profileData.color,
-				title: `${profileData.name} just leveled up! ${profileData.pronounArray[0].charAt(0).toUpperCase() + profileData.pronounArray[0].slice(1)} ${(profileData.pronounArray[5] == 'singular') ? 'is' : 'are'} now level ${profileData.levels}.`,
+				title: `${profileData.name} just leveled up! ${upperCasePronounAndPlural(profileData, 0, 'is', 'are')} now level ${profileData.levels}.`,
 			};
 
 			botReply.embeds.push(embed);
