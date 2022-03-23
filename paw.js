@@ -32,7 +32,7 @@ module.exports.start = (token) => {
 
 	require('./handlers/events').execute(client);
 
-	const toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
+	let toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
 
 	for (const [id, object] of Object.entries(toDeleteList)) {
 
@@ -44,7 +44,14 @@ module.exports.start = (token) => {
 				fs.unlinkSync(`./database/toDelete/${object.fileName}`);
 				console.log('Deleted File: ', dataObject);
 
-				delete toDeleteList[id];
+				toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
+
+				delete toDeleteList[id][dataObject.name];
+				if (Object.entries(toDeleteList[id]).length === 0) {
+
+					delete toDeleteList[id];
+				}
+
 				fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
 			}
 		}, object.deletionTimestamp - Date.now());
