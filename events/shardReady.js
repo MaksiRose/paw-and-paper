@@ -3,7 +3,6 @@ module.exports = {
 	once: false,
 	async execute(client) {
 
-		client.destroy();
-		process.exit();
+		client.user.setActivity('this awesome RPG :)\nrp help', { type: 'PLAYING' });
 	},
 };
