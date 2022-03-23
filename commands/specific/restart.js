@@ -18,9 +18,11 @@ module.exports = {
 					}
 				});
 
+			client.destroy();
 			process.exit();
 		}
 		catch (error) {
+			console.error(error);
 			message.channel
 				.send({ content: `ERROR: ${error.message}` })
 				.catch((newError) => {
