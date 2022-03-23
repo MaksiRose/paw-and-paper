@@ -1,4 +1,5 @@
 const serverModel = require('../models/serverModel');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 
 module.exports = {
 	name: 'ready',
@@ -13,8 +14,7 @@ module.exports = {
 			require(`../handlers/${file}`).execute(client);
 		}
 
-		// eslint-disable-next-line no-unused-vars
-		for (const [guild_key, guild] of client.guilds.cache) {
+		for (const [, guild] of await client.guilds.fetch()) {
 
 			const serverData = await serverModel.findOne({
 				serverId: guild.id,
@@ -22,7 +22,20 @@ module.exports = {
 
 			if (!serverData) {
 
-				return;
+				const serverInventoryObject = {
+					commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, 0])),
+					uncommonPlants: Object.fromEntries([...uncommonPlantsMap.keys()].sort().map(key => [key, 0])),
+					rarePlants: Object.fromEntries([...rarePlantsMap.keys()].sort().map(key => [key, 0])),
+					meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, 0])),
+				};
+
+				await serverModel.create({
+					serverId: guild.id,
+					name: guild.name,
+					inventoryObject: serverInventoryObject,
+					activeUsersArray: [],
+					nextPossibleAttack: Date.now(),
+				});
 			}
 		}
 	},
