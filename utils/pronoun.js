@@ -9,5 +9,5 @@ module.exports = (profileData, pronounNumber) => {
 		possiblePronouns.push(pronounSet[pronounNumber]);
 	}
 
-	return generateRandomNumber(possiblePronouns.length, 0);
+	return possiblePronouns[generateRandomNumber(possiblePronouns.length, 0)];
 };
