@@ -44,12 +44,13 @@ module.exports = {
 	upperCasePronounAndPlural(profileData, pronounNumber, extraWord1, extraWord2) {
 
 		const pronoun = module.exports.upperCasePronoun(profileData, pronounNumber);
+		const normalPronoun = module.exports.pronoun(profileData, pronounNumber);
 
 		if (extraWord2 === undefined) {
 
-			return `${pronoun} ${extraWord1}${module.exports.isPlural(profileData, pronoun.toLowerCase()) === false ? 's' : ''}`;
+			return `${pronoun} ${extraWord1}${module.exports.isPlural(profileData, normalPronoun) === false ? 's' : ''}`;
 		}
 
-		return `${pronoun} ${module.exports.isPlural(profileData, pronoun.toLowerCase()) === false ? extraWord1 : extraWord2}`;
+		return `${pronoun} ${module.exports.isPlural(profileData, normalPronoun) === false ? extraWord1 : extraWord2}`;
 	},
 };
