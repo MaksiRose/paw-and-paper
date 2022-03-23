@@ -1,6 +1,6 @@
 const fs = require('fs');
 const crypto = require('crypto');
-const { client } = require('../index');
+const { client } = require('../paw');
 
 class model {
 	constructor(path) {
