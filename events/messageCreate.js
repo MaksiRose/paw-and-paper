@@ -50,11 +50,12 @@ module.exports = {
 		const embedArray = [];
 
 		const argumentsArray = message.content.slice(prefix.length).trim().split(/ +/);
-		const cmd = argumentsArray.shift().toLowerCase();
+		const commandName = argumentsArray.shift().toLowerCase();
 
-		const command = client.commands.get(cmd) || client.commands.find(cmnd => cmnd.aliases && cmnd.aliases.includes(cmd));
+		const command = client.commands[commandName] || client.commands[Object.keys(client.commands).find(cmnd => client.commands[cmnd].aliases !== undefined && client.commands[cmnd].aliases.includes(commandName))];
+		console.log(command);
 
-		if (!command) {
+		if (command === undefined) {
 
 			await message
 				.reply({
@@ -74,7 +75,7 @@ module.exports = {
 			return;
 		}
 
-		if (command == 'say') {
+		if (command.name === 'say') {
 
 			if (profileData.currentRegion == 'ruins') {
 

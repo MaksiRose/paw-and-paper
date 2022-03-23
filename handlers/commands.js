@@ -1,17 +1,36 @@
 const fs = require('fs');
+const path = require('path');
 
 module.exports = {
 	execute(client) {
-		for (const dir of fs.readdirSync('./commands/')) {
 
-			for (const file of fs.readdirSync(`./commands/${dir}`)) {
+		for (const commandPath of getFiles('../commands')) {
 
-				const command = require(`../commands/${dir}/${file}`);
-				if (command.name) {
+			const command = require(`${commandPath}`);
 
-					client.commands.set(command.name, command);
-				}
-			}
+			client.commands[command.name] = command;
 		}
 	},
 };
+
+function getFiles(directory) {
+
+	let commandFiles = [];
+
+	for (const content of fs.readdirSync(path.join(__dirname, directory))) {
+
+		if (fs.lstatSync(path.join(__dirname, `${directory}/${content}`)).isDirectory()) {
+
+			commandFiles = [
+				...commandFiles,
+				...getFiles(`${directory}/${content}`),
+			];
+		}
+		else if (content.endsWith('.js')) {
+
+			commandFiles.push(`${directory}/${content.slice(0, -3)}`);
+		}
+	}
+
+	return commandFiles;
+}
