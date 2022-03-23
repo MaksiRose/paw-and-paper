@@ -1,5 +1,6 @@
 const fs = require('fs');
 const profileModel = require('../models/profileModel');
+const otherProfileModel = require('../models/otherProfileModel');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 
 module.exports = {
@@ -39,11 +40,17 @@ module.exports = {
 						},
 					},
 				)
-				.then(() => {
+				.then(async () => {
+
+					const inactiveUserProfiles = await otherProfileModel.find({
+						userId: dataObject.userId,
+						serverId: dataObject.serverId,
+					});
 
 					if (invalidGuilds.includes(dataObject.serverId)) {
 
-						moveFile(file, `${dataObject.serverId}${dataObject.userId}`);
+						moveFile(file, `${dataObject.serverId}${dataObject.userId}`, dataObject.name);
+						moveOtherFiles(inactiveUserProfiles);
 					}
 					else {
 
@@ -53,14 +60,15 @@ module.exports = {
 
 								guild.members
 									.fetch(dataObject.userId)
-									.catch(() => moveFile(file, `${dataObject.serverId}${dataObject.userId}`));
+									.catch(() => moveFile(file, `${dataObject.serverId}${dataObject.userId}`, dataObject.name) && moveOtherFiles(inactiveUserProfiles));
 							})
 							.catch(error => {
 
 								invalidGuilds.push(dataObject.serverId);
 								if (error.httpStatus === 403) {
 
-									moveFile(file, `${dataObject.serverId}${dataObject.userId}`);
+									moveFile(file, `${dataObject.serverId}${dataObject.userId}`, dataObject.name);
+									moveOtherFiles(inactiveUserProfiles);
 								}
 								else {
 									console.error(error);
@@ -72,9 +80,29 @@ module.exports = {
 	},
 };
 
-function moveFile(file, id) {
+function moveFile(file, id, name) {
+
 	fs.renameSync(`./database/profiles/${file}`, `./database/toDelete/${file}`);
+
 	const toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
-	toDeleteList[id] = { fileName: file, deletionTimestamp: Date.now() + 2073600000 };
+
+	toDeleteList[id] = toDeleteList[id] || {};
+	toDeleteList[id][name] = { fileName: file, deletionTimestamp: Date.now() + 2073600000 };
+
 	fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
+}
+
+function moveOtherFiles(profiles) {
+
+	for (const profile of profiles) {
+
+		fs.renameSync(`./database/profiles/inactiveProfiles/${profile.uuid}.json`, `./database/toDelete/${profile.uuid}.json`);
+
+		const toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
+
+		toDeleteList[`${profile.serverId}${profile.userId}`] = toDeleteList[`${profile.serverId}${profile.userId}`] || {};
+		toDeleteList[`${profile.serverId}${profile.userId}`][profile.name] = { fileName: `${profile.uuid}.json`, deletionTimestamp: Date.now() + 2073600000 };
+
+		fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
+	}
 }
