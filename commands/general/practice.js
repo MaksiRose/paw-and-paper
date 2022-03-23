@@ -22,6 +22,26 @@ module.exports = {
 			return;
 		}
 
+		if (profileData.rank == 'Youngling') {
+
+			embedArray.push({
+				color: profileData.color,
+				author: { name: profileData.name, icon_url: profileData.avatarURL },
+				description: `*The Elderly shakes their head as they see ${profileData.name} approaching.*\n"At your age, you shouldn't prepare for fights. Go play with your friends instead!"`,
+			});
+
+			return await message
+				.reply({
+					content: messageContent,
+					embeds: embedArray,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
+		}
+
 		profileData = await startCooldown(message, profileData);
 		const messageContent = remindOfAttack(message);
 
@@ -48,7 +68,7 @@ module.exports = {
 			color: profileData.color,
 			author: { name: profileData.name, icon_url: profileData.avatarURL },
 			description: `*A very experienced Elderly approaches ${profileData.name}.* "I've seen that you have not performed well in fights lately. Do you want to practice with me for a bit to strengthen your skills?"`,
-			footer: { text: 'You will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response. The footer will provide hints as to which button you should click.' },
+			footer: { text: 'You will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response. The footer will provide hints as to which button you should click. This is a memory game, so try to remember which button to click in which situation.' },
 		});
 
 		let botReply = await message
