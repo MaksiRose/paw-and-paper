@@ -5,7 +5,6 @@ const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = requir
 module.exports = {
 	execute(client) {
 
-		const validGuilds = new Map();
 		const invalidGuilds = [];
 
 		const files = fs.readdirSync('./database/profiles').filter(file => file.endsWith('.json'));
@@ -39,13 +38,12 @@ module.exports = {
 
 						moveFile(file, `${dataObject.serverId}${dataObject.userId}`);
 					}
-					else if (validGuilds.has(dataObject.serverId) == false) {
+					else {
 
 						client.guilds
 							.fetch(dataObject.serverId)
 							.then(guild => {
 
-								validGuilds.set(dataObject.serverId, guild);
 								guild.members
 									.fetch(dataObject.userId)
 									.catch(() => moveFile(file, `${dataObject.serverId}${dataObject.userId}`));
