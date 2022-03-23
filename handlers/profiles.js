@@ -20,9 +20,12 @@ module.exports = {
 				meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, dataObject.inventoryObject.meat[key] || 0])),
 			};
 
-			dataObject.pronounSets = [dataObject.pronounArray];
-			delete dataObject.pronounArray;
-			profileModel.save(dataObject);
+			if (dataObject.pronounArray !== undefined) {
+
+				dataObject.pronounSets = [dataObject.pronounArray];
+				delete dataObject.pronounArray;
+				profileModel.save(dataObject);
+			}
 
 			profileModel
 				.findOneAndUpdate(
