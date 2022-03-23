@@ -13,7 +13,7 @@ const client = new Discord.Client({
 	},
 });
 
-client.commands = new Discord.Collection();
+client.commands = {};
 
 module.exports.client = client;
 module.exports.start = (token) => {
@@ -30,10 +30,7 @@ module.exports.start = (token) => {
 		fs.writeFileSync('./database/toDeleteList.json', JSON.stringify({}, null, '\t'));
 	}
 
-	for (const file of fs.readdirSync('./handlers/')) {
-
-		require(`./handlers/${file}`).execute(client);
-	}
+	require('./handlers/events').execute(client);
 
 	const toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
 
