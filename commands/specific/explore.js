@@ -292,7 +292,7 @@ module.exports = {
 				{ $set: { hasQuest: true } },
 			);
 
-			botReply = introduceQuest(message, profileData, embedArray.slice(0, -1), embedFooterStatsText);
+			botReply = await introduceQuest(message, profileData, embedArray.slice(0, -1), embedFooterStatsText);
 
 			const filter = i => i.customId === 'quest-start' && i.user.id === message.author.id;
 
