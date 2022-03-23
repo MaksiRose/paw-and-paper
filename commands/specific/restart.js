@@ -1,5 +1,3 @@
-const config = require('../../config.json');
-
 module.exports = {
 	name: 'restart',
 	async sendMessage(client, message) {
@@ -20,12 +18,7 @@ module.exports = {
 					}
 				});
 
-			await process.exit()
-				.then(() => {
-
-					client.login(config.token);
-				});
-
+			process.exit();
 		}
 		catch (error) {
 			message.channel
