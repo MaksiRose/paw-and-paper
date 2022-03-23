@@ -637,7 +637,9 @@ module.exports = {
 		async function findEnemy() {
 
 			let opponentLevel = chosenBiomeNumber == 2 ? generateRandomNumber(profileData.levels > 40 ? profileData.levels - 15 : 25, 26) : chosenBiomeNumber == 1 ? generateRandomNumber(15, 11) : generateRandomNumber(10, 1);
-			const opponentsArray = [...userSpeciesMap.biome1OpponentArray, ...userSpeciesMap.biome2OpponentArray, ...userSpeciesMap.biome3OpponentArray].slice(0, chosenBiomeNumber + 1);
+			const opponentsArray = [...userSpeciesMap.biome1OpponentArray];
+			if (chosenBiome > 0) { opponentsArray.push(...userSpeciesMap.biome2OpponentArray); }
+			if (chosenBiome === 2) { opponentsArray.push(...userSpeciesMap.biome3OpponentArray); }
 
 			const opponentSpecies = opponentsArray[generateRandomNumber(opponentsArray.length, 0)];
 			let playerLevel = profileData.levels;
