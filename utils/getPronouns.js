@@ -47,9 +47,9 @@ module.exports = {
 
 		if (extraWord2 === undefined) {
 
-			return `${pronoun} ${extraWord1}${module.exports.isPlural(profileData, pronoun) === false ? 's' : ''}`;
+			return `${pronoun} ${extraWord1}${module.exports.isPlural(profileData, pronoun.toLowerCase()) === false ? 's' : ''}`;
 		}
 
-		return `${pronoun} ${module.exports.isPlural(profileData, pronoun) === false ? extraWord1 : extraWord2}`;
+		return `${pronoun} ${module.exports.isPlural(profileData, pronoun.toLowerCase()) === false ? extraWord1 : extraWord2}`;
 	},
 };
