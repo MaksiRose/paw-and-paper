@@ -18,6 +18,11 @@ module.exports = {
 
 		for (let index = pronounSets.length - 1; index >= 0; index--) {
 
+			if (pronounSets[index] === 'none') {
+
+				pronounSets[index] = `${profileData.name}/${profileData.name}/${profileData.name}'s/${profileData.name}'s/${profileData.name}/singular`;
+			}
+
 			pronounSets[index] = pronounSets[index].split('/');
 
 			if (pronounSets[index].length !== 6 || (pronounSets[index][5] !== 'singular' && pronounSets[index][5] !== 'plural')) {
