@@ -47,7 +47,7 @@ module.exports = {
 					hasQuest: false,
 					currentRegion: 'sleeping dens',
 					unlockedRanks: 0,
-					pronounArray: ['they', 'them', 'their', 'theirs', 'themselves', 'plural'],
+					pronounSets: [['they', 'them', 'their', 'theirs', 'themselves', 'plural']],
 					injuryObject: { wounds: 0, infections: 0, cold: false, sprains: 0, poison: false },
 					inventoryObject: profileInventoryObject,
 				});
