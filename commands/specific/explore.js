@@ -243,7 +243,7 @@ module.exports = {
 
 			await findHumans();
 		}
-		else if (chosenBiomeNumber == (profileData.unlockedRanks - 1) && chosenBiomeNumber == (allBiomesArray.length - 1) && generateRandomNumber((profileData.rank == 'Elderly') ? 500 : (profileData.rank == 'Hunter' || profileData.rank == 'Healer') ? 400 : 300, 1) === 1) {
+		else if (chosenBiomeNumber == (profileData.unlockedRanks - 1) && chosenBiomeNumber == (allBiomesArray.length - 1) && generateRandomNumber((profileData.rank == 'Elderly') ? 500 : (profileData.rank == 'Hunter' || profileData.rank == 'Healer') ? 375 : 250, 1) === 1) {
 
 			await findQuest();
 		}
