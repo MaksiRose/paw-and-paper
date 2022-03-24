@@ -398,8 +398,8 @@ module.exports = {
 							color: profileData.color,
 							description: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\`\n⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\`\n🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\``,
 							fields: [
-								{ name: '**🩹 Injuries/Illnesses**', value: injuryText, inline: true },
-								{ name: '**🌱 Gingko Sapling**', value: profileData.saplingObject.exists === false ? 'none' : `${profileData.saplingObject.waterCycles} days alive - ${profileData.saplingObject.health} health\nNext watering <t:${Math.floor(profileData.saplingObject.nextWaterTimestamp / 1000)}:R>`, inline: true },
+								{ name: '**🩹 Injuries/Illnesses**', value: injuryText },
+								{ name: '**🌱 Gingko Sapling**', value: profileData.saplingObject.exists === false ? 'none' : `${profileData.saplingObject.waterCycles} days alive - ${profileData.saplingObject.health} health\nNext watering <t:${Math.floor(profileData.saplingObject.nextWaterTimestamp / 1000)}:R>` },
 							],
 							footer: { text: profileData.hasQuest == true ? 'There is one open quest!' : null },
 						}],

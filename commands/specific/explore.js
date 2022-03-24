@@ -333,7 +333,7 @@ module.exports = {
 
 				profileData = await profileModel.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
-					{ $set: { saplingObject: { exists: true, health: 100, waterCycles: 0, nextWaterTimestamp: Date.now() } } },
+					{ $set: { saplingObject: { exists: true, health: 50, waterCycles: 0, nextWaterTimestamp: Date.now() } } },
 				);
 
 				embed.description = `*${profileData.name} finds a ginkgo sapling!* PLACEHOLDER`;
