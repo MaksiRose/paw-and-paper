@@ -1,5 +1,6 @@
 const config = require('../../config.json');
 const profileModel = require('../../models/profileModel');
+const otherProfileModel = require('../../models/otherProfileModel');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
 const startCooldown = require('../../utils/startCooldown');
 
@@ -96,6 +97,31 @@ module.exports = {
 						throw new Error(error);
 					}
 				});
+		}
+
+		const inactiveUserProfiles = await otherProfileModel.find({
+			userId: message.author.id,
+			serverId: message.guild.id,
+		});
+
+		for (const profile of inactiveUserProfiles) {
+
+			if (name === profile.name) {
+
+				return await message
+					.reply({
+						embeds: [{
+							color: config.error_color,
+							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+							title: 'You cannot have two accounts with the same name.',
+						}],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
 		}
 
 		await profileModel.findOneAndUpdate(
