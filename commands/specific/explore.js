@@ -250,7 +250,7 @@ module.exports = {
 		}
 		else if (pullFromWeightedTable({ 0: 10, 1: 90 + (profileData.levels - 1) }) == 0) {
 
-			await findNothing();
+			await findSaplingOrNothing();
 		}
 		else if (pullFromWeightedTable({ 0: 1, 1: 1 }) == 0) {
 
@@ -311,10 +311,11 @@ module.exports = {
 
 					message.content = `${config.prefix}quest start`;
 
-					return await execute(client, message);
+					await execute(client, message);
 				})
 				.catch(async () => {
-					return await botReply
+
+					await botReply
 						.edit({ components: [] })
 						.catch((error) => {
 							if (error.httpStatus !== 404) {
@@ -323,13 +324,26 @@ module.exports = {
 						});
 				});
 
-			return botReply;
+			return;
 		}
 
-		async function findNothing() {
+		async function findSaplingOrNothing() {
 
-			embed.description = `*${profileData.name} trots back into camp, mouth empty, and luck run out. Maybe ${pronoun(profileData, 0)} will go exploring again later, bring something that time!*`;
-			embed.footer.text = embedFooterStatsText;
+			if (profileData.saplingObject.exists === false) {
+
+				profileData = await profileModel.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $set: { saplingObject: { exists: true, health: 100, waterCycles: 0, nextWaterTimestamp: Date.now() } } },
+				);
+
+				embed.description = `*${profileData.name} finds a ginkgo sapling!* PLACEHOLDER`;
+				embed.footer.text = embedFooterStatsText;
+			}
+			else {
+
+				embed.description = `*${profileData.name} trots back into camp, mouth empty, and luck run out. Maybe ${pronoun(profileData, 0)} will go exploring again later, bring something that time!*`;
+				embed.footer.text = embedFooterStatsText;
+			}
 
 			embedArray.splice(-1, 1, embed);
 			return botReply = await message
