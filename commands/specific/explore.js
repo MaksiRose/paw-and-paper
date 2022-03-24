@@ -333,11 +333,11 @@ module.exports = {
 
 				profileData = await profileModel.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
-					{ $set: { saplingObject: { exists: true, health: 50, waterCycles: 0, nextWaterTimestamp: Date.now() + 86400000 } } },
+					{ $set: { saplingObject: { exists: true, health: 50, waterCycles: 0, nextWaterTimestamp: Date.now() } } },
 				);
 
 				embed.description = `*${profileData.name} finds a ginkgo sapling!* PLACEHOLDER`;
-				embed.footer.text = embedFooterStatsText + '\nCome back to water it in 24 hours.';
+				embed.footer.text = embedFooterStatsText + '\nWater it with \'rp water\'.';
 			}
 			else {
 
