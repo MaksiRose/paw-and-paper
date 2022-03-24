@@ -128,7 +128,7 @@ module.exports = {
 				description: `*${profileData.name}'s gingko tree died!* PLACEHOLDER`,
 			});
 
-			saplingObject = { exists: false, health: 100, waterCycles: 0, nextWaterTimestamp: null };
+			saplingObject = { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null };
 		}
 
 		if (profileData.health + healthPoints > profileData.maxHealth) {
