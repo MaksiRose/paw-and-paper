@@ -336,8 +336,8 @@ module.exports = {
 					{ $set: { saplingObject: { exists: true, health: 50, waterCycles: 0, nextWaterTimestamp: Date.now() } } },
 				);
 
-				embed.description = `*${profileData.name} finds a ginkgo sapling!* PLACEHOLDER`;
-				embed.footer.text = embedFooterStatsText + '\nWater it with \'rp water\'.';
+				embed.description = `*${profileData.name} is looking around for useful things around ${pronoun(profileData, 1)} when ${pronounAndPlural(profileData, 0, 'discover')} the sapling of a ginkgo tree. The ${profileData.species} remembers that they bring good luck and health. Surely it can't hurt to bring it back to the pack!*`;
+				embed.footer.text = embedFooterStatsText + '\nWater the ginkgo sapling with \'rp water\'.';
 			}
 			else {
 
