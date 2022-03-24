@@ -28,6 +28,12 @@ module.exports = {
 				profileModel.save(dataObject);
 			}
 
+			if (dataObject.saplingObject === undefined) {
+
+				dataObject.saplingObject = { exists: false, health: 100, waterCycles: 0, nextWaterTimestamp: null };
+				profileModel.save(dataObject);
+			}
+
 			profileModel
 				.findOneAndUpdate(
 					{ userId: dataObject.userId, serverId: dataObject.serverId },
