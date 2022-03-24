@@ -288,7 +288,7 @@ module.exports = {
 
 		async function findPlant() {
 
-			const findSomethingChance = pullFromWeightedTable({ 0: 90, 1: 10 });
+			const findSomethingChance = pullFromWeightedTable({ 0: 90, 1: 10 + profileData.saplingObject.waterCycles });
 			if (findSomethingChance == 0) {
 
 				embed.description = `*${profileData.name} bounces around camp, watching the busy hustle and blurs of hunters and healers at work. ${upperCasePronounAndPlural(profileData, 0, 'splashes', 'splash')} into the stream that split the pack in half, chasing the minnows with ${pronoun(profileData, 2)} eyes.*`;
@@ -308,7 +308,7 @@ module.exports = {
 					});
 			}
 
-			const getHurtChance = pullFromWeightedTable({ 0: 10, 1: 90 });
+			const getHurtChance = pullFromWeightedTable({ 0: 10, 1: 90 + profileData.saplingObject.waterCycles });
 			if (getHurtChance == 0 && profileData.rank != 'Youngling') {
 
 				healthPoints = generateRandomNumber(5, 3);

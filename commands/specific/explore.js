@@ -248,7 +248,7 @@ module.exports = {
 
 			await findQuest();
 		}
-		else if (pullFromWeightedTable({ 0: 10, 1: 90 + (profileData.levels - 1) }) == 0) {
+		else if (pullFromWeightedTable({ 0: 10, 1: 90 + profileData.saplingObject.waterCycles }) == 0) {
 
 			await findSaplingOrNothing();
 		}
@@ -391,11 +391,11 @@ module.exports = {
 
 			switch (true) {
 
-				case (pullFromWeightedTable({ 0: 70, 1: 30 + (profileData.levels - 1) }) == 1 && chosenBiomeNumber > 0):
+				case (pullFromWeightedTable({ 0: 70, 1: 30 + profileData.saplingObject.waterCycles }) == 1 && chosenBiomeNumber > 0):
 
 					switch (true) {
 
-						case (pullFromWeightedTable({ 0: 70, 1: 30 + (profileData.levels - 1) }) == 1 && chosenBiomeNumber == 2):
+						case (pullFromWeightedTable({ 0: 70, 1: 30 + profileData.saplingObject.waterCycles }) == 1 && chosenBiomeNumber == 2):
 
 							foundItem = await pickRandomRarePlant();
 
