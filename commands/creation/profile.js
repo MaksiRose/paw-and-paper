@@ -97,10 +97,15 @@ module.exports = {
 						{ name: '**🏷️ Rank**', value: profileData.rank, inline: true },
 						{ name: '**🍂 Pronouns**', value: profileData.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n') },
 						{ name: '**🗺️ Region**', value: profileData.currentRegion },
-						{ name: '**🚩 Levels**', value: `\`${profileData.levels}\``, inline: true },
-						{ name: '**✨ XP**', value: `\`${profileData.experience}/${profileData.levels * 50}\``, inline: true },
-						{ name: '**Condition**', value: `❤️ Health: \`${profileData.health}/${profileData.maxHealth}\`\n⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\`\n🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`` },
-						{ name: '**🩹 Injuries/Illnesses**', value: injuryText },
+
+					],
+				},
+				{
+					color: profileData.color,
+					description: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\`\n⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\`\n🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\``,
+					fields: [
+						{ name: '**🩹 Injuries/Illnesses**', value: injuryText, inline: true },
+						{ name: '**🌱 Gingko Sapling**', value: profileData.saplingObject.exists === false ? 'none' : `${profileData.saplingObject.waterCycles} days alive - ${profileData.saplingObject.health} health\nNext watering <t:${Math.floor(profileData.saplingObject.nextWaterTimestamp / 1000)}:R>`, inline: true },
 					],
 					footer: { text: profileData.hasQuest == true ? 'There is one open quest!' : null },
 				}],
