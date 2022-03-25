@@ -8,6 +8,7 @@ const { isInvalid } = require('../../utils/checkValidity');
 const { sendMessage } = require('./inventory');
 const { remindOfAttack } = require('../specific/attack');
 const { pronounAndPlural, pronoun, upperCasePronounAndPlural } = require('../../utils/getPronouns');
+const blockEntrance = require('../../utils/blockEntrance');
 
 module.exports = {
 	name: 'eat',
@@ -45,6 +46,11 @@ module.exports = {
 						throw new Error(error);
 					}
 				});
+		}
+
+		if ((profileData.rank !== 'Youngling' && serverData.blockedEntranceObject.den === null && generateRandomNumber(20, 0) === 0) || serverData.blockedEntranceObject.den === 'food den') {
+
+			return await blockEntrance(message, messageContent, profileData, 'food den');
 		}
 
 		if (!argumentsArray.length) {

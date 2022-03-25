@@ -5,6 +5,8 @@ const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion')
 const { hasCooldown } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { remindOfAttack } = require('../specific/attack');
+const { generateRandomNumber } = require('../../utils/randomizers');
+const blockEntrance = require('../../utils/blockEntrance');
 
 module.exports = {
 	name: 'inventory',
@@ -23,6 +25,11 @@ module.exports = {
 
 		profileData = await startCooldown(message, profileData);
 		const messageContent = remindOfAttack(message);
+
+		if ((profileData.rank !== 'Youngling' && serverData.blockedEntranceObject.den === null && generateRandomNumber(20, 0) === 0) || serverData.blockedEntranceObject.den === 'food den') {
+
+			return await blockEntrance(message, messageContent, profileData, 'food den');
+		}
 
 		const inventorySelectMenu = {
 			type: 'ACTION_ROW',
