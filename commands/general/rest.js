@@ -1,15 +1,17 @@
 const profileModel = require('../../models/profileModel');
+const blockEntrance = require('../../utils/blockEntrance');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isPassedOut, hasCooldown } = require('../../utils/checkValidity');
 const { startResting } = require('../../utils/executeResting');
 const { upperCasePronoun, pronoun, pronounAndPlural } = require('../../utils/getPronouns');
+const { generateRandomNumber } = require('../../utils/randomizers');
 const startCooldown = require('../../utils/startCooldown');
 const { remindOfAttack } = require('../specific/attack');
 
 module.exports = {
 	name: 'rest',
 	aliases: ['sleep'],
-	async sendMessage(client, message, argumentsArray, profileData) {
+	async sendMessage(client, message, argumentsArray, profileData, serverData) {
 
 		if (await hasNotCompletedAccount(message, profileData)) {
 
@@ -65,6 +67,11 @@ module.exports = {
 						throw new Error(error);
 					}
 				});
+		}
+
+		if ((profileData.rank !== 'Youngling' && serverData.blockedEntranceObject.den === null && generateRandomNumber(20, 0) === 0) || serverData.blockedEntranceObject.den === 'sleeping dens') {
+
+			return await blockEntrance(message, messageContent, profileData, 'food den');
 		}
 
 		await profileModel.findOneAndUpdate(

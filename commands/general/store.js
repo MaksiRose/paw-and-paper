@@ -7,6 +7,8 @@ const { isInvalid } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { remindOfAttack } = require('../specific/attack');
 const { pronoun, upperCasePronounAndPlural } = require('../../utils/getPronouns');
+const { generateRandomNumber } = require('../../utils/randomizers');
+const blockEntrance = require('../../utils/blockEntrance');
 
 module.exports = {
 	name: 'store',
@@ -94,6 +96,11 @@ module.exports = {
 						throw new Error(error);
 					}
 				});
+		}
+
+		if ((profileData.rank !== 'Youngling' && serverData.blockedEntranceObject.den === null && generateRandomNumber(20, 0) === 0) || serverData.blockedEntranceObject.den === 'food den') {
+
+			return await blockEntrance(message, messageContent, profileData, 'food den');
 		}
 
 		embedArray.push({

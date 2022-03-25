@@ -10,6 +10,7 @@ const { checkLevelUp } = require('../../utils/levelHandling');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { remindOfAttack } = require('./attack');
 const { pronoun, upperCasePronounAndPlural, pronounAndPlural } = require('../../utils/getPronouns');
+const blockEntrance = require('../../utils/blockEntrance');
 
 module.exports = {
 	name: 'heal',
@@ -47,6 +48,11 @@ module.exports = {
 						throw new Error(error);
 					}
 				});
+		}
+
+		if ((serverData.blockedEntranceObject.den === null && generateRandomNumber(20, 0) === 0) || serverData.blockedEntranceObject.den === 'medicine den') {
+
+			return await blockEntrance(message, messageContent, profileData, 'medicine den');
 		}
 
 		let
