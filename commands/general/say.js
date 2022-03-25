@@ -20,6 +20,13 @@ module.exports = {
 
 		profileData = await startCooldown(message, profileData);
 
+		const webHook = (await message.channel
+			.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook') || await message.channel
+			.createWebhook('PnP Profile Webhook')
+			.catch((error) => {
+				throw new Error(error);
+			});
+
 		let userText = argumentsArray.join(' ');
 
 		if (!userText) {
@@ -55,14 +62,6 @@ module.exports = {
 			{ $inc: { experience: 1 } },
 		);
 
-		const webHook = await message.channel
-			.createWebhook(profileData.name, {
-				avatar: profileData.avatarURL,
-			})
-			.catch((error) => {
-				throw new Error(error);
-			});
-
 		if (pingRuins == true) {
 
 			const allRuinProfilesArray = (await profileModel
@@ -84,16 +83,12 @@ module.exports = {
 			}
 		}
 
-		await webHook
+		return await webHook
 			.send({
 				content: userText,
+				username: profileData.name,
+				avatarURL: profileData.avatarURL,
 			})
-			.catch((error) => {
-				throw new Error(error);
-			});
-
-		return await webHook
-			.delete()
 			.catch((error) => {
 				throw new Error(error);
 			});
