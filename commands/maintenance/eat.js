@@ -66,6 +66,8 @@ module.exports = {
 		let minimumHealthPoints = 0;
 		let finalEnergyPoints = 0;
 
+		profileData.advice.eating = true;
+
 		const embed = {
 			color: profileData.color,
 			author: { name: profileData.name, icon_url: profileData.avatarURL },
@@ -199,7 +201,10 @@ module.exports = {
 						energy: +finalEnergyPoints,
 						health: +finalHealthPoints,
 					},
-					$set: { currentRegion: 'food den' },
+					$set: {
+						currentRegion: 'food den',
+						advice: profileData.advice,
+					},
 				},
 			);
 
@@ -270,7 +275,10 @@ module.exports = {
 
 			profileData = await profileModel.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
-				{ $inc: { hunger: +finalHungerPoints } },
+				{
+					$inc: { hunger: +finalHungerPoints },
+					$set: { advice: profileData.advice },
+				},
 			);
 
 			serverData = await serverModel.findOneAndUpdate(

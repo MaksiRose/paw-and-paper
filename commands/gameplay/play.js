@@ -11,6 +11,7 @@ const { introduceQuest } = require('./quest');
 const { execute } = require('../../events/messageCreate');
 const { remindOfAttack } = require('./attack');
 const { pronoun, pronounAndPlural, upperCasePronounAndPlural } = require('../../utils/getPronouns');
+const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
 
 module.exports = {
 	name: 'play',
@@ -248,6 +249,10 @@ module.exports = {
 		botReply = await decreaseHealth(message, profileData, botReply, userInjuryObject);
 		await checkLevelUp(profileData, botReply);
 		await isPassedOut(message, profileData, true);
+
+		await restAdvice(message, profileData);
+		await drinkAdvice(message, profileData);
+		await eatAdvice(message, profileData);
 
 
 		async function findQuest() {

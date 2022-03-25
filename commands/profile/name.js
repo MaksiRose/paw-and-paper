@@ -52,6 +52,7 @@ module.exports = {
 					pronounSets: [['they', 'them', 'their', 'theirs', 'themselves', 'plural']],
 					injuryObject: { wounds: 0, infections: 0, cold: false, sprains: 0, poison: false },
 					inventoryObject: profileInventoryObject,
+					advice: { resting: false, drinking: false, eating: false, passingout: false },
 				});
 			}
 		}
