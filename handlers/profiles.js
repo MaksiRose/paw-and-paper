@@ -48,7 +48,7 @@ module.exports = {
 							inventoryObject: dataObject.inventoryObject,
 							hasCooldown: false,
 							isResting: false,
-							energy: dataObject.maxEnergy,
+							energy: dataObject.energy === 0 ? 0 : dataObject.maxEnergy,
 						},
 					},
 				)
