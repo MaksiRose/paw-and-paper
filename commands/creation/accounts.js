@@ -98,6 +98,7 @@ module.exports = {
 			const newProfileData = await otherProfileModel.findOne({
 				userId: message.author.id,
 				serverId: message.guild.id,
+				name: name,
 			});
 
 			fs.renameSync(`./database/profiles/inactiveProfiles/${newProfileData.uuid}.json`, `./database/profiles/${newProfileData.uuid}.json`);

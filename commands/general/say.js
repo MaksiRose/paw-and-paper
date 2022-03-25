@@ -20,7 +20,7 @@ module.exports = {
 
 		profileData = await startCooldown(message, profileData);
 
-		const userText = argumentsArray.join(' ');
+		let userText = argumentsArray.join(' ');
 
 		if (!userText) {
 
@@ -55,11 +55,13 @@ module.exports = {
 			{ $inc: { experience: 1 } },
 		);
 
-		embedArray.push({
-			color: profileData.color,
-			author: { name: profileData.name, icon_url: profileData.avatarURL },
-			description: userText,
-		});
+		const webHook = await message.channel
+			.createWebhook(profileData.name, {
+				avatar: profileData.avatarURL,
+			})
+			.catch((error) => {
+				throw new Error(error);
+			});
 
 		if (pingRuins == true) {
 
@@ -78,22 +80,20 @@ module.exports = {
 
 			if (allRuinProfilesArray != '') {
 
-
-				return await message.channel
-					.send({
-						content: allRuinProfilesArray.join(' '),
-						embeds: embedArray,
-					})
-					.catch((error) => {
-						throw new Error(error);
-					});
+				userText = allRuinProfilesArray.join(' ') + '\n' + userText;
 			}
 		}
 
-		return await message.channel
+		await webHook
 			.send({
-				embeds: embedArray,
+				content: userText,
 			})
+			.catch((error) => {
+				throw new Error(error);
+			});
+
+		return await webHook
+			.delete()
 			.catch((error) => {
 				throw new Error(error);
 			});
