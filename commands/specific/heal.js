@@ -1,7 +1,7 @@
 const profileModel = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
 const startCooldown = require('../../utils/startCooldown');
-const { generateRandomNumber } = require('../../utils/randomizers');
+const { generateRandomNumber, pullFromWeightedTable } = require('../../utils/randomizers');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
@@ -515,7 +515,7 @@ module.exports = {
 							{ $set: { inventoryObject: serverData.inventoryObject } },
 						);
 
-						if (isSuccessful === true && chosenProfileData.userId === profileData.userId && generateRandomNumber(100 + ((profileData.levels - 1) * 5), 1) <= 60) {
+						if (isSuccessful === true && chosenProfileData.userId === profileData.userId && pullFromWeightedTable({ 0: 60, 1: 40 + profileData.saplingObject.waterCycles }) === 0) {
 
 							isSuccessful = false;
 						}
@@ -536,6 +536,11 @@ module.exports = {
 								});
 
 							return userSelectMenu.components[0].options.length > 0 ? await interactionCollector() : null;
+						}
+
+						if (isSuccessful === true && chosenProfileData.userId !== profileData.userId && profileData.rank === 'Apprentice' && pullFromWeightedTable({ 0: 40, 1: 60 + profileData.saplingObject.waterCycles }) === 0) {
+
+							isSuccessful = false;
 						}
 
 						const embedFooterStatsText = await decreaseStats();
@@ -587,7 +592,7 @@ module.exports = {
 							}
 							else {
 
-								embed.description = `*${profileData.name} takes a ${chosenItemName}. After a bit of preparation, ${pronounAndPlural(profileData, 0, 'give')} it to ${chosenProfileData.name}. But no matter how long they wait, it does not seem to help. Looks like ${profileData.name} chose the wrong herb!*`;
+								embed.description = `*${profileData.name} takes a ${chosenItemName}. After a bit of preparation, ${pronounAndPlural(profileData, 0, 'give')} it to ${chosenProfileData.name}. But no matter how long they wait, it does not seem to help. Looks like ${profileData.name} has to try again...*`;
 							}
 
 							embed.footer.text = `${embedFooterStatsText}\n\n-1 ${chosenItemName} for ${message.guild.name}`;
