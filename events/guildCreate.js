@@ -22,6 +22,7 @@ module.exports = {
 				serverId: guild.id,
 				name: guild.name,
 				inventoryObject: serverInventoryObject,
+				blockedEntranceObject: { den: null, blockedKind: null },
 				activeUsersArray: [],
 				nextPossibleAttack: Date.now(),
 			});

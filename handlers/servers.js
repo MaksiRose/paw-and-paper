@@ -20,6 +20,12 @@ module.exports = {
 				meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, dataObject.inventoryObject.meat[key] || 0])),
 			};
 
+			if (dataObject.blockedEntranceObject === undefined) {
+
+				dataObject.blockedEntranceObject = { den: null, blockedKind: null };
+				serverModel.save(dataObject);
+			}
+
 			serverModel
 				.findOneAndUpdate(
 					{ serverId: dataObject.serverId },
