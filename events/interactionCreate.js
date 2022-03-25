@@ -173,7 +173,7 @@ module.exports = {
 						embeds: [{
 							color: config.default_color,
 							title: 'Page 1: 📝 Profile Creation',
-							description: '__Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.__',
+							description: 'Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.',
 							fields: [
 								{ name: '**rp name [name]**', value: '__START YOUR ADVENTURE!__ Name your character.' },
 								{ name: '**rp species [species]**', value: 'Specify the species of your character. If you don\'t specify a species, it will give you an overview of the available ones.' },
@@ -184,7 +184,7 @@ module.exports = {
 								{ name: '**rp profilelist**', value: 'View a list of all the profiles that exist on this server.' },
 								{ name: '**rp delete**', value: 'Delete your account and reset your data permanently.' },
 							],
-							footer: { text: 'Select a command from the list below to view more information about it.' },
+							footer: { text: 'ℹ️ Select a command from the list below to view more information about it.' },
 						}],
 					})
 					.catch(async (error) => {
@@ -201,17 +201,17 @@ module.exports = {
 						embeds: [{
 							color: config.default_color,
 							title: 'Page 2: 🎲 Gameplay',
-							description: '__Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.__',
+							description: 'Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.',
 							fields: [
-								{ name: '**rp go (region)**', value: 'Go to a specific region in your pack!' },
 								{ name: '**rp play (@user)**', value: 'The main activity of Younglings. Costs energy, but gives XP. Additionally, you can mention someone to play with them. __Only available to Younglings and Apprentices.__' },
 								{ name: '**rp practice**', value: 'Practice fighting wild animals. You cannot get hurt here.' },
 								{ name: '**rp explore**', value: 'The main activity of every rank above Younglings. Find meat and herbs. Costs energy, but gives XP. __Not available to Younglings.__' },
+								{ name: '**rp go (region)**', value: 'Go to a specific region in your pack.' },
 								{ name: '**rp attack**', value: 'If humans are attacking the pack, you can fight back using this command.' },
 								{ name: '**rp quest**', value: 'Get quests by playing (as Youngling) and exploring. Start them with this command. If you are successful, you can move up a rank.' },
 								{ name: '**rp rank**', value: 'Once you successfully finished a quest, you can move up a rank using this command.' },
 							],
-							footer: { text: 'Select a command from the list below to view more information about it.' },
+							footer: { text: 'ℹ️ Select a command from the list below to view more information about it.' },
 						}],
 					})
 					.catch(async (error) => {
@@ -228,7 +228,7 @@ module.exports = {
 						embeds: [{
 							color: config.default_color,
 							title: 'Page 3: 🍗 Maintenance',
-							description: '__Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.__',
+							description: 'Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.',
 							fields: [
 								{ name: '**rp profile (@user)**', value: 'Look up all the available info about a character.' },
 								{ name: '**rp stats**', value: 'Quick view of your characters condition.' },
@@ -241,7 +241,7 @@ module.exports = {
 								{ name: '**rp dispose**', value: 'Remove obstacles blocking dens. Costs energy, but gives XP. __Only available to Apprentices, Hunters and Elderlies.__' },
 								{ name: '**rp water**', value: 'If you have a ginkgo sapling, you can water it using this command.' },
 							],
-							footer: { text: 'Select a command from the list below to view more information about it.' },
+							footer: { text: 'ℹ️ Select a command from the list below to view more information about it.' },
 						}],
 					})
 					.catch(async (error) => {
@@ -258,14 +258,14 @@ module.exports = {
 						embeds: [{
 							color: config.default_color,
 							title: 'Page 4: 👥 Interaction',
-							description: '__Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.__',
+							description: 'Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.',
 							fields: [
 								{ name: '**rp say [text]**', value: 'Talk to your fellow packmates. Gives 1 experience point per use.' },
 								{ name: '**rp hug [@user]**', value: 'Hug a fellow packmate, if they consent.' },
 								{ name: '**rp share (@user)**', value: 'Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person. __Only available to Elderlies.__' },
 								{ name: '**rp playfight [@user] (c4 / ttt)**', value: 'Playfully fight with another packmate. You can play Connect Four or Tic Tac Toe.' },
 							],
-							footer: { text: 'Select a command from the list below to view more information about it.' },
+							footer: { text: 'ℹ️ Select a command from the list below to view more information about it.' },
 						}],
 					})
 					.catch(async (error) => {
@@ -308,14 +308,14 @@ module.exports = {
 						embeds: [{
 							color: config.default_color,
 							title: 'Page 5: ⚙️ Bot',
-							description: '__Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.__',
+							description: 'Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.',
 							fields: [
-								{ name: '**rp switch**', value: 'Change the profile you are using. You can have up to three per server.' },
+								{ name: '**rp accounts**', value: 'Change the account/profile you are using. You can have up to three per server.' },
 								{ name: '**rp ticket [text]**', value: 'Report a bug, give feedback, suggest a feature!' },
 								{ name: '\n**__CREDITS:__**', value: `This bot was made with love by ${maksi.tag}. Special thanks goes out to ${ezra.tag}, ${ren.tag} and ${elliott.tag}, who did a lot of the custom bot responses, and ${jags.tag} who did the profile picture. Thank you also to everyone who tested the bot and gave feedback.\nThis bot was originally created for a Discord server called [Rushing River Pack](https://disboard.org/server/854522091328110595). If you are otherkin, therian, or supporter of those, you are welcome to join.` },
-								{ name: '\n**__OTHER:__**', value: `If you want to support me, you can donate [here](https://streamlabs.com/maksirose/tip)! :)\nYou can find the GitHub repository for this project [here](https://github.com/MaksiRose/paw-and-paper)\nThe bot is currently running on version ${pjson.version}.` },
+								{ name: '\n**__OTHER:__**', value: `If you want to support me, you can donate [here](https://streamlabs.com/maksirose/tip)! :)\nYou can find the GitHub repository for this project [here](https://github.com/MaksiRose/paw-and-paper).\nThe bot is currently running on version ${pjson.version}.` },
 							],
-							footer: { text: 'Select a command from the list below to view more information about it.' },
+							footer: { text: 'ℹ️ Select a command from the list below to view more information about it.' },
 						}],
 					})
 					.catch(async (error) => {
