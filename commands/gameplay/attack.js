@@ -8,6 +8,7 @@ const startCooldown = require('../../utils/startCooldown');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const config = require('../../config.json');
 const { pronounAndPlural, pronoun } = require('../../utils/getPronouns');
+const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
 const serverMap = new Map();
 
 
@@ -285,6 +286,10 @@ module.exports = {
 			botReply = await decreaseHealth(message, profileData, botReply, userInjuryObject);
 			botReply = await checkLevelUp(profileData, botReply);
 			await isPassedOut(message, profileData, true);
+
+			await restAdvice(message, profileData);
+			await drinkAdvice(message, profileData);
+			await eatAdvice(message, profileData);
 
 			return;
 		}

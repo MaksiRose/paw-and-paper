@@ -3,6 +3,7 @@ const config = require('../config.json');
 const { stopResting } = require('./executeResting');
 const { decreaseLevel } = require('./levelHandling');
 const { pronounAndPlural, pronoun, upperCasePronoun } = require('./getPronouns');
+const { passingoutAdvice } = require('./adviceMessages');
 
 module.exports = {
 
@@ -29,6 +30,8 @@ module.exports = {
 
 				decreaseLevel(profileData, botReply);
 			}
+
+			await passingoutAdvice(message, profileData);
 
 			return true;
 		}

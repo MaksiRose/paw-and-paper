@@ -94,10 +94,13 @@ module.exports = {
 					thirstPoints -= (profileData.thirst + thirstPoints) - profileData.maxThirst;
 				}
 
+				profileData.advice.drinking = true;
+
 				profileData = await profileModel.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{
 						$inc: { thirst: +thirstPoints },
+						$set: { advice: profileData.advice },
 					},
 				);
 				embedArray.splice(-1, 1, {

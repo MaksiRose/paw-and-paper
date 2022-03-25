@@ -4,6 +4,7 @@ const startCooldown = require('../../utils/startCooldown');
 const { speciesMap } = require('../../utils/itemsInfo');
 const { hasNoName } = require('../../utils/checkAccountCompletion');
 const { pronoun } = require('../../utils/getPronouns');
+const { playAdvice } = require('../../utils/adviceMessages');
 
 module.exports = {
 	name: 'species',
@@ -57,7 +58,7 @@ module.exports = {
 				{ $set: { species: chosenSpecies } },
 			);
 
-			return await message
+			await message
 				.reply({
 					embeds: [{
 						color: config.default_color,
@@ -72,6 +73,10 @@ module.exports = {
 						throw new Error(error);
 					}
 				});
+
+			await playAdvice(message);
+
+			return;
 		}
 
 		const botReply = await message
@@ -167,7 +172,7 @@ module.exports = {
 					{ $set: { species: interaction.values[0] } },
 				);
 
-				return await interaction.message
+				await interaction.message
 					.edit({
 						embeds: [{
 							color: '#9d9e51',
@@ -182,6 +187,10 @@ module.exports = {
 							throw new Error(error);
 						}
 					});
+
+				await playAdvice(message);
+
+				return;
 			}
 		}
 	},

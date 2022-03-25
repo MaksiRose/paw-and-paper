@@ -7,6 +7,7 @@ const { isPassedOut, hasCooldown, isResting } = require('../../utils/checkValidi
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { remindOfAttack } = require('./attack');
 const { pronoun, pronounAndPlural, upperCasePronounAndPlural, upperCasePronoun } = require('../../utils/getPronouns');
+const { apprenticeAdvice, hunterhealerAdvice, elderlyAdvice } = require('../../utils/adviceMessages');
 
 module.exports = {
 	name: 'quest',
@@ -473,7 +474,7 @@ module.exports = {
 						description: description,
 					});
 
-					return await botReply
+					await botReply
 						.edit({
 							embeds: embedArray,
 							components: [],
@@ -483,6 +484,23 @@ module.exports = {
 								throw new Error(error);
 							}
 						});
+
+					if (profileData.rank === 'Youngling') {
+
+						await apprenticeAdvice(message);
+					}
+
+					if (profileData.rank === 'Apprentice') {
+
+						await hunterhealerAdvice(message);
+					}
+
+					if (profileData.rank === 'Hunter' || profileData.rank === 'Healer') {
+
+						await elderlyAdvice(message);
+					}
+
+					return;
 				}
 				else {
 

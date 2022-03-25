@@ -34,6 +34,12 @@ module.exports = {
 				(path.includes('inactiveProfiles') ? otherProfileModel : profileModel).save(dataObject);
 			}
 
+			if (dataObject.advice === undefined) {
+
+				dataObject.advice = dataObject.rank === 'Youngling' ? { resting: false, drinking: false, eating: false, passingout: false } : { resting: true, drinking: true, eating: true, passingout: true };
+				(path.includes('inactiveProfiles') ? otherProfileModel : profileModel).save(dataObject);
+			}
+
 			(path.includes('inactiveProfiles') ? otherProfileModel : profileModel)
 				.findOneAndUpdate(
 					{ userId: dataObject.userId, serverId: dataObject.serverId },

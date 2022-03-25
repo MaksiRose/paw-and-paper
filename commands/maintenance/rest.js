@@ -74,12 +74,15 @@ module.exports = {
 			return await blockEntrance(message, messageContent, profileData, 'food den');
 		}
 
+		profileData.advice.resting = true;
+
 		await profileModel.findOneAndUpdate(
 			{ userId: message.author.id, serverId: message.guild.id },
 			{
 				$set: {
 					isResting: true,
 					currentRegion: 'sleeping dens',
+					advice: profileData.advice,
 				},
 			},
 		);

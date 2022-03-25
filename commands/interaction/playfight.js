@@ -9,6 +9,7 @@ const { checkLevelUp } = require('../../utils/levelHandling');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { remindOfAttack } = require('../gameplay/attack');
 const { pronoun, pronounAndPlural, upperCasePronounAndPlural } = require('../../utils/getPronouns');
+const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
 
 module.exports = {
 	name: 'playfight',
@@ -849,6 +850,15 @@ async function checkHealthAndLevel(message, botReply, profileData, partnerProfil
 
 	await isPassedOut(message, profileData, true);
 	await isPassedOut(message, partnerProfileData, true);
+
+	await restAdvice(message, profileData);
+	await restAdvice(message, partnerProfileData);
+
+	await drinkAdvice(message, profileData);
+	await drinkAdvice(message, partnerProfileData);
+
+	await eatAdvice(message, profileData);
+	await eatAdvice(message, partnerProfileData);
 }
 
 async function executeWin(componentArray, message, profileData, partnerProfileData, otherProfileData, currentProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, embedArray, botReply, messageContent) {
