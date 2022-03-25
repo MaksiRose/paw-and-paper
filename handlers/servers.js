@@ -26,6 +26,12 @@ module.exports = {
 				serverModel.save(dataObject);
 			}
 
+			if (dataObject.visitChannelId === undefined) {
+
+				dataObject.visitChannelId = null,
+				serverModel.save(dataObject);
+			}
+
 			serverModel
 				.findOneAndUpdate(
 					{ serverId: dataObject.serverId },
