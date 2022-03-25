@@ -36,6 +36,7 @@ module.exports = {
 					blockedEntranceObject: { den: null, blockedKind: null },
 					activeUsersArray: [],
 					nextPossibleAttack: Date.now(),
+					visitChannelId: null,
 				});
 			}
 		}
