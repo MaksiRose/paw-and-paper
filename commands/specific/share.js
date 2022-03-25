@@ -38,6 +38,7 @@ module.exports = {
 						title: 'You can only share every 2 hours!',
 						description: `You can share again <t:${Math.floor((sharingCooldownAccountsMap.get('nr' + message.author.id + message.guild.id) + 7200000) / 1000)}:R>.`,
 					}],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -58,6 +59,7 @@ module.exports = {
 				.reply({
 					content: messageContent,
 					embeds: embedArray,
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -78,6 +80,7 @@ module.exports = {
 				.reply({
 					content: messageContent,
 					embeds: embedArray,
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -200,6 +203,7 @@ module.exports = {
 					.reply({
 						content: messageContent,
 						embeds: embedArray,
+						failIfNotExists: false,
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) {
@@ -217,6 +221,7 @@ module.exports = {
 			.reply({
 				content: messageContent,
 				embeds: embedArray,
+				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {

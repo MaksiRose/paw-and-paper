@@ -57,6 +57,7 @@ module.exports = {
 			.reply({
 				content: 'Please choose an account that you want to switch to.',
 				components: components,
+				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {

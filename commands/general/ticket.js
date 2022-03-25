@@ -14,6 +14,7 @@ module.exports = {
 						title: 'Tickets must contain text! Example:',
 						description: 'rp ticket Attacking a chicken should lead to millions of chickens spawning and attacking you back until you die!',
 					}],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -84,6 +85,7 @@ module.exports = {
 					title: 'Thank you for your contribution!',
 					description: `You help improve the bot.\n[View ticket on GitHub](https://github.com/MaksiRose/paw-and-paper/issues/${githubIssue.data.number})`,
 				}],
+				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {

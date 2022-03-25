@@ -65,6 +65,7 @@ module.exports = {
 						allowedMentions: {
 							repliedUser: true,
 						},
+						failIfNotExists: false,
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) {

@@ -36,6 +36,7 @@ module.exports = {
 			return await message
 				.reply({
 					embeds: embedArray,
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -55,6 +56,7 @@ module.exports = {
 			return await message
 				.reply({
 					embeds: embedArray,
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -133,6 +135,7 @@ module.exports = {
 							type: 'ACTION_ROW',
 							components: fightButtons,
 						}],
+						failIfNotExists: false,
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) {

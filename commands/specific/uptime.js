@@ -5,6 +5,7 @@ module.exports = {
 		await message
 			.reply({
 				content: `Uptime: ${Math.floor(client.uptime / 3600000)} hours ${Math.floor(client.uptime / 60000) % 60} minutes\nPing: ${client.ws.ping} ms`,
+				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {

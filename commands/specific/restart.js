@@ -11,6 +11,7 @@ module.exports = {
 			await message
 				.reply({
 					content: 'Restarted!',
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {

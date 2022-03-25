@@ -130,6 +130,7 @@ module.exports = {
 					content: messageContent,
 					embeds: embedArray,
 					components: [sleepingDenButtons],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -145,6 +146,7 @@ module.exports = {
 					content: messageContent,
 					embeds: embedArray,
 					components: [foodDenButtons],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -161,6 +163,7 @@ module.exports = {
 					.reply({
 						content: messageContent,
 						embeds: [embed],
+						failIfNotExists: false,
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) {
@@ -175,6 +178,7 @@ module.exports = {
 						content: messageContent,
 						embeds: embedArray,
 						components: [medicineDenButtons],
+						failIfNotExists: false,
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) {
@@ -190,6 +194,7 @@ module.exports = {
 				.reply({
 					content: messageContent,
 					embeds: embedArray,
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -205,6 +210,7 @@ module.exports = {
 					content: messageContent,
 					embeds: embedArray,
 					components: [lakeButtons],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -222,6 +228,7 @@ module.exports = {
 						content: messageContent,
 						embeds: embedArray,
 						components: [prairieButtons],
+						failIfNotExists: false,
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) {
@@ -235,6 +242,7 @@ module.exports = {
 					.reply({
 						content: messageContent,
 						embeds: embedArray,
+						failIfNotExists: false,
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) {
@@ -250,6 +258,7 @@ module.exports = {
 					content: messageContent,
 					embeds: embedArray,
 					components: [travelSelectMenu],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {

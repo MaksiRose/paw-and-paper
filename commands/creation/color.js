@@ -24,6 +24,7 @@ module.exports = {
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: 'Enter a valid hex code to give your messages and profile that color!',
 					}],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -48,6 +49,7 @@ module.exports = {
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: 'Please send a valid hex code! Valid hex codes consist of 6 characters and contain only letters from \'a\' to \'f\' and/or numbers.',
 					}],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -70,6 +72,7 @@ module.exports = {
 					author: { name: `${message.guild.name}`, icon_url: message.guild.iconURL() },
 					title: `Profile color set to ${hexColor}!`,
 				}],
+				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {

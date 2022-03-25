@@ -45,6 +45,7 @@ module.exports = {
 				.reply({
 					content: messageContent,
 					embeds: embedArray,
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -65,6 +66,7 @@ module.exports = {
 				.reply({
 					content: messageContent,
 					embeds: embedArray,
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -126,6 +128,7 @@ module.exports = {
 			.reply({
 				content: messageContent,
 				embeds: embedArray,
+				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {
@@ -278,6 +281,7 @@ module.exports = {
 				.reply({
 					content: serverData.activeUsersArray.map(user => `<@${user}>`).join(' '),
 					embeds: embedArray,
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -351,6 +355,7 @@ module.exports = {
 					content: messageContent,
 					embeds: embedArray,
 					allowedMentions: { repliedUser: true },
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -453,6 +458,7 @@ module.exports = {
 						}],
 					}],
 					allowedMentions: { repliedUser: true },
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -699,6 +705,7 @@ module.exports = {
 						}],
 					}],
 					allowedMentions: { repliedUser: true },
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -973,6 +980,7 @@ module.exports = {
 					content: messageContent,
 					embeds: embedArray,
 					components: [selectBiomeComponent],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {

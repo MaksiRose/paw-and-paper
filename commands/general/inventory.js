@@ -77,6 +77,7 @@ module.exports = {
 				content: messageContent,
 				embeds: embedArray,
 				components: componentArray,
+				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {

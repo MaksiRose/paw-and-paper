@@ -59,6 +59,7 @@ module.exports = {
 					description: rankProfilesPages[pageNumber],
 				}],
 				components: components,
+				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {

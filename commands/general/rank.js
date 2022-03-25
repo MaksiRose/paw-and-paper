@@ -39,6 +39,7 @@ module.exports = {
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
 						description: `*An elderly smiles down at the young ${profileData.rank}.*\n"${profileData.name}, you have proven strength for the first time. I believe you are ready to explore the wild, and learn your strengths and weaknesses. Good luck in your rank as Apprentice" *they say. ${profileData.name}'s breast swells with pride.*`,
 					}],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -73,6 +74,7 @@ module.exports = {
 							style: 'SUCCESS',
 						}],
 					}],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -99,6 +101,7 @@ module.exports = {
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
 						description: `"We are here to celebrate the nomination of ${profileData.name} to the highest rank, Elderly. The ${profileData.species} has shown incredible skills and persistence, and we congratulate ${pronoun(profileData, 1)} to their new title." *A mixture of howls, crows, meows, roars and squeaks are heard all around the hill, on which the Alpha stoof to announce this special event. It is not every day that a packmate gets the title of Elderly.*`,
 					}],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -116,6 +119,7 @@ module.exports = {
 					description: `*${profileData.name} looks at the Elderly with puppy eyes, trying to convince them.*\n"I'm sorry, little ${profileData.species}, you haven't proven yourself worthy of moving up a rank yet. Try again once you were able to put your strength, agility and decision-making to the test!" *the Elderly says.*`,
 					footer: { text: 'Go playing (as Youngling) or exploring until you find a quest! Once you have completed the quest, you can move up a rank.' },
 				}],
+				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {

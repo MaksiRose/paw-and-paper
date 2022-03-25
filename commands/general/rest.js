@@ -39,6 +39,7 @@ module.exports = {
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
 						description: `${profileData.name} dreams of resting on a beach, out in the sun. The imaginary wind rocked the also imaginative hammock. ${upperCasePronoun(profileData, 0)} must be really tired to dream of sleeping!`,
 					}],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -57,6 +58,7 @@ module.exports = {
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
 						description: `*${profileData.name} trots around the dens eyeing ${pronoun(profileData, 2)} comfortable moss-covered bed. A nap looks nice, but ${pronounAndPlural(profileData, 0, 'has', 'have')} far too much energy to rest!*`,
 					}],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -84,6 +86,7 @@ module.exports = {
 					description: `*${profileData.name}'s chest rises and falls with the crickets. Snoring bounces off each wall, finally exiting the den and rising free to the clouds.*`,
 					footer: { text: `+0 energy (${profileData.energy}/${profileData.maxEnergy})${(profileData.currentRegion != 'sleeping dens') ? '\nYou are now at the sleeping dens' : ''}` },
 				}],
+				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {

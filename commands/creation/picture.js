@@ -30,6 +30,7 @@ module.exports = {
 						title: `The profile picture for ${profileData.name} is now the accounts profile picture!`,
 						footer: { text: 'If you want to set a new picture, just send it together in one message with this command!' },
 					}],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -47,6 +48,7 @@ module.exports = {
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: 'Please send an image to set as your characters profile picture!',
 					}],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -66,6 +68,7 @@ module.exports = {
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: 'This image extension is not supported! Please send a .png, .jp(e)g or .raw image.',
 					}],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -87,6 +90,7 @@ module.exports = {
 					title: `Profile picture for ${profileData.name} set!`,
 					image: { url: ImageLink },
 				}],
+				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {

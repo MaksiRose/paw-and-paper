@@ -36,6 +36,7 @@ module.exports = {
 				.reply({
 					content: messageContent,
 					embeds: embedArray,
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -71,6 +72,7 @@ module.exports = {
 						style: 'PRIMARY',
 					}],
 				}],
+				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {

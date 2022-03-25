@@ -24,6 +24,7 @@ module.exports = {
 						],
 					}],
 				}],
+				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {

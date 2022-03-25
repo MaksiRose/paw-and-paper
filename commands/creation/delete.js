@@ -16,6 +16,7 @@ module.exports = {
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: 'You have no account!',
 					}],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -47,6 +48,7 @@ module.exports = {
 						style: 'SECONDARY',
 					}],
 				}],
+				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {

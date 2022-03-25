@@ -39,6 +39,7 @@ module.exports = {
 				.reply({
 					content: messageContent,
 					embeds: embedArray,
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -59,6 +60,7 @@ module.exports = {
 				.reply({
 					content: messageContent,
 					embeds: embedArray,
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -84,6 +86,7 @@ module.exports = {
 				.reply({
 					content: messageContent,
 					embeds: embedArray,
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus != 404) {
@@ -125,6 +128,7 @@ module.exports = {
 						style: 'SUCCESS',
 					}],
 				}],
+				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {
@@ -371,6 +375,7 @@ function playTicTacToe(profileData, partnerProfileData, message, botReply, embed
 				content: `<@${otherProfileData.userId}>` + (messageContent == null ? '' : messageContent),
 				embeds: embedArray,
 				components: componentArray,
+				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {
@@ -652,6 +657,7 @@ async function playConnectFour(profileData, partnerProfileData, message, botRepl
 				content: `<@${otherProfileData.userId}>` + (messageContent == null ? '' : messageContent),
 				embeds: embedArray,
 				components: componentArray,
+				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {
@@ -936,6 +942,7 @@ async function executeWin(componentArray, message, profileData, partnerProfileDa
 			content: messageContent,
 			embeds: embedArray,
 			components: componentArray,
+			failIfNotExists: false,
 		})
 		.catch((error) => {
 			if (error.httpStatus !== 404) {
@@ -977,6 +984,7 @@ async function executeDraw(componentArray, message, profileData, partnerProfileD
 			content: messageContent,
 			embeds: embedArray,
 			components: componentArray,
+			failIfNotExists: false,
 		})
 		.catch((error) => {
 			if (error.httpStatus !== 404) {

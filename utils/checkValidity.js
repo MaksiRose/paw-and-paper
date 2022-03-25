@@ -17,6 +17,7 @@ module.exports = {
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
 						description: `*${profileData.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${pronounAndPlural(profileData, 0, 'screeches', 'screech')} with ${pronoun(profileData, 2)} last energy. Without help, ${pronoun(profileData, 0)} will not be able to continue.*`,
 					}],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -48,6 +49,7 @@ module.exports = {
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
 						description: `*${profileData.name} is so eager to get things done today that ${pronounAndPlural(profileData, 0, 'is', 'are')} somersaulting. ${upperCasePronoun(profileData, 0)} should probably take a few seconds to calm down.*`,
 					}],
+					failIfNotExists: false,
 				})
 				.then(reply => {
 					setTimeout(async function() {

@@ -24,6 +24,7 @@ module.exports = {
 						title: 'Tell us more about your character! Here is how to use the command:',
 						description: '\n\nrp desc [description]\nReplace [description] with your text.',
 					}],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -46,6 +47,7 @@ module.exports = {
 					title: `Description for ${profileData.name} set:`,
 					description: `${description}`,
 				}],
+				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {

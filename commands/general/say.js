@@ -41,6 +41,7 @@ module.exports = {
 			return await message
 				.reply({
 					embeds: embedArray,
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {

@@ -74,6 +74,7 @@ module.exports = {
 						title: 'Use this command to name or rename your character. Here is how to use it:',
 						description: '\n\nrp name [name]\nReplace [name] with the desired name.',
 					}],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -91,6 +92,7 @@ module.exports = {
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: 'Names can only be up to 25 characters long.',
 					}],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -115,6 +117,7 @@ module.exports = {
 							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 							title: 'You cannot have two accounts with the same name.',
 						}],
+						failIfNotExists: false,
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) {
@@ -137,6 +140,7 @@ module.exports = {
 					description: `*A stranger carefully steps over the pack's borders. Their face seems friendly. Curious eyes watch them as they come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n**"${name},"** *the creature responds.*`,
 					footer: { text: 'To continue setting up your profile, type "rp species"' },
 				}],
+				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {

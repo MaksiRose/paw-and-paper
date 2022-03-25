@@ -40,6 +40,7 @@ module.exports = {
 				.reply({
 					content: messageContent,
 					embeds: embedArray,
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -67,6 +68,7 @@ module.exports = {
 						description: `*${profileData.name} sits in front of the medicine den, looking if anyone needs help with injuries or illnesses.*`,
 					}],
 					components: allHurtProfilesList.length > 0 ? [userSelectMenu] : [],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -83,6 +85,7 @@ module.exports = {
 					content: messageContent,
 					embeds: woundEmbeds,
 					components: woundComponents,
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -630,6 +633,7 @@ module.exports = {
 						.reply({
 							content: content === '' ? null : content,
 							embeds: embedArray,
+							failIfNotExists: false,
 						})
 						.catch((error) => {
 							if (error.httpStatus !== 404) {
@@ -806,6 +810,7 @@ module.exports = {
 						content: messageContent,
 						embeds: [...embedArray, embed],
 						components: [userSelectMenu],
+						failIfNotExists: false,
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) {

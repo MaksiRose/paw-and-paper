@@ -45,6 +45,7 @@ module.exports = {
 				.reply({
 					content: messageContent,
 					embeds: embedArray,
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -66,6 +67,7 @@ module.exports = {
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
 						description: 'Loading...',
 					}],
+					failIfNotExists: false,
 				});
 
 			return await startQuest();
@@ -583,6 +585,7 @@ module.exports = {
 						style: 'SUCCESS',
 					}],
 				}],
+				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {

@@ -57,21 +57,6 @@ module.exports = {
 
 		if (command === undefined) {
 
-			await message
-				.reply({
-					embeds: [{
-						title: 'This command doesn\'t exist!',
-						description: 'Please check \'rp help\' to review your options.',
-					}],
-				})
-				.catch(async (error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-
-			console.log(`\x1b[32m${message.author.tag}\x1b[0m unsuccessfully tried to execute \x1b[33m${message.content} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-
 			return;
 		}
 

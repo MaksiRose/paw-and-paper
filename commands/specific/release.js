@@ -83,7 +83,10 @@ module.exports = {
 		}
 
 		await message
-			.reply({ content: 'Yaay! 🎉🥳🎈🎊' })
+			.reply({
+				content: 'Yaay! 🎉🥳🎈🎊',
+				failIfNotExists: false,
+			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {
 					throw new Error(error);

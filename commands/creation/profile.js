@@ -45,6 +45,7 @@ module.exports = {
 							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 							description: 'This user has no roleplay account, or the account setup process was not completed!',
 						}],
+						failIfNotExists: false,
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) {
@@ -110,6 +111,7 @@ module.exports = {
 					footer: { text: profileData.hasQuest == true ? 'There is one open quest!' : null },
 				}],
 				components: components,
+				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) {
