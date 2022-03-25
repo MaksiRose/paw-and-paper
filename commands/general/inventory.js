@@ -8,7 +8,7 @@ const { remindOfAttack } = require('../specific/attack');
 
 module.exports = {
 	name: 'inventory',
-	aliases: ['storage'],
+	aliases: ['storage', 'i'],
 	async sendMessage(client, message, argumentsArray, profileData, serverData, embedArray) {
 
 		if (await hasNotCompletedAccount(message, profileData)) {
