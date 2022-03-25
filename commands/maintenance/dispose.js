@@ -136,6 +136,8 @@ module.exports = {
 
 		if ((interaction.customId === 'dispose-bite' && serverData.blockedEntranceObject.blockedKind === 'vines') || (interaction.customId === 'dispose-soil' && serverData.blockedEntranceObject.blockedKind === 'burrow') || (interaction.customId === 'dispose-trample' && serverData.blockedEntranceObject.blockedKind === 'tree trunk') || (interaction.customId === 'dispose-push' && serverData.blockedEntranceObject.blockedKind === 'boulder')) {
 
+			// take energy, give XP
+
 			if (profileData.rank === 'Apprentice' && pullFromWeightedTable({ 0: 50, 1: 50 + profileData.saplingObject.waterCycles }) === 0) {
 
 				return await botReply
