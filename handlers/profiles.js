@@ -8,11 +8,11 @@ module.exports = {
 
 		const invalidGuilds = [];
 
-		const files = fs.readdirSync('./database/profiles').filter(file => file.endsWith('.json'));
+		const files = [...fs.readdirSync('./database/profiles').map(file => ['./database/profiles', file]), ...fs.readdirSync('./database/profiles/inactiveProfiles').map(file => ['./database/profiles/inactiveProfiles', file])].filter(([, file]) => file.endsWith('.json'));
 
-		for (const file of files) {
+		for (const [path, file] of files) {
 
-			const dataObject = JSON.parse(fs.readFileSync(`./database/profiles/${file}`));
+			const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`));
 
 			dataObject.inventoryObject = {
 				commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, dataObject.inventoryObject.commonPlants[key] || 0])),
@@ -25,16 +25,16 @@ module.exports = {
 
 				dataObject.pronounSets = [dataObject.pronounArray];
 				delete dataObject.pronounArray;
-				profileModel.save(dataObject);
+				(path.includes('inactiveProfiles') ? otherProfileModel : profileModel).save(dataObject);
 			}
 
 			if (dataObject.saplingObject === undefined) {
 
 				dataObject.saplingObject = { exists: false, health: 100, waterCycles: 0, nextWaterTimestamp: null };
-				profileModel.save(dataObject);
+				(path.includes('inactiveProfiles') ? otherProfileModel : profileModel).save(dataObject);
 			}
 
-			profileModel
+			(path.includes('inactiveProfiles') ? otherProfileModel : profileModel)
 				.findOneAndUpdate(
 					{ userId: dataObject.userId, serverId: dataObject.serverId },
 					{
@@ -48,15 +48,9 @@ module.exports = {
 				)
 				.then(async () => {
 
-					const inactiveUserProfiles = await otherProfileModel.find({
-						userId: dataObject.userId,
-						serverId: dataObject.serverId,
-					});
-
 					if (invalidGuilds.includes(dataObject.serverId)) {
 
-						moveFile(file, `${dataObject.serverId}${dataObject.userId}`, dataObject.name);
-						moveOtherFiles(inactiveUserProfiles);
+						moveFile(file, `${dataObject.serverId}${dataObject.userId}`, dataObject.name, path);
 					}
 					else {
 
@@ -66,15 +60,14 @@ module.exports = {
 
 								guild.members
 									.fetch(dataObject.userId)
-									.catch(() => moveFile(file, `${dataObject.serverId}${dataObject.userId}`, dataObject.name) && moveOtherFiles(inactiveUserProfiles));
+									.catch(() => moveFile(file, `${dataObject.serverId}${dataObject.userId}`, dataObject.name, path));
 							})
 							.catch(error => {
 
 								invalidGuilds.push(dataObject.serverId);
 								if (error.httpStatus === 403) {
 
-									moveFile(file, `${dataObject.serverId}${dataObject.userId}`, dataObject.name);
-									moveOtherFiles(inactiveUserProfiles);
+									moveFile(file, `${dataObject.serverId}${dataObject.userId}`, dataObject.name, path);
 								}
 								else {
 									console.error(error);
@@ -86,9 +79,9 @@ module.exports = {
 	},
 };
 
-function moveFile(file, id, name) {
+function moveFile(file, id, name, path) {
 
-	fs.renameSync(`./database/profiles/${file}`, `./database/toDelete/${file}`);
+	fs.renameSync(`${path}/${file}`, `./database/toDelete/${file}`);
 
 	const toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
 
@@ -96,19 +89,4 @@ function moveFile(file, id, name) {
 	toDeleteList[id][name] = { fileName: file, deletionTimestamp: Date.now() + 2073600000 };
 
 	fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
-}
-
-function moveOtherFiles(profiles) {
-
-	for (const profile of profiles) {
-
-		fs.renameSync(`./database/profiles/inactiveProfiles/${profile.uuid}.json`, `./database/toDelete/${profile.uuid}.json`);
-
-		const toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
-
-		toDeleteList[`${profile.serverId}${profile.userId}`] = toDeleteList[`${profile.serverId}${profile.userId}`] || {};
-		toDeleteList[`${profile.serverId}${profile.userId}`][profile.name] = { fileName: `${profile.uuid}.json`, deletionTimestamp: Date.now() + 2073600000 };
-
-		fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
-	}
 }

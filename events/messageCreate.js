@@ -133,11 +133,14 @@ module.exports = {
 			userMap.get('nr' + message.author.id + message.guild.id).activeCommands += 1;
 			userMap.get('nr' + message.author.id + message.guild.id).activityTimeout = setTimeout(removeActiveUser, 300000);
 
-			await message.channel
-				.sendTyping()
-				.catch(async (error) => {
-					return await errorHandling.output(message, error);
-				});
+			if (command.name !== 'say') {
+
+				await message.channel
+					.sendTyping()
+					.catch(async (error) => {
+						return await errorHandling.output(message, error);
+					});
+			}
 
 			await command
 				.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray, pingRuins)
