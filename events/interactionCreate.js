@@ -147,7 +147,9 @@ module.exports = {
 		const referencedMessage = await interaction.channel.messages
 			.fetch(interaction.message.reference.messageId)
 			.catch(async (error) => {
-				return await errorHandling.output(interaction.message, error);
+				if (error.httpStatus !== 404) {
+					return await errorHandling.output(interaction.message, error);
+				}
 			});
 
 		if (referencedMessage && referencedMessage.author.id != interaction.user.id) {
@@ -161,7 +163,7 @@ module.exports = {
 
 		if (interaction.isSelectMenu()) {
 
-			console.log(`\x1b[32m${referencedMessage.author.tag}\x1b[0m successfully selected \x1b[33m${interaction.values[0]} \x1b[0mfrom the menu \x1b[33m${interaction.customId} \x1b[0min \x1b[32m${referencedMessage.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			console.log(`\x1b[32m${interaction.user.tag}\x1b[0m successfully selected \x1b[33m${interaction.values[0]} \x1b[0mfrom the menu \x1b[33m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 
 			if (interaction.values[0] == 'help_page1') {
@@ -294,7 +296,7 @@ module.exports = {
 
 		if (interaction.isButton()) {
 
-			console.log(`\x1b[32m${referencedMessage.author.tag}\x1b[0m successfully clicked the button \x1b[33m${interaction.customId} \x1b[0min \x1b[32m${referencedMessage.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			console.log(`\x1b[32m${interaction.user.tag}\x1b[0m successfully clicked the button \x1b[33m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 
 			if (interaction.customId == 'report') {
