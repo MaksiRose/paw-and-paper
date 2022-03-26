@@ -35,6 +35,8 @@ module.exports = {
 
 		if (message.mentions.channels.size > 0) {
 
+			console.log(message.mentions.channels.first().id);
+
 			await serverModel.findOneAndUpdate(
 				{ serverId: message.guild.id },
 				{ $set: { visitChannelId: message.mentions.channels.first().id } },
@@ -45,7 +47,7 @@ module.exports = {
 					embeds: [{
 						color: config.default_color,
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						description: `Visits are now possible in ${message.mentions.channels.first().toString()}`,
+						description: `Visits are now possible in ${message.mentions.channels.first().toString()}!`,
 					}],
 					failIfNotExists: false,
 				})
