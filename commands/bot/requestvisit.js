@@ -60,6 +60,7 @@ module.exports = {
 
 		selectMenuOptionsArray = getMenuOptions(visitableServers, packPage, selectMenuOptionsArray);
 
+		// TO DO: replace messages with actual roleplay messages
 		const botReply = await message
 			.reply({
 				embeds: [{
@@ -395,107 +396,103 @@ async function acceptedInvitation(client, botReply, botReply2, serverData, other
 
 	const filter = async m => (await profileModel.findOne({ serverId: m.guild.id, userId: m.author.id })) === null ? false : true;
 
-	const hostChannnel = await client.channels.fetch(otherServerData.visitChannelId);
-	const guestChannnel = await client.channels.fetch(serverData.visitChannelId);
+	const hostChannel = await client.channels.fetch(otherServerData.visitChannelId);
+	const guestChannel = await client.channels.fetch(serverData.visitChannelId);
 
-	const guestCollector = guestChannnel.createMessageCollector({ filter, idle: 300000 });
-	const hostWebhook = (await hostChannnel
-		.fetchWebhooks()
-		.catch((error) => {
-			if (error.httpStatus === 403) {
-				hostChannnel.send('Please give me permission to create webhooks 😣');
-				guestChannnel.send('The other pack is missing permissions, so I couldn\'t establish a connection 😣');
-			}
-			throw new Error(error);
-		})
-	).find(webhook => webhook.name === 'PnP Profile Webhook') || await hostChannnel
-		.createWebhook('PnP Profile Webhook')
-		.catch((error) => {
-			if (error.httpStatus === 403) {
-				hostChannnel.send('Please give me permission to create webhooks 😣');
-				guestChannnel.send('The other pack is missing permissions, so I couldn\'t establish a connection 😣');
-			}
-			throw new Error(error);
-		});
+	collectMessages(hostChannel, guestChannel);
+	collectMessages(guestChannel, hostChannel);
 
-	guestCollector.on('collect', async msg => {
+	async function collectMessages(thisServerChannel, otherServerChannel) {
 
-		const profile = await profileModel.findOne({ serverId: msg.guild.id, userId: msg.author.id });
-
-		await hostWebhook
-			.send({
-				content: msg.content,
-				username: profile.name,
-				avatarURL: profile.avatarURL,
-			})
+		const collector = thisServerChannel.createMessageCollector({ filter, idle: 300000 });
+		const otherServerWebhook = (await otherServerChannel
+			.fetchWebhooks()
 			.catch((error) => {
+				if (error.httpStatus === 403) {
+					otherServerChannel.send('Please give me permission to create webhooks 😣');
+					thisServerChannel.send('The other pack is missing permissions, so I couldn\'t establish a connection 😣');
+				}
+				throw new Error(error);
+			})
+		).find(webhook => webhook.name === 'PnP Profile Webhook') || await otherServerChannel
+			.createWebhook('PnP Profile Webhook')
+			.catch((error) => {
+				if (error.httpStatus === 403) {
+					otherServerChannel.send('Please give me permission to create webhooks 😣');
+					thisServerChannel.send('The other pack is missing permissions, so I couldn\'t establish a connection 😣');
+				}
 				throw new Error(error);
 			});
 
-		await msg.react('✅');
-	});
+		collector.on('collect', async msg => {
 
-	guestCollector.on('end', async () => {
+			const profile = await profileModel.findOne({ serverId: msg.guild.id, userId: msg.author.id });
 
-		await serverModel.findOneAndUpdate(
-			{ serverId: botReply.guildId },
-			{ $set: { currentlyVisiting: null } },
-		);
+			await otherServerWebhook
+				.send({
+					content: msg.content,
+					username: profile.name,
+					avatarURL: profile.avatarURL,
+				})
+				.catch((error) => {
+					throw new Error(error);
+				});
 
-		await serverModel.findOneAndUpdate(
-			{ serverId: botReply2.guildId },
-			{ $set: { currentlyVisiting: null } },
-		);
-	});
-
-
-	const hostCollector = hostChannnel.createMessageCollector({ filter, idle: 300000 });
-	const guestWebhook = (await guestChannnel
-		.fetchWebhooks()
-		.catch((error) => {
-			if (error.httpStatus === 403) {
-				guestChannnel.send('Please give me permission to create webhooks 😣');
-				hostChannnel.send('The other pack is missing permissions, so I couldn\'t establish a connection 😣');
-			}
-			throw new Error(error);
-		})
-	).find(webhook => webhook.name === 'PnP Profile Webhook') || await guestChannnel
-		.createWebhook('PnP Profile Webhook')
-		.catch((error) => {
-			if (error.httpStatus === 403) {
-				guestChannnel.send('Please give me permission to create webhooks 😣');
-				hostChannnel.send('The other pack is missing permissions, so I couldn\'t establish a connection 😣');
-			}
-			throw new Error(error);
+			await msg.react('✅');
 		});
 
-	hostCollector.on('collect', async msg => {
+		collector.on('end', async () => {
 
-		const profile = await profileModel.findOne({ serverId: msg.guildId, userId: msg.author.id });
+			serverData = await serverModel.findOne(
+				{ serverId: thisServerChannel.guild.id },
+			);
 
-		await guestWebhook
-			.send({
-				content: msg.content,
-				username: profile.name,
-				avatarURL: profile.avatarURL,
-			})
-			.catch((error) => {
-				throw new Error(error);
-			});
+			otherServerData = await serverModel.findOne(
+				{ serverId: otherServerChannel.guild.id },
+			);
 
-		await msg.react('✅');
-	});
+			if (serverData.currentlyVisiting !== null && otherServerData.currentlyVisiting !== null) {
 
-	hostCollector.on('end', async () => {
+				await thisServerChannel
+					.send({
+						embeds: [{
+							color: config.default_color,
+							author: { name: otherServerChannel.guild.name, icon_url: otherServerChannel.guild.iconURL() },
+							title: 'The visit has ended.',
+						}],
+						failIfNotExists: false,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
 
-		await serverModel.findOneAndUpdate(
-			{ serverId: botReply.guildId },
-			{ $set: { currentlyVisiting: null } },
-		);
+				await otherServerChannel
+					.reply({
+						embeds: [{
+							color: config.default_color,
+							author: { name: thisServerChannel.guild.name, icon_url: thisServerChannel.guild.iconURL() },
+							title: 'The visit has ended.',
+						}],
+						failIfNotExists: false,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
 
-		await serverModel.findOneAndUpdate(
-			{ serverId: botReply2.guildId },
-			{ $set: { currentlyVisiting: null } },
-		);
-	});
+				await serverModel.findOneAndUpdate(
+					{ serverId: thisServerChannel.guild.id },
+					{ $set: { currentlyVisiting: null } },
+				);
+
+				await serverModel.findOneAndUpdate(
+					{ serverId: otherServerChannel.guild.id },
+					{ $set: { currentlyVisiting: null } },
+				);
+			}
+		});
+	}
 }
