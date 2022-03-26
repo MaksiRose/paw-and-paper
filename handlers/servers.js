@@ -29,6 +29,7 @@ module.exports = {
 			if (dataObject.visitChannelId === undefined) {
 
 				dataObject.visitChannelId = null,
+				dataObject.currentlyVisiting = null,
 				serverModel.save(dataObject);
 			}
 
@@ -39,6 +40,7 @@ module.exports = {
 						$set: {
 							inventoryObject: dataObject.inventoryObject,
 							activeUsersArray: [],
+							currentlyVisiting: null,
 						},
 					},
 				)

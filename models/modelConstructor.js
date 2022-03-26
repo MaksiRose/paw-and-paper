@@ -66,7 +66,7 @@ class model {
 
 						if (allObjectsMatch(value, compareObject[key]) === true) continue;
 					}
-					else if (compareObject[key] != undefined && compareObject[key] == value) {
+					else if (compareObject[key] !== undefined && compareObject[key] === value) {
 
 						continue;
 					}
@@ -171,7 +171,7 @@ class model {
 
 					for (const [key, value] of Object.entries(updateValue)) {
 
-						if (dataObject[key] != undefined && typeof dataObject[key] == typeof value) {
+						if (dataObject[key] !== undefined && (typeof dataObject[key] === typeof value || dataObject[key] === null || value === null)) {
 
 							(logOutputter(dataObject[key]) != logOutputter(value)) && console.log(`\x1b[32m${(user != null) ? `${user.tag} (${user.id}): ` : ''}\x1b[0m${key} changed from \x1b[33m${logOutputter(objectReducer(dataObject[key], value))} \x1b[0mto \x1b[33m${logOutputter(objectReducer(value, dataObject[key]))} \x1b[0min \x1b[32m${(guild != null) ? guild.name : ''} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 

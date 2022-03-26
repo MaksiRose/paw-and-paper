@@ -21,9 +21,19 @@ module.exports = {
 		profileData = await startCooldown(message, profileData);
 
 		const webHook = (await message.channel
-			.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook') || await message.channel
+			.fetchWebhooks()
+			.catch((error) => {
+				if (error.httpStatus === 403) {
+					message.channel.send('Please give me permission to create webhooks 😣');
+				}
+				throw new Error(error);
+			})
+		).find(webhook => webhook.name === 'PnP Profile Webhook') || await message.channel
 			.createWebhook('PnP Profile Webhook')
 			.catch((error) => {
+				if (error.httpStatus === 403) {
+					message.channel.send('Please give me permission to create webhooks 😣');
+				}
 				throw new Error(error);
 			});
 

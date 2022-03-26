@@ -139,7 +139,7 @@ module.exports = {
 				});
 		}
 
-		if (!interaction.message.reference && !interaction.message.reference.messageId) {
+		if (!interaction.message.reference || !interaction.message.reference.messageId) {
 
 			return;
 		}

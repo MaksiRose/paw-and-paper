@@ -41,6 +41,7 @@ module.exports = {
 				activeUsersArray: [],
 				nextPossibleAttack: Date.now(),
 				visitChannelId: null,
+				currentlyVisiting: null,
 			});
 		}
 
