@@ -27,6 +27,7 @@ module.exports = {
 				nextPossibleAttack: Date.now(),
 				visitChannelId: null,
 				currentlyVisiting: null,
+				shop: [],
 			});
 		}
 
