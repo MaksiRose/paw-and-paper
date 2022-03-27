@@ -24,9 +24,9 @@ module.exports = {
 				title: `${profileData.name} just leveled up! ${upperCasePronounAndPlural(profileData, 0, 'is', 'are')} now level ${profileData.levels}.`,
 			};
 
-			botReply.embeds.push(embed);
+			botReply?.embeds.push(embed);
 			await botReply
-				.edit({
+				?.edit({
 					embeds: botReply.embeds,
 				})
 				.catch((error) => {
@@ -34,6 +34,8 @@ module.exports = {
 						throw new Error(error);
 					}
 				});
+
+			botReply = module.exports.checkLevelUp(profileData, botReply);
 
 			return botReply;
 		}

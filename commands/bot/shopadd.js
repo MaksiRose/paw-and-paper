@@ -11,6 +11,7 @@ module.exports = {
 				.reply({
 					embeds: [{
 						color: config.error_color,
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: 'Only administrators of a server can use this command!',
 					}],
 					failIfNotExists: false,
@@ -77,7 +78,7 @@ module.exports = {
 		if (wayOfEarning === 'level') { wayOfEarning = 'levels'; }
 		if (wayOfEarning === 'xp') { wayOfEarning = 'experience'; }
 
-		if (wayOfEarning !== 'experience' && serverData.shop.filter(item => item.wayOfEarning === wayOfEarning && item.requirement === requirement).length > 0) {
+		if (serverData.shop.filter(item => item.wayOfEarning === wayOfEarning && item.requirement === requirement).length > 0) {
 
 			return await message
 				.reply({
@@ -85,6 +86,42 @@ module.exports = {
 						color: config.error_color,
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: 'There is already a role under these conditions!',
+					}],
+					failIfNotExists: false,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
+		}
+
+		if (serverData.shop.filter(item => item.roleId === role.id && item.wayOfEarning !== wayOfEarning && (wayOfEarning === 'experience' || item.wayOfEarning === 'experience')).length > 0) {
+
+			return await message
+				.reply({
+					embeds: [{
+						color: config.error_color,
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+						title: 'The same role cannot be acquired both through earning (rank, levels) and buying (experience) due to the refund system.',
+					}],
+					failIfNotExists: false,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
+		}
+
+		if (wayOfEarning === 'experience' && serverData.shop.filter(item => item.roleId === role.id && item.wayOfEarning === wayOfEarning).length > 0) {
+
+			return await message
+				.reply({
+					embeds: [{
+						color: config.error_color,
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+						title: 'The same role cannot be sold at two different prices!',
 					}],
 					failIfNotExists: false,
 				})

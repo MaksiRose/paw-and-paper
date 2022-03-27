@@ -13,6 +13,7 @@ module.exports = {
 				.reply({
 					embeds: [{
 						color: config.error_color,
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: 'Only administrators of a server can use this command!',
 					}],
 					failIfNotExists: false,
@@ -30,6 +31,7 @@ module.exports = {
 				.reply({
 					embeds: [{
 						color: config.error_color,
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: 'There are currently no roles in the shop!',
 					}],
 					failIfNotExists: false,
@@ -56,7 +58,7 @@ module.exports = {
 					components: [{
 						type: 'SELECT_MENU',
 						customId: 'shopdelete-options',
-						placeholder: 'Select a shop',
+						placeholder: 'Select an item',
 						options: selectMenuOptionsArray,
 					}],
 				}],
@@ -92,7 +94,7 @@ module.exports = {
 					});
 			}
 
-			if (interaction.values[0] === 'visit_page') {
+			if (interaction.values[0] === 'shopdelete_page') {
 
 				page += 1;
 				if (page >= Math.ceil(serverData.shop.length / 24)) {
@@ -114,7 +116,7 @@ module.exports = {
 							components: [{
 								type: 'SELECT_MENU',
 								customId: 'shopdelete-options',
-								placeholder: 'Select a shop',
+								placeholder: 'Select an item',
 								options: newSelectMenuOptionsArray,
 							}],
 						}],
@@ -136,17 +138,20 @@ module.exports = {
 					{ $set: { shop: serverData.shop } },
 				);
 
-				await interaction
-					.followUp({
-						content: `<@&${deleteItem[0].roleId}> with the requirement of ${deleteItem[0].requirement} ${deleteItem[0].wayOfEarning} was deleted from the shop.`,
-						ephemeral: true,
-						failIfNotExists: false,
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
+				setTimeout(async () => {
+
+					await interaction
+						.followUp({
+							content: `<@&${deleteItem[0].roleId}> with the requirement of ${deleteItem[0].requirement} ${deleteItem[0].wayOfEarning} was deleted from the shop.`,
+							ephemeral: true,
+							failIfNotExists: false,
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+				}, 500);
 
 				if (serverData.shop.length === 0) {
 
@@ -181,7 +186,7 @@ module.exports = {
 							components: [{
 								type: 'SELECT_MENU',
 								customId: 'shopdelete-options',
-								placeholder: 'Select a shop',
+								placeholder: 'Select an item',
 								options: newSelectMenuOptionsArray,
 							}],
 						}],
