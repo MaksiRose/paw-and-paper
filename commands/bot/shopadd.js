@@ -75,9 +75,9 @@ module.exports = {
 		}
 
 		if (wayOfEarning === 'level') { wayOfEarning = 'levels'; }
-		if (wayOfEarning === 'experience') { wayOfEarning = 'xp'; }
+		if (wayOfEarning === 'xp') { wayOfEarning = 'experience'; }
 
-		if (wayOfEarning !== 'xp' && serverData.shop.filter(item => item.wayOfEarning === wayOfEarning && item.requirement === requirement).length > 0) {
+		if (wayOfEarning !== 'experience' && serverData.shop.filter(item => item.wayOfEarning === wayOfEarning && item.requirement === requirement).length > 0) {
 
 			return await message
 				.reply({
@@ -105,5 +105,20 @@ module.exports = {
 			{ serverId: message.guild.id },
 			{ $set: { shop: serverData.shop } },
 		);
+
+		return await message
+			.reply({
+				embeds: [{
+					color: config.default_color,
+					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+					description: `${role.toString()} was added to the shop! The requirement is ${requirement} ${wayOfEarning}.`,
+				}],
+				failIfNotExists: false,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
+			});
 	},
 };
