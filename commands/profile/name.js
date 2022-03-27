@@ -3,10 +3,11 @@ const profileModel = require('../../models/profileModel');
 const otherProfileModel = require('../../models/otherProfileModel');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
 const startCooldown = require('../../utils/startCooldown');
+const { checkRankRequirements } = require('../../utils/checkRoleRequirements');
 
 module.exports = {
 	name: 'name',
-	async sendMessage(client, message, argumentsArray, profileData) {
+	async sendMessage(client, message, argumentsArray, profileData, serverData) {
 
 		try {
 
@@ -148,5 +149,7 @@ module.exports = {
 					throw new Error(error);
 				}
 			});
+
+		await checkRankRequirements(serverData, message, 'Youngling');
 	},
 };

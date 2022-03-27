@@ -147,7 +147,7 @@ module.exports = {
 									}
 								});
 
-							profileData = checkLevelUp(profileData, undefined);
+							profileData = checkLevelUp(message, undefined, profileData, serverData);
 						}, 500);
 					}
 					catch (error) {
@@ -193,7 +193,9 @@ module.exports = {
 
 					try {
 
-						await message.member.roles.add(buyItem.roleId);let cost = buyItem.requirement;
+						await message.member.roles.add(buyItem.roleId);
+
+						let cost = buyItem.requirement;
 
 						while (cost > 0) {
 

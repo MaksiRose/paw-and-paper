@@ -142,18 +142,18 @@ module.exports = {
 
 		if (gameType === 'Connect Four') {
 
-			playConnectFour(profileData, partnerProfileData, message, botReply, embedArray, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
+			playConnectFour(serverData, profileData, partnerProfileData, message, botReply, embedArray, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
 		}
 
 		if (gameType === 'Tic Tac Toe') {
 
-			playTicTacToe(profileData, partnerProfileData, message, botReply, embedArray, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
+			playTicTacToe(serverData, profileData, partnerProfileData, message, botReply, embedArray, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
 		}
 
 	},
 };
 
-function playTicTacToe(profileData, partnerProfileData, message, botReply, embedArray, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
+function playTicTacToe(serverData, profileData, partnerProfileData, message, botReply, embedArray, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
 
 	const emptyField = '◻️';
 	const player1Field = '⭕';
@@ -306,7 +306,7 @@ function playTicTacToe(profileData, partnerProfileData, message, botReply, embed
 						}
 					});
 
-				await checkHealthAndLevel();
+				await checkHealthAndLevel(message, botReply, profileData, serverData, partnerProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
 			}
 
 			return;
@@ -336,7 +336,7 @@ function playTicTacToe(profileData, partnerProfileData, message, botReply, embed
 					}
 				}
 
-				await executeWin(componentArray, message, profileData, partnerProfileData, otherProfileData, currentProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, embedArray, botReply, messageContent);
+				await executeWin(componentArray, message, profileData, serverData, partnerProfileData, otherProfileData, currentProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, embedArray, botReply, messageContent);
 
 				return;
 			}
@@ -351,7 +351,7 @@ function playTicTacToe(profileData, partnerProfileData, message, botReply, embed
 					}
 				}
 
-				await executeDraw(componentArray, message, profileData, partnerProfileData, embedArray, botReply, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
+				await executeDraw(componentArray, message, profileData, serverData, partnerProfileData, embedArray, botReply, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
 
 				return;
 			}
@@ -440,7 +440,7 @@ function playTicTacToe(profileData, partnerProfileData, message, botReply, embed
 	return { profileData, partnerProfileData, botReply };
 }
 
-async function playConnectFour(profileData, partnerProfileData, message, botReply, embedArray, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
+async function playConnectFour(serverData, profileData, partnerProfileData, message, botReply, embedArray, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
 
 	const emptyField = '⚫';
 	const player1Field = '🟡';
@@ -580,7 +580,7 @@ async function playConnectFour(profileData, partnerProfileData, message, botRepl
 						}
 					});
 
-				await checkHealthAndLevel();
+				await checkHealthAndLevel(message, botReply, profileData, serverData, partnerProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
 			}
 
 			return;
@@ -621,7 +621,7 @@ async function playConnectFour(profileData, partnerProfileData, message, botRepl
 					description: field.map(r => r.join('')).join('\n'),
 				});
 
-				await executeWin(null, message, profileData, partnerProfileData, otherProfileData, currentProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, embedArray, botReply, messageContent);
+				await executeWin(null, message, profileData, serverData, partnerProfileData, otherProfileData, currentProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, embedArray, botReply, messageContent);
 
 				return;
 			}
@@ -633,7 +633,7 @@ async function playConnectFour(profileData, partnerProfileData, message, botRepl
 					description: field.map(r => r.join('')).join('\n'),
 				});
 
-				await executeDraw(null, message, profileData, partnerProfileData, embedArray, botReply, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
+				await executeDraw(null, message, profileData, serverData, partnerProfileData, embedArray, botReply, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
 
 				return;
 			}
@@ -840,13 +840,13 @@ async function decreaseStats(message, profileData, partnerProfileData) {
 	return { embedFooterStatsTextPlayer1, embedFooterStatsTextPlayer2 };
 }
 
-async function checkHealthAndLevel(message, botReply, profileData, partnerProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
+async function checkHealthAndLevel(message, botReply, profileData, serverData, partnerProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
 
 	botReply = await decreaseHealth(message, profileData, botReply, userInjuryObjectPlayer1);
 	botReply = await decreaseHealth(message, partnerProfileData, botReply, userInjuryObjectPlayer2);
 
-	botReply = await checkLevelUp(profileData, botReply);
-	botReply = await checkLevelUp(partnerProfileData, botReply);
+	botReply = await checkLevelUp(message, botReply, profileData, serverData);
+	botReply = await checkLevelUp(message, botReply, partnerProfileData, serverData);
 
 	await isPassedOut(message, profileData, true);
 	await isPassedOut(message, partnerProfileData, true);
@@ -861,7 +861,7 @@ async function checkHealthAndLevel(message, botReply, profileData, partnerProfil
 	await eatAdvice(message, partnerProfileData);
 }
 
-async function executeWin(componentArray, message, profileData, partnerProfileData, otherProfileData, currentProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, embedArray, botReply, messageContent) {
+async function executeWin(componentArray, message, profileData, serverData, partnerProfileData, otherProfileData, currentProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, embedArray, botReply, messageContent) {
 
 	let { embedFooterStatsTextPlayer1, embedFooterStatsTextPlayer2 } = await decreaseStats(message, profileData, partnerProfileData);
 
@@ -960,10 +960,10 @@ async function executeWin(componentArray, message, profileData, partnerProfileDa
 			}
 		});
 
-	await checkHealthAndLevel(message, botReply, profileData, partnerProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
+	await checkHealthAndLevel(message, botReply, profileData, serverData, partnerProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
 }
 
-async function executeDraw(componentArray, message, profileData, partnerProfileData, embedArray, botReply, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
+async function executeDraw(componentArray, message, profileData, serverData, partnerProfileData, embedArray, botReply, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
 
 	let { embedFooterStatsTextPlayer1, embedFooterStatsTextPlayer2 } = await decreaseStats(message, profileData, partnerProfileData);
 
@@ -1002,7 +1002,7 @@ async function executeDraw(componentArray, message, profileData, partnerProfileD
 			}
 		});
 
-	await checkHealthAndLevel(message, botReply, profileData, partnerProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
+	await checkHealthAndLevel(message, botReply, profileData, serverData, partnerProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
 }
 
 function deepCopy(obj) {

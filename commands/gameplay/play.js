@@ -247,7 +247,7 @@ module.exports = {
 		}
 
 		botReply = await decreaseHealth(message, profileData, botReply, userInjuryObject);
-		await checkLevelUp(profileData, botReply);
+		await checkLevelUp(message, botReply, profileData, serverData);
 		await isPassedOut(message, profileData, true);
 
 		await restAdvice(message, profileData);

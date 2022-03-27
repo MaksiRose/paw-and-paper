@@ -1,9 +1,10 @@
 const profileModel = require('../models/profileModel');
+const { checkLevelRequirements } = require('./checkRoleRequirements');
 const { upperCasePronounAndPlural } = require('./getPronouns');
 
 module.exports = {
 
-	async checkLevelUp(profileData, botReply) {
+	async checkLevelUp(message, botReply, profileData, serverData) {
 
 		const requiredExperiencePoints = profileData.levels * 50;
 
@@ -35,7 +36,8 @@ module.exports = {
 					}
 				});
 
-			botReply = module.exports.checkLevelUp(profileData, botReply);
+			botReply = module.exports.checkLevelUp(message, botReply, profileData, serverData);
+			await checkLevelRequirements(serverData, message, profileData.level);
 
 			return botReply;
 		}
