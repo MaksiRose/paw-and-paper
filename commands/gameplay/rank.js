@@ -5,11 +5,12 @@ const { createCommandCollector } = require('../../utils/commandCollector');
 const { pronoun } = require('../../utils/getPronouns');
 const startCooldown = require('../../utils/startCooldown');
 const { remindOfAttack } = require('./attack');
+const { checkRankRequirements } = require('../../utils/checkRoleRequirements');
 
 module.exports = {
 	name: 'rank',
 	aliases: ['role'],
-	async sendMessage(client, message, argumentsArray, profileData) {
+	async sendMessage(client, message, argumentsArray, profileData, serverData) {
 
 		if (await hasNotCompletedAccount(message, profileData)) {
 
@@ -31,7 +32,7 @@ module.exports = {
 				{ $set: { rank: 'Apprentice' } },
 			);
 
-			return await message
+			await message
 				.reply({
 					content: messageContent,
 					embeds: [{
@@ -46,6 +47,10 @@ module.exports = {
 						throw new Error(error);
 					}
 				});
+
+			await checkRankRequirements(serverData, message, 'Apprentice');
+
+			return;
 		}
 
 		if (profileData.unlockedRanks == 2 && profileData.rank == 'Apprentice') {
@@ -93,7 +98,7 @@ module.exports = {
 				{ $set: { rank: 'Elderly' } },
 			);
 
-			return await message
+			await message
 				.reply({
 					content: messageContent,
 					embeds: [{
@@ -108,6 +113,10 @@ module.exports = {
 						throw new Error(error);
 					}
 				});
+
+			await checkRankRequirements(serverData, message, 'Elderly');
+
+			return;
 		}
 
 		return await message
@@ -155,7 +164,7 @@ module.exports = {
 					{ $set: { rank: 'Healer' } },
 				);
 
-				return await botReply
+				await botReply
 					.edit({
 						embeds: [{
 							color: profileData.color,
@@ -169,6 +178,10 @@ module.exports = {
 							throw new Error(error);
 						}
 					});
+
+				await checkRankRequirements(serverData, message, 'Healer');
+
+				return;
 			}
 
 			if (interaction.customId == 'rank-hunter') {
@@ -178,7 +191,7 @@ module.exports = {
 					{ $set: { rank: 'Hunter' } },
 				);
 
-				return await botReply
+				await botReply
 					.edit({
 						embeds: [{
 							color: profileData.color,
@@ -192,6 +205,10 @@ module.exports = {
 							throw new Error(error);
 						}
 					});
+
+				await checkRankRequirements(serverData, message, 'Hunter');
+
+				return;
 			}
 
 			return await interactionCollector();

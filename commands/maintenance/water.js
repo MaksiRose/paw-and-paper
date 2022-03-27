@@ -142,7 +142,7 @@ module.exports = {
 				}
 			});
 
-		await checkLevelUp(profileData, botReply);
+		await checkLevelUp(message, botReply, profileData, serverData);
 
 		if (profileData.saplingObject.health <= 0) {
 

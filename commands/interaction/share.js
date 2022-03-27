@@ -229,7 +229,7 @@ module.exports = {
 				}
 			});
 
-		botReply = await checkLevelUp(partnerProfileData, botReply);
+		botReply = await checkLevelUp(message, botReply, profileData, serverData);
 		await decreaseHealth(message, profileData, botReply, userInjuryObject);
 		await isPassedOut(message, profileData, false);
 
