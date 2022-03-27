@@ -33,6 +33,12 @@ module.exports = {
 				serverModel.save(dataObject);
 			}
 
+			if (dataObject.shop === undefined) {
+
+				dataObject.shop = [],
+				serverModel.save(dataObject);
+			}
+
 			serverModel
 				.findOneAndUpdate(
 					{ serverId: dataObject.serverId },
