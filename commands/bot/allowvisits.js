@@ -7,7 +7,19 @@ module.exports = {
 
 		if (message.member.permissions.has('ADMINISTRATOR') === false) {
 
-			return;
+			return await message
+				.reply({
+					embeds: [{
+						color: config.error_color,
+						title: 'Only administrators of a server can use this command!',
+					}],
+					failIfNotExists: false,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
 		}
 
 		if (argumentsArray[0] === 'off') {
