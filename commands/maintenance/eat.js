@@ -124,7 +124,7 @@ module.exports = {
 
 				minimumHungerPoints = -5;
 				minimumHealthPoints = -10;
-				finalHungerPoints = generateRandomNumber(5, minimumHungerPoints);
+				finalHungerPoints = generateRandomNumber(3, minimumHungerPoints);
 				finalHealthPoints = generateRandomNumber(3, minimumHealthPoints);
 
 				embed.description = `*A yucky feeling drifts down ${profileData.name}'s throat. ${upperCasePronounAndPlural(profileData, 0, 'shakes and spits', 'shake and spit')} it out, trying to rid ${pronoun(profileData, 2)} mouth of the taste. The plant is poisonous!*`;
@@ -132,7 +132,7 @@ module.exports = {
 
 			if (plantMap.get(chosenFood).edibality == 'i') {
 
-				minimumHungerPoints = -1;
+				minimumHungerPoints = -3;
 				finalHungerPoints = generateRandomNumber(3, minimumHungerPoints);
 
 				embed.description = `*${profileData.name} slowly opens ${pronoun(profileData, 2)} mouth and chomps onto the ${chosenFood}. The ${profileData.species} swallows it, but ${pronoun(profileData, 2)} face has a look of disgust. That wasn't very tasty!*`;

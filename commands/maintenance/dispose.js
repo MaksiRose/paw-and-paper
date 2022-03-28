@@ -136,36 +136,34 @@ module.exports = {
 			return;
 		}
 
-		if ((interaction.customId === 'dispose-bite' && serverData.blockedEntranceObject.blockedKind === 'vines') || (interaction.customId === 'dispose-soil' && serverData.blockedEntranceObject.blockedKind === 'burrow') || (interaction.customId === 'dispose-trample' && serverData.blockedEntranceObject.blockedKind === 'tree trunk') || (interaction.customId === 'dispose-push' && serverData.blockedEntranceObject.blockedKind === 'boulder')) {
+		const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; } (generateRandomNumber(5, 1) + await decreaseEnergy(profileData));
+		const hungerPoints = await decreaseHunger(profileData);
+		const thirstPoints = await decreaseThirst(profileData);
 
-			const experiencePoints = profileData.rank == 'Elderly' ? generateRandomNumber(41, 20) : profileData.rank == 'Hunter' ? generateRandomNumber(21, 10) : generateRandomNumber(11, 5);
-			const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; } (generateRandomNumber(5, 1) + await decreaseEnergy(profileData));
-			const hungerPoints = await decreaseHunger(profileData);
-			const thirstPoints = await decreaseThirst(profileData);
-
-			profileData = await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{
-					$inc: {
-						experience: +experiencePoints,
-						energy: -energyPoints,
-						hunger: -hungerPoints,
-						thirst: -thirstPoints,
-					},
+		profileData = await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{
+				$inc: {
+					energy: -energyPoints,
+					hunger: -hungerPoints,
+					thirst: -thirstPoints,
 				},
-			);
+			},
+		);
 
-			let footerStats = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
+		let footerStats = `-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
 
-			if (hungerPoints >= 1) {
+		if (hungerPoints >= 1) {
 
-				footerStats += `\n-${hungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})`;
-			}
+			footerStats += `\n-${hungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})`;
+		}
 
-			if (thirstPoints >= 1) {
+		if (thirstPoints >= 1) {
 
-				footerStats += `\n-${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})`;
-			}
+			footerStats += `\n-${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})`;
+		}
+
+		if ((interaction.customId === 'dispose-bite' && serverData.blockedEntranceObject.blockedKind === 'vines') || (interaction.customId === 'dispose-soil' && serverData.blockedEntranceObject.blockedKind === 'burrow') || (interaction.customId === 'dispose-trample' && serverData.blockedEntranceObject.blockedKind === 'tree trunk') || (interaction.customId === 'dispose-push' && serverData.blockedEntranceObject.blockedKind === 'boulder')) {
 
 			if (profileData.rank === 'Apprentice' && pullFromWeightedTable({ 0: 50, 1: 50 + profileData.saplingObject.waterCycles }) === 0) {
 
@@ -178,6 +176,7 @@ module.exports = {
 							description: `*${profileData.name} wasn't strong enough and has to try again!* PLACEHOLDER`,
 							footer: { text: footerStats },
 						}],
+						components: [],
 						failIfNotExists: false,
 					})
 					.catch((error) => {
@@ -186,6 +185,15 @@ module.exports = {
 						}
 					});
 			}
+
+			const experiencePoints = profileData.rank == 'Elderly' ? generateRandomNumber(41, 20) : profileData.rank == 'Hunter' ? generateRandomNumber(21, 10) : generateRandomNumber(11, 5);
+
+			profileData = await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $inc: { experience: +experiencePoints } },
+			);
+
+			footerStats = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n` + footerStats;
 
 			await serverModel.findOneAndUpdate(
 				{ serverId: message.guild.id },
@@ -201,6 +209,7 @@ module.exports = {
 						description: `*${profileData.name} is successful!* PLACEHOLDER`,
 						footer: { text: footerStats },
 					}],
+					components: [],
 					failIfNotExists: false,
 				})
 				.catch((error) => {
@@ -218,7 +227,9 @@ module.exports = {
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
 						description: `*${profileData.name} is unsuccessful!* PLACEHOLDER`,
+						footer: { text: footerStats },
 					}],
+					components: [],
 					failIfNotExists: false,
 				})
 				.catch((error) => {

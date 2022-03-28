@@ -16,13 +16,18 @@ module.exports = {
 		profileData = await startCooldown(message, profileData);
 
 		if (!argumentsArray.length) {
+
+			await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $set: { description: '' } },
+			);
+
 			return await message
 				.reply({
 					embeds: [{
 						color: config.default_color,
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						title: 'Tell us more about your character! Here is how to use the command:',
-						description: '\n\nrp desc [description]\nReplace [description] with your text.',
+						title: 'Your description has been reset!',
 					}],
 					failIfNotExists: false,
 				})
@@ -36,7 +41,7 @@ module.exports = {
 		const description = argumentsArray.join(' ');
 		await profileModel.findOneAndUpdate(
 			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { description: `${description}` } },
+			{ $set: { description: description } },
 		);
 
 		return await message
@@ -45,7 +50,7 @@ module.exports = {
 					color: profileData.color,
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: `Description for ${profileData.name} set:`,
-					description: `${description}`,
+					description: description,
 				}],
 				failIfNotExists: false,
 			})

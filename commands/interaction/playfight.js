@@ -866,7 +866,7 @@ async function executeWin(componentArray, message, profileData, serverData, part
 	let { embedFooterStatsTextPlayer1, embedFooterStatsTextPlayer2 } = await decreaseStats(message, profileData, partnerProfileData);
 
 	const x = (otherProfileData.levels - currentProfileData.levels < 0) ? 0 : otherProfileData.levels - currentProfileData.levels;
-	const extraExperience = Math.round((40 / (1 + Math.pow(Math.E, -0.125 * x))) - 20);
+	const extraExperience = Math.round((80 / (1 + Math.pow(Math.E, -0.09375 * x))) - 40);
 	const experiencePoints = generateRandomNumber(11, 10) + extraExperience;
 
 	if (currentProfileData.userId === profileData.userId) {
@@ -884,8 +884,7 @@ async function executeWin(componentArray, message, profileData, serverData, part
 	);
 
 	let getHurtText = '';
-	const betterLuckValue = (otherProfileData.levels - 1) * 2;
-	const getHurtChance = pullFromWeightedTable({ 0: 10, 1: 90 + betterLuckValue });
+	const getHurtChance = pullFromWeightedTable({ 0: 10, 1: 90 + otherProfileData.saplingObject.waterCycles });
 	if (getHurtChance == 0) {
 
 		let healthPoints = generateRandomNumber(5, 3);

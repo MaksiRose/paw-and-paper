@@ -3,8 +3,8 @@ const serverModel = require('../../models/serverModel');
 const { createCommandCollector } = require('../../utils/commandCollector');
 
 module.exports = {
-	name: 'shopdelete',
-	aliases: ['shopremove'],
+	name: 'shopremove',
+	aliases: ['shopdelete'],
 	async sendMessage(client, message, argumentsArray, profileData, serverData) {
 
 		if (message.member.permissions.has('ADMINISTRATOR') === false) {

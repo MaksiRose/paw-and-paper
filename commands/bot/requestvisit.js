@@ -13,6 +13,24 @@ module.exports = {
 			return;
 		}
 
+		if (serverData.visitChannelId === null) {
+
+			return await message
+				.reply({
+					embeds: [{
+						color: config.error_color,
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+						title: 'Visits are currently turned off! Ask a server admin to turn it on via \'rp allowvisits\'',
+					}],
+					failIfNotExists: false,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
+		}
+
 		if (serverData.currentlyVisiting !== null) {
 
 			return await message
@@ -431,7 +449,7 @@ async function acceptedInvitation(client, botReply, botReply2, serverData, other
 			await otherServerWebhook
 				.send({
 					content: msg.content,
-					username: profile.name,
+					username: `${profile.name} (${msg.guild.name})`,
 					avatarURL: profile.avatarURL,
 				})
 				.catch((error) => {

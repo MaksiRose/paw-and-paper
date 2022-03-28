@@ -329,12 +329,12 @@ module.exports = {
 
 							}
 
-							embed.footer.text = await decreaseStats();
+							embed.footer.text = await decreaseStats(false);
 
 						}
 						else {
 
-							const embedFooterStatsText = await decreaseStats();
+							const embedFooterStatsText = await decreaseStats(true);
 							const chosenUserThirstPoints = generateRandomNumber(10, 1);
 
 							chosenProfileData = await profileModel.findOneAndUpdate(
@@ -549,7 +549,7 @@ module.exports = {
 							isSuccessful = false;
 						}
 
-						const embedFooterStatsText = await decreaseStats();
+						const embedFooterStatsText = await decreaseStats(isSuccessful);
 						const chosenItemName = interaction.values[0];
 
 						if (isSuccessful === true) {
@@ -663,10 +663,10 @@ module.exports = {
 			await interactionCollector();
 		}
 
-		async function decreaseStats() {
+		async function decreaseStats(isSuccessful) {
 
-			const experiencePoints = profileData.rank == 'Elderly' ? generateRandomNumber(41, 20) : profileData.rank == 'Healer' ? generateRandomNumber(21, 10) : generateRandomNumber(11, 5);
-			const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; } (generateRandomNumber(5, 1) + await decreaseEnergy(profileData));
+			const experiencePoints = isSuccessful === false ? 0 : profileData.rank == 'Elderly' ? generateRandomNumber(41, 20) : profileData.rank == 'Healer' ? generateRandomNumber(21, 10) : generateRandomNumber(11, 5);
+			const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(5, 1) + await decreaseEnergy(profileData));
 			const hungerPoints = await decreaseHunger(profileData);
 			const thirstPoints = await decreaseThirst(profileData);
 
@@ -682,7 +682,12 @@ module.exports = {
 				},
 			);
 
-			let footerStats = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
+			let footerStats = `-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
+
+			if (experiencePoints > 0) {
+
+				footerStats = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n` + footerStats;
+			}
 
 			if (hungerPoints >= 1) {
 

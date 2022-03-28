@@ -3,7 +3,7 @@ const { isInvalid } = require('../../utils/checkValidity');
 const startCooldown = require('../../utils/startCooldown');
 const { remindOfAttack } = require('../gameplay/attack');
 const profileModel = require('../../models/profileModel');
-const { pullFromWeightedTable } = require('../../utils/randomizers');
+const { pullFromWeightedTable, generateRandomNumber } = require('../../utils/randomizers');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { pronounAndPlural } = require('../../utils/getPronouns');
 
@@ -65,7 +65,7 @@ module.exports = {
 			saplingObject.waterCycles += 1;
 
 			experiencePoints = saplingObject.waterCycles * 2;
-			healthPoints = pullFromWeightedTable({ 0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6 });
+			healthPoints = pullFromWeightedTable({ 0: 6, 1: 5, 2: 4, 3: 3, 4: 2, 5: 1 }) + generateRandomNumber(Math.round(saplingObject.waterCycles / 4), 0);
 
 			embedArray.push({
 				color: profileData.color,
