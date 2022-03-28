@@ -17,7 +17,7 @@ module.exports = {
 					embeds: [{
 						color: config.error_color,
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						title: 'Please type "rp name [name] to begin setting up your account!',
+						title: 'Please type "rp name [name]" to begin setting up your account!',
 					}],
 					failIfNotExists: false,
 				})
