@@ -41,7 +41,7 @@ module.exports = {
 				embeds: [{
 					color: config.default_color,
 					author: { name: hostChannnel.guild.name, icon_url: hostChannnel.guild.iconURL() },
-					title: 'The visit has ended.',
+					description: `*Hanging out with friends is always nice but has to end eventually. And so the friends from ${message.guild.name} went back to their territory. Until next time.*`,
 				}],
 				failIfNotExists: false,
 			})
@@ -56,7 +56,7 @@ module.exports = {
 				embeds: [{
 					color: config.default_color,
 					author: { name: guestChannnel.guild.name, icon_url: guestChannnel.guild.iconURL() },
-					title: 'The visit has ended.',
+					description: `*Hanging out with friends is always nice but has to end eventually. And so the friends from ${message.guild.name} went back to their territory. Until next time.*`,
 				}],
 				failIfNotExists: false,
 			})

@@ -3,6 +3,7 @@ const serverModel = require('../../models/serverModel');
 const profileModel = require('../../models/profileModel');
 const config = require('../../config.json');
 const { createCommandCollector } = require('../../utils/commandCollector');
+const { pronounAndPlural, pronoun, upperCasePronounAndPlural, upperCasePronoun } = require('../../utils/getPronouns');
 
 module.exports = {
 	name: 'requestvisit',
@@ -62,7 +63,7 @@ module.exports = {
 					embeds: [{
 						color: config.error_color,
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						title: 'There are no packs that are available to visit!',
+						description: `*${profileData.name} really wants to visit some packs in the area but no one there seems to have time. The ${profileData.species} gets back feeling a bit lonely but when ${pronounAndPlural(profileData, 0, 'see')} all ${pronoun(profileData, 2)} packmates having fun at home ${profileData.name} cheers up and joins them excitedly.*`,
 					}],
 					failIfNotExists: false,
 				})
@@ -78,13 +79,12 @@ module.exports = {
 
 		selectMenuOptionsArray = getMenuOptions(visitableServers, packPage, selectMenuOptionsArray);
 
-		// TO DO: replace messages with actual roleplay messages
-		const botReply = await message
+		let botReply = await message
 			.reply({
 				embeds: [{
 					color: config.default_color,
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-					title: 'Please choose a pack that you would like to send a visit request to!',
+					description: `*${profileData.name} is looking to meet some new friends. There are other packs in the area. Who should ${pronoun(profileData, 0)} visit?*`,
 				}],
 				components: [{
 					type: 'ACTION_ROW',
@@ -131,7 +131,7 @@ module.exports = {
 
 			if (interaction.customId === 'visit_cancel') {
 
-				return await declinedInvitation(message, botReply, botReply2);
+				return await declinedInvitation(message, profileData, botReply, botReply2);
 			}
 
 			if (interaction.values[0] == 'visit_page') {
@@ -205,12 +205,14 @@ module.exports = {
 					{ $set: { currentlyVisiting: serverData.serverId } },
 				);
 
-				await botReply
-					.edit({
+				const visitChannel = await client.channels.fetch(serverData.visitChannelId);
+
+				botReply = await visitChannel
+					.send({
 						embeds: [{
 							color: config.default_color,
 							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-							title: `A visitation invite has been sent to ${otherServerData.name}.`,
+							description: `*${profileData.name} strolls over to ${otherServerData.name}. ${upperCasePronounAndPlural(profileData, 0, 'is', 'are')} waiting patiently at the pack borders to be invited in as to not invade the pack's territory without permission.*`,
 							footer: { text: 'The invitation will expire in five minutes. Alternatively, you can cancel it using the button below.' },
 						}],
 						components: [{
@@ -231,13 +233,14 @@ module.exports = {
 
 				interactionCollector();
 
-				const visitChannel = await client.channels.fetch(otherServerData.visitChannelId);
+				const otherVisitChannel = await client.channels.fetch(otherServerData.visitChannelId);
 
-				botReply2 = await visitChannel
+				botReply2 = await otherVisitChannel
 					.send({
 						embeds: [{
 							color: config.default_color,
-							title: `${serverData.name} wants to visit this pack! Do you accept?`,
+							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+							title: `Near the lake a ${profileData.species} is waiting. ${upperCasePronoun(profileData, 0)} came out of the direction where a pack named "${serverData.name}" is lying. ${upperCasePronoun(profileData, 0)} seems to be waiting for permission to cross the pack borders.`,
 							footer: { text: 'The invitation will expire in five minutes. Alternatively, you can decline it using the button below.' },
 						}],
 						components: [{
@@ -245,12 +248,12 @@ module.exports = {
 							components: [{
 								type: 'BUTTON',
 								customId: 'visit_accept',
-								label: 'Accept',
+								label: 'Accept visit',
 								style: 'SUCCESS',
 							}, {
 								type: 'BUTTON',
 								customId: 'visit_decline',
-								label: 'Decline',
+								label: 'Decline visit',
 								style: 'DANGER',
 							}],
 						}],
@@ -262,8 +265,10 @@ module.exports = {
 						}
 					});
 
+				const filter2 = async i => (await profileModel.findOne({ serverId: i.guild.id, userId: i.user.id })) === null ? false : true;
+
 				await botReply2
-					.awaitMessageComponent({ time: 300000 })
+					.awaitMessageComponent({ filter2, time: 300000 })
 					.then(async button => {
 
 						if (button.customId === 'visit_decline') {
@@ -271,13 +276,15 @@ module.exports = {
 							return Promise.reject();
 						}
 
+						const otherProfileData = await profileModel.findOne({ serverId: button.guild.id, userId: button.user.id });
+
 						if (button.customId === 'visit_accept') {
 
-							acceptedInvitation(client, botReply, botReply2, serverData, otherServerData);
+							acceptedInvitation(client, message, botReply, botReply2, serverData, otherServerData, profileData, otherProfileData);
 							return;
 						}
 					})
-					.catch(async () => {return await declinedInvitation(message, botReply, botReply2);});
+					.catch(async () => {return await declinedInvitation(message, profileData, botReply, botReply2);});
 			}
 		}
 	},
@@ -299,7 +306,7 @@ function getMenuOptions(visitableServers, packPage, selectMenuOptionsArray) {
 	return selectMenuOptionsArray;
 }
 
-async function declinedInvitation(message, botReply, botReply2) {
+async function declinedInvitation(message, profileData, botReply, botReply2) {
 
 	await botReply
 		.edit({
@@ -316,7 +323,7 @@ async function declinedInvitation(message, botReply, botReply2) {
 			embeds: [{
 				color: config.default_color,
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-				title: 'The visitation invite has been declined or expired.',
+				description: `*After ${profileData.name} waited for a while, ${pronoun(profileData, 0)} couldn't deal with the boredom and left the borders of ${botReply.guild.name}. The ${profileData.species} gets back feeling a bit lonely but when ${pronounAndPlural(profileData, 0, 'see')} all ${pronoun(profileData, 2)} packmates having fun at home, ${profileData.name} cheers up and joins them excitedly.*`,
 			}],
 			failIfNotExists: false,
 		})
@@ -340,7 +347,8 @@ async function declinedInvitation(message, botReply, botReply2) {
 		.reply({
 			embeds: [{
 				color: config.default_color,
-				title: 'The visitation invite has been declined or expired.',
+				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+				description: `*After the ${profileData.species} waited for a while, the pack members of ${botReply.guild.name} can see them getting up and leaving, probably due to boredom. Everyone is too busy anyways, so it is probably for the best if they come back later.*`,
 			}],
 			failIfNotExists: false,
 		})
@@ -361,7 +369,7 @@ async function declinedInvitation(message, botReply, botReply2) {
 	);
 }
 
-async function acceptedInvitation(client, botReply, botReply2, serverData, otherServerData) {
+async function acceptedInvitation(client, message, botReply, botReply2, serverData, otherServerData, profileData, otherProfileData) {
 
 	await botReply
 		.edit({
@@ -378,7 +386,8 @@ async function acceptedInvitation(client, botReply, botReply2, serverData, other
 			embeds: [{
 				color: config.default_color,
 				author: { name: botReply.guild.name, icon_url: botReply.guild.iconURL() },
-				title: 'The visitation invite has been accepted! You can start talking now.',
+				description: `*After waiting for a bit, a ${otherProfileData.species} comes closer, inviting ${profileData.name} and their packmates in and leading them inside where they can talk to all these new friends.*`,
+				footer: { text: 'Anyone with a completed profile can now send a message in this channel. It will be delivered to the other pack, and vice versa. Type "rp endvisit" to end the visit at any time.' },
 			}],
 			failIfNotExists: false,
 		})
@@ -402,7 +411,9 @@ async function acceptedInvitation(client, botReply, botReply2, serverData, other
 		.reply({
 			embeds: [{
 				color: config.default_color,
-				title: `You have accepted ${serverData.name}! You can start talking to them now.`,
+				author: { name: botReply.guild.name, icon_url: botReply.guild.iconURL() },
+				description: `*${otherProfileData.name} goes to pick up the ${profileData.species} and their packmates from the pack borders. The new friends seem excited to be here and to talk to everyone.*`,
+				footer: { text: 'Anyone with a completed profile can now send a message in this channel. It will be delivered to the other pack, and vice versa. Type "rp endvisit" to end the visit at any time.' },
 			}],
 			failIfNotExists: false,
 		})
@@ -476,7 +487,7 @@ async function acceptedInvitation(client, botReply, botReply2, serverData, other
 						embeds: [{
 							color: config.default_color,
 							author: { name: otherServerChannel.guild.name, icon_url: otherServerChannel.guild.iconURL() },
-							title: 'The visit has ended.',
+							description: `*Hanging out with friends is always nice but has to end eventually. And so the friends from ${message.guild.name} went back to their territory. Until next time.*`,
 						}],
 						failIfNotExists: false,
 					})
@@ -491,7 +502,7 @@ async function acceptedInvitation(client, botReply, botReply2, serverData, other
 						embeds: [{
 							color: config.default_color,
 							author: { name: thisServerChannel.guild.name, icon_url: thisServerChannel.guild.iconURL() },
-							title: 'The visit has ended.',
+							description: `*Hanging out with friends is always nice but has to end eventually. And so the friends from ${message.guild.name} went back to their territory. Until next time.*`,
 						}],
 						failIfNotExists: false,
 					})
