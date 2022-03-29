@@ -1,6 +1,6 @@
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
-const { pronoun } = require('../../utils/getPronouns');
+const { pronoun, pronounAndPlural } = require('../../utils/getPronouns');
 const startCooldown = require('../../utils/startCooldown');
 const { remindOfAttack } = require('../gameplay/attack');
 const serverModel = require('../../models/serverModel');
@@ -173,7 +173,7 @@ module.exports = {
 						embeds: [...embedArray, {
 							color: profileData.color,
 							author: { name: profileData.name, icon_url: profileData.avatarURL },
-							description: `*${profileData.name} wasn't strong enough and has to try again!* PLACEHOLDER`,
+							description: `*${profileData.name} gasps and pants as ${pronounAndPlural(profileData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntranceObject.blockedKind}. All ${pronoun(profileData, 1)} strength might only barely be enough to clear the blockage. The ${profileData.species} should collect ${pronoun(profileData, 4)} for a moment, and then try again...*`,
 							footer: { text: footerStats },
 						}],
 						components: [],
@@ -206,7 +206,7 @@ module.exports = {
 					embeds: [...embedArray, {
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
-						description: `*${profileData.name} is successful!* PLACEHOLDER`,
+						description: `*${profileData.name} gasps and pants as ${pronounAndPlural(profileData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntranceObject.blockedKind}. All ${pronoun(profileData, 1)} strength is needed, but ${pronounAndPlural(profileData, 0, 'is', 'are')} able to successfully clear the blockage. The ${serverData.blockedEntranceObject.den} can be used again!*`,
 						footer: { text: footerStats },
 					}],
 					components: [],
@@ -226,7 +226,7 @@ module.exports = {
 					embeds: [...embedArray, {
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
-						description: `*${profileData.name} is unsuccessful!* PLACEHOLDER`,
+						description: `*${profileData.name} gasps and pants as ${pronounAndPlural(profileData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntranceObject.blockedKind}. But ${pronoun(profileData, 1)} attempts don't seem to leave any lasting impact. Maybe the ${profileData.species} is going about this the wrong way.*`,
 						footer: { text: footerStats },
 					}],
 					components: [],
