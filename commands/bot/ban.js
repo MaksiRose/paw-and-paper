@@ -22,8 +22,18 @@ module.exports = {
 			bannedList.usersArray.push(id);
 			fs.writeFileSync('./database/bannedList.json', JSON.stringify(bannedList, null, '\t'));
 
-			const profiles = profileModel.find({ userId: id });
-			const otherProfiles = otherProfileModel.find({ userId: id });
+			const profiles = await profileModel.find({ userId: id });
+			const otherProfiles = await otherProfileModel.find({ userId: id });
+
+			for (const profile of profiles) {
+
+				await profileModel.findOneAndDelete({ userId: profile.userId, serverId: profile.serverId });
+			}
+
+			for (const profile of otherProfiles) {
+
+				await otherProfileModel.findOneAndDelete({ userId: profile.userId, serverId: profile.serverId });
+			}
 
 			if (profiles.length > 0 || otherProfiles.length > 0) {
 
@@ -44,16 +54,6 @@ module.exports = {
 							throw new Error(error);
 						}
 					});
-
-				for (const profile of profiles) {
-
-					await profileModel.findOneAndDelete({ userId: profile.userId, serverId: profile.serverId });
-				}
-
-				for (const profile of otherProfiles) {
-
-					await otherProfileModel.findOneAndDelete({ userId: profile.userId, serverId: profile.serverId });
-				}
 			}
 		}
 
@@ -62,9 +62,21 @@ module.exports = {
 			bannedList.serversArray.push(id);
 			fs.writeFileSync('./database/bannedList.json', JSON.stringify(bannedList, null, '\t'));
 
-			const server = serverModel.find({ serverId: id });
-			const profiles = profileModel.find({ serverId: id });
-			const otherProfiles = otherProfileModel.find({ serverId: id });
+			const server = await serverModel.find({ serverId: id });
+			const profiles = await profileModel.find({ serverId: id });
+			const otherProfiles = await otherProfileModel.find({ serverId: id });
+
+			await serverModel.findOneAndDelete({ serverId: id });
+
+			for (const profile of profiles) {
+
+				await profileModel.findOneAndDelete({ userId: profile.userId, serverId: profile.serverId });
+			}
+
+			for (const profile of otherProfiles) {
+
+				await otherProfileModel.findOneAndDelete({ userId: profile.userId, serverId: profile.serverId });
+			}
 
 			if (server !== null) {
 
@@ -92,18 +104,6 @@ module.exports = {
 					.catch((error) => {
 						throw new Error(error);
 					});
-
-				await serverModel.findOneAndDelete({ serverId: id });
-
-				for (const profile of profiles) {
-
-					await profileModel.findOneAndDelete({ userId: profile.userId, serverId: profile.serverId });
-				}
-
-				for (const profile of otherProfiles) {
-
-					await otherProfileModel.findOneAndDelete({ userId: profile.userId, serverId: profile.serverId });
-				}
 			}
 		}
 	},
