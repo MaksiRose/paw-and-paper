@@ -718,7 +718,7 @@ async function playConnectFour(serverData, profileData, partnerProfileData, mess
 			}
 
 			array.shift();
-			return hasFourInARow(array);
+			return hasFourInARow(array, coordinatesArray);
 		}
 
 		if (hasFourInARow(coindropRow, rowCoords) === true || hasFourInARow(coindropColumn, columnCoords) === true || hasFourInARow(coindropDiagonal1, diagonal1Coords) === true || hasFourInARow(coindropDiagonal2, diagonal2Coords) === true) {

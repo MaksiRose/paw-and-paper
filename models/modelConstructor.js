@@ -85,7 +85,7 @@ class model {
 
 						return true;
 					}
-					else if (compareObject != undefined && compareObject == element) {
+					else if (compareObject !== undefined && compareObject === element) {
 
 						return true;
 					}
