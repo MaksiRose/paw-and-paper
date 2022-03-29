@@ -62,7 +62,7 @@ module.exports = {
 			bannedList.serversArray.push(id);
 			fs.writeFileSync('./database/bannedList.json', JSON.stringify(bannedList, null, '\t'));
 
-			const server = await serverModel.find({ serverId: id });
+			const server = await serverModel.findOne({ serverId: id });
 			const profiles = await profileModel.find({ serverId: id });
 			const otherProfiles = await otherProfileModel.find({ serverId: id });
 
