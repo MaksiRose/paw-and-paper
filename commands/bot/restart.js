@@ -3,6 +3,7 @@ module.exports = {
 	async sendMessage(client, message) {
 
 		if (message.author.id != '268402976844939266') {
+
 			return;
 		}
 

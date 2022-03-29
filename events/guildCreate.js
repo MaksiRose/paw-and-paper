@@ -7,6 +7,37 @@ module.exports = {
 	once: false,
 	async execute(client, guild) {
 
+		const bannedList = JSON.parse(fs.readFileSync('./database/bannedList.json'));
+
+		if (bannedList.serversArray.includes(guild.id)) {
+
+			const user = await client.users.fetch(guild.ownerId);
+
+			await user
+				.createDM()
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
+
+			await user
+				.send({ content: `I am sorry to inform you that your guild \`${guild.name}\` has been banned from using this bot.` })
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
+
+			await guild
+				.leave()
+				.catch((error) => {
+					throw new Error(error);
+				});
+
+			return;
+		}
+
 		const toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
 
 		if (toDeleteList[guild.id] === undefined) {

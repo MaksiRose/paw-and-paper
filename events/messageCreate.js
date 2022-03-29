@@ -1,4 +1,5 @@
 const config = require('../config.json');
+const fs = require('fs');
 const profileModel = require('../models/profileModel');
 const serverModel = require('../models/serverModel');
 const errorHandling = require('../utils/errorHandling');
@@ -25,6 +26,37 @@ module.exports = {
 		});
 
 		if (!serverData) {
+
+			const bannedList = JSON.parse(fs.readFileSync('./database/bannedList.json'));
+
+			if (bannedList.serversArray.includes(message.guild.id)) {
+
+				const user = await client.users.fetch(message.guild.ownerId);
+
+				await user
+					.createDM()
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
+				await user
+					.send({ content: `I am sorry to inform you that your guild \`${message.guild.name}\` has been banned from using this bot.` })
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
+				await message.guild
+					.leave()
+					.catch((error) => {
+						throw new Error(error);
+					});
+
+				return;
+			}
 
 			const serverInventoryObject = {
 				commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, 0])),

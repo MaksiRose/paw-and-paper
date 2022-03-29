@@ -30,6 +30,14 @@ module.exports.start = (token) => {
 		fs.writeFileSync('./database/toDeleteList.json', JSON.stringify({}, null, '\t'));
 	}
 
+	if (fs.existsSync('./database/bannedList.json') == false) {
+
+		fs.writeFileSync('./database/bannedList.json', JSON.stringify({
+			usersArray: [],
+			serversArray: [],
+		}, null, '\t'));
+	}
+
 	require('./handlers/events').execute(client);
 
 	let toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));

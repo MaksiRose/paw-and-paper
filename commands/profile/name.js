@@ -1,4 +1,5 @@
 const config = require('../../config.json');
+const fs = require('fs');
 const profileModel = require('../../models/profileModel');
 const otherProfileModel = require('../../models/otherProfileModel');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
@@ -17,6 +18,31 @@ module.exports = {
 			});
 
 			if (!profileData) {
+
+				const bannedList = JSON.parse(fs.readFileSync('./database/bannedList.json'));
+
+				if (bannedList.usersArray.includes(message.author.id)) {
+
+					const user = await client.users.fetch(message.author.id);
+
+					await user
+						.createDM()
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+
+					await user
+						.send({ content: 'I am sorry to inform you that you have been banned from using this bot.' })
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+
+					return;
+				}
 
 				const profileInventoryObject = {
 					commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, 0])),
