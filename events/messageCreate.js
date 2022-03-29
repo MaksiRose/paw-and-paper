@@ -1,9 +1,11 @@
 const config = require('../config.json');
+const fs = require('fs');
 const profileModel = require('../models/profileModel');
 const serverModel = require('../models/serverModel');
 const errorHandling = require('../utils/errorHandling');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 const { activeCommandsObject } = require('../utils/commandCollector');
+const { isPassedOut } = require('../utils/checkValidity');
 let lastMessageEpochTime = 0;
 const userMap = new Map();
 
@@ -19,16 +21,42 @@ module.exports = {
 			return;
 		}
 
-		let profileData = await profileModel.findOne({
-			userId: message.author.id,
-			serverId: message.guild.id,
-		});
-
 		let serverData = await serverModel.findOne({
 			serverId: message.guild.id,
 		});
 
 		if (!serverData) {
+
+			const bannedList = JSON.parse(fs.readFileSync('./database/bannedList.json'));
+
+			if (bannedList.serversArray.includes(message.guild.id)) {
+
+				const user = await client.users.fetch(message.guild.ownerId);
+
+				await user
+					.createDM()
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
+				await user
+					.send({ content: `I am sorry to inform you that your guild \`${message.guild.name}\` has been banned from using this bot.` })
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
+				await message.guild
+					.leave()
+					.catch((error) => {
+						throw new Error(error);
+					});
+
+				return;
+			}
 
 			const serverInventoryObject = {
 				commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, 0])),
@@ -41,40 +69,34 @@ module.exports = {
 				serverId: message.guild.id,
 				name: message.guild.name,
 				inventoryObject: serverInventoryObject,
+				blockedEntranceObject: { den: null, blockedKind: null },
 				activeUsersArray: [],
 				nextPossibleAttack: Date.now(),
+				visitChannelId: null,
+				currentlyVisiting: null,
+				shop: [],
 			});
 		}
+
+		let profileData = await profileModel.findOne({
+			userId: message.author.id,
+			serverId: message.guild.id,
+		});
 
 		let pingRuins = false;
 		const embedArray = [];
 
 		const argumentsArray = message.content.slice(prefix.length).trim().split(/ +/);
-		const cmd = argumentsArray.shift().toLowerCase();
+		const commandName = argumentsArray.shift().toLowerCase();
 
-		const command = client.commands.get(cmd) || client.commands.find(cmnd => cmnd.aliases && cmnd.aliases.includes(cmd));
+		const command = client.commands[commandName] || client.commands[Object.keys(client.commands).find(cmnd => client.commands[cmnd].aliases !== undefined && client.commands[cmnd].aliases.includes(commandName))];
 
-		if (!command) {
-
-			await message
-				.reply({
-					embeds: [{
-						title: 'This command doesn\'t exist!',
-						description: 'Please check \'rp help\' to review your options.',
-					}],
-				})
-				.catch(async (error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-
-			console.log(`\x1b[32m${message.author.tag}\x1b[0m unsuccessfully tried to execute \x1b[33m${message.content} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+		if (command === undefined) {
 
 			return;
 		}
 
-		if (command == 'say') {
+		if (command.name === 'say') {
 
 			if (profileData.currentRegion == 'ruins') {
 
@@ -132,11 +154,14 @@ module.exports = {
 			userMap.get('nr' + message.author.id + message.guild.id).activeCommands += 1;
 			userMap.get('nr' + message.author.id + message.guild.id).activityTimeout = setTimeout(removeActiveUser, 300000);
 
-			await message.channel
-				.sendTyping()
-				.catch(async (error) => {
-					return await errorHandling.output(message, error);
-				});
+			if (command.name !== 'say') {
+
+				await message.channel
+					.sendTyping()
+					.catch(async (error) => {
+						return await errorHandling.output(message, error);
+					});
+			}
 
 			await command
 				.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray, pingRuins)
@@ -181,7 +206,7 @@ module.exports = {
 				serverId: message.guild.id,
 			});
 
-			if (profileData && profileData.isResting == false && profileData.energy < profileData.maxEnergy) {
+			if (await isPassedOut(message, profileData, false) === false && profileData && profileData.isResting == false && profileData.energy < profileData.maxEnergy) {
 
 				message.content = `${config.prefix}rest`;
 

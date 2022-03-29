@@ -2,6 +2,8 @@ const profileModel = require('../models/profileModel');
 const config = require('../config.json');
 const { stopResting } = require('./executeResting');
 const { decreaseLevel } = require('./levelHandling');
+const { pronounAndPlural, pronoun, upperCasePronoun } = require('./getPronouns');
+const { passingoutAdvice } = require('./adviceMessages');
 
 module.exports = {
 
@@ -14,8 +16,9 @@ module.exports = {
 					embeds: [{
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
-						description: `*${profileData.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${profileData.pronounArray[0]} screech${(profileData.pronounArray[5] == 'singular') ? 'es' : ''} with ${profileData.pronounArray[2]} last energy. Without help, ${profileData.pronounArray[0]} will not be able to continue.*`,
+						description: `*${profileData.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${pronounAndPlural(profileData, 0, 'screeches', 'screech')} with ${pronoun(profileData, 2)} last energy. Without help, ${pronoun(profileData, 0)} will not be able to continue.*`,
 					}],
+					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
@@ -27,6 +30,8 @@ module.exports = {
 
 				decreaseLevel(profileData, botReply);
 			}
+
+			await passingoutAdvice(message, profileData);
 
 			return true;
 		}
@@ -45,8 +50,9 @@ module.exports = {
 					embeds: [{
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
-						description: `*${profileData.name} is so eager to get things done today that ${profileData.pronounArray[0]} ${(profileData.pronounArray[5] == 'singular') ? 'is' : 'are'} somersaulting. ${profileData.pronounArray[0].charAt(0).toUpperCase()}${profileData.pronounArray[0].slice(1)} should probably take a few seconds to calm down.*`,
+						description: `*${profileData.name} is so eager to get things done today that ${pronounAndPlural(profileData, 0, 'is', 'are')} somersaulting. ${upperCasePronoun(profileData, 0)} should probably take a few seconds to calm down.*`,
 					}],
+					failIfNotExists: false,
 				})
 				.then(reply => {
 					setTimeout(async function() {
@@ -86,7 +92,7 @@ module.exports = {
 			embedArray.unshift({
 				color: profileData.color,
 				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*${profileData.name} opens ${profileData.pronounArray[2]} eyes, blinking at the bright sun. After a long stretch, ${profileData.pronounArray[0]} leave${(profileData.pronounArray[5] == 'singular') ? 's' : ''} ${profileData.pronounArray[2]} den to continue ${profileData.pronounArray[2]} day.*`,
+				description: `*${profileData.name} opens ${pronoun(profileData, 2)} eyes, blinking at the bright sun. After a long stretch, ${pronounAndPlural(profileData, 0, 'leave')} ${pronoun(profileData, 2)} den to continue ${pronoun(profileData, 2)} day.*`,
 				footer: { text: `Current energy: ${profileData.energy}` },
 			});
 		}

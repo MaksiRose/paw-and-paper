@@ -1,5 +1,6 @@
 const restingTimeoutMap = new Map();
 const profileModel = require('../models/profileModel');
+const { pronounAndPlural } = require('./getPronouns');
 
 module.exports = {
 
@@ -59,11 +60,12 @@ module.exports = {
 						embeds: [{
 							color: profileData.color,
 							author: { name: profileData.name, icon_url: profileData.avatarURL },
-							description: `*${profileData.name}'s eyes blink open, ${profileData.pronounArray[0]} sit${(profileData.pronounArray[5]) == 'singular' ? 's' : ''} up to stretch and then walk out into the light and buzz of late morning camp. Younglings are spilling out of the nursery, ambitious to start the day, Hunters and Healers are traveling in and out of the camp border. It is the start of the next good day!*`,
+							description: `*${profileData.name}'s eyes blink open, ${pronounAndPlural(profileData, 0, 'sit')} up to stretch and then walk out into the light and buzz of late morning camp. Younglings are spilling out of the nursery, ambitious to start the day, Hunters and Healers are traveling in and out of the camp border. It is the start of the next good day!*`,
 						}],
 						allowedMentions: {
 							repliedUser: true,
 						},
+						failIfNotExists: false,
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) {

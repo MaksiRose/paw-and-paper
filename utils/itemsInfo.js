@@ -698,7 +698,7 @@ speciesMap.set('cougar', {
 	name: 'cougar',
 	diet: 'carnivore',
 	habitat: 'cold',
-	biome1OpponentArray: ['deer', 'goal'],
+	biome1OpponentArray: ['deer', 'goat'],
 	biome2OpponentArray: ['elk', 'coyote'],
 	biome3OpponentArray: ['bear', 'wolf'],
 });

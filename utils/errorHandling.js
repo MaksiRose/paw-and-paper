@@ -19,6 +19,7 @@ module.exports = {
 						style: 'SUCCESS',
 					}],
 				}],
+				failIfNotExists: false,
 			})
 			.catch((newError) => {
 				if (newError.httpStatus !== 404) {

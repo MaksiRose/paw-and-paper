@@ -1,5 +1,4 @@
 const Discord = require('discord.js');
-const config = require('./config.json');
 const fs = require('fs');
 
 const client = new Discord.Client({
@@ -14,43 +13,57 @@ const client = new Discord.Client({
 	},
 });
 
-client.commands = new Discord.Collection();
+client.commands = {};
 
 module.exports.client = client;
+module.exports.start = (token) => {
 
-if (fs.existsSync('./database/noUpdatesUserList.json') == false) {
+	if (fs.existsSync('./database/noUpdatesUserList.json') == false) {
 
-	fs.writeFileSync('./database/noUpdatesUserList.json', JSON.stringify({
-		usersArray: [],
-	}, null, '\t'));
-}
+		fs.writeFileSync('./database/noUpdatesUserList.json', JSON.stringify({
+			usersArray: [],
+		}, null, '\t'));
+	}
 
-if (fs.existsSync('./database/toDeleteList.json') == false) {
+	if (fs.existsSync('./database/toDeleteList.json') == false) {
 
-	fs.writeFileSync('./database/toDeleteList.json', JSON.stringify({}, null, '\t'));
-}
+		fs.writeFileSync('./database/toDeleteList.json', JSON.stringify({}, null, '\t'));
+	}
 
-for (const file of fs.readdirSync('./handlers/')) {
+	if (fs.existsSync('./database/bannedList.json') == false) {
 
-	require(`./handlers/${file}`).execute(client);
-}
+		fs.writeFileSync('./database/bannedList.json', JSON.stringify({
+			usersArray: [],
+			serversArray: [],
+		}, null, '\t'));
+	}
 
-const toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
+	require('./handlers/events').execute(client);
 
-for (const [id, object] of Object.entries(toDeleteList)) {
+	let toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
 
-	setTimeout(async () => {
+	for (const [id, object] of Object.entries(toDeleteList)) {
 
-		if (fs.existsSync(`./database/toDelete/${object.fileName}`) == true) {
+		setTimeout(async () => {
 
-			const dataObject = JSON.parse(fs.readFileSync(`./database/toDelete/${object.fileName}`));
-			fs.unlinkSync(`./database/toDelete/${object.fileName}`);
-			console.log('Deleted File: ', dataObject);
+			if (fs.existsSync(`./database/toDelete/${object.fileName}`) == true) {
 
-			delete toDeleteList[id];
-			fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
-		}
-	}, object.deletionTimestamp - Date.now());
-}
+				const dataObject = JSON.parse(fs.readFileSync(`./database/toDelete/${object.fileName}`));
+				fs.unlinkSync(`./database/toDelete/${object.fileName}`);
+				console.log('Deleted File: ', dataObject);
 
-client.login(config.token);
+				toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
+
+				delete toDeleteList[id][dataObject.name];
+				if (Object.entries(toDeleteList[id]).length === 0) {
+
+					delete toDeleteList[id];
+				}
+
+				fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
+			}
+		}, object.deletionTimestamp - Date.now());
+	}
+
+	client.login(token);
+};

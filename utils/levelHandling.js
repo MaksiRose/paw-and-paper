@@ -1,8 +1,10 @@
 const profileModel = require('../models/profileModel');
+const { checkLevelRequirements } = require('./checkRoleRequirements');
+const { upperCasePronounAndPlural } = require('./getPronouns');
 
 module.exports = {
 
-	async checkLevelUp(profileData, botReply) {
+	async checkLevelUp(message, botReply, profileData, serverData) {
 
 		const requiredExperiencePoints = profileData.levels * 50;
 
@@ -20,12 +22,12 @@ module.exports = {
 
 			const embed = {
 				color: profileData.color,
-				title: `${profileData.name} just leveled up! ${profileData.pronounArray[0].charAt(0).toUpperCase() + profileData.pronounArray[0].slice(1)} ${(profileData.pronounArray[5] == 'singular') ? 'is' : 'are'} now level ${profileData.levels}.`,
+				title: `${profileData.name} just leveled up! ${upperCasePronounAndPlural(profileData, 0, 'is', 'are')} now level ${profileData.levels}.`,
 			};
 
-			botReply.embeds.push(embed);
+			botReply?.embeds.push(embed);
 			await botReply
-				.edit({
+				?.edit({
 					embeds: botReply.embeds,
 				})
 				.catch((error) => {
@@ -33,6 +35,9 @@ module.exports = {
 						throw new Error(error);
 					}
 				});
+
+			botReply = module.exports.checkLevelUp(message, botReply, profileData, serverData);
+			await checkLevelRequirements(serverData, message, profileData.level);
 
 			return botReply;
 		}

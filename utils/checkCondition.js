@@ -1,4 +1,5 @@
 const profileModel = require('../models/profileModel');
+const { pronoun } = require('./getPronouns');
 const { generateRandomNumber, pullFromWeightedTable } = require('./randomizers');
 
 module.exports = {
@@ -130,7 +131,7 @@ module.exports = {
 
 				modifiedUserInjuryObject.cold = false;
 
-				embed.description += `\n*${profileData.name} recovered from ${profileData.pronounArray[2]} cold! What luck!*`;
+				embed.description += `\n*${profileData.name} recovered from ${pronoun(profileData, 2)} cold! What luck!*`;
 			}
 			else {
 
@@ -166,7 +167,7 @@ module.exports = {
 
 				modifiedUserInjuryObject.poison = false;
 
-				embed.description += `\n*${profileData.name} recovered from ${profileData.pronounArray[2]} poisoning! What luck!*`;
+				embed.description += `\n*${profileData.name} recovered from ${pronoun(profileData, 2)} poisoning! What luck!*`;
 			}
 			else {
 
