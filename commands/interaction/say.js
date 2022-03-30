@@ -94,6 +94,17 @@ module.exports = {
 			}
 		}
 
+		console.log(message.reference);
+		if (message.reference !== null) {
+
+			const referencedMessage = await message.channel.messages.fetch(message.reference.messageId);
+
+			const mention = `\n${referencedMessage.author.toString()} [jump](https://discord.com/channels/${referencedMessage.guild.id}/${referencedMessage.channel.id}/${referencedMessage.id})\n`;
+			const extraContent = referencedMessage.content.split('\n').map(line => `> ${line}`).join('\n').substring(0, 2000 - mention.length - userText.length);
+
+			userText = extraContent + mention + userText;
+		}
+
 		return await webHook
 			.send({
 				content: userText,
