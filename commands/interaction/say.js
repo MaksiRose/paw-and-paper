@@ -3,6 +3,7 @@ const config = require('../../config.json');
 const startCooldown = require('../../utils/startCooldown');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
+const webhookCache = require('../../utils/webhookCache');
 
 module.exports = {
 	name: 'say',
@@ -94,10 +95,22 @@ module.exports = {
 			}
 		}
 
-		console.log(message.reference);
 		if (message.reference !== null) {
 
 			const referencedMessage = await message.channel.messages.fetch(message.reference.messageId);
+
+			if (referencedMessage.content.includes('[jump]')) {
+
+				referencedMessage.content = referencedMessage.content.split('\n');
+				referencedMessage.content.splice(0, referencedMessage.content.findIndex(line => line.includes('[jump]')) + 1);
+				referencedMessage.content = referencedMessage.content.join('\n');
+			}
+
+			if (webhookCache.has(referencedMessage.id) === true) {
+
+				const user = await client.users.fetch(webhookCache.get(referencedMessage.id));
+				referencedMessage.author = user;
+			}
 
 			const mention = `\n${referencedMessage.author.toString()} [jump](https://discord.com/channels/${referencedMessage.guild.id}/${referencedMessage.channel.id}/${referencedMessage.id})\n`;
 			const extraContent = referencedMessage.content.split('\n').map(line => `> ${line}`).join('\n').substring(0, 2000 - mention.length - userText.length);
@@ -105,7 +118,7 @@ module.exports = {
 			userText = extraContent + mention + userText;
 		}
 
-		return await webHook
+		const botMessage = await webHook
 			.send({
 				content: userText,
 				username: profileData.name,
@@ -114,5 +127,7 @@ module.exports = {
 			.catch((error) => {
 				throw new Error(error);
 			});
+
+		webhookCache.set(botMessage.id, message.author.id);
 	},
 };
