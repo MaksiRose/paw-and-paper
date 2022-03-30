@@ -607,7 +607,7 @@ module.exports = {
 
 							if (userSpeciesMap.habitat == 'cold') {
 
-								embed.description = `*${profileData.name} plots around the forest, dashing from tree to tree, inspecting every corner for something ${profileData.pronoun(profileData, 0)} could add to the inventory. Suddenly, the ${profileData.species} sways, feeling tired and feeble. A coughing fit grew louder, escaping ${pronoun(profileData, 2)} throat.*`;
+								embed.description = `*${profileData.name} plots around the forest, dashing from tree to tree, inspecting every corner for something ${pronoun(profileData, 0)} could add to the inventory. Suddenly, the ${profileData.species} sways, feeling tired and feeble. A coughing fit grew louder, escaping ${pronoun(profileData, 2)} throat.*`;
 							}
 
 							if (userSpeciesMap.habitat == 'water') {

@@ -43,8 +43,8 @@ module.exports = {
 	},
 	upperCasePronounAndPlural(profileData, pronounNumber, extraWord1, extraWord2) {
 
-		const pronoun = module.exports.upperCasePronoun(profileData, pronounNumber);
 		const normalPronoun = module.exports.pronoun(profileData, pronounNumber);
+		const pronoun = normalPronoun.charAt(0).toUpperCase() + normalPronoun.slice(1);
 
 		if (extraWord2 === undefined) {
 

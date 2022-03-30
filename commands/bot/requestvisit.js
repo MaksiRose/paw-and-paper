@@ -3,6 +3,7 @@ const serverModel = require('../../models/serverModel');
 const profileModel = require('../../models/profileModel');
 const config = require('../../config.json');
 const { pronounAndPlural, pronoun, upperCasePronounAndPlural, upperCasePronoun } = require('../../utils/getPronouns');
+const fs = require('fs');
 
 module.exports = {
 	name: 'requestvisit',
@@ -203,13 +204,24 @@ module.exports = {
 					{ $set: { currentlyVisiting: serverDataV.serverId } },
 				);
 
+				await botReplyV
+					.edit({
+						components: [],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
 				const visitChannelV = await client.channels.fetch(serverDataV.visitChannelId);
+				const visitChannelH = await client.channels.fetch(serverDataH.visitChannelId);
 
 				botReplyV = await visitChannelV
 					.send({
 						embeds: [{
 							color: config.default_color,
-							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+							author: { name: visitChannelH.guild.name, icon_url: visitChannelH.guild.iconURL() },
 							description: `*${profileDataV.name} strolls over to ${serverDataH.name}. ${upperCasePronounAndPlural(profileDataV, 0, 'is', 'are')} waiting patiently at the pack borders to be invited in as to not invade the pack's territory without permission.*`,
 							footer: { text: 'The invitation will expire in five minutes. Alternatively, you can cancel it using the button below.' },
 						}],
@@ -230,8 +242,6 @@ module.exports = {
 					});
 
 				interactionCollector();
-
-				const visitChannelH = await client.channels.fetch(serverDataH.visitChannelId);
 
 				botReplyH = await visitChannelH
 					.send({
@@ -320,7 +330,7 @@ async function declinedInvitation(message, profileData, botReplyV, botReplyH) {
 		.reply({
 			embeds: [{
 				color: config.default_color,
-				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+				author: { name: botReplyH.guild.name, icon_url: botReplyH.guild.iconURL() },
 				description: `*After ${profileData.name} waited for a while, ${pronoun(profileData, 0)} couldn't deal with the boredom and left the borders of ${botReplyV.guild.name}. The ${profileData.species} gets back feeling a bit lonely but when ${pronounAndPlural(profileData, 0, 'see')} all ${pronoun(profileData, 2)} packmates having fun at home, ${profileData.name} cheers up and joins them excitedly.*`,
 			}],
 			failIfNotExists: false,
@@ -383,7 +393,7 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 		.reply({
 			embeds: [{
 				color: config.default_color,
-				author: { name: botReplyV.guild.name, icon_url: botReplyV.guild.iconURL() },
+				author: { name: botReplyH.guild.name, icon_url: botReplyH.guild.iconURL() },
 				description: `*After waiting for a bit, a ${profileDataH.species} comes closer, inviting ${profileDataV.name} and their packmates in and leading them inside where they can talk to all these new friends.*`,
 				footer: { text: 'Anyone with a completed profile can now send a message in this channel. It will be delivered to the other pack, and vice versa. Type "rp endvisit" to end the visit at any time.' },
 			}],
@@ -421,7 +431,7 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 			}
 		});
 
-	const filter = async m => m.content.startsWith(config.prefix) === false && (await profileModel.findOne({ serverId: m.guild.id, userId: m.author.id })) === null ? false : true;
+	const filter = async m => m.content.startsWith(config.prefix) === false && (await profileModel.findOne({ serverId: m.guild.id, userId: m.author.id })) !== null;
 
 	const hostChannel = await client.channels.fetch(serverDataH.visitChannelId);
 	const guestChannel = await client.channels.fetch(serverDataV.visitChannelId);
@@ -453,19 +463,55 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 
 		collector.on('collect', async msg => {
 
-			const profile = await profileModel.findOne({ serverId: msg.guild.id, userId: msg.author.id });
+			const server = await serverModel.findOne(
+				{ serverId: msg.guild.id },
+			);
 
-			await otherServerWebhook
+			if (server.currentlyVisiting === null) {
+
+				return collector.stop();
+			}
+
+			const profile = await profileModel.findOne({ serverId: msg.guild.id, userId: msg.author.id });
+			const webhookCache = JSON.parse(fs.readFileSync('./database/webhookCache.json'));
+			let embeds = undefined;
+
+			if (msg.reference !== null) {
+
+				const referencedMessage = await msg.channel.messages.fetch(msg.reference.messageId);
+
+				if (webhookCache[referencedMessage.id] !== undefined) {
+
+					const user = await client.users.fetch(webhookCache[referencedMessage.id]);
+					referencedMessage.author = user;
+				}
+
+				embeds = [{
+					author: { name: referencedMessage.member.displayName, icon_url: referencedMessage.member.displayAvatarURL() },
+					color: referencedMessage.member.displayHexColor,
+					description: referencedMessage.content,
+				}];
+			}
+
+			const botMessage = await otherServerWebhook
 				.send({
-					content: msg.content,
 					username: `${profile.name} (${msg.guild.name})`,
 					avatarURL: profile.avatarURL,
+					content: msg.content || undefined,
+					files: Array.from(msg.attachments.values()) || undefined,
+					embeds: embeds,
 				})
 				.catch((error) => {
 					throw new Error(error);
 				});
 
+			webhookCache[botMessage.id] = message.author.id;
+
+			fs.writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
+
 			await msg.react('✅');
+
+			return;
 		});
 
 		collector.on('end', async () => {
