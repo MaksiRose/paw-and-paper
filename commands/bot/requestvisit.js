@@ -453,6 +453,15 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 
 		collector.on('collect', async msg => {
 
+			const server = await serverModel.findOne(
+				{ serverId: msg.guild.id },
+			);
+
+			if (server.currentlyVisiting === null) {
+
+				collector.stop();
+			}
+
 			const profile = await profileModel.findOne({ serverId: msg.guild.id, userId: msg.author.id });
 
 			await otherServerWebhook
