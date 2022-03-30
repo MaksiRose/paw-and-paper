@@ -306,6 +306,7 @@ module.exports = {
 
 			const taggedProfileData = await profileModel.findOne({
 				userId: message.mentions.users.first().id,
+				serverId: message.guild.id,
 			});
 
 			if (taggedProfileData) {
