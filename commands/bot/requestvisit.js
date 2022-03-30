@@ -3,6 +3,7 @@ const serverModel = require('../../models/serverModel');
 const profileModel = require('../../models/profileModel');
 const config = require('../../config.json');
 const { pronounAndPlural, pronoun, upperCasePronounAndPlural, upperCasePronoun } = require('../../utils/getPronouns');
+const fs = require('fs');
 
 module.exports = {
 	name: 'requestvisit',
@@ -472,19 +473,45 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 			}
 
 			const profile = await profileModel.findOne({ serverId: msg.guild.id, userId: msg.author.id });
+			const webhookCache = JSON.parse(fs.readFileSync('./database/webhookCache.json'));
+			let embeds = undefined;
 
-			await otherServerWebhook
+			if (msg.reference !== null) {
+
+				const referencedMessage = await msg.channel.messages.fetch(msg.reference.messageId);
+
+				if (webhookCache[referencedMessage.id] !== undefined) {
+
+					const user = await client.users.fetch(webhookCache[referencedMessage.id]);
+					referencedMessage.author = user;
+				}
+
+				embeds = [{
+					author: { name: referencedMessage.member.displayName, icon_url: referencedMessage.member.displayAvatarURL() },
+					color: referencedMessage.member.displayHexColor,
+					description: referencedMessage.content,
+				}];
+			}
+
+			const botMessage = await otherServerWebhook
 				.send({
-					content: msg.content || undefined,
-					files: Array.from(msg.attachments.values()) || undefined,
 					username: `${profile.name} (${msg.guild.name})`,
 					avatarURL: profile.avatarURL,
+					content: msg.content || undefined,
+					files: Array.from(msg.attachments.values()) || undefined,
+					embeds: embeds,
 				})
 				.catch((error) => {
 					throw new Error(error);
 				});
 
+			webhookCache[botMessage.id] = message.author.id;
+
+			fs.writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
+
 			await msg.react('✅');
+
+			return;
 		});
 
 		collector.on('end', async () => {

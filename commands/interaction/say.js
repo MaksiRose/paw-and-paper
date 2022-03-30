@@ -3,6 +3,7 @@ const config = require('../../config.json');
 const startCooldown = require('../../utils/startCooldown');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
+const fs = require('fs');
 
 module.exports = {
 	name: 'say',
@@ -94,14 +95,42 @@ module.exports = {
 			}
 		}
 
-		return await webHook
+		const webhookCache = JSON.parse(fs.readFileSync('./database/webhookCache.json'));
+		let embeds = undefined;
+
+		if (message.reference !== null) {
+
+			const referencedMessage = await message.channel.messages.fetch(message.reference.messageId);
+
+			if (webhookCache[referencedMessage.id] !== undefined) {
+
+				const user = await client.users.fetch(webhookCache[referencedMessage.id]);
+				referencedMessage.author = user;
+			}
+
+			embeds = [{
+				author: { name: referencedMessage.member.displayName, icon_url: referencedMessage.member.displayAvatarURL() },
+				color: referencedMessage.member.displayColor,
+				description: referencedMessage.content,
+			}];
+		}
+
+		const botMessage = await webHook
 			.send({
-				content: userText,
-				username: profileData.name,
+				username: `${profileData.name} (${message.author.tag})`,
 				avatarURL: profileData.avatarURL,
+				content: userText || undefined,
+				files: Array.from(message.attachments.values()) || undefined,
+				embeds: embeds,
 			})
 			.catch((error) => {
 				throw new Error(error);
 			});
+
+		webhookCache[botMessage.id] = message.author.id;
+
+		fs.writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
+
+		return;
 	},
 };

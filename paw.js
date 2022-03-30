@@ -18,6 +18,14 @@ client.commands = {};
 module.exports.client = client;
 module.exports.start = (token) => {
 
+	if (fs.existsSync('./database/bannedList.json') == false) {
+
+		fs.writeFileSync('./database/bannedList.json', JSON.stringify({
+			usersArray: [],
+			serversArray: [],
+		}, null, '\t'));
+	}
+
 	if (fs.existsSync('./database/noUpdatesUserList.json') == false) {
 
 		fs.writeFileSync('./database/noUpdatesUserList.json', JSON.stringify({
@@ -30,12 +38,9 @@ module.exports.start = (token) => {
 		fs.writeFileSync('./database/toDeleteList.json', JSON.stringify({}, null, '\t'));
 	}
 
-	if (fs.existsSync('./database/bannedList.json') == false) {
+	if (fs.existsSync('./database/webhookCache.json') == false) {
 
-		fs.writeFileSync('./database/bannedList.json', JSON.stringify({
-			usersArray: [],
-			serversArray: [],
-		}, null, '\t'));
+		fs.writeFileSync('./database/webhookCache.json', JSON.stringify({}, null, '\t'));
 	}
 
 	require('./handlers/events').execute(client);
