@@ -3,7 +3,7 @@ const config = require('../../config.json');
 const startCooldown = require('../../utils/startCooldown');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
-const webhookCache = require('../../utils/webhookCache');
+const fs = require('fs');
 
 module.exports = {
 	name: 'say',
@@ -95,6 +95,8 @@ module.exports = {
 			}
 		}
 
+		const webhookCache = JSON.parse(fs.readFileSync('./database/webhookCache.json'));
+
 		if (message.reference !== null) {
 
 			const referencedMessage = await message.channel.messages.fetch(message.reference.messageId);
@@ -106,9 +108,9 @@ module.exports = {
 				referencedMessage.content = referencedMessage.content.join('\n');
 			}
 
-			if (webhookCache.has(referencedMessage.id) === true) {
+			if (webhookCache[referencedMessage.id] !== undefined) {
 
-				const user = await client.users.fetch(webhookCache.get(referencedMessage.id));
+				const user = await client.users.fetch(webhookCache[referencedMessage.id]);
 				referencedMessage.author = user;
 			}
 
@@ -128,6 +130,10 @@ module.exports = {
 				throw new Error(error);
 			});
 
-		webhookCache.set(botMessage.id, message.author.id);
+		webhookCache[botMessage.id] = message.author.id;
+
+		fs.writeFileSync('.database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
+
+		return;
 	},
 };

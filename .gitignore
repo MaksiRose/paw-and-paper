@@ -1,6 +1,7 @@
 node_modules
 config.json
 .DS_Store
+database/bannedList.json
 database/noUpdatesUserList.json
 database/toDeleteList.json
-database/bannedList.json
+database/webhookCache.json
