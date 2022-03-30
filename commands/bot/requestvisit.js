@@ -421,7 +421,7 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 			}
 		});
 
-	const filter = async m => (await profileModel.findOne({ serverId: m.guild.id, userId: m.author.id })) === null ? false : true;
+	const filter = async m => m.startsWith(config.prefix) === false && (await profileModel.findOne({ serverId: m.guild.id, userId: m.author.id })) === null ? false : true;
 
 	const hostChannel = await client.channels.fetch(serverDataH.visitChannelId);
 	const guestChannel = await client.channels.fetch(serverDataV.visitChannelId);
