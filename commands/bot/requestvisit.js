@@ -205,6 +205,16 @@ module.exports = {
 
 				const visitChannelV = await client.channels.fetch(serverDataV.visitChannelId);
 
+				await botReplyV
+					.edit({
+						components: [],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
 				botReplyV = await visitChannelV
 					.send({
 						embeds: [{
