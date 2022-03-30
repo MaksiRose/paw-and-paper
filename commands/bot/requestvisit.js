@@ -2,19 +2,18 @@ const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion')
 const serverModel = require('../../models/serverModel');
 const profileModel = require('../../models/profileModel');
 const config = require('../../config.json');
-const { createCommandCollector } = require('../../utils/commandCollector');
 const { pronounAndPlural, pronoun, upperCasePronounAndPlural, upperCasePronoun } = require('../../utils/getPronouns');
 
 module.exports = {
 	name: 'requestvisit',
-	async sendMessage(client, message, argumentsArray, profileData, serverData) {
+	async sendMessage(client, message, argumentsArray, profileDataV, serverDataV) {
 
-		if (await hasNotCompletedAccount(message, profileData)) {
+		if (await hasNotCompletedAccount(message, profileDataV)) {
 
 			return;
 		}
 
-		if (serverData.visitChannelId === null) {
+		if (serverDataV.visitChannelId === null) {
 
 			return await message
 				.reply({
@@ -32,7 +31,7 @@ module.exports = {
 				});
 		}
 
-		if (serverData.currentlyVisiting !== null) {
+		if (serverDataV.currentlyVisiting !== null) {
 
 			return await message
 				.reply({
@@ -63,7 +62,7 @@ module.exports = {
 					embeds: [{
 						color: config.error_color,
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						description: `*${profileData.name} really wants to visit some packs in the area but no one there seems to have time. The ${profileData.species} gets back feeling a bit lonely but when ${pronounAndPlural(profileData, 0, 'see')} all ${pronoun(profileData, 2)} packmates having fun at home ${profileData.name} cheers up and joins them excitedly.*`,
+						description: `*${profileDataV.name} really wants to visit some packs in the area but no one there seems to have time. The ${profileDataV.species} gets back feeling a bit lonely but when ${pronounAndPlural(profileDataV, 0, 'see')} all ${pronoun(profileDataV, 2)} packmates having fun at home ${profileDataV.name} cheers up and joins them excitedly.*`,
 					}],
 					failIfNotExists: false,
 				})
@@ -79,12 +78,12 @@ module.exports = {
 
 		selectMenuOptionsArray = getMenuOptions(visitableServers, packPage, selectMenuOptionsArray);
 
-		let botReply = await message
+		let botReplyV = await message
 			.reply({
 				embeds: [{
 					color: config.default_color,
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-					description: `*${profileData.name} is looking to meet some new friends. There are other packs in the area. Who should ${pronoun(profileData, 0)} visit?*`,
+					description: `*${profileDataV.name} is looking to meet some new friends. There are other packs in the area. Who should ${pronoun(profileDataV, 0)} visit?*`,
 				}],
 				components: [{
 					type: 'ACTION_ROW',
@@ -103,22 +102,21 @@ module.exports = {
 				}
 			});
 
-		let botReply2;
+		let botReplyH;
 
-		createCommandCollector(message.author.id, message.guild.id, botReply);
 		interactionCollector();
 
 		async function interactionCollector() {
 
 			const filter = i => i.user.id === message.author.id;
 
-			const interaction = await botReply
+			const interaction = await botReplyV
 				.awaitMessageComponent({ filter, time: 300000 })
 				.catch(() => { return null; });
 
 			if (interaction === null) {
 
-				return await botReply
+				return await botReplyV
 					.edit({
 						components: [],
 					})
@@ -131,7 +129,7 @@ module.exports = {
 
 			if (interaction.customId === 'visit_cancel') {
 
-				return await declinedInvitation(message, profileData, botReply, botReply2);
+				return await declinedInvitation(message, profileDataV, botReplyV, botReplyH);
 			}
 
 			if (interaction.values[0] == 'visit_page') {
@@ -172,15 +170,15 @@ module.exports = {
 
 			if (interaction.values[0].startsWith('visit-')) {
 
-				const visitGuildId = interaction.values[0].split('-')[1];
+				const hostGuildId = interaction.values[0].split('-')[1];
 
-				let otherServerData = await serverModel.findOne(
-					{ serverId: visitGuildId },
+				let serverDataH = await serverModel.findOne(
+					{ serverId: hostGuildId },
 				);
 
-				if (otherServerData === null || otherServerData.currentlyVisiting !== null) {
+				if (serverDataH === null || serverDataH.visitChannelId === null || serverDataH.currentlyVisiting !== null) {
 
-					return await botReply
+					return await botReplyV
 						.edit({
 							embeds: [{
 								color: config.error_color,
@@ -195,24 +193,24 @@ module.exports = {
 						});
 				}
 
-				serverData = await serverModel.findOneAndUpdate(
-					{ serverId: serverData.serverId },
-					{ $set: { currentlyVisiting: otherServerData.serverId } },
+				serverDataV = await serverModel.findOneAndUpdate(
+					{ serverId: serverDataV.serverId },
+					{ $set: { currentlyVisiting: serverDataH.serverId } },
 				);
 
-				otherServerData = await serverModel.findOneAndUpdate(
-					{ serverId: otherServerData.serverId },
-					{ $set: { currentlyVisiting: serverData.serverId } },
+				serverDataH = await serverModel.findOneAndUpdate(
+					{ serverId: serverDataH.serverId },
+					{ $set: { currentlyVisiting: serverDataV.serverId } },
 				);
 
-				const visitChannel = await client.channels.fetch(serverData.visitChannelId);
+				const visitChannelV = await client.channels.fetch(serverDataV.visitChannelId);
 
-				botReply = await visitChannel
+				botReplyV = await visitChannelV
 					.send({
 						embeds: [{
 							color: config.default_color,
 							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-							description: `*${profileData.name} strolls over to ${otherServerData.name}. ${upperCasePronounAndPlural(profileData, 0, 'is', 'are')} waiting patiently at the pack borders to be invited in as to not invade the pack's territory without permission.*`,
+							description: `*${profileDataV.name} strolls over to ${serverDataH.name}. ${upperCasePronounAndPlural(profileDataV, 0, 'is', 'are')} waiting patiently at the pack borders to be invited in as to not invade the pack's territory without permission.*`,
 							footer: { text: 'The invitation will expire in five minutes. Alternatively, you can cancel it using the button below.' },
 						}],
 						components: [{
@@ -233,14 +231,14 @@ module.exports = {
 
 				interactionCollector();
 
-				const otherVisitChannel = await client.channels.fetch(otherServerData.visitChannelId);
+				const visitChannelH = await client.channels.fetch(serverDataH.visitChannelId);
 
-				botReply2 = await otherVisitChannel
+				botReplyH = await visitChannelH
 					.send({
 						embeds: [{
 							color: config.default_color,
 							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-							title: `Near the lake a ${profileData.species} is waiting. ${upperCasePronoun(profileData, 0)} came out of the direction where a pack named "${serverData.name}" is lying. ${upperCasePronoun(profileData, 0)} seems to be waiting for permission to cross the pack borders.`,
+							title: `Near the lake a ${profileDataV.species} is waiting. ${upperCasePronoun(profileDataV, 0)} came out of the direction where a pack named "${serverDataV.name}" is lying. ${upperCasePronoun(profileDataV, 0)} seems to be waiting for permission to cross the pack borders.`,
 							footer: { text: 'The invitation will expire in five minutes. Alternatively, you can decline it using the button below.' },
 						}],
 						components: [{
@@ -267,7 +265,7 @@ module.exports = {
 
 				const filter2 = async i => (await profileModel.findOne({ serverId: i.guild.id, userId: i.user.id })) === null ? false : true;
 
-				await botReply2
+				await botReplyH
 					.awaitMessageComponent({ filter2, time: 300000 })
 					.then(async button => {
 
@@ -276,15 +274,15 @@ module.exports = {
 							return Promise.reject();
 						}
 
-						const otherProfileData = await profileModel.findOne({ serverId: button.guild.id, userId: button.user.id });
+						const profileDataH = await profileModel.findOne({ serverId: button.guild.id, userId: button.user.id });
 
 						if (button.customId === 'visit_accept') {
 
-							acceptedInvitation(client, message, botReply, botReply2, serverData, otherServerData, profileData, otherProfileData);
+							acceptedInvitation(client, message, botReplyV, botReplyH, serverDataV, serverDataH, profileDataV, profileDataH);
 							return;
 						}
 					})
-					.catch(async () => {return await declinedInvitation(message, profileData, botReply, botReply2);});
+					.catch(async () => {return await declinedInvitation(message, profileDataV, botReplyV, botReplyH);});
 			}
 		}
 	},
@@ -306,9 +304,9 @@ function getMenuOptions(visitableServers, packPage, selectMenuOptionsArray) {
 	return selectMenuOptionsArray;
 }
 
-async function declinedInvitation(message, profileData, botReply, botReply2) {
+async function declinedInvitation(message, profileData, botReplyV, botReplyH) {
 
-	await botReply
+	await botReplyV
 		.edit({
 			components: [],
 		})
@@ -318,12 +316,12 @@ async function declinedInvitation(message, profileData, botReply, botReply2) {
 			}
 		});
 
-	await botReply
+	await botReplyV
 		.reply({
 			embeds: [{
 				color: config.default_color,
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-				description: `*After ${profileData.name} waited for a while, ${pronoun(profileData, 0)} couldn't deal with the boredom and left the borders of ${botReply.guild.name}. The ${profileData.species} gets back feeling a bit lonely but when ${pronounAndPlural(profileData, 0, 'see')} all ${pronoun(profileData, 2)} packmates having fun at home, ${profileData.name} cheers up and joins them excitedly.*`,
+				description: `*After ${profileData.name} waited for a while, ${pronoun(profileData, 0)} couldn't deal with the boredom and left the borders of ${botReplyV.guild.name}. The ${profileData.species} gets back feeling a bit lonely but when ${pronounAndPlural(profileData, 0, 'see')} all ${pronoun(profileData, 2)} packmates having fun at home, ${profileData.name} cheers up and joins them excitedly.*`,
 			}],
 			failIfNotExists: false,
 		})
@@ -333,7 +331,7 @@ async function declinedInvitation(message, profileData, botReply, botReply2) {
 			}
 		});
 
-	await botReply2
+	await botReplyH
 		.edit({
 			components: [],
 		})
@@ -343,12 +341,12 @@ async function declinedInvitation(message, profileData, botReply, botReply2) {
 			}
 		});
 
-	await botReply2
+	await botReplyH
 		.reply({
 			embeds: [{
 				color: config.default_color,
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-				description: `*After the ${profileData.species} waited for a while, the pack members of ${botReply.guild.name} can see them getting up and leaving, probably due to boredom. Everyone is too busy anyways, so it is probably for the best if they come back later.*`,
+				description: `*After the ${profileData.species} waited for a while, the pack members of ${botReplyV.guild.name} can see them getting up and leaving, probably due to boredom. Everyone is too busy anyways, so it is probably for the best if they come back later.*`,
 			}],
 			failIfNotExists: false,
 		})
@@ -359,19 +357,19 @@ async function declinedInvitation(message, profileData, botReply, botReply2) {
 		});
 
 	await serverModel.findOneAndUpdate(
-		{ serverId: botReply.guildId },
+		{ serverId: botReplyV.guildId },
 		{ $set: { currentlyVisiting: null } },
 	);
 
 	await serverModel.findOneAndUpdate(
-		{ serverId: botReply2.guildId },
+		{ serverId: botReplyH.guildId },
 		{ $set: { currentlyVisiting: null } },
 	);
 }
 
-async function acceptedInvitation(client, message, botReply, botReply2, serverData, otherServerData, profileData, otherProfileData) {
+async function acceptedInvitation(client, message, botReplyV, botReplyH, serverDataV, serverDataH, profileDataV, profileDataH) {
 
-	await botReply
+	await botReplyV
 		.edit({
 			components: [],
 		})
@@ -381,12 +379,12 @@ async function acceptedInvitation(client, message, botReply, botReply2, serverDa
 			}
 		});
 
-	await botReply
+	await botReplyV
 		.reply({
 			embeds: [{
 				color: config.default_color,
-				author: { name: botReply.guild.name, icon_url: botReply.guild.iconURL() },
-				description: `*After waiting for a bit, a ${otherProfileData.species} comes closer, inviting ${profileData.name} and their packmates in and leading them inside where they can talk to all these new friends.*`,
+				author: { name: botReplyV.guild.name, icon_url: botReplyV.guild.iconURL() },
+				description: `*After waiting for a bit, a ${profileDataH.species} comes closer, inviting ${profileDataV.name} and their packmates in and leading them inside where they can talk to all these new friends.*`,
 				footer: { text: 'Anyone with a completed profile can now send a message in this channel. It will be delivered to the other pack, and vice versa. Type "rp endvisit" to end the visit at any time.' },
 			}],
 			failIfNotExists: false,
@@ -397,7 +395,7 @@ async function acceptedInvitation(client, message, botReply, botReply2, serverDa
 			}
 		});
 
-	await botReply2
+	await botReplyH
 		.edit({
 			components: [],
 		})
@@ -407,12 +405,12 @@ async function acceptedInvitation(client, message, botReply, botReply2, serverDa
 			}
 		});
 
-	await botReply2
+	await botReplyH
 		.reply({
 			embeds: [{
 				color: config.default_color,
-				author: { name: botReply.guild.name, icon_url: botReply.guild.iconURL() },
-				description: `*${otherProfileData.name} goes to pick up the ${profileData.species} and their packmates from the pack borders. The new friends seem excited to be here and to talk to everyone.*`,
+				author: { name: botReplyV.guild.name, icon_url: botReplyV.guild.iconURL() },
+				description: `*${profileDataH.name} goes to pick up the ${profileDataV.species} and their packmates from the pack borders. The new friends seem excited to be here and to talk to everyone.*`,
 				footer: { text: 'Anyone with a completed profile can now send a message in this channel. It will be delivered to the other pack, and vice versa. Type "rp endvisit" to end the visit at any time.' },
 			}],
 			failIfNotExists: false,
@@ -423,10 +421,10 @@ async function acceptedInvitation(client, message, botReply, botReply2, serverDa
 			}
 		});
 
-	const filter = async m => (await profileModel.findOne({ serverId: m.guild.id, userId: m.author.id })) === null ? false : true;
+	const filter = async m => m.startsWith(config.prefix) === false && (await profileModel.findOne({ serverId: m.guild.id, userId: m.author.id })) === null ? false : true;
 
-	const hostChannel = await client.channels.fetch(otherServerData.visitChannelId);
-	const guestChannel = await client.channels.fetch(serverData.visitChannelId);
+	const hostChannel = await client.channels.fetch(serverDataH.visitChannelId);
+	const guestChannel = await client.channels.fetch(serverDataV.visitChannelId);
 
 	collectMessages(hostChannel, guestChannel);
 	collectMessages(guestChannel, hostChannel);
@@ -472,15 +470,25 @@ async function acceptedInvitation(client, message, botReply, botReply2, serverDa
 
 		collector.on('end', async () => {
 
-			serverData = await serverModel.findOne(
+			const thisServerData = await serverModel.findOne(
 				{ serverId: thisServerChannel.guild.id },
 			);
 
-			otherServerData = await serverModel.findOne(
+			const otherServerData = await serverModel.findOne(
 				{ serverId: otherServerChannel.guild.id },
 			);
 
-			if (serverData.currentlyVisiting !== null && otherServerData.currentlyVisiting !== null) {
+			if (thisServerData.currentlyVisiting !== null && otherServerData.currentlyVisiting !== null) {
+
+				await serverModel.findOneAndUpdate(
+					{ serverId: thisServerChannel.guild.id },
+					{ $set: { currentlyVisiting: null } },
+				);
+
+				await serverModel.findOneAndUpdate(
+					{ serverId: otherServerChannel.guild.id },
+					{ $set: { currentlyVisiting: null } },
+				);
 
 				await thisServerChannel
 					.send({
@@ -498,7 +506,7 @@ async function acceptedInvitation(client, message, botReply, botReply2, serverDa
 					});
 
 				await otherServerChannel
-					.reply({
+					.send({
 						embeds: [{
 							color: config.default_color,
 							author: { name: thisServerChannel.guild.name, icon_url: thisServerChannel.guild.iconURL() },
@@ -511,16 +519,6 @@ async function acceptedInvitation(client, message, botReply, botReply2, serverDa
 							throw new Error(error);
 						}
 					});
-
-				await serverModel.findOneAndUpdate(
-					{ serverId: thisServerChannel.guild.id },
-					{ $set: { currentlyVisiting: null } },
-				);
-
-				await serverModel.findOneAndUpdate(
-					{ serverId: otherServerChannel.guild.id },
-					{ $set: { currentlyVisiting: null } },
-				);
 			}
 		});
 	}
