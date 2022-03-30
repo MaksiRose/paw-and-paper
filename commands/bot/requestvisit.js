@@ -421,7 +421,7 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 			}
 		});
 
-	const filter = async m => m.content.startsWith(config.prefix) === false && (await profileModel.findOne({ serverId: m.guild.id, userId: m.author.id })) === null ? false : true;
+	const filter = async m => m.content.startsWith(config.prefix) === false && (await profileModel.findOne({ serverId: m.guild.id, userId: m.author.id })) !== null;
 
 	const hostChannel = await client.channels.fetch(serverDataH.visitChannelId);
 	const guestChannel = await client.channels.fetch(serverDataV.visitChannelId);
@@ -459,14 +459,15 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 
 			if (server.currentlyVisiting === null) {
 
-				collector.stop();
+				return collector.stop();
 			}
 
 			const profile = await profileModel.findOne({ serverId: msg.guild.id, userId: msg.author.id });
 
 			await otherServerWebhook
 				.send({
-					content: msg.content,
+					content: msg.content || undefined,
+					files: Array.from(msg.attachments.values()) || undefined,
 					username: `${profile.name} (${msg.guild.name})`,
 					avatarURL: profile.avatarURL,
 				})
