@@ -122,7 +122,8 @@ module.exports = {
 
 		const botMessage = await webHook
 			.send({
-				content: userText,
+				content: userText || undefined,
+				files: Array.from(message.attachments.values()) || undefined,
 				username: profileData.name,
 				avatarURL: profileData.avatarURL,
 			})
