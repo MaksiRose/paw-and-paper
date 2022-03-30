@@ -203,8 +203,6 @@ module.exports = {
 					{ $set: { currentlyVisiting: serverDataV.serverId } },
 				);
 
-				const visitChannelV = await client.channels.fetch(serverDataV.visitChannelId);
-
 				await botReplyV
 					.edit({
 						components: [],
@@ -215,11 +213,14 @@ module.exports = {
 						}
 					});
 
+				const visitChannelV = await client.channels.fetch(serverDataV.visitChannelId);
+				const visitChannelH = await client.channels.fetch(serverDataH.visitChannelId);
+
 				botReplyV = await visitChannelV
 					.send({
 						embeds: [{
 							color: config.default_color,
-							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+							author: { name: visitChannelH.guild.name, icon_url: visitChannelH.guild.iconURL() },
 							description: `*${profileDataV.name} strolls over to ${serverDataH.name}. ${upperCasePronounAndPlural(profileDataV, 0, 'is', 'are')} waiting patiently at the pack borders to be invited in as to not invade the pack's territory without permission.*`,
 							footer: { text: 'The invitation will expire in five minutes. Alternatively, you can cancel it using the button below.' },
 						}],
@@ -240,8 +241,6 @@ module.exports = {
 					});
 
 				interactionCollector();
-
-				const visitChannelH = await client.channels.fetch(serverDataH.visitChannelId);
 
 				botReplyH = await visitChannelH
 					.send({
@@ -330,7 +329,7 @@ async function declinedInvitation(message, profileData, botReplyV, botReplyH) {
 		.reply({
 			embeds: [{
 				color: config.default_color,
-				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+				author: { name: botReplyH.guild.name, icon_url: botReplyH.guild.iconURL() },
 				description: `*After ${profileData.name} waited for a while, ${pronoun(profileData, 0)} couldn't deal with the boredom and left the borders of ${botReplyV.guild.name}. The ${profileData.species} gets back feeling a bit lonely but when ${pronounAndPlural(profileData, 0, 'see')} all ${pronoun(profileData, 2)} packmates having fun at home, ${profileData.name} cheers up and joins them excitedly.*`,
 			}],
 			failIfNotExists: false,
@@ -393,7 +392,7 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 		.reply({
 			embeds: [{
 				color: config.default_color,
-				author: { name: botReplyV.guild.name, icon_url: botReplyV.guild.iconURL() },
+				author: { name: botReplyH.guild.name, icon_url: botReplyH.guild.iconURL() },
 				description: `*After waiting for a bit, a ${profileDataH.species} comes closer, inviting ${profileDataV.name} and their packmates in and leading them inside where they can talk to all these new friends.*`,
 				footer: { text: 'Anyone with a completed profile can now send a message in this channel. It will be delivered to the other pack, and vice versa. Type "rp endvisit" to end the visit at any time.' },
 			}],
