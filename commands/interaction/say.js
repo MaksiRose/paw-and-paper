@@ -96,17 +96,11 @@ module.exports = {
 		}
 
 		const webhookCache = JSON.parse(fs.readFileSync('./database/webhookCache.json'));
+		let embeds = undefined;
 
 		if (message.reference !== null) {
 
 			const referencedMessage = await message.channel.messages.fetch(message.reference.messageId);
-
-			if (referencedMessage.content.includes('[jump]')) {
-
-				referencedMessage.content = referencedMessage.content.split('\n');
-				referencedMessage.content.splice(0, referencedMessage.content.findIndex(line => line.includes('[jump]')) + 1);
-				referencedMessage.content = referencedMessage.content.join('\n');
-			}
 
 			if (webhookCache[referencedMessage.id] !== undefined) {
 
@@ -114,18 +108,20 @@ module.exports = {
 				referencedMessage.author = user;
 			}
 
-			const mention = `\n${referencedMessage.author.toString()} [jump](https://discord.com/channels/${referencedMessage.guild.id}/${referencedMessage.channel.id}/${referencedMessage.id})\n`;
-			const extraContent = referencedMessage.content.split('\n').map(line => `> ${line}`).join('\n').substring(0, 2000 - mention.length - userText.length);
-
-			userText = extraContent + mention + userText;
+			embeds = [{
+				author: { name: referencedMessage.member.displayName, icon_url: referencedMessage.member.displayAvatarURL() },
+				color: referencedMessage.member.displayColor,
+				description: referencedMessage.content,
+			}];
 		}
 
 		const botMessage = await webHook
 			.send({
+				username: `${profileData.name} (${message.author.tag})`,
+				avatarURL: profileData.avatarURL,
 				content: userText || undefined,
 				files: Array.from(message.attachments.values()) || undefined,
-				username: profileData.name,
-				avatarURL: profileData.avatarURL,
+				embeds: embeds,
 			})
 			.catch((error) => {
 				throw new Error(error);
@@ -133,7 +129,7 @@ module.exports = {
 
 		webhookCache[botMessage.id] = message.author.id;
 
-		fs.writeFileSync('.database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
+		fs.writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
 
 		return;
 	},
