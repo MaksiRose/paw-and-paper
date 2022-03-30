@@ -33,38 +33,8 @@ module.exports = {
 			{ serverId: serverData.currentlyVisiting },
 		);
 
-		const guestChannnel = await client.channels.fetch(serverData.visitChannelId);
-		const hostChannnel = await client.channels.fetch(otherServerData.visitChannelId);
-
-		await guestChannnel
-			.send({
-				embeds: [{
-					color: config.default_color,
-					author: { name: hostChannnel.guild.name, icon_url: hostChannnel.guild.iconURL() },
-					description: `*Hanging out with friends is always nice but has to end eventually. And so the friends from ${message.guild.name} went back to their territory. Until next time.*`,
-				}],
-				failIfNotExists: false,
-			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
-			});
-
-		await hostChannnel
-			.reply({
-				embeds: [{
-					color: config.default_color,
-					author: { name: guestChannnel.guild.name, icon_url: guestChannnel.guild.iconURL() },
-					description: `*Hanging out with friends is always nice but has to end eventually. And so the friends from ${message.guild.name} went back to their territory. Until next time.*`,
-				}],
-				failIfNotExists: false,
-			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
-			});
+		const thisChannel = await client.channels.fetch(serverData.visitChannelId);
+		const otherChannel = await client.channels.fetch(otherServerData.visitChannelId);
 
 		await serverModel.findOneAndUpdate(
 			{ serverId: serverData.serverId },
@@ -75,5 +45,35 @@ module.exports = {
 			{ serverId: otherServerData.serverId },
 			{ $set: { currentlyVisiting: null } },
 		);
+
+		await thisChannel
+			.send({
+				embeds: [{
+					color: config.default_color,
+					author: { name: otherChannel.guild.name, icon_url: otherChannel.guild.iconURL() },
+					description: `*Hanging out with friends is always nice but has to end eventually. And so the friends from ${message.guild.name} went back to their territory. Until next time.*`,
+				}],
+				failIfNotExists: false,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
+			});
+
+		await otherChannel
+			.send({
+				embeds: [{
+					color: config.default_color,
+					author: { name: thisChannel.guild.name, icon_url: thisChannel.guild.iconURL() },
+					description: `*Hanging out with friends is always nice but has to end eventually. And so the friends from ${message.guild.name} went back to their territory. Until next time.*`,
+				}],
+				failIfNotExists: false,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
+			});
 	},
 };
