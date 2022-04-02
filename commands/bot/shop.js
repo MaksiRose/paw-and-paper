@@ -1,5 +1,6 @@
 const config = require('../../config.json');
 const profileModel = require('../../models/profileModel');
+const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { checkLevelUp } = require('../../utils/levelHandling');
 
@@ -122,23 +123,34 @@ module.exports = {
 					serverId: message.guild.id,
 				});
 
-				if (message.member.roles.cache.has(buyItem.roleId)) {
+				if (profileData.roles.some(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience')) {
 
 					try {
 
-						await message.member.roles.remove(buyItem.roleId);
+						const userRole = profileData.roles.find(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience');
+						const userRoleIndex = profileData.roles.indexOf(userRole);
+
+						if (userRoleIndex >= 0) { profileData.roles.splice(userRoleIndex, 1); }
 
 						profileData = await profileModel.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
-							{ $inc: { experience: buyItem.requirement } },
+							{
+								$inc: { experience: userRole.requirement },
+								$set: { roles: profileData.roles } },
 						);
 
-						setTimeout(async () => {
+						if (message.member.roles.cache.has(buyItem.roleId) === true) {
 
-							await interaction
-								.followUp({
-									content: `Refunded the <@&${buyItem.roleId}> role!`,
-									ephemeral: true,
+							await message.member.roles.remove(buyItem.roleId);
+
+							await interaction.message
+								.edit({
+									embeds: [{
+										color: config.default_color,
+										author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+										description: `You refunded the <@&${buyItem.roleId}> role!`,
+									}],
+									components: [],
 									failIfNotExists: false,
 								})
 								.catch((error) => {
@@ -146,54 +158,50 @@ module.exports = {
 										throw new Error(error);
 									}
 								});
+						}
 
-							profileData = checkLevelUp(message, undefined, profileData, serverData);
-						}, 500);
+						profileData = checkLevelUp(message, undefined, profileData, serverData);
 					}
 					catch (error) {
 
-						if (error.httpStatus === 403) {
-
-							return await interaction.message
-								.reply({
-									embeds: [{
-										color: config.error_color,
-										author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-										title: 'I don\'t have permission to manage roles, or the role is above my highest role. Please ask an admin to edit my permissions or move the wanted role below mine.',
-									}],
-									failIfNotExists: false,
-								})
-								.catch((err) => {
-									if (err.httpStatus !== 404) {
-										throw new Error(err);
-									}
-								});
-						}
-						else {
-
-							console.error(error);
-							return await interaction.message
-								.reply({
-									embeds: [{
-										color: config.error_color,
-										author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-										title: 'There was an error trying to add the role :(',
-									}],
-									failIfNotExists: false,
-								})
-								.catch((err) => {
-									if (err.httpStatus !== 404) {
-										throw new Error(err);
-									}
-								});
-						}
+						await checkRoleCatchBlock(error, message, message.member);
 					}
 				}
 				else if ((profileData.levels * (profileData.levels - 1) / 2) * 50 + profileData.experience >= buyItem.requirement) {
 
 					try {
 
-						await message.member.roles.add(buyItem.roleId);
+						if (message.member.roles.cache.has(buyItem.roleId) === false) {
+
+							await message.member.roles.add(buyItem.roleId);
+
+							await interaction.message
+								.edit({
+									embeds: [{
+										color: config.default_color,
+										author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+										description: `You bought the <@&${buyItem.roleId}> role for ${buyItem.requirement} experience!`,
+									}],
+									components: [],
+									failIfNotExists: false,
+								})
+								.catch((error) => {
+									if (error.httpStatus !== 404) {
+										throw new Error(error);
+									}
+								});
+						}
+
+						profileData.roles.push({
+							roleId: buyItem.roleId,
+							wayOfEarning: buyItem.wayOfEarning,
+							requirement: buyItem.requirement,
+						});
+
+						profileData = await profileModel.findOneAndUpdate(
+							{ userId: message.author.id, serverId: message.guild.id },
+							{ $set: { roles: profileData.roles } },
+						);
 
 						let cost = buyItem.requirement;
 
@@ -222,58 +230,51 @@ module.exports = {
 							}
 						}
 
-						setTimeout(async () => {
+						const member = await botReply.guild.members.fetch(profileData.userId);
+						const roles = profileData.roles.filter(role => role.wayOfEarning === 'levels' && role.requirement > profileData.levels);
 
-							await interaction
-								.followUp({
-									content: `You bought the <@&${buyItem.roleId}> role for ${buyItem.requirement} experience!`,
-									ephemeral: true,
-									failIfNotExists: false,
-								})
-								.catch((error) => {
-									if (error.httpStatus !== 404) {
-										throw new Error(error);
-									}
-								});
-						}, 500);
+						for (const role of roles) {
+
+							try {
+
+								const userRoleIndex = profileData.roles.indexOf(role);
+								if (userRoleIndex >= 0) { profileData.roles.splice(userRoleIndex, 1); }
+
+								await profileModel.findOneAndUpdate(
+									{ userId: profileData.userId, serverId: profileData.serverId },
+									{ $set: { roles: profileData.roles } },
+								);
+
+								if (message.member.roles.cache.has(role.roleId) === true && profileData.roles.filter(profilerole => profilerole.roleId === role.roleId).length === 0) {
+
+									await message.member.roles.remove(role.roleId);
+
+									await botReply.channel
+										.send({
+											content: member.toString(),
+											embeds: [{
+												color: config.default_color,
+												author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+												description: `You lost the <@&${role.roleId}> role because of a lack of levels!`,
+											}],
+											failIfNotExists: false,
+										})
+										.catch((error) => {
+											if (error.httpStatus !== 404) {
+												throw new Error(error);
+											}
+										});
+								}
+							}
+							catch (error) {
+
+								await checkRoleCatchBlock(error, botReply, member);
+							}
+						}
 					}
 					catch (error) {
 
-						if (error.httpStatus === 403) {
-
-							await interaction.message
-								.reply({
-									embeds: [{
-										color: config.error_color,
-										author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-										title: 'I don\'t have permission to manage roles, or the role is above my highest role. Please ask an admin to edit my permissions or move the wanted role below mine.',
-									}],
-									failIfNotExists: false,
-								})
-								.catch((err) => {
-									if (err.httpStatus !== 404) {
-										throw new Error(err);
-									}
-								});
-						}
-						else {
-
-							console.error(error);
-							await interaction.message
-								.reply({
-									embeds: [{
-										color: config.error_color,
-										author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-										title: 'There was an error trying to add the role :(',
-									}],
-									failIfNotExists: false,
-								})
-								.catch((err) => {
-									if (err.httpStatus !== 404) {
-										throw new Error(err);
-									}
-								});
-						}
+						await checkRoleCatchBlock(error, message, message.member);
 					}
 				}
 				else {
@@ -294,13 +295,7 @@ module.exports = {
 					}, 500);
 				}
 
-				await interaction.message
-					.edit({ components: interaction.message.components })
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
+				return;
 			}
 
 			return await interactionCollector();

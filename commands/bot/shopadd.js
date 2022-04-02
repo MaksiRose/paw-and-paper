@@ -1,5 +1,7 @@
 const config = require('../../config.json');
 const serverModel = require('../../models/serverModel');
+const profileModel = require('../../models/profileModel');
+const { checkLevelRequirements, checkRankRequirements } = require('../../utils/checkRoleRequirements');
 
 module.exports = {
 	name: 'shopadd',
@@ -78,7 +80,7 @@ module.exports = {
 		if (wayOfEarning === 'level') { wayOfEarning = 'levels'; }
 		if (wayOfEarning === 'xp') { wayOfEarning = 'experience'; }
 
-		if (serverData.shop.filter(item => item.wayOfEarning === wayOfEarning && item.requirement === requirement).length > 0) {
+		if (serverData.shop.filter(item => wayOfEarning !== 'experience' && item.wayOfEarning === wayOfEarning && item.requirement === requirement).length > 0) {
 
 			return await message
 				.reply({
@@ -143,7 +145,7 @@ module.exports = {
 			{ $set: { shop: serverData.shop } },
 		);
 
-		return await message
+		await message
 			.reply({
 				embeds: [{
 					color: config.default_color,
@@ -157,5 +159,24 @@ module.exports = {
 					throw new Error(error);
 				}
 			});
+
+		const allServerProfiles = await profileModel.find({
+			serverId: message.guild.id,
+		});
+
+		for (const profile of allServerProfiles) {
+
+			if (wayOfEarning === 'levels') {
+
+				const member = await message.guild.members.fetch(profile.userId);
+				checkLevelRequirements(serverData, message, member, profile.levels);
+			}
+
+			if (wayOfEarning === 'rank') {
+
+				const member = await message.guild.members.fetch(profile.userId);
+				checkRankRequirements(serverData, message, member, profile.rank);
+			}
+		}
 	},
 };

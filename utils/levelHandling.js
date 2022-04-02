@@ -1,6 +1,7 @@
 const profileModel = require('../models/profileModel');
-const { checkLevelRequirements } = require('./checkRoleRequirements');
+const { checkLevelRequirements, checkRoleCatchBlock } = require('./checkRoleRequirements');
 const { upperCasePronounAndPlural } = require('./getPronouns');
+const config = require('../config.json');
 
 module.exports = {
 
@@ -37,7 +38,7 @@ module.exports = {
 				});
 
 			botReply = module.exports.checkLevelUp(message, botReply, profileData, serverData);
-			await checkLevelRequirements(serverData, message, profileData.level);
+			await checkLevelRequirements(serverData, message, message.member, profileData.levels);
 
 			return botReply;
 		}
@@ -68,7 +69,7 @@ module.exports = {
 		}
 
 
-		await profileModel.findOneAndUpdate(
+		profileData = await profileModel.findOneAndUpdate(
 			{ userId: profileData.userId, serverId: profileData.serverId },
 			{
 				$set: {
@@ -78,6 +79,48 @@ module.exports = {
 				},
 			},
 		);
+
+		const member = await botReply.guild.members.fetch(profileData.userId);
+		const roles = profileData.roles.filter(role => role.wayOfEarning === 'levels' && role.requirement > profileData.levels);
+
+		for (const role of roles) {
+
+			try {
+
+				const userRoleIndex = profileData.roles.indexOf(role);
+				if (userRoleIndex >= 0) { profileData.roles.splice(userRoleIndex, 1); }
+
+				await profileModel.findOneAndUpdate(
+					{ userId: profileData.userId, serverId: profileData.serverId },
+					{ $set: { roles: profileData.roles } },
+				);
+
+				if (member.roles.cache.has(role.roleId) === true && profileData.roles.filter(profilerole => profilerole.roleId === role.roleId).length === 0) {
+
+					await member.roles.remove(role.roleId);
+
+					await botReply.channel
+						.send({
+							content: member.toString(),
+							embeds: [{
+								color: config.default_color,
+								author: { name: botReply.guild.name, icon_url: botReply.guild.iconURL() },
+								description: `You lost the <@&${role.roleId}> role because of a lack of levels!`,
+							}],
+							failIfNotExists: false,
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+				}
+			}
+			catch (error) {
+
+				await checkRoleCatchBlock(error, botReply, member);
+			}
+		}
 
 		botReply = await botReply
 			.edit({
