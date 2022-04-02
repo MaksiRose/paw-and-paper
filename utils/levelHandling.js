@@ -80,7 +80,7 @@ module.exports = {
 		);
 
 		const member = await botReply.guild.members.fetch(profileData.userId);
-		const roles = profileData.roles.filter(role => role.wayOfEarning === 'levls' && role.requirement > profileData.levels);
+		const roles = profileData.roles.filter(role => role.wayOfEarning === 'levels' && role.requirement > profileData.levels);
 
 		for (const role of roles) {
 
