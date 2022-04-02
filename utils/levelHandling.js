@@ -48,7 +48,8 @@ module.exports = {
 
 		const newUserLevel = Math.round(profileData.levels - (profileData.levels / 10));
 
-		botReply.embeds[0].footer = `${(profileData.experience > 0) ? `-${profileData.experience} XP` : ''}\n${(newUserLevel != profileData.levels) ? `-${profileData.levels - newUserLevel} level${(profileData.levels - newUserLevel > 1) ? 's' : ''}` : ''}`;
+		botReply.embeds[0].footer = { text: '' };
+		botReply.embeds[0].footer.text = `${profileData.experience > 0 ? `-${profileData.experience} XP` : ''}\n${(newUserLevel !== profileData.levels) ? `-${profileData.levels - newUserLevel} level${(profileData.levels - newUserLevel > 1) ? 's' : ''}` : ''}`;
 
 		const newUserInventory = { ...profileData.inventoryObject };
 		for (const itemType of Object.keys(newUserInventory)) {
@@ -63,7 +64,7 @@ module.exports = {
 			}
 		}
 
-		if (botReply.embeds[0].footer == '') {
+		if (botReply.embeds[0].footer.text == '') {
 
 			botReply.embeds[0].footer = null;
 		}
