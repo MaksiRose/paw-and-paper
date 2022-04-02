@@ -181,7 +181,7 @@ module.exports = {
 									$set: { roles: profile.roles } },
 							);
 
-							if (message.member.roles.cache.has(deleteItem[0].roleId) === true && profile.roles.filter(role => role.roleId === deleteItem[0].roleId).length <= 1) {
+							if (message.member.roles.cache.has(deleteItem[0].roleId) === true && profile.roles.filter(role => role.roleId === deleteItem[0].roleId).length === 0) {
 
 								await member.roles.remove(deleteItem[0].roleId);
 

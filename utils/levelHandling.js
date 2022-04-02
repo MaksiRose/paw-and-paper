@@ -95,7 +95,7 @@ module.exports = {
 					{ $set: { roles: profileData.roles } },
 				);
 
-				if (member.roles.cache.has(role.roleId) === true && profileData.roles.filter(profilerole => profilerole.roleId === role.roleId).length <= 1) {
+				if (member.roles.cache.has(role.roleId) === true && profileData.roles.filter(profilerole => profilerole.roleId === role.roleId).length === 0) {
 
 					await member.roles.remove(role.roleId);
 
