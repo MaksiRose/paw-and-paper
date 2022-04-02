@@ -37,7 +37,7 @@ module.exports = {
 				});
 
 			botReply = module.exports.checkLevelUp(message, botReply, profileData, serverData);
-			await checkLevelRequirements(serverData, message, message.member, profileData.level);
+			await checkLevelRequirements(serverData, message, message.member, profileData.levels);
 
 			return botReply;
 		}
