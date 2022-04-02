@@ -169,11 +169,6 @@ module.exports = {
 
 						try {
 
-							if (message.member.roles.cache.has(deleteItem[0].roleId) === true && profileData.roles.filter(role => role.roleId === deleteItem[0].roleId).length <= 1) {
-
-								await member.roles.remove(deleteItem[0].roleId);
-							}
-
 							const userRole = profile.roles.find(role => role.roleId === deleteItem[0].roleId && role.wayOfEarning === deleteItem[0].wayOfEarning && role.requirement === deleteItem[0].requirement);
 							const userRoleIndex = profile.roles.indexOf(userRole);
 
@@ -186,16 +181,26 @@ module.exports = {
 									$set: { roles: profile.roles } },
 							);
 
-							await message.channel
-								.send({
-									content: `${member.toString()}, you lost the <@&${deleteItem[0].roleId}> role because it was removed from the shop!`,
-									failIfNotExists: false,
-								})
-								.catch((error) => {
-									if (error.httpStatus !== 404) {
-										throw new Error(error);
-									}
-								});
+							if (message.member.roles.cache.has(deleteItem[0].roleId) === true && profile.roles.filter(role => role.roleId === deleteItem[0].roleId).length <= 1) {
+
+								await member.roles.remove(deleteItem[0].roleId);
+
+								await message.channel
+									.send({
+										content: member.toString(),
+										embeds: [{
+											color: config.default_color,
+											author: { name: botReply.guild.name, icon_url: botReply.guild.iconURL() },
+											description: `You lost the <@&${deleteItem[0].roleId}> role because it was removed from the shop!`,
+										}],
+										failIfNotExists: false,
+									})
+									.catch((error) => {
+										if (error.httpStatus !== 404) {
+											throw new Error(error);
+										}
+									});
+							}
 
 							checkLevelUp(message, undefined, profile, serverData);
 						}

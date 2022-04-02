@@ -1,6 +1,7 @@
 const profileModel = require('../models/profileModel');
 const { checkLevelRequirements, checkRoleCatchBlock } = require('./checkRoleRequirements');
 const { upperCasePronounAndPlural } = require('./getPronouns');
+const config = require('../config.json');
 
 module.exports = {
 
@@ -86,11 +87,6 @@ module.exports = {
 
 			try {
 
-				if (member.roles.cache.has(role.roleId) === true && profileData.roles.filter(profilerole => profilerole.roleId === role.roleId).length <= 1) {
-
-					await member.roles.remove(role.roleId);
-				}
-
 				const userRoleIndex = profileData.roles.indexOf(role);
 				if (userRoleIndex >= 0) { profileData.roles.splice(userRoleIndex, 1); }
 
@@ -99,16 +95,26 @@ module.exports = {
 					{ $set: { roles: profileData.roles } },
 				);
 
-				await botReply.channel
-					.send({
-						content: `${member.toString()}, you lost the <@&${role.roleId}> role because of a lack of levels!`,
-						failIfNotExists: false,
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
+				if (member.roles.cache.has(role.roleId) === true && profileData.roles.filter(profilerole => profilerole.roleId === role.roleId).length <= 1) {
+
+					await member.roles.remove(role.roleId);
+
+					await botReply.channel
+						.send({
+							content: member.toString(),
+							embeds: [{
+								color: config.default_color,
+								author: { name: botReply.guild.name, icon_url: botReply.guild.iconURL() },
+								description: `You lost the <@&${role.roleId}> role because of a lack of levels!`,
+							}],
+							failIfNotExists: false,
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+				}
 			}
 			catch (error) {
 

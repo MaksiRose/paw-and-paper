@@ -127,11 +127,6 @@ module.exports = {
 
 					try {
 
-						if (message.member.roles.cache.has(buyItem.roleId) === true) {
-
-							await message.member.roles.remove(buyItem.roleId);
-						}
-
 						const userRole = profileData.roles.find(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience');
 						const userRoleIndex = profileData.roles.indexOf(userRole);
 
@@ -144,7 +139,9 @@ module.exports = {
 								$set: { roles: profileData.roles } },
 						);
 
-						setTimeout(async () => {
+						if (message.member.roles.cache.has(buyItem.roleId) === true) {
+
+							await message.member.roles.remove(buyItem.roleId);
 
 							await interaction.message
 								.edit({
@@ -161,9 +158,9 @@ module.exports = {
 										throw new Error(error);
 									}
 								});
+						}
 
-							profileData = checkLevelUp(message, undefined, profileData, serverData);
-						}, 500);
+						profileData = checkLevelUp(message, undefined, profileData, serverData);
 					}
 					catch (error) {
 
@@ -224,11 +221,6 @@ module.exports = {
 
 							try {
 
-								if (message.member.roles.cache.has(role.roleId) === true && profileData.roles.filter(profilerole => profilerole.roleId === role.roleId).length <= 1) {
-
-									await message.member.roles.remove(role.roleId);
-								}
-
 								const userRoleIndex = profileData.roles.indexOf(role);
 								if (userRoleIndex >= 0) { profileData.roles.splice(userRoleIndex, 1); }
 
@@ -237,16 +229,26 @@ module.exports = {
 									{ $set: { roles: profileData.roles } },
 								);
 
-								await botReply.channel
-									.send({
-										content: `${member.toString()}, you lost the <@&${role.roleId}> role because of a lack of levels!`,
-										failIfNotExists: false,
-									})
-									.catch((error) => {
-										if (error.httpStatus !== 404) {
-											throw new Error(error);
-										}
-									});
+								if (message.member.roles.cache.has(role.roleId) === true && profileData.roles.filter(profilerole => profilerole.roleId === role.roleId).length <= 1) {
+
+									await message.member.roles.remove(role.roleId);
+
+									await botReply.channel
+										.send({
+											content: member.toString(),
+											embeds: [{
+												color: config.default_color,
+												author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+												description: `You lost the <@&${role.roleId}> role because of a lack of levels!`,
+											}],
+											failIfNotExists: false,
+										})
+										.catch((error) => {
+											if (error.httpStatus !== 404) {
+												throw new Error(error);
+											}
+										});
+								}
 							}
 							catch (error) {
 

@@ -42,7 +42,7 @@ module.exports = {
 							embeds: [{
 								color: config.default_color,
 								author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-								title: `You got the <@&${item.roleId}> role for being ${item.requirement}!`,
+								description: `You got the <@&${item.roleId}> role for being ${item.requirement}!`,
 							}],
 							failIfNotExists: false,
 						})
@@ -96,7 +96,7 @@ module.exports = {
 							embeds: [{
 								color: config.default_color,
 								author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-								title: `You got the <@&${item.roleId}> role for being level ${item.requirement}!`,
+								description: `You got the <@&${item.roleId}> role for being level ${item.requirement}!`,
 							}],
 							failIfNotExists: false,
 						})
