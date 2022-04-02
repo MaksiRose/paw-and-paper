@@ -82,7 +82,7 @@ module.exports = {
 		}
 		else {
 
-			const { embeds: woundEmbeds, components: woundComponents } = await getWoundList(chosenUser);
+			const { embeds: woundEmbeds, components: woundComponents } = await getWoundList(chosenUser) ?? { embeds: undefined, components: undefined };
 
 			botReply = await message
 				.reply({
@@ -228,7 +228,9 @@ module.exports = {
 					userSelectMenu = await getUserSelectMenu();
 
 					const componentArray = interaction.message.components;
-					await componentArray.splice(0, 1, userSelectMenu);
+					await componentArray.splice(0, 1);
+
+					if (allHurtProfilesList.length > 0) { componentArray.unshift(userSelectMenu); }
 
 					botReply = await interaction.message
 						.edit({ components: componentArray })
@@ -702,15 +704,16 @@ module.exports = {
 					{ health: 0 },
 					{ hunger: 0 },
 					{ thirst: 0 },
-					{ injuryObject: {
-						$or: [
-							{ wounds: { $gt: 0 } },
-							{ infections: { $gt: 0 } },
-							{ cold: true },
-							{ sprains: { $gt: 0 } },
-							{ poison: true },
-						],
-					},
+					{
+						injuryObject: {
+							$or: [
+								{ wounds: { $gt: 0 } },
+								{ infections: { $gt: 0 } },
+								{ cold: true },
+								{ sprains: { $gt: 0 } },
+								{ poison: true },
+							],
+						},
 					},
 				],
 			})).map(user => user.userId);
@@ -808,26 +811,16 @@ module.exports = {
 
 				embed.description = `*${profileData.name} approaches ${chosenProfileData.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${profileData.species} asks.\n${chosenProfileData.name} shakes ${pronoun(chosenProfileData, 2)} head.* "Not that I know of, no."\n*Disappointed, ${profileData.name} goes back to the medicine den.*`;
 
-				botReply = await message
-					.reply({
-						content: messageContent,
-						embeds: [...embedArray, embed],
-						components: [userSelectMenu],
-						failIfNotExists: false,
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-
-				return;
+				return { embeds: [...embedArray, embed], components: allHurtProfilesList.length > 0 ? [userSelectMenu] : [] };
 			}
 
+			const { embed: embed2, selectMenu } = getFirstHealPage();
+
+			if (embed2.fields.length === 0) { pageButtons.components[0].disabled = true; }
+
 			const
-				{ embed: embed2, selectMenu } = getFirstHealPage(),
-				embeds = [...embedArray, embed, embed2],
-				components = [userSelectMenu, pageButtons, ... selectMenu !== null ? [selectMenu] : []];
+				embeds = [...embedArray, embed, ...allHurtProfilesList.length > 0 ? [embed2] : []],
+				components = [...allHurtProfilesList.length > 0 ? [userSelectMenu, pageButtons, ...selectMenu !== null ? [selectMenu] : []] : []];
 
 			return { embeds, components };
 		}
