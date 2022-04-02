@@ -22,8 +22,6 @@ module.exports = {
 						{ userId: member.id, serverId: member.guild.id },
 					);
 
-					console.log(profileData);
-
 					profileData.roles.push({
 						roleId: item.roleId,
 						wayOfEarning: item.wayOfEarning,
