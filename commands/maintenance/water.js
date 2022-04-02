@@ -66,6 +66,7 @@ module.exports = {
 
 			experiencePoints = saplingObject.waterCycles * 2;
 			healthPoints = pullFromWeightedTable({ 0: 6, 1: 5, 2: 4, 3: 3, 4: 2, 5: 1 }) + generateRandomNumber(Math.round(saplingObject.waterCycles / 4), 0);
+			if (profileData.health + healthPoints > profileData.maxHealth) { healthPoints = profileData.maxHealth - profileData.health; }
 
 			embedArray.push({
 				color: profileData.color,
@@ -113,11 +114,6 @@ module.exports = {
 		}
 
 		saplingObject.nextWaterTimestamp = Date.now() + twentyFourHours;
-
-		if (profileData.health + healthPoints > profileData.maxHealth) {
-
-			healthPoints -= (profileData.health + healthPoints) - profileData.maxThirst;
-		}
 
 		profileData = await profileModel.findOneAndUpdate(
 			{ userId: message.author.id, serverId: message.guild.id },
