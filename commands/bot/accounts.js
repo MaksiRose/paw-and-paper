@@ -119,6 +119,21 @@ module.exports = {
 			});
 
 			fs.renameSync(`./database/profiles/inactiveProfiles/${newProfileData.uuid}.json`, `./database/profiles/${newProfileData.uuid}.json`);
+
+			for (const role of newProfileData.roles) {
+
+				if (message.member.roles.cache.has(role.roleId) === true) {
+
+					try {
+
+						await message.member.roles.add(role.roleId);
+					}
+					catch (error) {
+
+						await checkRoleCatchBlock(error, message, message.member);
+					}
+				}
+			}
 		}
 
 		setTimeout(async () => {
