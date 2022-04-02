@@ -1,21 +1,41 @@
 const config = require('../config.json');
+const profileModel = require('../models/profileModel');
 
 module.exports = {
 
-	async checkRankRequirements(serverData, message, userRank) {
+	async checkRankRequirements(serverData, message, member, userRank) {
 
+		// the reason why Elderly is also 2 is because as Elderly, it isn't clear if you were Hunter or Healer before
+		// therefore, having the higher rank Elderly shouldn't automatically grant you a Hunter or Healer role
+		const rankList = { Youngling: 0, Apprentice: 1, Hunter: 2, Healer: 2, Elderly: 2 };
 		const shop = serverData.shop.filter(item => item.wayOfEarning === 'rank');
 
 		for (const item of shop) {
 
-			if (item.requirement === userRank && message.member.roles.cache.has(item.roleId) === false) {
+			if ((userRank === item.requirement || rankList[userRank] > rankList[item.requirement]) && message.member.roles.cache.has(item.roleId) === false) {
 
 				try {
 
-					await message.member.roles.add(item.roleId);
+					await member.roles.add(item.roleId);
 
-					await message
-						.reply({
+					const profileData = profileModel.findOne(
+						{ userId: member.id, serverId: member.guild.id },
+					);
+
+					profileData.roles.push({
+						roleId: item.roleId,
+						wayOfEarning: item.wayOfEarning,
+						requirement: item.requirement,
+					});
+
+					profileModel.findOneAndUpdate(
+						{ userId: member.id, serverId: member.guild.id },
+						{ $set: { roles: profileData.roles } },
+					);
+
+					await message.channel
+						.send({
+							content: member.toString(),
 							embeds: [{
 								color: config.default_color,
 								author: { name: message.guild.name, icon_url: message.guild.iconURL() },
@@ -33,8 +53,9 @@ module.exports = {
 
 					if (error.httpStatus === 403) {
 
-						await message
-							.reply({
+						await message.channel
+							.send({
+								content: member.toString(),
 								embeds: [{
 									color: config.error_color,
 									author: { name: message.guild.name, icon_url: message.guild.iconURL() },
@@ -51,8 +72,9 @@ module.exports = {
 					else {
 
 						console.error(error);
-						await message
-							.reply({
+						await message.channel
+							.send({
+								content: member.toString(),
 								embeds: [{
 									color: config.error_color,
 									author: { name: message.guild.name, icon_url: message.guild.iconURL() },
@@ -71,20 +93,36 @@ module.exports = {
 		}
 	},
 
-	async checkLevelRequirements(serverData, message, userLevel) {
+	async checkLevelRequirements(serverData, message, member, userLevel) {
 
 		const shop = serverData.shop.filter(item => item.wayOfEarning === 'levels');
 
 		for (const item of shop) {
 
-			if (item.requirement === userLevel && message.member.roles.cache.has(item.roleId) === false) {
+			if (userLevel >= item.requirement && message.member.roles.cache.has(item.roleId) === false) {
 
 				try {
 
-					await message.member.roles.add(item.roleId);
+					await member.roles.add(item.roleId);
 
-					await message
-						.reply({
+					const profileData = profileModel.findOne(
+						{ userId: member.id, serverId: member.guild.id },
+					);
+
+					profileData.roles.push({
+						roleId: item.roleId,
+						wayOfEarning: item.wayOfEarning,
+						requirement: item.requirement,
+					});
+
+					profileModel.findOneAndUpdate(
+						{ userId: member.id, serverId: member.guild.id },
+						{ $set: { roles: profileData.roles } },
+					);
+
+					await message.channel
+						.send({
+							content: member.toString(),
 							embeds: [{
 								color: config.default_color,
 								author: { name: message.guild.name, icon_url: message.guild.iconURL() },
@@ -102,8 +140,9 @@ module.exports = {
 
 					if (error.httpStatus === 403) {
 
-						await message
-							.reply({
+						await message.channel
+							.send({
+								content: member.toString(),
 								embeds: [{
 									color: config.error_color,
 									author: { name: message.guild.name, icon_url: message.guild.iconURL() },
@@ -120,8 +159,9 @@ module.exports = {
 					else {
 
 						console.error(error);
-						await message
-							.reply({
+						await message.channel
+							.send({
+								content: member.toString(),
 								embeds: [{
 									color: config.error_color,
 									author: { name: message.guild.name, icon_url: message.guild.iconURL() },
