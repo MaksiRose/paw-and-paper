@@ -22,7 +22,7 @@ module.exports = {
 			};
 
 			// v2.9.0
-			if (dataObject.roles !== undefined) {
+			if (dataObject.roles === undefined) {
 
 				dataObject.roles = [];
 				(path.includes('inactiveProfiles') ? otherProfileModel : profileModel).save(dataObject);
