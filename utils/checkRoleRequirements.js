@@ -51,43 +51,7 @@ module.exports = {
 				}
 				catch (error) {
 
-					if (error.httpStatus === 403) {
-
-						await message.channel
-							.send({
-								content: member.toString(),
-								embeds: [{
-									color: config.error_color,
-									author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-									title: 'I don\'t have permission to manage roles, or the role is above my highest role. Please ask an admin to edit my permissions or move the wanted role below mine.',
-								}],
-								failIfNotExists: false,
-							})
-							.catch((err) => {
-								if (err.httpStatus !== 404) {
-									throw new Error(err);
-								}
-							});
-					}
-					else {
-
-						console.error(error);
-						await message.channel
-							.send({
-								content: member.toString(),
-								embeds: [{
-									color: config.error_color,
-									author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-									title: 'There was an error trying to add the role :(',
-								}],
-								failIfNotExists: false,
-							})
-							.catch((err) => {
-								if (err.httpStatus !== 404) {
-									throw new Error(err);
-								}
-							});
-					}
+					await module.exports.checkRoleCatchBlock(error, message, member);
 				}
 			}
 		}
@@ -138,45 +102,50 @@ module.exports = {
 				}
 				catch (error) {
 
-					if (error.httpStatus === 403) {
-
-						await message.channel
-							.send({
-								content: member.toString(),
-								embeds: [{
-									color: config.error_color,
-									author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-									title: 'I don\'t have permission to manage roles, or the role is above my highest role. Please ask an admin to edit my permissions or move the wanted role below mine.',
-								}],
-								failIfNotExists: false,
-							})
-							.catch((err) => {
-								if (err.httpStatus !== 404) {
-									throw new Error(err);
-								}
-							});
-					}
-					else {
-
-						console.error(error);
-						await message.channel
-							.send({
-								content: member.toString(),
-								embeds: [{
-									color: config.error_color,
-									author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-									title: 'There was an error trying to add the role :(',
-								}],
-								failIfNotExists: false,
-							})
-							.catch((err) => {
-								if (err.httpStatus !== 404) {
-									throw new Error(err);
-								}
-							});
-					}
+					await module.exports.checkRoleCatchBlock(error, message, member);
 				}
 			}
+		}
+	},
+
+	async checkRoleCatchBlock(error, message, member) {
+
+		if (error.httpStatus === 403) {
+
+			await message.channel
+				.send({
+					content: member.toString(),
+					embeds: [{
+						color: config.error_color,
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+						title: 'I don\'t have permission to manage roles, or the role is above my highest role. Please ask an admin to edit my permissions or move the wanted role below mine.',
+					}],
+					failIfNotExists: false,
+				})
+				.catch((err) => {
+					if (err.httpStatus !== 404) {
+						throw new Error(err);
+					}
+				});
+		}
+		else {
+
+			console.error(error);
+			await message.channel
+				.send({
+					content: member.toString(),
+					embeds: [{
+						color: config.error_color,
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+						title: 'There was an error trying to add the role :(',
+					}],
+					failIfNotExists: false,
+				})
+				.catch((err) => {
+					if (err.httpStatus !== 404) {
+						throw new Error(err);
+					}
+				});
 		}
 	},
 };

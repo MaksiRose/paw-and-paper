@@ -1,5 +1,6 @@
 const config = require('../../config.json');
 const profileModel = require('../../models/profileModel');
+const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { checkLevelUp } = require('../../utils/levelHandling');
 
@@ -152,41 +153,7 @@ module.exports = {
 					}
 					catch (error) {
 
-						if (error.httpStatus === 403) {
-
-							return await interaction.message
-								.reply({
-									embeds: [{
-										color: config.error_color,
-										author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-										title: 'I don\'t have permission to manage roles, or the role is above my highest role. Please ask an admin to edit my permissions or move the wanted role below mine.',
-									}],
-									failIfNotExists: false,
-								})
-								.catch((err) => {
-									if (err.httpStatus !== 404) {
-										throw new Error(err);
-									}
-								});
-						}
-						else {
-
-							console.error(error);
-							return await interaction.message
-								.reply({
-									embeds: [{
-										color: config.error_color,
-										author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-										title: 'There was an error trying to add the role :(',
-									}],
-									failIfNotExists: false,
-								})
-								.catch((err) => {
-									if (err.httpStatus !== 404) {
-										throw new Error(err);
-									}
-								});
-						}
+						await checkRoleCatchBlock(error, message, message.member);
 					}
 				}
 				else if ((profileData.levels * (profileData.levels - 1) / 2) * 50 + profileData.experience >= buyItem.requirement) {
@@ -239,41 +206,7 @@ module.exports = {
 					}
 					catch (error) {
 
-						if (error.httpStatus === 403) {
-
-							await interaction.message
-								.reply({
-									embeds: [{
-										color: config.error_color,
-										author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-										title: 'I don\'t have permission to manage roles, or the role is above my highest role. Please ask an admin to edit my permissions or move the wanted role below mine.',
-									}],
-									failIfNotExists: false,
-								})
-								.catch((err) => {
-									if (err.httpStatus !== 404) {
-										throw new Error(err);
-									}
-								});
-						}
-						else {
-
-							console.error(error);
-							await interaction.message
-								.reply({
-									embeds: [{
-										color: config.error_color,
-										author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-										title: 'There was an error trying to add the role :(',
-									}],
-									failIfNotExists: false,
-								})
-								.catch((err) => {
-									if (err.httpStatus !== 404) {
-										throw new Error(err);
-									}
-								});
-						}
+						await checkRoleCatchBlock(error, message, message.member);
 					}
 				}
 				else {
