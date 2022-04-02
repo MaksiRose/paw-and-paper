@@ -7,18 +7,13 @@ class model {
 
 		this.findOne = async function(filterObject) {
 
-			file_iteration: for (const file of fs.readdirSync(path)) {
-
-				if (!file.endsWith('.json')) {
-
-					continue;
-				}
+			file_iteration: for (const file of fs.readdirSync(path).filter(f => f.endsWith('.json'))) {
 
 				const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`));
 
 				for (const [key, value] of Object.entries(filterObject)) {
 
-					if (dataObject[key] == undefined || dataObject[key] != value) {
+					if (Object.hasOwn(dataObject, key) === false || dataObject[key] !== value) {
 
 						continue file_iteration;
 					}
@@ -34,9 +29,7 @@ class model {
 
 			const dataObjectsArray = [];
 
-			const files = fs.readdirSync(path).filter(file => file.endsWith('.json'));
-
-			for (const file of files) {
+			for (const file of fs.readdirSync(path).filter(f => f.endsWith('.json'))) {
 
 				const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`));
 
@@ -50,23 +43,23 @@ class model {
 
 				for (const [key, value] of Object.entries(testObject)) {
 
-					if (key == '$or') {
+					if (key === '$or') {
 
 						if (oneElementMatches(value, compareObject) === true) continue;
 					}
-					else if (key == '$gt') {
+					else if (key === '$gt') {
 
-						if (compareObject != undefined && compareObject > value) continue;
+						if (Object.hasOwn(compareObject, key) === true && compareObject > value) { continue; }
 					}
-					else if (key == '$nin') {
+					else if (key === '$nin') {
 
-						if (oneElementMatches(value, compareObject) === false) continue;
+						if (oneElementMatches(value, compareObject) === false) { continue; }
 					}
-					else if (value === Object(value)) {
+					else if (Object.hasOwn(compareObject, key) === true && value === Object(value)) {
 
-						if (allObjectsMatch(value, compareObject[key]) === true) continue;
+						if (allObjectsMatch(value, compareObject[key]) === true) { continue; }
 					}
-					else if (compareObject[key] !== undefined && compareObject[key] === value) {
+					else if (Object.hasOwn(compareObject, key) === true && compareObject[key] === value) {
 
 						continue;
 					}
@@ -111,9 +104,9 @@ class model {
 
 			function checkNewUUID() {
 
-				for (const file of fs.readdirSync(path)) {
+				for (const file of fs.readdirSync(path).filter(f => f.endsWith('.json'))) {
 
-					if (file == uuid) {
+					if (file.uuid === uuid) {
 
 						uuid = crypto.randomUUID();
 						return checkNewUUID();
@@ -128,7 +121,7 @@ class model {
 
 			const dataObject = await this.findOne(filterObject);
 
-			if (!dataObject) {
+			if (dataObject === null) {
 
 				return null;
 			}
@@ -144,34 +137,34 @@ class model {
 
 			const dataObject = await this.findOne(filterObject);
 
-			if (!dataObject) {
+			if (dataObject === null) {
 
 				return null;
 			}
 
-			const user = (dataObject.userId != undefined) ? await client.users
+			const user = (dataObject.userId !== undefined) ? await client.users
 				.fetch(dataObject.userId)
 				.catch((error) => {
-					if (error.httpStatus != 403 && error.httpStatus != 404) {
+					if (error.httpStatus !== 403 && error.httpStatus !== 404) {
 						console.error(error);
 					}
 				}) : null;
 
-			const guild = (dataObject.serverId != undefined) ? await client.guilds
+			const guild = (dataObject.serverId !== undefined) ? await client.guilds
 				.fetch(dataObject.serverId)
 				.catch((error) => {
-					if (error.httpStatus != 403 && error.httpStatus != 404) {
+					if (error.httpStatus !== 403 && error.httpStatus !== 404) {
 						console.error(error);
 					}
 				}) : null;
 
 			for (const [updateKey, updateValue] of Object.entries(updateObject)) {
 
-				if (updateKey == '$set') {
+				if (updateKey === '$set') {
 
 					for (const [key, value] of Object.entries(updateValue)) {
 
-						if (dataObject[key] !== undefined && (typeof dataObject[key] === typeof value || dataObject[key] === null || value === null)) {
+						if (Object.hasOwn(dataObject, key) === true && (typeof dataObject[key] === typeof value || dataObject[key] === null || value === null)) {
 
 							(logOutputter(dataObject[key]) != logOutputter(value)) && console.log(`\x1b[32m${(user != null) ? `${user.tag} (${user.id}): ` : ''}\x1b[0m${key} changed from \x1b[33m${logOutputter(objectReducer(dataObject[key], value))} \x1b[0mto \x1b[33m${logOutputter(objectReducer(value, dataObject[key]))} \x1b[0min \x1b[32m${(guild != null) ? guild.name : ''} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
@@ -180,24 +173,24 @@ class model {
 					}
 				}
 
-				if (updateKey == '$inc') {
+				if (updateKey === '$inc') {
 
 					for (const [key, value] of Object.entries(updateValue)) {
 
-						if (dataObject[key] != undefined && typeof dataObject[key] == typeof value) {
+						if (Object.hasOwn(dataObject, key) === true && typeof dataObject[key] === typeof value) {
 
-							(value != 0) && console.log(`\x1b[32m${(user != null) ? `${user.tag} (${user.id}): ` : ''}\x1b[0m${key} changed from \x1b[33m${dataObject[key]} \x1b[0mto \x1b[33m${dataObject[key] + value} \x1b[0min \x1b[32m${(guild != null) ? guild.name : ''} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+							(value !== 0) && console.log(`\x1b[32m${(user != null) ? `${user.tag} (${user.id}): ` : ''}\x1b[0m${key} changed from \x1b[33m${dataObject[key]} \x1b[0mto \x1b[33m${dataObject[key] + value} \x1b[0min \x1b[32m${(guild != null) ? guild.name : ''} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 							dataObject[key] += value;
 						}
 					}
 				}
 
-				if (updateKey == '$add') {
+				if (updateKey === '$add') {
 
 					for (const [key, value] of Object.entries(updateValue)) {
 
-						if (dataObject[key] == undefined) {
+						if (Object.hasOwn(dataObject, key) === false) {
 
 							(logOutputter(dataObject[key]) != logOutputter(value)) && console.log(`\x1b[32m${(user != null) ? `${user.tag} (${user.id}): ` : ''}\x1b[0m${key} created with value \x1b[33m${logOutputter(objectReducer(value, dataObject[key]))} \x1b[0min \x1b[32m${(guild != null) ? guild.name : ''} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
