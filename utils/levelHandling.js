@@ -1,5 +1,5 @@
 const profileModel = require('../models/profileModel');
-const { checkLevelRequirements } = require('./checkRoleRequirements');
+const { checkLevelRequirements, checkRoleCatchBlock } = require('./checkRoleRequirements');
 const { upperCasePronounAndPlural } = require('./getPronouns');
 
 module.exports = {
@@ -68,7 +68,7 @@ module.exports = {
 		}
 
 
-		await profileModel.findOneAndUpdate(
+		profileData = await profileModel.findOneAndUpdate(
 			{ userId: profileData.userId, serverId: profileData.serverId },
 			{
 				$set: {
@@ -78,6 +78,29 @@ module.exports = {
 				},
 			},
 		);
+
+		const member = await botReply.guild.members.fetch(profileData.userId);
+		const roles = profileData.roles.filter(role => role.wayOfEarning === 'levls' && role.requirement > profileData.levels);
+
+		for (const role of roles) {
+
+			try {
+
+				await member.roles.remove(role.roleId);
+
+				const userRoleIndex = profileData.roles.indexOf(role);
+				if (userRoleIndex >= 0) { profileData.roles.splice(userRoleIndex, 1); }
+
+				await profileModel.findOneAndUpdate(
+					{ userId: profileData.userId, serverId: profileData.serverId },
+					{ $set: { roles: profileData.roles } },
+				);
+			}
+			catch (error) {
+
+				await checkRoleCatchBlock(error, botReply, member);
+			}
+		}
 
 		botReply = await botReply
 			.edit({
