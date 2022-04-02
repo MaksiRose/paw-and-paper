@@ -309,6 +309,8 @@ module.exports = {
 						footer: { text: '' },
 					};
 
+					let isSuccessful = false;
+
 					if (interaction.values[0] === 'water') {
 
 						if (chosenProfileData.thirst > 0) {
@@ -317,25 +319,40 @@ module.exports = {
 
 								userHasChangedCondition = true;
 							}
-
-							if (profileData.userId === chosenProfileData.userId) {
-
-								embed.description = `*${profileData.name} thinks about just drinking some water, but that won't help with ${pronoun(profileData, 2)} issues...*"`;
-
-							}
-							else {
-
-								embed.description = `*${chosenProfileData.name} looks at ${profileData.name} with indignation.* "Being hydrated is really not my biggest problem right now!"`;
-
-							}
-
-							embed.footer.text = await decreaseStats(false);
-
 						}
 						else {
 
+							isSuccessful = true;
+						}
+
+						if (isSuccessful === false && userHasChangedCondition === true) {
+
+							botReply = await interaction.message
+								.edit({
+									embeds: [...embedArray, {
+										color: profileData.color,
+										title: `${chosenProfileData.name}'s stats/illnesses/injuries changed before you healed them. Please try again.`,
+									}],
+									components: userSelectMenu.components[0].options.length > 0 ? [userSelectMenu] : [],
+								})
+								.catch((error) => {
+									if (error.httpStatus !== 404) {
+										throw new Error(error);
+									}
+								});
+
+							return userSelectMenu.components[0].options.length > 0 ? await interactionCollector() : null;
+						}
+
+						if (isSuccessful === true && profileData.rank === 'Apprentice' && pullFromWeightedTable({ 0: 40, 1: 60 + profileData.saplingObject.waterCycles }) === 0) {
+
+							isSuccessful = false;
+						}
+
+						if (isSuccessful === true) {
+
 							const embedFooterStatsText = await decreaseStats(true);
-							const chosenUserThirstPoints = generateRandomNumber(10, 1);
+							const chosenUserThirstPoints = generateRandomNumber(10, 6);
 
 							chosenProfileData = await profileModel.findOneAndUpdate(
 								{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
@@ -344,7 +361,23 @@ module.exports = {
 
 							embed.description = `*${profileData.name} takes ${chosenProfileData.name}'s body, drags it over to the river, and positions ${pronoun(chosenProfileData, 2)} head right over the water. The ${chosenProfileData.species} sticks ${pronoun(chosenProfileData, 2)} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${pronoun(chosenProfileData, 2)} body.*`;
 							embed.footer.text = `${embedFooterStatsText}\n\n+${chosenUserThirstPoints} thirst for ${chosenProfileData.name} (${chosenProfileData.thirst}/${chosenProfileData.maxThirst})`;
+						}
+						else {
 
+							if (profileData.userId === chosenProfileData.userId) {
+
+								embed.description = `*${profileData.name} thinks about just drinking some water, but that won't help with ${pronoun(profileData, 2)} issues...*"`;
+							}
+							else if (chosenProfileData.thirst > 0) {
+
+								embed.description = `*${chosenProfileData.name} looks at ${profileData.name} with indignation.* "Being hydrated is really not my biggest problem right now!"`;
+							}
+							else {
+
+								embed.description = `*${profileData.name} takes ${chosenProfileData.name}'s body and tries to drag it over to the river. The ${profileData.species} attempts to position the ${chosenProfileData.species}'s head right over the water, but every attempt fails miserably. ${upperCasePronounAndPlural(profileData, 0, 'need')} to concentrate and try again.*`;
+							}
+
+							embed.footer.text = await decreaseStats(false);
 						}
 					}
 					else {
@@ -369,7 +402,6 @@ module.exports = {
 						const chosenUserInjuryObject = { ...chosenProfileData.injuryObject };
 						let chosenUserEnergyPoints = 0;
 						let chosenUserHungerPoints = 0;
-						let isSuccessful = false;
 						let embedFooterChosenUserStatsText = '';
 						let embedFooterChosenUserInjuryText = '';
 
@@ -627,7 +659,7 @@ module.exports = {
 							}
 						});
 
-					const content = (chosenProfileData.userId != profileData.userId ? `<@!${chosenProfileData.userId}>\n` : '') + (messageContent === null ? '' : messageContent);
+					const content = chosenProfileData.userId !== profileData.userId && isSuccessful === true ? `<@!${chosenProfileData.userId}>\n` : '' + (messageContent ?? '');
 
 					botReply = await message
 						.reply({
