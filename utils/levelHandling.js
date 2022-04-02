@@ -101,7 +101,7 @@ module.exports = {
 
 				await botReply.channel
 					.send({
-						content: `Removed the <@&${role.roleId}> role from ${member.toString()}!`,
+						content: `${member.toString()}, you lost the <@&${role.roleId}> role because of a lack of levels!`,
 						failIfNotExists: false,
 					})
 					.catch((error) => {

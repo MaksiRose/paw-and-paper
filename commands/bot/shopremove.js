@@ -142,8 +142,13 @@ module.exports = {
 				);
 
 				await interaction.message
-					.reply({
-						content: `<@&${deleteItem[0].roleId}> with the requirement of ${deleteItem[0].requirement} ${deleteItem[0].wayOfEarning} was deleted from the shop.`,
+					.edit({
+						embeds: [{
+							color: config.default_color,
+							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+							description: `<@&${deleteItem[0].roleId}> with the requirement of ${deleteItem[0].requirement} ${deleteItem[0].wayOfEarning} was deleted from the shop.`,
+						}],
+						components: [],
 						failIfNotExists: false,
 					})
 					.catch((error) => {
@@ -183,7 +188,7 @@ module.exports = {
 
 							await message.channel
 								.send({
-									content: `Removed the <@&${deleteItem[0].roleId}> role from ${member.toString()}!`,
+									content: `${member.toString()}, you lost the <@&${deleteItem[0].roleId}> role because it was removed from the shop!`,
 									failIfNotExists: false,
 								})
 								.catch((error) => {
@@ -201,49 +206,7 @@ module.exports = {
 					}
 				}
 
-				if (serverData.shop.length === 0) {
-
-					return await interaction.message
-						.edit({
-							embeds: [{
-								color: config.error_color,
-								title: 'There are currently no roles in the shop!',
-							}],
-							components: [],
-							failIfNotExists: false,
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
-						});
-				}
-
-				page = 0;
-				const { description: newDescription, selectMenuOptionsArray: newSelectMenuOptionsArray } = getMenuOptions(serverData.shop, page);
-
-				await interaction.message
-					.edit({
-						embeds: [{
-							color: config.default_color,
-							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-							description: newDescription,
-						}],
-						components: [{
-							type: 'ACTION_ROW',
-							components: [{
-								type: 'SELECT_MENU',
-								customId: 'shopdelete-options',
-								placeholder: 'Select an item',
-								options: newSelectMenuOptionsArray,
-							}],
-						}],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
+				return;
 			}
 
 			return await interactionCollector();

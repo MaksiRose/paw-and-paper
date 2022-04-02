@@ -146,9 +146,14 @@ module.exports = {
 
 						setTimeout(async () => {
 
-							await interaction
-								.followUp({
-									content: `Refunded the <@&${buyItem.roleId}> role!`,
+							await interaction.message
+								.edit({
+									embeds: [{
+										color: config.default_color,
+										author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+										description: `You refunded the <@&${buyItem.roleId}> role!`,
+									}],
+									components: [],
 									failIfNotExists: false,
 								})
 								.catch((error) => {
@@ -234,7 +239,7 @@ module.exports = {
 
 								await botReply.channel
 									.send({
-										content: `Removed the <@&${role.roleId}> role from ${member.toString()}!`,
+										content: `${member.toString()}, you lost the <@&${role.roleId}> role because of a lack of levels!`,
 										failIfNotExists: false,
 									})
 									.catch((error) => {
@@ -251,9 +256,14 @@ module.exports = {
 
 						setTimeout(async () => {
 
-							await interaction
-								.followUp({
-									content: `You bought the <@&${buyItem.roleId}> role for ${buyItem.requirement} experience!`,
+							await interaction.message
+								.edit({
+									embeds: [{
+										color: config.default_color,
+										author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+										description: `You bought the <@&${buyItem.roleId}> role for ${buyItem.requirement} experience!`,
+									}],
+									components: [],
 									failIfNotExists: false,
 								})
 								.catch((error) => {
@@ -286,13 +296,7 @@ module.exports = {
 					}, 500);
 				}
 
-				await interaction.message
-					.edit({ components: interaction.message.components })
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
+				return;
 			}
 
 			return await interactionCollector();
