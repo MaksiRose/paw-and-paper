@@ -21,22 +21,9 @@ module.exports = {
 				meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, dataObject.inventoryObject.meat[key] || 0])),
 			};
 
-			if (dataObject.pronounArray !== undefined) {
+			if (dataObject.roles !== undefined) {
 
-				dataObject.pronounSets = [dataObject.pronounArray];
-				delete dataObject.pronounArray;
-				(path.includes('inactiveProfiles') ? otherProfileModel : profileModel).save(dataObject);
-			}
-
-			if (dataObject.saplingObject === undefined) {
-
-				dataObject.saplingObject = { exists: false, health: 100, waterCycles: 0, nextWaterTimestamp: null };
-				(path.includes('inactiveProfiles') ? otherProfileModel : profileModel).save(dataObject);
-			}
-
-			if (dataObject.advice === undefined) {
-
-				dataObject.advice = dataObject.rank === 'Youngling' ? { resting: false, drinking: false, eating: false, passingout: false } : { resting: true, drinking: true, eating: true, passingout: true };
+				dataObject.roles = [];
 				(path.includes('inactiveProfiles') ? otherProfileModel : profileModel).save(dataObject);
 			}
 
