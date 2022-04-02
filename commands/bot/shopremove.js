@@ -141,6 +141,17 @@ module.exports = {
 					{ $set: { shop: serverData.shop } },
 				);
 
+				await interaction
+					.reply({
+						content: `<@&${deleteItem[0].roleId}> with the requirement of ${deleteItem[0].requirement} ${deleteItem[0].wayOfEarning} was deleted from the shop.`,
+						failIfNotExists: false,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
 				const allServerProfiles = await profileModel.find({
 					serverId: message.guild.id,
 				});
@@ -169,7 +180,7 @@ module.exports = {
 
 							await message.channel
 								.send({
-									content: `${member.toString()}, refunded the <@&${deleteItem[0].roleId}> role!`,
+									content: `Removed the <@&${deleteItem[0].roleId}> role from ${member.toString()}!`,
 									failIfNotExists: false,
 								})
 								.catch((error) => {
@@ -186,20 +197,6 @@ module.exports = {
 						}
 					}
 				}
-
-				setTimeout(async () => {
-
-					await interaction
-						.followUp({
-							content: `<@&${deleteItem[0].roleId}> with the requirement of ${deleteItem[0].requirement} ${deleteItem[0].wayOfEarning} was deleted from the shop.`,
-							failIfNotExists: false,
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
-						});
-				}, 500);
 
 				if (serverData.shop.length === 0) {
 
