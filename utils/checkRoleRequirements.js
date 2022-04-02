@@ -18,9 +18,11 @@ module.exports = {
 
 					await member.roles.add(item.roleId);
 
-					const profileData = profileModel.findOne(
+					const profileData = await profileModel.findOne(
 						{ userId: member.id, serverId: member.guild.id },
 					);
+
+					console.log(profileData);
 
 					profileData.roles.push({
 						roleId: item.roleId,
@@ -28,7 +30,7 @@ module.exports = {
 						requirement: item.requirement,
 					});
 
-					profileModel.findOneAndUpdate(
+					await profileModel.findOneAndUpdate(
 						{ userId: member.id, serverId: member.guild.id },
 						{ $set: { roles: profileData.roles } },
 					);
@@ -69,7 +71,7 @@ module.exports = {
 
 					await member.roles.add(item.roleId);
 
-					const profileData = profileModel.findOne(
+					const profileData = await profileModel.findOne(
 						{ userId: member.id, serverId: member.guild.id },
 					);
 
@@ -79,7 +81,7 @@ module.exports = {
 						requirement: item.requirement,
 					});
 
-					profileModel.findOneAndUpdate(
+					await profileModel.findOneAndUpdate(
 						{ userId: member.id, serverId: member.guild.id },
 						{ $set: { roles: profileData.roles } },
 					);
