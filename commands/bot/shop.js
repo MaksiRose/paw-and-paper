@@ -174,6 +174,22 @@ module.exports = {
 						if (message.member.roles.cache.has(buyItem.roleId) === false) {
 
 							await message.member.roles.add(buyItem.roleId);
+
+							await interaction.message
+								.edit({
+									embeds: [{
+										color: config.default_color,
+										author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+										description: `You bought the <@&${buyItem.roleId}> role for ${buyItem.requirement} experience!`,
+									}],
+									components: [],
+									failIfNotExists: false,
+								})
+								.catch((error) => {
+									if (error.httpStatus !== 404) {
+										throw new Error(error);
+									}
+								});
 						}
 
 						profileData.roles.push({
@@ -255,25 +271,6 @@ module.exports = {
 								await checkRoleCatchBlock(error, botReply, member);
 							}
 						}
-
-						setTimeout(async () => {
-
-							await interaction.message
-								.edit({
-									embeds: [{
-										color: config.default_color,
-										author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-										description: `You bought the <@&${buyItem.roleId}> role for ${buyItem.requirement} experience!`,
-									}],
-									components: [],
-									failIfNotExists: false,
-								})
-								.catch((error) => {
-									if (error.httpStatus !== 404) {
-										throw new Error(error);
-									}
-								});
-						}, 500);
 					}
 					catch (error) {
 

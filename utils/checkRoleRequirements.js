@@ -16,11 +16,6 @@ module.exports = {
 
 				try {
 
-					if (message.member.roles.cache.has(item.roleId) === false) {
-
-						await member.roles.add(item.roleId);
-					}
-
 					const profileData = await profileModel.findOne(
 						{ userId: member.id, serverId: member.guild.id },
 					);
@@ -36,21 +31,26 @@ module.exports = {
 						{ $set: { roles: profileData.roles } },
 					);
 
-					await message.channel
-						.send({
-							content: member.toString(),
-							embeds: [{
-								color: config.default_color,
-								author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-								description: `You got the <@&${item.roleId}> role for being ${item.requirement}!`,
-							}],
-							failIfNotExists: false,
-						})
-						.catch((err) => {
-							if (err.httpStatus !== 404) {
-								throw new Error(err);
-							}
-						});
+					if (message.member.roles.cache.has(item.roleId) === false) {
+
+						await member.roles.add(item.roleId);
+
+						await message.channel
+							.send({
+								content: member.toString(),
+								embeds: [{
+									color: config.default_color,
+									author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+									description: `You got the <@&${item.roleId}> role for being ${item.requirement}!`,
+								}],
+								failIfNotExists: false,
+							})
+							.catch((err) => {
+								if (err.httpStatus !== 404) {
+									throw new Error(err);
+								}
+							});
+					}
 				}
 				catch (error) {
 
@@ -70,11 +70,6 @@ module.exports = {
 
 				try {
 
-					if (message.member.roles.cache.has(item.roleId) === false) {
-
-						await member.roles.add(item.roleId);
-					}
-
 					const profileData = await profileModel.findOne(
 						{ userId: member.id, serverId: member.guild.id },
 					);
@@ -90,21 +85,26 @@ module.exports = {
 						{ $set: { roles: profileData.roles } },
 					);
 
-					await message.channel
-						.send({
-							content: member.toString(),
-							embeds: [{
-								color: config.default_color,
-								author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-								description: `You got the <@&${item.roleId}> role for being level ${item.requirement}!`,
-							}],
-							failIfNotExists: false,
-						})
-						.catch((err) => {
-							if (err.httpStatus !== 404) {
-								throw new Error(err);
-							}
-						});
+					if (message.member.roles.cache.has(item.roleId) === false) {
+
+						await member.roles.add(item.roleId);
+
+						await message.channel
+							.send({
+								content: member.toString(),
+								embeds: [{
+									color: config.default_color,
+									author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+									description: `You got the <@&${item.roleId}> role for being level ${item.requirement}!`,
+								}],
+								failIfNotExists: false,
+							})
+							.catch((err) => {
+								if (err.httpStatus !== 404) {
+									throw new Error(err);
+								}
+							});
+					}
 				}
 				catch (error) {
 
