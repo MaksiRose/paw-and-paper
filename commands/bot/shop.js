@@ -146,7 +146,6 @@ module.exports = {
 							await interaction
 								.followUp({
 									content: `Refunded the <@&${buyItem.roleId}> role!`,
-									ephemeral: true,
 									failIfNotExists: false,
 								})
 								.catch((error) => {
@@ -212,7 +211,6 @@ module.exports = {
 							await interaction
 								.followUp({
 									content: `You bought the <@&${buyItem.roleId}> role for ${buyItem.requirement} experience!`,
-									ephemeral: true,
 									failIfNotExists: false,
 								})
 								.catch((error) => {

@@ -1,6 +1,9 @@
 const config = require('../../config.json');
 const serverModel = require('../../models/serverModel');
+const profileModel = require('../../models/profileModel');
 const { createCommandCollector } = require('../../utils/commandCollector');
+const { checkLevelUp } = require('../../utils/levelHandling');
+const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
 
 module.exports = {
 	name: 'shopremove',
@@ -138,12 +141,57 @@ module.exports = {
 					{ $set: { shop: serverData.shop } },
 				);
 
+				const allServerProfiles = await profileModel.find({
+					serverId: message.guild.id,
+				});
+
+				for (const profile of allServerProfiles) {
+
+					const member = await message.guild.members.fetch(profile.userId);
+
+					if (member.roles.cache.has(deleteItem[0].roleId) === true && profile.roles.some(role => role.roleId === deleteItem[0].roleId && role.wayOfEarning === deleteItem[0].wayOfEarning && role.requirement === deleteItem[0].requirement)) {
+
+						try {
+
+							await member.roles.remove(deleteItem[0].roleId);
+
+							const userRole = profile.roles.find(role => role.roleId === deleteItem[0].roleId && role.wayOfEarning === deleteItem[0].wayOfEarning && role.requirement === deleteItem[0].requirement);
+							const userRoleIndex = profile.roles.indexOf(userRole);
+
+							if (userRoleIndex >= 0) { profile.roles.splice(userRoleIndex, 1); }
+
+							await profileModel.findOneAndUpdate(
+								{ userId: profile.userId, serverId: profile.serverId },
+								{
+									$inc: { experience: userRole.wayOfEarning === 'experience' ? userRole.requirement : 0 },
+									$set: { roles: profile.roles } },
+							);
+
+							await message.channel
+								.send({
+									content: `${member.toString()}, refunded the <@&${deleteItem[0].roleId}> role!`,
+									failIfNotExists: false,
+								})
+								.catch((error) => {
+									if (error.httpStatus !== 404) {
+										throw new Error(error);
+									}
+								});
+
+							checkLevelUp(message, undefined, profile, serverData);
+						}
+						catch (error) {
+
+							await checkRoleCatchBlock(error, message, message.member);
+						}
+					}
+				}
+
 				setTimeout(async () => {
 
 					await interaction
 						.followUp({
 							content: `<@&${deleteItem[0].roleId}> with the requirement of ${deleteItem[0].requirement} ${deleteItem[0].wayOfEarning} was deleted from the shop.`,
-							ephemeral: true,
 							failIfNotExists: false,
 						})
 						.catch((error) => {
