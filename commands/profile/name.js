@@ -177,6 +177,6 @@ module.exports = {
 				}
 			});
 
-		await checkRankRequirements(serverData, message, 'Youngling');
+		await checkRankRequirements(serverData, message, message.member, 'Youngling');
 	},
 };
