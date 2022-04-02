@@ -221,7 +221,7 @@ module.exports = {
 
 function getMenuOptions(shop, page) {
 
-	let position = 0;
+	let position = 0 + (page * 24);
 	const descriptionArray = [];
 	const selectMenuOptionsArray = [];
 
