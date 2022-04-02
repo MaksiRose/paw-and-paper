@@ -31,16 +31,14 @@ module.exports = {
 
 		if (profileData.rank === 'Youngling' || profileData.rank === 'Hunter') {
 
-			embedArray.push({
-				color: profileData.color,
-				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*A healer rushes into the medicine den in fury.*\n"${profileData.name}, you are not trained to heal yourself, and especially not to heal others! I don't ever wanna see you again in here without supervision!"\n*${profileData.name} lowers ${pronoun(profileData, 2)} head and leaves in shame.*`,
-			});
-
 			return await message
 				.reply({
 					content: messageContent,
-					embeds: embedArray,
+					embeds: [...embedArray, {
+						color: profileData.color,
+						author: { name: profileData.name, icon_url: profileData.avatarURL },
+						description: `*A healer rushes into the medicine den in fury.*\n"${profileData.name}, you are not trained to heal yourself, and especially not to heal others! I don't ever wanna see you again in here without supervision!"\n*${profileData.name} lowers ${pronoun(profileData, 2)} head and leaves in shame.*`,
+					}],
 					failIfNotExists: false,
 				})
 				.catch((error) => {
@@ -346,17 +344,6 @@ module.exports = {
 							embed.footer.text = `${embedFooterStatsText}\n\n+${chosenUserThirstPoints} thirst for ${chosenProfileData.name} (${chosenProfileData.thirst}/${chosenProfileData.maxThirst})`;
 
 						}
-
-						botReply = await interaction.message
-							.edit({
-								embeds: embedArray,
-								components: [],
-							})
-							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
-							});
 					}
 					else {
 
@@ -840,7 +827,7 @@ module.exports = {
 			const
 				{ embed: embed2, selectMenu } = getFirstHealPage(),
 				embeds = [...embedArray, embed, embed2],
-				components = [userSelectMenu, pageButtons, selectMenu];
+				components = [userSelectMenu, pageButtons, ... selectMenu !== null ? [selectMenu] : []];
 
 			return { embeds, components };
 		}
@@ -854,7 +841,7 @@ module.exports = {
 				footer: { text: 'Choose one of the herbs above to heal the player with it!' },
 			};
 
-			const selectMenu = {
+			let selectMenu = {
 				type: 'ACTION_ROW',
 				components: [{
 					type: 'SELECT_MENU',
@@ -872,6 +859,8 @@ module.exports = {
 					selectMenu.components[0].options.push({ label: commonPlantName, value: commonPlantName, description: `${serverData.inventoryObject.commonPlants[commonPlantName]}` });
 				}
 			}
+
+			if (selectMenu.components[0].options.length === 0) { selectMenu = null; }
 
 			return { embed, selectMenu };
 		}
