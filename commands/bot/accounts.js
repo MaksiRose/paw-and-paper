@@ -122,7 +122,7 @@ module.exports = {
 
 			for (const role of newProfileData.roles) {
 
-				if (message.member.roles.cache.has(role.roleId) === true) {
+				if (message.member.roles.cache.has(role.roleId) === false) {
 
 					try {
 

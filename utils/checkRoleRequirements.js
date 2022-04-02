@@ -12,11 +12,14 @@ module.exports = {
 
 		for (const item of shop) {
 
-			if ((userRank === item.requirement || rankList[userRank] > rankList[item.requirement]) && message.member.roles.cache.has(item.roleId) === false) {
+			if ((userRank === item.requirement || rankList[userRank] > rankList[item.requirement])) {
 
 				try {
 
-					await member.roles.add(item.roleId);
+					if (message.member.roles.cache.has(item.roleId) === false) {
+
+						await member.roles.add(item.roleId);
+					}
 
 					const profileData = await profileModel.findOne(
 						{ userId: member.id, serverId: member.guild.id },
@@ -63,11 +66,14 @@ module.exports = {
 
 		for (const item of shop) {
 
-			if (userLevel >= item.requirement && message.member.roles.cache.has(item.roleId) === false) {
+			if (userLevel >= item.requirement) {
 
 				try {
 
-					await member.roles.add(item.roleId);
+					if (message.member.roles.cache.has(item.roleId) === false) {
+
+						await member.roles.add(item.roleId);
+					}
 
 					const profileData = await profileModel.findOne(
 						{ userId: member.id, serverId: member.guild.id },

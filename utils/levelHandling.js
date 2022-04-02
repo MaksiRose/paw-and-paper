@@ -86,7 +86,10 @@ module.exports = {
 
 			try {
 
-				await member.roles.remove(role.roleId);
+				if (member.roles.cache.has(role.roleId) === true && profileData.roles.filter(profilerole => profilerole.roleId === role.roleId).length <= 1) {
+
+					await member.roles.remove(role.roleId);
+				}
 
 				const userRoleIndex = profileData.roles.indexOf(role);
 				if (userRoleIndex >= 0) { profileData.roles.splice(userRoleIndex, 1); }

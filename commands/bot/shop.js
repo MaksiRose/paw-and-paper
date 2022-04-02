@@ -123,11 +123,14 @@ module.exports = {
 					serverId: message.guild.id,
 				});
 
-				if (message.member.roles.cache.has(buyItem.roleId) === true && profileData.roles.some(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience')) {
+				if (profileData.roles.some(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience')) {
 
 					try {
 
-						await message.member.roles.remove(buyItem.roleId);
+						if (message.member.roles.cache.has(buyItem.roleId) === true) {
+
+							await message.member.roles.remove(buyItem.roleId);
+						}
 
 						const userRole = profileData.roles.find(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience');
 						const userRoleIndex = profileData.roles.indexOf(userRole);
@@ -162,11 +165,14 @@ module.exports = {
 						await checkRoleCatchBlock(error, message, message.member);
 					}
 				}
-				else if (message.member.roles.cache.has(buyItem.roleId) === false && (profileData.levels * (profileData.levels - 1) / 2) * 50 + profileData.experience >= buyItem.requirement) {
+				else if ((profileData.levels * (profileData.levels - 1) / 2) * 50 + profileData.experience >= buyItem.requirement) {
 
 					try {
 
-						await message.member.roles.add(buyItem.roleId);
+						if (message.member.roles.cache.has(buyItem.roleId) === false) {
+
+							await message.member.roles.add(buyItem.roleId);
+						}
 
 						profileData.roles.push({
 							roleId: buyItem.roleId,
@@ -213,7 +219,10 @@ module.exports = {
 
 							try {
 
-								await member.roles.remove(role.roleId);
+								if (message.member.roles.cache.has(role.roleId) === true && profileData.roles.filter(profilerole => profilerole.roleId === role.roleId).length <= 1) {
+
+									await message.member.roles.remove(role.roleId);
+								}
 
 								const userRoleIndex = profileData.roles.indexOf(role);
 								if (userRoleIndex >= 0) { profileData.roles.splice(userRoleIndex, 1); }

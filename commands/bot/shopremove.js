@@ -141,7 +141,7 @@ module.exports = {
 					{ $set: { shop: serverData.shop } },
 				);
 
-				await interaction
+				await interaction.message
 					.reply({
 						content: `<@&${deleteItem[0].roleId}> with the requirement of ${deleteItem[0].requirement} ${deleteItem[0].wayOfEarning} was deleted from the shop.`,
 						failIfNotExists: false,
@@ -160,11 +160,14 @@ module.exports = {
 
 					const member = await message.guild.members.fetch(profile.userId);
 
-					if (member.roles.cache.has(deleteItem[0].roleId) === true && profile.roles.some(role => role.roleId === deleteItem[0].roleId && role.wayOfEarning === deleteItem[0].wayOfEarning && role.requirement === deleteItem[0].requirement)) {
+					if (profile.roles.some(role => role.roleId === deleteItem[0].roleId && role.wayOfEarning === deleteItem[0].wayOfEarning && role.requirement === deleteItem[0].requirement)) {
 
 						try {
 
-							await member.roles.remove(deleteItem[0].roleId);
+							if (message.member.roles.cache.has(deleteItem[0].roleId) === true && profileData.roles.filter(role => role.roleId === deleteItem[0].roleId).length <= 1) {
+
+								await member.roles.remove(deleteItem[0].roleId);
+							}
 
 							const userRole = profile.roles.find(role => role.roleId === deleteItem[0].roleId && role.wayOfEarning === deleteItem[0].wayOfEarning && role.requirement === deleteItem[0].requirement);
 							const userRoleIndex = profile.roles.indexOf(userRole);

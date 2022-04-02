@@ -80,7 +80,7 @@ module.exports = {
 		if (wayOfEarning === 'level') { wayOfEarning = 'levels'; }
 		if (wayOfEarning === 'xp') { wayOfEarning = 'experience'; }
 
-		if (serverData.shop.filter(item => item.wayOfEarning === wayOfEarning && item.requirement === requirement).length > 0) {
+		if (serverData.shop.filter(item => wayOfEarning !== 'experience' && item.wayOfEarning === wayOfEarning && item.requirement === requirement).length > 0) {
 
 			return await message
 				.reply({
