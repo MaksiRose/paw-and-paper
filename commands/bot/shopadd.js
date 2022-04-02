@@ -1,5 +1,7 @@
 const config = require('../../config.json');
 const serverModel = require('../../models/serverModel');
+const profileModel = require('../../models/profileModel');
+const { checkLevelRequirements, checkRankRequirements } = require('../../utils/checkRoleRequirements');
 
 module.exports = {
 	name: 'shopadd',
@@ -143,7 +145,7 @@ module.exports = {
 			{ $set: { shop: serverData.shop } },
 		);
 
-		return await message
+		await message
 			.reply({
 				embeds: [{
 					color: config.default_color,
@@ -157,5 +159,24 @@ module.exports = {
 					throw new Error(error);
 				}
 			});
+
+		const allServerProfiles = await profileModel.find({
+			serverId: message.guild.id,
+		});
+
+		for (const profile of allServerProfiles) {
+
+			if (wayOfEarning === 'levels') {
+
+				const member = await message.guild.members.fetch(profile.userId);
+				checkLevelRequirements(serverData, message, member, profile.levels);
+			}
+
+			if (wayOfEarning === 'rank') {
+
+				const member = await message.guild.members.fetch(profile.userId);
+				checkRankRequirements(serverData, message, member, profile.rank);
+			}
+		}
 	},
 };
