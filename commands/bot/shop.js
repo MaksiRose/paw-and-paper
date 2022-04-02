@@ -123,15 +123,22 @@ module.exports = {
 					serverId: message.guild.id,
 				});
 
-				if (message.member.roles.cache.has(buyItem.roleId)) {
+				if (message.member.roles.cache.has(buyItem.roleId) === true && profileData.roles.some(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience')) {
 
 					try {
 
 						await message.member.roles.remove(buyItem.roleId);
 
+						const userRole = profileData.roles.find(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience');
+						const userRoleIndex = profileData.roles.indexOf(userRole);
+
+						if (userRoleIndex >= 0) { profileData.roles.splice(userRoleIndex, 1); }
+
 						profileData = await profileModel.findOneAndUpdate(
 							{ userId: message.author.id, serverId: message.guild.id },
-							{ $inc: { experience: buyItem.requirement } },
+							{
+								$inc: { experience: userRole.requirement },
+								$set: { roles: profileData.roles } },
 						);
 
 						setTimeout(async () => {
@@ -156,11 +163,22 @@ module.exports = {
 						await checkRoleCatchBlock(error, message, message.member);
 					}
 				}
-				else if ((profileData.levels * (profileData.levels - 1) / 2) * 50 + profileData.experience >= buyItem.requirement) {
+				else if (message.member.roles.cache.has(buyItem.roleId) === false && (profileData.levels * (profileData.levels - 1) / 2) * 50 + profileData.experience >= buyItem.requirement) {
 
 					try {
 
 						await message.member.roles.add(buyItem.roleId);
+
+						profileData.roles.push({
+							roleId: buyItem.roleId,
+							wayOfEarning: buyItem.wayOfEarning,
+							requirement: buyItem.requirement,
+						});
+
+						profileData = await profileModel.findOneAndUpdate(
+							{ userId: message.author.id, serverId: message.guild.id },
+							{ $set: { roles: profileData.roles } },
+						);
 
 						let cost = buyItem.requirement;
 
