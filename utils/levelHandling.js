@@ -95,6 +95,17 @@ module.exports = {
 					{ userId: profileData.userId, serverId: profileData.serverId },
 					{ $set: { roles: profileData.roles } },
 				);
+
+				await botReply.channel
+					.send({
+						content: `Removed the <@&${role.roleId}> role from ${member.toString()}!`,
+						failIfNotExists: false,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
 			}
 			catch (error) {
 
