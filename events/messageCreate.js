@@ -1,11 +1,10 @@
 const config = require('../config.json');
-const fs = require('fs');
 const profileModel = require('../models/profileModel');
 const serverModel = require('../models/serverModel');
 const errorHandling = require('../utils/errorHandling');
-const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 const { activeCommandsObject } = require('../utils/commandCollector');
 const { isPassedOut } = require('../utils/checkValidity');
+const createGuild = require('../utils/createGuild');
 let lastMessageEpochTime = 0;
 const userMap = new Map();
 
@@ -27,55 +26,7 @@ module.exports = {
 
 		if (!serverData) {
 
-			const bannedList = JSON.parse(fs.readFileSync('./database/bannedList.json'));
-
-			if (bannedList.serversArray.includes(message.guild.id)) {
-
-				const user = await client.users.fetch(message.guild.ownerId);
-
-				await user
-					.createDM()
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-
-				await user
-					.send({ content: `I am sorry to inform you that your guild \`${message.guild.name}\` has been banned from using this bot.` })
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-
-				await message.guild
-					.leave()
-					.catch((error) => {
-						throw new Error(error);
-					});
-
-				return;
-			}
-
-			const serverInventoryObject = {
-				commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, 0])),
-				uncommonPlants: Object.fromEntries([...uncommonPlantsMap.keys()].sort().map(key => [key, 0])),
-				rarePlants: Object.fromEntries([...rarePlantsMap.keys()].sort().map(key => [key, 0])),
-				meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, 0])),
-			};
-
-			serverData = await serverModel.create({
-				serverId: message.guild.id,
-				name: message.guild.name,
-				inventoryObject: serverInventoryObject,
-				blockedEntranceObject: { den: null, blockedKind: null },
-				activeUsersArray: [],
-				nextPossibleAttack: Date.now(),
-				visitChannelId: null,
-				currentlyVisiting: null,
-				shop: [],
-			});
+			await createGuild(client, message.guild);
 		}
 
 		let profileData = await profileModel.findOne({
