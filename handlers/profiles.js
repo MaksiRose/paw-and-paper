@@ -21,13 +21,6 @@ module.exports = {
 				meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, dataObject.inventoryObject.meat[key] || 0])),
 			};
 
-			// v2.9.0
-			if (dataObject.roles === undefined) {
-
-				dataObject.roles = [];
-				(path.includes('inactiveProfiles') ? otherProfileModel : profileModel).save(dataObject);
-			}
-
 			(path.includes('inactiveProfiles') ? otherProfileModel : profileModel)
 				.findOneAndUpdate(
 					{ userId: dataObject.userId, serverId: dataObject.serverId },

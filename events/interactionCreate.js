@@ -315,6 +315,8 @@ module.exports = {
 							title: 'Page 4: 👥 Interaction',
 							description: 'Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.',
 							fields: [
+								{ name: '**rp requestvisit**', value: 'Find, visit and talk to people from far away packs.' },
+								{ name: '**rp endvisit**', value: 'End a visit between your and another pack.' },
 								{ name: '**rp say [text]**', value: 'Talk to your fellow packmates. Gives 1 experience point per use.' },
 								{ name: '**rp hug [@user]**', value: 'Hug a fellow packmate, if they consent.' },
 								{ name: '**rp share (@user)**', value: 'Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person. __Only available to Elderlies.__' },
@@ -329,6 +331,8 @@ module.exports = {
 								customId: 'help-page4-commands',
 								placeholder: 'Select a command',
 								options: [
+									{ label: 'Requestvisit', value: 'help_requestvisit', description: 'Find, visit and talk to people from far away packs.' },
+									{ label: 'Endvisit', value: 'help_endvisit', description: 'End a visit between your and another pack.' },
 									{ label: 'Say', value: 'help_say', description: 'Talk to your fellow packmates. Gives 1 experience point per use.' },
 									{ label: 'Hug', value: 'help_hug', description: 'Hug a fellow packmate, if they consent.' },
 									{ label: 'Share', value: 'help_share', description: 'Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person.' },
@@ -381,11 +385,10 @@ module.exports = {
 							fields: [
 								{ name: '**rp accounts**', value: 'Change the account/profile you are using. You can have up to three per server.' },
 								{ name: '**rp shop**', value: 'Buy roles with experience points.' },
-								{ name: '**rp requestvisit**', value: 'Find, visit and talk to people from far away packs.' },
-								{ name: '**rp endvisit**', value: 'End a visit between your and another pack.' },
 								{ name: '**rp shopadd [@role] [rank/levels/XP] [requirement]**', value: '__Server admins only.__ Add a role to the shop.' },
 								{ name: '**rp shopremove**', value: '__Server admins only.__ Remove a role from the shop.' },
 								{ name: '**rp allowvisits [#channel/off]**', value: '__Server admins only.__ Allow or disallow visits between your and other packs.' },
+								{ name: '**rp getupdates [#channel]**', value: '__Server admins only.__ Specify a channel in which updates, new features etc. should be posted.' },
 								{ name: '**rp ticket [text]**', value: 'Report a bug, give feedback, suggest a feature!' },
 								{ name: '\n**__CREDITS:__**', value: `This bot was made with love by ${maksi.tag}. Special thanks goes out to ${ezra.tag}, ${ren.tag} and ${elliott.tag}, who did a lot of the custom bot responses, and ${jags.tag} who did the profile picture. Thank you also to everyone who tested the bot and gave feedback.\nThis bot was originally created for a Discord server called [Rushing River Pack](https://disboard.org/server/854522091328110595). If you are otherkin, therian, or supporter of those, you are welcome to join.` },
 								{ name: '\n**__OTHER:__**', value: `If you want to support me, you can donate [here](https://streamlabs.com/maksirose/tip)! :)\nYou can find the GitHub repository for this project [here](https://github.com/MaksiRose/paw-and-paper).\nThe bot is currently running on version ${pjson.version}.` },
@@ -401,11 +404,10 @@ module.exports = {
 								options: [
 									{ label: 'Accounts', value: 'help_accounts', description: 'Change the account/profile you are using. You can have up to three per server.' },
 									{ label: 'Shop', value: 'help_shop', description: 'Buy roles with experience points.' },
-									{ label: 'Requestvisit', value: 'help_requestvisit', description: 'Find, visit and talk to people from far away packs.' },
-									{ label: 'Endvisit', value: 'help_endvisit', description: 'End a visit between your and another pack.' },
 									{ label: 'Shopadd', value: 'help_shopadd', description: 'Server admins only. Add a role to the shop' },
 									{ label: 'Shopremove', value: 'help_shopremove', description: 'Server admins only. Remove a role from the shop.' },
 									{ label: 'Allowvisits', value: 'help_allowvisits', description: 'Server admins only. Allow or disallow visits between your and other packs.' },
+									{ label: 'Getupdates', value: 'help_getupdates', description: 'Server admins only. Specify a channel in which updates should be posted.' },
 									{ label: 'Ticket', value: 'help_ticket', description: 'Report a bug, give feedback, suggest a feature!' },
 								],
 							}],
@@ -1271,6 +1273,29 @@ module.exports = {
 								{ name: '**Aliases**', value: 'none' },
 								{ name: '**Arguments**', value: 'Either the mention of a channel that is the visit-channel, or "off" to turn visits off.' },
 								{ name: '**More information**', value: 'Visits are a feature where to servers can connect in order to talk with each other. Only messages in the channel you select will be sent to the visiting server, and only that channel will receive messages from the visiting server. Only messages by users with an account will be sent.' },
+							],
+						}],
+						ephemeral: true,
+					})
+					.catch(async (error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
+
+			if (interaction.values[0] === 'help_getupdates') {
+
+				return await interaction
+					.followUp({
+						embeds: [{
+							color: config.default_color,
+							title: 'rp getupdates [#channel]',
+							description: '__Server admins only.__ Allow or disallow visits between your and other packs.',
+							fields: [
+								{ name: '**Aliases**', value: 'updates, enableupdates' },
+								{ name: '**Arguments**', value: 'The mention of a channel.' },
+								{ name: '**More information**', value: 'Whenever important information is available such as new features being available, that information is posted in the updates channel of the Paw and Paper Support server. With this command, this updates channel is being followed, so that all the posts there will be posted in the specified channel. To turn this off, just unfollow from within your channels settings.' },
 							],
 						}],
 						ephemeral: true,

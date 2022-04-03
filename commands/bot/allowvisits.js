@@ -47,8 +47,6 @@ module.exports = {
 
 		if (message.mentions.channels.size > 0) {
 
-			console.log(message.mentions.channels.first().id);
-
 			await serverModel.findOneAndUpdate(
 				{ serverId: message.guild.id },
 				{ $set: { visitChannelId: message.mentions.channels.first().id } },
