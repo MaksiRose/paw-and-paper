@@ -185,19 +185,6 @@ class model {
 						}
 					}
 				}
-
-				if (updateKey === '$add') {
-
-					for (const [key, value] of Object.entries(updateValue)) {
-
-						if (Object.hasOwn(dataObject, key) === false) {
-
-							(logOutputter(dataObject[key]) != logOutputter(value)) && console.log(`\x1b[32m${(user != null) ? `${user.tag} (${user.id}): ` : ''}\x1b[0m${key} created with value \x1b[33m${logOutputter(objectReducer(value, dataObject[key]))} \x1b[0min \x1b[32m${(guild != null) ? guild.name : ''} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-
-							dataObject[key] = value;
-						}
-					}
-				}
 			}
 
 			fs.writeFileSync(`${path}/${dataObject.uuid}.json`, JSON.stringify(dataObject, null, '\t'));
