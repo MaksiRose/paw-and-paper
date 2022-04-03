@@ -1,9 +1,33 @@
 const fs = require('fs');
 const crypto = require('crypto');
 const { client } = require('../paw');
+const validTypes = ['undefined', 'boolean', 'number', 'string', 'object', 'array', 'any'];
 
 class model {
-	constructor(path) {
+	constructor(path, schema) {
+
+		this.path = path;
+		this.schema = schema;
+
+		for (const file of fs.readdirSync(path).filter(f => f.endsWith('.json'))) {
+
+			const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`));
+			const updateObject = {};
+
+			for (const [key, { type: type, default: def }] of Object.entries(schema)) {
+
+				if (Object.hasOwn(dataObject, key) === false) {
+
+					updateObject[key] = (typeof def === type || type === 'any') ? def : [undefined, false, 0, '', {}, [], null][validTypes.indexOf(type[0])];
+				}
+				else {
+
+					updateObject[key] = dataObject[key];
+				}
+			}
+
+			fs.writeFileSync(`${path}/${updateObject.uuid}.json`, JSON.stringify(updateObject, null, '\t'));
+		}
 
 		this.findOne = async function(filterObject) {
 
@@ -96,8 +120,21 @@ class model {
 			checkNewUUID();
 
 			dataObject.uuid = uuid;
+			const updateObject = {};
 
-			fs.writeFileSync(`${path}/${uuid}.json`, JSON.stringify(dataObject, null, '\t'));
+			for (const [key, { type: type, default: def }] of Object.entries(schema)) {
+
+				if (Object.hasOwn(dataObject, key) === false) {
+
+					updateObject[key] = (typeof def === type || type === 'any') ? def : [undefined, false, 0, '', {}, [], null][validTypes.indexOf(type[0])];
+				}
+				else {
+
+					updateObject[key] = dataObject[key];
+				}
+			}
+
+			fs.writeFileSync(`${path}/${uuid}.json`, JSON.stringify(updateObject, null, '\t'));
 
 			return dataObject;
 
@@ -259,4 +296,39 @@ class model {
 	}
 }
 
+class schema {
+	constructor(object) {
+
+		for (const [key, { type: type, default: def, locked: locked }] of Object.entries(object)) {
+
+			this[key] = { type: getType(type) || def !== undefined ? [typeof def] : ['any'], default: def || undefined, locked: Boolean(locked) };
+		}
+
+		this.uuid = { type: ['string'], default: undefined, locked: true };
+	}
+}
+
+function getType(typeArray) {
+
+	if (Array.isArray(typeArray) === false) {
+
+		return undefined;
+	}
+
+	for (let i = 0; i < typeArray.length; i++) {
+
+		if (Array.isArray(typeArray[i])) {
+
+			typeArray[i] = getType(typeArray[i]);
+		}
+		else if (validTypes.includes(typeArray[i]) === false) {
+
+			typeArray.splice(i, 1);
+		}
+	}
+
+	return typeArray.length === 0 ? null : typeArray;
+}
+
 module.exports.model = model;
+module.exports.schema = schema;
