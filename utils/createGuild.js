@@ -6,17 +6,17 @@ module.exports = async (client, guild) => {
 
 	const bannedList = JSON.parse(fs.readFileSync('./database/bannedList.json'));
 
+	const user = await client.users.fetch(guild.ownerId);
+
+	await user
+		.createDM()
+		.catch((error) => {
+			if (error.httpStatus !== 404) {
+				throw new Error(error);
+			}
+		});
+
 	if (bannedList.serversArray.includes(guild.id)) {
-
-		const user = await client.users.fetch(guild.ownerId);
-
-		await user
-			.createDM()
-			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
-			});
 
 		await user
 			.send({ content: `I am sorry to inform you that your guild \`${guild.name}\` has been banned from using this bot.` })
@@ -34,6 +34,17 @@ module.exports = async (client, guild) => {
 
 		return;
 	}
+
+	setTimeout(async () => {
+
+		await user
+			.send({ content: 'Thank you for adding Paw and Paper to your server! 🥰\nYour server can receive updates about new releases and features. Just go in your server and type `rp getupdates #channel`, with #channel being the channel that you want to receive udpates. Don\'t worry, I won\'t spam you! 😊' })
+			.catch((error) => {
+				if (error.httpStatus !== 404) {
+					throw new Error(error);
+				}
+			});
+	}, 300000);
 
 	const toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
 
