@@ -14,9 +14,10 @@ const client = new Discord.Client({
 });
 
 client.commands = {};
+client.votes = {};
 
 module.exports.client = client;
-module.exports.start = (token) => {
+module.exports.start = (botToken, bfdToken, topToken) => {
 
 	if (fs.existsSync('./database/bannedList.json') == false) {
 
@@ -70,5 +71,8 @@ module.exports.start = (token) => {
 		}, object.deletionTimestamp - Date.now());
 	}
 
-	client.login(token);
+	client.votes.bfd = bfdToken;
+	client.votes.top = topToken;
+
+	client.login(botToken);
 };

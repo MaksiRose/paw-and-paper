@@ -9,7 +9,7 @@ module.exports = {
 		console.log('Paw and Paper is online!');
 		client.user.setActivity('this awesome RPG :)\nrp help', { type: 'PLAYING' });
 
-		for (const file of ['commands', 'profiles', 'servers']) {
+		for (const file of ['commands', 'votes', 'profiles', 'servers']) {
 
 			require(`../handlers/${file}`).execute(client);
 		}
