@@ -7,16 +7,11 @@ const DiscordBotListAPI = require('dbl-api');
 module.exports = {
 	async execute(client) {
 
-		const bfdClient = new bfd(client.votes.bfd.token, client.user.id);
+		const bfdClient = new bfd(client.votes.bfd.token, '862718885564252212');
 		client.votes.bfd = bfdClient;
 
 		const serverCount = client.guilds.cache.size;
 		client.votes.bfd.setServers(serverCount);
-
-		// client.votes.bfd.checkVote('268402976844939266').then(vote => {
-		//
-		//  console.log(vote);
-		// });
 		/*
 		Structure:
 			{

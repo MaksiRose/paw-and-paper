@@ -78,7 +78,7 @@ module.exports = {
 
 		async function interactionCollector() {
 
-			const filter = i => i.user.id === message.author.id;
+			const filter = i => i.user.id === message.author.id && i.customId === 'shopdelete-options';
 
 			const interaction = await botReply
 				.awaitMessageComponent({ filter, time: 120_000 })

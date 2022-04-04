@@ -27,16 +27,14 @@ module.exports.start = (botToken, bfdToken, topToken, topAuthorization, dblToken
 		}, null, '\t'));
 	}
 
-	if (fs.existsSync('./database/noUpdatesUserList.json') == false) {
-
-		fs.writeFileSync('./database/noUpdatesUserList.json', JSON.stringify({
-			usersArray: [],
-		}, null, '\t'));
-	}
-
 	if (fs.existsSync('./database/toDeleteList.json') == false) {
 
 		fs.writeFileSync('./database/toDeleteList.json', JSON.stringify({}, null, '\t'));
+	}
+
+	if (fs.existsSync('./database/voteCache.json') == false) {
+
+		fs.writeFileSync('./database/voteCache.json', JSON.stringify({}, null, '\t'));
 	}
 
 	if (fs.existsSync('./database/webhookCache.json') == false) {
