@@ -14,7 +14,7 @@ module.exports = {
 			require(`../handlers/${file}`).execute(client);
 		}
 
-		for (const [, guild] of await client.guilds.fetch()) {
+		for (let [, guild] of await client.guilds.fetch()) {
 
 			const serverData = await serverModel.findOne({
 				serverId: guild.id,
@@ -22,6 +22,7 @@ module.exports = {
 
 			if (!serverData) {
 
+				guild = await client.guilds.fetch(guild.id);
 				await createGuild(client, guild);
 			}
 		}
