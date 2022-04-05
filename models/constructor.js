@@ -23,10 +23,39 @@ class model {
 				else {
 
 					updateObject[key] = dataObject[key];
+
+					if (def !== undefined) {
+
+						updateObject[key] = transferObjectKeys({}, dataObject[key], def);
+					}
 				}
 			}
 
 			fs.writeFileSync(`${path}/${updateObject.uuid}.json`, JSON.stringify(updateObject, null, '\t'));
+		}
+
+		function transferObjectKeys(newObject, oldObject, schemaObject) {
+
+			if (typeof oldObject === 'object' && !Array.isArray(oldObject) && oldObject !== null) {
+
+				for (const [key, value] of Object.entries(schemaObject)) {
+
+					if (Object.hasOwn(oldObject, key) === false) {
+
+						newObject[key] = value;
+					}
+					else {
+
+						newObject[key] = oldObject[key];
+
+						newObject[key] = transferObjectKeys({}, oldObject[key], schemaObject[key]);
+					}
+				}
+
+				return newObject;
+			}
+
+			return oldObject;
 		}
 
 		this.findOne = async function(filterObject) {
