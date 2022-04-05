@@ -46,16 +46,6 @@ module.exports = {
 						color: config.default_color,
 						title: `**New release: ${pjson.version} 🎉🥳🎈🎊**`,
 						description: argumentsArray.join(' '),
-						footer: { text: 'You can change if you want updates for new releases by clicking the button below.' },
-					}],
-					components: [{
-						type: 'ACTION_ROW',
-						components: [{
-							type: 'BUTTON',
-							customId: 'updates-off',
-							label: 'Turn updates off',
-							style: 'SECONDARY',
-						}],
 					}],
 				})
 				.then(async newMessage => {
