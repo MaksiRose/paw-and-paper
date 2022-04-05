@@ -2,7 +2,6 @@ const bfd = require('bfd-api-redux');
 const { AutoPoster } = require('topgg-autoposter');
 const Topgg = require('@top-gg/sdk');
 const express = require('express');
-const DiscordBotListAPI = require('dbl-api');
 
 module.exports = {
 	async execute(client) {
@@ -27,34 +26,40 @@ module.exports = {
 		AutoPoster(client.votes.top.token, client);
 
 		const topApi = new Topgg.Api(client.votes.top.token);
-		const app = express();
+		const topApp = express();
 		const webhook = new Topgg.Webhook(client.votes.top.authorization);
 
 		client.votes.top = topApi;
 		client.votes.top.users = {};
 
-		app.post('/top', webhook.listener(async vote => {
+		topApp.post('/top', webhook.listener(async vote => {
 
-			console.log(vote);
 			const twelveHoursInMs = 43200000;
 			client.votes.top.users[vote.user] = Date.now() + twelveHoursInMs;
 		}));
 
-		app.listen(3000);
-
-		// in vote structure:
-		// if (Date.now() > client.votes.top.users[userid] && await client.votes.api.hasVoted(userid)) {
-
-		// 	client.votes.top.users[userid] = Date.now() + twelveHoursInMs;
-		// }
+		topApp.listen(3000);
 
 
-		// const dblApi = new DiscordBotListAPI({ port: 3000, path: '/' });
-		// dblApi.on('upvote', (user, bot) => console.log(`Upvote by ${user} for bot ${bot}`));
+		const dblApp = express();
+		client.votes.dbl.users = {};
 
-		// app.post('/', () => {
+		dblApp.use(express.json());
 
-		// 	console.log('test');
-		// });
+		dblApp.post('/dbl', (request, response) => {
+
+			// It seems as though the authorization isn't working yet. Other than that, this works!
+			console.log('body:', request.body);
+			console.log('authorization:', typeof request.headers.authorization, typeof client.votes.dbl.authorization);
+			if (request.headers.authorization === client.votes.dbl.authorization) {
+
+				const twelveHoursInMs = 43200000;
+				client.votes.dbl.users[request.body.id] = Date.now() + twelveHoursInMs;
+			}
+
+			response.status(200).end();
+		});
+
+		dblApp.listen(3001);
 	},
 };

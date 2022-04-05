@@ -17,7 +17,7 @@ client.commands = {};
 client.votes = {};
 
 module.exports.client = client;
-module.exports.start = (botToken, bfdToken, topToken, topAuthorization, dblToken) => {
+module.exports.start = (botToken, bfdToken, topToken, topAuthorization, dblToken, dblAuthorization) => {
 
 	if (fs.existsSync('./database/bannedList.json') == false) {
 
@@ -71,7 +71,7 @@ module.exports.start = (botToken, bfdToken, topToken, topAuthorization, dblToken
 
 	client.votes.bfd = { token: bfdToken };
 	client.votes.top = { token: topToken, authorization: topAuthorization };
-	client.votes.dbl = { token: dblToken };
+	client.votes.dbl = { token: dblToken, authorization: dblAuthorization };
 
 	client.login(botToken);
 };
