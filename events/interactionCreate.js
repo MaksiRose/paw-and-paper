@@ -1354,7 +1354,7 @@ module.exports = {
 			console.log(`\x1b[32m${interaction.user.tag}\x1b[0m successfully clicked the button \x1b[33m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 
-			if (interaction.customId == 'report') {
+			if (interaction.customId === 'report') {
 
 				interaction.message
 					.edit({
@@ -1386,7 +1386,7 @@ module.exports = {
 					});
 			}
 
-			if (interaction.customId == 'profile-refresh') {
+			if (interaction.customId === 'profile-refresh') {
 
 				const components = [{
 					type: 'ACTION_ROW',
@@ -1469,7 +1469,7 @@ module.exports = {
 					});
 			}
 
-			if (interaction.customId == 'stats-refresh') {
+			if (interaction.customId === 'stats-refresh') {
 
 				let injuryText = (Object.values(profileData.injuryObject).every(item => item == 0)) ? null : '';
 
@@ -1520,7 +1520,7 @@ module.exports = {
 					});
 			}
 
-			if (interaction.customId == 'profile-store') {
+			if (interaction.customId === 'profile-store') {
 
 				interaction.message
 					.delete()
@@ -1533,6 +1533,84 @@ module.exports = {
 				referencedMessage.content = `${config.prefix}store`;
 
 				return await execute(client, referencedMessage);
+			}
+
+			if (interaction.customId === 'water-reminder-off') {
+
+				profileData.saplingObject.reminder = false;
+
+				await profileModel.findOneAndUpdate(
+					{ userId: profileData.userId, serverId: profileData.serverId },
+					{ $set: { saplingObject: profileData.saplingObject } },
+				);
+
+				await interaction
+					.followUp({
+						content: 'You turned reminders for watering off!',
+						ephemeral: true,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
+				return await interaction
+					.editReply({
+						components: [{
+							type: 'ACTION_ROW',
+							components: [{
+								type: 'BUTTON',
+								customId: 'water-reminder-on',
+								label: 'Turn water reminders on',
+								style: 'SECONDARY',
+							}],
+						}],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
+
+			if (interaction.customId === 'water-reminder-on') {
+
+				profileData.saplingObject.reminder = true;
+
+				await profileModel.findOneAndUpdate(
+					{ userId: profileData.userId, serverId: profileData.serverId },
+					{ $set: { saplingObject: profileData.saplingObject } },
+				);
+
+				await interaction
+					.followUp({
+						content: 'You turned reminders for watering on!',
+						ephemeral: true,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
+				return await interaction
+					.editReply({
+						components: [{
+							type: 'ACTION_ROW',
+							components: [{
+								type: 'BUTTON',
+								customId: 'water-reminder-off',
+								label: 'Turn water reminders off',
+								style: 'SECONDARY',
+							}],
+						}],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
 			}
 		}
 	},
