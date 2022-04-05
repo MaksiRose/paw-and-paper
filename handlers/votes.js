@@ -2,25 +2,38 @@ const bfd = require('bfd-api-redux');
 const { AutoPoster } = require('topgg-autoposter');
 const Topgg = require('@top-gg/sdk');
 const express = require('express');
+const fs = require('fs');
 
 module.exports = {
 	async execute(client) {
 
 		const bfdClient = new bfd(client.votes.bfd.token, '862718885564252212');
+		const bfdAuthorization = client.votes.bfd.authorization;
 		client.votes.bfd = bfdClient;
 
 		const serverCount = client.guilds.cache.size;
 		client.votes.bfd.setServers(serverCount);
-		/*
-		Structure:
-			{
-				voted: true,
-				votes: [ { userid: '268402976844939266', expires: '1649111130698' } ]
+
+		const bfdApp = express();
+
+		bfdApp.use(express.json());
+
+		bfdApp.post('/discords', (request, response) => {
+
+			if (request.headers.authorization === bfdAuthorization) {
+
+				const voteCache = JSON.parse(fs.readFileSync('./database/voteCache.json'));
+
+				voteCache[request.body.user] = voteCache[request.body.user] ?? {};
+				voteCache[request.body.user].lastRecordedDiscordsVote = Date.now();
+
+				fs.writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 			}
-		Questions:
-			Does "voted" turn false after 12h?
-			Are new votes appearing at the front of the votes array or at the end?
-		*/
+
+			response.status(200).end();
+		});
+
+		bfdApp.listen(3002);
 
 
 		AutoPoster(client.votes.top.token, client);
@@ -30,31 +43,36 @@ module.exports = {
 		const webhook = new Topgg.Webhook(client.votes.top.authorization);
 
 		client.votes.top = topApi;
-		client.votes.top.users = {};
 
 		topApp.post('/top', webhook.listener(async vote => {
 
-			const twelveHoursInMs = 43200000;
-			client.votes.top.users[vote.user] = Date.now() + twelveHoursInMs;
+			const voteCache = JSON.parse(fs.readFileSync('./database/voteCache.json'));
+
+			voteCache[vote.user] = voteCache[vote.user] ?? {};
+			voteCache[vote.user].lastRecordedTopVote = Date.now();
+
+			fs.writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 		}));
 
 		topApp.listen(3000);
 
 
 		const dblApp = express();
-		client.votes.dbl.users = {};
 
 		dblApp.use(express.json());
 
 		dblApp.post('/dbl', (request, response) => {
 
 			// It seems as though the authorization isn't working yet. Other than that, this works!
-			console.log('body:', request.body);
 			console.log('authorization:', typeof request.headers.authorization, typeof client.votes.dbl.authorization);
 			if (request.headers.authorization === client.votes.dbl.authorization) {
 
-				const twelveHoursInMs = 43200000;
-				client.votes.dbl.users[request.body.id] = Date.now() + twelveHoursInMs;
+				const voteCache = JSON.parse(fs.readFileSync('./database/voteCache.json'));
+
+				voteCache[request.body.id] = voteCache[request.body.id] ?? {};
+				voteCache[request.body.id].lastRecordedDblVote = Date.now();
+
+				fs.writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 			}
 
 			response.status(200).end();

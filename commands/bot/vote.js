@@ -78,16 +78,19 @@ module.exports = {
 						}
 					});
 
-				const successfulTopVote = interaction.values[0] === 'top.gg-vote' && (Date.now() - twelveHoursInMs > client.votes.top.users[message.author.id] || await client.votes.top.hasVoted(message.author.id));
-				const oldTopVote = successfulTopVote && Date.now() < voteCache[message.author.id]?.nextPossibleTopVote;
+				const successfulTopVote = interaction.values[0] === 'top.gg-vote' && (voteCache[message.author.id]?.lastRecordedTopVote > Date.now() - twelveHoursInMs || await client.votes.top.hasVoted(message.author.id));
+				const redeemedTopVote = successfulTopVote && Date.now() < voteCache[message.author.id]?.nextRedeemableTopVote;
 
 				const discordsVote = await client.votes.bfd.checkVote(message.author.id);
-				const successfulDiscordsVote = interaction.values[0] === 'discords.com-vote' && discordsVote.voted;
-				const oldDiscordsVote = successfulDiscordsVote && Date.now() < voteCache[message.author.id]?.nextPossibleDiscordsVote;
+				const successfulDiscordsVote = interaction.values[0] === 'discords.com-vote' && (voteCache[message.author.id]?.lastRecordedDiscordsVote > Date.now() - twelveHoursInMs || discordsVote.voted);
+				const redeemedDiscordsVote = successfulDiscordsVote && Date.now() < voteCache[message.author.id]?.nextRedeemableDiscordsVote;
+
+				const successfulDblVote = interaction.values[0] === 'discordbotlist.com-vote' && voteCache[message.author.id]?.lastRecordedDblVote > Date.now() - twelveHoursInMs;
+				const redeemedDblVote = successfulDblVote && Date.now() < voteCache[message.author.id]?.nextRedeemableDblVote;
 
 				if (successfulTopVote === true || successfulDiscordsVote === true) {
 
-					if (oldTopVote === true || oldDiscordsVote) {
+					if (redeemedTopVote === true || redeemedDiscordsVote === true || redeemedDblVote === true) {
 
 						return await interaction
 							.followUp({
@@ -103,8 +106,9 @@ module.exports = {
 
 					voteCache[message.author.id] = voteCache[message.author.id] ?? {};
 
-					if (successfulTopVote === true) { voteCache[message.author.id].nextPossibleTopVote = (client.votes.top.users[message.author.id] || Date.now()) + twelveHoursInMs; }
-					if (successfulDiscordsVote === true) { voteCache[message.author.id].nextPossibleDiscordsVote = Number(discordsVote.votes[0].expires); }
+					if (successfulTopVote === true) { voteCache[message.author.id].nextRedeemableTopVote = (client.votes.top.users[message.author.id] || Date.now()) + twelveHoursInMs; }
+					if (successfulDiscordsVote === true) { voteCache[message.author.id].nextRedeemableDiscordsVote = Number(discordsVote.votes[0].expires); }
+					if (successfulDblVote === true) { voteCache[message.author.id].nextRedeemableDblVote = (client.votes.dbl.users[message.author.id] || Date.now()) + twelveHoursInMs; }
 
 					fs.writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 

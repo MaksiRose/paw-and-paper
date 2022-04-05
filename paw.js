@@ -17,7 +17,11 @@ client.commands = {};
 client.votes = {};
 
 module.exports.client = client;
-module.exports.start = (botToken, bfdToken, topToken, topAuthorization, dblToken, dblAuthorization) => {
+module.exports.start = (botToken, bfdToken, bfdAuthorization, topToken, topAuthorization, dblToken, dblAuthorization) => {
+
+	client.votes.bfd = { token: bfdToken, authorization: bfdAuthorization };
+	client.votes.top = { token: topToken, authorization: topAuthorization };
+	client.votes.dbl = { token: dblToken, authorization: dblAuthorization };
 
 	if (fs.existsSync('./database/bannedList.json') == false) {
 
@@ -68,10 +72,6 @@ module.exports.start = (botToken, bfdToken, topToken, topAuthorization, dblToken
 			}
 		}, object.deletionTimestamp - Date.now());
 	}
-
-	client.votes.bfd = { token: bfdToken };
-	client.votes.top = { token: topToken, authorization: topAuthorization };
-	client.votes.dbl = { token: dblToken, authorization: dblAuthorization };
 
 	client.login(botToken);
 };
