@@ -75,7 +75,7 @@ module.exports = {
 					hasQuest: false,
 					currentRegion: 'sleeping dens',
 					unlockedRanks: 0,
-					saplingObject: { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null },
+					saplingObject: { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, reminder: false },
 					pronounSets: [['they', 'them', 'their', 'theirs', 'themselves', 'plural']],
 					injuryObject: { wounds: 0, infections: 0, cold: false, sprains: 0, poison: false },
 					inventoryObject: profileInventoryObject,

@@ -158,7 +158,7 @@ module.exports = {
 
 			await profileModel.findOneAndUpdate(
 				{ userId: profileData.userId, serverId: profileData.serverId },
-				{ $set: { saplingObject: { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null } } },
+				{ $set: { saplingObject: { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, reminder: profileData.saplingObject.reminder } } },
 			);
 		}
 	},

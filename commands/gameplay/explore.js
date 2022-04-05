@@ -337,7 +337,7 @@ module.exports = {
 
 				profileData = await profileModel.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
-					{ $set: { saplingObject: { exists: true, health: 50, waterCycles: 0, nextWaterTimestamp: Date.now() } } },
+					{ $set: { saplingObject: { exists: true, health: 50, waterCycles: 0, nextWaterTimestamp: Date.now(), reminder: profileData.saplingObject.reminder } } },
 				);
 
 				embed.description = `*${profileData.name} is looking around for useful things around ${pronoun(profileData, 1)} when ${pronounAndPlural(profileData, 0, 'discover')} the sapling of a ginkgo tree. The ${profileData.species} remembers that they bring good luck and health. Surely it can't hurt to bring it back to the pack!*`;
