@@ -1,7 +1,6 @@
 const config = require('../../config.json');
 const pjson = require('../../package.json');
 const profileModel = require('../../models/profileModel');
-const fs = require('fs');
 
 module.exports = {
 	name: 'release',
@@ -17,7 +16,12 @@ module.exports = {
 			return;
 		}
 
-		const dataObject = JSON.parse(fs.readFileSync('./database/noUpdatesUserList.json'));
+		const dataObject = { usersArray: [
+			'689718856234565675',
+			'838989303417536552',
+			'369108507280146453',
+			'772510673250156565',
+		] };
 
 		const allProfiles = [...new Set((await profileModel
 			.find({}))
