@@ -130,6 +130,15 @@ module.exports = {
 			.reply({
 				content: messageContent,
 				embeds: embedArray,
+				components: [{
+					type: 'ACTION_ROW',
+					components: [{
+						type: 'BUTTON',
+						customId: `water-reminder-${profileData.saplingObject.reminder === true ? 'off' : 'on'}`,
+						label: `Turn water reminders ${profileData.saplingObject.reminder === true ? 'off' : 'on'}`,
+						style: 'SECONDARY',
+					}],
+				}],
 				failIfNotExists: false,
 			})
 			.catch((error) => {
