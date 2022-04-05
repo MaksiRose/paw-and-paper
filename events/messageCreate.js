@@ -76,7 +76,7 @@ module.exports = {
 
 		if (userMap.has('nr' + message.author.id + message.guild.id) == false) {
 
-			userMap.set('nr' + message.author.id + message.guild.id, { activeCommands: 0, activityTimeout: null, cooldownTimeout: null, restingTimeout: null });
+			userMap.set('nr' + message.author.id + message.guild.id, { activeCommands: 0, lastGentleWaterReminderTimestamp: 0, activityTimeout: null, cooldownTimeout: null, restingTimeout: null });
 		}
 
 		clearTimeout(userMap.get('nr' + message.author.id + message.guild.id).activityTimeout);
