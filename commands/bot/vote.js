@@ -31,8 +31,8 @@ module.exports = {
 				components: [{
 					type: 'ACTION_ROW',
 					components: [
-						{ type: 'BUTTON', label: 'top.gg', url: 'https://discords.com/bots/bot/862718885564252212', style: 'LINK' },
-						{ type: 'BUTTON', label: 'discords.com', url: 'https://top.gg/bot/862718885564252212', style: 'LINK' },
+						{ type: 'BUTTON', label: 'top.gg', url: 'https://top.gg/bot/862718885564252212', style: 'LINK' },
+						{ type: 'BUTTON', label: 'discords.com', url: 'https://discords.com/bots/bot/862718885564252212', style: 'LINK' },
 						{ type: 'BUTTON', label: 'discordbotlist.com', url: 'https://discordbotlist.com/bots/paw-and-paper', style: 'LINK' },
 					],
 				}, {
@@ -88,7 +88,7 @@ module.exports = {
 				const successfulDblVote = interaction.values[0] === 'discordbotlist.com-vote' && voteCache[message.author.id]?.lastRecordedDblVote > Date.now() - twelveHoursInMs;
 				const redeemedDblVote = successfulDblVote && Date.now() < voteCache[message.author.id]?.nextRedeemableDblVote;
 
-				if (successfulTopVote === true || successfulDiscordsVote === true) {
+				if (successfulTopVote === true || successfulDiscordsVote === true || successfulDblVote === true) {
 
 					if (redeemedTopVote === true || redeemedDiscordsVote === true || redeemedDblVote === true) {
 
@@ -106,9 +106,9 @@ module.exports = {
 
 					voteCache[message.author.id] = voteCache[message.author.id] ?? {};
 
-					if (successfulTopVote === true) { voteCache[message.author.id].nextRedeemableTopVote = (client.votes.top.users[message.author.id] || Date.now()) + twelveHoursInMs; }
-					if (successfulDiscordsVote === true) { voteCache[message.author.id].nextRedeemableDiscordsVote = Number(discordsVote.votes[0].expires); }
-					if (successfulDblVote === true) { voteCache[message.author.id].nextRedeemableDblVote = (client.votes.dbl.users[message.author.id] || Date.now()) + twelveHoursInMs; }
+					if (successfulTopVote === true) { voteCache[message.author.id].nextRedeemableTopVote = (voteCache[message.author.id].lastRecordedTopVote || Date.now()) + twelveHoursInMs; }
+					if (successfulDiscordsVote === true) { voteCache[message.author.id].nextRedeemableDiscordsVote = voteCache[message.author.id]?.lastRecordedDiscordsVote > Date.now() - twelveHoursInMs ? voteCache[message.author.id].lastRecordedDiscordsVote + twelveHoursInMs : Number(discordsVote.votes[0].expires); }
+					if (successfulDblVote === true) { voteCache[message.author.id].nextRedeemableDblVote = voteCache[message.author.id].lastRecordedDblVote + twelveHoursInMs; }
 
 					fs.writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 
@@ -133,6 +133,17 @@ module.exports = {
 							}
 						});
 				}
+
+				return await interaction
+					.followUp({
+						content: 'You haven\'t voted on this website in the last 12 hours!',
+						ephemeral: true,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
 			})
 			.catch(async () => {
 
