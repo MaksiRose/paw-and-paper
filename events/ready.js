@@ -9,12 +9,12 @@ module.exports = {
 		console.log('Paw and Paper is online!');
 		client.user.setActivity('this awesome RPG :)\nrp help', { type: 'PLAYING' });
 
-		for (const file of ['commands', 'profiles', 'servers']) {
+		for (const file of ['commands', 'votes', 'profiles', 'servers']) {
 
 			require(`../handlers/${file}`).execute(client);
 		}
 
-		for (const [, guild] of await client.guilds.fetch()) {
+		for (let [, guild] of await client.guilds.fetch()) {
 
 			const serverData = await serverModel.findOne({
 				serverId: guild.id,
@@ -22,6 +22,7 @@ module.exports = {
 
 			if (!serverData) {
 
+				guild = await client.guilds.fetch(guild.id);
 				await createGuild(client, guild);
 			}
 		}

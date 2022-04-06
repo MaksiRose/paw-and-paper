@@ -4,7 +4,6 @@ const errorHandling = require('../utils/errorHandling');
 const pjson = require('../package.json');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 const { execute } = require('./messageCreate');
-const fs = require('fs');
 const { sendReminder, stopReminder } = require('../commands/maintenance/water');
 
 module.exports = {
@@ -29,113 +28,6 @@ module.exports = {
 				.catch(async (error) => {
 					if (error.httpStatus !== 404) {
 						return await errorHandling.output(interaction.message, error);
-					}
-				});
-		}
-
-		if (interaction.customId.includes('updates-off')) {
-
-			const user = await client.users.fetch(interaction.user.id);
-			let dataObject = {
-				usersArray: [user.id],
-			};
-
-			if (fs.existsSync('./database/noUpdatesUserList.json')) {
-
-				dataObject = JSON.parse(fs.readFileSync('./database/noUpdatesUserList.json'));
-
-				if (dataObject.usersArray.findIndex(userId => userId == user.id) == -1) {
-
-					dataObject.usersArray.push(user.id);
-				}
-			}
-
-			fs.writeFileSync('./database/noUpdatesUserList.json', JSON.stringify(dataObject, null, '\t'));
-
-			await user
-				.createDM()
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-
-			await interaction
-				.followUp({
-					content: 'You turned updates for new releases off!',
-					ephemeral: true,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-
-			return await interaction
-				.editReply({
-					components: [{
-						type: 'ACTION_ROW',
-						components: [{
-							type: 'BUTTON',
-							customId: 'updates-on',
-							label: 'Turn updates on',
-							style: 'SECONDARY',
-						}],
-					}],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-		}
-
-		if (interaction.customId.includes('updates-on')) {
-
-			const user = await client.users.fetch(interaction.user.id);
-			const dataObject = JSON.parse(fs.readFileSync('./database/noUpdatesUserList.json'));
-
-			if (dataObject.usersArray.findIndex(userId => userId == user.id) !== -1) {
-
-				dataObject.usersArray.splice(dataObject.usersArray.findIndex(userId => userId == user.id), 1);
-			}
-
-			fs.writeFileSync('./database/noUpdatesUserList.json', JSON.stringify(dataObject, null, '\t'));
-
-			await user
-				.createDM()
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-
-			await interaction
-				.followUp({
-					content: 'You turned updates for new releases on!',
-					ephemeral: true,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-
-			return await interaction
-				.editReply({
-					components: [{
-						type: 'ACTION_ROW',
-						components: [{
-							type: 'BUTTON',
-							customId: 'updates-off',
-							label: 'Turn updates off',
-							style: 'SECONDARY',
-						}],
-					}],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
 					}
 				});
 		}
