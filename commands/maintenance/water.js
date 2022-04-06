@@ -150,7 +150,7 @@ module.exports = {
 
 		if (profileData.saplingObject.reminder === true) {
 
-			module.exports.sendReminder(profileData.message);
+			module.exports.sendReminder(client, profileData, message.channel.id);
 		}
 
 		await checkLevelUp(message, botReply, profileData, serverData);
@@ -177,17 +177,19 @@ module.exports = {
 			);
 		}
 	},
-	sendReminder(profileData, message) {
+	sendReminder(client, profileData, channelId) {
 
 		module.exports.stopReminder(profileData);
 
 		userMap.set('nr' + profileData.userId + profileData.serverId, setTimeout(async () => {
 
-			profileData = await profileModel.findOne({ userId: message.author.id, serverId: message.guild.id });
+			profileData = await profileModel.findOne({ userId: profileData.userId, serverId: profileData.serverId });
 
 			if (profileData.saplingObject.exists === true && profileData.saplingObject.reminder === true) {
 
-				await message.channel
+				const channel = await client.channels.fetch(channelId);
+
+				await channel
 					.send({
 						content: `<@${profileData.userId}>`,
 						embeds: [{

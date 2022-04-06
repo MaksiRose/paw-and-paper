@@ -1,6 +1,7 @@
 const fs = require('fs');
 const profileModel = require('../models/profileModel');
 const otherProfileModel = require('../models/otherProfileModel');
+const { sendReminder } = require('../commands/maintenance/water');
 
 module.exports = {
 	execute(client) {
@@ -12,6 +13,11 @@ module.exports = {
 		for (const [path, file] of files) {
 
 			const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`));
+
+			if (dataObject.saplingObject.reminder === true && path.includes('inactiveProfiles') === false) {
+
+				sendReminder(client, dataObject, dataObject.saplingObject.lastMessageChannelId);
+			}
 
 			(path.includes('inactiveProfiles') ? otherProfileModel : profileModel)
 				.findOneAndUpdate(

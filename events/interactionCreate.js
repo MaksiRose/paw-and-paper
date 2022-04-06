@@ -1586,7 +1586,7 @@ module.exports = {
 					{ $set: { saplingObject: profileData.saplingObject } },
 				);
 
-				sendReminder(profileData, interaction.message);
+				sendReminder(client, profileData, interaction.message.channel.id);
 
 				await interaction
 					.followUp({
