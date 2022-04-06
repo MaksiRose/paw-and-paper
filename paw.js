@@ -14,9 +14,14 @@ const client = new Discord.Client({
 });
 
 client.commands = {};
+client.votes = {};
 
 module.exports.client = client;
-module.exports.start = (token) => {
+module.exports.start = (botToken, bfdToken, bfdAuthorization, topToken, topAuthorization, dblToken, dblAuthorization) => {
+
+	client.votes.bfd = { token: bfdToken, authorization: bfdAuthorization };
+	client.votes.top = { token: topToken, authorization: topAuthorization };
+	client.votes.dbl = { token: dblToken, authorization: dblAuthorization };
 
 	if (fs.existsSync('./database/bannedList.json') == false) {
 
@@ -26,16 +31,14 @@ module.exports.start = (token) => {
 		}, null, '\t'));
 	}
 
-	if (fs.existsSync('./database/noUpdatesUserList.json') == false) {
-
-		fs.writeFileSync('./database/noUpdatesUserList.json', JSON.stringify({
-			usersArray: [],
-		}, null, '\t'));
-	}
-
 	if (fs.existsSync('./database/toDeleteList.json') == false) {
 
 		fs.writeFileSync('./database/toDeleteList.json', JSON.stringify({}, null, '\t'));
+	}
+
+	if (fs.existsSync('./database/voteCache.json') == false) {
+
+		fs.writeFileSync('./database/voteCache.json', JSON.stringify({}, null, '\t'));
 	}
 
 	if (fs.existsSync('./database/webhookCache.json') == false) {
@@ -70,5 +73,5 @@ module.exports.start = (token) => {
 		}, object.deletionTimestamp - Date.now());
 	}
 
-	client.login(token);
+	client.login(botToken);
 };
