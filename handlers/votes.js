@@ -63,8 +63,6 @@ module.exports = {
 
 		dblApp.post('/dbl', (request, response) => {
 
-			// It seems as though the authorization isn't working yet. Other than that, this works!
-			console.log('authorization:', typeof request.headers.authorization, typeof client.votes.dbl.authorization);
 			if (request.headers.authorization === client.votes.dbl.authorization) {
 
 				const voteCache = JSON.parse(fs.readFileSync('./database/voteCache.json'));
