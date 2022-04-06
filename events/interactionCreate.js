@@ -5,6 +5,7 @@ const pjson = require('../package.json');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 const { execute } = require('./messageCreate');
 const fs = require('fs');
+const { sendReminder, stopReminder } = require('../commands/maintenance/water');
 
 module.exports = {
 	name: 'interactionCreate',
@@ -1544,6 +1545,8 @@ module.exports = {
 					{ $set: { saplingObject: profileData.saplingObject } },
 				);
 
+				stopReminder(profileData, interaction.message);
+
 				await interaction
 					.followUp({
 						content: 'You turned reminders for watering off!',
@@ -1582,6 +1585,8 @@ module.exports = {
 					{ userId: profileData.userId, serverId: profileData.serverId },
 					{ $set: { saplingObject: profileData.saplingObject } },
 				);
+
+				sendReminder(profileData, interaction.message);
 
 				await interaction
 					.followUp({
