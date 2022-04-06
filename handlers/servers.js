@@ -1,6 +1,5 @@
 const fs = require('fs');
 const serverModel = require('../models/serverModel');
-const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 
 module.exports = {
 	execute(client) {
@@ -13,38 +12,11 @@ module.exports = {
 
 			const dataObject = JSON.parse(fs.readFileSync(`./database/servers/${file}`));
 
-			dataObject.inventoryObject = {
-				commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, dataObject.inventoryObject.commonPlants[key] || 0])),
-				uncommonPlants: Object.fromEntries([...uncommonPlantsMap.keys()].sort().map(key => [key, dataObject.inventoryObject.uncommonPlants[key] || 0])),
-				rarePlants: Object.fromEntries([...rarePlantsMap.keys()].sort().map(key => [key, dataObject.inventoryObject.rarePlants[key] || 0])),
-				meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, dataObject.inventoryObject.meat[key] || 0])),
-			};
-
-			if (dataObject.blockedEntranceObject === undefined) {
-
-				dataObject.blockedEntranceObject = { den: null, blockedKind: null };
-				serverModel.save(dataObject);
-			}
-
-			if (dataObject.visitChannelId === undefined) {
-
-				dataObject.visitChannelId = null,
-				dataObject.currentlyVisiting = null,
-				serverModel.save(dataObject);
-			}
-
-			if (dataObject.shop === undefined) {
-
-				dataObject.shop = [],
-				serverModel.save(dataObject);
-			}
-
 			serverModel
 				.findOneAndUpdate(
 					{ serverId: dataObject.serverId },
 					{
 						$set: {
-							inventoryObject: dataObject.inventoryObject,
 							activeUsersArray: [],
 							currentlyVisiting: null,
 						},

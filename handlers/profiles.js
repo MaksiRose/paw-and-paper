@@ -1,7 +1,7 @@
 const fs = require('fs');
 const profileModel = require('../models/profileModel');
 const otherProfileModel = require('../models/otherProfileModel');
-const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
+const { sendReminder } = require('../commands/maintenance/water');
 
 module.exports = {
 	execute(client) {
@@ -14,19 +14,16 @@ module.exports = {
 
 			const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`));
 
-			dataObject.inventoryObject = {
-				commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, dataObject.inventoryObject.commonPlants[key] || 0])),
-				uncommonPlants: Object.fromEntries([...uncommonPlantsMap.keys()].sort().map(key => [key, dataObject.inventoryObject.uncommonPlants[key] || 0])),
-				rarePlants: Object.fromEntries([...rarePlantsMap.keys()].sort().map(key => [key, dataObject.inventoryObject.rarePlants[key] || 0])),
-				meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, dataObject.inventoryObject.meat[key] || 0])),
-			};
+			if (dataObject.saplingObject.reminder === true && path.includes('inactiveProfiles') === false) {
+
+				sendReminder(client, dataObject, dataObject.saplingObject.lastMessageChannelId);
+			}
 
 			(path.includes('inactiveProfiles') ? otherProfileModel : profileModel)
 				.findOneAndUpdate(
 					{ userId: dataObject.userId, serverId: dataObject.serverId },
 					{
 						$set: {
-							inventoryObject: dataObject.inventoryObject,
 							hasCooldown: false,
 							isResting: false,
 							energy: dataObject.energy === 0 ? 0 : dataObject.maxEnergy,
