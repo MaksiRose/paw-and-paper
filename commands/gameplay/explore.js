@@ -536,7 +536,7 @@ module.exports = {
 					winPoints -= 1;
 				}
 
-				if (customId.includes(correctButton) === true) {
+				if (customId?.includes(correctButton) === true) {
 
 					winPoints += 1;
 				}
