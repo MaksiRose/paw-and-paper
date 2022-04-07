@@ -762,13 +762,7 @@ async function decreaseStats(message, profileData, partnerProfileData) {
 
 	const thirstPointsPlayer1 = await decreaseThirst(profileData);
 	const hungerPointsPlayer1 = await decreaseHunger(profileData);
-	const extraLostEnergyPointsPlayer1 = await decreaseEnergy(profileData);
-	let energyPointsPlayer1 = generateRandomNumber(5, 1) + extraLostEnergyPointsPlayer1;
-
-	if (profileData.energy - energyPointsPlayer1 < 0) {
-
-		energyPointsPlayer1 = profileData.energy;
-	}
+	const energyPointsPlayer1 = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(3, 1) + await decreaseEnergy(profileData));
 
 	profileData = await profileModel.findOneAndUpdate(
 		{ userId: message.author.id, serverId: message.guild.id },
@@ -801,13 +795,7 @@ async function decreaseStats(message, profileData, partnerProfileData) {
 
 	const thirstPointsPlayer2 = await decreaseThirst(partnerProfileData);
 	const hungerPointsPlayer2 = await decreaseHunger(partnerProfileData);
-	const extraLostEnergyPointsPlayer2 = await decreaseEnergy(partnerProfileData);
-	let energyPointsPlayer2 = generateRandomNumber(5, 1) + extraLostEnergyPointsPlayer2;
-
-	if (partnerProfileData.energy - energyPointsPlayer2 < 0) {
-
-		energyPointsPlayer2 = partnerProfileData.energy;
-	}
+	const energyPointsPlayer2 = function(energy) { return (partnerProfileData.energy - energy < 0) ? partnerProfileData.energy : energy; }(generateRandomNumber(3, 1) + await decreaseEnergy(partnerProfileData));
 
 	partnerProfileData = await profileModel.findOneAndUpdate(
 		{ userId: message.mentions.users.first().id, serverId: message.guild.id },

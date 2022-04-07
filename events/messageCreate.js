@@ -154,7 +154,7 @@ module.exports = {
 		const oneHourInMs = 3600000;
 		// If sapling exists, the watering time is between 2 hours from perfect and 3 hours from perfect, and there wasn't a reminder in the last hour
 		// The reminder in the last hour prevents the reminder from being sent out multiple times
-		if (profileData.saplingObject.exists === true && Date.now > profileData.saplingObject.nextWaterTimestamp + oneHourInMs * 2 && Date.now() < profileData.saplingObject.nextWaterTimestamp + oneHourInMs * 3 && Date.now() > userMap.get('nr' + message.author.id + message.guild.id).lastGentleWaterReminderTimestamp + oneHourInMs) {
+		if (profileData !== null && profileData.saplingObject.exists === true && Date.now > profileData.saplingObject.nextWaterTimestamp + oneHourInMs * 2 && Date.now() < profileData.saplingObject.nextWaterTimestamp + oneHourInMs * 3 && Date.now() > userMap.get('nr' + message.author.id + message.guild.id).lastGentleWaterReminderTimestamp + oneHourInMs) {
 
 			userMap.get('nr' + message.author.id + message.guild.id).lastGentleWaterReminderTimestamp = Date.now();
 

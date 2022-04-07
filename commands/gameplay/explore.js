@@ -75,6 +75,7 @@ module.exports = {
 				});
 		}
 
+		const responseTime = profileData.rank === 'Elderly' ? 2000 : profileData.rank === 'Hunter' || profileData.rank === 'Healer' ? 3000 : 4000;
 		const userSpeciesMap = speciesMap.get(profileData.species);
 
 		const allBiomesArray = [
@@ -212,7 +213,7 @@ module.exports = {
 			});
 
 		const experiencePoints = chosenBiomeNumber == 2 ? generateRandomNumber(41, 20) : chosenBiomeNumber == 1 ? generateRandomNumber(21, 10) : generateRandomNumber(11, 5);
-		const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(5, 1) + await decreaseEnergy(profileData));
+		const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(3, 1) + await decreaseEnergy(profileData));
 		const hungerPoints = await decreaseHunger(profileData);
 		const thirstPoints = await decreaseThirst(profileData);
 
@@ -367,29 +368,7 @@ module.exports = {
 		async function findPlant() {
 
 			const wrongEmoji = '🏕️';
-			let emojiList = ['🌱', '🌿', '☘️', '🍀', '🍃', '💐', '🌷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🍇', '🍊', '🫒', '🌰'];
-
-			const emojiToFind = emojiList.splice(generateRandomNumber(emojiList.length, 0), 1);
-			emojiList = emojiList.concat(emojiList, userHabitatEmojisArray, userHabitatEmojisArray);
-
-			const buttonsArray = [];
-			for (let i = 0; i < 5; i++) {
-
-				const buttonEmojis = [];
-				for (let j = 0; j < 5; j++) {
-
-					buttonEmojis.push(emojiList.splice(generateRandomNumber(emojiList.length, 0), 1));
-				}
-				buttonsArray.push(buttonEmojis);
-			}
-
-			const correctButton = generateRandomNumber(buttonsArray.length, 0);
-			buttonsArray[correctButton][generateRandomNumber(5, 0)] = emojiToFind;
-
-			const incorrectButton = generateRandomNumberWithException(buttonsArray.length, 0, correctButton);
-			const wrongEmojiPlacement = generateRandomNumber(5, 0);
-			buttonsArray[incorrectButton][wrongEmojiPlacement] = emojiToFind;
-			buttonsArray[incorrectButton][generateRandomNumberWithException(5, 0, wrongEmojiPlacement)] = wrongEmoji;
+			const emojiList = ['🌱', '🌿', '☘️', '🍀', '🍃', '💐', '🌷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🍇', '🍊', '🫒', '🌰'];
 
 
 			let foundItem = null;
@@ -418,22 +397,22 @@ module.exports = {
 					foundItem = await pickRandomCommonPlant();
 			}
 
-			if (userSpeciesMap.habitat == 'warm') {
+			if (userSpeciesMap.habitat === 'warm') {
 
 				embed.description = `*For a while, ${profileData.name} has been trudging through the hot sand, searching in vain for something useful. ${upperCasePronounAndPlural(profileData, 0, 'was', 'were')} about to give up when ${pronounAndPlural(profileData, 0, 'discover')} a ${foundItem} in a small, lone bush. Now ${pronounAndPlural(profileData, 0, 'just need')} to pick it up gently...*`;
 			}
 
-			if (userSpeciesMap.habitat == 'cold') {
+			if (userSpeciesMap.habitat === 'cold') {
 
-				embed.description = `*For a while, ${profileData.name} has been trudging through the dense undergrowth, searching in vain for something useful. ${upperCasePronounAndPlural(profileData, 0, 'was', 'were')} about to give up when ${pronounAndPlural(profileData, 0, 'discord')} a ${foundItem} at the end of a tree trunk. Now ${pronounAndPlural(profileData, 0, 'just need')} to pick it up gently...*`;
+				embed.description = `*For a while, ${profileData.name} has been trudging through the dense undergrowth, searching in vain for something useful. ${upperCasePronounAndPlural(profileData, 0, 'was', 'were')} about to give up when ${pronounAndPlural(profileData, 0, 'discover')} a ${foundItem} at the end of a tree trunk. Now ${pronounAndPlural(profileData, 0, 'just need')} to pick it up gently...*`;
 			}
 
-			if (userSpeciesMap.habitat == 'water') {
+			if (userSpeciesMap.habitat === 'water') {
 
 				embed.description = `*For a while, ${profileData.name} has been swimming through the water, searching in vain for something useful. ${upperCasePronounAndPlural(profileData, 0, 'was', 'were')} about to give up when ${pronounAndPlural(profileData, 0, 'discover')} a ${foundItem} among large algae. Now ${pronounAndPlural(profileData, 0, 'just need')} to pick it up gently...*`;
 			}
 
-			embed.footer.text = 'You will be presented five buttons with five emojis each. The footer will show you an emoji, and you have to find the button with that emoji, but without the campsite (🏕️).';
+			embed.footer.text = `You will be presented five buttons with five emojis each. The footer will show you an emoji, and you have to find the button with that emoji, but without the campsite (${wrongEmoji}).`;
 
 			embedArray.splice(-1, 1, embed);
 			botReply = await message
@@ -490,38 +469,86 @@ module.exports = {
 					});
 			}
 
-			embed.footer.text = `Click the button with this emoji: ${emojiToFind}. But watch out for the campsite (🏕️)!`;
+			await pickupCycle(0, -1, 0);
 
-			const selectHerbComponent = {
-				type: 'ACTION_ROW',
-				components: [],
-			};
+			function createButtons(emojis, lastRoundEmojiIndex) {
 
-			for (let i = 0; i < 5; i++) {
+				const thisRoundEmojiIndex = generateRandomNumberWithException(emojis.length, 0, lastRoundEmojiIndex);
+				const emojiToFind = emojis.splice(thisRoundEmojiIndex, 1);
+				emojis = emojis.concat(emojis, userHabitatEmojisArray, userHabitatEmojisArray);
 
-				selectHerbComponent.components.push({ type: 'BUTTON', customId: `plant-${i}`, label: buttonsArray[i].join(''), style: 'SECONDARY' });
+				const buttonsArray = [];
+				for (let i = 0; i < 5; i++) {
+
+					const buttonEmojis = [];
+					for (let j = 0; j < 5; j++) {
+
+						buttonEmojis.push(emojis.splice(generateRandomNumber(emojis.length, 0), 1));
+					}
+					buttonsArray.push(buttonEmojis);
+				}
+
+				const correctButton = generateRandomNumber(buttonsArray.length, 0);
+				buttonsArray[correctButton][generateRandomNumber(5, 0)] = emojiToFind;
+
+				const incorrectButton = generateRandomNumberWithException(buttonsArray.length, 0, correctButton);
+				const wrongEmojiPlacement = generateRandomNumber(5, 0);
+				buttonsArray[incorrectButton][wrongEmojiPlacement] = emojiToFind;
+				buttonsArray[incorrectButton][generateRandomNumberWithException(5, 0, wrongEmojiPlacement)] = wrongEmoji;
+
+				return { emojiToFind, buttonsArray, correctButton, incorrectButton, thisRoundEmojiIndex };
 			}
 
-			embedArray.splice(-1, 1, embed);
-			botReply = await botReply
-				.edit({
-					embeds: embedArray,
-					components: [selectHerbComponent],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
+			async function pickupCycle(totalCycles, lastRoundEmojiIndex, winPoints) {
 
-			return await botReply
-				.awaitMessageComponent({ filter, time: 5000 })
-				.then(async button => {
+				const { emojiToFind, buttonsArray, correctButton, incorrectButton, thisRoundEmojiIndex } = createButtons(emojiList, lastRoundEmojiIndex);
 
-					if (!button.customId.includes(correctButton)) {
+				embed.footer.text = `Click the button with this emoji: ${emojiToFind}. But watch out for the campsite (🏕️)!`;
 
-						return Promise.reject();
-					}
+				const selectHerbComponent = {
+					type: 'ACTION_ROW',
+					components: [],
+				};
+
+				for (let i = 0; i < 5; i++) {
+
+					selectHerbComponent.components.push({ type: 'BUTTON', customId: `plant-${i}`, label: buttonsArray[i].join(''), style: 'SECONDARY' });
+				}
+
+				embedArray.splice(-1, 1, embed);
+				botReply = await botReply
+					.edit({
+						embeds: embedArray,
+						components: [selectHerbComponent],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
+				const { customId } = await botReply
+					.awaitMessageComponent({ filter, time: responseTime })
+					.catch(() => { return { customId: null }; });
+
+				if (customId === null || customId.includes(incorrectButton) === true) {
+
+					winPoints -= 1;
+				}
+
+				if (customId?.includes(correctButton) === true) {
+
+					winPoints += 1;
+				}
+
+				totalCycles += 1;
+
+				if (totalCycles < 3) {
+
+					return await pickupCycle(totalCycles, thisRoundEmojiIndex, winPoints);
+				}
+
+				if (winPoints === 3) {
 
 					const userInventory = {
 						commonPlants: { ...profileData.inventoryObject.commonPlants },
@@ -543,6 +570,8 @@ module.exports = {
 						{ $set: { inventoryObject: userInventory } },
 					);
 
+					embed.description = `*${profileData.name} gently lowers ${pronoun(profileData, 2)} head, picking up the ${foundItem} and carrying it back in their mouth. What a success!*`;
+
 					embed.footer.text = `${embedFooterStatsText}\n\n+1 ${foundItem}`;
 
 					embedArray.splice(-1, 1, embed);
@@ -556,90 +585,26 @@ module.exports = {
 								throw new Error(error);
 							}
 						});
-				})
-				.catch(async () => {
+				}
 
-					const healthPoints = function(health) { return (profileData.health - health < 0) ? profileData.health : health; }(generateRandomNumber(5, 3));
+				if (winPoints === 2) {
 
-					await profileModel.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{ $inc: { health: -healthPoints } },
-					);
+					if (userSpeciesMap.habitat === 'warm') {
 
-					const allElderlyProfilesArray = (await profileModel.find({
-						serverId: message.guild.id,
-						rank: 'Elderly',
-					})).map(user => user.userId);
-
-					switch (true) {
-
-						case (pullFromWeightedTable({ 0: 1, 1: 2 }) == 0 && allElderlyProfilesArray.length > 1):
-
-							userInjuryObject.poison = true;
-
-							if (userSpeciesMap.habitat == 'warm') {
-
-								embed.description = `*Piles of sand and lone, scraggly bushes are dotting the landscape all around ${profileData.name}. ${upperCasePronounAndPlural(profileData, 0, 'pad')} through the scattered branches from long-dead trees, carefully avoiding the cacti, trying to reach the ${foundItem} ${pronoun(profileData, 0)} saw. The ${profileData.species} steps on a root but feels it twist and pulse before it leaps from its camouflage and latches onto ${pronoun(profileData, 2)} body. The snake pumps poison into ${pronoun(profileData, 1)} while ${pronounAndPlural(profileData, 0, 'lashes', 'lash')} around, trying to throw it off, finally succeeding and rushing away.*`;
-							}
-
-							if (userSpeciesMap.habitat == 'cold') {
-
-								embed.description = `*Many sticks and roots are popping up all around ${profileData.name}. ${upperCasePronounAndPlural(profileData, 0, 'shuffle')} through the fallen branches and twisting vines, trying to reach the ${foundItem} ${pronoun(profileData, 0)} found. The ${profileData.species} steps on a root but feels it weave and pulse before it leaps from its camouflage and latches onto ${pronoun(profileData, 2)} body. The snake pumps poison into $${pronoun(profileData, 1)} while ${pronounAndPlural(profileData, 0, 'lashes', 'lash')} around, trying to throw it off, finally succeeding and rushing away.*`;
-							}
-
-							if (userSpeciesMap.habitat == 'water') {
-
-								embed.description = `*Many plants and jellyfish are popping up all around ${profileData.name}. ${upperCasePronounAndPlural(profileData, 0, 'weave')} through the jellyfish and twisting kelp, trying to reach the ${foundItem} ${pronoun(profileData, 0)} found. The ${profileData.species} pushes through a piece of kelp but feels it twist and pulse before it latches onto ${pronoun(profileData, 2)} body. The jellyfish wraps ${pronoun(profileData, 1)} with its stingers, poison flowing into ${pronoun(profileData, 1)} while ${pronounAndPlural(profileData, 0, 'thrashes', 'trash')} around trying to throw it off, finally succeeding and rushing away to the surface.*`;
-							}
-
-							embed.footer.text = `-${healthPoints} HP (from poison)\n${embedFooterStatsText}`;
-
-							break;
-
-						case (pullFromWeightedTable({ 0: 1, 1: 1 }) == 0 && profileData.injuryObject.cold == false):
-
-							userInjuryObject.cold = true;
-
-							if (userSpeciesMap.habitat == 'warm') {
-
-								embed.description = `*${profileData.name} pads along the ground, dashing from bush to bush, inspecting every corner for something ${pronoun(profileData, 0)} could add to the inventory. Suddenly, the ${profileData.species} sways, feeling tired and feeble. A coughing fit grew louder, escaping ${pronoun(profileData, 2)} throat.*`;
-							}
-
-							if (userSpeciesMap.habitat == 'cold') {
-
-								embed.description = `*${profileData.name} plots around the forest, dashing from tree to tree, inspecting every corner for something ${pronoun(profileData, 0)} could add to the inventory. Suddenly, the ${profileData.species} sways, feeling tired and feeble. A coughing fit grew louder, escaping ${pronoun(profileData, 2)} throat.*`;
-							}
-
-							if (userSpeciesMap.habitat == 'water') {
-
-								embed.description = `*${profileData.name} flips around in the water, swimming from rock to rock, inspecting every nook for something ${profileData.pronoun(profileData, 0)} could add to the inventory. Suddenly, the ${profileData.species} falters in ${pronoun(profileData, 2)} stroke, feeling tired and feeble. A coughing fit grew louder, bubbles escaping ${pronoun(profileData, 2)} throat to rise to the surface.*`;
-							}
-
-							embed.footer.text = `-${healthPoints} HP (from cold)\n${embedFooterStatsText}`;
-
-							break;
-
-						default:
-
-							userInjuryObject.infections += 1;
-
-							if (userSpeciesMap.habitat == 'warm') {
-
-								embed.description = `*The soft noise of sand shifting on the ground spooks ${profileData.name} as ${pronounAndPlural(profileData, 0, 'walk')} around the area, searching for something useful for ${pronoun(profileData, 2)} pack. A warm wind brushes against ${pronoun(profileData, 2)} side, and a cactus bush sweeps atop ${pronoun(profileData, 2)} path, going unnoticed. A needle pricks into ${pronoun(profileData, 2)} skin, sending pain waves through ${pronoun(profileData, 2)} body. While removing the needle ${profileData.name} notices how swollen the wound looks. It is infected.*`;
-							}
-
-							if (userSpeciesMap.habitat == 'cold') {
-
-								embed.description = `*The thunks of acorns falling from trees spook ${profileData.name} as ${pronounAndPlural(profileData, 0, 'prance')} around the forest, searching for something useful for ${pronoun(profileData, 2)} pack. A warm wind brushes against ${pronoun(profileData, 2)} side, and a thorn bush sweeps atop ${pronoun(profileData, 2)} path, going unnoticed. A thorn pricks into ${pronoun(profileData, 2)} skin, sending pain waves through ${pronoun(profileData, 2)} body. While removing the thorn ${profileData.name} notices how swollen the wound looks. It is infected.*`;
-							}
-
-							if (userSpeciesMap.habitat == 'water') {
-
-								embed.description = `*The sudden silence in the water spooks ${profileData.name} as ${pronounAndPlural(profileData, 0, 'swim')} around in the water, searching for something useful for their pack. A rocky outcropping appears next to ${pronoun(profileData, 1)}, unnoticed. The rocks scrape into ${pronoun(profileData, 2)} side, sending shockwaves of pain up ${pronoun(profileData, 2)} flank. ${profileData.name} takes a closer look and notices how swollen the wound is. It is infected.*`;
-							}
-
-							embed.footer.text = `-${healthPoints} HP (from infection)\n${embedFooterStatsText}`;
+						embed.description = `*${profileData.name} tries really hard to pick up the ${foundItem} that ${pronoun(profileData, 0)} discovered in a small, lone bush. But as the ${profileData.species} tries to pick it up, it just breaks into little pieces.*`;
 					}
+
+					if (userSpeciesMap.habitat === 'cold') {
+
+						embed.description = `*${profileData.name} tries really hard to pick up the ${foundItem} that ${pronoun(profileData, 0)} discovered at the end of a tree trunk. But as the ${profileData.species} tries to pick it up, it just breaks into little pieces.*`;
+					}
+
+					if (userSpeciesMap.habitat === 'water') {
+
+						embed.description = `*${profileData.name} tries really hard to pick up the ${foundItem} that ${pronoun(profileData, 0)} discovered among large algae. But as the ${profileData.species} tries to pick it up, it just breaks into little pieces.*`;
+					}
+
+					embed.footer.text = embedFooterStatsText;
 
 					embedArray.splice(-1, 1, embed);
 					return botReply = await botReply
@@ -652,7 +617,102 @@ module.exports = {
 								throw new Error(error);
 							}
 						});
-				});
+				}
+
+				const healthPoints = function(health) { return (profileData.health - health < 0) ? profileData.health : health; }(generateRandomNumber(5, 3));
+
+				await profileModel.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $inc: { health: -healthPoints } },
+				);
+
+				const allElderlyProfilesArray = (await profileModel.find({
+					serverId: message.guild.id,
+					rank: 'Elderly',
+				})).map(user => user.userId);
+
+				switch (true) {
+
+					case (pullFromWeightedTable({ 0: 1, 1: 2 }) == 0 && allElderlyProfilesArray.length > 1):
+
+						userInjuryObject.poison = true;
+
+						if (userSpeciesMap.habitat == 'warm') {
+
+							embed.description = `*Piles of sand and lone, scraggly bushes are dotting the landscape all around ${profileData.name}. ${upperCasePronounAndPlural(profileData, 0, 'pad')} through the scattered branches from long-dead trees, carefully avoiding the cacti, trying to reach the ${foundItem} ${pronoun(profileData, 0)} saw. The ${profileData.species} steps on a root but feels it twist and pulse before it leaps from its camouflage and latches onto ${pronoun(profileData, 2)} body. The snake pumps poison into ${pronoun(profileData, 1)} while ${pronounAndPlural(profileData, 0, 'lashes', 'lash')} around, trying to throw it off, finally succeeding and rushing away.*`;
+						}
+
+						if (userSpeciesMap.habitat == 'cold') {
+
+							embed.description = `*Many sticks and roots are popping up all around ${profileData.name}. ${upperCasePronounAndPlural(profileData, 0, 'shuffle')} through the fallen branches and twisting vines, trying to reach the ${foundItem} ${pronoun(profileData, 0)} found. The ${profileData.species} steps on a root but feels it weave and pulse before it leaps from its camouflage and latches onto ${pronoun(profileData, 2)} body. The snake pumps poison into $${pronoun(profileData, 1)} while ${pronounAndPlural(profileData, 0, 'lashes', 'lash')} around, trying to throw it off, finally succeeding and rushing away.*`;
+						}
+
+						if (userSpeciesMap.habitat == 'water') {
+
+							embed.description = `*Many plants and jellyfish are popping up all around ${profileData.name}. ${upperCasePronounAndPlural(profileData, 0, 'weave')} through the jellyfish and twisting kelp, trying to reach the ${foundItem} ${pronoun(profileData, 0)} found. The ${profileData.species} pushes through a piece of kelp but feels it twist and pulse before it latches onto ${pronoun(profileData, 2)} body. The jellyfish wraps ${pronoun(profileData, 1)} with its stingers, poison flowing into ${pronoun(profileData, 1)} while ${pronounAndPlural(profileData, 0, 'thrashes', 'trash')} around trying to throw it off, finally succeeding and rushing away to the surface.*`;
+						}
+
+						embed.footer.text = `-${healthPoints} HP (from poison)\n${embedFooterStatsText}`;
+
+						break;
+
+					case (pullFromWeightedTable({ 0: 1, 1: 1 }) == 0 && profileData.injuryObject.cold == false):
+
+						userInjuryObject.cold = true;
+
+						if (userSpeciesMap.habitat == 'warm') {
+
+							embed.description = `*${profileData.name} pads along the ground, dashing from bush to bush, inspecting every corner for something ${pronoun(profileData, 0)} could add to the inventory. Suddenly, the ${profileData.species} sways, feeling tired and feeble. A coughing fit grew louder, escaping ${pronoun(profileData, 2)} throat.*`;
+						}
+
+						if (userSpeciesMap.habitat == 'cold') {
+
+							embed.description = `*${profileData.name} plots around the forest, dashing from tree to tree, inspecting every corner for something ${pronoun(profileData, 0)} could add to the inventory. Suddenly, the ${profileData.species} sways, feeling tired and feeble. A coughing fit grew louder, escaping ${pronoun(profileData, 2)} throat.*`;
+						}
+
+						if (userSpeciesMap.habitat == 'water') {
+
+							embed.description = `*${profileData.name} flips around in the water, swimming from rock to rock, inspecting every nook for something ${profileData.pronoun(profileData, 0)} could add to the inventory. Suddenly, the ${profileData.species} falters in ${pronoun(profileData, 2)} stroke, feeling tired and feeble. A coughing fit grew louder, bubbles escaping ${pronoun(profileData, 2)} throat to rise to the surface.*`;
+						}
+
+						embed.footer.text = `-${healthPoints} HP (from cold)\n${embedFooterStatsText}`;
+
+						break;
+
+					default:
+
+						userInjuryObject.infections += 1;
+
+						if (userSpeciesMap.habitat == 'warm') {
+
+							embed.description = `*The soft noise of sand shifting on the ground spooks ${profileData.name} as ${pronounAndPlural(profileData, 0, 'walk')} around the area, searching for something useful for ${pronoun(profileData, 2)} pack. A warm wind brushes against ${pronoun(profileData, 2)} side, and a cactus bush sweeps atop ${pronoun(profileData, 2)} path, going unnoticed. A needle pricks into ${pronoun(profileData, 2)} skin, sending pain waves through ${pronoun(profileData, 2)} body. While removing the needle ${profileData.name} notices how swollen the wound looks. It is infected.*`;
+						}
+
+						if (userSpeciesMap.habitat == 'cold') {
+
+							embed.description = `*The thunks of acorns falling from trees spook ${profileData.name} as ${pronounAndPlural(profileData, 0, 'prance')} around the forest, searching for something useful for ${pronoun(profileData, 2)} pack. A warm wind brushes against ${pronoun(profileData, 2)} side, and a thorn bush sweeps atop ${pronoun(profileData, 2)} path, going unnoticed. A thorn pricks into ${pronoun(profileData, 2)} skin, sending pain waves through ${pronoun(profileData, 2)} body. While removing the thorn ${profileData.name} notices how swollen the wound looks. It is infected.*`;
+						}
+
+						if (userSpeciesMap.habitat == 'water') {
+
+							embed.description = `*The sudden silence in the water spooks ${profileData.name} as ${pronounAndPlural(profileData, 0, 'swim')} around in the water, searching for something useful for their pack. A rocky outcropping appears next to ${pronoun(profileData, 1)}, unnoticed. The rocks scrape into ${pronoun(profileData, 2)} side, sending shockwaves of pain up ${pronoun(profileData, 2)} flank. ${profileData.name} takes a closer look and notices how swollen the wound is. It is infected.*`;
+						}
+
+						embed.footer.text = `-${healthPoints} HP (from infection)\n${embedFooterStatsText}`;
+				}
+
+				embedArray.splice(-1, 1, embed);
+				return botReply = await botReply
+					.edit({
+						embeds: embedArray,
+						components: [],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
 		}
 
 		async function findEnemy() {
@@ -811,7 +871,7 @@ module.exports = {
 				filter = i => (i.customId == 'fight-attack' || i.customId == 'fight-defend' || i.customId == 'fight-dodge') && i.user.id == message.author.id;
 
 				const { customId } = await botReply
-					.awaitMessageComponent({ filter, time: 4000 })
+					.awaitMessageComponent({ filter, time: responseTime })
 					.catch(() => { return { customId: null }; });
 
 				if (customId == null || (customId == 'fight-attack' && cycleKind == 'dodge') || (customId == 'fight-defend' && cycleKind == 'attack') || (customId == 'fight-dodge' && cycleKind == 'defend')) {

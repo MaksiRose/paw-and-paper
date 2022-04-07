@@ -102,7 +102,7 @@ class model {
 					}
 					else if (key === '$gt') {
 
-						if (Object.hasOwn(compareObject, key) === true && compareObject > value) { continue; }
+						if (typeof compareObject === 'number' && compareObject > value) { continue; }
 					}
 					else if (key === '$nin') {
 
