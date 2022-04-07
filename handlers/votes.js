@@ -3,6 +3,12 @@ const { AutoPoster } = require('topgg-autoposter');
 const Topgg = require('@top-gg/sdk');
 const express = require('express');
 const fs = require('fs');
+const RateLimit = require('express-rate-limit');
+
+const limiter = new RateLimit({
+	windowMs: 60 * 1000,
+	max: 20,
+});
 
 module.exports = {
 	async execute(client) {
@@ -17,6 +23,7 @@ module.exports = {
 		const bfdApp = express();
 
 		bfdApp.use(express.json());
+		bfdApp.use(limiter);
 
 		bfdApp.post('/discords', (request, response) => {
 
@@ -60,6 +67,7 @@ module.exports = {
 		const dblApp = express();
 
 		dblApp.use(express.json());
+		dblApp.use(limiter);
 
 		dblApp.post('/dbl', (request, response) => {
 

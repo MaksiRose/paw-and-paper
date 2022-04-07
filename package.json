@@ -19,6 +19,7 @@
 		"bfd-api-redux": "^1.2.2",
 		"discord.js": "^13.6.0",
 		"express": "^4.17.3",
+		"express-rate-limit": "^6.3.0",
 		"fs": "^0.0.1-security",
 		"topgg-autoposter": "^2.0.1"
 	},
