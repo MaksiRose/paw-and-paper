@@ -3,6 +3,12 @@ const { AutoPoster } = require('topgg-autoposter');
 const Topgg = require('@top-gg/sdk');
 const express = require('express');
 const fs = require('fs');
+const RateLimit = require('express-rate-limit');
+
+const limiter = new RateLimit({
+	windowMs: 60 * 1000,
+	max: 20,
+});
 
 module.exports = {
 	async execute(client) {
@@ -17,6 +23,7 @@ module.exports = {
 		const bfdApp = express();
 
 		bfdApp.use(express.json());
+		bfdApp.use(limiter);
 
 		bfdApp.post('/discords', (request, response) => {
 
@@ -24,8 +31,8 @@ module.exports = {
 
 				const voteCache = JSON.parse(fs.readFileSync('./database/voteCache.json'));
 
-				voteCache[request.body.user] = voteCache[request.body.user] ?? {};
-				voteCache[request.body.user].lastRecordedDiscordsVote = Date.now();
+				voteCache['id_' + request.body.user] = voteCache['id_' + request.body.user] ?? {};
+				voteCache['id_' + request.body.user].lastRecordedDiscordsVote = Date.now();
 
 				fs.writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 			}
@@ -48,8 +55,8 @@ module.exports = {
 
 			const voteCache = JSON.parse(fs.readFileSync('./database/voteCache.json'));
 
-			voteCache[vote.user] = voteCache[vote.user] ?? {};
-			voteCache[vote.user].lastRecordedTopVote = Date.now();
+			voteCache['id_' + vote.user] = voteCache['id_' + vote.user] ?? {};
+			voteCache['id_' + vote.user].lastRecordedTopVote = Date.now();
 
 			fs.writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 		}));
@@ -60,6 +67,7 @@ module.exports = {
 		const dblApp = express();
 
 		dblApp.use(express.json());
+		dblApp.use(limiter);
 
 		dblApp.post('/dbl', (request, response) => {
 
@@ -67,8 +75,8 @@ module.exports = {
 
 				const voteCache = JSON.parse(fs.readFileSync('./database/voteCache.json'));
 
-				voteCache[request.body.id] = voteCache[request.body.id] ?? {};
-				voteCache[request.body.id].lastRecordedDblVote = Date.now();
+				voteCache['id_' + request.body.id] = voteCache['id_' + request.body.id] ?? {};
+				voteCache['id_' + request.body.id].lastRecordedDblVote = Date.now();
 
 				fs.writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 			}
