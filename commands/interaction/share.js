@@ -91,13 +91,7 @@ module.exports = {
 
 		const thirstPoints = await decreaseThirst(profileData);
 		const hungerPoints = await decreaseHunger(profileData);
-		const extraLostEnergyPoints = await decreaseEnergy(profileData);
-		let energyPoints = generateRandomNumber(5, 1) + extraLostEnergyPoints;
-
-		if (profileData.energy - energyPoints < 0) {
-
-			energyPoints = profileData.energy;
-		}
+		const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(3, 1) + await decreaseEnergy(profileData));
 
 		profileData = await profileModel.findOneAndUpdate(
 			{ userId: message.author.id, serverId: message.guild.id },

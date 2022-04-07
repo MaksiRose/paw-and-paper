@@ -185,7 +185,7 @@ module.exports = {
 			}
 
 			const experiencePoints = generateRandomNumber(10, 11);
-			const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(5, 1) + await decreaseEnergy(profileData));
+			const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(3, 1) + await decreaseEnergy(profileData));
 			const hungerPoints = await decreaseHunger(profileData);
 			const thirstPoints = await decreaseThirst(profileData);
 
