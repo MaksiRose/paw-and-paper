@@ -174,8 +174,8 @@ module.exports = {
 				.filter(user => user.userId != profileData.userId && user.injuryObject.cold == false)
 				.map(user => user.userId);
 
-			const getsQuestChance = generateRandomNumber(20, 0);
-			if (getsQuestChance == 0 && profileData.unlockedRanks == 0 && profileData.rank == 'Youngling' && profileData.levels > 1) {
+			const getsQuestChance = generateRandomNumber(3, 0);
+			if (getsQuestChance === 0 && profileData.unlockedRanks === 0 && profileData.rank === 'Youngling' && profileData.levels > 1) {
 
 				await findQuest();
 			}
