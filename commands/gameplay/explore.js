@@ -75,6 +75,7 @@ module.exports = {
 				});
 		}
 
+		const responseTime = profileData.rank === 'Elderly' ? 2000 : profileData.rank === 'Hunter' || profileData.rank === 'Healer' ? 3000 : 4000;
 		const userSpeciesMap = speciesMap.get(profileData.species);
 
 		const allBiomesArray = [
@@ -515,7 +516,7 @@ module.exports = {
 				});
 
 			return await botReply
-				.awaitMessageComponent({ filter, time: 5000 })
+				.awaitMessageComponent({ filter, time: responseTime })
 				.then(async button => {
 
 					if (!button.customId.includes(correctButton)) {
@@ -811,7 +812,7 @@ module.exports = {
 				filter = i => (i.customId == 'fight-attack' || i.customId == 'fight-defend' || i.customId == 'fight-dodge') && i.user.id == message.author.id;
 
 				const { customId } = await botReply
-					.awaitMessageComponent({ filter, time: 4000 })
+					.awaitMessageComponent({ filter, time: responseTime })
 					.catch(() => { return { customId: null }; });
 
 				if (customId == null || (customId == 'fight-attack' && cycleKind == 'dodge') || (customId == 'fight-defend' && cycleKind == 'attack') || (customId == 'fight-dodge' && cycleKind == 'defend')) {

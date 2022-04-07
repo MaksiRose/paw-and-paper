@@ -247,7 +247,7 @@ module.exports = {
 			filter = i => (i.customId == 'practice-attack' || i.customId == 'practice-defend' || i.customId == 'practice-dodge') && i.user.id == message.author.id;
 
 			await botReply
-				.awaitMessageComponent({ filter, time: 5000 })
+				.awaitMessageComponent({ filter, time: profileData.rank === 'Elderly' ? 2000 : profileData.rank === 'Hunter' || profileData.rank === 'Healer' ? 3000 : 4000 })
 				.then(async interaction => {
 
 					if ((interaction.customId == 'practice-attack' && cycleKind == 'dodge') || (interaction.customId == 'practice-defend' && cycleKind == 'attack') || (interaction.customId == 'practice-dodge' && cycleKind == 'defend')) {
