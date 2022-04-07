@@ -31,8 +31,8 @@ module.exports = {
 
 				const voteCache = JSON.parse(fs.readFileSync('./database/voteCache.json'));
 
-				voteCache[request.body.user] = voteCache[request.body.user] ?? {};
-				voteCache[request.body.user].lastRecordedDiscordsVote = Date.now();
+				voteCache['id_' + request.body.user] = voteCache['id_' + request.body.user] ?? {};
+				voteCache['id_' + request.body.user].lastRecordedDiscordsVote = Date.now();
 
 				fs.writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 			}
@@ -55,8 +55,8 @@ module.exports = {
 
 			const voteCache = JSON.parse(fs.readFileSync('./database/voteCache.json'));
 
-			voteCache[vote.user] = voteCache[vote.user] ?? {};
-			voteCache[vote.user].lastRecordedTopVote = Date.now();
+			voteCache['id_' + vote.user] = voteCache['id_' + vote.user] ?? {};
+			voteCache['id_' + vote.user].lastRecordedTopVote = Date.now();
 
 			fs.writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 		}));
@@ -75,8 +75,8 @@ module.exports = {
 
 				const voteCache = JSON.parse(fs.readFileSync('./database/voteCache.json'));
 
-				voteCache[request.body.id] = voteCache[request.body.id] ?? {};
-				voteCache[request.body.id].lastRecordedDblVote = Date.now();
+				voteCache['id_' + request.body.id] = voteCache['id_' + request.body.id] ?? {};
+				voteCache['id_' + request.body.id].lastRecordedDblVote = Date.now();
 
 				fs.writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 			}
