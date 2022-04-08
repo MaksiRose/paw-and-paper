@@ -331,17 +331,23 @@ rarePlantsMap.set('marsh mallow', {
 });
 
 
+// *rodents incl.: mice, rats, squirrels, prairie dogs, porcupines, beavers, guinea pigs, hamsters, rabbits, hares, pikas
+// every animal should have ~3-4 opponents per biome, and be mentioned 9-12 times in total
 const speciesMap = new Map();
 
+// actual diet: moose, red deer, roe deer, wild boar, elk, caribou, white-tailed deer, mule deer, rodents*, hares, insectivores, smaller carnivores, waterfowl, lizards, snakes, frogs, large insecets
+// actual predators: no real ones, but sometimes large cats (eg eurasian lynx, cougars, siberian tigers), coyotes, elks that try to protect themselves, bears, striped hyenas
 speciesMap.set('wolf', {
 	name: 'wolf',
-	diet: 'carnivore',
+	diet: 'omnivore',
 	habitat: 'cold',
 	biome1OpponentArray: ['rabbit', 'squirrel', 'deer'],
 	biome2OpponentArray: ['fox', 'dog', 'goat'],
 	biome3OpponentArray: ['bear', 'horse', 'elk'],
 });
 
+// actual diet in: hamsters, rats, mice, voles, sometimes martens, european polecat, stoat, weasel, sometimes deer, chamols, hates, rodents*, squirrel galliformes, birds, fish
+// actual predators: feral dogs, dingoes, coyotes, caracals, birds of prey
 speciesMap.set('cat', {
 	name: 'cat',
 	diet: 'carnivore',
@@ -351,6 +357,8 @@ speciesMap.set('cat', {
 	biome3OpponentArray: ['wolf', 'dog'],
 });
 
+// actual diet: invertebrates such as insects and small vertebrates such as reptiles and birds, raccoons, oppossums, small rodents* like voles, mice and squirrels
+// actual predators: wolves, coyotes, leopards, caracals, lynxes, hyena, cougars, bobcats, eagles, owls
 speciesMap.set('fox', {
 	name: 'fox',
 	diet: 'omnivore',
@@ -360,6 +368,8 @@ speciesMap.set('fox', {
 	biome3OpponentArray: ['wolf', 'bear'],
 });
 
+// actual diet: ungulates such as antelopes and deer, primates such as monkeys, smaller carnivores like black-backed jackal, foxes, genets and cheetah
+// actual predators: tiger, lion, hyena, snake, crocodiles
 speciesMap.set('leopard', {
 	name: 'leopard',
 	diet: 'carnivore',
@@ -369,6 +379,8 @@ speciesMap.set('leopard', {
 	biome3OpponentArray: ['tiger', 'lion'],
 });
 
+// actual diet: large and medium-sizes mammals such as ungulates, deer, wapiti and wild boars, guar, buffalo, smaller prey such as monkeys, peafowl and other ground-based birds, hares, porcupines and fish, other predators such as dogs, leopards, pythons, bears and crocodiles, lifestock such as cattle, horses and donkeys
+// actual predators: leopards, dholes, hyenas, wolves, bears, pythons and crocodiles
 speciesMap.set('tiger', {
 	name: 'tiger',
 	diet: 'carnivore',
@@ -612,7 +624,6 @@ speciesMap.set('elk', {
 	biome3OpponentArray: ['bear', 'wolf', 'horse'],
 });
 
-
 speciesMap.set('cassowary', {
 	name: 'cassowary',
 	diet: 'omnivore',
@@ -655,7 +666,7 @@ speciesMap.set('praying mantis', {
 	habitat: 'cold',
 	biome1OpponentArray: ['cricket', 'beetle'],
 	biome2OpponentArray: ['moth', 'bee'],
-	biome3OpponentArray: ['weasel', 'raccoon'],
+	biome3OpponentArray: ['weasel', 'raccoon', 'hedgehog'],
 });
 
 speciesMap.set('cricket', {
@@ -664,7 +675,7 @@ speciesMap.set('cricket', {
 	habitat: 'cold',
 	biome1OpponentArray: ['moth', 'beetle'],
 	biome2OpponentArray: ['praying mantis', 'bee'],
-	biome3OpponentArray: ['weasel', 'owl'],
+	biome3OpponentArray: ['weasel', 'owl', 'hedgehog'],
 });
 
 speciesMap.set('beetle', {
@@ -673,7 +684,7 @@ speciesMap.set('beetle', {
 	habitat: 'cold',
 	biome1OpponentArray: ['cricket', 'moth'],
 	biome2OpponentArray: ['praying mantis', 'bee'],
-	biome3OpponentArray: ['weasel', 'owl'],
+	biome3OpponentArray: ['weasel', 'owl', 'hedgehog'],
 });
 
 speciesMap.set('moth', {
@@ -708,7 +719,7 @@ speciesMap.set('frog', {
 	diet: 'carnivore',
 	habitat: 'cold',
 	biome1OpponentArray: ['beetle', 'cricket', 'praying mantis'],
-	biome2OpponentArray: ['raccoon', 'fox'],
+	biome2OpponentArray: ['raccoon', 'fox', 'hedgehog'],
 	biome3OpponentArray: ['owl', 'crow'],
 });
 
@@ -725,7 +736,7 @@ speciesMap.set('king cobra', {
 	name: 'king cobra',
 	diet: 'carnivore',
 	habitat: 'cold',
-	biome1OpponentArray: ['frog', 'rabbit'],
+	biome1OpponentArray: ['frog', 'rabbit', 'hedgehog'],
 	biome2OpponentArray: ['gaboon viper', 'cassowary', 'hoatzin'],
 	biome3OpponentArray: ['hawk', 'eagle'],
 });
@@ -737,6 +748,37 @@ speciesMap.set('rat', {
 	biome1OpponentArray: ['beetle', 'cricket', 'praying mantis'],
 	biome2OpponentArray: ['squirrel', 'rabbit', 'raccoon'],
 	biome3OpponentArray: ['owl', 'cougar', 'weasel'],
+});
+
+speciesMap.set('hedgehog', {
+	name: 'hedgehog',
+	diet: 'omnivore',
+	habitat: 'cold',
+	biome1OpponentArray: ['beetle', 'cricket', 'praying mantis'],
+	biome2OpponentArray: ['frog', 'rat', 'squirrel'],
+	biome3OpponentArray: ['owl', 'eagle', 'weasel'],
+});
+
+// actual diet: plants
+// actual predators: felids, canids and bears, hawks, sometimes otters
+speciesMap.set('beaver', {
+	name: 'beaver',
+	diet: 'herbivore',
+	habitat: 'cold',
+	biome1OpponentArray: ['beetle', 'cricket', 'praying mantis'],
+	biome2OpponentArray: ['coyote', 'fox', 'weasel'],
+	biome3OpponentArray: ['bear', 'hawk', 'wolf'],
+});
+
+// actual diet: sedentary animals such as mollusks, worms and insect larvae, fish, amphibians, reptiles, birds and mammals
+// actual predators: raccoons, opossums, skunks, sharks, crows, seagulls, kingsnakes, crocodiles, alligators
+speciesMap.set('turtle', {
+	name: 'turtle',
+	diet: 'omnivore',
+	habitat: 'warm',
+	biome1OpponentArray: ['beetle', 'cricket', 'salmon'],
+	biome2OpponentArray: ['raccoon', 'crow', 'weasel'],
+	biome3OpponentArray: ['shark', 'fox', 'coyote'],
 });
 
 
