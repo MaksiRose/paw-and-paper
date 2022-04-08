@@ -123,7 +123,7 @@ module.exports = {
 				}
 			});
 
-		const filter = i => i.user.id == message.mentions.users.first().id;
+		const filter = i => i.user.id === message.mentions.users.first().id && i.customId.includes('hug');
 
 		botReply
 			.awaitMessageComponent({ filter, time: 120000 })
@@ -169,6 +169,7 @@ module.exports = {
 					});
 			})
 			.catch(async () => {
+
 				return await botReply
 					.edit({
 						embeds: [...embedArray, {

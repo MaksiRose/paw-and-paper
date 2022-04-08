@@ -164,7 +164,7 @@ module.exports = {
 			const filter = i => (i.customId == 'fight-attack' || i.customId == 'fight-defend' || i.customId == 'fight-dodge') && i.user.id == message.author.id;
 
 			const { customId } = await botReply
-				.awaitMessageComponent({ filter, time: 4000 })
+				.awaitMessageComponent({ filter, time: profileData.rank === 'Elderly' ? 2000 : profileData.rank === 'Hunter' || profileData.rank === 'Healer' ? 3000 : profileData.rank === 'Apprentice' ? 4000 : 5000 })
 				.catch(() => { return { customId: null }; });
 
 			if (customId == null || (customId == 'fight-attack' && cycleKind == 'dodge') || (customId == 'fight-defend' && cycleKind == 'attack') || (customId == 'fight-dodge' && cycleKind == 'defend')) {
@@ -185,7 +185,7 @@ module.exports = {
 			}
 
 			const experiencePoints = generateRandomNumber(10, 11);
-			const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(5, 1) + await decreaseEnergy(profileData));
+			const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(3, 1) + await decreaseEnergy(profileData));
 			const hungerPoints = await decreaseHunger(profileData);
 			const thirstPoints = await decreaseThirst(profileData);
 

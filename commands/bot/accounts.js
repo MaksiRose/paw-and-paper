@@ -3,6 +3,7 @@ const startCooldown = require('../../utils/startCooldown');
 const otherProfileModel = require('../../models/otherProfileModel');
 const fs = require('fs');
 const { createCommandCollector } = require('../../utils/commandCollector');
+const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
 
 module.exports = {
 	name: 'accounts',
@@ -90,6 +91,21 @@ module.exports = {
 		if (profileData.uuid !== undefined) {
 
 			fs.renameSync(`./database/profiles/${profileData.uuid}.json`, `./database/profiles/inactiveProfiles/${profileData.uuid}.json`);
+
+			for (const role of profileData.roles) {
+
+				if (message.member.roles.cache.has(role.roleId) === true) {
+
+					try {
+
+						await message.member.roles.remove(role.roleId);
+					}
+					catch (error) {
+
+						await checkRoleCatchBlock(error, message, message.member);
+					}
+				}
+			}
 		}
 
 		const name = interaction.customId.split('-').slice(1, -1).join('-');
@@ -103,6 +119,21 @@ module.exports = {
 			});
 
 			fs.renameSync(`./database/profiles/inactiveProfiles/${newProfileData.uuid}.json`, `./database/profiles/${newProfileData.uuid}.json`);
+
+			for (const role of newProfileData.roles) {
+
+				if (message.member.roles.cache.has(role.roleId) === false) {
+
+					try {
+
+						await message.member.roles.add(role.roleId);
+					}
+					catch (error) {
+
+						await checkRoleCatchBlock(error, message, message.member);
+					}
+				}
+			}
 		}
 
 		setTimeout(async () => {

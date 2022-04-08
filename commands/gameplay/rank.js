@@ -48,7 +48,7 @@ module.exports = {
 					}
 				});
 
-			await checkRankRequirements(serverData, message, 'Apprentice');
+			await checkRankRequirements(serverData, message, message.member, 'Apprentice');
 
 			return;
 		}
@@ -114,7 +114,7 @@ module.exports = {
 					}
 				});
 
-			await checkRankRequirements(serverData, message, 'Elderly');
+			await checkRankRequirements(serverData, message, message.member, 'Elderly');
 
 			return;
 		}
@@ -179,7 +179,7 @@ module.exports = {
 						}
 					});
 
-				await checkRankRequirements(serverData, message, 'Healer');
+				await checkRankRequirements(serverData, message, message.member, 'Healer');
 
 				return;
 			}
@@ -206,7 +206,7 @@ module.exports = {
 						}
 					});
 
-				await checkRankRequirements(serverData, message, 'Hunter');
+				await checkRankRequirements(serverData, message, message.member, 'Hunter');
 
 				return;
 			}

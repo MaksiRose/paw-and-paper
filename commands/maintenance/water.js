@@ -12,6 +12,7 @@ const thirtyMinutes = oneMinute * 30;
 const oneHour = thirtyMinutes * 2;
 const threeHours = oneHour * 3;
 const twentyFourHours = threeHours * 8;
+const userMap = new Map();
 
 module.exports = {
 	name: 'water',
@@ -66,6 +67,7 @@ module.exports = {
 
 			experiencePoints = saplingObject.waterCycles * 2;
 			healthPoints = pullFromWeightedTable({ 0: 6, 1: 5, 2: 4, 3: 3, 4: 2, 5: 1 }) + generateRandomNumber(Math.round(saplingObject.waterCycles / 4), 0);
+			if (profileData.health + healthPoints > profileData.maxHealth) { healthPoints = profileData.maxHealth - profileData.health; }
 
 			embedArray.push({
 				color: profileData.color,
@@ -114,11 +116,6 @@ module.exports = {
 
 		saplingObject.nextWaterTimestamp = Date.now() + twentyFourHours;
 
-		if (profileData.health + healthPoints > profileData.maxHealth) {
-
-			healthPoints -= (profileData.health + healthPoints) - profileData.maxThirst;
-		}
-
 		profileData = await profileModel.findOneAndUpdate(
 			{ userId: message.author.id, serverId: message.guild.id },
 			{
@@ -134,6 +131,15 @@ module.exports = {
 			.reply({
 				content: messageContent,
 				embeds: embedArray,
+				components: [{
+					type: 'ACTION_ROW',
+					components: [{
+						type: 'BUTTON',
+						customId: `water-reminder-${profileData.saplingObject.reminder === true ? 'off' : 'on'}`,
+						label: `Turn water reminders ${profileData.saplingObject.reminder === true ? 'off' : 'on'}`,
+						style: 'SECONDARY',
+					}],
+				}],
 				failIfNotExists: false,
 			})
 			.catch((error) => {
@@ -141,6 +147,11 @@ module.exports = {
 					throw new Error(error);
 				}
 			});
+
+		if (profileData.saplingObject.reminder === true) {
+
+			module.exports.sendReminder(client, profileData, message.channel.id);
+		}
 
 		await checkLevelUp(message, botReply, profileData, serverData);
 
@@ -162,8 +173,44 @@ module.exports = {
 
 			await profileModel.findOneAndUpdate(
 				{ userId: profileData.userId, serverId: profileData.serverId },
-				{ $set: { saplingObject: { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null } } },
+				{ $set: { saplingObject: { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, reminder: profileData.saplingObject.reminder } } },
 			);
+		}
+	},
+	sendReminder(client, profileData, channelId) {
+
+		module.exports.stopReminder(profileData);
+
+		userMap.set('nr' + profileData.userId + profileData.serverId, setTimeout(async () => {
+
+			profileData = await profileModel.findOne({ userId: profileData.userId, serverId: profileData.serverId });
+
+			if (profileData.saplingObject.exists === true && profileData.saplingObject.reminder === true) {
+
+				const channel = await client.channels.fetch(channelId);
+
+				await channel
+					.send({
+						content: `<@${profileData.userId}>`,
+						embeds: [{
+							color: profileData.color,
+							author: { name: profileData.name, icon_url: profileData.avatarURL },
+							description: 'It is time to `water` your tree!',
+						}],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
+		}, profileData.saplingObject.nextWaterTimestamp - Date.now()));
+	},
+	stopReminder(profileData) {
+
+		if (userMap.has('nr' + profileData.userId + profileData.serverId)) {
+
+			clearTimeout(userMap.get('nr' + profileData.userId + profileData.serverId));
 		}
 	},
 };

@@ -4,7 +4,7 @@ const errorHandling = require('../utils/errorHandling');
 const pjson = require('../package.json');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 const { execute } = require('./messageCreate');
-const fs = require('fs');
+const { sendReminder, stopReminder } = require('../commands/maintenance/water');
 
 module.exports = {
 	name: 'interactionCreate',
@@ -28,113 +28,6 @@ module.exports = {
 				.catch(async (error) => {
 					if (error.httpStatus !== 404) {
 						return await errorHandling.output(interaction.message, error);
-					}
-				});
-		}
-
-		if (interaction.customId.includes('updates-off')) {
-
-			const user = await client.users.fetch(interaction.user.id);
-			let dataObject = {
-				usersArray: [user.id],
-			};
-
-			if (fs.existsSync('./database/noUpdatesUserList.json')) {
-
-				dataObject = JSON.parse(fs.readFileSync('./database/noUpdatesUserList.json'));
-
-				if (dataObject.usersArray.findIndex(userId => userId == user.id) == -1) {
-
-					dataObject.usersArray.push(user.id);
-				}
-			}
-
-			fs.writeFileSync('./database/noUpdatesUserList.json', JSON.stringify(dataObject, null, '\t'));
-
-			await user
-				.createDM()
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-
-			await interaction
-				.followUp({
-					content: 'You turned updates for new releases off!',
-					ephemeral: true,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-
-			return await interaction
-				.editReply({
-					components: [{
-						type: 'ACTION_ROW',
-						components: [{
-							type: 'BUTTON',
-							customId: 'updates-on',
-							label: 'Turn updates on',
-							style: 'SECONDARY',
-						}],
-					}],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-		}
-
-		if (interaction.customId.includes('updates-on')) {
-
-			const user = await client.users.fetch(interaction.user.id);
-			const dataObject = JSON.parse(fs.readFileSync('./database/noUpdatesUserList.json'));
-
-			if (dataObject.usersArray.findIndex(userId => userId == user.id) !== -1) {
-
-				dataObject.usersArray.splice(dataObject.usersArray.findIndex(userId => userId == user.id), 1);
-			}
-
-			fs.writeFileSync('./database/noUpdatesUserList.json', JSON.stringify(dataObject, null, '\t'));
-
-			await user
-				.createDM()
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-
-			await interaction
-				.followUp({
-					content: 'You turned updates for new releases on!',
-					ephemeral: true,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-
-			return await interaction
-				.editReply({
-					components: [{
-						type: 'ACTION_ROW',
-						components: [{
-							type: 'BUTTON',
-							customId: 'updates-off',
-							label: 'Turn updates off',
-							style: 'SECONDARY',
-						}],
-					}],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
 					}
 				});
 		}
@@ -315,6 +208,8 @@ module.exports = {
 							title: 'Page 4: 👥 Interaction',
 							description: 'Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.',
 							fields: [
+								{ name: '**rp requestvisit**', value: 'Find, visit and talk to people from far away packs.' },
+								{ name: '**rp endvisit**', value: 'End a visit between your and another pack.' },
 								{ name: '**rp say [text]**', value: 'Talk to your fellow packmates. Gives 1 experience point per use.' },
 								{ name: '**rp hug [@user]**', value: 'Hug a fellow packmate, if they consent.' },
 								{ name: '**rp share (@user)**', value: 'Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person. __Only available to Elderlies.__' },
@@ -329,6 +224,8 @@ module.exports = {
 								customId: 'help-page4-commands',
 								placeholder: 'Select a command',
 								options: [
+									{ label: 'Requestvisit', value: 'help_requestvisit', description: 'Find, visit and talk to people from far away packs.' },
+									{ label: 'Endvisit', value: 'help_endvisit', description: 'End a visit between your and another pack.' },
 									{ label: 'Say', value: 'help_say', description: 'Talk to your fellow packmates. Gives 1 experience point per use.' },
 									{ label: 'Hug', value: 'help_hug', description: 'Hug a fellow packmate, if they consent.' },
 									{ label: 'Share', value: 'help_share', description: 'Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person.' },
@@ -381,11 +278,10 @@ module.exports = {
 							fields: [
 								{ name: '**rp accounts**', value: 'Change the account/profile you are using. You can have up to three per server.' },
 								{ name: '**rp shop**', value: 'Buy roles with experience points.' },
-								{ name: '**rp requestvisit**', value: 'Find, visit and talk to people from far away packs.' },
-								{ name: '**rp endvisit**', value: 'End a visit between your and another pack.' },
 								{ name: '**rp shopadd [@role] [rank/levels/XP] [requirement]**', value: '__Server admins only.__ Add a role to the shop.' },
 								{ name: '**rp shopremove**', value: '__Server admins only.__ Remove a role from the shop.' },
 								{ name: '**rp allowvisits [#channel/off]**', value: '__Server admins only.__ Allow or disallow visits between your and other packs.' },
+								{ name: '**rp getupdates [#channel]**', value: '__Server admins only.__ Specify a channel in which updates, new features etc. should be posted.' },
 								{ name: '**rp ticket [text]**', value: 'Report a bug, give feedback, suggest a feature!' },
 								{ name: '\n**__CREDITS:__**', value: `This bot was made with love by ${maksi.tag}. Special thanks goes out to ${ezra.tag}, ${ren.tag} and ${elliott.tag}, who did a lot of the custom bot responses, and ${jags.tag} who did the profile picture. Thank you also to everyone who tested the bot and gave feedback.\nThis bot was originally created for a Discord server called [Rushing River Pack](https://disboard.org/server/854522091328110595). If you are otherkin, therian, or supporter of those, you are welcome to join.` },
 								{ name: '\n**__OTHER:__**', value: `If you want to support me, you can donate [here](https://streamlabs.com/maksirose/tip)! :)\nYou can find the GitHub repository for this project [here](https://github.com/MaksiRose/paw-and-paper).\nThe bot is currently running on version ${pjson.version}.` },
@@ -401,11 +297,10 @@ module.exports = {
 								options: [
 									{ label: 'Accounts', value: 'help_accounts', description: 'Change the account/profile you are using. You can have up to three per server.' },
 									{ label: 'Shop', value: 'help_shop', description: 'Buy roles with experience points.' },
-									{ label: 'Requestvisit', value: 'help_requestvisit', description: 'Find, visit and talk to people from far away packs.' },
-									{ label: 'Endvisit', value: 'help_endvisit', description: 'End a visit between your and another pack.' },
 									{ label: 'Shopadd', value: 'help_shopadd', description: 'Server admins only. Add a role to the shop' },
 									{ label: 'Shopremove', value: 'help_shopremove', description: 'Server admins only. Remove a role from the shop.' },
 									{ label: 'Allowvisits', value: 'help_allowvisits', description: 'Server admins only. Allow or disallow visits between your and other packs.' },
+									{ label: 'Getupdates', value: 'help_getupdates', description: 'Server admins only. Specify a channel in which updates should be posted.' },
 									{ label: 'Ticket', value: 'help_ticket', description: 'Report a bug, give feedback, suggest a feature!' },
 								],
 							}],
@@ -1282,6 +1177,29 @@ module.exports = {
 					});
 			}
 
+			if (interaction.values[0] === 'help_getupdates') {
+
+				return await interaction
+					.followUp({
+						embeds: [{
+							color: config.default_color,
+							title: 'rp getupdates [#channel]',
+							description: '__Server admins only.__ Allow or disallow visits between your and other packs.',
+							fields: [
+								{ name: '**Aliases**', value: 'updates, enableupdates' },
+								{ name: '**Arguments**', value: 'The mention of a channel.' },
+								{ name: '**More information**', value: 'Whenever important information is available such as new features being available, that information is posted in the updates channel of the Paw and Paper Support server. With this command, this updates channel is being followed, so that all the posts there will be posted in the specified channel. To turn this off, just unfollow from within your channels settings.' },
+							],
+						}],
+						ephemeral: true,
+					})
+					.catch(async (error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
+
 			if (interaction.values[0] === 'help_ticket') {
 
 				return await interaction
@@ -1329,7 +1247,7 @@ module.exports = {
 			console.log(`\x1b[32m${interaction.user.tag}\x1b[0m successfully clicked the button \x1b[33m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 
-			if (interaction.customId == 'report') {
+			if (interaction.customId === 'report') {
 
 				interaction.message
 					.edit({
@@ -1361,7 +1279,7 @@ module.exports = {
 					});
 			}
 
-			if (interaction.customId == 'profile-refresh') {
+			if (interaction.customId === 'profile-refresh') {
 
 				const components = [{
 					type: 'ACTION_ROW',
@@ -1444,7 +1362,7 @@ module.exports = {
 					});
 			}
 
-			if (interaction.customId == 'stats-refresh') {
+			if (interaction.customId === 'stats-refresh') {
 
 				let injuryText = (Object.values(profileData.injuryObject).every(item => item == 0)) ? null : '';
 
@@ -1495,7 +1413,7 @@ module.exports = {
 					});
 			}
 
-			if (interaction.customId == 'profile-store') {
+			if (interaction.customId === 'profile-store') {
 
 				interaction.message
 					.delete()
@@ -1508,6 +1426,88 @@ module.exports = {
 				referencedMessage.content = `${config.prefix}store`;
 
 				return await execute(client, referencedMessage);
+			}
+
+			if (interaction.customId === 'water-reminder-off') {
+
+				profileData.saplingObject.reminder = false;
+
+				await profileModel.findOneAndUpdate(
+					{ userId: profileData.userId, serverId: profileData.serverId },
+					{ $set: { saplingObject: profileData.saplingObject } },
+				);
+
+				stopReminder(profileData, interaction.message);
+
+				await interaction
+					.followUp({
+						content: 'You turned reminders for watering off!',
+						ephemeral: true,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
+				return await interaction
+					.editReply({
+						components: [{
+							type: 'ACTION_ROW',
+							components: [{
+								type: 'BUTTON',
+								customId: 'water-reminder-on',
+								label: 'Turn water reminders on',
+								style: 'SECONDARY',
+							}],
+						}],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
+
+			if (interaction.customId === 'water-reminder-on') {
+
+				profileData.saplingObject.reminder = true;
+
+				await profileModel.findOneAndUpdate(
+					{ userId: profileData.userId, serverId: profileData.serverId },
+					{ $set: { saplingObject: profileData.saplingObject } },
+				);
+
+				sendReminder(client, profileData, interaction.message.channel.id);
+
+				await interaction
+					.followUp({
+						content: 'You turned reminders for watering on!',
+						ephemeral: true,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
+				return await interaction
+					.editReply({
+						components: [{
+							type: 'ACTION_ROW',
+							components: [{
+								type: 'BUTTON',
+								customId: 'water-reminder-off',
+								label: 'Turn water reminders off',
+								style: 'SECONDARY',
+							}],
+						}],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
 			}
 		}
 	},

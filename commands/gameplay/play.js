@@ -96,14 +96,8 @@ module.exports = {
 
 		const thirstPoints = await decreaseThirst(profileData);
 		const hungerPoints = await decreaseHunger(profileData);
-		const extraLostEnergyPoints = await decreaseEnergy(profileData);
-		let energyPoints = generateRandomNumber(5, 1) + extraLostEnergyPoints;
+		const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(3, 1) + await decreaseEnergy(profileData));
 		let experiencePoints = 0;
-
-		if (profileData.energy - energyPoints < 0) {
-
-			energyPoints = profileData.energy;
-		}
 
 		if (profileData.rank == 'Youngling') {
 
@@ -174,8 +168,8 @@ module.exports = {
 				.filter(user => user.userId != profileData.userId && user.injuryObject.cold == false)
 				.map(user => user.userId);
 
-			const getsQuestChance = generateRandomNumber(20, 0);
-			if (getsQuestChance == 0 && profileData.unlockedRanks == 0 && profileData.rank == 'Youngling' && profileData.levels > 1) {
+			const getsQuestChance = generateRandomNumber(3, 0);
+			if (getsQuestChance === 0 && profileData.unlockedRanks === 0 && profileData.rank === 'Youngling' && profileData.levels > 1) {
 
 				await findQuest();
 			}

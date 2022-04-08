@@ -28,7 +28,7 @@ module.exports = {
 
 			if (isNew === true) {
 
-				decreaseLevel(profileData, botReply);
+				await decreaseLevel(profileData, botReply);
 			}
 
 			await passingoutAdvice(message, profileData);

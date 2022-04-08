@@ -1,11 +1,11 @@
 const config = require('../config.json');
-const fs = require('fs');
 const profileModel = require('../models/profileModel');
 const serverModel = require('../models/serverModel');
 const errorHandling = require('../utils/errorHandling');
-const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 const { activeCommandsObject } = require('../utils/commandCollector');
 const { isPassedOut } = require('../utils/checkValidity');
+const createGuild = require('../utils/createGuild');
+const { pronoun, pronounAndPlural } = require('../utils/getPronouns');
 let lastMessageEpochTime = 0;
 const userMap = new Map();
 
@@ -27,55 +27,7 @@ module.exports = {
 
 		if (!serverData) {
 
-			const bannedList = JSON.parse(fs.readFileSync('./database/bannedList.json'));
-
-			if (bannedList.serversArray.includes(message.guild.id)) {
-
-				const user = await client.users.fetch(message.guild.ownerId);
-
-				await user
-					.createDM()
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-
-				await user
-					.send({ content: `I am sorry to inform you that your guild \`${message.guild.name}\` has been banned from using this bot.` })
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-
-				await message.guild
-					.leave()
-					.catch((error) => {
-						throw new Error(error);
-					});
-
-				return;
-			}
-
-			const serverInventoryObject = {
-				commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, 0])),
-				uncommonPlants: Object.fromEntries([...uncommonPlantsMap.keys()].sort().map(key => [key, 0])),
-				rarePlants: Object.fromEntries([...rarePlantsMap.keys()].sort().map(key => [key, 0])),
-				meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, 0])),
-			};
-
-			serverData = await serverModel.create({
-				serverId: message.guild.id,
-				name: message.guild.name,
-				inventoryObject: serverInventoryObject,
-				blockedEntranceObject: { den: null, blockedKind: null },
-				activeUsersArray: [],
-				nextPossibleAttack: Date.now(),
-				visitChannelId: null,
-				currentlyVisiting: null,
-				shop: [],
-			});
+			await createGuild(client, message.guild);
 		}
 
 		let profileData = await profileModel.findOne({
@@ -125,7 +77,7 @@ module.exports = {
 
 		if (userMap.has('nr' + message.author.id + message.guild.id) == false) {
 
-			userMap.set('nr' + message.author.id + message.guild.id, { activeCommands: 0, activityTimeout: null, cooldownTimeout: null, restingTimeout: null });
+			userMap.set('nr' + message.author.id + message.guild.id, { activeCommands: 0, lastGentleWaterReminderTimestamp: 0, activityTimeout: null, cooldownTimeout: null, restingTimeout: null });
 		}
 
 		clearTimeout(userMap.get('nr' + message.author.id + message.guild.id).activityTimeout);
@@ -195,6 +147,29 @@ module.exports = {
 			}
 
 			await errorHandling.output(message, error);
+		}
+
+		profileData = await profileModel.findOne({ userId: message.author.id, serverId: message.guild.id });
+
+		const oneHourInMs = 3600000;
+		// If sapling exists, the watering time is between 2 hours from perfect and 3 hours from perfect, and there wasn't a reminder in the last hour
+		// The reminder in the last hour prevents the reminder from being sent out multiple times
+		if (profileData !== null && profileData.saplingObject.exists === true && Date.now > profileData.saplingObject.nextWaterTimestamp + oneHourInMs * 2 && Date.now() < profileData.saplingObject.nextWaterTimestamp + oneHourInMs * 3 && Date.now() > userMap.get('nr' + message.author.id + message.guild.id).lastGentleWaterReminderTimestamp + oneHourInMs) {
+
+			userMap.get('nr' + message.author.id + message.guild.id).lastGentleWaterReminderTimestamp = Date.now();
+
+			await message.channel
+				.send({
+					embeds: [{
+						color: profileData.color,
+						author: { name: profileData.name, icon_url: profileData.avatarURL },
+						description: `*Engrossed in ${pronoun(profileData, 2)} work, ${profileData.name} suddenly remembers that ${pronounAndPlural(profileData, 0, 'has', 'have')} not yet watered ${pronoun(profileData, 2)} plant today. The ${profileData.species} should really do it soon!*`,
+						footer: { text: 'Type "rp water" to water your ginkgo sapling!' },
+					}],
+				})
+				.catch(async (error) => {
+					return await errorHandling.output(message, error);
+				});
 		}
 
 		userMap.get('nr' + message.author.id + message.guild.id).restingTimeout = setTimeout(startResting, 600000);

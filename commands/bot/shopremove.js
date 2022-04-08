@@ -1,6 +1,9 @@
 const config = require('../../config.json');
 const serverModel = require('../../models/serverModel');
+const profileModel = require('../../models/profileModel');
 const { createCommandCollector } = require('../../utils/commandCollector');
+const { checkLevelUp } = require('../../utils/levelHandling');
+const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
 
 module.exports = {
 	name: 'shopremove',
@@ -75,7 +78,7 @@ module.exports = {
 
 		async function interactionCollector() {
 
-			const filter = i => i.user.id === message.author.id;
+			const filter = i => i.user.id === message.author.id && i.customId === 'shopdelete-options';
 
 			const interaction = await botReply
 				.awaitMessageComponent({ filter, time: 120_000 })
@@ -138,64 +141,77 @@ module.exports = {
 					{ $set: { shop: serverData.shop } },
 				);
 
-				setTimeout(async () => {
-
-					await interaction
-						.followUp({
-							content: `<@&${deleteItem[0].roleId}> with the requirement of ${deleteItem[0].requirement} ${deleteItem[0].wayOfEarning} was deleted from the shop.`,
-							ephemeral: true,
-							failIfNotExists: false,
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
-						});
-				}, 500);
-
-				if (serverData.shop.length === 0) {
-
-					return await interaction.message
-						.edit({
-							embeds: [{
-								color: config.error_color,
-								title: 'There are currently no roles in the shop!',
-							}],
-							components: [],
-							failIfNotExists: false,
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
-						});
-				}
-
-				page = 0;
-				const { description: newDescription, selectMenuOptionsArray: newSelectMenuOptionsArray } = getMenuOptions(serverData.shop, page);
-
 				await interaction.message
 					.edit({
 						embeds: [{
 							color: config.default_color,
 							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-							description: newDescription,
+							description: `<@&${deleteItem[0].roleId}> with the requirement of ${deleteItem[0].requirement} ${deleteItem[0].wayOfEarning} was deleted from the shop.`,
 						}],
-						components: [{
-							type: 'ACTION_ROW',
-							components: [{
-								type: 'SELECT_MENU',
-								customId: 'shopdelete-options',
-								placeholder: 'Select an item',
-								options: newSelectMenuOptionsArray,
-							}],
-						}],
+						components: [],
+						failIfNotExists: false,
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) {
 							throw new Error(error);
 						}
 					});
+
+				const allServerProfiles = await profileModel.find({
+					serverId: message.guild.id,
+				});
+
+				for (const profile of allServerProfiles) {
+
+					const member = await message.guild.members.fetch(profile.userId);
+
+					if (profile.roles.some(role => role.roleId === deleteItem[0].roleId && role.wayOfEarning === deleteItem[0].wayOfEarning && role.requirement === deleteItem[0].requirement)) {
+
+						try {
+
+							const userRole = profile.roles.find(role => role.roleId === deleteItem[0].roleId && role.wayOfEarning === deleteItem[0].wayOfEarning && role.requirement === deleteItem[0].requirement);
+							const userRoleIndex = profile.roles.indexOf(userRole);
+
+							if (userRoleIndex >= 0) { profile.roles.splice(userRoleIndex, 1); }
+
+							await profileModel.findOneAndUpdate(
+								{ userId: profile.userId, serverId: profile.serverId },
+								{
+									$inc: { experience: userRole.wayOfEarning === 'experience' ? userRole.requirement : 0 },
+									$set: { roles: profile.roles } },
+							);
+
+							if (message.member.roles.cache.has(deleteItem[0].roleId) === true && profile.roles.filter(role => role.roleId === deleteItem[0].roleId).length === 0) {
+
+								await member.roles.remove(deleteItem[0].roleId);
+
+								await message.channel
+									.send({
+										content: member.toString(),
+										embeds: [{
+											color: config.default_color,
+											author: { name: botReply.guild.name, icon_url: botReply.guild.iconURL() },
+											description: `You lost the <@&${deleteItem[0].roleId}> role because it was removed from the shop!`,
+										}],
+										failIfNotExists: false,
+									})
+									.catch((error) => {
+										if (error.httpStatus !== 404) {
+											throw new Error(error);
+										}
+									});
+							}
+
+							checkLevelUp(message, undefined, profile, serverData);
+						}
+						catch (error) {
+
+							await checkRoleCatchBlock(error, message, message.member);
+						}
+					}
+				}
+
+				return;
 			}
 
 			return await interactionCollector();
@@ -205,7 +221,7 @@ module.exports = {
 
 function getMenuOptions(shop, page) {
 
-	let position = 0;
+	let position = 0 + (page * 24);
 	const descriptionArray = [];
 	const selectMenuOptionsArray = [];
 

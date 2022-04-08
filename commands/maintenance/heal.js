@@ -31,16 +31,14 @@ module.exports = {
 
 		if (profileData.rank === 'Youngling' || profileData.rank === 'Hunter') {
 
-			embedArray.push({
-				color: profileData.color,
-				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*A healer rushes into the medicine den in fury.*\n"${profileData.name}, you are not trained to heal yourself, and especially not to heal others! I don't ever wanna see you again in here without supervision!"\n*${profileData.name} lowers ${pronoun(profileData, 2)} head and leaves in shame.*`,
-			});
-
 			return await message
 				.reply({
 					content: messageContent,
-					embeds: embedArray,
+					embeds: [...embedArray, {
+						color: profileData.color,
+						author: { name: profileData.name, icon_url: profileData.avatarURL },
+						description: `*A healer rushes into the medicine den in fury.*\n"${profileData.name}, you are not trained to heal yourself, and especially not to heal others! I don't ever wanna see you again in here without supervision!"\n*${profileData.name} lowers ${pronoun(profileData, 2)} head and leaves in shame.*`,
+					}],
 					failIfNotExists: false,
 				})
 				.catch((error) => {
@@ -84,7 +82,7 @@ module.exports = {
 		}
 		else {
 
-			const { embeds: woundEmbeds, components: woundComponents } = await getWoundList(chosenUser);
+			const { embeds: woundEmbeds, components: woundComponents } = await getWoundList(chosenUser) ?? { embeds: undefined, components: undefined };
 
 			botReply = await message
 				.reply({
@@ -230,7 +228,9 @@ module.exports = {
 					userSelectMenu = await getUserSelectMenu();
 
 					const componentArray = interaction.message.components;
-					await componentArray.splice(0, 1, userSelectMenu);
+					await componentArray.splice(0, 1);
+
+					if (allHurtProfilesList.length > 0) { componentArray.unshift(userSelectMenu); }
 
 					botReply = await interaction.message
 						.edit({ components: componentArray })
@@ -309,6 +309,8 @@ module.exports = {
 						footer: { text: '' },
 					};
 
+					let isSuccessful = false;
+
 					if (interaction.values[0] === 'water') {
 
 						if (chosenProfileData.thirst > 0) {
@@ -317,25 +319,40 @@ module.exports = {
 
 								userHasChangedCondition = true;
 							}
-
-							if (profileData.userId === chosenProfileData.userId) {
-
-								embed.description = `*${profileData.name} thinks about just drinking some water, but that won't help with ${pronoun(profileData, 2)} issues...*"`;
-
-							}
-							else {
-
-								embed.description = `*${chosenProfileData.name} looks at ${profileData.name} with indignation.* "Being hydrated is really not my biggest problem right now!"`;
-
-							}
-
-							embed.footer.text = await decreaseStats(false);
-
 						}
 						else {
 
+							isSuccessful = true;
+						}
+
+						if (isSuccessful === false && userHasChangedCondition === true) {
+
+							botReply = await interaction.message
+								.edit({
+									embeds: [...embedArray, {
+										color: profileData.color,
+										title: `${chosenProfileData.name}'s stats/illnesses/injuries changed before you healed them. Please try again.`,
+									}],
+									components: userSelectMenu.components[0].options.length > 0 ? [userSelectMenu] : [],
+								})
+								.catch((error) => {
+									if (error.httpStatus !== 404) {
+										throw new Error(error);
+									}
+								});
+
+							return userSelectMenu.components[0].options.length > 0 ? await interactionCollector() : null;
+						}
+
+						if (isSuccessful === true && profileData.rank === 'Apprentice' && pullFromWeightedTable({ 0: 40, 1: 60 + profileData.saplingObject.waterCycles }) === 0) {
+
+							isSuccessful = false;
+						}
+
+						if (isSuccessful === true) {
+
 							const embedFooterStatsText = await decreaseStats(true);
-							const chosenUserThirstPoints = generateRandomNumber(10, 1);
+							const chosenUserThirstPoints = generateRandomNumber(10, 6);
 
 							chosenProfileData = await profileModel.findOneAndUpdate(
 								{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
@@ -344,19 +361,24 @@ module.exports = {
 
 							embed.description = `*${profileData.name} takes ${chosenProfileData.name}'s body, drags it over to the river, and positions ${pronoun(chosenProfileData, 2)} head right over the water. The ${chosenProfileData.species} sticks ${pronoun(chosenProfileData, 2)} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${pronoun(chosenProfileData, 2)} body.*`;
 							embed.footer.text = `${embedFooterStatsText}\n\n+${chosenUserThirstPoints} thirst for ${chosenProfileData.name} (${chosenProfileData.thirst}/${chosenProfileData.maxThirst})`;
-
 						}
+						else {
 
-						botReply = await interaction.message
-							.edit({
-								embeds: embedArray,
-								components: [],
-							})
-							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
-							});
+							if (profileData.userId === chosenProfileData.userId) {
+
+								embed.description = `*${profileData.name} thinks about just drinking some water, but that won't help with ${pronoun(profileData, 2)} issues...*"`;
+							}
+							else if (chosenProfileData.thirst > 0) {
+
+								embed.description = `*${chosenProfileData.name} looks at ${profileData.name} with indignation.* "Being hydrated is really not my biggest problem right now!"`;
+							}
+							else {
+
+								embed.description = `*${profileData.name} takes ${chosenProfileData.name}'s body and tries to drag it over to the river. The ${profileData.species} attempts to position the ${chosenProfileData.species}'s head right over the water, but every attempt fails miserably. ${upperCasePronounAndPlural(profileData, 0, 'need')} to concentrate and try again.*`;
+							}
+
+							embed.footer.text = await decreaseStats(false);
+						}
 					}
 					else {
 
@@ -380,7 +402,6 @@ module.exports = {
 						const chosenUserInjuryObject = { ...chosenProfileData.injuryObject };
 						let chosenUserEnergyPoints = 0;
 						let chosenUserHungerPoints = 0;
-						let isSuccessful = false;
 						let embedFooterChosenUserStatsText = '';
 						let embedFooterChosenUserInjuryText = '';
 
@@ -638,7 +659,7 @@ module.exports = {
 							}
 						});
 
-					const content = (chosenProfileData.userId != profileData.userId ? `<@!${chosenProfileData.userId}>\n` : '') + (messageContent === null ? '' : messageContent);
+					const content = chosenProfileData.userId !== profileData.userId && isSuccessful === true ? `<@!${chosenProfileData.userId}>\n` : '' + (messageContent ?? '');
 
 					botReply = await message
 						.reply({
@@ -666,7 +687,7 @@ module.exports = {
 		async function decreaseStats(isSuccessful) {
 
 			const experiencePoints = isSuccessful === false ? 0 : profileData.rank == 'Elderly' ? generateRandomNumber(41, 20) : profileData.rank == 'Healer' ? generateRandomNumber(21, 10) : generateRandomNumber(11, 5);
-			const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(5, 1) + await decreaseEnergy(profileData));
+			const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(3, 1) + await decreaseEnergy(profileData));
 			const hungerPoints = await decreaseHunger(profileData);
 			const thirstPoints = await decreaseThirst(profileData);
 
@@ -715,15 +736,16 @@ module.exports = {
 					{ health: 0 },
 					{ hunger: 0 },
 					{ thirst: 0 },
-					{ injuryObject: {
-						$or: [
-							{ wounds: { $gt: 0 } },
-							{ infections: { $gt: 0 } },
-							{ cold: true },
-							{ sprains: { $gt: 0 } },
-							{ poison: true },
-						],
-					},
+					{
+						injuryObject: {
+							$or: [
+								{ wounds: { $gt: 0 } },
+								{ infections: { $gt: 0 } },
+								{ cold: true },
+								{ sprains: { $gt: 0 } },
+								{ poison: true },
+							],
+						},
 					},
 				],
 			})).map(user => user.userId);
@@ -821,26 +843,16 @@ module.exports = {
 
 				embed.description = `*${profileData.name} approaches ${chosenProfileData.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${profileData.species} asks.\n${chosenProfileData.name} shakes ${pronoun(chosenProfileData, 2)} head.* "Not that I know of, no."\n*Disappointed, ${profileData.name} goes back to the medicine den.*`;
 
-				botReply = await message
-					.reply({
-						content: messageContent,
-						embeds: [...embedArray, embed],
-						components: [userSelectMenu],
-						failIfNotExists: false,
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-
-				return;
+				return { embeds: [...embedArray, embed], components: allHurtProfilesList.length > 0 ? [userSelectMenu] : [] };
 			}
 
+			const { embed: embed2, selectMenu } = getFirstHealPage();
+
+			if (embed2.fields.length === 0) { pageButtons.components[0].disabled = true; }
+
 			const
-				{ embed: embed2, selectMenu } = getFirstHealPage(),
-				embeds = [...embedArray, embed, embed2],
-				components = [userSelectMenu, pageButtons, selectMenu];
+				embeds = [...embedArray, embed, ...allHurtProfilesList.length > 0 ? [embed2] : []],
+				components = [...allHurtProfilesList.length > 0 ? [userSelectMenu, pageButtons, ...selectMenu !== null ? [selectMenu] : []] : []];
 
 			return { embeds, components };
 		}
@@ -854,7 +866,7 @@ module.exports = {
 				footer: { text: 'Choose one of the herbs above to heal the player with it!' },
 			};
 
-			const selectMenu = {
+			let selectMenu = {
 				type: 'ACTION_ROW',
 				components: [{
 					type: 'SELECT_MENU',
@@ -872,6 +884,8 @@ module.exports = {
 					selectMenu.components[0].options.push({ label: commonPlantName, value: commonPlantName, description: `${serverData.inventoryObject.commonPlants[commonPlantName]}` });
 				}
 			}
+
+			if (selectMenu.components[0].options.length === 0) { selectMenu = null; }
 
 			return { embed, selectMenu };
 		}

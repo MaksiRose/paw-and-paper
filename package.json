@@ -1,6 +1,6 @@
 {
 	"name": "paw-and-paper",
-	"version": "2.8.3",
+	"version": "2.9.0",
 	"description": "An RPG Bot in which you play as an animal in a pack",
 	"main": "index.js",
 	"scripts": {
@@ -15,8 +15,13 @@
 	"license": "ISC",
 	"dependencies": {
 		"@octokit/rest": "^18.12.0",
+		"@top-gg/sdk": "^3.1.3",
+		"bfd-api-redux": "^1.2.2",
 		"discord.js": "^13.6.0",
-		"fs": "^0.0.1-security"
+		"express": "^4.17.3",
+		"express-rate-limit": "^6.3.0",
+		"fs": "^0.0.1-security",
+		"topgg-autoposter": "^2.0.1"
 	},
 	"devDependencies": {
 		"eslint": "^8.5.0"
