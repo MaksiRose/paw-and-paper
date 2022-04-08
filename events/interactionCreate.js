@@ -264,7 +264,7 @@ module.exports = {
 						return await errorHandling.output(interaction.message, error);
 					});
 				const elliott = await client.users
-					.fetch(config.eliott)
+					.fetch(config.elliott)
 					.catch(async (error) => {
 						return await errorHandling.output(interaction.message, error);
 					});
