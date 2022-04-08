@@ -5,7 +5,7 @@ const express = require('express');
 const fs = require('fs');
 const RateLimit = require('express-rate-limit');
 
-const limiter = new RateLimit({
+const limiter = RateLimit({
 	windowMs: 60 * 1000,
 	max: 20,
 });

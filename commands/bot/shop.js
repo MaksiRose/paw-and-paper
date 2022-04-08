@@ -9,8 +9,11 @@ module.exports = {
 	async sendMessage(client, message, argumentsArray, profileData, serverData) {
 
 		const shop = serverData.shop.filter(item => item.wayOfEarning === 'experience');
+		const rankRoles = serverData.shop.filter(item => item.wayOfEarning === 'rank');
+		const levelRoles = serverData.shop.filter(item => item.wayOfEarning === 'levels');
+		const totalPages = Math.ceil(shop.length / 24) + Math.ceil(rankRoles.length / 24) + Math.ceil(levelRoles.length / 24) - 1;
 
-		if (shop.length === 0) {
+		if (serverData.shop.length === 0) {
 
 			return await message
 				.reply({
@@ -29,7 +32,7 @@ module.exports = {
 		}
 
 		let page = 0;
-		const { description, selectMenuOptionsArray } = getMenuOptions(shop, page);
+		const { description, selectMenuOptionsArray } = getMenuOptions(page, shop, rankRoles, levelRoles);
 
 		const botReply = await message
 			.reply({
@@ -82,12 +85,12 @@ module.exports = {
 			if (interaction.values[0] === 'shopbuy_page') {
 
 				page += 1;
-				if (page >= Math.ceil(shop.length / 24)) {
+				if (page > totalPages) {
 
 					page = 0;
 				}
 
-				const { description: newDescription, selectMenuOptionsArray: newSelectMenuOptionsArray } = getMenuOptions(shop, page);
+				const { description: newDescription, selectMenuOptionsArray: newSelectMenuOptionsArray } = getMenuOptions(page, shop, rankRoles, levelRoles);
 
 				await interaction.message
 					.edit({
@@ -303,23 +306,44 @@ module.exports = {
 	},
 };
 
-function getMenuOptions(shop, page) {
+function getMenuOptions(page, shop, rankRoles, levelRoles) {
 
 	let position = 0;
 	const descriptionArray = [];
 	const selectMenuOptionsArray = [];
 
-	for (const item of shop.slice((page * 24), 25 + (page * 24))) {
+	const shopPages = Math.ceil(shop.length / 24);
+	const rankRolesPages = Math.ceil(rankRoles.length / 24);
+	const levelRolesPages = Math.ceil(levelRoles.length / 24);
 
-		position += 1;
-		descriptionArray.push(`**${position}.:** <@&${item.roleId}> for ${item.requirement} ${item.wayOfEarning}`);
-		selectMenuOptionsArray.push({ label: `${position}`, value: `shopbuy-${position - 1}` });
+	if (shopPages > 0 && page < shopPages) {
+
+		for (const item of shop.slice((page * 24), 25 + (page * 24))) {
+
+			position += 1;
+			descriptionArray.push(`**${position}.:** <@&${item.roleId}> for ${item.requirement} ${item.wayOfEarning}`);
+			selectMenuOptionsArray.push({ label: `${position}`, value: `shopbuy-${position - 1}` });
+		}
+	}
+	else if (rankRolesPages > 0 && page < shopPages + rankRolesPages) {
+
+		page -= shopPages;
+		for (const item of rankRoles.slice((page * 24), 25 + (page * 24))) {
+
+			descriptionArray.push(`<@&${item.roleId}> for ${item.requirement} ${item.wayOfEarning}`);
+		}
+	}
+	else if (levelRolesPages > 0) {
+
+		page -= shopPages + rankRolesPages;
+		for (const item of levelRoles.slice((page * 24), 25 + (page * 24))) {
+
+			descriptionArray.push(`<@&${item.roleId}> for ${item.requirement} ${item.wayOfEarning}`);
+		}
 	}
 
-	if (shop.length > 25) {
+	if (shopPages + rankRolesPages + levelRolesPages > 1) {
 
-		descriptionArray.length = 24;
-		selectMenuOptionsArray.length = 24;
 		selectMenuOptionsArray.push({ label: 'Show more shop options', value: 'shopbuy_page', description: 'You are currently on page 1', emoji: '📋' });
 	}
 
