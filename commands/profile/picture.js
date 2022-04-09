@@ -59,14 +59,14 @@ module.exports = {
 
 		const ImageLink = message.attachments.first().url;
 
-		if (!ImageLink.endsWith('.png') && !ImageLink.endsWith('.jpeg') && !ImageLink.endsWith('.jpg') && !ImageLink.endsWith('.raw')) {
+		if (!ImageLink.endsWith('.png') && !ImageLink.endsWith('.jpeg') && !ImageLink.endsWith('.jpg') && !ImageLink.endsWith('.raw') && !ImageLink.endsWith('.webp')) {
 
 			return await message
 				.reply({
 					embeds: [{
 						color: config.error_color,
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						title: 'This image extension is not supported! Please send a .png, .jp(e)g or .raw image.',
+						title: 'This image extension is not supported! Please send a .png, .jp(e)g, .raw or .webp image.',
 					}],
 					failIfNotExists: false,
 				})
