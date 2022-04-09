@@ -1,8 +1,6 @@
 const profileModel = require('../../models/profileModel');
 const config = require('../../config.json');
-const startCooldown = require('../../utils/startCooldown');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
-const { isInvalid } = require('../../utils/checkValidity');
 const fs = require('fs');
 
 module.exports = {
@@ -13,13 +11,6 @@ module.exports = {
 
 			return;
 		}
-
-		if (await isInvalid(message, profileData, embedArray, [module.exports.name])) {
-
-			return;
-		}
-
-		profileData = await startCooldown(message, profileData);
 
 		const webHook = (await message.channel
 			.fetchWebhooks()
