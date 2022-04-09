@@ -30,7 +30,7 @@ module.exports = {
 				return;
 			}
 
-			if (profileData.resting === true) {
+			if (profileData.isResting === true) {
 
 				profileData = await profileModel.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
