@@ -276,6 +276,7 @@ module.exports = {
 							title: 'Page 5: ⚙️ Bot',
 							description: 'Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.',
 							fields: [
+								{ name: '**rp vote**', value: 'Vote for this bot on one of three websites and get +30 energy each time.' },
 								{ name: '**rp accounts**', value: 'Change the account/profile you are using. You can have up to three per server.' },
 								{ name: '**rp shop**', value: 'Buy roles with experience points.' },
 								{ name: '**rp shopadd [@role] [rank/levels/XP] [requirement]**', value: '__Server admins only.__ Add a role to the shop.' },
@@ -295,6 +296,7 @@ module.exports = {
 								customId: 'help-page4-commands',
 								placeholder: 'Select a command',
 								options: [
+									{ lavel: 'Vote*', value: 'help_vote', description: 'Vote for this bot on one of three websites and get +30 energy each time.' },
 									{ label: 'Accounts', value: 'help_accounts', description: 'Change the account/profile you are using. You can have up to three per server.' },
 									{ label: 'Shop', value: 'help_shop', description: 'Buy roles with experience points.' },
 									{ label: 'Shopadd', value: 'help_shopadd', description: 'Server admins only. Add a role to the shop' },
@@ -1213,6 +1215,29 @@ module.exports = {
 								{ name: '**Arguments**', value: 'Text of the ticket that you want to send.' },
 								{ name: '**More information**', value: 'Tickets are a way to contribute to the bot. Any form of feedback, either by reporting an issue or suggesting a new feature is appreciated. Thank you!' },
 								{ name: '**Example**', value: '`rp ticket Attacking a chicken should lead to millions of chickens spawning and attacking you back until you die!`' },
+							],
+						}],
+						ephemeral: true,
+					})
+					.catch(async (error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
+
+			if (interaction.values[0] === 'help_vote') {
+
+				return await interaction
+					.followUp({
+						embeds: [{
+							color: config.default_color,
+							title: 'rp vote',
+							description: 'Vote for this bot on one of three websites and get +30 energy each time.',
+							fields: [
+								{ name: '**Aliases**', value: 'none' },
+								{ name: '**Arguments**', value: 'none' },
+								{ name: '**More information**', value: 'There will be three buttons with links to websites where this bot is listed. You can vote for this bot on these websites, and then come back and select that website from the drop-down list to get +30 energy. If you are less than 30 energy away from your maximum energy, you will get whatever is left to fill your energy all the way up. You can vote every 12 hours, and you can only redeem the +30 energy on one account.' },
 							],
 						}],
 						ephemeral: true,
