@@ -50,7 +50,7 @@ module.exports = {
 
 		if ((serverData.blockedEntranceObject.den === null && generateRandomNumber(20, 0) === 0) || serverData.blockedEntranceObject.den === 'medicine den') {
 
-			return await blockEntrance(message, messageContent, profileData, 'medicine den');
+			return await blockEntrance(message, messageContent, profileData, serverData, 'medicine den');
 		}
 
 		let

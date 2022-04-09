@@ -2,15 +2,18 @@ const serverModel = require('../models/serverModel');
 const { pronounAndPlural } = require('./getPronouns');
 const { generateRandomNumber } = require('./randomizers');
 
-module.exports = async (message, messageContent, profileData, den) => {
+module.exports = async (message, messageContent, profileData, serverData, den) => {
 
 	const possibleBlockages = ['vines', 'burrow', 'tree trunk', 'boulder'];
-	const block = possibleBlockages[generateRandomNumber(possibleBlockages.length, 0)];
+	const block = serverData.blockedEntranceObject.blockedKind === null ? possibleBlockages[generateRandomNumber(possibleBlockages.length, 0)] : serverData.blockedEntranceObject.blockedKind;
 
-	await serverModel.findOneAndUpdate(
-		{ serverId: message.guild.id },
-		{ $set: { blockedEntranceObject: { den: den, blockedKind: block } } },
-	);
+	if (serverData.blockedEntranceObject.den === null) {
+
+		await serverModel.findOneAndUpdate(
+			{ serverId: message.guild.id },
+			{ $set: { blockedEntranceObject: { den: den, blockedKind: block } } },
+		);
+	}
 
 	let blockText = null;
 	if (block === 'vines') blockText = 'thick vines appear to have grown over';

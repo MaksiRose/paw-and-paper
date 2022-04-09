@@ -50,7 +50,7 @@ module.exports = {
 
 		if ((profileData.rank !== 'Youngling' && serverData.blockedEntranceObject.den === null && generateRandomNumber(20, 0) === 0) || serverData.blockedEntranceObject.den === 'food den') {
 
-			return await blockEntrance(message, messageContent, profileData, 'food den');
+			return await blockEntrance(message, messageContent, profileData, serverData, 'food den');
 		}
 
 		if (!argumentsArray.length) {
