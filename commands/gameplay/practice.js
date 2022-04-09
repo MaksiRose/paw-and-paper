@@ -33,7 +33,6 @@ module.exports = {
 
 			return await message
 				.reply({
-					content: messageContent,
 					embeds: embedArray,
 					failIfNotExists: false,
 				})
