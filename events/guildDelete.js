@@ -23,7 +23,7 @@ module.exports = {
 
 		for (const profileData of (await profileModel.find({ serverId: guild.id }))) {
 
-			fs.renameSync(`./database/servers/${profileData.uuid}.json`, `./database/toDelete/${profileData.uuid}.json`);
+			fs.renameSync(`./database/profiles/${profileData.uuid}.json`, `./database/toDelete/${profileData.uuid}.json`);
 			toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
 			toDeleteList[`${profileData.userId}${profileData.serverId}`] = { fileName: `${profileData.uuid}.json`, deletionTimestamp: Date.now() + 2073600000 };
 			fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
