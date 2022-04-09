@@ -1,4 +1,4 @@
-const { test_token, bfd_token, bfd_authorization, top_token, top_authorization, dbl_token, dbl_authorization } = require('./config.json');
+const { test_token } = require('./config.json');
 const { start } = require('./paw');
 
-start(test_token, bfd_token, bfd_authorization, top_token, top_authorization, dbl_token, dbl_authorization);
+start(test_token, '0', '0', '0', '0', '0', '0');

@@ -3,7 +3,6 @@ const profileModel = require('../models/profileModel');
 const serverModel = require('../models/serverModel');
 const errorHandling = require('../utils/errorHandling');
 const { activeCommandsObject } = require('../utils/commandCollector');
-const { isPassedOut } = require('../utils/checkValidity');
 const createGuild = require('../utils/createGuild');
 const { pronoun, pronounAndPlural } = require('../utils/getPronouns');
 let lastMessageEpochTime = 0;
@@ -181,7 +180,7 @@ module.exports = {
 				serverId: message.guild.id,
 			});
 
-			if (await isPassedOut(message, profileData, false) === false && profileData && profileData.isResting == false && profileData.energy < profileData.maxEnergy) {
+			if (profileData && (profileData.energy > 0 && profileData.health > 0 && profileData.hunger > 0 && profileData.thirst > 0) && profileData.isResting === false && profileData.energy < profileData.maxEnergy) {
 
 				message.content = `${config.prefix}rest`;
 

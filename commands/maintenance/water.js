@@ -115,6 +115,7 @@ module.exports = {
 		}
 
 		saplingObject.nextWaterTimestamp = Date.now() + twentyFourHours;
+		saplingObject.lastMessageChannelId = message.channel.id;
 
 		profileData = await profileModel.findOneAndUpdate(
 			{ userId: message.author.id, serverId: message.guild.id },
@@ -173,7 +174,7 @@ module.exports = {
 
 			await profileModel.findOneAndUpdate(
 				{ userId: profileData.userId, serverId: profileData.serverId },
-				{ $set: { saplingObject: { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, reminder: profileData.saplingObject.reminder } } },
+				{ $set: { saplingObject: { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, reminder: profileData.saplingObject.reminder, lastMessageChannelId: 0 } } },
 			);
 		}
 	},
@@ -187,10 +188,12 @@ module.exports = {
 
 			if (profileData.saplingObject.exists === true && profileData.saplingObject.reminder === true) {
 
-				const channel = await client.channels.fetch(channelId);
+				const channel = await client.channels
+					.fetch(channelId)
+					.catch(() => {return;});
 
 				await channel
-					.send({
+					?.send({
 						content: `<@${profileData.userId}>`,
 						embeds: [{
 							color: profileData.color,

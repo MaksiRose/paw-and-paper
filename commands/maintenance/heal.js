@@ -50,7 +50,7 @@ module.exports = {
 
 		if ((serverData.blockedEntranceObject.den === null && generateRandomNumber(20, 0) === 0) || serverData.blockedEntranceObject.den === 'medicine den') {
 
-			return await blockEntrance(message, messageContent, profileData, 'medicine den');
+			return await blockEntrance(message, messageContent, profileData, serverData, 'medicine den');
 		}
 
 		let
@@ -687,7 +687,7 @@ module.exports = {
 		async function decreaseStats(isSuccessful) {
 
 			const experiencePoints = isSuccessful === false ? 0 : profileData.rank == 'Elderly' ? generateRandomNumber(41, 20) : profileData.rank == 'Healer' ? generateRandomNumber(21, 10) : generateRandomNumber(11, 5);
-			const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(3, 1) + await decreaseEnergy(profileData));
+			const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(5, 1) + await decreaseEnergy(profileData));
 			const hungerPoints = await decreaseHunger(profileData);
 			const thirstPoints = await decreaseThirst(profileData);
 

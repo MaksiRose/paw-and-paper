@@ -213,7 +213,7 @@ module.exports = {
 			});
 
 		const experiencePoints = chosenBiomeNumber == 2 ? generateRandomNumber(41, 20) : chosenBiomeNumber == 1 ? generateRandomNumber(21, 10) : generateRandomNumber(11, 5);
-		const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(3, 1) + await decreaseEnergy(profileData));
+		const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(5, 1) + await decreaseEnergy(profileData));
 		const hungerPoints = await decreaseHunger(profileData);
 		const thirstPoints = await decreaseThirst(profileData);
 
@@ -672,7 +672,7 @@ module.exports = {
 
 						if (userSpeciesMap.habitat == 'water') {
 
-							embed.description = `*${profileData.name} flips around in the water, swimming from rock to rock, inspecting every nook for something ${profileData.pronoun(profileData, 0)} could add to the inventory. Suddenly, the ${profileData.species} falters in ${pronoun(profileData, 2)} stroke, feeling tired and feeble. A coughing fit grew louder, bubbles escaping ${pronoun(profileData, 2)} throat to rise to the surface.*`;
+							embed.description = `*${profileData.name} flips around in the water, swimming from rock to rock, inspecting every nook for something ${pronoun(profileData, 0)} could add to the inventory. Suddenly, the ${profileData.species} falters in ${pronoun(profileData, 2)} stroke, feeling tired and feeble. A coughing fit grew louder, bubbles escaping ${pronoun(profileData, 2)} throat to rise to the surface.*`;
 						}
 
 						embed.footer.text = `-${healthPoints} HP (from cold)\n${embedFooterStatsText}`;

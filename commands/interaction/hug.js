@@ -1,9 +1,8 @@
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
-const { isInvalid } = require('../../utils/checkValidity');
+const { hasCooldown } = require('../../utils/checkValidity');
 const { generateRandomNumber } = require('../../utils/randomizers');
 const startCooldown = require('../../utils/startCooldown');
 const config = require('../../config.json');
-const profileModel = require('../../models/profileModel');
 
 module.exports = {
 	name: 'hug',
@@ -15,7 +14,7 @@ module.exports = {
 			return;
 		}
 
-		if (await isInvalid(message, profileData, embedArray, [module.exports.name])) {
+		if (await hasCooldown(message, profileData, [module.exports.name])) {
 
 			return;
 		}
@@ -63,31 +62,6 @@ module.exports = {
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-		}
-
-		const partnerProfileData = await profileModel.findOne({
-			userId: message.mentions.users.first().id,
-			serverId: message.guild.id,
-		});
-
-		if (!partnerProfileData || partnerProfileData.name === '' || partnerProfileData.species === '') {
-
-			const embed = {
-				color: config.error_color,
-				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-				title: 'The mentioned user has no account :(',
-			};
-
-			return await message
-				.reply({
-					embeds: [...embedArray, embed],
-					failIfNotExists: false,
-				})
-				.catch((error) => {
-					if (error.httpStatus != 404) {
 						throw new Error(error);
 					}
 				});

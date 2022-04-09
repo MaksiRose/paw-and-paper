@@ -762,7 +762,7 @@ async function decreaseStats(message, profileData, partnerProfileData) {
 
 	const thirstPointsPlayer1 = await decreaseThirst(profileData);
 	const hungerPointsPlayer1 = await decreaseHunger(profileData);
-	const energyPointsPlayer1 = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(3, 1) + await decreaseEnergy(profileData));
+	const energyPointsPlayer1 = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(5, 1) + await decreaseEnergy(profileData));
 
 	profileData = await profileModel.findOneAndUpdate(
 		{ userId: message.author.id, serverId: message.guild.id },
@@ -795,7 +795,7 @@ async function decreaseStats(message, profileData, partnerProfileData) {
 
 	const thirstPointsPlayer2 = await decreaseThirst(partnerProfileData);
 	const hungerPointsPlayer2 = await decreaseHunger(partnerProfileData);
-	const energyPointsPlayer2 = function(energy) { return (partnerProfileData.energy - energy < 0) ? partnerProfileData.energy : energy; }(generateRandomNumber(3, 1) + await decreaseEnergy(partnerProfileData));
+	const energyPointsPlayer2 = function(energy) { return (partnerProfileData.energy - energy < 0) ? partnerProfileData.energy : energy; }(generateRandomNumber(5, 1) + await decreaseEnergy(partnerProfileData));
 
 	partnerProfileData = await profileModel.findOneAndUpdate(
 		{ userId: message.mentions.users.first().id, serverId: message.guild.id },
