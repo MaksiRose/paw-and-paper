@@ -96,7 +96,7 @@ module.exports = {
 
 		const thirstPoints = await decreaseThirst(profileData);
 		const hungerPoints = await decreaseHunger(profileData);
-		const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(3, 1) + await decreaseEnergy(profileData));
+		const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(5, 1) + await decreaseEnergy(profileData));
 		let experiencePoints = 0;
 
 		if (profileData.rank == 'Youngling') {
