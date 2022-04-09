@@ -71,7 +71,7 @@ module.exports = {
 
 		if ((profileData.rank !== 'Youngling' && serverData.blockedEntranceObject.den === null && generateRandomNumber(20, 0) === 0) || serverData.blockedEntranceObject.den === 'sleeping dens') {
 
-			return await blockEntrance(message, messageContent, profileData, 'food den');
+			return await blockEntrance(message, messageContent, profileData, 'sleeping dens');
 		}
 
 		profileData.advice.resting = true;

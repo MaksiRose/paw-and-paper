@@ -7,6 +7,7 @@ const serverModel = require('../../models/serverModel');
 const profileModel = require('../../models/profileModel');
 const { pullFromWeightedTable, generateRandomNumber } = require('../../utils/randomizers');
 const { decreaseEnergy, decreaseHunger, decreaseThirst } = require('../../utils/checkCondition');
+const { createCommandCollector } = require('../../utils/commandCollector');
 
 module.exports = {
 	name: 'dispose',
@@ -115,57 +116,95 @@ module.exports = {
 				}
 			});
 
-		const filter = i => i.user.id === message.author.id;
+		createCommandCollector(message.author.id, message.guild.id, botReply);
+		interactionCollector();
 
-		const interaction = await botReply
-			.awaitMessageComponent({ filter, time: 60000 })
-			.catch(() => { return null; });
+		async function interactionCollector() {
 
-		if (interaction === null) {
+			const filter = i => i.user.id === message.author.id;
 
-			await botReply
-				.edit({
-					components: [],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
+			const interaction = await botReply
+				.awaitMessageComponent({ filter, time: 60000 })
+				.catch(() => { return null; });
 
-			return;
-		}
+			if (interaction === null) {
 
-		const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; } (generateRandomNumber(5, 1) + await decreaseEnergy(profileData));
-		const hungerPoints = await decreaseHunger(profileData);
-		const thirstPoints = await decreaseThirst(profileData);
+				await botReply
+					.edit({
+						components: [],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
 
-		profileData = await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{
-				$inc: {
-					energy: -energyPoints,
-					hunger: -hungerPoints,
-					thirst: -thirstPoints,
+				return;
+			}
+
+			const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(5, 1) + await decreaseEnergy(profileData));
+			const hungerPoints = await decreaseHunger(profileData);
+			const thirstPoints = await decreaseThirst(profileData);
+
+			profileData = await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{
+					$inc: {
+						energy: -energyPoints,
+						hunger: -hungerPoints,
+						thirst: -thirstPoints,
+					},
 				},
-			},
-		);
+			);
 
-		let footerStats = `-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
+			let footerStats = `-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
 
-		if (hungerPoints >= 1) {
+			if (hungerPoints >= 1) {
 
-			footerStats += `\n-${hungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})`;
-		}
+				footerStats += `\n-${hungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})`;
+			}
 
-		if (thirstPoints >= 1) {
+			if (thirstPoints >= 1) {
 
-			footerStats += `\n-${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})`;
-		}
+				footerStats += `\n-${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})`;
+			}
 
-		if ((interaction.customId === 'dispose-bite' && serverData.blockedEntranceObject.blockedKind === 'vines') || (interaction.customId === 'dispose-soil' && serverData.blockedEntranceObject.blockedKind === 'burrow') || (interaction.customId === 'dispose-trample' && serverData.blockedEntranceObject.blockedKind === 'tree trunk') || (interaction.customId === 'dispose-push' && serverData.blockedEntranceObject.blockedKind === 'boulder')) {
+			if ((interaction.customId === 'dispose-bite' && serverData.blockedEntranceObject.blockedKind === 'vines') || (interaction.customId === 'dispose-soil' && serverData.blockedEntranceObject.blockedKind === 'burrow') || (interaction.customId === 'dispose-trample' && serverData.blockedEntranceObject.blockedKind === 'tree trunk') || (interaction.customId === 'dispose-push' && serverData.blockedEntranceObject.blockedKind === 'boulder')) {
 
-			if (profileData.rank === 'Apprentice' && pullFromWeightedTable({ 0: 50, 1: 50 + profileData.saplingObject.waterCycles }) === 0) {
+				if (profileData.rank === 'Apprentice' && pullFromWeightedTable({ 0: 50, 1: 50 + profileData.saplingObject.waterCycles }) === 0) {
+
+					return await botReply
+						.edit({
+							content: messageContent,
+							embeds: [...embedArray, {
+								color: profileData.color,
+								author: { name: profileData.name, icon_url: profileData.avatarURL },
+								description: `*${profileData.name} gasps and pants as ${pronounAndPlural(profileData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntranceObject.blockedKind}. All ${pronoun(profileData, 1)} strength might only barely be enough to clear the blockage. The ${profileData.species} should collect ${pronoun(profileData, 4)} for a moment, and then try again...*`,
+								footer: { text: footerStats },
+							}],
+							components: [],
+							failIfNotExists: false,
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+				}
+
+				const experiencePoints = profileData.rank == 'Elderly' ? generateRandomNumber(41, 20) : profileData.rank == 'Hunter' ? generateRandomNumber(21, 10) : generateRandomNumber(11, 5);
+
+				profileData = await profileModel.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $inc: { experience: +experiencePoints } },
+				);
+
+				footerStats = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n` + footerStats;
+
+				await serverModel.findOneAndUpdate(
+					{ serverId: message.guild.id },
+					{ $set: { blockedEntranceObject: { den: null, blockedKind: null } } },
+				);
 
 				return await botReply
 					.edit({
@@ -173,7 +212,7 @@ module.exports = {
 						embeds: [...embedArray, {
 							color: profileData.color,
 							author: { name: profileData.name, icon_url: profileData.avatarURL },
-							description: `*${profileData.name} gasps and pants as ${pronounAndPlural(profileData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntranceObject.blockedKind}. All ${pronoun(profileData, 1)} strength might only barely be enough to clear the blockage. The ${profileData.species} should collect ${pronoun(profileData, 4)} for a moment, and then try again...*`,
+							description: `*${profileData.name} gasps and pants as ${pronounAndPlural(profileData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntranceObject.blockedKind}. All ${pronoun(profileData, 1)} strength is needed, but ${pronounAndPlural(profileData, 0, 'is', 'are')} able to successfully clear the blockage. The ${serverData.blockedEntranceObject.den} can be used again!*`,
 							footer: { text: footerStats },
 						}],
 						components: [],
@@ -185,58 +224,26 @@ module.exports = {
 						}
 					});
 			}
+			else {
 
-			const experiencePoints = profileData.rank == 'Elderly' ? generateRandomNumber(41, 20) : profileData.rank == 'Hunter' ? generateRandomNumber(21, 10) : generateRandomNumber(11, 5);
-
-			profileData = await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $inc: { experience: +experiencePoints } },
-			);
-
-			footerStats = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n` + footerStats;
-
-			await serverModel.findOneAndUpdate(
-				{ serverId: message.guild.id },
-				{ $set: { blockedEntranceObject: { den: null, blockedKind: null } } },
-			);
-
-			return await botReply
-				.edit({
-					content: messageContent,
-					embeds: [...embedArray, {
-						color: profileData.color,
-						author: { name: profileData.name, icon_url: profileData.avatarURL },
-						description: `*${profileData.name} gasps and pants as ${pronounAndPlural(profileData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntranceObject.blockedKind}. All ${pronoun(profileData, 1)} strength is needed, but ${pronounAndPlural(profileData, 0, 'is', 'are')} able to successfully clear the blockage. The ${serverData.blockedEntranceObject.den} can be used again!*`,
-						footer: { text: footerStats },
-					}],
-					components: [],
-					failIfNotExists: false,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-		}
-		else {
-
-			return await botReply
-				.edit({
-					content: messageContent,
-					embeds: [...embedArray, {
-						color: profileData.color,
-						author: { name: profileData.name, icon_url: profileData.avatarURL },
-						description: `*${profileData.name} gasps and pants as ${pronounAndPlural(profileData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntranceObject.blockedKind}. But ${pronoun(profileData, 1)} attempts don't seem to leave any lasting impact. Maybe the ${profileData.species} is going about this the wrong way.*`,
-						footer: { text: footerStats },
-					}],
-					components: [],
-					failIfNotExists: false,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
+				return await botReply
+					.edit({
+						content: messageContent,
+						embeds: [...embedArray, {
+							color: profileData.color,
+							author: { name: profileData.name, icon_url: profileData.avatarURL },
+							description: `*${profileData.name} gasps and pants as ${pronounAndPlural(profileData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntranceObject.blockedKind}. But ${pronoun(profileData, 1)} attempts don't seem to leave any lasting impact. Maybe the ${profileData.species} is going about this the wrong way.*`,
+							footer: { text: footerStats },
+						}],
+						components: [],
+						failIfNotExists: false,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
 		}
 	},
 };
