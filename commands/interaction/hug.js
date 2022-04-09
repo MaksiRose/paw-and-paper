@@ -14,7 +14,7 @@ module.exports = {
 			return;
 		}
 
-		if (await hasCooldown(message, profileData, embedArray, [module.exports.name])) {
+		if (await hasCooldown(message, profileData, [module.exports.name])) {
 
 			return;
 		}

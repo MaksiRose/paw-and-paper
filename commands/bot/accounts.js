@@ -1,9 +1,12 @@
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
+const profileModel = require('../../models/profileModel');
 const otherProfileModel = require('../../models/otherProfileModel');
 const fs = require('fs');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
+const { hasCooldown } = require('../../utils/checkValidity');
+const { stopResting } = require('../../utils/executeResting');
 
 module.exports = {
 	name: 'accounts',
@@ -21,6 +24,21 @@ module.exports = {
 		}
 
 		if (profileData !== null) {
+
+			if (await hasCooldown(message, profileData, [module.exports.name])) {
+
+				return;
+			}
+
+			if (profileData.resting === true) {
+
+				profileData = await profileModel.findOneAndUpdate(
+					{ userId: message.author.id, serverId: message.guild.id },
+					{ $set: { isResting: false } },
+				);
+
+				stopResting(message.author.id, message.guild.id);
+			}
 
 			profileData = await startCooldown(message, profileData);
 		}
