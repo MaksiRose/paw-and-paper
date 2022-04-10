@@ -97,7 +97,6 @@ module.exports.start = (botToken, bfdToken, bfdAuthorization, topToken, topAutho
 
 	if (existsSync('./database/bannedList.json') == false) {
 
-
 		writeFileSync('./database/bannedList.json', JSON.stringify(bannedList, null, '\t'));
 	}
 

@@ -1,9 +1,17 @@
+// @ts-check
 const serverModel = require('../models/serverModel');
 const createGuild = require('../utils/createGuild');
 
-module.exports = {
+/**
+ * @type {import('../typedef').Event}
+ */
+const event = {
 	name: 'ready',
 	once: true,
+	/**
+	 * Fires when the bot is first ready.
+	 * @param {import('../paw').client} client
+	 */
 	async execute(client) {
 
 		console.log('Paw and Paper is online!');
@@ -14,17 +22,19 @@ module.exports = {
 			require(`../handlers/${file}`).execute(client);
 		}
 
-		for (let [, guild] of await client.guilds.fetch()) {
 
-			const serverData = await serverModel.findOne({
-				serverId: guild.id,
+		for (const [, OAuth2Guild] of await client.guilds.fetch()) {
+
+			const serverData = serverModel.findOne({
+				serverId: OAuth2Guild.id,
 			});
 
 			if (!serverData) {
 
-				guild = await client.guilds.fetch(guild.id);
+				const guild = await client.guilds.fetch(OAuth2Guild.id);
 				await createGuild(client, guild);
 			}
 		}
 	},
 };
+module.exports = event;

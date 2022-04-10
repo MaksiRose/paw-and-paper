@@ -58,10 +58,18 @@ class model {
 			return oldObject;
 		}
 
+		/**
+		 * Searches for an object that meets the filter, and returns it. If several objects meet the requirement, the first that is found is returned.
+		 * @param {Object<string, *>} filterObject
+		 * @returns {null|import('../typedef').ProfileSchema|import('../typedef').ServerSchema} Data Object or null
+		 */
 		this.findOne = async function(filterObject) {
 
 			file_iteration: for (const file of fs.readdirSync(path).filter(f => f.endsWith('.json'))) {
 
+				/**
+				 * @type {import('../typedef').ProfileSchema|import('../typedef').ServerSchema}
+				 */
 				const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`));
 
 				for (const [key, value] of Object.entries(filterObject)) {
