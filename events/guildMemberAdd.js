@@ -1,18 +1,31 @@
+// @ts-check
 const otherProfileModel = require('../models/otherProfileModel');
 const serverModel = require('../models/serverModel');
 const fs = require('fs');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 
-module.exports = {
+/**
+ * @type {import('../typedef').Event}
+ */
+const event = {
 	name: 'guildMemberAdd',
 	once: false,
+
+	/**
+	 * Emitted whenever a user joins a guild.
+	 * @param {import('../paw').client} client
+	 * @param {import('discord.js').GuildMember} member
+	 */
 	async execute(client, member) {
 
 		const serverData = await serverModel.findOne({
 			serverId: member.guild.id,
 		});
 
-		const toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
+		/**
+		 * @type {import('../typedef').DeleteList}
+		 */
+		const toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json', 'utf-8'));
 
 		if (serverData === null || toDeleteList[`${member.id}${member.guild.id}`] === undefined) {
 
@@ -60,3 +73,4 @@ module.exports = {
 		}
 	},
 };
+module.exports = event;
