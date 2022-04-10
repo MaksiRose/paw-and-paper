@@ -26,9 +26,9 @@ const event = {
 
 		for (const [, OAuth2Guild] of await client.guilds.fetch()) {
 
-			const serverData = await serverModel.findOne({
+			const serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOne({
 				serverId: OAuth2Guild.id,
-			});
+			}));
 
 			if (!serverData) {
 

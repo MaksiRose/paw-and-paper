@@ -1,3 +1,4 @@
+// @ts-check
 const config = require('../config.json');
 const profileModel = require('../models/profileModel');
 const serverModel = require('../models/serverModel');
@@ -8,31 +9,40 @@ const { pronoun, pronounAndPlural } = require('../utils/getPronouns');
 let lastMessageEpochTime = 0;
 const userMap = new Map();
 
-module.exports = {
+/**
+ * @type {import('../typedef').Event}
+ */
+const event = {
 	name: 'messageCreate',
 	once: false,
+
+	/**
+	 * Emitted whenever a message is created.
+	 * @param {import('../paw').client} client
+	 * @param {import('discord.js').Message} message
+	 */
 	async execute(client, message) {
 
 		const prefix = config.prefix;
 
-		if (!message.content.toLowerCase().startsWith(prefix) || message.author.bot || message.channel.type === 'dm') {
+		if (!message.content.toLowerCase().startsWith(prefix) || message.author.bot || message.channel.type === 'DM') {
 
 			return;
 		}
 
-		let serverData = await serverModel.findOne({
+		let serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOne({
 			serverId: message.guild.id,
-		});
+		}));
 
 		if (!serverData) {
 
 			await createGuild(client, message.guild);
 		}
 
-		let profileData = await profileModel.findOne({
+		let profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
 			userId: message.author.id,
 			serverId: message.guild.id,
-		});
+		}));
 
 		let pingRuins = false;
 		const embedArray = [];
@@ -83,6 +93,7 @@ module.exports = {
 		clearTimeout(userMap.get('nr' + message.author.id + message.guild.id).cooldownTimeout);
 		clearTimeout(userMap.get('nr' + message.author.id + message.guild.id).restingTimeout);
 
+		// @ts-ignore
 		if (Object.hasOwn(activeCommandsObject, 'nr' + message.author.id + message.guild.id)) {
 
 			await activeCommandsObject['nr' + message.author.id + message.guild.id]();
@@ -96,10 +107,10 @@ module.exports = {
 
 				serverData.activeUsersArray.push(message.author.id);
 
-				serverData = await serverModel.findOneAndUpdate(
+				serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOneAndUpdate(
 					{ serverId: message.guild.id },
 					{ $set: { activeUsersArray: serverData.activeUsersArray } },
-				);
+				));
 			}
 
 			userMap.get('nr' + message.author.id + message.guild.id).activeCommands += 1;
@@ -122,10 +133,10 @@ module.exports = {
 
 					if (profileData && userMap.get('nr' + message.author.id + message.guild.id).activeCommands <= 0) {
 
-						profileData = await profileModel.findOne({
+						profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
 							userId: message.author.id,
 							serverId: message.guild.id,
-						});
+						}));
 
 						userMap.get('nr' + message.author.id + message.guild.id).cooldownTimeout = setTimeout(removeCooldown, 1000);
 					}
@@ -137,10 +148,10 @@ module.exports = {
 
 			if (profileData && userMap.get('nr' + message.author.id + message.guild.id).activeCommands <= 0) {
 
-				profileData = await profileModel.findOne({
+				profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
 					userId: message.author.id,
 					serverId: message.guild.id,
-				});
+				}));
 
 				userMap.get('nr' + message.author.id + message.guild.id).cooldownTimeout = setTimeout(removeCooldown, 1000);
 			}
@@ -148,19 +159,22 @@ module.exports = {
 			await errorHandling.output(message, error);
 		}
 
-		profileData = await profileModel.findOne({ userId: message.author.id, serverId: message.guild.id });
+		profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
+			userId: message.author.id,
+			serverId: message.guild.id,
+		}));
 
 		const oneHourInMs = 3600000;
 		// If sapling exists, the watering time is between 2 hours from perfect and 3 hours from perfect, and there wasn't a reminder in the last hour
 		// The reminder in the last hour prevents the reminder from being sent out multiple times
-		if (profileData !== null && profileData.saplingObject.exists === true && Date.now > profileData.saplingObject.nextWaterTimestamp + oneHourInMs * 2 && Date.now() < profileData.saplingObject.nextWaterTimestamp + oneHourInMs * 3 && Date.now() > userMap.get('nr' + message.author.id + message.guild.id).lastGentleWaterReminderTimestamp + oneHourInMs) {
+		if (profileData !== null && profileData.saplingObject.exists === true && Date.now() > profileData.saplingObject.nextWaterTimestamp + oneHourInMs * 2 && Date.now() < profileData.saplingObject.nextWaterTimestamp + oneHourInMs * 3 && Date.now() > userMap.get('nr' + message.author.id + message.guild.id).lastGentleWaterReminderTimestamp + oneHourInMs) {
 
 			userMap.get('nr' + message.author.id + message.guild.id).lastGentleWaterReminderTimestamp = Date.now();
 
 			await message.channel
 				.send({
 					embeds: [{
-						color: profileData.color,
+						color: /** @type {`#${string}`} */ (profileData.color),
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
 						description: `*Engrossed in ${pronoun(profileData, 2)} work, ${profileData.name} suddenly remembers that ${pronounAndPlural(profileData, 0, 'has', 'have')} not yet watered ${pronoun(profileData, 2)} plant today. The ${profileData.species} should really do it soon!*`,
 						footer: { text: 'Type "rp water" to water your ginkgo sapling!' },
@@ -173,12 +187,15 @@ module.exports = {
 
 		userMap.get('nr' + message.author.id + message.guild.id).restingTimeout = setTimeout(startResting, 600000);
 
+		/**
+		 * Checks if character is eligable for resting, and executes rest command if true.
+		 */
 		async function startResting() {
 
-			profileData = await profileModel.findOne({
+			profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
 				userId: message.author.id,
 				serverId: message.guild.id,
-			});
+			}));
 
 			if (profileData && (profileData.energy > 0 && profileData.health > 0 && profileData.hunger > 0 && profileData.thirst > 0) && profileData.isResting === false && profileData.energy < profileData.maxEnergy) {
 
@@ -188,28 +205,35 @@ module.exports = {
 			}
 		}
 
+		/**
+		 * Sets `hasCooldown` to false.
+		 */
 		async function removeCooldown() {
 
-			profileData = await profileModel.findOneAndUpdate(
+			/** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $set: { hasCooldown: false } },
-			);
+			));
 		}
 
+		/**
+		 * Looks for this users ID in `activeUserArray` and removes it.
+		 */
 		async function removeActiveUser() {
 
-			serverData = await serverModel.findOne({ serverId: message.guild.id });
+			serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOne({ serverId: message.guild.id }));
 			const authorIndex = serverData.activeUsersArray.findIndex(element => element == message.author.id);
 
 			if (authorIndex >= 0) {
 
 				serverData.activeUsersArray.splice(authorIndex, 1);
 
-				serverData = await serverModel.findOneAndUpdate(
+				/** @type {import('../typedef').ServerSchema} */ (await serverModel.findOneAndUpdate(
 					{ serverId: message.guild.id },
 					{ $set: { activeUsersArray: serverData.activeUsersArray } },
-				);
+				));
 			}
 		}
 	},
 };
+module.exports = event;

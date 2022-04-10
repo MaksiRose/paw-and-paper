@@ -18,9 +18,9 @@ const event = {
 	 */
 	async execute(client, member) {
 
-		const serverData = await serverModel.findOne({
+		const serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOne({
 			serverId: member.guild.id,
-		});
+		}));
 
 		/**
 		 * @type {import('../typedef').DeleteList}
@@ -46,11 +46,11 @@ const event = {
 			writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
 
 
-			const profileData = await otherProfileModel.findOne({
+			const profileData = /** @type {import('../typedef').ProfileSchema} */ (await otherProfileModel.findOne({
 				userId: member.id,
 				serverId: member.guild.id,
 				name: profileName,
-			});
+			}));
 
 			profileData.inventoryObject = {
 				commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, profileData.inventoryObject.commonPlants[key] || 0])),

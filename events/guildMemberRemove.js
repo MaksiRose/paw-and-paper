@@ -18,14 +18,14 @@ const event = {
 	 */
 	async execute(client, member) {
 
-		const profileData = await profileModel.findOne({
+		const profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
 			userId: member.id,
 			serverId: member.guild.id,
-		});
+		}));
 
-		const serverData = await serverModel.findOne({
+		const serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOne({
 			serverId: member.guild.id,
-		});
+		}));
 
 		if (profileData === null || serverData === null) {
 

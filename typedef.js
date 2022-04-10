@@ -53,7 +53,7 @@ module.exports.WebhookMessages = this.WebhookMessages;
  * @property {string} serverId - ID of the server that the account was created on. Cannot be modified.
  * @property {string} name - Name of character.
  * @property {string} description - Description of the character.
- * @property {string} color - Embed color used in messages.
+ * @property {`#${number}`} color - Embed color used in messages.
  * @property {string} species - Species of the character.
  * @property {'Youngling'|'Apprentice'|'Hunter'|'Healer'|'Elderly'} rank - Rank of the character.
  * @property {string} avatarURL - Avatar URL of the character.

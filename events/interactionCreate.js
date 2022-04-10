@@ -56,9 +56,10 @@ const event = {
 			return;
 		}
 
-		let profileData = await profileModel.findOne(
-			{ userId: interaction.user.id, serverId: interaction.guild.id },
-		);
+		let profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
+			userId: interaction.user.id,
+			serverId: interaction.guild.id,
+		}));
 
 		if (interaction.isSelectMenu()) {
 
@@ -1323,10 +1324,10 @@ const event = {
 
 				if (referencedMessage.mentions.users.size > 0) {
 
-					profileData = await profileModel.findOne({
+					profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
 						userId: referencedMessage.mentions.users.first().id,
 						serverId: referencedMessage.guild.id,
-					});
+					}));
 
 					components[0].components.pop();
 				}
@@ -1368,7 +1369,7 @@ const event = {
 							],
 						},
 						{
-							color: profileData.color,
+							color: /** @type {`#${string}`} */ (profileData.color),
 							description: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\`\n⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\`\n🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\``,
 							fields: [
 								{ name: '**🩹 Injuries/Illnesses**', value: injuryText, inline: true },

@@ -17,9 +17,9 @@ const event = {
 	 */
 	async execute(client, guild) {
 
-		const serverData = await serverModel.findOne({
+		const serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOne({
 			serverId: guild.id,
-		});
+		}));
 
 		if (serverData === null) {
 
