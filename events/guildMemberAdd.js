@@ -1,7 +1,7 @@
 // @ts-check
 const otherProfileModel = require('../models/otherProfileModel');
 const serverModel = require('../models/serverModel');
-const fs = require('fs');
+const { readFileSync, renameSync, writeFileSync } = require('fs');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 
 /**
@@ -25,7 +25,7 @@ const event = {
 		/**
 		 * @type {import('../typedef').DeleteList}
 		 */
-		const toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json', 'utf-8'));
+		const toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8'));
 
 		if (serverData === null || toDeleteList[`${member.id}${member.guild.id}`] === undefined) {
 
@@ -35,7 +35,7 @@ const event = {
 		for (const profileName of Object.keys(toDeleteList[`${member.id}${member.guild.id}`])) {
 
 			const userFile = toDeleteList[`${member.id}${member.guild.id}`][profileName].fileName;
-			fs.renameSync(`./database/toDelete/${userFile}`, `./database/profiles/inactiveProfiles/${userFile}`);
+			renameSync(`./database/toDelete/${userFile}`, `./database/profiles/inactiveProfiles/${userFile}`);
 
 			delete toDeleteList[`${member.id}${member.guild.id}`][profileName];
 			if (Object.entries(toDeleteList[`${member.id}${member.guild.id}`]).length === 0) {
@@ -43,7 +43,7 @@ const event = {
 				delete toDeleteList[`${member.id}${member.guild.id}`];
 			}
 
-			fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
+			writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
 
 
 			const profileData = await otherProfileModel.findOne({

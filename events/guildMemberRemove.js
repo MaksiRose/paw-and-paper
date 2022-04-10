@@ -1,11 +1,21 @@
+// @ts-check
 const profileModel = require('../models/profileModel');
 const otherProfileModel = require('../models/otherProfileModel');
 const serverModel = require('../models/serverModel');
-const fs = require('fs');
+const { renameSync, readFileSync, writeFileSync, existsSync, unlinkSync } = require('fs');
 
-module.exports = {
+/**
+ * @type {import('../typedef').Event}
+ */
+const event = {
 	name: 'guildMemberRemove',
 	once: false,
+
+	/**
+	 * Emitted whenever a member leaves a guild, or is kicked.
+	 * @param {import('../paw').client} client
+	 * @param {import('discord.js').GuildMember} member
+	 */
 	async execute(client, member) {
 
 		const profileData = await profileModel.findOne({
@@ -27,24 +37,27 @@ module.exports = {
 			{ $set: { currentRegion: 'sleeping dens' } },
 		);
 
-		fs.renameSync(`./database/profiles/${profileData.uuid}.json`, `./database/toDelete/${profileData.uuid}.json`);
+		renameSync(`./database/profiles/${profileData.uuid}.json`, `./database/toDelete/${profileData.uuid}.json`);
 
-		let toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
+		/**
+		 * @type {import('../typedef').DeleteList}
+		 */
+		let toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8'));
 
 		toDeleteList[`${member.id}${member.guild.id}`] = toDeleteList[`${member.id}${member.guild.id}`] || {};
 		toDeleteList[`${member.id}${member.guild.id}`][`${profileData.name}`] = { fileName: `${profileData.uuid}.json`, deletionTimestamp: Date.now() + 2073600000 };
 
-		fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
+		writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
 
 		setTimeout(async () => {
 
-			if (fs.existsSync(`./database/toDelete/${profileData.uuid}.json`) == true) {
+			if (existsSync(`./database/toDelete/${profileData.uuid}.json`) == true) {
 
-				const dataObject = JSON.parse(fs.readFileSync(`./database/toDelete/${profileData.uuid}.json`));
-				fs.unlinkSync(`./database/toDelete/${profileData.uuid}.json`);
+				const dataObject = JSON.parse(readFileSync(`./database/toDelete/${profileData.uuid}.json`, 'utf-8'));
+				unlinkSync(`./database/toDelete/${profileData.uuid}.json`);
 				console.log('Deleted File: ', dataObject);
 
-				toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
+				toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8'));
 
 				delete toDeleteList[`${profileData.userId}${profileData.serverId}`][dataObject.name];
 				if (Object.entries(toDeleteList[`${profileData.userId}${profileData.serverId}`]).length === 0) {
@@ -52,7 +65,7 @@ module.exports = {
 					delete toDeleteList[`${profileData.userId}${profileData.serverId}`];
 				}
 
-				fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
+				writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
 			}
 		}, 2592000000);
 
@@ -63,34 +76,32 @@ module.exports = {
 
 		for (const profile of inactiveUserProfiles) {
 
-			fs.renameSync(`./database/profiles/inactiveProfiles/${profile.uuid}.json`, `./database/toDelete/${profile.uuid}.json`);
+			renameSync(`./database/profiles/inactiveProfiles/${profile.uuid}.json`, `./database/toDelete/${profile.uuid}.json`);
 
-			toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
+			toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8'));
 
 			toDeleteList[`${profile.serverId}${profile.userId}`] = toDeleteList[`${profile.serverId}${profile.userId}`] || {};
 			toDeleteList[`${profile.serverId}${profile.userId}`][`${profile.name}`] = { fileName: `${profile.uuid}.json`, deletionTimestamp: Date.now() + 2073600000 };
 
-			fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
+			writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
 
 			setTimeout(async () => {
 
-				if (fs.existsSync(`./database/toDelete/${profile.uuid}.json`) == true) {
+				if (existsSync(`./database/toDelete/${profile.uuid}.json`) == true) {
 
-					const dataObject = JSON.parse(fs.readFileSync(`./database/toDelete/${profile.uuid}.json`));
-					fs.unlinkSync(`./database/toDelete/${profile.uuid}.json`);
+					const dataObject = JSON.parse(readFileSync(`./database/toDelete/${profile.uuid}.json`, 'utf-8'));
+					unlinkSync(`./database/toDelete/${profile.uuid}.json`);
 					console.log('Deleted File: ', dataObject);
 
-					toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
+					toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8'));
 
 					delete toDeleteList[`${profile.userId}${profile.serverId}`][profile.name];
-					if (Object.entries(toDeleteList[`${profile.userId}${profile.serverId}`]).length === 0) {
+					if (Object.entries(toDeleteList[`${profile.userId}${profile.serverId}`]).length === 0) { delete toDeleteList[`${profile.userId}${profile.serverId}`]; }
 
-						delete toDeleteList[`${profile.userId}${profile.serverId}`];
-					}
-
-					fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
+					writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
 				}
 			}, 2592000000);
 		}
 	},
 };
+module.exports = event;
