@@ -8,8 +8,9 @@ const createGuild = require('../utils/createGuild');
 const event = {
 	name: 'ready',
 	once: true,
+
 	/**
-	 * Fires when the bot is first ready.
+	 * Emitted when the client becomes ready to start working.
 	 * @param {import('../paw').client} client
 	 */
 	async execute(client) {
@@ -25,7 +26,7 @@ const event = {
 
 		for (const [, OAuth2Guild] of await client.guilds.fetch()) {
 
-			const serverData = serverModel.findOne({
+			const serverData = await serverModel.findOne({
 				serverId: OAuth2Guild.id,
 			});
 

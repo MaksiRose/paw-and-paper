@@ -61,14 +61,14 @@ class model {
 		/**
 		 * Searches for an object that meets the filter, and returns it. If several objects meet the requirement, the first that is found is returned.
 		 * @param {Object<string, *>} filterObject
-		 * @returns {null|import('../typedef').ProfileSchema|import('../typedef').ServerSchema} Data Object or null
+		 * @returns {Promise<null | Object.<string, *>>} Data Object or null
 		 */
 		this.findOne = async function(filterObject) {
 
 			file_iteration: for (const file of fs.readdirSync(path).filter(f => f.endsWith('.json'))) {
 
 				/**
-				 * @type {import('../typedef').ProfileSchema|import('../typedef').ServerSchema}
+				 * @type {Object.<string, *>}
 				 */
 				const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`));
 
@@ -86,12 +86,23 @@ class model {
 			return null;
 		};
 
+		/**
+		 * Searches for all objects that meet the filter, and returns an array of them.
+		 * @param {Object<string, *>} filterObject
+		 * @returns {Promise<Array<Object.<string, *>>>} Array of objects
+		 */
 		this.find = async function(filterObject) {
 
+			/**
+			 * @type {Array<Object.<string, *>>} Array of objects
+			 */
 			const dataObjectsArray = [];
 
 			for (const file of fs.readdirSync(path).filter(f => f.endsWith('.json'))) {
 
+				/**
+				 * @type {Object.<string, *>} Object
+				 */
 				const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`));
 
 				if (allObjectsMatch(filterObject, dataObject) === true) {
@@ -100,6 +111,12 @@ class model {
 				}
 			}
 
+			/**
+			 * Compares two objects and returns whether all objects match.
+			 * @param {Object<string, *>} testObject
+			 * @param {Object<string, *>} compareObject
+			 * @returns {boolean}
+			 */
 			function allObjectsMatch(testObject, compareObject) {
 
 				for (const [key, value] of Object.entries(testObject)) {
@@ -131,6 +148,12 @@ class model {
 				return true;
 			}
 
+			/**
+			 * Compares an array with an object and returns whether one element of the array is found in or is equal to the object
+			 * @param {Array<>} array
+			 * @param {Object<string, *>} compareObject
+			 * @returns
+			 */
 			function oneElementMatches(array, compareObject) {
 
 				for (const element of array) {
@@ -333,7 +356,14 @@ class model {
 	}
 }
 
+/**
+ * Class to create a Schema object
+ */
 class schema {
+
+	/**
+	 * @param {Object<string, {type: Array, default: *, locked: boolean}>} object
+	 */
 	constructor(object) {
 
 		for (const [key, { type: type, default: def, locked: locked }] of Object.entries(object)) {
@@ -341,6 +371,9 @@ class schema {
 			this[key] = { type: getType(type) || def !== undefined ? [typeof def] : ['any'], default: def || undefined, locked: Boolean(locked) };
 		}
 
+		/**
+		 * @type {Object<string, {type: Array, default: *, locked: boolean}>}
+		 */
 		this.uuid = { type: ['string'], default: undefined, locked: true };
 	}
 }

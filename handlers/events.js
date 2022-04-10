@@ -1,5 +1,5 @@
 // @ts-check
-const fs = require('fs');
+const { readdirSync } = require('fs');
 
 /**
  * Starts up all the `listeners` based on their `eventName` and whether or not their are one-time.
@@ -7,7 +7,7 @@ const fs = require('fs');
  */
 module.exports.execute = (client) => {
 
-	for (const file of fs.readdirSync('./events/')) {
+	for (const file of readdirSync('./events/')) {
 
 		/**
 		 * @type {import('../typedef').Event}
