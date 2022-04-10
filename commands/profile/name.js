@@ -21,7 +21,7 @@ module.exports = {
 
 				const bannedList = JSON.parse(fs.readFileSync('./database/bannedList.json'));
 
-				if (bannedList.usersArray.includes(message.author.id)) {
+				if (bannedList.users.includes(message.author.id)) {
 
 					const user = await client.users.fetch(message.author.id);
 

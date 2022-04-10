@@ -294,7 +294,7 @@ const event = {
 							type: 'ACTION_ROW',
 							components: [{
 								type: 'SELECT_MENU',
-								customId: 'help-page4-commands',
+								customId: 'help-page5-commands',
 								placeholder: 'Select a command',
 								options: [
 									{ label: 'Vote*', value: 'help_vote', description: 'Vote for this bot on one of three websites and get +30 energy each time.' },

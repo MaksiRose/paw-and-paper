@@ -16,7 +16,7 @@ module.exports = async (client, guild) => {
 			}
 		});
 
-	if (bannedList.serversArray.includes(guild.id)) {
+	if (bannedList.servers.includes(guild.id)) {
 
 		await user
 			.send({ content: `I am sorry to inform you that your guild \`${guild.name}\` has been banned from using this bot.` })

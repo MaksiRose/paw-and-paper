@@ -28,7 +28,7 @@ module.exports = {
 
 			await message.channel
 				.send({
-					content: `${message.author.toString()} ❓ **Tip:**\nRest via \`rp rest\` to fill up your energy. Resting takes a while, so be patient!`,
+					content: `${message.author.toString()} ❓ **Tip:**\nRest via \`rp rest\` to fill up your energy. Resting takes a while, so be patient!\nYou can also do \`rp vote\` to get +30 energy per vote!`,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) {
