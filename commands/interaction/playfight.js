@@ -106,7 +106,7 @@ module.exports = {
 			color: profileData.color,
 			author: { name: profileData.name, icon_url: profileData.avatarURL },
 			description: `*${profileData.name} hangs around the prairie when ${partnerProfileData.name} comes by. The ${partnerProfileData.species} has things to do but ${profileData.name}'s smug expression implies ${pronoun(partnerProfileData, 0)} wouldn't be able to beat the ${profileData.species}.*`,
-			footer: { text: `You are playing ${gameType}. After 30 seconds, the invitation expires.\n\nTip: To pick a game, include 'connectfour' / 'c4' or 'tictactoe' / 'ttt' somewhere in the original command.` },
+			footer: { text: `You are playing ${gameType}. After 60 seconds, the invitation expires.\n\nTip: To pick a game, include 'connectfour' / 'c4' or 'tictactoe' / 'ttt' somewhere in the original command.` },
 		});
 
 		const botReply = await message
@@ -233,7 +233,7 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 		const filter = i => (i.customId === 'playfight-confirm-tic-tac-toe' && i.user.id == message.mentions.users.first().id) || (i.customId.includes('board') && i.user.id == currentProfileData.userId);
 
 		const interaction = await botReply
-			.awaitMessageComponent({ filter, time: 30000 })
+			.awaitMessageComponent({ filter, time: 60000 })
 			.catch(() => { return null; });
 
 		let isEmptyBoard = true;
@@ -501,7 +501,7 @@ async function playConnectFour(serverData, profileData, partnerProfileData, mess
 		const filter = i => (i.customId === 'playfight-confirm-connect-four' && i.user.id == message.mentions.users.first().id) || (i.customId.includes('field') && i.user.id == currentProfileData.userId);
 
 		const interaction = await botReply
-			.awaitMessageComponent({ filter, time: 30000 })
+			.awaitMessageComponent({ filter, time: 60000 })
 			.catch(() => { return null; });
 
 		let isEmptyBoard = true;
