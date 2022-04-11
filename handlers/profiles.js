@@ -1,7 +1,6 @@
 // @ts-check
 const { readdirSync, readFileSync, renameSync, writeFileSync } = require('fs');
-const profileModel = require('../models/profileModel');
-const otherProfileModel = require('../models/otherProfileModel');
+const { profileModel, otherProfileModel } = require('../models/profileModel');
 const { sendReminder } = require('../commands/maintenance/water');
 
 

@@ -408,7 +408,7 @@ class model {
 class schema {
 
 	/**
-	 * @param {Object<string, {type: Array, default: *, locked: boolean}>} object
+	 * @param {Object<string, {type: Array, default?: *, locked?: boolean}>} object
 	 */
 	constructor(object) {
 

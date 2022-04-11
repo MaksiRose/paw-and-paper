@@ -1,7 +1,8 @@
-const constructor = require('./constructor');
+// @ts-check
+const { schema, model } = require('./constructor');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 
-const schema = new constructor.schema({
+const serverSchema = new schema({
 	serverId: { type: ['string'], locked: true },
 	name: { type: ['string'] },
 	inventoryObject: { type: ['object', ['object', ['number']]], default: {
@@ -18,5 +19,4 @@ const schema = new constructor.schema({
 	shop: { type: ['array', ['object', ['string', 'number']]] },
 });
 
-const model = new constructor.model('./database/servers', schema);
-module.exports = model;
+module.exports = new model('./database/servers', serverSchema);

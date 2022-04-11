@@ -1,8 +1,9 @@
-const constructor = require('./constructor');
+// @ts-check
+const { schema, model } = require('./constructor');
 const config = require('../config.json');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 
-const schema = new constructor.schema({
+const profileSchema = new schema({
 	userId: { type: ['string'], locked: true },
 	serverId: { type: ['string'], locked: true },
 	name: { type: ['string'] },
@@ -39,5 +40,5 @@ const schema = new constructor.schema({
 	roles: { type: ['array', ['object', ['string', 'number']]] },
 });
 
-const model = new constructor.model('./database/profiles', schema);
-module.exports = model;
+module.exports.profileModel = new model('./database/profiles', profileSchema);
+module.exports.otherProfileModel = new model('./database/inactiveProfiles', profileSchema);
