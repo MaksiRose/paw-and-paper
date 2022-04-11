@@ -1,5 +1,5 @@
 // @ts-check
-const profileModel = require('../models/profileModel');
+const { profileModel } = require('../models/profileModel');
 const config = require('../config.json');
 const errorHandling = require('../utils/errorHandling');
 const { version } = require('../package.json');

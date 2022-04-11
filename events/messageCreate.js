@@ -1,6 +1,6 @@
 // @ts-check
 const config = require('../config.json');
-const profileModel = require('../models/profileModel');
+const { profileModel } = require('../models/profileModel');
 const serverModel = require('../models/serverModel');
 const errorHandling = require('../utils/errorHandling');
 const { activeCommandsObject } = require('../utils/commandCollector');

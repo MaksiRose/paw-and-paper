@@ -1,6 +1,6 @@
 // @ts-check
 const serverModel = require('../models/serverModel');
-const profileModel = require('../models/profileModel');
+const { profileModel } = require('../models/profileModel');
 
 /**
  * @type {import('../typedef').Event}

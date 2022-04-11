@@ -1,6 +1,6 @@
 // @ts-check
 const serverModel = require('../models/serverModel');
-const profileModel = require('../models/profileModel');
+const { profileModel } = require('../models/profileModel');
 const { renameSync, readFileSync, writeFileSync, existsSync, unlinkSync } = require('fs');
 
 /**

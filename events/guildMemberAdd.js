@@ -1,5 +1,5 @@
 // @ts-check
-const otherProfileModel = require('../models/otherProfileModel');
+const { otherProfileModel } = require('../models/profileModel');
 const serverModel = require('../models/serverModel');
 const { readFileSync, renameSync, writeFileSync } = require('fs');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
