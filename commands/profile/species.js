@@ -29,9 +29,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -69,9 +67,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 
 			await playAdvice(message);
@@ -98,11 +94,7 @@ module.exports = {
 				}],
 				failIfNotExists: false,
 			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
-			});
+			.catch((error) => { throw new Error(error); });
 
 		await interactionCollector();
 
@@ -121,9 +113,7 @@ module.exports = {
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -157,9 +147,7 @@ module.exports = {
 						}],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 
 				return await interactionCollector();
@@ -183,9 +171,7 @@ module.exports = {
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 
 				await playAdvice(message);

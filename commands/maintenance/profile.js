@@ -19,7 +19,7 @@ module.exports = {
 			components: [{
 				type: 'BUTTON',
 				customId: 'profile-refresh',
-				emoji: { name: '🔁' },
+				emoji: '🔁',
 				style: 'SECONDARY',
 			}, {
 				type: 'BUTTON',
@@ -48,9 +48,7 @@ module.exports = {
 						failIfNotExists: false,
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -114,9 +112,7 @@ module.exports = {
 				failIfNotExists: false,
 			})
 			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
+				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 	},
 };

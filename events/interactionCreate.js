@@ -105,10 +105,8 @@ const event = {
 							}],
 						}],
 					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -149,10 +147,8 @@ const event = {
 							}],
 						}],
 					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -199,10 +195,8 @@ const event = {
 							}],
 						}],
 					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -241,10 +235,8 @@ const event = {
 							}],
 						}],
 					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -309,10 +301,8 @@ const event = {
 							}],
 						}],
 					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -1279,10 +1269,8 @@ const event = {
 					.edit({
 						components: [],
 					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 
 				const maksi = await client.users.fetch(config.maksi);
@@ -1379,10 +1367,8 @@ const event = {
 						}],
 						components: /** @type {Array<import('discord.js').MessageActionRow>} */ (components),
 					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -1405,12 +1391,13 @@ const event = {
 					}
 				}
 
+				/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} */
 				const components = [{
 					type: 'ACTION_ROW',
 					components: [{
 						type: 'BUTTON',
 						customId: 'stats-refresh',
-						emoji: { name: '🔁' },
+						emoji: '🔁',
 						style: 'SECONDARY',
 					}, {
 						type: 'BUTTON',
@@ -1428,12 +1415,10 @@ const event = {
 				await interaction.message
 					.edit({
 						content: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\` - ⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\` - 🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`${(injuryText == null) ? '' : `🩹 Injuries/Illnesses: ${injuryText.slice(2)}`}`,
-						components: /** @type {Array<import('discord.js').MessageActionRow>} */ (components),
+						components: components,
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 

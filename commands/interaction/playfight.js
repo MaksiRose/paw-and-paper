@@ -43,9 +43,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -64,9 +62,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -90,9 +86,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus != 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -131,11 +125,7 @@ module.exports = {
 				}],
 				failIfNotExists: false,
 			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
-			});
+			.catch((error) => { throw new Error(error); });
 
 		const userInjuryObjectPlayer1 = { ...profileData.injuryObject };
 		const userInjuryObjectPlayer2 = { ...partnerProfileData.injuryObject };
@@ -278,9 +268,8 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
+						return botReply;
 					});
 			}
 			else {
@@ -301,9 +290,8 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
+						return botReply;
 					});
 
 				await checkHealthAndLevel(message, botReply, profileData, serverData, partnerProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
@@ -378,11 +366,7 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 				components: componentArray,
 				failIfNotExists: false,
 			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
-			});
+			.catch((error) => { throw new Error(error); });
 
 		return await startNewRound(!isPartner);
 	}
@@ -552,9 +536,8 @@ async function playConnectFour(serverData, profileData, partnerProfileData, mess
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
+						return botReply;
 					});
 			}
 			else {
@@ -575,9 +558,8 @@ async function playConnectFour(serverData, profileData, partnerProfileData, mess
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
+						return botReply;
 					});
 
 				await checkHealthAndLevel(message, botReply, profileData, serverData, partnerProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
@@ -660,11 +642,7 @@ async function playConnectFour(serverData, profileData, partnerProfileData, mess
 				components: componentArray,
 				failIfNotExists: false,
 			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
-			});
+			.catch((error) => { throw new Error(error); });
 
 		return await startNewRound(!isPartner);
 	}
@@ -941,11 +919,7 @@ async function executeWin(componentArray, message, profileData, serverData, part
 			components: componentArray,
 			failIfNotExists: false,
 		})
-		.catch((error) => {
-			if (error.httpStatus !== 404) {
-				throw new Error(error);
-			}
-		});
+		.catch((error) => { throw new Error(error); });
 
 	await checkHealthAndLevel(message, botReply, profileData, serverData, partnerProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
 }
@@ -983,11 +957,7 @@ async function executeDraw(componentArray, message, profileData, serverData, par
 			components: componentArray,
 			failIfNotExists: false,
 		})
-		.catch((error) => {
-			if (error.httpStatus !== 404) {
-				throw new Error(error);
-			}
-		});
+		.catch((error) => { throw new Error(error); });
 
 	await checkHealthAndLevel(message, botReply, profileData, serverData, partnerProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
 }

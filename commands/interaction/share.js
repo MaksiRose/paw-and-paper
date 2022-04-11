@@ -41,9 +41,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -62,9 +60,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -83,9 +79,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -200,9 +194,7 @@ module.exports = {
 						failIfNotExists: false,
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 			else {
@@ -217,11 +209,7 @@ module.exports = {
 				embeds: embedArray,
 				failIfNotExists: false,
 			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
-			});
+			.catch((error) => { throw new Error(error); });
 
 		botReply = await checkLevelUp(message, botReply, profileData, serverData);
 		await decreaseHealth(message, profileData, botReply, userInjuryObject);

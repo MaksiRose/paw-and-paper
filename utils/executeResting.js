@@ -45,9 +45,7 @@ async function startResting(message, profileData, botReply) {
 				embeds: botReply.embeds,
 			})
 			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
+				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 
 		if (profileData.energy >= profileData.maxEnergy) {
@@ -84,9 +82,7 @@ async function startResting(message, profileData, botReply) {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 			return;
 		}

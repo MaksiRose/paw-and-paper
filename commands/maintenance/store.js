@@ -92,9 +92,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -123,11 +121,7 @@ module.exports = {
 				components: componentArray,
 				failIfNotExists: false,
 			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
-			});
+			.catch((error) => { throw new Error(error); });
 
 		createCommandCollector(message.author.id, message.guild.id, botReply);
 		interactionCollector(null, null);
@@ -147,9 +141,7 @@ module.exports = {
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -190,9 +182,7 @@ module.exports = {
 							components: componentArray,
 						})
 						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
+							if (error.httpStatus !== 404) { throw new Error(error); }
 						});
 
 					return await interactionCollector(chosenFood, foodCategory);
@@ -241,9 +231,7 @@ module.exports = {
 								components: [],
 							})
 							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
+								if (error.httpStatus !== 404) { throw new Error(error); }
 							});
 
 						return;
@@ -255,9 +243,7 @@ module.exports = {
 							components: componentArray,
 						})
 						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
+							if (error.httpStatus !== 404) { throw new Error(error); }
 						});
 
 					return await interactionCollector(null, null);
@@ -310,9 +296,7 @@ module.exports = {
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 
 				return;

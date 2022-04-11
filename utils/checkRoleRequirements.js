@@ -51,10 +51,8 @@ async function checkRankRequirements(serverData, message, member, userRank) {
 								description: `You got the <@&${item.roleId}> role for being ${item.requirement}!`,
 							}],
 						})
-						.catch((err) => {
-							if (err.httpStatus !== 404) {
-								throw new Error(err);
-							}
+						.catch((error) => {
+							if (error.httpStatus !== 404) { throw new Error(error); }
 						});
 				}
 			}
@@ -113,10 +111,8 @@ async function checkLevelRequirements(serverData, message, member, userLevel) {
 								description: `You got the <@&${item.roleId}> role for being level ${item.requirement}!`,
 							}],
 						})
-						.catch((err) => {
-							if (err.httpStatus !== 404) {
-								throw new Error(err);
-							}
+						.catch((error) => {
+							if (error.httpStatus !== 404) { throw new Error(error); }
 						});
 				}
 			}
@@ -148,9 +144,7 @@ async function checkRoleCatchBlock(error, message, member) {
 				}],
 			})
 			.catch((err) => {
-				if (err.httpStatus !== 404) {
-					throw new Error(err);
-				}
+				if (err.httpStatus !== 404) { throw new Error(err); }
 			});
 	}
 	else {
@@ -166,9 +160,7 @@ async function checkRoleCatchBlock(error, message, member) {
 				}],
 			})
 			.catch((err) => {
-				if (err.httpStatus !== 404) {
-					throw new Error(err);
-				}
+				if (err.httpStatus !== 404) { throw new Error(err); }
 			});
 	}
 }

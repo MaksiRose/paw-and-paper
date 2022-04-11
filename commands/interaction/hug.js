@@ -41,9 +41,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -61,9 +59,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -91,11 +87,7 @@ module.exports = {
 				}],
 				failIfNotExists: false,
 			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
-			});
+			.catch((error) => { throw new Error(error); });
 
 		const filter = i => i.user.id === message.mentions.users.first().id && i.customId.includes('hug');
 
@@ -137,9 +129,7 @@ module.exports = {
 						failIfNotExists: false,
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			})
 			.catch(async () => {
@@ -155,9 +145,7 @@ module.exports = {
 						failIfNotExists: false,
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			});
 

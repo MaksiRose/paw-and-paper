@@ -40,9 +40,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -60,9 +58,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -138,11 +134,7 @@ module.exports = {
 						}],
 						failIfNotExists: false,
 					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
+					.catch((error) => { throw new Error(error); });
 			}
 			else {
 
@@ -155,9 +147,8 @@ module.exports = {
 						}],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
+						return botReply;
 					});
 			}
 
@@ -278,9 +269,8 @@ module.exports = {
 					components: [],
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
+					return botReply;
 				});
 
 			botReply = await decreaseHealth(message, profileData, botReply, userInjuryObject);
@@ -308,9 +298,7 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 
 			clearTimeout(serverMap.get('nr' + message.guild.id).endingTimeout);
@@ -349,9 +337,7 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 
 			serverMap.get('nr' + message.guild.id).startsTimestamp = null;
@@ -422,9 +408,7 @@ async function remainingHumans(message, serverData) {
 	await message.channel
 		.send({ embeds: [embed] })
 		.catch((error) => {
-			if (error.httpStatus !== 404) {
-				throw new Error(error);
-			}
+			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 
 	serverMap.delete('nr' + message.guild.id);

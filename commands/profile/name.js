@@ -35,9 +35,7 @@ module.exports = {
 					await user
 						.send({ content: 'I am sorry to inform you that you have been banned from using this bot.' })
 						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
+							if (error.httpStatus !== 404) { throw new Error(error); }
 						});
 
 					return;
@@ -105,9 +103,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -123,9 +119,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -148,9 +142,7 @@ module.exports = {
 						failIfNotExists: false,
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 		}
@@ -171,9 +163,7 @@ module.exports = {
 				failIfNotExists: false,
 			})
 			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
+				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 
 		await checkRankRequirements(serverData, message, message.member, 'Youngling');

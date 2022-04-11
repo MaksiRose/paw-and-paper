@@ -132,11 +132,7 @@ module.exports = {
 					components: [sleepingDenButtons],
 					failIfNotExists: false,
 				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
+				.catch((error) => { throw new Error(error); });
 		}
 		else if (chosenRegion == 'food den') {
 
@@ -148,11 +144,7 @@ module.exports = {
 					components: [foodDenButtons],
 					failIfNotExists: false,
 				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
+				.catch((error) => { throw new Error(error); });
 		}
 		else if (chosenRegion == 'medicine den') {
 
@@ -165,11 +157,7 @@ module.exports = {
 						embeds: [embed],
 						failIfNotExists: false,
 					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
+					.catch((error) => { throw new Error(error); });
 			}
 			else {
 
@@ -180,11 +168,7 @@ module.exports = {
 						components: [medicineDenButtons],
 						failIfNotExists: false,
 					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
+					.catch((error) => { throw new Error(error); });
 			}
 		}
 		else if (chosenRegion == 'ruins') {
@@ -196,11 +180,7 @@ module.exports = {
 					embeds: embedArray,
 					failIfNotExists: false,
 				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
+				.catch((error) => { throw new Error(error); });
 		}
 		else if (chosenRegion == 'lake') {
 
@@ -212,11 +192,7 @@ module.exports = {
 					components: [lakeButtons],
 					failIfNotExists: false,
 				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
+				.catch((error) => { throw new Error(error); });
 		}
 		else if (chosenRegion == 'prairie') {
 
@@ -230,11 +206,7 @@ module.exports = {
 						components: [prairieButtons],
 						failIfNotExists: false,
 					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
+					.catch((error) => { throw new Error(error); });
 			}
 			else {
 
@@ -244,11 +216,7 @@ module.exports = {
 						embeds: embedArray,
 						failIfNotExists: false,
 					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
+					.catch((error) => { throw new Error(error); });
 			}
 		}
 		else {
@@ -260,11 +228,7 @@ module.exports = {
 					components: [travelSelectMenu],
 					failIfNotExists: false,
 				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
+				.catch((error) => { throw new Error(error); });
 		}
 
 
@@ -287,9 +251,7 @@ module.exports = {
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -304,9 +266,7 @@ module.exports = {
 							components: [travelSelectMenu, sleepingDenButtons],
 						})
 						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
+							if (error.httpStatus !== 404) { throw new Error(error); }
 						});
 				}
 
@@ -319,9 +279,7 @@ module.exports = {
 							components: [travelSelectMenu, foodDenButtons],
 						})
 						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
+							if (error.httpStatus !== 404) { throw new Error(error); }
 						});
 				}
 
@@ -337,9 +295,7 @@ module.exports = {
 								components: [travelSelectMenu],
 							})
 							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
+								if (error.httpStatus !== 404) { throw new Error(error); }
 							});
 					}
 					await interaction.message
@@ -348,9 +304,7 @@ module.exports = {
 							components: [travelSelectMenu, medicineDenButtons],
 						})
 						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
+							if (error.httpStatus !== 404) { throw new Error(error); }
 						});
 				}
 
@@ -363,9 +317,7 @@ module.exports = {
 							components: [travelSelectMenu],
 						})
 						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
+							if (error.httpStatus !== 404) { throw new Error(error); }
 						});
 				}
 
@@ -378,9 +330,7 @@ module.exports = {
 							components: [travelSelectMenu, lakeButtons],
 						})
 						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
+							if (error.httpStatus !== 404) { throw new Error(error); }
 						});
 				}
 
@@ -394,9 +344,7 @@ module.exports = {
 							components: [travelSelectMenu],
 						})
 						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
+							if (error.httpStatus !== 404) { throw new Error(error); }
 						});
 
 					if (profileData.rank == 'Youngling' || profileData.rank == 'Apprentice') {
@@ -407,9 +355,7 @@ module.exports = {
 								components: [travelSelectMenu, prairieButtons],
 							})
 							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
+								if (error.httpStatus !== 404) { throw new Error(error); }
 							});
 					}
 				}

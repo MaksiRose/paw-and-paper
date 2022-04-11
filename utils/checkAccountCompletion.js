@@ -27,9 +27,7 @@ async function hasNoName(message, profileData) {
 				failIfNotExists: false,
 			})
 			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
+				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 
 		return true;
@@ -64,9 +62,7 @@ async function hasNoSpecies(message, profileData) {
 				failIfNotExists: false,
 			})
 			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
+				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 
 		return true;

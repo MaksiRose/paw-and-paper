@@ -22,9 +22,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -40,9 +38,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -67,11 +63,7 @@ module.exports = {
 				}],
 				failIfNotExists: false,
 			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
-			});
+			.catch((error) => { throw new Error(error); });
 
 		createCommandCollector(message.author.id, message.guild.id, botReply);
 		interactionCollector();
@@ -91,9 +83,7 @@ module.exports = {
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -125,9 +115,7 @@ module.exports = {
 						}],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -152,9 +140,7 @@ module.exports = {
 						failIfNotExists: false,
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 
 				const allServerProfiles = await profileModel.find({
@@ -196,9 +182,7 @@ module.exports = {
 										failIfNotExists: false,
 									})
 									.catch((error) => {
-										if (error.httpStatus !== 404) {
-											throw new Error(error);
-										}
+										if (error.httpStatus !== 404) { throw new Error(error); }
 									});
 							}
 

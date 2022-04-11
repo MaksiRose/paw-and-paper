@@ -46,9 +46,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -143,11 +141,7 @@ module.exports = {
 				}],
 				failIfNotExists: false,
 			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
-			});
+			.catch((error) => { throw new Error(error); });
 
 		if (profileData.saplingObject.reminder === true) {
 
@@ -167,9 +161,7 @@ module.exports = {
 					}],
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 
 			await profileModel.findOneAndUpdate(
@@ -190,10 +182,10 @@ module.exports = {
 
 				const channel = await client.channels
 					.fetch(channelId)
-					.catch(() => {return;});
+					.catch((error) => { throw new Error(error); });
 
 				await channel
-					?.send({
+					.send({
 						content: `<@${profileData.userId}>`,
 						embeds: [{
 							color: profileData.color,
@@ -202,9 +194,7 @@ module.exports = {
 						}],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 		}, profileData.saplingObject.nextWaterTimestamp - Date.now()));

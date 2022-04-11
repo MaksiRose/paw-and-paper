@@ -46,9 +46,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -67,9 +65,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -88,9 +84,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -231,9 +225,7 @@ module.exports = {
 						failIfNotExists: false,
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -280,9 +272,8 @@ module.exports = {
 					return await botReply
 						.edit({ components: [] })
 						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
+							if (error.httpStatus !== 404) { throw new Error(error); }
+							return botReply;
 						});
 				});
 
@@ -305,11 +296,7 @@ module.exports = {
 						embeds: embedArray,
 						failIfNotExists: false,
 					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
+					.catch((error) => { throw new Error(error); });
 			}
 
 			const getHurtChance = pullFromWeightedTable({ 0: 10, 1: 90 + profileData.saplingObject.waterCycles });
@@ -354,11 +341,7 @@ module.exports = {
 						embeds: embedArray,
 						failIfNotExists: false,
 					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
+					.catch((error) => { throw new Error(error); });
 			}
 
 			const foundItem = await pickRandomCommonPlant();
@@ -394,11 +377,7 @@ module.exports = {
 					embeds: embedArray,
 					failIfNotExists: false,
 				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
+				.catch((error) => { throw new Error(error); });
 		}
 
 		async function playTogether(partnerProfileData) {
@@ -470,11 +449,7 @@ module.exports = {
 					embeds: embedArray,
 					failIfNotExists: false,
 				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
+				.catch((error) => { throw new Error(error); });
 		}
 	},
 };

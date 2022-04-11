@@ -227,10 +227,8 @@ async function decreaseHealth(message, profileData, botReply, modifiedUserInjury
 			embeds: botReply.embeds,
 		})
 		.catch((error) => {
-			if (error.httpStatus !== 404) {
-				throw new Error(error);
-			}
-			return null;
+			if (error.httpStatus !== 404) { throw new Error(error); }
+			return botReply;
 		});
 
 	return botReply;

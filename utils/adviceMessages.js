@@ -12,9 +12,7 @@ async function playAdvice(message) {
 			content: `${message.author.toString()} ❓ **Tip:**\nGo playing via \`rp play\` to find quests and rank up!`,
 		})
 		.catch((error) => {
-			if (error.httpStatus !== 404) {
-				throw new Error(error);
-			}
+			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 }
 
@@ -39,9 +37,7 @@ async function restAdvice(message, profileData) {
 				content: `${message.author.toString()} ❓ **Tip:**\nRest via \`rp rest\` to fill up your energy. Resting takes a while, so be patient!\nYou can also do \`rp vote\` to get +30 energy per vote!`,
 			})
 			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
+				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 	}
 }
@@ -67,9 +63,7 @@ async function drinkAdvice(message, profileData) {
 				content: `${message.author.toString()} ❓ **Tip:**\nDrink via \`rp drink\` to fill up your thirst.`,
 			})
 			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
+				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 	}
 }
@@ -95,9 +89,7 @@ async function eatAdvice(message, profileData) {
 				content: `${message.author.toString()} ❓ **Tip:**\nEat via \`rp eat\` to fill up your hunger. Carnivores prefer meat, and herbivores prefer plants! Omnivores can eat both.`,
 			})
 			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
+				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 	}
 }
@@ -123,9 +115,7 @@ async function passingoutAdvice(message, profileData) {
 				content: `${message.author.toString()} ❓ **Tip:**\nIf your health, energy, hunger or thirst points hit zero, you pass out. Another player has to heal you so you can continue playing.\nMake sure to always watch your stats to prevent passing out!`,
 			})
 			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
+				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 	}
 }
@@ -141,9 +131,7 @@ async function apprenticeAdvice(message) {
 			content: `${message.author.toString()} ❓ **Tip:**\nAs apprentice, you unlock new commands: \`explore\`, \`heal\`, \`practice\`, and \`dispose\`.\nCheck \`rp help\` to see what they do!\nGo exploring via \`rp explore\` to find more quests and rank up higher!`,
 		})
 		.catch((error) => {
-			if (error.httpStatus !== 404) {
-				throw new Error(error);
-			}
+			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 }
 
@@ -158,9 +146,7 @@ async function hunterhealerAdvice(message) {
 			content: `${message.author.toString()} ❓ **Tip:**\nHunters and Healers have different strengths and weaknesses!\nHealers can \`heal\` perfectly, but they are not able to use the \`practice\` and \`dispose\` commands or fight when \`exploring\`.\nHunters can \`dispose\` perfectly, but they are not able to use the \`heal\` command or pick up plants when \`exploring\`.\nHunters and Healers lose their ability to use the \`play\` command.`,
 		})
 		.catch((error) => {
-			if (error.httpStatus !== 404) {
-				throw new Error(error);
-			}
+			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 }
 
@@ -175,9 +161,7 @@ async function elderlyAdvice(message) {
 			content: `${message.author.toString()} ❓ **Tip:**\nElderlies have the abilities of both Hunters and Healers!\nAdditionally, they can use the \`share\` command.`,
 		})
 		.catch((error) => {
-			if (error.httpStatus !== 404) {
-				throw new Error(error);
-			}
+			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 }
 

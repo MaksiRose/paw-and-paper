@@ -43,9 +43,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 
 			await checkRankRequirements(serverData, message, message.member, 'Apprentice');
@@ -81,11 +79,7 @@ module.exports = {
 					}],
 					failIfNotExists: false,
 				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
+				.catch((error) => { throw new Error(error); });
 
 			createCommandCollector(message.author.id, message.guild.id, botReply);
 			return await interactionCollector(botReply);
@@ -109,9 +103,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 
 			await checkRankRequirements(serverData, message, message.member, 'Elderly');
@@ -131,9 +123,7 @@ module.exports = {
 				failIfNotExists: false,
 			})
 			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
+				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 
 		async function interactionCollector(botReply) {
@@ -151,9 +141,7 @@ module.exports = {
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -174,9 +162,7 @@ module.exports = {
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 
 				await checkRankRequirements(serverData, message, message.member, 'Healer');
@@ -201,9 +187,7 @@ module.exports = {
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 
 				await checkRankRequirements(serverData, message, message.member, 'Hunter');

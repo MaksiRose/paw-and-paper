@@ -34,15 +34,13 @@ async function checkLevelUp(message, botReply, profileData, serverData) {
 			title: `${profileData.name} just leveled up! ${upperCasePronounAndPlural(profileData, 0, 'is', 'are')} now level ${profileData.levels}.`,
 		};
 
-		botReply?.embeds.push(/** @type {import('discord.js').MessageEmbed} */ (embed));
+		botReply.embeds.push(/** @type {import('discord.js').MessageEmbed} */ (embed));
 		await botReply
-			?.edit({
+			.edit({
 				embeds: botReply.embeds,
 			})
 			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
+				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 
 		botReply = await module.exports.checkLevelUp(message, botReply, profileData, serverData);
@@ -125,9 +123,7 @@ async function decreaseLevel(profileData, botReply) {
 						}],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 		}
@@ -142,10 +138,8 @@ async function decreaseLevel(profileData, botReply) {
 			embeds: botReply.embeds,
 		})
 		.catch((error) => {
-			if (error.httpStatus !== 404) {
-				throw new Error(error);
-			}
-			return null;
+			if (error.httpStatus !== 404) { throw new Error(error); }
+			return botReply;
 		});
 
 	return botReply;

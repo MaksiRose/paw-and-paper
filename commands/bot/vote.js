@@ -50,11 +50,7 @@ module.exports = {
 				}],
 				failIfNotExists: false,
 			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
-			});
+			.catch((error) => { throw new Error(error); });
 
 		createCommandCollector(message.author.id, message.guild.id, botReply);
 
@@ -73,9 +69,7 @@ module.exports = {
 						failIfNotExists: false,
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 
 				const successfulTopVote = interaction.values[0] === 'top.gg-vote' && (voteCache['id_' + message.author.id]?.lastRecordedTopVote > Date.now() - twelveHoursInMs || await client.votes.top.hasVoted(message.author.id));
@@ -153,9 +147,7 @@ module.exports = {
 						failIfNotExists: false,
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			});
 	},

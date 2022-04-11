@@ -15,9 +15,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 
 			client.destroy();
@@ -27,9 +25,7 @@ module.exports = {
 			console.error(error);
 			message.channel
 				.send({ content: `ERROR: ${error.message}` })
-				.catch((newError) => {
-					throw new Error(newError);
-				});
+				.catch((newError) => { throw new Error(newError); });
 		}
 	},
 };

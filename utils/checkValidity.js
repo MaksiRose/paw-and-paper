@@ -26,12 +26,7 @@ async function isPassedOut(message, profileData, isNew) {
 				}],
 				failIfNotExists: false,
 			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
-				return null;
-			});
+			.catch((error) => { throw new Error(error); });
 
 		if (isNew === true) {
 
@@ -74,16 +69,12 @@ async function hasCooldown(message, profileData, callerNameArray) {
 					await reply
 						.delete()
 						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
+							if (error.httpStatus !== 404) { throw new Error(error); }
 						});
 				}, 10000);
 			})
 			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
+				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 
 		return true;

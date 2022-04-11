@@ -16,7 +16,7 @@ module.exports = {
 			.fetchWebhooks()
 			.catch((error) => {
 				if (error.httpStatus === 403) {
-					message.channel.send('Please give me permission to create webhooks 😣');
+					message.channel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
 				}
 				throw new Error(error);
 			})
@@ -24,7 +24,7 @@ module.exports = {
 			.createWebhook('PnP Profile Webhook')
 			.catch((error) => {
 				if (error.httpStatus === 403) {
-					message.channel.send('Please give me permission to create webhooks 😣');
+					message.channel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
 				}
 				throw new Error(error);
 			});
@@ -46,9 +46,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -114,9 +112,7 @@ module.exports = {
 				files: Array.from(message.attachments.values()) || undefined,
 				embeds: embeds,
 			})
-			.catch((error) => {
-				throw new Error(error);
-			});
+			.catch((error) => { throw new Error(error); });
 
 		webhookCache[botMessage.id] = message.author.id;
 

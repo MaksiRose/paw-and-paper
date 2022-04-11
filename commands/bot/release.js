@@ -59,9 +59,7 @@ module.exports = {
 							await msg
 								.edit({ components: [] })
 								.catch((error) => {
-									if (error.httpStatus !== 404 && error.httpStatus !== 403) {
-										throw new Error(error);
-									}
+									if (error.httpStatus !== 404) { throw new Error(error); }
 								});
 						}
 					}
@@ -69,9 +67,7 @@ module.exports = {
 					console.log(`\x1b[32mNew release message\x1b[0m successfully sent to \x1b[33m${user.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404 && error.httpStatus !== 403) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404 && error.httpStatus !== 403) { throw new Error(error); }
 					console.log(`\x1b[32mNew release message\x1b[0m could not be sent to \x1b[33m${user.tag} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 				});
 		}
@@ -82,9 +78,7 @@ module.exports = {
 				failIfNotExists: false,
 			})
 			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
+				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 	},
 };

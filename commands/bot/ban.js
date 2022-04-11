@@ -49,9 +49,7 @@ module.exports = {
 				await user
 					.send({ content: 'I am sorry to inform you that you have been banned from using this bot.' })
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 		}
@@ -93,9 +91,7 @@ module.exports = {
 				await user
 					.send({ content: `I am sorry to inform you that your guild \`${guild.name}\` has been banned from using this bot.` })
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 
 				await guild

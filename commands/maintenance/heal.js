@@ -42,9 +42,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -74,11 +72,7 @@ module.exports = {
 					components: allHurtProfilesList.length > 0 ? [userSelectMenu] : [],
 					failIfNotExists: false,
 				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
+				.catch((error) => { throw new Error(error); });
 		}
 		else {
 
@@ -91,11 +85,7 @@ module.exports = {
 					components: woundComponents,
 					failIfNotExists: false,
 				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
+				.catch((error) => { throw new Error(error); });
 		}
 
 
@@ -122,9 +112,7 @@ module.exports = {
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 
 				return;
@@ -149,9 +137,8 @@ module.exports = {
 							components: selectMenu.components[0].options.length > 0 ? [...componentArray, selectMenu] : componentArray,
 						})
 						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
+							if (error.httpStatus !== 404) { throw new Error(error); }
+							return interaction.message;
 						});
 				}
 
@@ -206,9 +193,8 @@ module.exports = {
 							components: [...componentArray, selectMenu],
 						})
 						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
+							if (error.httpStatus !== 404) { throw new Error(error); }
+							return interaction.message;
 						});
 				}
 			}
@@ -235,9 +221,8 @@ module.exports = {
 					botReply = await interaction.message
 						.edit({ components: componentArray })
 						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
+							if (error.httpStatus !== 404) { throw new Error(error); }
+							return interaction.message;
 						});
 				}
 
@@ -264,9 +249,8 @@ module.exports = {
 							components: woundComponents,
 						})
 						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
+							if (error.httpStatus !== 404) { throw new Error(error); }
+							return botReply;
 						});
 				}
 
@@ -283,9 +267,8 @@ module.exports = {
 								components: userSelectMenu.components[0].options.length > 0 ? [userSelectMenu] : [],
 							})
 							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
+								if (error.httpStatus !== 404) { throw new Error(error); }
+								return interaction.message;
 							});
 
 						return userSelectMenu.components[0].options.length > 0 ? await interactionCollector() : null;
@@ -336,9 +319,8 @@ module.exports = {
 									components: userSelectMenu.components[0].options.length > 0 ? [userSelectMenu] : [],
 								})
 								.catch((error) => {
-									if (error.httpStatus !== 404) {
-										throw new Error(error);
-									}
+									if (error.httpStatus !== 404) { throw new Error(error); }
+									return interaction.message;
 								});
 
 							return userSelectMenu.components[0].options.length > 0 ? await interactionCollector() : null;
@@ -557,9 +539,8 @@ module.exports = {
 									components: userSelectMenu.components[0].options.length > 0 ? [userSelectMenu] : [],
 								})
 								.catch((error) => {
-									if (error.httpStatus !== 404) {
-										throw new Error(error);
-									}
+									if (error.httpStatus !== 404) { throw new Error(error); }
+									return interaction.message;
 								});
 
 							return userSelectMenu.components[0].options.length > 0 ? await interactionCollector() : null;
@@ -667,11 +648,7 @@ module.exports = {
 							embeds: embedArray,
 							failIfNotExists: false,
 						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
-						});
+						.catch((error) => { throw new Error(error); });
 
 					botReply = await decreaseHealth(message, profileData, botReply, userInjuryObject);
 					botReply = await checkLevelUp(message, botReply, profileData, serverData);

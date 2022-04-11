@@ -61,11 +61,7 @@ module.exports = {
 				components: components,
 				failIfNotExists: false,
 			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
-			});
+			.catch((error) => { throw new Error(error); });
 
 		components = [components.pop()];
 
@@ -84,9 +80,7 @@ module.exports = {
 							components: [],
 						})
 						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
+							if (error.httpStatus !== 404) { throw new Error(error); }
 						});
 				});
 
@@ -149,9 +143,8 @@ module.exports = {
 					components: components,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
+					return botReply;
 				});
 
 			components = [components.pop()];

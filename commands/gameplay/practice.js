@@ -37,9 +37,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -60,9 +58,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -95,11 +91,7 @@ module.exports = {
 				}],
 				failIfNotExists: false,
 			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
-			});
+			.catch((error) => { throw new Error(error); });
 
 		let filter = i => (i.customId === 'practice-accept' || i.customId === 'practice-decline') && i.user.id == message.author.id;
 
@@ -128,9 +120,8 @@ module.exports = {
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
+						return botReply;
 					});
 
 				return false;
@@ -238,9 +229,8 @@ module.exports = {
 					components: [fightComponents],
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
+					return botReply;
 				});
 
 			filter = i => (i.customId == 'practice-attack' || i.customId == 'practice-defend' || i.customId == 'practice-dodge') && i.user.id == message.author.id;
@@ -290,9 +280,8 @@ module.exports = {
 					components: [],
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
+					return botReply;
 				});
 		}
 	},

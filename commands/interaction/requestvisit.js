@@ -26,9 +26,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -44,9 +42,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -68,9 +64,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -97,11 +91,7 @@ module.exports = {
 				}],
 				failIfNotExists: false,
 			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
-			});
+			.catch((error) => { throw new Error(error); });
 
 		let botReplyH;
 
@@ -122,9 +112,7 @@ module.exports = {
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -161,9 +149,7 @@ module.exports = {
 						}],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 
 				return await interactionCollector();
@@ -188,9 +174,7 @@ module.exports = {
 							}],
 						})
 						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
+							if (error.httpStatus !== 404) { throw new Error(error); }
 						});
 				}
 
@@ -209,9 +193,7 @@ module.exports = {
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 
 				const visitChannelV = await client.channels.fetch(serverDataV.visitChannelId);
@@ -235,11 +217,7 @@ module.exports = {
 							}],
 						}],
 					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
+					.catch((error) => { throw new Error(error); });
 
 				interactionCollector();
 
@@ -267,11 +245,7 @@ module.exports = {
 						}],
 						failIfNotExists: false,
 					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
+					.catch((error) => { throw new Error(error); });
 
 				const filter2 = async i => (await profileModel.findOne({ serverId: i.guild.id, userId: i.user.id })) === null ? false : true;
 
@@ -321,9 +295,7 @@ async function declinedInvitation(message, profileData, botReplyV, botReplyH) {
 			components: [],
 		})
 		.catch((error) => {
-			if (error.httpStatus !== 404) {
-				throw new Error(error);
-			}
+			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 
 	await botReplyV
@@ -336,9 +308,7 @@ async function declinedInvitation(message, profileData, botReplyV, botReplyH) {
 			failIfNotExists: false,
 		})
 		.catch((error) => {
-			if (error.httpStatus !== 404) {
-				throw new Error(error);
-			}
+			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 
 	await botReplyH
@@ -346,9 +316,7 @@ async function declinedInvitation(message, profileData, botReplyV, botReplyH) {
 			components: [],
 		})
 		.catch((error) => {
-			if (error.httpStatus !== 404) {
-				throw new Error(error);
-			}
+			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 
 	await botReplyH
@@ -361,9 +329,7 @@ async function declinedInvitation(message, profileData, botReplyV, botReplyH) {
 			failIfNotExists: false,
 		})
 		.catch((error) => {
-			if (error.httpStatus !== 404) {
-				throw new Error(error);
-			}
+			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 
 	await serverModel.findOneAndUpdate(
@@ -384,9 +350,7 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 			components: [],
 		})
 		.catch((error) => {
-			if (error.httpStatus !== 404) {
-				throw new Error(error);
-			}
+			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 
 	await botReplyV
@@ -400,9 +364,7 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 			failIfNotExists: false,
 		})
 		.catch((error) => {
-			if (error.httpStatus !== 404) {
-				throw new Error(error);
-			}
+			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 
 	await botReplyH
@@ -410,9 +372,7 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 			components: [],
 		})
 		.catch((error) => {
-			if (error.httpStatus !== 404) {
-				throw new Error(error);
-			}
+			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 
 	await botReplyH
@@ -426,9 +386,7 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 			failIfNotExists: false,
 		})
 		.catch((error) => {
-			if (error.httpStatus !== 404) {
-				throw new Error(error);
-			}
+			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 
 	const filter = async m => m.content.startsWith(config.prefix) === false && (await profileModel.findOne({ serverId: m.guild.id, userId: m.author.id })) !== null;
@@ -446,8 +404,8 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 			.fetchWebhooks()
 			.catch((error) => {
 				if (error.httpStatus === 403) {
-					otherServerChannel.send('Please give me permission to create webhooks 😣');
-					thisServerChannel.send('The other pack is missing permissions, so I couldn\'t establish a connection 😣');
+					otherServerChannel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
+					thisServerChannel.send({ content: 'The other pack is missing permissions, so I couldn\'t establish a connection 😣' }).catch((err) => { throw new Error(err); });
 				}
 				throw new Error(error);
 			})
@@ -455,8 +413,8 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 			.createWebhook('PnP Profile Webhook')
 			.catch((error) => {
 				if (error.httpStatus === 403) {
-					otherServerChannel.send('Please give me permission to create webhooks 😣');
-					thisServerChannel.send('The other pack is missing permissions, so I couldn\'t establish a connection 😣');
+					otherServerChannel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
+					thisServerChannel.send({ content: 'The other pack is missing permissions, so I couldn\'t establish a connection 😣' }).catch((err) => { throw new Error(err); });
 				}
 				throw new Error(error);
 			});
@@ -501,9 +459,7 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 					files: Array.from(msg.attachments.values()) || undefined,
 					embeds: embeds,
 				})
-				.catch((error) => {
-					throw new Error(error);
-				});
+				.catch((error) => { throw new Error(error); });
 
 			webhookCache[botMessage.id] = message.author.id;
 
@@ -546,9 +502,7 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 						failIfNotExists: false,
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 
 				await otherServerChannel
@@ -561,9 +515,7 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 						failIfNotExists: false,
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 		});

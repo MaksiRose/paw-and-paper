@@ -18,9 +18,7 @@ function createCommandCollector(userId, guildId, botReply) {
 				components: [],
 			})
 			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
+				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 
 		delete activeCommandsObject['nr' + userId + guildId];

@@ -48,9 +48,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -69,9 +67,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -131,11 +127,7 @@ module.exports = {
 				embeds: embedArray,
 				failIfNotExists: false,
 			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
-			});
+			.catch((error) => { throw new Error(error); });
 
 		let oldPushpinPosition = { vertical: null, horizontal: null };
 		let currentPushpinPosition = { vertical: null, horizontal: null };
@@ -184,9 +176,8 @@ module.exports = {
 					embeds: embedArray,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
+					return botReply;
 				});
 		}, 1500, waitingArray);
 
@@ -285,9 +276,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -323,9 +312,7 @@ module.exports = {
 					await botReply
 						.edit({ components: [] })
 						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
+							if (error.httpStatus !== 404) { throw new Error(error); }
 						});
 				});
 
@@ -359,9 +346,7 @@ module.exports = {
 					failIfNotExists: false,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
 
@@ -439,11 +424,7 @@ module.exports = {
 					allowedMentions: { repliedUser: true },
 					failIfNotExists: false,
 				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
+				.catch((error) => { throw new Error(error); });
 
 			const filter = i => i.customId.includes('plant') && i.user.id == message.author.id;
 
@@ -463,9 +444,7 @@ module.exports = {
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -522,9 +501,8 @@ module.exports = {
 						components: [selectHerbComponent],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
+						return botReply;
 					});
 
 				const { customId } = await botReply
@@ -575,16 +553,16 @@ module.exports = {
 					embed.footer.text = `${embedFooterStatsText}\n\n+1 ${foundItem}`;
 
 					embedArray.splice(-1, 1, embed);
-					return botReply = await botReply
+					botReply = await botReply
 						.edit({
 							embeds: embedArray,
 							components: [],
 						})
 						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
+							if (error.httpStatus !== 404) { throw new Error(error); }
+							return botReply;
 						});
+					return;
 				}
 
 				if (winPoints === 2) {
@@ -607,16 +585,16 @@ module.exports = {
 					embed.footer.text = embedFooterStatsText;
 
 					embedArray.splice(-1, 1, embed);
-					return botReply = await botReply
+					botReply = await botReply
 						.edit({
 							embeds: embedArray,
 							components: [],
 						})
 						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
+							if (error.httpStatus !== 404) { throw new Error(error); }
+							return botReply;
 						});
+					return;
 				}
 
 				const healthPoints = function(health) { return (profileData.health - health < 0) ? profileData.health : health; }(generateRandomNumber(5, 3));
@@ -702,16 +680,16 @@ module.exports = {
 				}
 
 				embedArray.splice(-1, 1, embed);
-				return botReply = await botReply
+				botReply = await botReply
 					.edit({
 						embeds: embedArray,
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
+						return botReply;
 					});
+				return;
 			}
 		}
 
@@ -767,11 +745,7 @@ module.exports = {
 					allowedMentions: { repliedUser: true },
 					failIfNotExists: false,
 				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
+				.catch((error) => { throw new Error(error); });
 
 			let filter = i => (i.customId === 'enemy-flee' || i.customId === 'enemy-fight') && i.user.id == message.author.id;
 
@@ -799,16 +773,15 @@ module.exports = {
 				embed.footer.text = `${embedFooterStatsText}`;
 
 				embedArray.splice(-1, 1, embed);
-				return await botReply
+				await botReply
 					.edit({
 						embeds: embedArray,
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
+				return;
 			}
 
 			await fightCycle(0, '');
@@ -863,9 +836,8 @@ module.exports = {
 						}],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
+						return botReply;
 					});
 
 				filter = i => (i.customId == 'fight-attack' || i.customId == 'fight-defend' || i.customId == 'fight-dodge') && i.user.id == message.author.id;
@@ -1004,16 +976,16 @@ module.exports = {
 				}
 
 				embedArray.splice(-1, 1, embed);
-				return botReply = await botReply
+				botReply = await botReply
 					.edit({
 						embeds: embedArray,
 						components: [],
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
+						return botReply;
 					});
+				return;
 			}
 		}
 
@@ -1042,11 +1014,7 @@ module.exports = {
 					components: [selectBiomeComponent],
 					failIfNotExists: false,
 				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
+				.catch((error) => { throw new Error(error); });
 
 			embedArray.splice(-1, 1);
 
@@ -1071,9 +1039,7 @@ module.exports = {
 					await getBiomeMessage
 						.edit({ components: [] })
 						.catch((error) => {
-							if (error.httpStatus !== 404) {
-								throw new Error(error);
-							}
+							if (error.httpStatus !== 404) { throw new Error(error); }
 						});
 
 					return null;
