@@ -110,7 +110,7 @@ class model {
 		 */
 		this.find = async function(filterObject) {
 
-			/** @type {Array<Object<string, *>?} */
+			/** @type {Array<Object<string, *>>} */
 			const dataObjectsArray = [];
 
 			for (const file of fs.readdirSync(path).filter(f => f.endsWith('.json'))) {

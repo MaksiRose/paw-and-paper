@@ -1,7 +1,6 @@
 const config = require('../../config.json');
 const fs = require('fs');
-const profileModel = require('../../models/profileModel');
-const otherProfileModel = require('../../models/otherProfileModel');
+const { profileModel, otherProfileModel } = require('../../models/profileModel');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
 const startCooldown = require('../../utils/startCooldown');
 const { checkRankRequirements } = require('../../utils/checkRoleRequirements');

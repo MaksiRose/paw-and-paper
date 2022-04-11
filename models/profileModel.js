@@ -41,4 +41,4 @@ const profileSchema = new schema({
 });
 
 module.exports.profileModel = new model('./database/profiles', profileSchema);
-module.exports.otherProfileModel = new model('./database/inactiveProfiles', profileSchema);
+module.exports.otherProfileModel = new model('./database/profiles/inactiveProfiles', profileSchema);

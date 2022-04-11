@@ -21,7 +21,14 @@ const event = {
 
 		for (const file of ['commands', 'votes', 'profiles', 'servers']) {
 
-			require(`../handlers/${file}`).execute(client);
+			try {
+
+				require(`../handlers/${file}`).execute(client);
+			}
+			catch (error) {
+
+				console.error(error);
+			}
 		}
 
 

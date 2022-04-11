@@ -105,3 +105,30 @@ module.exports.ServerSchema = this.ServerSchema;
  * @property {Function} execute
  */
 module.exports.Event = this.Event;
+
+
+/**
+ * @typedef {Object} PlantMapObject
+ * @property {string} name - Name of the plant.
+ * @property {string} description - Description of the plant.
+ * @property {'e' | 'i' | 't'} edibality - Edibabilty of the plant: `e` for edible, `i` for inedible and `t` for toxic.
+ * @property {boolean} healsWounds - Whether the plant heals wounds.
+ * @property {boolean} healsInfections - Whether the plant heals infections.
+ * @property {boolean} healsColds - Whether the plant heals colds.
+ * @property {boolean} healsSprains - Whether the plant heals sprains.
+ * @property {boolean} healsPoison - Whether the plant heals poison.
+ * @property {boolean} givesEnergy - Whether the plant gives energy.
+ */
+module.exports.PlantMapObject = this.PlantMapObject;
+
+
+/**
+ * @typedef {Object} SpeciesMapObject
+ * @property {string} name - Name of the species.
+ * @property {'omnivore' | 'herbivore' | 'carnivore'} diet - Diet of the species.
+ * @property {'cold' | 'warm' | 'water'} habitat - Habitat that the species lives in.
+ * @property {Array<string>} biome1OpponentArray - Opponents that the species meets in biome 1.
+ * @property {Array<string>} biome2OpponentArray - Opponents that the species meets in biome 2.
+ * @property {Array<string>} biome3OpponentArray - Opponents that the species meets in biome 2.
+ */
+module.exports.SpeciesMapObject = this.SpeciesMapObject;

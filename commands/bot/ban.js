@@ -1,6 +1,5 @@
 const fs = require('fs');
-const profileModel = require('../../models/profileModel');
-const otherProfileModel = require('../../models/otherProfileModel');
+const { profileModel, otherProfileModel } = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
 
 module.exports = {

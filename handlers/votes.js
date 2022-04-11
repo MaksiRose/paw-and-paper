@@ -17,83 +17,90 @@ const limiter = rateLimit({
  */
 module.exports.execute = (client) => {
 
-	const bfdClient = new bfd(/** @type {{token: string, authorization: string}} */ (client.votes.bfd).token, client.user.id);
-	const bfdAuthorization = /** @type {{token: string, authorization: string}} */ (client.votes.bfd).authorization;
-	client.votes.bfd = bfdClient;
+	if (/** @type {{token: string, authorization: string}} */ (client.votes.bfd).token !== '' || /** @type {{token: string, authorization: string}} */ (client.votes.bfd).authorization != '') {
 
-	const serverCount = client.guilds.cache.size;
-	client.votes.bfd.setServers(serverCount);
+		const bfdClient = new bfd(/** @type {{token: string, authorization: string}} */(client.votes.bfd).token, client.user.id);
+		const bfdAuthorization = /** @type {{token: string, authorization: string}} */ (client.votes.bfd).authorization;
+		client.votes.bfd = bfdClient;
 
-	/** @type {*} */
-	const bfdApp = express();
+		const serverCount = client.guilds.cache.size;
+		client.votes.bfd.setServers(serverCount);
 
-	bfdApp.use(express.json());
-	bfdApp.use(limiter);
+		/** @type {*} */
+		const bfdApp = express();
 
-	bfdApp.post('/discords', (/** @type {{ headers: { authorization: string; }; body: { user: string; }; }} */ request, /** @type {{ status: (arg0: number) => { (): any; new (): any; end: { (): void; new (): any; }; }; }} */ response) => {
+		bfdApp.use(express.json());
+		bfdApp.use(limiter);
 
-		if (request.headers.authorization === bfdAuthorization) {
+		bfdApp.post('/discords', (/** @type {{ headers: { authorization: string; }; body: { user: string; }; }} */ request, /** @type {{ status: (arg0: number) => { (): any; new (): any; end: { (): void; new (): any; }; }; }} */ response) => {
 
-			/** @type {import('../typedef').VoteList} */
-			const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8'));
+			if (request.headers.authorization === bfdAuthorization) {
 
-			voteCache['id_' + request.body.user] = voteCache['id_' + request.body.user] ?? {};
-			voteCache['id_' + request.body.user].lastRecordedDiscordsVote = Date.now();
+				/** @type {import('../typedef').VoteList} */
+				const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8'));
 
-			writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
-		}
+				voteCache['id_' + request.body.user] = voteCache['id_' + request.body.user] ?? {};
+				voteCache['id_' + request.body.user].lastRecordedDiscordsVote = Date.now();
 
-		response.status(200).end();
-	});
+				writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
+			}
 
-	bfdApp.listen(3002);
+			response.status(200).end();
+		});
 
+		bfdApp.listen(3002, (/** @type {any} */ error) => {return console.error(error);});
+	}
 
-	AutoPoster(/** @type {{token: string, authorization: string}} */ (client.votes.top).token, client);
+	if (/** @type {{token: string, authorization: string}} */ (client.votes.top).token !== '' || /** @type {{token: string, authorization: string}} */ (client.votes.top).authorization != '') {
 
-	const topApi = new Topgg.Api(/** @type {{token: string, authorization: string}} */(client.votes.top).token);
-	const webhook = new Topgg.Webhook(/** @type {{token: string, authorization: string}} */(client.votes.top).authorization);
+		AutoPoster(/** @type {{token: string, authorization: string}} */(client.votes.top).token, client);
 
-	client.votes.top = topApi;
+		const topApi = new Topgg.Api(/** @type {{token: string, authorization: string}} */(client.votes.top).token);
+		const webhook = new Topgg.Webhook(/** @type {{token: string, authorization: string}} */(client.votes.top).authorization);
 
-	/** @type {*} */
-	const topApp = express();
+		client.votes.top = topApi;
 
-	topApp.post('/top', webhook.listener(async vote => {
+		/** @type {*} */
+		const topApp = express();
 
-		/** @type {import('../typedef').VoteList} */
-		const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8'));
-
-		voteCache['id_' + vote.user] = voteCache['id_' + vote.user] ?? {};
-		voteCache['id_' + vote.user].lastRecordedTopVote = Date.now();
-
-		writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
-	}));
-
-	topApp.listen(3000);
-
-
-	/** @type {*} */
-	const dblApp = express();
-
-	dblApp.use(express.json());
-	dblApp.use(limiter);
-
-	dblApp.post('/dbl', (request, response) => {
-
-		if (request.headers.authorization === /** @type {{token: string, authorization: string}} */(client.votes.dbl).authorization) {
+		topApp.post('/top', webhook.listener(async vote => {
 
 			/** @type {import('../typedef').VoteList} */
 			const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8'));
 
-			voteCache['id_' + request.body.id] = voteCache['id_' + request.body.id] ?? {};
-			voteCache['id_' + request.body.id].lastRecordedDblVote = Date.now();
+			voteCache['id_' + vote.user] = voteCache['id_' + vote.user] ?? {};
+			voteCache['id_' + vote.user].lastRecordedTopVote = Date.now();
 
 			writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
-		}
+		}));
 
-		response.status(200).end();
-	});
+		topApp.listen(3000, (/** @type {any} */ error) => {return console.error(error);});
+	}
 
-	dblApp.listen(3001);
+	if (/** @type {{token: string, authorization: string}} */ (client.votes.dbl).token !== '' || /** @type {{token: string, authorization: string}} */ (client.votes.dbl).authorization != '') {
+
+		/** @type {*} */
+		const dblApp = express();
+
+		dblApp.use(express.json());
+		dblApp.use(limiter);
+
+		dblApp.post('/dbl', (request, response) => {
+
+			if (request.headers.authorization === /** @type {{token: string, authorization: string}} */(client.votes.dbl).authorization) {
+
+				/** @type {import('../typedef').VoteList} */
+				const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8'));
+
+				voteCache['id_' + request.body.id] = voteCache['id_' + request.body.id] ?? {};
+				voteCache['id_' + request.body.id].lastRecordedDblVote = Date.now();
+
+				writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
+			}
+
+			response.status(200).end();
+		});
+
+		dblApp.listen(3001, (/** @type {any} */ error) => {return console.error(error);});
+	}
 };

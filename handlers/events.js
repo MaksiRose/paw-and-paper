@@ -15,11 +15,11 @@ module.exports.execute = (client) => {
 		const event = require(`../events/${file}`);
 		if (event.once) {
 
-			client.once(event.name, (...args) => event.execute(client, ...args));
+			client.once(event.name, (...args) => event.execute(client, ...args).catch((/** @type {any} */ error) => console.error(error)));
 		}
 		else {
 
-			client.on(event.name, (...args) => event.execute(client, ...args));
+			client.on(event.name, (...args) => event.execute(client, ...args).catch((/** @type {any} */ error) => console.error(error)));
 		}
 	}
 };

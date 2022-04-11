@@ -1,7 +1,6 @@
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
-const profileModel = require('../../models/profileModel');
-const otherProfileModel = require('../../models/otherProfileModel');
+const { profileModel, otherProfileModel } = require('../../models/profileModel');
 const fs = require('fs');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
