@@ -79,7 +79,7 @@ module.exports.execute = (client) => {
 /**
  * Moves a file to the `toDelete` path
  * @param {string} file - File name
- * @param {string} id - ID to give to the file
+ * @param {string} id - user ID + server ID
  * @param {string} name - Name of the user
  * @param {string} path - Path before the file
  */
