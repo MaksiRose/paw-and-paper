@@ -31,6 +31,7 @@ module.exports = {
 					color: config.default_color,
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Are you sure you want to delete all your data? This will be **permanent**!!!',
+					footer: { text: 'Consider starting a second account via `rp accounts`.' },
 				}],
 				components: [{
 					type: 'ACTION_ROW',
