@@ -72,52 +72,42 @@ module.exports.start = (botToken, bfdToken, bfdAuthorization, topToken, topAutho
 	client.votes.top = { token: topToken, authorization: topAuthorization };
 	client.votes.dbl = { token: dblToken, authorization: dblAuthorization };
 
-	/**
-	 * @type {import('./typedef').BanList}
-	 */
-	const bannedList = {
-		users: [],
-		servers: [],
-	};
-
-	/**
-	 * @type {import('./typedef').DeleteList}
-	 */
-	let toDeleteList = {};
-
-	/**
-	 * @type {import('./typedef').VoteList}
-	 */
-	const voteCache = {};
-
-	/**
-	 * @type {import('./typedef').WebhookMessages}
-	 */
-	const webhookCache = {};
 
 	if (existsSync('./database/bannedList.json') == false) {
 
-		writeFileSync('./database/bannedList.json', JSON.stringify(bannedList, null, '\t'));
+		writeFileSync('./database/bannedList.json', JSON.stringify(/** @type {import('./typedef').BanList} */ ({ users: [], servers: [] }), null, '\t'));
 	}
 
 	if (existsSync('./database/toDeleteList.json') == false) {
 
-		writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
+		writeFileSync('./database/toDeleteList.json', JSON.stringify(/** @type {import('./typedef').DeleteList} */ ({}), null, '\t'));
 	}
 
 	if (existsSync('./database/voteCache.json') == false) {
 
-		writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
+		writeFileSync('./database/voteCache.json', JSON.stringify(/** @type {import('./typedef').VoteList} */ ({}), null, '\t'));
 	}
 
 	if (existsSync('./database/webhookCache.json') == false) {
 
-		writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
+		writeFileSync('./database/webhookCache.json', JSON.stringify(/** @type {import('./typedef').WebhookMessages} */ ({}), null, '\t'));
 	}
+
 
 	require('./handlers/events').execute(client);
 
-	toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8'));
+	client.login(botToken);
+};
+
+/**
+ * Fetches the list of accounts that will be deleted and initiates a timeout to delete them
+ */
+module.exports.startDeleteListTimeouts = () => {
+
+	/**
+	 * @type {import('./typedef').DeleteList}
+	 */
+	let toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8'));
 
 	for (const [id, accounts] of Object.entries(toDeleteList)) {
 
@@ -144,6 +134,4 @@ module.exports.start = (botToken, bfdToken, bfdAuthorization, topToken, topAutho
 			}, accountObject.deletionTimestamp - Date.now());
 		}
 	}
-
-	client.login(botToken);
 };

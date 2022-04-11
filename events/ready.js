@@ -1,5 +1,6 @@
 // @ts-check
 const serverModel = require('../models/serverModel');
+const { startDeleteListTimeouts } = require('../paw');
 const createGuild = require('../utils/createGuild');
 
 /**
@@ -36,6 +37,8 @@ const event = {
 				await createGuild(client, guild);
 			}
 		}
+
+		startDeleteListTimeouts();
 	},
 };
 module.exports = event;
