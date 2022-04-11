@@ -18,7 +18,7 @@ module.exports.DeleteList = this.DeleteList;
 
 /**
  * This object holds references to users and when they voted on which websites, with their user ID as the key, and an object with the last recorded and next redeemable vote for the respective websites as variables.
- * @typedef {Object<string, {lastRecordedTopVote: number, nextRedeemableTopVote: number, lastRecordedDiscordsVote: number, nextRedeemableDiscordsVote: number, lastRecordedDblVote: number, nextRedeemableDblVote: number}>} VoteList
+ * @typedef {Object<string, {lastRecordedTopVote?: number, nextRedeemableTopVote?: number, lastRecordedDiscordsVote?: number, nextRedeemableDiscordsVote?: number, lastRecordedDblVote?: number, nextRedeemableDblVote?: number}>} VoteList
  */
 module.exports.VoteList = this.VoteList;
 

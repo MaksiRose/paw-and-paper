@@ -24,16 +24,10 @@ class CustomClient extends Client {
 		 */
 		this.commands = {};
 
-		/**
-		 * A command
-		 * @typedef {Object} WebsiteCredentials
-		 * @property {string} token - Website Token
-		 * @property {string} authorization - Website Authorization
-		 */
 
 		/**
 		 * This object holds the structure for the websites the bot can voted on, with the website name as the key and the token and authorization as the value
-		 * @type {Object<string, WebsiteCredentials>}
+		 * @type {Object<string, ({ token: string, authorization: string } | import('bfd-api-redux/src/main') | import('@top-gg/sdk').Api)>}
 		 */
 		this.votes = {};
 	}
