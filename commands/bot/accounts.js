@@ -10,6 +10,7 @@ const { stopResting } = require('../../utils/executeResting');
 
 module.exports.name = 'accounts';
 module.exports.aliases = ['switch'];
+
 /**
  *
  * @param {import('discord.js').Client} client
@@ -90,11 +91,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		.catch((error) => { throw new Error(error); });
 
 	createCommandCollector(message.author.id, message.guild.id, botReply);
-	const filter = i => i.customId.includes('switchto') && i.user.id === message.author.id;
+	const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId.includes('switchto') && i.user.id === message.author.id;
 
+	/** @type {import('discord.js').MessageComponentInteraction | undefined} } */
 	const interaction = await botReply
-		.awaitMessageComponent({ filter, time: 120000 })
-		.catch(async () => { return null; });
+		.awaitMessageComponent({ filter, time: 12000 })
+		.catch(() => { return undefined; });
 
 	await botReply
 		.edit({
@@ -104,7 +106,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 
-	if (interaction === null) {
+	if (interaction === undefined) {
 
 		return;
 	}
@@ -133,11 +135,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	if (interaction.customId.endsWith('-0')) {
 
-		const newProfileData = await otherProfileModel.findOne({
+		/** @type {import('../../typedef').ProfileSchema} */
+		const newProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await otherProfileModel.findOne({
 			userId: message.author.id,
 			serverId: message.guild.id,
 			name: name,
-		});
+		}));
 
 		renameSync(`./database/profiles/inactiveProfiles/${newProfileData.uuid}.json`, `./database/profiles/${newProfileData.uuid}.json`);
 
@@ -165,9 +168,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				ephemeral: true,
 			})
 			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
+				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 	}, 500);
 };

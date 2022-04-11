@@ -1,78 +1,89 @@
-const config = require('../../config.json');
+// @ts-check
+const { error_color, default_color } = require('../../config.json');
 const serverModel = require('../../models/serverModel');
 
-module.exports = {
-	name: 'allowvisits',
-	async sendMessage(client, message, argumentsArray) {
+module.exports.name = 'allowvisits';
 
-		if (message.member.permissions.has('ADMINISTRATOR') === false) {
+/**
+ *
+ * @param {import('discord.js').Client} client
+ * @param {import('discord.js').Message} message
+ * @param {Array<string>} argumentsArray
+ * @returns {Promise<void>}
+ */
+module.exports.sendMessage = async (client, message, argumentsArray) => {
 
-			return await message
-				.reply({
-					embeds: [{
-						color: config.error_color,
-						title: 'Only administrators of a server can use this command!',
-					}],
-					failIfNotExists: false,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
-		}
+	if (message.member.permissions.has('ADMINISTRATOR') === false) {
 
-		if (argumentsArray[0] === 'off') {
-
-			await serverModel.findOneAndUpdate(
-				{ serverId: message.guild.id },
-				{ $set: { visitChannelId: null } },
-			);
-
-			return await message
-				.reply({
-					embeds: [{
-						color: config.default_color,
-						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						description: 'Visits have successfully been turned off!',
-					}],
-					failIfNotExists: false,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
-		}
-
-		if (message.mentions.channels.size > 0) {
-
-			await serverModel.findOneAndUpdate(
-				{ serverId: message.guild.id },
-				{ $set: { visitChannelId: message.mentions.channels.first().id } },
-			);
-
-			return await message
-				.reply({
-					embeds: [{
-						color: config.default_color,
-						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						description: `Visits are now possible in ${message.mentions.channels.first().toString()}!`,
-					}],
-					failIfNotExists: false,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
-		}
-
-		return await message
+		await message
 			.reply({
 				embeds: [{
-					color: config.error_color,
-					description: 'Please mention a channel to turn visits on, or type `rp allowvisits off` to turn visits off.',
-					footer: { text: 'The channel you mention will be the channel through which two packs can communicate.' },
+					color: /** @type {`#${string}`} */ (error_color),
+					title: 'Only administrators of a server can use this command!',
 				}],
 				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
-	},
+		return;
+	}
+
+	if (argumentsArray[0] === 'off') {
+
+		await serverModel.findOneAndUpdate(
+			{ serverId: message.guild.id },
+			{ $set: { visitChannelId: null } },
+		);
+
+		await message
+			.reply({
+				embeds: [{
+					color: /** @type {`#${string}`} */ (default_color),
+					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+					description: 'Visits have successfully been turned off!',
+				}],
+				failIfNotExists: false,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+		return;
+	}
+
+	if (message.mentions.channels.size > 0) {
+
+		await serverModel.findOneAndUpdate(
+			{ serverId: message.guild.id },
+			{ $set: { visitChannelId: message.mentions.channels.first().id } },
+		);
+
+		await message
+			.reply({
+				embeds: [{
+					color: /** @type {`#${string}`} */ (default_color),
+					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+					description: `Visits are now possible in ${message.mentions.channels.first().toString()}!`,
+				}],
+				failIfNotExists: false,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+		return;
+	}
+
+	await message
+		.reply({
+			embeds: [{
+				color: /** @type {`#${string}`} */ (error_color),
+				description: 'Please mention a channel to turn visits on, or type `rp allowvisits off` to turn visits off.',
+				footer: { text: 'The channel you mention will be the channel through which two packs can communicate.' },
+			}],
+			failIfNotExists: false,
+		})
+		.catch((error) => {
+			if (error.httpStatus !== 404) { throw new Error(error); }
+		});
+	return;
 };
