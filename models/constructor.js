@@ -1,9 +1,15 @@
+// @ts-check
 const fs = require('fs');
 const crypto = require('crypto');
 const { client } = require('../paw');
 const validTypes = ['undefined', 'boolean', 'number', 'string', 'object', 'array', 'any'];
 
 class model {
+	/**
+	 *
+	 * @param {string} path
+	 * @param {schema} schema
+	 */
 	constructor(path, schema) {
 
 		this.path = path;
@@ -11,11 +17,15 @@ class model {
 
 		for (const file of fs.readdirSync(path).filter(f => f.endsWith('.json'))) {
 
-			const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`));
+			/** @type {Object.<string, *>} */
+			const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`, 'utf-8'));
+
+			/** @type {Object.<string, *>} */
 			const updateObject = {};
 
 			for (const [key, { type: type, default: def }] of Object.entries(schema)) {
 
+				// @ts-ignore
 				if (Object.hasOwn(dataObject, key) === false) {
 
 					updateObject[key] = (typeof def === type || type === 'any') ? def : [undefined, false, 0, '', {}, [], null][validTypes.indexOf(type[0])];
@@ -34,12 +44,20 @@ class model {
 			fs.writeFileSync(`${path}/${updateObject.uuid}.json`, JSON.stringify(updateObject, null, '\t'));
 		}
 
+		/**
+		 * Copies a template over to a new object so that keys from an existing object are carried over where possible
+		 * @param {Object.<string, *>} newObject
+		 * @param {Object.<string, *>} oldObject
+		 * @param {*} schemaObject
+		 * @returns {Object.<string, *>}
+		 */
 		function transferObjectKeys(newObject, oldObject, schemaObject) {
 
 			if (typeof oldObject === 'object' && !Array.isArray(oldObject) && oldObject !== null) {
 
 				for (const [key, value] of Object.entries(schemaObject)) {
 
+					// @ts-ignore
 					if (Object.hasOwn(oldObject, key) === false) {
 
 						newObject[key] = value;
@@ -67,13 +85,12 @@ class model {
 
 			file_iteration: for (const file of fs.readdirSync(path).filter(f => f.endsWith('.json'))) {
 
-				/**
-				 * @type {Object.<string, *>}
-				 */
-				const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`));
+				/** @type {Object.<string, *>} */
+				const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`, 'utf-8'));
 
 				for (const [key, value] of Object.entries(filterObject)) {
 
+					// @ts-ignore
 					if (Object.hasOwn(dataObject, key) === false || dataObject[key] !== value) {
 
 						continue file_iteration;
@@ -93,17 +110,13 @@ class model {
 		 */
 		this.find = async function(filterObject) {
 
-			/**
-			 * @type {Array<Object.<string, *>>} Array of objects
-			 */
+			/** @type {Array<Object<string, *>?} */
 			const dataObjectsArray = [];
 
 			for (const file of fs.readdirSync(path).filter(f => f.endsWith('.json'))) {
 
-				/**
-				 * @type {Object.<string, *>} Object
-				 */
-				const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`));
+				/** @type {Object.<string, *>} */
+				const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`, 'utf-8'));
 
 				if (allObjectsMatch(filterObject, dataObject) === true) {
 
@@ -133,10 +146,12 @@ class model {
 
 						if (oneElementMatches(value, compareObject) === false) { continue; }
 					}
+					// @ts-ignore
 					else if (Object.hasOwn(compareObject, key) === true && value === Object(value)) {
 
 						if (allObjectsMatch(value, compareObject[key]) === true) { continue; }
 					}
+					// @ts-ignore
 					else if (Object.hasOwn(compareObject, key) === true && compareObject[key] === value) {
 
 						continue;
@@ -150,9 +165,9 @@ class model {
 
 			/**
 			 * Compares an array with an object and returns whether one element of the array is found in or is equal to the object
-			 * @param {Array<>} array
+			 * @param {Array} array
 			 * @param {Object<string, *>} compareObject
-			 * @returns
+			 * @returns {boolean} boolean
 			 */
 			function oneElementMatches(array, compareObject) {
 
@@ -174,16 +189,24 @@ class model {
 			return dataObjectsArray;
 		};
 
+		/**
+		 * Creates a new database entry.
+		 * @param {Object<string, *>} dataObject
+		 * @returns {Promise<Object<string, *>>}
+		 */
 		this.create = async function(dataObject) {
 
 			let uuid = crypto.randomUUID();
-			checkNewUUID();
+			uuid = checkNewUUID();
 
 			dataObject.uuid = uuid;
+
+			/** @type {Object.<string, *>} */
 			const updateObject = {};
 
 			for (const [key, { type: type, default: def }] of Object.entries(schema)) {
 
+				// @ts-ignore
 				if (Object.hasOwn(dataObject, key) === false) {
 
 					updateObject[key] = (typeof def === type || type === 'any') ? def : [undefined, false, 0, '', {}, [], null][validTypes.indexOf(type[0])];
@@ -198,22 +221,30 @@ class model {
 
 			return dataObject;
 
-
+			/**
+			 * Checks if any file in this path has the uuid as its name, and returns a new uuid if so.
+			 * @returns {string} uuid
+			 */
 			function checkNewUUID() {
 
-				for (const file of fs.readdirSync(path).filter(f => f.endsWith('.json'))) {
+				for (const fileName of fs.readdirSync(path).filter(f => f.endsWith('.json'))) {
 
-					if (file.uuid === uuid) {
+					if (fileName.includes(uuid)) {
 
 						uuid = crypto.randomUUID();
 						return checkNewUUID();
 					}
 				}
 
-				return;
+				return uuid;
 			}
 		};
 
+		/**
+		 * Searches for an object that meets the filter, and deletes it. If several objects meet the requirement, the first that is found is deleted.
+		 * @param {Object<string, *>} filterObject
+		 * @returns {Promise<void>}
+		 */
 		this.findOneAndDelete = async function(filterObject) {
 
 			const dataObject = await this.findOne(filterObject);
@@ -230,6 +261,12 @@ class model {
 			return;
 		};
 
+		/**
+		 * Searches for an object that meets the filter, and updates it. If several objects meet the requirement, the first that is found is updated.
+		 * @param {Object<string, *>} filterObject
+		 * @param {Object<string, *>} updateObject
+		 * @returns {Promise<null | Object<string, *>>}
+		 */
 		this.findOneAndUpdate = async function(filterObject, updateObject) {
 
 			const dataObject = await this.findOne(filterObject);
@@ -241,19 +278,11 @@ class model {
 
 			const user = (dataObject.userId !== undefined) ? await client.users
 				.fetch(dataObject.userId)
-				.catch((error) => {
-					if (error.httpStatus !== 403 && error.httpStatus !== 404) {
-						console.error(error);
-					}
-				}) : null;
+				.catch(() => { return; }) || null : null;
 
 			const guild = (dataObject.serverId !== undefined) ? await client.guilds
 				.fetch(dataObject.serverId)
-				.catch((error) => {
-					if (error.httpStatus !== 403 && error.httpStatus !== 404) {
-						console.error(error);
-					}
-				}) : null;
+				.catch(() => { return; }) || null : null;
 
 			for (const [updateKey, updateValue] of Object.entries(updateObject)) {
 
@@ -261,6 +290,7 @@ class model {
 
 					for (const [key, value] of Object.entries(updateValue)) {
 
+						// @ts-ignore
 						if (Object.hasOwn(dataObject, key) === true && (typeof dataObject[key] === typeof value || dataObject[key] === null || value === null)) {
 
 							(logOutputter(dataObject[key]) != logOutputter(value)) && console.log(`\x1b[32m${(user != null) ? `${user.tag} (${user.id}): ` : ''}\x1b[0m${key} changed from \x1b[33m${logOutputter(objectReducer(dataObject[key], value))} \x1b[0mto \x1b[33m${logOutputter(objectReducer(value, dataObject[key]))} \x1b[0min \x1b[32m${(guild != null) ? guild.name : ''} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
@@ -274,6 +304,7 @@ class model {
 
 					for (const [key, value] of Object.entries(updateValue)) {
 
+						// @ts-ignore
 						if (Object.hasOwn(dataObject, key) === true && typeof dataObject[key] === typeof value) {
 
 							(value !== 0) && console.log(`\x1b[32m${(user != null) ? `${user.tag} (${user.id}): ` : ''}\x1b[0m${key} changed from \x1b[33m${dataObject[key]} \x1b[0mto \x1b[33m${dataObject[key] + value} \x1b[0min \x1b[32m${(guild != null) ? guild.name : ''} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
@@ -288,6 +319,11 @@ class model {
 
 			return dataObject;
 
+			/**
+			 * Formats a variable to be readable for the log output
+			 * @param {*} variable
+			 * @returns
+			 */
 			function logOutputter(variable) {
 
 				if (variable !== Object(variable)) {
@@ -309,6 +345,12 @@ class model {
 				return result;
 			}
 
+			/**
+			 * Compares two objects and returns the difference between them.
+			 * @param {*} mainObject
+			 * @param {*} compareObject
+			 * @returns {*} new Object
+			 */
 			function objectReducer(mainObject, compareObject) {
 
 				if (mainObject !== Object(mainObject)) {
@@ -349,6 +391,10 @@ class model {
 			}
 		};
 
+		/**
+		 * Updates a file in the database. **Caution:** This could make unexpected changes to the file!
+		 * @param {Object<string, *>} updateObject
+		 */
 		this.save = async function(updateObject) {
 
 			fs.writeFileSync(`${path}/${updateObject.uuid}.json`, JSON.stringify(updateObject, null, '\t'));
@@ -372,17 +418,22 @@ class schema {
 		}
 
 		/**
-		 * @type {Object<string, {type: Array, default: *, locked: boolean}>}
+		 * @type {{type: Array, default: *, locked: boolean}}
 		 */
 		this.uuid = { type: ['string'], default: undefined, locked: true };
 	}
 }
 
+/**
+ * Reduces an array to exclude invalid types
+ * @param {Array} typeArray
+ * @returns {null | Array}
+ */
 function getType(typeArray) {
 
 	if (Array.isArray(typeArray) === false) {
 
-		return undefined;
+		return null;
 	}
 
 	for (let i = 0; i < typeArray.length; i++) {
