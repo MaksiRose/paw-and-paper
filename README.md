@@ -1,131 +1,34 @@
 
 # Paw and Paper
 
-Paw and Paper is a Discord Bot, providing an interactive roleplay game about surviving in the wild with your friends. Your goal is it to rank and level up, explore all the places and help out your pack. Make sure you don't pass out!
+Paw and Paper is a Discord Bot, an interactive roleplay game with a focus on animals rather than humans. After choosing a name and a species, you will be welcomed to your pack. You start as a Youngling, and your goal is to go up the ranks, gain as much experience as possible, explore all the places and help out your pack. You can go to different biomes, where you can find herbs, stumble upon animals to fight, or do quests. But beware of your stats! If one of them reaches zero, you will pass out and lose all your items.
+This game has a heavy focus on player-to-player interaction, so it's best to bring some friends to play it with!
+
+**Want to have Paw and Paper on your server? Use this link to invite it:**
+
+https://discord.com/api/oauth2/authorize?client_id=862718885564252212&permissions=518385954112&scope=bot
+
+**Do you have questions or need support? Join our discord server:**
+
+https://discord.gg/9DENgj8q5Q
+
 ## Features
 
-- Profile Customization: Name, species, description, pronouns, color, and avatar
-- Play, explore, heal, and share stories with others
-- Find quests and complete them to rank up
-- Gain XP and levels, take care of your health, energy, hunger and thirst
-- Travel around the pack, and fill its inventory with herbs you found and animals you killed
-- Speak as your character and roleplay with others
-## Installation
+- Extensive profile customization, with up to three profiles per server
+- Exploring (ft. custom minigames), quests, attacking, playing, ranking up
+- Sleeping, eating, drinking, healing, plant watering, personal and server inventory
+- Hugging others, sharing others, playfighting others (playing Tic Tac Toe or Connect Four)
+- Custom roleplaying with others using your character
+- Visiting other servers
+- Shop to gain roles
 
-After downloading the latest release, open a Terminal and navigate to the folder.
-There is a few things you need to install:
-
-```bash
-npm install discord.js
-npm install @octokit/rest
-```
-
-Keep the terminal open, you will need it later.
-In the folder, create a config.json file.
-This needs to include the following information:
-
-```
-{
-    "token": "your discord token",
-    "github_token": "your github token",
-    "prefix": "rp ",
-    "default_color": "#9d9e51",
-    "error_color": "#d0342c",
-}
-```
-
-To get a Discord Token, [create a Discord Application](https://discordjs.guide/preparations/setting-up-a-bot-application.html).
-Generate a GitHub Token [here](https://github.com/settings/tokens).
-The prefix and the colors can be modified by will.
-
-After you saved the config.json file, go back to the terminal, and type either `node .` or `node paw.js`.
-Alternatively, you can also [install pm2](https://pm2.keymetrics.io/docs/usage/quick-start/) and run `pm2 start paw.js`, then `pm2 logs`.
-If you don't use pm2, make sure to keep the terminal window open, otherwise the Bot will go offline.
-If you turn off the PC that is running the Bot, the Bot will go offline. I recommend running it on a server or on a raspberry pi for this reason.
-## Lessons Learned
-
-I created this Bot because I was looking for an RPG that didn't center humans or human-like creatures as its player character, but non-human animals instead. I didn't find one, so I decided to create one myself. My goal was it to make something that is fun to play, creates a roleplay vibe, and keeps things fairly realistic.
-
-Since this was my first serious programming project, I had to rework my code several times. But the more time I spent optimizing, the more confident I feel about what I created. I believe this bot can serve as a great template for anyone who doesn't just want to make a simple Utility Bot, but a serious text-based game.
-
-Not only did this help me improve my understanding of node js and coding in general, but it also helped me understand a few things about game design, and how to engage a user.
 ## Contributing
 
-#### Introduction to the repository
+### Add a species
 
-The repository is structured in the following way:
+If you just want to suggest a species, [fill out this form](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement%2Cnon-code&template=species_request.yaml&title=New+species%3A+).
 
-```
-project
-│   paw.js    
-│
-└───handlers
-│   │   events.js
-│   │   commands.js
-│   
-└───events
-│   │   ready.js
-│   │   messageCreate.js
-│   │   interactionCreate.js
-│   │   ...
-│   
-└───models
-│   │   modelConstructor.js
-│   │   profileModel.js
-│   │   serverModel.js
-│   
-└───commands
-│   └───creation
-│   │   │   help.js
-│   │   │   ...
-│   │
-│   └───general
-│   │   │   ticket.js
-│   │   │   ...
-│   │
-│   └───specific
-│   │   │   restart.js
-│   │   │   ...
-│   │
-│   
-└───utils
-│   ...
-│
-└───database
-│   └───profiles
-│	│	...
-│	│
-│   └───servers
-│	│	...
-```
-
-- `paw.js` is the main file. This is where mongoDB and discord js are started, and the handlers are called.
-- `handlers`
-    - `event.js` basically creates a client.on() function for every file that is in the `events` file
-    - `commands.js`: In `paw.js`, a [Discord Collection](https://discordjs.guide/additional-info/collections.html#array-like-methods) was created. All the files within the subfolders of the `commands` folder are added to that collection.
-- `models`: This contains the `modelConstructor.js`, which is called in `profileModel.js` and `serverModel.js`. They are called in the `events`, `utils` and `commands` folders whenever a document needs to be found or updated.
-- `commands` is separated into `creation`, `general` and `specific` based on how the commands are used: `creation` contains all the commands needed to create an account, `specific` contains all the commands that are limited to certain users, and `general` contains all other commands.
-- `utils` contains files with code that is used in several files to reduce code length and increase consistency.
-- `database` contains `profiles` and `servers`, which then contain the documents of all servers and users.
-
-
-#### Create a new issue
-
-If you see a problem in the code or one comes up during usage, search if an issue already exists. If a related issue doesn't exist, open a new one. You can also use the ticket command from within the Bot to start a new issue.
-
-
-#### Solve an issue
-
-If you find an issue that you would like to fix, first make sure that you can replicate it. If you can confirm the issue, open a new branch that references the issue number, then start working on a fix. Once you believe you have fixed the issue, you can create a pull request.
-
-If you find a smaller issue like a typo, you can open the file from within GitHub, click on edit, fix it and then propose changes.
-
-
-#### Add a species
-
-First of all: Don't worry, you don't have to do actual coding! All you have copy, paste, and replace per the instructions below.
-
-If you want to add a species, [click here to open the appropriate file.](https://github.com/MaksiRose/paw-and-paper/blob/main/utils/maps.js)
+If you want to add a species, [click here to open the appropriate file.](https://github.com/MaksiRose/paw-and-paper/blob/main/utils/itemsInfo.js)
 
 First click the edit button (in form of a pencil) at the top right of the screen. Then go to the bottom of the file, and paste this "species block" behind the last one of those species blocks:
 ```
@@ -147,6 +50,147 @@ Keep either herbivore, omnivore or carnivore depending on the diet of that speci
 In the three following Arrays, reference 2-4 animals each. Make sure that you use the exact name used for an animal in one of the previous species blocks. Make sure that the animals are those that your animal would actually meet and interact with. Biome1 should contain animals that are easy to defeat, Biome2 should contain animals that are equally strong, and Biome3 should contain animals that would most likely defeat your animal.
 
 You should also make sure to go to the species blocks of the animals you referenced, and paste in your animal into the appropriate one of their biome opponent arrays. You don't have to do this for every animal you referenced.
+
+### Create a new issue
+
+If you see a problem in the code or one comes up during usage, search if an issue already exists. If a related issue doesn't exist, open a new one. You can also use the ticket command from within the Bot to start a new issue.
+
+### Solve an issue
+
+If you find an issue that you would like to fix, first make sure that you can replicate it. If you can confirm the issue, clone the repository, then start working on a fix. Once you believe you have fixed the issue, you can create a pull request.
+
+If you find a smaller issue like a typo, you can open the file from within GitHub, click on edit, fix it and then propose changes.
+
+### Cloning the repository
+
+Open a terminal and use the 'cd' command do navigate to the folder that you want the repository to be cloned to. then write:
+
+```bash
+git clone https://github.com/MaksiRose/paw-and-paper.git
+git checkout stable
+npm install
+```
+
+Keep the terminal open, you will need it later.
+In the repository, create a config.json file.
+This needs to include the following information:
+
+```
+{
+	"token": "your discord token",
+	"test_token": "another discord token for a test bot, if necessary",
+	"bfd_token": "your discords.com token",
+	"bfd_authorization": "authorization chosen on discords.com",
+	"top_token": "your top.gg token",
+	"top_authorization": "authorization chosen on top.gg",
+	"dbl_token": "your discordbotlist.com token",
+	"dbl_authorization": "authorization chosen on discordbotlist.com",
+	"github_token": "your github token",
+	"prefix": "rp ",
+	"default_color": "#b4a257",
+	"error_color": "#d0342c",
+	"maksi": "268402976844939266",
+	"ezra": "669725936840736840",
+	"ren": "794320272723410955",
+	"jags": "840108230176145410",
+	"elliott": "422145578676256779"
+}
+```
+> Anything that you don't have or need from this list can be left as an empty string. The people listed at the end are for credits.
+
+To get a Discord Token, [create a Discord Application](https://discordjs.guide/preparations/setting-up-a-bot-application.html).
+Generate a GitHub Token [here](https://github.com/settings/tokens).
+The prefix and the colors can be modified by will.
+
+After you saved the config.json file, go back to the terminal, and type either `npm run localstart` or `npm run localtest`.
+Alternatively, you can also [install pm2](https://pm2.keymetrics.io/docs/usage/quick-start/) and run `npm run start`, then `npm run logs`. Other command are `npm run reload` and `npm run stop`.
+If you don't use pm2, make sure to keep the terminal window open, otherwise the Bot will go offline.
+If you turn off the PC that is running the Bot, the Bot will go offline. I recommend running it on a server or on a raspberry pi for this reason.
+
+### Introduction to the repository
+
+The repository is structured in the following way:
+
+```
+project
+│   paw.js    
+│   index.js    
+│   testindex.js    
+│
+└───handlers
+│   │   events.js
+│   │   commands.js
+│   │   profiles.js
+│   │   servers.js
+│   │   votes.js
+│   
+└───events
+│   │   ready.js
+│   │   messageCreate.js
+│   │   interactionCreate.js
+│   │   ...
+│   
+└───models
+│   │   constructor.js
+│   │   profileModel.js
+│   │   serverModel.js
+│   
+└───commands
+│   └───bot
+│   │   │   help.js
+│   │   │   ticket.js
+│   │   │   ...
+│   │
+│   └───gameplay
+│   │   │   play.js
+│   │   │   explore.js
+│   │   │   ...
+│   │
+│   └───interaction
+│   │   │   playfight.js
+│   │   │   say.js
+│   │   │   ...
+│   │
+│   └───maintenance
+│   │   │   rest.js
+│   │   │   stats.js
+│   │   │   ...
+│   │
+│   └───profile
+│   │   │   name.js
+│   │   │   species.js
+│   │   │   ...
+│   │
+│   
+└───utils
+│   ...
+│
+└───database
+│   └───profiles
+│	│	...
+│	│
+│   └───servers
+│	│	...
+│	│
+│   └───toDelete
+│	│	...
+│	│
+│   └───bannedList.json
+│   └───toDeleteList.json
+│   └───voteCache.json
+│   └───webhookCache.json
+```
+
+- `paw.js` and the index files are the main files. This is where the discord js are started, and the events handler is called.
+- `handlers`
+    - `events.js`: Creates a listener for every event file that is in the `events` folder. [More on event listeners](https://developer.mozilla.org/en-US/docs/Web/Events/Event_handlers). Once discords 'ready' event is fired, it will call the following handlers.
+    - `commands.js`: In `paw.js`, a commands object was created. All the files within the subfolders of the `commands` folder are added to that object.
+	- `profiles.js` & `servers.js`: Updates the database profiles and servers.
+	- `votes.js`: Creates a listener for the event that the bot has been voted for on top.gg, discords.com or discordbotlist.com.
+- `models`: This contains the `constructor.js`, which is called in `profileModel.js` and `serverModel.js`. This creates a schema and the functions to find or update something in the database.
+- `commands` is separated based on how the commands are used. It contains files for all the commands.
+- `utils` contains files with code that is used in several files to reduce code length and increase consistency.
+- `database` contains `profiles` and `servers`, which then contain the documents of all servers and users, as well as `toDelete` and `toDeleteList.json`, which is responsible for storing files that will be deleted at a later point (when the bot leaves a server or a member leaves a server for example). It also has `bannedList.json` which contains users and servers that are banned from using the bot, `voteCache.json` which contains data about which users votes where and when, and `webhookCache.json` which contains data about which webhook messages were created because of which user.
 ## Feedback
 
-If you have any feedback, please [open an issue on the GitHub repository](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=enhancement&template=feature_request.md&title=).
+If you have any feedback, please [open a ticket](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement&template=feature_request.yaml&title=New+feature%3A+) or tell it to me directly on [the Bots Discord server](https://discord.gg/9DENgj8q5Q).
