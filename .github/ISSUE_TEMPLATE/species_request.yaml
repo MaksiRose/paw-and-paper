@@ -1,6 +1,6 @@
 name: Species request
 description: Add information about a species you would like to see added to the bot
-title: "[New species:] <title>"
+title: "New species: "
 labels: ["improvement", "non-code"]
 body:
   - type: markdown
@@ -13,26 +13,26 @@ body:
       label: What is the name of the species?
     validations:
       required: true
-  - type: dropdown
+  - type: radio
     id: diet
     attributes:
       label: What diet does the species have?
       options:
-        - omnivore
-        - herbivore
-        - carnivore
+        one: omnivore
+        two: herbivore
+        three: carnivore
     validations:
       required: true
-  - type: dropdown
+  - type: radio
     id: habitat
     attributes:
       label: What habitat does the species live in?
       description: |
         Please pick the one that fits best.
       options:
-        - cold (forest, taiga, tundra)
-        - warm (shrubland, savanna, desert)
-        - water (river, coral reef, ocean)
+        one: cold (forest, taiga, tundra)
+        two: warm (shrubland, savanna, desert)
+        three: water (river, coral reef, ocean)
     validations:
       required: true
   - type: textarea
