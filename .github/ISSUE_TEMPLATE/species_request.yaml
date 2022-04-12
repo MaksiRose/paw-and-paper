@@ -16,25 +16,25 @@ body:
   - type: radio
     id: diet
     attributes:
-      label: What diet does the species have?
+      # label: What diet does the species have?
       options:
         one: omnivore
         two: herbivore
         three: carnivore
-    validations:
-      required: true
-  - type: radio
-    id: habitat
-    attributes:
-      label: What habitat does the species live in?
-      description: |
-        Please pick the one that fits best.
-      options:
-        one: cold (forest, taiga, tundra)
-        two: warm (shrubland, savanna, desert)
-        three: water (river, coral reef, ocean)
-    validations:
-      required: true
+  #   validations:
+  #     required: true
+  # - type: radio
+  #   id: habitat
+  #   attributes:
+  #     label: What habitat does the species live in?
+  #     description: |
+  #       Please pick the one that fits best.
+  #     options:
+  #       one: cold (forest, taiga, tundra)
+  #       two: warm (shrubland, savanna, desert)
+  #       three: water (river, coral reef, ocean)
+  #   validations:
+  #     required: true
   - type: textarea
     id: prey
     attributes:
