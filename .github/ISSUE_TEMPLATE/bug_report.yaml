@@ -9,19 +9,19 @@ body:
     validations:
       required: true
   - type: textarea
-      attributes:
-        label: Expected behavior
-      validations:
-        required: true
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
   - type: textarea
-      attributes:
-        label: Steps to reproduce the behavior
-        placeholder: |
-          1. 
-          2. 
-          3. 
-      validations:
-        required: true
+    attributes:
+      label: Steps to reproduce the behavior
+      value: |
+        1. 
+        2. 
+        3. 
+    validations:
+      required: true
   - type: textarea
-      attributes:
-        label: Additional details
+    attributes:
+      label: Additional details

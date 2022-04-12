@@ -56,7 +56,7 @@ body:
     attributes:
       label: Sources
       description: Please link to credible websites that you got your information from. Sources should hold information for the diet, habitat, prey and predators.
-      placeholder: |
+      value: |
         1. https://wikipedia.com
         2. 
         3. 
