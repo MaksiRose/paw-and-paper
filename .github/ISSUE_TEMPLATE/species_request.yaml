@@ -36,28 +36,27 @@ body:
     attributes:
       label: What prey does this species eat or hunt?
       description: If the species is a herbivore, are there any bugs or similar that it might accidentally eat?
-      placeholder: |
-        1. 
-        2. 
-        3. 
+      placeholder: Please add as many and as detailed as you can find it.
     validations:
       required: true
   - type: textarea
     attributes:
-      label: What predators does eat or hunt this species?
+      label: What predators eat or hunt this species?
       description: If the species is at the top of the food chain, are there any competitors or animals that would be challenging to fight?
-      placeholder: |
-        1. 
-        2. 
-        3. 
+      placeholder: Please add as many and as detailed as you can find it.
     validations:
       required: true
   - type: textarea
     attributes:
       label: Sources
       description: Please link to credible websites that you got your information from. Sources should hold information for the diet, habitat, prey and predators.
+      placeholder: |
+        1.
+        2. 
+        3. 
+        ... (add more as needed)
       value: |
-        1. https://wikipedia.com
+        1. 
         2. 
         3. 
     validations:
