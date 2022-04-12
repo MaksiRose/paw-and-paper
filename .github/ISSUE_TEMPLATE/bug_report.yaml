@@ -1,0 +1,27 @@
+name: Bug report
+description: Create a report to help us improve
+title: 'Bug using command / feature X: Y is faulty / missing'
+labels: ["bug"]
+body:
+  - type: textarea
+    attributes:
+      label: Current behavior
+    validations:
+      required: true
+  - type: textarea
+      attributes:
+        label: Expected behavior
+      validations:
+        required: true
+  - type: textarea
+      attributes:
+        label: Steps to reproduce the behavior
+        placeholder: |
+          1. 
+          2. 
+          3. 
+      validations:
+        required: true
+  - type: textarea
+      attributes:
+        label: Additional details
