@@ -14,13 +14,11 @@ body:
     validations:
       required: true
   - type: radio
-    id: diet
-    attributes:
       # label: What diet does the species have?
-      options:
-        one: omnivore
-        two: herbivore
-        three: carnivore
+    options:
+      one: omnivore
+      two: herbivore
+      three: carnivore
   #   validations:
   #     required: true
   # - type: radio
