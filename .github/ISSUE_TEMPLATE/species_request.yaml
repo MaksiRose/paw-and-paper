@@ -16,9 +16,9 @@ body:
     attributes: 
       label: What diet does the species have?
       options:
-        - label: omnivore
-        - label: herbivore
-        - label: carnivore
+        - omnivore
+        - herbivore
+        - carnivore
     validations:
       required: true
   - type: dropdown
@@ -27,9 +27,9 @@ body:
       description: |
         Please pick the one that fits best.
       options:
-        one: cold (forest, taiga, tundra)
-        two: warm (shrubland, savanna, desert)
-        three: water (river, coral reef, ocean)
+        - cold (forest, taiga, tundra)
+        - warm (shrubland, savanna, desert)
+        - water (river, coral reef, ocean)
     validations:
       required: true
   - type: textarea
