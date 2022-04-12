@@ -13,12 +13,12 @@ body:
       label: What is the name of the species?
     validations:
       required: true
-  - type: radio
-      # label: What diet does the species have?
-    options:
-      one: omnivore
-      two: herbivore
-      three: carnivore
+  # - type: radio
+  #     # label: What diet does the species have?
+  #   options:
+  #     one: omnivore
+  #     two: herbivore
+  #     three: carnivore
   #   validations:
   #     required: true
   # - type: radio
