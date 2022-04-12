@@ -1,13 +1,13 @@
 name: Species request
 description: Add information about a species you would like to see added to the bot
-title: '[New species:] '
+title: "[New species:] <title>"
 labels: ["improvement", "non-code"]
 body:
   - type: markdown
     attributes:
       value: |
         **Note:** Species should not be extinct, mythical, and should not be too specific, for example a breed of dog, or they will not be accepted. Rule of thumb is that if it is so similar to another animal that they can be grouped together in terms of looks/behavior, diet, habitat, prey and predators, they should be grouped together.
-  - type: textarea
+  - type: input
     id: name
     attributes:
       label: What is the name of the species?
