@@ -85,19 +85,21 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		const filter = i => i.user.id === message.author.id && i.customId === 'shopdelete-options';
 
+		/** @type {import('discord.js').SelectMenuInteraction | undefined} } */
 		const interaction = await botReply
 			.awaitMessageComponent({ filter, time: 120_000 })
-			.catch(() => { return null; });
+			.catch(() => { return undefined; });
 
-		if (interaction === null) {
+		if (interaction === undefined) {
 
-			return await botReply
+			await botReply
 				.edit({
 					components: [],
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
+			return;
 		}
 
 		if (interaction.values[0] === 'shopdelete_page') {
@@ -110,7 +112,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			const { description: newDescription, selectMenuOptionsArray: newSelectMenuOptionsArray } = getMenuOptions(serverData.shop, page);
 
-			await interaction.message
+			await /** @type {import('discord.js').Message} */ (interaction.message)
 				.edit({
 					embeds: [{
 						color: /** @type {`#${string}`} */ (default_color),
@@ -134,7 +136,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		if (interaction.values[0].startsWith('shopdelete-')) {
 
-			const deleteIndex = interaction.values[0].split('-')[1];
+			const deleteIndex = Number(interaction.values[0].split('-')[1]);
 			const deleteItem = serverData.shop.splice(deleteIndex, 1);
 
 			serverData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOneAndUpdate(
@@ -142,15 +144,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				{ $set: { shop: serverData.shop } },
 			));
 
-			await interaction.message
+			await /** @type {import('discord.js').Message} */ (interaction.message)
 				.edit({
 					embeds: [{
-						color: default_color,
+						color: /** @type {`#${string}`} */ (default_color),
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						description: `<@&${deleteItem[0].roleId}> with the requirement of ${deleteItem[0].requirement} ${deleteItem[0].wayOfEarning} was deleted from the shop.`,
 					}],
 					components: [],
-					failIfNotExists: false,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
