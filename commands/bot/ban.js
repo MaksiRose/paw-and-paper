@@ -7,7 +7,7 @@ module.exports.name = 'ban';
 
 /**
  *
- * @param {import('discord.js').Client} client
+ * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
  * @returns {Promise<void>}
@@ -84,8 +84,8 @@ module.exports.sendMessage = async (client, message, argumentsArray) => {
 
 		if (server !== null) {
 
-			const guild = await client.guilds.fetch(id);
-			const user = await client.users.fetch(guild.ownerId);
+			const guild = await message.client.guilds.fetch(id);
+			const user = await message.client.users.fetch(guild.ownerId);
 
 			await user
 				.createDM()

@@ -6,7 +6,7 @@ module.exports.name = 'allowvisits';
 
 /**
  *
- * @param {import('discord.js').Client} client
+ * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
  * @returns {Promise<void>}
@@ -52,6 +52,23 @@ module.exports.sendMessage = async (client, message, argumentsArray) => {
 	}
 
 	if (message.mentions.channels.size > 0) {
+
+		if (message.mentions.channels.first().isText() === false) {
+
+			await message
+				.reply({
+					embeds: [{
+						color: /** @type {`#${string}`} */ (error_color),
+						description: 'Please mention a text channel.',
+						footer: { text: 'The channel you mention will be the channel through which two packs can communicate.' },
+					}],
+					failIfNotExists: false,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
+			return;
+		}
 
 		await serverModel.findOneAndUpdate(
 			{ serverId: message.guild.id },

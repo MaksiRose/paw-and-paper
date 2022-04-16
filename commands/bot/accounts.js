@@ -13,7 +13,7 @@ module.exports.aliases = ['switch'];
 
 /**
  *
- * @param {import('discord.js').Client} client
+ * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
  * @param {Partial<import('../../typedef').ProfileSchema & {id?: string}>} profileData

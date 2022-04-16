@@ -34,10 +34,10 @@ async function checkLevelUp(message, botReply, profileData, serverData) {
 			title: `${profileData.name} just leveled up! ${upperCasePronounAndPlural(profileData, 0, 'is', 'are')} now level ${profileData.levels}.`,
 		};
 
-		botReply.embeds.push(/** @type {import('discord.js').MessageEmbed} */ (embed));
+		botReply?.embeds?.push(/** @type {import('discord.js').MessageEmbed} */ (embed));
 		await botReply
-			.edit({
-				embeds: botReply.embeds,
+			?.edit({
+				embeds: botReply?.embeds,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }

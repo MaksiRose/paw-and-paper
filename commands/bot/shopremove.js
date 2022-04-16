@@ -1,208 +1,225 @@
-const config = require('../../config.json');
+// @ts-check
+const { error_color, default_color } = require('../../config.json');
 const serverModel = require('../../models/serverModel');
-const profileModel = require('../../models/profileModel');
+const { profileModel } = require('../../models/profileModel');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
 
-module.exports = {
-	name: 'shopremove',
-	aliases: ['shopdelete'],
-	async sendMessage(client, message, argumentsArray, profileData, serverData) {
+module.exports.name = 'shopremove';
+module.exports.aliases = ['shopdelete'];
 
-		if (message.member.permissions.has('ADMINISTRATOR') === false) {
+/**
+ *
+ *
+ * @param {import('../../paw').client} client
+ * @param {import('discord.js').Message} message
+ * @param {Array<string>} argumentsArray
+ * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ServerSchema} serverData
+ * @returns {Promise<void>}
+ */
+module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData) => {
 
-			return await message
-				.reply({
-					embeds: [{
-						color: config.error_color,
-						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						title: 'Only administrators of a server can use this command!',
-					}],
-					failIfNotExists: false,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
-		}
+	if (message.member.permissions.has('ADMINISTRATOR') === false) {
 
-		if (serverData.shop.length === 0) {
-
-			return await message
-				.reply({
-					embeds: [{
-						color: config.error_color,
-						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						title: 'There are currently no roles in the shop!',
-					}],
-					failIfNotExists: false,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
-		}
-
-		let page = 0;
-		const { description, selectMenuOptionsArray } = getMenuOptions(serverData.shop, page);
-
-		const botReply = await message
+		await message
 			.reply({
 				embeds: [{
-					color: config.default_color,
+					color: /** @type {`#${string}`} */ (error_color),
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-					description: description,
-				}],
-				components: [{
-					type: 'ACTION_ROW',
-					components: [{
-						type: 'SELECT_MENU',
-						customId: 'shopdelete-options',
-						placeholder: 'Select an item',
-						options: selectMenuOptionsArray,
-					}],
+					title: 'Only administrators of a server can use this command!',
 				}],
 				failIfNotExists: false,
 			})
-			.catch((error) => { throw new Error(error); });
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+		return;
+	}
 
-		createCommandCollector(message.author.id, message.guild.id, botReply);
-		interactionCollector();
+	if (serverData.shop.length === 0) {
 
-		async function interactionCollector() {
+		await message
+			.reply({
+				embeds: [{
+					color: /** @type {`#${string}`} */ (error_color),
+					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+					title: 'There are currently no roles in the shop!',
+				}],
+				failIfNotExists: false,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+		return;
+	}
 
-			const filter = i => i.user.id === message.author.id && i.customId === 'shopdelete-options';
+	let page = 0;
+	const { description, selectMenuOptionsArray } = getMenuOptions(serverData.shop, page);
 
-			const interaction = await botReply
-				.awaitMessageComponent({ filter, time: 120_000 })
-				.catch(() => { return null; });
+	const botReply = await message
+		.reply({
+			embeds: [{
+				color: /** @type {`#${string}`} */ (default_color),
+				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+				description: description,
+			}],
+			components: [{
+				type: 'ACTION_ROW',
+				components: [{
+					type: 'SELECT_MENU',
+					customId: 'shopdelete-options',
+					placeholder: 'Select an item',
+					options: selectMenuOptionsArray,
+				}],
+			}],
+			failIfNotExists: false,
+		})
+		.catch((error) => { throw new Error(error); });
 
-			if (interaction === null) {
+	createCommandCollector(message.author.id, message.guild.id, botReply);
+	interactionCollector();
 
-				return await botReply
-					.edit({
-						components: [],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) { throw new Error(error); }
-					});
+	async function interactionCollector() {
+
+		const filter = i => i.user.id === message.author.id && i.customId === 'shopdelete-options';
+
+		const interaction = await botReply
+			.awaitMessageComponent({ filter, time: 120_000 })
+			.catch(() => { return null; });
+
+		if (interaction === null) {
+
+			return await botReply
+				.edit({
+					components: [],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
+		}
+
+		if (interaction.values[0] === 'shopdelete_page') {
+
+			page += 1;
+			if (page >= Math.ceil(serverData.shop.length / 24)) {
+
+				page = 0;
 			}
 
-			if (interaction.values[0] === 'shopdelete_page') {
+			const { description: newDescription, selectMenuOptionsArray: newSelectMenuOptionsArray } = getMenuOptions(serverData.shop, page);
 
-				page += 1;
-				if (page >= Math.ceil(serverData.shop.length / 24)) {
-
-					page = 0;
-				}
-
-				const { description: newDescription, selectMenuOptionsArray: newSelectMenuOptionsArray } = getMenuOptions(serverData.shop, page);
-
-				await interaction.message
-					.edit({
-						embeds: [{
-							color: config.default_color,
-							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-							description: newDescription,
-						}],
+			await interaction.message
+				.edit({
+					embeds: [{
+						color: /** @type {`#${string}`} */ (default_color),
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+						description: newDescription,
+					}],
+					components: [{
+						type: 'ACTION_ROW',
 						components: [{
-							type: 'ACTION_ROW',
-							components: [{
-								type: 'SELECT_MENU',
-								customId: 'shopdelete-options',
-								placeholder: 'Select an item',
-								options: newSelectMenuOptionsArray,
-							}],
+							type: 'SELECT_MENU',
+							customId: 'shopdelete-options',
+							placeholder: 'Select an item',
+							options: newSelectMenuOptionsArray,
 						}],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) { throw new Error(error); }
-					});
-			}
+					}],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
+		}
 
-			if (interaction.values[0].startsWith('shopdelete-')) {
+		if (interaction.values[0].startsWith('shopdelete-')) {
 
-				const deleteIndex = interaction.values[0].split('-')[1];
-				const deleteItem = serverData.shop.splice(deleteIndex, 1);
+			const deleteIndex = interaction.values[0].split('-')[1];
+			const deleteItem = serverData.shop.splice(deleteIndex, 1);
 
-				serverData = await serverModel.findOneAndUpdate(
-					{ serverId: message.guild.id },
-					{ $set: { shop: serverData.shop } },
-				);
+			serverData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOneAndUpdate(
+				{ serverId: message.guild.id },
+				{ $set: { shop: serverData.shop } },
+			));
 
-				await interaction.message
-					.edit({
-						embeds: [{
-							color: config.default_color,
-							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-							description: `<@&${deleteItem[0].roleId}> with the requirement of ${deleteItem[0].requirement} ${deleteItem[0].wayOfEarning} was deleted from the shop.`,
-						}],
-						components: [],
-						failIfNotExists: false,
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) { throw new Error(error); }
-					});
-
-				const allServerProfiles = await profileModel.find({
-					serverId: message.guild.id,
+			await interaction.message
+				.edit({
+					embeds: [{
+						color: default_color,
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+						description: `<@&${deleteItem[0].roleId}> with the requirement of ${deleteItem[0].requirement} ${deleteItem[0].wayOfEarning} was deleted from the shop.`,
+					}],
+					components: [],
+					failIfNotExists: false,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 
-				for (const profile of allServerProfiles) {
+			const allServerProfiles = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find({
+				serverId: message.guild.id,
+			}));
 
-					const member = await message.guild.members.fetch(profile.userId);
+			for (const profile of allServerProfiles) {
 
-					if (profile.roles.some(role => role.roleId === deleteItem[0].roleId && role.wayOfEarning === deleteItem[0].wayOfEarning && role.requirement === deleteItem[0].requirement)) {
+				const member = await message.guild.members.fetch(profile.userId);
 
-						try {
+				if (profile.roles.some(role => role.roleId === deleteItem[0].roleId && role.wayOfEarning === deleteItem[0].wayOfEarning && role.requirement === deleteItem[0].requirement)) {
 
-							const userRole = profile.roles.find(role => role.roleId === deleteItem[0].roleId && role.wayOfEarning === deleteItem[0].wayOfEarning && role.requirement === deleteItem[0].requirement);
-							const userRoleIndex = profile.roles.indexOf(userRole);
+					try {
 
-							if (userRoleIndex >= 0) { profile.roles.splice(userRoleIndex, 1); }
+						const userRole = profile.roles.find(role => role.roleId === deleteItem[0].roleId && role.wayOfEarning === deleteItem[0].wayOfEarning && role.requirement === deleteItem[0].requirement);
+						const userRoleIndex = profile.roles.indexOf(userRole);
 
-							await profileModel.findOneAndUpdate(
-								{ userId: profile.userId, serverId: profile.serverId },
-								{
-									$inc: { experience: userRole.wayOfEarning === 'experience' ? userRole.requirement : 0 },
-									$set: { roles: profile.roles } },
-							);
+						if (userRoleIndex >= 0) { profile.roles.splice(userRoleIndex, 1); }
 
-							if (message.member.roles.cache.has(deleteItem[0].roleId) === true && profile.roles.filter(role => role.roleId === deleteItem[0].roleId).length === 0) {
+						await profileModel.findOneAndUpdate(
+							{ userId: profile.userId, serverId: profile.serverId },
+							{
+								$inc: { experience: userRole.wayOfEarning === 'experience' ? userRole.requirement : 0 },
+								$set: { roles: profile.roles } },
+						);
 
-								await member.roles.remove(deleteItem[0].roleId);
+						if (message.member.roles.cache.has(deleteItem[0].roleId) === true && profile.roles.filter(role => role.roleId === deleteItem[0].roleId).length === 0) {
 
-								await message.channel
-									.send({
-										content: member.toString(),
-										embeds: [{
-											color: config.default_color,
-											author: { name: botReply.guild.name, icon_url: botReply.guild.iconURL() },
-											description: `You lost the <@&${deleteItem[0].roleId}> role because it was removed from the shop!`,
-										}],
-										failIfNotExists: false,
-									})
-									.catch((error) => {
-										if (error.httpStatus !== 404) { throw new Error(error); }
-									});
-							}
+							await member.roles.remove(deleteItem[0].roleId);
 
-							checkLevelUp(message, undefined, profile, serverData);
+							await message.channel
+								.send({
+									content: member.toString(),
+									embeds: [{
+										color: /** @type {`#${string}`} */ (default_color),
+										author: { name: botReply.guild.name, icon_url: botReply.guild.iconURL() },
+										description: `You lost the <@&${deleteItem[0].roleId}> role because it was removed from the shop!`,
+									}],
+								})
+								.catch((error) => {
+									if (error.httpStatus !== 404) { throw new Error(error); }
+								});
 						}
-						catch (error) {
 
-							await checkRoleCatchBlock(error, message, message.member);
-						}
+						checkLevelUp(message, undefined, profile, serverData);
+					}
+					catch (error) {
+
+						await checkRoleCatchBlock(error, message, message.member);
 					}
 				}
-
-				return;
 			}
 
-			return await interactionCollector();
+			return;
 		}
-	},
+
+		return await interactionCollector();
+	}
 };
 
+/**
+ * Creates an embed description and select menu based on the roles available in the server.
+ * @param {Array<import('../../typedef').Role>} shop
+ * @param {number} page
+ * @returns {{description: string, selectMenuOptionsArray: Array<{label: string, value: string, description?: string, emoji?: string}>}}
+ */
 function getMenuOptions(shop, page) {
 
 	let position = 0 + (page * 24);
