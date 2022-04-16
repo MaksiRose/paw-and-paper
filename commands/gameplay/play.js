@@ -43,17 +43,15 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	if (/** @type {Array<number>} */ ([].concat(...Object.values(profileData.inventoryObject).map(type => Object.values(type)))).filter(value => value > 0).length > 25) {
 
-		embedArray.push({
-			color: profileData.color,
-			author: { name: profileData.name, icon_url: profileData.avatarURL },
-			description: `*${profileData.name} approaches the prairie, ${pronoun(profileData, 2)} mouth filled with various things. As eager as ${pronounAndPlural(profileData, 0, 'is', 'are')} to go playing, ${pronounAndPlural(profileData, 0, 'decide')} to store some things away first.*`,
-			footer: { text: 'You can only hold up to 25 items in your personal inventory. Type "rp store" to put things into the pack inventory!' },
-		});
-
 		await message
 			.reply({
 				content: messageContent,
-				embeds: embedArray,
+				embeds: [...embedArray, {
+					color: profileData.color,
+					author: { name: profileData.name, icon_url: profileData.avatarURL },
+					description: `*${profileData.name} approaches the prairie, ${pronoun(profileData, 2)} mouth filled with various things. As eager as ${pronounAndPlural(profileData, 0, 'is', 'are')} to go playing, ${pronounAndPlural(profileData, 0, 'decide')} to store some things away first.*`,
+					footer: { text: 'You can only hold up to 25 items in your personal inventory. Type "rp store" to put things into the pack inventory!' },
+				}],
 				failIfNotExists: false,
 			})
 			.catch((error) => {
@@ -64,16 +62,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	if (profileData.rank === 'Healer' || profileData.rank === 'Hunter' || profileData.rank === 'Elderly') {
 
-		embedArray.push({
-			color: profileData.color,
-			author: { name: profileData.name, icon_url: profileData.avatarURL },
-			description: `*A packmate turns their head sideways as they see ${profileData.name} running towards the playground.* "Aren't you a little too old to play, ${profileData.rank}?" *they ask.*`,
-		});
-
 		await message
 			.reply({
 				content: messageContent,
-				embeds: embedArray,
+				embeds: [...embedArray, {
+					color: profileData.color,
+					author: { name: profileData.name, icon_url: profileData.avatarURL },
+					description: `*A packmate turns their head sideways as they see ${profileData.name} running towards the playground.* "Aren't you a little too old to play, ${profileData.rank}?" *they ask.*`,
+				}],
 				failIfNotExists: false,
 			})
 			.catch((error) => {
@@ -84,16 +80,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	if (message.mentions.users.size > 0 && message.mentions.users.first().id == message.author.id) {
 
-		embedArray.push({
-			color: profileData.color,
-			author: { name: profileData.name, icon_url: profileData.avatarURL },
-			description: `*${profileData.name} plays with ${pronoun(profileData, 4)}. The rest of the pack looks away in embarrassment.*`,
-		});
-
 		await message
 			.reply({
 				content: messageContent,
-				embeds: embedArray,
+				embeds: [...embedArray, {
+					color: profileData.color,
+					author: { name: profileData.name, icon_url: profileData.avatarURL },
+					description: `*${profileData.name} plays with ${pronoun(profileData, 4)}. The rest of the pack looks away in embarrassment.*`,
+				}],
 				failIfNotExists: false,
 			})
 			.catch((error) => {
