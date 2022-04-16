@@ -301,7 +301,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			{ $set: { hasQuest: true } },
 		);
 
-		botReply = await introduceQuest(message, profileData, embedArray.slice(0, -1), embedFooterStatsText);
+		botReply = await introduceQuest(message, profileData, embedArray, embedFooterStatsText);
 
 		const filter = (/** @type {{ customId: string; user: { id: string; }; }} */ i) => i.customId === 'quest-start' && i.user.id === message.author.id;
 
