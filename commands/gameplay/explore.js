@@ -636,7 +636,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				{ $inc: { health: -healthPoints } },
 			);
 
-			/** @type {Array<string>} */
 			const allElderlyProfilesArray = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find({
 				serverId: message.guild.id,
 				rank: 'Elderly',
