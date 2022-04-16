@@ -16,8 +16,8 @@ module.exports.name = 'vote';
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} profileData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {Array<import('discord.js').MessageEmbed>} embedArray
- * @returns
+ * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData, embedArray) => {
 

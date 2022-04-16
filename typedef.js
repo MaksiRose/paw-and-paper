@@ -75,7 +75,7 @@ module.exports.WebhookMessages = this.WebhookMessages;
  * @property {Sapling} saplingObject - The sapling of the character
  * @property {Array<Array<string>>} pronounSets - Array of Arrays of pronouns the character uses.
  * @property {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} injuryObject - Object with injury types as keys and whether the user has them/how many the user has of them as variables.
- * @property {{commonPlants: Object, uncommonPlants: Object, rarePlants: Object, meat: Object}} inventoryObject - Object with item kinds as the keys and an object of the item types and their quantity as the variables.
+ * @property {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, meat: Object<string, number>}} inventoryObject - Object with item kinds as the keys and an object of the item types and their quantity as the variables.
  * @property {{resting: boolean, drinking: boolean, eating: boolean, passingout: boolean}} advice - Object of advice kinds as the keys and whether the advice has been given as the variables.
  * @property {Array<Role>} roles - Array of role objects
  * @property {string} uuid
@@ -87,7 +87,7 @@ module.exports.ProfileSchema = this.ProfileSchema;
  * @typedef {Object} ServerSchema
  * @property {string} serverId - ID of the server. Cannot be modified.
  * @property {string} name - Name of the server.
- * @property {{commonPlants: Object, uncommonPlants: Object, rarePlants: Object, meat: Object}} inventoryObject - Object with item kinds as the keys and an object of the item types and their quantity as the variables.
+ * @property {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, meat: Object<string, number>}} inventoryObject - Object with item kinds as the keys and an object of the item types and their quantity as the variables.
  * @property {{den: ?('sleeping dens' | 'food den' | 'medicine den'), blockedKind: ?('vines'|'burrow'|'tree trunk'|'boulder')}} blockedEntranceObject - Object of the blocked entrance with the name of the den and kind of block as the variables. If no entrance is blocked, they are null.
  * @property {Array<string>} activeUsersArray - Array of IDs of users that executed a command in this server in the last 5 minutes.
  * @property {number} nextPossibleAttack - Timestamp of the time when the next attack is possible.
