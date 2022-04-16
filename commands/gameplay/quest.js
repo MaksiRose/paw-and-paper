@@ -51,7 +51,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				content: messageContent,
 				embeds: [...embedArray, {
 					color: '#9d9e51',
-					author: { name: `${message.guild.name}`, icon_url: `${message.guild.iconURL()}` },
+					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'You have no open quests at the moment :(',
 					footer: { text: 'Go playing or exploring to get quests!' },
 				}],
