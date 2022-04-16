@@ -177,22 +177,21 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		embedFooterStatsText += `\n-${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})`;
 	}
 
-	/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions>} */
-	const fightButtons = [ /** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions} */ ({
+	const fightButtons = [ /** @type {import('discord.js').MessageActionRowComponentResolvable} */ ({
 		type: 'BUTTON',
-		customId: 'practice-attack',
+		customId: 'fight-attack',
 		label: 'Attack',
 		emoji: '⏫',
 		style: 'PRIMARY',
-	}), /** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions} */ ({
+	}), /** @type {import('discord.js').MessageActionRowComponentResolvable} */ ({
 		type: 'BUTTON',
-		customId: 'practice-defend',
+		customId: 'fight-defend',
 		label: 'Defend',
 		emoji: '⏺️',
 		style: 'PRIMARY',
-	}), /** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions} */ ({
+	}), /** @type {import('discord.js').MessageActionRowComponentResolvable} */ ({
 		type: 'BUTTON',
-		customId: 'practice-dodge',
+		customId: 'fight-dodge',
 		label: 'Dodge',
 		emoji: '↪️',
 		style: 'PRIMARY',

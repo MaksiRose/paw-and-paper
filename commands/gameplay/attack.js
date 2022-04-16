@@ -116,20 +116,19 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		embed.footer.text = 'You will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response.';
 
-		/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions>} */
-		const fightButtons = [ /** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions} */ ({
+		const fightButtons = [ /** @type {import('discord.js').MessageActionRowComponentResolvable} */ ({
 			type: 'BUTTON',
 			customId: 'fight-attack',
 			label: 'Attack',
 			emoji: '⏫',
 			style: 'PRIMARY',
-		}), /** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions} */ ({
+		}), /** @type {import('discord.js').MessageActionRowComponentResolvable} */ ({
 			type: 'BUTTON',
 			customId: 'fight-defend',
 			label: 'Defend',
 			emoji: '⏺️',
 			style: 'PRIMARY',
-		}), /** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions} */ ({
+		}), /** @type {import('discord.js').MessageActionRowComponentResolvable} */ ({
 			type: 'BUTTON',
 			customId: 'fight-dodge',
 			label: 'Dodge',

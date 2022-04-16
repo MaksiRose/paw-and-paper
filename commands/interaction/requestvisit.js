@@ -1,277 +1,301 @@
+// @ts-check
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const serverModel = require('../../models/serverModel');
-const profileModel = require('../../models/profileModel');
-const config = require('../../config.json');
+const { profileModel } = require('../../models/profileModel');
+const { error_color, default_color, prefix } = require('../../config.json');
 const { pronounAndPlural, pronoun, upperCasePronounAndPlural, upperCasePronoun } = require('../../utils/getPronouns');
-const fs = require('fs');
+const { readFileSync, writeFileSync } = require('fs');
 
-module.exports = {
-	name: 'requestvisit',
-	async sendMessage(client, message, argumentsArray, profileDataV, serverDataV) {
+module.exports.name = 'requestvisit';
 
-		if (await hasNotCompletedAccount(message, profileDataV)) {
+/**
+ *
+ * @param {import('../../paw').client} client
+ * @param {import('discord.js').Message} message
+ * @param {Array<string>} argumentsArray
+ * @param {import('../../typedef').ProfileSchema} profileDataV
+ * @param {import('../../typedef').ServerSchema} serverDataV
+ * @returns {Promise<void>}
+ */
+module.exports.sendMessage = async (client, message, argumentsArray, profileDataV, serverDataV) => {
 
-			return;
-		}
+	if (await hasNotCompletedAccount(message, profileDataV)) {
 
-		if (serverDataV.visitChannelId === null) {
+		return;
+	}
 
-			return await message
-				.reply({
-					embeds: [{
-						color: config.error_color,
-						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						title: 'Visits are currently turned off! Ask a server admin to turn it on via \'rp allowvisits\'',
-					}],
-					failIfNotExists: false,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
-		}
+	if (serverDataV.visitChannelId === null) {
 
-		if (serverDataV.currentlyVisiting !== null) {
-
-			return await message
-				.reply({
-					embeds: [{
-						color: config.error_color,
-						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						title: 'You are already visiting someonne!',
-					}],
-					failIfNotExists: false,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
-		}
-
-		let visitableServers = await serverModel.find({
-			serverId: { $nin: [message.guild.id] },
-			visitChannelId: { $nin: [null] },
-			currentlyVisiting: null,
-		});
-
-		if (visitableServers.length <= 0) {
-
-			return await message
-				.reply({
-					embeds: [{
-						color: config.error_color,
-						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						description: `*${profileDataV.name} really wants to visit some packs in the area but no one there seems to have time. The ${profileDataV.species} gets back feeling a bit lonely but when ${pronounAndPlural(profileDataV, 0, 'see')} all ${pronoun(profileDataV, 2)} packmates having fun at home ${profileDataV.name} cheers up and joins them excitedly.*`,
-					}],
-					failIfNotExists: false,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
-		}
-
-		let selectMenuOptionsArray = [];
-		let packPage = 0;
-
-		selectMenuOptionsArray = getMenuOptions(visitableServers, packPage, selectMenuOptionsArray);
-
-		let botReplyV = await message
+		await message
 			.reply({
 				embeds: [{
-					color: config.default_color,
+					color: /** @type {`#${string}`} */ (error_color),
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-					description: `*${profileDataV.name} is looking to meet some new friends. There are other packs in the area. Who should ${pronoun(profileDataV, 0)} visit?*`,
-				}],
-				components: [{
-					type: 'ACTION_ROW',
-					components: [{
-						type: 'SELECT_MENU',
-						customId: 'visit-options',
-						placeholder: 'Select a pack',
-						options: selectMenuOptionsArray,
-					}],
+					title: 'Visits are currently turned off! Ask a server admin to turn it on via \'rp allowvisits\'',
 				}],
 				failIfNotExists: false,
 			})
-			.catch((error) => { throw new Error(error); });
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+		return;
+	}
 
-		let botReplyH;
+	if (serverDataV.currentlyVisiting !== null) {
 
-		interactionCollector();
+		await message
+			.reply({
+				embeds: [{
+					color: /** @type {`#${string}`} */ (error_color),
+					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+					title: 'You are already visiting someonne!',
+				}],
+				failIfNotExists: false,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+		return;
+	}
 
-		async function interactionCollector() {
+	let visitableServers = /** @type {Array<import('../../typedef').ServerSchema>} */ (await serverModel.find({
+		serverId: { $nin: [message.guild.id] },
+		visitChannelId: { $nin: [null] },
+		currentlyVisiting: null,
+	}));
 
-			const filter = i => i.user.id === message.author.id;
+	if (visitableServers.length <= 0) {
 
-			const interaction = await botReplyV
-				.awaitMessageComponent({ filter, time: 300000 })
-				.catch(() => { return null; });
+		await message
+			.reply({
+				embeds: [{
+					color: /** @type {`#${string}`} */ (error_color),
+					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+					description: `*${profileDataV.name} really wants to visit some packs in the area but no one there seems to have time. The ${profileDataV.species} gets back feeling a bit lonely but when ${pronounAndPlural(profileDataV, 0, 'see')} all ${pronoun(profileDataV, 2)} packmates having fun at home ${profileDataV.name} cheers up and joins them excitedly.*`,
+				}],
+				failIfNotExists: false,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+		return;
+	}
 
-			if (interaction === null) {
+	let packPage = 0;
+	let selectMenuOptionsArray = getMenuOptions(visitableServers, packPage, []);
+
+	let botReplyV = await message
+		.reply({
+			embeds: [{
+				color: /** @type {`#${string}`} */ (default_color),
+				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+				description: `*${profileDataV.name} is looking to meet some new friends. There are other packs in the area. Who should ${pronoun(profileDataV, 0)} visit?*`,
+			}],
+			components: [{
+				type: 'ACTION_ROW',
+				components: [{
+					type: 'SELECT_MENU',
+					customId: 'visit-options',
+					placeholder: 'Select a pack',
+					options: selectMenuOptionsArray,
+				}],
+			}],
+			failIfNotExists: false,
+		})
+		.catch((error) => { throw new Error(error); });
+
+	/** @type {import('discord.js').Message} */
+	let botReplyH;
+
+	interactionCollector();
+
+	async function interactionCollector() {
+
+		let filter = async (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.user.id === message.author.id;
+
+		/** @type {import('discord.js').SelectMenuInteraction | undefined} } */
+		const interaction = await botReplyV
+			.awaitMessageComponent({ filter, time: 300000 })
+			.catch(() => { return undefined; });
+
+		if (interaction === undefined) {
+
+			return await botReplyV
+				.edit({
+					components: [],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
+		}
+
+		if (interaction.customId === 'visit_cancel') {
+
+			return await declinedInvitation(message, profileDataV, botReplyV, botReplyH);
+		}
+
+		if (interaction.values[0] == 'visit_page') {
+
+			visitableServers = /** @type {Array<import('../../typedef').ServerSchema>} */ (await serverModel.find({
+				visitChannelId: { $nin: [null] },
+				currentlyVisiting: null,
+			}));
+
+			packPage++;
+			if (packPage >= Math.ceil(visitableServers.length / 24)) {
+
+				packPage = 0;
+			}
+
+			selectMenuOptionsArray = getMenuOptions(visitableServers, packPage, []);
+
+			await /** @type {import('discord.js').Message} */ (interaction.message)
+				.edit({
+					components: [{
+						type: 'ACTION_ROW',
+						components: [{
+							type: 'SELECT_MENU',
+							customId: 'species-options',
+							placeholder: 'Select a species',
+							options: selectMenuOptionsArray,
+						}],
+					}],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
+
+			return await interactionCollector();
+		}
+
+		if (interaction.values[0].startsWith('visit-')) {
+
+			const hostGuildId = interaction.values[0].split('-')[1];
+
+			let serverDataH = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOne(
+				{ serverId: hostGuildId },
+			));
+
+			if (serverDataH === null || serverDataH.visitChannelId === null || serverDataH.currentlyVisiting !== null) {
 
 				return await botReplyV
 					.edit({
-						components: [],
+						embeds: [{
+							color: /** @type {`#${string}`} */ (error_color),
+							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+							title: 'The chosen pack has become unavailable or is already being visited. Please pick another one.',
+						}],
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
-			if (interaction.customId === 'visit_cancel') {
+			serverDataV = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOneAndUpdate(
+				{ serverId: serverDataV.serverId },
+				{ $set: { currentlyVisiting: serverDataH.serverId } },
+			));
 
-				return await declinedInvitation(message, profileDataV, botReplyV, botReplyH);
-			}
+			serverDataH = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOneAndUpdate(
+				{ serverId: serverDataH.serverId },
+				{ $set: { currentlyVisiting: serverDataV.serverId } },
+			));
 
-			if (interaction.values[0] == 'visit_page') {
-
-				visitableServers = await serverModel.find({
-					visitChannelId: { $nin: [null] },
-					currentlyVisiting: null,
+			await botReplyV
+				.edit({
+					components: [],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 
-				packPage++;
-				if (packPage >= Math.ceil(visitableServers.length / 24)) {
+			const visitChannelV = await client.channels.fetch(serverDataV.visitChannelId);
+			const visitChannelH = await client.channels.fetch(serverDataH.visitChannelId);
 
-					packPage = 0;
-				}
+			if (!visitChannelV.isText() || !visitChannelH.isText()) {
 
-				selectMenuOptionsArray = getMenuOptions(visitableServers, packPage, []);
-
-				await interaction.message
-					.edit({
-						components: [{
-							type: 'ACTION_ROW',
-							components: [{
-								type: 'SELECT_MENU',
-								customId: 'species-options',
-								placeholder: 'Select a species',
-								options: selectMenuOptionsArray,
-							}],
-						}],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) { throw new Error(error); }
-					});
-
-				return await interactionCollector();
+				return;
 			}
 
-			if (interaction.values[0].startsWith('visit-')) {
-
-				const hostGuildId = interaction.values[0].split('-')[1];
-
-				let serverDataH = await serverModel.findOne(
-					{ serverId: hostGuildId },
-				);
-
-				if (serverDataH === null || serverDataH.visitChannelId === null || serverDataH.currentlyVisiting !== null) {
-
-					return await botReplyV
-						.edit({
-							embeds: [{
-								color: config.error_color,
-								author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-								title: 'The chosen pack has become unavailable or is already being visited. Please pick another one.',
-							}],
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) { throw new Error(error); }
-						});
-				}
-
-				serverDataV = await serverModel.findOneAndUpdate(
-					{ serverId: serverDataV.serverId },
-					{ $set: { currentlyVisiting: serverDataH.serverId } },
-				);
-
-				serverDataH = await serverModel.findOneAndUpdate(
-					{ serverId: serverDataH.serverId },
-					{ $set: { currentlyVisiting: serverDataV.serverId } },
-				);
-
-				await botReplyV
-					.edit({
-						components: [],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) { throw new Error(error); }
-					});
-
-				const visitChannelV = await client.channels.fetch(serverDataV.visitChannelId);
-				const visitChannelH = await client.channels.fetch(serverDataH.visitChannelId);
-
-				botReplyV = await visitChannelV
-					.send({
-						embeds: [{
-							color: config.default_color,
-							author: { name: visitChannelH.guild.name, icon_url: visitChannelH.guild.iconURL() },
-							description: `*${profileDataV.name} strolls over to ${serverDataH.name}. ${upperCasePronounAndPlural(profileDataV, 0, 'is', 'are')} waiting patiently at the pack borders to be invited in as to not invade the pack's territory without permission.*`,
-							footer: { text: 'The invitation will expire in five minutes. Alternatively, you can cancel it using the button below.' },
-						}],
+			botReplyV = await visitChannelV
+				.send({
+					embeds: [{
+						color: /** @type {`#${string}`} */ (default_color),
+						author: { name: /** @type {import('discord.js').TextChannel} */ (visitChannelH).guild.name, icon_url: /** @type {import('discord.js').TextChannel} */ (visitChannelH).guild.iconURL() },
+						description: `*${profileDataV.name} strolls over to ${serverDataH.name}. ${upperCasePronounAndPlural(profileDataV, 0, 'is', 'are')} waiting patiently at the pack borders to be invited in as to not invade the pack's territory without permission.*`,
+						footer: { text: 'The invitation will expire in five minutes. Alternatively, you can cancel it using the button below.' },
+					}],
+					components: [{
+						type: 'ACTION_ROW',
 						components: [{
-							type: 'ACTION_ROW',
-							components: [{
-								type: 'BUTTON',
-								customId: 'visit_cancel',
-								label: 'Cancel',
-								style: 'DANGER',
-							}],
+							type: 'BUTTON',
+							customId: 'visit_cancel',
+							label: 'Cancel',
+							style: 'DANGER',
 						}],
-					})
-					.catch((error) => { throw new Error(error); });
+					}],
+				})
+				.catch((error) => { throw new Error(error); });
 
-				interactionCollector();
+			interactionCollector();
 
-				botReplyH = await visitChannelH
-					.send({
-						embeds: [{
-							color: config.default_color,
-							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-							title: `Near the lake a ${profileDataV.species} is waiting. ${upperCasePronoun(profileDataV, 0)} came out of the direction where a pack named "${serverDataV.name}" is lying. ${upperCasePronoun(profileDataV, 0)} seems to be waiting for permission to cross the pack borders.`,
-							footer: { text: 'The invitation will expire in five minutes. Alternatively, you can decline it using the button below.' },
-						}],
+			botReplyH = await visitChannelH
+				.send({
+					embeds: [{
+						color: /** @type {`#${string}`} */ (default_color),
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+						title: `Near the lake a ${profileDataV.species} is waiting. ${upperCasePronoun(profileDataV, 0)} came out of the direction where a pack named "${serverDataV.name}" is lying. ${upperCasePronoun(profileDataV, 0)} seems to be waiting for permission to cross the pack borders.`,
+						footer: { text: 'The invitation will expire in five minutes. Alternatively, you can decline it using the button below.' },
+					}],
+					components: [{
+						type: 'ACTION_ROW',
 						components: [{
-							type: 'ACTION_ROW',
-							components: [{
-								type: 'BUTTON',
-								customId: 'visit_accept',
-								label: 'Accept visit',
-								style: 'SUCCESS',
-							}, {
-								type: 'BUTTON',
-								customId: 'visit_decline',
-								label: 'Decline visit',
-								style: 'DANGER',
-							}],
+							type: 'BUTTON',
+							customId: 'visit_accept',
+							label: 'Accept visit',
+							style: 'SUCCESS',
+						}, {
+							type: 'BUTTON',
+							customId: 'visit_decline',
+							label: 'Decline visit',
+							style: 'DANGER',
 						}],
-						failIfNotExists: false,
-					})
-					.catch((error) => { throw new Error(error); });
+					}],
+				})
+				.catch((error) => { throw new Error(error); });
 
-				const filter2 = async i => (await profileModel.findOne({ serverId: i.guild.id, userId: i.user.id })) === null ? false : true;
 
-				await botReplyH
-					.awaitMessageComponent({ filter2, time: 300000 })
-					.then(async button => {
+			filter = i => profileModel.findOne({ serverId: i.guild.id, userId: i.user.id }).then(profile => profile === null ? false : true);
 
-						if (button.customId === 'visit_decline') {
+			await botReplyH
+				.awaitMessageComponent({ filter, time: 300000 })
+				.then(async button => {
 
-							return Promise.reject();
-						}
+					if (button.customId === 'visit_decline') {
 
-						const profileDataH = await profileModel.findOne({ serverId: button.guild.id, userId: button.user.id });
+						return Promise.reject();
+					}
 
-						if (button.customId === 'visit_accept') {
+					const profileDataH = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ serverId: button.guild.id, userId: button.user.id }));
 
-							acceptedInvitation(client, message, botReplyV, botReplyH, serverDataV, serverDataH, profileDataV, profileDataH);
-							return;
-						}
-					})
-					.catch(async () => {return await declinedInvitation(message, profileDataV, botReplyV, botReplyH);});
-			}
+					if (button.customId === 'visit_accept') {
+
+						acceptedInvitation(client, message, botReplyV, botReplyH, serverDataV, serverDataH, profileDataV, profileDataH);
+						return;
+					}
+				})
+				.catch(async () => {return await declinedInvitation(message, profileDataV, botReplyV, botReplyH);});
 		}
-	},
+	}
 };
 
+/**
+ *
+ * @param {Array<import('../../typedef').ServerSchema>} visitableServers
+ * @param {number} packPage
+ * @param {Array<import('discord.js').MessageSelectOptionData>} selectMenuOptionsArray
+ * @returns {Array<import('discord.js').MessageSelectOptionData>}
+ */
 function getMenuOptions(visitableServers, packPage, selectMenuOptionsArray) {
 
 	for (const server of visitableServers.slice((packPage * 24), 25 + (packPage * 24))) {
@@ -288,6 +312,13 @@ function getMenuOptions(visitableServers, packPage, selectMenuOptionsArray) {
 	return selectMenuOptionsArray;
 }
 
+/**
+ *
+ * @param {import('discord.js').Message} message
+ * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('discord.js').Message} botReplyV
+ * @param {import('discord.js').Message} botReplyH
+ */
 async function declinedInvitation(message, profileData, botReplyV, botReplyH) {
 
 	await botReplyV
@@ -301,7 +332,7 @@ async function declinedInvitation(message, profileData, botReplyV, botReplyH) {
 	await botReplyV
 		.reply({
 			embeds: [{
-				color: config.default_color,
+				color: /** @type {`#${string}`} */ (default_color),
 				author: { name: botReplyH.guild.name, icon_url: botReplyH.guild.iconURL() },
 				description: `*After ${profileData.name} waited for a while, ${pronoun(profileData, 0)} couldn't deal with the boredom and left the borders of ${botReplyV.guild.name}. The ${profileData.species} gets back feeling a bit lonely but when ${pronounAndPlural(profileData, 0, 'see')} all ${pronoun(profileData, 2)} packmates having fun at home, ${profileData.name} cheers up and joins them excitedly.*`,
 			}],
@@ -322,7 +353,7 @@ async function declinedInvitation(message, profileData, botReplyV, botReplyH) {
 	await botReplyH
 		.reply({
 			embeds: [{
-				color: config.default_color,
+				color: /** @type {`#${string}`} */ (default_color),
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 				description: `*After the ${profileData.species} waited for a while, the pack members of ${botReplyV.guild.name} can see them getting up and leaving, probably due to boredom. Everyone is too busy anyways, so it is probably for the best if they come back later.*`,
 			}],
@@ -343,6 +374,17 @@ async function declinedInvitation(message, profileData, botReplyV, botReplyH) {
 	);
 }
 
+/**
+ *
+ * @param {import('discord.js').Client} client
+ * @param {import('discord.js').Message} message
+ * @param {import('discord.js').Message} botReplyV
+ * @param {import('discord.js').Message} botReplyH
+ * @param {import('../../typedef').ServerSchema} serverDataV
+ * @param {import('../../typedef').ServerSchema} serverDataH
+ * @param {import('../../typedef').ProfileSchema} profileDataV
+ * @param {import('../../typedef').ProfileSchema} profileDataH
+ */
 async function acceptedInvitation(client, message, botReplyV, botReplyH, serverDataV, serverDataH, profileDataV, profileDataH) {
 
 	await botReplyV
@@ -356,7 +398,7 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 	await botReplyV
 		.reply({
 			embeds: [{
-				color: config.default_color,
+				color: /** @type {`#${string}`} */ (default_color),
 				author: { name: botReplyH.guild.name, icon_url: botReplyH.guild.iconURL() },
 				description: `*After waiting for a bit, a ${profileDataH.species} comes closer, inviting ${profileDataV.name} and their packmates in and leading them inside where they can talk to all these new friends.*`,
 				footer: { text: 'Anyone with a completed profile can now send a message in this channel. It will be delivered to the other pack, and vice versa. Type "rp endvisit" to end the visit at any time.' },
@@ -378,7 +420,7 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 	await botReplyH
 		.reply({
 			embeds: [{
-				color: config.default_color,
+				color: /** @type {`#${string}`} */ (default_color),
 				author: { name: botReplyV.guild.name, icon_url: botReplyV.guild.iconURL() },
 				description: `*${profileDataH.name} goes to pick up the ${profileDataV.species} and their packmates from the pack borders. The new friends seem excited to be here and to talk to everyone.*`,
 				footer: { text: 'Anyone with a completed profile can now send a message in this channel. It will be delivered to the other pack, and vice versa. Type "rp endvisit" to end the visit at any time.' },
@@ -389,14 +431,24 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 
-	const filter = async m => m.content.startsWith(config.prefix) === false && (await profileModel.findOne({ serverId: m.guild.id, userId: m.author.id })) !== null;
+	const filter = async (/** @type {import('discord.js').Message} */ m) => m.content.startsWith(prefix) === false && (await profileModel.findOne({ serverId: m.guild.id, userId: m.author.id })) !== null;
 
 	const hostChannel = await client.channels.fetch(serverDataH.visitChannelId);
 	const guestChannel = await client.channels.fetch(serverDataV.visitChannelId);
 
-	collectMessages(hostChannel, guestChannel);
-	collectMessages(guestChannel, hostChannel);
+	if (!hostChannel.isText() || !guestChannel.isText()) {
 
+		return;
+	}
+
+	collectMessages(/** @type {import('discord.js').TextChannel} */ (hostChannel), /** @type {import('discord.js').TextChannel} */ (guestChannel));
+	collectMessages(/** @type {import('discord.js').TextChannel} */ (guestChannel), /** @type {import('discord.js').TextChannel} */ (hostChannel));
+
+	/**
+	 *
+	 * @param {import('discord.js').TextChannel} thisServerChannel
+	 * @param {import('discord.js').TextChannel} otherServerChannel
+	 */
 	async function collectMessages(thisServerChannel, otherServerChannel) {
 
 		const collector = thisServerChannel.createMessageCollector({ filter, idle: 300000 });
@@ -421,17 +473,18 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 
 		collector.on('collect', async msg => {
 
-			const server = await serverModel.findOne(
+			const server = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOne(
 				{ serverId: msg.guild.id },
-			);
+			));
 
 			if (server.currentlyVisiting === null) {
 
 				return collector.stop();
 			}
 
-			const profile = await profileModel.findOne({ serverId: msg.guild.id, userId: msg.author.id });
-			const webhookCache = JSON.parse(fs.readFileSync('./database/webhookCache.json'));
+			const profile = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ serverId: msg.guild.id, userId: msg.author.id }));
+			/** @type {import('../../typedef').WebhookMessages} */
+			const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8'));
 			let embeds = undefined;
 
 			if (msg.reference !== null) {
@@ -463,7 +516,7 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 
 			webhookCache[botMessage.id] = message.author.id;
 
-			fs.writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
+			writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
 
 			await msg.react('✅');
 
@@ -472,13 +525,13 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 
 		collector.on('end', async () => {
 
-			const thisServerData = await serverModel.findOne(
+			const thisServerData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOne(
 				{ serverId: thisServerChannel.guild.id },
-			);
+			));
 
-			const otherServerData = await serverModel.findOne(
+			const otherServerData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOne(
 				{ serverId: otherServerChannel.guild.id },
-			);
+			));
 
 			if (thisServerData.currentlyVisiting !== null && otherServerData.currentlyVisiting !== null) {
 
@@ -495,11 +548,10 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 				await thisServerChannel
 					.send({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (default_color),
 							author: { name: otherServerChannel.guild.name, icon_url: otherServerChannel.guild.iconURL() },
 							description: `*Hanging out with friends is always nice but has to end eventually. And so the friends from ${message.guild.name} went back to their territory. Until next time.*`,
 						}],
-						failIfNotExists: false,
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
@@ -508,11 +560,10 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 				await otherServerChannel
 					.send({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (default_color),
 							author: { name: thisServerChannel.guild.name, icon_url: thisServerChannel.guild.iconURL() },
 							description: `*Hanging out with friends is always nice but has to end eventually. And so the friends from ${message.guild.name} went back to their territory. Until next time.*`,
 						}],
-						failIfNotExists: false,
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }

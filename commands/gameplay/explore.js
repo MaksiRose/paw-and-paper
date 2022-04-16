@@ -845,20 +845,19 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				embed.description = `⏺️ *The ${opponentSpecies} gets into position to oppose an attack. ${profileData.name} must think quickly about how ${pronounAndPlural(profileData, 0, 'want')} to react.*`;
 			}
 
-			/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions>} */
-			const fightButtons = [ /** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions} */ ({
+			const fightButtons = [ /** @type {import('discord.js').MessageActionRowComponentResolvable} */ ({
 				type: 'BUTTON',
 				customId: 'fight-attack',
 				label: 'Attack',
 				emoji: '⏫',
 				style: 'PRIMARY',
-			}), /** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions} */ ({
+			}), /** @type {import('discord.js').MessageActionRowComponentResolvable} */ ({
 				type: 'BUTTON',
 				customId: 'fight-defend',
 				label: 'Defend',
 				emoji: '⏺️',
 				style: 'PRIMARY',
-			}), /** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions} */ ({
+			}), /** @type {import('discord.js').MessageActionRowComponentResolvable} */ ({
 				type: 'BUTTON',
 				customId: 'fight-dodge',
 				label: 'Dodge',
