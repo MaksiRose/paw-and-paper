@@ -879,7 +879,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					return botReply;
 				});
 
-			filter = i => (i.customId == 'fight-attack' || i.customId == 'fight-defend' || i.customId == 'fight-dodge') && i.user.id == message.author.id;
+			filter = i => (i.customId === 'fight-attack' || i.customId === 'fight-defend' || i.customId === 'fight-dodge') && i.user.id === message.author.id;
 
 			const { customId } = await botReply
 				.awaitMessageComponent({ filter, time: responseTime })
