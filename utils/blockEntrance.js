@@ -1,8 +1,18 @@
+// @ts-check
 const serverModel = require('../models/serverModel');
 const { pronounAndPlural } = require('./getPronouns');
 const { generateRandomNumber } = require('./randomizers');
 
-module.exports = async (message, messageContent, profileData, serverData, den) => {
+/**
+ * Sends message informing the user that the entrance is blocked off.
+ * @param {import('discord.js').Message} message
+ * @param {null | string} messageContent
+ * @param {import('../typedef').ProfileSchema} profileData
+ * @param {import('../typedef').ServerSchema} serverData
+ * @param {'sleeping dens' | 'medicine den' | 'food den'} den
+ * @returns
+ */
+async function blockEntrance(message, messageContent, profileData, serverData, den) {
 
 	const possibleBlockages = ['vines', 'burrow', 'tree trunk', 'boulder'];
 	const block = serverData.blockedEntranceObject.blockedKind === null ? possibleBlockages[generateRandomNumber(possibleBlockages.length, 0)] : serverData.blockedEntranceObject.blockedKind;
@@ -15,6 +25,7 @@ module.exports = async (message, messageContent, profileData, serverData, den) =
 		);
 	}
 
+	/** @type {null | string} */
 	let blockText = null;
 	if (block === 'vines') blockText = 'thick vines appear to have grown over';
 	if (block === 'burrow') blockText = 'someone seems to have built a big burrow right under';
@@ -32,8 +43,7 @@ module.exports = async (message, messageContent, profileData, serverData, den) =
 			failIfNotExists: false,
 		})
 		.catch((error) => {
-			if (error.httpStatus !== 404) {
-				throw new Error(error);
-			}
+			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
-};
+}
+module.exports = blockEntrance;

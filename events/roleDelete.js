@@ -1,27 +1,37 @@
+// @ts-check
 const serverModel = require('../models/serverModel');
-const profileModel = require('../models/profileModel');
+const { profileModel } = require('../models/profileModel');
 
-module.exports = {
+/**
+ * @type {import('../typedef').Event}
+ */
+const event = {
 	name: 'roleDelete',
 	once: false,
+
+	/**
+	 * Emitted whenever a guild role is deleted.
+	 * @param {import('../paw').client} client
+	 * @param {import('discord.js').Role} role
+	 */
 	async execute(client, role) {
 
-		const serverData = await serverModel.findOne({
+		const serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOne({
 			serverId: role.guild.id,
-		});
+		}));
 
 		if (serverData === null) {
 
 			return;
 		}
 
-		const roles = serverData.roles.filter(shoprole => shoprole.roleId === role.id);
+		const roles = serverData.shop.filter(shoprole => shoprole.roleId === role.id);
 
 		for (const shoprole of roles) {
 
-			const allServerProfiles = await profileModel.find({
+			const allServerProfiles = /** @type {Array<import('../typedef').ProfileSchema>} */ (await profileModel.find({
 				serverId: role.guild.id,
-			});
+			}));
 
 			for (const profile of allServerProfiles) {
 
@@ -36,10 +46,12 @@ module.exports = {
 						{ userId: profile.userId, serverId: profile.serverId },
 						{
 							$inc: { experience: userRole.wayOfEarning === 'experience' ? userRole.requirement : 0 },
-							$set: { roles: profile.roles } },
+							$set: { roles: profile.roles },
+						},
 					);
 				}
 			}
 		}
 	},
 };
+module.exports = event;

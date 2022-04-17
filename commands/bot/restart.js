@@ -1,35 +1,38 @@
-module.exports = {
-	name: 'restart',
-	async sendMessage(client, message) {
+// @ts-check
 
-		if (message.author.id != '268402976844939266') {
+module.exports.name = 'restart';
 
-			return;
-		}
+/**
+ *
+ * @param {import('../../paw').client} client
+ * @param {import('discord.js').Message} message
+ * @returns {Promise<void>}
+ */
+module.exports.sendMessage = async (client, message) => {
 
-		try {
+	if (message.author.id !== client.application.owner.id && /** @type {import('discord.js').Team} */ (client.application.owner).members?.has(message.author.id) === false) {
 
-			await message
-				.reply({
-					content: 'Restarted!',
-					failIfNotExists: false,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
+		return;
+	}
 
-			client.destroy();
-			process.exit();
-		}
-		catch (error) {
-			console.error(error);
-			message.channel
-				.send({ content: `ERROR: ${error.message}` })
-				.catch((newError) => {
-					throw new Error(newError);
-				});
-		}
-	},
+	try {
+
+		await message
+			.reply({
+				content: 'Restarted!',
+				failIfNotExists: false,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+
+		client.destroy();
+		process.exit();
+	}
+	catch (error) {
+		console.error(error);
+		message.channel
+			.send({ content: `ERROR: ${error.message}` })
+			.catch((newError) => { throw new Error(newError); });
+	}
 };

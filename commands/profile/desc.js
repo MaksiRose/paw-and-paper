@@ -1,63 +1,69 @@
-const config = require('../../config.json');
-const profileModel = require('../../models/profileModel');
+// @ts-check
+const { default_color } = require('../../config.json');
+const { profileModel } = require('../../models/profileModel');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
 
-module.exports = {
-	name: 'desc',
-	aliases: ['description'],
-	async sendMessage(client, message, argumentsArray, profileData) {
+module.exports.name = 'desc';
+module.exports.aliases = ['description'];
 
-		if (await hasNotCompletedAccount(message, profileData)) {
+/**
+ *
+ * @param {import('../../paw').client} client
+ * @param {import('discord.js').Message} message
+ * @param {Array<string>} argumentsArray
+ * @param {import('../../typedef').ProfileSchema} profileData
+ * @returns {Promise<void>}
+ */
+module.exports.sendMessage = async (client, message, argumentsArray, profileData) => {
 
-			return;
-		}
+	if (await hasNotCompletedAccount(message, profileData)) {
 
-		profileData = await startCooldown(message, profileData);
+		return;
+	}
 
-		if (!argumentsArray.length) {
+	profileData = await startCooldown(message, profileData);
 
-			await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { description: '' } },
-			);
+	if (!argumentsArray.length) {
 
-			return await message
-				.reply({
-					embeds: [{
-						color: config.default_color,
-						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						title: 'Your description has been reset!',
-					}],
-					failIfNotExists: false,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-		}
-
-		const description = argumentsArray.join(' ');
 		await profileModel.findOneAndUpdate(
 			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { description: description } },
+			{ $set: { description: '' } },
 		);
 
-		return await message
+		await message
 			.reply({
 				embeds: [{
-					color: profileData.color,
+					color: /** @type {`#${string}`} */ (default_color),
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-					title: `Description for ${profileData.name} set:`,
-					description: description,
+					title: 'Your description has been reset!',
 				}],
 				failIfNotExists: false,
 			})
 			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
+				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
-	},
+		return;
+	}
+
+	const description = argumentsArray.join(' ');
+	await profileModel.findOneAndUpdate(
+		{ userId: message.author.id, serverId: message.guild.id },
+		{ $set: { description: description } },
+	);
+
+	await message
+		.reply({
+			embeds: [{
+				color: profileData.color,
+				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+				title: `Description for ${profileData.name} set:`,
+				description: description,
+			}],
+			failIfNotExists: false,
+		})
+		.catch((error) => {
+			if (error.httpStatus !== 404) { throw new Error(error); }
+		});
+	return;
 };

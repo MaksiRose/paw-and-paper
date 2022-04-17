@@ -1,69 +1,85 @@
+// @ts-check
 const bfd = require('bfd-api-redux');
 const { AutoPoster } = require('topgg-autoposter');
 const Topgg = require('@top-gg/sdk');
 const express = require('express');
-const fs = require('fs');
-const RateLimit = require('express-rate-limit');
+const { readFileSync, writeFileSync } = require('fs');
+const { rateLimit } = require('express-rate-limit');
 
-const limiter = RateLimit({
+const limiter = rateLimit({
 	windowMs: 60 * 1000,
 	max: 20,
 });
 
-module.exports = {
-	async execute(client) {
+/**
+ * Updates server count on vote websites, starts event listeners to store successful votes, and adds structure to client to request individual votes
+ * @param {import('../paw').client} client
+ */
+module.exports.execute = (client) => {
 
-		const bfdClient = new bfd(client.votes.bfd.token, '862718885564252212');
-		const bfdAuthorization = client.votes.bfd.authorization;
+	if (/** @type {{token: string, authorization: string}} */ (client.votes.bfd).token !== '' || /** @type {{token: string, authorization: string}} */ (client.votes.bfd).authorization != '') {
+
+		const bfdClient = new bfd(/** @type {{token: string, authorization: string}} */(client.votes.bfd).token, client.user.id);
+		const bfdAuthorization = /** @type {{token: string, authorization: string}} */ (client.votes.bfd).authorization;
 		client.votes.bfd = bfdClient;
 
 		const serverCount = client.guilds.cache.size;
 		client.votes.bfd.setServers(serverCount);
 
+		/** @type {*} */
 		const bfdApp = express();
 
 		bfdApp.use(express.json());
 		bfdApp.use(limiter);
 
-		bfdApp.post('/discords', (request, response) => {
+		bfdApp.post('/discords', (/** @type {{ headers: { authorization: string; }; body: { user: string; }; }} */ request, /** @type {{ status: (arg0: number) => { (): any; new (): any; end: { (): void; new (): any; }; }; }} */ response) => {
 
 			if (request.headers.authorization === bfdAuthorization) {
 
-				const voteCache = JSON.parse(fs.readFileSync('./database/voteCache.json'));
+				/** @type {import('../typedef').VoteList} */
+				const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8'));
 
 				voteCache['id_' + request.body.user] = voteCache['id_' + request.body.user] ?? {};
 				voteCache['id_' + request.body.user].lastRecordedDiscordsVote = Date.now();
 
-				fs.writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
+				writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 			}
 
 			response.status(200).end();
 		});
 
-		bfdApp.listen(3002);
+		bfdApp.listen(3002, (/** @type {any} */ error) => {return console.error(error);});
+	}
 
+	if (/** @type {{token: string, authorization: string}} */ (client.votes.top).token !== '' || /** @type {{token: string, authorization: string}} */ (client.votes.top).authorization != '') {
 
-		AutoPoster(client.votes.top.token, client);
+		AutoPoster(/** @type {{token: string, authorization: string}} */(client.votes.top).token, client);
 
-		const topApi = new Topgg.Api(client.votes.top.token);
-		const topApp = express();
-		const webhook = new Topgg.Webhook(client.votes.top.authorization);
+		const topApi = new Topgg.Api(/** @type {{token: string, authorization: string}} */(client.votes.top).token);
+		const webhook = new Topgg.Webhook(/** @type {{token: string, authorization: string}} */(client.votes.top).authorization);
 
 		client.votes.top = topApi;
 
+		/** @type {*} */
+		const topApp = express();
+
 		topApp.post('/top', webhook.listener(async vote => {
 
-			const voteCache = JSON.parse(fs.readFileSync('./database/voteCache.json'));
+			/** @type {import('../typedef').VoteList} */
+			const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8'));
 
 			voteCache['id_' + vote.user] = voteCache['id_' + vote.user] ?? {};
 			voteCache['id_' + vote.user].lastRecordedTopVote = Date.now();
 
-			fs.writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
+			writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 		}));
 
-		topApp.listen(3000);
+		topApp.listen(3000, (/** @type {any} */ error) => {return console.error(error);});
+	}
 
+	if (/** @type {{token: string, authorization: string}} */ (client.votes.dbl).token !== '' || /** @type {{token: string, authorization: string}} */ (client.votes.dbl).authorization != '') {
 
+		/** @type {*} */
 		const dblApp = express();
 
 		dblApp.use(express.json());
@@ -71,19 +87,20 @@ module.exports = {
 
 		dblApp.post('/dbl', (request, response) => {
 
-			if (request.headers.authorization === client.votes.dbl.authorization) {
+			if (request.headers.authorization === /** @type {{token: string, authorization: string}} */(client.votes.dbl).authorization) {
 
-				const voteCache = JSON.parse(fs.readFileSync('./database/voteCache.json'));
+				/** @type {import('../typedef').VoteList} */
+				const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8'));
 
 				voteCache['id_' + request.body.id] = voteCache['id_' + request.body.id] ?? {};
 				voteCache['id_' + request.body.id].lastRecordedDblVote = Date.now();
 
-				fs.writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
+				writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 			}
 
 			response.status(200).end();
 		});
 
-		dblApp.listen(3001);
-	},
+		dblApp.listen(3001, (/** @type {any} */ error) => {return console.error(error);});
+	}
 };

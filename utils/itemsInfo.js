@@ -1,3 +1,6 @@
+// @ts-check
+
+/** @type {Map<string, import('../typedef').PlantMapObject>} */
 const commonPlantsMap = new Map();
 
 commonPlantsMap.set('raspberry', {
@@ -193,6 +196,7 @@ commonPlantsMap.set('rhodiola', {
 });
 
 
+/** @type {Map<string, import('../typedef').PlantMapObject>} */
 const uncommonPlantsMap = new Map();
 
 uncommonPlantsMap.set('solomon\'s seal', {
@@ -292,6 +296,7 @@ uncommonPlantsMap.set('yerba mate', {
 });
 
 
+/** @type {Map<string, import('../typedef').PlantMapObject>} */
 const rarePlantsMap = new Map();
 
 rarePlantsMap.set('ribwort plantain', {
@@ -333,6 +338,7 @@ rarePlantsMap.set('marsh mallow', {
 
 // *rodents incl.: mice, rats, squirrels, prairie dogs, porcupines, beavers, guinea pigs, hamsters, rabbits, hares, pikas
 // every animal should have ~3-4 opponents per biome, and be mentioned 9-12 times in total
+/** @type {Map<string, import('../typedef').SpeciesMapObject>} */
 const speciesMap = new Map();
 
 // actual diet: moose, red deer, roe deer, wild boar, elk, caribou, white-tailed deer, mule deer, rodents*, hares, insectivores, smaller carnivores, waterfowl, lizards, snakes, frogs, large insecets

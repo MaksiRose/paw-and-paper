@@ -1,8 +1,19 @@
+// @ts-check
 const serverModel = require('../models/serverModel');
 
-module.exports = {
+/**
+ * @type {import('../typedef').Event}
+ */
+const event = {
 	name: 'guildUpdate',
 	once: false,
+
+	/**
+	 * Emitted whenever a guild is updated - e.g. name change.
+	 * @param {import('../paw').client} client
+	 * @param {import('discord.js').Guild} oldGuild
+	 * @param {import('discord.js').Guild} newGuild
+	 */
 	async execute(client, oldGuild, newGuild) {
 
 		await serverModel.findOneAndUpdate(
@@ -11,3 +22,4 @@ module.exports = {
 		);
 	},
 };
+module.exports = event;

@@ -1,14 +1,23 @@
-const profileModel = require('../models/profileModel');
+// @ts-check
+const { profileModel } = require('../models/profileModel');
 const config = require('../config.json');
 const errorHandling = require('../utils/errorHandling');
-const pjson = require('../package.json');
-const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
+const { version } = require('../package.json');
 const { execute } = require('./messageCreate');
 const { sendReminder, stopReminder } = require('../commands/maintenance/water');
 
-module.exports = {
+/**
+ * @type {import('../typedef').Event}
+ */
+const event = {
 	name: 'interactionCreate',
 	once: false,
+
+	/**
+	 * Emitted when an interaction is created.
+	 * @param {import('../paw').client} client
+	 * @param {(import('discord.js').SelectMenuInteraction | import('discord.js').ButtonInteraction) & { message: import('discord.js').Message }} interaction
+	 */
 	async execute(client, interaction) {
 
 		await interaction
@@ -40,20 +49,17 @@ module.exports = {
 
 		const referencedMessage = await interaction.channel.messages
 			.fetch(interaction.message.reference.messageId)
-			.catch(async (error) => {
-				if (error.httpStatus !== 404) {
-					return await errorHandling.output(interaction.message, error);
-				}
-			});
+			.catch(async () => { return null; });
 
-		if (referencedMessage && referencedMessage.author.id != interaction.user.id) {
+		if (referencedMessage && referencedMessage.author.id !== interaction.user.id) {
 
 			return;
 		}
 
-		let profileData = await profileModel.findOne(
-			{ userId: interaction.user.id, serverId: interaction.guild.id },
-		);
+		let profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
+			userId: interaction.user.id,
+			serverId: interaction.guild.id,
+		}));
 
 		if (interaction.isSelectMenu()) {
 
@@ -65,7 +71,7 @@ module.exports = {
 				return await interaction.message
 					.edit({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'Page 1: 📝 Profile Creation',
 							description: 'Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.',
 							fields: [
@@ -99,10 +105,8 @@ module.exports = {
 							}],
 						}],
 					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -111,7 +115,7 @@ module.exports = {
 				return await interaction.message
 					.edit({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'Page 2: 🎲 Gameplay',
 							description: 'Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.',
 							fields: [
@@ -143,10 +147,8 @@ module.exports = {
 							}],
 						}],
 					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -155,7 +157,7 @@ module.exports = {
 				return await interaction.message
 					.edit({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'Page 3: 🍗 Maintenance',
 							description: 'Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.',
 							fields: [
@@ -193,10 +195,8 @@ module.exports = {
 							}],
 						}],
 					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -205,7 +205,7 @@ module.exports = {
 				return await interaction.message
 					.edit({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'Page 4: 👥 Interaction',
 							description: 'Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.',
 							fields: [
@@ -235,10 +235,8 @@ module.exports = {
 							}],
 						}],
 					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -246,34 +244,28 @@ module.exports = {
 
 				const maksi = await client.users
 					.fetch(config.maksi)
-					.catch(async (error) => {
-						return await errorHandling.output(interaction.message, error);
-					});
+					.catch(() => { return null; });
+
 				const ezra = await client.users
 					.fetch(config.ezra)
-					.catch(async (error) => {
-						return await errorHandling.output(interaction.message, error);
-					});
+					.catch(() => { return null; });
+
 				const ren = await client.users
 					.fetch(config.ren)
-					.catch(async (error) => {
-						return await errorHandling.output(interaction.message, error);
-					});
+					.catch(() => { return null; });
+
 				const jags = await client.users
 					.fetch(config.jags)
-					.catch(async (error) => {
-						return await errorHandling.output(interaction.message, error);
-					});
+					.catch(() => { return null; });
+
 				const elliott = await client.users
 					.fetch(config.elliott)
-					.catch(async (error) => {
-						return await errorHandling.output(interaction.message, error);
-					});
+					.catch(() => { return null; });
 
 				await interaction.message
 					.edit({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'Page 5: ⚙️ Bot',
 							description: 'Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.',
 							fields: [
@@ -285,8 +277,8 @@ module.exports = {
 								{ name: '**rp allowvisits [#channel/off]**', value: '__Server admins only.__ Allow or disallow visits between your and other packs.' },
 								{ name: '**rp getupdates [#channel]**', value: '__Server admins only.__ Specify a channel in which updates, new features etc. should be posted.' },
 								{ name: '**rp ticket [text]**', value: 'Report a bug, give feedback, suggest a feature!' },
-								{ name: '\n**__CREDITS:__**', value: `This bot was made with love by ${maksi.tag}. Special thanks goes out to ${ezra.tag}, ${ren.tag} and ${elliott.tag}, who did a lot of the custom bot responses, and ${jags.tag} who did the profile picture. Thank you also to everyone who tested the bot and gave feedback.\nThis bot was originally created for a Discord server called [Rushing River Pack](https://disboard.org/server/854522091328110595). If you are otherkin, therian, or supporter of those, you are welcome to join.` },
-								{ name: '\n**__OTHER:__**', value: `If you want to support me, you can donate [here](https://streamlabs.com/maksirose/tip)! :)\nYou can find the GitHub repository for this project [here](https://github.com/MaksiRose/paw-and-paper).\nThe bot is currently running on version ${pjson.version}.` },
+								{ name: '\n**__CREDITS:__**', value: `This bot was made with love by ${maksi?.tag}. Special thanks goes out to ${ezra?.tag}, ${ren?.tag} and ${elliott.tag}, who did a lot of the custom bot responses, and ${jags.tag} who did the profile picture. Thank you also to everyone who tested the bot and gave feedback.\nThis bot was originally created for a Discord server called [Rushing River Pack](https://disboard.org/server/854522091328110595). If you are otherkin, therian, or supporter of those, you are welcome to join.` },
+								{ name: '\n**__OTHER:__**', value: `If you want to support me, you can donate [here](https://streamlabs.com/maksirose/tip)! :)\nYou can find the GitHub repository for this project [here](https://github.com/MaksiRose/paw-and-paper).\nThe bot is currently running on version ${version}.` },
 							],
 							footer: { text: 'ℹ️ Select a command from the list below to view more information about it.' },
 						}],
@@ -294,10 +286,10 @@ module.exports = {
 							type: 'ACTION_ROW',
 							components: [{
 								type: 'SELECT_MENU',
-								customId: 'help-page4-commands',
+								customId: 'help-page5-commands',
 								placeholder: 'Select a command',
 								options: [
-									{ lavel: 'Vote*', value: 'help_vote', description: 'Vote for this bot on one of three websites and get +30 energy each time.' },
+									{ label: 'Vote*', value: 'help_vote', description: 'Vote for this bot on one of three websites and get +30 energy each time.' },
 									{ label: 'Accounts', value: 'help_accounts', description: 'Change the account/profile you are using. You can have up to three per server.' },
 									{ label: 'Shop', value: 'help_shop', description: 'Buy roles with experience points.' },
 									{ label: 'Shopadd', value: 'help_shopadd', description: 'Server admins only. Add a role to the shop' },
@@ -309,10 +301,8 @@ module.exports = {
 							}],
 						}],
 					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -321,7 +311,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp name [name]',
 							description: '__START YOUR ADVENTURE!__ Name your character.',
 							fields: [
@@ -345,7 +335,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp species (species)',
 							description: 'Specify the species of your character.',
 							fields: [
@@ -369,7 +359,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp pronouns [none OR [subject pronoun]/[object pronoun]/[possessive adjective]/[possessive pronoun]/[reflexive pronoun]/[singular OR plural]] & (optional additional sets of pronouns)',
 							description: 'Choose the pronouns you are using during roleplay.',
 							fields: [
@@ -393,11 +383,11 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp picture (attachment of the desired image)',
 							description: 'Choose a picture for your character.',
 							fields: [
-								{ name: '**Aliases**', value: 'pic, pfp' },
+								{ name: '**Aliases**', value: 'pic, pfp, avatar' },
 								{ name: '**Arguments**', value: 'Optional: Upload the desired picture together with the command.' },
 								{ name: '**More information**', value: 'The default for this is the user\'s profile picture. Not uploading a picture will reset the picture to the users profile picture.\nThis can be changed at any time.\nThis will be the picture displayed for your character during gameplay. Only .jp(e)g, .png and .raw images are supported, GIFs and videos don\'t work. Sending links is not supported. Square images are recommended.' },
 								{ name: '**Example**', value: '`rp picture` (+ image below)' },
@@ -418,7 +408,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp color [hex code]',
 							description: 'Enter a valid hex code to give your messages and profile that color.',
 							fields: [
@@ -442,7 +432,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp desc (description text)',
 							description: 'Give a more detailed description of your character.',
 							fields: [
@@ -466,7 +456,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp profilelist',
 							description: 'View a list of all the profiles that exist on this server.',
 							fields: [
@@ -489,7 +479,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp profilelist',
 							description: 'Delete your account and reset your data permanently.',
 							fields: [
@@ -512,7 +502,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp play (@user)',
 							description: 'The main activity of Younglings. Costs energy, but gives XP. Additionally, you can mention someone to play with them. __Only available to Younglings and Apprentices.__',
 							fields: [
@@ -535,7 +525,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp practice',
 							description: 'Practice fighting wild animals. You cannot get hurt here. __Not available to Younglings__.',
 							fields: [
@@ -558,7 +548,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp explore (biome)',
 							description: 'The main activity of every rank above Younglings. Find meat and herbs. Costs energy, but gives XP. __Not available to Younglings.__',
 							fields: [
@@ -584,7 +574,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp go (region)',
 							description: 'Go to a specific region in your pack.',
 							fields: [
@@ -608,7 +598,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp attack',
 							description: 'If humans are attacking the pack, you can fight back using this command.',
 							fields: [
@@ -631,7 +621,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp quest',
 							description: 'Get quests by playing (as Youngling) and exploring. Start them with this command. If you are successful, you can move up a rank.',
 							fields: [
@@ -654,7 +644,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp rank',
 							description: 'Once you successfully finished a quest, you can move up a rank using this command.',
 							fields: [
@@ -677,7 +667,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp profile (@user)',
 							description: 'Look up all the available info about a character.',
 							fields: [
@@ -700,7 +690,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp stats',
 							description: 'Quick view of your characters condition.',
 							fields: [
@@ -723,7 +713,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp inventory',
 							description: 'This is a collection of all the things your pack has gathered, listed up.',
 							fields: [
@@ -746,7 +736,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp store',
 							description: 'Take items you have gathered for your pack, and put them in the pack inventory.',
 							fields: [
@@ -769,7 +759,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp eat (item)',
 							description: 'Take the appropriate food for your species out of the packs food pile and fill up your hunger meter.',
 							fields: [
@@ -792,7 +782,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp drink',
 							description: 'Drink some water and fill up your thirst meter.',
 							fields: [
@@ -815,7 +805,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp rest',
 							description: 'Get some sleep and fill up your energy meter. Takes some time to refill.',
 							fields: [
@@ -838,7 +828,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp heal (@user)',
 							description: 'Heal your packmates. Costs energy, but gives XP. __Only available to Apprentices, Healers and Elderlies.__',
 							fields: [
@@ -861,7 +851,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp dispose',
 							description: 'Remove obstacles blocking dens. Costs energy, but gives XP. __Only available to Apprentices, Hunters and Elderlies.__',
 							fields: [
@@ -884,7 +874,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp water',
 							description: 'If you have a ginkgo sapling, you can water it using this command.',
 							fields: [
@@ -907,7 +897,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp say [text]',
 							description: 'Talk to your fellow packmates. Gives 1 experience point per use.',
 							fields: [
@@ -930,7 +920,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp hug [@user]',
 							description: 'Hug a fellow packmate, if they consent.',
 							fields: [
@@ -953,7 +943,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp share (@user)',
 							description: 'Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person. __Only available to Elderlies.__',
 							fields: [
@@ -976,7 +966,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp playfight [@user] (c4 or connectfour / ttt or tictactoe)',
 							description: 'Playfully fight with another packmate. You can play Connect Four or Tic Tac Toe.',
 							fields: [
@@ -999,7 +989,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp accounts',
 							description: 'Change the account/profile you are using. You can have up to three per server.',
 							fields: [
@@ -1022,7 +1012,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp shop',
 							description: 'Buy roles with experience points.',
 							fields: [
@@ -1045,7 +1035,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp requestvisit',
 							description: 'Find, visit and talk to people from far away packs.',
 							fields: [
@@ -1068,7 +1058,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp requestvisit',
 							description: 'End a visit between your and another pack.',
 							fields: [
@@ -1091,7 +1081,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp shopadd [@role] [rank/levels/XP] [requirement]',
 							description: '__Server admins only.__ Add a role to the shop.',
 							fields: [
@@ -1115,7 +1105,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp shopadd [@role] [rank/levels/XP] [requirement]',
 							description: '__Server admins only.__ Add a role to the shop.',
 							fields: [
@@ -1139,7 +1129,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp shopremove',
 							description: '__Server admins only.__ Remove a role from the shop.',
 							fields: [
@@ -1162,7 +1152,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp allowvists [#channel/off]',
 							description: '__Server admins only.__ Allow or disallow visits between your and other packs.',
 							fields: [
@@ -1185,7 +1175,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp getupdates [#channel]',
 							description: '__Server admins only.__ Allow or disallow visits between your and other packs.',
 							fields: [
@@ -1208,7 +1198,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp ticket [text]',
 							description: 'Report a bug, give feedback, suggest a feature!',
 							fields: [
@@ -1232,7 +1222,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp vote',
 							description: 'Vote for this bot on one of three websites and get +30 energy each time.',
 							fields: [
@@ -1249,23 +1239,6 @@ module.exports = {
 						}
 					});
 			}
-
-			const plantNamesArray = [...commonPlantsMap.keys(), ...uncommonPlantsMap.keys(), ...rarePlantsMap.keys(), ...speciesMap.keys() ].sort();
-
-			if (interaction.customId == 'eat-options' && plantNamesArray.some(elem => elem == interaction.values[0])) {
-
-				interaction.message
-					.delete()
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-
-				referencedMessage.content = `${config.prefix}eat ${interaction.values[0]}`;
-
-				return await execute(client, referencedMessage);
-			}
 		}
 
 		if (interaction.isButton()) {
@@ -1279,13 +1252,11 @@ module.exports = {
 					.edit({
 						components: [],
 					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 
-				const maksi = await client.users.fetch(config.maksi, false);
+				const maksi = await client.users.fetch(config.maksi);
 				return await maksi
 					.send({
 						content: `https://discord.com/channels/${interaction.guild.id}/${interaction.message.channel.id}/${interaction.message.id}`,
@@ -1324,10 +1295,10 @@ module.exports = {
 
 				if (referencedMessage.mentions.users.size > 0) {
 
-					profileData = await profileModel.findOne({
+					profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
 						userId: referencedMessage.mentions.users.first().id,
 						serverId: referencedMessage.guild.id,
-					});
+					}));
 
 					components[0].components.pop();
 				}
@@ -1350,9 +1321,7 @@ module.exports = {
 				const description = (profileData.description == '') ? '' : `*${profileData.description}*`;
 				const user = await client.users
 					.fetch(profileData.userId)
-					.catch(async (error) => {
-						return await errorHandling.output(interaction.message, error);
-					});
+					.catch(() => { return null; });
 
 				await interaction.message
 					.edit({
@@ -1371,7 +1340,7 @@ module.exports = {
 							],
 						},
 						{
-							color: profileData.color,
+							color: /** @type {`#${string}`} */ (profileData.color),
 							description: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\`\n⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\`\n🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\``,
 							fields: [
 								{ name: '**🩹 Injuries/Illnesses**', value: injuryText, inline: true },
@@ -1379,12 +1348,10 @@ module.exports = {
 							],
 							footer: { text: profileData.hasQuest == true ? 'There is one open quest!' : null },
 						}],
-						components: components,
+						components: /** @type {Array<import('discord.js').MessageActionRow>} */ (components),
 					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -1407,12 +1374,13 @@ module.exports = {
 					}
 				}
 
+				/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} */
 				const components = [{
 					type: 'ACTION_ROW',
 					components: [{
 						type: 'BUTTON',
 						customId: 'stats-refresh',
-						emoji: { name: '🔁' },
+						emoji: '🔁',
 						style: 'SECONDARY',
 					}, {
 						type: 'BUTTON',
@@ -1433,9 +1401,7 @@ module.exports = {
 						components: components,
 					})
 					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -1463,7 +1429,7 @@ module.exports = {
 					{ $set: { saplingObject: profileData.saplingObject } },
 				);
 
-				stopReminder(profileData, interaction.message);
+				stopReminder(profileData);
 
 				await interaction
 					.followUp({
@@ -1538,3 +1504,4 @@ module.exports = {
 		}
 	},
 };
+module.exports = event;
