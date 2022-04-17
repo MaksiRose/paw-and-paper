@@ -287,7 +287,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		const findSomethingChance = pullFromWeightedTable({ 0: 90, 1: 10 + profileData.saplingObject.waterCycles });
 		if (findSomethingChance === 0) {
 
-			embed.description = `*${profileData.name} bounces around camp, watching the busy hustle and blurs of hunters and healers at work. ${upperCasePronounAndPlural(profileData, 0, 'splashes', 'splash')} into the stream that split the pack in half, chasing the minnows with ${pronoun(profileData, 2)} eyes.*`;
+			embed.description = `*${profileData.name} bounces around camp, watching the busy hustle and blurs of hunters and healers at work. ${upperCasePronounAndPlural(profileData, 0, 'splashes', 'splash')} into the stream that splits the pack in half, chasing the minnows with ${pronoun(profileData, 2)} eyes.*`;
 			embed.footer.text = embedFooterStatsText;
 
 			return await message

@@ -386,7 +386,7 @@ const event = {
 							title: 'rp picture (attachment of the desired image)',
 							description: 'Choose a picture for your character.',
 							fields: [
-								{ name: '**Aliases**', value: 'pic, pfp' },
+								{ name: '**Aliases**', value: 'pic, pfp, avatar' },
 								{ name: '**Arguments**', value: 'Optional: Upload the desired picture together with the command.' },
 								{ name: '**More information**', value: 'The default for this is the user\'s profile picture. Not uploading a picture will reset the picture to the users profile picture.\nThis can be changed at any time.\nThis will be the picture displayed for your character during gameplay. Only .jp(e)g, .png and .raw images are supported, GIFs and videos don\'t work. Sending links is not supported. Square images are recommended.' },
 								{ name: '**Example**', value: '`rp picture` (+ image below)' },
