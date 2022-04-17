@@ -37,7 +37,7 @@ module.exports.WebhookMessages = this.WebhookMessages;
  * @property {number} waterCycles - How many times the sapling has been watered.
  * @property {?number} nextWaterTimestamp - Timestamp of the next perfect watering.
  * @property {boolean} reminder - Whether the user wants to be reminded to water the sapling.
- * @property {number} lastMessageChannelId - The ID of the last channel the sapling was watered in.
+ * @property {string} lastMessageChannelId - The ID of the last channel the sapling was watered in.
  */
 
 /**

@@ -27,7 +27,7 @@ const profileSchema = new schema({
 	hasQuest: { type: ['boolean'] },
 	currentRegion: { type: ['string'], default: 'sleeping dens' },
 	unlockedRanks: { type: ['number'] },
-	saplingObject: { type: ['object', ['any']], default: { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, reminder: false, lastMessageChannelId: 0 } },
+	saplingObject: { type: ['object', ['any']], default: { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, reminder: false, lastMessageChannelId: '0' } },
 	pronounSets: { type: ['array', ['array', ['string']]], default: [['they', 'them', 'their', 'theirs', 'themselves', 'plural']] },
 	injuryObject: { type: ['object', ['any']], default: { wounds: 0, infections: 0, cold: false, sprains: 0, poison: false } },
 	inventoryObject: { type: ['object', ['object', ['number']]], default: {
