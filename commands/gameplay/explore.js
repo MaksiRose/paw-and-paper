@@ -631,10 +631,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			const healthPoints = function(health) { return (profileData.health - health < 0) ? profileData.health : health; }(generateRandomNumber(5, 3));
 
-			await profileModel.findOneAndUpdate(
+			profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 				{ userId: message.author.id, serverId: message.guild.id },
 				{ $inc: { health: -healthPoints } },
-			);
+			));
 
 			const allElderlyProfilesArray = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find({
 				serverId: message.guild.id,
@@ -960,10 +960,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 				const healthPoints = function(health) { return (profileData.health - health < 0) ? profileData.health : health; }(generateRandomNumber(5, 3));
 
-				await profileModel.findOneAndUpdate(
+				profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 					{ userId: message.author.id, serverId: message.guild.id },
 					{ $inc: { health: -healthPoints } },
-				);
+				));
 
 				switch (pullFromWeightedTable({ 0: 1, 1: 1 })) {
 

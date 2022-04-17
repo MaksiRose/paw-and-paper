@@ -179,7 +179,7 @@ async function decreaseHealth(message, profileData, botReply, modifiedUserInjury
 			continue;
 		}
 
-		extraLostHealthPoints += generateRandomNumber(5, (Math.round(profileData.levels / 2) < 11) ? Math.round(profileData.levels / 2) : 11);
+		extraLostHealthPoints += generateRandomNumber(5, Math.round(profileData.levels / 2) < 11 ? Math.round(profileData.levels / 2) : 11);
 
 		embed.description += `\n*One of ${profileData.name}'s sprains is getting worse!*`;
 	}
