@@ -185,7 +185,15 @@ const event = {
 				});
 		}
 
-		userMap.get('nr' + message.author.id + message.guild.id).restingTimeout = setTimeout(startResting, 600000);
+		/*
+		This ensures that no two timeouts are set at the same time, and only one of them being cleared. When a command that doesn't immediately return (ie explore) is called, this timeout doesn't exist yet, but the old timeout was already cleared. If a second command (ie stats) is started while the old one is still running, it will try to delete the same timeout that the first command (aka explore) already cleared, and create a new one, that subsequently is going to be overwritten by the first command (aka explore) once it is finished. That means that the timeout created by the other command (aka stats) is never going to be cleared, and instead only the timeout of the last finished command (aka explore) is going to be cleared, which means that 10 minutes after the other command (aka stats) was executed, the user will start automatically resting, even if they were still actively playing in that time.
+		It is not a good idea to place clearing the timeout behind the command finish executing, since the command finish executing might take some time, and the 10 minutes from that timer might over in that time, making the user attempt to rest while executing a command.
+		It is also not a good idea to place starting the timeout before the command start executing, since the command again might take some time to finish executing, and then the 10 minute timer might be over sooner as expected.
+		*/
+		if (userMap.get('nr' + message.author.id + message.guild.id).activeCommands === 0) {
+
+			userMap.get('nr' + message.author.id + message.guild.id).restingTimeout = setTimeout(startResting, 600000);
+		}
 
 		/**
 		 * Checks if character is eligable for resting, and executes rest command if true.
