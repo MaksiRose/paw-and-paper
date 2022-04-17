@@ -28,7 +28,7 @@ class model {
 				// @ts-ignore
 				if (Object.hasOwn(dataObject, key) === false) {
 
-					updateObject[key] = (typeof def === type || type === 'any') ? def : [undefined, false, 0, '', {}, [], null][validTypes.indexOf(type[0])];
+					updateObject[key] = (typeof def === type || type === 'array' || type === 'any') ? def : [undefined, false, 0, '', {}, [], null][validTypes.indexOf(type[0])];
 				}
 				else {
 
@@ -414,7 +414,7 @@ class schema {
 
 		for (const [key, { type: type, default: def, locked: locked }] of Object.entries(object)) {
 
-			this[key] = { type: getType(type) || def !== undefined ? [typeof def] : ['any'], default: def || undefined, locked: Boolean(locked) };
+			this[key] = { type: getType(type) || (def !== undefined ? [typeof def] : ['any']), default: def || undefined, locked: Boolean(locked) };
 		}
 
 		/**
