@@ -622,7 +622,7 @@ function playConnectFour(serverData, profileData, partnerProfileData, message, b
 
 					if (r === 0) {
 
-						componentArray[column < 4 ? 0 : 1].components[column].disabled = true;
+						componentArray[column <= 3 ? 0 : 1].components[column <= 3 ? column : column - 4].disabled = true;
 					}
 
 					break;
