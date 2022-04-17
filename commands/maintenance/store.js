@@ -231,7 +231,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					}
 				}
 
-				interaction.message.embeds[interaction.message.embeds.length - 1].footer.text += `+${chosenAmount} ${chosenFood} for ${message.guild.name}\n`;
+				let footerText = interaction.message.embeds[interaction.message.embeds.length - 1].footer?.text ?? '';
+				footerText += `+${chosenAmount} ${chosenFood} for ${message.guild.name}\n`;
+				interaction.message.embeds[interaction.message.embeds.length - 1].footer = { text: footerText };
 
 				await /** @type {import('discord.js').Message} */ (interaction.message)
 					.edit({
@@ -254,7 +256,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				serverId: message.guild.id,
 			}));
 
-			let footerText = interaction.message.embeds[interaction.message.embeds.length - 1].footer.text;
+			let footerText = interaction.message.embeds[interaction.message.embeds.length - 1].footer?.text ?? '';
 			let maximumAmount = 0;
 
 			for (const [itemType, itemsArray] of inventoryMap) {
@@ -282,7 +284,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				{ $set: { inventoryObject: serverInventory } },
 			);
 
-			interaction.message.embeds[interaction.message.embeds.length - 1].footer.text = footerText;
+			interaction.message.embeds[interaction.message.embeds.length - 1].footer = { text: footerText };
 			await /** @type {import('discord.js').Message} */ (interaction.message)
 				.edit({
 					embeds: interaction.message.embeds,
