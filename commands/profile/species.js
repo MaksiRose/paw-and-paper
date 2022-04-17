@@ -176,7 +176,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				.edit({
 					embeds: [{
 						color: '#9d9e51',
-						author: { name: `${message.guild.name}`, icon_url: message.guild.iconURL() },
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						description: `*The Alpha took a friendly step towards the ${interaction.values[0]}.* "It's nice to have you here, ${profileData.name}" *they said. More and more packmates came closer to greet the newcomer.*`,
 						footer: { text: 'You are now done setting up your account! Type "rp profile" to look at it. With "rp help" you can see how else you can customize your profile, as well as your other options.' },
 					}],
