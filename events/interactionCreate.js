@@ -29,6 +29,52 @@ const event = {
 				return await errorHandling.output(interaction.message, error);
 			});
 
+		// this is a DM interaction and doesn't have a referenced messages, so it gets processed before everything else
+		if (interaction.isButton() && interaction.customId === 'ticket') {
+
+			const user = await client.users.fetch(interaction.user.id);
+			const message = await user.dmChannel.messages.fetch(interaction.message.id);
+
+			return await message
+				.delete()
+				.catch(async (error) => {
+					if (error.httpStatus !== 404) {
+						return await errorHandling.output(interaction.message, error);
+					}
+				});
+		}
+
+		// report messages respond to the bot message that had the issue, so referenced messages don't work with it
+		if (interaction.isButton() && interaction.customId === 'report') {
+
+			interaction.message
+				.edit({
+					components: [],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
+
+			const maksi = await client.users.fetch(config.maksi);
+			return await maksi
+				.send({
+					content: `https://discord.com/channels/${interaction.guild.id}/${interaction.message.channel.id}/${interaction.message.id}`,
+					embeds: interaction.message.embeds,
+					components: [{
+						type: 'ACTION_ROW',
+						components: [{
+							type: 'BUTTON',
+							customId: 'ticket',
+							label: 'Resolve',
+							style: 'SUCCESS',
+						}],
+					}],
+				})
+				.catch(async (error) => {
+					return await errorHandling.output(interaction.message, error);
+				});
+		}
+
 		if (!interaction.message.reference || !interaction.message.reference.messageId) {
 
 			return;
@@ -40,6 +86,20 @@ const event = {
 			.catch(async () => { return null; });
 
 		if (referencedMessage === null || referencedMessage.author.id !== interaction.user.id) {
+
+			if (referencedMessage === null || !referencedMessage.mentions.users.has(interaction.user.id)) {
+
+				await interaction
+					.followUp({
+						content: 'Sorry, I only listen to the person that created the command 😣 (If your command-creation message was deleted, I won\'t recognize that you created the command)',
+						ephemeral: true,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
 
 			return;
 		}
@@ -55,21 +115,6 @@ const event = {
 		}
 
 		clearTimeout(userMap.get('nr' + interaction.user.id + interaction.guild.id).restingTimeout);
-
-		// there are DM interactions and dont have referenced messages, so thet get processed before everything else
-		if (interaction.customId === 'ticket') {
-
-			const user = await client.users.fetch(interaction.user.id);
-			const message = await user.dmChannel.messages.fetch(interaction.message.id);
-
-			return await message
-				.delete()
-				.catch(async (error) => {
-					if (error.httpStatus !== 404) {
-						return await errorHandling.output(interaction.message, error);
-					}
-				});
-		}
 
 		if (interaction.isSelectMenu()) {
 
@@ -1255,36 +1300,6 @@ const event = {
 
 			console.log(`\x1b[32m${interaction.user.tag}\x1b[0m successfully clicked the button \x1b[33m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
-
-			if (interaction.customId === 'report') {
-
-				interaction.message
-					.edit({
-						components: [],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) { throw new Error(error); }
-					});
-
-				const maksi = await client.users.fetch(config.maksi);
-				return await maksi
-					.send({
-						content: `https://discord.com/channels/${interaction.guild.id}/${interaction.message.channel.id}/${interaction.message.id}`,
-						embeds: interaction.message.embeds,
-						components: [{
-							type: 'ACTION_ROW',
-							components: [{
-								type: 'BUTTON',
-								customId: 'ticket',
-								label: 'Resolve',
-								style: 'SUCCESS',
-							}],
-						}],
-					})
-					.catch(async (error) => {
-						return await errorHandling.output(interaction.message, error);
-					});
-			}
 
 			if (interaction.customId === 'water-reminder-off') {
 
