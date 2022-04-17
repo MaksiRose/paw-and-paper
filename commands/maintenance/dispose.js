@@ -1,14 +1,15 @@
 // @ts-check
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
-const { isInvalid } = require('../../utils/checkValidity');
+const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { pronoun, pronounAndPlural } = require('../../utils/getPronouns');
 const startCooldown = require('../../utils/startCooldown');
 const { remindOfAttack } = require('../gameplay/attack');
 const serverModel = require('../../models/serverModel');
 const { profileModel } = require('../../models/profileModel');
 const { pullFromWeightedTable, generateRandomNumber } = require('../../utils/randomizers');
-const { decreaseEnergy, decreaseHunger, decreaseThirst } = require('../../utils/checkCondition');
+const { decreaseEnergy, decreaseHunger, decreaseThirst, decreaseHealth } = require('../../utils/checkCondition');
 const { createCommandCollector } = require('../../utils/commandCollector');
+const { checkLevelUp } = require('../../utils/levelHandling');
 
 module.exports.name = 'dispose';
 
@@ -79,7 +80,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	if (serverData.blockedEntranceObject.blockedKind === 'tree trunk') blockText = 'a rotten tree trunk has fallen in front of';
 	if (serverData.blockedEntranceObject.blockedKind === 'boulder') blockText = 'a boulder has rolled in front of';
 
-	const botReply = await message
+	let botReply = await message
 		.reply({
 			content: messageContent,
 			embeds: [...embedArray, {
@@ -171,7 +172,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			if (profileData.rank === 'Apprentice' && pullFromWeightedTable({ 0: 50, 1: 50 + profileData.saplingObject.waterCycles }) === 0) {
 
-				return await botReply
+				botReply = await botReply
 					.edit({
 						content: messageContent,
 						embeds: [...embedArray, {
@@ -184,7 +185,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
+						return botReply;
 					});
+
+				checkHealthAndLevel();
+				return;
 			}
 
 			const experiencePoints = profileData.rank === 'Elderly' ? generateRandomNumber(41, 20) : profileData.rank === 'Hunter' ? generateRandomNumber(21, 10) : generateRandomNumber(11, 5);
@@ -201,7 +206,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				{ $set: { blockedEntranceObject: { den: null, blockedKind: null } } },
 			);
 
-			return await botReply
+			botReply = await botReply
 				.edit({
 					content: messageContent,
 					embeds: [...embedArray, {
@@ -214,11 +219,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
+					return botReply;
 				});
 		}
 		else {
 
-			return await botReply
+			botReply = await botReply
 				.edit({
 					content: messageContent,
 					embeds: [...embedArray, {
@@ -231,7 +237,21 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
+					return botReply;
 				});
 		}
+
+		checkHealthAndLevel();
+		return;
+	}
+
+	/**
+	 * Checks whether to decrease the players health, level them up and if they are passed out.
+	 */
+	async function checkHealthAndLevel() {
+
+		botReply = await decreaseHealth(message, profileData, botReply, { ...profileData.injuryObject });
+		botReply = await checkLevelUp(message, botReply, profileData, serverData);
+		await isPassedOut(message, profileData, true);
 	}
 };

@@ -1,12 +1,13 @@
 // @ts-check
-const { decreaseThirst, decreaseHunger, decreaseEnergy } = require('../../utils/checkCondition');
+const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
 const { generateRandomNumber, generateRandomNumberWithException } = require('../../utils/randomizers');
 const { profileModel } = require('../../models/profileModel');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
-const { isInvalid } = require('../../utils/checkValidity');
+const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const startCooldown = require('../../utils/startCooldown');
 const { remindOfAttack } = require('./attack');
 const { pronoun, pronounAndPlural } = require('../../utils/getPronouns');
+const { checkLevelUp } = require('../../utils/levelHandling');
 const practicingCooldownAccountsMap = new Map();
 
 module.exports.name = 'practice';
@@ -288,6 +289,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				if (error.httpStatus !== 404) { throw new Error(error); }
 				return botReply;
 			});
+
+		botReply = await decreaseHealth(message, profileData, botReply, { ...profileData.injuryObject });
+		botReply = await checkLevelUp(message, botReply, profileData, serverData);
+		await isPassedOut(message, profileData, true);
+
 		return;
 	}
 };
