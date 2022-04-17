@@ -15,7 +15,7 @@ async function output(message, error) {
 			embeds: [{
 				title: 'There was an unexpected error executing this command:',
 				description: `\`\`\`${error.toString().substring(0, 4090)}\`\`\``,
-				footer: { text: 'If this is the first time you encountered the issue, please report it using the button below. After that, only report it again if the issue was supposedly fixed after an update came out. To receive updates, ask a server administrator to use "rp getupdates".' },
+				footer: { text: 'If this is the first time you encountered the issue, please report it using the button below. After that, only report it again if the issue was supposed to be fixed after an update came out. To receive updates, ask a server administrator to do the "getupdates" command.' },
 			}],
 			components: [{
 				type: 'ACTION_ROW',
