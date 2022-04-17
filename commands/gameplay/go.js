@@ -229,13 +229,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.user.id == message.author.id;
 
-		/** @type {import('discord.js').MessageComponentInteraction | undefined} } */
+		/** @type {import('discord.js').MessageComponentInteraction | null} } */
 		const interaction = await botReply
 			.awaitMessageComponent({ filter, time: 120000 })
-			.catch(() => {return undefined;});
+			.catch(() => { return null; });
 
 
-		if (interaction === undefined) {
+		if (interaction === null) {
 
 			return await botReply
 				.edit({

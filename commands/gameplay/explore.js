@@ -447,12 +447,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId.includes('plant') && i.user.id == message.author.id;
 
-		/** @type {import('discord.js').MessageComponentInteraction | undefined} } */
+		/** @type {import('discord.js').MessageComponentInteraction | null} } */
 		const interaction = await botReply
 			.awaitMessageComponent({ filter, time: 15000 })
-			.catch(() => undefined);
+			.catch(() => { return null; });
 
-		if (interaction === undefined || interaction.customId === 'plant-leave') {
+		if (interaction === null || interaction.customId === 'plant-leave') {
 
 			embed.description = `*After thinking about it for a moment, ${profileData.name} decides ${pronounAndPlural(profileData, 0, 'is', 'are')} too tired to focus on picking up the plant. It's better to leave it there in case another pack member comes along.*`;
 			embed.footer.text = `${embedFooterStatsText}`;
@@ -782,12 +782,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		let filter = (/** @type {{ customId: string; user: { id: string; }; }} */ i) => (i.customId === 'enemy-flee' || i.customId === 'enemy-fight') && i.user.id == message.author.id;
 
-		/** @type {import('discord.js').MessageComponentInteraction | undefined} } */
+		/** @type {import('discord.js').MessageComponentInteraction | null} } */
 		const interaction = await botReply
 			.awaitMessageComponent({ filter, time: 15000 })
-			.catch(() => undefined);
+			.catch(() => { return null; });
 
-		if (interaction === undefined || interaction.customId === 'enemy-flee') {
+		if (interaction === null || interaction.customId === 'enemy-flee') {
 
 			if (userSpeciesMap.habitat == 'warm') {
 

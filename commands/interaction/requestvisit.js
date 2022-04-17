@@ -113,12 +113,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		let filter = async (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.user.id === message.author.id;
 
-		/** @type {import('discord.js').SelectMenuInteraction | undefined} } */
+		/** @type {import('discord.js').SelectMenuInteraction | null} } */
 		const interaction = await botReplyV
 			.awaitMessageComponent({ filter, time: 300000 })
-			.catch(() => { return undefined; });
+			.catch(() => { return null; });
 
-		if (interaction === undefined) {
+		if (interaction === null) {
 
 			return await botReplyV
 				.edit({

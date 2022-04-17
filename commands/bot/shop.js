@@ -70,12 +70,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.user.id === message.author.id && i.customId === 'shopbuy-options';
 
-		/** @type {import('discord.js').SelectMenuInteraction | undefined} } */
+		/** @type {import('discord.js').SelectMenuInteraction | null} } */
 		const interaction = await botReply
 			.awaitMessageComponent({ filter, time: 120_000 })
-			.catch(() => { return undefined; });
+			.catch(() => { return null; });
 
-		if (interaction === undefined) {
+		if (interaction === null) {
 
 			return await botReply
 				.edit({

@@ -268,32 +268,28 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			});
 		}
 
-		if (partnerProfileData.injuryObject.cold == true && profileData.injuryObject.cold == false) {
+		if (partnerProfileData.injuryObject.cold == true && profileData.injuryObject.cold == false, pullFromWeightedTable({ 0: 3, 1: 7 }) === 0) {
 
-			const getsInfectedChance = pullFromWeightedTable({ 0: 3, 1: 7 });
-			if (getsInfectedChance == 0) {
+			healthPoints = generateRandomNumber(5, 3);
 
-				healthPoints = generateRandomNumber(5, 3);
+			if (profileData.health - healthPoints < 0) {
 
-				if (profileData.health - healthPoints < 0) {
-
-					healthPoints = profileData.health;
-				}
-
-				profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $inc: { health: -healthPoints } },
-				));
-
-				userInjuryObject.cold = true;
-
-				extraEmbeds.push({
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: `*Suddenly, ${profileData.name} starts coughing uncontrollably. Thinking back, they spent all day alongside ${partnerProfileData.name}, who was coughing as well. That was probably not the best idea!*`,
-					footer: { text: `-${healthPoints} HP (from cold)` },
-				});
+				healthPoints = profileData.health;
 			}
+
+			profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{ $inc: { health: -healthPoints } },
+			));
+
+			userInjuryObject.cold = true;
+
+			extraEmbeds.push({
+				color: profileData.color,
+				author: { name: profileData.name, icon_url: profileData.avatarURL },
+				description: `*Suddenly, ${profileData.name} starts coughing uncontrollably. Thinking back, they spent all day alongside ${partnerProfileData.name}, who was coughing as well. That was probably not the best idea!*`,
+				footer: { text: `-${healthPoints} HP (from cold)` },
+			});
 		}
 
 		return extraEmbeds;

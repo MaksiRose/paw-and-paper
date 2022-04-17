@@ -93,10 +93,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	createCommandCollector(message.author.id, message.guild.id, botReply);
 	const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId.includes('switchto') && i.user.id === message.author.id;
 
-	/** @type {import('discord.js').MessageComponentInteraction | undefined} } */
+	/** @type {import('discord.js').MessageComponentInteraction | null} } */
 	const interaction = await botReply
 		.awaitMessageComponent({ filter, time: 12000 })
-		.catch(() => { return undefined; });
+		.catch(() => { return null; });
 
 	await botReply
 		.edit({
@@ -106,7 +106,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 
-	if (interaction === undefined) {
+	if (interaction === null) {
 
 		return;
 	}
