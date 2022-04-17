@@ -487,17 +487,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 
-				if (profileData.rank === 'Youngling') {
+				if (hitValue >= 10 && profileData.rank === 'Youngling') {
 
 					await apprenticeAdvice(message);
 				}
 
-				if (profileData.rank === 'Apprentice') {
+				if (hitValue >= 10 && profileData.rank === 'Apprentice') {
 
 					await hunterhealerAdvice(message);
 				}
 
-				if (profileData.rank === 'Hunter' || profileData.rank === 'Healer') {
+				if (hitValue >= 10 && (profileData.rank === 'Hunter' || profileData.rank === 'Healer')) {
 
 					await elderlyAdvice(message);
 				}
