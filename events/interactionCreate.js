@@ -3,7 +3,6 @@ const { profileModel } = require('../models/profileModel');
 const config = require('../config.json');
 const errorHandling = require('../utils/errorHandling');
 const { version } = require('../package.json');
-const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 const { execute } = require('./messageCreate');
 const { sendReminder, stopReminder } = require('../commands/maintenance/water');
 
@@ -1238,23 +1237,6 @@ const event = {
 							throw new Error(error);
 						}
 					});
-			}
-
-			const plantNamesArray = [...commonPlantsMap.keys(), ...uncommonPlantsMap.keys(), ...rarePlantsMap.keys(), ...speciesMap.keys() ].sort();
-
-			if (interaction.customId == 'eat-options' && plantNamesArray.some(elem => elem == interaction.values[0])) {
-
-				interaction.message
-					.delete()
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-
-				referencedMessage.content = `${config.prefix}eat ${interaction.values[0]}`;
-
-				return await execute(client, referencedMessage);
 			}
 		}
 

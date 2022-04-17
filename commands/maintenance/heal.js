@@ -626,7 +626,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					}
 				}
 
-				embedArray.push(embed);
+				/** @type {import('discord.js').MessageEmbedOptions} */
+				let extraEmbed = null;
 
 				if (chosenProfileData.injuryObject.cold === true && chosenProfileData.userId !== profileData.userId && profileData.injuryObject.cold === false && pullFromWeightedTable({ 0: 3, 1: 7 }) === 0) {
 
@@ -644,11 +645,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 					userInjuryObject.cold = true;
 
-					embedArray.push({
+					extraEmbed = {
 						color: profileData.color,
 						description: `*Suddenly, ${profileData.name} starts coughing uncontrollably. Thinking back, they spent all day alongside ${chosenProfileData.name}, who was coughing as well. That was probably not the best idea!*`,
 						footer: { text: `-${healthPoints} HP (from cold)` },
-					});
+					};
 				}
 
 				await /** @type {import('discord.js').Message} */ (interaction.message)
@@ -664,7 +665,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				botReply = await message
 					.reply({
 						content: content === '' ? null : content,
-						embeds: embedArray,
+						embeds: [...embedArray, embed, ...extraEmbed === null ? [] : [extraEmbed]],
 						failIfNotExists: false,
 					})
 					.catch((error) => { throw new Error(error); });
