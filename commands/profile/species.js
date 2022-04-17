@@ -100,7 +100,7 @@ module.exports = {
 
 		async function interactionCollector() {
 
-			const filter = i => (i.values[0] == 'species_page' || speciesMap.has(i.values[0])) && i.user.id == message.author.id;
+			const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.values[0] == 'species_page' || speciesMap.has(i.values[0])) && i.user.id == message.author.id;
 
 			const interaction = await botReply
 				.awaitMessageComponent({ filter, time: 120000 })

@@ -51,7 +51,7 @@ module.exports = {
 			.catch((error) => { throw new Error(error); });
 
 		createCommandCollector(message.author.id, message.guild.id, botReply);
-		const filter = i => (i.customId == 'delete-confirm' || i.customId == 'delete-cancel') && i.user.id == message.author.id;
+		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.customId == 'delete-confirm' || i.customId == 'delete-cancel') && i.user.id == message.author.id;
 
 		const interaction = await botReply
 			.awaitMessageComponent({ filter, time: 120000 })

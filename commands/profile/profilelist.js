@@ -69,7 +69,7 @@ module.exports = {
 
 		async function interactionCollector() {
 
-			const filter = i => i.customId.includes('profilelist') && i.user.id == message.author.id;
+			const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId.includes('profilelist') && i.user.id == message.author.id;
 
 			const interaction = await botReply
 				.awaitMessageComponent({ filter, time: 120000 })

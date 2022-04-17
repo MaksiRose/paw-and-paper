@@ -128,7 +128,7 @@ module.exports = {
 
 		async function interactionCollector(chosenFood, foodCategory) {
 
-			const filter = i => i.user.id == message.author.id;
+			const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.user.id == message.author.id;
 
 			const interaction = await botReply
 				.awaitMessageComponent({ filter, time: 30000 })
