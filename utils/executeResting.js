@@ -38,7 +38,7 @@ async function startResting(message, profileData, botReply) {
 			{ $inc: { energy: 1 } },
 		));
 
-		botReply.embeds[0].footer.text = `+${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})${(profileData.currentRegion != 'sleeping dens') ? '\nYou are now at the sleeping dens' : ''}`;
+		botReply.embeds[0].footer.text = `+${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})\nTip: \nYou can also do \`rp vote\` to get +30 energy per vote!`;
 
 		await botReply
 			.edit({

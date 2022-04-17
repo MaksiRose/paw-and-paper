@@ -23,6 +23,7 @@ const event = {
 		await interaction
 			.deferUpdate()
 			.catch(async (error) => {
+				if (error.httpStatus === 400) { return console.error('DiscordAPIError: Interaction has already been acknowledged.'); }
 				return await errorHandling.output(interaction.message, error);
 			});
 

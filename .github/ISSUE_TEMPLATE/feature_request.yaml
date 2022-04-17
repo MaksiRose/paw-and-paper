@@ -1,0 +1,27 @@
+name: Feature request
+description: Suggest an idea for this project
+title: 'New feature: '
+labels: ["improvement"]
+body:
+  - type: dropdown
+    attributes:
+      label: What kind of idea is this?
+      options:
+        - improve on an existing feature
+        - implement a new feature
+        - something else
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Describe your idea in detail.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Why is this needed? How would this improve the bot?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Notes

@@ -1,0 +1,63 @@
+name: Species request
+description: Add information about a species you would like to see added to the bot
+title: "New species: "
+labels: ["improvement", "non-code"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Note:** Species should not be extinct, mythical, and should not be too specific, for example a breed of dog, or they will not be accepted. Rule of thumb is that if it is so similar to another animal that they can be grouped together in terms of looks/behavior, diet, habitat, prey and predators, they should be grouped together.
+  - type: input
+    attributes:
+      label: What is the name of the species?
+    validations:
+      required: true
+  - type: dropdown
+    attributes: 
+      label: What diet does the species have?
+      options:
+        - omnivore
+        - herbivore
+        - carnivore
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: What habitat does the species live in?
+      description: |
+        Please pick the one that fits best.
+      options:
+        - cold (forest, taiga, tundra)
+        - warm (shrubland, savanna, desert)
+        - water (river, coral reef, ocean)
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What prey does this species eat or hunt?
+      description: If the species is a herbivore, are there any bugs or similar that it might accidentally eat?
+      placeholder: Please add as many and as detailed as you can find it.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What predators eat or hunt this species?
+      description: If the species is at the top of the food chain, are there any competitors or animals that would be challenging to fight?
+      placeholder: Please add as many and as detailed as you can find it.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Sources
+      description: Please link to credible websites that you got your information from. Sources should hold information for the diet, habitat, prey and predators.
+      placeholder: |
+        1.
+        2. 
+        3. 
+        ... (add more as needed)
+      value: |
+        1. 
+        2. 
+        3. 
+    validations:
+      required: true
