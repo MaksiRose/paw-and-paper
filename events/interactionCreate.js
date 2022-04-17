@@ -3,8 +3,9 @@ const { profileModel } = require('../models/profileModel');
 const config = require('../config.json');
 const errorHandling = require('../utils/errorHandling');
 const { version } = require('../package.json');
-const { execute } = require('./messageCreate');
+const { execute, startRestingTimeout } = require('./messageCreate');
 const { sendReminder, stopReminder } = require('../commands/maintenance/water');
+const userMap = require('../utils/userMap');
 
 /**
  * @type {import('../typedef').Event}
@@ -24,11 +25,39 @@ const event = {
 			.deferUpdate()
 			.catch(async (error) => {
 				if (error.httpStatus === 400) { return console.error('DiscordAPIError: Interaction has already been acknowledged.'); }
+				if (error.httpStatus === 404) { return console.error('DiscordAPIError: Unknown interaction. (This probably means that there was server-side delay when receiving the interaction)'); }
 				return await errorHandling.output(interaction.message, error);
 			});
 
+		if (!interaction.message.reference || !interaction.message.reference.messageId) {
+
+			return;
+		}
+
+		/** @type {null | import('discord.js').Message} */
+		const referencedMessage = await interaction.channel.messages
+			.fetch(interaction.message.reference.messageId)
+			.catch(async () => { return null; });
+
+		if (referencedMessage === null || referencedMessage.author.id !== interaction.user.id) {
+
+			return;
+		}
+
+		let profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
+			userId: interaction.user.id,
+			serverId: interaction.guild.id,
+		}));
+
+		if (userMap.has('nr' + interaction.user.id + interaction.guild.id) === false) {
+
+			userMap.set('nr' + interaction.user.id + interaction.guild.id, { activeCommands: 0, lastGentleWaterReminderTimestamp: 0, activityTimeout: null, cooldownTimeout: null, restingTimeout: null });
+		}
+
+		clearTimeout(userMap.get('nr' + interaction.user.id + interaction.guild.id).restingTimeout);
+
 		// there are DM interactions and dont have referenced messages, so thet get processed before everything else
-		if (interaction.customId == 'ticket') {
+		if (interaction.customId === 'ticket') {
 
 			const user = await client.users.fetch(interaction.user.id);
 			const message = await user.dmChannel.messages.fetch(interaction.message.id);
@@ -42,31 +71,12 @@ const event = {
 				});
 		}
 
-		if (!interaction.message.reference || !interaction.message.reference.messageId) {
-
-			return;
-		}
-
-		const referencedMessage = await interaction.channel.messages
-			.fetch(interaction.message.reference.messageId)
-			.catch(async () => { return null; });
-
-		if (referencedMessage && referencedMessage.author.id !== interaction.user.id) {
-
-			return;
-		}
-
-		let profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
-			userId: interaction.user.id,
-			serverId: interaction.guild.id,
-		}));
-
 		if (interaction.isSelectMenu()) {
 
 			console.log(`\x1b[32m${interaction.user.tag}\x1b[0m successfully selected \x1b[33m${interaction.values[0]} \x1b[0mfrom the menu \x1b[33m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 
-			if (interaction.values[0] == 'help_page1') {
+			if (interaction.values[0] === 'help_page1') {
 
 				return await interaction.message
 					.edit({
@@ -110,7 +120,7 @@ const event = {
 					});
 			}
 
-			if (interaction.values[0] == 'help_page2') {
+			if (interaction.values[0] === 'help_page2') {
 
 				return await interaction.message
 					.edit({
@@ -152,7 +162,7 @@ const event = {
 					});
 			}
 
-			if (interaction.values[0] == 'help_page3') {
+			if (interaction.values[0] === 'help_page3') {
 
 				return await interaction.message
 					.edit({
@@ -200,7 +210,7 @@ const event = {
 					});
 			}
 
-			if (interaction.values[0] == 'help_page4') {
+			if (interaction.values[0] === 'help_page4') {
 
 				return await interaction.message
 					.edit({
@@ -240,7 +250,7 @@ const event = {
 					});
 			}
 
-			if (interaction.values[0] == 'help_page5') {
+			if (interaction.values[0] === 'help_page5') {
 
 				const maksi = await client.users
 					.fetch(config.maksi)
@@ -1276,151 +1286,6 @@ const event = {
 					});
 			}
 
-			if (interaction.customId === 'profile-refresh') {
-
-				const components = [{
-					type: 'ACTION_ROW',
-					components: [{
-						type: 'BUTTON',
-						customId: 'profile-refresh',
-						emoji: { name: '🔁' },
-						style: 'SECONDARY',
-					}, {
-						type: 'BUTTON',
-						customId: 'profile-store',
-						label: 'Store food away',
-						style: 'SECONDARY',
-					}],
-				}];
-
-				if (referencedMessage.mentions.users.size > 0) {
-
-					profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
-						userId: referencedMessage.mentions.users.first().id,
-						serverId: referencedMessage.guild.id,
-					}));
-
-					components[0].components.pop();
-				}
-				else if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
-
-					components[0].components.pop();
-				}
-
-				let injuryText = (Object.values(profileData.injuryObject).every(item => item == 0)) ? 'none' : '';
-
-				for (const [injuryKey, injuryAmount] of Object.entries(profileData.injuryObject)) {
-
-					if (injuryAmount > 0) {
-
-						const injuryName = injuryKey.charAt(0).toUpperCase() + injuryKey.slice(1);
-						injuryText += `${injuryAmount} ${(injuryAmount > 1) ? injuryName.slice(0, -1) : injuryName}\n`;
-					}
-				}
-
-				const description = (profileData.description == '') ? '' : `*${profileData.description}*`;
-				const user = await client.users
-					.fetch(profileData.userId)
-					.catch(() => { return null; });
-
-				await interaction.message
-					.edit({
-						embeds: [{
-							color: profileData.color,
-							title: `Profile - ${user.tag}`,
-							author: { name: profileData.name, icon_url: profileData.avatarURL },
-							description: description,
-							thumbnail: { url: profileData.avatarURL },
-							fields: [
-								{ name: '**🦑 Species**', value: profileData.species.charAt(0).toUpperCase() + profileData.species.slice(1), inline: true },
-								{ name: '**🏷️ Rank**', value: profileData.rank, inline: true },
-								{ name: '**🍂 Pronouns**', value: profileData.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n') },
-								{ name: '**🗺️ Region**', value: profileData.currentRegion },
-
-							],
-						},
-						{
-							color: /** @type {`#${string}`} */ (profileData.color),
-							description: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\`\n⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\`\n🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\``,
-							fields: [
-								{ name: '**🩹 Injuries/Illnesses**', value: injuryText, inline: true },
-								{ name: '**🌱 Ginkgo Sapling**', value: profileData.saplingObject.exists === false ? 'none' : `${profileData.saplingObject.waterCycles} days alive - ${profileData.saplingObject.health} health\nNext watering <t:${Math.floor(profileData.saplingObject.nextWaterTimestamp / 1000)}:R>`, inline: true },
-							],
-							footer: { text: profileData.hasQuest == true ? 'There is one open quest!' : null },
-						}],
-						components: /** @type {Array<import('discord.js').MessageActionRow>} */ (components),
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) { throw new Error(error); }
-					});
-			}
-
-			if (interaction.customId === 'stats-refresh') {
-
-				// "item" needs to be == and not === in order to catch the booleans as well
-				let injuryText = Object.values(profileData.injuryObject).every(item => item == 0) ? null : '';
-
-				for (const [injuryKind, injuryAmount] of Object.entries(profileData.injuryObject)) {
-
-					if (injuryAmount > 0) {
-
-						if (typeof injuryAmount === 'number') {
-
-							injuryText += `, ${injuryAmount} ${(injuryAmount < 2) ? injuryKind.slice(0, -1) : injuryKind}`;
-						}
-						else {
-
-							injuryText += `, ${injuryKind}: yes`;
-						}
-					}
-				}
-
-				/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} */
-				const components = [{
-					type: 'ACTION_ROW',
-					components: [{
-						type: 'BUTTON',
-						customId: 'stats-refresh',
-						emoji: '🔁',
-						style: 'SECONDARY',
-					}, {
-						type: 'BUTTON',
-						customId: 'profile-store',
-						label: 'Store food away',
-						style: 'SECONDARY',
-					}],
-				}];
-
-				if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
-
-					components[0].components.pop();
-				}
-
-				await interaction.message
-					.edit({
-						content: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\` - ⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\` - 🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`\n${injuryText == null ? '' : `🩹 Injuries/Illnesses: ${injuryText.slice(2)}`}`,
-						components: components,
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) { throw new Error(error); }
-					});
-			}
-
-			if (interaction.customId === 'profile-store') {
-
-				interaction.message
-					.delete()
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-
-				referencedMessage.content = `${config.prefix}store`;
-
-				return await execute(client, referencedMessage);
-			}
-
 			if (interaction.customId === 'water-reminder-off') {
 
 				profileData.saplingObject.reminder = false;
@@ -1502,6 +1367,161 @@ const event = {
 						}
 					});
 			}
+
+			if (interaction.customId === 'stats-refresh') {
+
+				// "item" needs to be == and not === in order to catch the booleans as well
+				let injuryText = Object.values(profileData.injuryObject).every(item => item == 0) ? null : '';
+
+				for (const [injuryKind, injuryAmount] of Object.entries(profileData.injuryObject)) {
+
+					if (injuryAmount > 0) {
+
+						if (typeof injuryAmount === 'number') {
+
+							injuryText += `, ${injuryAmount} ${(injuryAmount < 2) ? injuryKind.slice(0, -1) : injuryKind}`;
+						}
+						else {
+
+							injuryText += `, ${injuryKind}: yes`;
+						}
+					}
+				}
+
+				/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} */
+				const components = [{
+					type: 'ACTION_ROW',
+					components: [{
+						type: 'BUTTON',
+						customId: 'stats-refresh',
+						emoji: '🔁',
+						style: 'SECONDARY',
+					}, {
+						type: 'BUTTON',
+						customId: 'profile-store',
+						label: 'Store food away',
+						style: 'SECONDARY',
+					}],
+				}];
+
+				if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
+
+					components[0].components.pop();
+				}
+
+				await interaction.message
+					.edit({
+						content: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\` - ⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\` - 🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`\n${injuryText == null ? '' : `🩹 Injuries/Illnesses: ${injuryText.slice(2)}`}`,
+						components: components,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
+					});
+			}
+
+			if (interaction.customId === 'profile-refresh') {
+
+				const components = [{
+					type: 'ACTION_ROW',
+					components: [{
+						type: 'BUTTON',
+						customId: 'profile-refresh',
+						emoji: { name: '🔁' },
+						style: 'SECONDARY',
+					}, {
+						type: 'BUTTON',
+						customId: 'profile-store',
+						label: 'Store food away',
+						style: 'SECONDARY',
+					}],
+				}];
+
+				if (referencedMessage.mentions.users.size > 0) {
+
+					profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
+						userId: referencedMessage.mentions.users.first().id,
+						serverId: referencedMessage.guild.id,
+					}));
+
+					components[0].components.pop();
+				}
+				else if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
+
+					components[0].components.pop();
+				}
+
+				let injuryText = (Object.values(profileData.injuryObject).every(item => item == 0)) ? 'none' : '';
+
+				for (const [injuryKey, injuryAmount] of Object.entries(profileData.injuryObject)) {
+
+					if (injuryAmount > 0) {
+
+						const injuryName = injuryKey.charAt(0).toUpperCase() + injuryKey.slice(1);
+						injuryText += `${injuryAmount} ${(injuryAmount > 1) ? injuryName.slice(0, -1) : injuryName}\n`;
+					}
+				}
+
+				const description = (profileData.description == '') ? '' : `*${profileData.description}*`;
+				const user = await client.users
+					.fetch(profileData.userId)
+					.catch(() => { return null; });
+
+				await interaction.message
+					.edit({
+						embeds: [{
+							color: profileData.color,
+							title: `Profile - ${user.tag}`,
+							author: { name: profileData.name, icon_url: profileData.avatarURL },
+							description: description,
+							thumbnail: { url: profileData.avatarURL },
+							fields: [
+								{ name: '**🦑 Species**', value: profileData.species.charAt(0).toUpperCase() + profileData.species.slice(1), inline: true },
+								{ name: '**🏷️ Rank**', value: profileData.rank, inline: true },
+								{ name: '**🍂 Pronouns**', value: profileData.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n') },
+								{ name: '**🗺️ Region**', value: profileData.currentRegion },
+
+							],
+						},
+						{
+							color: /** @type {`#${string}`} */ (profileData.color),
+							description: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\`\n⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\`\n🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\``,
+							fields: [
+								{ name: '**🩹 Injuries/Illnesses**', value: injuryText, inline: true },
+								{ name: '**🌱 Ginkgo Sapling**', value: profileData.saplingObject.exists === false ? 'none' : `${profileData.saplingObject.waterCycles} days alive - ${profileData.saplingObject.health} health\nNext watering <t:${Math.floor(profileData.saplingObject.nextWaterTimestamp / 1000)}:R>`, inline: true },
+							],
+							footer: { text: profileData.hasQuest == true ? 'There is one open quest!' : null },
+						}],
+						components: /** @type {Array<import('discord.js').MessageActionRow>} */ (components),
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
+					});
+			}
+
+			if (interaction.customId === 'profile-store') {
+
+				interaction.message
+					.delete()
+					.catch(async (error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
+				referencedMessage.content = `${config.prefix}store`;
+
+				return await execute(client, referencedMessage);
+			}
+		}
+
+		/*
+		This if block ensures that no two timeouts are set at the same time, and only one of them being cleared. When a command that doesn't immediately return (ie explore) is called, this timeout doesn't exist yet, but the old timeout was already cleared. If a second command (ie stats) is started while the old one is still running, it will try to delete the same timeout that the first command (aka explore) already cleared, and create a new one, that subsequently is going to be overwritten by the first command (aka explore) once it is finished. That means that the timeout created by the other command (aka stats) is never going to be cleared, and instead only the timeout of the last finished command (aka explore) is going to be cleared, which means that 10 minutes after the other command (aka stats) was executed, the user will start automatically resting, even if they were still actively playing in that time.
+		It is not a good idea to place clearing the timeout behind the command finish executing, since the command finish executing might take some time, and the 10 minutes from that timer might over in that time, making the user attempt to rest while executing a command.
+		It is also not a good idea to place starting the timeout before the command start executing, since the command again might take some time to finish executing, and then the 10 minute timer might be over sooner as expected.
+		*/
+		if (userMap.get('nr' + interaction.user.id + interaction.guild.id).activeCommands === 0) {
+
+			userMap.get('nr' + interaction.user.id + interaction.guild.id).restingTimeout = setTimeout(startRestingTimeout, 600000, client, referencedMessage);
 		}
 	},
 };
