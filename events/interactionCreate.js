@@ -1357,7 +1357,8 @@ const event = {
 
 			if (interaction.customId === 'stats-refresh') {
 
-				let injuryText = Object.values(profileData.injuryObject).every(item => item === 0) ? null : '';
+				// "item" needs to be == and not === in order to catch the booleans as well
+				let injuryText = Object.values(profileData.injuryObject).every(item => item == 0) ? null : '';
 
 				for (const [injuryKind, injuryAmount] of Object.entries(profileData.injuryObject)) {
 
