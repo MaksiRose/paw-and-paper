@@ -65,7 +65,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	createCommandCollector(message.author.id, message.guild.id, botReply);
 
-	const filter = (/** @type {{ user: { id: string; }; customId: string; }} */ i) => i.user.id === message.author.id && i.customId === 'vote-options';
+	const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.user.id === message.author.id && i.customId === 'vote-options';
 
 	botReply
 		.awaitMessageComponent({ filter })

@@ -303,7 +303,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		botReply = await introduceQuest(message, profileData, embedArray, embedFooterStatsText);
 
-		const filter = (/** @type {{ customId: string; user: { id: string; }; }} */ i) => i.customId === 'quest-start' && i.user.id === message.author.id;
+		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId === 'quest-start' && i.user.id === message.author.id;
 
 		botReply
 			.awaitMessageComponent({ filter, time: 30000 })
@@ -445,7 +445,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			})
 			.catch((error) => { throw new Error(error); });
 
-		const filter = (/** @type {{ customId: string | string[]; user: { id: string; }; }} */ i) => i.customId.includes('plant') && i.user.id == message.author.id;
+		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId.includes('plant') && i.user.id == message.author.id;
 
 		/** @type {import('discord.js').MessageComponentInteraction | undefined} } */
 		const interaction = await botReply
@@ -1055,7 +1055,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			})
 			.catch((error) => { throw new Error(error); });
 
-		const filter = (/** @type {{ customId: string; user: { id: string; }; }} */ i) => allBiomesArray.includes(i.customId) && i.user.id == message.author.id;
+		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => allBiomesArray.includes(i.customId) && i.user.id == message.author.id;
 
 		return await getBiomeMessage
 			.awaitMessageComponent({ filter, time: 30000 })

@@ -254,7 +254,7 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 		const currentProfileData = (isPartner == true) ? partnerProfileData : profileData;
 		const otherProfileData = (isPartner == true) ? profileData : partnerProfileData;
 
-		const filter = (/** @type {{ customId: string | string[]; user: { id: string; }; }} */ i) => (i.customId === 'playfight-confirm-tic-tac-toe' && i.user.id == message.mentions.users.first().id) || (i.customId.includes('board') && i.user.id == currentProfileData.userId);
+		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.customId === 'playfight-confirm-tic-tac-toe' && i.user.id == message.mentions.users.first().id) || (i.customId.includes('board') && i.user.id == currentProfileData.userId);
 
 		const { customId } = await botReply
 			.awaitMessageComponent({ filter, time: 60000 })
@@ -539,7 +539,7 @@ function playConnectFour(serverData, profileData, partnerProfileData, message, b
 		createCommandCollector(message.author.id, message.guild.id, botReply);
 		createCommandCollector(message.mentions.users.first().id, message.guild.id, botReply);
 
-		const filter = (/** @type {{ customId: string | string[]; user: { id: string; }; }} */ i) => (i.customId === 'playfight-confirm-connect-four' && i.user.id === message.mentions.users.first().id) || (i.customId.includes('field') && i.user.id === currentProfileData.userId);
+		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.customId === 'playfight-confirm-connect-four' && i.user.id === message.mentions.users.first().id) || (i.customId.includes('field') && i.user.id === currentProfileData.userId);
 
 		const { customId } = await botReply
 			.awaitMessageComponent({ filter, time: 60000 })

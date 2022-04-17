@@ -65,7 +65,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	/** @type {import('discord.js').Message} */
 	let botReply;
-	const filter = (/** @type {{ customId: string | string[]; user: { id: string; }; }} */ i) => i.customId.includes('quest') && i.user.id === message.author.id;
+	const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId.includes('quest') && i.user.id === message.author.id;
 
 	if (argumentsArray[0] === 'start') {
 

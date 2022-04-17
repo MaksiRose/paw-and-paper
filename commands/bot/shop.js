@@ -68,7 +68,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	async function interactionCollector() {
 
-		const filter = (/** @type {{ user: { id: string; }; customId: string; }} */ i) => i.user.id === message.author.id && i.customId === 'shopbuy-options';
+		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.user.id === message.author.id && i.customId === 'shopbuy-options';
 
 		/** @type {import('discord.js').SelectMenuInteraction | undefined} } */
 		const interaction = await botReply

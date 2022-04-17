@@ -102,7 +102,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		})
 		.catch((error) => { throw new Error(error); });
 
-	const filter = i => i.user.id === message.mentions.users.first().id && i.customId.includes('hug');
+	const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.user.id === message.mentions.users.first().id && i.customId.includes('hug');
 
 	botReply
 		.awaitMessageComponent({ filter, time: 120000 })

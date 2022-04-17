@@ -227,7 +227,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	async function interactionCollector() {
 
-		const filter = (/** @type {{ user: { id: string; }; }} */ i) => i.user.id == message.author.id;
+		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.user.id == message.author.id;
 
 		/** @type {import('discord.js').MessageComponentInteraction | undefined} } */
 		const interaction = await botReply

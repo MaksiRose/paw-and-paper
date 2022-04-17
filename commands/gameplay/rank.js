@@ -140,7 +140,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	async function interactionCollector(botReply) {
 
-		const filter = (/** @type {{ isButton: () => {boolean}; customId: string; user: { id: string; }; }} */ i) => i.isButton() && (i.customId === 'rank-healer' || i.customId === 'rank-hunter') && i.user.id == message.author.id;
+		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.isButton() && (i.customId === 'rank-healer' || i.customId === 'rank-hunter') && i.user.id == message.author.id;
 
 		const { customId } = await botReply
 			.awaitMessageComponent({ filter, time: 30000 })
