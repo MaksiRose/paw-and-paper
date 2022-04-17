@@ -42,7 +42,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		components[0].components.pop();
 	}
 
-	let injuryText = Object.values(profileData.injuryObject).every(item => item == 0) ? null : '';
+	let injuryText = Object.values(profileData.injuryObject).every(item => item === 0) ? null : '';
 
 	for (const [injuryKind, injuryAmount] of Object.entries(profileData.injuryObject)) {
 
