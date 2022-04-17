@@ -1,62 +1,72 @@
+// @ts-check
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
 
-module.exports = {
-	name: 'stats',
-	async sendMessage(client, message, argumentsArray, profileData) {
+module.exports.name = 'stats';
 
-		if (await hasNotCompletedAccount(message, profileData)) {
+/**
+ *
+ * @param {import('../../paw').client} client
+ * @param {import('discord.js').Message} message
+ * @param {Array<string>} argumentsArray
+ * @param {import('../../typedef').ProfileSchema} profileData
+ * @returns {Promise<void>}
+ */
+module.exports.sendMessage = async (client, message, argumentsArray, profileData) => {
 
-			return;
-		}
+	if (await hasNotCompletedAccount(message, profileData)) {
 
-		profileData = await startCooldown(message, profileData);
+		return;
+	}
 
-		const components = [{
-			type: 'ACTION_ROW',
-			components: [{
-				type: 'BUTTON',
-				customId: 'stats-refresh',
-				emoji: { name: '🔁' },
-				style: 'SECONDARY',
-			}, {
-				type: 'BUTTON',
-				customId: 'profile-store',
-				label: 'Store food away',
-				style: 'SECONDARY',
-			}],
-		}];
+	profileData = await startCooldown(message, profileData);
 
-		if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
+	/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} */
+	const components = [{
+		type: 'ACTION_ROW',
+		components: [{
+			type: 'BUTTON',
+			customId: 'stats-refresh',
+			emoji: '🔁',
+			style: 'SECONDARY',
+		}, {
+			type: 'BUTTON',
+			customId: 'profile-store',
+			label: 'Store food away',
+			style: 'SECONDARY',
+		}],
+	}];
 
-			components[0].components.pop();
-		}
+	if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
 
-		let injuryText = Object.values(profileData.injuryObject).every(item => item == 0) ? null : '';
+		components[0].components.pop();
+	}
 
-		for (const [injuryKind, injuryAmount] of Object.entries(profileData.injuryObject)) {
+	let injuryText = Object.values(profileData.injuryObject).every(item => item == 0) ? null : '';
 
-			if (injuryAmount > 0) {
+	for (const [injuryKind, injuryAmount] of Object.entries(profileData.injuryObject)) {
 
-				if (typeof injuryAmount === 'number') {
+		if (injuryAmount > 0) {
 
-					injuryText += `, ${injuryAmount} ${(injuryAmount < 2) ? injuryKind.slice(0, -1) : injuryKind}`;
-				}
-				else {
+			if (typeof injuryAmount === 'number') {
 
-					injuryText += `, ${injuryKind}: yes`;
-				}
+				injuryText += `, ${injuryAmount} ${(injuryAmount < 2) ? injuryKind.slice(0, -1) : injuryKind}`;
+			}
+			else {
+
+				injuryText += `, ${injuryKind}: yes`;
 			}
 		}
+	}
 
-		return await message
-			.reply({
-				content: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\` - ⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\` - 🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`\n${injuryText === null ? '' : `🩹 Injuries/Illnesses: ${injuryText.slice(2)}`}`,
-				components: components,
-				failIfNotExists: false,
-			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
-	},
+	await message
+		.reply({
+			content: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\` - ⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\` - 🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`\n${injuryText === null ? '' : `🩹 Injuries/Illnesses: ${injuryText.slice(2)}`}`,
+			components: components,
+			failIfNotExists: false,
+		})
+		.catch((error) => {
+			if (error.httpStatus !== 404) { throw new Error(error); }
+		});
+	return;
 };
