@@ -13,6 +13,7 @@ const { execute } = require('../../events/messageCreate');
 const { remindOfAttack } = require('./attack');
 const { pronoun, pronounAndPlural, upperCasePronounAndPlural } = require('../../utils/getPronouns');
 const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
+const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'play';
 
@@ -267,8 +268,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				return await execute(client, message);
 			})
 			.catch(async () => {
+
 				return await botReply
-					.edit({ components: [] })
+					.edit({ components: disableAllComponents(botReply.components) })
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
 						return botReply;
