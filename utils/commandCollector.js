@@ -1,5 +1,7 @@
 // @ts-check
 
+const disableAllComponents = require('./disableAllComponents');
+
 /** @type {Object<string, Function>} */
 const activeCommandsObject = {};
 
@@ -15,7 +17,7 @@ function createCommandCollector(userId, guildId, botReply) {
 
 		await botReply
 			.edit({
-				components: [],
+				components: disableAllComponents(botReply.components),
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
