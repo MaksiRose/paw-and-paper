@@ -207,9 +207,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			})].sort(() => Math.random() - 0.5),
 		});
 
-		console.log(botReply?.components[0]?.components[0]);
-		console.log(fightComponents?.components[0]);
-
 		const newCycleArray = ['attack', 'dodge', 'defend'];
 		cycleKind = newCycleArray[generateRandomNumberWithException(newCycleArray.length, 0, newCycleArray.indexOf(cycleKind))];
 

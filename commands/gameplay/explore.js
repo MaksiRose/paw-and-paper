@@ -244,7 +244,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	serverData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOne({ serverId: message.guild.id }));
 	messageContent = remindOfAttack(message);
 
-	if (serverData.activeUsersArray.length >= 3 && messageContent === null && serverData.nextPossibleAttack <= Date.now()) {
+	if (serverData.activeUsersArray.length >= 2 && messageContent === null && serverData.nextPossibleAttack <= Date.now()) {
 
 		botReply = await findHumans();
 	}
