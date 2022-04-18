@@ -2,10 +2,11 @@
 const { default_color } = require('../../config.json');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
-const { createCommandCollector } = require('../../utils/commandCollector');
 const startCooldown = require('../../utils/startCooldown');
 const { readFileSync, writeFileSync } = require('fs');
 const { profileModel } = require('../../models/profileModel');
+const { MessageActionRow, MessageButton, MessageSelectMenu } = require('discord.js');
+const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'vote';
 
@@ -39,17 +40,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				color: /** @type {`#${string}`} */ (default_color),
 				description: 'Click a button to be sent to that websites bot page. After voting for this bot, select the website you voted on from the drop-down menu to get +30 energy.',
 			}],
-			components: [{
-				type: 'ACTION_ROW',
+			components: [ new MessageActionRow({
 				components: [
-					{ type: 'BUTTON', label: 'top.gg', url: 'https://top.gg/bot/862718885564252212', style: 'LINK' },
-					{ type: 'BUTTON', label: 'discords.com', url: 'https://discords.com/bots/bot/862718885564252212', style: 'LINK' },
-					{ type: 'BUTTON', label: 'discordbotlist.com', url: 'https://discordbotlist.com/bots/paw-and-paper', style: 'LINK' },
+					new MessageButton({ label: 'top.gg', url: 'https://top.gg/bot/862718885564252212', style: 'LINK' }),
+					new MessageButton({ label: 'discords.com', url: 'https://discords.com/bots/bot/862718885564252212', style: 'LINK' }),
+					new MessageButton({ label: 'discordbotlist.com', url: 'https://discordbotlist.com/bots/paw-and-paper', style: 'LINK' }),
 				],
-			}, {
-				type: 'ACTION_ROW',
-				components: [{
-					type: 'SELECT_MENU',
+			}), new MessageActionRow({
+				components: [ new MessageSelectMenu({
 					customId: 'vote-options',
 					placeholder: 'Select the site on which you voted',
 					options: [
@@ -57,30 +55,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						{ label: 'discords.com', value: 'discords.com-vote' },
 						{ label: 'discordbotlist.com', value: 'discordbotlist.com-vote' },
 					],
-				}],
-			}],
+				})],
+			})],
 			failIfNotExists: false,
 		})
 		.catch((error) => { throw new Error(error); });
 
-	createCommandCollector(message.author.id, message.guild.id, botReply);
-
 	const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.user.id === message.author.id && i.customId === 'vote-options';
 
 	botReply
-		.awaitMessageComponent({ filter })
+		.awaitMessageComponent({ filter, time: 600_000 })
 		.then(async interaction => {
 
 			const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8'));
 			const twelveHoursInMs = 43200000;
-
-			await /** @type {import('discord.js').Message} */ (interaction.message)
-				.edit({
-					components: [],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
 
 			/** @type {boolean} */
 			const successfulTopVote = /** @type {import('discord.js').SelectMenuInteraction} */ (interaction).values[0] === 'top.gg-vote' && (voteCache['id_' + message.author.id]?.lastRecordedTopVote > Date.now() - twelveHoursInMs || await /** @type {import('@top-gg/sdk').Api} */ (client.votes.top).hasVoted(message.author.id));
@@ -163,7 +151,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			await botReply
 				.edit({
-					components: [],
+					components: disableAllComponents(botReply.components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }

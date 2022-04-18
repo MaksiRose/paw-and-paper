@@ -10,6 +10,8 @@ const { remindOfAttack } = require('../gameplay/attack');
 const { pronoun, upperCasePronounAndPlural } = require('../../utils/getPronouns');
 const { generateRandomNumber } = require('../../utils/randomizers');
 const blockEntrance = require('../../utils/blockEntrance');
+const { MessageActionRow, MessageSelectMenu, MessageButton } = require('discord.js');
+const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'store';
 
@@ -59,16 +61,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		['meat', [...speciesMap.keys()].sort()],
 	]);
 
-	/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions} */
-	const itemSelectMenu = {
-		type: 'ACTION_ROW',
-		components: [{
-			type: 'SELECT_MENU',
+	const itemSelectMenu = new MessageActionRow({
+		components: [ new MessageSelectMenu({
 			customId: 'store-options',
 			placeholder: 'Select an item to store away',
 			options: [],
-		}],
-	};
+		})],
+	});
 
 	for (const [itemType, itemsArray] of inventoryMap) {
 
@@ -81,16 +80,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		}
 	}
 
-	/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions} */
-	const storeAllButton = {
-		type: 'ACTION_ROW',
-		components: [{
-			type: 'BUTTON',
+	const storeAllButton = new MessageActionRow({
+		components: [ new MessageButton({
 			customId: 'store-all',
 			label: 'Store everything',
 			style: 'SUCCESS',
-		}],
-	};
+		})],
+	});
 
 	if (/** @type {import('discord.js').MessageSelectMenuOptions} */ (itemSelectMenu.components[0]).options.length === 0) {
 
@@ -123,7 +119,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				color: profileData.color,
 				author: { name: profileData.name, icon_url: profileData.avatarURL },
 				description: `*${profileData.name} wanders to the food den, ready to store away ${pronoun(profileData, 2)} findings. ${upperCasePronounAndPlural(profileData, 0, 'circle')} the food pile…*`,
-				footer: { text: '' },
 			}],
 			components: [.../** @type {import('discord.js').MessageSelectMenuOptions} */ (itemSelectMenu.components[0]).options.length > 25 ? [] : [itemSelectMenu], storeAllButton],
 			failIfNotExists: false,
@@ -152,7 +147,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			return await botReply
 				.edit({
-					components: [],
+					components: disableAllComponents(botReply.components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -176,16 +171,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					}
 				}
 
-				/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions} */
-				const amountSelectMenu = {
-					type: 'ACTION_ROW',
-					components: [{
-						type: 'SELECT_MENU',
+				const amountSelectMenu = new MessageActionRow({
+					components: [ new MessageSelectMenu({
 						customId: 'store-amount',
 						placeholder: 'Select the amount to store away',
 						options: [],
-					}],
-				};
+					})],
+				});
 
 				for (let i = 0; i < maximumAmount; i++) {
 
@@ -238,7 +230,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				await /** @type {import('discord.js').Message} */ (interaction.message)
 					.edit({
 						embeds: interaction.message.embeds,
-						components: /** @type {import('discord.js').MessageSelectMenuOptions} */ (itemSelectMenu.components[0]).options.length === 0 ? [] : [itemSelectMenu, storeAllButton],
+						components: /** @type {import('discord.js').MessageSelectMenuOptions} */ (itemSelectMenu.components[0]).options.length === 0 ? disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components) : [itemSelectMenu, storeAllButton],
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
@@ -288,7 +280,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			await /** @type {import('discord.js').Message} */ (interaction.message)
 				.edit({
 					embeds: interaction.message.embeds,
-					components: [],
+					components: disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }

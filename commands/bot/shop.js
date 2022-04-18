@@ -1,8 +1,10 @@
 // @ts-check
+const { MessageActionRow, MessageSelectMenu } = require('discord.js');
 const { error_color, default_color } = require('../../config.json');
 const { profileModel } = require('../../models/profileModel');
 const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
 const { createCommandCollector } = require('../../utils/commandCollector');
+const disableAllComponents = require('../../utils/disableAllComponents');
 const { checkLevelUp } = require('../../utils/levelHandling');
 
 module.exports.name = 'shop';
@@ -50,15 +52,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 				description: description,
 			}],
-			components: [{
-				type: 'ACTION_ROW',
-				components: [{
-					type: 'SELECT_MENU',
+			components: [ new MessageActionRow({
+				components: [ new MessageSelectMenu({
 					customId: 'shopbuy-options',
 					placeholder: 'Select an item',
 					options: selectMenuOptionsArray,
-				}],
-			}],
+				})],
+			})],
 			failIfNotExists: false,
 		})
 		.catch((error) => { throw new Error(error); });
@@ -79,7 +79,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			return await botReply
 				.edit({
-					components: [],
+					components: disableAllComponents(botReply.components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -103,15 +103,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						description: newDescription,
 					}],
-					components: [{
-						type: 'ACTION_ROW',
-						components: [{
-							type: 'SELECT_MENU',
+					components: [ new MessageActionRow({
+						components: [ new MessageSelectMenu({
 							customId: 'shopbuy-options',
 							placeholder: 'Select a shop',
 							options: newSelectMenuOptionsArray,
-						}],
-					}],
+						})],
+					})],
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -156,7 +154,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 									author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 									description: `You refunded the <@&${buyItem.roleId}> role!`,
 								}],
-								components: [],
+								components: disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components),
 							})
 							.catch((error) => {
 								if (error.httpStatus !== 404) { throw new Error(error); }
@@ -185,7 +183,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 									author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 									description: `You bought the <@&${buyItem.roleId}> role for ${buyItem.requirement} experience!`,
 								}],
-								components: [],
+								components: disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components),
 							})
 							.catch((error) => {
 								if (error.httpStatus !== 404) { throw new Error(error); }

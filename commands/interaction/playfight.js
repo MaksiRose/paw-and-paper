@@ -11,6 +11,8 @@ const { createCommandCollector } = require('../../utils/commandCollector');
 const { remindOfAttack } = require('../gameplay/attack');
 const { pronoun, pronounAndPlural, upperCasePronounAndPlural } = require('../../utils/getPronouns');
 const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
+const { MessageActionRow, MessageButton } = require('discord.js');
+const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'playfight';
 
@@ -119,16 +121,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				description: `*${profileData.name} hangs around the prairie when ${partnerProfileData.name} comes by. The ${partnerProfileData.species} has things to do but ${profileData.name}'s smug expression implies ${pronoun(partnerProfileData, 0)} wouldn't be able to beat the ${profileData.species}.*`,
 				footer: { text: `You are playing ${gameType}. After 60 seconds, the invitation expires.\n\nTip: To pick a game, include 'connectfour' / 'c4' or 'tictactoe' / 'ttt' somewhere in the original command.` },
 			}],
-			components: [{
-				type: 'ACTION_ROW',
-				components: [{
-					type: 'BUTTON',
+			components: [ new MessageActionRow({
+				components: [ new MessageButton({
 					customId: `playfight-confirm-${gameType.split(' ').join('-').toLowerCase()}`,
 					label: 'Accept challenge',
 					emoji: '🎭',
 					style: 'SUCCESS',
-				}],
-			}],
+				})],
+			})],
 			failIfNotExists: false,
 		})
 		.catch((error) => { throw new Error(error); });
@@ -167,74 +167,61 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 	const player1Field = '⭕';
 	const player2Field = '❌';
 
-	/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} */
 	const componentArray = [
-		{
-			type: 'ACTION_ROW',
-			components: [{
-				type: 'BUTTON',
+		new MessageActionRow({
+			components: [ new MessageButton({
 				customId: 'board-1-1',
 				emoji: emptyField,
 				disabled: false,
 				style: 'SECONDARY',
-			}, {
-				type: 'BUTTON',
+			}), new MessageButton({
 				customId: 'board-1-2',
 				emoji: emptyField,
 				disabled: false,
 				style: 'SECONDARY',
-			}, {
-				type: 'BUTTON',
+			}), new MessageButton({
 				customId: 'board-1-3',
 				emoji:  emptyField,
 				disabled: false,
 				style: 'SECONDARY',
-			}],
-		},
-		{
-			type: 'ACTION_ROW',
-			components: [{
-				type: 'BUTTON',
+			})],
+		}),
+		new MessageActionRow({
+			components: [ new MessageButton({
 				customId: 'board-2-1',
 				emoji: emptyField,
 				disabled: false,
 				style: 'SECONDARY',
-			}, {
-				type: 'BUTTON',
+			}), new MessageButton({
 				customId: 'board-2-2',
 				emoji: emptyField,
 				disabled: false,
 				style: 'SECONDARY',
-			}, {
-				type: 'BUTTON',
+			}), new MessageButton({
 				customId: 'board-2-3',
 				emoji: emptyField,
 				disabled: false,
 				style: 'SECONDARY',
-			}],
-		},
-		{
-			type: 'ACTION_ROW',
-			components: [{
-				type: 'BUTTON',
+			})],
+		}),
+		new MessageActionRow({
+			components: [ new MessageButton({
 				customId: 'board-3-1',
 				emoji: emptyField,
 				disabled: false,
 				style: 'SECONDARY',
-			}, {
-				type: 'BUTTON',
+			}), new MessageButton({
 				customId: 'board-3-2',
 				emoji: emptyField,
 				disabled: false,
 				style: 'SECONDARY',
-			}, {
-				type: 'BUTTON',
+			}), new MessageButton({
 				customId: 'board-3-3',
 				emoji: emptyField,
 				disabled: false,
 				style: 'SECONDARY',
-			}],
-		},
+			})],
+		}),
 	];
 
 	let newTurnEmbedTextArrayIndex = -1;
@@ -265,7 +252,7 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 
 			for (const rowArray of columnArray.components) {
 
-				if (/** @type {import('discord.js').MessageButtonOptions} */ (rowArray).emoji === player1Field || /** @type {import('discord.js').MessageButtonOptions} */ (rowArray).emoji === player2Field) {
+				if (/** @type {import('discord.js').MessageButton} */ (rowArray).emoji.name === player1Field || /** @type {import('discord.js').MessageButton} */ (rowArray).emoji.name === player2Field) {
 
 					isEmptyBoard = false;
 					break forLoop;
@@ -284,7 +271,7 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 							author: { name: profileData.name, icon_url: profileData.avatarURL },
 							description: `*${partnerProfileData.name} wouldn't give in so easily and simply passes the pleading looks of the ${profileData.species}.*`,
 						}],
-						components: [],
+						components: disableAllComponents(botReply.components),
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
@@ -303,7 +290,7 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 							description: `*${currentProfileData.name} takes so long with ${pronoun(currentProfileData, 2)} decision on how to attack that ${otherProfileData.name} gets impatient and leaves.*`,
 							footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
 						}],
-						components: [],
+						components: disableAllComponents(botReply.components),
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
@@ -327,7 +314,7 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 			const column = Number(customId.split('-', 2).pop()) - 1;
 			const row = Number(customId.split('-').pop()) - 1;
 
-			/** @type {import('discord.js').MessageButtonOptions} */ (componentArray[column].components[row]).emoji = isPartner === true ? player1Field : player2Field;
+			/** @type {import('discord.js').MessageButton} */ (componentArray[column].components[row]).emoji.name = isPartner === true ? player1Field : player2Field;
 			componentArray[column].components[row].disabled = true;
 
 			if (isWin()) {
@@ -391,13 +378,13 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 	 */
 	function isWin() {
 
-		const diagonal_1_1 = /** @type {import('discord.js').MessageButtonOptions} */ (componentArray[1].components[1]).emoji;
+		const diagonal_1_1 = /** @type {import('discord.js').MessageButton} */ (componentArray[1].components[1]).emoji.name;
 
-		const diagonal_0_0 = /** @type {import('discord.js').MessageButtonOptions} */ (componentArray[0].components[0]).emoji;
-		const diagonal_2_2 = /** @type {import('discord.js').MessageButtonOptions} */ (componentArray[2].components[2]).emoji;
+		const diagonal_0_0 = /** @type {import('discord.js').MessageButton} */ (componentArray[0].components[0]).emoji.name;
+		const diagonal_2_2 = /** @type {import('discord.js').MessageButton} */ (componentArray[2].components[2]).emoji.name;
 
-		const diagonal_0_2 = /** @type {import('discord.js').MessageButtonOptions} */ (componentArray[0].components[2]).emoji;
-		const diagonal_2_0 = /** @type {import('discord.js').MessageButtonOptions} */ (componentArray[2].components[0]).emoji;
+		const diagonal_0_2 = /** @type {import('discord.js').MessageButton} */ (componentArray[0].components[2]).emoji.name;
+		const diagonal_2_0 = /** @type {import('discord.js').MessageButton} */ (componentArray[2].components[0]).emoji.name;
 
 		if (diagonal_1_1 !== emptyField && ((diagonal_1_1 === diagonal_0_0 && diagonal_1_1 === diagonal_2_2) || (diagonal_1_1 === diagonal_0_2 && diagonal_1_1 === diagonal_2_0))) {
 
@@ -406,13 +393,13 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 
 		for (const value of [0, 1, 2]) {
 
-			const column_1 = /** @type {import('discord.js').MessageButtonOptions} */ (componentArray[value].components[0]).emoji;
-			const column_2 = /** @type {import('discord.js').MessageButtonOptions} */ (componentArray[value].components[1]).emoji;
-			const column_3 = /** @type {import('discord.js').MessageButtonOptions} */ (componentArray[value].components[2]).emoji;
+			const column_1 = /** @type {import('discord.js').MessageButton} */ (componentArray[value].components[0]).emoji.name;
+			const column_2 = /** @type {import('discord.js').MessageButton} */ (componentArray[value].components[1]).emoji.name;
+			const column_3 = /** @type {import('discord.js').MessageButton} */ (componentArray[value].components[2]).emoji.name;
 
-			const row_1 = /** @type {import('discord.js').MessageButtonOptions} */ (componentArray[0].components[value]).emoji;
-			const row_2 = /** @type {import('discord.js').MessageButtonOptions} */ (componentArray[1].components[value]).emoji;
-			const row_3 = /** @type {import('discord.js').MessageButtonOptions} */ (componentArray[2].components[value]).emoji;
+			const row_1 = /** @type {import('discord.js').MessageButton} */ (componentArray[0].components[value]).emoji.name;
+			const row_2 = /** @type {import('discord.js').MessageButton} */ (componentArray[1].components[value]).emoji.name;
+			const row_3 = /** @type {import('discord.js').MessageButton} */ (componentArray[2].components[value]).emoji.name;
 
 			if ((column_1 === column_2 && column_1 === column_3 && column_1 !== emptyField) || (row_1 === row_2 && row_1 === row_3 && row_1 !== emptyField)) {
 
@@ -433,7 +420,7 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 
 			for (const rowArray of columnArray.components) {
 
-				if (/** @type {import('discord.js').MessageButtonOptions} */ (rowArray).emoji === emptyField) {
+				if (/** @type {import('discord.js').MessageButton} */ (rowArray).emoji.name === emptyField) {
 
 					return false;
 				}
@@ -468,58 +455,48 @@ function playConnectFour(serverData, profileData, partnerProfileData, message, b
 	const field = Array.from({ length: 6 }, () => Array.from({ length: 7 }, () => emptyField));
 
 
-	/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} */
 	const componentArray = [
-		{
-			type: 'ACTION_ROW',
-			components: [{
-				type: 'BUTTON',
+		new MessageActionRow({
+			components: [ new MessageButton({
 				customId: 'field-1',
 				emoji: '1️⃣',
 				disabled: false,
 				style: 'SECONDARY',
-			}, {
-				type: 'BUTTON',
+			}), new MessageButton({
 				customId: 'field-2',
 				emoji:'2️⃣',
 				disabled: false,
 				style: 'SECONDARY',
-			}, {
-				type: 'BUTTON',
+			}), new MessageButton({
 				customId: 'field-3',
 				emoji:  '3️⃣',
 				disabled: false,
 				style: 'SECONDARY',
-			}, {
-				type: 'BUTTON',
+			}), new MessageButton({
 				customId: 'field-4',
 				emoji: '4️⃣',
 				disabled: false,
 				style: 'SECONDARY',
-			}],
-		},
-		{
-			type: 'ACTION_ROW',
-			components: [{
-				type: 'BUTTON',
+			})],
+		}),
+		new MessageActionRow({
+			components: [ new MessageButton({
 				customId: 'field-5',
 				emoji: '5️⃣',
 				disabled: false,
 				style: 'SECONDARY',
-			}, {
-				type: 'BUTTON',
+			}), new MessageButton({
 				customId: 'field-6',
 				emoji: '6️⃣',
 				disabled: false,
 				style: 'SECONDARY',
-			}, {
-				type: 'BUTTON',
+			}), new MessageButton({
 				customId: 'field-7',
 				emoji: '7️⃣',
 				disabled: false,
 				style: 'SECONDARY',
-			}],
-		},
+			})],
+		}),
 	];
 
 	let newTurnEmbedTextArrayIndex = -1;
@@ -569,7 +546,7 @@ function playConnectFour(serverData, profileData, partnerProfileData, message, b
 							author: { name: profileData.name, icon_url: profileData.avatarURL },
 							description: `*${partnerProfileData.name} wouldn't give in so easily and simply passes the pleading looks of the ${profileData.species}.*`,
 						}],
-						components: [],
+						components: disableAllComponents(botReply.components),
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
@@ -588,7 +565,7 @@ function playConnectFour(serverData, profileData, partnerProfileData, message, b
 							description: `*${currentProfileData.name} takes so long with ${pronoun(currentProfileData, 2)} decision on how to attack that ${otherProfileData.name} gets impatient and leaves.*`,
 							footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
 						}],
-						components: [],
+						components: disableAllComponents(botReply.components),
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }

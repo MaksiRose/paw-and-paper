@@ -9,6 +9,8 @@ const { remindOfAttack } = require('../gameplay/attack');
 const { generateRandomNumber } = require('../../utils/randomizers');
 const blockEntrance = require('../../utils/blockEntrance');
 const { execute } = require('../../events/messageCreate');
+const { MessageActionRow, MessageSelectMenu, MessageEmbed } = require('discord.js');
+const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'inventory';
 module.exports.aliases = ['storage', 'i'];
@@ -44,11 +46,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		return;
 	}
 
-	/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions} */
-	const inventorySelectMenu = {
-		type: 'ACTION_ROW',
-		components: [{
-			type: 'SELECT_MENU',
+	const inventorySelectMenu = new MessageActionRow({
+		components: [ new MessageSelectMenu({
 			customId: 'inventory-page',
 			placeholder: 'Select a page',
 			options: [
@@ -56,27 +55,23 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				{ label: 'Page 2', value: 'inventory_page2', description: 'uncommon & rare herbs', emoji: '🍀' },
 				{ label: 'Page 3', value: 'inventory_page3', description: 'meat', emoji: '🥩' },
 			],
-		}],
-	};
+		})],
+	});
 
-	/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions} */
-	const foodSelectMenu = {
-		type: 'ACTION_ROW',
-		components: [{
-			type: 'SELECT_MENU',
+	const foodSelectMenu = new MessageActionRow({
+		components: [ new MessageSelectMenu({
 			customId: 'eat-options',
 			placeholder: 'Select an item to eat',
 			options: [],
-		}],
-	};
+		})],
+	});
 
-	/** @type {import('discord.js').MessageEmbedOptions} */
-	let embed = {
+	let embed = new MessageEmbed({
 		color: /** @type {`#${string}`} */ (default_color),
 		author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 		title: `Inventory of ${message.guild.name} - Page 1`,
 		fields: [],
-	};
+	});
 
 	for (const [commonPlantName, commonPlantObject] of [...commonPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
@@ -115,7 +110,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			return await botReply
 				.edit({
-					components: [],
+					components: disableAllComponents(botReply.components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -138,12 +133,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			if (interaction.values[0] == 'inventory_page1') {
 
-				embed = {
+				embed = new MessageEmbed({
 					color: /** @type {`#${string}`} */ (default_color),
 					author: { name: interaction.guild.name, icon_url: interaction.guild.iconURL() },
 					title: `Inventory of ${interaction.guild.name} - Page 1`,
 					fields: [],
-				};
+				});
 
 				for (const [commonPlantName, commonPlantObject] of [...commonPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
@@ -171,12 +166,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			if (interaction.values[0] === 'inventory_page2') {
 
-				embed = {
+				embed = new MessageEmbed({
 					color: /** @type {`#${string}`} */ (default_color),
 					author: { name: interaction.guild.name, icon_url: interaction.guild.iconURL() },
 					title: `Inventory of ${interaction.guild.name} - Page 2`,
 					fields: [],
-				};
+				});
 
 				for (const [uncommonPlantName, uncommonPlantObject] of [...uncommonPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
@@ -196,8 +191,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					}
 				}
 
-				embedArray.splice(-1, 1, embed);
-
 				if (profileData.hunger < profileData.maxHunger && /** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.length > 0) {
 
 					messageComponentArray.push(foodSelectMenu);
@@ -205,7 +198,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 				await /** @type {import('discord.js').Message} */ (interaction.message)
 					.edit({
-						embeds: embedArray,
+						embeds: [...embedArray, embed],
 						components: messageComponentArray,
 					})
 					.catch((error) => {
@@ -215,12 +208,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			if (interaction.values[0] === 'inventory_page3') {
 
-				embed = {
+				embed = new MessageEmbed({
 					color: /** @type {`#${string}`} */ (default_color),
 					author: { name: interaction.guild.name, icon_url: interaction.guild.iconURL() },
 					title: `Inventory of ${interaction.guild.name} - Page 3`,
 					fields: [],
-				};
+				});
 
 				for (const [speciesName] of [...speciesMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
@@ -240,8 +233,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: 'Show more meat options', value: 'inventory_meat_page', description: 'You are currently on page 1', emoji: '📋' });
 				}
 
-				embedArray.splice(-1, 1, embed);
-
 				if (profileData.hunger < profileData.maxHunger && /** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.length > 0) {
 
 					messageComponentArray.push(foodSelectMenu);
@@ -249,7 +240,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 				await /** @type {import('discord.js').Message} */ (interaction.message)
 					.edit({
-						embeds: embedArray,
+						embeds: [...embedArray, embed],
 						components: messageComponentArray,
 					})
 					.catch((error) => {
@@ -280,12 +271,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					currentPage = 0;
 				}
 
-				embed = {
+				embed = new MessageEmbed({
 					color: /** @type {`#${string}`} */ (default_color),
 					author: { name: interaction.guild.name, icon_url: interaction.guild.iconURL() },
 					title: `Inventory of ${interaction.guild.name} - Page 3.${currentPage + 1}`,
 					fields: [],
-				};
+				});
 
 				for (const [speciesName] of speciesMap) {
 
@@ -307,7 +298,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				}
 
 				/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: 'Show more meat options', value: 'inventory_meat_page', description: 'You are currently on page 1', emoji: '📋' });
-				embedArray.splice(-1, 1, embed);
 
 				if (profileData.hunger < profileData.maxHunger && /** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.length > 0) {
 
@@ -316,7 +306,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 				await /** @type {import('discord.js').Message} */ (interaction.message)
 					.edit({
-						embeds: embedArray,
+						embeds: [...embedArray, embed],
 						components: messageComponentArray,
 					})
 					.catch((error) => {

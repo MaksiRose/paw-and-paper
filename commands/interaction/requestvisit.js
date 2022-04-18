@@ -5,6 +5,8 @@ const { profileModel } = require('../../models/profileModel');
 const { error_color, default_color, prefix } = require('../../config.json');
 const { pronounAndPlural, pronoun, upperCasePronounAndPlural, upperCasePronoun } = require('../../utils/getPronouns');
 const { readFileSync, writeFileSync } = require('fs');
+const { MessageActionRow, MessageSelectMenu, MessageButton } = require('discord.js');
+const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'requestvisit';
 
@@ -91,15 +93,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 				description: `*${profileDataV.name} is looking to meet some new friends. There are other packs in the area. Who should ${pronoun(profileDataV, 0)} visit?*`,
 			}],
-			components: [{
-				type: 'ACTION_ROW',
-				components: [{
-					type: 'SELECT_MENU',
+			components: [ new MessageActionRow({
+				components: [ new MessageSelectMenu({
 					customId: 'visit-options',
 					placeholder: 'Select a pack',
 					options: selectMenuOptionsArray,
-				}],
-			}],
+				})],
+			})],
 			failIfNotExists: false,
 		})
 		.catch((error) => { throw new Error(error); });
@@ -122,7 +122,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			return await botReplyV
 				.edit({
-					components: [],
+					components: disableAllComponents(botReplyV.components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -151,15 +151,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			await /** @type {import('discord.js').Message} */ (interaction.message)
 				.edit({
-					components: [{
-						type: 'ACTION_ROW',
-						components: [{
-							type: 'SELECT_MENU',
+					components: [ new MessageActionRow({
+						components: [ new MessageSelectMenu({
 							customId: 'species-options',
 							placeholder: 'Select a species',
 							options: selectMenuOptionsArray,
-						}],
-					}],
+						})],
+					})],
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -203,7 +201,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			await botReplyV
 				.edit({
-					components: [],
+					components: disableAllComponents(botReplyV.components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -225,15 +223,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						description: `*${profileDataV.name} strolls over to ${serverDataH.name}. ${upperCasePronounAndPlural(profileDataV, 0, 'is', 'are')} waiting patiently at the pack borders to be invited in as to not invade the pack's territory without permission.*`,
 						footer: { text: 'The invitation will expire in five minutes. Alternatively, you can cancel it using the button below.' },
 					}],
-					components: [{
-						type: 'ACTION_ROW',
-						components: [{
-							type: 'BUTTON',
+					components: [ new MessageActionRow({
+						components: [ new MessageButton({
 							customId: 'visit_cancel',
 							label: 'Cancel',
 							style: 'DANGER',
-						}],
-					}],
+						})],
+					})],
 				})
 				.catch((error) => { throw new Error(error); });
 
@@ -247,20 +243,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						title: `Near the lake a ${profileDataV.species} is waiting. ${upperCasePronoun(profileDataV, 0)} came out of the direction where a pack named "${serverDataV.name}" is lying. ${upperCasePronoun(profileDataV, 0)} seems to be waiting for permission to cross the pack borders.`,
 						footer: { text: 'The invitation will expire in five minutes. Alternatively, you can decline it using the button below.' },
 					}],
-					components: [{
-						type: 'ACTION_ROW',
-						components: [{
-							type: 'BUTTON',
+					components: [ new MessageActionRow({
+						components: [ new MessageButton({
 							customId: 'visit_accept',
 							label: 'Accept visit',
 							style: 'SUCCESS',
-						}, {
-							type: 'BUTTON',
+						}), new MessageButton({
 							customId: 'visit_decline',
 							label: 'Decline visit',
 							style: 'DANGER',
-						}],
-					}],
+						})],
+					})],
 				})
 				.catch((error) => { throw new Error(error); });
 
@@ -323,7 +316,7 @@ async function declinedInvitation(message, profileData, botReplyV, botReplyH) {
 
 	await botReplyV
 		.edit({
-			components: [],
+			components: disableAllComponents(botReplyV.components),
 		})
 		.catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }
@@ -344,7 +337,7 @@ async function declinedInvitation(message, profileData, botReplyV, botReplyH) {
 
 	await botReplyH
 		.edit({
-			components: [],
+			components: disableAllComponents(botReplyH.components),
 		})
 		.catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }
@@ -389,7 +382,7 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 
 	await botReplyV
 		.edit({
-			components: [],
+			components: disableAllComponents(botReplyV.components),
 		})
 		.catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }
@@ -411,7 +404,7 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 
 	await botReplyH
 		.edit({
-			components: [],
+			components: disableAllComponents(botReplyH.components),
 		})
 		.catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }

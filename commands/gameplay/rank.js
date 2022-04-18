@@ -7,6 +7,8 @@ const { pronoun } = require('../../utils/getPronouns');
 const startCooldown = require('../../utils/startCooldown');
 const { remindOfAttack } = require('./attack');
 const { checkRankRequirements } = require('../../utils/checkRoleRequirements');
+const { MessageActionRow, MessageButton } = require('discord.js');
+const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'rank';
 module.exports.aliases = ['role'];
@@ -72,28 +74,26 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					author: { name: profileData.name, icon_url: profileData.avatarURL },
 					title: `What rank should ${profileData.name} have?`,
 					footer: { text: 'Available options: \n\nHealer (recommended for herbivores)\nHunter (recommended for carnivores)' },
-				}], components: [{
-					type: 'ACTION_ROW',
-					components: [{
-						type: 'BUTTON',
+				}], components: [ new MessageActionRow({
+					components: [ new MessageButton({
 						customId: 'rank-healer',
 						label: 'Healer',
 						emoji: '🛡️',
 						style: 'SUCCESS',
-					}, {
-						type: 'BUTTON',
+					}), new MessageButton({
 						customId: 'rank-hunter',
 						label: 'Hunter',
 						emoji: '⚔️',
 						style: 'SUCCESS',
-					}],
-				}],
+					})],
+				})],
 				failIfNotExists: false,
 			})
 			.catch((error) => { throw new Error(error); });
 
 		createCommandCollector(message.author.id, message.guild.id, botReply);
-		return await interactionCollector(botReply);
+		interactionCollector(botReply);
+		return;
 	}
 
 	if (profileData.unlockedRanks === 3 && (profileData.rank === 'Hunter' || profileData.rank === 'Healer')) {
@@ -142,72 +142,72 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.isButton() && (i.customId === 'rank-healer' || i.customId === 'rank-hunter') && i.user.id == message.author.id;
 
-		const { customId } = await botReply
+		await botReply
 			.awaitMessageComponent({ filter, time: 30000 })
-			.catch(() => {return { customId: '' };});
+			.then(async ({ customId }) => {
 
-		if (customId === '') {
+				if (customId === 'rank-healer') {
 
-			await botReply
-				.edit({
-					components: [],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
-			return;
-		}
+					await profileModel.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{ $set: { rank: 'Healer' } },
+					);
 
-		if (customId === 'rank-healer') {
+					await botReply
+						.edit({
+							embeds: [{
+								color: profileData.color,
+								author: { name: profileData.name, icon_url: profileData.avatarURL },
+								description: `*${profileData.name} stands before one of the eldest, excited to hear their following words.* "Congratulations, ${profileData.name}, you are now a fully-fledged Healer. I am certain you will contribute greatly to the pack in this role."\n*The ${profileData.species} grins from ear to ear.*`,
+							}],
+							components: disableAllComponents(botReply.components),
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) { throw new Error(error); }
+						});
 
-			await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { rank: 'Healer' } },
-			);
+					await checkRankRequirements(serverData, message, message.member, 'Healer');
 
-			await botReply
-				.edit({
-					embeds: [{
-						color: profileData.color,
-						author: { name: profileData.name, icon_url: profileData.avatarURL },
-						description: `*${profileData.name} stands before one of the eldest, excited to hear their following words.* "Congratulations, ${profileData.name}, you are now a fully-fledged Healer. I am certain you will contribute greatly to the pack in this role."\n*The ${profileData.species} grins from ear to ear.*`,
-					}],
-					components: [],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+					return;
+				}
 
-			await checkRankRequirements(serverData, message, message.member, 'Healer');
+				if (customId === 'rank-hunter') {
 
-			return;
-		}
+					await profileModel.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{ $set: { rank: 'Hunter' } },
+					);
 
-		if (customId === 'rank-hunter') {
+					await botReply
+						.edit({
+							embeds: [{
+								color: profileData.color,
+								author: { name: profileData.name, icon_url: profileData.avatarURL },
+								description: `*${profileData.name} stands before one of the eldest, excited to hear their following words.* "Congratulations, ${profileData.name}, you are now a fully-fledged Hunter. I am certain you will contribute greatly to the pack in this role."\n*The ${profileData.species} grins from ear to ear.*`,
+							}],
+							components: disableAllComponents(botReply.components),
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) { throw new Error(error); }
+						});
 
-			await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { rank: 'Hunter' } },
-			);
+					await checkRankRequirements(serverData, message, message.member, 'Hunter');
 
-			await botReply
-				.edit({
-					embeds: [{
-						color: profileData.color,
-						author: { name: profileData.name, icon_url: profileData.avatarURL },
-						description: `*${profileData.name} stands before one of the eldest, excited to hear their following words.* "Congratulations, ${profileData.name}, you are now a fully-fledged Hunter. I am certain you will contribute greatly to the pack in this role."\n*The ${profileData.species} grins from ear to ear.*`,
-					}],
-					components: [],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+					return;
+				}
 
-			await checkRankRequirements(serverData, message, message.member, 'Hunter');
+				return await interactionCollector();
+			})
+			.catch(async () => {
 
-			return;
-		}
-
-		return await interactionCollector();
+				await botReply
+					.edit({
+						components: disableAllComponents(botReply.components),
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
+					});
+				return;
+			});
 	}
 };

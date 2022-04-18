@@ -1,4 +1,5 @@
 // @ts-check
+const { MessageEmbed } = require('discord.js');
 const { default_color, error_color } = require('../../config.json');
 const { profileModel } = require('../../models/profileModel');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
@@ -28,11 +29,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		await message
 			.reply({
-				embeds: [{
+				embeds: [ new MessageEmbed({
 					color: /** @type {`#${string}`} */ (default_color),
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Enter a valid hex code to give your messages and profile that color!',
-				}],
+				})],
 				failIfNotExists: false,
 			})
 			.catch((error) => {
@@ -52,11 +53,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		await message
 			.reply({
-				embeds: [{
+				embeds: [ new MessageEmbed({
 					color: /** @type {`#${string}`} */ (error_color),
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Please send a valid hex code! Valid hex codes consist of 6 characters and contain only letters from \'a\' to \'f\' and/or numbers.',
-				}],
+				})],
 				failIfNotExists: false,
 			})
 			.catch((error) => {
@@ -74,11 +75,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	await message
 		.reply({
-			embeds: [{
+			embeds: [ new MessageEmbed({
 				color: profileData.color,
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 				title: `Profile color set to ${hexColor}!`,
-			}],
+			})],
 			failIfNotExists: false,
 		})
 		.catch((error) => {

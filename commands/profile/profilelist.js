@@ -3,6 +3,8 @@ const { profileModel } = require('../../models/profileModel');
 const { default_color } = require('../../config.json');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
+const { MessageActionRow, MessageSelectMenu, MessageButton, MessageEmbed } = require('discord.js');
+const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'profilelist';
 
@@ -23,11 +25,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	profileData = await startCooldown(message, profileData);
 
-	/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} */
-	let components = [{
-		type: 'ACTION_ROW',
-		components: [{
-			type: 'SELECT_MENU',
+	const profilelistRankComponent = new MessageActionRow({
+		components: [ new MessageSelectMenu({
 			customId: 'profilelist-rank',
 			placeholder: 'Select a rank',
 			options: [
@@ -36,44 +35,36 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				{ label: 'Hunters/Healers', value: 'profilelist-huntershealers' },
 				{ label: 'Elderlies', value: 'profilelist-elderlies' },
 			],
-		}],
-	}];
+		})],
+	});
+
+	const profilelistPageComponent = new MessageActionRow({
+		components: [ new MessageButton({
+			customId: 'profilelist-left',
+			emoji: '⬅️',
+			style: 'SECONDARY',
+		}), new MessageButton({
+			customId: 'profilelist-right',
+			emoji: '➡️',
+			style: 'SECONDARY',
+		})],
+	});
 
 	let rankProfilesPages = await getRank('Youngling');
-
-	if (rankProfilesPages.length > 1) {
-
-		components.unshift({
-			type: 'ACTION_ROW',
-			components: [{
-				type: 'BUTTON',
-				customId: 'profilelist-left',
-				emoji: '⬅️',
-				style: 'SECONDARY',
-			}, {
-				type: 'BUTTON',
-				customId: 'profilelist-right',
-				emoji: '➡️',
-				style: 'SECONDARY',
-			}],
-		});
-	}
 
 	let pageNumber = 0;
 	let botReply = await message
 		.reply({
-			embeds: [{
+			embeds: [ new MessageEmbed({
 				color: /** @type {`#${string}`} */ (default_color),
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 				title: 'Profiles - Younglings',
 				description: rankProfilesPages[pageNumber],
-			}],
-			components: components,
+			})],
+			components: [profilelistRankComponent, ...rankProfilesPages.length > 1 ? [profilelistPageComponent] : []],
 			failIfNotExists: false,
 		})
 		.catch((error) => { throw new Error(error); });
-
-	components = [components.pop()];
 
 	interactionCollector();
 
@@ -82,88 +73,70 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId.includes('profilelist') && i.user.id == message.author.id;
 
 		/** @type {import('discord.js').MessageComponentInteraction | null} */
-		const interaction = await botReply
+		await botReply
 			.awaitMessageComponent({ filter, time: 120000 })
-			.catch(async () => { return null; });
+			.then(async interaction => {
 
-		if (interaction === null) {
+				if (interaction.isSelectMenu() && interaction.customId === 'profilelist-rank') {
 
-			await botReply
-				.edit({
-					components: [],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
-			return;
-		}
+					const rankName = (interaction.values[0] === 'profilelist-elderlies') ? 'Elderly' : (interaction.values[0] === 'profilelist-huntershealers') ? /** @type { {$or: Array<'Hunter' | 'Healer'>} } */ ({ $or: ['Hunter', 'Healer'] }) : (interaction.values[0] === 'profilelist-apprentices') ? 'Apprentice' : 'Youngling';
 
-		if (interaction.isSelectMenu() && interaction.customId === 'profilelist-rank') {
+					rankProfilesPages = await getRank(rankName);
 
-			const rankName = (interaction.values[0] === 'profilelist-elderlies') ? 'Elderly' : (interaction.values[0] === 'profilelist-huntershealers') ? /** @type { {$or: Array<'Hunter' | 'Healer'>} } */ ({ $or: ['Hunter', 'Healer'] }) : (interaction.values[0] === 'profilelist-apprentices') ? 'Apprentice' : 'Youngling';
+					botReply.components = [profilelistRankComponent, ...rankProfilesPages.length > 1 ? [profilelistPageComponent] : []];
 
-			rankProfilesPages = await getRank(rankName);
+					pageNumber = 0;
+					botReply.embeds[0].title = `Profiles - ${interaction.component.options.find(element => element.value == interaction.values[0]).label}`;
+					botReply.embeds[0].description = rankProfilesPages[pageNumber];
+				}
 
-			if (rankProfilesPages.length > 1) {
+				if (interaction.customId === 'profilelist-left') {
 
-				components.unshift({
-					type: 'ACTION_ROW',
-					components: [{
-						type: 'BUTTON',
-						customId: 'profilelist-left',
-						emoji: '⬅️',
-						style: 'SECONDARY',
-					}, {
-						type: 'BUTTON',
-						customId: 'profilelist-right',
-						emoji: '➡️',
-						style: 'SECONDARY',
-					}],
-				});
-			}
+					pageNumber -= 1;
 
-			pageNumber = 0;
-			botReply.embeds[0].title = `Profiles - ${interaction.component.options.find(element => element.value == interaction.values[0]).label}`;
-			botReply.embeds[0].description = rankProfilesPages[pageNumber];
-		}
+					if (pageNumber < 0) {
 
-		if (interaction.customId === 'profilelist-left') {
+						pageNumber = rankProfilesPages.length - 1;
+					}
 
-			pageNumber -= 1;
+					botReply.embeds[0].description = rankProfilesPages[pageNumber];
+				}
 
-			if (pageNumber < 0) {
+				if (interaction.customId === 'profilelist-right') {
 
-				pageNumber = rankProfilesPages.length - 1;
-			}
+					pageNumber += 1;
 
-			botReply.embeds[0].description = rankProfilesPages[pageNumber];
-		}
+					if (pageNumber >= rankProfilesPages.length) {
 
-		if (interaction.customId === 'profilelist-right') {
+						pageNumber = 0;
+					}
 
-			pageNumber += 1;
+					botReply.embeds[0].description = rankProfilesPages[pageNumber];
+				}
 
-			if (pageNumber >= rankProfilesPages.length) {
+				botReply = await botReply
+					.edit({
+						embeds: botReply.embeds,
+						components: botReply.components,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
+						return botReply;
+					});
 
-				pageNumber = 0;
-			}
-
-			botReply.embeds[0].description = rankProfilesPages[pageNumber];
-		}
-
-		botReply = await botReply
-			.edit({
-				embeds: botReply.embeds,
-				components: components,
+				interactionCollector();
 			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-				return botReply;
+			.catch(async () => {
+
+				await botReply
+					.edit({
+						components: disableAllComponents(botReply.components),
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
+					});
+				return;
 			});
-
-		components = [components.pop()];
-
-		interactionCollector();
 	}
 
 	/**

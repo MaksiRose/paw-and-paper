@@ -1,4 +1,5 @@
 // @ts-check
+const { MessageEmbed } = require('discord.js');
 const { default_color } = require('../../config.json');
 const { profileModel } = require('../../models/profileModel');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
@@ -33,11 +34,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		await message
 			.reply({
-				embeds: [{
+				embeds: [ new MessageEmbed({
 					color: /** @type {`#${string}`} */ (default_color),
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Your description has been reset!',
-				}],
+				})],
 				failIfNotExists: false,
 			})
 			.catch((error) => {
@@ -54,12 +55,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	await message
 		.reply({
-			embeds: [{
+			embeds: [ new MessageEmbed({
 				color: profileData.color,
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 				title: `Description for ${profileData.name} set:`,
 				description: description,
-			}],
+			})],
 			failIfNotExists: false,
 		})
 		.catch((error) => {

@@ -8,6 +8,8 @@ const { prefix } = require('../../config.json');
 const { execute } = require('../../events/messageCreate');
 const { remindOfAttack } = require('./attack');
 const { pronoun, pronounAndPlural } = require('../../utils/getPronouns');
+const { MessageSelectMenu, MessageActionRow, MessageButton, MessageEmbed } = require('discord.js');
+const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'go';
 module.exports.aliases = ['region'];
@@ -44,11 +46,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	const chosenRegion = argumentsArray.join(' ').toLowerCase();
 
-	/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions} */
-	const travelSelectMenu = {
-		type: 'ACTION_ROW',
-		components: [{
-			type: 'SELECT_MENU',
+	const travelComponent = new MessageActionRow({
+		components: [ new MessageSelectMenu({
 			customId: 'pack-travel',
 			placeholder: 'Select a region',
 			options: [
@@ -59,70 +58,54 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				{ label: 'lake', value: 'lake', emoji: '🌊' },
 				{ label: 'prairie', value: 'prairie', emoji: '🌼' },
 			],
-		}],
-	};
+		})],
+	});
 
-	/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions} */
-	const sleepingDenButtons = {
-		type: 'ACTION_ROW',
-		components: [{
-			type: 'BUTTON',
+	const sleepingDenButtons = new MessageActionRow({
+		components: [ new MessageButton({
 			customId: 'execute-rest',
 			label: 'Rest',
 			style: 'PRIMARY',
-		}],
-	};
+		})],
+	});
 
-	/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions} */
-	const foodDenButtons = {
-		type: 'ACTION_ROW',
-		components: [{
-			type: 'BUTTON',
+	const foodDenButtons = new MessageActionRow({
+		components: [new MessageButton({
 			customId: 'execute-inventory',
 			label: 'View Inventory',
 			style: 'PRIMARY',
-		}, {
-			type: 'BUTTON',
+		}), new MessageButton({
 			customId: 'execute-store',
 			label: 'Store food away',
 			style: 'PRIMARY',
-		}],
-	};
+		})],
+	});
 
-	/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions} */
-	const medicineDenButtons = {
-		type: 'ACTION_ROW',
-		components: [{
-			type: 'BUTTON',
+	const medicineDenButtons = new MessageActionRow({
+		components: [ new MessageButton({
 			customId: 'execute-heal',
 			label: 'Heal',
 			style: 'PRIMARY',
-		}],
-	};
+		})],
+	});
 
-	/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions} */
-	const lakeButtons = {
-		type: 'ACTION_ROW',
-		components: [{
-			type: 'BUTTON',
+	const lakeButtons = new MessageActionRow({
+		components: [ new MessageButton({
 			customId: 'execute-drink',
 			label: 'Drink',
 			style: 'PRIMARY',
-		}],
-	};
+		})],
+	});
 
-	/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions} */
-	const prairieButtons = {
-		type: 'ACTION_ROW',
-		components: [{
-			type: 'BUTTON',
+	const prairieButtons = new MessageActionRow({
+		components: [ new MessageButton({
 			customId: 'execute-play',
 			label: 'Play',
 			style: 'PRIMARY',
-		}],
-	};
+		})],
+	});
 
-	const embed = {
+	const embed = new MessageEmbed({
 		color: profileData.color,
 		author: { name: profileData.name, icon_url: profileData.avatarURL },
 		description: `You are currently at the ${profileData.currentRegion}! Here are the regions you can go to:`,
@@ -134,7 +117,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			{ name: '🌊 lake', value: 'Not only do some aquatic packmates live here, but it is also the primary source of fresh water, in case someone is thirsty.' },
 			{ name: '🌼 prairie', value: 'This is where the Younglings go to play! Everyone else can also come here and play with them.' },
 		],
-	};
+	});
 
 	let botReply;
 
@@ -215,7 +198,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				content: messageContent,
 				embeds: [...embedArray, embed],
-				components: [travelSelectMenu],
+				components: [travelComponent],
 				failIfNotExists: false,
 			})
 			.catch((error) => { throw new Error(error); });
@@ -239,7 +222,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			return await botReply
 				.edit({
-					components: [],
+					components: disableAllComponents(botReply.components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -253,8 +236,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				await sleepingDen();
 				await /** @type {import('discord.js').Message} */ (interaction.message)
 					.edit({
-						embeds: embedArray,
-						components: [travelSelectMenu, sleepingDenButtons],
+						embeds: [...embedArray, embed],
+						components: [travelComponent, sleepingDenButtons],
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
@@ -266,8 +249,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				await foodDen();
 				await /** @type {import('discord.js').Message} */ (interaction.message)
 					.edit({
-						embeds: embedArray,
-						components: [travelSelectMenu, foodDenButtons],
+						embeds: [...embedArray, embed],
+						components: [travelComponent, foodDenButtons],
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
@@ -279,8 +262,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				await medicineDen();
 				await /** @type {import('discord.js').Message} */ (interaction.message)
 					.edit({
-						embeds: embedArray,
-						components: [travelSelectMenu, ...profileData.rank === 'Youngling' || profileData.rank === 'Hunter' ? [] : [medicineDenButtons]],
+						embeds: [...embedArray, embed],
+						components: [travelComponent, ...profileData.rank === 'Youngling' || profileData.rank === 'Hunter' ? [] : [medicineDenButtons]],
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
@@ -292,8 +275,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				await ruins();
 				await /** @type {import('discord.js').Message} */ (interaction.message)
 					.edit({
-						embeds: embedArray,
-						components: [travelSelectMenu],
+						embeds: [...embedArray, embed],
+						components: [travelComponent],
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
@@ -305,8 +288,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				await lake();
 				await /** @type {import('discord.js').Message} */ (interaction.message)
 					.edit({
-						embeds: embedArray,
-						components: [travelSelectMenu, lakeButtons],
+						embeds: [...embedArray, embed],
+						components: [travelComponent, lakeButtons],
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
@@ -319,8 +302,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 				await /** @type {import('discord.js').Message} */ (interaction.message)
 					.edit({
-						embeds: embedArray,
-						components: [travelSelectMenu, ...profileData.rank === 'Youngling' || profileData.rank === 'Apprentice' ? [prairieButtons] : []],
+						embeds: [...embedArray, embed],
+						components: [travelComponent, ...profileData.rank === 'Youngling' || profileData.rank === 'Apprentice' ? [prairieButtons] : []],
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
@@ -382,7 +365,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		if (allFoodDenProfilesArray.length > 0) {
 
-			embed.fields.push({ name: 'Packmates at the food den:', value: allFoodDenProfilesArray.join('\n') });
+			embed.addField('Packmates at the food den:', allFoodDenProfilesArray.join('\n'));
 		}
 	}
 
@@ -449,7 +432,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		if (allRuinProfilesArray.length > 0) {
 
-			embed.fields.push({ name: 'Packmates at the ruins:', value: allRuinProfilesArray.join('\n') });
+			embed.addField('Packmates at the ruins:', allRuinProfilesArray.join('\n'));
 		}
 	}
 
@@ -486,7 +469,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		if (allPrairieProfilesArray.length > 0) {
 
-			embed.fields.push({ name: 'Packmates at the prairie:', value: allPrairieProfilesArray.join('\n') });
+			embed.addField('Packmates at the prairie:', allPrairieProfilesArray.join('\n'));
 		}
 	}
 };

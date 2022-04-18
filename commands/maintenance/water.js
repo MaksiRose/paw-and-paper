@@ -7,6 +7,7 @@ const { profileModel } = require('../../models/profileModel');
 const { pullFromWeightedTable, generateRandomNumber } = require('../../utils/randomizers');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { pronounAndPlural } = require('../../utils/getPronouns');
+const { MessageEmbed, MessageActionRow, MessageButton } = require('discord.js');
 
 const oneMinute = 60000;
 const thirtyMinutes = oneMinute * 30;
@@ -67,14 +68,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	let experiencePoints = 0;
 	let healthPoints = 0;
 
-	const embed = {
+	const embed = new MessageEmbed({
 		color: profileData.color,
 		author: { name: profileData.name, icon_url: profileData.avatarURL },
-		/** @type {string} */
-		description: null,
-		/** @type { {text: string} } */
-		footer: { text: null },
-	};
+	});
 
 	if (timeDifference >= -thirtyMinutes && timeDifference <= thirtyMinutes) {
 
@@ -133,15 +130,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		.reply({
 			content: messageContent,
 			embeds: [...embedArray, embed],
-			components: [{
-				type: 'ACTION_ROW',
-				components: [{
-					type: 'BUTTON',
+			components: [ new MessageActionRow({
+				components: [ new MessageButton({
 					customId: `water-reminder-${profileData.saplingObject.reminder === true ? 'off' : 'on'}`,
 					label: `Turn water reminders ${profileData.saplingObject.reminder === true ? 'off' : 'on'}`,
 					style: 'SECONDARY',
-				}],
-			}],
+				})],
+			})],
 			failIfNotExists: false,
 		})
 		.catch((error) => { throw new Error(error); });
