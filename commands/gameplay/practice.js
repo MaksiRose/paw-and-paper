@@ -8,6 +8,8 @@ const startCooldown = require('../../utils/startCooldown');
 const { remindOfAttack } = require('./attack');
 const { pronoun, pronounAndPlural } = require('../../utils/getPronouns');
 const { checkLevelUp } = require('../../utils/levelHandling');
+const { MessageActionRow, MessageButton } = require('discord.js');
+const disableAllComponents = require('../../utils/disableAllComponents');
 const practicingCooldownAccountsMap = new Map();
 
 module.exports.name = 'practice';
@@ -83,22 +85,19 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				description: `*A very experienced Elderly approaches ${profileData.name}.* "I've seen that you have not performed well in fights lately. Do you want to practice with me for a bit to strengthen your skills?"`,
 				footer: { text: 'You will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response. The footer will provide hints as to which button you should click. This is a memory game, so try to remember which button to click in which situation.' },
 			}],
-			components: [{
-				type: 'ACTION_ROW',
-				components: [{
-					type: 'BUTTON',
+			components: [ new MessageActionRow({
+				components: [ new MessageButton({
 					customId: 'practice-accept',
 					label: 'Accept',
 					emoji: '⚔️',
 					style: 'PRIMARY',
-				}, {
-					type: 'BUTTON',
+				}), new MessageButton({
 					customId: 'practice-decline',
 					label: 'Decline',
 					emoji: '💨',
 					style: 'PRIMARY',
-				}],
-			}],
+				})],
+			})],
 			failIfNotExists: false,
 		})
 		.catch((error) => { throw new Error(error); });
@@ -125,7 +124,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
 						description: `*After a bit of thinking, ${profileData.name} decides that now is not a good time to practice ${pronoun(profileData, 2)} fighting skills. Politely, ${pronounAndPlural(profileData, 0, 'decline')} the Elderlies offer.*`,
 					}],
-					components: [],
+					components: disableAllComponents(botReply.components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -139,6 +138,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		return;
 	}
+
+	/* This is done so that later, these buttons aren't copied over. */
+	botReply.components = [];
 
 	practicingCooldownAccountsMap.set('nr' + message.author.id + message.guild.id, Date.now());
 
@@ -178,26 +180,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		embedFooterStatsText += `\n-${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})`;
 	}
 
-	const fightButtons = [ /** @type {import('discord.js').MessageActionRowComponentResolvable} */ ({
-		type: 'BUTTON',
-		customId: 'fight-attack',
-		label: 'Attack',
-		emoji: '⏫',
-		style: 'PRIMARY',
-	}), /** @type {import('discord.js').MessageActionRowComponentResolvable} */ ({
-		type: 'BUTTON',
-		customId: 'fight-defend',
-		label: 'Defend',
-		emoji: '⏺️',
-		style: 'PRIMARY',
-	}), /** @type {import('discord.js').MessageActionRowComponentResolvable} */ ({
-		type: 'BUTTON',
-		customId: 'fight-dodge',
-		label: 'Dodge',
-		emoji: '↪️',
-		style: 'PRIMARY',
-	})].sort(() => Math.random() - 0.5);
-
 	let totalCycles = 0;
 	let cycleKind = '';
 	let winLoseRatio = 0;
@@ -205,6 +187,28 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	await interactionCollector();
 
 	async function interactionCollector() {
+
+		const fightComponents = new MessageActionRow({
+			components: [ new MessageButton({
+				customId: 'practice-attack',
+				label: 'Attack',
+				emoji: '⏫',
+				style: 'SECONDARY',
+			}), new MessageButton({
+				customId: 'practice-defend',
+				label: 'Defend',
+				emoji: '⏺️',
+				style: 'SECONDARY',
+			}), new MessageButton({
+				customId: 'practice-dodge',
+				label: 'Dodge',
+				emoji: '↪️',
+				style: 'SECONDARY',
+			})].sort(() => Math.random() - 0.5),
+		});
+
+		console.log(botReply?.components[0]?.components[0]);
+		console.log(fightComponents?.components[0]);
 
 		const newCycleArray = ['attack', 'dodge', 'defend'];
 		cycleKind = newCycleArray[generateRandomNumberWithException(newCycleArray.length, 0, newCycleArray.indexOf(cycleKind))];
@@ -230,21 +234,26 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		botReply = await botReply
 			.edit({
 				embeds: [...embedArray, embed],
-				components: [{
-					type: 'ACTION_ROW',
-					components: fightButtons,
-				}],
+				components: [...botReply.components.length > 0 ? [botReply.components[botReply.components.length - 1]] : [], fightComponents],
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 				return botReply;
 			});
 
+		/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
+		if (cycleKind === 'defend') { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === 'practice-attack')]).style = 'PRIMARY'; }
+		if (cycleKind === 'dodge') { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === 'practice-defend')]).style = 'PRIMARY'; }
+		if (cycleKind === 'attack') { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === 'practice-dodge')]).style = 'PRIMARY'; }
+
 		filter = i => (i.customId === 'practice-attack' || i.customId === 'practice-defend' || i.customId === 'practice-dodge') && i.user.id == message.author.id;
 
 		await botReply
 			.awaitMessageComponent({ filter, time: profileData.rank === 'Elderly' ? 2000 : profileData.rank === 'Hunter' || profileData.rank === 'Healer' ? 3000 : 4000 })
 			.then(async interaction => {
+
+				/* Here we make the button the player choses red, this will apply always except if the player choses the correct button, then this will be overwritten. */
+				/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === interaction.customId)]).style = 'DANGER';
 
 				if ((interaction.customId === 'practice-attack' && cycleKind === 'dodge') || (interaction.customId === 'practice-defend' && cycleKind === 'attack') || (interaction.customId === 'practice-dodge' && cycleKind === 'defend')) {
 
@@ -253,10 +262,25 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 				if ((interaction.customId === 'practice-attack' && cycleKind === 'defend') || (interaction.customId === 'practice-defend' && cycleKind === 'dodge') || (interaction.customId === 'practice-dodge' && cycleKind === 'attack')) {
 
+					/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
+					/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === interaction.customId)]).style = 'SUCCESS';
+
 					winLoseRatio += 1;
 				}
 			})
-			.catch(() => winLoseRatio -= 1);
+			.catch(() => {
+
+				winLoseRatio -= 1;
+			});
+
+		/* Here we change the buttons customId's so that they will always stay unique, as well as disabling the buttons. */
+		for (const button of botReply.components[botReply.components.length - 1].components) {
+
+			button.customId += totalCycles;
+		}
+
+		botReply.components = disableAllComponents(botReply.components);
+
 
 		totalCycles += 1;
 
@@ -283,7 +307,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		botReply = await botReply
 			.edit({
 				embeds: [...embedArray, embed],
-				components: [],
+				components: [botReply.components[botReply.components.length - 1]],
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
