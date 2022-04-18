@@ -5,6 +5,7 @@ const { profileModel, otherProfileModel } = require('../../models/profileModel')
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
 const startCooldown = require('../../utils/startCooldown');
 const { checkRankRequirements } = require('../../utils/checkRoleRequirements');
+const { MessageEmbed } = require('discord.js');
 
 module.exports.name = 'name';
 
@@ -105,12 +106,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		await message
 			.reply({
-				embeds: [{
+				embeds: [ new MessageEmbed({
 					color: /** @type {`#${string}`} */ (default_color),
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Use this command to name or rename your character. Here is how to use it:',
 					description: '\n\nrp name [name]\nReplace [name] with the desired name.',
-				}],
+				})],
 				failIfNotExists: false,
 			})
 			.catch((error) => {
@@ -123,11 +124,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		await message
 			.reply({
-				embeds: [{
+				embeds: [ new MessageEmbed({
 					color: /** @type {`#${string}`} */ (error_color),
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Names can only be up to 25 characters long.',
-				}],
+				})],
 				failIfNotExists: false,
 			})
 			.catch((error) => {
@@ -147,11 +148,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			await message
 				.reply({
-					embeds: [{
+					embeds: [ new MessageEmbed({
 						color: /** @type {`#${string}`} */ (error_color),
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: 'You cannot have two accounts with the same name.',
-					}],
+					})],
 					failIfNotExists: false,
 				})
 				.catch((error) => {
@@ -168,12 +169,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	await message
 		.reply({
-			embeds: [{
+			embeds: [ new MessageEmbed({
 				color: /** @type {`#${string}`} */ (default_color),
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 				description: `*A stranger carefully steps over the pack's borders. Their face seems friendly. Curious eyes watch them as they come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n**"${name},"** *the creature responds.*`,
 				footer: { text: 'To continue setting up your profile, type "rp species"' },
-			}],
+			})],
 			failIfNotExists: false,
 		})
 		.catch((error) => {

@@ -1,5 +1,5 @@
 // @ts-check
-const { MessageActionRow, MessageButton } = require('discord.js');
+const { MessageActionRow, MessageButton, MessageEmbed } = require('discord.js');
 const { error_color, default_color } = require('../../config.json');
 const { profileModel } = require('../../models/profileModel');
 const { createCommandCollector } = require('../../utils/commandCollector');
@@ -22,11 +22,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		await message
 			.reply({
-				embeds: [{
+				embeds: [ new MessageEmbed({
 					color: /** @type {`#${string}`} */ (error_color),
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'You have no account!',
-				}],
+				})],
 				failIfNotExists: false,
 			})
 			.catch((error) => {
@@ -37,11 +37,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	const botReply = await message
 		.reply({
-			embeds: [{
+			embeds: [ new MessageEmbed({
 				color: /** @type {`#${string}`} */ (default_color),
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 				title: 'Are you sure you want to delete all your data? This will be **permanent**!!!',
-			}],
+			})],
 			components: [ new MessageActionRow({
 				components: [ new MessageButton({
 					customId: 'delete-confirm',
@@ -62,59 +62,58 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	createCommandCollector(message.author.id, message.guild.id, botReply);
 	const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.customId == 'delete-confirm' || i.customId == 'delete-cancel') && i.user.id == message.author.id;
 
-	/** @type {import('discord.js').MessageComponentInteraction | null} } */
-	const interaction = await botReply
+	await botReply
 		.awaitMessageComponent({ filter, time: 120000 })
-		.catch(async () => {return null;});
+		.then(async interaction => {
 
-	if (interaction === null) {
+			if (interaction.customId === 'delete-confirm') {
 
-		await botReply
-			.edit({
-				components: disableAllComponents(botReply.components),
-			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
-		return;
-	}
+				await profileModel.findOneAndDelete({
+					userId: message.author.id,
+					serverId: message.guild.id,
+				});
 
-	if (interaction.customId === 'delete-confirm') {
+				await /** @type {import('discord.js').Message} */ (interaction.message)
+					.edit({
+						embeds: [ new MessageEmbed({
+							color: '#9d9e51',
+							author: { name: `${interaction.guild.name}`, icon_url: interaction.guild.iconURL() },
+							title: 'Your account was deleted permanently! Type "rp name [name]" to start again.',
+						})],
+						components: disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components),
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
+					});
+				return;
+			}
 
-		await profileModel.findOneAndDelete({
-			userId: message.author.id,
-			serverId: message.guild.id,
+			if (interaction.customId === 'delete-cancel') {
+
+				await /** @type {import('discord.js').Message} */ (interaction.message)
+					.edit({
+						embeds: [ new MessageEmbed({
+							color: '#9d9e51',
+							author: { name: `${interaction.guild.name}`, icon_url: interaction.guild.iconURL() },
+							title: 'Account deletion canceled.',
+						})],
+						components: disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components),
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
+					});
+				return;
+			}
+		})
+		.catch(async () => {
+
+			await botReply
+				.edit({
+					components: disableAllComponents(botReply.components),
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
+			return;
 		});
-
-		await /** @type {import('discord.js').Message} */ (interaction.message)
-			.edit({
-				embeds: [{
-					color: '#9d9e51',
-					author: { name: `${interaction.guild.name}`, icon_url: interaction.guild.iconURL() },
-					title: 'Your account was deleted permanently! Type "rp name [name]" to start again.',
-				}],
-				components: disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components),
-			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
-		return;
-	}
-
-	if (interaction.customId === 'delete-cancel') {
-
-		await /** @type {import('discord.js').Message} */ (interaction.message)
-			.edit({
-				embeds: [{
-					color: '#9d9e51',
-					author: { name: `${interaction.guild.name}`, icon_url: interaction.guild.iconURL() },
-					title: 'Account deletion canceled.',
-				}],
-				components: disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components),
-			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
-		return;
-	}
 };
