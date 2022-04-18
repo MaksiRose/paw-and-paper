@@ -160,7 +160,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			if (speciesMap.get(profileData.species).diet === 'herbivore' || speciesMap.get(profileData.species).diet === 'omnivore') {
 
-				finalHungerPoints = function(hunger) { return profileData.hunger - hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(10, 11));
+				finalHungerPoints = function(hunger) { return profileData.hunger - hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(4, 15));
 
 				embed.description = `*Leaves flutter into the storage den, landing near ${profileData.name}'s feet. The ${profileData.species} searches around the inventory determined to find the perfect meal, and that ${pronounAndPlural(profileData, 0, 'does', 'do')}. ${profileData.name} plucks a ${chosenFood} from the pile and eats until ${pronoun(profileData, 2)} stomach is pleased.*`;
 			}
@@ -248,7 +248,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		if (speciesMap.get(profileData.species).diet === 'carnivore' || speciesMap.get(profileData.species).diet === 'omnivore') {
 
-			finalHungerPoints = function(hunger) { return profileData.hunger - hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(10, 11));
+			finalHungerPoints = function(hunger) { return profileData.hunger - hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(4, 15));
 
 			embed.description = `*${profileData.name} sits chewing maliciously on a ${chosenFood}. A dribble of blood escapes out of ${pronoun(profileData, 2)} jaw as the ${profileData.species} finishes off the meal. It was a delicious feast, but very messy!*`;
 		}

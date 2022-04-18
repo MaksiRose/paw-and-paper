@@ -27,7 +27,7 @@ async function decreaseThirst(profileData) {
 }
 
 /**
- * Calculates an appropriate amount of thirst points to lose based on the users energy, and returns it.
+ * Calculates an appropriate amount of hunger points to lose based on the users energy, and returns it.
  * @param {import('../typedef').ProfileSchema} profileData
  * @returns {Promise<number>}
  */
@@ -51,7 +51,7 @@ async function decreaseHunger(profileData) {
 }
 
 /**
- * Calculates an appropriate amount of hunger points to lose based on the users health, and returns it.
+ * Calculates an appropriate amount of energy points to lose based on the users health, and returns it.
  * @param {import('../typedef').ProfileSchema} profileData
  * @returns {Promise<number>}
  */
