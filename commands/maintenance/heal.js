@@ -344,7 +344,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						return /** @type {import('discord.js').MessageSelectMenuOptions} */ (userSelectMenu.components[0]).options.length > 0 ? await interactionCollector() : null;
 					}
 
-					if (isSuccessful === true && profileData.rank === 'Apprentice' && pullFromWeightedTable({ 0: 40, 1: 60 + profileData.saplingObject.waterCycles }) === 0) {
+					if (isSuccessful === true && profileData.rank === 'Apprentice' && pullFromWeightedTable({ 0: 30, 1: 70 + profileData.saplingObject.waterCycles }) === 0) {
 
 						isSuccessful = false;
 					}
@@ -542,7 +542,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						{ $set: { inventoryObject: serverData.inventoryObject } },
 					));
 
-					if (isSuccessful === true && chosenProfileData.userId === profileData.userId && pullFromWeightedTable({ 0: 60, 1: 40 + profileData.saplingObject.waterCycles }) === 0) {
+					if (isSuccessful === true && chosenProfileData.userId === profileData.userId && pullFromWeightedTable({ 0: 70, 1: 30 + profileData.saplingObject.waterCycles }) === 0) {
 
 						isSuccessful = false;
 					}
@@ -564,7 +564,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						return /** @type {import('discord.js').MessageSelectMenuOptions} */ (userSelectMenu.components[0]).options.length > 0 ? await interactionCollector() : null;
 					}
 
-					if (isSuccessful === true && chosenProfileData.userId !== profileData.userId && profileData.rank === 'Apprentice' && pullFromWeightedTable({ 0: 40, 1: 60 + profileData.saplingObject.waterCycles }) === 0) {
+					if (isSuccessful === true && chosenProfileData.userId !== profileData.userId && profileData.rank === 'Apprentice' && pullFromWeightedTable({ 0: 30, 1: 70 + profileData.saplingObject.waterCycles }) === 0) {
 
 						isSuccessful = false;
 					}

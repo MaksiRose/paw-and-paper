@@ -172,7 +172,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			/* The button the player choses is green. */
 			/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === interaction.customId)]).style = 'SUCCESS';
 
-			if (profileData.rank === 'Apprentice' && pullFromWeightedTable({ 0: 50, 1: 50 + profileData.saplingObject.waterCycles }) === 0) {
+			if (profileData.rank === 'Apprentice' && pullFromWeightedTable({ 0: 30, 1: 70 + profileData.saplingObject.waterCycles }) === 0) {
 
 				botReply = await botReply
 					.edit({
