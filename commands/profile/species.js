@@ -33,9 +33,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		await message
 			.reply({
 				embeds: [ new MessageEmbed({
-					color: '#9d9e51',
+					color: /** @type {`#${string}`} */ (default_color),
 					author: { name: `${message.guild.name}`, icon_url: message.guild.iconURL() },
 					title: `${profileData.name} is a ${profileData.species}! You cannot change ${pronoun(profileData, 2)} species unless you reset your account or create another one via \`rp accounts\`.`,
+					description: `List of current available species: ${[...speciesMap.keys()].sort().join(', ')}`,
 				})],
 				failIfNotExists: false,
 			})
@@ -98,7 +99,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				color: /** @type {`#${string}`} */ (default_color),
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 				title: `What species is ${profileData.name}?`,
-				description: 'If you want an earthly, extant species that is not on the list, open a ticket. Alternatively, you can [learn how to add it yourself here](https://github.com/MaksiRose/paw-and-paper#add-a-species)',
+				description: 'If you want an earthly, extant species added that is not on the list, create a GitHub account and [use this form](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement%2Cnon-code&template=species_request.yaml&title=New+species%3A+) to suggest it.',
 			})],
 			components: [
 				new MessageActionRow({ components: [speciesMenu] }),

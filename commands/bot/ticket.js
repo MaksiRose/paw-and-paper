@@ -21,7 +21,7 @@ module.exports.sendMessage = async (client, message, argumentsArray) => {
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
 					title: 'Tickets must contain text! Example:',
-					description: 'rp ticket Attacking a chicken should lead to millions of chickens spawning and attacking you back until you die!',
+					description: 'rp ticket Attacking a chicken should lead to millions of chickens spawning and attacking you back until you die!\nNote: To suggest a species, create a GitHub account and [use this form](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement%2Cnon-code&template=species_request.yaml&title=New+species%3A+).',
 				}],
 				failIfNotExists: false,
 			})
@@ -87,7 +87,7 @@ module.exports.sendMessage = async (client, message, argumentsArray) => {
 			embeds: [{
 				color: '#9d9e51',
 				title: 'Thank you for your contribution!',
-				description: `You help improve the bot.\n[View ticket on GitHub](https://github.com/MaksiRose/paw-and-paper/issues/${githubIssue.data.number})`,
+				description: `You help improve the bot.\n[View ticket on GitHub](https://github.com/MaksiRose/paw-and-paper/issues/${githubIssue.data.number})\nNote: To suggest a species, create a GitHub account and [use this form](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement%2Cnon-code&template=species_request.yaml&title=New+species%3A+).`,
 			}],
 			failIfNotExists: false,
 		})
