@@ -5,6 +5,8 @@ const { profileModel } = require('../../models/profileModel');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
+const { MessageActionRow, MessageSelectMenu } = require('discord.js');
+const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'shopremove';
 module.exports.aliases = ['shopdelete'];
@@ -65,15 +67,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 				description: description,
 			}],
-			components: [{
-				type: 'ACTION_ROW',
-				components: [{
-					type: 'SELECT_MENU',
+			components: [ new MessageActionRow({
+				components: [ new MessageSelectMenu({
 					customId: 'shopdelete-options',
 					placeholder: 'Select an item',
 					options: selectMenuOptionsArray,
-				}],
-			}],
+				})],
+			})],
 			failIfNotExists: false,
 		})
 		.catch((error) => { throw new Error(error); });
@@ -94,7 +94,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			await botReply
 				.edit({
-					components: [],
+					components: disableAllComponents(botReply.components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -119,15 +119,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						description: newDescription,
 					}],
-					components: [{
-						type: 'ACTION_ROW',
-						components: [{
-							type: 'SELECT_MENU',
+					components: [ new MessageActionRow({
+						components: [ new MessageSelectMenu({
 							customId: 'shopdelete-options',
 							placeholder: 'Select an item',
 							options: newSelectMenuOptionsArray,
-						}],
-					}],
+						})],
+					})],
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -151,7 +149,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						description: `<@&${deleteItem[0].roleId}> with the requirement of ${deleteItem[0].requirement} ${deleteItem[0].wayOfEarning} was deleted from the shop.`,
 					}],
-					components: [],
+					components: disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }

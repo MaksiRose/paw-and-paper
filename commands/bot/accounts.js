@@ -7,6 +7,8 @@ const { createCommandCollector } = require('../../utils/commandCollector');
 const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
 const { hasCooldown } = require('../../utils/checkValidity');
 const { stopResting } = require('../../utils/executeResting');
+const { MessageActionRow, MessageButton } = require('discord.js');
+const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'accounts';
 module.exports.aliases = ['switch'];
@@ -57,16 +59,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	}
 
 	/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} */
-	const components = [{
-		type: 'ACTION_ROW',
-		components: [{
-			type: 'BUTTON',
+	const components = [ new MessageActionRow({
+		components: [ new MessageButton({
 			customId: `switchto-${profileData.name}-${profileData.id || '0'}`,
 			label: profileData.name,
 			disabled: true,
 			style: 'SECONDARY',
-		}],
-	}];
+		})],
+	})];
 
 	inactiveUserProfiles.push({ name: 'Empty Slot', id: '2' });
 	inactiveUserProfiles.push({ name: 'Empty Slot', id: '3' });
@@ -74,12 +74,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	for (const profile of inactiveUserProfiles) {
 
-		components[0].components.push({
-			type: 'BUTTON',
+		components[0].components.push(new MessageButton({
 			customId: `switchto-${profile.name}-${profile.id || '0'}`,
 			label: profile.name,
 			style: 'SECONDARY',
-		});
+		}));
 	}
 
 	const botReply = await message
@@ -100,7 +99,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	await botReply
 		.edit({
-			components: [],
+			components: disableAllComponents(botReply.components),
 		})
 		.catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }

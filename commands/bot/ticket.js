@@ -1,6 +1,7 @@
 // @ts-check
 const { error_color, github_token, maksi } = require('../../config.json');
 const { Octokit } = require('@octokit/rest');
+const { MessageActionRow, MessageButton } = require('discord.js');
 
 module.exports.name = 'ticket';
 
@@ -71,15 +72,13 @@ module.exports.sendMessage = async (client, message, argumentsArray) => {
 				url: `https://discord.com/channels/${message.guild.id}/${message.channel.id}/${message.id}`,
 				description: argumentsArray.join(' '),
 			}],
-			components: [{
-				type: 'ACTION_ROW',
-				components: [{
-					type: 'BUTTON',
+			components: [ new MessageActionRow({
+				components: [ new MessageButton({
 					customId: 'ticket',
 					label: 'Resolve',
 					style: 'SUCCESS',
-				}],
-			}],
+				})],
+			})],
 		})
 		.catch((error) => { throw new Error(error); });
 
