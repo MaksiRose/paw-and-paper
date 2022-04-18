@@ -7,6 +7,8 @@ const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion')
 const { isInvalid } = require('../../utils/checkValidity');
 const { remindOfAttack } = require('../gameplay/attack');
 const { pronounAndPlural, pronoun } = require('../../utils/getPronouns');
+const { MessageActionRow, MessageButton } = require('discord.js');
+const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'drink';
 
@@ -69,15 +71,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 				description: 'For the next 15 seconds, click the button as many times as you can!',
 			}],
-			components: [{
-				type: 'ACTION_ROW',
-				components: [{
-					type: 'BUTTON',
+			components: [ new MessageActionRow({
+				components: [ new MessageButton({
 					customId: 'water',
 					emoji: '💧',
 					style: 'PRIMARY',
-				}],
-			}],
+				})],
+			})],
 			failIfNotExists: false,
 		})
 		.catch((error) => { throw new Error(error); });
@@ -114,7 +114,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						description: `*${profileData.name} scurries over to the river and takes hasty gulps. The fresh water runs down ${pronoun(profileData, 2)} throat and fills ${pronoun(profileData, 2)} body with new energy.*`,
 						footer: { text: `+${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})${(profileData.currentRegion != 'lake') ? '\nYou are now at the lake' : ''}\n\nDon't forget to stay hydrated in real life too!` },
 					}],
-					components: [],
+					components: disableAllComponents(botReply.components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }

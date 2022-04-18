@@ -10,6 +10,8 @@ const { pullFromWeightedTable, generateRandomNumber } = require('../../utils/ran
 const { decreaseEnergy, decreaseHunger, decreaseThirst, decreaseHealth } = require('../../utils/checkCondition');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { checkLevelUp } = require('../../utils/levelHandling');
+const { MessageActionRow, MessageButton } = require('discord.js');
+const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'dispose';
 
@@ -88,30 +90,25 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				author: { name: profileData.name, icon_url: profileData.avatarURL },
 				description: `*${profileData.name} patrols around the pack, looking for anything that blocks entrances or might be a hazard. And indeed, ${blockText} the entrance to the ${serverData.blockedEntranceObject.den}, making it impossible to enter safely. The ${profileData.species} should remove it immediately! But what would be the best way?*`,
 			}],
-			components: [{
-				type: 'ACTION_ROW',
-				components: [{
-					type: 'BUTTON',
+			components: [ new MessageActionRow({
+				components: [ new MessageButton({
 					customId: 'dispose-bite',
 					label: 'Bite through',
 					style: 'SECONDARY',
-				}, {
-					type: 'BUTTON',
+				}), new MessageButton({
 					customId: 'dispose-soil',
 					label: 'Throw soil',
 					style: 'SECONDARY',
-				}, {
-					type: 'BUTTON',
+				}), new MessageButton({
 					customId: 'dispose-trample',
 					label: 'Trample',
 					style: 'SECONDARY',
-				}, {
-					type: 'BUTTON',
+				}), new MessageButton({
 					customId: 'dispose-push',
 					label: 'Push away',
 					style: 'SECONDARY',
-				}],
-			}],
+				})],
+			})],
 			failIfNotExists: false,
 		})
 		.catch((error) => { throw new Error(error); });
@@ -121,7 +118,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	async function interactionCollector() {
 
-		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.user.id === message.author.id;
+		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId.includes('dispose') && i.user.id === message.author.id;
 
 		/** @type {import('discord.js').SelectMenuInteraction | null} } */
 		const interaction = await botReply
@@ -132,7 +129,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			await botReply
 				.edit({
-					components: [],
+					components: disableAllComponents(botReply.components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -168,7 +165,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			footerStats += `\n-${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})`;
 		}
 
+		botReply.components = disableAllComponents(botReply.components);
+
 		if ((interaction.customId === 'dispose-bite' && serverData.blockedEntranceObject.blockedKind === 'vines') || (interaction.customId === 'dispose-soil' && serverData.blockedEntranceObject.blockedKind === 'burrow') || (interaction.customId === 'dispose-trample' && serverData.blockedEntranceObject.blockedKind === 'tree trunk') || (interaction.customId === 'dispose-push' && serverData.blockedEntranceObject.blockedKind === 'boulder')) {
+
+			/* The button the player choses is green. */
+			/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === interaction.customId)]).style = 'SUCCESS';
 
 			if (profileData.rank === 'Apprentice' && pullFromWeightedTable({ 0: 50, 1: 50 + profileData.saplingObject.waterCycles }) === 0) {
 
@@ -181,7 +183,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 							description: `*${profileData.name} gasps and pants as ${pronounAndPlural(profileData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntranceObject.blockedKind}. All ${pronoun(profileData, 1)} strength might only barely be enough to clear the blockage. The ${profileData.species} should collect ${pronoun(profileData, 4)} for a moment, and then try again...*`,
 							footer: { text: footerStats },
 						}],
-						components: [],
+						components: botReply.components,
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
@@ -215,7 +217,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						description: `*${profileData.name} gasps and pants as ${pronounAndPlural(profileData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntranceObject.blockedKind}. All ${pronoun(profileData, 1)} strength is needed, but ${pronounAndPlural(profileData, 0, 'is', 'are')} able to successfully clear the blockage. The ${serverData.blockedEntranceObject.den} can be used again!*`,
 						footer: { text: footerStats },
 					}],
-					components: [],
+					components: botReply.components,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -223,6 +225,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				});
 		}
 		else {
+
+			/* The button the player choses is red. */
+			/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === interaction.customId)]).style = 'DANGER';
 
 			botReply = await botReply
 				.edit({
@@ -233,7 +238,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						description: `*${profileData.name} gasps and pants as ${pronounAndPlural(profileData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntranceObject.blockedKind}. But ${pronoun(profileData, 1)} attempts don't seem to leave any lasting impact. Maybe the ${profileData.species} is going about this the wrong way.*`,
 						footer: { text: footerStats },
 					}],
-					components: [],
+					components: botReply.components,
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }

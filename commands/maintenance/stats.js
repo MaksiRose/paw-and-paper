@@ -1,4 +1,5 @@
 // @ts-check
+const { MessageActionRow, MessageButton } = require('discord.js');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
 
@@ -22,20 +23,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	profileData = await startCooldown(message, profileData);
 
 	/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} */
-	const components = [{
-		type: 'ACTION_ROW',
-		components: [{
-			type: 'BUTTON',
+	const components = [ new MessageActionRow({
+		components: [ new MessageButton({
 			customId: 'stats-refresh',
 			emoji: '🔁',
 			style: 'SECONDARY',
-		}, {
-			type: 'BUTTON',
+		}), new MessageButton({
 			customId: 'profile-store',
 			label: 'Store food away',
 			style: 'SECONDARY',
-		}],
-	}];
+		})],
+	})];
 
 	if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
 

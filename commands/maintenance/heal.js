@@ -12,6 +12,8 @@ const { createCommandCollector } = require('../../utils/commandCollector');
 const { remindOfAttack } = require('../gameplay/attack');
 const { pronoun, upperCasePronounAndPlural, pronounAndPlural } = require('../../utils/getPronouns');
 const blockEntrance = require('../../utils/blockEntrance');
+const { MessageActionRow, MessageSelectMenu, MessageButton } = require('discord.js');
+const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'heal';
 
@@ -126,7 +128,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			await botReply
 				.edit({
-					components: [],
+					components: disableAllComponents(botReply.components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -168,16 +170,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					footer: { text: 'Choose one of the herbs above to heal the player with it!' },
 				};
 
-				/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions} */
-				const selectMenu = {
-					type: 'ACTION_ROW',
-					components: [{
-						type: 'SELECT_MENU',
+				const selectMenu = new MessageActionRow({
+					components: [ new MessageSelectMenu({
 						customId: 'heal-options-2',
 						placeholder: 'Select an item',
 						options: [],
-					}],
-				};
+					})],
+				});
 
 				embed.fields.push({ name: 'water', value: 'Found lots and lots of in the river that flows through the pack!', inline: true });
 				/** @type {import('discord.js').MessageSelectMenuOptions} */ (selectMenu.components[0]).options.push({ label: 'water', value: 'water' });
@@ -722,7 +721,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	/**
 	 * Updates `allHurtProfilesList`, then iterates through it to update the select menu and returns it.
-	 * @returns {Promise<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>}
+	 * @returns {Promise<import('discord.js').MessageActionRow>}
 	 */
 	async function getUserSelectMenu() {
 
@@ -747,16 +746,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			],
 		})).map(user => user.userId);
 
-		/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions} */
-		const selectMenu = {
-			type: 'ACTION_ROW',
-			components: [{
-				type: 'SELECT_MENU',
+		const selectMenu = new MessageActionRow({
+			components: [ new MessageSelectMenu({
 				customId: 'heal-user-options',
 				placeholder: 'Select a user to heal',
 				options: [],
-			}],
-		};
+			})],
+		});
 
 		for (let i = currentUserPage * 24; i < allHurtProfilesList.length; i++) {
 
@@ -782,27 +778,23 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	/**
 	 * Finds all health-related problems the selected user has, and return the messages components and embeds.
 	 * @param {import('discord.js').User} healUser - The user that should be scanned.
-	 * @returns { Promise<{embeds: Array<import('discord.js').MessageEmbedOptions>, components: Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>}> }
+	 * @returns { Promise<{embeds: Array<import('discord.js').MessageEmbedOptions>, components: Array<import('discord.js').MessageActionRow>}> }
 	 */
 	async function getWoundList(healUser) {
 
-		/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions} */
-		const pageButtons = {
-			type: 'ACTION_ROW',
-			components: [{
-				type: 'BUTTON',
+		const pageButtons = new MessageActionRow({
+			components: [ new MessageButton({
 				customId: 'healpage-1',
 				label: 'Page 1',
 				emoji: '🌱',
 				style: 'SECONDARY',
-			}, {
-				type: 'BUTTON',
+			}), new MessageButton({
 				customId: 'healpage-2',
 				label: 'Page 2',
 				emoji: '🍀',
 				style: 'SECONDARY',
-			}],
-		};
+			})],
+		});
 
 		chosenProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
 			userId: healUser.id,
@@ -862,7 +854,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	/**
 	 * Iterates through the first inventory page and returns embed and component.
-	 * @returns { {embed: import('discord.js').MessageEmbedOptions, selectMenu: Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions} }
+	 * @returns { {embed: import('discord.js').MessageEmbedOptions, selectMenu: import('discord.js').MessageActionRow} }
 	 */
 	function getFirstHealPage() {
 
@@ -873,16 +865,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			footer: { text: 'Choose one of the herbs above to heal the player with it!' },
 		};
 
-		/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions} */
-		let selectMenu = {
-			type: 'ACTION_ROW',
-			components: [{
-				type: 'SELECT_MENU',
+		let selectMenu = new MessageActionRow({
+			components: [ new MessageSelectMenu({
 				customId: 'heal-options-1',
 				placeholder: 'Select an item',
 				options: [],
-			}],
-		};
+			})],
+		});
 
 		for (const [commonPlantName, commonPlantObject] of [...commonPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
