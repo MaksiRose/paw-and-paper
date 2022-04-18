@@ -4,6 +4,8 @@ const { hasCooldown } = require('../../utils/checkValidity');
 const { generateRandomNumber } = require('../../utils/randomizers');
 const startCooldown = require('../../utils/startCooldown');
 const { error_color } = require('../../config.json');
+const { MessageActionRow, MessageButton } = require('discord.js');
+const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'hug';
 module.exports.aliases = ['snuggle'];
@@ -83,21 +85,18 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				author: { name: profileData.name, icon_url: profileData.avatarURL },
 				description: `${message.mentions.users.first().toString()}, do you accept the hug?`,
 			}],
-			components: [{
-				type: 'ACTION_ROW',
-				components: [{
-					type: 'BUTTON',
+			components: [ new MessageActionRow({
+				components: [ new MessageButton({
 					customId: 'hug-accept',
 					label: 'Accept',
 					emoji: '🫂',
 					style: 'SUCCESS',
-				}, {
-					type: 'BUTTON',
+				}), new MessageButton({
 					customId: 'hug-decline',
 					label: 'Decline',
 					style: 'DANGER',
-				}],
-			}],
+				})],
+			})],
 			failIfNotExists: false,
 		})
 		.catch((error) => { throw new Error(error); });
@@ -153,7 +152,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
 						description:`${message.mentions.users.first().toString()} did not accept the hug.`,
 					}],
-					components: [],
+					components: disableAllComponents(botReply.components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
