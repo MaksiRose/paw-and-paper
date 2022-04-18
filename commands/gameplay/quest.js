@@ -9,6 +9,8 @@ const { createCommandCollector } = require('../../utils/commandCollector');
 const { remindOfAttack } = require('./attack');
 const { pronoun, pronounAndPlural, upperCasePronounAndPlural, upperCasePronoun } = require('../../utils/getPronouns');
 const { apprenticeAdvice, hunterhealerAdvice, elderlyAdvice } = require('../../utils/adviceMessages');
+const disableAllComponents = require('../../utils/disableAllComponents');
+const { MessageEmbed, MessageActionRow, MessageButton } = require('discord.js');
 
 module.exports.name = 'quest';
 
@@ -90,12 +92,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		.awaitMessageComponent({ filter, time: 30000 })
 		.then(async () => await startQuest())
 		.catch(async () => {
-			return await botReply
-				.edit({ components: [] })
+
+			await botReply
+				.edit({ components: disableAllComponents(botReply.components) })
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 					return botReply;
 				});
+			return;
 		});
 	return;
 
@@ -104,6 +108,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	 * @returns {Promise<void>}
 	 */
 	async function startQuest() {
+
+		/* This is done so that later, these buttons aren't copied over. */
+		botReply.components = [];
 
 		profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 			{ userId: message.author.id, serverId: message.guild.id },
@@ -210,70 +217,48 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				}
 			}
 
-			embedFooterText += ' But watch out for your energy bar.\nSometimes you will lose energy even if choose right, depending on how many levels you have.';
+			embedFooterText += ' But watch out for your energy bar.\nSometimes you will lose energy even if you chose right, depending on how many levels you have.';
 
-			/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions>} */
-			const buttonArray = [
-				[
-					/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions} */ ({
-						type: 'BUTTON',
-						label: 'Blue',
-						customId: 'quest-bluetext-redcolor',
-						style: 'DANGER',
-					}),
-					/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions} */ ({
-						type: 'BUTTON',
-						label: 'Red',
-						customId: 'quest-redtext-bluecolor',
-						style: 'PRIMARY',
-					}),
-					/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions} */ ({
-						type: 'BUTTON',
-						label: 'Green',
-						customId: 'quest-greentext-greencolor',
-						style: 'SUCCESS',
-					}),
-				],
-				[
-					/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions} */ ({
-						type: 'BUTTON',
-						label: 'Green',
-						customId: 'quest-greentext-redcolor',
-						style: 'DANGER',
-					}),
-					/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions} */ ({
-						type: 'BUTTON',
-						label: 'Blue',
-						customId: 'quest-bluetext-bluecolor',
-						style: 'PRIMARY',
-					}),
-					/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions} */ ({
-						type: 'BUTTON',
-						label: 'Red',
-						customId: 'quest-redtext-greencolor',
-						style: 'SUCCESS',
-					}),
-				],
-				[
-					/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions} */ ({
-						type: 'BUTTON',
-						label: 'Red',
-						customId: 'quest-redtext-redcolor',
-						style: 'DANGER',
-					}),
-					/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions} */ ({
-						type: 'BUTTON',
-						label: 'Green',
-						customId: 'quest-greentext-bluecolor',
-						style: 'PRIMARY',
-					}),
-					/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').InteractionButtonOptions} */ ({
-						type: 'BUTTON',
-						label: 'Blue',
-						customId: 'quest-bluetext-greencolor',
-						style: 'SUCCESS',
-					}),
-				],
+			const questButtons = [
+				[ new MessageButton({
+					label: 'Blue',
+					customId: 'quest-bluetext-redcolor',
+					style: 'DANGER',
+				}), new MessageButton({
+					label: 'Red',
+					customId: 'quest-redtext-bluecolor',
+					style: 'PRIMARY',
+				}), new MessageButton({
+					label: 'Green',
+					customId: 'quest-greentext-greencolor',
+					style: 'SUCCESS',
+				})],
+				[new MessageButton({
+					label: 'Green',
+					customId: 'quest-greentext-redcolor',
+					style: 'DANGER',
+				}), new MessageButton({
+					label: 'Blue',
+					customId: 'quest-bluetext-bluecolor',
+					style: 'PRIMARY',
+				}), new MessageButton({
+					label: 'Red',
+					customId: 'quest-redtext-greencolor',
+					style: 'SUCCESS',
+				})],
+				[ new MessageButton({
+					label: 'Red',
+					customId: 'quest-redtext-redcolor',
+					style: 'DANGER',
+				}), new MessageButton({
+					label: 'Green',
+					customId: 'quest-greentext-bluecolor',
+					style: 'PRIMARY',
+				}), new MessageButton({
+					label: 'Blue',
+					customId: 'quest-bluetext-greencolor',
+					style: 'SUCCESS',
+				})],
 			][generateRandomNumber(3, 0)].sort(() => Math.random() - 0.5);
 
 			botReply = await botReply
@@ -285,10 +270,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						description: `${drawProgressbar(hitValue, hitEmoji)}\n${drawProgressbar(missValue, missEmoji)}`,
 						footer: { text: embedFooterText },
 					}],
-					components: [{
-						type: 'ACTION_ROW',
-						components: buttonArray,
-					}],
+					components: [...botReply.components.length > 0 ? [botReply.components[botReply.components.length - 1]] : [], new MessageActionRow({
+						components: questButtons,
+					})],
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -300,14 +284,36 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				.catch(() => { return { customId: '' }; });
 
 			const winChance = generateWinChance(profileData.levels, profileData.rank === 'Elderly' ? 35 : (profileData.rank === 'Hunter' || profileData.rank === 'Healer') ? 20 : profileData.rank === 'Apprentice' ? 10 : 2);
+			const randomNumber = generateRandomNumber(100, 0);
 
-			if (customId === '' || !customId.includes(`${buttonColorKind}${buttonTextOrColor}`) || generateRandomNumber(100, 0) > winChance) {
+			if (customId !== '') {
+
+				/* The button the user chose will get the "radio button"-emoji. */
+				/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId)]).setEmoji('🔘');
+			}
+
+			if (randomNumber <= winChance) {
+
+				/* The correct button will get the "checkbox"-emoji. */
+				/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId.includes(`${buttonColorKind}${buttonTextOrColor}`))]).setEmoji('☑️');
+			}
+
+			if (customId === '' || !customId.includes(`${buttonColorKind}${buttonTextOrColor}`) || randomNumber > winChance) {
 
 				++missValue;
 			}
 			else {
 				++hitValue;
 			}
+
+			/* Here we change the buttons customId's so that they will always stay unique, as well as disabling the buttons. */
+			for (const button of botReply.components[botReply.components.length - 1].components) {
+
+				button.customId += missValue + '-' + hitValue;
+			}
+
+			botReply.components = disableAllComponents(botReply.components);
+
 
 			if (hitValue >= 10) {
 
@@ -319,29 +325,32 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					);
 				}
 
-				let description = '';
-				let footer = 'Type \'rp rank\' to rank up';
+				const embed = new MessageEmbed({
+					color: profileData.color,
+					author: { name: profileData.name, icon_url: profileData.avatarURL },
+					footer: { text: 'Type \'rp rank\' to rank up.' },
+				});
 
 				if (profileData.rank === 'Youngling') {
 
-					description = `*A large thump erupts into the forest, sending flocks of crows fleeing to the sky. ${profileData.name} collapses, panting and yearning for breath after the difficult task of pushing the giant boulder. Another ${profileData.species} runs out of the cave, jumping around ${profileData.name} with relief. Suddenly, an Elderly shows up behind the two.*\n"Well done, Youngling, you have proven to be worthy of the Apprentice status. If you ever choose to rank up, just come to me," *the proud elder says with a raspy voice.*`;
+					embed.description = `*A large thump erupts into the forest, sending flocks of crows fleeing to the sky. ${profileData.name} collapses, panting and yearning for breath after the difficult task of pushing the giant boulder. Another ${profileData.species} runs out of the cave, jumping around ${profileData.name} with relief. Suddenly, an Elderly shows up behind the two.*\n"Well done, Youngling, you have proven to be worthy of the Apprentice status. If you ever choose to rank up, just come to me," *the proud elder says with a raspy voice.*`;
 				}
 
 				if (profileData.rank === 'Apprentice') {
 
 					if (speciesMap.get(profileData.species).habitat === 'warm') {
 
-						description = `*After fighting with the trunk for a while, the Apprentice now slips out with slightly ruffled fur. Just at this moment, a worried Elderly comes running.*\n"Is everything alright? You've been gone for a while, and we heard cries of pain, so we were worried!" *They look over to the tree trunk.*\n"Oh, looks like you've already solved the problem, ${profileData.name}! Very well done! I think you're ready to become a Hunter or Healer if you're ever interested."`;
+						embed.description = `*After fighting with the trunk for a while, the Apprentice now slips out with slightly ruffled fur. Just at this moment, a worried Elderly comes running.*\n"Is everything alright? You've been gone for a while, and we heard cries of pain, so we were worried!" *They look over to the tree trunk.*\n"Oh, looks like you've already solved the problem, ${profileData.name}! Very well done! I think you're ready to become a Hunter or Healer if you're ever interested."`;
 					}
 
 					if (speciesMap.get(profileData.species).habitat === 'cold') {
 
-						description = `*After fighting with the root for a while, the Apprentice now slips out with slightly ruffled fur. Just at this moment, a worried Elderly comes running.*\n"Is everything alright? You've been gone for a while, and we heard cries of pain, so we were worried!" *They look over to the bush.*\n"Oh, looks like you've already solved the problem, ${profileData.name}! Very well done! I think you're ready to become a Hunter or Healer if you're ever interested."`;
+						embed.description = `*After fighting with the root for a while, the Apprentice now slips out with slightly ruffled fur. Just at this moment, a worried Elderly comes running.*\n"Is everything alright? You've been gone for a while, and we heard cries of pain, so we were worried!" *They look over to the bush.*\n"Oh, looks like you've already solved the problem, ${profileData.name}! Very well done! I think you're ready to become a Hunter or Healer if you're ever interested."`;
 					}
 
 					if (speciesMap.get(profileData.species).habitat === 'water') {
 
-						description = `*After fighting with the trunk for a while, the Apprentice now slips out. Just at this moment, a worried Elderly comes swimming.*\n"Is everything alright? You've been gone for a while, and we heard cries of pain, so we were worried!" *They look over to the bush.*\n"Oh, looks like you've already solved the problem, ${profileData.name}! Very well done! I think you're ready to become a Hunter or Healer if you're ever interested."`;
+						embed.description = `*After fighting with the trunk for a while, the Apprentice now slips out. Just at this moment, a worried Elderly comes swimming.*\n"Is everything alright? You've been gone for a while, and we heard cries of pain, so we were worried!" *They look over to the bush.*\n"Oh, looks like you've already solved the problem, ${profileData.name}! Very well done! I think you're ready to become a Hunter or Healer if you're ever interested."`;
 					}
 				}
 
@@ -349,12 +358,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 					if (speciesMap.get(profileData.species).habitat === 'warm' || speciesMap.get(profileData.species).habitat === 'cold') {
 
-						description = `*The engine noise became quieter and quieter before it finally disappeared entirely after endless maneuvers. Relieved, the ${profileData.species} runs to the pack, the other ${profileData.rank} in ${pronoun(profileData, 2)} mouth. An Elderly is already coming towards ${pronoun(profileData, 1)}.*\n"You're alright! We heard the humans. And you didn't lead them straight to us, very good! Your wisdom, skill, and experience qualify you as an Elderly, ${profileData.name}. I'll talk to the other Elderlies about it. Just let me know if you want to join us."`;
+						embed.description = `*The engine noise became quieter and quieter before it finally disappeared entirely after endless maneuvers. Relieved, the ${profileData.species} runs to the pack, the other ${profileData.rank} in ${pronoun(profileData, 2)} mouth. An Elderly is already coming towards ${pronoun(profileData, 1)}.*\n"You're alright! We heard the humans. And you didn't lead them straight to us, very good! Your wisdom, skill, and experience qualify you as an Elderly, ${profileData.name}. I'll talk to the other Elderlies about it. Just let me know if you want to join us."`;
 					}
 
 					if (speciesMap.get(profileData.species).habitat === 'water') {
 
-						description = `*The engine noise became quieter and quieter before it finally disappeared entirely after endless maneuvers. Relieved, the ${profileData.species} swims to the pack, the other ${profileData.rank} in ${pronoun(profileData, 2)} mouth. An Elderly is already swimming towards ${pronoun(profileData, 1)}.*\n"You're alright! We heard the humans. And you didn't lead them straight to us, very good! Your wisdom, skill, and experience qualify you as an Elderly, ${profileData.name}. I'll talk to the other Elderlies about it. Just let me know if you want to join us."`;
+						embed.description = `*The engine noise became quieter and quieter before it finally disappeared entirely after endless maneuvers. Relieved, the ${profileData.species} swims to the pack, the other ${profileData.rank} in ${pronoun(profileData, 2)} mouth. An Elderly is already swimming towards ${pronoun(profileData, 1)}.*\n"You're alright! We heard the humans. And you didn't lead them straight to us, very good! Your wisdom, skill, and experience qualify you as an Elderly, ${profileData.name}. I'll talk to the other Elderlies about it. Just let me know if you want to join us."`;
 					}
 				}
 
@@ -362,12 +371,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 					if (speciesMap.get(profileData.species).habitat === 'warm' || speciesMap.get(profileData.species).habitat === 'cold') {
 
-						description = `*The ${profileData.species} runs for a while before the situation seems to clear up. ${profileData.name} gasps in exhaustion. That was close. Full of adrenaline, ${pronounAndPlural(profileData, 0, 'goes', 'go')} back to the pack, another pack member in ${pronoun(profileData, 2)} mouth. ${upperCasePronounAndPlural(profileData, 0, 'feel')} strangely stronger than before.*`;
+						embed.description = `*The ${profileData.species} runs for a while before the situation seems to clear up. ${profileData.name} gasps in exhaustion. That was close. Full of adrenaline, ${pronounAndPlural(profileData, 0, 'goes', 'go')} back to the pack, another pack member in ${pronoun(profileData, 2)} mouth. ${upperCasePronounAndPlural(profileData, 0, 'feel')} strangely stronger than before.*`;
 					}
 
 					if (speciesMap.get(profileData.species).habitat === 'water') {
 
-						description = `*The ${profileData.species} runs for a while before the situation seems to clear up. ${profileData.name} gasps in exhaustion. That was close. Full of adrenaline, ${pronounAndPlural(profileData, 0, 'swim')} back to the pack, another pack member in ${pronoun(profileData, 2)} mouth. ${upperCasePronounAndPlural(profileData, 0, 'feel')} strangely stronger than before.*`;
+						embed.description = `*The ${profileData.species} runs for a while before the situation seems to clear up. ${profileData.name} gasps in exhaustion. That was close. Full of adrenaline, ${pronounAndPlural(profileData, 0, 'swim')} back to the pack, another pack member in ${pronoun(profileData, 2)} mouth. ${upperCasePronounAndPlural(profileData, 0, 'feel')} strangely stronger than before.*`;
 					}
 
 					let maxHealthPoints = 0;
@@ -379,19 +388,19 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 					if (random === 0) {
 						maxHealthPoints = 10;
-						footer = '+10 maximum health\n\n';
+						embed.footer.text = '+10 maximum health\n\n';
 					}
 					else if (random === 1) {
 						maxEnergyPoints = 10;
-						footer = '+10 maximum energy\n\n';
+						embed.footer.text = '+10 maximum energy\n\n';
 					}
 					else if (random === 2) {
 						maxHungerPoints = 10;
-						footer = '+10 maximum hunger\n\n';
+						embed.footer.text = '+10 maximum hunger\n\n';
 					}
 					else {
 						maxThirstPoints = 10;
-						footer = '+10 maximum thirst\n\n';
+						embed.footer.text = '+10 maximum thirst\n\n';
 					}
 
 					await profileModel.findOneAndUpdate(
@@ -407,44 +416,60 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					);
 				}
 
-				return await botReply
+				await botReply
 					.edit({
-						embeds: [...embedArray, {
-							color: profileData.color,
-							author: { name: profileData.name, icon_url: profileData.avatarURL },
-							description: description,
-							footer: { text: footer },
-						}],
-						components: [],
+						embeds: [...embedArray, embed],
+						components: [botReply.components[botReply.components.length - 1]],
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
-			}
-			else if (missValue >= 10) {
 
-				let description = '';
 
 				if (profileData.rank === 'Youngling') {
 
-					description = `"I can't... I can't do it," *${profileData.name} heaves, ${pronoun(profileData, 2)} chest struggling to fall and rise.\nSuddenly the boulder shakes and falls away from the cave entrance.*\n"You are too weak for a task like this. Come back to camp, Youngling." *The Elderly turns around and slowly walks back towards camp, not dwelling long by the exhausted ${profileData.species}.*`;
+					await apprenticeAdvice(message);
+				}
+
+				if (profileData.rank === 'Apprentice') {
+
+					await hunterhealerAdvice(message);
+				}
+
+				if (profileData.rank === 'Hunter' || profileData.rank === 'Healer') {
+
+					await elderlyAdvice(message);
+				}
+
+				return;
+			}
+			else if (missValue >= 10) {
+
+				const embed = new MessageEmbed({
+					color: profileData.color,
+					author: { name: profileData.name, icon_url: profileData.avatarURL },
+				});
+
+				if (profileData.rank === 'Youngling') {
+
+					embed.description = `"I can't... I can't do it," *${profileData.name} heaves, ${pronoun(profileData, 2)} chest struggling to fall and rise.\nSuddenly the boulder shakes and falls away from the cave entrance.*\n"You are too weak for a task like this. Come back to camp, Youngling." *The Elderly turns around and slowly walks back towards camp, not dwelling long by the exhausted ${profileData.species}.*`;
 				}
 
 				if (profileData.rank === 'Apprentice') {
 
 					if (speciesMap.get(profileData.species).habitat === 'warm') {
 
-						description = `*No matter how long the ${profileData.species} pulls and tugs, ${pronoun(profileData, 0)} just can't break the Apprentice free. They both lie there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's them!" *the Elderly shouts. The other two run to the Apprentice and bite away the root.*\n"Thanks for trying, ${profileData.name}. But thank goodness we found you!" *the Elderly says.*`;
+						embed.description = `*No matter how long the ${profileData.species} pulls and tugs, ${pronoun(profileData, 0)} just can't break the Apprentice free. They both lie there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's them!" *the Elderly shouts. The other two run to the Apprentice and bite away the root.*\n"Thanks for trying, ${profileData.name}. But thank goodness we found you!" *the Elderly says.*`;
 					}
 
 					if (speciesMap.get(profileData.species).habitat === 'cold') {
 
-						description = `*No matter how long the ${profileData.species} pulls and tugs, ${pronoun(profileData, 0)} just can't break the Apprentice free. They both lie there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's them!" *the Elderly shouts. The other two run to the Apprentice and pull them out from under the log with their mouths.*\n"Thanks for trying, ${profileData.name}. But thank goodness we found you!" *the Elderly says.*`;
+						embed.description = `*No matter how long the ${profileData.species} pulls and tugs, ${pronoun(profileData, 0)} just can't break the Apprentice free. They both lie there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's them!" *the Elderly shouts. The other two run to the Apprentice and pull them out from under the log with their mouths.*\n"Thanks for trying, ${profileData.name}. But thank goodness we found you!" *the Elderly says.*`;
 					}
 
 					if (speciesMap.get(profileData.species).habitat === 'water') {
 
-						description = `*No matter how long the ${profileData.species} pulls and tugs, ${pronoun(profileData, 0)} just can't break the Apprentice free. They both lie there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's them!" *the Elderly shouts. The other two run to the Apprentice and push them away from the log with their heads.*\n"Thanks for trying, ${profileData.name}. But thank goodness we found you!" *the Elderly says.*`;
+						embed.description = `*No matter how long the ${profileData.species} pulls and tugs, ${pronoun(profileData, 0)} just can't break the Apprentice free. They both lie there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's them!" *the Elderly shouts. The other two run to the Apprentice and push them away from the log with their heads.*\n"Thanks for trying, ${profileData.name}. But thank goodness we found you!" *the Elderly says.*`;
 					}
 				}
 
@@ -452,12 +477,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 					if (speciesMap.get(profileData.species).habitat === 'warm' || speciesMap.get(profileData.species).habitat === 'cold') {
 
-						description = `*It almost looks like the humans are catching up to the other ${profileData.rank} when suddenly two larger ${profileData.species}s come running from the side. They pick both of them up and run sideways as fast as lightning. Before ${pronounAndPlural(profileData, 0, 'know')} what has happened to ${pronoun(profileData, 1)}, they are already out of reach.*\n"That was close," *the Elderly says.* "Good thing I was nearby."`;
+						embed.description = `*It almost looks like the humans are catching up to the other ${profileData.rank} when suddenly two larger ${profileData.species}s come running from the side. They pick both of them up and run sideways as fast as lightning. Before ${pronounAndPlural(profileData, 0, 'know')} what has happened to ${pronoun(profileData, 1)}, they are already out of reach.*\n"That was close," *the Elderly says.* "Good thing I was nearby."`;
 					}
 
 					if (speciesMap.get(profileData.species).habitat === 'water') {
 
-						description = `*It almost looks like the humans are catching up to the other ${profileData.rank} when suddenly two larger ${profileData.species}s come swimming from the side. They push them both away with their head and swim sideways as fast as lightning. Before ${pronounAndPlural(profileData, 0, 'know')} what has happened to ${pronoun(profileData, 1)}, they are already out of reach.*\n"That was close," *the Elderly says.* "Good thing I was nearby."`;
+						embed.description = `*It almost looks like the humans are catching up to the other ${profileData.rank} when suddenly two larger ${profileData.species}s come swimming from the side. They push them both away with their head and swim sideways as fast as lightning. Before ${pronounAndPlural(profileData, 0, 'know')} what has happened to ${pronoun(profileData, 1)}, they are already out of reach.*\n"That was close," *the Elderly says.* "Good thing I was nearby."`;
 					}
 				}
 
@@ -465,42 +490,23 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 					if (speciesMap.get(profileData.species).habitat === 'warm' || speciesMap.get(profileData.species).habitat === 'cold') {
 
-						description = `*The ${profileData.species} gasps as ${pronounAndPlural(profileData, 0, 'drop')} down to the ground, defeated. ${upperCasePronounAndPlural(profileData, 0, '\'s', '\'re')} just not fast enough... Suddenly a bunch of Elderlies come running and lift the pack members by their necks. Another ${profileData.species} has ${profileData.name} in their mouth and runs as fast as they can. Everyone is saved!*`;
+						embed.description = `*The ${profileData.species} gasps as ${pronounAndPlural(profileData, 0, 'drop')} down to the ground, defeated. ${upperCasePronounAndPlural(profileData, 0, '\'s', '\'re')} just not fast enough... Suddenly a bunch of Elderlies come running and lift the pack members by their necks. Another ${profileData.species} has ${profileData.name} in their mouth and runs as fast as they can. Everyone is saved!*`;
 					}
 
 					if (speciesMap.get(profileData.species).habitat === 'water') {
 
-						description = `*The ${profileData.species} gasps as ${pronounAndPlural(profileData, 0, 'stop')} swimming, defeated. ${upperCasePronounAndPlural(profileData, 0, '\'s', '\'re')} just not fast enough... Suddenly a bunch of Elderlies come running and thrust the pack members from the side. Another ${profileData.species} pushes into ${profileData.name} with their head and swims as fast as they can. Everyone is saved!*`;
+						embed.description = `*The ${profileData.species} gasps as ${pronounAndPlural(profileData, 0, 'stop')} swimming, defeated. ${upperCasePronounAndPlural(profileData, 0, '\'s', '\'re')} just not fast enough... Suddenly a bunch of Elderlies come running and thrust the pack members from the side. Another ${profileData.species} pushes into ${profileData.name} with their head and swims as fast as they can. Everyone is saved!*`;
 					}
 				}
 
 				await botReply
 					.edit({
-						embeds: [...embedArray, {
-							color: profileData.color,
-							author: { name: profileData.name, icon_url: profileData.avatarURL },
-							description: description,
-						}],
-						components: [],
+						embeds: [...embedArray, embed],
+						components: [botReply.components[botReply.components.length - 1]],
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
-
-				if (hitValue >= 10 && profileData.rank === 'Youngling') {
-
-					await apprenticeAdvice(message);
-				}
-
-				if (hitValue >= 10 && profileData.rank === 'Apprentice') {
-
-					await hunterhealerAdvice(message);
-				}
-
-				if (hitValue >= 10 && (profileData.rank === 'Hunter' || profileData.rank === 'Healer')) {
-
-					await elderlyAdvice(message);
-				}
 
 				return;
 			}
@@ -536,12 +542,12 @@ module.exports.introduceQuest = async (message, profileData, embedArray, footerT
 
 	const messageContent = remindOfAttack(message);
 
-	const embed = {
+	const embed = new MessageEmbed({
 		color: profileData.color,
 		author: { name: profileData.name, icon_url: profileData.avatarURL },
 		description: '',
 		footer: { text: '' },
-	};
+	});
 
 	if (profileData.rank === 'Youngling') {
 
@@ -602,23 +608,21 @@ module.exports.introduceQuest = async (message, profileData, embedArray, footerT
 		}
 	}
 
-	embed.footer.text = `${footerText}\n\nClick the button to continue! Level ${profileData.rank == 'Elderly' ? '35' : (profileData.rank == 'Hunter' || profileData.rank == 'Healer') ? '20' : profileData.rank == 'Apprentice' ? '10' : '2'} is recommended for this.`;
+	embed.footer.text = `${footerText}\n\nClick the button to continue. *Level ${profileData.rank == 'Elderly' ? '35' : (profileData.rank == 'Hunter' || profileData.rank == 'Healer') ? '20' : profileData.rank == 'Apprentice' ? '10' : '2'} is recommended for this!*\n\nTip: The button you chose will get a "radio button"-emoji, and the correct button will get a checkmark emoji. Sometimes you will lose a round even if you chose right, depending on how many levels you have, then there will be no checkmark emoji.`;
 
 
 	const botReply = await message
 		.reply({
 			content: `<@${message.author.id}>` + (messageContent === null ? '' : messageContent),
 			embeds: [...embedArray, embed],
-			components: [{
-				type: 'ACTION_ROW',
-				components: [{
-					type: 'BUTTON',
+			components: [ new MessageActionRow({
+				components: [ new MessageButton({
 					customId: 'quest-start',
 					label: 'Start quest',
 					emoji: '⭐',
 					style: 'SUCCESS',
-				}],
-			}],
+				})],
+			})],
 			failIfNotExists: false,
 		})
 		.catch((error) => { throw new Error(error); });
