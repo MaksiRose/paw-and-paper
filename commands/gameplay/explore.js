@@ -14,6 +14,8 @@ const { prefix } = require('../../config.json');
 const { execute } = require('../../events/messageCreate');
 const { remindOfAttack, startAttack } = require('./attack');
 const { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural } = require('../../utils/getPronouns');
+const { MessageActionRow, MessageButton } = require('discord.js');
+const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'explore';
 module.exports.aliases = ['e'];
@@ -244,7 +246,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	serverData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOne({ serverId: message.guild.id }));
 	messageContent = remindOfAttack(message);
 
-	if (serverData.activeUsersArray.length >= 2 && messageContent === null && serverData.nextPossibleAttack <= Date.now()) {
+	if (serverData.activeUsersArray.length >= 3 && messageContent === null && serverData.nextPossibleAttack <= Date.now()) {
 
 		botReply = await findHumans();
 	}
@@ -324,7 +326,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.catch(async () => {
 
 				await botReply
-					.edit({ components: [] })
+					.edit({ components: disableAllComponents(botReply.components) })
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
@@ -423,23 +425,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				content: messageContent,
 				embeds: [...embedArray, embed],
-				components: [{
-					type: 'ACTION_ROW',
-					components: [{
-						type: 'BUTTON',
+				components: [ new MessageActionRow({
+					components: [ new MessageButton({
 						customId: 'plant-pickup',
 						label: 'Pick up',
 						emoji: '🌿',
 						style: 'PRIMARY',
-						disabled: (profileData.rank == 'Hunter') ? true : false,
-					}, {
-						type: 'BUTTON',
+						disabled: (profileData.rank === 'Hunter') ? true : false,
+					}), new MessageButton({
 						customId: 'plant-leave',
 						label: 'Leave',
 						emoji: '💨',
 						style: 'PRIMARY',
-					}],
-				}],
+					})],
+				})],
 				allowedMentions: { repliedUser: true },
 				failIfNotExists: false,
 			})
@@ -460,13 +459,16 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			return await botReply
 				.edit({
 					embeds: [...embedArray, embed],
-					components: [],
+					components: disableAllComponents(botReply.components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 					return botReply;
 				});
 		}
+
+		/* This is done so that later, these buttons aren't copied over. */
+		botReply.components = [];
 
 		return await pickupCycle(0, -1, 0);
 
@@ -519,30 +521,35 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			embed.footer.text = `Click the button with this emoji: ${emojiToFind}. But watch out for the campsite (🏕️)!`;
 
-			/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions} */
-			const selectHerbComponent = {
-				type: 'ACTION_ROW',
-				components: [],
-			};
+			const herbComponent = new MessageActionRow();
 
 			for (let i = 0; i < 5; i++) {
 
-				selectHerbComponent.components.push({ type: 'BUTTON', customId: `plant-${i}`, label: buttonsArray[i].join(''), style: 'SECONDARY' });
+				herbComponent.components.push(new MessageButton({ customId: `plant-${i}`, label: buttonsArray[i].join(' '), style: 'SECONDARY' }));
 			}
 
 			botReply = await botReply
 				.edit({
 					embeds: [...embedArray, embed],
-					components: [selectHerbComponent],
+					components: [...botReply.components.length > 0 ? [botReply.components[botReply.components.length - 1]] : [], herbComponent],
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 					return botReply;
 				});
 
+			/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
+			/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId.includes(`${correctButton}`))]).style = 'PRIMARY';
+
 			const { customId } = await botReply
 				.awaitMessageComponent({ filter, time: responseTime })
 				.catch(() => { return { customId: '' }; });
+
+			if (customId !== '') {
+
+				/* Here we make the button the player choses red, this will apply always except if the player choses the correct button, then this will be overwritten. */
+				/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId)]).style = 'DANGER';
+			}
 
 			if (customId === '' || customId.includes(`${incorrectButton}`) === true) {
 
@@ -551,8 +558,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			if (customId?.includes(`${correctButton}`) === true) {
 
+				/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
+				/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId)]).style = 'SUCCESS';
+
 				winPoints += 1;
 			}
+
+			/* Here we change the buttons customId's so that they will always stay unique, as well as disabling the buttons. */
+			for (const button of botReply.components[botReply.components.length - 1].components) {
+
+				button.customId += totalCycles;
+			}
+
+			botReply.components = disableAllComponents(botReply.components);
+
 
 			totalCycles += 1;
 
@@ -591,7 +610,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				return await botReply
 					.edit({
 						embeds: [...embedArray, embed],
-						components: [],
+						components: [botReply.components[botReply.components.length - 1]],
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
@@ -621,7 +640,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				return await botReply
 					.edit({
 						embeds: [...embedArray, embed],
-						components: [],
+						components: [botReply.components[botReply.components.length - 1]],
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
@@ -714,7 +733,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			return await botReply
 				.edit({
 					embeds: [...embedArray, embed],
-					components: [],
+					components: [botReply.components[botReply.components.length - 1]],
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -758,23 +777,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				content: messageContent,
 				embeds: [...embedArray, embed],
-				components: [{
-					type: 'ACTION_ROW',
-					components: [{
-						type: 'BUTTON',
+				components: [new MessageActionRow({
+					components: [ new MessageButton({
 						customId: 'enemy-fight',
 						label: 'Fight',
 						emoji: '⚔️',
 						style: 'PRIMARY',
 						disabled: (profileData.rank == 'Healer') ? true : false,
-					}, {
-						type: 'BUTTON',
+					}), new MessageButton({
 						customId: 'enemy-flee',
 						label: 'Flee',
 						emoji: '💨',
 						style: 'PRIMARY',
-					}],
-				}],
+					})],
+				})],
 				allowedMentions: { repliedUser: true },
 				failIfNotExists: false,
 			})
@@ -809,13 +825,16 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			return await botReply
 				.edit({
 					embeds: [...embedArray, embed],
-					components: [],
+					components: disableAllComponents(botReply.components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 					return botReply;
 				});
 		}
+
+		/* This is done so that later, these buttons aren't copied over. */
+		botReply.components = [];
 
 		return await fightCycle(0, '');
 
@@ -826,6 +845,25 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		 * @returns {Promise<import('discord.js').Message>}
 		 */
 		async function fightCycle(totalCycles, cycleKind) {
+
+			const fightComponents = new MessageActionRow({
+				components: [ new MessageButton({
+					customId: 'fight-attack',
+					label: 'Attack',
+					emoji: '⏫',
+					style: 'SECONDARY',
+				}), new MessageButton({
+					customId: 'fight-defend',
+					label: 'Defend',
+					emoji: '⏺️',
+					style: 'SECONDARY',
+				}), new MessageButton({
+					customId: 'fight-dodge',
+					label: 'Dodge',
+					emoji: '↪️',
+					style: 'SECONDARY',
+				})].sort(() => Math.random() - 0.5),
+			});
 
 			const newCycleArray = ['attack', 'dodge', 'defend'];
 			cycleKind = newCycleArray[generateRandomNumberWithException(newCycleArray.length, 0, newCycleArray.indexOf(cycleKind))];
@@ -845,44 +883,32 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				embed.description = `⏺️ *The ${opponentSpecies} gets into position to oppose an attack. ${profileData.name} must think quickly about how ${pronounAndPlural(profileData, 0, 'want')} to react.*`;
 			}
 
-			const fightButtons = [ /** @type {import('discord.js').MessageActionRowComponentResolvable} */ ({
-				type: 'BUTTON',
-				customId: 'fight-attack',
-				label: 'Attack',
-				emoji: '⏫',
-				style: 'PRIMARY',
-			}), /** @type {import('discord.js').MessageActionRowComponentResolvable} */ ({
-				type: 'BUTTON',
-				customId: 'fight-defend',
-				label: 'Defend',
-				emoji: '⏺️',
-				style: 'PRIMARY',
-			}), /** @type {import('discord.js').MessageActionRowComponentResolvable} */ ({
-				type: 'BUTTON',
-				customId: 'fight-dodge',
-				label: 'Dodge',
-				emoji: '↪️',
-				style: 'PRIMARY',
-			})].sort(() => Math.random() - 0.5);
-
 			botReply = await botReply
 				.edit({
 					embeds: [...embedArray, embed],
-					components: [{
-						type: 'ACTION_ROW',
-						components: fightButtons,
-					}],
+					components: [...botReply.components.length > 0 ? [botReply.components[botReply.components.length - 1]] : [], fightComponents],
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 					return botReply;
 				});
 
+			/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
+			if (cycleKind === 'defend') { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === 'fight-attack')]).style = 'PRIMARY'; }
+			if (cycleKind === 'dodge') { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === 'fight-defend')]).style = 'PRIMARY'; }
+			if (cycleKind === 'attack') { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === 'fight-dodge')]).style = 'PRIMARY'; }
+
 			filter = i => (i.customId === 'fight-attack' || i.customId === 'fight-defend' || i.customId === 'fight-dodge') && i.user.id === message.author.id;
 
 			const { customId } = await botReply
 				.awaitMessageComponent({ filter, time: responseTime })
 				.catch(() => { return { customId: '' }; });
+
+			if (customId !== '') {
+
+				/* Here we make the button the player choses red, this will apply always except if the player choses the correct button, then this will be overwritten. */
+				/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId)]).style = 'DANGER';
+			}
 
 			if (customId === '' || (customId === 'fight-attack' && cycleKind === 'dodge') || (customId === 'fight-defend' && cycleKind === 'attack') || (customId === 'fight-dodge' && cycleKind === 'defend')) {
 
@@ -891,8 +917,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			if ((customId === 'fight-attack' && cycleKind === 'defend') || (customId === 'fight-defend' && cycleKind === 'dodge') || (customId === 'fight-dodge' && cycleKind === 'attack')) {
 
+				/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
+				/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId)]).style = 'SUCCESS';
+
 				playerLevel += Math.ceil(profileData.levels / 10);
 			}
+
+			/* Here we change the buttons customId's so that they will always stay unique, as well as disabling the buttons. */
+			for (const button of botReply.components[botReply.components.length - 1].components) {
+
+				button.customId += totalCycles;
+			}
+
+			botReply.components = disableAllComponents(botReply.components);
+
 
 			totalCycles += 1;
 
@@ -1016,7 +1054,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			return await botReply
 				.edit({
 					embeds: [...embedArray, embed],
-					components: [],
+					components: [botReply.components[botReply.components.length - 1]],
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -1031,15 +1069,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	 */
 	async function getBiome() {
 
-		/** @type {Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions} */
-		const selectBiomeComponent = {
-			type: 'ACTION_ROW',
-			components: [],
-		};
+		const biomeComponent = new MessageActionRow();
 
 		for (let i = 0; i < allBiomesArray.length; i++) {
 
-			selectBiomeComponent.components.push({ type: 'BUTTON', customId: allBiomesArray[i], label: allBiomesArray[i].charAt(0).toUpperCase() + allBiomesArray[i].slice(1), style: 'PRIMARY' });
+			biomeComponent.components.push(new MessageButton({ customId: allBiomesArray[i], label: allBiomesArray[i].charAt(0).toUpperCase() + allBiomesArray[i].slice(1), style: 'PRIMARY' }));
 		}
 
 		const getBiomeMessage = await message
@@ -1050,7 +1084,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					author: { name: profileData.name, icon_url: profileData.avatarURL },
 					description: `*${profileData.name} is longing for adventure as ${pronounAndPlural(profileData, 0, 'look')} into the wild outside of camp. All there is to decide is where the journey will lead ${pronoun(profileData, 1)}.*`,
 				}],
-				components: [selectBiomeComponent],
+				components: [biomeComponent],
 				failIfNotExists: false,
 			})
 			.catch((error) => { throw new Error(error); });
@@ -1074,7 +1108,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.catch(async () => {
 
 				await getBiomeMessage
-					.edit({ components: [] })
+					.edit({ components: disableAllComponents(getBiomeMessage.components) })
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
