@@ -3,6 +3,8 @@ const { profileModel } = require('../../models/profileModel');
 const { default_color } = require('../../config.json');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
+const { MessageActionRow, MessageSelectMenu, MessageButton } = require('discord.js');
+const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'profilelist';
 
@@ -23,11 +25,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	profileData = await startCooldown(message, profileData);
 
-	/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} */
-	let components = [{
-		type: 'ACTION_ROW',
-		components: [{
-			type: 'SELECT_MENU',
+	const profilelistRankComponent = new MessageActionRow({
+		components: [ new MessageSelectMenu({
 			customId: 'profilelist-rank',
 			placeholder: 'Select a rank',
 			options: [
@@ -36,28 +35,22 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				{ label: 'Hunters/Healers', value: 'profilelist-huntershealers' },
 				{ label: 'Elderlies', value: 'profilelist-elderlies' },
 			],
-		}],
-	}];
+		})],
+	});
+
+	const profilelistPageComponent = new MessageActionRow({
+		components: [ new MessageButton({
+			customId: 'profilelist-left',
+			emoji: '⬅️',
+			style: 'SECONDARY',
+		}), new MessageButton({
+			customId: 'profilelist-right',
+			emoji: '➡️',
+			style: 'SECONDARY',
+		})],
+	});
 
 	let rankProfilesPages = await getRank('Youngling');
-
-	if (rankProfilesPages.length > 1) {
-
-		components.unshift({
-			type: 'ACTION_ROW',
-			components: [{
-				type: 'BUTTON',
-				customId: 'profilelist-left',
-				emoji: '⬅️',
-				style: 'SECONDARY',
-			}, {
-				type: 'BUTTON',
-				customId: 'profilelist-right',
-				emoji: '➡️',
-				style: 'SECONDARY',
-			}],
-		});
-	}
 
 	let pageNumber = 0;
 	let botReply = await message
@@ -68,12 +61,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				title: 'Profiles - Younglings',
 				description: rankProfilesPages[pageNumber],
 			}],
-			components: components,
+			components: [profilelistRankComponent, ...rankProfilesPages.length > 1 ? [profilelistPageComponent] : []],
 			failIfNotExists: false,
 		})
 		.catch((error) => { throw new Error(error); });
-
-	components = [components.pop()];
 
 	interactionCollector();
 
@@ -90,7 +81,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			await botReply
 				.edit({
-					components: [],
+					components: disableAllComponents(botReply.components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -104,23 +95,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			rankProfilesPages = await getRank(rankName);
 
-			if (rankProfilesPages.length > 1) {
-
-				components.unshift({
-					type: 'ACTION_ROW',
-					components: [{
-						type: 'BUTTON',
-						customId: 'profilelist-left',
-						emoji: '⬅️',
-						style: 'SECONDARY',
-					}, {
-						type: 'BUTTON',
-						customId: 'profilelist-right',
-						emoji: '➡️',
-						style: 'SECONDARY',
-					}],
-				});
-			}
+			botReply.components = [profilelistRankComponent, ...rankProfilesPages.length > 1 ? [profilelistPageComponent] : []];
 
 			pageNumber = 0;
 			botReply.embeds[0].title = `Profiles - ${interaction.component.options.find(element => element.value == interaction.values[0]).label}`;
@@ -154,14 +129,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		botReply = await botReply
 			.edit({
 				embeds: botReply.embeds,
-				components: components,
+				components: botReply.components,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 				return botReply;
 			});
-
-		components = [components.pop()];
 
 		interactionCollector();
 	}

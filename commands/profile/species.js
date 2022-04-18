@@ -6,6 +6,8 @@ const { speciesMap } = require('../../utils/itemsInfo');
 const { hasNoName } = require('../../utils/checkAccountCompletion');
 const { pronoun } = require('../../utils/getPronouns');
 const { playAdvice } = require('../../utils/adviceMessages');
+const { MessageSelectMenu, MessageActionRow } = require('discord.js');
+const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'species';
 
@@ -45,18 +47,22 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	const chosenSpecies = argumentsArray.join(' ').toLowerCase();
 	const speciesNameArray = [...speciesMap.keys()].sort();
-	/** @type {Array<import('discord.js').MessageSelectOptionData>} */
-	let selectMenuOptionsArray = [];
+
+	const speciesMenu = new MessageSelectMenu({
+		customId: 'species-options',
+		placeholder: 'Select a species',
+	});
+
 	let speciesPage = 0;
 
 	for (const speciesName of speciesNameArray.slice(0, 24)) {
 
-		selectMenuOptionsArray.push({ label: speciesName, value: speciesName });
+		speciesMenu.addOptions({ label: speciesName, value: speciesName });
 	}
 
 	if (speciesNameArray.length > 25) {
 
-		selectMenuOptionsArray.push({ label: 'Show more species options', value: 'species_page', description: 'You are currently on page 1', emoji: '📋' });
+		speciesMenu.addOptions({ label: 'Show more species options', value: 'species_page', description: 'You are currently on page 1', emoji: '📋' });
 	}
 
 
@@ -94,15 +100,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				title: `What species is ${profileData.name}?`,
 				description: 'If you want an earthly, extant species that is not on the list, open a ticket. Alternatively, you can [learn how to add it yourself here](https://github.com/MaksiRose/paw-and-paper#add-a-species)',
 			}],
-			components: [{
-				type: 'ACTION_ROW',
-				components: [{
-					type: 'SELECT_MENU',
-					customId: 'species-options',
-					placeholder: 'Select a species',
-					options: selectMenuOptionsArray,
-				}],
-			}],
+			components: [
+				new MessageActionRow({ components: [speciesMenu] }),
+			],
 			failIfNotExists: false,
 		})
 		.catch((error) => { throw new Error(error); });
@@ -122,7 +122,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			return await botReply
 				.edit({
-					components: [],
+					components: disableAllComponents(botReply.components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -137,26 +137,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				speciesPage = 0;
 			}
 
-			selectMenuOptionsArray = [];
+			speciesMenu.options = [];
 
 			for (const speciesName of speciesNameArray.slice((speciesPage * 24), 24 + (speciesPage * 24))) {
 
-				selectMenuOptionsArray.push({ label: speciesName, value: speciesName });
+				speciesMenu.addOptions({ label: speciesName, value: speciesName });
 			}
 
-			selectMenuOptionsArray.push({ label: 'Show more species options', value: 'species_page', description: `You are currently on page ${speciesPage + 1}`, emoji: '📋' });
+			speciesMenu.addOptions({ label: 'Show more species options', value: 'species_page', description: `You are currently on page ${speciesPage + 1}`, emoji: '📋' });
 
 			await /** @type {import('discord.js').Message} */ (interaction.message)
 				.edit({
-					components: [{
-						type: 'ACTION_ROW',
-						components: [{
-							type: 'SELECT_MENU',
-							customId: 'species-options',
-							placeholder: 'Select a species',
-							options: selectMenuOptionsArray,
-						}],
-					}],
+					components: [
+						new MessageActionRow({ components: [speciesMenu] }),
+					],
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -180,7 +174,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						description: `*The Alpha took a friendly step towards the ${interaction.values[0]}.* "It's nice to have you here, ${profileData.name}" *they said. More and more packmates came closer to greet the newcomer.*`,
 						footer: { text: 'You are now done setting up your account! Type "rp profile" to look at it. With "rp help" you can see how else you can customize your profile, as well as your other options.' },
 					}],
-					components: [],
+					components: disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }

@@ -1,7 +1,9 @@
 // @ts-check
+const { MessageActionRow, MessageButton } = require('discord.js');
 const { error_color, default_color } = require('../../config.json');
 const { profileModel } = require('../../models/profileModel');
 const { createCommandCollector } = require('../../utils/commandCollector');
+const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'delete';
 module.exports.aliases = ['purge', 'remove', 'reset'];
@@ -40,22 +42,19 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 				title: 'Are you sure you want to delete all your data? This will be **permanent**!!!',
 			}],
-			components: [{
-				type: 'ACTION_ROW',
-				components: [{
-					type: 'BUTTON',
+			components: [ new MessageActionRow({
+				components: [ new MessageButton({
 					customId: 'delete-confirm',
 					label: 'Confirm',
 					emoji: '✔',
 					style: 'DANGER',
-				}, {
-					type: 'BUTTON',
+				}), new MessageButton({
 					customId: 'delete-cancel',
 					label: 'Cancel',
 					emoji: '✖',
 					style: 'SECONDARY',
-				}],
-			}],
+				})],
+			})],
 			failIfNotExists: false,
 		})
 		.catch((error) => { throw new Error(error); });
@@ -72,7 +71,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		await botReply
 			.edit({
-				components: [],
+				components: disableAllComponents(botReply.components),
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
@@ -94,7 +93,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					author: { name: `${interaction.guild.name}`, icon_url: interaction.guild.iconURL() },
 					title: 'Your account was deleted permanently! Type "rp name [name]" to start again.',
 				}],
-				components: [],
+				components: disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components),
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
@@ -111,7 +110,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					author: { name: `${interaction.guild.name}`, icon_url: interaction.guild.iconURL() },
 					title: 'Account deletion canceled.',
 				}],
-				components: [],
+				components: disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components),
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
