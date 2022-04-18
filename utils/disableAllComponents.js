@@ -11,6 +11,7 @@ function disableAllComponents(messageComponents) {
 
 		for (const component of actionRow.components) {
 
+			if (component.type === 'BUTTON' && component.style === 'LINK') { continue; }
 			component.disabled = true;
 		}
 	}

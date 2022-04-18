@@ -2,11 +2,11 @@
 const { default_color } = require('../../config.json');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
-const { createCommandCollector } = require('../../utils/commandCollector');
 const startCooldown = require('../../utils/startCooldown');
 const { readFileSync, writeFileSync } = require('fs');
 const { profileModel } = require('../../models/profileModel');
 const { MessageActionRow, MessageButton, MessageSelectMenu } = require('discord.js');
+const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'vote';
 
@@ -61,12 +61,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		})
 		.catch((error) => { throw new Error(error); });
 
-	createCommandCollector(message.author.id, message.guild.id, botReply);
-
 	const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.user.id === message.author.id && i.customId === 'vote-options';
 
 	botReply
-		.awaitMessageComponent({ filter })
+		.awaitMessageComponent({ filter, time: 600_000 })
 		.then(async interaction => {
 
 			const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8'));
@@ -151,6 +149,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		})
 		.catch(async () => {
 
+			await botReply
+				.edit({
+					components: disableAllComponents(botReply.components),
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
 			return;
 		});
 };
