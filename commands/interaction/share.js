@@ -224,7 +224,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		.catch((error) => { throw new Error(error); });
 
 	botReply = await checkLevelUp(message, botReply, profileData, serverData);
-	await decreaseHealth(message, profileData, botReply, userInjuryObject);
+	await decreaseHealth(profileData, botReply, userInjuryObject);
 	await isPassedOut(message, profileData, false);
 
 

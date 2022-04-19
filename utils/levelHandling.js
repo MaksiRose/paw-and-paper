@@ -43,8 +43,10 @@ async function checkLevelUp(message, botReply, profileData, serverData) {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 
+		const member = await message.guild.members.fetch(profileData.userId);
+
 		botReply = await module.exports.checkLevelUp(message, botReply, profileData, serverData);
-		await checkLevelRequirements(serverData, message, message.member, profileData.levels);
+		await checkLevelRequirements(serverData, message, member, profileData.levels);
 
 		return botReply;
 	}

@@ -842,8 +842,8 @@ async function decreaseStats(message, profileData, partnerProfileData) {
  */
 async function checkHealthAndLevel(message, botReply, profileData, serverData, partnerProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
 
-	botReply = await decreaseHealth(message, profileData, botReply, userInjuryObjectPlayer1);
-	botReply = await decreaseHealth(message, partnerProfileData, botReply, userInjuryObjectPlayer2);
+	botReply = await decreaseHealth(profileData, botReply, userInjuryObjectPlayer1);
+	botReply = await decreaseHealth(partnerProfileData, botReply, userInjuryObjectPlayer2);
 
 	botReply = await checkLevelUp(message, botReply, profileData, serverData);
 	botReply = await checkLevelUp(message, botReply, partnerProfileData, serverData);
@@ -899,11 +899,11 @@ async function executeWin(componentArray, message, profileData, serverData, part
 	));
 
 	let getHurtText = '';
-	const getHurtChance = pullFromWeightedTable({ 0: 10, 1: 90 + otherProfileData.saplingObject.waterCycles });
-	if (getHurtChance == 0) {
+	const getHurtChance = pullFromWeightedTable({ 0: 1110, 1: 90 + otherProfileData.saplingObject.waterCycles });
+	if (getHurtChance === 0) {
 
 		let healthPoints = generateRandomNumber(5, 3);
-		const userInjuryObject = (otherProfileData.userId === profileData.userId) ? userInjuryObjectPlayer1 : userInjuryObjectPlayer2;
+		const userInjuryObject = (otherProfileData.userId === profileData.userId) ? { ...userInjuryObjectPlayer1 } : { ...userInjuryObjectPlayer2 };
 
 		if (otherProfileData.health - healthPoints < 0) {
 

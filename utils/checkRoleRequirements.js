@@ -98,7 +98,7 @@ async function checkLevelRequirements(serverData, message, member, userLevel) {
 					{ $set: { roles: profileData.roles } },
 				);
 
-				if (message.member.roles.cache.has(item.roleId) === false) {
+				if (member.roles.cache.has(item.roleId) === false) {
 
 					await member.roles.add(item.roleId);
 

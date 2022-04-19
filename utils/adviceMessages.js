@@ -28,13 +28,13 @@ async function restAdvice(message, profileData) {
 		profileData.advice.resting = true;
 
 		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
+			{ userId: profileData.userId, serverId: profileData.serverId },
 			{ $set: { advice: profileData.advice } },
 		);
 
 		await message.channel
 			.send({
-				content: `${message.author.toString()} ❓ **Tip:**\nRest via \`rp rest\` to fill up your energy. Resting takes a while, so be patient!\nYou can also do \`rp vote\` to get +30 energy per vote!`,
+				content: `<@${profileData.userId}> ❓ **Tip:**\nRest via \`rp rest\` to fill up your energy. Resting takes a while, so be patient!\nYou can also do \`rp vote\` to get +30 energy per vote!`,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
@@ -54,13 +54,13 @@ async function drinkAdvice(message, profileData) {
 		profileData.advice.drinking = true;
 
 		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
+			{ userId: profileData.userId, serverId: profileData.serverId },
 			{ $set: { advice: profileData.advice } },
 		);
 
 		await message.channel
 			.send({
-				content: `${message.author.toString()} ❓ **Tip:**\nDrink via \`rp drink\` to fill up your thirst.`,
+				content: `<@${profileData.userId}> ❓ **Tip:**\nDrink via \`rp drink\` to fill up your thirst.`,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
@@ -80,13 +80,13 @@ async function eatAdvice(message, profileData) {
 		profileData.advice.eating = true;
 
 		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
+			{ userId: profileData.userId, serverId: profileData.serverId },
 			{ $set: { advice: profileData.advice } },
 		);
 
 		await message.channel
 			.send({
-				content: `${message.author.toString()} ❓ **Tip:**\nEat via \`rp eat\` to fill up your hunger. Carnivores prefer meat, and herbivores prefer plants! Omnivores can eat both.`,
+				content: `<@${profileData.userId}> ❓ **Tip:**\nEat via \`rp eat\` to fill up your hunger. Carnivores prefer meat, and herbivores prefer plants! Omnivores can eat both.`,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }

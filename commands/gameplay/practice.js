@@ -311,7 +311,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				return botReply;
 			});
 
-		botReply = await decreaseHealth(message, profileData, botReply, { ...profileData.injuryObject });
+		botReply = await decreaseHealth(profileData, botReply, { ...profileData.injuryObject });
 		botReply = await checkLevelUp(message, botReply, profileData, serverData);
 		await isPassedOut(message, profileData, true);
 

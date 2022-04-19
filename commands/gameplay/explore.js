@@ -267,7 +267,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		botReply = await findEnemy();
 	}
 
-	botReply = await decreaseHealth(message, profileData, botReply, userInjuryObject);
+	botReply = await decreaseHealth(profileData, botReply, userInjuryObject);
 	botReply = await checkLevelUp(message, botReply, profileData, serverData);
 	await isPassedOut(message, profileData, true);
 

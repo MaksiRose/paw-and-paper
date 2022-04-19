@@ -77,18 +77,20 @@ async function decreaseEnergy(profileData) {
  * Checks if user has existing injuries.
  * If not, it adds modified injuries and return botReply.
  * If yes, it loops through them and either randomly heals them or calculates an appropriate amount on health points to lose based on the users health, edits the bots reply to include an embed displaying the changes, and updates the profile by subtracting the lost health and adding the modified injuries.
- * @param {import('discord.js').Message} message
  * @param {import('../typedef').ProfileSchema} profileData
  * @param {import('discord.js').Message} botReply
  * @param {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} modifiedUserInjuryObject
  * @returns {Promise<import('discord.js').Message>} botReply
  */
-async function decreaseHealth(message, profileData, botReply, modifiedUserInjuryObject) {
+async function decreaseHealth(profileData, botReply, modifiedUserInjuryObject) {
+
+	console.log('profiles injuries:', profileData.injuryObject);
+	console.log('modified injuries:', modifiedUserInjuryObject);
 
 	if (Object.values(profileData.injuryObject).every((value) => value == 0)) {
 
 		profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
+			{ userId: profileData.userId, serverId: profileData.serverId },
 			{ $set: { injuryObject: modifiedUserInjuryObject } },
 		));
 
@@ -209,7 +211,7 @@ async function decreaseHealth(message, profileData, botReply, modifiedUserInjury
 	}
 
 	profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-		{ userId: message.author.id, serverId: message.guild.id },
+		{ userId: profileData.userId, serverId: profileData.serverId },
 		{
 			$inc: { health: -extraLostHealthPoints },
 			$set: { injuryObject: modifiedUserInjuryObject },
