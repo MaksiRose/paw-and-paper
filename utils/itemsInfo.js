@@ -380,7 +380,7 @@ speciesMap.set('leopard', {
 	name: 'leopard',
 	diet: 'carnivore',
 	habitat: 'warm',
-	biome1OpponentArray: ['coyote', 'maned wolf'],
+	biome1OpponentArray: ['coyote', 'maned wolf', 'mongoose'],
 	biome2OpponentArray: ['caracal'],
 	biome3OpponentArray: ['tiger', 'lion'],
 });
@@ -391,7 +391,7 @@ speciesMap.set('tiger', {
 	name: 'tiger',
 	diet: 'carnivore',
 	habitat: 'warm',
-	biome1OpponentArray: ['coyote', 'maned wolf'],
+	biome1OpponentArray: ['coyote', 'maned wolf', 'mongoose'],
 	biome2OpponentArray: ['leopard', 'caracal'],
 	biome3OpponentArray: ['lion'],
 });
@@ -500,7 +500,7 @@ speciesMap.set('crab', {
 	diet: 'omnivore',
 	habitat: 'water',
 	biome1OpponentArray: ['squid'],
-	biome2OpponentArray: ['tuna', 'salmon'],
+	biome2OpponentArray: ['tuna', 'salmon', 'mongoose'],
 	biome3OpponentArray: ['bear', 'seal', 'owl'],
 });
 
@@ -818,6 +818,17 @@ speciesMap.set('porcupine', {
 	biome1OpponentArray: ['cricket', 'beetle', 'praying mantis'],
 	biome2OpponentArray: ['anole', 'owl', 'fox'],
 	biome3OpponentArray: ['bear', 'cougar', 'coyote'],
+});
+
+// actual diet: small mammals (rodents), birds, reptiles (lizards), eggs, occasionally fruit, insects, crabs, earthworms
+// actual predators: hawks, eagles, jackals, big cats, avian predators
+speciesMap.set('mongoose', {
+	name: 'mongoose',
+	diet: 'carnivore',
+	habitat: 'warm',
+	biome1OpponentArray: ['rat', 'rabbit', 'crab'],
+	biome2OpponentArray: ['anole', 'cougar', 'leopard'],
+	biome3OpponentArray: ['tiger', 'eagle', 'hawk'],
 });
 
 
