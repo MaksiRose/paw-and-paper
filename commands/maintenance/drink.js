@@ -1,127 +1,126 @@
-const config = require('../../config.json');
-const profileModel = require('../../models/profileModel');
+// @ts-check
+const { default_color } = require('../../config.json');
+const { profileModel } = require('../../models/profileModel');
 const startCooldown = require('../../utils/startCooldown');
 const { generateRandomNumber } = require('../../utils/randomizers');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
 const { remindOfAttack } = require('../gameplay/attack');
 const { pronounAndPlural, pronoun } = require('../../utils/getPronouns');
+const { MessageActionRow, MessageButton } = require('discord.js');
+const disableAllComponents = require('../../utils/disableAllComponents');
 
-module.exports = {
-	name: 'drink',
-	async sendMessage(client, message, argumentsArray, profileData, serverData, embedArray) {
+module.exports.name = 'drink';
 
-		if (await hasNotCompletedAccount(message, profileData)) {
+/**
+ *
+ * @param {import('../../paw').client} client
+ * @param {import('discord.js').Message} message
+ * @param {Array<string>} argumentsArray
+ * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ServerSchema} serverData
+ * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @returns {Promise<void>}
+ */
+module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData, embedArray) => {
 
-			return;
-		}
+	if (await hasNotCompletedAccount(message, profileData)) {
 
-		if (await isInvalid(message, profileData, embedArray, [module.exports.name])) {
+		return;
+	}
 
-			return;
-		}
+	if (await isInvalid(message, profileData, embedArray, [module.exports.name])) {
 
-		profileData = await startCooldown(message, profileData);
-		const messageContent = remindOfAttack(message);
+		return;
+	}
 
-		if (profileData.thirst >= profileData.maxThirst) {
+	profileData = await startCooldown(message, profileData);
+	const messageContent = remindOfAttack(message);
 
-			embedArray.push({
-				color: profileData.color,
-				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*Water sounds churned in ${profileData.name}'s ear, ${pronoun(profileData, 2)} mouth longing for just one more drink. It seems like ${pronoun(profileData, 0)} can never be as hydrated as ${pronounAndPlural(profileData, 0, 'want')}, but  ${pronoun(profileData, 0)} had plenty of water today.*`,
-			});
+	if (profileData.thirst >= profileData.maxThirst) {
 
-			return await message
-				.reply({
-					content: messageContent,
-					embeds: embedArray,
-					failIfNotExists: false,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-		}
-
-		if (profileData.currentRegion != 'lake') {
-
-			await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { currentRegion: 'lake' } },
-			);
-		}
-
-		embedArray.push({
-			color: config.default_color,
-			author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-			description: 'For the next 15 seconds, click the button as many times as you can!',
-		});
-
-		const botReply = await message
+		await message
 			.reply({
 				content: messageContent,
-				embeds: embedArray,
-				components: [{
-					type: 'ACTION_ROW',
-					components: [{
-						type: 'BUTTON',
-						customId: 'water',
-						emoji: { name: '💧' },
-						style: 'PRIMARY',
-					}],
+				embeds: [...embedArray, {
+					color: profileData.color,
+					author: { name: profileData.name, icon_url: profileData.avatarURL },
+					description: `*Water sounds churned in ${profileData.name}'s ear, ${pronoun(profileData, 2)} mouth longing for just one more drink. It seems like ${pronoun(profileData, 0)} can never be as hydrated as ${pronounAndPlural(profileData, 0, 'want')}, but  ${pronoun(profileData, 0)} had plenty of water today.*`,
 				}],
 				failIfNotExists: false,
 			})
 			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
+				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
+		return;
+	}
 
-		return await new Promise((resolve) => {
+	if (profileData.currentRegion !== 'lake') {
 
-			const filter = i => i.customId === 'water' && i.user.id === message.author.id;
+		await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{ $set: { currentRegion: 'lake' } },
+		);
+	}
 
-			const collector = message.channel.createMessageComponentCollector({ filter, time: 15000 });
-			collector.on('end', async collected => {
+	const botReply = await message
+		.reply({
+			content: messageContent,
+			embeds: [...embedArray, {
+				color: /** @type {`#${string}`} */ (default_color),
+				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+				description: 'For the next 15 seconds, click the button as many times as you can!',
+			}],
+			components: [ new MessageActionRow({
+				components: [ new MessageButton({
+					customId: 'water',
+					emoji: '💧',
+					style: 'PRIMARY',
+				})],
+			})],
+			failIfNotExists: false,
+		})
+		.catch((error) => { throw new Error(error); });
 
-				let thirstPoints = generateRandomNumber(3, collected.size);
+	return await new Promise((resolve) => {
 
-				if (profileData.thirst + thirstPoints > profileData.maxThirst) {
+		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId === 'water' && i.user.id === message.author.id;
 
-					thirstPoints -= (profileData.thirst + thirstPoints) - profileData.maxThirst;
-				}
+		const collector = message.channel.createMessageComponentCollector({ filter, time: 15000 });
+		collector.on('end', async collected => {
 
-				profileData.advice.drinking = true;
+			let thirstPoints = generateRandomNumber(3, collected.size);
 
-				profileData = await profileModel.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{
-						$inc: { thirst: +thirstPoints },
-						$set: { advice: profileData.advice },
-					},
-				);
-				embedArray.splice(-1, 1, {
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: `*${profileData.name} scurries over to the river and takes hasty gulps. The fresh water runs down ${pronoun(profileData, 2)} throat and fills ${pronoun(profileData, 2)} body with new energy.*`,
-					footer: { text: `+${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})${(profileData.currentRegion != 'lake') ? '\nYou are now at the lake' : ''}\n\nDon't forget to stay hydrated in real life too!` },
+			if (profileData.thirst + thirstPoints > profileData.maxThirst) {
+
+				thirstPoints -= (profileData.thirst + thirstPoints) - profileData.maxThirst;
+			}
+
+			profileData.advice.drinking = true;
+
+			profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+				{ userId: message.author.id, serverId: message.guild.id },
+				{
+					$inc: { thirst: +thirstPoints },
+					$set: { advice: profileData.advice },
+				},
+			));
+
+			await botReply
+				.edit({
+					embeds: [...embedArray, {
+						color: profileData.color,
+						author: { name: profileData.name, icon_url: profileData.avatarURL },
+						description: `*${profileData.name} scurries over to the river and takes hasty gulps. The fresh water runs down ${pronoun(profileData, 2)} throat and fills ${pronoun(profileData, 2)} body with new energy.*`,
+						footer: { text: `+${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})${(profileData.currentRegion != 'lake') ? '\nYou are now at the lake' : ''}\n\nDon't forget to stay hydrated in real life too!` },
+					}],
+					components: disableAllComponents(botReply.components),
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 
-				await botReply
-					.edit({
-						embeds: embedArray, components: [],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-
-				return resolve();
-			});
+			return resolve();
 		});
-	},
+	});
 };

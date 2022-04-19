@@ -1,18 +1,31 @@
-const otherProfileModel = require('../models/otherProfileModel');
+// @ts-check
+const { otherProfileModel } = require('../models/profileModel');
 const serverModel = require('../models/serverModel');
-const fs = require('fs');
+const { readFileSync, renameSync, writeFileSync } = require('fs');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
 
-module.exports = {
+/**
+ * @type {import('../typedef').Event}
+ */
+const event = {
 	name: 'guildMemberAdd',
 	once: false,
+
+	/**
+	 * Emitted whenever a user joins a guild.
+	 * @param {import('../paw').client} client
+	 * @param {import('discord.js').GuildMember} member
+	 */
 	async execute(client, member) {
 
-		const serverData = await serverModel.findOne({
+		const serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOne({
 			serverId: member.guild.id,
-		});
+		}));
 
-		const toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
+		/**
+		 * @type {import('../typedef').DeleteList}
+		 */
+		const toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8'));
 
 		if (serverData === null || toDeleteList[`${member.id}${member.guild.id}`] === undefined) {
 
@@ -22,7 +35,7 @@ module.exports = {
 		for (const profileName of Object.keys(toDeleteList[`${member.id}${member.guild.id}`])) {
 
 			const userFile = toDeleteList[`${member.id}${member.guild.id}`][profileName].fileName;
-			fs.renameSync(`./database/toDelete/${userFile}`, `./database/profiles/inactiveProfiles/${userFile}`);
+			renameSync(`./database/toDelete/${userFile}`, `./database/profiles/inactiveProfiles/${userFile}`);
 
 			delete toDeleteList[`${member.id}${member.guild.id}`][profileName];
 			if (Object.entries(toDeleteList[`${member.id}${member.guild.id}`]).length === 0) {
@@ -30,14 +43,14 @@ module.exports = {
 				delete toDeleteList[`${member.id}${member.guild.id}`];
 			}
 
-			fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
+			writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
 
 
-			const profileData = await otherProfileModel.findOne({
+			const profileData = /** @type {import('../typedef').ProfileSchema} */ (await otherProfileModel.findOne({
 				userId: member.id,
 				serverId: member.guild.id,
 				name: profileName,
-			});
+			}));
 
 			profileData.inventoryObject = {
 				commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, profileData.inventoryObject.commonPlants[key] || 0])),
@@ -60,3 +73,4 @@ module.exports = {
 		}
 	},
 };
+module.exports = event;

@@ -1,10 +1,18 @@
-const fs = require('fs');
+// @ts-check
+const { readFileSync, renameSync, writeFileSync } = require('fs');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('./itemsInfo');
 const serverModel = require('../models/serverModel');
 
-module.exports = async (client, guild) => {
+/**
+ *
+ * @param {import('discord.js').Client} client
+ * @param {import('discord.js').Guild} guild
+ * @returns
+ */
+async function createGuild(client, guild) {
 
-	const bannedList = JSON.parse(fs.readFileSync('./database/bannedList.json'));
+	/** @type {import('../typedef').BanList} */
+	const bannedList = JSON.parse(readFileSync('./database/bannedList.json', 'utf-8'));
 
 	const user = await client.users.fetch(guild.ownerId);
 
@@ -16,14 +24,12 @@ module.exports = async (client, guild) => {
 			}
 		});
 
-	if (bannedList.serversArray.includes(guild.id)) {
+	if (bannedList.servers.includes(guild.id)) {
 
 		await user
 			.send({ content: `I am sorry to inform you that your guild \`${guild.name}\` has been banned from using this bot.` })
 			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
+				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 
 		await guild
@@ -40,13 +46,12 @@ module.exports = async (client, guild) => {
 		await user
 			.send({ content: 'Thank you for adding Paw and Paper to your server! 🥰\nYour server can receive updates about new releases and features. Just go in your server and type `rp getupdates #channel`, with #channel being the channel that you want to receive udpates. Don\'t worry, I won\'t spam you! 😊' })
 			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
+				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 	}, 300000);
 
-	const toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
+	/** @type {import('../typedef').DeleteList} */
+	const toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8'));
 
 	if (toDeleteList[guild.id] === undefined) {
 
@@ -71,13 +76,14 @@ module.exports = async (client, guild) => {
 	}
 
 	const guildFile = toDeleteList[guild.id].fileName;
-	fs.renameSync(`./database/toDelete/${guildFile}`, `./database/servers/${guildFile}`);
+	renameSync(`./database/toDelete/${guildFile}`, `./database/servers/${guildFile}`);
 	delete toDeleteList[guild.id];
-	fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
+	writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
 
-	const serverData = await serverModel.findOne({
+	/** @type {import('../typedef').ServerSchema} */
+	const serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOne({
 		serverId: guild.id,
-	});
+	}));
 
 	serverData.inventoryObject = {
 		commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, serverData.inventoryObject.commonPlants[key] || 0])),
@@ -86,10 +92,10 @@ module.exports = async (client, guild) => {
 		meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, serverData.inventoryObject.meat[key] || 0])),
 	};
 
-	return await serverData.findOneAndUpdate(
-		{ userId: serverData.userId, serverId: serverData.serverId },
-		{
-			$set: { inventoryObject: serverData.inventoryObject },
-		},
+	return await serverModel.findOneAndUpdate(
+		{ serverId: serverData.serverId },
+		{ $set: { inventoryObject: serverData.inventoryObject } },
 	);
-};
+}
+
+module.exports = createGuild;

@@ -1,24 +1,36 @@
-const profileModel = require('../models/profileModel');
+// @ts-check
+const { profileModel } = require('../models/profileModel');
 const config = require('../config.json');
 const errorHandling = require('../utils/errorHandling');
-const pjson = require('../package.json');
-const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
-const { execute } = require('./messageCreate');
+const { version } = require('../package.json');
+const { execute, startRestingTimeout } = require('./messageCreate');
 const { sendReminder, stopReminder } = require('../commands/maintenance/water');
+const userMap = require('../utils/userMap');
 
-module.exports = {
+/**
+ * @type {import('../typedef').Event}
+ */
+const event = {
 	name: 'interactionCreate',
 	once: false,
+
+	/**
+	 * Emitted when an interaction is created.
+	 * @param {import('../paw').client} client
+	 * @param {(import('discord.js').SelectMenuInteraction | import('discord.js').ButtonInteraction) & { message: import('discord.js').Message }} interaction
+	 */
 	async execute(client, interaction) {
 
 		await interaction
 			.deferUpdate()
 			.catch(async (error) => {
+				if (error.httpStatus === 400) { return console.error('DiscordAPIError: Interaction has already been acknowledged.'); }
+				if (error.httpStatus === 404) { return console.error('DiscordAPIError: Unknown interaction. (This probably means that there was server-side delay when receiving the interaction)'); }
 				return await errorHandling.output(interaction.message, error);
 			});
 
-		// there are DM interactions and dont have referenced messages, so thet get processed before everything else
-		if (interaction.customId == 'ticket') {
+		// this is a DM interaction and doesn't have a referenced messages, so it gets processed before everything else
+		if (interaction.isButton() && interaction.customId === 'ticket') {
 
 			const user = await client.users.fetch(interaction.user.id);
 			const message = await user.dmChannel.messages.fetch(interaction.message.id);
@@ -32,39 +44,89 @@ module.exports = {
 				});
 		}
 
+		// report messages respond to the bot message that had the issue, so referenced messages don't work with it
+		if (interaction.isButton() && interaction.customId === 'report') {
+
+			interaction.message
+				.edit({
+					components: [],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
+
+			const maksi = await client.users.fetch(config.maksi);
+			return await maksi
+				.send({
+					content: `https://discord.com/channels/${interaction.guild.id}/${interaction.message.channel.id}/${interaction.message.id}`,
+					embeds: interaction.message.embeds,
+					components: [{
+						type: 'ACTION_ROW',
+						components: [{
+							type: 'BUTTON',
+							customId: 'ticket',
+							label: 'Resolve',
+							style: 'SUCCESS',
+						}],
+					}],
+				})
+				.catch(async (error) => {
+					return await errorHandling.output(interaction.message, error);
+				});
+		}
+
 		if (!interaction.message.reference || !interaction.message.reference.messageId) {
 
 			return;
 		}
 
+		/** @type {null | import('discord.js').Message} */
 		const referencedMessage = await interaction.channel.messages
 			.fetch(interaction.message.reference.messageId)
-			.catch(async (error) => {
-				if (error.httpStatus !== 404) {
-					return await errorHandling.output(interaction.message, error);
-				}
-			});
+			.catch(async () => { return null; });
 
-		if (referencedMessage && referencedMessage.author.id != interaction.user.id) {
+		if (referencedMessage === null || referencedMessage.author.id !== interaction.user.id) {
+
+			if (referencedMessage === null || !referencedMessage.mentions.users.has(interaction.user.id)) {
+
+				await interaction
+					.followUp({
+						content: 'Sorry, I only listen to the person that created the command 😣 (If your command-creation message was deleted, I won\'t recognize that you created the command)',
+						ephemeral: true,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
 
 			return;
 		}
 
-		let profileData = await profileModel.findOne(
-			{ userId: interaction.user.id, serverId: interaction.guild.id },
-		);
+		let profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
+			userId: interaction.user.id,
+			serverId: interaction.guild.id,
+		}));
+
+		if (userMap.has('nr' + interaction.user.id + interaction.guild.id) === false) {
+
+			userMap.set('nr' + interaction.user.id + interaction.guild.id, { activeCommands: 0, lastGentleWaterReminderTimestamp: 0, activityTimeout: null, cooldownTimeout: null, restingTimeout: null });
+		}
+
+		clearTimeout(userMap.get('nr' + interaction.user.id + interaction.guild.id).restingTimeout);
 
 		if (interaction.isSelectMenu()) {
 
 			console.log(`\x1b[32m${interaction.user.tag}\x1b[0m successfully selected \x1b[33m${interaction.values[0]} \x1b[0mfrom the menu \x1b[33m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 
-			if (interaction.values[0] == 'help_page1') {
+			if (interaction.values[0] === 'help_page1') {
 
 				return await interaction.message
 					.edit({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'Page 1: 📝 Profile Creation',
 							description: 'Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.',
 							fields: [
@@ -74,7 +136,8 @@ module.exports = {
 								{ name: '**rp picture [attachment of the desired image]**', value: 'Choose a picture for your character.' },
 								{ name: '**rp color [hex code]**', value: 'Enter a valid hex code to give your messages and profile that color.' },
 								{ name: '**rp desc [description text]**', value: 'Give a more detailed description of your character.' },
-								{ name: '**rp profilelist**', value: 'View a list of all the profiles that exist on this server.' },
+								{ name: '**rp profile (@user)**', value: 'Look up all the available info about a character.' },
+								{ name: '**rp accounts**', value: 'Change the account/profile you are using. You can have up to three per server.' },
 								{ name: '**rp delete**', value: 'Delete your account and reset your data permanently.' },
 							],
 							footer: { text: 'ℹ️ Select a command from the list below to view more information about it.' },
@@ -92,25 +155,24 @@ module.exports = {
 									{ label: 'Picture', value: 'help_picture', description: 'Choose a picture for your character.' },
 									{ label: 'Color', value: 'help_color', description: 'Enter a valid hex code to give your messages and profile that color.' },
 									{ label: 'Desc', value: 'help_desc', description: 'Give a more detailed description of your character.' },
-									{ label: 'Profilelist', value: 'help_profilelist', description: 'View a list of all the profiles that exist on this server.' },
+									{ label: 'Profile', value: 'help_profile', description: 'Look up all the available info about a character.' },
+									{ label: 'Accounts', value: 'help_accounts', description: 'Change the account/profile you are using. You can have up to three per server.' },
 									{ label: 'Delete', value: 'help_delete', description: 'Delete your account and reset your data permanently.' },
 								],
 							}],
 						}],
 					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
-			if (interaction.values[0] == 'help_page2') {
+			if (interaction.values[0] === 'help_page2') {
 
 				return await interaction.message
 					.edit({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'Page 2: 🎲 Gameplay',
 							description: 'Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.',
 							fields: [
@@ -142,29 +204,27 @@ module.exports = {
 							}],
 						}],
 					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
-			if (interaction.values[0] == 'help_page3') {
+			if (interaction.values[0] === 'help_page3') {
 
 				return await interaction.message
 					.edit({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'Page 3: 🍗 Maintenance',
 							description: 'Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.',
 							fields: [
-								{ name: '**rp profile (@user)**', value: 'Look up all the available info about a character.' },
 								{ name: '**rp stats**', value: 'Quick view of your characters condition.' },
 								{ name: '**rp inventory**', value: 'This is a collection of all the things your pack has gathered, listed up.' },
 								{ name: '**rp store**', value: 'Take items you have gathered for your pack, and put them in the pack inventory.' },
 								{ name: '**rp eat (item)**', value: 'Take the appropriate food for your species out of the packs food pile and fill up your hunger meter.' },
 								{ name: '**rp drink**', value: 'Drink some water and fill up your thirst meter.' },
 								{ name: '**rp rest**', value: 'Get some sleep and fill up your energy meter. Takes some time to refill.' },
+								{ name: '**rp vote**', value: 'Vote for this bot on one of three websites and get +30 energy each time.' },
 								{ name: '**rp heal (@user)**', value: 'Heal your packmates. Costs energy, but gives XP. __Only available to Apprentices, Healers and Elderlies.__' },
 								{ name: '**rp dispose**', value: 'Remove obstacles blocking dens. Costs energy, but gives XP. __Only available to Apprentices, Hunters and Elderlies.__' },
 								{ name: '**rp water**', value: 'If you have a ginkgo sapling, you can water it using this command.' },
@@ -178,13 +238,13 @@ module.exports = {
 								customId: 'help-page3-commands',
 								placeholder: 'Select a command',
 								options: [
-									{ label: 'Profile', value: 'help_profile', description: 'Look up all the available info about a character.' },
 									{ label: 'Stats', value: 'help_stats', description: 'Quick view of your characters condition.' },
 									{ label: 'Inventory', value: 'help_inventory', description: 'This is a collection of all the things your pack has gathered, listed up.' },
 									{ label: 'Store', value: 'help_store', description: 'Take items you have gathered for your pack, and put them in the pack inventory.' },
 									{ label: 'Eat', value: 'help_eat', description: 'Take the appropriate food for your species out of the packs food pile and fill up your hunger meter.' },
 									{ label: 'Drink', value: 'help_drink', description: 'Drink some water and fill up your thirst meter.' },
 									{ label: 'Rest', value: 'help_rest', description: 'Get some sleep and fill up your energy meter. Takes some time to refill.' },
+									{ label: 'Vote*', value: 'help_vote', description: 'Vote for this bot on one of three websites and get +30 energy each time.' },
 									{ label: 'Heal', value: 'help_heal', description: 'Heal your packmates. Costs energy, but gives XP.' },
 									{ label: 'Dispose', value: 'help_dispose', description: 'Remove obstacles blocking dens. Costs energy, but gives XP.' },
 									{ label: 'Water', value: 'help_water', description: 'If you have a ginkgo sapling, you can water it using this command.' },
@@ -192,19 +252,17 @@ module.exports = {
 							}],
 						}],
 					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
-			if (interaction.values[0] == 'help_page4') {
+			if (interaction.values[0] === 'help_page4') {
 
 				return await interaction.message
 					.edit({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'Page 4: 👥 Interaction',
 							description: 'Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.',
 							fields: [
@@ -214,6 +272,7 @@ module.exports = {
 								{ name: '**rp hug [@user]**', value: 'Hug a fellow packmate, if they consent.' },
 								{ name: '**rp share (@user)**', value: 'Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person. __Only available to Elderlies.__' },
 								{ name: '**rp playfight [@user] (c4 / ttt)**', value: 'Playfully fight with another packmate. You can play Connect Four or Tic Tac Toe.' },
+								{ name: '**rp profilelist**', value: 'View a list of all the profiles that exist on this server.' },
 							],
 							footer: { text: 'ℹ️ Select a command from the list below to view more information about it.' },
 						}],
@@ -230,62 +289,53 @@ module.exports = {
 									{ label: 'Hug', value: 'help_hug', description: 'Hug a fellow packmate, if they consent.' },
 									{ label: 'Share', value: 'help_share', description: 'Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person.' },
 									{ label: 'Playfight', value: 'help_playfight', description: 'Playfully fight with another packmate. You can play Connect Four or Tic Tac Toe.' },
+									{ label: 'Profilelist', value: 'help_profilelist', description: 'View a list of all the profiles that exist on this server.' },
 								],
 							}],
 						}],
 					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
-			if (interaction.values[0] == 'help_page5') {
+			if (interaction.values[0] === 'help_page5') {
 
 				const maksi = await client.users
 					.fetch(config.maksi)
-					.catch(async (error) => {
-						return await errorHandling.output(interaction.message, error);
-					});
+					.catch(() => { return null; });
+
 				const ezra = await client.users
 					.fetch(config.ezra)
-					.catch(async (error) => {
-						return await errorHandling.output(interaction.message, error);
-					});
+					.catch(() => { return null; });
+
 				const ren = await client.users
 					.fetch(config.ren)
-					.catch(async (error) => {
-						return await errorHandling.output(interaction.message, error);
-					});
+					.catch(() => { return null; });
+
 				const jags = await client.users
 					.fetch(config.jags)
-					.catch(async (error) => {
-						return await errorHandling.output(interaction.message, error);
-					});
+					.catch(() => { return null; });
+
 				const elliott = await client.users
 					.fetch(config.elliott)
-					.catch(async (error) => {
-						return await errorHandling.output(interaction.message, error);
-					});
+					.catch(() => { return null; });
 
 				await interaction.message
 					.edit({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'Page 5: ⚙️ Bot',
 							description: 'Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.',
 							fields: [
-								{ name: '**rp vote**', value: 'Vote for this bot on one of three websites and get +30 energy each time.' },
-								{ name: '**rp accounts**', value: 'Change the account/profile you are using. You can have up to three per server.' },
 								{ name: '**rp shop**', value: 'Buy roles with experience points.' },
 								{ name: '**rp shopadd [@role] [rank/levels/XP] [requirement]**', value: '__Server admins only.__ Add a role to the shop.' },
 								{ name: '**rp shopremove**', value: '__Server admins only.__ Remove a role from the shop.' },
 								{ name: '**rp allowvisits [#channel/off]**', value: '__Server admins only.__ Allow or disallow visits between your and other packs.' },
 								{ name: '**rp getupdates [#channel]**', value: '__Server admins only.__ Specify a channel in which updates, new features etc. should be posted.' },
 								{ name: '**rp ticket [text]**', value: 'Report a bug, give feedback, suggest a feature!' },
-								{ name: '\n**__CREDITS:__**', value: `This bot was made with love by ${maksi.tag}. Special thanks goes out to ${ezra.tag}, ${ren.tag} and ${elliott.tag}, who did a lot of the custom bot responses, and ${jags.tag} who did the profile picture. Thank you also to everyone who tested the bot and gave feedback.\nThis bot was originally created for a Discord server called [Rushing River Pack](https://disboard.org/server/854522091328110595). If you are otherkin, therian, or supporter of those, you are welcome to join.` },
-								{ name: '\n**__OTHER:__**', value: `If you want to support me, you can donate [here](https://streamlabs.com/maksirose/tip)! :)\nYou can find the GitHub repository for this project [here](https://github.com/MaksiRose/paw-and-paper).\nThe bot is currently running on version ${pjson.version}.` },
+								{ name: '\n**__CREDITS:__**', value: `This bot was made with love by ${maksi?.tag}. Special thanks goes out to ${ezra?.tag}, ${ren?.tag} and ${elliott.tag}, who did a lot of the custom bot responses, and ${jags.tag} who did the profile picture. Thank you also to everyone who tested the bot and gave feedback.\nThis bot was originally created for a Discord server called [Rushing River Pack](https://disboard.org/server/854522091328110595). If you are otherkin, therian, or supporter of those, you are welcome to join.` },
+								{ name: '\n**__OTHER:__**', value: `If you want to support me, you can donate [here](https://streamlabs.com/maksirose/tip)! :)\nYou can find the GitHub repository for this project [here](https://github.com/MaksiRose/paw-and-paper).\nThe bot is currently running on version ${version}.` },
 							],
 							footer: { text: 'ℹ️ Select a command from the list below to view more information about it.' },
 						}],
@@ -293,11 +343,9 @@ module.exports = {
 							type: 'ACTION_ROW',
 							components: [{
 								type: 'SELECT_MENU',
-								customId: 'help-page4-commands',
+								customId: 'help-page5-commands',
 								placeholder: 'Select a command',
 								options: [
-									{ lavel: 'Vote*', value: 'help_vote', description: 'Vote for this bot on one of three websites and get +30 energy each time.' },
-									{ label: 'Accounts', value: 'help_accounts', description: 'Change the account/profile you are using. You can have up to three per server.' },
 									{ label: 'Shop', value: 'help_shop', description: 'Buy roles with experience points.' },
 									{ label: 'Shopadd', value: 'help_shopadd', description: 'Server admins only. Add a role to the shop' },
 									{ label: 'Shopremove', value: 'help_shopremove', description: 'Server admins only. Remove a role from the shop.' },
@@ -308,10 +356,8 @@ module.exports = {
 							}],
 						}],
 					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
 
@@ -320,7 +366,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp name [name]',
 							description: '__START YOUR ADVENTURE!__ Name your character.',
 							fields: [
@@ -344,7 +390,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp species (species)',
 							description: 'Specify the species of your character.',
 							fields: [
@@ -368,7 +414,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp pronouns [none OR [subject pronoun]/[object pronoun]/[possessive adjective]/[possessive pronoun]/[reflexive pronoun]/[singular OR plural]] & (optional additional sets of pronouns)',
 							description: 'Choose the pronouns you are using during roleplay.',
 							fields: [
@@ -392,11 +438,11 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp picture (attachment of the desired image)',
 							description: 'Choose a picture for your character.',
 							fields: [
-								{ name: '**Aliases**', value: 'pic, pfp' },
+								{ name: '**Aliases**', value: 'pic, pfp, avatar' },
 								{ name: '**Arguments**', value: 'Optional: Upload the desired picture together with the command.' },
 								{ name: '**More information**', value: 'The default for this is the user\'s profile picture. Not uploading a picture will reset the picture to the users profile picture.\nThis can be changed at any time.\nThis will be the picture displayed for your character during gameplay. Only .jp(e)g, .png and .raw images are supported, GIFs and videos don\'t work. Sending links is not supported. Square images are recommended.' },
 								{ name: '**Example**', value: '`rp picture` (+ image below)' },
@@ -417,7 +463,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp color [hex code]',
 							description: 'Enter a valid hex code to give your messages and profile that color.',
 							fields: [
@@ -441,7 +487,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp desc (description text)',
 							description: 'Give a more detailed description of your character.',
 							fields: [
@@ -465,7 +511,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp profilelist',
 							description: 'View a list of all the profiles that exist on this server.',
 							fields: [
@@ -488,7 +534,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp profilelist',
 							description: 'Delete your account and reset your data permanently.',
 							fields: [
@@ -511,7 +557,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp play (@user)',
 							description: 'The main activity of Younglings. Costs energy, but gives XP. Additionally, you can mention someone to play with them. __Only available to Younglings and Apprentices.__',
 							fields: [
@@ -534,7 +580,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp practice',
 							description: 'Practice fighting wild animals. You cannot get hurt here. __Not available to Younglings__.',
 							fields: [
@@ -557,7 +603,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp explore (biome)',
 							description: 'The main activity of every rank above Younglings. Find meat and herbs. Costs energy, but gives XP. __Not available to Younglings.__',
 							fields: [
@@ -583,7 +629,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp go (region)',
 							description: 'Go to a specific region in your pack.',
 							fields: [
@@ -607,7 +653,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp attack',
 							description: 'If humans are attacking the pack, you can fight back using this command.',
 							fields: [
@@ -630,7 +676,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp quest',
 							description: 'Get quests by playing (as Youngling) and exploring. Start them with this command. If you are successful, you can move up a rank.',
 							fields: [
@@ -653,7 +699,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp rank',
 							description: 'Once you successfully finished a quest, you can move up a rank using this command.',
 							fields: [
@@ -676,7 +722,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp profile (@user)',
 							description: 'Look up all the available info about a character.',
 							fields: [
@@ -699,7 +745,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp stats',
 							description: 'Quick view of your characters condition.',
 							fields: [
@@ -722,7 +768,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp inventory',
 							description: 'This is a collection of all the things your pack has gathered, listed up.',
 							fields: [
@@ -745,7 +791,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp store',
 							description: 'Take items you have gathered for your pack, and put them in the pack inventory.',
 							fields: [
@@ -768,7 +814,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp eat (item)',
 							description: 'Take the appropriate food for your species out of the packs food pile and fill up your hunger meter.',
 							fields: [
@@ -791,7 +837,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp drink',
 							description: 'Drink some water and fill up your thirst meter.',
 							fields: [
@@ -814,7 +860,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp rest',
 							description: 'Get some sleep and fill up your energy meter. Takes some time to refill.',
 							fields: [
@@ -837,13 +883,13 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp heal (@user)',
 							description: 'Heal your packmates. Costs energy, but gives XP. __Only available to Apprentices, Healers and Elderlies.__',
 							fields: [
 								{ name: '**Aliases**', value: 'none' },
 								{ name: '**Arguments**', value: 'Optional: A mention of the user that you want to heal.' },
-								{ name: '**More information**', value: 'If you do mention someone, this will check if they need to be healed. If you don\'t, it will check how many players need to be healed. If it is only one, that player will automatically be selected. It will also automatically select page 1 of the inventory, but page 2 of the inventory can also be selected. Then, you select a herb from a drop-down list.\nThis will first check if the herb\'s healing abilities overlap with the illnesses/injuries of the player you want to heal. If so, you are successful. If the player you want to heal is yourself, there is a 60 in 100 chance that you will be unsuccessful even if you chose right. If you are Apprentice, there is a 40 in 100 chance that you are unsuccessful even if you chose right.\nIf you have a living ginkgo sapling, both of these chances are increased in your favor by one for the amount of times you watered the sapling successfully.\nIf you heal someone who has a cold, you have a 3 in 10 chance to get infected.' },
+								{ name: '**More information**', value: 'If you do mention someone, this will check if they need to be healed. If you don\'t, it will check how many players need to be healed. If it is only one, that player will automatically be selected. It will also automatically select page 1 of the inventory, but page 2 of the inventory can also be selected. Then, you select a herb from a drop-down list.\nThis will first check if the herb\'s healing abilities overlap with the illnesses/injuries of the player you want to heal. If so, you are successful. If the player you want to heal is yourself, there is a 70 in 100 chance that you will be unsuccessful even if you chose right. If you are Apprentice, there is a 30 in 100 chance that you are unsuccessful even if you chose right.\nIf you have a living ginkgo sapling, both of these chances are increased in your favor by one for the amount of times you watered the sapling successfully.\nIf you heal someone who has a cold, you have a 3 in 10 chance to get infected.' },
 							],
 						}],
 						ephemeral: true,
@@ -860,13 +906,13 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp dispose',
 							description: 'Remove obstacles blocking dens. Costs energy, but gives XP. __Only available to Apprentices, Hunters and Elderlies.__',
 							fields: [
 								{ name: '**Aliases**', value: 'none' },
 								{ name: '**Arguments**', value: 'none' },
-								{ name: '**More information**', value: 'This command is used when the entrance to a den is blocked. When any player that isn\'t a Youngling executes a command associated with a den, and there isn\'t already something blocking a den, there is a 1 in 20 chance that the den will be blocked off. After that, the command associated with that den can\'t be executed anymore until someone uses `dispose` successfully.\nDens and commands that are associated with each other are the sleeping dens with `rest`, the food den with `eat`, `store` and `inventory`, and the medicine den with `heal`.\nDepending on what is blocking the den, the player has to choose the right way to get rid of it.\nApprentices have a lowered chance of 50 in 100 to be successful, even if they chose correctly. If you have a living ginkgo sapling, that chance is increased in your favor by one for the amount of times you watered the sapling successfully.' },
+								{ name: '**More information**', value: 'This command is used when the entrance to a den is blocked. When any player that isn\'t a Youngling executes a command associated with a den, and there isn\'t already something blocking a den, there is a 1 in 20 chance that the den will be blocked off. After that, the command associated with that den can\'t be executed anymore until someone uses `dispose` successfully.\nDens and commands that are associated with each other are the sleeping dens with `rest`, the food den with `eat`, `store` and `inventory`, and the medicine den with `heal`.\nDepending on what is blocking the den, the player has to choose the right way to get rid of it.\nApprentices have a lowered chance of 70 in 100 to be successful, even if they chose correctly. If you have a living ginkgo sapling, that chance is increased in your favor by one for the amount of times you watered the sapling successfully.' },
 							],
 						}],
 						ephemeral: true,
@@ -883,7 +929,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp water',
 							description: 'If you have a ginkgo sapling, you can water it using this command.',
 							fields: [
@@ -906,7 +952,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp say [text]',
 							description: 'Talk to your fellow packmates. Gives 1 experience point per use.',
 							fields: [
@@ -929,7 +975,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp hug [@user]',
 							description: 'Hug a fellow packmate, if they consent.',
 							fields: [
@@ -952,7 +998,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp share (@user)',
 							description: 'Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person. __Only available to Elderlies.__',
 							fields: [
@@ -975,7 +1021,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp playfight [@user] (c4 or connectfour / ttt or tictactoe)',
 							description: 'Playfully fight with another packmate. You can play Connect Four or Tic Tac Toe.',
 							fields: [
@@ -998,7 +1044,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp accounts',
 							description: 'Change the account/profile you are using. You can have up to three per server.',
 							fields: [
@@ -1021,7 +1067,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp shop',
 							description: 'Buy roles with experience points.',
 							fields: [
@@ -1044,7 +1090,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp requestvisit',
 							description: 'Find, visit and talk to people from far away packs.',
 							fields: [
@@ -1067,7 +1113,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp requestvisit',
 							description: 'End a visit between your and another pack.',
 							fields: [
@@ -1090,7 +1136,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp shopadd [@role] [rank/levels/XP] [requirement]',
 							description: '__Server admins only.__ Add a role to the shop.',
 							fields: [
@@ -1114,7 +1160,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp shopadd [@role] [rank/levels/XP] [requirement]',
 							description: '__Server admins only.__ Add a role to the shop.',
 							fields: [
@@ -1138,7 +1184,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp shopremove',
 							description: '__Server admins only.__ Remove a role from the shop.',
 							fields: [
@@ -1161,7 +1207,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp allowvists [#channel/off]',
 							description: '__Server admins only.__ Allow or disallow visits between your and other packs.',
 							fields: [
@@ -1184,7 +1230,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp getupdates [#channel]',
 							description: '__Server admins only.__ Allow or disallow visits between your and other packs.',
 							fields: [
@@ -1207,7 +1253,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp ticket [text]',
 							description: 'Report a bug, give feedback, suggest a feature!',
 							fields: [
@@ -1231,7 +1277,7 @@ module.exports = {
 				return await interaction
 					.followUp({
 						embeds: [{
-							color: config.default_color,
+							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp vote',
 							description: 'Vote for this bot on one of three websites and get +30 energy each time.',
 							fields: [
@@ -1248,210 +1294,12 @@ module.exports = {
 						}
 					});
 			}
-
-			const plantNamesArray = [...commonPlantsMap.keys(), ...uncommonPlantsMap.keys(), ...rarePlantsMap.keys(), ...speciesMap.keys() ].sort();
-
-			if (interaction.customId == 'eat-options' && plantNamesArray.some(elem => elem == interaction.values[0])) {
-
-				interaction.message
-					.delete()
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-
-				referencedMessage.content = `${config.prefix}eat ${interaction.values[0]}`;
-
-				return await execute(client, referencedMessage);
-			}
 		}
 
 		if (interaction.isButton()) {
 
 			console.log(`\x1b[32m${interaction.user.tag}\x1b[0m successfully clicked the button \x1b[33m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
-
-			if (interaction.customId === 'report') {
-
-				interaction.message
-					.edit({
-						components: [],
-					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-
-				const maksi = await client.users.fetch(config.maksi, false);
-				return await maksi
-					.send({
-						content: `https://discord.com/channels/${interaction.guild.id}/${interaction.message.channel.id}/${interaction.message.id}`,
-						embeds: interaction.message.embeds,
-						components: [{
-							type: 'ACTION_ROW',
-							components: [{
-								type: 'BUTTON',
-								customId: 'ticket',
-								label: 'Resolve',
-								style: 'SUCCESS',
-							}],
-						}],
-					})
-					.catch(async (error) => {
-						return await errorHandling.output(interaction.message, error);
-					});
-			}
-
-			if (interaction.customId === 'profile-refresh') {
-
-				const components = [{
-					type: 'ACTION_ROW',
-					components: [{
-						type: 'BUTTON',
-						customId: 'profile-refresh',
-						emoji: { name: '🔁' },
-						style: 'SECONDARY',
-					}, {
-						type: 'BUTTON',
-						customId: 'profile-store',
-						label: 'Store food away',
-						style: 'SECONDARY',
-					}],
-				}];
-
-				if (referencedMessage.mentions.users.size > 0) {
-
-					profileData = await profileModel.findOne({
-						userId: referencedMessage.mentions.users.first().id,
-						serverId: referencedMessage.guild.id,
-					});
-
-					components[0].components.pop();
-				}
-				else if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
-
-					components[0].components.pop();
-				}
-
-				let injuryText = (Object.values(profileData.injuryObject).every(item => item == 0)) ? 'none' : '';
-
-				for (const [injuryKey, injuryAmount] of Object.entries(profileData.injuryObject)) {
-
-					if (injuryAmount > 0) {
-
-						const injuryName = injuryKey.charAt(0).toUpperCase() + injuryKey.slice(1);
-						injuryText += `${injuryAmount} ${(injuryAmount > 1) ? injuryName.slice(0, -1) : injuryName}\n`;
-					}
-				}
-
-				const description = (profileData.description == '') ? '' : `*${profileData.description}*`;
-				const user = await client.users
-					.fetch(profileData.userId)
-					.catch(async (error) => {
-						return await errorHandling.output(interaction.message, error);
-					});
-
-				await interaction.message
-					.edit({
-						embeds: [{
-							color: profileData.color,
-							title: `Profile - ${user.tag}`,
-							author: { name: profileData.name, icon_url: profileData.avatarURL },
-							description: description,
-							thumbnail: { url: profileData.avatarURL },
-							fields: [
-								{ name: '**🦑 Species**', value: profileData.species.charAt(0).toUpperCase() + profileData.species.slice(1), inline: true },
-								{ name: '**🏷️ Rank**', value: profileData.rank, inline: true },
-								{ name: '**🍂 Pronouns**', value: profileData.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n') },
-								{ name: '**🗺️ Region**', value: profileData.currentRegion },
-
-							],
-						},
-						{
-							color: profileData.color,
-							description: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\`\n⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\`\n🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\``,
-							fields: [
-								{ name: '**🩹 Injuries/Illnesses**', value: injuryText, inline: true },
-								{ name: '**🌱 Ginkgo Sapling**', value: profileData.saplingObject.exists === false ? 'none' : `${profileData.saplingObject.waterCycles} days alive - ${profileData.saplingObject.health} health\nNext watering <t:${Math.floor(profileData.saplingObject.nextWaterTimestamp / 1000)}:R>`, inline: true },
-							],
-							footer: { text: profileData.hasQuest == true ? 'There is one open quest!' : null },
-						}],
-						components: components,
-					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-			}
-
-			if (interaction.customId === 'stats-refresh') {
-
-				let injuryText = (Object.values(profileData.injuryObject).every(item => item == 0)) ? null : '';
-
-				for (const [injuryKey, injuryAmount] of Object.entries(profileData.injuryObject)) {
-
-					if (injuryAmount > 0) {
-
-						if (typeof injuryAmount === 'number') {
-
-							injuryText += `, ${injuryAmount} ${(injuryAmount < 2) ? injuryKey.slice(0, -1) : injuryKey}`;
-						}
-						else {
-
-							injuryText += `${injuryKey}: yes\n`;
-						}
-					}
-				}
-
-				const components = [{
-					type: 'ACTION_ROW',
-					components: [{
-						type: 'BUTTON',
-						customId: 'stats-refresh',
-						emoji: { name: '🔁' },
-						style: 'SECONDARY',
-					}, {
-						type: 'BUTTON',
-						customId: 'profile-store',
-						label: 'Store food away',
-						style: 'SECONDARY',
-					}],
-				}];
-
-				if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
-
-					components[0].components.pop();
-				}
-
-				await interaction.message
-					.edit({
-						content: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\` - ⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\` - 🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`${(injuryText == null) ? '' : `🩹 Injuries/Illnesses: ${injuryText.slice(2)}`}`,
-						components: components,
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-			}
-
-			if (interaction.customId === 'profile-store') {
-
-				interaction.message
-					.delete()
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-
-				referencedMessage.content = `${config.prefix}store`;
-
-				return await execute(client, referencedMessage);
-			}
 
 			if (interaction.customId === 'water-reminder-off') {
 
@@ -1462,7 +1310,7 @@ module.exports = {
 					{ $set: { saplingObject: profileData.saplingObject } },
 				);
 
-				stopReminder(profileData, interaction.message);
+				stopReminder(profileData);
 
 				await interaction
 					.followUp({
@@ -1534,6 +1382,162 @@ module.exports = {
 						}
 					});
 			}
+
+			if (interaction.customId === 'stats-refresh') {
+
+				// "item" needs to be == and not === in order to catch the booleans as well
+				let injuryText = Object.values(profileData.injuryObject).every(item => item == 0) ? null : '';
+
+				for (const [injuryKind, injuryAmount] of Object.entries(profileData.injuryObject)) {
+
+					if (injuryAmount > 0) {
+
+						if (typeof injuryAmount === 'number') {
+
+							injuryText += `, ${injuryAmount} ${(injuryAmount < 2) ? injuryKind.slice(0, -1) : injuryKind}`;
+						}
+						else {
+
+							injuryText += `, ${injuryKind}: yes`;
+						}
+					}
+				}
+
+				/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} */
+				const components = [{
+					type: 'ACTION_ROW',
+					components: [{
+						type: 'BUTTON',
+						customId: 'stats-refresh',
+						emoji: '🔁',
+						style: 'SECONDARY',
+					}, {
+						type: 'BUTTON',
+						customId: 'profile-store',
+						label: 'Store food away',
+						style: 'SECONDARY',
+					}],
+				}];
+
+				if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
+
+					components[0].components.pop();
+				}
+
+				await interaction.message
+					.edit({
+						content: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\` - ⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\` - 🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`\n${injuryText == null ? '' : `🩹 Injuries/Illnesses: ${injuryText.slice(2)}`}`,
+						components: components,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
+					});
+			}
+
+			if (interaction.customId === 'profile-refresh') {
+
+				const components = [{
+					type: 'ACTION_ROW',
+					components: [{
+						type: 'BUTTON',
+						customId: 'profile-refresh',
+						emoji: { name: '🔁' },
+						style: 'SECONDARY',
+					}, {
+						type: 'BUTTON',
+						customId: 'profile-store',
+						label: 'Store food away',
+						style: 'SECONDARY',
+					}],
+				}];
+
+				if (referencedMessage.mentions.users.size > 0) {
+
+					profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
+						userId: referencedMessage.mentions.users.first().id,
+						serverId: referencedMessage.guild.id,
+					}));
+
+					components[0].components.pop();
+				}
+				else if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
+
+					components[0].components.pop();
+				}
+
+				let injuryText = (Object.values(profileData.injuryObject).every(item => item == 0)) ? 'none' : '';
+
+				for (const [injuryKey, injuryAmount] of Object.entries(profileData.injuryObject)) {
+
+					if (injuryAmount > 0) {
+
+						const injuryName = injuryKey.charAt(0).toUpperCase() + injuryKey.slice(1);
+						injuryText += `${injuryAmount} ${(injuryAmount > 1) ? injuryName.slice(0, -1) : injuryName}\n`;
+					}
+				}
+
+				const description = (profileData.description == '') ? '' : `*${profileData.description}*`;
+				const user = await client.users
+					.fetch(profileData.userId)
+					.catch(() => { return null; });
+
+				await interaction.message
+					.edit({
+						embeds: [{
+							color: profileData.color,
+							title: `Profile - ${user.tag}`,
+							author: { name: profileData.name, icon_url: profileData.avatarURL },
+							description: description,
+							thumbnail: { url: profileData.avatarURL },
+							fields: [
+								{ name: '**🦑 Species**', value: profileData.species.charAt(0).toUpperCase() + profileData.species.slice(1), inline: true },
+								{ name: '**🏷️ Rank**', value: profileData.rank, inline: true },
+								{ name: '**🍂 Pronouns**', value: profileData.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n') },
+								{ name: '**🗺️ Region**', value: profileData.currentRegion },
+
+							],
+						},
+						{
+							color: /** @type {`#${string}`} */ (profileData.color),
+							description: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\`\n⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\`\n🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\``,
+							fields: [
+								{ name: '**🩹 Injuries/Illnesses**', value: injuryText, inline: true },
+								{ name: '**🌱 Ginkgo Sapling**', value: profileData.saplingObject.exists === false ? 'none' : `${profileData.saplingObject.waterCycles} days alive - ${profileData.saplingObject.health} health\nNext watering <t:${Math.floor(profileData.saplingObject.nextWaterTimestamp / 1000)}:R>`, inline: true },
+							],
+							footer: { text: profileData.hasQuest == true ? 'There is one open quest!' : null },
+						}],
+						components: /** @type {Array<import('discord.js').MessageActionRow>} */ (components),
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
+					});
+			}
+
+			if (interaction.customId === 'profile-store') {
+
+				interaction.message
+					.delete()
+					.catch(async (error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
+				referencedMessage.content = `${config.prefix}store`;
+
+				return await execute(client, referencedMessage);
+			}
+		}
+
+		/*
+		This if block ensures that no two timeouts are set at the same time, and only one of them being cleared. When a command that doesn't immediately return (ie explore) is called, this timeout doesn't exist yet, but the old timeout was already cleared. If a second command (ie stats) is started while the old one is still running, it will try to delete the same timeout that the first command (aka explore) already cleared, and create a new one, that subsequently is going to be overwritten by the first command (aka explore) once it is finished. That means that the timeout created by the other command (aka stats) is never going to be cleared, and instead only the timeout of the last finished command (aka explore) is going to be cleared, which means that 10 minutes after the other command (aka stats) was executed, the user will start automatically resting, even if they were still actively playing in that time.
+		It is not a good idea to place clearing the timeout behind the command finish executing, since the command finish executing might take some time, and the 10 minutes from that timer might over in that time, making the user attempt to rest while executing a command.
+		It is also not a good idea to place starting the timeout before the command start executing, since the command again might take some time to finish executing, and then the 10 minute timer might be over sooner as expected.
+		*/
+		if (userMap.get('nr' + interaction.user.id + interaction.guild.id).activeCommands === 0) {
+
+			userMap.get('nr' + interaction.user.id + interaction.guild.id).restingTimeout = setTimeout(startRestingTimeout, 600000, client, referencedMessage);
 		}
 	},
 };
+module.exports = event;

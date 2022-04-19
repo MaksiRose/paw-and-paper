@@ -1,11 +1,43 @@
-const Discord = require('discord.js');
-const fs = require('fs');
+// @ts-check
+const { Client, Intents } = require('discord.js');
+const { existsSync, writeFileSync, readFileSync, unlinkSync } = require('fs');
 
-const client = new Discord.Client({
+class CustomClient extends Client {
+	/**
+	 * @param {import("discord.js").ClientOptions} options
+	 */
+	constructor(options) {
+
+		super(options);
+
+		/**
+		 * A command
+		 * @typedef {Object} Command
+		 * @property {string} name - Command name
+		 * @property {Array<string>} aliases - Command aliases
+		 * @property {Function} sendMessage - Command function
+		 */
+
+		/**
+		 * This object holds all the commands with their names as key and the module export as their value
+		 * @type {Object<string, Command>}
+		 */
+		this.commands = {};
+
+
+		/**
+		 * This object holds the structure for the websites the bot can voted on, with the website name as the key and the token and authorization as the value
+		 * @type {Object<string, ({ token: string, authorization: string } | import('bfd-api-redux/src/main') | import('@top-gg/sdk').Api)>}
+		 */
+		this.votes = {};
+	}
+}
+
+const client = new CustomClient({
 	intents: [
-		Discord.Intents.FLAGS.GUILDS,
-		Discord.Intents.FLAGS.GUILD_MESSAGES,
-		Discord.Intents.FLAGS.GUILD_MEMBERS,
+		Intents.FLAGS.GUILDS,
+		Intents.FLAGS.GUILD_MESSAGES,
+		Intents.FLAGS.GUILD_MEMBERS,
 	],
 	allowedMentions: {
 		parse: ['users', 'roles'],
@@ -17,61 +49,83 @@ client.commands = {};
 client.votes = {};
 
 module.exports.client = client;
+
+/**
+ * Starts the bot up, authorizes vote-websites and creates database files where necessary
+ * @param {string} botToken
+ * @param {string} bfdToken
+ * @param {string} bfdAuthorization
+ * @param {string} topToken
+ * @param {string} topAuthorization
+ * @param {string} dblToken
+ * @param {string} dblAuthorization
+ */
 module.exports.start = (botToken, bfdToken, bfdAuthorization, topToken, topAuthorization, dblToken, dblAuthorization) => {
 
 	client.votes.bfd = { token: bfdToken, authorization: bfdAuthorization };
 	client.votes.top = { token: topToken, authorization: topAuthorization };
 	client.votes.dbl = { token: dblToken, authorization: dblAuthorization };
 
-	if (fs.existsSync('./database/bannedList.json') == false) {
 
-		fs.writeFileSync('./database/bannedList.json', JSON.stringify({
-			usersArray: [],
-			serversArray: [],
-		}, null, '\t'));
+	if (existsSync('./database/bannedList.json') == false) {
+
+		writeFileSync('./database/bannedList.json', JSON.stringify(/** @type {import('./typedef').BanList} */ ({ users: [], servers: [] }), null, '\t'));
 	}
 
-	if (fs.existsSync('./database/toDeleteList.json') == false) {
+	if (existsSync('./database/toDeleteList.json') == false) {
 
-		fs.writeFileSync('./database/toDeleteList.json', JSON.stringify({}, null, '\t'));
+		writeFileSync('./database/toDeleteList.json', JSON.stringify(/** @type {import('./typedef').DeleteList} */ ({}), null, '\t'));
 	}
 
-	if (fs.existsSync('./database/voteCache.json') == false) {
+	if (existsSync('./database/voteCache.json') == false) {
 
-		fs.writeFileSync('./database/voteCache.json', JSON.stringify({}, null, '\t'));
+		writeFileSync('./database/voteCache.json', JSON.stringify(/** @type {import('./typedef').VoteList} */ ({}), null, '\t'));
 	}
 
-	if (fs.existsSync('./database/webhookCache.json') == false) {
+	if (existsSync('./database/webhookCache.json') == false) {
 
-		fs.writeFileSync('./database/webhookCache.json', JSON.stringify({}, null, '\t'));
+		writeFileSync('./database/webhookCache.json', JSON.stringify(/** @type {import('./typedef').WebhookMessages} */ ({}), null, '\t'));
 	}
+
 
 	require('./handlers/events').execute(client);
 
-	let toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
-
-	for (const [id, object] of Object.entries(toDeleteList)) {
-
-		setTimeout(async () => {
-
-			if (fs.existsSync(`./database/toDelete/${object.fileName}`) == true) {
-
-				const dataObject = JSON.parse(fs.readFileSync(`./database/toDelete/${object.fileName}`));
-				fs.unlinkSync(`./database/toDelete/${object.fileName}`);
-				console.log('Deleted File: ', dataObject);
-
-				toDeleteList = JSON.parse(fs.readFileSync('./database/toDeleteList.json'));
-
-				delete toDeleteList[id][dataObject.name];
-				if (Object.entries(toDeleteList[id]).length === 0) {
-
-					delete toDeleteList[id];
-				}
-
-				fs.writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
-			}
-		}, object.deletionTimestamp - Date.now());
-	}
-
 	client.login(botToken);
+};
+
+/**
+ * Fetches the list of accounts that will be deleted and initiates a timeout to delete them
+ */
+module.exports.startDeleteListTimeouts = () => {
+
+	/**
+	 * @type {import('./typedef').DeleteList}
+	 */
+	let toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8'));
+
+	for (const [id, accounts] of Object.entries(toDeleteList)) {
+
+		for (const [accountName, accountObject] of Object.entries(accounts)) {
+
+			setTimeout(async () => {
+
+				if (existsSync(`./database/toDelete/${accountObject.fileName}`) == true) {
+
+					/**
+					 * @type {import('./typedef').ProfileSchema}
+					 */
+					const dataObject = JSON.parse(readFileSync(`./database/toDelete/${accountObject.fileName}`, 'utf-8'));
+					unlinkSync(`./database/toDelete/${accountObject.fileName}`);
+					console.log('Deleted File: ', dataObject);
+
+					toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8'));
+
+					delete toDeleteList[id][accountName];
+					if (Object.entries(toDeleteList[id]).length === 0) { delete toDeleteList[id]; }
+
+					writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
+				}
+			}, accountObject.deletionTimestamp - Date.now());
+		}
+	}
 };

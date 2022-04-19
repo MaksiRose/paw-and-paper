@@ -1,315 +1,316 @@
-const config = require('../../config.json');
-const profileModel = require('../../models/profileModel');
+// @ts-check
+const { MessageActionRow, MessageSelectMenu } = require('discord.js');
+const { error_color, default_color } = require('../../config.json');
+const { profileModel } = require('../../models/profileModel');
 const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
 const { createCommandCollector } = require('../../utils/commandCollector');
+const disableAllComponents = require('../../utils/disableAllComponents');
 const { checkLevelUp } = require('../../utils/levelHandling');
 
-module.exports = {
-	name: 'shop',
-	async sendMessage(client, message, argumentsArray, profileData, serverData) {
+module.exports.name = 'shop';
 
-		const shop = serverData.shop.filter(item => item.wayOfEarning === 'experience');
-		const rankRoles = serverData.shop.filter(item => item.wayOfEarning === 'rank');
-		const levelRoles = serverData.shop.filter(item => item.wayOfEarning === 'levels');
-		const totalPages = Math.ceil(shop.length / 24) + Math.ceil(rankRoles.length / 24) + Math.ceil(levelRoles.length / 24) - 1;
+/**
+ *
+ * @param {import('../../paw').client} client
+ * @param {import('discord.js').Message} message
+ * @param {Array<string>} argumentsArray
+ * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ServerSchema} serverData
+ * @returns {Promise<void>}
+ */
+module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData) => {
 
-		if (serverData.shop.length === 0) {
+	const shop = serverData.shop.filter(item => item.wayOfEarning === 'experience');
+	const rankRoles = serverData.shop.filter(item => item.wayOfEarning === 'rank');
+	const levelRoles = serverData.shop.filter(item => item.wayOfEarning === 'levels');
+	const totalPages = Math.ceil(shop.length / 24) + Math.ceil(rankRoles.length / 24) + Math.ceil(levelRoles.length / 24) - 1;
 
-			return await message
-				.reply({
-					embeds: [{
-						color: config.error_color,
-						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						title: 'There are currently no roles in the shop!',
-					}],
-					failIfNotExists: false,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-		}
+	if (serverData.shop.length === 0) {
 
-		let page = 0;
-		const { description, selectMenuOptionsArray } = getMenuOptions(page, shop, rankRoles, levelRoles);
-
-		const botReply = await message
+		await message
 			.reply({
 				embeds: [{
-					color: config.default_color,
+					color: /** @type {`#${string}`} */ (error_color),
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-					description: description,
-				}],
-				components: [{
-					type: 'ACTION_ROW',
-					components: [{
-						type: 'SELECT_MENU',
-						customId: 'shopbuy-options',
-						placeholder: 'Select an item',
-						options: selectMenuOptionsArray,
-					}],
+					title: 'There are currently no roles in the shop!',
 				}],
 				failIfNotExists: false,
 			})
 			.catch((error) => {
-				if (error.httpStatus !== 404) {
-					throw new Error(error);
-				}
+				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
+		return;
+	}
 
-		createCommandCollector(message.author.id, message.guild.id, botReply);
-		interactionCollector();
+	let page = 0;
+	const { description, selectMenuOptionsArray } = getMenuOptions(page, shop, rankRoles, levelRoles);
 
-		async function interactionCollector() {
+	const botReply = await message
+		.reply({
+			embeds: [{
+				color: /** @type {`#${string}`} */ (default_color),
+				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+				description: description,
+			}],
+			components: [ new MessageActionRow({
+				components: [ new MessageSelectMenu({
+					customId: 'shopbuy-options',
+					placeholder: 'Select an item',
+					options: selectMenuOptionsArray,
+				})],
+			})],
+			failIfNotExists: false,
+		})
+		.catch((error) => { throw new Error(error); });
 
-			const filter = i => i.user.id === message.author.id && i.customId === 'shopbuy-options';
+	createCommandCollector(message.author.id, message.guild.id, botReply);
+	interactionCollector();
 
-			const interaction = await botReply
-				.awaitMessageComponent({ filter, time: 120_000 })
-				.catch(() => { return null; });
+	async function interactionCollector() {
 
-			if (interaction === null) {
+		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.user.id === message.author.id && i.customId === 'shopbuy-options';
 
-				return await botReply
-					.edit({
-						components: [],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-			}
+		/** @type {import('discord.js').SelectMenuInteraction | null} } */
+		const interaction = await botReply
+			.awaitMessageComponent({ filter, time: 120_000 })
+			.catch(() => { return null; });
 
-			if (interaction.values[0] === 'shopbuy_page') {
+		if (interaction === null) {
 
-				page += 1;
-				if (page > totalPages) {
-
-					page = 0;
-				}
-
-				const { description: newDescription, selectMenuOptionsArray: newSelectMenuOptionsArray } = getMenuOptions(page, shop, rankRoles, levelRoles);
-
-				await interaction.message
-					.edit({
-						embeds: [{
-							color: config.default_color,
-							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-							description: newDescription,
-						}],
-						components: [{
-							type: 'ACTION_ROW',
-							components: [{
-								type: 'SELECT_MENU',
-								customId: 'shopbuy-options',
-								placeholder: 'Select a shop',
-								options: newSelectMenuOptionsArray,
-							}],
-						}],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-			}
-
-			if (interaction.values[0].startsWith('shopbuy-')) {
-
-				const buyIndex = interaction.values[0].split('-')[1];
-				const buyItem = shop[buyIndex];
-
-				profileData = await profileModel.findOne({
-					userId: message.author.id,
-					serverId: message.guild.id,
+			return await botReply
+				.edit({
+					components: disableAllComponents(botReply.components),
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
+		}
 
-				if (profileData.roles.some(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience')) {
+		if (interaction.values[0] === 'shopbuy_page') {
 
-					try {
+			page += 1;
+			if (page > totalPages) {
 
-						const userRole = profileData.roles.find(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience');
-						const userRoleIndex = profileData.roles.indexOf(userRole);
+				page = 0;
+			}
 
-						if (userRoleIndex >= 0) { profileData.roles.splice(userRoleIndex, 1); }
+			const { description: newDescription, selectMenuOptionsArray: newSelectMenuOptionsArray } = getMenuOptions(page, shop, rankRoles, levelRoles);
 
-						profileData = await profileModel.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
-							{
-								$inc: { experience: userRole.requirement },
-								$set: { roles: profileData.roles } },
-						);
+			await /** @type {import('discord.js').Message} */ (interaction.message)
+				.edit({
+					embeds: [{
+						color: /** @type {`#${string}`} */ (default_color),
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+						description: newDescription,
+					}],
+					components: [ new MessageActionRow({
+						components: [ new MessageSelectMenu({
+							customId: 'shopbuy-options',
+							placeholder: 'Select a shop',
+							options: newSelectMenuOptionsArray,
+						})],
+					})],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
+		}
 
-						if (message.member.roles.cache.has(buyItem.roleId) === true) {
+		if (interaction.values[0].startsWith('shopbuy-')) {
 
-							await message.member.roles.remove(buyItem.roleId);
+			const buyIndex = interaction.values[0].split('-')[1];
+			/** @type {import('../../typedef').Role} */
+			const buyItem = shop[buyIndex];
 
-							await interaction.message
-								.edit({
-									embeds: [{
-										color: config.default_color,
-										author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-										description: `You refunded the <@&${buyItem.roleId}> role!`,
-									}],
-									components: [],
-									failIfNotExists: false,
-								})
-								.catch((error) => {
-									if (error.httpStatus !== 404) {
-										throw new Error(error);
-									}
-								});
-						}
+			profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
+				userId: message.author.id,
+				serverId: message.guild.id,
+			}));
 
-						profileData = checkLevelUp(message, undefined, profileData, serverData);
-					}
-					catch (error) {
+			if (profileData.roles.some(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience')) {
 
-						await checkRoleCatchBlock(error, message, message.member);
-					}
-				}
-				else if ((profileData.levels * (profileData.levels - 1) / 2) * 50 + profileData.experience >= buyItem.requirement) {
+				try {
 
-					try {
+					const userRole = profileData.roles.find(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience');
+					const userRoleIndex = profileData.roles.indexOf(userRole);
 
-						if (message.member.roles.cache.has(buyItem.roleId) === false) {
+					if (userRoleIndex >= 0) { profileData.roles.splice(userRoleIndex, 1); }
 
-							await message.member.roles.add(buyItem.roleId);
+					profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{
+							$inc: { experience: userRole.requirement },
+							$set: { roles: profileData.roles } },
+					));
 
-							await interaction.message
-								.edit({
-									embeds: [{
-										color: config.default_color,
-										author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-										description: `You bought the <@&${buyItem.roleId}> role for ${buyItem.requirement} experience!`,
-									}],
-									components: [],
-									failIfNotExists: false,
-								})
-								.catch((error) => {
-									if (error.httpStatus !== 404) {
-										throw new Error(error);
-									}
-								});
-						}
+					if (message.member.roles.cache.has(buyItem.roleId) === true) {
 
-						profileData.roles.push({
-							roleId: buyItem.roleId,
-							wayOfEarning: buyItem.wayOfEarning,
-							requirement: buyItem.requirement,
-						});
+						await message.member.roles.remove(buyItem.roleId);
 
-						profileData = await profileModel.findOneAndUpdate(
-							{ userId: message.author.id, serverId: message.guild.id },
-							{ $set: { roles: profileData.roles } },
-						);
-
-						let cost = buyItem.requirement;
-
-						while (cost > 0) {
-
-							if (cost <= profileData.experience) {
-
-								profileData = await profileModel.findOneAndUpdate(
-									{ userId: message.author.id, serverId: message.guild.id },
-									{ $inc: { experience: -cost } },
-								);
-
-								cost -= cost;
-							}
-							else {
-
-								profileData = await profileModel.findOneAndUpdate(
-									{ userId: message.author.id, serverId: message.guild.id },
-									{
-										$inc: {
-											experience: (profileData.levels - 1) * 50,
-											levels: -1,
-										},
-									},
-								);
-							}
-						}
-
-						const member = await botReply.guild.members.fetch(profileData.userId);
-						const roles = profileData.roles.filter(role => role.wayOfEarning === 'levels' && role.requirement > profileData.levels);
-
-						for (const role of roles) {
-
-							try {
-
-								const userRoleIndex = profileData.roles.indexOf(role);
-								if (userRoleIndex >= 0) { profileData.roles.splice(userRoleIndex, 1); }
-
-								await profileModel.findOneAndUpdate(
-									{ userId: profileData.userId, serverId: profileData.serverId },
-									{ $set: { roles: profileData.roles } },
-								);
-
-								if (message.member.roles.cache.has(role.roleId) === true && profileData.roles.filter(profilerole => profilerole.roleId === role.roleId).length === 0) {
-
-									await message.member.roles.remove(role.roleId);
-
-									await botReply.channel
-										.send({
-											content: member.toString(),
-											embeds: [{
-												color: config.default_color,
-												author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-												description: `You lost the <@&${role.roleId}> role because of a lack of levels!`,
-											}],
-											failIfNotExists: false,
-										})
-										.catch((error) => {
-											if (error.httpStatus !== 404) {
-												throw new Error(error);
-											}
-										});
-								}
-							}
-							catch (error) {
-
-								await checkRoleCatchBlock(error, botReply, member);
-							}
-						}
-					}
-					catch (error) {
-
-						await checkRoleCatchBlock(error, message, message.member);
-					}
-				}
-				else {
-
-					setTimeout(async () => {
-
-						await interaction
-							.followUp({
-								content: `You don't have the experience to buy the <@&${buyItem.roleId}> role!`,
-								ephemeral: true,
-								failIfNotExists: false,
+						await /** @type {import('discord.js').Message} */ (interaction.message)
+							.edit({
+								embeds: [{
+									color: /** @type {`#${string}`} */ (default_color),
+									author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+									description: `You refunded the <@&${buyItem.roleId}> role!`,
+								}],
+								components: disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components),
 							})
 							.catch((error) => {
-								if (error.httpStatus !== 404) {
-									throw new Error(error);
-								}
+								if (error.httpStatus !== 404) { throw new Error(error); }
 							});
-					}, 500);
-				}
+					}
 
-				return;
+					await checkLevelUp(message, undefined, profileData, serverData);
+				}
+				catch (error) {
+
+					await checkRoleCatchBlock(error, message, message.member);
+				}
+			}
+			else if ((profileData.levels * (profileData.levels - 1) / 2) * 50 + profileData.experience >= buyItem.requirement) {
+
+				try {
+
+					if (message.member.roles.cache.has(buyItem.roleId) === false) {
+
+						await message.member.roles.add(buyItem.roleId);
+
+						await /** @type {import('discord.js').Message} */ (interaction.message)
+							.edit({
+								embeds: [{
+									color: /** @type {`#${string}`} */ (default_color),
+									author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+									description: `You bought the <@&${buyItem.roleId}> role for ${buyItem.requirement} experience!`,
+								}],
+								components: disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components),
+							})
+							.catch((error) => {
+								if (error.httpStatus !== 404) { throw new Error(error); }
+							});
+					}
+
+					profileData.roles.push({
+						roleId: buyItem.roleId,
+						wayOfEarning: buyItem.wayOfEarning,
+						requirement: buyItem.requirement,
+					});
+
+					profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+						{ userId: message.author.id, serverId: message.guild.id },
+						{ $set: { roles: profileData.roles } },
+					));
+
+					/** @type {number} */
+					let cost = /** @type {number} */ (buyItem.requirement);
+
+					while (cost > 0) {
+
+						if (cost <= profileData.experience) {
+
+							profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+								{ userId: message.author.id, serverId: message.guild.id },
+								{ $inc: { experience: -cost } },
+							));
+
+							cost -= cost;
+						}
+						else {
+
+							profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+								{ userId: message.author.id, serverId: message.guild.id },
+								{
+									$inc: {
+										experience: (profileData.levels - 1) * 50,
+										levels: -1,
+									},
+								},
+							));
+						}
+					}
+
+					const member = await botReply.guild.members.fetch(profileData.userId);
+					const roles = profileData.roles.filter(role => role.wayOfEarning === 'levels' && role.requirement > profileData.levels);
+
+					for (const role of roles) {
+
+						try {
+
+							const userRoleIndex = profileData.roles.indexOf(role);
+							if (userRoleIndex >= 0) { profileData.roles.splice(userRoleIndex, 1); }
+
+							await profileModel.findOneAndUpdate(
+								{ userId: profileData.userId, serverId: profileData.serverId },
+								{ $set: { roles: profileData.roles } },
+							);
+
+							if (message.member.roles.cache.has(role.roleId) === true && profileData.roles.filter(profilerole => profilerole.roleId === role.roleId).length === 0) {
+
+								await message.member.roles.remove(role.roleId);
+
+								await botReply.channel
+									.send({
+										content: member.toString(),
+										embeds: [{
+											color: /** @type {`#${string}`} */ (default_color),
+											author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+											description: `You lost the <@&${role.roleId}> role because of a lack of levels!`,
+										}],
+									})
+									.catch((error) => {
+										if (error.httpStatus !== 404) { throw new Error(error); }
+									});
+							}
+						}
+						catch (error) {
+
+							await checkRoleCatchBlock(error, botReply, member);
+						}
+					}
+				}
+				catch (error) {
+
+					await checkRoleCatchBlock(error, message, message.member);
+				}
+			}
+			else {
+
+				setTimeout(async () => {
+
+					await interaction
+						.followUp({
+							content: `You don't have the experience to buy the <@&${buyItem.roleId}> role!`,
+							ephemeral: true,
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+				}, 500);
 			}
 
-			return await interactionCollector();
+			return;
 		}
-	},
+
+		return await interactionCollector();
+	}
 };
 
+/**
+ * Creates an embed description and select menu based on the roles available in the server.
+ * @param {number} page
+ * @param {Array<import('../../typedef').Role>} shop
+ * @param {Array<import('../../typedef').Role>} rankRoles
+ * @param {Array<import('../../typedef').Role>} levelRoles
+ * @returns {{description: string, selectMenuOptionsArray: Array<{label: string, value: string, description?: string, emoji?: string}>}}
+ */
 function getMenuOptions(page, shop, rankRoles, levelRoles) {
 
-	let position = 0;
+	let position = 0 + (page * 24);
+	/** @type {Array<string>} */
 	const descriptionArray = [];
+	/** @type {Array<{label: string, value: string, description?: string, emoji?: string}>} */
 	const selectMenuOptionsArray = [];
 
 	const shopPages = Math.ceil(shop.length / 24);
