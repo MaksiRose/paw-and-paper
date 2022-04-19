@@ -76,7 +76,7 @@ module.exports.WebhookMessages = this.WebhookMessages;
  * @property {Array<Array<string>>} pronounSets - Array of Arrays of pronouns the character uses.
  * @property {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} injuryObject - Object with injury types as keys and whether the user has them/how many the user has of them as variables.
  * @property {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, meat: Object<string, number>}} inventoryObject - Object with item kinds as the keys and an object of the item types and their quantity as the variables.
- * @property {{resting: boolean, drinking: boolean, eating: boolean, passingout: boolean}} advice - Object of advice kinds as the keys and whether the advice has been given as the variables.
+ * @property {{resting: boolean, drinking: boolean, eating: boolean, passingout: boolean, coloredbuttons: boolean}} advice - Object of advice kinds as the keys and whether the advice has been given as the variables.
  * @property {Array<Role>} roles - Array of role objects
  * @property {string} uuid
  */

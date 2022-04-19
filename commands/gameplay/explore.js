@@ -16,6 +16,7 @@ const { remindOfAttack, startAttack } = require('./attack');
 const { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural } = require('../../utils/getPronouns');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
+const { coloredButtonsAdvice } = require('../../utils/adviceMessages');
 
 module.exports.name = 'explore';
 module.exports.aliases = ['e'];
@@ -270,6 +271,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	botReply = await decreaseHealth(profileData, botReply, userInjuryObject);
 	botReply = await checkLevelUp(message, botReply, profileData, serverData);
 	await isPassedOut(message, profileData, true);
+
+	await coloredButtonsAdvice(message, profileData);
 
 
 	/**

@@ -9,7 +9,7 @@ const startCooldown = require('../../utils/startCooldown');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { default_color } = require('../../config.json');
 const { pronounAndPlural, pronoun } = require('../../utils/getPronouns');
-const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
+const { restAdvice, drinkAdvice, eatAdvice, coloredButtonsAdvice } = require('../../utils/adviceMessages');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const serverMap = new Map();
@@ -307,6 +307,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		botReply = await checkLevelUp(message, botReply, profileData, serverData);
 		await isPassedOut(message, profileData, true);
 
+		await coloredButtonsAdvice(message, profileData);
 		await restAdvice(message, profileData);
 		await drinkAdvice(message, profileData);
 		await eatAdvice(message, profileData);

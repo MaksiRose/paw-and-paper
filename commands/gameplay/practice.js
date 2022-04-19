@@ -10,6 +10,7 @@ const { pronoun, pronounAndPlural } = require('../../utils/getPronouns');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
+const { coloredButtonsAdvice } = require('../../utils/adviceMessages');
 const practicingCooldownAccountsMap = new Map();
 
 module.exports.name = 'practice';
@@ -314,6 +315,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		botReply = await decreaseHealth(profileData, botReply, { ...profileData.injuryObject });
 		botReply = await checkLevelUp(message, botReply, profileData, serverData);
 		await isPassedOut(message, profileData, true);
+
+		await coloredButtonsAdvice(message, profileData);
 
 		return;
 	}

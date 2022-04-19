@@ -121,6 +121,32 @@ async function passingoutAdvice(message, profileData) {
 }
 
 /**
+ * Sends advice of how the colors work.
+ * @param {import('discord.js').Message} message
+ * @param {import('../typedef').ProfileSchema} profileData
+ */
+async function coloredButtonsAdvice(message, profileData) {
+
+	if (profileData.advice.coloredbuttons === false) {
+
+		profileData.advice.coloredbuttons = true;
+
+		await profileModel.findOneAndUpdate(
+			{ userId: message.author.id, serverId: message.guild.id },
+			{ $set: { advice: profileData.advice } },
+		);
+
+		await message.channel
+			.send({
+				content: `${message.author.toString()} ❓ **Tip:**\nA red button means that you picked wrong, the blue button is what you should've picked instead. A green button means that you picked correct.`,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+	}
+}
+
+/**
  * Sends advice of what changes as Apprentice.
  * @param {import('discord.js').Message} message
  */
@@ -171,6 +197,7 @@ module.exports = {
 	drinkAdvice,
 	eatAdvice,
 	passingoutAdvice,
+	coloredButtonsAdvice,
 	apprenticeAdvice,
 	hunterhealerAdvice,
 	elderlyAdvice,

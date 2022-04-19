@@ -36,7 +36,7 @@ const profileSchema = new schema({
 		rarePlants: Object.fromEntries([...rarePlantsMap.keys()].sort().map(key => [key, 0])),
 		meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, 0])),
 	} },
-	advice: { type: ['object', ['boolean']], default: { resting: false, drinking: false, eating: false, passingout: false } },
+	advice: { type: ['object', ['boolean']], default: { resting: false, drinking: false, eating: false, passingout: false, coloredbuttons: false } },
 	roles: { type: ['array', ['object', ['string', 'number']]] },
 });
 

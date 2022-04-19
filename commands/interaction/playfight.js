@@ -899,7 +899,7 @@ async function executeWin(componentArray, message, profileData, serverData, part
 	));
 
 	let getHurtText = '';
-	const getHurtChance = pullFromWeightedTable({ 0: 1110, 1: 90 + otherProfileData.saplingObject.waterCycles });
+	const getHurtChance = pullFromWeightedTable({ 0: 10, 1: 90 + otherProfileData.saplingObject.waterCycles });
 	if (getHurtChance === 0) {
 
 		let healthPoints = generateRandomNumber(5, 3);
