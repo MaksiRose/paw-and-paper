@@ -427,7 +427,7 @@ speciesMap.set('coyote', {
 	name: 'coyote',
 	diet: 'omnivore',
 	habitat: 'warm',
-	biome1OpponentArray: ['caracal', 'maned wolf'],
+	biome1OpponentArray: ['caracal', 'maned wolf', 'porcupine'],
 	biome2OpponentArray: ['leopard', 'goat'],
 	biome3OpponentArray: ['tiger', 'lion'],
 });
@@ -473,7 +473,7 @@ speciesMap.set('salmon', {
 	diet: 'carnivore',
 	habitat: 'water',
 	biome1OpponentArray: ['squid'],
-	biome2OpponentArray: ['crab'],
+	biome2OpponentArray: ['crab', 'anole'],
 	biome3OpponentArray: ['bear', 'seal', 'owl'],
 });
 
@@ -699,7 +699,7 @@ speciesMap.set('moth', {
 	habitat: 'cold',
 	biome1OpponentArray: ['moth', 'praying mantis'],
 	biome2OpponentArray: ['cricket', 'beetle'],
-	biome3OpponentArray: ['bee', 'owl'],
+	biome3OpponentArray: ['bee', 'owl', 'anole'],
 });
 
 speciesMap.set('bee', {
@@ -714,8 +714,8 @@ speciesMap.set('bee', {
 speciesMap.set('cougar', {
 	name: 'cougar',
 	diet: 'carnivore',
-	habitat: 'cold',
-	biome1OpponentArray: ['deer', 'goat'],
+	habitat: 'warm',
+	biome1OpponentArray: ['deer', 'goat', 'porcupine'],
 	biome2OpponentArray: ['elk', 'coyote'],
 	biome3OpponentArray: ['bear', 'wolf'],
 });
@@ -807,6 +807,17 @@ speciesMap.set('anole', {
 	biome1OpponentArray: ['beetle', 'cricket', 'moth'],
 	biome2OpponentArray: ['salmon', 'frog', 'owl'],
 	biome3OpponentArray: ['weasel', 'king cobra', 'raccoon'],
+});
+
+// actual diet: lizard, grub
+// actual predators: coyote, cougar, bobcat, bear, wolf, owl, fox, lynx
+speciesMap.set('porcupine', {
+	name: 'porcupine',
+	diet: 'herbivore',
+	habitat: 'cold',
+	biome1OpponentArray: ['cricket', 'beetle', 'praying mantis'],
+	biome2OpponentArray: ['anole', 'owl', 'fox'],
+	biome3OpponentArray: ['bear', 'cougar', 'coyote'],
 });
 
 
