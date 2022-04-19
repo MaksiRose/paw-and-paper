@@ -40,7 +40,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	profileData = await startCooldown(message, profileData);
 	const messageContent = remindOfAttack(message);
 
-	if ((profileData.rank !== 'Youngling' && serverData.blockedEntranceObject.den === null && generateRandomNumber(20, 0) === 0) || serverData.blockedEntranceObject.den === 'food den') {
+	// If the commands content isn't part of this commands name and aliases list, then a new blockage won't be opened. This is to prevent the eat command from having this likelihood twice.
+	if ((profileData.rank !== 'Youngling' && serverData.blockedEntranceObject.den === null && ![module.exports.name].concat(module.exports.aliases).includes(message.content.slice(prefix.length).trim().split(/ +/).shift().toLowerCase()) && generateRandomNumber(20, 0) === 0) || serverData.blockedEntranceObject.den === 'food den') {
 
 		await blockEntrance(message, messageContent, profileData, serverData, 'food den');
 		return;

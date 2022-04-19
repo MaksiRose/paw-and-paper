@@ -103,7 +103,8 @@ const event = {
 
 			console.log(`\x1b[32m${message.author.tag}\x1b[0m successfully executed \x1b[33m${message.content} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
-			if (serverData.activeUsersArray.findIndex(element => element == message.author.id) == -1) {
+			// Only push a user to the active users array if they aren't a youngling. This way, attacks won't be triggered when a pack mostly consists of inexperienced Younglings.
+			if (serverData.activeUsersArray.findIndex(element => element === message.author.id) === -1 && profileData !== null && profileData.rank !== 'Youngling') {
 
 				serverData.activeUsersArray.push(message.author.id);
 
