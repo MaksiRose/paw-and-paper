@@ -84,9 +84,6 @@ async function decreaseEnergy(profileData) {
  */
 async function decreaseHealth(profileData, botReply, modifiedUserInjuryObject) {
 
-	console.log('profiles injuries:', profileData.injuryObject);
-	console.log('modified injuries:', modifiedUserInjuryObject);
-
 	if (Object.values(profileData.injuryObject).every((value) => value == 0)) {
 
 		profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(

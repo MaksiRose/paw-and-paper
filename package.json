@@ -1,6 +1,6 @@
 {
 	"name": "paw-and-paper",
-	"version": "2.10.0",
+	"version": "2.10.1",
 	"description": "An RPG Bot in which you play as an animal in a pack",
 	"main": "index.js",
 	"scripts": {

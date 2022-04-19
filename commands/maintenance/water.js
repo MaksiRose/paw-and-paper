@@ -71,6 +71,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	const embed = new MessageEmbed({
 		color: profileData.color,
 		author: { name: profileData.name, icon_url: profileData.avatarURL },
+		description: null,
+		footer: { text: null },
 	});
 
 	if (timeDifference >= -thirtyMinutes && timeDifference <= thirtyMinutes) {
