@@ -787,6 +787,28 @@ speciesMap.set('turtle', {
 	biome3OpponentArray: ['shark', 'fox', 'coyote'],
 });
 
+// actual diet: crickets, beetles, ants, flies, grasshoppers, caterpillars, moths, butterflies, arachnids like spiders, sometimes mice, small birds, lizards, fish, shrimp
+// actual predators: skinks, snakes, birds, large frogs, lizards, monkeys, carnivorous mammals
+speciesMap.set('anole', {
+	name: 'anole',
+	diet: 'carnivore',
+	habitat: 'cold',
+	biome1OpponentArray: ['beetle', 'cricket', 'moth'],
+	biome2OpponentArray: ['salmon', 'frog', 'owl'],
+	biome3OpponentArray: ['weasel', 'king cobra', 'raccoon'],
+});
+
+// actual diet: crickets, beetles, ants, flies, grasshoppers, caterpillars, moths, butterflies, arachnids like spiders, sometimes mice, small birds, lizards, fish, shrimp
+// actual predators: skinks, snakes, birds, large frogs, lizards, monkeys, carnivorous mammals
+speciesMap.set('anole', {
+	name: 'anole',
+	diet: 'carnivore',
+	habitat: 'cold',
+	biome1OpponentArray: ['beetle', 'cricket', 'moth'],
+	biome2OpponentArray: ['salmon', 'frog', 'owl'],
+	biome3OpponentArray: ['weasel', 'king cobra', 'raccoon'],
+});
+
 
 module.exports = {
 
