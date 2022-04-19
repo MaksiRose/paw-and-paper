@@ -709,6 +709,7 @@ function playConnectFour(serverData, profileData, partnerProfileData, message, b
 			}
 
 			array.shift();
+			coordinatesArray.shift();
 			return hasFourInARow(array, coordinatesArray);
 		}
 
