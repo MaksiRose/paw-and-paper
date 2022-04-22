@@ -554,7 +554,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId)]).style = 'DANGER';
 			}
 
-			if (customId === '' || customId.includes(`${incorrectButton}`) === true) {
+			if (customId.includes(`${incorrectButton}`) === true) {
 
 				winPoints -= 1;
 			}
@@ -918,7 +918,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId)]).style = 'DANGER';
 			}
 
-			if (customId === '' || (customId === 'fight-attack' && cycleKind === 'dodge') || (customId === 'fight-defend' && cycleKind === 'attack') || (customId === 'fight-dodge' && cycleKind === 'defend')) {
+			if ((customId === 'fight-attack' && cycleKind === 'dodge') || (customId === 'fight-defend' && cycleKind === 'attack') || (customId === 'fight-dodge' && cycleKind === 'defend')) {
 
 				opponentLevel += Math.ceil(profileData.levels / 10) * 2;
 			}
