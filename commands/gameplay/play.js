@@ -401,7 +401,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		}
 		else {
 
-			embed.description = `*${profileData.name} trails behind ${partnerProfileData.name}'s rear end, preparing for a play attack. Right when the ${profileData.species} launches forward, ${partnerProfileData.name} dashes sideways, followed by a precise jump right on top of ${profileData.name}.* "I got you, ${profileData.name}!" *${pronounAndPlural(profileData, 0, 'say')}. Both creatures bounce away from each other, laughing.*`;
+			embed.description = `*${profileData.name} trails behind ${partnerProfileData.name}'s rear end, preparing for a play attack. Right when the ${profileData.species} launches forward, ${partnerProfileData.name} dashes sideways, followed by a precise jump right on top of ${profileData.name}.* "I got you, ${profileData.name}!" *${pronounAndPlural(partnerProfileData, 0, 'say')}. Both creatures bounce away from each other, laughing.*`;
 			embed.image.url = 'https://i.pinimg.com/originals/7e/e4/01/7ee4017f0152c7b7c573a3dfe2c6673f.gif';
 		}
 
