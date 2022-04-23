@@ -14,6 +14,7 @@ const { pronoun, upperCasePronounAndPlural, pronounAndPlural } = require('../../
 const blockEntrance = require('../../utils/blockEntrance');
 const { MessageActionRow, MessageSelectMenu, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
+const { addFriendshipPoints } = require('../../utils/friendshipHandling');
 
 module.exports.name = 'heal';
 
@@ -672,6 +673,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				botReply = await decreaseHealth(profileData, botReply, userInjuryObject);
 				botReply = await checkLevelUp(message, botReply, profileData, serverData);
 				await isPassedOut(message, profileData, true);
+
+				if (chosenProfileData.userId !== profileData.userId) { await addFriendshipPoints(message, profileData, chosenProfileData); }
 
 				return;
 			}

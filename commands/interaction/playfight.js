@@ -13,6 +13,7 @@ const { pronoun, pronounAndPlural, upperCasePronounAndPlural } = require('../../
 const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
+const { addFriendshipPoints } = require('../../utils/friendshipHandling');
 
 module.exports.name = 'playfight';
 
@@ -851,6 +852,8 @@ async function checkHealthAndLevel(message, botReply, profileData, serverData, p
 
 	await isPassedOut(message, profileData, true);
 	await isPassedOut(message, partnerProfileData, true);
+
+	await addFriendshipPoints(message, profileData, partnerProfileData);
 
 	await restAdvice(message, profileData);
 	await restAdvice(message, partnerProfileData);
