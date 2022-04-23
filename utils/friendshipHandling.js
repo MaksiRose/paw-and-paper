@@ -30,7 +30,7 @@ async function addFriendshipPoints(message, profileData, partnerProfileData) {
 	friendship = friendshipKey !== null ? friendshipList[friendshipKey] : { [profileData.uuid]: [], [partnerProfileData.uuid]: [] };
 	const newFriendshipPoints = getFriendshipPoints(friendship[profileData.uuid], friendship[partnerProfileData.uuid]);
 
-	if (getFriendshipHearts(previousFriendshipPoints) > getFriendshipHearts(newFriendshipPoints)) {
+	if (getFriendshipHearts(previousFriendshipPoints) < getFriendshipHearts(newFriendshipPoints)) {
 
 		await message.channel
 			.send({
