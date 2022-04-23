@@ -840,7 +840,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	 */
 	async function findEnemy() {
 
-		let opponentLevel = generateRandomNumber(1 + Math.ceil(profileData.levels / 10) * 7, (profileData.levels > 2 ? profileData.levels : 3) - Math.ceil(profileData.levels / 10) * 2);
+		let opponentLevel = generateRandomNumber(1 + Math.ceil(profileData.levels / 10) * 5, (profileData.levels > 2 ? profileData.levels : 3) - Math.ceil(profileData.levels / 10) * 2);
 		chosenBiomeNumber === 2 ? generateRandomNumber(profileData.levels > 40 ? profileData.levels - 15 : 25, 26) : chosenBiomeNumber === 1 ? generateRandomNumber(15, 11) : generateRandomNumber(10, 1);
 		const opponentsArray = [...userSpeciesMap.biome1OpponentArray];
 		if (chosenBiomeNumber > 0) { opponentsArray.push(...userSpeciesMap.biome2OpponentArray); }
