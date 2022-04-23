@@ -39,6 +39,7 @@ async function addFriendshipPoints(message, profileData, partnerProfileData) {
 					author: { name: profileData.name, icon_url: profileData.avatarURL },
 					title: `The friendship between ${profileData.name} and ${partnerProfileData.name} grew 💗`,
 					description: '❤️'.repeat(getFriendshipHearts(newFriendshipPoints)) + '🖤'.repeat(10 - getFriendshipHearts(newFriendshipPoints)),
+					footer: { text: getFriendshipHearts(newFriendshipPoints) === 6 ? 'You can now adventure together using the "adventure" command!' : null },
 				})],
 			})
 			.catch((newError) => { throw new Error(newError); });
