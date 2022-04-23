@@ -68,10 +68,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	hexColor = '#' + hexColor;
 
-	await profileModel.findOneAndUpdate(
+	profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 		{ userId: message.author.id, serverId: message.guild.id },
 		{ $set: { color: hexColor } },
-	);
+	));
 
 	await message
 		.reply({
