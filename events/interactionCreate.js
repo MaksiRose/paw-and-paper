@@ -273,6 +273,7 @@ const event = {
 								{ name: '**rp share (@user)**', value: 'Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person. __Only available to Elderlies.__' },
 								{ name: '**rp playfight [@user] (c4 / ttt)**', value: 'Playfully fight with another packmate. You can play Connect Four or Tic Tac Toe.' },
 								{ name: '**rp profilelist**', value: 'View a list of all the profiles that exist on this server.' },
+								{ name: '**rp friendships**', value: 'View a list of all the friendships that you have with other players.' },
 							],
 							footer: { text: 'ℹ️ Select a command from the list below to view more information about it.' },
 						}],
@@ -290,6 +291,7 @@ const event = {
 									{ label: 'Share', value: 'help_share', description: 'Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person.' },
 									{ label: 'Playfight', value: 'help_playfight', description: 'Playfully fight with another packmate. You can play Connect Four or Tic Tac Toe.' },
 									{ label: 'Profilelist', value: 'help_profilelist', description: 'View a list of all the profiles that exist on this server.' },
+									{ label: 'Friendships', value: 'help_friendships', description: 'View a list of all the friendships that you have with other players.' },
 								],
 							}],
 						}],
@@ -1028,6 +1030,29 @@ const event = {
 								{ name: '**Aliases**', value: 'none' },
 								{ name: '**Arguments**', value: 'A mention of the user you want to playfight with. Optional: `c4` or `connectfour` to play Connect Four, or `ttt` or `tictactoe` to play Tic Tac Toe.' },
 								{ name: '**More information**', value: 'If no game is selected, a random game will be chosen.\nBoth users need an account to play this.\nThe receiving user will first be asked if they want to play, and if they say yes, the users alternate as per the game. If a player doesn\'t click a button for too long, the game will be aborted.\nIn the case of a tie, both players get between 5 and 15 XP. In the case that one player wins, They get between 10 and 20 XP, with an extra amount of XP being calculated in a sigmoid function based on the difference between the winners and losers level, where the lower the winners level is than the losers level, the more extra XP they get. The maximum extra XP is 40.\nThe losing player has a 10 in 100 chance of being injured. If the losing player has a living ginkgo sapling, this chance is increased in their favor by one for the amount of times they watered the sapling successfully. If they do get injured, it is a 50/50 chance between getting a sprain and getting an infection.' },
+							],
+						}],
+						ephemeral: true,
+					})
+					.catch(async (error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
+
+			if (interaction.values[0] === 'help_friendships') {
+
+				return await interaction
+					.followUp({
+						embeds: [{
+							color: /** @type {`#${string}`} */ (config.default_color),
+							title: 'rp friendships',
+							description: 'View a list of all the friendships that you have with other players.',
+							fields: [
+								{ name: '**Aliases**', value: 'none' },
+								{ name: '**Arguments**', value: 'none' },
+								{ name: '**More information**', value: 'A list of friendships you have with other players. Displays 25 at a time, and adds buttons to go back and fourth if you have more than 25 friendships. Friendship hearts are gained by mentioning each other.' },
 							],
 						}],
 						ephemeral: true,
