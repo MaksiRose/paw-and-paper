@@ -44,7 +44,7 @@ async function createGuild(client, guild) {
 	setTimeout(async () => {
 
 		await user
-			.send({ content: 'Thank you for adding Paw and Paper to your server! 🥰\nYour server can receive updates about new releases and features. Just go in your server and type `rp getupdates #channel`, with #channel being the channel that you want to receive udpates. Don\'t worry, I won\'t spam you! 😊' })
+			.send({ content: 'Thank you for adding Paw and Paper to your server! 🥰\nYour server can receive updates about new releases and features. Just go in your server and type `rp getupdates #channel`, with #channel being the channel that you want to receive updates. Don\'t worry, I won\'t spam you! 😊' })
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
