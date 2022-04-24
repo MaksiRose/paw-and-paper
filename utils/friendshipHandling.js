@@ -92,10 +92,10 @@ function getFriendshipKey(friendshipList, profileData, partnerProfileData) {
  */
 function getFriendshipPoints(array1, array2) {
 
-	const higherPoints = array1.length >= array2.length ? array1.length : array2.length;
-	const lowerPoints = array1.length < array2.length ? array1.length : array2.length;
+	const higherPoints = array1?.length >= array2?.length ? array1?.length : array2?.length;
+	const lowerPoints = array1?.length < array2?.length ? array1?.length : array2?.length;
 
-	return (lowerPoints * 3) + (higherPoints - lowerPoints);
+	return (lowerPoints * 3) + (higherPoints - lowerPoints) || 0;
 }
 
 /**
@@ -112,6 +112,8 @@ function getFriendshipHearts(points) {
 			return index + 1;
 		}
 	}
+
+	return 0;
 }
 
 module.exports = {
