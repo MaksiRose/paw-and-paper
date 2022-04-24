@@ -107,7 +107,7 @@ function getFriendshipHearts(points) {
 
 	for (let index = requiredPoints.length - 1; index >= 0; index--) {
 
-		if (requiredPoints[index] < points) {
+		if (requiredPoints[index] <= points) {
 
 			return index + 1;
 		}
