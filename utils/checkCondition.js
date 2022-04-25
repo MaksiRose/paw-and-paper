@@ -10,7 +10,8 @@ const { generateRandomNumber, pullFromWeightedTable } = require('./randomizers')
  */
 async function decreaseThirst(profileData) {
 
-	const minimumThirstPoints = Math.round(10 - (profileData.energy / 10));
+	const divider = Math.floor(profileData.thirst / 10);
+	const minimumThirstPoints = Math.round(divider - (profileData.energy / divider));
 	let thirstPoints = 0;
 
 	if (minimumThirstPoints > 0) {
@@ -33,7 +34,8 @@ async function decreaseThirst(profileData) {
  */
 async function decreaseHunger(profileData) {
 
-	let minimumHungerPoints = Math.round(10 - (profileData.energy / 10));
+	const divider = Math.floor(profileData.hunger / 10);
+	let minimumHungerPoints = Math.round(divider - (profileData.energy / divider));
 	let hungerPoints = 0;
 
 	if (minimumHungerPoints > 0) {
@@ -57,7 +59,8 @@ async function decreaseHunger(profileData) {
  */
 async function decreaseEnergy(profileData) {
 
-	const minimumEnergyPoints = Math.round((10 - (profileData.health / 10)) / 2);
+	const divider = Math.floor(profileData.energy / 10);
+	const minimumEnergyPoints = Math.round((divider - (profileData.health / divider)) / 2);
 	let extraLostEnergyPoints = 0;
 
 	if (minimumEnergyPoints > 0) {
@@ -94,6 +97,7 @@ async function decreaseHealth(profileData, botReply, modifiedUserInjuryObject) {
 		return botReply;
 	}
 
+	const divider = Math.floor(profileData.health / 10);
 	let extraLostHealthPoints = 0;
 	/** @type {import('discord.js').MessageEmbedOptions} */
 	const embed = {
@@ -141,7 +145,7 @@ async function decreaseHealth(profileData, botReply, modifiedUserInjuryObject) {
 			continue;
 		}
 
-		const minimumInfectionHealthPoints = Math.round((10 - (profileData.health / 10)) / 3);
+		const minimumInfectionHealthPoints = Math.round((divider - (profileData.health / divider)) / 3);
 		extraLostHealthPoints += generateRandomNumber(3, (minimumInfectionHealthPoints < 0) ? 3 : minimumInfectionHealthPoints + 3);
 
 		embed.description += `\n*One of ${profileData.name}'s infections is getting worse!*`;
@@ -159,7 +163,7 @@ async function decreaseHealth(profileData, botReply, modifiedUserInjuryObject) {
 		}
 		else {
 
-			const minimumColdHealthPoints = Math.round((10 - (profileData.health / 10)) / 1.5);
+			const minimumColdHealthPoints = Math.round((divider - (profileData.health / divider)) / 1.5);
 			extraLostHealthPoints += generateRandomNumber(3, (minimumColdHealthPoints > 0) ? minimumColdHealthPoints : 1);
 
 			embed.description += `\n*${profileData.name}'s cold is getting worse!*`;
@@ -195,7 +199,7 @@ async function decreaseHealth(profileData, botReply, modifiedUserInjuryObject) {
 		}
 		else {
 
-			const minimumPoisonHealthPoints = Math.round((10 - (profileData.health / 10)) * 1.5) ;
+			const minimumPoisonHealthPoints = Math.round((divider - (profileData.health / divider)) * 1.5) ;
 			extraLostHealthPoints += generateRandomNumber(5, (minimumPoisonHealthPoints > 0) ? minimumPoisonHealthPoints : 1);
 
 			embed.description += `\n*The poison in ${profileData.name}'s body is spreading!*`;
