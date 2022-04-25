@@ -242,7 +242,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		else {
 
 			const inventoryObject = { ...serverData.inventoryObject };
-			const { itemType, itemName } = getHighestItem(inventoryObject);
+			const { itemType, itemName } = module.exports.getHighestItem(inventoryObject);
 
 			if (inventoryObject[itemType][itemName] > 0) {
 
@@ -428,7 +428,7 @@ async function remainingHumans(message, serverData) {
 	const inventoryObject = { ...serverData.inventoryObject };
 	while (serverMap.get('nr' + message.guild.id).humans > 0) {
 
-		const { itemType, itemName } = getHighestItem(inventoryObject);
+		const { itemType, itemName } = module.exports.getHighestItem(inventoryObject);
 
 		if (inventoryObject[itemType][itemName] > 0) {
 
@@ -468,7 +468,7 @@ async function remainingHumans(message, serverData) {
  * @param {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, meat: Object<string, number>}} inventoryObject
  * @returns {{itemType: 'commonPlants' | 'uncommonPlants' | 'rarePlants' | 'meat', itemName: string}}
  */
-function getHighestItem(inventoryObject) {
+module.exports.getHighestItem = (inventoryObject) => {
 
 	/** @type {{commonPlants?: number, uncommonPlants?: number, rarePlants?: number, meat?: number}} */
 	const inventoryReduced = {};
@@ -478,4 +478,4 @@ function getHighestItem(inventoryObject) {
 	const itemName = Object.keys(inventoryObject[itemType]).reduce((a, b) => inventoryObject[itemType][a] > inventoryObject[itemType][b] ? a : b);
 
 	return { itemType, itemName };
-}
+};
