@@ -183,6 +183,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			}
 			else {
 
+				/* This is done to prevent getting friendship points despite not playing with them */
+				partnerProfileData = null;
 				botReply = await findPlantOrNothing();
 			}
 		}
