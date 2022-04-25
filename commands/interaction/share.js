@@ -271,7 +271,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			});
 		}
 
-		if (partnerProfileData.injuryObject.cold == true && profileData.injuryObject.cold == false, pullFromWeightedTable({ 0: 3, 1: 7 }) === 0) {
+		if (partnerProfileData.injuryObject.cold === true && profileData.injuryObject.cold === false && pullFromWeightedTable({ 0: 3, 1: 7 }) === 0) {
 
 			healthPoints = generateRandomNumber(5, 3);
 
