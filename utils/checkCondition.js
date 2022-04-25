@@ -10,8 +10,8 @@ const { generateRandomNumber, pullFromWeightedTable } = require('./randomizers')
  */
 async function decreaseThirst(profileData) {
 
-	const divider = Math.floor(profileData.thirst / 10);
-	const minimumThirstPoints = Math.round(divider - (profileData.energy / Math.floor(profileData.energy / 10)));
+	const divider = Math.floor(profileData.maxThirst / 10);
+	const minimumThirstPoints = Math.round(divider - (profileData.energy / Math.floor(profileData.maxEnergy / 10)));
 	let thirstPoints = 0;
 
 	if (minimumThirstPoints > 0) {
@@ -34,8 +34,8 @@ async function decreaseThirst(profileData) {
  */
 async function decreaseHunger(profileData) {
 
-	const divider = Math.floor(profileData.hunger / 10);
-	let minimumHungerPoints = Math.round(divider - (profileData.energy / Math.floor(profileData.energy / 10)));
+	const divider = Math.floor(profileData.maxHunger / 10);
+	let minimumHungerPoints = Math.round(divider - (profileData.energy / Math.floor(profileData.maxEnergy / 10)));
 	let hungerPoints = 0;
 
 	if (minimumHungerPoints > 0) {
@@ -59,8 +59,8 @@ async function decreaseHunger(profileData) {
  */
 async function decreaseEnergy(profileData) {
 
-	const divider = Math.floor(profileData.energy / 10);
-	const minimumEnergyPoints = Math.round((divider - (profileData.health / Math.floor(profileData.health / 10))) / 2);
+	const divider = Math.floor(profileData.maxEnergy / 10);
+	const minimumEnergyPoints = Math.round((divider - (profileData.health / Math.floor(profileData.maxHealth / 10))) / 2);
 	let extraLostEnergyPoints = 0;
 
 	if (minimumEnergyPoints > 0) {
@@ -97,7 +97,7 @@ async function decreaseHealth(profileData, botReply, modifiedUserInjuryObject) {
 		return botReply;
 	}
 
-	const divider = Math.floor(profileData.health / 10);
+	const divider = Math.floor(profileData.maxHealth / 10);
 	let extraLostHealthPoints = 0;
 	/** @type {import('discord.js').MessageEmbedOptions} */
 	const embed = {
