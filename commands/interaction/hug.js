@@ -6,6 +6,8 @@ const startCooldown = require('../../utils/startCooldown');
 const { error_color } = require('../../config.json');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
+const { profileModel } = require('../../models/profileModel');
+const { addFriendshipPoints } = require('../../utils/friendshipHandling');
 
 module.exports.name = 'hug';
 module.exports.aliases = ['snuggle'];
@@ -130,7 +132,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				'https://c.tenor.com/N4wxlSS6s6YAAAAd/wake-up-360baby-pandas.gif',
 			];
 
-			return botReply
+			await botReply
 				.edit({
 					embeds: [...embedArray, {
 						color: profileData.color,
@@ -142,6 +144,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
+
+			const partnerProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
+				userId: message.mentions.users.first().id,
+				serverId: message.guild.id,
+			}));
+
+			if (partnerProfileData !== null) { await addFriendshipPoints(message, profileData, partnerProfileData); }
 		})
 		.catch(async () => {
 

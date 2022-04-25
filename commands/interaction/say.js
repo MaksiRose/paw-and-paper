@@ -3,6 +3,7 @@ const { profileModel } = require('../../models/profileModel');
 const { default_color } = require('../../config.json');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { readFileSync, writeFileSync } = require('fs');
+const { addFriendshipPoints } = require('../../utils/friendshipHandling');
 
 module.exports.name = 'say';
 
@@ -99,6 +100,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8'));
 	/** @type {Array<import('discord.js').MessageEmbedOptions>} */
 	let embeds = [];
+	/** @type {import('../../typedef').ProfileSchema} */
+	let partnerProfileData = null;
 
 	if (message.reference !== null) {
 
@@ -108,6 +111,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			const user = await client.users.fetch(webhookCache[referencedMessage.id]);
 			referencedMessage.author = user;
+
+			partnerProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
+				userId: user.id,
+				serverId: message.guild.id,
+			}));
 		}
 
 		embeds = [{
@@ -130,6 +138,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	webhookCache[botMessage.id] = message.author.id;
 
 	writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
+
+	if (partnerProfileData !== null) { await addFriendshipPoints(message, profileData, partnerProfileData); }
 
 	return;
 };

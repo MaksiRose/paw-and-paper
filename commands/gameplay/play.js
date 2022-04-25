@@ -14,6 +14,7 @@ const { remindOfAttack } = require('./attack');
 const { pronoun, pronounAndPlural, upperCasePronounAndPlural } = require('../../utils/getPronouns');
 const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
 const disableAllComponents = require('../../utils/disableAllComponents');
+const { addFriendshipPoints } = require('../../utils/friendshipHandling');
 
 module.exports.name = 'play';
 
@@ -151,6 +152,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	/** @type {import('discord.js').Message} */
 	let botReply;
 
+	/** @type {import('../../typedef').ProfileSchema | null} */
+	let partnerProfileData;
+
 	if (message.mentions.users.size === 0) {
 
 		const allPrairieProfilesArray = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel
@@ -167,7 +171,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		}
 		else if (allPrairieProfilesArray.length > 0) {
 
-			const partnerProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
+			partnerProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
 				userId: allPrairieProfilesArray[generateRandomNumber(allPrairieProfilesArray.length, 0)],
 				serverId: message.guild.id,
 			}));
@@ -175,7 +179,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			const playTogetherChance = pullFromWeightedTable({ 0: 3, 1: 7 });
 			if (playTogetherChance == 1 && partnerProfileData.energy > 0 && partnerProfileData.health > 0 && partnerProfileData.hunger > 0 && partnerProfileData.thirst > 0) {
 
-				botReply = await playTogether(partnerProfileData);
+				botReply = await playTogether();
 			}
 			else {
 
@@ -189,7 +193,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	}
 	else {
 
-		const partnerProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
+		partnerProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
 			userId: message.mentions.users.first().id,
 			serverId: message.guild.id,
 		}));
@@ -224,12 +228,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			return;
 		}
 
-		botReply = await playTogether(partnerProfileData);
+		botReply = await playTogether();
 	}
 
 	botReply = await decreaseHealth(profileData, botReply, userInjuryObject);
 	await checkLevelUp(message, botReply, profileData, serverData);
 	await isPassedOut(message, profileData, true);
+
+	if (partnerProfileData !== null) { await addFriendshipPoints(message, profileData, partnerProfileData); }
 
 	await restAdvice(message, profileData);
 	await drinkAdvice(message, profileData);
@@ -376,10 +382,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	/**
 	 * Plays with another user.
-	 * @param {import('../../typedef').ProfileSchema} partnerProfileData
 	 * @returns {Promise<import('discord.js').Message>}
 	 */
-	async function playTogether(partnerProfileData) {
+	async function playTogether() {
 
 		const partnerHealthPoints = function(health) { return (partnerProfileData.health + health > partnerProfileData.maxHealth) ? partnerProfileData.maxHealth - partnerProfileData.health : health; }(generateRandomNumber(5, 1));
 
