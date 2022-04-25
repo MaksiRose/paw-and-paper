@@ -187,7 +187,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.customId === 'adventure-confirm' && i.user.id === message.mentions.users.first().id) || (i.customId.includes('board') && i.user.id == currentProfileData.userId);
 
 		const { customId } = await botReply
-			.awaitMessageComponent({ filter, time: 60000 })
+			.awaitMessageComponent({ filter, time: 60_000 })
 			.catch(() => { return { customId: '' }; });
 
 		if (customId === '') {

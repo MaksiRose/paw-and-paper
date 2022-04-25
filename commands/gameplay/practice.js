@@ -106,7 +106,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	let filter = (/** @type {{ customId: string; user: { id: string; }; }} */ i) => (i.customId === 'practice-accept' || i.customId === 'practice-decline') && i.user.id == message.author.id;
 
 	const shouldContinue = await botReply
-		.awaitMessageComponent({ filter, time: 15000 })
+		.awaitMessageComponent({ filter, time: 15_000 })
 		.then(async interaction => {
 
 			if (interaction.customId === 'practice-decline') {
@@ -247,7 +247,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		filter = i => (i.customId === 'practice-attack' || i.customId === 'practice-defend' || i.customId === 'practice-dodge') && i.user.id == message.author.id;
 
 		await botReply
-			.awaitMessageComponent({ filter, time: profileData.rank === 'Elderly' ? 2000 : profileData.rank === 'Hunter' || profileData.rank === 'Healer' ? 3000 : 4000 })
+			.awaitMessageComponent({ filter, time: profileData.rank === 'Elderly' ? 3_000 : profileData.rank === 'Hunter' || profileData.rank === 'Healer' ? 4_000 : 5_000 })
 			.then(async interaction => {
 
 				/* Here we make the button the player choses red, this will apply always except if the player choses the correct button, then this will be overwritten. */

@@ -245,7 +245,7 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.customId === 'playfight-confirm-tic-tac-toe' && i.user.id == message.mentions.users.first().id) || (i.customId.includes('board') && i.user.id == currentProfileData.userId);
 
 		const { customId } = await botReply
-			.awaitMessageComponent({ filter, time: 60000 })
+			.awaitMessageComponent({ filter, time: 60_000 })
 			.catch(() => { return { customId: '' }; });
 
 		let isEmptyBoard = true;
@@ -520,7 +520,7 @@ function playConnectFour(serverData, profileData, partnerProfileData, message, b
 		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.customId === 'playfight-confirm-connect-four' && i.user.id === message.mentions.users.first().id) || (i.customId.includes('field') && i.user.id === currentProfileData.userId);
 
 		const { customId } = await botReply
-			.awaitMessageComponent({ filter, time: 60000 })
+			.awaitMessageComponent({ filter, time: 60_000 })
 			.catch(() => { return { customId: '' }; });
 
 		let isEmptyBoard = true;

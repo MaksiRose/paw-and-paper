@@ -260,7 +260,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId === 'quest-start' && i.user.id === message.author.id;
 
 		botReply
-			.awaitMessageComponent({ filter, time: 30000 })
+			.awaitMessageComponent({ filter, time: 30_000 })
 			.then(async interaction => {
 
 				await /** @type {import('discord.js').Message} */ (interaction.message)

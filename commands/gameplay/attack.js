@@ -168,7 +168,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.customId === 'fight-attack' || i.customId === 'fight-defend' || i.customId === 'fight-dodge') && i.user.id === message.author.id;
 
 		const { customId } = await botReply
-			.awaitMessageComponent({ filter, time: profileData.rank === 'Elderly' ? 2000 : profileData.rank === 'Hunter' || profileData.rank === 'Healer' ? 3000 : profileData.rank === 'Apprentice' ? 4000 : 5000 })
+			.awaitMessageComponent({ filter, time: profileData.rank === 'Elderly' ? 3_000 : profileData.rank === 'Hunter' || profileData.rank === 'Healer' ? 4_000 : profileData.rank === 'Apprentice' ? 5_000 : 10_000 })
 			.catch(() => { return { customId: '' }; });
 
 		if (customId !== '') {

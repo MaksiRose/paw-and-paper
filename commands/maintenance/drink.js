@@ -86,7 +86,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId === 'water' && i.user.id === message.author.id;
 
-		const collector = message.channel.createMessageComponentCollector({ filter, time: 15000 });
+		const collector = message.channel.createMessageComponentCollector({ filter, time: 15_000 });
 		collector.on('end', async collected => {
 
 			let thirstPoints = generateRandomNumber(3, collected.size);

@@ -140,7 +140,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		/** @type {import('discord.js').MessageComponentInteraction | null} } */
 		const interaction = await botReply
-			.awaitMessageComponent({ filter, time: 30000 })
+			.awaitMessageComponent({ filter, time: 30_000 })
 			.catch(() => { return null;});
 
 		if (interaction == null) {

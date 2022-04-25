@@ -83,7 +83,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		return;
 	}
 
-	const responseTime = profileData.rank === 'Elderly' ? 2000 : profileData.rank === 'Hunter' || profileData.rank === 'Healer' ? 3000 : 4000;
+	const responseTime = profileData.rank === 'Elderly' ? 3_000 : profileData.rank === 'Hunter' || profileData.rank === 'Healer' ? 4_000 : 5_000;
 	const userSpeciesMap = speciesMap.get(profileData.species);
 
 	const allBiomesArray = [
@@ -187,7 +187,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId.includes('explore-') && i.user.id === message.author.id;
 
-	const collector = message.channel.createMessageComponentCollector({ filter, time: 15000 });
+	const collector = message.channel.createMessageComponentCollector({ filter, time: 15_000 });
 
 	collector.on('collect', interaction => {
 
@@ -396,7 +396,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId === 'quest-start' && i.user.id === message.author.id;
 
 		botReply
-			.awaitMessageComponent({ filter, time: 30000 })
+			.awaitMessageComponent({ filter, time: 30_000 })
 			.then(async interaction => {
 
 				await /** @type {import('discord.js').Message} */ (interaction.message)
@@ -536,7 +536,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		/** @type {import('discord.js').MessageComponentInteraction | null} } */
 		const interaction = await botReply
-			.awaitMessageComponent({ filter, time: 15000 })
+			.awaitMessageComponent({ filter, time: 15_000 })
 			.catch(() => { return null; });
 
 		if (interaction === null || interaction.customId === 'plant-leave') {
@@ -893,7 +893,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		/** @type {import('discord.js').MessageComponentInteraction | null} } */
 		const interaction = await botReply
-			.awaitMessageComponent({ filter, time: 15000 })
+			.awaitMessageComponent({ filter, time: 15_000 })
 			.catch(() => { return null; });
 
 		if (interaction === null || interaction.customId === 'enemy-flee') {
@@ -1185,7 +1185,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => allBiomesArray.includes(i.customId) && i.user.id == message.author.id;
 
 		return await getBiomeMessage
-			.awaitMessageComponent({ filter, time: 30000 })
+			.awaitMessageComponent({ filter, time: 30_000 })
 			.then(async interaction => {
 
 				await /** @type {import('discord.js').Message} */ (interaction.message)

@@ -143,7 +143,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.isButton() && (i.customId === 'rank-healer' || i.customId === 'rank-hunter') && i.user.id == message.author.id;
 
 		await botReply
-			.awaitMessageComponent({ filter, time: 30000 })
+			.awaitMessageComponent({ filter, time: 30_000 })
 			.then(async ({ customId }) => {
 
 				if (customId === 'rank-healer') {

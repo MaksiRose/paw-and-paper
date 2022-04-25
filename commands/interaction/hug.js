@@ -106,7 +106,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.user.id === message.mentions.users.first().id && i.customId.includes('hug');
 
 	botReply
-		.awaitMessageComponent({ filter, time: 120000 })
+		.awaitMessageComponent({ filter, time: 120_000 })
 		.then(async interaction => {
 
 			if (interaction.customId === 'hug-decline') {

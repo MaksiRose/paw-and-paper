@@ -74,7 +74,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		/** @type {import('discord.js').MessageComponentInteraction | null} */
 		await botReply
-			.awaitMessageComponent({ filter, time: 120000 })
+			.awaitMessageComponent({ filter, time: 120_000 })
 			.then(async interaction => {
 
 				if (interaction.isSelectMenu() && interaction.customId === 'profilelist-rank') {
