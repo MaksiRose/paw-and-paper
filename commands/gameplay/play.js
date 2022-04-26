@@ -588,7 +588,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		})({
 			content: messageContent,
 			embeds: [...embedArray, embed],
-			components: botReply.components || [],
+			components: botReply?.components || [],
 			failIfNotExists: false,
 		}).catch((error) => { throw new Error(error); });
 
