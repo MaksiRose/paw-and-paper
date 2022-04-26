@@ -63,7 +63,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.customId == 'delete-confirm' || i.customId == 'delete-cancel') && i.user.id == message.author.id;
 
 	await botReply
-		.awaitMessageComponent({ filter, time: 120000 })
+		.awaitMessageComponent({ filter, time: 120_000 })
 		.then(async interaction => {
 
 			if (interaction.customId === 'delete-confirm') {

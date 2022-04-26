@@ -83,7 +83,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		return;
 	}
 
-	const responseTime = profileData.rank === 'Elderly' ? 2000 : profileData.rank === 'Hunter' || profileData.rank === 'Healer' ? 3000 : 4000;
+	const responseTime = profileData.rank === 'Elderly' ? 3_000 : profileData.rank === 'Hunter' || profileData.rank === 'Healer' ? 4_000 : 5_000;
 	const userSpeciesMap = speciesMap.get(profileData.species);
 
 	const allBiomesArray = [
@@ -93,6 +93,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	][
 		['cold', 'warm', 'water'].indexOf(userSpeciesMap.habitat)
 	].slice(0, (profileData.rank == 'Elderly') ? 3 : (profileData.rank == 'Healer' || profileData.rank == 'Hunter') ? 2 : 1);
+
+	/* This is up since it is used in the getBiome-function, so it has to be declared early */
+	let filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.user.id === message.author.id;
 
 	/** @type {'forest' | 'taiga' | 'tundra' | 'shrubland' | 'savanna' | 'desert' | 'river' | 'coral reef' | 'ocean' | null} */
 	const chosenBiome = allBiomesArray.includes(argumentsArray.join(' ').toLowerCase()) ? /** @type {'forest' | 'taiga' | 'tundra' | 'shrubland' | 'savanna' | 'desert' | 'river' | 'coral reef' | 'ocean'} */ (argumentsArray.join(' ').toLowerCase()) : await getBiome();
@@ -104,7 +107,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	}
 
 	const waitingArray = [
-		['⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛'],
+		['⬛', '⬛', '⬛', '🚩', '⬛', '⬛', '⬛'],
 		['⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛'],
 		['⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛'],
 		['⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛'],
@@ -128,22 +131,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	const waitingString = `*${profileData.name} slips out of camp, ${pronoun(profileData, 2)} body disappearing in the morning mist. For a while ${pronoun(profileData, 0)} will look around in the ${chosenBiome}, searching for anything of use…*\n`;
 
 
-	let botReply = await message
-		.reply({
-			content: messageContent,
-			embeds: [...embedArray, {
-				color: profileData.color,
-				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: waitingString + joinNestedArray(waitingArray),
-			}],
-			failIfNotExists: false,
-		})
-		.catch((error) => { throw new Error(error); });
-
-	/** @type {{vertical: number | null, horizontal: number | null}} */
-	let oldPushpinPosition = { vertical: null, horizontal: null };
 	/** @type {{vertical: number | null, horizontal: number | null}} */
 	let currentPushpinPosition = { vertical: null, horizontal: null };
+	/** @type {{vertical: number | null, horizontal: number | null}} */
+	let newPushpinPosition = { vertical: null, horizontal: null };
 
 	for (let line = 0; line < waitingArray.length; line++) {
 
@@ -152,55 +143,149 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			if (waitingArray[line][element] === '📍') {
 
 				currentPushpinPosition = { vertical: line, horizontal: element };
+				newPushpinPosition = { vertical: line, horizontal: element };
 			}
 		}
 	}
 
-	const waitingInterval = setInterval(async function(array) {
+	const waitingComponent = new MessageActionRow({
+		components: [ new MessageButton({
+			customId: 'explore-left',
+			emoji: '⬅️',
+			disabled: waitingArray[currentPushpinPosition.vertical][currentPushpinPosition.horizontal - 1] === '⬛' ? false : true,
+			style: 'SECONDARY',
+		}), new MessageButton({
+			customId: 'explore-up',
+			emoji: '⬆️',
+			disabled: waitingArray[currentPushpinPosition.vertical - 1] !== undefined && waitingArray[currentPushpinPosition.vertical - 1][currentPushpinPosition.horizontal] === '⬛' ? false : true,
+			style: 'SECONDARY',
+		}), new MessageButton({
+			customId: 'explore-down',
+			emoji: '⬇️',
+			disabled: waitingArray[currentPushpinPosition.vertical + 1] !== undefined && waitingArray[currentPushpinPosition.vertical + 1][currentPushpinPosition.horizontal] === '⬛' ? false : true,
+			style: 'SECONDARY',
+		}), new MessageButton({
+			customId: 'explore-right',
+			emoji: '➡️',
+			disabled: waitingArray[currentPushpinPosition.vertical][currentPushpinPosition.horizontal + 1] === '⬛' ? false : true,
+			style: 'SECONDARY',
+		})],
+	});
 
-		let options = [
-			{ vertical: currentPushpinPosition.vertical, horizontal: currentPushpinPosition.horizontal - 1 },
-			{ vertical: currentPushpinPosition.vertical, horizontal: currentPushpinPosition.horizontal + 1 },
-			{ vertical: currentPushpinPosition.vertical - 1, horizontal: currentPushpinPosition.horizontal },
-			{ vertical: currentPushpinPosition.vertical + 1, horizontal: currentPushpinPosition.horizontal },
-		].filter(position => array[position.vertical] !== undefined && array[position.vertical][position.horizontal] === '⬛');
+	let botReply = await message
+		.reply({
+			content: messageContent,
+			embeds: [...embedArray, {
+				color: profileData.color,
+				author: { name: profileData.name, icon_url: profileData.avatarURL },
+				description: waitingString + joinNestedArray(waitingArray),
+			}],
+			components: [waitingComponent],
+			failIfNotExists: false,
+		})
+		.catch((error) => { throw new Error(error); });
 
-		if (options.length > 1) {
+	filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId.includes('explore-') && i.user.id === message.author.id;
 
-			options = options.filter(position => position.vertical !== oldPushpinPosition.vertical || position.horizontal !== oldPushpinPosition.horizontal);
+	const collector = message.channel.createMessageComponentCollector({ filter, time: 15_000 });
+
+	collector.on('collect', interaction => {
+
+		if (waitingArray[newPushpinPosition.vertical][newPushpinPosition.horizontal] === '📍') {
+
+			if (interaction.customId === 'explore-left') { newPushpinPosition.horizontal -= 1; }
+			if (interaction.customId === 'explore-up') { newPushpinPosition.vertical -= 1; }
+			if (interaction.customId === 'explore-down') { newPushpinPosition.vertical += 1; }
+			if (interaction.customId === 'explore-right') { newPushpinPosition.horizontal += 1; }
 		}
+	});
 
-		const newPushpinPosition = options[generateRandomNumber(options.length, 0)];
+	/** @type {{vertical: number | null, horizontal: number | null}} */
+	let oldGoalPosition = { vertical: null, horizontal: null };
+	/** @type {{vertical: number | null, horizontal: number | null}} */
+	let currentGoalPosition = { vertical: null, horizontal: null };
 
-		array[newPushpinPosition.vertical][newPushpinPosition.horizontal] = '📍';
-		array[currentPushpinPosition.vertical][currentPushpinPosition.horizontal] = '⬛';
+	for (let line = 0; line < waitingArray.length; line++) {
 
+		for (let element = 0; element < waitingArray[line].length; element++) {
 
-		oldPushpinPosition = currentPushpinPosition;
-		currentPushpinPosition = newPushpinPosition;
+			if (waitingArray[line][element] === '🚩') {
 
-		botReply = await botReply
-			.edit({
-				embeds: [...embedArray, {
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: waitingString + joinNestedArray(array),
-				}],
-			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-				return botReply;
-			});
-	}, 1500, waitingArray);
+				currentGoalPosition = { vertical: line, horizontal: element };
+			}
+		}
+	}
 
 
 	await new Promise((resolve) => {
 
-		setTimeout(resolve, 15000);
+		const waitingInterval = setInterval(async function(array) {
+
+			let options = [
+				{ vertical: currentGoalPosition.vertical, horizontal: currentGoalPosition.horizontal - 1 },
+				{ vertical: currentGoalPosition.vertical, horizontal: currentGoalPosition.horizontal + 1 },
+				{ vertical: currentGoalPosition.vertical - 1, horizontal: currentGoalPosition.horizontal },
+				{ vertical: currentGoalPosition.vertical + 1, horizontal: currentGoalPosition.horizontal },
+			].filter(position => array[position.vertical] !== undefined && (array[position.vertical][position.horizontal] === '⬛' || array[position.vertical][position.horizontal] === '📍'));
+
+			if (options.length > 1) {
+
+				options = options.filter(position => position.vertical !== oldGoalPosition.vertical || position.horizontal !== oldGoalPosition.horizontal);
+			}
+
+			const newGoalPosition = options[generateRandomNumber(options.length, 0)];
+
+
+			array[newGoalPosition.vertical][newGoalPosition.horizontal] = '🚩';
+			array[currentGoalPosition.vertical][currentGoalPosition.horizontal] = '⬛';
+
+			oldGoalPosition = { ...currentGoalPosition };
+			currentGoalPosition = { ...newGoalPosition };
+
+
+			array[currentPushpinPosition.vertical][currentPushpinPosition.horizontal] = '⬛';
+			array[newPushpinPosition.vertical][newPushpinPosition.horizontal] = '📍';
+
+			const oldPushPinPosition = { ...currentPushpinPosition };
+			currentPushpinPosition = { ...newPushpinPosition };
+
+
+			// if the currentpushpinposition is equal to the currentgoalposition OR if both the oldgoalposition is equal to the newpushpinposition and the oldpinposition equal to the newgoalposition, end the game early
+			if ((currentGoalPosition.vertical === currentPushpinPosition.vertical && currentGoalPosition.horizontal === currentPushpinPosition.horizontal) || ((oldGoalPosition.vertical === newPushpinPosition.vertical && oldGoalPosition.horizontal === newPushpinPosition.horizontal) && (oldPushPinPosition.vertical === newGoalPosition.vertical && oldPushPinPosition.horizontal === newGoalPosition.horizontal))) {
+
+				clearInterval(waitingInterval);
+				resolve();
+			}
+
+
+			waitingComponent.components[0].disabled = waitingArray[currentPushpinPosition.vertical][currentPushpinPosition.horizontal - 1] === '⬛' || waitingArray[currentPushpinPosition.vertical][currentPushpinPosition.horizontal - 1] === '🚩' ? false : true;
+			waitingComponent.components[1].disabled = waitingArray[currentPushpinPosition.vertical - 1] !== undefined && (waitingArray[currentPushpinPosition.vertical - 1][currentPushpinPosition.horizontal] === '⬛' || waitingArray[currentPushpinPosition.vertical - 1][currentPushpinPosition.horizontal] === '🚩') ? false : true;
+			waitingComponent.components[2].disabled = waitingArray[currentPushpinPosition.vertical + 1] !== undefined && (waitingArray[currentPushpinPosition.vertical + 1][currentPushpinPosition.horizontal] === '⬛' || waitingArray[currentPushpinPosition.vertical + 1][currentPushpinPosition.horizontal] === '🚩') ? false : true;
+			waitingComponent.components[3].disabled = waitingArray[currentPushpinPosition.vertical][currentPushpinPosition.horizontal + 1] === '⬛' || waitingArray[currentPushpinPosition.vertical][currentPushpinPosition.horizontal + 1] === '🚩' ? false : true;
+
+			botReply = await botReply
+				.edit({
+					embeds: [...embedArray, {
+						color: profileData.color,
+						author: { name: profileData.name, icon_url: profileData.avatarURL },
+						description: waitingString + joinNestedArray(array),
+					}],
+					components: [waitingComponent],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+					return botReply;
+				});
+		}, 1500, waitingArray);
+
+		setTimeout(() => {
+
+			clearInterval(waitingInterval);
+			resolve();
+		}, 15000);
 	});
 
 
-	clearInterval(waitingInterval);
 	await botReply
 		.delete()
 		.catch((error) => {
@@ -308,10 +393,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		botReply = await introduceQuest(message, profileData, embedArray, embedFooterStatsText);
 
-		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId === 'quest-start' && i.user.id === message.author.id;
+		filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId === 'quest-start' && i.user.id === message.author.id;
 
 		botReply
-			.awaitMessageComponent({ filter, time: 30000 })
+			.awaitMessageComponent({ filter, time: 30_000 })
 			.then(async interaction => {
 
 				await /** @type {import('discord.js').Message} */ (interaction.message)
@@ -447,11 +532,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			})
 			.catch((error) => { throw new Error(error); });
 
-		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId.includes('plant') && i.user.id == message.author.id;
+		filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId.includes('plant') && i.user.id == message.author.id;
 
 		/** @type {import('discord.js').MessageComponentInteraction | null} } */
 		const interaction = await botReply
-			.awaitMessageComponent({ filter, time: 15000 })
+			.awaitMessageComponent({ filter, time: 15_000 })
 			.catch(() => { return null; });
 
 		if (interaction === null || interaction.customId === 'plant-leave') {
@@ -476,42 +561,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		return await pickupCycle(0, -1, 0);
 
 		/**
-		 * Creates 5 buttons with 5 emojis each, and assigns two of them the emoji to find, of which one also has the emoji to avoid.
-		 * @param {Array<string>} emojis
-		 * @param {number} lastRoundEmojiIndex
-		 * @returns {{emojiToFind: string, buttonsArray: Array<Array<string>>, correctButton: number, incorrectButton: number, thisRoundEmojiIndex: number }}
-		 */
-		function createButtons(emojis, lastRoundEmojiIndex) {
-
-			const thisRoundEmojiIndex = generateRandomNumberWithException(emojis.length, 0, lastRoundEmojiIndex);
-			const emojiToFind = emojis.splice(thisRoundEmojiIndex, 1)[0];
-			emojis = emojis.concat(emojis, userHabitatEmojisArray, userHabitatEmojisArray);
-
-			/** @type {Array<Array<string>>} */
-			const buttonsArray = [];
-			for (let i = 0; i < 5; i++) {
-
-				/** @type {Array<string>} */
-				const buttonEmojis = [];
-				for (let j = 0; j < 5; j++) {
-
-					buttonEmojis.push(emojis.splice(generateRandomNumber(emojis.length, 0), 1)[0]);
-				}
-				buttonsArray.push(buttonEmojis);
-			}
-
-			const correctButton = generateRandomNumber(buttonsArray.length, 0);
-			buttonsArray[correctButton][generateRandomNumber(5, 0)] = emojiToFind;
-
-			const incorrectButton = generateRandomNumberWithException(buttonsArray.length, 0, correctButton);
-			const wrongEmojiPlacement = generateRandomNumber(5, 0);
-			buttonsArray[incorrectButton][wrongEmojiPlacement] = emojiToFind;
-			buttonsArray[incorrectButton][generateRandomNumberWithException(5, 0, wrongEmojiPlacement)] = emojiToAvoid;
-
-			return { emojiToFind, buttonsArray, correctButton, incorrectButton, thisRoundEmojiIndex };
-		}
-
-		/**
 		 * Creates a message with 5 buttons to click, then evaluates the results based on which button was clicked.
 		 * @param {number} totalCycles
 		 * @param {number} lastRoundEmojiIndex
@@ -520,7 +569,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		 */
 		async function pickupCycle(totalCycles, lastRoundEmojiIndex, winPoints) {
 
-			const { emojiToFind, buttonsArray, correctButton, incorrectButton, thisRoundEmojiIndex } = createButtons(emojiList, lastRoundEmojiIndex);
+			const { emojiToFind, buttonsArray, correctButton, incorrectButton, thisRoundEmojiIndex } = module.exports.createButtons(emojiList, lastRoundEmojiIndex, userHabitatEmojisArray, emojiToAvoid);
 
 			embed.footer.text = `Click the button with this emoji: ${emojiToFind}. But watch out for the campsite (🏕️)!`;
 
@@ -554,7 +603,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId)]).style = 'DANGER';
 			}
 
-			if (customId === '' || customId.includes(`${incorrectButton}`) === true) {
+			if (customId.includes(`${incorrectButton}`) === true) {
 
 				winPoints -= 1;
 			}
@@ -755,7 +804,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	 */
 	async function findEnemy() {
 
-		let opponentLevel = generateRandomNumber(1 + Math.ceil(profileData.levels / 10) * 7, (profileData.levels > 2 ? profileData.levels : 3) - Math.ceil(profileData.levels / 10) * 2);
+		let opponentLevel = generateRandomNumber(1 + Math.ceil(profileData.levels / 10) * 5, (profileData.levels > 2 ? profileData.levels : 3) - Math.ceil(profileData.levels / 10) * 2);
 		chosenBiomeNumber === 2 ? generateRandomNumber(profileData.levels > 40 ? profileData.levels - 15 : 25, 26) : chosenBiomeNumber === 1 ? generateRandomNumber(15, 11) : generateRandomNumber(10, 1);
 		const opponentsArray = [...userSpeciesMap.biome1OpponentArray];
 		if (chosenBiomeNumber > 0) { opponentsArray.push(...userSpeciesMap.biome2OpponentArray); }
@@ -804,11 +853,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			})
 			.catch((error) => { throw new Error(error); });
 
-		let filter = (/** @type {{ customId: string; user: { id: string; }; }} */ i) => (i.customId === 'enemy-flee' || i.customId === 'enemy-fight') && i.user.id == message.author.id;
+		filter = (/** @type {{ customId: string; user: { id: string; }; }} */ i) => (i.customId === 'enemy-flee' || i.customId === 'enemy-fight') && i.user.id == message.author.id;
 
 		/** @type {import('discord.js').MessageComponentInteraction | null} } */
 		const interaction = await botReply
-			.awaitMessageComponent({ filter, time: 15000 })
+			.awaitMessageComponent({ filter, time: 15_000 })
 			.catch(() => { return null; });
 
 		if (interaction === null || interaction.customId === 'enemy-flee') {
@@ -918,7 +967,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId)]).style = 'DANGER';
 			}
 
-			if (customId === '' || (customId === 'fight-attack' && cycleKind === 'dodge') || (customId === 'fight-defend' && cycleKind === 'attack') || (customId === 'fight-dodge' && cycleKind === 'defend')) {
+			if ((customId === 'fight-attack' && cycleKind === 'dodge') || (customId === 'fight-defend' && cycleKind === 'attack') || (customId === 'fight-dodge' && cycleKind === 'defend')) {
 
 				opponentLevel += Math.ceil(profileData.levels / 10) * 2;
 			}
@@ -1097,10 +1146,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			})
 			.catch((error) => { throw new Error(error); });
 
-		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => allBiomesArray.includes(i.customId) && i.user.id == message.author.id;
+		filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => allBiomesArray.includes(i.customId) && i.user.id == message.author.id;
 
 		return await getBiomeMessage
-			.awaitMessageComponent({ filter, time: 30000 })
+			.awaitMessageComponent({ filter, time: 30_000 })
 			.then(async interaction => {
 
 				await /** @type {import('discord.js').Message} */ (interaction.message)
@@ -1146,6 +1195,44 @@ function getRandomBox(field) {
 
 	return (chosenField == '⬛' && leftField == '⬛' && rightField == '⬛' && upperField == '⬛' && lowerField == '⬛') ? [randomVertical, randomHorizontal] : getRandomBox(field);
 }
+
+/**
+ * Creates 5 buttons with 5 emojis each, and assigns two of them the emoji to find, of which one also has the emoji to avoid.
+ * @param {Array<string>} emojis
+ * @param {number} lastRoundEmojiIndex
+ * @param {Array<string>} userHabitatEmojisArray
+ * @param {string} emojiToAvoid
+ * @returns {{emojiToFind: string, buttonsArray: Array<Array<string>>, correctButton: number, incorrectButton: number, thisRoundEmojiIndex: number }}
+ */
+module.exports.createButtons = (emojis, lastRoundEmojiIndex, userHabitatEmojisArray, emojiToAvoid) => {
+
+	const thisRoundEmojiIndex = generateRandomNumberWithException(emojis.length, 0, lastRoundEmojiIndex);
+	const emojiToFind = emojis.splice(thisRoundEmojiIndex, 1)[0];
+	emojis = emojis.concat(emojis, userHabitatEmojisArray, userHabitatEmojisArray);
+
+	/** @type {Array<Array<string>>} */
+	const buttonsArray = [];
+	for (let i = 0; i < 5; i++) {
+
+		/** @type {Array<string>} */
+		const buttonEmojis = [];
+		for (let j = 0; j < 5; j++) {
+
+			buttonEmojis.push(emojis.splice(generateRandomNumber(emojis.length, 0), 1)[0]);
+		}
+		buttonsArray.push(buttonEmojis);
+	}
+
+	const correctButton = generateRandomNumber(buttonsArray.length, 0);
+	buttonsArray[correctButton][generateRandomNumber(5, 0)] = emojiToFind;
+
+	const incorrectButton = generateRandomNumberWithException(buttonsArray.length, 0, correctButton);
+	const wrongEmojiPlacement = generateRandomNumber(5, 0);
+	buttonsArray[incorrectButton][wrongEmojiPlacement] = emojiToFind;
+	buttonsArray[incorrectButton][generateRandomNumberWithException(5, 0, wrongEmojiPlacement)] = emojiToAvoid;
+
+	return { emojiToFind, buttonsArray, correctButton, incorrectButton, thisRoundEmojiIndex };
+};
 
 /**
  *

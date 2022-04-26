@@ -172,8 +172,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			embeds: [ new MessageEmbed({
 				color: /** @type {`#${string}`} */ (default_color),
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-				description: `*A stranger carefully steps over the pack's borders. Their face seems friendly. Curious eyes watch them as they come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n**"${name},"** *the creature responds.*`,
-				footer: { text: 'To continue setting up your profile, type "rp species"' },
+				title: profileData.species === '' ? null : `You successfully renamed your character to ${name}!`,
+				description: profileData.species === '' ? `*A stranger carefully steps over the pack's borders. Their face seems friendly. Curious eyes watch them as they come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n**"${name},"** *the creature responds.*` : null,
+				footer: { text: profileData.species === '' ? 'To continue setting up your profile, type "rp species"' : null },
 			})],
 			failIfNotExists: false,
 		})

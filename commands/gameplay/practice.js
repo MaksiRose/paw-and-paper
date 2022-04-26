@@ -11,7 +11,6 @@ const { checkLevelUp } = require('../../utils/levelHandling');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { coloredButtonsAdvice } = require('../../utils/adviceMessages');
-const practicingCooldownAccountsMap = new Map();
 
 module.exports.name = 'practice';
 module.exports.aliases = ['train'];
@@ -58,25 +57,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	profileData = await startCooldown(message, profileData);
 	const messageContent = remindOfAttack(message);
 
-	if (practicingCooldownAccountsMap.has('nr' + message.author.id + message.guild.id) && Date.now() - practicingCooldownAccountsMap.get('nr' + message.author.id + message.guild.id) < 300000) {
-
-		await message
-			.reply({
-				content: messageContent,
-				embeds: [...embedArray, {
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					title: 'You can only practice every 5 minutes!',
-					description: `You can practice again <t:${Math.floor((practicingCooldownAccountsMap.get('nr' + message.author.id + message.guild.id) + 300000) / 1000)}:R>.`,
-				}],
-				failIfNotExists: false,
-			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
-		return;
-	}
-
 	let botReply = await message
 		.reply({
 			content: messageContent,
@@ -106,7 +86,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	let filter = (/** @type {{ customId: string; user: { id: string; }; }} */ i) => (i.customId === 'practice-accept' || i.customId === 'practice-decline') && i.user.id == message.author.id;
 
 	const shouldContinue = await botReply
-		.awaitMessageComponent({ filter, time: 15000 })
+		.awaitMessageComponent({ filter, time: 15_000 })
 		.then(async interaction => {
 
 			if (interaction.customId === 'practice-decline') {
@@ -142,8 +122,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	/* This is done so that later, these buttons aren't copied over. */
 	botReply.components = [];
-
-	practicingCooldownAccountsMap.set('nr' + message.author.id + message.guild.id, Date.now());
 
 	const thirstPoints = await decreaseThirst(profileData);
 	const hungerPoints = await decreaseHunger(profileData);
@@ -247,7 +225,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		filter = i => (i.customId === 'practice-attack' || i.customId === 'practice-defend' || i.customId === 'practice-dodge') && i.user.id == message.author.id;
 
 		await botReply
-			.awaitMessageComponent({ filter, time: profileData.rank === 'Elderly' ? 2000 : profileData.rank === 'Hunter' || profileData.rank === 'Healer' ? 3000 : 4000 })
+			.awaitMessageComponent({ filter, time: profileData.rank === 'Elderly' ? 6_000 : profileData.rank === 'Hunter' || profileData.rank === 'Healer' ? 8_000 : 10_000 })
 			.then(async interaction => {
 
 				/* Here we make the button the player choses red, this will apply always except if the player choses the correct button, then this will be overwritten. */

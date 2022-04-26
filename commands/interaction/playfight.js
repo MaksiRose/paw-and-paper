@@ -13,6 +13,7 @@ const { pronoun, pronounAndPlural, upperCasePronounAndPlural } = require('../../
 const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
+const { addFriendshipPoints } = require('../../utils/friendshipHandling');
 
 module.exports.name = 'playfight';
 
@@ -82,7 +83,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		serverId: message.guild.id,
 	}));
 
-	if (!partnerProfileData || partnerProfileData.name === '' || partnerProfileData.species === '' || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0 || partnerProfileData.hasCooldown === true) {
+	if (!partnerProfileData || partnerProfileData.name === '' || partnerProfileData.species === '' || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0 || partnerProfileData.hasCooldown === true || partnerProfileData.isResting === true) {
 
 		await message
 			.reply({
@@ -244,7 +245,7 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.customId === 'playfight-confirm-tic-tac-toe' && i.user.id == message.mentions.users.first().id) || (i.customId.includes('board') && i.user.id == currentProfileData.userId);
 
 		const { customId } = await botReply
-			.awaitMessageComponent({ filter, time: 60000 })
+			.awaitMessageComponent({ filter, time: 60_000 })
 			.catch(() => { return { customId: '' }; });
 
 		let isEmptyBoard = true;
@@ -519,7 +520,7 @@ function playConnectFour(serverData, profileData, partnerProfileData, message, b
 		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.customId === 'playfight-confirm-connect-four' && i.user.id === message.mentions.users.first().id) || (i.customId.includes('field') && i.user.id === currentProfileData.userId);
 
 		const { customId } = await botReply
-			.awaitMessageComponent({ filter, time: 60000 })
+			.awaitMessageComponent({ filter, time: 60_000 })
 			.catch(() => { return { customId: '' }; });
 
 		let isEmptyBoard = true;
@@ -851,6 +852,8 @@ async function checkHealthAndLevel(message, botReply, profileData, serverData, p
 
 	await isPassedOut(message, profileData, true);
 	await isPassedOut(message, partnerProfileData, true);
+
+	await addFriendshipPoints(message, profileData, partnerProfileData);
 
 	await restAdvice(message, profileData);
 	await restAdvice(message, partnerProfileData);

@@ -115,7 +115,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		/** @type {import('discord.js').SelectMenuInteraction | null} } */
 		const interaction = await botReplyV
-			.awaitMessageComponent({ filter, time: 300000 })
+			.awaitMessageComponent({ filter, time: 300_000 })
 			.catch(() => { return null; });
 
 		if (interaction === null) {
@@ -261,7 +261,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			filter = i => profileModel.findOne({ serverId: i.guild.id, userId: i.user.id }).then(profile => profile === null ? false : true);
 
 			await botReplyH
-				.awaitMessageComponent({ filter, time: 300000 })
+				.awaitMessageComponent({ filter, time: 300_000 })
 				.then(async button => {
 
 					if (button.customId === 'visit_decline') {

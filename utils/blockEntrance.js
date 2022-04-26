@@ -63,7 +63,7 @@ async function blockEntrance(message, messageContent, profileData, serverData, d
 	const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId === 'dispose' && i.user.id === message.author.id;
 
 	botReply
-		.awaitMessageComponent({ filter, time: 60000 })
+		.awaitMessageComponent({ filter, time: 60_000 })
 		.then(async interaction => {
 
 			await /** @type {import('discord.js').Message} */ (interaction.message)

@@ -9,6 +9,7 @@ const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = requi
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { remindOfAttack } = require('../gameplay/attack');
 const { pronounAndPlural, pronoun } = require('../../utils/getPronouns');
+const { addFriendshipPoints } = require('../../utils/friendshipHandling');
 const sharingCooldownAccountsMap = new Map();
 
 module.exports.name = 'share';
@@ -227,6 +228,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	await decreaseHealth(profileData, botReply, userInjuryObject);
 	await isPassedOut(message, profileData, false);
 
+	if (partnerProfileData !== null) { await addFriendshipPoints(message, profileData, partnerProfileData); }
+
 
 	/**
 	 * Shares a story with a user.
@@ -268,7 +271,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			});
 		}
 
-		if (partnerProfileData.injuryObject.cold == true && profileData.injuryObject.cold == false, pullFromWeightedTable({ 0: 3, 1: 7 }) === 0) {
+		if (partnerProfileData.injuryObject.cold === true && profileData.injuryObject.cold === false && pullFromWeightedTable({ 0: 3, 1: 7 }) === 0) {
 
 			healthPoints = generateRandomNumber(5, 3);
 

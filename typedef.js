@@ -8,6 +8,12 @@
  */
 module.exports.BanList = this.BanList;
 
+/**
+ * This object holds references to user accounts that are friends.
+ * @typedef {Object<string, Object<string, Array<number>>>} FriendsList
+ */
+module.exports.FriendsList = this.FriendsList;
+
 
 /**
  * This object holds references to files that will be deleted, with either a guild ID or a user + guild ID as the key, and an object with the file name and deletion timestamp as variables.

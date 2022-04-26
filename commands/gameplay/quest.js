@@ -89,7 +89,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	botReply = await module.exports.introduceQuest(message, profileData, embedArray, '');
 
 	await botReply
-		.awaitMessageComponent({ filter, time: 30000 })
+		.awaitMessageComponent({ filter, time: 30_000 })
 		.then(async () => await startQuest())
 		.catch(async () => {
 
@@ -280,7 +280,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				});
 
 			const { customId } = await botReply
-				.awaitMessageComponent({ filter, time: 5000 })
+				.awaitMessageComponent({ filter, time: 5_000 })
 				.catch(() => { return { customId: '' }; });
 
 			const winChance = generateWinChance(profileData.levels, profileData.rank === 'Elderly' ? 35 : (profileData.rank === 'Hunter' || profileData.rank === 'Healer') ? 20 : profileData.rank === 'Apprentice' ? 10 : 2);
