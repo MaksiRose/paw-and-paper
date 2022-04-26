@@ -561,6 +561,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 							whoWinsChance = 0;
 						}
 
+						botReply.components = disableAllComponents(botReply.components);
+
 						resolve();
 					})
 					.catch((error) => { throw new Error(error); });
@@ -579,8 +581,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		}
 
 		embed.footer.text = embedFooterStatsText;
-
-		botReply.components = disableAllComponents(botReply.components);
 
 		botReply = await (async content => {
 			botReply === null ? (botReply = await message.reply(content)) : (botReply = await botReply.edit(content));
