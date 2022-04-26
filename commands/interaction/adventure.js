@@ -117,7 +117,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				color: profileData.color,
 				author: { name: profileData.name, icon_url: profileData.avatarURL },
 				description: `*${profileData.name} impatiently paces at the pack borders, hoping for ${partnerProfileData.name} to come and adventure with ${pronoun(profileData, 1)}.*`,
-				footer: { text: 'After 60 seconds, the invitation expires.' },
+				footer: { text: 'The game that is being played is memory, meaning that a player has to uncover two cards. If the emojis match, the cards are left uncovered.\nThe invitation expires after 60 seconds.' },
 			}],
 			components: [ new MessageActionRow({
 				components: [ new MessageButton({

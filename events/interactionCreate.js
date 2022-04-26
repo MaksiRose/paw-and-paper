@@ -266,14 +266,15 @@ const event = {
 							title: 'Page 4: 👥 Interaction',
 							description: 'Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.',
 							fields: [
-								{ name: '**rp requestvisit**', value: 'Find, visit and talk to people from far away packs.' },
-								{ name: '**rp endvisit**', value: 'End a visit between your and another pack.' },
-								{ name: '**rp say [text]**', value: 'Talk to your fellow packmates. Gives 1 experience point per use.' },
-								{ name: '**rp hug [@user]**', value: 'Hug a fellow packmate, if they consent.' },
+								{ name: '**rp adventure [@user]**', value: 'Go adventuring with a fellow packmate. Requires 6 friendship hearts.' },
 								{ name: '**rp share (@user)**', value: 'Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person. __Only available to Elderlies.__' },
 								{ name: '**rp playfight [@user] (c4 / ttt)**', value: 'Playfully fight with another packmate. You can play Connect Four or Tic Tac Toe.' },
+								{ name: '**rp say [text]**', value: 'Talk to your fellow packmates. Gives 1 experience point per use.' },
+								{ name: '**rp hug [@user]**', value: 'Hug a fellow packmate, if they consent.' },
 								{ name: '**rp profilelist**', value: 'View a list of all the profiles that exist on this server.' },
 								{ name: '**rp friendships**', value: 'View a list of all the friendships that you have with other players.' },
+								{ name: '**rp requestvisit**', value: 'Find, visit and talk to people from far away packs.' },
+								{ name: '**rp endvisit**', value: 'End a visit between your and another pack.' },
 							],
 							footer: { text: 'ℹ️ Select a command from the list below to view more information about it.' },
 						}],
@@ -284,14 +285,15 @@ const event = {
 								customId: 'help-page4-commands',
 								placeholder: 'Select a command',
 								options: [
-									{ label: 'Requestvisit', value: 'help_requestvisit', description: 'Find, visit and talk to people from far away packs.' },
-									{ label: 'Endvisit', value: 'help_endvisit', description: 'End a visit between your and another pack.' },
-									{ label: 'Say', value: 'help_say', description: 'Talk to your fellow packmates. Gives 1 experience point per use.' },
-									{ label: 'Hug', value: 'help_hug', description: 'Hug a fellow packmate, if they consent.' },
+									{ label: 'Adventure', value: 'help_adventure', description: 'Go adventuring with a fellow packmate. Requires 6 friendship hearts.' },
 									{ label: 'Share', value: 'help_share', description: 'Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person.' },
 									{ label: 'Playfight', value: 'help_playfight', description: 'Playfully fight with another packmate. You can play Connect Four or Tic Tac Toe.' },
+									{ label: 'Say', value: 'help_say', description: 'Talk to your fellow packmates. Gives 1 experience point per use.' },
+									{ label: 'Hug', value: 'help_hug', description: 'Hug a fellow packmate, if they consent.' },
 									{ label: 'Profilelist', value: 'help_profilelist', description: 'View a list of all the profiles that exist on this server.' },
 									{ label: 'Friendships', value: 'help_friendships', description: 'View a list of all the friendships that you have with other players.' },
+									{ label: 'Requestvisit', value: 'help_requestvisit', description: 'Find, visit and talk to people from far away packs.' },
+									{ label: 'Endvisit', value: 'help_endvisit', description: 'End a visit between your and another pack.' },
 								],
 							}],
 						}],
@@ -1030,6 +1032,29 @@ const event = {
 								{ name: '**Aliases**', value: 'none' },
 								{ name: '**Arguments**', value: 'A mention of the user you want to playfight with. Optional: `c4` or `connectfour` to play Connect Four, or `ttt` or `tictactoe` to play Tic Tac Toe.' },
 								{ name: '**More information**', value: 'If no game is selected, a random game will be chosen.\nBoth users need an account to play this.\nThe receiving user will first be asked if they want to play, and if they say yes, the users alternate as per the game. If a player doesn\'t click a button for too long, the game will be aborted.\nIn the case of a tie, both players get between 5 and 15 XP. In the case that one player wins, They get between 10 and 20 XP, with an extra amount of XP being calculated in a sigmoid function based on the difference between the winners and losers level, where the lower the winners level is than the losers level, the more extra XP they get. The maximum extra XP is 40.\nThe losing player has a 10 in 100 chance of being injured. If the losing player has a living ginkgo sapling, this chance is increased in their favor by one for the amount of times they watered the sapling successfully. If they do get injured, it is a 50/50 chance between getting a sprain and getting an infection.' },
+							],
+						}],
+						ephemeral: true,
+					})
+					.catch(async (error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
+
+			if (interaction.values[0] === 'help_adventure') {
+
+				return await interaction
+					.followUp({
+						embeds: [{
+							color: /** @type {`#${string}`} */ (config.default_color),
+							title: 'rp adventure [@user]',
+							description: 'Go adventuring with a fellow packmate. Requires 6 friendship hearts.',
+							fields: [
+								{ name: '**Aliases**', value: 'none' },
+								{ name: '**Arguments**', value: 'A mention of the user you want to adventure with.' },
+								{ name: '**More information**', value: 'Both users need an account to play this.\nThe receiving user will first be asked if they want to adventure, and if they say yes, the users alternate as per the game. If a player doesn\'t click a button for too long, the game will be aborted.\nThe game that is being played is memory, meaning that a player has to uncover two cards. If the emojis match, the cards are left uncovered.\nIf the players don\'t manage to win after 20 rounds, the game ends and the player who uncovered less cards will either lose an item in their invetory, or get a wound or cold. If the players do manage to win, the player who uncovered more cards will get 6-8 HP or find a herb. The less rounds were needed, the higher the chance to find a rarer herb.' },
 							],
 						}],
 						ephemeral: true,
