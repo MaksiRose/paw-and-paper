@@ -561,42 +561,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		return await pickupCycle(0, -1, 0);
 
 		/**
-		 * Creates 5 buttons with 5 emojis each, and assigns two of them the emoji to find, of which one also has the emoji to avoid.
-		 * @param {Array<string>} emojis
-		 * @param {number} lastRoundEmojiIndex
-		 * @returns {{emojiToFind: string, buttonsArray: Array<Array<string>>, correctButton: number, incorrectButton: number, thisRoundEmojiIndex: number }}
-		 */
-		function createButtons(emojis, lastRoundEmojiIndex) {
-
-			const thisRoundEmojiIndex = generateRandomNumberWithException(emojis.length, 0, lastRoundEmojiIndex);
-			const emojiToFind = emojis.splice(thisRoundEmojiIndex, 1)[0];
-			emojis = emojis.concat(emojis, userHabitatEmojisArray, userHabitatEmojisArray);
-
-			/** @type {Array<Array<string>>} */
-			const buttonsArray = [];
-			for (let i = 0; i < 5; i++) {
-
-				/** @type {Array<string>} */
-				const buttonEmojis = [];
-				for (let j = 0; j < 5; j++) {
-
-					buttonEmojis.push(emojis.splice(generateRandomNumber(emojis.length, 0), 1)[0]);
-				}
-				buttonsArray.push(buttonEmojis);
-			}
-
-			const correctButton = generateRandomNumber(buttonsArray.length, 0);
-			buttonsArray[correctButton][generateRandomNumber(5, 0)] = emojiToFind;
-
-			const incorrectButton = generateRandomNumberWithException(buttonsArray.length, 0, correctButton);
-			const wrongEmojiPlacement = generateRandomNumber(5, 0);
-			buttonsArray[incorrectButton][wrongEmojiPlacement] = emojiToFind;
-			buttonsArray[incorrectButton][generateRandomNumberWithException(5, 0, wrongEmojiPlacement)] = emojiToAvoid;
-
-			return { emojiToFind, buttonsArray, correctButton, incorrectButton, thisRoundEmojiIndex };
-		}
-
-		/**
 		 * Creates a message with 5 buttons to click, then evaluates the results based on which button was clicked.
 		 * @param {number} totalCycles
 		 * @param {number} lastRoundEmojiIndex
@@ -605,7 +569,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		 */
 		async function pickupCycle(totalCycles, lastRoundEmojiIndex, winPoints) {
 
-			const { emojiToFind, buttonsArray, correctButton, incorrectButton, thisRoundEmojiIndex } = createButtons(emojiList, lastRoundEmojiIndex);
+			const { emojiToFind, buttonsArray, correctButton, incorrectButton, thisRoundEmojiIndex } = module.exports.createButtons(emojiList, lastRoundEmojiIndex, userHabitatEmojisArray, emojiToAvoid);
 
 			embed.footer.text = `Click the button with this emoji: ${emojiToFind}. But watch out for the campsite (🏕️)!`;
 
@@ -1231,6 +1195,44 @@ function getRandomBox(field) {
 
 	return (chosenField == '⬛' && leftField == '⬛' && rightField == '⬛' && upperField == '⬛' && lowerField == '⬛') ? [randomVertical, randomHorizontal] : getRandomBox(field);
 }
+
+/**
+ * Creates 5 buttons with 5 emojis each, and assigns two of them the emoji to find, of which one also has the emoji to avoid.
+ * @param {Array<string>} emojis
+ * @param {number} lastRoundEmojiIndex
+ * @param {Array<string>} userHabitatEmojisArray
+ * @param {string} emojiToAvoid
+ * @returns {{emojiToFind: string, buttonsArray: Array<Array<string>>, correctButton: number, incorrectButton: number, thisRoundEmojiIndex: number }}
+ */
+module.exports.createButtons = (emojis, lastRoundEmojiIndex, userHabitatEmojisArray, emojiToAvoid) => {
+
+	const thisRoundEmojiIndex = generateRandomNumberWithException(emojis.length, 0, lastRoundEmojiIndex);
+	const emojiToFind = emojis.splice(thisRoundEmojiIndex, 1)[0];
+	emojis = emojis.concat(emojis, userHabitatEmojisArray, userHabitatEmojisArray);
+
+	/** @type {Array<Array<string>>} */
+	const buttonsArray = [];
+	for (let i = 0; i < 5; i++) {
+
+		/** @type {Array<string>} */
+		const buttonEmojis = [];
+		for (let j = 0; j < 5; j++) {
+
+			buttonEmojis.push(emojis.splice(generateRandomNumber(emojis.length, 0), 1)[0]);
+		}
+		buttonsArray.push(buttonEmojis);
+	}
+
+	const correctButton = generateRandomNumber(buttonsArray.length, 0);
+	buttonsArray[correctButton][generateRandomNumber(5, 0)] = emojiToFind;
+
+	const incorrectButton = generateRandomNumberWithException(buttonsArray.length, 0, correctButton);
+	const wrongEmojiPlacement = generateRandomNumber(5, 0);
+	buttonsArray[incorrectButton][wrongEmojiPlacement] = emojiToFind;
+	buttonsArray[incorrectButton][generateRandomNumberWithException(5, 0, wrongEmojiPlacement)] = emojiToAvoid;
+
+	return { emojiToFind, buttonsArray, correctButton, incorrectButton, thisRoundEmojiIndex };
+};
 
 /**
  *
