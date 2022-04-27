@@ -1,7 +1,7 @@
 // @ts-check
 const { MessageEmbed, MessageActionRow, MessageButton } = require('discord.js');
 const { readFileSync } = require('fs');
-const { profileModel } = require('../../models/profileModel');
+const { profileModel, otherProfileModel } = require('../../models/profileModel');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { getFriendshipPoints, getFriendshipHearts } = require('../../utils/friendshipHandling');
@@ -36,11 +36,15 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		if (key.includes(profileData.uuid)) {
 
-			const otherProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: key.replace(profileData.uuid, '').replace('_', '') }));
+			let otherProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: key.replace(profileData.uuid, '').replace('_', '') }));
+			if (otherProfileData === null) { otherProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await otherProfileModel.findOne({ uuid: key.replace(profileData.uuid, '').replace('_', '') })); }
 
-			const friendshipHearts = getFriendshipHearts(getFriendshipPoints(friendshipList[key][profileData.uuid], friendshipList[key][otherProfileData.uuid]));
+			if (otherProfileData !== null) {
 
-			friendships.push(`${otherProfileData.name} (<@${otherProfileData.userId}>) - ${'❤️'.repeat(friendshipHearts) + '🖤'.repeat(10 - friendshipHearts)}`);
+				const friendshipHearts = getFriendshipHearts(getFriendshipPoints(friendshipList[key][profileData.uuid], friendshipList[key][otherProfileData.uuid]));
+
+				friendships.push(`${otherProfileData.name} (<@${otherProfileData.userId}>) - ${'❤️'.repeat(friendshipHearts) + '🖤'.repeat(10 - friendshipHearts)}`);
+			}
 		}
 	}
 
