@@ -367,7 +367,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 					botReply = await botReply
 						.edit({
-							content: messageContent == null ? '' : messageContent,
+							content: messageContent,
 							embeds: [...embedArray, {
 								color: profileData.color,
 								author: { name: profileData.name, icon_url: profileData.avatarURL },
@@ -450,7 +450,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 					botReply = await botReply
 						.edit({
-							content: messageContent == null ? '' : messageContent,
+							content: messageContent,
 							embeds: [...embedArray, {
 								color: profileData.color,
 								author: { name: profileData.name, icon_url: profileData.avatarURL },
