@@ -1,5 +1,5 @@
 // @ts-check
-const { readdirSync, readFileSync, renameSync, writeFileSync } = require('fs');
+const { readdirSync, readFileSync } = require('fs');
 const { profileModel, otherProfileModel } = require('../models/profileModel');
 const { sendReminder } = require('../commands/maintenance/water');
 
@@ -8,12 +8,7 @@ const { sendReminder } = require('../commands/maintenance/water');
  * Updates all profiles
  * @param {import('../paw').client} client
  */
-module.exports.execute = (client) => {
-
-	/**
-	 * @type {Array<string>}
-	 */
-	const invalidGuilds = [];
+module.exports.execute = async (client) => {
 
 	const files = [
 		...readdirSync('./database/profiles').map(file => ['./database/profiles', file]),
@@ -32,7 +27,7 @@ module.exports.execute = (client) => {
 			sendReminder(client, dataObject, dataObject.saplingObject.lastMessageChannelId);
 		}
 
-		(path.includes('inactiveProfiles') ? otherProfileModel : profileModel)
+		await (path.includes('inactiveProfiles') ? otherProfileModel : profileModel)
 			.findOneAndUpdate(
 				{ userId: dataObject.userId, serverId: dataObject.serverId },
 				{
@@ -42,57 +37,6 @@ module.exports.execute = (client) => {
 						energy: dataObject.energy === 0 ? 0 : dataObject.maxEnergy,
 					},
 				},
-			)
-			.then(() => {
-
-				if (invalidGuilds.includes(dataObject.serverId)) {
-
-					moveFile(file, `${dataObject.serverId}${dataObject.userId}`, dataObject.name, path);
-				}
-				else {
-
-					client.guilds
-						.fetch(dataObject.serverId)
-						.then(guild => {
-
-							guild.members
-								.fetch(dataObject.userId)
-								.catch(() => moveFile(file, `${dataObject.serverId}${dataObject.userId}`, dataObject.name, path));
-						})
-						.catch(error => {
-
-							invalidGuilds.push(dataObject.serverId);
-							if (error.httpStatus === 403) {
-
-								moveFile(file, `${dataObject.serverId}${dataObject.userId}`, dataObject.name, path);
-							}
-							else {
-								console.error(error);
-							}
-						});
-				}
-			});
+			);
 	}
 };
-
-/**
- * Moves a file to the `toDelete` path
- * @param {string} file - File name
- * @param {string} id - user ID + server ID
- * @param {string} name - Name of the user
- * @param {string} path - Path before the file
- */
-function moveFile(file, id, name, path) {
-
-	renameSync(`${path}/${file}`, `./database/toDelete/${file}`);
-
-	/**
-	 * @type {import('../typedef').DeleteList}
-	 */
-	const toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8'));
-
-	toDeleteList[id] = toDeleteList[id] || {};
-	toDeleteList[id][name] = { fileName: file, deletionTimestamp: Date.now() + 2073600000 };
-
-	writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
-}

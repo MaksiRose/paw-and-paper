@@ -1,6 +1,6 @@
 // @ts-check
 const { Client, Intents } = require('discord.js');
-const { existsSync, writeFileSync, readFileSync, unlinkSync } = require('fs');
+const { existsSync, writeFileSync } = require('fs');
 
 class CustomClient extends Client {
 	/**
@@ -95,41 +95,4 @@ module.exports.start = (botToken, bfdToken, bfdAuthorization, topToken, topAutho
 	require('./handlers/events').execute(client);
 
 	client.login(botToken);
-};
-
-/**
- * Fetches the list of accounts that will be deleted and initiates a timeout to delete them
- */
-module.exports.startDeleteListTimeouts = () => {
-
-	/**
-	 * @type {import('./typedef').DeleteList}
-	 */
-	let toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8'));
-
-	for (const [id, accounts] of Object.entries(toDeleteList)) {
-
-		for (const [accountName, accountObject] of Object.entries(accounts)) {
-
-			setTimeout(async () => {
-
-				if (existsSync(`./database/toDelete/${accountObject.fileName}`) == true) {
-
-					/**
-					 * @type {import('./typedef').ProfileSchema}
-					 */
-					const dataObject = JSON.parse(readFileSync(`./database/toDelete/${accountObject.fileName}`, 'utf-8'));
-					unlinkSync(`./database/toDelete/${accountObject.fileName}`);
-					console.log('Deleted File: ', dataObject);
-
-					toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8'));
-
-					delete toDeleteList[id][accountName];
-					if (Object.entries(toDeleteList[id]).length === 0) { delete toDeleteList[id]; }
-
-					writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
-				}
-			}, accountObject.deletionTimestamp - Date.now());
-		}
-	}
 };

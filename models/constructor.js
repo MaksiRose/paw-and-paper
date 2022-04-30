@@ -409,7 +409,7 @@ class model {
 
 		for (const file of fs.readdirSync(path).filter(f => f.endsWith('.json'))) {
 
-			this.update(file);
+			this.update(file.replace('.json', ''));
 		}
 	}
 }
