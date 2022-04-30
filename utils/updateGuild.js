@@ -1,10 +1,11 @@
 // @ts-check
-const { readFileSync, renameSync, writeFileSync } = require('fs');
+const { readFileSync, renameSync, writeFileSync, readdirSync } = require('fs');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('./itemsInfo');
 const serverModel = require('../models/serverModel');
+const { otherProfileModel } = require('../models/profileModel');
 
 /**
- *
+ * This creates a new guild if the guild isn't on the ban list, or restores it from the guilds that are to be deleted.
  * @param {import('discord.js').Client} client
  * @param {import('discord.js').Guild} guild
  * @returns
@@ -52,8 +53,26 @@ async function createGuild(client, guild) {
 
 	/** @type {import('../typedef').DeleteList} */
 	const toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8'));
+	let isNewServer = true;
 
-	if (toDeleteList[guild.id] === undefined) {
+	/* Here we are finding every file in the toDelete folder and adding its uuid to an Array if the server IDs match. We are also moving the files out of the toDelete folder. */
+	for (const file of readdirSync('./database/toDelete').filter(f => f.endsWith('.json'))) {
+
+		/** @type {Object.<string, *>} */
+		const dataObject = JSON.parse(readFileSync(`'./database/toDelete'/${file}`, 'utf-8'));
+
+		if (Object.hasOwn(dataObject, 'serverId') && dataObject.serverId === guild.id) {
+
+			delete toDeleteList[dataObject.uuid];
+
+			renameSync(`./database/toDelete/${dataObject.uuid}`, `./database/${Object.hasOwn(dataObject, 'userId') ? 'profiles/inactiveProfiles' : 'servers'}/${dataObject.uuid}`);
+
+			if (Object.hasOwn(dataObject, 'userId') === false) { isNewServer = false; }
+			await (Object.hasOwn(dataObject, 'userId') ? otherProfileModel : serverModel).update(dataObject.uuid);
+		}
+	}
+
+	if (isNewServer) {
 
 		const serverInventoryObject = {
 			commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, 0])),
@@ -74,28 +93,11 @@ async function createGuild(client, guild) {
 			shop: [],
 		});
 	}
+	else {
 
-	const guildFile = toDeleteList[guild.id].fileName;
-	renameSync(`./database/toDelete/${guildFile}`, `./database/servers/${guildFile}`);
-	delete toDeleteList[guild.id];
-	writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
-
-	/** @type {import('../typedef').ServerSchema} */
-	const serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOne({
-		serverId: guild.id,
-	}));
-
-	serverData.inventoryObject = {
-		commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, serverData.inventoryObject.commonPlants[key] || 0])),
-		uncommonPlants: Object.fromEntries([...uncommonPlantsMap.keys()].sort().map(key => [key, serverData.inventoryObject.uncommonPlants[key] || 0])),
-		rarePlants: Object.fromEntries([...rarePlantsMap.keys()].sort().map(key => [key, serverData.inventoryObject.rarePlants[key] || 0])),
-		meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, serverData.inventoryObject.meat[key] || 0])),
-	};
-
-	return await serverModel.findOneAndUpdate(
-		{ serverId: serverData.serverId },
-		{ $set: { inventoryObject: serverData.inventoryObject } },
-	);
+		writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
+	}
 }
 
-module.exports = createGuild;
+
+module.exports.createGuild = createGuild;

@@ -15,66 +15,15 @@ class model {
 		this.path = path;
 		this.schema = schema;
 
-		for (const file of fs.readdirSync(path).filter(f => f.endsWith('.json'))) {
-
-			/** @type {Object.<string, *>} */
-			const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`, 'utf-8'));
-
-			/** @type {Object.<string, *>} */
-			const updateObject = {};
-
-			for (const [key, { type: type, default: def }] of Object.entries(schema)) {
-
-				// @ts-ignore
-				if (Object.hasOwn(dataObject, key) === false) {
-
-					updateObject[key] = (typeof def === type || type === 'array' || type === 'any') ? def : [undefined, false, 0, '', {}, [], null][validTypes.indexOf(type[0])];
-				}
-				else {
-
-					updateObject[key] = dataObject[key];
-
-					if (def !== undefined) {
-
-						updateObject[key] = transferObjectKeys({}, dataObject[key], def);
-					}
-				}
-			}
-
-			fs.writeFileSync(`${path}/${updateObject.uuid}.json`, JSON.stringify(updateObject, null, '\t'));
-		}
 
 		/**
-		 * Copies a template over to a new object so that keys from an existing object are carried over where possible
-		 * @param {Object.<string, *>} newObject
-		 * @param {Object.<string, *>} oldObject
-		 * @param {*} schemaObject
-		 * @returns {Object.<string, *>}
+		 * Overwrites a file in the database. **Caution:** This could make unexpected changes to the file!
+		 * @param {Object<string, *>} updateObject
 		 */
-		function transferObjectKeys(newObject, oldObject, schemaObject) {
+		this.save = async function(updateObject) {
 
-			if (typeof oldObject === 'object' && !Array.isArray(oldObject) && oldObject !== null) {
-
-				for (const [key, value] of Object.entries(schemaObject)) {
-
-					// @ts-ignore
-					if (Object.hasOwn(oldObject, key) === false) {
-
-						newObject[key] = value;
-					}
-					else {
-
-						newObject[key] = oldObject[key];
-
-						newObject[key] = transferObjectKeys({}, oldObject[key], schemaObject[key]);
-					}
-				}
-
-				return newObject;
-			}
-
-			return oldObject;
-		}
+			fs.writeFileSync(`${path}/${updateObject.uuid}.json`, JSON.stringify(updateObject, null, '\t'));
+		};
 
 		/**
 		 * Searches for an object that meets the filter, and returns it. If several objects meet the requirement, the first that is found is returned.
@@ -217,7 +166,7 @@ class model {
 				}
 			}
 
-			fs.writeFileSync(`${path}/${uuid}.json`, JSON.stringify(updateObject, null, '\t'));
+			this.save(updateObject);
 
 			return dataObject;
 
@@ -315,7 +264,7 @@ class model {
 				}
 			}
 
-			fs.writeFileSync(`${path}/${dataObject.uuid}.json`, JSON.stringify(dataObject, null, '\t'));
+			this.save(dataObject);
 
 			return dataObject;
 
@@ -392,13 +341,76 @@ class model {
 		};
 
 		/**
-		 * Updates a file in the database. **Caution:** This could make unexpected changes to the file!
-		 * @param {Object<string, *>} updateObject
+		 * Updates the information of a file to be accurate to the schema
+		 * @param {string} uuid
+		 * @returns {Promise<Object.<string, *>>}
 		 */
-		this.save = async function(updateObject) {
+		this.update = async function(uuid) {
 
-			fs.writeFileSync(`${path}/${updateObject.uuid}.json`, JSON.stringify(updateObject, null, '\t'));
+			const dataObject = await this.findOne({ uuid: uuid });
+
+			/** @type {Object.<string, *>} */
+			const updateObject = {};
+
+			for (const [key, { type: type, default: def }] of Object.entries(schema)) {
+
+				// @ts-ignore
+				if (Object.hasOwn(dataObject, key) === false) {
+
+					updateObject[key] = (typeof def === type || type === 'array' || type === 'any') ? def : [undefined, false, 0, '', {}, [], null][validTypes.indexOf(type[0])];
+				}
+				else {
+
+					updateObject[key] = dataObject[key];
+
+					if (def !== undefined) {
+
+						updateObject[key] = transferObjectKeys({}, dataObject[key], def);
+					}
+				}
+			}
+
+			this.save(updateObject);
+
+			return updateObject;
 		};
+
+		/**
+		 * Copies a template over to a new object so that keys from an existing object are carried over where possible
+		 * @param {Object.<string, *>} newObject
+		 * @param {Object.<string, *>} oldObject
+		 * @param {*} schemaObject
+		 * @returns {Object.<string, *>}
+		 */
+		function transferObjectKeys(newObject, oldObject, schemaObject) {
+
+			if (typeof oldObject === 'object' && !Array.isArray(oldObject) && oldObject !== null) {
+
+				for (const [key, value] of Object.entries(schemaObject)) {
+
+					// @ts-ignore
+					if (Object.hasOwn(oldObject, key) === false) {
+
+						newObject[key] = value;
+					}
+					else {
+
+						newObject[key] = oldObject[key];
+
+						newObject[key] = transferObjectKeys({}, oldObject[key], schemaObject[key]);
+					}
+				}
+
+				return newObject;
+			}
+
+			return oldObject;
+		}
+
+		for (const file of fs.readdirSync(path).filter(f => f.endsWith('.json'))) {
+
+			this.update(file);
+		}
 	}
 }
 
