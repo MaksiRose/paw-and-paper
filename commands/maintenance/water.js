@@ -3,7 +3,7 @@ const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion')
 const { isInvalid } = require('../../utils/checkValidity');
 const startCooldown = require('../../utils/startCooldown');
 const { remindOfAttack } = require('../gameplay/attack');
-const { profileModel } = require('../../models/profileModel');
+const { profileModel, otherProfileModel } = require('../../models/profileModel');
 const { pullFromWeightedTable, generateRandomNumber } = require('../../utils/randomizers');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { pronounAndPlural } = require('../../utils/getPronouns');
@@ -107,8 +107,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	else {
 
 		const overdueHours = Math.ceil(timeDifference / oneHour);
-		const saplingHealthPoints = ((overdueHours * (overdueHours + 1)) / 2) + (Math.round(saplingObject.waterCycles / 10) * overdueHours);
-		saplingObject.health -= saplingHealthPoints;
+		const saplingHealthPoints = overdueHours + (Math.floor(saplingObject.waterCycles / 7) * overdueHours);
+		saplingObject.health -= saplingObject.health - saplingHealthPoints > 0 ? saplingHealthPoints : saplingHealthPoints - saplingHealthPoints > -10 ? saplingObject.health - 1 : saplingObject.health;
 
 		embed.description = `*${profileData.name} decides to see if the ginkgo tree needs watering, and sure enough: the leaves are drooping, some have lost color, and many of them fell on the ground. It is about time that the poor tree gets some water.*`,
 		embed.footer.text = `-${saplingHealthPoints} health for ginkgo tree\nCome back to water it in 24 hours.`;
@@ -181,11 +181,18 @@ module.exports.sendReminder = (client, profileData, channelId) => {
 
 	module.exports.stopReminder(profileData);
 
-	userMap.set('nr' + profileData.userId + profileData.serverId, setTimeout(async () => {
+	userMap.set(profileData.uuid, setTimeout(async () => {
 
-		profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: profileData.userId, serverId: profileData.serverId }));
+		const uuid = profileData.uuid;
+		let isInactive = false;
+		profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: uuid }));
+		if (profileData === null) {
 
-		if (profileData.saplingObject.exists === true && profileData.saplingObject.reminder === true) {
+			profileData = /** @type {import('../../typedef').ProfileSchema} */ (await otherProfileModel.findOne({ uuid: uuid }));
+			isInactive = true;
+		}
+
+		if (profileData !== null && profileData?.saplingObject?.exists === true && profileData?.saplingObject?.reminder === true) {
 
 			const channel = await client.channels
 				.fetch(channelId)
@@ -203,6 +210,7 @@ module.exports.sendReminder = (client, profileData, channelId) => {
 						color: profileData.color,
 						author: { name: profileData.name, icon_url: profileData.avatarURL },
 						description: 'It is time to `water` your tree!',
+						footer: isInactive ? { text: '⚠️ CAUTION! The account associated with this reminder is currently inactive. Type "rp accounts" and select it before watering your tree.' } : null,
 					}],
 				})
 				.catch((error) => {
@@ -218,8 +226,8 @@ module.exports.sendReminder = (client, profileData, channelId) => {
  */
 module.exports.stopReminder = (profileData) => {
 
-	if (userMap.has('nr' + profileData.userId + profileData.serverId)) {
+	if (userMap.has(profileData.uuid)) {
 
-		clearTimeout(userMap.get('nr' + profileData.userId + profileData.serverId));
+		clearTimeout(userMap.get(profileData.uuid));
 	}
 };

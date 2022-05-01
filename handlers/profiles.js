@@ -22,7 +22,7 @@ module.exports.execute = async (client) => {
 		 */
 		const dataObject = JSON.parse(readFileSync(`${path}/${file}`, 'utf-8'));
 
-		if (dataObject.saplingObject.reminder === true && path.includes('inactiveProfiles') === false) {
+		if (dataObject.saplingObject.reminder === true) {
 
 			sendReminder(client, dataObject, dataObject.saplingObject.lastMessageChannelId);
 		}
