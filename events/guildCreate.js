@@ -1,5 +1,5 @@
 // @ts-check
-const createGuild = require('../utils/createGuild');
+const { createGuild } = require('../utils/updateGuild');
 
 /**
  * @type {import('../typedef').Event}

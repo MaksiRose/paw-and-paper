@@ -113,50 +113,51 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	if (profileData.uuid !== undefined) {
 
 		renameSync(`./database/profiles/${profileData.uuid}.json`, `./database/profiles/inactiveProfiles/${profileData.uuid}.json`);
-
-		for (const role of profileData.roles) {
-
-			if (message.member.roles.cache.has(role.roleId) === true) {
-
-				try {
-
-					await message.member.roles.remove(role.roleId);
-				}
-				catch (error) {
-
-					await checkRoleCatchBlock(error, message, message.member);
-				}
-			}
-		}
 	}
 
 	const name = interaction.customId.split('-').slice(1, -1).join('-');
 
-	if (interaction.customId.endsWith('-0')) {
+	/** @type {import('../../typedef').ProfileSchema} */
+	const newProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await otherProfileModel.findOne({
+		userId: message.author.id,
+		serverId: message.guild.id,
+		name: interaction.customId.endsWith('-0') ? name : null,
+	}));
 
-		/** @type {import('../../typedef').ProfileSchema} */
-		const newProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await otherProfileModel.findOne({
-			userId: message.author.id,
-			serverId: message.guild.id,
-			name: name,
-		}));
+	if (interaction.customId.endsWith('-0')) {
 
 		renameSync(`./database/profiles/inactiveProfiles/${newProfileData.uuid}.json`, `./database/profiles/${newProfileData.uuid}.json`);
 
-		for (const role of newProfileData.roles) {
+		try {
 
-			if (message.member.roles.cache.has(role.roleId) === false) {
+			for (const role of newProfileData.roles) {
 
-				try {
+				if (message.member.roles.cache.has(role.roleId) === false) {
 
-					await message.member.roles.add(role.roleId);
-				}
-				catch (error) {
-
-					await checkRoleCatchBlock(error, message, message.member);
+					message.member.roles.add(role.roleId);
 				}
 			}
 		}
+		catch (error) {
+
+			await checkRoleCatchBlock(error, message, message.member);
+		}
+	}
+
+	try {
+
+		for (const role of profileData.roles) {
+
+			const isInNewRoles = newProfileData !== null && newProfileData.roles.some(r => r.roleId === role.roleId && r.wayOfEarning === role.wayOfEarning && r.requirement === role.requirement);
+			if (isInNewRoles === false && message.member.roles.cache.has(role.roleId)) {
+
+				message.member.roles.remove(role.roleId);
+			}
+		}
+	}
+	catch (error) {
+
+		await checkRoleCatchBlock(error, message, message.member);
 	}
 
 	setTimeout(async () => {

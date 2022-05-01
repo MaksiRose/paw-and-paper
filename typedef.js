@@ -17,7 +17,7 @@ module.exports.FriendsList = this.FriendsList;
 
 /**
  * This object holds references to files that will be deleted, with either a guild ID or a user + guild ID as the key, and an object with the file name and deletion timestamp as variables.
- * @typedef {Object<string, Object<string, {fileName: string, deletionTimestamp: number}>>} DeleteList
+ * @typedef {Object<string, number>} DeleteList
  */
 module.exports.DeleteList = this.DeleteList;
 

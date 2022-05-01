@@ -179,6 +179,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				color: profileData.color,
 				author: { name: profileData.name, icon_url: profileData.avatarURL },
 				description: waitingString + joinNestedArray(waitingArray),
+				footer: { text: 'This game is voluntary to skip waiting time. If you don\'t mind waiting, you can ignore this game.' },
 			}],
 			components: [waitingComponent],
 			failIfNotExists: false,
@@ -729,7 +730,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 					if (userSpeciesMap.habitat == 'cold') {
 
-						embed.description = `*Many sticks and roots are popping up all around ${profileData.name}. ${upperCasePronounAndPlural(profileData, 0, 'shuffle')} through the fallen branches and twisting vines, trying to reach the ${foundItem} ${pronoun(profileData, 0)} found. The ${profileData.species} steps on a root but feels it weave and pulse before it leaps from its camouflage and latches onto ${pronoun(profileData, 2)} body. The snake pumps poison into $${pronoun(profileData, 1)} while ${pronounAndPlural(profileData, 0, 'lashes', 'lash')} around, trying to throw it off, finally succeeding and rushing away.*`;
+						embed.description = `*Many sticks and roots are popping up all around ${profileData.name}. ${upperCasePronounAndPlural(profileData, 0, 'shuffle')} through the fallen branches and twisting vines, trying to reach the ${foundItem} ${pronoun(profileData, 0)} found. The ${profileData.species} steps on a root but feels it weave and pulse before it leaps from its camouflage and latches onto ${pronoun(profileData, 2)} body. The snake pumps poison into ${pronoun(profileData, 1)} while ${pronounAndPlural(profileData, 0, 'lashes', 'lash')} around, trying to throw it off, finally succeeding and rushing away.*`;
 					}
 
 					if (userSpeciesMap.habitat == 'water') {

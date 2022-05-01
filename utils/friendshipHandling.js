@@ -15,21 +15,27 @@ async function addFriendshipPoints(message, profileData, partnerProfileData) {
 	/** @type {import('../typedef').FriendsList} */
 	let friendshipList = JSON.parse(readFileSync('./database/friendshipList.json', 'utf-8'));
 
-	const friendshipKey = getFriendshipKey(friendshipList, profileData, partnerProfileData);
+	/* Friendship-key and friendship are first initialized. If there is no key, an empty friendship is created. */
+	let friendshipKey = getFriendshipKey(friendshipList, profileData, partnerProfileData);
 	let friendship = friendshipKey !== null ? friendshipList[friendshipKey] : { [profileData.uuid]: [], [partnerProfileData.uuid]: [] };
 
+	/* Based on current friendship, the friendship points are calculated. */
 	const previousFriendshipPoints = getFriendshipPoints(friendship[profileData.uuid], friendship[partnerProfileData.uuid]);
 
+	/* This mention is being pushed to the friendship, and the friendship is pushed to the friendship list. */
 	friendship[profileData.uuid].push(message.createdTimestamp);
 	friendshipList[friendshipKey !== null ? friendshipKey : `${profileData.uuid}_${partnerProfileData.uuid}`] = friendship;
 
+	/* The friendship list is saved, and then updated to remove old mentions. The old mentions are only removed now, because they need to count towards the previous friendship points. As far as the user is concerned, that was the last existing state of the friendship. */
 	writeFileSync('./database/friendshipList.json', JSON.stringify(friendshipList, null, '\t'));
-
 	friendshipList = checkOldMentions(profileData, partnerProfileData);
 
+	/* The friendship-key is grabbed again in case it was just created and was null before, as well as the friendship being checked again since it might've changed from the updated friendshipList that excludes old mentions. Based on this updated friendship, the new friendship points are calculated. */
+	friendshipKey = getFriendshipKey(friendshipList, profileData, partnerProfileData);
 	friendship = friendshipKey !== null ? friendshipList[friendshipKey] : { [profileData.uuid]: [], [partnerProfileData.uuid]: [] };
 	const newFriendshipPoints = getFriendshipPoints(friendship[profileData.uuid], friendship[partnerProfileData.uuid]);
 
+	/* A message is sent to the users if the friendship has more hearts now than it had before. */
 	if (getFriendshipHearts(previousFriendshipPoints) < getFriendshipHearts(newFriendshipPoints)) {
 
 		await message.channel
