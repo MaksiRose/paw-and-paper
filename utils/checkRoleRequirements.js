@@ -27,16 +27,19 @@ async function checkRankRequirements(serverData, message, member, userRank) {
 					{ userId: member.id, serverId: member.guild.id },
 				));
 
-				profileData.roles.push({
-					roleId: item.roleId,
-					wayOfEarning: item.wayOfEarning,
-					requirement: item.requirement,
-				});
+				if (profileData.roles.some(r => r.roleId === item.roleId && r.wayOfEarning === item.wayOfEarning && r.requirement === item.requirement) === false) {
 
-				await profileModel.findOneAndUpdate(
-					{ userId: member.id, serverId: member.guild.id },
-					{ $set: { roles: profileData.roles } },
-				);
+					profileData.roles.push({
+						roleId: item.roleId,
+						wayOfEarning: item.wayOfEarning,
+						requirement: item.requirement,
+					});
+
+					await profileModel.findOneAndUpdate(
+						{ userId: member.id, serverId: member.guild.id },
+						{ $set: { roles: profileData.roles } },
+					);
+				}
 
 				if (message.member.roles.cache.has(item.roleId) === false) {
 
@@ -62,6 +65,8 @@ async function checkRankRequirements(serverData, message, member, userRank) {
 			}
 		}
 	}
+
+	return;
 }
 
 
@@ -156,7 +161,7 @@ async function checkRoleCatchBlock(error, message, member) {
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-					title: 'There was an error trying to add the role :(',
+					title: 'There was an error trying to add/remove the role :(',
 				}],
 			})
 			.catch((err) => {
