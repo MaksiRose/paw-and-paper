@@ -308,6 +308,17 @@ module.exports.sendMessage = async (client, message) => {
 							.catch((error) => {
 								if (error.httpStatus !== 404) { throw new Error(error); }
 							});
+
+						botReply = await botReply
+							.edit({
+								components: disableAllComponents(botReply.components),
+							})
+							.catch((error) => {
+								if (error.httpStatus !== 404) { throw new Error(error); }
+								return botReply;
+							});
+
+						return;
 					}
 
 					allAccounts = [
