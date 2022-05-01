@@ -4,7 +4,7 @@ const { readFileSync } = require('fs');
 const { profileModel, otherProfileModel } = require('../../models/profileModel');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
 const startCooldown = require('../../utils/startCooldown');
-const { checkRankRequirements } = require('../../utils/checkRoleRequirements');
+const { checkRankRequirements, checkLevelRequirements } = require('../../utils/checkRoleRequirements');
 const { MessageEmbed } = require('discord.js');
 
 module.exports.name = 'name';
@@ -183,4 +183,5 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		});
 
 	await checkRankRequirements(serverData, message, message.member, 'Youngling');
+	await checkLevelRequirements(serverData, message, message.member, 1);
 };

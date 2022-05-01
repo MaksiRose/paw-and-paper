@@ -175,11 +175,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 };
 
 /**
- * Creates a select menu with the users accounts
- * @param {import('../../typedef').ProfileSchema} profileData
- * @param {Array<import('../../typedef').ProfileSchema>} inactiveUserProfiles
- * @param {number} accountsPage
- * @returns {import('discord.js').MessageSelectMenu}
+ * It takes in a profile, a list of inactive profiles, and a page number, and returns a menu with the
+ * profile and inactive profiles as options.
+ * @param {import('../../typedef').ProfileSchema} profileData - The profile data of the user who is currently logged in.
+ * @param {Array<import('../../typedef').ProfileSchema>} inactiveUserProfiles - An array of all the user's inactive profiles.
+ * @param {number} accountsPage - The current page of accounts the user is on.
+ * @returns {import('discord.js').MessageSelectMenu} A MessageSelectMenu object
  */
 function getAccountsPage(profileData, inactiveUserProfiles, accountsPage) {
 

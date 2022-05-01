@@ -23,6 +23,8 @@ module.exports.sendMessage = async (client, message) => {
 	];
 	let allServers = /** @type {Array<import('../../typedef').ServerSchema>} */ (await Promise.all([...new Set(allAccounts.map(p => p.serverId))].map(async serverId => serverModel.findOne({ serverId: serverId }))));
 
+	/* Checking if the user has any accounts. If they do not, it will send a message saying they have no
+	accounts. */
 	if (allAccounts.length === 0) {
 
 		await message
@@ -84,6 +86,7 @@ module.exports.sendMessage = async (client, message) => {
 			.awaitMessageComponent({ filter, time: 120_000 })
 			.then(async interaction => {
 
+				/* Creating a new page for the user to select an account to delete. */
 				if (interaction.isButton() && interaction.customId === 'delete-individual') {
 
 					deletePage = 0;
@@ -104,6 +107,9 @@ module.exports.sendMessage = async (client, message) => {
 					return;
 				}
 
+				/* Checking if the interaction is a select menu and if the value is delete-individual_page. If it is,
+				it increments the page number, and if the page number is greater than the number of pages,
+				it sets the page number to 0. It will then edit the reply to have the new page of accounts. */
 				if (interaction.isSelectMenu() && interaction.values[0] === 'delete-individual_page') {
 
 					deletePage++;
@@ -124,6 +130,8 @@ module.exports.sendMessage = async (client, message) => {
 					return;
 				}
 
+				/* Checking if the interaction is a select menu and if the account exists. If it does, it will edit
+				the message to ask the user if they are sure they want to delete the account. */
 				if (interaction.isSelectMenu() && allAccounts.map(p => p.uuid).includes(interaction.values[0].replace('delete-individual_', ''))) {
 
 					botReply = await botReply
@@ -152,6 +160,7 @@ module.exports.sendMessage = async (client, message) => {
 					return;
 				}
 
+				/* Creating a new page for the user to select their accounts on a server to delete. */
 				if (interaction.isButton() && interaction.customId === 'delete-server') {
 
 					deletePage = 0;
@@ -172,6 +181,9 @@ module.exports.sendMessage = async (client, message) => {
 					return;
 				}
 
+				/* Checking if the interaction is a select menu and if the value is delete-server_page. If it is,
+				it increments the page number, and if the page number is greater than the number of pages,
+				it sets the page number to 0. It will then edit the reply to have the new page of servers. */
 				if (interaction.isSelectMenu() && interaction.values[0] === 'delete-server_page') {
 
 					deletePage++;
@@ -192,6 +204,9 @@ module.exports.sendMessage = async (client, message) => {
 					return;
 				}
 
+				/* Checking if the interaction is a select menu and if the server ID is in the array of all
+				servers. If it is, it will edit the message to ask the user if they are sure they want to delete
+				all their accounts on the server. */
 				if (interaction.isSelectMenu() && allServers.map(s => s.serverId).includes(interaction.values[0].replace('delete-server_', ''))) {
 
 					botReply = await botReply
@@ -220,6 +235,7 @@ module.exports.sendMessage = async (client, message) => {
 					return;
 				}
 
+				/* Creating a new message asking the user if they are sure that they want to delete all their data. */
 				if (interaction.isButton() && interaction.customId === 'delete-all') {
 
 					botReply = await botReply
@@ -248,10 +264,12 @@ module.exports.sendMessage = async (client, message) => {
 					return;
 				}
 
+				/* Deleting the data of the user. */
 				if (interaction.customId.includes('delete-confirm')) {
 
 					const type = /** @type {'individual' | 'server' | 'all'} */(interaction.customId.split('_')[1]);
 
+					/* Deleting a user from the database. */
 					if (type === 'individual') {
 
 						await profileModel.findOneAndDelete({ uuid: interaction.customId.split('_')[2] });
@@ -269,6 +287,7 @@ module.exports.sendMessage = async (client, message) => {
 							});
 					}
 
+					/* Deleting all accounts by a user on a server. */
 					if (type === 'server') {
 
 						await profileModel.findOneAndDelete({ userId: message.author.id, serverId: interaction.customId.split('_')[2] });
@@ -289,6 +308,7 @@ module.exports.sendMessage = async (client, message) => {
 							});
 					}
 
+					/* Deleting all the data of the user. */
 					if (type === 'all') {
 
 						for (const profile of allAccounts) {
@@ -338,6 +358,7 @@ module.exports.sendMessage = async (client, message) => {
 					return;
 				}
 
+				/* Editing the message to the original message. */
 				if (interaction.customId === 'delete-cancel') {
 
 					await /** @type {import('discord.js').Message} */ (interaction.message)
