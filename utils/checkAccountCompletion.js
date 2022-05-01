@@ -72,7 +72,7 @@ async function hasNoSpecies(message, profileData) {
 }
 
 /**
- * Checks if the user has a name and a species, returns false if they do, and if they don't, sends the appropriate message and reutrns true.
+ * Checks if the user has a name and a species, returns false if they do, and if they don't, sends the appropriate message and returns true.
  * @param {import('discord.js').Message} message
  * @param {import('../typedef').ProfileSchema} profileData
  * @returns {Promise<boolean>}
