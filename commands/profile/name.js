@@ -90,6 +90,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				inventoryObject: profileInventoryObject,
 				advice: { resting: false, drinking: false, eating: false, passingout: false },
 				roles: [],
+				linkedTo: null,
 			}));
 		}
 	}

@@ -38,6 +38,7 @@ const profileSchema = new schema({
 	} },
 	advice: { type: ['object', ['boolean']], default: { resting: false, drinking: false, eating: false, passingout: false, coloredbuttons: false } },
 	roles: { type: ['array', ['object', ['string', 'number']]] },
+	linkedTo: { type: ['string'], default: null },
 });
 
 module.exports.profileModel = new model('./database/profiles', profileSchema);

@@ -84,6 +84,7 @@ module.exports.WebhookMessages = this.WebhookMessages;
  * @property {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, meat: Object<string, number>}} inventoryObject - Object with item kinds as the keys and an object of the item types and their quantity as the variables.
  * @property {{resting: boolean, drinking: boolean, eating: boolean, passingout: boolean, coloredbuttons: boolean}} advice - Object of advice kinds as the keys and whether the advice has been given as the variables.
  * @property {Array<Role>} roles - Array of role objects
+ * @property {string} linkedTo - UUID of the file that this profile is linked to.
  * @property {string} uuid
  */
 module.exports.ProfileSchema = this.ProfileSchema;

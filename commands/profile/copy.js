@@ -47,6 +47,24 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		return;
 	}
 
+	/* Checking if the profile data is null, and if it isn't, it sends a message saying that they need to switch to an empty slot. */
+	if (profileData !== null) {
+
+		await message
+			.reply({
+				embeds: [ new MessageEmbed({
+					color: /** @type {`#${string}`} */ (error_color),
+					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+					description: 'Please use `rp accounts` to switch to an empty slot before copying another account.',
+				})],
+				failIfNotExists: false,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+		return;
+	}
+
 	let copyPage = 0;
 	let botReply = await message
 		.reply({
@@ -111,6 +129,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						.../** @type {Array<import('../../typedef').ProfileSchema>} */ (await otherProfileModel.find({ userId: message.author.id, serverId: message.guild.id })),
 					];
 
+					/* Checking if the user already has a profile with the same name in this server. If they do, it will send an error message. */
 					if (thisServerUserProfiles.map(p => p.name).includes(profileData.name)) {
 
 						await message
@@ -128,7 +147,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						return;
 					}
 
-					/** @type {import('../../typedef').ProfileSchema} */ (await profileModel.create({
+					profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.create({
 						userId: message.author.id,
 						serverId: message.guild.id,
 						name: profileData.name,
@@ -163,6 +182,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						},
 						advice: { resting: false, drinking: false, eating: false, passingout: false },
 						roles: [],
+						linkedTo: null,
 					}));
 
 					botReply = await botReply
@@ -170,17 +190,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 							embeds: [new MessageEmbed({
 								color: /** @type {`#${string}`} */ (default_color),
 								title: `Successfully copied the profile "${profileData.name}" of the server "${allServers.find(s => s.serverId === allAccounts.find(p => p.uuid === interaction.values[0].replace('copy_', '')).serverId).name}"! Do you want to link the profiles as well?`,
-								description: 'Linking two profiles means that changing general information like name, species, avatar, description, pronouns, color etc. on one server will also change it on all the other servers. You can always `unlink` the profiles later.',
+								description: 'Linking two profiles means that changing general information like name, species, avatar, description, pronouns, color etc. on one server will also change it on all the other servers. You can always unlink the profiles later using `rp link destroy`.',
 							})],
 							components: [...disableAllComponents([botReply.components[0]]), new MessageActionRow({
 								components: [new MessageButton({
-									customId: 'copy-confirm',
+									customId: `copy-confirm_${interaction.values[0].replace('copy_', '')}`,
 									label: 'Link the profiles',
 									emoji: '✔',
 									style: 'SUCCESS',
 								}), new MessageButton({
 									customId: 'copy-cancel',
-									label: 'Continue without linking (permanent)',
+									label: 'Continue without linking',
 									emoji: '✖',
 									style: 'SECONDARY',
 								})],
@@ -195,11 +215,28 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					return;
 				}
 
-				if (interaction.isButton() && interaction.customId === 'copy-confirm') {
+				/* Updating the profile to set the UUID it is linked to to the account this account was copied from.
+				Then it edits the bot reply to inform the user of the change. */
+				if (interaction.isButton() && interaction.customId.includes('copy-confirm')) {
 
-					// here i will insert the the uuid as the link inside the profile
+					profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+						{ uuid: profileData.uuid },
+						{ $set: { linkedTo: interaction.customId.replace('copy-confirm_', '') } },
+					));
+
+					botReply = await botReply
+						.edit({
+							embeds: [new MessageEmbed({
+								color: /** @type {`#${string}`} */ (default_color),
+								title: `Successfully linked this profile to the profile "${profileData.name}" of the server "${allServers.find(s => s.serverId === allAccounts.find(p => p.uuid === interaction.customId.replace('copy-confirm_', '')).serverId).name}"!`,
+								description: 'You can unlink the profiles later using `rp link destroy`.',
+							})],
+							components: disableAllComponents(botReply.components),
+						})
+						.catch((error) => { throw new Error(error); });
 				}
 
+				/* Disabling all the components of the bots reply. */
 				if (interaction.isButton() && interaction.customId === 'copy-cancel') {
 
 					botReply = await botReply
@@ -208,6 +245,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						})
 						.catch((error) => { throw new Error(error); });
 				}
+
 			})
 			.catch(async () => {
 

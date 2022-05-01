@@ -1,5 +1,5 @@
 // @ts-check
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasNoName } = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
 const { profileModel, otherProfileModel } = require('../../models/profileModel');
 const { renameSync } = require('fs');
@@ -28,13 +28,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		serverId: message.guild.id,
 	}));
 
-	if (inactiveUserProfiles.length === 0 && await hasNotCompletedAccount(message, /** @type {import('../../typedef').ProfileSchema} */ (profileData))) {
+	if (inactiveUserProfiles.length === 0 && await hasNoName(message, /** @type {import('../../typedef').ProfileSchema} */ (profileData))) {
 
 		return;
 	}
 
 	let accountsPage = 0;
 
+	/* Checking if the user has a profile, and if they do, it checks if they have a cooldown, and if they
+	do, it returns.
+	If they don't have a cooldown, it checks if they are resting, and if they are, it stops their resting.
+	Then, it starts a cooldown. */
 	if (profileData !== null) {
 
 		if (await hasCooldown(message, profileData, [module.exports.name])) {
