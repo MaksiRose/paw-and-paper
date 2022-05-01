@@ -148,7 +148,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		for (const role of profileData.roles) {
 
-			const isInNewRoles = newProfileData.roles.some(r => r.roleId === role.roleId && r.wayOfEarning === role.wayOfEarning && r.requirement === role.requirement);
+			const isInNewRoles = newProfileData !== null && newProfileData.roles.some(r => r.roleId === role.roleId && r.wayOfEarning === role.wayOfEarning && r.requirement === role.requirement);
 			if (isInNewRoles === false && message.member.roles.cache.has(role.roleId)) {
 
 				message.member.roles.remove(role.roleId);
