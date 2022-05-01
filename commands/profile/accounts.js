@@ -7,7 +7,7 @@ const { createCommandCollector } = require('../../utils/commandCollector');
 const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
 const { hasCooldown } = require('../../utils/checkValidity');
 const { stopResting } = require('../../utils/executeResting');
-const { MessageActionRow, MessageButton } = require('discord.js');
+const { MessageActionRow, MessageSelectMenu } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'accounts';
@@ -18,12 +18,11 @@ module.exports.aliases = ['switch'];
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {Partial<import('../../typedef').ProfileSchema & {id?: string}>} profileData
+ * @param {import('../../typedef').ProfileSchema} profileData
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, profileData) => {
 
-	/** @type {Array<Partial<import('../../typedef').ProfileSchema & {id?: string}>>} */
 	const inactiveUserProfiles = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await otherProfileModel.find({
 		userId: message.author.id,
 		serverId: message.guild.id,
@@ -34,9 +33,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		return;
 	}
 
+	let accountsPage = 0;
+
 	if (profileData !== null) {
 
-		if (await hasCooldown(message, /** @type {import('../../typedef').ProfileSchema} */ (profileData), [module.exports.name])) {
+		if (await hasCooldown(message, profileData, [module.exports.name])) {
 
 			return;
 		}
@@ -51,124 +52,157 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			stopResting(message.author.id, message.guild.id);
 		}
 
-		profileData = await startCooldown(message, /** @type {import('../../typedef').ProfileSchema} */ (profileData));
-	}
-	else {
-
-		profileData = { name: 'Empty Slot', id: '1' };
+		profileData = await startCooldown(message, profileData);
 	}
 
-	/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} */
-	const components = [ new MessageActionRow({
-		components: [ new MessageButton({
-			customId: `switchto-${profileData.name}-${profileData.id || '0'}`,
-			label: profileData.name,
-			disabled: true,
-			style: 'SECONDARY',
-		})],
-	})];
-
-	inactiveUserProfiles.push({ name: 'Empty Slot', id: '2' });
-	inactiveUserProfiles.push({ name: 'Empty Slot', id: '3' });
-	inactiveUserProfiles.length = 2;
-
-	for (const profile of inactiveUserProfiles) {
-
-		components[0].components.push(new MessageButton({
-			customId: `switchto-${profile.name}-${profile.id || '0'}`,
-			label: profile.name,
-			style: 'SECONDARY',
-		}));
-	}
-
-	const botReply = await message
+	let botReply = await message
 		.reply({
-			content: 'Please choose an account that you want to switch to.',
-			components: components,
+			content: `Please choose an account that you want to switch to. You are currently on \`${profileData?.name || 'Empty Slot'}\`.`,
+			components: [new MessageActionRow({ components: [getAccountsPage(profileData, inactiveUserProfiles, accountsPage)] })],
 			failIfNotExists: false,
 		})
 		.catch((error) => { throw new Error(error); });
 
 	createCommandCollector(message.author.id, message.guild.id, botReply);
-	const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId.includes('switchto') && i.user.id === message.author.id;
 
-	/** @type {import('discord.js').MessageComponentInteraction | null} } */
-	const interaction = await botReply
-		.awaitMessageComponent({ filter, time: 120_000 })
-		.catch(() => { return null; });
+	interactionCollector();
 
-	await botReply
-		.edit({
-			components: disableAllComponents(botReply.components),
-		})
-		.catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-		});
+	async function interactionCollector() {
 
-	if (interaction === null) {
+		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.isSelectMenu() && i.customId === 'accounts-options' && i.user.id === message.author.id;
 
-		return;
-	}
+		/** @type {import('discord.js').MessageComponentInteraction | null} } */
+		const interaction = await botReply
+			.awaitMessageComponent({ filter, time: 120_000 })
+			.catch(() => { return null; });
 
-	if (profileData.uuid !== undefined) {
-
-		renameSync(`./database/profiles/${profileData.uuid}.json`, `./database/profiles/inactiveProfiles/${profileData.uuid}.json`);
-	}
-
-	const name = interaction.customId.split('-').slice(1, -1).join('-');
-
-	/** @type {import('../../typedef').ProfileSchema} */
-	const newProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await otherProfileModel.findOne({
-		userId: message.author.id,
-		serverId: message.guild.id,
-		name: interaction.customId.endsWith('-0') ? name : null,
-	}));
-
-	if (interaction.customId.endsWith('-0')) {
-
-		renameSync(`./database/profiles/inactiveProfiles/${newProfileData.uuid}.json`, `./database/profiles/${newProfileData.uuid}.json`);
-
-		try {
-
-			for (const role of newProfileData.roles) {
-
-				if (message.member.roles.cache.has(role.roleId) === false) {
-
-					message.member.roles.add(role.roleId);
-				}
-			}
-		}
-		catch (error) {
-
-			await checkRoleCatchBlock(error, message, message.member);
-		}
-	}
-
-	try {
-
-		for (const role of profileData.roles) {
-
-			const isInNewRoles = newProfileData !== null && newProfileData.roles.some(r => r.roleId === role.roleId && r.wayOfEarning === role.wayOfEarning && r.requirement === role.requirement);
-			if (isInNewRoles === false && message.member.roles.cache.has(role.roleId)) {
-
-				message.member.roles.remove(role.roleId);
-			}
-		}
-	}
-	catch (error) {
-
-		await checkRoleCatchBlock(error, message, message.member);
-	}
-
-	setTimeout(async () => {
-
-		await interaction
-			.followUp({
-				content: `You successfully switched to \`${name}\`!`,
-				ephemeral: true,
+		await botReply
+			.edit({
+				components: disableAllComponents(botReply.components),
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
-	}, 500);
+
+		if (interaction === null) {
+
+			return;
+		}
+
+		if (interaction.isSelectMenu() && interaction.values[0] === 'accounts_page') {
+
+			accountsPage++;
+			if (accountsPage >= Math.ceil(((profileData === null ? 1 : 2) + inactiveUserProfiles.length) / 24)) {
+
+				accountsPage = 0;
+			}
+
+			botReply = await botReply
+				.edit({
+					components: [new MessageActionRow({ components: [getAccountsPage(profileData, inactiveUserProfiles, accountsPage)] })],
+				})
+				.catch((error) => { throw new Error(error); });
+
+			await interactionCollector();
+			return;
+		}
+
+		if (interaction.isSelectMenu() && interaction.values[0].includes('switchto')) {
+
+			if (profileData?.uuid !== undefined) {
+
+				renameSync(`./database/profiles/${profileData.uuid}.json`, `./database/profiles/inactiveProfiles/${profileData.uuid}.json`);
+			}
+
+			const name = interaction.values[0].split('-').slice(1, -1).join('-');
+
+			/** @type {import('../../typedef').ProfileSchema} */
+			const newProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await otherProfileModel.findOne({
+				userId: message.author.id,
+				serverId: message.guild.id,
+				name: interaction.values[0].endsWith('-0') ? name : null,
+			}));
+
+			if (interaction.values[0].endsWith('-0')) {
+
+				renameSync(`./database/profiles/inactiveProfiles/${newProfileData.uuid}.json`, `./database/profiles/${newProfileData.uuid}.json`);
+
+				try {
+
+					for (const role of newProfileData.roles) {
+
+						if (message.member.roles.cache.has(role.roleId) === false) {
+
+							message.member.roles.add(role.roleId);
+						}
+					}
+				}
+				catch (error) {
+
+					await checkRoleCatchBlock(error, message, message.member);
+				}
+			}
+
+			try {
+
+				for (const role of profileData?.roles || []) {
+
+					const isInNewRoles = newProfileData !== null && newProfileData.roles.some(r => r.roleId === role.roleId && r.wayOfEarning === role.wayOfEarning && r.requirement === role.requirement);
+					if (isInNewRoles === false && message.member.roles.cache.has(role.roleId)) {
+
+						message.member.roles.remove(role.roleId);
+					}
+				}
+			}
+			catch (error) {
+
+				await checkRoleCatchBlock(error, message, message.member);
+			}
+
+			setTimeout(async () => {
+
+				await interaction
+					.followUp({
+						content: `You successfully switched to \`${name}\`!`,
+						ephemeral: true,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
+					});
+			}, 500);
+		}
+	}
 };
+
+/**
+ * Creates a select menu with the users accounts
+ * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {Array<import('../../typedef').ProfileSchema>} inactiveUserProfiles
+ * @param {number} accountsPage
+ * @returns {import('discord.js').MessageSelectMenu}
+ */
+function getAccountsPage(profileData, inactiveUserProfiles, accountsPage) {
+
+	const accountsMenu = new MessageSelectMenu({
+		customId: 'accounts-options',
+		placeholder: 'Select an account',
+	});
+
+	if (profileData !== null) { accountsMenu.addOptions({ label: profileData.name, value: `switchto-${profileData.name}-0` }); }
+
+	for (const profile of inactiveUserProfiles) {
+
+		accountsMenu.addOptions({ label: profile.name, value: `switchto-${profile.name}-0` });
+	}
+
+	accountsMenu.addOptions({ label: 'Empty Slot', value: 'switchto-Empty Slot-1' });
+
+	if (accountsMenu.options.length > 25) {
+
+		accountsMenu.options = accountsMenu.options.splice(accountsPage * 24, (accountsPage + 1) * 24);
+		accountsMenu.addOptions({ label: 'Show more accounts', value: 'accounts_page', description: `You are currently on page ${accountsPage + 1}`, emoji: '📋' });
+	}
+
+	return accountsMenu;
+}
+
