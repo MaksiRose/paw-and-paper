@@ -130,14 +130,13 @@ const event = {
 				.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray, pingRuins)
 				.then(async () => {
 
+					profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
+						userId: message.author.id,
+						serverId: message.guild.id,
+					}));
 					userMap.get('nr' + message.author.id + message.guild.id).activeCommands -= 1;
 
 					if (profileData && userMap.get('nr' + message.author.id + message.guild.id).activeCommands <= 0) {
-
-						profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
-							userId: message.author.id,
-							serverId: message.guild.id,
-						}));
 
 						userMap.get('nr' + message.author.id + message.guild.id).cooldownTimeout = setTimeout(removeCooldown, 1000);
 					}
