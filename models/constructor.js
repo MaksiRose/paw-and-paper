@@ -205,7 +205,7 @@ class model {
 
 			fs.unlinkSync(`${path}/${dataObject.uuid}.json`);
 
-			console.log('Deleted File: ', dataObject);
+			console.log('Deleted File: ', dataObject.uuid);
 
 			return;
 		};

@@ -37,7 +37,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				embeds: [ new MessageEmbed({
 					color: /** @type {`#${string}`} */ (error_color),
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-					title: 'You have no accounts (or none outside of this server)!',
+					title: 'You have no accounts (or none outside of this server) to copy!',
 				})],
 				failIfNotExists: false,
 			})
@@ -47,7 +47,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		return;
 	}
 
-	/* Checking if the profile data is null, and if it isn't, it sends a message saying that they need to switch to an empty slot. */
+	/* Checking if the profileData is null. If it is, it will send a message to the user saying that they
+	need to use the command rp accounts to switch to an empty slot before copying another account. */
 	if (profileData !== null) {
 
 		await message
@@ -71,7 +72,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			embeds: [ new MessageEmbed({
 				color: /** @type {`#${string}`} */ (default_color),
 				title: 'Please select the profile that you want to copy.',
-				description: 'Copying a profile means that all the general information like name, species, avatar, description, pronouns, color etc. get copied over. Server-specific information like stats, levels, inventory, wounds etc. stays separate.',
+				description: 'Copying a profile means that all the general information like name, avatar, description, pronouns, color etc. get copied over. Server-specific information like stats, levels, inventory, wounds etc. stays separate.',
 			})],
 			components: [new MessageActionRow({
 				components: [getAccountsPage(copyPage, allAccounts, allServers)],
@@ -92,10 +93,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.awaitMessageComponent({ filter, time: 120_000 })
 			.then(async interaction => {
 
-				/* Checking if the interaction is a select menu, and if the value of the select menu is
-				'copy-page'. If it is, it increments the page number, and if the page number is greater than the
-				number of pages, it sets the page number to 0. Then it edits the bot reply to have the new page
-				of accounts. */
+				/* It's checking if the user clicked on the "Show more profiles" button, and if they did, it
+				increases the page number by 1, and if the page number is greater than the total number of
+				pages, it sets it back to 0. Then it edits the message to show the next page of profiles. */
 				if (interaction.isSelectMenu() && interaction.values[0] === 'copy-page') {
 
 					copyPage++;
@@ -116,10 +116,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					return;
 				}
 
-				/* Checking if the user has selected a profile from the list of profiles that they can copy. If
-				they have, it will then check if the user already has a profile with the same name in this server. If they do,
-				it will send an error message. If they don't, it will create a new profile with the same
-				information as the profile they selected. */
+				/* Checking if the user has selected a profile to copy and if the user has a profile with the
+				same name as the one they are trying to create.
+				If it does, it will copy the profile and ask the user if they want to link the profiles. */
 				if (interaction.isSelectMenu() && allAccounts.map(p => p.uuid).includes(interaction.values[0].replace('copy_', ''))) {
 
 					profileData = allAccounts.filter(p => p.uuid === interaction.values[0].replace('copy_', ''))[0];
@@ -129,17 +128,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						.../** @type {Array<import('../../typedef').ProfileSchema>} */ (await otherProfileModel.find({ userId: message.author.id, serverId: message.guild.id })),
 					];
 
-					/* Checking if the user already has a profile with the same name in this server. If they do, it will send an error message. */
+					/* Checking if the user has a profile with the same name as the one they are trying to create. */
 					if (thisServerUserProfiles.map(p => p.name).includes(profileData.name)) {
 
-						await message
-							.reply({
+						await botReply
+							.edit({
 								embeds: [ new MessageEmbed({
 									color: /** @type {`#${string}`} */ (error_color),
 									author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-									title: 'You cannot have two accounts with the same name.',
+									title: 'You cannot have two accounts in one server with the same name.',
 								})],
-								failIfNotExists: false,
+								components: disableAllComponents(botReply.components),
 							})
 							.catch((error) => {
 								if (error.httpStatus !== 404) { throw new Error(error); }
@@ -153,7 +152,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						name: profileData.name,
 						description: profileData.description,
 						color: profileData.color,
-						species: profileData.species,
+						species: '',
 						rank: 'Youngling',
 						avatarURL: profileData.avatarURL,
 						levels: 1,
@@ -190,7 +189,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 							embeds: [new MessageEmbed({
 								color: /** @type {`#${string}`} */ (default_color),
 								title: `Successfully copied the profile "${profileData.name}" of the server "${allServers.find(s => s.serverId === allAccounts.find(p => p.uuid === interaction.values[0].replace('copy_', '')).serverId).name}"! Do you want to link the profiles as well?`,
-								description: 'Linking two profiles means that changing general information like name, species, avatar, description, pronouns, color etc. on one server will also change it on all the other servers. You can always unlink the profiles later using `rp link destroy`.',
+								description: 'Linking two profiles means that changing general information like name, avatar, description, pronouns, color etc. on one profile will also change it on all the other linked profiles. You can always unlink the profiles later using `rp link destroy`.',
+								footer: { text: 'DISCLAIMER: The species will not be linked. This means that if the species don\'t match up, information such as descriptions, avatars etc. may not make sense if they are specific to one species.' },
 							})],
 							components: [...disableAllComponents([botReply.components[0]]), new MessageActionRow({
 								components: [new MessageButton({
@@ -215,8 +215,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					return;
 				}
 
-				/* Updating the profile to set the UUID it is linked to to the account this account was copied from.
-				Then it edits the bot reply to inform the user of the change. */
+				/* Checking if the interaction is a button and if the customId includes 'copy-confirm'. If it does,
+				it will update the profileData to the linkedTo value of the UUID.
+				It will then edit the botReply to a success message. */
 				if (interaction.isButton() && interaction.customId.includes('copy-confirm')) {
 
 					profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
@@ -236,7 +237,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						.catch((error) => { throw new Error(error); });
 				}
 
-				/* Disabling all the components of the bots reply. */
+				/* Disabling all components in the bot reply. */
 				if (interaction.isButton() && interaction.customId === 'copy-cancel') {
 
 					botReply = await botReply
@@ -277,7 +278,6 @@ function getAccountsPage(copyPage, allAccounts, allServers) {
 	});
 
 	for (const profile of allAccounts) {
-
 
 		accountsMenu.addOptions({ label: `${profile.name} ${`(${allServers.find(s => s.serverId === profile.serverId)?.name})` || ''}`, value: `copy_${profile.uuid}` });
 	}
