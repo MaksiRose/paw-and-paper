@@ -29,7 +29,7 @@ module.exports.execute = async (client) => {
 
 		await (path.includes('inactiveProfiles') ? otherProfileModel : profileModel)
 			.findOneAndUpdate(
-				{ userId: dataObject.userId, serverId: dataObject.serverId },
+				{ uuid: dataObject.uuid },
 				{
 					$set: {
 						hasCooldown: false,
