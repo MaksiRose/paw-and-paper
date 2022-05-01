@@ -4,6 +4,7 @@ const { default_color, error_color } = require('../../config.json');
 const { profileModel } = require('../../models/profileModel');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
+const updateLinkedProfiles = require('../../utils/updateLinkedProfiles');
 
 module.exports.name = 'color';
 module.exports.aliases = ['colour'];
@@ -85,6 +86,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		.catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
+
+	await updateLinkedProfiles(profileData);
 	return;
 };
 

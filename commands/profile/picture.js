@@ -4,6 +4,7 @@ const { error_color } = require('../../config.json');
 const { profileModel } = require('../../models/profileModel');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
+const updateLinkedProfiles = require('../../utils/updateLinkedProfiles');
 
 module.exports.name = 'picture';
 module.exports.aliases = ['pic', 'pfp', 'avatar'];
@@ -84,10 +85,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		return;
 	}
 
-	await profileModel.findOneAndUpdate(
+	profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 		{ userId: message.author.id, serverId: message.guild.id },
 		{ $set: { avatarURL: ImageLink } },
-	);
+	));
 
 	await message
 		.reply({
@@ -102,5 +103,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		.catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
+
+	await updateLinkedProfiles(profileData);
 	return;
 };

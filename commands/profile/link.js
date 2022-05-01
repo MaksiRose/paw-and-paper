@@ -6,6 +6,7 @@ const serverModel = require('../../models/serverModel');
 const { error_color, default_color } = require('../../config.json');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { createCommandCollector } = require('../../utils/commandCollector');
+const updateLinkedProfiles = require('../../utils/updateLinkedProfiles');
 
 module.exports.name = 'link';
 
@@ -160,26 +161,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	 */
 	async function createLink() {
 
-		const allLinkableAccounts = allAccounts.filter(p => p.linkedTo === '');
-
-		/* Checking if the user has no accounts to link up. */
-		if (allLinkableAccounts.length === 0) {
-
-			await message
-				.reply({
-					embeds: [new MessageEmbed({
-						color: /** @type {`#${string}`} */ (error_color),
-						title: 'You have no accounts (or none outside of this server) to link up with!',
-						description: 'All your accounts may already be linked up, in which case you need to destroy the link first using `rp link destroy`',
-					})],
-					failIfNotExists: false,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
-			return;
-		}
-
 		let linkPage = 0;
 		let botReply = await message
 			.reply({
@@ -190,7 +171,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					footer: { text: 'DISCLAIMER: The species will not be linked. This means that if the species don\'t match up, information such as descriptions, avatars etc. may not make sense if they are specific to one species.' },
 				})],
 				components: [new MessageActionRow({
-					components: [getAccountsPage(linkPage, allLinkableAccounts, allServers)],
+					components: [getAccountsPage(linkPage, allAccounts, allServers)],
 				})],
 				failIfNotExists: false,
 			})
@@ -210,7 +191,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				if (interaction.isSelectMenu() && interaction.values[0] === 'link-page') {
 
 					linkPage++;
-					if (linkPage >= Math.ceil(allLinkableAccounts.length / 24)) {
+					if (linkPage >= Math.ceil(allAccounts.length / 24)) {
 
 						linkPage = 0;
 					}
@@ -218,7 +199,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					botReply = await botReply
 						.edit({
 							components: [botReply.components[0], new MessageActionRow({
-								components: [getAccountsPage(linkPage, allLinkableAccounts, allServers)],
+								components: [getAccountsPage(linkPage, allAccounts, allServers)],
 							})],
 						})
 						.catch((error) => { throw new Error(error); });
@@ -230,9 +211,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				/* Checking if the user has selected a profile to link to. If they have, it will check if the user
 				has a profile with the same name as the one they are trying to link to. If they do, it will send
 				an error message. If they don't, it will link the profile. */
-				if (interaction.isSelectMenu() && allLinkableAccounts.map(p => p.uuid).includes(interaction.values[0].replace('link_', ''))) {
+				if (interaction.isSelectMenu() && allAccounts.map(p => p.uuid).includes(interaction.values[0].replace('link_', ''))) {
 
-					const linkedProfileData = allLinkableAccounts.filter(p => p.uuid === interaction.values[0].replace('link_', ''))[0];
+					const linkedProfileData = allAccounts.filter(p => p.uuid === interaction.values[0].replace('link_', ''))[0];
 
 					const thisServerUserProfiles = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await otherProfileModel.find({ userId: message.author.id, serverId: message.guild.id }));
 
@@ -278,11 +259,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 							components: disableAllComponents(botReply.components),
 						})
 						.catch((error) => { throw new Error(error); });
+
+					await updateLinkedProfiles(profileData, [linkedProfileData.uuid]);
 					return;
 				}
 			})
-			.catch(async (err) => {
-				console.error(err);
+			.catch(async () => {
 
 				await botReply
 					.edit({

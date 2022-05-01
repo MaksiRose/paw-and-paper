@@ -6,6 +6,7 @@ const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = requir
 const startCooldown = require('../../utils/startCooldown');
 const { checkRankRequirements, checkLevelRequirements } = require('../../utils/checkRoleRequirements');
 const { MessageEmbed } = require('discord.js');
+const updateLinkedProfiles = require('../../utils/updateLinkedProfiles');
 
 module.exports.name = 'name';
 
@@ -163,10 +164,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		}
 	}
 
-	await profileModel.findOneAndUpdate(
+	profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 		{ userId: message.author.id, serverId: message.guild.id },
 		{ $set: { name: name } },
-	);
+	));
 
 	await message
 		.reply({
@@ -182,6 +183,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		.catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
+
+	await updateLinkedProfiles(profileData);
 
 	await checkRankRequirements(serverData, message, message.member, 'Youngling');
 	await checkLevelRequirements(serverData, message, message.member, 1);
