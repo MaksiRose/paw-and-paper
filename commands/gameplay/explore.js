@@ -179,6 +179,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				color: profileData.color,
 				author: { name: profileData.name, icon_url: profileData.avatarURL },
 				description: waitingString + joinNestedArray(waitingArray),
+				footer: { text: 'This game is voluntary to skip waiting time. If you don\'t mind waiting, you can ignore this game.' },
 			}],
 			components: [waitingComponent],
 			failIfNotExists: false,
