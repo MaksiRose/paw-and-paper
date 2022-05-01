@@ -139,6 +139,7 @@ const event = {
 								{ name: '**rp profile (@user)**', value: 'Look up all the available info about a character.' },
 								{ name: '**rp accounts**', value: 'Change the account/profile you are using.' },
 								{ name: '**rp copy**', value: 'Copy a profile from another server.' },
+								{ name: '**rp link (create/destroy)**', value: 'Create or destroy a link between two profiles.' },
 								{ name: '**rp delete**', value: 'Delete your account and reset your data permanently.' },
 							],
 							footer: { text: 'ℹ️ Select a command from the list below to view more information about it.' },
@@ -159,6 +160,7 @@ const event = {
 									{ label: 'Profile', value: 'help_profile', description: 'Look up all the available info about a character.' },
 									{ label: 'Accounts', value: 'help_accounts', description: 'Change the account/profile you are using.' },
 									{ label: 'Copy', value: 'help_copy', description: 'Copy a profile from another server.' },
+									{ label: 'Link', value: 'help_link', description: 'Create or destroy a link between two profiles.' },
 									{ label: 'Delete', value: 'help_delete', description: 'Delete your account and reset your data permanently.' },
 								],
 							}],
@@ -547,6 +549,29 @@ const event = {
 								{ name: '**Aliases**', value: 'duplicate' },
 								{ name: '**Arguments**', value: 'none' },
 								{ name: '**More information**', value: 'It is first being checked if the user has any accounts outside of the server they are currently in. Then it is being checked if the user is currently on an empty slot. If both of these conditions are met, the user gets a drop-down list of all the accounts that exist on other servers. Choosing one will copy it, as well as asking if the user wants to create a link as well. If they click the button to create a link, the accounts will be linked up.' },
+							],
+						}],
+						ephemeral: true,
+					})
+					.catch(async (error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
+
+			if (interaction.values[0] === 'help_link') {
+
+				return await interaction
+					.followUp({
+						embeds: [{
+							color: /** @type {`#${string}`} */ (config.default_color),
+							title: 'rp link',
+							description: 'Create or destroy a link between two profiles.',
+							fields: [
+								{ name: '**Aliases**', value: 'none' },
+								{ name: '**Arguments**', value: 'Optional: create or destroy' },
+								{ name: '**More information**', value: 'It is first being checked if the user has any accounts outside of the server they are currently in. Then, if the user selected to create a link, it is being checked if the user is on a non-empty account that has no existing link. The user gets a drop-down list of all the accounts that exist on other servers. Choosing one will create a link to it from the currently selected profile. If the user selected to destroy a link, it is being checked if there are any accounts to destroy the link of. If there are, the user gets a drop-down list of all those accounts. Choosing one will destroy the link from it.' },
 							],
 						}],
 						ephemeral: true,
