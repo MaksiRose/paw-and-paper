@@ -63,27 +63,26 @@ async function decreaseLevel(profileData, botReply) {
 	const newUserLevel = Math.round(profileData.levels - (profileData.levels / 10));
 
 	botReply.embeds[0].footer = { text: '' };
-	botReply.embeds[0].footer.text = `${profileData.experience > 0 ? `-${profileData.experience} XP` : ''}\n${(newUserLevel !== profileData.levels) ? `-${profileData.levels - newUserLevel} level${(profileData.levels - newUserLevel > 1) ? 's' : ''}` : ''}`;
+	botReply.embeds[0].footer.text = `${(newUserLevel !== profileData.levels) ? `-${profileData.levels - newUserLevel} level${(profileData.levels - newUserLevel > 1) ? 's' : ''}\n` : ''}${profileData.experience > 0 ? `-${profileData.experience} XP` : ''}`;
 
-	const newUserInventory = { ...profileData.inventoryObject };
+	const newUserInventory = {
+		commonPlants: { ...profileData.inventoryObject.commonPlants },
+		uncommonPlants: { ...profileData.inventoryObject.uncommonPlants },
+		rarePlants: { ...profileData.inventoryObject.rarePlants },
+		meat: { ...profileData.inventoryObject.meat },
+	};
+
 	for (const itemType of Object.keys(newUserInventory)) {
 
 		for (const item of Object.keys(newUserInventory[itemType])) {
 
 			if (newUserInventory[itemType][item] > 0) {
 
-
-				/** @type {*} */ (botReply.embeds[0].footer) += `\n-${newUserInventory[itemType][item]} ${item}`;
+				botReply.embeds[0].footer.text += `\n-${newUserInventory[itemType][item]} ${item}`;
 				newUserInventory[itemType][item] = 0;
 			}
 		}
 	}
-
-	if (botReply.embeds[0].footer.text == '') {
-
-		botReply.embeds[0].footer = null;
-	}
-
 
 	profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 		{ userId: profileData.userId, serverId: profileData.serverId },
@@ -95,6 +94,18 @@ async function decreaseLevel(profileData, botReply) {
 			},
 		},
 	));
+
+	if (botReply.embeds[0].footer.text === '') { botReply.embeds[0].footer = null; }
+
+	botReply = await botReply
+		.edit({
+			embeds: botReply.embeds,
+		})
+		.catch((error) => {
+			if (error.httpStatus !== 404) { throw new Error(error); }
+			return botReply;
+		});
+
 
 	const member = await botReply.guild.members.fetch(profileData.userId);
 	const roles = profileData.roles.filter(role => role.wayOfEarning === 'levels' && role.requirement > profileData.levels);
@@ -134,15 +145,6 @@ async function decreaseLevel(profileData, botReply) {
 			await checkRoleCatchBlock(error, botReply, member);
 		}
 	}
-
-	botReply = await botReply
-		.edit({
-			embeds: botReply.embeds,
-		})
-		.catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-			return botReply;
-		});
 
 	return botReply;
 }

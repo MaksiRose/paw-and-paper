@@ -241,7 +241,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		}
 		else {
 
-			const inventoryObject = { ...serverData.inventoryObject };
+			const inventoryObject = {
+				commonPlants: { ...serverData.inventoryObject.commonPlants },
+				uncommonPlants: { ...serverData.inventoryObject.uncommonPlants },
+				rarePlants: { ...serverData.inventoryObject.rarePlants },
+				meat: { ...serverData.inventoryObject.meat },
+			};
 			const { itemType, itemName } = module.exports.getHighestItem(inventoryObject);
 
 			if (inventoryObject[itemType][itemName] > 0) {
@@ -425,7 +430,12 @@ async function remainingHumans(message, serverData) {
 		footer: { text: '' },
 	};
 
-	const inventoryObject = { ...serverData.inventoryObject };
+	const inventoryObject = {
+		commonPlants: { ...serverData.inventoryObject.commonPlants },
+		uncommonPlants: { ...serverData.inventoryObject.uncommonPlants },
+		rarePlants: { ...serverData.inventoryObject.rarePlants },
+		meat: { ...serverData.inventoryObject.meat },
+	};
 	while (serverMap.get('nr' + message.guild.id).humans > 0) {
 
 		const { itemType, itemName } = module.exports.getHighestItem(inventoryObject);
