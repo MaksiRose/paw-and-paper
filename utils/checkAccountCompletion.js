@@ -1,5 +1,6 @@
 // @ts-check
 const { error_color } = require('../config.json');
+const { profileModel, otherProfileModel } = require('../models/profileModel');
 
 /**
  * Checks if there is an account and if the account has a name, returns false if they do, and if not, sends a message telling the user to create an account and return true.
@@ -17,12 +18,18 @@ async function hasNoName(message, profileData) {
 				throw new Error(error);
 			});
 
+		const allAccounts = [
+			.../** @type {Array<import('../typedef').ProfileSchema>} */ (await profileModel.find({ userId: message.author.id, serverId: { $nin: [message.guild.id] } })),
+			.../** @type {Array<import('../typedef').ProfileSchema>} */ (await otherProfileModel.find({ userId: message.author.id, serverId: { $nin: [message.guild.id] } })),
+		];
+
 		await message
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Please type "rp name [name]" to begin setting up your account!',
+					description: allAccounts.length > 0 ? 'I see that you already have a profile on another server. You can copy it over using `rp copy`!' : null,
 				}],
 				failIfNotExists: false,
 			})
