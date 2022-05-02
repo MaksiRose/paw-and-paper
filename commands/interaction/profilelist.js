@@ -1,8 +1,6 @@
 // @ts-check
-const { profileModel } = require('../../models/profileModel');
+const { profileModel, otherProfileModel } = require('../../models/profileModel');
 const { default_color } = require('../../config.json');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
-const startCooldown = require('../../utils/startCooldown');
 const { MessageActionRow, MessageSelectMenu, MessageButton, MessageEmbed } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
 
@@ -12,18 +10,9 @@ module.exports.name = 'profilelist';
  *
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
- * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData) => {
-
-	if (await hasNotCompletedAccount(message, profileData)) {
-
-		return;
-	}
-
-	profileData = await startCooldown(message, profileData);
+module.exports.sendMessage = async (client, message) => {
 
 	const profilelistRankComponent = new MessageActionRow({
 		components: [ new MessageSelectMenu({
@@ -146,11 +135,18 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	 */
 	async function getRank(rankName) {
 
-		const allRankProfilesArray = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel
-			.find({
-				serverId: message.guild.id,
-				rank: rankName,
-			}))
+		const allRankProfilesArray = [
+			.../** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel
+				.find({
+					serverId: message.guild.id,
+					rank: rankName,
+				})),
+			.../** @type {Array<import('../../typedef').ProfileSchema>} */ (await otherProfileModel
+				.find({
+					serverId: message.guild.id,
+					rank: rankName,
+				})),
+		]
 			.sort((a, b) => (a.name.toUpperCase() < b.name.toUpperCase()) ? -1 : (a.name.toUpperCase() > b.name.toUpperCase()) ? 1 : 0)
 			.map(doc => `${doc.name} - <@${doc.userId}>`);
 
