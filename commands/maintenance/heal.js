@@ -1,5 +1,5 @@
 // @ts-check
-const { profileModel } = require('../../models/profileModel');
+const { profileModel, otherProfileModel } = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
 const startCooldown = require('../../utils/startCooldown');
 const { generateRandomNumber, pullFromWeightedTable } = require('../../utils/randomizers');
@@ -355,10 +355,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						const embedFooterStatsText = await decreaseStats(true);
 						const chosenUserThirstPoints = generateRandomNumber(10, 6);
 
-						chosenProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+						chosenProfileData = (/** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 							{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
 							{ $inc: { thirst: +chosenUserThirstPoints } },
-						));
+						))) || (/** @type {import('../../typedef').ProfileSchema} */ (await otherProfileModel.findOneAndUpdate(
+							{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
+							{ $inc: { thirst: +chosenUserThirstPoints } },
+						)));
 
 						embed.description = `*${profileData.name} takes ${chosenProfileData.name}'s body, drags it over to the river, and positions ${pronoun(chosenProfileData, 2)} head right over the water. The ${chosenProfileData.species} sticks ${pronoun(chosenProfileData, 2)} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${pronoun(chosenProfileData, 2)} body.*`;
 						embed.footer.text = `${embedFooterStatsText}\n\n+${chosenUserThirstPoints} thirst for ${chosenProfileData.name} (${chosenProfileData.thirst}/${chosenProfileData.maxThirst})`;
@@ -543,7 +546,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						{ $set: { inventoryObject: serverData.inventoryObject } },
 					));
 
-					if (isSuccessful === true && chosenProfileData.userId === profileData.userId && pullFromWeightedTable({ 0: 70, 1: 30 + profileData.saplingObject.waterCycles }) === 0) {
+					if (isSuccessful === true && chosenProfileData.userId === profileData.userId && pullFromWeightedTable({ 0: 75, 1: 25 + profileData.saplingObject.waterCycles }) === 0) {
 
 						isSuccessful = false;
 					}
@@ -565,7 +568,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						return /** @type {import('discord.js').MessageSelectMenuOptions} */ (userSelectMenu.components[0]).options.length > 0 ? await interactionCollector() : null;
 					}
 
-					if (isSuccessful === true && chosenProfileData.userId !== profileData.userId && profileData.rank === 'Apprentice' && pullFromWeightedTable({ 0: 30, 1: 70 + profileData.saplingObject.waterCycles }) === 0) {
+					if (isSuccessful === true && chosenProfileData.userId !== profileData.userId && profileData.rank === 'Apprentice' && pullFromWeightedTable({ 0: 35, 1: 65 + profileData.saplingObject.waterCycles }) === 0) {
 
 						isSuccessful = false;
 					}
@@ -581,7 +584,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 							chosenUserHealthPoints -= (chosenProfileData.health + chosenUserHealthPoints) - chosenProfileData.maxHealth;
 						}
 
-						chosenProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+						chosenProfileData = (/** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 							{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
 							{
 								$inc: {
@@ -591,7 +594,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 								},
 								$set: { injuryObject: chosenUserInjuryObject },
 							},
-						));
+						))) || (/** @type {import('../../typedef').ProfileSchema} */ (await otherProfileModel.findOneAndUpdate(
+							{ userId: chosenProfileData.userId, serverId: chosenProfileData.serverId },
+							{
+								$inc: {
+									hunger: +chosenUserHungerPoints,
+									energy: +chosenUserEnergyPoints,
+									health: +chosenUserHealthPoints,
+								},
+								$set: { injuryObject: chosenUserInjuryObject },
+							},
+						)));
 
 						if (chosenProfileData.userId === profileData.userId) {
 
@@ -728,26 +741,48 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	 */
 	async function getUserSelectMenu() {
 
-		allHurtProfilesList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find({
-			serverId: message.guild.id,
-			$or: [
-				{ energy: 0 },
-				{ health: 0 },
-				{ hunger: 0 },
-				{ thirst: 0 },
-				{
-					injuryObject: {
-						$or: [
-							{ wounds: { $gt: 0 } },
-							{ infections: { $gt: 0 } },
-							{ cold: true },
-							{ sprains: { $gt: 0 } },
-							{ poison: true },
-						],
+		allHurtProfilesList = [
+			.../** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find({
+				serverId: message.guild.id,
+				$or: [
+					{ energy: 0 },
+					{ health: 0 },
+					{ hunger: 0 },
+					{ thirst: 0 },
+					{
+						injuryObject: {
+							$or: [
+								{ wounds: { $gt: 0 } },
+								{ infections: { $gt: 0 } },
+								{ cold: true },
+								{ sprains: { $gt: 0 } },
+								{ poison: true },
+							],
+						},
 					},
-				},
-			],
-		})).map(user => user.userId);
+				],
+			})),
+			.../** @type {Array<import('../../typedef').ProfileSchema>} */ (await otherProfileModel.find({
+				serverId: message.guild.id,
+				$or: [
+					{ energy: 0 },
+					{ health: 0 },
+					{ hunger: 0 },
+					{ thirst: 0 },
+					{
+						injuryObject: {
+							$or: [
+								{ wounds: { $gt: 0 } },
+								{ infections: { $gt: 0 } },
+								{ cold: true },
+								{ sprains: { $gt: 0 } },
+								{ poison: true },
+							],
+						},
+					},
+				],
+			})),
+		].map(user => user.userId);
 
 		const selectMenu = new MessageActionRow({
 			components: [ new MessageSelectMenu({
