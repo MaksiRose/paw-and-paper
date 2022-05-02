@@ -1,8 +1,6 @@
 // @ts-check
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
-const { hasCooldown } = require('../../utils/checkValidity');
+const { hasNoName } = require('../../utils/checkAccountCompletion');
 const { generateRandomNumber } = require('../../utils/randomizers');
-const startCooldown = require('../../utils/startCooldown');
 const { error_color } = require('../../config.json');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
@@ -24,17 +22,10 @@ module.exports.aliases = ['snuggle'];
  */
 module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData, embedArray) => {
 
-	if (await hasNotCompletedAccount(message, profileData)) {
+	if (await hasNoName(message, profileData)) {
 
 		return;
 	}
-
-	if (await hasCooldown(message, profileData, [module.exports.name])) {
-
-		return;
-	}
-
-	profileData = await startCooldown(message, profileData);
 
 	if (message.mentions.users.size > 0 && message.mentions.users.first().id === message.author.id) {
 

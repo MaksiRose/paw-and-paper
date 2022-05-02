@@ -1,7 +1,7 @@
 // @ts-check
 const { profileModel } = require('../../models/profileModel');
 const { default_color } = require('../../config.json');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasNoName } = require('../../utils/checkAccountCompletion');
 const { readFileSync, writeFileSync } = require('fs');
 const { addFriendshipPoints } = require('../../utils/friendshipHandling');
 
@@ -20,7 +20,7 @@ module.exports.name = 'say';
  */
 module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData, embedArray, pingRuins) => {
 
-	if (await hasNotCompletedAccount(message, profileData)) {
+	if (await hasNoName(message, profileData)) {
 
 		return;
 	}

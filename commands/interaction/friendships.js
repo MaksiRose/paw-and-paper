@@ -2,7 +2,7 @@
 const { MessageEmbed, MessageActionRow, MessageButton } = require('discord.js');
 const { readFileSync } = require('fs');
 const { profileModel, otherProfileModel } = require('../../models/profileModel');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasNoName } = require('../../utils/checkAccountCompletion');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { getFriendshipPoints, getFriendshipHearts } = require('../../utils/friendshipHandling');
 const startCooldown = require('../../utils/startCooldown');
@@ -19,7 +19,7 @@ module.exports.name = 'friendships';
  */
 module.exports.sendMessage = async (client, message, argumentsArray, profileData) => {
 
-	if (await hasNotCompletedAccount(message, profileData)) {
+	if (await hasNoName(message, profileData)) {
 
 		return;
 	}

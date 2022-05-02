@@ -2,6 +2,7 @@
 const { MessageActionRow, MessageSelectMenu } = require('discord.js');
 const { error_color, default_color } = require('../../config.json');
 const { profileModel } = require('../../models/profileModel');
+const { hasNoName } = require('../../utils/checkAccountCompletion');
 const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const disableAllComponents = require('../../utils/disableAllComponents');
@@ -19,6 +20,11 @@ module.exports.name = 'shop';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData) => {
+
+	if (await hasNoName(message, profileData)) {
+
+		return;
+	}
 
 	const shop = serverData.shop.filter(item => item.wayOfEarning === 'experience');
 	const rankRoles = serverData.shop.filter(item => item.wayOfEarning === 'rank');

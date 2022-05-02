@@ -2,7 +2,7 @@
 const { MessageEmbed } = require('discord.js');
 const { error_color, default_color } = require('../../config.json');
 const { profileModel } = require('../../models/profileModel');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasNoName } = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
 const updateLinkedProfiles = require('../../utils/updateLinkedProfiles');
 
@@ -18,7 +18,7 @@ module.exports.name = 'pronouns';
  */
 module.exports.sendMessage = async (client, message, argumentsArray, profileData) => {
 
-	if (await hasNotCompletedAccount(message, profileData)) {
+	if (await hasNoName(message, profileData)) {
 
 		return;
 	}

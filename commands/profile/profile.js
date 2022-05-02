@@ -1,8 +1,7 @@
 // @ts-check
 const { MessageActionRow, MessageButton } = require('discord.js');
 const { profileModel } = require('../../models/profileModel');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
-const startCooldown = require('../../utils/startCooldown');
+const { hasNoName } = require('../../utils/checkAccountCompletion');
 
 module.exports.name = 'profile';
 module.exports.aliases = ['info', 'about'];
@@ -16,13 +15,6 @@ module.exports.aliases = ['info', 'about'];
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, profileData) => {
-
-	if (await hasNotCompletedAccount(message, profileData)) {
-
-		return;
-	}
-
-	profileData = await startCooldown(message, profileData);
 
 	/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} */
 	const components = [ new MessageActionRow({
@@ -44,14 +36,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			serverId: message.guild.id,
 		}));
 
-		if (!profileData || profileData.species === '') {
+		if (!profileData) {
 
 			await message
 				.reply({
 					embeds: [{
 						color: '#9d9e51',
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						description: 'This user has no roleplay account, or the account setup process was not completed!',
+						description: 'This user has no roleplay account!',
 					}],
 					failIfNotExists: false,
 				})
@@ -63,9 +55,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		components[0].components.pop();
 	}
-	else if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
+	else {
 
-		components[0].components.pop();
+		if (await hasNoName(message, profileData)) {
+
+			return;
+		}
+
+		if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
+
+			components[0].components.pop();
+		}
 	}
 
 	let injuryText = Object.values(profileData.injuryObject).every(item => item == 0) ? 'none' : '';
@@ -101,7 +101,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				description: description,
 				thumbnail: { url: profileData.avatarURL },
 				fields: [
-					{ name: '**🦑 Species**', value: profileData.species.charAt(0).toUpperCase() + profileData.species.slice(1), inline: true },
+					{ name: '**🦑 Species**', value: (profileData.species.charAt(0).toUpperCase() + profileData.species.slice(1)) || '/', inline: true },
 					{ name: '**🏷️ Rank**', value: profileData.rank, inline: true },
 					{ name: '**🍂 Pronouns**', value: profileData.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n') },
 					{ name: '**🗺️ Region**', value: profileData.currentRegion },
