@@ -2,7 +2,7 @@
 const fs = require('fs');
 const crypto = require('crypto');
 const { client } = require('../paw');
-const validTypes = ['undefined', 'boolean', 'number', 'string', 'object', 'array', 'any'];
+const validTypes = ['undefined', 'boolean', 'number', 'string', 'object', 'array', 'nest', 'any'];
 
 class model {
 	/**
@@ -350,25 +350,8 @@ class model {
 			const dataObject = await this.findOne({ uuid: uuid });
 
 			/** @type {Object.<string, *>} */
-			const updateObject = {};
-
-			for (const [key, { type: type, default: def }] of Object.entries(schema)) {
-
-				// @ts-ignore
-				if (Object.hasOwn(dataObject, key) === false) {
-
-					updateObject[key] = (typeof def === type || type === 'array' || type === 'any') ? def : [undefined, false, 0, '', {}, [], null][validTypes.indexOf(type[0])];
-				}
-				else {
-
-					updateObject[key] = dataObject[key];
-
-					if (def !== undefined) {
-
-						updateObject[key] = transferObjectKeys({}, dataObject[key], def);
-					}
-				}
-			}
+			const updateObject = transferObjectKeys(dataObject, schema, 'object');
+			console.log(updateObject);
 
 			this.save(updateObject);
 
@@ -377,31 +360,55 @@ class model {
 
 		/**
 		 * Copies a template over to a new object so that keys from an existing object are carried over where possible
-		 * @param {Object.<string, *>} newObject
-		 * @param {Object.<string, *>} oldObject
+		 * @param {*} oldObject
 		 * @param {*} schemaObject
+		 * @param {string} objectType
 		 * @returns {Object.<string, *>}
 		 */
-		function transferObjectKeys(newObject, oldObject, schemaObject) {
+		function transferObjectKeys(oldObject, schemaObject, objectType) {
 
-			if (typeof oldObject === 'object' && !Array.isArray(oldObject) && oldObject !== null) {
+			if (typeof oldObject === 'object' && oldObject !== null) {
 
-				for (const [key, value] of Object.entries(schemaObject)) {
+				if (objectType === 'object') {
 
-					// @ts-ignore
-					if (Object.hasOwn(oldObject, key) === false) {
+					const newObject = {};
 
-						newObject[key] = value;
+					for (const [key, { type: type, default: def }] of Object.entries(schemaObject)) {
+
+						if (Object.hasOwn(oldObject, key) === false) {
+
+							newObject[key] = transferObjectKeys([def, def, def, def, {}, [], {}, def][validTypes.indexOf(type)], def, type);
+						}
+						else {
+
+							newObject[key] = transferObjectKeys(oldObject[key], def, type);
+						}
 					}
-					else {
 
-						newObject[key] = oldObject[key];
-
-						newObject[key] = transferObjectKeys({}, oldObject[key], schemaObject[key]);
-					}
+					return newObject;
 				}
+				else if (objectType === 'array') {
 
-				return newObject;
+					const newArray = [];
+
+					for (const element of oldObject) {
+
+						newArray.push(transferObjectKeys(element, schemaObject.default, schemaObject.type));
+					}
+
+					return newArray;
+				}
+				else if (objectType === 'nest') {
+
+					const newObject = {};
+
+					for (const [key, nestedObject] of Object.entries(oldObject)) {
+
+						newObject[key] = transferObjectKeys(nestedObject, schemaObject.default, schemaObject.type);
+					}
+
+					return newObject;
+				}
 			}
 
 			return oldObject;
@@ -420,47 +427,64 @@ class model {
 class schema {
 
 	/**
-	 * @param {Object<string, {type: Array, default?: *, locked?: boolean}>} object
+	 * @param {Object<string, {type: string, default?: *, locked?: boolean}>} object
 	 */
 	constructor(object) {
 
-		for (const [key, { type: type, default: def, locked: locked }] of Object.entries(object)) {
+		for (const [key, value] of Object.entries(makeSchema(object))) {
 
-			this[key] = { type: getType(type) || (def !== undefined ? [typeof def] : ['any']), default: def || undefined, locked: Boolean(locked) };
+			this[key] = value;
 		}
 
 		/**
-		 * @type {{type: Array, default: *, locked: boolean}}
+		 * @type {{type: string, default: *, locked: boolean}}
 		 */
-		this.uuid = { type: ['string'], default: undefined, locked: true };
+		this.uuid = { type: 'string', default: '', locked: true };
 	}
 }
 
 /**
- * Reduces an array to exclude invalid types
- * @param {Array} typeArray
- * @returns {null | Array}
+ * It takes an object and returns a schema object
+ * @param {Object<string, {type: string, default?: *, locked?: boolean}>} object - The object to make a schema from.
+ * @returns {Object<string, {type: string, default: *, locked: boolean}>} A schema object.
  */
-function getType(typeArray) {
+function makeSchema(object) {
 
-	if (Array.isArray(typeArray) === false) {
+	/** @type {Object<string, {type: string, default: *, locked: boolean}>} */
+	const result = {};
 
-		return null;
+	for (const [key, { type: type, default: def, locked: locked }] of Object.entries(object)) {
+
+		let newType = 'any';
+		if (validTypes.includes(type)) { newType = type; }
+		else if (def !== null) {newType = typeof def; }
+
+		let newDefault = def;
+		if (typeof def === 'object' && def !== null) {
+			if (newType === 'array' || newType === 'nest') { newDefault = makeSchema({ 0: def })[0]; }
+			else { newDefault = makeSchema(def); }
+		}
+		else if (def === undefined) {
+			newDefault = [
+				undefined,
+				false,
+				0,
+				'',
+				{ type: 'any', default: null, locked: false },
+				[{ type: 'any', default: null, locked: false }],
+				{ type: 'any', default: null, locked: false },
+				null,
+			][validTypes.indexOf(newType)];
+		}
+
+		result[key] = {
+			type: newType,
+			default: newDefault,
+			locked: Boolean(locked),
+		};
 	}
 
-	for (let i = 0; i < typeArray.length; i++) {
-
-		if (Array.isArray(typeArray[i])) {
-
-			typeArray[i] = getType(typeArray[i]);
-		}
-		else if (validTypes.includes(typeArray[i]) === false) {
-
-			typeArray.splice(i, 1);
-		}
-	}
-
-	return typeArray.length === 0 ? null : typeArray;
+	return result;
 }
 
 module.exports.model = model;
