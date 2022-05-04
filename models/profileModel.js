@@ -50,7 +50,8 @@ const profileSchema = new schema({
 		type: 'nest',
 		default: {
 			type: 'object',
-			default: { name: { type: 'string' },
+			default: {
+				name: { type: 'string' },
 				species: { type: 'string' },
 				description: { type: 'string' },
 				avatarURL: { type: 'string' },
