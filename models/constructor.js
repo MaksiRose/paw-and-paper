@@ -1,7 +1,6 @@
 // @ts-check
 const fs = require('fs');
 const crypto = require('crypto');
-const { client } = require('../paw');
 const validTypes = ['undefined', 'boolean', 'number', 'string', 'object', 'array', 'nest', 'any'];
 
 class model {
@@ -39,7 +38,6 @@ class model {
 
 				for (const [key, value] of Object.entries(filterObject)) {
 
-					// @ts-ignore
 					if (Object.hasOwn(dataObject, key) === false || dataObject[key] !== value) {
 
 						continue file_iteration;
@@ -54,88 +52,15 @@ class model {
 
 		/**
 		 * Searches for all objects that meet the filter, and returns an array of them.
-		 * @param {Object<string, *>} filterObject
+		 * @param {(value: Object<string, *>) => Object<string, *>} [filter]
 		 * @returns {Promise<Array<Object.<string, *>>>} Array of objects
 		 */
-		this.find = async function(filterObject) {
+		this.find = async function(filter) {
 
-			/** @type {Array<Object<string, *>>} */
-			const dataObjectsArray = [];
+			const allDocumentNames = fs.readdirSync(path).filter(f => f.endsWith('.json'));
+			const allDocuments = allDocumentNames.map(filename => /** @type {Object.<string, *>} */ (JSON.parse(fs.readFileSync(`${path}/${filename}`, 'utf-8'))));
 
-			for (const file of fs.readdirSync(path).filter(f => f.endsWith('.json'))) {
-
-				/** @type {Object.<string, *>} */
-				const dataObject = JSON.parse(fs.readFileSync(`${path}/${file}`, 'utf-8'));
-
-				if (allObjectsMatch(filterObject, dataObject) === true) {
-
-					dataObjectsArray.push(dataObject);
-				}
-			}
-
-			/**
-			 * Compares two objects and returns whether all objects match.
-			 * @param {Object<string, *>} testObject
-			 * @param {Object<string, *>} compareObject
-			 * @returns {boolean}
-			 */
-			function allObjectsMatch(testObject, compareObject) {
-
-				for (const [key, value] of Object.entries(testObject)) {
-
-					if (key === '$or') {
-
-						if (oneElementMatches(value, compareObject) === true) continue;
-					}
-					else if (key === '$gt') {
-
-						if (typeof compareObject === 'number' && compareObject > value) { continue; }
-					}
-					else if (key === '$nin') {
-
-						if (oneElementMatches(value, compareObject) === false) { continue; }
-					}
-					// @ts-ignore
-					else if (Object.hasOwn(compareObject, key) === true && value === Object(value)) {
-
-						if (allObjectsMatch(value, compareObject[key]) === true) { continue; }
-					}
-					// @ts-ignore
-					else if (Object.hasOwn(compareObject, key) === true && compareObject[key] === value) {
-
-						continue;
-					}
-
-					return false;
-				}
-
-				return true;
-			}
-
-			/**
-			 * Compares an array with an object and returns whether one element of the array is found in or is equal to the object
-			 * @param {Array} array
-			 * @param {Object<string, *>} compareObject
-			 * @returns {boolean} boolean
-			 */
-			function oneElementMatches(array, compareObject) {
-
-				for (const element of array) {
-
-					if (element === Object(element) && allObjectsMatch(element, compareObject) === true) {
-
-						return true;
-					}
-					else if (compareObject !== undefined && compareObject === element) {
-
-						return true;
-					}
-				}
-
-				return false;
-			}
-
-			return dataObjectsArray;
+			return allDocuments.filter((typeof filter === 'function') ? filter : v => v);
 		};
 
 		/**
@@ -213,60 +138,55 @@ class model {
 		/**
 		 * Searches for an object that meets the filter, and updates it. If several objects meet the requirement, the first that is found is updated.
 		 * @param {Object<string, *>} filterObject
-		 * @param {Object<string, *>} updateObject
+		 * @param {(value: Object<string, *>) => any} update
 		 * @returns {Promise<null | Object<string, *>>}
 		 */
-		this.findOneAndUpdate = async function(filterObject, updateObject) {
+		this.findOneAndUpdate = async function(filterObject, update) {
 
 			const dataObject = await this.findOne(filterObject);
+			const oldDataObject = JSON.parse(JSON.stringify(dataObject));
 
 			if (dataObject === null) {
 
 				return null;
 			}
 
-			const user = (dataObject.userId !== undefined) ? await client.users
-				.fetch(dataObject.userId)
-				.catch(() => { return; }) || null : null;
+			update(dataObject);
 
-			const guild = (dataObject.serverId !== undefined) ? await client.guilds
-				.fetch(dataObject.serverId)
-				.catch(() => { return; }) || null : null;
-
-			for (const [updateKey, updateValue] of Object.entries(updateObject)) {
-
-				if (updateKey === '$set') {
-
-					for (const [key, value] of Object.entries(updateValue)) {
-
-						// @ts-ignore
-						if (Object.hasOwn(dataObject, key) === true && (typeof dataObject[key] === typeof value || dataObject[key] === null || value === null)) {
-
-							(logOutputter(dataObject[key]) != logOutputter(value)) && console.log(`\x1b[32m${(user != null) ? `${user.tag} (${user.id}): ` : ''}\x1b[0m${key} changed from \x1b[33m${logOutputter(objectReducer(dataObject[key], value))} \x1b[0mto \x1b[33m${logOutputter(objectReducer(value, dataObject[key]))} \x1b[0min \x1b[32m${(guild != null) ? guild.name : ''} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-
-							dataObject[key] = value;
-						}
-					}
-				}
-
-				if (updateKey === '$inc') {
-
-					for (const [key, value] of Object.entries(updateValue)) {
-
-						// @ts-ignore
-						if (Object.hasOwn(dataObject, key) === true && typeof dataObject[key] === typeof value) {
-
-							(value !== 0) && console.log(`\x1b[32m${(user != null) ? `${user.tag} (${user.id}): ` : ''}\x1b[0m${key} changed from \x1b[33m${dataObject[key]} \x1b[0mto \x1b[33m${dataObject[key] + value} \x1b[0min \x1b[32m${(guild != null) ? guild.name : ''} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-
-							dataObject[key] += value;
-						}
-					}
-				}
-			}
+			logCreator(oldDataObject, dataObject, 'DOC');
 
 			this.save(dataObject);
 
 			return dataObject;
+
+
+			/**
+			 * It takes two objects, compares them, and logs the differences
+			 * @param {*} oldVariable - The old variable that was passed in.
+			 * @param {*} newVariable - The new variable that is being compared to the old variable.
+			 * @param {string} variablePath - The path to the variable in the object.
+			 * @returns the value of the variable that is passed to it.
+			 */
+			function logCreator(oldVariable, newVariable, variablePath) {
+
+				if (newVariable === Object(newVariable)) {
+
+					const testArray = Object.values(newVariable).filter(v => v === Object(v));
+					if (testArray.length > 0) {
+
+						for (const key of Object.keys(newVariable)) {
+
+							logCreator(oldVariable[key], newVariable[key], variablePath + `.${key}`);
+						}
+						return;
+					}
+				}
+
+				if (logOutputter(oldVariable) !== logOutputter(newVariable)) {
+
+					console.log(`\x1b[32m${dataObject.uuid}: \x1b[0m${variablePath} changed from \x1b[33m${logOutputter(objectReducer(oldVariable, newVariable))} \x1b[0mto \x1b[33m${logOutputter(objectReducer(newVariable, oldVariable))} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+				}
+			}
 
 			/**
 			 * Formats a variable to be readable for the log output
@@ -351,7 +271,6 @@ class model {
 
 			/** @type {Object.<string, *>} */
 			const updateObject = transferObjectKeys(dataObject, schema, 'object');
-			console.log(updateObject);
 
 			this.save(updateObject);
 
