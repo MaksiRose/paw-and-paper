@@ -1,6 +1,6 @@
 // @ts-check
 const serverModel = require('../models/serverModel');
-const { profileModel } = require('../models/profileModel');
+const profileModel = require('../models/profileModel');
 
 /**
  * @type {import('../typedef').Event}
@@ -29,26 +29,34 @@ const event = {
 
 		for (const shoprole of roles) {
 
-			const allServerProfiles = /** @type {Array<import('../typedef').ProfileSchema>} */ (await profileModel.find({
-				serverId: role.guild.id,
-			}));
+			const allServerUsers = /** @type {Array<import('../typedef').ProfileSchema>} */ (await profileModel.find(
+				(/** @type {import('../typedef').ProfileSchema} */ p) => Object.keys(p.currentCharacter).includes(role.guild.id),
+			));
 
-			for (const profile of allServerProfiles) {
+			for (const user of allServerUsers) {
 
-				if (profile.roles.some(profilerole => profilerole.roleId === shoprole.roleId && profilerole.wayOfEarning === shoprole.wayOfEarning && profilerole.requirement === shoprole.requirement)) {
+				const characters = Object.values(user.characters).filter(c => Object.keys(c.profiles).includes(role.guild.id));
+				for (const character of characters) {
 
-					const userRole = profile.roles.find(profilerole => profilerole.roleId === shoprole.roleId && profilerole.wayOfEarning === shoprole.wayOfEarning && profilerole.requirement === shoprole.requirement);
-					const userRoleIndex = profile.roles.indexOf(userRole);
+					const profile = character.profiles[role.guild.id];
 
-					if (userRoleIndex >= 0) { profile.roles.splice(userRoleIndex, 1); }
+					if (profile.roles.some(profilerole => profilerole.roleId === shoprole.roleId && profilerole.wayOfEarning === shoprole.wayOfEarning && profilerole.requirement === shoprole.requirement)) {
 
-					await profileModel.findOneAndUpdate(
-						{ userId: profile.userId, serverId: profile.serverId },
-						{
-							$inc: { experience: userRole.wayOfEarning === 'experience' ? userRole.requirement : 0 },
-							$set: { roles: profile.roles },
-						},
-					);
+						const userRole = profile.roles.find(profilerole => profilerole.roleId === shoprole.roleId && profilerole.wayOfEarning === shoprole.wayOfEarning && profilerole.requirement === shoprole.requirement);
+						const userRoleIndex = profile.roles.indexOf(userRole);
+
+						if (userRoleIndex >= 0) { profile.roles.splice(userRoleIndex, 1); }
+
+						await profileModel.findOneAndUpdate(
+							{ uuid: user.uuid },
+							(/** @type {import('../typedef').ProfileSchema} */ p) => {
+								p.characters[character.name].profiles[profile.serverId].roles = profile.roles;
+								if (userRole.wayOfEarning === 'experience') {
+									p.characters[character.name].profiles[profile.serverId].experience += (Number(userRole.requirement) || 0);
+								}
+							},
+						);
+					}
 				}
 			}
 		}

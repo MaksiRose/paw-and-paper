@@ -1,6 +1,6 @@
 // @ts-check
 const { default_color, error_color } = require('../config.json');
-const { profileModel } = require('../models/profileModel');
+const profileModel = require('../models/profileModel');
 
 /**
  * Checks if user has reached the requirement to get a role based on their rank.
@@ -22,24 +22,25 @@ async function checkRankRequirements(serverData, message, member, userRank) {
 
 			try {
 
-				/** @type {import('../typedef').ProfileSchema} */
-				const profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne(
-					{ userId: member.id, serverId: member.guild.id },
+				const userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne(
+					{ userId: member.id },
 				));
+				const roles = userData.characters[userData.currentCharacter[message.guild.id]].profiles[message.guild.id].roles;
 
-				if (profileData.roles.some(r => r.roleId === item.roleId && r.wayOfEarning === item.wayOfEarning && r.requirement === item.requirement) === false) {
-
-					profileData.roles.push({
-						roleId: item.roleId,
-						wayOfEarning: item.wayOfEarning,
-						requirement: item.requirement,
-					});
+				if (roles.some(r => r.roleId === item.roleId && r.wayOfEarning === item.wayOfEarning && r.requirement === item.requirement) === false) {
 
 					await profileModel.findOneAndUpdate(
-						{ userId: member.id, serverId: member.guild.id },
-						{ $set: { roles: profileData.roles } },
+						{ userId: member.id },
+						(/** @type {import('../typedef').ProfileSchema} */ p) => {
+							p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].roles.push({
+								roleId: item.roleId,
+								wayOfEarning: item.wayOfEarning,
+								requirement: item.requirement,
+							});
+						},
 					);
 				}
+
 
 				if (message.member.roles.cache.has(item.roleId) === false) {
 
@@ -87,21 +88,24 @@ async function checkLevelRequirements(serverData, message, member, userLevel) {
 
 			try {
 
-				/** @type {import('../typedef').ProfileSchema} */
-				const profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne(
-					{ userId: member.id, serverId: member.guild.id },
+				const userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne(
+					{ userId: member.id },
 				));
+				const roles = userData.characters[userData.currentCharacter[message.guild.id]].profiles[message.guild.id].roles;
 
-				profileData.roles.push({
-					roleId: item.roleId,
-					wayOfEarning: item.wayOfEarning,
-					requirement: item.requirement,
-				});
+				if (roles.some(r => r.roleId === item.roleId && r.wayOfEarning === item.wayOfEarning && r.requirement === item.requirement) === false) {
 
-				await profileModel.findOneAndUpdate(
-					{ userId: member.id, serverId: member.guild.id },
-					{ $set: { roles: profileData.roles } },
-				);
+					await profileModel.findOneAndUpdate(
+						{ userId: member.id },
+						(/** @type {import('../typedef').ProfileSchema} */ p) => {
+							p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].roles.push({
+								roleId: item.roleId,
+								wayOfEarning: item.wayOfEarning,
+								requirement: item.requirement,
+							});
+						},
+					);
+				}
 
 				if (member.roles.cache.has(item.roleId) === false) {
 

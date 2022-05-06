@@ -52,7 +52,7 @@ class model {
 
 		/**
 		 * Searches for all objects that meet the filter, and returns an array of them.
-		 * @param {(value: Object<string, *>) => Object<string, *>} [filter]
+		 * @param {(value: any) => any} [filter]
 		 * @returns {Promise<Array<Object.<string, *>>>} Array of objects
 		 */
 		this.find = async function(filter) {
@@ -138,7 +138,7 @@ class model {
 		/**
 		 * Searches for an object that meets the filter, and updates it. If several objects meet the requirement, the first that is found is updated.
 		 * @param {Object<string, *>} filterObject
-		 * @param {(value: Object<string, *>) => any} update
+		 * @param {(value: any) => any} update
 		 * @returns {Promise<null | Object<string, *>>}
 		 */
 		this.findOneAndUpdate = async function(filterObject, update) {

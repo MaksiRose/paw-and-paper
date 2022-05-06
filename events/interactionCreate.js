@@ -1,5 +1,5 @@
 // @ts-check
-const { profileModel } = require('../models/profileModel');
+const profileModel = require('../models/profileModel');
 const config = require('../config.json');
 const errorHandling = require('../utils/errorHandling');
 const { version } = require('../package.json');
@@ -104,14 +104,16 @@ const event = {
 			return;
 		}
 
-		let profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
+		let userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
 			userId: interaction.user.id,
 			serverId: interaction.guild.id,
 		}));
+		const characterData = userData.characters[userData.currentCharacter[interaction.guild.id]];
+		const profileData = characterData.profiles[interaction.guild.id];
 
 		if (userMap.has('nr' + interaction.user.id + interaction.guild.id) === false) {
 
-			userMap.set('nr' + interaction.user.id + interaction.guild.id, { activeCommands: 0, lastGentleWaterReminderTimestamp: 0, activityTimeout: null, cooldownTimeout: null, restingTimeout: null });
+			userMap.set('nr' + interaction.user.id + interaction.guild.id, { activeCommands: 0, lastGentleWaterReminderTimestamp: 0, lastMessageTimestamp: 0, activityTimeout: null, cooldownTimeout: null, restingTimeout: null });
 		}
 
 		clearTimeout(userMap.get('nr' + interaction.user.id + interaction.guild.id).restingTimeout);
@@ -1403,14 +1405,14 @@ const event = {
 
 			if (interaction.customId === 'water-reminder-off') {
 
-				profileData.saplingObject.reminder = false;
+				userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+					{ uuid: userData.uuid },
+					(/** @type {import('../typedef').ProfileSchema} */ p) => {
+						p.reminders.water = false;
+					},
+				));
 
-				await profileModel.findOneAndUpdate(
-					{ userId: profileData.userId, serverId: profileData.serverId },
-					{ $set: { saplingObject: profileData.saplingObject } },
-				);
-
-				stopReminder(profileData);
+				stopReminder(characterData.name, interaction.user.id, interaction.channel.id);
 
 				await interaction
 					.followUp({
@@ -1444,14 +1446,14 @@ const event = {
 
 			if (interaction.customId === 'water-reminder-on') {
 
-				profileData.saplingObject.reminder = true;
+				userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+					{ uuid: userData.uuid },
+					(/** @type {import('../typedef').ProfileSchema} */ p) => {
+						p.reminders.water = true;
+					},
+				));
 
-				await profileModel.findOneAndUpdate(
-					{ userId: profileData.userId, serverId: profileData.serverId },
-					{ $set: { saplingObject: profileData.saplingObject } },
-				);
-
-				sendReminder(client, profileData, interaction.message.channel.id);
+				sendReminder(client, userData, characterData, profileData);
 
 				await interaction
 					.followUp({
@@ -1486,9 +1488,9 @@ const event = {
 			if (interaction.customId === 'stats-refresh') {
 
 				// "item" needs to be == and not === in order to catch the booleans as well
-				let injuryText = Object.values(profileData.injuryObject).every(item => item == 0) ? null : '';
+				let injuryText = Object.values(profileData.injuries).every(item => item == 0) ? null : '';
 
-				for (const [injuryKind, injuryAmount] of Object.entries(profileData.injuryObject)) {
+				for (const [injuryKind, injuryAmount] of Object.entries(profileData.injuries)) {
 
 					if (injuryAmount > 0) {
 
@@ -1519,7 +1521,7 @@ const event = {
 					}],
 				}];
 
-				if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
+				if (Object.values(profileData.inventory).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
 
 					components[0].components.pop();
 				}
@@ -1553,21 +1555,21 @@ const event = {
 
 				if (referencedMessage.mentions.users.size > 0) {
 
-					profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
+					userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
 						userId: referencedMessage.mentions.users.first().id,
 						serverId: referencedMessage.guild.id,
 					}));
 
 					components[0].components.pop();
 				}
-				else if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
+				else if (Object.values(profileData.inventory).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
 
 					components[0].components.pop();
 				}
 
-				let injuryText = (Object.values(profileData.injuryObject).every(item => item == 0)) ? 'none' : '';
+				let injuryText = (Object.values(profileData.injuries).every(item => item == 0)) ? 'none' : '';
 
-				for (const [injuryKey, injuryAmount] of Object.entries(profileData.injuryObject)) {
+				for (const [injuryKey, injuryAmount] of Object.entries(profileData.injuries)) {
 
 					if (injuryAmount > 0) {
 
@@ -1576,35 +1578,35 @@ const event = {
 					}
 				}
 
-				const description = (profileData.description == '') ? '' : `*${profileData.description}*`;
+				const description = (characterData.description == '') ? '' : `*${characterData.description}*`;
 				const user = await client.users
-					.fetch(profileData.userId)
+					.fetch(userData.userId)
 					.catch(() => { return null; });
 
 				await interaction.message
 					.edit({
 						embeds: [{
-							color: profileData.color,
+							color: characterData.color,
 							title: `Profile - ${user.tag}`,
-							author: { name: profileData.name, icon_url: profileData.avatarURL },
+							author: { name: characterData.name, icon_url: characterData.avatarURL },
 							description: description,
-							thumbnail: { url: profileData.avatarURL },
+							thumbnail: { url: characterData.avatarURL },
 							fields: [
-								{ name: '**🦑 Species**', value: profileData.species.charAt(0).toUpperCase() + profileData.species.slice(1), inline: true },
+								{ name: '**🦑 Species**', value: characterData.species.charAt(0).toUpperCase() + characterData.species.slice(1), inline: true },
 								{ name: '**🏷️ Rank**', value: profileData.rank, inline: true },
-								{ name: '**🍂 Pronouns**', value: profileData.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n') },
+								{ name: '**🍂 Pronouns**', value: characterData.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n') },
 								{ name: '**🗺️ Region**', value: profileData.currentRegion },
 
 							],
 						},
 						{
-							color: /** @type {`#${string}`} */ (profileData.color),
+							color: characterData.color,
 							description: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\`\n⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\`\n🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\``,
 							fields: [
 								{ name: '**🩹 Injuries/Illnesses**', value: injuryText, inline: true },
-								{ name: '**🌱 Ginkgo Sapling**', value: profileData.saplingObject.exists === false ? 'none' : `${profileData.saplingObject.waterCycles} days alive - ${profileData.saplingObject.health} health\nNext watering <t:${Math.floor(profileData.saplingObject.nextWaterTimestamp / 1000)}:R>`, inline: true },
+								{ name: '**🌱 Ginkgo Sapling**', value: profileData.sapling.exists === false ? 'none' : `${profileData.sapling.waterCycles} days alive - ${profileData.sapling.health} health\nNext watering <t:${Math.floor(profileData.sapling.nextWaterTimestamp / 1000)}:R>`, inline: true },
 							],
-							footer: { text: profileData.hasQuest == true ? 'There is one open quest!' : null },
+							footer: { text: profileData.hasQuest === true ? 'There is one open quest!' : null },
 						}],
 						components: /** @type {Array<import('discord.js').MessageActionRow>} */ (components),
 					})

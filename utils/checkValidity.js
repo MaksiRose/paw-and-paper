@@ -1,5 +1,5 @@
 // @ts-check
-const { profileModel } = require('../models/profileModel');
+const profileModel = require('../models/profileModel');
 const { prefix } = require('../config.json');
 const { stopResting } = require('./executeResting');
 const { decreaseLevel } = require('./levelHandling');
@@ -7,22 +7,25 @@ const { pronounAndPlural, pronoun, upperCasePronoun } = require('./getPronouns')
 const { passingoutAdvice } = require('./adviceMessages');
 
 /**
-	 * Checks if the user is passed out. If yes, then send a message and return true, as well as decrease their level if it's new. Else, return false.
-	 * @param {import('discord.js').Message} message
-	 * @param {import('../typedef').ProfileSchema} profileData
-	 * @param {boolean} isNew
-	 * @returns {Promise<boolean>}
-	 */
-async function isPassedOut(message, profileData, isNew) {
+ * Checks if the user is passed out. If yes, then send a message and return true, as well as decrease their level if it's new. Else, return false.
+ * @param {import('discord.js').Message} message
+ * @param {import('../typedef').ProfileSchema} userData
+ * @param {boolean} isNew
+ * @returns {Promise<boolean>}
+ */
+async function isPassedOut(message, userData, isNew) {
+
+	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+	const profileData = characterData.profiles[message.guild.id];
 
 	if (profileData.energy <= 0 || profileData.health <= 0 || profileData.hunger <= 0 || profileData.thirst <= 0) {
 
 		const botReply = await message
 			.reply({
 				embeds: [{
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: `*${profileData.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${pronounAndPlural(profileData, 0, 'screeches', 'screech')} with ${pronoun(profileData, 2)} last energy. Without help, ${pronoun(profileData, 0)} will not be able to continue.*`,
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					description: `*${characterData.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${pronounAndPlural(characterData, 0, 'screeches', 'screech')} with ${pronoun(characterData, 2)} last energy. Without help, ${pronoun(characterData, 0)} will not be able to continue.*`,
 				}],
 				failIfNotExists: false,
 			})
@@ -30,10 +33,10 @@ async function isPassedOut(message, profileData, isNew) {
 
 		if (isNew === true) {
 
-			await decreaseLevel(profileData, botReply);
+			await decreaseLevel(userData, botReply);
 		}
 
-		await passingoutAdvice(message, profileData);
+		await passingoutAdvice(message, userData);
 
 		return true;
 	}
@@ -42,13 +45,16 @@ async function isPassedOut(message, profileData, isNew) {
 }
 
 /**
-	 * Checks if the user is on a cooldown. If yes, then send a message and return true, as well as decrease their level if it's new. Else, return false.
-	 * @param {import('discord.js').Message} message
-	 * @param {import('../typedef').ProfileSchema} profileData
-	 * @param {Array<string>} callerNameArray
-	 * @returns {Promise<boolean>}
-	 */
-async function hasCooldown(message, profileData, callerNameArray) {
+ * Checks if the user is on a cooldown. If yes, then send a message and return true, as well as decrease their level if it's new. Else, return false.
+ * @param {import('discord.js').Message} message
+ * @param {import('../typedef').ProfileSchema} userData
+ * @param {Array<string>} callerNameArray
+ * @returns {Promise<boolean>}
+ */
+async function hasCooldown(message, userData, callerNameArray) {
+
+	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+	const profileData = characterData.profiles[message.guild.id];
 
 	const commandName = message.content.slice(prefix.length).trim().split(/ +/).shift().toLowerCase();
 
@@ -57,9 +63,9 @@ async function hasCooldown(message, profileData, callerNameArray) {
 		await message
 			.reply({
 				embeds: [{
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: `*${profileData.name} is so eager to get things done today that ${pronounAndPlural(profileData, 0, 'is', 'are')} somersaulting. ${upperCasePronoun(profileData, 0)} should probably take a few seconds to calm down.*`,
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					description: `*${characterData.name} is so eager to get things done today that ${pronounAndPlural(characterData, 0, 'is', 'are')} somersaulting. ${upperCasePronoun(characterData, 0)} should probably take a few seconds to calm down.*`,
 				}],
 				failIfNotExists: false,
 			})
@@ -84,55 +90,60 @@ async function hasCooldown(message, profileData, callerNameArray) {
 }
 
 /**
-	 * Checks if the user is resting. If yes, then wake user up and attach an embed to the message. Returns the updates `profileData`.
-	 * @param {import('discord.js').Message} message
-	 * @param {import('../typedef').ProfileSchema} profileData
-	 * @param {Array<import('discord.js').MessageEmbed | import('discord.js').MessageEmbedOptions>} embedArray
-	 * @returns {Promise<import('../typedef').ProfileSchema>}
-	 */
-async function isResting(message, profileData, embedArray) {
+ * Checks if the user is resting. If yes, then wake user up and attach an embed to the message. Returns the updated `userData`.
+ * @param {import('discord.js').Message} message
+ * @param {import('../typedef').ProfileSchema} userData
+ * @param {Array<import('discord.js').MessageEmbed | import('discord.js').MessageEmbedOptions>} embedArray
+ * @returns {Promise<import('../typedef').ProfileSchema>}
+ */
+async function isResting(message, userData, embedArray) {
+
+	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+	const profileData = characterData.profiles[message.guild.id];
 
 	if (profileData.isResting == true) {
 
-		profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+		userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { isResting: false } },
+			(/** @type {import('../typedef').ProfileSchema} */ p) => {
+				p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].isResting = false;
+			},
 		));
 
 		stopResting(message.author.id, message.guild.id);
 
 		embedArray.unshift({
-			color: profileData.color,
-			author: { name: profileData.name, icon_url: profileData.avatarURL },
-			description: `*${profileData.name} opens ${pronoun(profileData, 2)} eyes, blinking at the bright sun. After a long stretch, ${pronounAndPlural(profileData, 0, 'leave')} ${pronoun(profileData, 2)} den to continue ${pronoun(profileData, 2)} day.*`,
+			color: characterData.color,
+			author: { name: characterData.name, icon_url: characterData.avatarURL },
+			description: `*${characterData.name} opens ${pronoun(characterData, 2)} eyes, blinking at the bright sun. After a long stretch, ${pronounAndPlural(characterData, 0, 'leave')} ${pronoun(characterData, 2)} den to continue ${pronoun(characterData, 2)} day.*`,
 			footer: { text: `Current energy: ${profileData.energy}` },
 		});
 	}
 
-	return profileData;
+	return userData;
 }
 
 /**
-	 * Checks if the user is passed out, on a cooldown or resting, sends or attaches the appropriate message/embed, and returns a boolean of the result.
-	 * @param {import('discord.js').Message} message
-	 * @param {import('../typedef').ProfileSchema} profileData
-	 * @param {Array<import('discord.js').MessageEmbed | import('discord.js').MessageEmbedOptions>} embedArray
-	 * @param {Array<string>} callerNameArray
-	 * @returns {Promise<boolean>}
-	 */
-async function isInvalid(message, profileData, embedArray, callerNameArray) {
+ * Checks if the user is passed out, on a cooldown or resting, sends or attaches the appropriate message/embed, and returns a boolean of the result.
+ * @param {import('discord.js').Message} message
+ * @param {import('../typedef').ProfileSchema} userData
+ * @param {Array<import('discord.js').MessageEmbed | import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<string>} callerNameArray
+ * @returns {Promise<boolean>}
+ */
+async function isInvalid(message, userData, embedArray, callerNameArray) {
 
-	if (await isPassedOut(message, profileData, false)) {
-
-		return true;
-	}
-
-	if (await hasCooldown(message, profileData, callerNameArray)) {
+	if (await isPassedOut(message, userData, false)) {
 
 		return true;
 	}
 
-	await isResting(message, profileData, embedArray);
+	if (await hasCooldown(message, userData, callerNameArray)) {
+
+		return true;
+	}
+
+	await isResting(message, userData, embedArray);
 
 	return false;
 }

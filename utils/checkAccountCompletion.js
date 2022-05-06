@@ -1,16 +1,16 @@
 // @ts-check
 const { error_color } = require('../config.json');
-const { profileModel, otherProfileModel } = require('../models/profileModel');
+const profileModel = require('../models/profileModel');
 
 /**
  * Checks if there is an account and if the account has a name, returns false if they do, and if not, sends a message telling the user to create an account and return true.
  * @param {import('discord.js').Message} message
- * @param {import('../typedef').ProfileSchema} profileData
+ * @param {import('../typedef').Character} characterData
  * @returns {Promise<boolean>}
  */
-async function hasNoName(message, profileData) {
+async function hasNoName(message, characterData) {
 
-	if (!profileData || profileData?.name === '') {
+	if (!characterData || characterData?.name === '') {
 
 		await message.channel
 			.sendTyping()
@@ -18,10 +18,7 @@ async function hasNoName(message, profileData) {
 				throw new Error(error);
 			});
 
-		const allAccounts = [
-			.../** @type {Array<import('../typedef').ProfileSchema>} */ (await profileModel.find({ userId: message.author.id, serverId: { $nin: [message.guild.id] } })),
-			.../** @type {Array<import('../typedef').ProfileSchema>} */ (await otherProfileModel.find({ userId: message.author.id, serverId: { $nin: [message.guild.id] } })),
-		];
+		const userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.author.id }));
 
 		await message
 			.reply({
@@ -29,7 +26,7 @@ async function hasNoName(message, profileData) {
 					color: /** @type {`#${string}`} */ (error_color),
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Please type "rp name [name]" to begin setting up your account!',
-					description: allAccounts.length > 0 ? 'I see that you already have a profile on another server. You can copy it over using `rp copy`!' : null,
+					description: Object.keys(userData.characters).length > 0 ? 'I see that you already have a character. You can switch to it using `rp accounts`! Pack-specific information like stats, levels, rank etc. will not transfer over though to prevent cheating.' : null,
 				}],
 				failIfNotExists: false,
 			})
@@ -46,12 +43,12 @@ async function hasNoName(message, profileData) {
 /**
  * Checks if the account has a species, returns false if they do, and if not, sends a message telling the user to create an account and returns true.
  * @param {import('discord.js').Message} message
- * @param {import('../typedef').ProfileSchema} profileData
+ * @param {import('../typedef').Character} characterData
  * @returns {Promise<boolean>}
  */
-async function hasNoSpecies(message, profileData) {
+async function hasNoSpecies(message, characterData) {
 
-	if (!profileData || profileData?.species === '') {
+	if (!characterData || characterData?.species === '') {
 
 		await message.channel
 			.sendTyping()
@@ -64,7 +61,7 @@ async function hasNoSpecies(message, profileData) {
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-					title: `Please choose ${profileData.name}'s species!!`,
+					title: `Please choose ${characterData.name}'s species!!`,
 				}],
 				failIfNotExists: false,
 			})
@@ -81,16 +78,16 @@ async function hasNoSpecies(message, profileData) {
 /**
  * Checks if the user has a name and a species, returns false if they do, and if they don't, sends the appropriate message and returns true.
  * @param {import('discord.js').Message} message
- * @param {import('../typedef').ProfileSchema} profileData
+ * @param {import('../typedef').Character} characterData
  * @returns {Promise<boolean>}
  */
-async function hasNotCompletedAccount(message, profileData) {
+async function hasNotCompletedAccount(message, characterData) {
 
-	if (await hasNoName(message, profileData)) {
+	if (await hasNoName(message, characterData)) {
 		return true;
 	}
 
-	if (await hasNoSpecies(message, profileData)) {
+	if (await hasNoSpecies(message, characterData)) {
 
 		return true;
 	}
