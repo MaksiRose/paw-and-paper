@@ -1,5 +1,5 @@
 // @ts-check
-const { profileModel } = require('../models/profileModel');
+const profileModel = require('../models/profileModel');
 
 /**
  * Sends advice message to play.
@@ -19,22 +19,25 @@ async function playAdvice(message) {
 /**
  * Sends advice to rest.
  * @param {import('discord.js').Message} message
- * @param {import('../typedef').ProfileSchema} profileData
+ * @param {import('../typedef').ProfileSchema} userData
  */
-async function restAdvice(message, profileData) {
+async function restAdvice(message, userData) {
 
-	if (profileData.energy <= 80 && profileData.advice.resting === false) {
+	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+	const profileData = characterData.profiles[message.guild.id];
 
-		profileData.advice.resting = true;
+	if (profileData.energy <= 80 && userData.advice.resting === false) {
 
 		await profileModel.findOneAndUpdate(
-			{ userId: profileData.userId, serverId: profileData.serverId },
-			{ $set: { advice: profileData.advice } },
+			{ uuid: userData.uuid },
+			(/** @type {import('../typedef').ProfileSchema} */ p) => {
+				p.advice.resting = true;
+			},
 		);
 
 		await message.channel
 			.send({
-				content: `<@${profileData.userId}> ❓ **Tip:**\nRest via \`rp rest\` to fill up your energy. Resting takes a while, so be patient!\nYou can also do \`rp vote\` to get +30 energy per vote!`,
+				content: `<@${userData.userId}> ❓ **Tip:**\nRest via \`rp rest\` to fill up your energy. Resting takes a while, so be patient!\nYou can also do \`rp vote\` to get +30 energy per vote!`,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
@@ -45,22 +48,25 @@ async function restAdvice(message, profileData) {
 /**
  * Sends advice to drink.
  * @param {import('discord.js').Message} message
- * @param {import('../typedef').ProfileSchema} profileData
+ * @param {import('../typedef').ProfileSchema} userData
  */
-async function drinkAdvice(message, profileData) {
+async function drinkAdvice(message, userData) {
 
-	if (profileData.thirst <= 80 && profileData.advice.drinking === false) {
+	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+	const profileData = characterData.profiles[message.guild.id];
 
-		profileData.advice.drinking = true;
+	if (profileData.thirst <= 80 && userData.advice.drinking === false) {
 
 		await profileModel.findOneAndUpdate(
-			{ userId: profileData.userId, serverId: profileData.serverId },
-			{ $set: { advice: profileData.advice } },
+			{ uuid: userData.uuid },
+			(/** @type {import('../typedef').ProfileSchema} */ p) => {
+				p.advice.drinking = true;
+			},
 		);
 
 		await message.channel
 			.send({
-				content: `<@${profileData.userId}> ❓ **Tip:**\nDrink via \`rp drink\` to fill up your thirst.`,
+				content: `<@${userData.userId}> ❓ **Tip:**\nDrink via \`rp drink\` to fill up your thirst.`,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
@@ -71,22 +77,25 @@ async function drinkAdvice(message, profileData) {
 /**
  * Sends advice to eat.
  * @param {import('discord.js').Message} message
- * @param {import('../typedef').ProfileSchema} profileData
+ * @param {import('../typedef').ProfileSchema} userData
  */
-async function eatAdvice(message, profileData) {
+async function eatAdvice(message, userData) {
 
-	if (profileData.hunger <= 80 && profileData.advice.eating === false) {
+	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+	const profileData = characterData.profiles[message.guild.id];
 
-		profileData.advice.eating = true;
+	if (profileData.hunger <= 80 && userData.advice.eating === false) {
 
 		await profileModel.findOneAndUpdate(
-			{ userId: profileData.userId, serverId: profileData.serverId },
-			{ $set: { advice: profileData.advice } },
+			{ uuid: userData.uuid },
+			(/** @type {import('../typedef').ProfileSchema} */ p) => {
+				p.advice.eating = true;
+			},
 		);
 
 		await message.channel
 			.send({
-				content: `<@${profileData.userId}> ❓ **Tip:**\nEat via \`rp eat\` to fill up your hunger. Carnivores prefer meat, and herbivores prefer plants! Omnivores can eat both.`,
+				content: `<@${userData.userId}> ❓ **Tip:**\nEat via \`rp eat\` to fill up your hunger. Carnivores prefer meat, and herbivores prefer plants! Omnivores can eat both.`,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
@@ -97,17 +106,17 @@ async function eatAdvice(message, profileData) {
 /**
  * Sends advice of what to do when passing out.
  * @param {import('discord.js').Message} message
- * @param {import('../typedef').ProfileSchema} profileData
+ * @param {import('../typedef').ProfileSchema} userData
  */
-async function passingoutAdvice(message, profileData) {
+async function passingoutAdvice(message, userData) {
 
-	if (profileData.advice.passingout === false) {
-
-		profileData.advice.passingout = true;
+	if (userData.advice.passingout === false) {
 
 		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { advice: profileData.advice } },
+			{ uuid: userData.uuid },
+			(/** @type {import('../typedef').ProfileSchema} */ p) => {
+				p.advice.passingout = true;
+			},
 		);
 
 		await message.channel
@@ -123,17 +132,17 @@ async function passingoutAdvice(message, profileData) {
 /**
  * Sends advice of how the colors work.
  * @param {import('discord.js').Message} message
- * @param {import('../typedef').ProfileSchema} profileData
+ * @param {import('../typedef').ProfileSchema} userData
  */
-async function coloredButtonsAdvice(message, profileData) {
+async function coloredButtonsAdvice(message, userData) {
 
-	if (profileData.advice.coloredbuttons === false) {
-
-		profileData.advice.coloredbuttons = true;
+	if (userData.advice.coloredbuttons === false) {
 
 		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { advice: profileData.advice } },
+			{ uuid: userData.uuid },
+			(/** @type {import('../typedef').ProfileSchema} */ p) => {
+				p.advice.coloredbuttons = true;
+			},
 		);
 
 		await message.channel

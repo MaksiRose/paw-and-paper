@@ -13,21 +13,23 @@ const { client } = require('../paw');
  * Sends message informing the user that the entrance is blocked off.
  * @param {import('discord.js').Message} message
  * @param {null | string} messageContent
- * @param {import('../typedef').ProfileSchema} profileData
+ * @param {import('../typedef').Character} characterData
  * @param {import('../typedef').ServerSchema} serverData
  * @param {'sleeping dens' | 'medicine den' | 'food den'} den
  * @returns {Promise<void>}
  */
-async function blockEntrance(message, messageContent, profileData, serverData, den) {
+async function blockEntrance(message, messageContent, characterData, serverData, den) {
 
 	const possibleBlockages = ['vines', 'burrow', 'tree trunk', 'boulder'];
-	const block = serverData.blockedEntranceObject.blockedKind === null ? possibleBlockages[generateRandomNumber(possibleBlockages.length, 0)] : serverData.blockedEntranceObject.blockedKind;
+	const block = serverData.blockedEntrance.blockedKind === null ? possibleBlockages[generateRandomNumber(possibleBlockages.length, 0)] : serverData.blockedEntrance.blockedKind;
 
-	if (serverData.blockedEntranceObject.den === null) {
+	if (serverData.blockedEntrance.den === null) {
 
 		await serverModel.findOneAndUpdate(
 			{ serverId: message.guild.id },
-			{ $set: { blockedEntranceObject: { den: den, blockedKind: block } } },
+			(/** @type {import('../typedef').ServerSchema} */ s) => {
+				s.blockedEntrance = { den: den, blockedKind: /** @type {'vines' | 'burrow' | 'tree trunk' | 'boulder'} */ (block) };
+			},
 		);
 	}
 
@@ -42,9 +44,9 @@ async function blockEntrance(message, messageContent, profileData, serverData, d
 		.reply({
 			content: messageContent,
 			embeds: [{
-				color: profileData.color,
-				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*${profileData.name} is about to enter the ${den}, when ${pronounAndPlural(profileData, 0, 'notice')} that ${blockText} the entrance to the ${den}, making it impossible to enter safely. That will take a lot of strength to dispose of!*`,
+				color: characterData.color,
+				author: { name: characterData.name, icon_url: characterData.avatarURL },
+				description: `*${characterData.name} is about to enter the ${den}, when ${pronounAndPlural(characterData, 0, 'notice')} that ${blockText} the entrance to the ${den}, making it impossible to enter safely. That will take a lot of strength to dispose of!*`,
 				footer: { text: 'Use the button below or type "rp dispose" to dispose of the blockage!' },
 			}],
 			components: [new MessageActionRow({

@@ -10,10 +10,7 @@ const { sendReminder } = require('../commands/maintenance/water');
  */
 module.exports.execute = async (client) => {
 
-	const files = [
-		...readdirSync('./database/profiles').map(file => ['./database/profiles', file]),
-		...readdirSync('./database/profiles/inactiveProfiles').map(file => ['./database/profiles/inactiveProfiles', file]),
-	].filter(([, file]) => file.endsWith('.json'));
+	const files = readdirSync('./database/profiles').map(file => ['./database/profiles', file]).filter(([, file]) => file.endsWith('.json'));
 
 	for (const [path, file] of files) {
 

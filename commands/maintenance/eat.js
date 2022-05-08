@@ -1,5 +1,5 @@
 // @ts-check
-const { profileModel } = require('../../models/profileModel');
+const profileModel = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
 const startCooldown = require('../../utils/startCooldown');
 const { generateRandomNumber } = require('../../utils/randomizers');
@@ -18,24 +18,27 @@ module.exports.name = 'eat';
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
  * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData, embedArray) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await hasNotCompletedAccount(message, profileData)) {
+	let characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+	let profileData = characterData.profiles[message.guild.id];
 
-		return;
-	}
-
-	if (await isInvalid(message, profileData, embedArray, [module.exports.name])) {
+	if (await hasNotCompletedAccount(message, characterData)) {
 
 		return;
 	}
 
-	profileData = await startCooldown(message, profileData);
+	if (await isInvalid(message, userData, embedArray, [module.exports.name])) {
+
+		return;
+	}
+
+	userData = await startCooldown(message);
 	const messageContent = remindOfAttack(message);
 
 	if (profileData.hunger >= profileData.maxHunger) {
@@ -44,9 +47,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				content: messageContent,
 				embeds: [...embedArray, {
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: `*${profileData.name}'s stomach bloats as ${pronounAndPlural(profileData, 0, 'roll')} around camp, stuffing food into ${pronoun(profileData, 2)} mouth. The ${profileData.species} might need to take a break from food before ${pronounAndPlural(profileData, 0, 'goes', 'go')} into a food coma.*`,
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					description: `*${characterData.name}'s stomach bloats as ${pronounAndPlural(characterData, 0, 'roll')} around camp, stuffing food into ${pronoun(characterData, 2)} mouth. The ${characterData.species} might need to take a break from food before ${pronounAndPlural(characterData, 0, 'goes', 'go')} into a food coma.*`,
 				}],
 				failIfNotExists: false,
 			})
@@ -56,21 +59,23 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		return;
 	}
 
-	if ((profileData.rank !== 'Youngling' && serverData.blockedEntranceObject.den === null && generateRandomNumber(20, 0) === 0) || serverData.blockedEntranceObject.den === 'food den') {
+	if ((profileData.rank !== 'Youngling' && serverData.blockedEntrance.den === null && generateRandomNumber(20, 0) === 0) || serverData.blockedEntrance.den === 'food den') {
 
-		await blockEntrance(message, messageContent, profileData, serverData, 'food den');
+		await blockEntrance(message, messageContent, characterData, serverData, 'food den');
 		return;
 	}
 
 	await profileModel.findOneAndUpdate(
-		{ userId: message.author.id, serverId: message.guild.id },
-		{ $set: { currentRegion: 'food den' } },
+		{ uuid: userData.uuid },
+		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'food den';
+		},
 	);
 
 	if (!argumentsArray.length) {
 
 		// I have to call the inventory command directly here instead of executing messageCreate.js, since doing otherwise would always return profileData.hasCooldown as true
-		await sendMessage(client, message, argumentsArray, profileData, serverData, embedArray);
+		await sendMessage(client, message, argumentsArray, userData, serverData, embedArray);
 		return;
 	}
 
@@ -79,11 +84,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	let finalHealthPoints = 0;
 	let finalEnergyPoints = 0;
 
-	profileData.advice.eating = true;
-
 	const embed = {
-		color: profileData.color,
-		author: { name: profileData.name, icon_url: profileData.avatarURL },
+		color: characterData.color,
+		author: { name: characterData.name, icon_url: characterData.avatarURL },
 		description: '',
 		footer: { text: '' },
 	};
@@ -115,15 +118,15 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			plantMap = new Map([...rarePlantsMap]);
 		}
 
-		if (serverData.inventoryObject[plantType][chosenFood] <= 0) {
+		if (serverData.inventory[plantType][chosenFood] <= 0) {
 
 			await message
 				.reply({
 					content: messageContent,
 					embeds: [...embedArray, {
-						color: profileData.color,
-						author: { name: profileData.name, icon_url: profileData.avatarURL },
-						description: `*${profileData.name} searches for a ${chosenFood} all over the pack, but couldn't find one...*`,
+						color: characterData.color,
+						author: { name: characterData.name, icon_url: characterData.avatarURL },
+						description: `*${characterData.name} searches for a ${chosenFood} all over the pack, but couldn't find one...*`,
 						footer: { text: profileData.currentRegion !== 'food den' ? '\nYou are now at the food den' : null },
 					}],
 					failIfNotExists: false,
@@ -139,30 +142,30 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			finalHungerPoints = function(hunger) { return profileData.hunger + hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(3, -5));
 			finalHealthPoints = function(health) { return (profileData.health - health < 0) ? profileData.health : health; }(generateRandomNumber(3, -10));
 
-			embed.description = `*A yucky feeling drifts down ${profileData.name}'s throat. ${upperCasePronounAndPlural(profileData, 0, 'shakes and spits', 'shake and spit')} it out, trying to rid ${pronoun(profileData, 2)} mouth of the taste. The plant is poisonous!*`;
+			embed.description = `*A yucky feeling drifts down ${characterData.name}'s throat. ${upperCasePronounAndPlural(characterData, 0, 'shakes and spits', 'shake and spit')} it out, trying to rid ${pronoun(characterData, 2)} mouth of the taste. The plant is poisonous!*`;
 		}
 
 		if (plantMap.get(chosenFood).edibality === 'i') {
 
 			finalHungerPoints = function(hunger) { return profileData.hunger + hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(3, -3));
 
-			embed.description = `*${profileData.name} slowly opens ${pronoun(profileData, 2)} mouth and chomps onto the ${chosenFood}. The ${profileData.species} swallows it, but ${pronoun(profileData, 2)} face has a look of disgust. That wasn't very tasty!*`;
+			embed.description = `*${characterData.name} slowly opens ${pronoun(characterData, 2)} mouth and chomps onto the ${chosenFood}. The ${characterData.species} swallows it, but ${pronoun(characterData, 2)} face has a look of disgust. That wasn't very tasty!*`;
 		}
 
 		if (plantMap.get(chosenFood).edibality === 'e') {
 
-			if (speciesMap.get(profileData.species).diet === 'carnivore') {
+			if (speciesMap.get(characterData.species).diet === 'carnivore') {
 
 				finalHungerPoints = function(hunger) { return profileData.hunger + hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(5, 1));
 
-				embed.description = `*${profileData.name} plucks a ${chosenFood} from the pack storage and nibbles away at it. It has a bitter, foreign taste, not the usual meaty meal the ${profileData.species} prefers.*`;
+				embed.description = `*${characterData.name} plucks a ${chosenFood} from the pack storage and nibbles away at it. It has a bitter, foreign taste, not the usual meaty meal the ${characterData.species} prefers.*`;
 			}
 
-			if (speciesMap.get(profileData.species).diet === 'herbivore' || speciesMap.get(profileData.species).diet === 'omnivore') {
+			if (speciesMap.get(characterData.species).diet === 'herbivore' || speciesMap.get(characterData.species).diet === 'omnivore') {
 
 				finalHungerPoints = function(hunger) { return profileData.hunger + hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(4, 15));
 
-				embed.description = `*Leaves flutter into the storage den, landing near ${profileData.name}'s feet. The ${profileData.species} searches around the inventory determined to find the perfect meal, and that ${pronounAndPlural(profileData, 0, 'does', 'do')}. ${profileData.name} plucks a ${chosenFood} from the pile and eats until ${pronoun(profileData, 2)} stomach is pleased.*`;
+				embed.description = `*Leaves flutter into the storage den, landing near ${characterData.name}'s feet. The ${characterData.species} searches around the inventory determined to find the perfect meal, and that ${pronounAndPlural(characterData, 0, 'does', 'do')}. ${characterData.name} plucks a ${chosenFood} from the pile and eats until ${pronoun(characterData, 2)} stomach is pleased.*`;
 			}
 		}
 
@@ -171,25 +174,24 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			finalEnergyPoints = function(energy) { return (profileData.energy + energy > profileData.maxEnergy) ? profileData.maxEnergy - profileData.energy : energy; }(20);
 		}
 
-		serverData.inventoryObject[plantType][chosenFood] -= 1;
 
-		profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{
-				$inc: {
-					hunger: +finalHungerPoints,
-					energy: +finalEnergyPoints,
-					health: +finalHealthPoints,
-				},
-				$set: {
-					advice: profileData.advice,
-				},
+		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+			{ uuid: userData.uuid },
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				p.advice.eating = true;
+				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hunger += finalHungerPoints;
+				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].energy += finalEnergyPoints;
+				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].health += finalHealthPoints;
 			},
 		));
+		characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+		profileData = characterData.profiles[message.guild.id];
 
 		serverData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOneAndUpdate(
 			{ serverId: message.guild.id },
-			{ $set: { inventoryObject: serverData.inventoryObject } },
+			(/** @type {import('../../typedef').ServerSchema} */ s) => {
+				s.inventory[plantType][chosenFood] -= 1;
+			},
 		));
 
 		embed.footer.text = `${finalHungerPoints >= 0 ? '+' : ''}${finalHungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})`;
@@ -220,15 +222,15 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	if (speciesMap.has(chosenFood) === true) {
 
-		if (serverData.inventoryObject.meat[chosenFood] <= 0) {
+		if (serverData.inventory.meat[chosenFood] <= 0) {
 
 			await message
 				.reply({
 					content: messageContent,
 					embeds: [...embedArray, {
-						color: profileData.color,
-						author: { name: profileData.name, icon_url: profileData.avatarURL },
-						description: `*${profileData.name} searches for a ${chosenFood} all over the pack, but couldn't find one...*`,
+						color: characterData.color,
+						author: { name: characterData.name, icon_url: characterData.avatarURL },
+						description: `*${characterData.name} searches for a ${chosenFood} all over the pack, but couldn't find one...*`,
 						footer: { text: profileData.currentRegion !== 'food den' ? '\nYou are now at the food den' : null },
 					}],
 					failIfNotExists: false,
@@ -239,33 +241,35 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			return;
 		}
 
-		if (speciesMap.get(profileData.species).diet === 'herbivore') {
+		if (speciesMap.get(characterData.species).diet === 'herbivore') {
 
 			finalHungerPoints = function(hunger) { return profileData.hunger - hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(5, 1));
 
-			embed.description = `*${profileData.name} stands by the storage den, eyeing the varieties of food. A ${chosenFood} catches ${pronoun(profileData, 2)} attention. The ${profileData.species} walks over to it and begins to eat.* "This isn't very good!" *${profileData.name} whispers to ${pronoun(profileData, 4)} and leaves the den, stomach still growling, and craving for plants to grow.*`;
+			embed.description = `*${characterData.name} stands by the storage den, eyeing the varieties of food. A ${chosenFood} catches ${pronoun(characterData, 2)} attention. The ${characterData.species} walks over to it and begins to eat.* "This isn't very good!" *${characterData.name} whispers to ${pronoun(characterData, 4)} and leaves the den, stomach still growling, and craving for plants to grow.*`;
 		}
 
-		if (speciesMap.get(profileData.species).diet === 'carnivore' || speciesMap.get(profileData.species).diet === 'omnivore') {
+		if (speciesMap.get(characterData.species).diet === 'carnivore' || speciesMap.get(characterData.species).diet === 'omnivore') {
 
 			finalHungerPoints = function(hunger) { return profileData.hunger - hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(4, 15));
 
-			embed.description = `*${profileData.name} sits chewing maliciously on a ${chosenFood}. A dribble of blood escapes out of ${pronoun(profileData, 2)} jaw as the ${profileData.species} finishes off the meal. It was a delicious feast, but very messy!*`;
+			embed.description = `*${characterData.name} sits chewing maliciously on a ${chosenFood}. A dribble of blood escapes out of ${pronoun(characterData, 2)} jaw as the ${characterData.species} finishes off the meal. It was a delicious feast, but very messy!*`;
 		}
 
-		serverData.inventoryObject.meat[chosenFood] -= 1;
-
-		profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{
-				$inc: { hunger: +finalHungerPoints },
-				$set: { advice: profileData.advice },
+		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+			{ uuid: userData.uuid },
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				p.advice.eating = true;
+				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hunger += finalHungerPoints;
 			},
 		));
+		characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+		profileData = characterData.profiles[message.guild.id];
 
 		serverData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOneAndUpdate(
 			{ serverId: message.guild.id },
-			{ $set: { inventoryObject: serverData.inventoryObject } },
+			(/** @type {import('../../typedef').ServerSchema} */ s) => {
+				s.inventory.meat[chosenFood] -= 1;
+			},
 		));
 
 		embed.footer.text = `+${finalHungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})${(profileData.currentRegion != 'food den') ? '\nYou are now at the food den' : ''}\n\n-1 ${chosenFood} for ${message.guild.name}`;
@@ -284,14 +288,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	if (message.mentions.users.size > 0) {
 
-		const taggedProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
-			userId: message.mentions.users.first().id,
-			serverId: message.guild.id,
-		}));
+		const taggedUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first().id }));
+		const taggedCharacterData = taggedUserData.characters[taggedUserData.currentCharacter[message.guild.id]];
 
-		if (taggedProfileData) {
+		if (taggedUserData) {
 
-			embed.description = `*${profileData.name} looks down at ${taggedProfileData.name} as ${pronounAndPlural(profileData, 0, 'nom')} on the ${taggedProfileData.species}'s leg.* "No eating packmates here!" *${taggedProfileData.name} chuckled, shaking off ${profileData.name}.*`;
+			embed.description = `*${characterData.name} looks down at ${taggedCharacterData.name} as ${pronounAndPlural(characterData, 0, 'nom')} on the ${taggedCharacterData.species}'s leg.* "No eating packmates here!" *${taggedCharacterData.name} chuckled, shaking off ${characterData.name}.*`;
 			embed.footer.text = profileData.currentRegion !== 'food den' ? '\nYou are now at the food den' : null;
 
 			await message
@@ -308,6 +310,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	}
 
 	// I have to call the inventory command directly here instead of executing messageCreate.js, since doing otherwise would always return profileData.hasCooldown as true
-	await sendMessage(client, message, argumentsArray, profileData, serverData, embedArray);
+	await sendMessage(client, message, argumentsArray, userData, serverData, embedArray);
 	return;
 };

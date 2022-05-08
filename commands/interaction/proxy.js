@@ -71,7 +71,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						color: /** @type {`#${string}`} */ (error_color),
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: 'Here is how to use the always subcommand:',
-						description: alwaysDescription + `\n\nHere is a list of all the channels that you have turned this on for:\n${}`,
+						description: alwaysDescription + `\n\nHere is a list of all the channels that you have turned this on for:\n${'I still need something here' || 'something else'}`,
 					})],
 					failIfNotExists: false,
 				})

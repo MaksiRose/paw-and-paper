@@ -1,11 +1,11 @@
 // @ts-check
-const { profileModel } = require('../models/profileModel');
+const profileModel = require('../models/profileModel');
 const { pronoun } = require('./getPronouns');
 const { generateRandomNumber, pullFromWeightedTable } = require('./randomizers');
 
 /**
  * Calculates an appropriate amount of thirst points to lose based on the users energy, and returns it.
- * @param {import('../typedef').ProfileSchema} profileData
+ * @param {import('../typedef').Profile} profileData
  * @returns {Promise<number>}
  */
 async function decreaseThirst(profileData) {
@@ -28,7 +28,7 @@ async function decreaseThirst(profileData) {
 
 /**
  * Calculates an appropriate amount of hunger points to lose based on the users energy, and returns it.
- * @param {import('../typedef').ProfileSchema} profileData
+ * @param {import('../typedef').Profile} profileData
  * @returns {Promise<number>}
  */
 async function decreaseHunger(profileData) {
@@ -52,7 +52,7 @@ async function decreaseHunger(profileData) {
 
 /**
  * Calculates an appropriate amount of energy points to lose based on the users health, and returns it.
- * @param {import('../typedef').ProfileSchema} profileData
+ * @param {import('../typedef').Profile} profileData
  * @returns {Promise<number>}
  */
 async function decreaseEnergy(profileData) {
@@ -77,18 +77,23 @@ async function decreaseEnergy(profileData) {
  * Checks if user has existing injuries.
  * If not, it adds modified injuries and return botReply.
  * If yes, it loops through them and either randomly heals them or calculates an appropriate amount on health points to lose based on the users health, edits the bots reply to include an embed displaying the changes, and updates the profile by subtracting the lost health and adding the modified injuries.
- * @param {import('../typedef').ProfileSchema} profileData
+ * @param {import('../typedef').ProfileSchema} userData
  * @param {import('discord.js').Message} botReply
  * @param {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} modifiedUserInjuryObject
  * @returns {Promise<import('discord.js').Message>} botReply
  */
-async function decreaseHealth(profileData, botReply, modifiedUserInjuryObject) {
+async function decreaseHealth(userData, botReply, modifiedUserInjuryObject) {
 
-	if (Object.values(profileData.injuryObject).every((value) => value == 0)) {
+	const characterData = userData.characters[userData.currentCharacter[botReply.guild.id]];
+	const profileData = characterData.profiles[botReply.guild.id];
 
-		profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-			{ userId: profileData.userId, serverId: profileData.serverId },
-			{ $set: { injuryObject: modifiedUserInjuryObject } },
+	if (Object.values(profileData.injuries).every((value) => value == 0)) {
+
+		userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+			{ uuid: userData.uuid },
+			(/** @type {import('../typedef').ProfileSchema} */ p) => {
+				p.characters[p.currentCharacter[botReply.guild.id]].profiles[botReply.guild.id].injuries = modifiedUserInjuryObject;
+			},
 		));
 
 		return botReply;
@@ -97,12 +102,12 @@ async function decreaseHealth(profileData, botReply, modifiedUserInjuryObject) {
 	let extraLostHealthPoints = 0;
 	/** @type {import('discord.js').MessageEmbedOptions} */
 	const embed = {
-		color: profileData.color,
+		color: characterData.color,
 		description: '',
 		footer: { text: '' },
 	};
 
-	for (let i = 0; i < profileData.injuryObject.wounds; i++) {
+	for (let i = 0; i < profileData.injuries.wounds; i++) {
 
 		const getsHealed = pullFromWeightedTable({ 0: 1, 1: 4 });
 		const becomesInfection = pullFromWeightedTable({ 0: 1, 1: 1 });
@@ -111,7 +116,7 @@ async function decreaseHealth(profileData, botReply, modifiedUserInjuryObject) {
 
 			modifiedUserInjuryObject.wounds -= 1;
 
-			embed.description += `\n*One of ${profileData.name}'s wounds healed! What luck!*`;
+			embed.description += `\n*One of ${characterData.name}'s wounds healed! What luck!*`;
 			continue;
 		}
 
@@ -122,14 +127,14 @@ async function decreaseHealth(profileData, botReply, modifiedUserInjuryObject) {
 			modifiedUserInjuryObject.wounds -= 1;
 			modifiedUserInjuryObject.infections += 1;
 
-			embed.description += `\n*One of ${profileData.name}'s wounds turned into an infection!*`;
+			embed.description += `\n*One of ${characterData.name}'s wounds turned into an infection!*`;
 			continue;
 		}
 
-		embed.description += `\n*One of ${profileData.name}'s wounds is bleeding!*`;
+		embed.description += `\n*One of ${characterData.name}'s wounds is bleeding!*`;
 	}
 
-	for (let i = 0; i < profileData.injuryObject.infections; i++) {
+	for (let i = 0; i < profileData.injuries.infections; i++) {
 
 		const getsHealed = pullFromWeightedTable({ 0: 1, 1: 4 });
 
@@ -137,17 +142,17 @@ async function decreaseHealth(profileData, botReply, modifiedUserInjuryObject) {
 
 			modifiedUserInjuryObject.infections -= 1;
 
-			embed.description += `\n*One of ${profileData.name}'s infections healed! What luck!*`;
+			embed.description += `\n*One of ${characterData.name}'s infections healed! What luck!*`;
 			continue;
 		}
 
 		const minimumInfectionHealthPoints = Math.round((10 - (profileData.health / 10)) / 3);
 		extraLostHealthPoints += generateRandomNumber(3, (minimumInfectionHealthPoints < 0) ? 3 : minimumInfectionHealthPoints + 3);
 
-		embed.description += `\n*One of ${profileData.name}'s infections is getting worse!*`;
+		embed.description += `\n*One of ${characterData.name}'s infections is getting worse!*`;
 	}
 
-	if (profileData.injuryObject.cold == true) {
+	if (profileData.injuries.cold == true) {
 
 		const getsHealed = pullFromWeightedTable({ 0: 1, 1: 4 });
 
@@ -155,18 +160,18 @@ async function decreaseHealth(profileData, botReply, modifiedUserInjuryObject) {
 
 			modifiedUserInjuryObject.cold = false;
 
-			embed.description += `\n*${profileData.name} recovered from ${pronoun(profileData, 2)} cold! What luck!*`;
+			embed.description += `\n*${characterData.name} recovered from ${pronoun(characterData, 2)} cold! What luck!*`;
 		}
 		else {
 
 			const minimumColdHealthPoints = Math.round((10 - (profileData.health / 10)) / 1.5);
 			extraLostHealthPoints += generateRandomNumber(3, (minimumColdHealthPoints > 0) ? minimumColdHealthPoints : 1);
 
-			embed.description += `\n*${profileData.name}'s cold is getting worse!*`;
+			embed.description += `\n*${characterData.name}'s cold is getting worse!*`;
 		}
 	}
 
-	for (let i = 0; i < profileData.injuryObject.sprains; i++) {
+	for (let i = 0; i < profileData.injuries.sprains; i++) {
 
 		const getsHealed = pullFromWeightedTable({ 0: 1, 1: 4 });
 
@@ -174,16 +179,16 @@ async function decreaseHealth(profileData, botReply, modifiedUserInjuryObject) {
 
 			modifiedUserInjuryObject.sprains -= 1;
 
-			embed.description += `\n*One of ${profileData.name}'s sprains healed! What luck!*`;
+			embed.description += `\n*One of ${characterData.name}'s sprains healed! What luck!*`;
 			continue;
 		}
 
 		extraLostHealthPoints += generateRandomNumber(5, Math.round(profileData.levels / 2) < 11 ? Math.round(profileData.levels / 2) : 11);
 
-		embed.description += `\n*One of ${profileData.name}'s sprains is getting worse!*`;
+		embed.description += `\n*One of ${characterData.name}'s sprains is getting worse!*`;
 	}
 
-	if (profileData.injuryObject.poison == true) {
+	if (profileData.injuries.poison == true) {
 
 		const getsHealed = pullFromWeightedTable({ 0: 1, 1: 4 });
 
@@ -191,14 +196,14 @@ async function decreaseHealth(profileData, botReply, modifiedUserInjuryObject) {
 
 			modifiedUserInjuryObject.poison = false;
 
-			embed.description += `\n*${profileData.name} recovered from ${pronoun(profileData, 2)} poisoning! What luck!*`;
+			embed.description += `\n*${characterData.name} recovered from ${pronoun(characterData, 2)} poisoning! What luck!*`;
 		}
 		else {
 
 			const minimumPoisonHealthPoints = Math.round((10 - (profileData.health / 10)) * 1.5) ;
 			extraLostHealthPoints += generateRandomNumber(5, (minimumPoisonHealthPoints > 0) ? minimumPoisonHealthPoints : 1);
 
-			embed.description += `\n*The poison in ${profileData.name}'s body is spreading!*`;
+			embed.description += `\n*The poison in ${characterData.name}'s body is spreading!*`;
 		}
 	}
 
@@ -207,11 +212,11 @@ async function decreaseHealth(profileData, botReply, modifiedUserInjuryObject) {
 		extraLostHealthPoints = profileData.health;
 	}
 
-	profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-		{ userId: profileData.userId, serverId: profileData.serverId },
-		{
-			$inc: { health: -extraLostHealthPoints },
-			$set: { injuryObject: modifiedUserInjuryObject },
+	userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+		{ uuid: userData.uuid },
+		(/** @type {import('../typedef').ProfileSchema} */ p) => {
+			p.characters[p.currentCharacter[botReply.guild.id]].profiles[botReply.guild.id].health -= extraLostHealthPoints;
+			p.characters[p.currentCharacter[botReply.guild.id]].profiles[botReply.guild.id].injuries = modifiedUserInjuryObject;
 		},
 	));
 

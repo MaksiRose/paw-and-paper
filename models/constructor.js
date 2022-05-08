@@ -176,7 +176,7 @@ class model {
 
 						for (const key of Object.keys(newVariable)) {
 
-							logCreator(oldVariable[key], newVariable[key], variablePath + `.${key}`);
+							logCreator(oldVariable?.[key], newVariable[key], variablePath + `.${key}`);
 						}
 						return;
 					}
@@ -236,14 +236,14 @@ class model {
 
 				for (const key in mainObject) {
 
-					if (!Object.prototype.hasOwnProperty.call(compareObject, key)) {
+					if (compareObject !== undefined && !Object.prototype.hasOwnProperty.call(compareObject, key)) {
 
 						continue;
 					}
 
 					if (mainObject[key] !== Object(mainObject[key]) || Array.isArray(mainObject[key])) {
 
-						if (mainObject[key] != compareObject[key]) {
+						if (mainObject[key] != compareObject?.[key]) {
 
 							newObject[key] = mainObject[key];
 						}
@@ -252,7 +252,7 @@ class model {
 					}
 					else {
 
-						newObject = { ...newObject, ...objectReducer(mainObject[key], compareObject[key]) };
+						newObject = { ...newObject, ...objectReducer(mainObject[key], compareObject?.[key]) };
 					}
 				}
 

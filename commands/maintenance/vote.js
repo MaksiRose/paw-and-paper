@@ -4,7 +4,7 @@ const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion')
 const { isInvalid } = require('../../utils/checkValidity');
 const startCooldown = require('../../utils/startCooldown');
 const { readFileSync, writeFileSync } = require('fs');
-const { profileModel } = require('../../models/profileModel');
+const profileModel = require('../../models/profileModel');
 const { MessageActionRow, MessageButton, MessageSelectMenu } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
 
@@ -15,24 +15,27 @@ module.exports.name = 'vote';
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
  * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData, embedArray) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await hasNotCompletedAccount(message, profileData)) {
+	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+	const profileData = characterData.profiles[message.guild.id];
 
-		return;
-	}
-
-	if (await isInvalid(message, profileData, embedArray, [module.exports.name])) {
+	if (await hasNotCompletedAccount(message, characterData)) {
 
 		return;
 	}
 
-	profileData = await startCooldown(message, profileData);
+	if (await isInvalid(message, userData, embedArray, [module.exports.name])) {
+
+		return;
+	}
+
+	userData = await startCooldown(message);
 
 	const botReply = await message
 		.reply({
@@ -115,8 +118,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				const energyPoints = profileData.maxEnergy - profileData.energy < 30 ? profileData.maxEnergy - profileData.energy : 30;
 
 				await profileModel.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $inc: { energy: energyPoints } },
+					{ uuid: userData.uuid },
+					(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+						p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].energy += energyPoints;
+					},
 				);
 
 				await interaction

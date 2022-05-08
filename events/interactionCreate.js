@@ -104,10 +104,7 @@ const event = {
 			return;
 		}
 
-		let userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
-			userId: interaction.user.id,
-			serverId: interaction.guild.id,
-		}));
+		let userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: interaction.user.id }));
 		const characterData = userData.characters[userData.currentCharacter[interaction.guild.id]];
 		const profileData = characterData.profiles[interaction.guild.id];
 

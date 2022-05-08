@@ -1,6 +1,6 @@
 // @ts-check
 const { MessageActionRow, MessageButton } = require('discord.js');
-const { profileModel } = require('../../models/profileModel');
+const profileModel = require('../../models/profileModel');
 const { hasNoName } = require('../../utils/checkAccountCompletion');
 
 module.exports.name = 'profile';
@@ -11,10 +11,10 @@ module.exports.aliases = ['info', 'about'];
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
 
 	/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} */
 	const components = [ new MessageActionRow({
@@ -29,21 +29,23 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		})],
 	})];
 
+	let characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+	let profileData = characterData.profiles[message.guild.id];
+
 	if (message.mentions.users.size > 0) {
 
-		profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
-			userId: message.mentions.users.first().id,
-			serverId: message.guild.id,
-		}));
+		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first().id }));
+		characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+		profileData = characterData.profiles[message.guild.id];
 
-		if (!profileData) {
+		if (!userData) {
 
 			await message
 				.reply({
 					embeds: [{
 						color: '#9d9e51',
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						description: 'This user has no roleplay account!',
+						description: 'This user has no account!',
 					}],
 					failIfNotExists: false,
 				})
@@ -57,20 +59,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	}
 	else {
 
-		if (await hasNoName(message, profileData)) {
+		if (await hasNoName(message, characterData)) {
 
 			return;
 		}
 
-		if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
+		if (Object.values(profileData.inventory).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
 
 			components[0].components.pop();
 		}
 	}
 
-	let injuryText = Object.values(profileData.injuryObject).every(item => item == 0) ? 'none' : '';
 
-	for (const [injuryKind, injuryAmount] of Object.entries(profileData.injuryObject)) {
+	let injuryText = Object.values(profileData.injuries).every(item => item == 0) ? 'none' : '';
+	for (const [injuryKind, injuryAmount] of Object.entries(profileData.injuries)) {
 
 		if (injuryAmount > 0) {
 
@@ -85,9 +87,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		}
 	}
 
-	const description = profileData.description === '' ? '' : `*${profileData.description}*`;
+	const description = characterData.description === '' ? '' : `*${characterData.description}*`;
 	const user = await client.users
-		.fetch(profileData.userId)
+		.fetch(userData.userId)
 		.catch((error) => {
 			throw new Error(error);
 		});
@@ -95,27 +97,27 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	await message
 		.reply({
 			embeds: [{
-				color: profileData.color,
+				color: characterData.color,
 				title: `Profile - ${user.tag}`,
-				author: { name: profileData.name, icon_url: profileData.avatarURL },
+				author: { name: characterData.name, icon_url: characterData.avatarURL },
 				description: description,
-				thumbnail: { url: profileData.avatarURL },
+				thumbnail: { url: characterData.avatarURL },
 				fields: [
-					{ name: '**🦑 Species**', value: (profileData.species.charAt(0).toUpperCase() + profileData.species.slice(1)) || '/', inline: true },
+					{ name: '**🦑 Species**', value: (characterData.species.charAt(0).toUpperCase() + characterData.species.slice(1)) || '/', inline: true },
 					{ name: '**🏷️ Rank**', value: profileData.rank, inline: true },
-					{ name: '**🍂 Pronouns**', value: profileData.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n') },
+					{ name: '**🍂 Pronouns**', value: characterData.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n') },
 					{ name: '**🗺️ Region**', value: profileData.currentRegion },
 
 				],
 			},
 			{
-				color: profileData.color,
+				color: characterData.color,
 				description: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\`\n⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\`\n🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\``,
 				fields: [
 					{ name: '**🩹 Injuries/Illnesses**', value: injuryText, inline: true },
-					{ name: '**🌱 Ginkgo Sapling**', value: profileData.saplingObject.exists === false ? 'none' : `${profileData.saplingObject.waterCycles} days alive - ${profileData.saplingObject.health} health\nNext watering <t:${Math.floor(profileData.saplingObject.nextWaterTimestamp / 1000)}:R>`, inline: true },
+					{ name: '**🌱 Ginkgo Sapling**', value: profileData.sapling.exists === false ? 'none' : `${profileData.sapling.waterCycles} days alive - ${profileData.sapling.health} health\nNext watering <t:${Math.floor(profileData.sapling.nextWaterTimestamp / 1000)}:R>`, inline: true },
 				],
-				footer: { text: profileData.hasQuest == true ? 'There is one open quest!' : null },
+				footer: { text: profileData.hasQuest === true ? `${characterData.name} has one open quest!` : null },
 			}],
 			components: components,
 			failIfNotExists: false,

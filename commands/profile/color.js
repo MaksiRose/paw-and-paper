@@ -1,10 +1,9 @@
 // @ts-check
 const { MessageEmbed } = require('discord.js');
 const { default_color, error_color } = require('../../config.json');
-const { profileModel } = require('../../models/profileModel');
+const profileModel = require('../../models/profileModel');
 const { hasNoName } = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
-const updateLinkedProfiles = require('../../utils/updateLinkedProfiles');
 
 module.exports.name = 'color';
 module.exports.aliases = ['colour'];
@@ -14,17 +13,19 @@ module.exports.aliases = ['colour'];
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
 
-	if (await hasNoName(message, profileData)) {
+	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+
+	if (await hasNoName(message, characterData)) {
 
 		return;
 	}
 
-	profileData = await startCooldown(message, profileData);
+	userData = await startCooldown(message);
 
 	if (!argumentsArray.length) {
 
@@ -45,7 +46,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	let hexColor = argumentsArray[0].toLowerCase();
 
-	if (hexColor.charAt(0) == '#') {
+	if (hexColor.charAt(0) === '#') {
 
 		hexColor = hexColor.slice(1);
 	}
@@ -69,15 +70,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	hexColor = '#' + hexColor;
 
-	profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-		{ userId: message.author.id, serverId: message.guild.id },
-		{ $set: { color: hexColor } },
+	userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+		{ uuid: userData.uuid },
+		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+			p.characters[p.currentCharacter[message.guild.id]].color = /** @type {`#${number}`} */ (hexColor);
+		},
 	));
 
 	await message
 		.reply({
 			embeds: [ new MessageEmbed({
-				color: profileData.color,
+				color: /** @type {`#${number}`} */ (hexColor),
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 				title: `Profile color set to ${hexColor}!`,
 			})],
@@ -87,7 +90,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 
-	await updateLinkedProfiles(profileData);
 	return;
 };
 
