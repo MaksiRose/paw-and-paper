@@ -36,9 +36,9 @@ module.exports.execute = async (client) => {
 
 						for (const profile of Object.values(character.profiles)) {
 
-							p.characters[character.name].profiles[profile.serverId].hasCooldown = false;
-							p.characters[character.name].profiles[profile.serverId].isResting = false;
-							p.characters[character.name].profiles[profile.serverId].energy = p.characters[character.name].profiles[profile.serverId].energy === 0 ? 0 : p.characters[character.name].profiles[profile.serverId].maxEnergy;
+							p.characters[character._id].profiles[profile.serverId].hasCooldown = false;
+							p.characters[character._id].profiles[profile.serverId].isResting = false;
+							p.characters[character._id].profiles[profile.serverId].energy = p.characters[character._id].profiles[profile.serverId].energy === 0 ? 0 : p.characters[character._id].profiles[profile.serverId].maxEnergy;
 						}
 					}
 				},

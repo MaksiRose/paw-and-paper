@@ -185,15 +185,15 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
  */
 module.exports.sendReminder = (client, userData, characterData, profileData) => {
 
-	module.exports.stopReminder(characterData.name, userData.userId, profileData.serverId);
+	module.exports.stopReminder(characterData._id, userData.userId, profileData.serverId);
 
-	userMap.set(characterData.name + userData.userId + profileData.serverId, setTimeout(async () => {
+	userMap.set(characterData._id + userData.userId + profileData.serverId, setTimeout(async () => {
 
 		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: userData.uuid }));
 		characterData = userData.characters[userData.currentCharacter[profileData.serverId]];
 		profileData = characterData.profiles[profileData.serverId];
 
-		const isInactive = (userData !== null && userData.currentCharacter[profileData.serverId] !== characterData.name);
+		const isInactive = (userData !== null && userData.currentCharacter[profileData.serverId] !== characterData._id);
 
 		if (userData !== null && characterData !== null && profileData !== null && profileData.sapling.exists === true && userData.reminders.water === true) {
 
@@ -225,14 +225,14 @@ module.exports.sendReminder = (client, userData, characterData, profileData) => 
 
 /**
  *
- * @param {string} name
+ * @param {string} _id
  * @param {string} userId
  * @param {string} serverId
  */
-module.exports.stopReminder = (name, userId, serverId) => {
+module.exports.stopReminder = (_id, userId, serverId) => {
 
-	if (userMap.has(name + userId + serverId)) {
+	if (userMap.has(_id + userId + serverId)) {
 
-		clearTimeout(userMap.get(name + userId + serverId));
+		clearTimeout(userMap.get(_id + userId + serverId));
 	}
 };

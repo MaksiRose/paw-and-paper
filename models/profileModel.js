@@ -51,6 +51,7 @@ const profileSchema = new schema({
 		default: {
 			type: 'object',
 			default: {
+				_id: { type: 'string' },
 				name: { type: 'string' },
 				species: { type: 'string' },
 				description: { type: 'string' },
@@ -72,6 +73,13 @@ const profileSchema = new schema({
 				color: {
 					type: 'string',
 					default: config.default_color,
+				},
+				mentions: {
+					type: 'nest',
+					default: {
+						type: 'array',
+						default: { type: 'number' },
+					},
 				},
 				profiles: {
 					type: 'nest',

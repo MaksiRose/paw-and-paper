@@ -1409,7 +1409,7 @@ const event = {
 					},
 				));
 
-				stopReminder(characterData.name, interaction.user.id, interaction.channel.id);
+				stopReminder(characterData._id, interaction.user.id, interaction.channel.id);
 
 				await interaction
 					.followUp({

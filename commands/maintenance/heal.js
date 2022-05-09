@@ -78,8 +78,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		chosenUserData = message.mentions.users.size > 0 ?
 			/** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first().id })) :
 			Object.keys(allHurtCharactersList).length === 1 ?
-			/** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: Object.keys(allHurtCharactersList)[0] })) : null,
-		chosenCharacterData = chosenUserData !== null ? chosenUserData.characters[Object.values(allHurtCharactersList)[0].name] : null,
+			/** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: Object.keys(allHurtCharactersList)[0].split('_')[0] })) : null,
+		chosenCharacterData = chosenUserData !== null ? chosenUserData.characters[Object.values(allHurtCharactersList)[0]._id] : null,
 		chosenProfileData = chosenCharacterData !== null ? chosenCharacterData.profiles[message.guild.id] : null,
 		/** @type {import('discord.js').Message} */
 		botReply = null;
@@ -253,10 +253,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			userSelectMenu = await getUserSelectMenu();
 
-			if (Object.keys(allHurtCharactersList).includes(interaction.values[0].split(' ')[0])) {
+			/* Checking if the user input is a valid character name. If it is, it will get the character data
+			and the profile data for that character. It will then get the wound list for that character and
+			edit the message with the wound list. */
+			if (Object.keys(allHurtCharactersList).includes(interaction.values[0])) {
 
-				chosenUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: interaction.values[0].split(' ')[0] }));
-				chosenCharacterData = chosenUserData.characters[interaction.values[0].split(' ').slice(1).join(' ')];
+				chosenUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: interaction.values[0].split('_')[0] }));
+				chosenCharacterData = chosenUserData.characters[interaction.values[0].split('_')[1]];
 				chosenProfileData = chosenCharacterData.profiles[message.guild.id];
 
 				const { embeds: woundEmbeds, components: woundComponents } = await getWoundList(chosenUserData, chosenCharacterData.name);
@@ -274,7 +277,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			if (commonPlantsMap.has(interaction.values[0]) || uncommonPlantsMap.has(interaction.values[0]) || rarePlantsMap.has(interaction.values[0]) || interaction.values[0] === 'water') {
 
-				if (Object.keys(allHurtCharactersList).includes(chosenUserData.userId) === false) {
+				if (Object.keys(allHurtCharactersList).includes(chosenUserData.userId + '_' + chosenCharacterData._id) === false) {
 
 					botReply = await /** @type {import('discord.js').Message} */ (interaction.message)
 						.edit({
@@ -293,7 +296,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				}
 
 				chosenUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: chosenUserData.userId }));
-				chosenCharacterData = chosenUserData.characters[chosenCharacterData.name];
+				chosenCharacterData = chosenUserData.characters[chosenCharacterData._id];
 				chosenProfileData = chosenCharacterData.profiles[message.guild.id];
 
 				const userCondition = botReply.embeds[botReply.embeds.length - 2].footer.text.toLowerCase();
@@ -359,7 +362,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 								cP.characters[cP.currentCharacter[message.guild.id]].profiles[message.guild.id].thirst += chosenUserThirstPoints;
 							},
 						)));
-						chosenCharacterData = chosenUserData.characters[chosenCharacterData.name];
+						chosenCharacterData = chosenUserData.characters[chosenCharacterData._id];
 						chosenProfileData = chosenCharacterData.profiles[message.guild.id];
 
 						embed.description = `*${characterData.name} takes ${chosenCharacterData.name}'s body, drags it over to the river, and positions ${pronoun(chosenCharacterData, 2)} head right over the water. The ${chosenCharacterData.species} sticks ${pronoun(chosenCharacterData, 2)} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${pronoun(chosenCharacterData, 2)} body.*`;
@@ -594,7 +597,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 								cP.characters[cP.currentCharacter[message.guild.id]].profiles[message.guild.id].injuries = chosenUserInjuryObject;
 							},
 						));
-						chosenCharacterData = chosenUserData.characters[chosenCharacterData.name];
+						chosenCharacterData = chosenUserData.characters[chosenCharacterData._id];
 						chosenProfileData = chosenCharacterData.profiles[message.guild.id];
 
 						if (chosenUserData.userId === userData.userId) {
@@ -680,7 +683,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				botReply = await checkLevelUp(message, botReply, userData, serverData);
 				await isPassedOut(message, userData, true);
 
-				if (chosenUserData.userId !== userData.userId) { await addFriendshipPoints(message, userData, chosenUserData); }
+				if (chosenUserData.userId !== userData.userId) { await addFriendshipPoints(message, userData, characterData._id, chosenUserData, chosenCharacterData._id); }
 
 				return;
 			}
@@ -754,7 +757,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				const p = c.profiles[message.guild.id];
 				if (p !== undefined && (p.energy === 0 || p.health === 0 || p.hunger === 0 || p.thirst === 0 || Object.values(p.injuries).filter(i => i > 0).length > 0)) {
 
-					allHurtCharactersList[u.userId] = c;
+					allHurtCharactersList[u.userId + '_' + c._id] = c;
 				}
 			}
 		}
@@ -777,7 +780,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				/** @type {import('discord.js').MessageSelectMenuOptions} */ (selectMenu.components[0]).options.push({ label: 'Show more user options', value: 'heal_user_page', description: 'You are currently on page 1', emoji: '📋' });
 			}
 
-			/** @type {import('discord.js').MessageSelectMenuOptions} */ (selectMenu.components[0]).options.push({ label: allHurtCharactersList[key].name, value: key + ' ' + allHurtCharactersList[key].name });
+			/** @type {import('discord.js').MessageSelectMenuOptions} */ (selectMenu.components[0]).options.push({ label: allHurtCharactersList[key].name, value: key });
 		}
 
 		return selectMenu;

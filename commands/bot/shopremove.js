@@ -1,7 +1,7 @@
 // @ts-check
 const { error_color, default_color } = require('../../config.json');
 const serverModel = require('../../models/serverModel');
-const { profileModel } = require('../../models/profileModel');
+const profileModel = require('../../models/profileModel');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
@@ -139,7 +139,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			serverData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOneAndUpdate(
 				{ serverId: message.guild.id },
-				{ $set: { shop: serverData.shop } },
+				(/** @type {import('../../typedef').ServerSchema} */ s) => {
+					s.shop = serverData.shop;
+				},
 			));
 
 			await /** @type {import('discord.js').Message} */ (interaction.message)
@@ -155,53 +157,62 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 
-			const allServerProfiles = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find({
-				serverId: message.guild.id,
-			}));
+			const allServerUsers = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
+				(/** @type {import('../../typedef').ProfileSchema} */ u) => {
+					return Object.values(u.characters).filter(c => c.profiles[message.guild.id] !== undefined).length > 0;
+				}));
 
-			for (const profile of allServerProfiles) {
+			for (const u of Object.values(allServerUsers)) {
 
-				const member = await message.guild.members.fetch(profile.userId);
+				for (const c of Object.values(u.characters)) {
 
-				if (profile.roles.some(role => role.roleId === deleteItem[0].roleId && role.wayOfEarning === deleteItem[0].wayOfEarning && role.requirement === deleteItem[0].requirement)) {
+					const p = c.profiles[message.guild.id];
+					if (p !== undefined) {
 
-					try {
+						const member = await message.guild.members.fetch(u.userId);
 
-						const userRole = profile.roles.find(role => role.roleId === deleteItem[0].roleId && role.wayOfEarning === deleteItem[0].wayOfEarning && role.requirement === deleteItem[0].requirement);
-						const userRoleIndex = profile.roles.indexOf(userRole);
+						if (p.roles.some(role => role.roleId === deleteItem[0].roleId && role.wayOfEarning === deleteItem[0].wayOfEarning && role.requirement === deleteItem[0].requirement)) {
 
-						if (userRoleIndex >= 0) { profile.roles.splice(userRoleIndex, 1); }
+							try {
 
-						await profileModel.findOneAndUpdate(
-							{ userId: profile.userId, serverId: profile.serverId },
-							{
-								$inc: { experience: userRole.wayOfEarning === 'experience' ? userRole.requirement : 0 },
-								$set: { roles: profile.roles } },
-						);
+								const userRole = p.roles.find(role => role.roleId === deleteItem[0].roleId && role.wayOfEarning === deleteItem[0].wayOfEarning && role.requirement === deleteItem[0].requirement);
+								const userRoleIndex = p.roles.indexOf(userRole);
 
-						if (message.member.roles.cache.has(deleteItem[0].roleId) === true && profile.roles.filter(role => role.roleId === deleteItem[0].roleId).length === 0) {
+								if (userRoleIndex >= 0) { p.roles.splice(userRoleIndex, 1); }
 
-							await member.roles.remove(deleteItem[0].roleId);
+								await profileModel.findOneAndUpdate(
+									{ userId: u.userId },
+									(/** @type {import('../../typedef').ProfileSchema} */ usr) => {
+										usr.characters[c._id].profiles[message.guild.id].experience += userRole.wayOfEarning === 'experience' ? /** @type {number} */ (userRole.requirement) : 0;
+										usr.characters[c._id].profiles[message.guild.id].roles = p.roles;
+									},
+								);
 
-							await message.channel
-								.send({
-									content: member.toString(),
-									embeds: [{
-										color: /** @type {`#${string}`} */ (default_color),
-										author: { name: botReply.guild.name, icon_url: botReply.guild.iconURL() },
-										description: `You lost the <@&${deleteItem[0].roleId}> role because it was removed from the shop!`,
-									}],
-								})
-								.catch((error) => {
-									if (error.httpStatus !== 404) { throw new Error(error); }
-								});
+								if (message.member.roles.cache.has(deleteItem[0].roleId) === true && p.roles.filter(role => role.roleId === deleteItem[0].roleId).length === 0) {
+
+									await member.roles.remove(deleteItem[0].roleId);
+
+									await message.channel
+										.send({
+											content: member.toString(),
+											embeds: [{
+												color: /** @type {`#${string}`} */ (default_color),
+												author: { name: botReply.guild.name, icon_url: botReply.guild.iconURL() },
+												description: `You lost the <@&${deleteItem[0].roleId}> role because it was removed from the shop!`,
+											}],
+										})
+										.catch((error) => {
+											if (error.httpStatus !== 404) { throw new Error(error); }
+										});
+								}
+
+								checkLevelUp(message, undefined, u, serverData);
+							}
+							catch (error) {
+
+								await checkRoleCatchBlock(error, message, message.member);
+							}
 						}
-
-						checkLevelUp(message, undefined, profile, serverData);
-					}
-					catch (error) {
-
-						await checkRoleCatchBlock(error, message, message.member);
 					}
 				}
 			}

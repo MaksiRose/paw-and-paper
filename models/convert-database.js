@@ -1,5 +1,7 @@
+// @ts-check
 const { randomUUID } = require('crypto');
 const { readdirSync, readFileSync, writeFileSync, unlinkSync, rmSync } = require('fs');
+const createId = require('../utils/createId');
 
 for (const file of readdirSync('./database/servers').filter(f => f.endsWith('.json'))) {
 
@@ -56,7 +58,9 @@ for (const userId of userIds) {
 
 	for (const thisUserFile of thisUserFiles) {
 
+		/** @type {import('../typedef').Character} */
 		const character = {
+			_id: createId(),
 			name: thisUserFile?.name,
 			species: thisUserFile?.species,
 			description: thisUserFile?.description,
@@ -64,6 +68,7 @@ for (const userId of userIds) {
 			pronounSets: thisUserFile?.pronounSets,
 			proxy: '',
 			color: thisUserFile?.color,
+			mentions: {},
 			profiles: {},
 		};
 		character.profiles[thisUserFile?.serverId] = {
@@ -102,7 +107,7 @@ for (const userId of userIds) {
 			roles: thisUserFile?.roles || [],
 		};
 
-		newUserFile.characters[thisUserFile.name] = character;
+		newUserFile.characters[thisUserFile._id] = character;
 	}
 
 	for (const { serverId, name, isActive } of thisUserFiles) {

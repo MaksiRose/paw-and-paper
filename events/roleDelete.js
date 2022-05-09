@@ -50,9 +50,9 @@ const event = {
 						await profileModel.findOneAndUpdate(
 							{ uuid: user.uuid },
 							(/** @type {import('../typedef').ProfileSchema} */ p) => {
-								p.characters[character.name].profiles[profile.serverId].roles = profile.roles;
+								p.characters[character._id].profiles[profile.serverId].roles = profile.roles;
 								if (userRole.wayOfEarning === 'experience') {
-									p.characters[character.name].profiles[profile.serverId].experience += (Number(userRole.requirement) || 0);
+									p.characters[character._id].profiles[profile.serverId].experience += (Number(userRole.requirement) || 0);
 								}
 							},
 						);

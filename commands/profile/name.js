@@ -6,6 +6,7 @@ const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = requir
 const startCooldown = require('../../utils/startCooldown');
 const { checkRankRequirements, checkLevelRequirements } = require('../../utils/checkRoleRequirements');
 const { MessageEmbed } = require('discord.js');
+const createId = require('../../utils/createId');
 
 module.exports.name = 'name';
 
@@ -52,7 +53,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				userId: message.author.id,
 				advice: { resting: false, drinking: false, eating: false, passingout: false, coloredbuttons: false },
 				reminders: { water: true, resting: true },
-				characters: { },
+				characters: {},
 				currentCharacter: {},
 			}));
 		}
@@ -123,13 +124,15 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	}
 
 	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+	const _id = characterData ? characterData._id : createId();
 
 	userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 		{ uuid: userData.uuid },
 		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
 			if (!characterData) {
 
-				p.characters[name] = {
+				p.characters[_id] = {
+					_id: _id,
 					name: name,
 					species: '',
 					description: '',
@@ -137,6 +140,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					pronounSets: [['they', 'them', 'their', 'theirs', 'themselves', 'plural']],
 					proxy: '',
 					color: /** @type {`#${number}`} */ (default_color),
+					mentions: {},
 					profiles: {
 						[message.guild.id]: {
 							serverId: message.guild.id,
@@ -171,9 +175,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			}
 			else {
 
-				p.characters[name] = p.characters[characterData.name];
-				p.characters[name].name = name;
-				delete p.characters[characterData.name];
+				p.characters[_id].name = name;
 			}
 
 			p.currentCharacter[message.guild.id] = name;

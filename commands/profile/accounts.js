@@ -31,10 +31,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 
 	let accountsPage = 0;
 
-	/* Checking if the user has a profile, and if they do, it checks if they have a cooldown, and if they
-	do, it returns.
-	If they don't have a cooldown, it checks if they are resting, and if they are, it stops their resting.
-	Then, it starts a cooldown. */
+	/* Checking if the user has a character, and if they do, it starts the cooldown. */
 	if (characterData !== null) {
 
 		userData = await startCooldown(message);
@@ -69,11 +66,16 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 
+		/* Checking if the user has not clicked on any of the options, and if they haven't, it will return. */
 		if (interaction === null) {
 
 			return;
 		}
 
+		/* Checking if the user has clicked on the "Show more accounts" button, and if they have, it will
+		increase the page number by 1, and if the page number is greater than the total number of pages,
+		it will set the page number to 0. Then, it will edit the bot reply to show the next page of
+		accounts, and then it will call the interactionCollector function again. */
 		if (interaction.isSelectMenu() && interaction.values[0] === 'accounts_page') {
 
 			accountsPage++;
@@ -92,8 +94,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 			return;
 		}
 
+		/* It checks if the user has clicked on one of the accounts, and if they have, it will check if the
+		user is resting, and if they are, it will stop the resting. Then, it will get the name of the
+		account the user has clicked on, and it will update the user's current character to the account
+		they have clicked on. Then, it will get the new character data, and it will check if the user has
+		clicked on an account, and if they have, it will add the roles of the account to the user. Then,
+		it will check if the user has any roles from the old account, and if they do, it will remove them.
+		Then, it will send a follow up message to the user saying that they have successfully switched to
+		the account they have clicked on. */
 		if (interaction.isSelectMenu() && interaction.values[0].includes('switchto')) {
 
+			/* Checking if the user is resting, and if they are, it will stop the resting. */
 			if (characterData?.profiles?.[message.guild.id]?.isResting === true) {
 
 				userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
@@ -106,18 +117,21 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 				stopResting(message.author.id, message.guild.id);
 			}
 
-			const name = interaction.values[0].split('-').slice(1, -1).join('-');
-
+			/* Getting the id of the account the user has clicked on, and then it is updating the user's current
+			character to the account they have clicked on. */
+			const _id = interaction.values[0].split('-').slice(1, -1).join('-');
 			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 				{ uuid: userData.uuid },
 				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-					if (interaction.values[0].endsWith('-0')) { p.currentCharacter[message.guild.id] = name; }
+					if (interaction.values[0].endsWith('-0')) { p.currentCharacter[message.guild.id] = _id; }
 					else {delete p.currentCharacter[message.guild.id];}
 				},
 			));
-			const newCharacterData = userData.characters[userData.currentCharacter[message.guild.id]];
 
-			if (interaction.values[0].endsWith('-0')) {
+			/* Getting the new character data, and then it is checking if the user has clicked on an account,
+			and if they have, it will add the roles of the account to the user. */
+			const newCharacterData = userData.characters[userData.currentCharacter[message.guild.id]];
+			if (newCharacterData !== null) {
 
 				try {
 
@@ -135,6 +149,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 				}
 			}
 
+			/* Checking if the user has any roles from the old account, and if they do, it will remove them. */
 			try {
 
 				for (const role of characterData?.profiles?.[message.guild.id]?.roles || []) {
@@ -151,11 +166,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 				await checkRoleCatchBlock(error, message, message.member);
 			}
 
+			/* Sending a follow up message to the user saying that they have successfully switched to the
+			account they have clicked on. */
 			setTimeout(async () => {
 
 				await interaction
 					.followUp({
-						content: `You successfully switched to \`${name}\`!`,
+						content: `You successfully switched to \`${newCharacterData.name}\`!`,
 						ephemeral: true,
 					})
 					.catch((error) => {
@@ -182,7 +199,7 @@ function getAccountsPage(userData, accountsPage) {
 
 	for (const character of Object.values(userData.characters)) {
 
-		accountsMenu.addOptions({ label: character.name, value: `switchto-${character.name}-0` });
+		accountsMenu.addOptions({ label: character.name, value: `switchto-${character._id}-0` });
 	}
 
 	accountsMenu.addOptions({ label: 'Empty Slot', value: 'switchto-Empty Slot-1' });
