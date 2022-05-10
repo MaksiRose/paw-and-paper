@@ -1,5 +1,5 @@
 // @ts-check
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasNoName } = require('../../utils/checkAccountCompletion');
 const { error_color, default_color } = require('../../config.json');
 const serverModel = require('../../models/serverModel');
 
@@ -10,13 +10,13 @@ module.exports.name = 'endvisit';
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData) => {
 
-	if (await hasNotCompletedAccount(message, profileData)) {
+	if (await hasNoName(message, userData?.characters?.[userData?.currentCharacter?.[message.guild.id]])) {
 
 		return;
 	}
@@ -52,12 +52,16 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	await serverModel.findOneAndUpdate(
 		{ serverId: serverData.serverId },
-		{ $set: { currentlyVisiting: null } },
+		(/** @type {import('../../typedef').ServerSchema} */ s) => {
+			s.currentlyVisiting = null;
+		},
 	);
 
 	await serverModel.findOneAndUpdate(
 		{ serverId: otherServerData.serverId },
-		{ $set: { currentlyVisiting: null } },
+		(/** @type {import('../../typedef').ServerSchema} */ s) => {
+			s.currentlyVisiting = null;
+		},
 	);
 
 	await thisChannel

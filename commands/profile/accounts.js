@@ -21,7 +21,7 @@ module.exports.aliases = ['switch'];
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
 
-	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 
 	if (Object.keys(userData.characters).length === 0) {
 
@@ -32,7 +32,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 	let accountsPage = 0;
 
 	/* Checking if the user has a character, and if they do, it starts the cooldown. */
-	if (characterData !== null) {
+	if (characterData != null) {
 
 		userData = await startCooldown(message);
 	}

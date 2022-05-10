@@ -1,9 +1,8 @@
 // @ts-check
-const { profileModel } = require('../../models/profileModel');
+const profileModel = require('../../models/profileModel');
 const { default_color } = require('../../config.json');
 const { hasNoName } = require('../../utils/checkAccountCompletion');
 const { readFileSync, writeFileSync } = require('fs');
-const { addFriendshipPoints } = require('../../utils/friendshipHandling');
 
 module.exports.name = 'say';
 
@@ -12,15 +11,16 @@ module.exports.name = 'say';
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
  * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
- * @param {boolean} pingRuins
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData, embedArray, pingRuins) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await hasNoName(message, profileData)) {
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+
+	if (await hasNoName(message, characterData)) {
 
 		return;
 	}
@@ -42,7 +42,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			throw new Error(error);
 		});
 
-	let userText = argumentsArray.join(' ');
+	const userText = argumentsArray.join(' ');
 
 	if (!userText) {
 
@@ -51,7 +51,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				embeds: [...embedArray, {
 					color: /** @type {`#${string}`} */ (default_color),
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-					title: 'Talk to your fellow packmates! Gives 1 experience point each time. Here is how to use the command:',
+					title: 'This is a way for you to send a message as though it was coming from your character, with their name and avatar. Here is how to use the command:',
 					description: '\n\nrp say "text"\nReplace "text" with your text.',
 				}],
 				failIfNotExists: false,
@@ -70,38 +70,21 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			}
 		});
 
-	await profileModel.findOneAndUpdate(
-		{ userId: message.author.id, serverId: message.guild.id },
-		{ $inc: { experience: 1 } },
-	);
+	if (characterData.profiles[message.guild.id] !== undefined) {
 
-	if (pingRuins === true) {
-
-		const allRuinProfilesArray = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel
-			.find({
-				serverId: message.guild.id,
-				currentRegion: profileData.currentRegion,
-			}))
-			.map(user => user.userId)
-			.filter(userId => userId != profileData.userId);
-
-		for (let i = 0; i < allRuinProfilesArray.length; i++) {
-
-			allRuinProfilesArray[i] = `<@${allRuinProfilesArray[i]}>`;
-		}
-
-		if (allRuinProfilesArray.length === 0) {
-
-			userText = allRuinProfilesArray.join(' ') + '\n' + userText;
-		}
+		await profileModel.findOneAndUpdate(
+			{ uuid: userData.uuid },
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].experience += 1;
+				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'ruins';
+			},
+		);
 	}
 
 	/** @type {import('../../typedef').WebhookMessages} */
 	const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8'));
 	/** @type {Array<import('discord.js').MessageEmbedOptions>} */
 	let embeds = [];
-	/** @type {import('../../typedef').ProfileSchema} */
-	let partnerProfileData = null;
 
 	if (message.reference !== null) {
 
@@ -111,11 +94,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			const user = await client.users.fetch(webhookCache[referencedMessage.id]);
 			referencedMessage.author = user;
-
-			partnerProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
-				userId: user.id,
-				serverId: message.guild.id,
-			}));
 		}
 
 		embeds = [{
@@ -127,8 +105,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	const botMessage = await webHook
 		.send({
-			username: `${profileData.name} (${message.author.tag})`,
-			avatarURL: profileData.avatarURL,
+			username: `${characterData.name} (${message.author.tag})`,
+			avatarURL: characterData.avatarURL,
 			content: userText || undefined,
 			files: Array.from(message.attachments.values()) || undefined,
 			embeds: embeds,
@@ -138,8 +116,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	webhookCache[botMessage.id] = message.author.id;
 
 	writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
-
-	if (partnerProfileData !== null) { await addFriendshipPoints(message, profileData, partnerProfileData); }
 
 	return;
 };

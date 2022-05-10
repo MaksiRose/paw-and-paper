@@ -110,7 +110,7 @@ const event = {
 
 		if (userMap.has('nr' + interaction.user.id + interaction.guild.id) === false) {
 
-			userMap.set('nr' + interaction.user.id + interaction.guild.id, { activeCommands: 0, lastGentleWaterReminderTimestamp: 0, lastMessageTimestamp: 0, activityTimeout: null, cooldownTimeout: null, restingTimeout: null });
+			userMap.set('nr' + interaction.user.id + interaction.guild.id, { activeCommands: 0, lastGentleWaterReminderTimestamp: 0, activityTimeout: null, cooldownTimeout: null, restingTimeout: null });
 		}
 
 		clearTimeout(userMap.get('nr' + interaction.user.id + interaction.guild.id).restingTimeout);

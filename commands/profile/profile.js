@@ -29,14 +29,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		})],
 	})];
 
-	let characterData = userData.characters[userData.currentCharacter[message.guild.id]];
-	let profileData = characterData.profiles[message.guild.id];
+	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	let profileData = characterData?.profiles?.[message.guild.id];
 
 	if (message.mentions.users.size > 0) {
 
 		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first().id }));
-		characterData = userData.characters[userData.currentCharacter[message.guild.id]];
-		profileData = characterData.profiles[message.guild.id];
+		characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+		profileData = characterData?.profiles?.[message.guild.id];
 
 		if (!userData) {
 

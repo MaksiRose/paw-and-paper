@@ -18,7 +18,7 @@ module.exports.aliases = ['colour'];
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
 
-	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 
 	if (await hasNoName(message, characterData)) {
 

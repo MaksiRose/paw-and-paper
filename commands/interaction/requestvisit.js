@@ -1,7 +1,7 @@
 // @ts-check
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasNoName } = require('../../utils/checkAccountCompletion');
 const serverModel = require('../../models/serverModel');
-const { profileModel } = require('../../models/profileModel');
+const profileModel = require('../../models/profileModel');
 const { error_color, default_color, prefix } = require('../../config.json');
 const { pronounAndPlural, pronoun, upperCasePronounAndPlural, upperCasePronoun } = require('../../utils/getPronouns');
 const { readFileSync, writeFileSync } = require('fs');
@@ -21,7 +21,7 @@ module.exports.name = 'requestvisit';
  */
 module.exports.sendMessage = async (client, message, argumentsArray, profileDataV, serverDataV) => {
 
-	if (await hasNotCompletedAccount(message, profileDataV)) {
+	if (await hasNoName(message, profileDataV)) {
 
 		return;
 	}

@@ -27,8 +27,8 @@ module.exports.name = 'dispose';
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	let characterData = userData.characters[userData.currentCharacter[message.guild.id]];
-	let profileData = characterData.profiles[message.guild.id];
+	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	let profileData = characterData?.profiles?.[message.guild.id];
 
 	if (await hasNotCompletedAccount(message, characterData)) {
 

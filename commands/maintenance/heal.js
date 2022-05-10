@@ -30,8 +30,8 @@ module.exports.name = 'heal';
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
-	const profileData = characterData.profiles[message.guild.id];
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	const profileData = characterData?.profiles?.[message.guild.id];
 
 	if (await hasNotCompletedAccount(message, characterData)) {
 

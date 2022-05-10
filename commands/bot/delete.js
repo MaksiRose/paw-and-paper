@@ -28,7 +28,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 				embeds: [ new MessageEmbed({
 					color: /** @type {`#${string}`} */ (error_color),
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-					title: 'You have no accounts!',
+					title: 'You have no account!',
 				})],
 				failIfNotExists: false,
 			})

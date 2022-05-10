@@ -47,7 +47,6 @@ const event = {
 		let characterData = userData.characters[userData.currentCharacter[message.guild.id]];
 		let profileData = characterData.profiles[message.guild.id];
 
-		let pingRuins = false;
 		const embedArray = [];
 
 		/* Taking the command name and arguments from the message and storing them in variables. */
@@ -64,29 +63,7 @@ const event = {
 
 		if (userMap.has('nr' + message.author.id + message.guild.id) === false) {
 
-			userMap.set('nr' + message.author.id + message.guild.id, { activeCommands: 0, lastGentleWaterReminderTimestamp: 0, lastMessageTimestamp: 0, activityTimeout: null, cooldownTimeout: null, restingTimeout: null });
-		}
-
-		if (command.name === 'say' && profileData.currentRegion === 'ruins') {
-
-			const currentTimestamp = Date.now();
-			const cooldownMilliseconds = 3600000;
-			const expirationTimestamp = userMap.get('nr' + message.author.id + message.guild.id).lastMessageTimestamp + cooldownMilliseconds;
-
-			/*
-				Every time the bot starts up or the 1-hour-Timeout executes, lastMessageEpochTime is set to 0 (January 1, 1970)
-				This sets expirationTimestamp to one hour after January 1, 1970, making it smaller than the current time
-				This means that pings get set to true for this command (which is reset every time a new message is called)
-				After that, lastMessageEpochTime is set to the current time, making expirationTimestamp bigger than currentTimestamp
-				This means that every following command will not set the Ping to true, until the Timeout executes and lastMessageEpochTime is back to 0 (January 1, 1970)
-				*/
-
-			if (expirationTimestamp < currentTimestamp) {
-
-				pingRuins = true;
-			}
-
-			userMap.get('nr' + message.author.id + message.guild.id).lastMessageTimestamp = currentTimestamp;
+			userMap.set('nr' + message.author.id + message.guild.id, { activeCommands: 0, lastGentleWaterReminderTimestamp: 0, activityTimeout: null, cooldownTimeout: null, restingTimeout: null });
 		}
 
 		clearTimeout(userMap.get('nr' + message.author.id + message.guild.id).activityTimeout);
@@ -122,7 +99,7 @@ const event = {
 			}
 
 			await command
-				.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray, pingRuins)
+				.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
 				.then(async () => {
 
 					userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: userData.uuid }));
