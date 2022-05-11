@@ -270,7 +270,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				const healthPoints = function(health) { return (profileData.health - health < 0) ? profileData.health : health; }(generateRandomNumber(5, 3));
 
 				await profileModel.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
+					{ userId: message.author.id },
 					(/** @type {import('../../typedef').ProfileSchema} */ p) => {
 						p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].health -= healthPoints;
 					},

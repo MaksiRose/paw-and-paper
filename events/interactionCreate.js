@@ -105,8 +105,8 @@ const event = {
 		}
 
 		let userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: interaction.user.id }));
-		const characterData = userData.characters[userData.currentCharacter[interaction.guild.id]];
-		const profileData = characterData.profiles[interaction.guild.id];
+		const characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guild.id]];
+		const profileData = characterData?.profiles?.[interaction.guild.id];
 
 		if (userMap.has('nr' + interaction.user.id + interaction.guild.id) === false) {
 
@@ -1552,10 +1552,7 @@ const event = {
 
 				if (referencedMessage.mentions.users.size > 0) {
 
-					userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
-						userId: referencedMessage.mentions.users.first().id,
-						serverId: referencedMessage.guild.id,
-					}));
+					userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: referencedMessage.mentions.users.first().id }));
 
 					components[0].components.pop();
 				}
@@ -1589,7 +1586,7 @@ const event = {
 							description: description,
 							thumbnail: { url: characterData.avatarURL },
 							fields: [
-								{ name: '**🦑 Species**', value: characterData.species.charAt(0).toUpperCase() + characterData.species.slice(1), inline: true },
+								{ name: '**🦑 Species**', value: (characterData.species.charAt(0).toUpperCase() + characterData.species.slice(1)) || '/', inline: true },
 								{ name: '**🏷️ Rank**', value: profileData.rank, inline: true },
 								{ name: '**🍂 Pronouns**', value: characterData.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n') },
 								{ name: '**🗺️ Region**', value: profileData.currentRegion },

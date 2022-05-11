@@ -604,10 +604,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 							userInjuryObject = chosenUserInjuryObject;
 
-							userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
-								userId: message.author.id,
-								serverId: message.guild.id,
-							}));
+							userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.author.id }));
 
 							embed.description = `*${characterData.name} takes a ${chosenItemName}. After a bit of preparation, the ${characterData.species} can apply it correctly. Immediately you can see the effect. ${upperCasePronounAndPlural(characterData, 0, 'feel')} much better!*`;
 						}

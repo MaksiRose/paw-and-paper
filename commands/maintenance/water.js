@@ -121,7 +121,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	saplingObject.lastMessageChannelId = message.channel.id;
 
 	userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-		{ userId: message.author.id, serverId: message.guild.id },
+		{ userId: message.author.id },
 		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
 			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].sapling = saplingObject;
 			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].experience += experiencePoints;
@@ -190,8 +190,8 @@ module.exports.sendReminder = (client, userData, characterData, profileData) => 
 	userMap.set(characterData._id + userData.userId + profileData.serverId, setTimeout(async () => {
 
 		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: userData.uuid }));
-		characterData = userData.characters[userData.currentCharacter[profileData.serverId]];
-		profileData = characterData.profiles[profileData.serverId];
+		characterData = userData.characters[characterData._id];
+		profileData = characterData?.profiles?.[profileData.serverId];
 
 		const isInactive = (userData !== null && userData.currentCharacter[profileData.serverId] !== characterData._id);
 

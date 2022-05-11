@@ -69,9 +69,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 	if (pronounSets.length > 0) {
 
 		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-			{ userId: userData.uuid },
+			{ uuid: userData.uuid },
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				p.characters[p.currentCharacter[message.guild.id]].pronounSets = pronounSets;
+				p.characters[characterData._id].pronounSets = pronounSets;
 			},
 		));
 

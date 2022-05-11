@@ -131,10 +131,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			/** @type {import('../../typedef').Role} */
 			const buyItem = shop[buyIndex];
 
-			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
-				userId: message.author.id,
-				serverId: message.guild.id,
-			}));
+			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.author.id }));
 
 			if (profileData.roles.some(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience')) {
 

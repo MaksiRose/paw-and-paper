@@ -34,7 +34,7 @@ async function startResting(message, userData, botReply) {
 		energyPoints += 1;
 
 		userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-			{ uuid: userData.userId },
+			{ uuid: userData.uuid },
 			(/** @type {import('../typedef').ProfileSchema} */ p) => {
 				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].energy += 1;
 			},
@@ -61,7 +61,7 @@ async function startResting(message, userData, botReply) {
 				});
 
 			await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
+				{ userId: message.author.id },
 				(/** @type {import('../typedef').ProfileSchema} */ p) => {
 					p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].isResting = false;
 				},

@@ -138,7 +138,7 @@ module.exports.sendMessage = async (client, message) => {
 
 		const allRankProfilesArray = [];
 
-		const allHurtUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
+		const allRankUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
 			(/** @type {import('../../typedef').ProfileSchema} */ u) => {
 				const thisServerProfiles = Object.values(u.characters).filter(c => c.profiles[message.guild.id] !== undefined).map(c => c.profiles[message.guild.id]);
 				return thisServerProfiles.filter(p => {
@@ -146,7 +146,7 @@ module.exports.sendMessage = async (client, message) => {
 				}).length > 0;
 			}));
 
-		for (const u of Object.values(allHurtUsersList)) {
+		for (const u of Object.values(allRankUsersList)) {
 
 			for (const c of Object.values(u.characters)) {
 

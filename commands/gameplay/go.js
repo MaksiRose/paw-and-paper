@@ -42,10 +42,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	userData = await startCooldown(message);
 	const messageContent = remindOfAttack(message);
 
-	userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
-		userId: message.author.id,
-		serverId: message.guild.id,
-	}));
+	userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.author.id }));
 
 	const chosenRegion = argumentsArray.join(' ').toLowerCase();
 

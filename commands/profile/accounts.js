@@ -7,6 +7,7 @@ const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
 const { stopResting } = require('../../utils/executeResting');
 const { MessageActionRow, MessageSelectMenu } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
 
 module.exports.name = 'accounts';
 module.exports.aliases = ['switch'];
@@ -130,8 +131,49 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 
 			/* Getting the new character data, and then it is checking if the user has clicked on an account,
 			and if they have, it will add the roles of the account to the user. */
-			const newCharacterData = userData.characters[userData.currentCharacter[message.guild.id]];
-			if (newCharacterData !== null) {
+			let newCharacterData = userData.characters[userData.currentCharacter[message.guild.id]];
+			let profileData = newCharacterData.profiles[message.guild.id];
+
+			if (newCharacterData != null) {
+
+				if (!profileData) {
+
+					userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+						{ uuid: userData.uuid },
+						(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+							p.characters[newCharacterData._id].profiles[message.guild.id] = {
+								serverId: message.guild.id,
+								rank: 'Youngling',
+								levels: 1,
+								experience: 0,
+								health: 100,
+								energy: 100,
+								hunger: 100,
+								thirst: 100,
+								maxHealth: 100,
+								maxEnergy: 100,
+								maxHunger: 100,
+								maxThirst: 100,
+								isResting: false,
+								hasCooldown: false,
+								hasQuest: false,
+								currentRegion: 'ruins',
+								unlockedRanks: 0,
+								sapling: { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, lastMessageChannelId: null },
+								injuries: { wounds: 0, infections: 0, cold: false, sprains: 0, poison: false },
+								inventory: {
+									commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, 0])),
+									uncommonPlants: Object.fromEntries([...uncommonPlantsMap.keys()].sort().map(key => [key, 0])),
+									rarePlants: Object.fromEntries([...rarePlantsMap.keys()].sort().map(key => [key, 0])),
+									meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, 0])),
+								},
+								roles: [],
+							};
+						},
+					));
+					newCharacterData = userData.characters[userData.currentCharacter[message.guild.id]];
+					profileData = newCharacterData.profiles[message.guild.id];
+				}
 
 				try {
 
@@ -172,7 +214,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 
 				await interaction
 					.followUp({
-						content: `You successfully switched to \`${newCharacterData.name}\`!`,
+						content: `You successfully switched to \`${newCharacterData?.name || 'Empty Slot'}\`!`,
 						ephemeral: true,
 					})
 					.catch((error) => {

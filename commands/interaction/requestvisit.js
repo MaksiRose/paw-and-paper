@@ -259,7 +259,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userDataV, 
 				.catch((error) => { throw new Error(error); });
 
 
-			filter = i => profileModel.findOne({ serverId: i.guild.id, userId: i.user.id }).then(profile => profile === null ? false : true);
+			filter = i => profileModel.findOne({ userId: i.user.id }).then(profile => profile === null ? false : true);
 
 			await botReplyH
 				.awaitMessageComponent({ filter, time: 300_000 })
@@ -426,7 +426,7 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 
-	const filter = async (/** @type {import('discord.js').Message} */ m) => m.content.startsWith(prefix) === false && (await profileModel.findOne({ serverId: m.guild.id, userId: m.author.id })) !== null;
+	const filter = async (/** @type {import('discord.js').Message} */ m) => m.content.startsWith(prefix) === false && (await profileModel.findOne({ userId: m.author.id })) !== null;
 
 	const hostChannel = await client.channels.fetch(serverDataH.visitChannelId);
 	const guestChannel = await client.channels.fetch(serverDataV.visitChannelId);

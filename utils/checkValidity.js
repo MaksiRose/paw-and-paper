@@ -104,7 +104,7 @@ async function isResting(message, userData, embedArray) {
 	if (profileData.isResting == true) {
 
 		userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
+			{ userId: message.author.id },
 			(/** @type {import('../typedef').ProfileSchema} */ p) => {
 				p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].isResting = false;
 			},
