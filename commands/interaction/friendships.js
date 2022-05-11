@@ -1,10 +1,9 @@
 // @ts-check
 const { MessageEmbed, MessageActionRow, MessageButton } = require('discord.js');
-const { readFileSync } = require('fs');
 const profileModel = require('../../models/profileModel');
 const { hasNoName } = require('../../utils/checkAccountCompletion');
 const disableAllComponents = require('../../utils/disableAllComponents');
-const { getFriendshipPoints, getFriendshipHearts } = require('../../utils/friendshipHandling');
+const { getFriendshipPoints, getFriendshipHearts, checkOldMentions } = require('../../utils/friendshipHandling');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports.name = 'friendships';
@@ -19,7 +18,7 @@ module.exports.name = 'friendships';
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
 
-	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 
 	if (await hasNoName(message, characterData)) {
 
@@ -31,20 +30,21 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 	/** @type {Array<string>} */
 	const friendships = [];
 
-	for (const key of Object.keys(friendshipList)) {
+	const allUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find());
+	const friendshipList = [
+		...new Set(
+			Object.keys(characterData.mentions).concat(
+				...allUsersList.map(u => Object.values(u.characters).filter(c => Object.keys(c.mentions).includes(characterData._id)).map(c => c._id)),
+			),
+		),
+	];
 
-		if (key.includes(userData.uuid)) {
+	for (const _id of friendshipList) {
 
-			let otherProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: key.replace(userData.uuid, '').replace('_', '') }));
-			if (otherProfileData === null) { otherProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await otherProfileModel.findOne({ uuid: key.replace(userData.uuid, '').replace('_', '') })); }
-
-			if (otherProfileData !== null) {
-
-				const friendshipHearts = getFriendshipHearts(getFriendshipPoints(friendshipList[key][userData.uuid], friendshipList[key][otherProfileData.uuid]));
-
-				friendships.push(`${otherProfileData.name} (<@${otherProfileData.userId}>) - ${'❤️'.repeat(friendshipHearts) + '🖤'.repeat(10 - friendshipHearts)}`);
-			}
-		}
+		let otherUserData = allUsersList.find(u => u.characters[_id] !== undefined);
+		[userData, otherUserData] = await checkOldMentions(userData, characterData._id, otherUserData, _id);
+		const friendshipHearts = getFriendshipHearts(getFriendshipPoints(userData.characters[characterData._id].mentions[_id], otherUserData.characters[_id].mentions[characterData._id]));
+		friendships.push(`${otherUserData.characters[_id].name} (<@${otherUserData.userId}>) - ${'❤️'.repeat(friendshipHearts) + '🖤'.repeat(10 - friendshipHearts)}`);
 	}
 
 
@@ -64,8 +64,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 	let botReply = await message
 		.reply({
 			embeds: [ new MessageEmbed({
-				color: userData.color,
-				author: { name: userData.name, icon_url: userData.avatarURL },
+				color: characterData.color,
+				author: { name: characterData.name, icon_url: characterData.avatarURL },
 				description: friendships.length > 0 ? friendships.slice(pageNumber, 25).join('\n') : 'You have not formed any friendships yet :(',
 			})],
 			components: friendships.length > 25 ? [friendshipPageComponent] : [],

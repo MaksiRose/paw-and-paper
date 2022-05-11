@@ -14,8 +14,8 @@ const requiredPoints = [1, 3, 6, 9, 15, 24, 39, 63, 99, 162];
  */
 async function addFriendshipPoints(message, userData, characterId, partnerUserData, partnerCharacterId) {
 
-	let characterData = userData[characterId];
-	let partnerCharacterData = partnerUserData[partnerCharacterId];
+	let characterData = userData.characters[characterId];
+	let partnerCharacterData = partnerUserData.characters[partnerCharacterId];
 
 	/* Based on current friendship, the friendship points are calculated. */
 	const previousFriendshipPoints = getFriendshipPoints(characterData.mentions[partnerCharacterId], partnerCharacterData.mentions[characterId]);
@@ -92,6 +92,9 @@ async function checkOldMentions(userData, characterId, partnerUserData, partnerC
  * @returns {number}
  */
 function getFriendshipPoints(array1, array2) {
+
+	if (!Array.isArray(array1)) { array1 = []; }
+	if (!Array.isArray(array2)) { array2 = []; }
 
 	const higherPoints = array1?.length >= array2?.length ? array1?.length : array2?.length;
 	const lowerPoints = array1?.length < array2?.length ? array1?.length : array2?.length;

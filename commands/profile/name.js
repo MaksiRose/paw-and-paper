@@ -124,7 +124,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	}
 
 	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
-	const _id = characterData ? characterData._id : createId();
+	const _id = characterData ? characterData._id : await createId();
 
 	userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 		{ uuid: userData.uuid },
@@ -178,7 +178,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				p.characters[_id].name = name;
 			}
 
-			p.currentCharacter[message.guild.id] = name;
+			p.currentCharacter[message.guild.id] = _id;
 		},
 	));
 

@@ -11,7 +11,9 @@ async function startCooldown(message) {
 	return /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 		{ userId: message.author.id },
 		(/** @type {import('../typedef').ProfileSchema} */ p) => {
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hasCooldown = true;
+			if (p?.characters?.[p?.currentCharacter?.[message.guild.id]]?.profiles?.[message.guild.id]?.hasCooldown !== undefined) {
+				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hasCooldown = true;
+			}
 		},
 	));
 }

@@ -44,8 +44,6 @@ const event = {
 		let userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
 			userId: message.author.id,
 		}));
-		let characterData = userData.characters[userData.currentCharacter[message.guild.id]];
-		let profileData = characterData.profiles[message.guild.id];
 
 		const embedArray = [];
 
@@ -99,10 +97,10 @@ const event = {
 			}
 
 			await command
-				.sendMessage(client, message, argumentsArray, profileData, serverData, embedArray)
+				.sendMessage(client, message, argumentsArray, userData, serverData, embedArray)
 				.then(async () => {
 
-					userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: userData.uuid }));
+					userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.author.id }));
 					userMap.get('nr' + message.author.id + message.guild.id).activeCommands -= 1;
 
 					if (userData && userMap.get('nr' + message.author.id + message.guild.id).activeCommands <= 0) {
@@ -125,13 +123,13 @@ const event = {
 		}
 
 		userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: userData.uuid }));
-		characterData = userData.characters[userData.currentCharacter[message.guild.id]];
-		profileData = characterData.profiles[message.guild.id];
+		const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+		const profileData = characterData?.profiles?.[message.guild.id];
 
 		const oneHourInMs = 3600000;
 		// If sapling exists, the watering time is between 2 hours from perfect and 3 hours from perfect, and there wasn't a reminder in the last hour
 		// The reminder in the last hour prevents the reminder from being sent out multiple times
-		if (profileData !== null && profileData.sapling.exists === true && Date.now() > profileData.sapling.nextWaterTimestamp + oneHourInMs * 2 && Date.now() < profileData.sapling.nextWaterTimestamp + oneHourInMs * 3 && Date.now() > userMap.get('nr' + message.author.id + message.guild.id).lastGentleWaterReminderTimestamp + oneHourInMs) {
+		if (profileData != null && profileData.sapling.exists === true && Date.now() > profileData.sapling.nextWaterTimestamp + oneHourInMs * 2 && Date.now() < profileData.sapling.nextWaterTimestamp + oneHourInMs * 3 && Date.now() > userMap.get('nr' + message.author.id + message.guild.id).lastGentleWaterReminderTimestamp + oneHourInMs) {
 
 			userMap.get('nr' + message.author.id + message.guild.id).lastGentleWaterReminderTimestamp = Date.now();
 
@@ -168,7 +166,9 @@ const event = {
 			/** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 				{ userId: message.author.id },
 				(/** @type {import('../typedef').ProfileSchema} */ p) => {
-					p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hasCooldown = false;
+					if (p?.characters?.[p?.currentCharacter?.[message.guild.id]]?.profiles?.[message.guild.id]?.hasCooldown !== undefined) {
+						p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hasCooldown = false;
+					}
 				},
 			));
 		}
