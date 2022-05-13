@@ -75,7 +75,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				content: messageContent,
 				embeds: [...embedArray, {
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'The mentioned user has no account, is passed out or busy :(',
 				}],
 				failIfNotExists: false,
@@ -97,7 +96,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				content: messageContent,
 				embeds: [...embedArray, {
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: characterData.name, icon_url: characterData.avatarURL },
 					title: `You and ${partnerCharacterData.name} need at least 6 ❤️ to be able to adventure together!`,
 					description: 'You gain ❤️ by mentioning and interacting with each other. To check your friendships, type `rp friendships`.',
 				}],
@@ -417,7 +415,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					switch (true) {
 
-						case (pullFromWeightedTable({ 0: 1, 1: 1 }) === 0 && /** @type {Array<number>} */ ([].concat(...Object.values(losingProfileData.inventory).map(type => Object.values(type)))).filter(value => value > 0).length > 0):
+						case (pullFromWeightedTable({ 0: 1, 1: 1 }) === 0 && /** @type {Array<number>} */ Object.values(losingProfileData.inventory).map(type => Object.values(type)).flat().filter(value => value > 0).length > 0):
 
 							userInventory[itemType][itemName] -= 1;
 							extraDescription = `accidentally drops a ${itemName} that ${pronoun(losingCharacterData, 0)} had with them.`;

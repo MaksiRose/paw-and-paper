@@ -206,7 +206,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					content: messageContent,
 					embeds: [...embedArray, {
 						color: /** @type {`#${string}`} */ (error_color),
-						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: 'The mentioned user has no account or is passed out :(',
 					}],
 					failIfNotExists: false,

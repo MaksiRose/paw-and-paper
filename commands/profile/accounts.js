@@ -131,8 +131,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 
 			/* Getting the new character data, and then it is checking if the user has clicked on an account,
 			and if they have, it will add the roles of the account to the user. */
-			let newCharacterData = userData.characters[userData.currentCharacter[message.guild.id]];
-			let profileData = newCharacterData.profiles[message.guild.id];
+			let newCharacterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+			let profileData = newCharacterData?.profiles?.[message.guild.id];
 
 			if (newCharacterData != null) {
 

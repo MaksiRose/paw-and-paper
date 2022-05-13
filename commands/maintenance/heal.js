@@ -101,7 +101,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	}
 	else {
 
-		const { embeds: woundEmbeds, components: woundComponents } = await getWoundList(chosenUserData, chosenCharacterData.name) ?? { embeds: undefined, components: undefined };
+		const { embeds: woundEmbeds, components: woundComponents } = await getWoundList(chosenUserData, chosenCharacterData._id) ?? { embeds: undefined, components: undefined };
 
 		botReply = await message
 			.reply({
@@ -589,12 +589,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						}
 
 						chosenUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-							{ userId: chosenUserData.uuid },
+							{ uuid: chosenUserData.uuid },
 							(/** @type {import('../../typedef').ProfileSchema} */ cP) => {
-								cP.characters[cP.currentCharacter[message.guild.id]].profiles[message.guild.id].hunger += chosenUserHungerPoints;
-								cP.characters[cP.currentCharacter[message.guild.id]].profiles[message.guild.id].energy += chosenUserEnergyPoints;
-								cP.characters[cP.currentCharacter[message.guild.id]].profiles[message.guild.id].health += chosenUserHealthPoints;
-								cP.characters[cP.currentCharacter[message.guild.id]].profiles[message.guild.id].injuries = chosenUserInjuryObject;
+								cP.characters[chosenCharacterData._id].profiles[message.guild.id].hunger += chosenUserHungerPoints;
+								cP.characters[chosenCharacterData._id].profiles[message.guild.id].energy += chosenUserEnergyPoints;
+								cP.characters[chosenCharacterData._id].profiles[message.guild.id].health += chosenUserHealthPoints;
+								cP.characters[chosenCharacterData._id].profiles[message.guild.id].injuries = chosenUserInjuryObject;
 							},
 						));
 						chosenCharacterData = chosenUserData.characters[chosenCharacterData._id];
@@ -786,10 +786,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	/**
 	 * Finds all health-related problems the selected user has, and return the messages components and embeds.
 	 * @param {import('../../typedef').ProfileSchema} healUserData - The user data of the user that should be scanned.
-	 * @param {string} healCharacterName - The name of the character that should be scanned.
+	 * @param {string} healCharacterId - The ID of the character that should be scanned.
 	 * @returns { Promise<{embeds: Array<import('discord.js').MessageEmbedOptions>, components: Array<import('discord.js').MessageActionRow>}> }
 	 */
-	async function getWoundList(healUserData, healCharacterName) {
+	async function getWoundList(healUserData, healCharacterId) {
 
 		const pageButtons = new MessageActionRow({
 			components: [ new MessageButton({
@@ -806,7 +806,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		});
 
 		chosenUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: healUserData.uuid }));
-		chosenCharacterData = chosenUserData.characters[healCharacterName];
+		chosenCharacterData = chosenUserData.characters[healCharacterId];
 		chosenProfileData = chosenCharacterData.profiles[message.guild.id];
 
 		let healUserConditionText = '';

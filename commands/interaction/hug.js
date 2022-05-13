@@ -33,7 +33,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		const embed = {
 			color: characterData?.color || message.member.displayHexColor,
-			author: { name: characterData.name || message.member.displayName, icon_url: characterData.avatarURL || message.member.displayAvatarURL() },
+			author: { name: characterData?.name || message.member.displayName, icon_url: characterData?.avatarURL || message.member.displayAvatarURL() },
 			image: { url: selfHugURLs[generateRandomNumber(selfHugURLs.length, 0)] },
 		};
 
@@ -52,7 +52,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		const embed = {
 			color: /** @type {`#${string}`} */ (error_color),
-			author: { name: characterData.name || message.member.displayName, icon_url: characterData.avatarURL || message.member.displayAvatarURL() },
 			title: 'Please mention a user that you want to hug!',
 		};
 
@@ -71,7 +70,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		.reply({
 			embeds: [...embedArray, {
 				color: characterData?.color || message.member.displayHexColor,
-				author: { name: characterData.name || message.member.displayName, icon_url: characterData.avatarURL || message.member.displayAvatarURL() },
+				author: { name: characterData?.name || message.member.displayName, icon_url: characterData?.avatarURL || message.member.displayAvatarURL() },
 				description: `${message.mentions.users.first().toString()}, do you accept the hug?`,
 			}],
 			components: [ new MessageActionRow({
@@ -123,7 +122,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				.edit({
 					embeds: [...embedArray, {
 						color: characterData?.color || message.member.displayHexColor,
-						author: { name: characterData.name || message.member.displayName, icon_url: characterData.avatarURL || message.member.displayAvatarURL() },
+						author: { name: characterData?.name || message.member.displayName, icon_url: characterData?.avatarURL || message.member.displayAvatarURL() },
 						image: { url: hugURLs[generateRandomNumber(hugURLs.length, 0)] },
 					}],
 					components: [],
@@ -143,7 +142,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				.edit({
 					embeds: [...embedArray, {
 						color: characterData?.color || message.member.displayHexColor,
-						author: { name: characterData.name || message.member.displayName, icon_url: characterData.avatarURL || message.member.displayAvatarURL() },
+						author: { name: characterData?.name || message.member.displayName, icon_url: characterData?.avatarURL || message.member.displayAvatarURL() },
 						description:`${message.mentions.users.first().toString()} did not accept the hug.`,
 					}],
 					components: disableAllComponents(botReply.components),

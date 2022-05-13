@@ -70,7 +70,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				content: messageContent,
 				embeds: [...embedArray, {
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Please mention a user that you want to playfight with!',
 				}],
 				failIfNotExists: false,
@@ -92,7 +91,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				content: messageContent,
 				embeds: [...embedArray, {
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'The mentioned user has no account, is passed out or busy :(',
 				}],
 				failIfNotExists: false,

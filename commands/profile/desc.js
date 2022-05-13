@@ -1,6 +1,5 @@
 // @ts-check
 const { MessageEmbed } = require('discord.js');
-const { default_color } = require('../../config.json');
 const profileModel = require('../../models/profileModel');
 const { hasNoName } = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
@@ -39,8 +38,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		await message
 			.reply({
 				embeds: [ new MessageEmbed({
-					color: /** @type {`#${string}`} */ (default_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
 					title: 'Your description has been reset!',
 				})],
 				failIfNotExists: false,
@@ -63,7 +62,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		.reply({
 			embeds: [ new MessageEmbed({
 				color: characterData.color,
-				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+				author: { name: characterData.name, icon_url: characterData.avatarURL },
 				title: `Description for ${characterData.name} set:`,
 				description: description,
 			})],

@@ -23,7 +23,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Only administrators of a server can use this command!',
 				}],
 				failIfNotExists: false,
@@ -76,7 +75,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Use this command to add a role to the shop. Here is how to use it:',
 					description: 'rp shopadd [@role] [way of earning] [requirement]\n**The brackets are just for readability, don\'t type them out in the command!**\n\nReplace `way of earning` with either \'rank\', \'levels\' or \'XP\'. The first two mean that a user will automatically acquire the role when achieving the specified rank/level. The last one means that they have to spend the specified amount of XP to acquire it.\nReplace `requirement` with a number (for levels or XP) or a rank name (Youngling, Apprentice, Hunter, Healer, Elderly)',
 					footer: { text: 'Tip: Anything between 1000 and 10000 XP is recommended as a price, 1000 XP being easy to achieve, and 10000 being hard to achieve.' },
@@ -98,7 +96,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'There is already a role under these conditions!',
 				}],
 				failIfNotExists: false,
@@ -115,7 +112,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'The same role cannot be acquired both through earning (rank, levels) and buying (experience) due to the refund system.',
 				}],
 				failIfNotExists: false,
@@ -132,7 +128,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'The same role cannot be sold at two different prices!',
 				}],
 				failIfNotExists: false,

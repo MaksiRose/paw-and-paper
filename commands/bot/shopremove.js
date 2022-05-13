@@ -29,7 +29,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Only administrators of a server can use this command!',
 				}],
 				failIfNotExists: false,
@@ -46,7 +45,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'There are currently no roles in the shop!',
 				}],
 				failIfNotExists: false,

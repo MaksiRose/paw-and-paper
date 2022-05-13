@@ -238,7 +238,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		if (winPoints == 2) {
 
-			embed.description = `*For a moment it looks like the human might get the upper hand before ${characterData.name} jumps on them with a big hop. The human falls to the ground and crawls away with a terrified look on their face. It looks like their not coming back.*`;
+			embed.description = `*For a moment it looks like the human might get the upper hand before ${characterData.name} jumps on them with a big hop. The human falls to the ground and crawls away with a terrified look on their face. It looks like they're not coming back.*`;
 		}
 		else {
 

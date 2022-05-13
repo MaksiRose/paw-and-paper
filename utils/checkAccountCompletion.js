@@ -24,9 +24,8 @@ async function hasNoName(message, characterData) {
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Please type "rp name [name]" to begin setting up your account!',
-					description: Object.keys(userData.characters).length > 0 ? 'I see that you already have a character. You can switch to it using `rp accounts`! Pack-specific information like stats, levels, rank etc. will not transfer over though to prevent cheating.' : null,
+					description: Object.keys(userData?.characters || {}).length > 0 ? 'I see that you already have a character. You can switch to it using `rp accounts`! Pack-specific information like stats, levels, rank etc. will not transfer over though to prevent cheating.' : null,
 				}],
 				failIfNotExists: false,
 			})
@@ -60,8 +59,7 @@ async function hasNoSpecies(message, characterData) {
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-					title: `Please choose ${characterData.name}'s species!!`,
+					title: `To access this command, you need to choose ${characterData.name}'s species!`,
 				}],
 				failIfNotExists: false,
 			})

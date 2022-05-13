@@ -108,5 +108,5 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		})
 		.catch((error) => { throw new Error(error); });
 
-	await startResting(message, userData, botReply);
+	await startResting(message, userData, botReply, profileData.currentRegion);
 };

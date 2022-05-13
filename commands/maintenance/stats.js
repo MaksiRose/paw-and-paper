@@ -38,7 +38,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		})],
 	})];
 
-	if (Object.values(profileData.injuries).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
+	if (Object.values(profileData.inventory).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
 
 		components[0].components.pop();
 	}

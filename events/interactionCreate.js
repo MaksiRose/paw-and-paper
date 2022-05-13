@@ -1581,8 +1581,8 @@ const event = {
 					.edit({
 						embeds: [{
 							color: characterData.color,
-							title: `Profile - ${user.tag}`,
-							author: { name: characterData.name, icon_url: characterData.avatarURL },
+							title: characterData.name,
+							author: { name: `Profile - ${user.tag}` },
 							description: description,
 							thumbnail: { url: characterData.avatarURL },
 							fields: [
@@ -1592,6 +1592,7 @@ const event = {
 								{ name: '**🗺️ Region**', value: profileData.currentRegion },
 
 							],
+							footer: { text: `Character ID: ${characterData._id}` },
 						},
 						{
 							color: characterData.color,

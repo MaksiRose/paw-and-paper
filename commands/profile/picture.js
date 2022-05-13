@@ -40,7 +40,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 			.reply({
 				embeds: [ new MessageEmbed({
 					color: characterData.color,
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+					author: { name: characterData.name, icon_url: message.author.avatarURL() },
 					title: `The profile picture for ${characterData.name} is now the accounts profile picture!`,
 					footer: { text: 'If you want to set a new picture, just send it together in one message with this command!' },
 				})],
@@ -58,7 +58,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 			.reply({
 				embeds: [ new MessageEmbed({
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Please send an image to set as your characters profile picture!',
 				})],
 				failIfNotExists: false,
@@ -77,7 +76,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 			.reply({
 				embeds: [ new MessageEmbed({
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'This image extension is not supported! Please send a .png, .jp(e)g, .raw or .webp image.',
 				})],
 				failIfNotExists: false,
@@ -99,7 +97,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		.reply({
 			embeds: [ new MessageEmbed({
 				color: characterData.color,
-				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+				author: { name: characterData.name, icon_url: ImageLink },
 				title: `Profile picture for ${characterData.name} set!`,
 				image: { url: ImageLink },
 			})],

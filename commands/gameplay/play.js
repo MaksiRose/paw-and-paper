@@ -12,7 +12,7 @@ const { introduceQuest } = require('./quest');
 const { execute } = require('../../events/messageCreate');
 const { remindOfAttack } = require('./attack');
 const { pronoun, pronounAndPlural, upperCasePronounAndPlural } = require('../../utils/getPronouns');
-const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
+const { restAdvice, drinkAdvice, eatAdvice, coloredButtonsAdvice } = require('../../utils/adviceMessages');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { addFriendshipPoints } = require('../../utils/friendshipHandling');
 const { speciesMap } = require('../../utils/itemsInfo');
@@ -49,7 +49,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	userData = await startCooldown(message);
 	const messageContent = remindOfAttack(message);
 
-	if (/** @type {Array<number>} */ ([].concat(...Object.values(profileData.inventory).map(type => Object.values(type)))).filter(value => value > 0).length > 25) {
+	if (/** @type {Array<number>} */ Object.values(profileData.inventory).map(type => Object.values(type)).flat().filter(value => value > 0).length > 25) {
 
 		await message
 			.reply({
@@ -210,6 +210,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	else {
 
 		partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first().id }));
+		partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guild.id]];
+		partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id];
 
 		if (!partnerUserData || !partnerCharacterData || partnerCharacterData.name === '' || partnerCharacterData.species === '' || !partnerProfileData || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0) {
 
@@ -228,7 +230,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					content: messageContent,
 					embeds: [...embedArray, {
 						color: /** @type {`#${string}`} */ (error_color),
-						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 						title: 'The mentioned user has no account or is passed out :(',
 					}],
 					failIfNotExists: false,
@@ -248,6 +249,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 	if (partnerUserData !== null) { await addFriendshipPoints(message, userData, characterData._id, partnerUserData, partnerCharacterData._id); }
 
+	await coloredButtonsAdvice(message, userData);
 	await restAdvice(message, userData);
 	await drinkAdvice(message, userData);
 	await eatAdvice(message, userData);

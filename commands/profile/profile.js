@@ -98,8 +98,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		.reply({
 			embeds: [{
 				color: characterData.color,
-				title: `Profile - ${user.tag}`,
-				author: { name: characterData.name, icon_url: characterData.avatarURL },
+				title: characterData.name,
+				author: { name: `Profile - ${user.tag}` },
 				description: description,
 				thumbnail: { url: characterData.avatarURL },
 				fields: [
@@ -109,6 +109,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 					{ name: '**🗺️ Region**', value: profileData.currentRegion },
 
 				],
+				footer: { text: `Character ID: ${characterData._id}` },
 			},
 			{
 				color: characterData.color,

@@ -92,7 +92,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			.reply({
 				embeds: [ new MessageEmbed({
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Names can only be up to 25 characters long.',
 				})],
 				failIfNotExists: false,
@@ -101,26 +100,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 		return;
-	}
-
-	for (const character of Object.keys(userData.characters)) {
-
-		if (name === character) {
-
-			await message
-				.reply({
-					embeds: [ new MessageEmbed({
-						color: /** @type {`#${string}`} */ (error_color),
-						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						title: 'You cannot have two characters with the same name.',
-					})],
-					failIfNotExists: false,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
-			return;
-		}
 	}
 
 	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];

@@ -34,7 +34,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userDataV, 
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Visits are currently turned off! Ask a server admin to turn it on via \'rp allowvisits\'',
 				}],
 				failIfNotExists: false,
@@ -51,7 +50,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userDataV, 
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'You are already visiting someone!',
 				}],
 				failIfNotExists: false,
@@ -73,7 +71,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userDataV, 
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					description: `*${characterDataV.name} really wants to visit some packs in the area but no one there seems to have time. The ${characterDataV.species} gets back feeling a bit lonely but when ${pronounAndPlural(characterDataV, 0, 'see')} all ${pronoun(characterDataV, 2)} packmates having fun at home ${characterDataV.name} cheers up and joins them excitedly.*`,
 				}],
 				failIfNotExists: false,
@@ -181,7 +178,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userDataV, 
 					.edit({
 						embeds: [{
 							color: /** @type {`#${string}`} */ (error_color),
-							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 							title: 'The chosen pack has become unavailable or is already being visited. Please pick another one.',
 						}],
 					})

@@ -14,8 +14,8 @@ const { default_color } = require('../config.json');
  */
 async function checkLevelUp(message, botReply, userData, serverData) {
 
-	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
-	const profileData = characterData.profiles[message.guild.id];
+	let characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+	let profileData = characterData.profiles[message.guild.id];
 
 	const requiredExperiencePoints = profileData.levels * 50;
 
@@ -28,6 +28,8 @@ async function checkLevelUp(message, botReply, userData, serverData) {
 				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].levels += 1;
 			},
 		));
+		characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+		profileData = characterData.profiles[message.guild.id];
 
 		/** @type {import('discord.js').MessageEmbedOptions} */
 		const embed = {

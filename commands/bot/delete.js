@@ -27,7 +27,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 			.reply({
 				embeds: [ new MessageEmbed({
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'You have no account!',
 				})],
 				failIfNotExists: false,
@@ -186,7 +185,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 				if (interaction.isSelectMenu() && interaction.values[0] === 'delete-server_page') {
 
 					deletePage++;
-					if (deletePage >= Math.ceil([...new Set([].concat(Object.values(userData.characters).map(c => Object.keys(c.profiles))))].length / 24)) {
+					if (deletePage >= Math.ceil([...new Set(Object.values(userData.characters).map(c => Object.keys(c.profiles)).flat())].length / 24)) {
 
 						deletePage = 0;
 					}
@@ -206,7 +205,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 				/* Checking if the interaction is a select menu and if the server ID is in the array of all
 				servers. If it is, it will edit the message to ask the user if they are sure they want to delete
 				all their accounts on the server. */
-				if (interaction.isSelectMenu() && [...new Set([].concat(Object.values(userData.characters).map(c => Object.keys(c.profiles))))].includes(interaction.values[0].replace('delete-server_', ''))) {
+				if (interaction.isSelectMenu() && [...new Set([...Object.values(userData.characters).map(c => Object.keys(c.profiles)), ...Object.keys(userData.currentCharacter)].flat())].includes(interaction.values[0].replace('delete-server_', ''))) {
 
 					const server = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOne({ serverId: interaction.values[0].replace('delete-server_', '') }));
 					const accountsOnServer = Object.values(userData.characters).map(c => c.profiles[server.serverId]).filter(p => p !== undefined);
@@ -282,6 +281,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 							{ uuid: userData.uuid },
 							(/** @type {import('../../typedef').ProfileSchema} */ p) => {
 								delete p.characters[_id];
+								for (const curchar of Object.keys(p.currentCharacter)) {
+									if (p.currentCharacter[curchar] === _id) { delete p.currentCharacter[curchar]; }
+								}
 							},
 						);
 
@@ -310,6 +312,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 								for (const c of Object.values(p.characters)) {
 									if (c.profiles[serverId] !== undefined) { delete c.profiles[serverId]; }
 								}
+								delete p.currentCharacter[serverId];
 							},
 						);
 
@@ -379,7 +382,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 					return;
 				}
 			})
-			.catch(async () => {
+			.catch(async (err) => {
+				console.error(err);
 
 				await botReply
 					.edit({
@@ -434,7 +438,7 @@ async function getServersPage(deletePage, userData) {
 	});
 
 	/** @type {Array<string>} */
-	const serverIdList = [...new Set([].concat(Object.values(userData.characters).map(c => Object.keys(c.profiles))))];
+	const serverIdList = [...new Set([...Object.values(userData.characters).map(c => Object.keys(c.profiles)), ...Object.keys(userData.currentCharacter)].flat())];
 
 	for (const serverId of serverIdList) {
 

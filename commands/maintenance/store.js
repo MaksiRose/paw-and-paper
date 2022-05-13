@@ -233,7 +233,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				}
 
 				let footerText = interaction.message.embeds[interaction.message.embeds.length - 1].footer?.text ?? '';
-				footerText += `+${chosenAmount} ${chosenFood} for ${message.guild.name}\n`;
+				footerText += `\n+${chosenAmount} ${chosenFood} for ${message.guild.name}`;
 				interaction.message.embeds[interaction.message.embeds.length - 1].footer = { text: footerText };
 
 				await /** @type {import('discord.js').Message} */ (interaction.message)

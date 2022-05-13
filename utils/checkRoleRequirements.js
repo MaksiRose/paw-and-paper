@@ -148,7 +148,6 @@ async function checkRoleCatchBlock(error, message, member) {
 				content: member.toString(),
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'I don\'t have permission to manage roles, or the role is above my highest role. Please ask an admin to edit my permissions or move the wanted role below mine.',
 				}],
 			})
@@ -164,7 +163,6 @@ async function checkRoleCatchBlock(error, message, member) {
 				content: member.toString(),
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'There was an error trying to add/remove the role :(',
 				}],
 			})

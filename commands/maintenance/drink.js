@@ -24,8 +24,8 @@ module.exports.name = 'drink';
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-	const profileData = characterData?.profiles?.[message.guild.id];
+	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	let profileData = characterData?.profiles?.[message.guild.id];
 
 	if (await hasNotCompletedAccount(message, characterData)) {
 
@@ -108,6 +108,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					p.advice.drinking = true;
 				},
 			));
+			characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+			profileData = characterData?.profiles?.[message.guild.id];
 
 			await botReply
 				.edit({

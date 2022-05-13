@@ -80,7 +80,7 @@ const event = {
 			serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOneAndUpdate(
 				{ serverId: message.guild.id },
 				(/** @type {import('../typedef').ServerSchema} */ s) => {
-					s.activeUsers.push(message.author.id);
+					if (!s.activeUsers.includes(message.author.id)) { s.activeUsers.push(message.author.id); }
 				},
 			));
 
@@ -111,7 +111,7 @@ const event = {
 		}
 		catch (error) {
 
-			userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: userData.uuid }));
+			userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: userData?.uuid }));
 			userMap.get('nr' + message.author.id + message.guild.id).activeCommands -= 1;
 
 			if (userData && userMap.get('nr' + message.author.id + message.guild.id).activeCommands <= 0) {
@@ -122,7 +122,7 @@ const event = {
 			await errorHandling.output(message, error);
 		}
 
-		userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: userData.uuid }));
+		userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: userData?.uuid }));
 		const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 		const profileData = characterData?.profiles?.[message.guild.id];
 

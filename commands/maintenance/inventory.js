@@ -44,7 +44,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	const messageContent = remindOfAttack(message);
 
 	// If the commands content isn't part of this commands name and aliases list, then a new blockage won't be opened. This is to prevent the eat command from having this likelihood twice.
-	if ((profileData.rank !== 'Youngling' && serverData.blockedEntrance.den === null && ![module.exports.name].concat(module.exports.aliases).includes(message.content.slice(prefix.length).trim().split(/ +/).shift().toLowerCase()) && generateRandomNumber(20, 0) === 0) || serverData.blockedEntrance.den === 'food den') {
+	if ((profileData.rank !== 'Youngling' && serverData.blockedEntrance.den === null && [module.exports.name].concat(module.exports.aliases).includes(message.content.slice(prefix.length).trim().split(/ +/).shift().toLowerCase()) && generateRandomNumber(20, 0) === 0) || serverData.blockedEntrance.den === 'food den') {
 
 		await blockEntrance(message, messageContent, characterData, serverData, 'food den');
 		return;

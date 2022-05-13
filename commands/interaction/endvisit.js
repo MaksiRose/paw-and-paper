@@ -27,7 +27,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'You are not visiting someonne!',
 				}],
 				failIfNotExists: false,

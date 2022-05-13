@@ -18,6 +18,8 @@ module.exports.name = 'say';
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
+	/** the userData.currentCharacter gets modified in messageCreate if the proxy is from an inactive account.
+	 * It is not permanently saved though, making the account practically still inactive. */
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 
 	if (await hasNoName(message, characterData)) {
@@ -75,8 +77,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		await profileModel.findOneAndUpdate(
 			{ uuid: userData.uuid },
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].experience += 1;
-				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'ruins';
+				p.characters[characterData._id].profiles[message.guild.id].experience += 1;
+				p.characters[characterData._id].profiles[message.guild.id].currentRegion = 'ruins';
 			},
 		);
 	}

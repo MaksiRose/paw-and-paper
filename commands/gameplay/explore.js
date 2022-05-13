@@ -49,7 +49,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	userData = await startCooldown(message);
 	let messageContent = remindOfAttack(message);
 
-	if (/** @type {Array<number>} */ ([].concat(...Object.values(profileData.inventory).map(type => Object.values(type)))).filter(value => value > 0).length > 25) {
+	if (/** @type {Array<number>} */ Object.values(profileData.inventory).map(type => Object.values(type)).flat().filter(value => value > 0).length > 25) {
 
 		await message
 			.reply({
@@ -273,6 +273,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						color: characterData.color,
 						author: { name: characterData.name, icon_url: characterData.avatarURL },
 						description: waitingString + joinNestedArray(array),
+						footer: { text: 'This game is voluntary to skip waiting time. If you don\'t mind waiting, you can ignore this game.' },
 					}],
 					components: [waitingComponent],
 				})

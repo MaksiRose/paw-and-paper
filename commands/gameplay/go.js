@@ -361,7 +361,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		a mention and returning the first 44 items. More than 44 users would exceed the field limit of 1024 characters. */
 		const allFoodDenUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'food den').length > 0;
+				return Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'food den').length > 0;
 			},
 		)).map(user => `<@${user.userId}>`).slice(0, 45);
 
@@ -387,7 +387,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		a mention and returning the first 44 items. More than 44 users would exceed the field limit of 1024 characters. */
 		const allMedicineDenUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'medicine den').length > 0;
+				return Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'medicine den').length > 0;
 			},
 		)).map(user => `<@${user.userId}>`).slice(0, 45);
 
@@ -400,7 +400,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		a mention and returning the first 44 items. More than 44 users would exceed the field limit of 1024 characters. */
 		const allHealerUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].rank !== 'Youngling').length > 0;
+				return Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].rank !== 'Youngling').length > 0;
 			},
 		)).map(user => `<@${user.userId}>`).slice(0, 45);
 
@@ -426,7 +426,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		a mention and returning the first 44 items. More than 44 users would exceed the field limit of 1024 characters. */
 		const allRuinUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'ruins').length > 0;
+				return Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'ruins').length > 0;
 			},
 		)).map(user => `<@${user.userId}>`).slice(0, 45);
 
@@ -465,7 +465,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		a mention and returning the first 44 items. More than 44 users would exceed the field limit of 1024 characters. */
 		const allPrairieUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'prairie').length > 0;
+				return Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'prairie').length > 0;
 			},
 		)).map(user => `<@${user.userId}>`).slice(0, 45);
 
