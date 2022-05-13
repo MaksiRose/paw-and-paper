@@ -1,5 +1,5 @@
 // @ts-check
-const { profileModel } = require('../../models/profileModel');
+const profileModel = require('../../models/profileModel');
 const blockEntrance = require('../../utils/blockEntrance');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isPassedOut, hasCooldown } = require('../../utils/checkValidity');
@@ -17,28 +17,31 @@ module.exports.aliases = ['sleep'];
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData) => {
 
-	if (await hasNotCompletedAccount(message, profileData)) {
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	const profileData = characterData?.profiles?.[message.guild.id];
 
-		return;
-	}
-
-	if (await isPassedOut(message, profileData, false)) {
+	if (await hasNotCompletedAccount(message, characterData)) {
 
 		return;
 	}
 
-	if (await hasCooldown(message, profileData, [module.exports.name].concat(module.exports.aliases))) {
+	if (await isPassedOut(message, userData, false)) {
 
 		return;
 	}
 
-	profileData = await startCooldown(message, profileData);
+	if (await hasCooldown(message, userData, [module.exports.name].concat(module.exports.aliases))) {
+
+		return;
+	}
+
+	userData = await startCooldown(message);
 	const messageContent = remindOfAttack(message);
 
 	if (profileData.isResting === true) {
@@ -47,9 +50,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				content: messageContent,
 				embeds: [{
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: `${profileData.name} dreams of resting on a beach, out in the sun. The imaginary wind rocked the also imaginative hammock. ${upperCasePronoun(profileData, 0)} must be really tired to dream of sleeping!`,
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					description: `${characterData.name} dreams of resting on a beach, out in the sun. The imaginary wind rocked the also imaginative hammock. ${upperCasePronoun(characterData, 0)} must be really tired to dream of sleeping!`,
 				}],
 				failIfNotExists: false,
 			})
@@ -65,9 +68,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				content: messageContent,
 				embeds: [{
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: `*${profileData.name} trots around the dens eyeing ${pronoun(profileData, 2)} comfortable moss-covered bed. A nap looks nice, but ${pronounAndPlural(profileData, 0, 'has', 'have')} far too much energy to rest!*`,
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					description: `*${characterData.name} trots around the dens eyeing ${pronoun(characterData, 2)} comfortable moss-covered bed. A nap looks nice, but ${pronounAndPlural(characterData, 0, 'has', 'have')} far too much energy to rest!*`,
 				}],
 				failIfNotExists: false,
 			})
@@ -77,22 +80,18 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		return;
 	}
 
-	if ((profileData.rank !== 'Youngling' && serverData.blockedEntranceObject.den === null && generateRandomNumber(20, 0) === 0) || serverData.blockedEntranceObject.den === 'sleeping dens') {
+	if ((profileData.rank !== 'Youngling' && serverData.blockedEntrance.den === null && generateRandomNumber(20, 0) === 0) || serverData.blockedEntrance.den === 'sleeping dens') {
 
-		await blockEntrance(message, messageContent, profileData, serverData, 'sleeping dens');
+		await blockEntrance(message, messageContent, characterData, serverData, 'sleeping dens');
 		return;
 	}
 
-	profileData.advice.resting = true;
-
 	await profileModel.findOneAndUpdate(
-		{ userId: message.author.id, serverId: message.guild.id },
-		{
-			$set: {
-				isResting: true,
-				currentRegion: 'sleeping dens',
-				advice: profileData.advice,
-			},
+		{ uuid: userData.uuid },
+		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].isResting = true;
+			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'sleeping dens';
+			p.advice.resting = true;
 		},
 	);
 
@@ -100,14 +99,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		.reply({
 			content: messageContent,
 			embeds: [{
-				color: profileData.color,
-				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*${profileData.name}'s chest rises and falls with the crickets. Snoring bounces off each wall, finally exiting the den and rising free to the clouds.*`,
+				color: characterData.color,
+				author: { name: characterData.name, icon_url: characterData.avatarURL },
+				description: `*${characterData.name}'s chest rises and falls with the crickets. Snoring bounces off each wall, finally exiting the den and rising free to the clouds.*`,
 				footer: { text: `+0 energy (${profileData.energy}/${profileData.maxEnergy})\nTip: You can also do "rp vote" to get +30 energy per vote!${(profileData.currentRegion != 'sleeping dens') ? '\nYou are now at the sleeping dens' : ''}` },
 			}],
 			failIfNotExists: false,
 		})
 		.catch((error) => { throw new Error(error); });
 
-	await startResting(message, profileData, botReply);
+	await startResting(message, userData, botReply, profileData.currentRegion);
 };

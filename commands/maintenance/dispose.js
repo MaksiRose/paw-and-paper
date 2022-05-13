@@ -5,7 +5,7 @@ const { pronoun, pronounAndPlural } = require('../../utils/getPronouns');
 const startCooldown = require('../../utils/startCooldown');
 const { remindOfAttack } = require('../gameplay/attack');
 const serverModel = require('../../models/serverModel');
-const { profileModel } = require('../../models/profileModel');
+const profileModel = require('../../models/profileModel');
 const { pullFromWeightedTable, generateRandomNumber } = require('../../utils/randomizers');
 const { decreaseEnergy, decreaseHunger, decreaseThirst, decreaseHealth } = require('../../utils/checkCondition');
 const { createCommandCollector } = require('../../utils/commandCollector');
@@ -20,24 +20,27 @@ module.exports.name = 'dispose';
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
  * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData, embedArray) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await hasNotCompletedAccount(message, profileData)) {
+	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	let profileData = characterData?.profiles?.[message.guild.id];
 
-		return;
-	}
-
-	if (await isInvalid(message, profileData, embedArray, [module.exports.name])) {
+	if (await hasNotCompletedAccount(message, characterData)) {
 
 		return;
 	}
 
-	profileData = await startCooldown(message, profileData);
+	if (await isInvalid(message, userData, embedArray, [module.exports.name])) {
+
+		return;
+	}
+
+	userData = await startCooldown(message);
 	const messageContent = remindOfAttack(message);
 
 	if (profileData.rank === 'Youngling' || profileData.rank === 'Healer') {
@@ -46,9 +49,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				content: messageContent,
 				embeds: [...embedArray, {
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: `*A hunter rushes to stop the ${profileData.rank}.*\n"${profileData.name}, you are not trained to dispose things that are blocking the dens, it is very dangerous! I don't ever wanna see you again in here without supervision!"\n*${profileData.name} lowers ${pronoun(profileData, 2)} head and leaves in shame.*`,
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					description: `*A hunter rushes to stop the ${profileData.rank}.*\n"${characterData.name}, you are not trained to dispose things that are blocking the dens, it is very dangerous! I don't ever wanna see you again in here without supervision!"\n*${characterData.name} lowers ${pronoun(characterData, 2)} head and leaves in shame.*`,
 				}],
 				failIfNotExists: false,
 			})
@@ -58,15 +61,15 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		return;
 	}
 
-	if (serverData.blockedEntranceObject.den === null) {
+	if (serverData.blockedEntrance.den === null) {
 
 		await message
 			.reply({
 				content: messageContent,
 				embeds: [...embedArray, {
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: `*${profileData.name} patrols around the pack, looking for anything that blocks entrances or might be a hazard. Luckily, it seems like everything is in order as of now.*`,
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					description: `*${characterData.name} patrols around the pack, looking for anything that blocks entrances or might be a hazard. Luckily, it seems like everything is in order as of now.*`,
 				}],
 				failIfNotExists: false,
 			})
@@ -77,18 +80,18 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	}
 
 	let blockText = null;
-	if (serverData.blockedEntranceObject.blockedKind === 'vines') blockText = 'thick vines appear to have grown over';
-	if (serverData.blockedEntranceObject.blockedKind === 'burrow') blockText = 'someone seems to have built a big burrow right under';
-	if (serverData.blockedEntranceObject.blockedKind === 'tree trunk') blockText = 'a rotten tree trunk has fallen in front of';
-	if (serverData.blockedEntranceObject.blockedKind === 'boulder') blockText = 'a boulder has rolled in front of';
+	if (serverData.blockedEntrance.blockedKind === 'vines') blockText = 'thick vines appear to have grown over';
+	if (serverData.blockedEntrance.blockedKind === 'burrow') blockText = 'someone seems to have built a big burrow right under';
+	if (serverData.blockedEntrance.blockedKind === 'tree trunk') blockText = 'a rotten tree trunk has fallen in front of';
+	if (serverData.blockedEntrance.blockedKind === 'boulder') blockText = 'a boulder has rolled in front of';
 
 	let botReply = await message
 		.reply({
 			content: messageContent,
 			embeds: [...embedArray, {
-				color: profileData.color,
-				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*${profileData.name} patrols around the pack, looking for anything that blocks entrances or might be a hazard. And indeed, ${blockText} the entrance to the ${serverData.blockedEntranceObject.den}, making it impossible to enter safely. The ${profileData.species} should remove it immediately! But what would be the best way?*`,
+				color: characterData.color,
+				author: { name: characterData.name, icon_url: characterData.avatarURL },
+				description: `*${characterData.name} patrols around the pack, looking for anything that blocks entrances or might be a hazard. And indeed, ${blockText} the entrance to the ${serverData.blockedEntrance.den}, making it impossible to enter safely. The ${characterData.species} should remove it immediately! But what would be the best way?*`,
 			}],
 			components: [ new MessageActionRow({
 				components: [ new MessageButton({
@@ -142,16 +145,16 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		const hungerPoints = await decreaseHunger(profileData);
 		const thirstPoints = await decreaseThirst(profileData);
 
-		profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{
-				$inc: {
-					energy: -energyPoints,
-					hunger: -hungerPoints,
-					thirst: -thirstPoints,
-				},
+		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+			{ uuid: userData.uuid },
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				p.characters[p.currentCharacter[botReply.guild.id]].profiles[botReply.guild.id].energy -= energyPoints;
+				p.characters[p.currentCharacter[botReply.guild.id]].profiles[botReply.guild.id].hunger -= hungerPoints;
+				p.characters[p.currentCharacter[botReply.guild.id]].profiles[botReply.guild.id].thirst -= thirstPoints;
 			},
 		));
+		characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+		profileData = characterData.profiles[message.guild.id];
 
 		let footerStats = `-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
 
@@ -167,20 +170,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		botReply.components = disableAllComponents(botReply.components);
 
-		if ((interaction.customId === 'dispose-bite' && serverData.blockedEntranceObject.blockedKind === 'vines') || (interaction.customId === 'dispose-soil' && serverData.blockedEntranceObject.blockedKind === 'burrow') || (interaction.customId === 'dispose-trample' && serverData.blockedEntranceObject.blockedKind === 'tree trunk') || (interaction.customId === 'dispose-push' && serverData.blockedEntranceObject.blockedKind === 'boulder')) {
+		if ((interaction.customId === 'dispose-bite' && serverData.blockedEntrance.blockedKind === 'vines') || (interaction.customId === 'dispose-soil' && serverData.blockedEntrance.blockedKind === 'burrow') || (interaction.customId === 'dispose-trample' && serverData.blockedEntrance.blockedKind === 'tree trunk') || (interaction.customId === 'dispose-push' && serverData.blockedEntrance.blockedKind === 'boulder')) {
 
 			/* The button the player choses is green. */
 			/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === interaction.customId)]).style = 'SUCCESS';
 
-			if (profileData.rank === 'Apprentice' && pullFromWeightedTable({ 0: 30, 1: 70 + profileData.saplingObject.waterCycles }) === 0) {
+			if (profileData.rank === 'Apprentice' && pullFromWeightedTable({ 0: 30, 1: 70 + profileData.sapling.waterCycles }) === 0) {
 
 				botReply = await botReply
 					.edit({
 						content: messageContent,
 						embeds: [...embedArray, {
-							color: profileData.color,
-							author: { name: profileData.name, icon_url: profileData.avatarURL },
-							description: `*${profileData.name} gasps and pants as ${pronounAndPlural(profileData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntranceObject.blockedKind}. All ${pronoun(profileData, 1)} strength might only barely be enough to clear the blockage. The ${profileData.species} should collect ${pronoun(profileData, 4)} for a moment, and then try again...*`,
+							color: characterData.color,
+							author: { name: characterData.name, icon_url: characterData.avatarURL },
+							description: `*${characterData.name} gasps and pants as ${pronounAndPlural(characterData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntrance.blockedKind}. All ${pronoun(characterData, 1)} strength might only barely be enough to clear the blockage. The ${characterData.species} should collect ${pronoun(characterData, 4)} for a moment, and then try again...*`,
 							footer: { text: footerStats },
 						}],
 						components: botReply.components,
@@ -196,25 +199,31 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			const experiencePoints = profileData.rank === 'Elderly' ? generateRandomNumber(41, 20) : profileData.rank === 'Hunter' ? generateRandomNumber(21, 10) : generateRandomNumber(11, 5);
 
-			profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $inc: { experience: +experiencePoints } },
+			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+				{ uuid: userData.uuid },
+				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+					p.characters[p.currentCharacter[botReply.guild.id]].profiles[botReply.guild.id].experience += experiencePoints;
+				},
 			));
+			characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+			profileData = characterData.profiles[message.guild.id];
 
 			footerStats = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n` + footerStats;
 
 			await serverModel.findOneAndUpdate(
 				{ serverId: message.guild.id },
-				{ $set: { blockedEntranceObject: { den: null, blockedKind: null } } },
+				(/** @type {import('../../typedef').ServerSchema} */ s) => {
+					s.blockedEntrance = { den: null, blockedKind: null };
+				},
 			);
 
 			botReply = await botReply
 				.edit({
 					content: messageContent,
 					embeds: [...embedArray, {
-						color: profileData.color,
-						author: { name: profileData.name, icon_url: profileData.avatarURL },
-						description: `*${profileData.name} gasps and pants as ${pronounAndPlural(profileData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntranceObject.blockedKind}. All ${pronoun(profileData, 1)} strength is needed, but ${pronounAndPlural(profileData, 0, 'is', 'are')} able to successfully clear the blockage. The ${serverData.blockedEntranceObject.den} can be used again!*`,
+						color: characterData.color,
+						author: { name: characterData.name, icon_url: characterData.avatarURL },
+						description: `*${characterData.name} gasps and pants as ${pronounAndPlural(characterData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntrance.blockedKind}. All ${pronoun(characterData, 1)} strength is needed, but ${pronounAndPlural(characterData, 0, 'is', 'are')} able to successfully clear the blockage. The ${serverData.blockedEntrance.den} can be used again!*`,
 						footer: { text: footerStats },
 					}],
 					components: botReply.components,
@@ -233,9 +242,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				.edit({
 					content: messageContent,
 					embeds: [...embedArray, {
-						color: profileData.color,
-						author: { name: profileData.name, icon_url: profileData.avatarURL },
-						description: `*${profileData.name} gasps and pants as ${pronounAndPlural(profileData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntranceObject.blockedKind}. But ${pronoun(profileData, 1)} attempts don't seem to leave any lasting impact. Maybe the ${profileData.species} is going about this the wrong way.*`,
+						color: characterData.color,
+						author: { name: characterData.name, icon_url: characterData.avatarURL },
+						description: `*${characterData.name} gasps and pants as ${pronounAndPlural(characterData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntrance.blockedKind}. But ${pronoun(characterData, 1)} attempts don't seem to leave any lasting impact. Maybe the ${characterData.species} is going about this the wrong way.*`,
 						footer: { text: footerStats },
 					}],
 					components: botReply.components,
@@ -255,8 +264,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	 */
 	async function checkHealthAndLevel() {
 
-		botReply = await decreaseHealth(profileData, botReply, { ...profileData.injuryObject });
-		botReply = await checkLevelUp(message, botReply, profileData, serverData);
-		await isPassedOut(message, profileData, true);
+		botReply = await decreaseHealth(userData, botReply, { ...profileData.injuries });
+		botReply = await checkLevelUp(message, botReply, userData, serverData);
+		await isPassedOut(message, userData, true);
 	}
 };

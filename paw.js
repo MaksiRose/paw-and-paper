@@ -71,9 +71,9 @@ module.exports.start = (botToken, bfdToken, bfdAuthorization, topToken, topAutho
 		writeFileSync('./database/bannedList.json', JSON.stringify(/** @type {import('./typedef').BanList} */ ({ users: [], servers: [] }), null, '\t'));
 	}
 
-	if (existsSync('./database/friendshipList.json') == false) {
+	if (existsSync('./database/givenIds.json') == false) {
 
-		writeFileSync('./database/friendshipList.json', JSON.stringify(/** @type {import('./typedef').FriendsList} */ ({}), null, '\t'));
+		writeFileSync('./database/givenIds.json', JSON.stringify(/** @type {import('./typedef').GivenIdList} */ ([]), null, '\t'));
 	}
 
 	if (existsSync('./database/toDeleteList.json') == false) {

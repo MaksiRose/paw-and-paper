@@ -10,9 +10,9 @@ module.exports.BanList = this.BanList;
 
 /**
  * This object holds references to user accounts that are friends.
- * @typedef {Object<string, Object<string, Array<number>>>} FriendsList
+ * @typedef {Array<string>} GivenIdList
  */
-module.exports.FriendsList = this.FriendsList;
+module.exports.GivenIdList = this.GivenIdList;
 
 
 /**
@@ -42,7 +42,6 @@ module.exports.WebhookMessages = this.WebhookMessages;
  * @property {number} health - The health of the sapling.
  * @property {number} waterCycles - How many times the sapling has been watered.
  * @property {?number} nextWaterTimestamp - Timestamp of the next perfect watering.
- * @property {boolean} reminder - Whether the user wants to be reminded to water the sapling.
  * @property {string} lastMessageChannelId - The ID of the last channel the sapling was watered in.
  */
 
@@ -54,15 +53,9 @@ module.exports.WebhookMessages = this.WebhookMessages;
  */
 
 /**
- * @typedef {Object} ProfileSchema
- * @property {string} userId - ID of the user that created the account. Cannot be modified.
- * @property {string} serverId - ID of the server that the account was created on. Cannot be modified.
- * @property {string} name - Name of character.
- * @property {string} description - Description of the character.
- * @property {`#${number}`} color - Embed color used in messages.
- * @property {string} species - Species of the character.
+ * @typedef {Object} Profile
+ * @property {string} serverId - ID of the server that this information is associated with.
  * @property {'Youngling'|'Apprentice'|'Hunter'|'Healer'|'Elderly'} rank - Rank of the character.
- * @property {string} avatarURL - Avatar URL of the character.
  * @property {number} levels - Levels of the character.
  * @property {number} experience - Experience Points of the character.
  * @property {number} health - Health Points of the character.
@@ -78,13 +71,33 @@ module.exports.WebhookMessages = this.WebhookMessages;
  * @property {boolean} hasQuest - Whether the character has an open quest.
  * @property {'sleeping dens' | 'food den' | 'medicine den' | 'prairie' | 'ruins' | 'lake'} currentRegion - The current region the character is in.
  * @property {number} unlockedRanks - How many ranks the character has unlocked.
- * @property {Sapling} saplingObject - The sapling of the character
- * @property {Array<Array<string>>} pronounSets - Array of Arrays of pronouns the character uses.
- * @property {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} injuryObject - Object with injury types as keys and whether the user has them/how many the user has of them as variables.
- * @property {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, meat: Object<string, number>}} inventoryObject - Object with item kinds as the keys and an object of the item types and their quantity as the variables.
- * @property {{resting: boolean, drinking: boolean, eating: boolean, passingout: boolean, coloredbuttons: boolean}} advice - Object of advice kinds as the keys and whether the advice has been given as the variables.
+ * @property {Sapling} sapling - The sapling of the character
+ * @property {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} injuries - Object with injury types as keys and whether the user has them/how many the user has of them as variables.
+ * @property {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, meat: Object<string, number>}} inventory - Object with item kinds as the keys and an object of the item types and their quantity as the variables.
  * @property {Array<Role>} roles - Array of role objects
- * @property {string} linkedTo - UUID of the file that this profile is linked to.
+ */
+
+/**
+ * @typedef {Object} Character
+ * @property {string} _id - Unique ID of the character.
+ * @property {string} name - Name of the character.
+ * @property {string} species - Species of the character.
+ * @property {string} description - Description of the character.
+ * @property {string} avatarURL - Avatar URL of the character.
+ * @property {Array<Array<string>>} pronounSets - Array of Arrays of pronouns the character uses.
+ * @property {string} proxy - Proxy this character uses.
+ * @property {`#${number}`} color - Embed color used in messages.
+ * @property {Object<string, Array<number>>} mentions - Object of character_id as key and an array of timestamps of when the mention has been done as the value
+ * @property {Object<string, Profile>} profiles - Object of server IDs this character has been used on as the key and the information associated with it as the value.
+ */
+
+/**
+ * @typedef {Object} ProfileSchema
+ * @property {string} userId - ID of the user that created the account. Cannot be modified.
+ * @property {{resting: boolean, drinking: boolean, eating: boolean, passingout: boolean, coloredbuttons: boolean}} advice - Object of advice kinds as the key and whether the advice has been given as the value.
+ * @property {{water: boolean, resting: boolean}} reminders - Object of reminder kinds as the key and whether the user wants to be reminded/pinged for these occasions as the value.
+ * @property {Object<string, Character>} characters - Object of names of characters as the key and the characters this user has created as value.
+ * @property {Object<string, string>} currentCharacter - Object of the server IDs as the key and the id of the character that is currently active as the value.
  * @property {string} uuid
  */
 module.exports.ProfileSchema = this.ProfileSchema;
@@ -94,9 +107,9 @@ module.exports.ProfileSchema = this.ProfileSchema;
  * @typedef {Object} ServerSchema
  * @property {string} serverId - ID of the server. Cannot be modified.
  * @property {string} name - Name of the server.
- * @property {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, meat: Object<string, number>}} inventoryObject - Object with item kinds as the keys and an object of the item types and their quantity as the variables.
- * @property {{den: ?('sleeping dens' | 'food den' | 'medicine den'), blockedKind: ?('vines'|'burrow'|'tree trunk'|'boulder')}} blockedEntranceObject - Object of the blocked entrance with the name of the den and kind of block as the variables. If no entrance is blocked, they are null.
- * @property {Array<string>} activeUsersArray - Array of IDs of users that executed a command in this server in the last 5 minutes.
+ * @property {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, meat: Object<string, number>}} inventory - Object with item kinds as the keys and an object of the item types and their quantity as the variables.
+ * @property {{den: ?('sleeping dens' | 'food den' | 'medicine den'), blockedKind: ?('vines'|'burrow'|'tree trunk'|'boulder')}} blockedEntrance - Object of the blocked entrance with the name of the den and kind of block as the variables. If no entrance is blocked, they are null.
+ * @property {Array<string>} activeUsers - Array of IDs of users that executed a command in this server in the last 5 minutes.
  * @property {number} nextPossibleAttack - Timestamp of the time when the next attack is possible.
  * @property {?string} visitChannelId - ID of the channel that can be visited. If no channel is seleted, this is null.
  * @property {?string} currentlyVisiting - ID of the guild that is currently being visited. If no guild is being visited, this is null.

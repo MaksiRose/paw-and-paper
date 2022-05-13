@@ -1,6 +1,6 @@
 // @ts-check
 const { default_color } = require('../../config.json');
-const { profileModel } = require('../../models/profileModel');
+const profileModel = require('../../models/profileModel');
 const startCooldown = require('../../utils/startCooldown');
 const { speciesMap } = require('../../utils/itemsInfo');
 const { hasNoName } = require('../../utils/checkAccountCompletion');
@@ -16,26 +16,28 @@ module.exports.name = 'species';
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
 
-	if (await hasNoName(message, profileData)) {
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+
+	if (await hasNoName(message, characterData)) {
 
 		return;
 	}
 
-	profileData = await startCooldown(message, profileData);
+	userData = await startCooldown(message);
 
-	if (profileData.species !== '') {
+	if (characterData.species !== '') {
 
 		await message
 			.reply({
 				embeds: [ new MessageEmbed({
 					color: /** @type {`#${string}`} */ (default_color),
 					author: { name: `${message.guild.name}`, icon_url: message.guild.iconURL() },
-					title: `${profileData.name} is a ${profileData.species}! You cannot change ${pronoun(profileData, 2)} species unless you reset your account or create another one via \`rp accounts\`.`,
+					title: `${characterData.name} is a ${characterData.species}! You cannot change ${pronoun(characterData, 2)} species unless you reset your account or create another one via \`rp accounts\`.`,
 					description: `List of current available species: ${[...speciesMap.keys()].sort().join(', ')}`,
 				})],
 				failIfNotExists: false,
@@ -69,26 +71,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	if (chosenSpecies !== null && speciesMap.has(chosenSpecies)) {
 
-		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { species: chosenSpecies } },
-		);
-
-		await message
-			.reply({
-				embeds: [ new MessageEmbed({
-					color: /** @type {`#${string}`} */ (default_color),
-					author: { name: `${message.guild.name}`, icon_url: message.guild.iconURL() },
-					description: `*The Alpha took a friendly step towards the ${chosenSpecies}.* "It's nice to have you here, ${profileData.name}," *they said. More and more packmates came closer to greet the newcomer.*`,
-					footer: { text: 'You are now done setting up your account! Type "rp profile" to look at it. With "rp help" you can see how else you can customize your profile, as well as your other options.' },
-				})],
-				failIfNotExists: false,
-			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
-
-		await playAdvice(message);
+		await successMessage(message, chosenSpecies, characterData);
 
 		return;
 	}
@@ -98,7 +81,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			embeds: [ new MessageEmbed({
 				color: /** @type {`#${string}`} */ (default_color),
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-				title: `What species is ${profileData.name}?`,
+				title: `What species is ${characterData.name}?`,
 				description: 'If you want an earthly, extant species added that is not on the list, create a GitHub account and [use this form](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement%2Cnon-code&template=species_request.yaml&title=New+species%3A+) to suggest it.',
 			})],
 			components: [
@@ -151,26 +134,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 				if (interaction.isSelectMenu() && speciesMap.has(interaction.values[0])) {
 
-					await profileModel.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{ $set: { species: interaction.values[0] } },
-					);
-
-					await /** @type {import('discord.js').Message} */ (interaction.message)
-						.edit({
-							embeds: [{
-								color: '#9d9e51',
-								author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-								description: `*The Alpha took a friendly step towards the ${interaction.values[0]}.* "It's nice to have you here, ${profileData.name}" *they said. More and more packmates came closer to greet the newcomer.*`,
-								footer: { text: 'You are now done setting up your account! Type "rp profile" to look at it. With "rp help" you can see how else you can customize your profile, as well as your other options.' },
-							}],
-							components: disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components),
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) { throw new Error(error); }
-						});
-
-					await playAdvice(message);
+					await successMessage(message, interaction.values[0], characterData);
 
 					return;
 				}
@@ -188,3 +152,36 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			});
 	}
 };
+
+
+/**
+ * It sends a message to the user who ran the command, and it's supposed to be a success message.
+ * @param {import('discord.js').Message} message - The message object.
+ * @param {string} chosenSpecies - The species the user chose.
+ * @param {import('../../typedef').Character} characterData - {
+ */
+async function successMessage(message, chosenSpecies, characterData) {
+
+	await profileModel.findOneAndUpdate(
+		{ userId: message.author.id },
+		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+			p.characters[p.currentCharacter[message.guild.id]].species = chosenSpecies;
+		},
+	);
+
+	await message
+		.reply({
+			embeds: [new MessageEmbed({
+				color: /** @type {`#${string}`} */ (default_color),
+				author: { name: `${message.guild.name}`, icon_url: message.guild.iconURL() },
+				description: `*The Alpha took a friendly step towards the ${chosenSpecies}.* "It's nice to have you here, ${characterData.name}," *they said. More and more packmates came closer to greet the newcomer.*`,
+				footer: { text: 'You are now done setting up your account! Type "rp profile" to look at it. With "rp help" you can see how else you can customize your profile, as well as your other options.' },
+			})],
+			failIfNotExists: false,
+		})
+		.catch((error) => {
+			if (error.httpStatus !== 404) { throw new Error(error); }
+		});
+
+	await playAdvice(message);
+}

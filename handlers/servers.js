@@ -1,5 +1,5 @@
 // @ts-check
-const { readdirSync, readFileSync } = require('fs');
+const { readdirSync } = require('fs');
 const serverModel = require('../models/serverModel');
 const { deleteGuild } = require('../utils/updateGuild');
 
@@ -13,33 +13,26 @@ module.exports.execute = async (client) => {
 
 	for (const file of files) {
 
-		/** @type {import('../typedef').ServerSchema} */
-		const dataObject = JSON.parse(readFileSync(`./database/servers/${file}`, 'utf-8'));
-
-		await serverModel
+		const serverData = await serverModel
 			.findOneAndUpdate(
-				{ serverId: dataObject.serverId },
-				{
-					$set: {
-						activeUsersArray: [],
-						currentlyVisiting: null,
-					},
+				{ uuid: file.replace('.json', '') },
+				(/** @type {import('../typedef').ServerSchema} */ s) => {
+					s.activeUsers = [];
+					s.currentlyVisiting = null;
 				},
-			)
-			.then(async () => {
+			);
 
-				await client.guilds
-					.fetch(dataObject.serverId)
-					.catch(error => {
+		await client.guilds
+			.fetch(serverData.serverId)
+			.catch(error => {
 
-						if (error.httpStatus === 403) {
+				if (error.httpStatus === 403) {
 
-							deleteGuild(dataObject.serverId);
-						}
-						else {
-							console.error(error);
-						}
-					});
+					deleteGuild(serverData.serverId);
+				}
+				else {
+					console.error(error);
+				}
 			});
 	}
 };

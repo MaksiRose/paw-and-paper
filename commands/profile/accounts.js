@@ -1,14 +1,13 @@
 // @ts-check
 const { hasNoName } = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
-const { profileModel, otherProfileModel } = require('../../models/profileModel');
-const { renameSync } = require('fs');
+const profileModel = require('../../models/profileModel');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
-const { hasCooldown } = require('../../utils/checkValidity');
 const { stopResting } = require('../../utils/executeResting');
 const { MessageActionRow, MessageSelectMenu } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
 
 module.exports.name = 'accounts';
 module.exports.aliases = ['switch'];
@@ -18,51 +17,31 @@ module.exports.aliases = ['switch'];
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
 
-	const inactiveUserProfiles = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await otherProfileModel.find({
-		userId: message.author.id,
-		serverId: message.guild.id,
-	}));
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 
-	if (inactiveUserProfiles.length === 0 && await hasNoName(message, /** @type {import('../../typedef').ProfileSchema} */ (profileData))) {
+	if (Object.keys(userData.characters).length === 0) {
 
+		await hasNoName(message, characterData);
 		return;
 	}
 
 	let accountsPage = 0;
 
-	/* Checking if the user has a profile, and if they do, it checks if they have a cooldown, and if they
-	do, it returns.
-	If they don't have a cooldown, it checks if they are resting, and if they are, it stops their resting.
-	Then, it starts a cooldown. */
-	if (profileData !== null) {
+	/* Checking if the user has a character, and if they do, it starts the cooldown. */
+	if (characterData != null) {
 
-		if (await hasCooldown(message, profileData, [module.exports.name])) {
-
-			return;
-		}
-
-		if (profileData.isResting === true) {
-
-			profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { isResting: false } },
-			));
-
-			stopResting(message.author.id, message.guild.id);
-		}
-
-		profileData = await startCooldown(message, profileData);
+		userData = await startCooldown(message);
 	}
 
 	let botReply = await message
 		.reply({
-			content: `Please choose an account that you want to switch to. You are currently on \`${profileData?.name || 'Empty Slot'}\`.`,
-			components: [new MessageActionRow({ components: [getAccountsPage(profileData, inactiveUserProfiles, accountsPage)] })],
+			content: `Please choose an account that you want to switch to. You are currently on \`${characterData?.name || 'Empty Slot'}\`.`,
+			components: [new MessageActionRow({ components: [getAccountsPage(userData, accountsPage)] })],
 			failIfNotExists: false,
 		})
 		.catch((error) => { throw new Error(error); });
@@ -88,22 +67,27 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 
+		/* Checking if the user has not clicked on any of the options, and if they haven't, it will return. */
 		if (interaction === null) {
 
 			return;
 		}
 
+		/* Checking if the user has clicked on the "Show more accounts" button, and if they have, it will
+		increase the page number by 1, and if the page number is greater than the total number of pages,
+		it will set the page number to 0. Then, it will edit the bot reply to show the next page of
+		accounts, and then it will call the interactionCollector function again. */
 		if (interaction.isSelectMenu() && interaction.values[0] === 'accounts_page') {
 
 			accountsPage++;
-			if (accountsPage >= Math.ceil(((profileData === null ? 1 : 2) + inactiveUserProfiles.length) / 24)) {
+			if (accountsPage >= Math.ceil((Object.keys(userData.characters).length + 1) / 24)) {
 
 				accountsPage = 0;
 			}
 
 			botReply = await botReply
 				.edit({
-					components: [new MessageActionRow({ components: [getAccountsPage(profileData, inactiveUserProfiles, accountsPage)] })],
+					components: [new MessageActionRow({ components: [getAccountsPage(userData, accountsPage)] })],
 				})
 				.catch((error) => { throw new Error(error); });
 
@@ -111,29 +95,89 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			return;
 		}
 
+		/* It checks if the user has clicked on one of the accounts, and if they have, it will check if the
+		user is resting, and if they are, it will stop the resting. Then, it will get the name of the
+		account the user has clicked on, and it will update the user's current character to the account
+		they have clicked on. Then, it will get the new character data, and it will check if the user has
+		clicked on an account, and if they have, it will add the roles of the account to the user. Then,
+		it will check if the user has any roles from the old account, and if they do, it will remove them.
+		Then, it will send a follow up message to the user saying that they have successfully switched to
+		the account they have clicked on. */
 		if (interaction.isSelectMenu() && interaction.values[0].includes('switchto')) {
 
-			if (profileData?.uuid !== undefined) {
+			/* Checking if the user is resting, and if they are, it will stop the resting. */
+			if (characterData?.profiles?.[message.guild.id]?.isResting === true) {
 
-				renameSync(`./database/profiles/${profileData.uuid}.json`, `./database/profiles/inactiveProfiles/${profileData.uuid}.json`);
+				userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+					{ uuid: userData.uuid },
+					(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+						p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].isResting = false;
+					},
+				));
+
+				stopResting(message.author.id, message.guild.id);
 			}
 
-			const name = interaction.values[0].split('-').slice(1, -1).join('-');
+			/* Getting the id of the account the user has clicked on, and then it is updating the user's current
+			character to the account they have clicked on. */
+			const _id = interaction.values[0].split('-').slice(1, -1).join('-');
+			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+				{ uuid: userData.uuid },
+				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+					if (interaction.values[0].endsWith('-0')) { p.currentCharacter[message.guild.id] = _id; }
+					else {delete p.currentCharacter[message.guild.id];}
+				},
+			));
 
-			/** @type {import('../../typedef').ProfileSchema} */
-			const newProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await otherProfileModel.findOne({
-				userId: message.author.id,
-				serverId: message.guild.id,
-				name: interaction.values[0].endsWith('-0') ? name : null,
-			}));
+			/* Getting the new character data, and then it is checking if the user has clicked on an account,
+			and if they have, it will add the roles of the account to the user. */
+			let newCharacterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+			let profileData = newCharacterData?.profiles?.[message.guild.id];
 
-			if (interaction.values[0].endsWith('-0')) {
+			if (newCharacterData != null) {
 
-				renameSync(`./database/profiles/inactiveProfiles/${newProfileData.uuid}.json`, `./database/profiles/${newProfileData.uuid}.json`);
+				if (!profileData) {
+
+					userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+						{ uuid: userData.uuid },
+						(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+							p.characters[newCharacterData._id].profiles[message.guild.id] = {
+								serverId: message.guild.id,
+								rank: 'Youngling',
+								levels: 1,
+								experience: 0,
+								health: 100,
+								energy: 100,
+								hunger: 100,
+								thirst: 100,
+								maxHealth: 100,
+								maxEnergy: 100,
+								maxHunger: 100,
+								maxThirst: 100,
+								isResting: false,
+								hasCooldown: false,
+								hasQuest: false,
+								currentRegion: 'ruins',
+								unlockedRanks: 0,
+								sapling: { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, lastMessageChannelId: null },
+								injuries: { wounds: 0, infections: 0, cold: false, sprains: 0, poison: false },
+								inventory: {
+									commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, 0])),
+									uncommonPlants: Object.fromEntries([...uncommonPlantsMap.keys()].sort().map(key => [key, 0])),
+									rarePlants: Object.fromEntries([...rarePlantsMap.keys()].sort().map(key => [key, 0])),
+									meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, 0])),
+								},
+								roles: [],
+							};
+						},
+					));
+					newCharacterData = userData.characters[userData.currentCharacter[message.guild.id]];
+					profileData = newCharacterData.profiles[message.guild.id];
+				}
 
 				try {
 
-					for (const role of newProfileData.roles) {
+					for (const role of newCharacterData.profiles[message.guild.id].roles) {
 
 						if (message.member.roles.cache.has(role.roleId) === false) {
 
@@ -147,11 +191,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				}
 			}
 
+			/* Checking if the user has any roles from the old account, and if they do, it will remove them. */
 			try {
 
-				for (const role of profileData?.roles || []) {
+				for (const role of characterData?.profiles?.[message.guild.id]?.roles || []) {
 
-					const isInNewRoles = newProfileData !== null && newProfileData.roles.some(r => r.roleId === role.roleId && r.wayOfEarning === role.wayOfEarning && r.requirement === role.requirement);
+					const isInNewRoles = newCharacterData !== null && newCharacterData.profiles[message.guild.id].roles.some(r => r.roleId === role.roleId && r.wayOfEarning === role.wayOfEarning && r.requirement === role.requirement);
 					if (isInNewRoles === false && message.member.roles.cache.has(role.roleId)) {
 
 						message.member.roles.remove(role.roleId);
@@ -163,11 +208,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				await checkRoleCatchBlock(error, message, message.member);
 			}
 
+			/* Sending a follow up message to the user saying that they have successfully switched to the
+			account they have clicked on. */
 			setTimeout(async () => {
 
 				await interaction
 					.followUp({
-						content: `You successfully switched to \`${name}\`!`,
+						content: `You successfully switched to \`${newCharacterData?.name || 'Empty Slot'}\`!`,
 						ephemeral: true,
 					})
 					.catch((error) => {
@@ -181,23 +228,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 /**
  * It takes in a profile, a list of inactive profiles, and a page number, and returns a menu with the
  * profile and inactive profiles as options.
- * @param {import('../../typedef').ProfileSchema} profileData - The profile data of the user who is currently logged in.
- * @param {Array<import('../../typedef').ProfileSchema>} inactiveUserProfiles - An array of all the user's inactive profiles.
+ * @param {import('../../typedef').ProfileSchema} userData - The user data.
  * @param {number} accountsPage - The current page of accounts the user is on.
  * @returns {import('discord.js').MessageSelectMenu} A MessageSelectMenu object
  */
-function getAccountsPage(profileData, inactiveUserProfiles, accountsPage) {
+function getAccountsPage(userData, accountsPage) {
 
 	const accountsMenu = new MessageSelectMenu({
 		customId: 'accounts-options',
 		placeholder: 'Select an account',
 	});
 
-	if (profileData !== null) { accountsMenu.addOptions({ label: profileData.name, value: `switchto-${profileData.name}-0` }); }
+	for (const character of Object.values(userData.characters)) {
 
-	for (const profile of inactiveUserProfiles) {
-
-		accountsMenu.addOptions({ label: profile.name, value: `switchto-${profile.name}-0` });
+		accountsMenu.addOptions({ label: character.name, value: `switchto-${character._id}-0` });
 	}
 
 	accountsMenu.addOptions({ label: 'Empty Slot', value: 'switchto-Empty Slot-1' });

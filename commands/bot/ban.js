@@ -1,6 +1,6 @@
 // @ts-check
 const { readFileSync, writeFileSync } = require('fs');
-const { profileModel, otherProfileModel } = require('../../models/profileModel');
+const profileModel = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
 
 module.exports.name = 'ban';
@@ -30,20 +30,11 @@ module.exports.sendMessage = async (client, message, argumentsArray) => {
 		bannedList.users.push(id);
 		writeFileSync('./database/bannedList.json', JSON.stringify(bannedList, null, '\t'));
 
-		const profiles = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find({ userId: id }));
-		const otherProfiles = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await otherProfileModel.find({ userId: id }));
+		const profile = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.findOne({ userId: id }));
 
-		for (const profile of profiles) {
+		await profileModel.findOneAndDelete({ userId: id });
 
-			await profileModel.findOneAndDelete({ userId: profile.userId, serverId: profile.serverId });
-		}
-
-		for (const profile of otherProfiles) {
-
-			await otherProfileModel.findOneAndDelete({ userId: profile.userId, serverId: profile.serverId });
-		}
-
-		if (profiles.length > 0 || otherProfiles.length > 0) {
+		if (profile !== null) {
 
 			const user = await client.users.fetch(id);
 
@@ -67,20 +58,8 @@ module.exports.sendMessage = async (client, message, argumentsArray) => {
 		writeFileSync('./database/bannedList.json', JSON.stringify(bannedList, null, '\t'));
 
 		const server = /** @type {Array<import('../../typedef').ServerSchema>} */ (await serverModel.findOne({ serverId: id }));
-		const profiles = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find({ serverId: id }));
-		const otherProfiles = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await otherProfileModel.find({ serverId: id }));
 
 		await serverModel.findOneAndDelete({ serverId: id });
-
-		for (const profile of profiles) {
-
-			await profileModel.findOneAndDelete({ userId: profile.userId, serverId: profile.serverId });
-		}
-
-		for (const profile of otherProfiles) {
-
-			await otherProfileModel.findOneAndDelete({ userId: profile.userId, serverId: profile.serverId });
-		}
 
 		if (server !== null) {
 

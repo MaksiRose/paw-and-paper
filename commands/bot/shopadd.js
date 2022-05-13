@@ -1,7 +1,7 @@
 // @ts-check
 const { error_color, default_color } = require('../../config.json');
 const serverModel = require('../../models/serverModel');
-const { profileModel } = require('../../models/profileModel');
+const profileModel = require('../../models/profileModel');
 const { checkLevelRequirements, checkRankRequirements } = require('../../utils/checkRoleRequirements');
 
 module.exports.name = 'shopadd';
@@ -23,7 +23,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Only administrators of a server can use this command!',
 				}],
 				failIfNotExists: false,
@@ -76,7 +75,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Use this command to add a role to the shop. Here is how to use it:',
 					description: 'rp shopadd [@role] [way of earning] [requirement]\n**The brackets are just for readability, don\'t type them out in the command!**\n\nReplace `way of earning` with either \'rank\', \'levels\' or \'XP\'. The first two mean that a user will automatically acquire the role when achieving the specified rank/level. The last one means that they have to spend the specified amount of XP to acquire it.\nReplace `requirement` with a number (for levels or XP) or a rank name (Youngling, Apprentice, Hunter, Healer, Elderly)',
 					footer: { text: 'Tip: Anything between 1000 and 10000 XP is recommended as a price, 1000 XP being easy to achieve, and 10000 being hard to achieve.' },
@@ -98,7 +96,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'There is already a role under these conditions!',
 				}],
 				failIfNotExists: false,
@@ -115,7 +112,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'The same role cannot be acquired both through earning (rank, levels) and buying (experience) due to the refund system.',
 				}],
 				failIfNotExists: false,
@@ -132,7 +128,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'The same role cannot be sold at two different prices!',
 				}],
 				failIfNotExists: false,
@@ -143,15 +138,15 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		return;
 	}
 
-	serverData.shop.push({
-		roleId: role.id,
-		wayOfEarning: /** @type {'rank' | 'levels' | 'experience'} */ (wayOfEarning),
-		requirement: /** @type {'Youngling' | 'Apprentice' | 'Hunter' | 'Healer' | 'Elderly' | number} */ (requirement),
-	});
-
 	serverData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOneAndUpdate(
 		{ serverId: message.guild.id },
-		{ $set: { shop: serverData.shop } },
+		(/** @type {import('../../typedef').ServerSchema} */ s) => {
+			s.shop.push({
+				roleId: role.id,
+				wayOfEarning: /** @type {'rank' | 'levels' | 'experience'} */ (wayOfEarning),
+				requirement: /** @type {'Youngling' | 'Apprentice' | 'Hunter' | 'Healer' | 'Elderly' | number} */ (requirement),
+			});
+		},
 	));
 
 	await message
@@ -167,22 +162,30 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 
-	const allServerProfiles = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find({
-		serverId: message.guild.id,
-	}));
+	const allServerUsers = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
+		(/** @type {import('../../typedef').ProfileSchema} */ u) => {
+			return Object.values(u.characters).filter(c => c.profiles[message.guild.id] !== undefined).length > 0;
+		}));
 
-	for (const profile of allServerProfiles) {
+	for (const u of Object.values(allServerUsers)) {
 
-		if (wayOfEarning === 'levels') {
+		for (const c of Object.values(u.characters)) {
 
-			const member = await message.guild.members.fetch(profile.userId);
-			checkLevelRequirements(serverData, message, member, profile.levels);
-		}
+			const p = c.profiles[message.guild.id];
+			if (p !== undefined) {
 
-		if (wayOfEarning === 'rank') {
+				if (wayOfEarning === 'levels') {
 
-			const member = await message.guild.members.fetch(profile.userId);
-			checkRankRequirements(serverData, message, member, profile.rank);
+					const member = await message.guild.members.fetch(u.userId);
+					checkLevelRequirements(serverData, message, member, p.levels);
+				}
+
+				if (wayOfEarning === 'rank') {
+
+					const member = await message.guild.members.fetch(u.userId);
+					checkRankRequirements(serverData, message, member, p.rank);
+				}
+			}
 		}
 	}
 };

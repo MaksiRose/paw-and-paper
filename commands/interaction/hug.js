@@ -1,10 +1,9 @@
 // @ts-check
-const { hasNoName } = require('../../utils/checkAccountCompletion');
 const { generateRandomNumber } = require('../../utils/randomizers');
 const { error_color } = require('../../config.json');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
-const { profileModel } = require('../../models/profileModel');
+const profileModel = require('../../models/profileModel');
 const { addFriendshipPoints } = require('../../utils/friendshipHandling');
 
 module.exports.name = 'hug';
@@ -15,17 +14,14 @@ module.exports.aliases = ['snuggle'];
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
  * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData, embedArray) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await hasNoName(message, profileData)) {
-
-		return;
-	}
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 
 	if (message.mentions.users.size > 0 && message.mentions.users.first().id === message.author.id) {
 
@@ -36,8 +32,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			'https://c.tenor.com/P5lPftY1nzUAAAAd/tired-exhausted.gif'];
 
 		const embed = {
-			color: profileData.color,
-			author: { name: profileData.name, icon_url: profileData.avatarURL },
+			color: characterData?.color || message.member.displayHexColor,
+			author: { name: characterData?.name || message.member.displayName, icon_url: characterData?.avatarURL || message.member.displayAvatarURL() },
 			image: { url: selfHugURLs[generateRandomNumber(selfHugURLs.length, 0)] },
 		};
 
@@ -56,7 +52,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		const embed = {
 			color: /** @type {`#${string}`} */ (error_color),
-			author: { name: profileData.name, icon_url: profileData.avatarURL },
 			title: 'Please mention a user that you want to hug!',
 		};
 
@@ -74,8 +69,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	const botReply = await message
 		.reply({
 			embeds: [...embedArray, {
-				color: profileData.color,
-				author: { name: profileData.name, icon_url: profileData.avatarURL },
+				color: characterData?.color || message.member.displayHexColor,
+				author: { name: characterData?.name || message.member.displayName, icon_url: characterData?.avatarURL || message.member.displayAvatarURL() },
 				description: `${message.mentions.users.first().toString()}, do you accept the hug?`,
 			}],
 			components: [ new MessageActionRow({
@@ -126,8 +121,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			await botReply
 				.edit({
 					embeds: [...embedArray, {
-						color: profileData.color,
-						author: { name: profileData.name, icon_url: profileData.avatarURL },
+						color: characterData?.color || message.member.displayHexColor,
+						author: { name: characterData?.name || message.member.displayName, icon_url: characterData?.avatarURL || message.member.displayAvatarURL() },
 						image: { url: hugURLs[generateRandomNumber(hugURLs.length, 0)] },
 					}],
 					components: [],
@@ -136,20 +131,18 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 
-			const partnerProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
-				userId: message.mentions.users.first().id,
-				serverId: message.guild.id,
-			}));
+			const partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first().id }));
+			const partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guild.id]];
 
-			if (partnerProfileData !== null) { await addFriendshipPoints(message, profileData, partnerProfileData); }
+			if (characterData !== undefined && partnerCharacterData !== undefined) { await addFriendshipPoints(message, userData, characterData._id, partnerUserData, partnerCharacterData._id); }
 		})
 		.catch(async () => {
 
 			return await botReply
 				.edit({
 					embeds: [...embedArray, {
-						color: profileData.color,
-						author: { name: profileData.name, icon_url: profileData.avatarURL },
+						color: characterData?.color || message.member.displayHexColor,
+						author: { name: characterData?.name || message.member.displayName, icon_url: characterData?.avatarURL || message.member.displayAvatarURL() },
 						description:`${message.mentions.users.first().toString()} did not accept the hug.`,
 					}],
 					components: disableAllComponents(botReply.components),

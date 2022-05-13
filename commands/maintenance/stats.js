@@ -10,17 +10,20 @@ module.exports.name = 'stats';
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
 
-	if (await hasNotCompletedAccount(message, profileData)) {
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	const profileData = characterData?.profiles?.[message.guild.id];
+
+	if (await hasNotCompletedAccount(message, characterData)) {
 
 		return;
 	}
 
-	profileData = await startCooldown(message, profileData);
+	userData = await startCooldown(message);
 
 	/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} */
 	const components = [ new MessageActionRow({
@@ -35,15 +38,15 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		})],
 	})];
 
-	if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
+	if (Object.values(profileData.inventory).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
 
 		components[0].components.pop();
 	}
 
 	// "item" needs to be == and not === in order to catch the booleans as well
-	let injuryText = Object.values(profileData.injuryObject).every(item => item == 0) ? null : '';
+	let injuryText = Object.values(profileData.injuries).every(item => item == 0) ? null : '';
 
-	for (const [injuryKind, injuryAmount] of Object.entries(profileData.injuryObject)) {
+	for (const [injuryKind, injuryAmount] of Object.entries(profileData.injuries)) {
 
 		if (injuryAmount > 0) {
 
