@@ -62,7 +62,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userDataV, 
 
 	let visitableServers = /** @type {Array<import('../../typedef').ServerSchema>} */ (await serverModel.find(
 		(/** @type {import('../../typedef').ServerSchema} */ s) => {
-			s.serverId !== message.guild.id && s.visitChannelId !== null && s.currentlyVisiting === null;
+			return s.serverId !== message.guild.id && s.visitChannelId !== null && s.currentlyVisiting === null;
 		}));
 
 	if (visitableServers.length <= 0) {
@@ -136,7 +136,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userDataV, 
 
 			visitableServers = /** @type {Array<import('../../typedef').ServerSchema>} */ (await serverModel.find(
 				(/** @type {import('../../typedef').ServerSchema} */ s) => {
-					s.serverId !== message.guild.id && s.visitChannelId !== null && s.currentlyVisiting === null;
+					return s.serverId !== message.guild.id && s.visitChannelId !== null && s.currentlyVisiting === null;
 				}));
 
 			packPage++;

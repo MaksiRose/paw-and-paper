@@ -154,7 +154,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		const allRuinUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel
 			.find(
 				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-					Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'ruins' && c.profiles[message.guild.id].energy > 0 && c.profiles[message.guild.id].health > 0 && c.profiles[message.guild.id].hunger > 0 && c.profiles[message.guild.id].thirst > 0 && c.profiles[message.guild.id].injuries.cold === false).length > 0;
+					return Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'ruins' && c.profiles[message.guild.id].energy > 0 && c.profiles[message.guild.id].health > 0 && c.profiles[message.guild.id].hunger > 0 && c.profiles[message.guild.id].thirst > 0 && c.profiles[message.guild.id].injuries.cold === false).length > 0;
 				},
 			))
 			.map(user => user.userId)

@@ -53,7 +53,7 @@ class model {
 
 		/**
 		 * Searches for all objects that meet the filter, and returns an array of them.
-		 * @param {(value: any) => any} [filter]
+		 * @param {(value: any) => boolean} [filter]
 		 * @returns {Promise<Array<Object.<string, *>>>} Array of objects
 		 */
 		this.find = async function(filter) {

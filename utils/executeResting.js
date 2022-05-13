@@ -83,7 +83,7 @@ async function startResting(message, userData, botReply, previousRegion) {
 						color: characterData.color,
 						author: { name: characterData.name, icon_url: characterData.avatarURL },
 						description: `*${characterData.name}'s eyes blink open, ${pronounAndPlural(characterData, 0, 'sit')} up to stretch and then walk out into the light and buzz of late morning camp. Younglings are spilling out of the nursery, ambitious to start the day, Hunters and Healers are traveling in and out of the camp border. It is the start of the next good day!*`,
-						footer: { text: `+${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})${(previousRegion !== 'sleeping dens') ? `You are now at the ${previousRegion}` : ''}` },
+						footer: { text: `+${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})\n${(previousRegion !== 'sleeping dens') ? `You are now at the ${previousRegion}` : ''}` },
 					}],
 					allowedMentions: {
 						repliedUser: true,
