@@ -24,7 +24,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		return;
 	}
 
-	const setDescription = 'Proxying is a way for you to send a message as though it was coming from your character, with their name and avatar. The proxy is a placeholder/indicator that you put in your message to tell Paw and Paper that you would like this message to be proxied. You can set a proxy by putting the wanted placeholder in front of and/or behind the word "text". In a real message, "text" would be replaced by the text that you want your character to say.\n\nExamples:\n`rp proxy set <text>`\n`rp proxy set P: text`\n`rp proxy set text -p`\n\nThis is case-sensitive (meaning that upper and lowercase matters).';
+	const setDescription = 'Proxying is a way to speak as if your character was saying it. The proxy is an indicator to the bot you want your message to be proxied. You can set your proxy by putting the indicator around the word "text". In a message, "text" would be replaced by whatever you want your character to say.\n\nExamples:\n`rp proxy set <text>`\n`rp proxy set P: text`\n`rp proxy set text -p`\nThis is case-sensitive (meaning that upper and lowercase matters).';
 	const alwaysDescription = 'When this feature is enabled, every message you sent will be treated as if it was proxied, even if the proxy isn\'t included.\nYou can either toggle it for the entire server (by adding the word "everywhere" to the command), or just one channel (by mentioning the channel). Repeating the command will toggle the feature off again for that channel/for the server.\n\nSo it\'s either `rp proxy always everywhere` or `rp proxy always #channel`.';
 
 	const subcommand = argumentsArray.splice(0, 1)[0];

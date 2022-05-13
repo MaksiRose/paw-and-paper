@@ -6,6 +6,7 @@ const { version } = require('../package.json');
 const { execute, startRestingTimeout } = require('./messageCreate');
 const { sendReminder, stopReminder } = require('../commands/maintenance/water');
 const userMap = require('../utils/userMap');
+const { getMessageContent } = require('../commands/maintenance/stats');
 
 /**
  * @type {import('../typedef').Event}
@@ -105,8 +106,8 @@ const event = {
 		}
 
 		let userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: interaction.user.id }));
-		const characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guild.id]];
-		const profileData = characterData?.profiles?.[interaction.guild.id];
+		let characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guild.id]];
+		let profileData = characterData?.profiles?.[interaction.guild.id];
 
 		if (userMap.has('nr' + interaction.user.id + interaction.guild.id) === false) {
 
@@ -135,10 +136,8 @@ const event = {
 								{ name: '**rp picture [attachment of the desired image]**', value: 'Choose a picture for your character.' },
 								{ name: '**rp color [hex code]**', value: 'Enter a valid hex code to give your messages and profile that color.' },
 								{ name: '**rp desc [description text]**', value: 'Give a more detailed description of your character.' },
-								{ name: '**rp profile (@user)**', value: 'Look up all the available info about a character.' },
-								{ name: '**rp accounts**', value: 'Change the account/profile you are using.' },
-								{ name: '**rp copy**', value: 'Copy a profile from another server.' },
-								{ name: '**rp link (create/destroy)**', value: 'Create or destroy a link between two profiles.' },
+								{ name: '**rp proxy**', value: 'Add a proxy or autoproxy for your character.' },
+								{ name: '**rp profile (@user)**', value: 'Look up all the available info about a character or change the character you are using.' },
 								{ name: '**rp delete**', value: 'Delete your account and reset your data permanently.' },
 							],
 							footer: { text: 'ℹ️ Select a command from the list below to view more information about it.' },
@@ -156,10 +155,8 @@ const event = {
 									{ label: 'Picture', value: 'help_picture', description: 'Choose a picture for your character.' },
 									{ label: 'Color', value: 'help_color', description: 'Enter a valid hex code to give your messages and profile that color.' },
 									{ label: 'Desc', value: 'help_desc', description: 'Give a more detailed description of your character.' },
-									{ label: 'Profile', value: 'help_profile', description: 'Look up all the available info about a character.' },
-									{ label: 'Accounts', value: 'help_accounts', description: 'Change the account/profile you are using.' },
-									{ label: 'Copy', value: 'help_copy', description: 'Copy a profile from another server.' },
-									{ label: 'Link', value: 'help_link', description: 'Create or destroy a link between two profiles.' },
+									{ label: 'Proxy', value: 'help_proxy', description: 'Add a proxy or autoproxy for your character.' },
+									{ label: 'Profile', value: 'help_profile', description: 'Look up all the available info about a character or change the character you are using.' },
 									{ label: 'Delete', value: 'help_delete', description: 'Delete your account and reset your data permanently.' },
 								],
 							}],
@@ -536,41 +533,18 @@ const event = {
 					});
 			}
 
-			if (interaction.values[0] === 'help_copy') {
+			if (interaction.values[0] === 'help_proxy') {
 
 				return await interaction
 					.followUp({
 						embeds: [{
 							color: /** @type {`#${string}`} */ (config.default_color),
-							title: 'rp copy',
-							description: 'Copy a profile from another server.',
-							fields: [
-								{ name: '**Aliases**', value: 'duplicate' },
-								{ name: '**Arguments**', value: 'none' },
-								{ name: '**More information**', value: 'It is first being checked if the user has any accounts outside of the server they are currently in. Then it is being checked if the user is currently on an empty slot. If both of these conditions are met, the user gets a drop-down list of all the accounts that exist on other servers. Choosing one will copy it, as well as asking if the user wants to create a link as well. If they click the button to create a link, the accounts will be linked up.' },
-							],
-						}],
-						ephemeral: true,
-					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-			}
-
-			if (interaction.values[0] === 'help_link') {
-
-				return await interaction
-					.followUp({
-						embeds: [{
-							color: /** @type {`#${string}`} */ (config.default_color),
-							title: 'rp link',
-							description: 'Create or destroy a link between two profiles.',
+							title: 'rp proxy',
+							description: 'Add a proxy or autoproxy for your character.',
 							fields: [
 								{ name: '**Aliases**', value: 'none' },
-								{ name: '**Arguments**', value: 'Optional: create or destroy' },
-								{ name: '**More information**', value: 'It is first being checked if the user has any accounts outside of the server they are currently in. Then, if the user selected to create a link, it is being checked if the user is on a non-empty account that has no existing link. The user gets a drop-down list of all the accounts that exist on other servers. Choosing one will create a link to it from the currently selected profile. If the user selected to destroy a link, it is being checked if there are any accounts to destroy the link of. If there are, the user gets a drop-down list of all those accounts. Choosing one will destroy the link from it.' },
+								{ name: '**Arguments**', value: '"set" to set a proxy, "always" to set an autoproxy' },
+								{ name: '**More information**', value: 'Proxying is a way for you to send a message as though it was coming from your character, with their name and avatar. The proxy is a placeholder/indicator that you put in your message to tell Paw and Paper that you would like this message to be proxied. You can set a proxy by putting the wanted placeholder in front of and/or behind the word "text". In a real message, "text" would be replaced by the text that you want your character to say.\nExamples:\n`rp proxy set <text>`\n`rp proxy set P: text`\n`rp proxy set text -p`\n\nThis is case-sensitive (meaning that upper and lowercase matters).\n\nWhen autoproxy is enabled, every message you sent will be treated as if it was proxied, even if the proxy isn\'t included.\nYou can either toggle it for the entire server (by adding the word "everywhere" to the command), or just one channel (by mentioning the channel). Repeating the command will toggle the feature off again for that channel/for the server.\nSo it\'s either `rp proxy always everywhere` or `rp proxy always #channel`.' },
 							],
 						}],
 						ephemeral: true,
@@ -777,11 +751,11 @@ const event = {
 						embeds: [{
 							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp profile (@user)',
-							description: 'Look up all the available info about a character.',
+							description: 'Look up all the available info about a character or change the character you are using.',
 							fields: [
-								{ name: '**Aliases**', value: 'info, about' },
+								{ name: '**Aliases**', value: 'info, about, profiles, character, characters, account, accounts, switch' },
 								{ name: '**Arguments**', value: 'Optional: Mention someone to get their profile instead of yours.' },
-								{ name: '**More information**', value: 'This shows all the information about someone, including their name, description, avatar, species, rank, pronouns, current region, levels, XP, health, energy, hunger, thirst, injuries/illnesses, ginkgo sapling and quest status. There is a button to refresh the information at any time. If the user has items in their inventory, a "Store food away" button is displayed as well.' },
+								{ name: '**More information**', value: 'This shows all the information about a character, including their name, description, avatar, species, pronouns, and proxy. This also contains a drop-down menu, from which you can select other characters from the same user. If these are your characters, there will be an extra selection for "Empty Slot", and selecting another character makes this the "active" character, aka the character used during RPG. Selecting "Empty Slot" means that no character is active, meaning you can create a new one.' },
 							],
 						}],
 						ephemeral: true,
@@ -1138,29 +1112,6 @@ const event = {
 					});
 			}
 
-			if (interaction.values[0] === 'help_accounts') {
-
-				return await interaction
-					.followUp({
-						embeds: [{
-							color: /** @type {`#${string}`} */ (config.default_color),
-							title: 'rp accounts',
-							description: 'Change the account/profile you are using.',
-							fields: [
-								{ name: '**Aliases**', value: 'switch' },
-								{ name: '**Arguments**', value: 'none' },
-								{ name: '**More information**', value: 'Any player can have up to three accounts per pack. Only the account that is selected is active, the other accounts are being treated as non-existent until they are selected. They will not show up in the `profilelist` command, the `go` command etc.\nWith this command, you can click on any of three buttons to select the account associated with it. If you have less than three accounts, the remaining buttons will be replaced by "Empty Slot" buttons. Clicking those means you are on no account, meaning you can create a new one.' },
-							],
-						}],
-						ephemeral: true,
-					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-			}
-
 			if (interaction.values[0] === 'help_shop') {
 
 				return await interaction
@@ -1484,50 +1435,15 @@ const event = {
 
 			if (interaction.customId === 'stats-refresh') {
 
-				// "item" needs to be == and not === in order to catch the booleans as well
-				let injuryText = Object.values(profileData.injuries).every(item => item == 0) ? null : '';
+				if (referencedMessage.mentions.users.size > 0) {
 
-				for (const [injuryKind, injuryAmount] of Object.entries(profileData.injuries)) {
-
-					if (injuryAmount > 0) {
-
-						if (typeof injuryAmount === 'number') {
-
-							injuryText += `, ${injuryAmount} ${(injuryAmount < 2) ? injuryKind.slice(0, -1) : injuryKind}`;
-						}
-						else {
-
-							injuryText += `, ${injuryKind}: yes`;
-						}
-					}
-				}
-
-				/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} */
-				const components = [{
-					type: 'ACTION_ROW',
-					components: [{
-						type: 'BUTTON',
-						customId: 'stats-refresh',
-						emoji: '🔁',
-						style: 'SECONDARY',
-					}, {
-						type: 'BUTTON',
-						customId: 'profile-store',
-						label: 'Store food away',
-						style: 'SECONDARY',
-					}],
-				}];
-
-				if (Object.values(profileData.inventory).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
-
-					components[0].components.pop();
+					userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: referencedMessage.mentions.users.first().id }));
+					characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guild.id]];
+					profileData = characterData?.profiles?.[interaction.guild.id];
 				}
 
 				await interaction.message
-					.edit({
-						content: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\` - ⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\` - 🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`\n${injuryText == null ? '' : `🩹 Injuries/Illnesses: ${injuryText.slice(2)}`}`,
-						components: components,
-					})
+					.edit(getMessageContent(profileData, characterData.name, referencedMessage.mentions.users.size > 0))
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
