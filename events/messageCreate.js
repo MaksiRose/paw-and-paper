@@ -7,6 +7,7 @@ const { activeCommandsObject } = require('../utils/commandCollector');
 const { createGuild } = require('../utils/updateGuild');
 const { pronoun, pronounAndPlural } = require('../utils/getPronouns');
 const userMap = require('../utils/userMap');
+const { sendVisitMessage } = require('../commands/interaction/requestvisit');
 
 /**
  * @type {import('../typedef').Event}
@@ -21,6 +22,8 @@ const event = {
 	 * @param {import('discord.js').Message} message
 	 */
 	async execute(client, message) {
+
+		if (message.author.bot) { return; }
 
 		const prefix = config.prefix;
 
@@ -60,8 +63,16 @@ const event = {
 			message.content = prefix + 'say ' + message.content;
 		}
 
+		if ((!message.content.toLowerCase().startsWith(prefix) || message.content.toLowerCase().startsWith(prefix + 'say ')) && serverData?.currentlyVisiting !== null && message.channel.id === serverData?.visitChannelId) {
+
+			if (message.content.toLowerCase().startsWith(prefix + 'say ')) { message.content = message.content.substring((prefix + 'say ').length); }
+			const otherServerData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOne({ serverId: serverData?.currentlyVisiting }));
+			await sendVisitMessage(client, message, userData, serverData, otherServerData);
+			message.content = prefix + 'say ' + message.content;
+		}
+
 		/* Checking if the message starts with the prefix, if the author is a bot, or if the channel is a DM. */
-		if (!message.content.toLowerCase().startsWith(prefix) || message.author.bot || message.channel.type === 'DM') {
+		if (!message.content.toLowerCase().startsWith(prefix) || message.channel.type === 'DM') {
 
 			return;
 		}

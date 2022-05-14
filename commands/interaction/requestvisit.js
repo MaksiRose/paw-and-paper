@@ -9,6 +9,7 @@ const { MessageActionRow, MessageSelectMenu, MessageButton } = require('discord.
 const disableAllComponents = require('../../utils/disableAllComponents');
 
 module.exports.name = 'requestvisit';
+module.exports.aliases = ['visit'];
 
 /**
  *
@@ -443,26 +444,13 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 	async function collectMessages(thisServerChannel, otherServerChannel) {
 
 		const collector = thisServerChannel.createMessageCollector({ filter, idle: 300000 });
-		const otherServerWebhook = (await otherServerChannel
-			.fetchWebhooks()
-			.catch((error) => {
-				if (error.httpStatus === 403) {
-					otherServerChannel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
-					thisServerChannel.send({ content: 'The other pack is missing permissions, so I couldn\'t establish a connection 😣' }).catch((err) => { throw new Error(err); });
-				}
-				throw new Error(error);
-			})
-		).find(webhook => webhook.name === 'PnP Profile Webhook') || await otherServerChannel
-			.createWebhook('PnP Profile Webhook')
-			.catch((error) => {
-				if (error.httpStatus === 403) {
-					otherServerChannel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
-					thisServerChannel.send({ content: 'The other pack is missing permissions, so I couldn\'t establish a connection 😣' }).catch((err) => { throw new Error(err); });
-				}
-				throw new Error(error);
-			});
 
 		collector.on('collect', async msg => {
+
+			if (msg.content.startsWith(prefix + 'say ')) {
+
+				msg.content = msg.content.substring((prefix + 'say ').length);
+			}
 
 			const server = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOne(
 				{ serverId: msg.guild.id },
@@ -472,45 +460,6 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 
 				return collector.stop();
 			}
-
-			const userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: msg.author.id }));
-			const characterData = userData.characters[userData.currentCharacter[msg.guild.id]];
-			/** @type {import('../../typedef').WebhookMessages} */
-			const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8'));
-			let embeds = undefined;
-
-			if (msg.reference !== null) {
-
-				const referencedMessage = await msg.channel.messages.fetch(msg.reference.messageId);
-
-				if (webhookCache[referencedMessage.id] !== undefined) {
-
-					const user = await client.users.fetch(webhookCache[referencedMessage.id]);
-					referencedMessage.author = user;
-				}
-
-				embeds = [{
-					author: { name: referencedMessage.member.displayName, icon_url: referencedMessage.member.displayAvatarURL() },
-					color: referencedMessage.member.displayHexColor,
-					description: referencedMessage.content,
-				}];
-			}
-
-			const botMessage = await otherServerWebhook
-				.send({
-					username: `${characterData.name} (${msg.guild.name})`,
-					avatarURL: characterData.avatarURL,
-					content: msg.content || undefined,
-					files: Array.from(msg.attachments.values()) || undefined,
-					embeds: embeds,
-				})
-				.catch((error) => { throw new Error(error); });
-
-			webhookCache[botMessage.id] = message.author.id;
-
-			writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
-
-			await msg.react('✅');
 
 			return;
 		});
@@ -564,3 +513,74 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 		});
 	}
 }
+
+/**
+ * Sends a message to another server.
+ * @param {import('discord.js').Client} client
+ * @param {import('discord.js').Message} message
+ * @param {import('../../typedef').ProfileSchema} userData
+ * @param {import('../../typedef').ServerSchema} thisServerData
+ * @param {import('../../typedef').ServerSchema} otherServerData
+ */
+module.exports.sendVisitMessage = async (client, message, userData, thisServerData, otherServerData) => {
+
+	const thisServerChannel = /** @type {import('discord.js').TextChannel} */ (await client.channels.fetch(thisServerData.visitChannelId));
+	const otherServerChannel = /** @type {import('discord.js').TextChannel} */ (await client.channels.fetch(otherServerData.visitChannelId));
+
+	const otherServerWebhook = (await otherServerChannel
+		.fetchWebhooks()
+		.catch((error) => {
+			if (error.httpStatus === 403) {
+				otherServerChannel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
+				thisServerChannel.send({ content: 'The other pack is missing permissions, so I couldn\'t establish a connection 😣' }).catch((err) => { throw new Error(err); });
+			}
+			throw new Error(error);
+		})
+	).find(webhook => webhook.name === 'PnP Profile Webhook') || await otherServerChannel
+		.createWebhook('PnP Profile Webhook')
+		.catch((error) => {
+			if (error.httpStatus === 403) {
+				otherServerChannel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
+				thisServerChannel.send({ content: 'The other pack is missing permissions, so I couldn\'t establish a connection 😣' }).catch((err) => { throw new Error(err); });
+			}
+			throw new Error(error);
+		});
+
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	if (characterData === undefined) { return; }
+	/** @type {import('../../typedef').WebhookMessages} */
+	const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8'));
+	let embeds = undefined;
+
+	if (message.reference !== null) {
+
+		const referencedMessage = await message.channel.messages.fetch(message.reference.messageId);
+
+		if (webhookCache[referencedMessage.id] !== undefined) {
+
+			const user = await client.users.fetch(webhookCache[referencedMessage.id]);
+			referencedMessage.author = user;
+		}
+
+		embeds = [{
+			author: { name: referencedMessage.member.displayName, icon_url: referencedMessage.member.displayAvatarURL() },
+			color: referencedMessage.member.displayHexColor,
+			description: referencedMessage.content,
+		}];
+	}
+
+	const botMessage = await otherServerWebhook
+		.send({
+			username: `${characterData.name} (${message.guild.name})`,
+			avatarURL: characterData.avatarURL,
+			content: message.content || undefined,
+			files: Array.from(message.attachments.values()) || undefined,
+			embeds: embeds,
+		})
+		.catch((error) => { throw new Error(error); });
+
+	webhookCache[botMessage.id] = message.author.id;
+
+	writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
+};
+
