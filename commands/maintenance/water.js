@@ -213,7 +213,7 @@ module.exports.sendReminder = (client, userData, characterData, profileData) => 
 						color: characterData.color,
 						author: { name: characterData.name, icon_url: characterData.avatarURL },
 						description: 'It is time to `water` your tree!',
-						footer: isInactive ? { text: '⚠️ CAUTION! The account associated with this reminder is currently inactive. Type "rp accounts" and select it before watering your tree.' } : null,
+						footer: isInactive ? { text: '⚠️ CAUTION! The character associated with this reminder is currently inactive. Type "rp profile" and select the character from the drop-down list before watering your tree.' } : null,
 					}],
 				})
 				.catch((error) => {
