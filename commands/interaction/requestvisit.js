@@ -347,7 +347,7 @@ async function declinedInvitation(message, characterData, botReplyV, botReplyH) 
 			embeds: [{
 				color: /** @type {`#${string}`} */ (default_color),
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-				description: `*After the ${characterData.species} waited for a while, the pack members of ${botReplyV.guild.name} can see them getting up and leaving, probably due to boredom. Everyone is too busy anyways, so it is probably for the best if they come back later.*`,
+				description: `*After the ${characterData.species} waited for a while, the pack members of ${botReplyV.guild.name} can see them getting up and leaving, probably due to boredom. Everyone is too busy anyways, so it is probably for the best if ${pronoun(characterData, 0)} come back later.*`,
 			}],
 			failIfNotExists: false,
 		})

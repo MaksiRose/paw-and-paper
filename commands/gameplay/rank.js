@@ -116,7 +116,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				embeds: [...embedArray, {
 					color: characterData.color,
 					author: { name: characterData.name, icon_url: characterData.avatarURL },
-					description: `"We are here to celebrate the nomination of ${characterData.name} to the highest rank, Elderly. The ${characterData.species} has shown incredible skills and persistence, and we congratulate ${pronoun(characterData, 1)} to their new title." *A mixture of howls, crows, meows, roars and squeaks are heard all around the hill, on which the Alpha stoof to announce this special event. It is not every day that a packmate gets the title of Elderly.*`,
+					description: `"We are here to celebrate the nomination of ${characterData.name} to the highest rank, Elderly. The ${characterData.species} has shown incredible skills and persistence, and we congratulate ${pronoun(characterData, 1)} to ${pronoun(characterData, 2)} new title." *A mixture of howls, crows, meows, roars and squeaks are heard all around the hill, on which the Alpha stoof to announce this special event. It is not every day that a packmate gets the title of Elderly.*`,
 				}],
 				failIfNotExists: false,
 			})

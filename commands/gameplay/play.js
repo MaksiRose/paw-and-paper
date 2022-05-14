@@ -626,7 +626,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					embeds: [...botReply.embeds, {
 						color: characterData.color,
 						author: { name: characterData.name, icon_url: characterData.avatarURL },
-						description: `*Suddenly, ${characterData.name} starts coughing uncontrollably. Thinking back, they spent all day alongside ${partnerCharacterData.name}, who was coughing as well. That was probably not the best idea!*`,
+						description: `*Suddenly, ${characterData.name} starts coughing uncontrollably. Thinking back, ${pronoun(characterData, 0)} spent all day alongside ${partnerCharacterData.name}, who was coughing as well. That was probably not the best idea!*`,
 						footer: { text: `-${healthPoints} HP (from cold)` },
 					}],
 				})

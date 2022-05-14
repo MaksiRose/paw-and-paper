@@ -4,7 +4,7 @@ const profileModel = require('../../models/profileModel');
 const startCooldown = require('../../utils/startCooldown');
 const { speciesMap } = require('../../utils/itemsInfo');
 const { hasNoName } = require('../../utils/checkAccountCompletion');
-const { pronoun } = require('../../utils/getPronouns');
+const { pronoun, upperCasePronoun } = require('../../utils/getPronouns');
 const { playAdvice } = require('../../utils/adviceMessages');
 const { MessageSelectMenu, MessageActionRow, MessageEmbed } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
@@ -174,7 +174,7 @@ async function successMessage(message, chosenSpecies, characterData) {
 			embeds: [new MessageEmbed({
 				color: /** @type {`#${string}`} */ (default_color),
 				author: { name: `${message.guild.name}`, icon_url: message.guild.iconURL() },
-				description: `*A stranger carefully steps over the pack's borders. Their face seems friendly. Curious eyes watch them as they come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n"${characterData.name}," *the ${chosenSpecies} responds. The Alpha took a friendly step towards them.* "It's nice to have you here, ${characterData.name}," *they said. More and more packmates came closer to greet the newcomer.*`,
+				description: `*A stranger carefully steps over the pack's borders. ${upperCasePronoun(characterData, 2)} face seems friendly. Curious eyes watch ${pronoun(characterData, 1)} as ${pronoun(characterData, 0)} come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n"${characterData.name}," *the ${chosenSpecies} responds. The Alpha takes a friendly step towards ${pronoun(characterData, 1)}.* "It's nice to have you here, ${characterData.name}," *they say. More and more packmates come closer to greet the newcomer.*`,
 				footer: { text: 'You are now done setting up your character for RPGing! Type "rp profile" to look at it. With "rp help" you can see how else you can customize your profile, as well as your other options.' },
 			})],
 			failIfNotExists: false,

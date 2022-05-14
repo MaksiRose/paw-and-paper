@@ -670,7 +670,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					},
 				));
 
-				embed.description = `*${characterData.name} gently lowers ${pronoun(characterData, 2)} head, picking up the ${foundItem} and carrying it back in their mouth. What a success!*`;
+				embed.description = `*${characterData.name} gently lowers ${pronoun(characterData, 2)} head, picking up the ${foundItem} and carrying it back in ${pronoun(characterData, 2)} mouth. What a success!*`;
 
 				embed.footer.text = `${embedFooterStatsText}\n\n+1 ${foundItem}`;
 
@@ -796,7 +796,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					if (userSpeciesMap.habitat == 'water') {
 
-						embed.description = `*The sudden silence in the water spooks ${characterData.name} as ${pronounAndPlural(characterData, 0, 'swim')} around in the water, searching for something useful for their pack. A rocky outcropping appears next to ${pronoun(characterData, 1)}, unnoticed. The rocks scrape into ${pronoun(characterData, 2)} side, sending shockwaves of pain up ${pronoun(characterData, 2)} flank. ${characterData.name} takes a closer look and notices how swollen the wound is. It is infected.*`;
+						embed.description = `*The sudden silence in the water spooks ${characterData.name} as ${pronounAndPlural(characterData, 0, 'swim')} around in the water, searching for something useful for ${pronoun(characterData, 2)} pack. A rocky outcropping appears next to ${pronoun(characterData, 1)}, unnoticed. The rocks scrape into ${pronoun(characterData, 2)} side, sending shockwaves of pain up ${pronoun(characterData, 2)} flank. ${characterData.name} takes a closer look and notices how swollen the wound is. It is infected.*`;
 					}
 
 					embed.footer.text = `-${healthPoints} HP (from infection)\n${embedFooterStatsText}`;

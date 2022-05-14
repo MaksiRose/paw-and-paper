@@ -584,17 +584,17 @@ module.exports.introduceQuest = async (message, userData, embedArray, footerText
 
 		if (speciesMap.get(characterData.species).habitat === 'warm') {
 
-			embed.description = `*It is a quiet morning in the savanna. Only the rustling of the scarce bushes and trees breaks the silence. ${characterData.name} meanders over the sand, looking for food for ${pronoun(characterData, 2)} pack. But suddenly the cat hears a motor. Frightened, ${pronounAndPlural(characterData, 0, 'look')} into the distance: indeed, a jeep is in front of ${pronoun(characterData, 1)}, and the humans inside have another ${profileData.rank} of ${pronoun(characterData, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(characterData, 0, 'get')} to the rescue, the better.*`;
+			embed.description = `*It is a quiet morning in the savanna. Only the rustling of the scarce bushes and trees breaks the silence. ${characterData.name} meanders over the sand, looking for food for ${pronoun(characterData, 2)} pack. But suddenly the ${characterData.species} hears a motor. Frightened, ${pronounAndPlural(characterData, 0, 'look')} into the distance: indeed, a jeep is in front of ${pronoun(characterData, 1)}, and the humans inside have another ${profileData.rank} of ${pronoun(characterData, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(characterData, 0, 'get')} to the rescue, the better.*`;
 		}
 
 		if (speciesMap.get(characterData.species).habitat === 'cold') {
 
-			embed.description = `*It is a quiet morning in the taiga. Only the chirping of birds in the trees breaks the silence. ${characterData.name} meanders between the trees, looking for food for ${pronoun(characterData, 2)} pack. But suddenly the cat hears a motor. Frightened, ${pronounAndPlural(characterData, 0, 'look')} into the distance: indeed, a jeep is in front of ${pronoun(characterData, 1)}, and the humans inside have another ${profileData.rank} of ${pronoun(characterData, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(characterData, 0, 'get')} to the rescue, the better.*`;
+			embed.description = `*It is a quiet morning in the taiga. Only the chirping of birds in the trees breaks the silence. ${characterData.name} meanders between the trees, looking for food for ${pronoun(characterData, 2)} pack. But suddenly the ${characterData.species} hears a motor. Frightened, ${pronounAndPlural(characterData, 0, 'look')} into the distance: indeed, a jeep is in front of ${pronoun(characterData, 1)}, and the humans inside have another ${profileData.rank} of ${pronoun(characterData, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(characterData, 0, 'get')} to the rescue, the better.*`;
 		}
 
 		if (speciesMap.get(characterData.species).habitat === 'water') {
 
-			embed.description = `*It is a quiet morning in the coral reef. Only once in a while a fish passes by. ${characterData.name} floats through the water, looking for food for ${pronoun(characterData, 2)} pack. But suddenly the cat hears a motor. Frightened, ${pronounAndPlural(characterData, 0, 'look')} to the surface: indeed, a motorboat is in front of ${pronoun(characterData, 1)}, and the humans inside have another ${profileData.rank} of ${pronoun(characterData, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(characterData, 0, 'get')} to the rescue, the better.*`;
+			embed.description = `*It is a quiet morning in the coral reef. Only once in a while a fish passes by. ${characterData.name} floats through the water, looking for food for ${pronoun(characterData, 2)} pack. But suddenly the ${characterData.species} hears a motor. Frightened, ${pronounAndPlural(characterData, 0, 'look')} to the surface: indeed, a motorboat is in front of ${pronoun(characterData, 1)}, and the humans inside have another ${profileData.rank} of ${pronoun(characterData, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(characterData, 0, 'get')} to the rescue, the better.*`;
 		}
 	}
 

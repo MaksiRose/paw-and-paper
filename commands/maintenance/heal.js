@@ -623,7 +623,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						}
 						else {
 
-							embed.description = `*${characterData.name} takes a ${chosenItemName}. After a bit of preparation, ${pronounAndPlural(characterData, 0, 'give')} it to ${chosenCharacterData.name}. But no matter how long they wait, it does not seem to help. Looks like ${characterData.name} has to try again...*`;
+							embed.description = `*${characterData.name} takes a ${chosenItemName}. After a bit of preparation, ${pronounAndPlural(characterData, 0, 'give')} it to ${chosenCharacterData.name}. But no matter how long ${pronoun(characterData, 0)} wait, it does not seem to help. Looks like ${characterData.name} has to try again...*`;
 						}
 
 						embed.footer.text = `${embedFooterStatsText}\n\n-1 ${chosenItemName} for ${message.guild.name}`;
@@ -653,7 +653,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					extraEmbed = {
 						color: characterData.color,
-						description: `*Suddenly, ${characterData.name} starts coughing uncontrollably. Thinking back, they spent all day alongside ${chosenCharacterData.name}, who was coughing as well. That was probably not the best idea!*`,
+						description: `*Suddenly, ${characterData.name} starts coughing uncontrollably. Thinking back, ${pronoun(characterData, 0)} spent all day alongside ${chosenCharacterData.name}, who was coughing as well. That was probably not the best idea!*`,
 						footer: { text: `-${healthPoints} HP (from cold)` },
 					};
 				}

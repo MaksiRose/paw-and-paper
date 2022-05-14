@@ -8,7 +8,7 @@ const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { remindOfAttack } = require('../gameplay/attack');
-const { pronounAndPlural, pronoun } = require('../../utils/getPronouns');
+const { pronounAndPlural, pronoun, upperCasePronounAndPlural, upperCasePronoun } = require('../../utils/getPronouns');
 const { addFriendshipPoints } = require('../../utils/friendshipHandling');
 const sharingCooldownAccountsMap = new Map();
 
@@ -255,7 +255,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		partnerCharacterData = partnerUserData.characters[partnerCharacterData._id];
 		partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id];
 
-		embed.description = `*${partnerCharacterData.name} comes running to the old wooden trunk at the ruins where ${characterData.name} sits, ready to tell an exciting story from long ago. Their eyes are sparkling as the ${characterData.species} recounts great adventures and the lessons to be learned from them.*`;
+		embed.description = `*${partnerCharacterData.name} comes running to the old wooden trunk at the ruins where ${characterData.name} sits, ready to tell an exciting story from long ago. ${upperCasePronoun(partnerCharacterData, 2)} eyes are sparkling as the ${characterData.species} recounts great adventures and the lessons to be learned from them.*`;
 		embed.footer.text = `${embedFooterStatsText}\n+${partnerExperiencePoints} XP for ${partnerCharacterData.name} (${partnerProfileData.experience}/${partnerProfileData.levels * 50})`;
 
 		/** @type {Array<import('discord.js').MessageEmbedOptions>} */
@@ -276,7 +276,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			extraEmbeds.push({
 				color: partnerCharacterData.color,
 				author: { name: partnerCharacterData.name, icon_url: partnerCharacterData.avatarURL },
-				title: `${partnerCharacterData.name} just leveled up! They are now level ${partnerProfileData.levels}.`,
+				title: `${partnerCharacterData.name} just leveled up! ${upperCasePronounAndPlural(partnerCharacterData, 2, 'is', 'are')} now level ${partnerProfileData.levels}.`,
 			});
 		}
 

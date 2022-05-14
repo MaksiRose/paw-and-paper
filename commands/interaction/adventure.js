@@ -418,7 +418,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						case (pullFromWeightedTable({ 0: 1, 1: 1 }) === 0 && /** @type {Array<number>} */ Object.values(losingProfileData.inventory).map(type => Object.values(type)).flat().filter(value => value > 0).length > 0):
 
 							userInventory[itemType][itemName] -= 1;
-							extraDescription = `accidentally drops a ${itemName} that ${pronoun(losingCharacterData, 0)} had with them.`;
+							extraDescription = `accidentally drops a ${itemName} that ${pronoun(losingCharacterData, 0)} had with ${pronoun(characterData, 1)}.`;
 							extraFooter = `-1 ${itemName} for ${losingCharacterData.name}`;
 
 							break;
