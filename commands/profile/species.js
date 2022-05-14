@@ -174,8 +174,8 @@ async function successMessage(message, chosenSpecies, characterData) {
 			embeds: [new MessageEmbed({
 				color: /** @type {`#${string}`} */ (default_color),
 				author: { name: `${message.guild.name}`, icon_url: message.guild.iconURL() },
-				description: `*The Alpha took a friendly step towards the ${chosenSpecies}.* "It's nice to have you here, ${characterData.name}," *they said. More and more packmates came closer to greet the newcomer.*`,
-				footer: { text: 'You are now done setting up your account! Type "rp profile" to look at it. With "rp help" you can see how else you can customize your profile, as well as your other options.' },
+				description: `*A stranger carefully steps over the pack's borders. Their face seems friendly. Curious eyes watch them as they come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n"${characterData.name}," *the ${chosenSpecies} responds. The Alpha took a friendly step towards them.* "It's nice to have you here, ${characterData.name}," *they said. More and more packmates came closer to greet the newcomer.*`,
+				footer: { text: 'You are now done setting up your character for RPGing! Type "rp profile" to look at it. With "rp help" you can see how else you can customize your profile, as well as your other options.' },
 			})],
 			failIfNotExists: false,
 		})
