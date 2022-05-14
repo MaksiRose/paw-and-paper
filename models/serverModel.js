@@ -86,6 +86,19 @@ const serverSchema = new schema({
 			},
 		},
 	},
+	proxysetting: {
+		type: 'object',
+		default: {
+			all: {
+				type: 'array',
+				default: { type: 'string' },
+			},
+			auto: {
+				type: 'array',
+				default: { type: 'string' },
+			},
+		},
+	},
 });
 
 module.exports = new model('./database/servers', serverSchema);

@@ -115,6 +115,7 @@ module.exports.ProfileSchema = this.ProfileSchema;
  * @property {?string} visitChannelId - ID of the channel that can be visited. If no channel is seleted, this is null.
  * @property {?string} currentlyVisiting - ID of the guild that is currently being visited. If no guild is being visited, this is null.
  * @property {Array<Role>} shop - Array of role objects
+ * @property {{auto: Array<string>, all: Array<string>}} proxysetting - Object with the keys "all" and "auto", which hold an array each with channels where proxying isn't allowed.
  * @property {string} uuid
  */
 module.exports.ServerSchema = this.ServerSchema;

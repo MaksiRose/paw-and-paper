@@ -30,21 +30,32 @@ const event = {
 		}));
 		let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 
+		let serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOne({
+			serverId: message.guild.id,
+		}));
+		const allproxyIsDisabled = serverData?.proxysetting?.all?.includes(message.channel.id) || serverData?.proxysetting?.all?.includes('everywhere');
+		const autoproxyIsDisabled = serverData?.proxysetting?.auto?.includes(message.channel.id) || serverData?.proxysetting?.auto?.includes('everywhere');
+
 		/* Checking if the message starts with the character's proxy start and ends with the character's
 		proxy end. If it does, it will set the current character to the character that the message is
 		being sent from. */
 		for (const character of Object.values(userData?.characters || {})) {
 
-			if (!(character?.proxy?.startsWith === '' && character?.proxy?.endsWith === '') && message.content.startsWith(character?.proxy?.startsWith) && message.content.endsWith(character?.proxy?.endsWith)) {
+			/* Checking if the message includes the proxy. If it does, it will change the message content
+			to the prefix + 'say ' + the message content without the proxy. */
+			const hasNoProxy = character?.proxy?.startsWith === '' && character?.proxy?.endsWith === '';
+			const messageIncludesProxy = message.content.startsWith(character?.proxy?.startsWith) && message.content.endsWith(character?.proxy?.endsWith);
+			if (!hasNoProxy && messageIncludesProxy && !allproxyIsDisabled) {
 
 				if (userData?.currentCharacter?.[message.guild.id]) { userData.currentCharacter[message.guild.id] = character._id; }
 				message.content = prefix + 'say ' + message.content.substring(character?.proxy?.startsWith.length, message.content.length - character?.proxy?.endsWith.length);
 			}
 		}
 
-		/* Checking if the message doesn't start with the prefix but the channel is set to autoproxy, and
-		if it is, it adds the prefix to the message. */
-		if (!message.content.toLowerCase().startsWith(prefix) && (userData?.autoproxy?.[message.guild.id]?.includes(message.channel.id) || userData?.autoproxy?.[message.guild.id]?.includes('everywhere'))) {
+		/* Checking if the user has autoproxy enabled in the current channel, and if so, it is adding the
+		prefix to the message. */
+		const autoproxyIsToggled = userData?.autoproxy?.[message.guild.id]?.includes(message.channel.id) || userData?.autoproxy?.[message.guild.id]?.includes('everywhere');
+		if (!message.content.toLowerCase().startsWith(prefix) && autoproxyIsToggled && !allproxyIsDisabled && !autoproxyIsDisabled) {
 
 			message.content = prefix + 'say ' + message.content;
 		}
@@ -54,10 +65,6 @@ const event = {
 
 			return;
 		}
-
-		let serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOne({
-			serverId: message.guild.id,
-		}));
 
 		/* Checking if the serverData is not null. If it is not null, it will create a guild. */
 		if (!serverData) {

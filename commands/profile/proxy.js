@@ -3,6 +3,7 @@ const { MessageEmbed } = require('discord.js');
 const { hasNoName } = require('../../utils/checkAccountCompletion');
 const { error_color, prefix } = require('../../config.json');
 const profileModel = require('../../models/profileModel');
+const serverModel = require('../../models/serverModel');
 
 module.exports.name = 'proxy';
 
@@ -12,25 +13,27 @@ module.exports.name = 'proxy';
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} userData
+ * @param {import('../../typedef').ServerSchema} serverData
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData) => {
 
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 
 	/* Checking if the user has a name set. If they don't, it will send a message telling them to set a
 	name. */
-	if (await hasNoName(message, characterData)) {
+	if (message.member.permissions.has('ADMINISTRATOR') === false && await hasNoName(message, characterData)) {
 
 		return;
 	}
 
 	const setDescription = 'Proxying is a way to speak as if your character was saying it. The proxy is an indicator to the bot you want your message to be proxied. You can set your proxy by putting the indicator around the word "text". In a message, "text" would be replaced by whatever you want your character to say.\n\nExamples:\n`rp proxy set <text>`\n`rp proxy set P: text`\n`rp proxy set text -p`\nThis is case-sensitive (meaning that upper and lowercase matters).';
 	const alwaysDescription = 'When this feature is enabled, every message you sent will be treated as if it was proxied, even if the proxy isn\'t included.\nYou can either toggle it for the entire server (by adding the word "everywhere" to the command), or just one channel (by mentioning the channel). Repeating the command will toggle the feature off again for that channel/for the server.\n\nSo it\'s either `rp proxy always everywhere` or `rp proxy always #channel`.';
+	const disableDescription = 'This is an **administrator** setting that can toggle whether `automatic` or `all` proxy should be disabled or enabled in a specific channel, or everywhere. Repeating the command will allow that kind of proxying again for that channel/for the server.\n\nExamples:\n`rp proxy disable automatic everywhere`\n`rp proxy disable all #channel`';
 
 	const subcommand = argumentsArray.splice(0, 1)[0];
 
-	if (subcommand === 'set') {
+	if ((characterData && characterData?.name !== '') && (subcommand === 'set' || subcommand === 'add')) {
 
 		const proxy = argumentsArray.join(' ');
 
@@ -113,7 +116,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		return;
 	}
 
-	if (subcommand === 'always') {
+	if ((characterData && characterData?.name !== '') && (subcommand === 'always' || subcommand === 'auto' || subcommand === 'automatic')) {
 
 		const autoproxy = message.mentions.channels.size > 0 && message.mentions.channels.first().isText() ? message.mentions.channels.first().id : argumentsArray.join(' ');
 
@@ -150,7 +153,74 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 					embeds: [ new MessageEmbed({
 						color: /** @type {`#${string}`} */ (error_color),
 						title: 'Here is how to use the always subcommand:',
-						description: alwaysDescription + `\n\nHere is a list of all the channels that you have turned this on for:\n${'I still need something here' || 'something else'}`,
+						description: alwaysDescription + `\n\nHere is a list of all the channels that you have turned this on for:\n${userData.autoproxy[message.guild.id].map(string => string === 'everwhere' ? string : `<#${string}>`).join(', ') || '/'}`,
+					})],
+					failIfNotExists: false,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
+		}
+
+		return;
+	}
+
+	if (subcommand === 'disable' || subcommand === 'enable' || subcommand === 'toggle') {
+
+		if (message.member.permissions.has('ADMINISTRATOR') === false) {
+
+			await message
+				.reply({
+					embeds: [ new MessageEmbed({
+						color: /** @type {`#${string}`} */ (error_color),
+						title: 'Only administrators of a server can use this command!',
+					})],
+					failIfNotExists: false,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
+			return;
+		}
+
+		const subsubcommand = argumentsArray.splice(0, 1)[0];
+		const place = message.mentions.channels.size > 0 && message.mentions.channels.first().isText() ? message.mentions.channels.first().id : argumentsArray.join(' ');
+
+		if (((message.mentions.channels.size > 0 && message.mentions.channels.first().isText()) || place === 'everywhere') && (subsubcommand === 'all' || subsubcommand === 'any' || subsubcommand === 'always' || subsubcommand === 'auto' || subsubcommand === 'automatic')) {
+
+			const kind = (subsubcommand === 'any' || subsubcommand === 'all') ? 'all' : 'auto';
+
+			const hasChannel = serverData.proxysetting[kind].includes(place);
+
+			serverData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOneAndUpdate(
+				{ serverId: message.guild.id },
+				(/** @type {import('../../typedef').ServerSchema} */ s) => {
+					if (hasChannel) { s.proxysetting[kind] = s.proxysetting[kind].filter(string => string !== place); }
+					else { s.proxysetting[kind].push(place); }
+				},
+			));
+
+			await message
+				.reply({
+					embeds: [ new MessageEmbed({
+						color: characterData.color,
+						author: { name: characterData.name, icon_url: characterData.avatarURL },
+						title: `${hasChannel ? 'Enabled' : 'Disabled'} ${kind} proxies ${place === 'everywhere' ? place : 'in ' + message.guild.channels.cache.get(place).name}!`,
+					})],
+					failIfNotExists: false,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
+		}
+		else {
+
+			await message
+				.reply({
+					embeds: [ new MessageEmbed({
+						color: /** @type {`#${string}`} */ (error_color),
+						title: 'Here is how to use the disable subcommand:',
+						description: disableDescription + `\n\nHere is a list of all the channels that this is disabled for:\nAll: ${serverData.proxysetting.all.map(string => string === 'everwhere' ? string : `<#${string}>`).join(', ') || '/'}\nAutomatic: ${serverData.proxysetting.auto.map(string => string === 'everwhere' ? string : `<#${string}>`).join(', ') || '/'}`,
 					})],
 					failIfNotExists: false,
 				})
@@ -168,14 +238,22 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 				color: /** @type {`#${string}`} */ (error_color),
 				title: 'This command has two subcommands. Here is how to use them:',
 				fields: [
-					{
-						name: 'rp proxy set',
-						value: setDescription,
-					},
-					{
-						name: 'rp proxy always ["everywhere"/#channel]',
-						value: alwaysDescription + '\n\nTo see a list of all the channels that you have turned this on for, type `rp proxy always` without anything after it.',
-					},
+					...(characterData && characterData?.name !== '' ? [
+						{
+							name: 'rp proxy set',
+							value: setDescription,
+						},
+						{
+							name: 'rp proxy always ["everywhere"/#channel]',
+							value: alwaysDescription + '\n\nTo see a list of all the channels that you have turned this on for, type `rp proxy always` without anything after it.',
+						},
+					] : []),
+					...(message.member.permissions.has('ADMINISTRATOR') ? [
+						{
+							name: 'rp proxy disable',
+							value: disableDescription + '\n\nTo see a list of all the channels that this is disabled for, type `rp proxy disable` without anything after it.',
+						},
+					] : []),
 				],
 			})],
 			failIfNotExists: false,
