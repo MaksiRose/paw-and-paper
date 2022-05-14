@@ -2,7 +2,6 @@
 const { readFileSync, renameSync, writeFileSync, readdirSync } = require('fs');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('./itemsInfo');
 const serverModel = require('../models/serverModel');
-const { otherProfileModel, profileModel } = require('../models/profileModel');
 
 /**
  * This creates a new guild if the guild isn't on the ban list, or restores it from the guilds that are to be deleted.
@@ -25,6 +24,8 @@ async function createGuild(client, guild) {
 			}
 		});
 
+	/* This is checking if the guild is on the ban list. If it is, then the bot will leave the guild and
+	send a message to the owner of the guild. */
 	if (bannedList.servers.includes(guild.id)) {
 
 		await user
@@ -48,24 +49,21 @@ async function createGuild(client, guild) {
 			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 
-	/** @type {import('../typedef').DeleteList} */
-	const toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8'));
+	const toDeleteList = /** @type {import('../typedef').DeleteList} */ (JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8')));
 	let isNewServer = true;
 
-	/* Here we are finding every file in the toDelete folder and moving the files out of the toDelete folder. */
+	/* This is checking if the guild is in the toDelete folder. If it is, then it will move the guild out
+	of the toDelete folder and update the guild. */
 	for (const file of readdirSync('./database/toDelete').filter(f => f.endsWith('.json'))) {
 
-		/** @type {Object.<string, *>} */
-		const dataObject = JSON.parse(readFileSync(`./database/toDelete/${file}`, 'utf-8'));
+		const serverData = /** @type {import('../typedef').ServerSchema} */ (JSON.parse(readFileSync(`./database/toDelete/${file}`, 'utf-8')));
 
-		if (Object.hasOwn(dataObject, 'serverId') && dataObject.serverId === guild.id) {
+		if (Object.hasOwn(serverData, 'serverId') && serverData.serverId === guild.id) {
 
-			delete toDeleteList[dataObject.uuid];
-
-			renameSync(`./database/toDelete/${dataObject.uuid}.json`, `./database/${Object.hasOwn(dataObject, 'userId') ? 'profiles/inactiveProfiles' : 'servers'}/${dataObject.uuid}.json`);
-
-			if (Object.hasOwn(dataObject, 'userId') === false) { isNewServer = false; }
-			await (Object.hasOwn(dataObject, 'userId') ? otherProfileModel : serverModel).update(dataObject.uuid);
+			delete toDeleteList[serverData.uuid];
+			renameSync(`./database/toDelete/${serverData.uuid}.json`, `./database/servers/${serverData.uuid}.json`);
+			isNewServer = false;
+			await serverModel.update(serverData.uuid);
 		}
 	}
 
@@ -81,9 +79,9 @@ async function createGuild(client, guild) {
 		return await serverModel.create({
 			serverId: guild.id,
 			name: guild.name,
-			inventoryObject: serverInventoryObject,
-			blockedEntranceObject: { den: null, blockedKind: null },
-			activeUsersArray: [],
+			inventory: serverInventoryObject,
+			blockedEntrance: { den: null, blockedKind: null },
+			activeUsers: [],
 			nextPossibleAttack: Date.now(),
 			visitChannelId: null,
 			currentlyVisiting: null,
@@ -107,23 +105,8 @@ async function deleteGuild(guildId) {
 
 	const serverData = (await serverModel.findOne({ serverId: guildId }));
 	renameSync(`./database/servers/${serverData.uuid}.json`, `./database/toDelete/${serverData.uuid}.json`);
-	const profiles = (await profileModel.find({ serverId: guildId }));
-	const inactiveProfiles = (await otherProfileModel.find({ serverId: guildId }));
 
-	for (const file of [serverData, ...profiles, ...inactiveProfiles]) {
-
-		toDeleteList[file.uuid] = Date.now() + 2592000000;
-	}
-
-	for (const file of profiles) {
-
-		renameSync(`./database/profiles/${file.uuid}.json`, `./database/toDelete/${file.uuid}.json`);
-	}
-
-	for (const file of inactiveProfiles) {
-
-		renameSync(`./database/profiles/inactiveProfiles/${file.uuid}.json`, `./database/toDelete/${file.uuid}.json`);
-	}
+	toDeleteList[serverData.uuid] = Date.now() + 2592000000;
 
 	writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
 }

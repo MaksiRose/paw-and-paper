@@ -3,7 +3,7 @@ const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion')
 const { isInvalid } = require('../../utils/checkValidity');
 const startCooldown = require('../../utils/startCooldown');
 const { remindOfAttack } = require('../gameplay/attack');
-const { profileModel, otherProfileModel } = require('../../models/profileModel');
+const profileModel = require('../../models/profileModel');
 const { pullFromWeightedTable, generateRandomNumber } = require('../../utils/randomizers');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { pronounAndPlural } = require('../../utils/getPronouns');
@@ -23,35 +23,38 @@ module.exports.name = 'water';
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
  * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData, embedArray) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await hasNotCompletedAccount(message, profileData)) {
+	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	let profileData = characterData?.profiles?.[message.guild.id];
 
-		return;
-	}
-
-	if (await isInvalid(message, profileData, embedArray, [module.exports.name])) {
+	if (await hasNotCompletedAccount(message, characterData)) {
 
 		return;
 	}
 
-	profileData = await startCooldown(message, profileData);
+	if (await isInvalid(message, userData, embedArray, [module.exports.name])) {
+
+		return;
+	}
+
+	userData = await startCooldown(message);
 	const messageContent = remindOfAttack(message);
 
-	if (profileData.saplingObject.exists === false) {
+	if (profileData.sapling.exists === false) {
 
 		await message
 			.reply({
 				content: messageContent,
 				embeds: [...embedArray, {
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: `*${profileData.name} has already fetched water when ${pronounAndPlural(profileData, 0, 'remember')} that ${pronounAndPlural(profileData, 0, 'has', 'have')} nothing to water.*`,
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					description: `*${characterData.name} has already fetched water when ${pronounAndPlural(characterData, 0, 'remember')} that ${pronounAndPlural(characterData, 0, 'has', 'have')} nothing to water.*`,
 				}],
 				failIfNotExists: false,
 			})
@@ -61,7 +64,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		return;
 	}
 
-	const saplingObject = { ...profileData.saplingObject };
+	const saplingObject = { ...profileData.sapling };
 	const timeDifference = Date.now() - saplingObject.nextWaterTimestamp;
 	const timeDifferenceInMinutes = timeDifference / oneMinute;
 
@@ -69,8 +72,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	let healthPoints = 0;
 
 	const embed = new MessageEmbed({
-		color: profileData.color,
-		author: { name: profileData.name, icon_url: profileData.avatarURL },
+		color: characterData.color,
+		author: { name: characterData.name, icon_url: characterData.avatarURL },
 		description: null,
 		footer: { text: null },
 	});
@@ -85,7 +88,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		healthPoints = pullFromWeightedTable({ 0: 6, 1: 5, 2: 4, 3: 3, 4: 2, 5: 1 }) + generateRandomNumber(Math.round(saplingObject.waterCycles / 4), 0);
 		if (profileData.health + healthPoints > profileData.maxHealth) { healthPoints = profileData.maxHealth - profileData.health; }
 
-		embed.description = `*${profileData.name} waters the seedling, and it look it's at the perfect time. The ginkgo tree looks healthy, the leaves have a strong green color, and a pleasant fragrance emanates from them. The ${profileData.species} feels warm and safe from the scent.*`,
+		embed.description = `*${characterData.name} waters the seedling, and it look it's at the perfect time. The ginkgo tree looks healthy, the leaves have a strong green color, and a pleasant fragrance emanates from them. The ${characterData.species} feels warm and safe from the scent.*`,
 		embed.footer.text = `+${experiencePoints} XP (${profileData.experience + experiencePoints}/${profileData.levels * 50})${healthPoints > 0 ? `\n+${healthPoints} health (${profileData.health + healthPoints}/${profileData.maxEnergy})` : ''}\n\n+${saplingHealthPoints} health for ginkgo sapling\nCome back to water it in 24 hours.`;
 	}
 	else if (timeDifference >= -threeHours && timeDifference <= threeHours) {
@@ -93,7 +96,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		saplingObject.waterCycles += 1;
 		experiencePoints = saplingObject.waterCycles * 2;
 
-		embed.description = `*${profileData.name} waters the seedling, and it look like the sapling needs it. Although the ginkgo tree looks healthy, with leaves of beautiful green color and a light scent, the soil seems to be already quite dry.*`;
+		embed.description = `*${characterData.name} waters the seedling, and it look like the sapling needs it. Although the ginkgo tree looks healthy, with leaves of beautiful green color and a light scent, the soil seems to be already quite dry.*`;
 		embed.footer.text = `+${experiencePoints} XP (${profileData.experience + experiencePoints}/${profileData.levels * 50})\n\nCome back to water the ginkgo sapling in 24 hours.`;
 	}
 	else if (timeDifference < -threeHours) {
@@ -101,7 +104,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		const saplingHealthPoints = Math.floor((timeDifferenceInMinutes + 180) / 60);
 		saplingObject.health += saplingHealthPoints;
 
-		embed.description = `*The soil is already soggy when ${profileData.name} adds more water to it. The leaves are yellow-brown, the stem is muddy and has a slight mold. Next time the ${profileData.species} should wait a little with the watering.*`;
+		embed.description = `*The soil is already soggy when ${characterData.name} adds more water to it. The leaves are yellow-brown, the stem is muddy and has a slight mold. Next time the ${characterData.species} should wait a little with the watering.*`;
 		embed.footer.text = `${saplingHealthPoints} health for ginkgo tree\nCome back to water it in 24 hours.`;
 	}
 	else {
@@ -110,23 +113,23 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		const saplingHealthPoints = overdueHours + (Math.floor(saplingObject.waterCycles / 7) * overdueHours);
 		saplingObject.health -= saplingObject.health - saplingHealthPoints > 0 ? saplingHealthPoints : saplingHealthPoints - saplingHealthPoints > -10 ? saplingObject.health - 1 : saplingObject.health;
 
-		embed.description = `*${profileData.name} decides to see if the ginkgo tree needs watering, and sure enough: the leaves are drooping, some have lost color, and many of them fell on the ground. It is about time that the poor tree gets some water.*`,
+		embed.description = `*${characterData.name} decides to see if the ginkgo tree needs watering, and sure enough: the leaves are drooping, some have lost color, and many of them fell on the ground. It is about time that the poor tree gets some water.*`,
 		embed.footer.text = `-${saplingHealthPoints} health for ginkgo tree\nCome back to water it in 24 hours.`;
 	}
 
 	saplingObject.nextWaterTimestamp = Date.now() + twentyFourHours;
 	saplingObject.lastMessageChannelId = message.channel.id;
 
-	profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-		{ userId: message.author.id, serverId: message.guild.id },
-		{
-			$set: { saplingObject: saplingObject },
-			$inc: {
-				experience: experiencePoints,
-				health: healthPoints,
-			},
+	userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+		{ userId: message.author.id },
+		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].sapling = saplingObject;
+			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].experience += experiencePoints;
+			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].health += healthPoints;
 		},
 	));
+	characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+	profileData = characterData.profiles[message.guild.id];
 
 	const botReply = await message
 		.reply({
@@ -134,8 +137,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			embeds: [...embedArray, embed],
 			components: [ new MessageActionRow({
 				components: [ new MessageButton({
-					customId: `water-reminder-${profileData.saplingObject.reminder === true ? 'off' : 'on'}`,
-					label: `Turn water reminders ${profileData.saplingObject.reminder === true ? 'off' : 'on'}`,
+					customId: `water-reminder-${userData.reminders.water === true ? 'off' : 'on'}`,
+					label: `Turn water reminders ${userData.reminders.water === true ? 'off' : 'on'}`,
 					style: 'SECONDARY',
 				})],
 			})],
@@ -143,21 +146,21 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		})
 		.catch((error) => { throw new Error(error); });
 
-	if (profileData.saplingObject.reminder === true) {
+	if (userData.reminders.water === true) {
 
-		module.exports.sendReminder(client, profileData, message.channel.id);
+		module.exports.sendReminder(client, userData, characterData, profileData);
 	}
 
-	await checkLevelUp(message, botReply, profileData, serverData);
+	await checkLevelUp(message, botReply, userData, serverData);
 
-	if (profileData.saplingObject.health <= 0) {
+	if (profileData.sapling.health <= 0) {
 
 		await message.channel
 			.send({
 				embeds: [{
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: `*No matter what ${profileData.name} does, all the leaves on the ginkgo tree have either fallen off, or are dark brown and hang limply. It's time to say goodbye to the tree.*`,
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					description: `*No matter what ${characterData.name} does, all the leaves on the ginkgo tree have either fallen off, or are dark brown and hang limply. It's time to say goodbye to the tree.*`,
 				}],
 			})
 			.catch((error) => {
@@ -165,8 +168,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			});
 
 		await profileModel.findOneAndUpdate(
-			{ userId: profileData.userId, serverId: profileData.serverId },
-			{ $set: { saplingObject: { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, reminder: profileData.saplingObject.reminder, lastMessageChannelId: 0 } } },
+			{ uuid: userData.uuid },
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].sapling = { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, lastMessageChannelId: null };
+			},
 		);
 	}
 };
@@ -174,28 +179,26 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 /**
  *
  * @param {import('../../paw').client} client
- * @param {import('../../typedef').ProfileSchema} profileData
- * @param {string} channelId
+ * @param {import('../../typedef').ProfileSchema} userData
+ * @param {import('../../typedef').Character} characterData
+ * @param {import('../../typedef').Profile} profileData
  */
-module.exports.sendReminder = (client, profileData, channelId) => {
+module.exports.sendReminder = (client, userData, characterData, profileData) => {
 
-	module.exports.stopReminder(profileData);
+	module.exports.stopReminder(characterData._id, userData.userId, profileData.serverId);
 
-	userMap.set(profileData.uuid, setTimeout(async () => {
+	userMap.set(characterData._id + userData.userId + profileData.serverId, setTimeout(async () => {
 
-		const uuid = profileData.uuid;
-		let isInactive = false;
-		profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: uuid }));
-		if (profileData === null) {
+		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: userData.uuid }));
+		characterData = userData.characters[characterData._id];
+		profileData = characterData?.profiles?.[profileData.serverId];
 
-			profileData = /** @type {import('../../typedef').ProfileSchema} */ (await otherProfileModel.findOne({ uuid: uuid }));
-			isInactive = true;
-		}
+		const isInactive = (userData !== null && userData.currentCharacter[profileData.serverId] !== characterData._id);
 
-		if (profileData !== null && profileData?.saplingObject?.exists === true && profileData?.saplingObject?.reminder === true) {
+		if (userData !== null && characterData !== null && profileData !== null && profileData.sapling.exists === true && userData.reminders.water === true) {
 
 			const channel = await client.channels
-				.fetch(channelId)
+				.fetch(profileData.sapling.lastMessageChannelId)
 				.catch((error) => { throw new Error(error); });
 
 			if (!channel.isText()) {
@@ -205,29 +208,31 @@ module.exports.sendReminder = (client, profileData, channelId) => {
 
 			await channel
 				.send({
-					content: `<@${profileData.userId}>`,
+					content: `<@${userData.userId}>`,
 					embeds: [{
-						color: profileData.color,
-						author: { name: profileData.name, icon_url: profileData.avatarURL },
+						color: characterData.color,
+						author: { name: characterData.name, icon_url: characterData.avatarURL },
 						description: 'It is time to `water` your tree!',
-						footer: isInactive ? { text: '⚠️ CAUTION! The account associated with this reminder is currently inactive. Type "rp accounts" and select it before watering your tree.' } : null,
+						footer: isInactive ? { text: '⚠️ CAUTION! The character associated with this reminder is currently inactive. Type "rp profile" and select the character from the drop-down list before watering your tree.' } : null,
 					}],
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
-	}, profileData.saplingObject.nextWaterTimestamp - Date.now()));
+	}, profileData.sapling.nextWaterTimestamp - Date.now()));
 };
 
 /**
  *
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {string} _id
+ * @param {string} userId
+ * @param {string} serverId
  */
-module.exports.stopReminder = (profileData) => {
+module.exports.stopReminder = (_id, userId, serverId) => {
 
-	if (userMap.has(profileData.uuid)) {
+	if (userMap.has(_id + userId + serverId)) {
 
-		clearTimeout(userMap.get(profileData.uuid));
+		clearTimeout(userMap.get(_id + userId + serverId));
 	}
 };

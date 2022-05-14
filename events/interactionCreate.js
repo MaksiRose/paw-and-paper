@@ -1,11 +1,12 @@
 // @ts-check
-const { profileModel } = require('../models/profileModel');
+const profileModel = require('../models/profileModel');
 const config = require('../config.json');
 const errorHandling = require('../utils/errorHandling');
 const { version } = require('../package.json');
 const { execute, startRestingTimeout } = require('./messageCreate');
 const { sendReminder, stopReminder } = require('../commands/maintenance/water');
 const userMap = require('../utils/userMap');
+const { getMessageContent } = require('../commands/maintenance/stats');
 
 /**
  * @type {import('../typedef').Event}
@@ -104,10 +105,9 @@ const event = {
 			return;
 		}
 
-		let profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
-			userId: interaction.user.id,
-			serverId: interaction.guild.id,
-		}));
+		let userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: interaction.user.id }));
+		let characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guild.id]];
+		let profileData = characterData?.profiles?.[interaction.guild.id];
 
 		if (userMap.has('nr' + interaction.user.id + interaction.guild.id) === false) {
 
@@ -136,8 +136,8 @@ const event = {
 								{ name: '**rp picture [attachment of the desired image]**', value: 'Choose a picture for your character.' },
 								{ name: '**rp color [hex code]**', value: 'Enter a valid hex code to give your messages and profile that color.' },
 								{ name: '**rp desc [description text]**', value: 'Give a more detailed description of your character.' },
-								{ name: '**rp profile (@user)**', value: 'Look up all the available info about a character.' },
-								{ name: '**rp accounts**', value: 'Change the account/profile you are using. You can have up to three per server.' },
+								{ name: '**rp proxy**', value: 'Add a proxy or autoproxy for your character.' },
+								{ name: '**rp profile (@user)**', value: 'Look up all the available info about a character or change the character you are using.' },
 								{ name: '**rp delete**', value: 'Delete your account and reset your data permanently.' },
 							],
 							footer: { text: 'ℹ️ Select a command from the list below to view more information about it.' },
@@ -155,8 +155,8 @@ const event = {
 									{ label: 'Picture', value: 'help_picture', description: 'Choose a picture for your character.' },
 									{ label: 'Color', value: 'help_color', description: 'Enter a valid hex code to give your messages and profile that color.' },
 									{ label: 'Desc', value: 'help_desc', description: 'Give a more detailed description of your character.' },
-									{ label: 'Profile', value: 'help_profile', description: 'Look up all the available info about a character.' },
-									{ label: 'Accounts', value: 'help_accounts', description: 'Change the account/profile you are using. You can have up to three per server.' },
+									{ label: 'Proxy', value: 'help_proxy', description: 'Add a proxy or autoproxy for your character.' },
+									{ label: 'Profile', value: 'help_profile', description: 'Look up all the available info about a character or change the character you are using.' },
 									{ label: 'Delete', value: 'help_delete', description: 'Delete your account and reset your data permanently.' },
 								],
 							}],
@@ -533,13 +533,36 @@ const event = {
 					});
 			}
 
+			if (interaction.values[0] === 'help_proxy') {
+
+				return await interaction
+					.followUp({
+						embeds: [{
+							color: /** @type {`#${string}`} */ (config.default_color),
+							title: 'rp proxy',
+							description: 'Add a proxy or autoproxy for your character.',
+							fields: [
+								{ name: '**Aliases**', value: 'none' },
+								{ name: '**Arguments**', value: '"set" to set a proxy, "always" to set an autoproxy' },
+								{ name: '**More information**', value: 'Proxying is a way for you to send a message as though it was coming from your character, with their name and avatar. The proxy is a placeholder/indicator that you put in your message to tell Paw and Paper that you would like this message to be proxied. You can set a proxy by putting the wanted placeholder in front of and/or behind the word "text". In a real message, "text" would be replaced by the text that you want your character to say.\nExamples:\n`rp proxy set <text>`\n`rp proxy set P: text`\n`rp proxy set text -p`\n\nThis is case-sensitive (meaning that upper and lowercase matters).\n\nWhen autoproxy is enabled, every message you sent will be treated as if it was proxied, even if the proxy isn\'t included.\nYou can either toggle it for the entire server (by adding the word "everywhere" to the command), or just one channel (by mentioning the channel). Repeating the command will toggle the feature off again for that channel/for the server.\nSo it\'s either `rp proxy always everywhere` or `rp proxy always #channel`.' },
+							],
+						}],
+						ephemeral: true,
+					})
+					.catch(async (error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
+
 			if (interaction.values[0] === 'help_delete') {
 
 				return await interaction
 					.followUp({
 						embeds: [{
 							color: /** @type {`#${string}`} */ (config.default_color),
-							title: 'rp profilelist',
+							title: 'rp delete',
 							description: 'Delete your account and reset your data permanently.',
 							fields: [
 								{ name: '**Aliases**', value: 'purge, remove, reset' },
@@ -728,11 +751,11 @@ const event = {
 						embeds: [{
 							color: /** @type {`#${string}`} */ (config.default_color),
 							title: 'rp profile (@user)',
-							description: 'Look up all the available info about a character.',
+							description: 'Look up all the available info about a character or change the character you are using.',
 							fields: [
-								{ name: '**Aliases**', value: 'info, about' },
+								{ name: '**Aliases**', value: 'info, about, profiles, character, characters, account, accounts, switch' },
 								{ name: '**Arguments**', value: 'Optional: Mention someone to get their profile instead of yours.' },
-								{ name: '**More information**', value: 'This shows all the information about someone, including their name, description, avatar, species, rank, pronouns, current region, levels, XP, health, energy, hunger, thirst, injuries/illnesses, ginkgo sapling and quest status. There is a button to refresh the information at any time. If the user has items in their inventory, a "Store food away" button is displayed as well.' },
+								{ name: '**More information**', value: 'This shows all the information about a character, including their name, description, avatar, species, pronouns, and proxy. This also contains a drop-down menu, from which you can select other characters from the same user. If these are your characters, there will be an extra selection for "Empty Slot", and selecting another character makes this the "active" character, aka the character used during RPG. Selecting "Empty Slot" means that no character is active, meaning you can create a new one.' },
 							],
 						}],
 						ephemeral: true,
@@ -1089,29 +1112,6 @@ const event = {
 					});
 			}
 
-			if (interaction.values[0] === 'help_accounts') {
-
-				return await interaction
-					.followUp({
-						embeds: [{
-							color: /** @type {`#${string}`} */ (config.default_color),
-							title: 'rp accounts',
-							description: 'Change the account/profile you are using. You can have up to three per server.',
-							fields: [
-								{ name: '**Aliases**', value: 'switch' },
-								{ name: '**Arguments**', value: 'none' },
-								{ name: '**More information**', value: 'Any player can have up to three accounts per pack. Only the account that is selected is active, the other accounts are being treated as non-existent until they are selected. They will not show up in the `profilelist` command, the `go` command etc.\nWith this command, you can click on any of three buttons to select the account associated with it. If you have less than three accounts, the remaining buttons will be replaced by "Empty Slot" buttons. Clicking those means you are on no account, meaning you can create a new one.' },
-							],
-						}],
-						ephemeral: true,
-					})
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
-			}
-
 			if (interaction.values[0] === 'help_shop') {
 
 				return await interaction
@@ -1353,14 +1353,14 @@ const event = {
 
 			if (interaction.customId === 'water-reminder-off') {
 
-				profileData.saplingObject.reminder = false;
+				userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+					{ uuid: userData.uuid },
+					(/** @type {import('../typedef').ProfileSchema} */ p) => {
+						p.reminders.water = false;
+					},
+				));
 
-				await profileModel.findOneAndUpdate(
-					{ userId: profileData.userId, serverId: profileData.serverId },
-					{ $set: { saplingObject: profileData.saplingObject } },
-				);
-
-				stopReminder(profileData);
+				stopReminder(characterData._id, interaction.user.id, interaction.channel.id);
 
 				await interaction
 					.followUp({
@@ -1394,14 +1394,14 @@ const event = {
 
 			if (interaction.customId === 'water-reminder-on') {
 
-				profileData.saplingObject.reminder = true;
+				userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+					{ uuid: userData.uuid },
+					(/** @type {import('../typedef').ProfileSchema} */ p) => {
+						p.reminders.water = true;
+					},
+				));
 
-				await profileModel.findOneAndUpdate(
-					{ userId: profileData.userId, serverId: profileData.serverId },
-					{ $set: { saplingObject: profileData.saplingObject } },
-				);
-
-				sendReminder(client, profileData, interaction.message.channel.id);
+				sendReminder(client, userData, characterData, profileData);
 
 				await interaction
 					.followUp({
@@ -1435,50 +1435,15 @@ const event = {
 
 			if (interaction.customId === 'stats-refresh') {
 
-				// "item" needs to be == and not === in order to catch the booleans as well
-				let injuryText = Object.values(profileData.injuryObject).every(item => item == 0) ? null : '';
+				if (referencedMessage.mentions.users.size > 0) {
 
-				for (const [injuryKind, injuryAmount] of Object.entries(profileData.injuryObject)) {
-
-					if (injuryAmount > 0) {
-
-						if (typeof injuryAmount === 'number') {
-
-							injuryText += `, ${injuryAmount} ${(injuryAmount < 2) ? injuryKind.slice(0, -1) : injuryKind}`;
-						}
-						else {
-
-							injuryText += `, ${injuryKind}: yes`;
-						}
-					}
-				}
-
-				/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} */
-				const components = [{
-					type: 'ACTION_ROW',
-					components: [{
-						type: 'BUTTON',
-						customId: 'stats-refresh',
-						emoji: '🔁',
-						style: 'SECONDARY',
-					}, {
-						type: 'BUTTON',
-						customId: 'profile-store',
-						label: 'Store food away',
-						style: 'SECONDARY',
-					}],
-				}];
-
-				if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
-
-					components[0].components.pop();
+					userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: referencedMessage.mentions.users.first().id }));
+					characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guild.id]];
+					profileData = characterData?.profiles?.[interaction.guild.id];
 				}
 
 				await interaction.message
-					.edit({
-						content: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\` - ⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\` - 🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`\n${injuryText == null ? '' : `🩹 Injuries/Illnesses: ${injuryText.slice(2)}`}`,
-						components: components,
-					})
+					.edit(getMessageContent(profileData, characterData.name, referencedMessage.mentions.users.size > 0))
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
@@ -1503,21 +1468,18 @@ const event = {
 
 				if (referencedMessage.mentions.users.size > 0) {
 
-					profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
-						userId: referencedMessage.mentions.users.first().id,
-						serverId: referencedMessage.guild.id,
-					}));
+					userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: referencedMessage.mentions.users.first().id }));
 
 					components[0].components.pop();
 				}
-				else if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
+				else if (Object.values(profileData.inventory).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
 
 					components[0].components.pop();
 				}
 
-				let injuryText = (Object.values(profileData.injuryObject).every(item => item == 0)) ? 'none' : '';
+				let injuryText = (Object.values(profileData.injuries).every(item => item == 0)) ? 'none' : '';
 
-				for (const [injuryKey, injuryAmount] of Object.entries(profileData.injuryObject)) {
+				for (const [injuryKey, injuryAmount] of Object.entries(profileData.injuries)) {
 
 					if (injuryAmount > 0) {
 
@@ -1526,35 +1488,36 @@ const event = {
 					}
 				}
 
-				const description = (profileData.description == '') ? '' : `*${profileData.description}*`;
+				const description = (characterData.description == '') ? '' : `*${characterData.description}*`;
 				const user = await client.users
-					.fetch(profileData.userId)
+					.fetch(userData.userId)
 					.catch(() => { return null; });
 
 				await interaction.message
 					.edit({
 						embeds: [{
-							color: profileData.color,
-							title: `Profile - ${user.tag}`,
-							author: { name: profileData.name, icon_url: profileData.avatarURL },
+							color: characterData.color,
+							title: characterData.name,
+							author: { name: `Profile - ${user.tag}` },
 							description: description,
-							thumbnail: { url: profileData.avatarURL },
+							thumbnail: { url: characterData.avatarURL },
 							fields: [
-								{ name: '**🦑 Species**', value: profileData.species.charAt(0).toUpperCase() + profileData.species.slice(1), inline: true },
+								{ name: '**🦑 Species**', value: (characterData.species.charAt(0).toUpperCase() + characterData.species.slice(1)) || '/', inline: true },
 								{ name: '**🏷️ Rank**', value: profileData.rank, inline: true },
-								{ name: '**🍂 Pronouns**', value: profileData.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n') },
+								{ name: '**🍂 Pronouns**', value: characterData.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n') },
 								{ name: '**🗺️ Region**', value: profileData.currentRegion },
 
 							],
+							footer: { text: `Character ID: ${characterData._id}` },
 						},
 						{
-							color: /** @type {`#${string}`} */ (profileData.color),
+							color: characterData.color,
 							description: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\`\n⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\`\n🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\``,
 							fields: [
 								{ name: '**🩹 Injuries/Illnesses**', value: injuryText, inline: true },
-								{ name: '**🌱 Ginkgo Sapling**', value: profileData.saplingObject.exists === false ? 'none' : `${profileData.saplingObject.waterCycles} days alive - ${profileData.saplingObject.health} health\nNext watering <t:${Math.floor(profileData.saplingObject.nextWaterTimestamp / 1000)}:R>`, inline: true },
+								{ name: '**🌱 Ginkgo Sapling**', value: profileData.sapling.exists === false ? 'none' : `${profileData.sapling.waterCycles} days alive - ${profileData.sapling.health} health\nNext watering <t:${Math.floor(profileData.sapling.nextWaterTimestamp / 1000)}:R>`, inline: true },
 							],
-							footer: { text: profileData.hasQuest == true ? 'There is one open quest!' : null },
+							footer: { text: profileData.hasQuest === true ? 'There is one open quest!' : null },
 						}],
 						components: /** @type {Array<import('discord.js').MessageActionRow>} */ (components),
 					})

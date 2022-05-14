@@ -2,7 +2,7 @@ node_modules
 config.json
 .DS_Store
 database/bannedList.json
-database/friendshipList.json
+database/givenIds.json
 database/toDeleteList.json
 database/voteCache.json
 database/webhookCache.json

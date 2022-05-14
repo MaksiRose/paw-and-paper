@@ -1,7 +1,8 @@
 // @ts-check
 const { MessageActionRow, MessageButton } = require('discord.js');
+const profileModel = require('../../models/profileModel');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
-const startCooldown = require('../../utils/startCooldown');
+const { error_color } = require('../../config.json');
 
 module.exports.name = 'stats';
 
@@ -10,17 +11,60 @@ module.exports.name = 'stats';
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
 
-	if (await hasNotCompletedAccount(message, profileData)) {
+	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	let profileData = characterData?.profiles?.[message.guild.id];
+	let isYourself = true;
+
+	if (message.mentions.users.size > 0) {
+
+		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first().id }));
+		characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+		profileData = characterData?.profiles?.[message.guild.id];
+		isYourself = false;
+
+		if (!profileData) {
+
+			await message
+				.reply({
+					embeds: [{
+						color: /** @type {`#${string}`} */ (error_color),
+						title: 'There is nothing to show here :(',
+					}],
+					failIfNotExists: false,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
+			return;
+		}
+	}
+	else if (await hasNotCompletedAccount(message, characterData)) {
 
 		return;
 	}
 
-	profileData = await startCooldown(message, profileData);
+
+	await message
+		.reply(module.exports.getMessageContent(profileData, characterData.name, isYourself))
+		.catch((error) => {
+			if (error.httpStatus !== 404) { throw new Error(error); }
+		});
+	return;
+};
+
+/**
+ * It takes in a profileData and a name, and returns a message object
+ * @param {import('../../typedef').Profile} profileData - The profile data from the database.
+ * @param {string} name - The name of the character that the profile data belongs to.
+ * @param {boolean} isYourself - Whether the profile is by the user who executed the command
+ * @returns {import('discord.js').ReplyMessageOptions} The message object.
+ */
+module.exports.getMessageContent = (profileData, name, isYourself) => {
 
 	/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} */
 	const components = [ new MessageActionRow({
@@ -35,15 +79,15 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		})],
 	})];
 
-	if (Object.values(profileData.inventoryObject).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0) {
+	if (Object.values(profileData.inventory).map(itemType => Object.values(itemType)).flat().filter(amount => amount > 0).length == 0 || !isYourself) {
 
 		components[0].components.pop();
 	}
 
 	// "item" needs to be == and not === in order to catch the booleans as well
-	let injuryText = Object.values(profileData.injuryObject).every(item => item == 0) ? null : '';
+	let injuryText = Object.values(profileData.injuries).every(item => item == 0) ? null : '';
 
-	for (const [injuryKind, injuryAmount] of Object.entries(profileData.injuryObject)) {
+	for (const [injuryKind, injuryAmount] of Object.entries(profileData.injuries)) {
 
 		if (injuryAmount > 0) {
 
@@ -58,14 +102,16 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		}
 	}
 
-	await message
-		.reply({
-			content: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\` - ⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\` - 🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`\n${injuryText === null ? '' : `🩹 Injuries/Illnesses: ${injuryText.slice(2)}`}`,
-			components: components,
-			failIfNotExists: false,
-		})
-		.catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-		});
-	return;
+	const message = /** @type {import('discord.js').ReplyMessageOptions} */ ({
+		content: `🚩 Levels: \`${profileData.levels}\` - 🏷️ Rank: ${profileData.rank}\n` +
+			`✨ XP: \`${profileData.experience}/${profileData.levels * 50}\` - 🗺️ Region: ${profileData.currentRegion}\n` +
+			`❤️ HP: \`${profileData.health}/${profileData.maxHealth}\` - ⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n` +
+			`🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\` - 🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`` +
+			(injuryText === null ? '' : `\n🩹 Injuries/Illnesses: ${injuryText.slice(2)}`) +
+			(profileData.sapling.exists === false ? '' : `\n🌱 Ginkgo Sapling: ${profileData.sapling.waterCycles} days alive - ${profileData.sapling.health} health - Next watering <t:${Math.floor(profileData.sapling.nextWaterTimestamp / 1000)}:R>`) +
+			(profileData.hasQuest === false ? '' : `\n${name} has one open quest!`),
+		components: components,
+		failIfNotExists: false,
+	});
+	return message;
 };

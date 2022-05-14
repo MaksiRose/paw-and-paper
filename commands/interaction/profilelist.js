@@ -1,8 +1,6 @@
 // @ts-check
-const { profileModel } = require('../../models/profileModel');
+const profileModel = require('../../models/profileModel');
 const { default_color } = require('../../config.json');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
-const startCooldown = require('../../utils/startCooldown');
 const { MessageActionRow, MessageSelectMenu, MessageButton, MessageEmbed } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
 
@@ -12,18 +10,9 @@ module.exports.name = 'profilelist';
  *
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
- * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData) => {
-
-	if (await hasNotCompletedAccount(message, profileData)) {
-
-		return;
-	}
-
-	profileData = await startCooldown(message, profileData);
+module.exports.sendMessage = async (client, message) => {
 
 	const profilelistRankComponent = new MessageActionRow({
 		components: [ new MessageSelectMenu({
@@ -79,9 +68,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 				if (interaction.isSelectMenu() && interaction.customId === 'profilelist-rank') {
 
-					const rankName = (interaction.values[0] === 'profilelist-elderlies') ? 'Elderly' : (interaction.values[0] === 'profilelist-huntershealers') ? /** @type { {$or: Array<'Hunter' | 'Healer'>} } */ ({ $or: ['Hunter', 'Healer'] }) : (interaction.values[0] === 'profilelist-apprentices') ? 'Apprentice' : 'Youngling';
+					const rankName = (interaction.values[0] === 'profilelist-elderlies') ? 'Elderly' : (interaction.values[0] === 'profilelist-huntershealers') ? 'Hunter' : (interaction.values[0] === 'profilelist-apprentices') ? 'Apprentice' : 'Youngling';
 
-					rankProfilesPages = await getRank(rankName);
+					rankProfilesPages = await getRank(rankName, (interaction.values[0] === 'profilelist-huntershealers') ? 'Healer' : undefined);
 
 					botReply.components = [profilelistRankComponent, ...rankProfilesPages.length > 1 ? [profilelistPageComponent] : []];
 
@@ -141,18 +130,30 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	/**
 	 * Finds all the users of a given rank and returns an array of strings, each being a "page" of 25 users with their profile name and a mention of their Discord account.
-	 * @param {'Youngling' | 'Elderly' | 'Apprentice' | {$or: Array<'Hunter' | 'Healer'>} } rankName
+	 * @param {'Youngling' | 'Elderly' | 'Apprentice' | 'Hunter' | 'Healer'} rankName1
+	 * @param {'Youngling' | 'Elderly' | 'Apprentice' | 'Hunter' | 'Healer'} [rankName2]
 	 * @returns {Promise<Array<string>>}
 	 */
-	async function getRank(rankName) {
+	async function getRank(rankName1, rankName2) {
 
-		const allRankProfilesArray = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel
-			.find({
-				serverId: message.guild.id,
-				rank: rankName,
-			}))
-			.sort((a, b) => (a.name.toUpperCase() < b.name.toUpperCase()) ? -1 : (a.name.toUpperCase() > b.name.toUpperCase()) ? 1 : 0)
-			.map(doc => `${doc.name} - <@${doc.userId}>`);
+		const allRankProfilesArray = [];
+
+		const allRankUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
+			(/** @type {import('../../typedef').ProfileSchema} */ u) => {
+				const thisServerProfiles = Object.values(u.characters).filter(c => c.profiles[message.guild.id] !== undefined).map(c => c.profiles[message.guild.id]);
+				return thisServerProfiles.filter(p => {
+					return p.rank === rankName1 || p.rank === rankName2;
+				}).length > 0;
+			}));
+
+		for (const u of Object.values(allRankUsersList)) {
+
+			for (const c of Object.values(u.characters)) {
+
+				const p = c.profiles[message.guild.id];
+				if (p !== undefined && (p.rank === rankName1 || p.rank === rankName2)) { allRankProfilesArray.push(`${c.name} - <@${u.userId}>`); }
+			}
+		}
 
 		/** @type {Array<string>} */
 		const allRankProfilesPages = [];

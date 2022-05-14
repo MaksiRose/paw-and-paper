@@ -1,5 +1,5 @@
 // @ts-check
-const { profileModel } = require('../../models/profileModel');
+const profileModel = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
 const startCooldown = require('../../utils/startCooldown');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
@@ -20,38 +20,41 @@ module.exports.name = 'store';
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
  * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData, embedArray) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await hasNotCompletedAccount(message, profileData)) {
+	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	let profileData = characterData?.profiles?.[message.guild.id];
 
-		return;
-	}
-
-	if (await isInvalid(message, profileData, embedArray, [module.exports.name])) {
+	if (await hasNotCompletedAccount(message, characterData)) {
 
 		return;
 	}
 
-	profileData = await startCooldown(message, profileData);
+	if (await isInvalid(message, userData, embedArray, [module.exports.name])) {
+
+		return;
+	}
+
+	userData = await startCooldown(message);
 	const messageContent = remindOfAttack(message);
 
 	const userInventory = {
-		commonPlants: { ...profileData.inventoryObject.commonPlants },
-		uncommonPlants: { ...profileData.inventoryObject.uncommonPlants },
-		rarePlants: { ...profileData.inventoryObject.rarePlants },
-		meat: { ...profileData.inventoryObject.meat },
+		commonPlants: { ...profileData.inventory.commonPlants },
+		uncommonPlants: { ...profileData.inventory.uncommonPlants },
+		rarePlants: { ...profileData.inventory.rarePlants },
+		meat: { ...profileData.inventory.meat },
 	};
 
 	const serverInventory = {
-		commonPlants: { ...serverData.inventoryObject.commonPlants },
-		uncommonPlants: { ...serverData.inventoryObject.uncommonPlants },
-		rarePlants: { ...serverData.inventoryObject.rarePlants },
-		meat: { ...serverData.inventoryObject.meat },
+		commonPlants: { ...serverData.inventory.commonPlants },
+		uncommonPlants: { ...serverData.inventory.uncommonPlants },
+		rarePlants: { ...serverData.inventory.rarePlants },
+		meat: { ...serverData.inventory.meat },
 	};
 
 	const inventoryMap = new Map([
@@ -73,9 +76,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		for (const itemName of itemsArray) {
 
-			if (profileData.inventoryObject[itemType][itemName] > 0) {
+			if (profileData.inventory[itemType][itemName] > 0) {
 
-				/** @type {import('discord.js').MessageSelectMenuOptions} */ (itemSelectMenu.components[0]).options.push({ label: itemName, value: itemName, description: `${profileData.inventoryObject[itemType][itemName]}` });
+				/** @type {import('discord.js').MessageSelectMenuOptions} */ (itemSelectMenu.components[0]).options.push({ label: itemName, value: itemName, description: `${profileData.inventory[itemType][itemName]}` });
 			}
 		}
 	}
@@ -94,9 +97,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				content: messageContent,
 				embeds: [...embedArray, {
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: `*${profileData.name} goes to the food den to store food away, but ${pronoun(profileData, 2)} mouth is empty...*`,
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					description: `*${characterData.name} goes to the food den to store food away, but ${pronoun(characterData, 2)} mouth is empty...*`,
 				}],
 				failIfNotExists: false,
 			})
@@ -106,9 +109,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		return;
 	}
 
-	if (serverData.blockedEntranceObject.den === 'food den' || (profileData.rank !== 'Youngling' && serverData.blockedEntranceObject.den === null && generateRandomNumber(20, 0) === 0)) {
+	if (serverData.blockedEntrance.den === 'food den' || (profileData.rank !== 'Youngling' && serverData.blockedEntrance.den === null && generateRandomNumber(20, 0) === 0)) {
 
-		await blockEntrance(message, messageContent, profileData, serverData, 'food den');
+		await blockEntrance(message, messageContent, characterData, serverData, 'food den');
 		return;
 	}
 
@@ -116,9 +119,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		.reply({
 			content: messageContent,
 			embeds: [...embedArray, {
-				color: profileData.color,
-				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*${profileData.name} wanders to the food den, ready to store away ${pronoun(profileData, 2)} findings. ${upperCasePronounAndPlural(profileData, 0, 'circle')} the food pile…*`,
+				color: characterData.color,
+				author: { name: characterData.name, icon_url: characterData.avatarURL },
+				description: `*${characterData.name} wanders to the food den, ready to store away ${pronoun(characterData, 2)} findings. ${upperCasePronounAndPlural(characterData, 0, 'circle')} the food pile…*`,
 			}],
 			components: [.../** @type {import('discord.js').MessageSelectMenuOptions} */ (itemSelectMenu.components[0]).options.length > 25 ? [] : [itemSelectMenu], storeAllButton],
 			failIfNotExists: false,
@@ -167,7 +170,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					if (itemsArray.includes(chosenFood)) {
 
 						foodCategory = itemType;
-						maximumAmount = profileData.inventoryObject[itemType][chosenFood];
+						maximumAmount = profileData.inventory[itemType][chosenFood];
 					}
 				}
 
@@ -201,14 +204,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				userInventory[foodCategory][chosenFood] -= chosenAmount;
 				serverInventory[foodCategory][chosenFood] += chosenAmount;
 
-				profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $set: { inventoryObject: userInventory } },
+				userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+					{ uuid: userData.uuid },
+					(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+						p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].inventory = userInventory;
+					},
 				));
+				characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+				profileData = characterData.profiles[message.guild.id];
 
 				await serverModel.findOneAndUpdate(
 					{ serverId: message.guild.id },
-					{ $set: { inventoryObject: serverInventory } },
+					(/** @type {import('../../typedef').ServerSchema} */ s) => {
+						s.inventory = serverInventory;
+					},
 				);
 
 				/** @type {import('discord.js').MessageSelectMenuOptions} */ (itemSelectMenu.components[0]).options = [];
@@ -216,15 +225,15 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 					for (const itemName of itemsArray) {
 
-						if (profileData.inventoryObject[itemType][itemName] > 0) {
+						if (profileData.inventory[itemType][itemName] > 0) {
 
-							/** @type {import('discord.js').MessageSelectMenuOptions} */ (itemSelectMenu.components[0]).options.push({ label: itemName, value: itemName, description: `${profileData.inventoryObject[itemType][itemName]}` });
+							/** @type {import('discord.js').MessageSelectMenuOptions} */ (itemSelectMenu.components[0]).options.push({ label: itemName, value: itemName, description: `${profileData.inventory[itemType][itemName]}` });
 						}
 					}
 				}
 
 				let footerText = interaction.message.embeds[interaction.message.embeds.length - 1].footer?.text ?? '';
-				footerText += `+${chosenAmount} ${chosenFood} for ${message.guild.name}\n`;
+				footerText += `\n+${chosenAmount} ${chosenFood} for ${message.guild.name}`;
 				interaction.message.embeds[interaction.message.embeds.length - 1].footer = { text: footerText };
 
 				await /** @type {import('discord.js').Message} */ (interaction.message)
@@ -243,10 +252,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		if (interaction.isButton() && interaction.customId === 'store-all') {
 
-			profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
-				userId: message.author.id,
-				serverId: message.guild.id,
-			}));
+			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: userData.uuid }));
+			characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+			profileData = characterData.profiles[message.guild.id];
 
 			let footerText = interaction.message.embeds[interaction.message.embeds.length - 1].footer?.text ?? '';
 			let maximumAmount = 0;
@@ -255,9 +263,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 				for (const itemName of itemsArray) {
 
-					if (profileData.inventoryObject[itemType][itemName] > 0) {
+					if (profileData.inventory[itemType][itemName] > 0) {
 
-						maximumAmount = profileData.inventoryObject[itemType][itemName];
+						maximumAmount = profileData.inventory[itemType][itemName];
 
 						footerText += `+${maximumAmount} ${itemName} for ${message.guild.name}\n`;
 						userInventory[itemType][itemName] -= maximumAmount;
@@ -266,14 +274,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				}
 			}
 
-			await profileModel.findOneAndUpdate(
-				{ userId: message.author.id, serverId: message.guild.id },
-				{ $set: { inventoryObject: userInventory } },
-			);
+			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+				{ uuid: userData.uuid },
+				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+					p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].inventory = userInventory;
+				},
+			));
+			characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+			profileData = characterData.profiles[message.guild.id];
 
 			await serverModel.findOneAndUpdate(
 				{ serverId: message.guild.id },
-				{ $set: { inventoryObject: serverInventory } },
+				(/** @type {import('../../typedef').ServerSchema} */ s) => {
+					s.inventory = serverInventory;
+				},
 			);
 
 			interaction.message.embeds[interaction.message.embeds.length - 1].footer = { text: footerText };

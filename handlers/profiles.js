@@ -1,6 +1,6 @@
 // @ts-check
 const { readdirSync, readFileSync } = require('fs');
-const { profileModel, otherProfileModel } = require('../models/profileModel');
+const profileModel = require('../models/profileModel');
 const { sendReminder } = require('../commands/maintenance/water');
 
 
@@ -10,32 +10,37 @@ const { sendReminder } = require('../commands/maintenance/water');
  */
 module.exports.execute = async (client) => {
 
-	const files = [
-		...readdirSync('./database/profiles').map(file => ['./database/profiles', file]),
-		...readdirSync('./database/profiles/inactiveProfiles').map(file => ['./database/profiles/inactiveProfiles', file]),
-	].filter(([, file]) => file.endsWith('.json'));
+	const files = readdirSync('./database/profiles').map(file => ['./database/profiles', file]).filter(([, file]) => file.endsWith('.json'));
 
 	for (const [path, file] of files) {
 
-		/**
-		 * @type {import('../typedef').ProfileSchema}
-		 */
-		const dataObject = JSON.parse(readFileSync(`${path}/${file}`, 'utf-8'));
+		const userData = /** @type {import('../typedef').ProfileSchema} */ (JSON.parse(readFileSync(`${path}/${file}`, 'utf-8')));
 
-		if (dataObject.saplingObject.reminder === true) {
+		if (userData.reminders.water === true) {
 
-			sendReminder(client, dataObject, dataObject.saplingObject.lastMessageChannelId);
+			for (const character of Object.values(userData.characters)) {
+
+				for (const profile of Object.values(character.profiles)) {
+
+					sendReminder(client, userData, character, profile);
+				}
+			}
 		}
 
-		await (path.includes('inactiveProfiles') ? otherProfileModel : profileModel)
+
+		await profileModel
 			.findOneAndUpdate(
-				{ userId: dataObject.userId, serverId: dataObject.serverId },
-				{
-					$set: {
-						hasCooldown: false,
-						isResting: false,
-						energy: dataObject.energy === 0 ? 0 : dataObject.maxEnergy,
-					},
+				{ uuid: userData.uuid },
+				(/** @type {import('../typedef').ProfileSchema} */ p) => {
+					for (const character of Object.values(p.characters)) {
+
+						for (const profile of Object.values(character.profiles)) {
+
+							p.characters[character._id].profiles[profile.serverId].hasCooldown = false;
+							p.characters[character._id].profiles[profile.serverId].isResting = false;
+							p.characters[character._id].profiles[profile.serverId].energy = p.characters[character._id].profiles[profile.serverId].energy === 0 ? 0 : p.characters[character._id].profiles[profile.serverId].maxEnergy;
+						}
+					}
 				},
 			);
 	}

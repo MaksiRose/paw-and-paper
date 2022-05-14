@@ -1,39 +1,41 @@
 // @ts-check
 const { MessageEmbed } = require('discord.js');
-const { readFileSync, writeFileSync } = require('fs');
+const profileModel = require('../models/profileModel');
 
 const requiredPoints = [1, 3, 6, 9, 15, 24, 39, 63, 99, 162];
 
 /**
  * Creates a friendship or adds friendship points to an existing friendship. Sends a message if they have more hearts than before.
  * @param {import('discord.js').Message} message
- * @param {import('../typedef').ProfileSchema} profileData
- * @param {import('../typedef').ProfileSchema} partnerProfileData
+ * @param {import('../typedef').ProfileSchema} userData
+ * @param {string} characterId
+ * @param {import('../typedef').ProfileSchema} partnerUserData
+ * @param {string} partnerCharacterId
  */
-async function addFriendshipPoints(message, profileData, partnerProfileData) {
+async function addFriendshipPoints(message, userData, characterId, partnerUserData, partnerCharacterId) {
 
-	/** @type {import('../typedef').FriendsList} */
-	let friendshipList = JSON.parse(readFileSync('./database/friendshipList.json', 'utf-8'));
-
-	/* Friendship-key and friendship are first initialized. If there is no key, an empty friendship is created. */
-	let friendshipKey = getFriendshipKey(friendshipList, profileData, partnerProfileData);
-	let friendship = friendshipKey !== null ? friendshipList[friendshipKey] : { [profileData.uuid]: [], [partnerProfileData.uuid]: [] };
+	let characterData = userData.characters[characterId];
+	let partnerCharacterData = partnerUserData.characters[partnerCharacterId];
 
 	/* Based on current friendship, the friendship points are calculated. */
-	const previousFriendshipPoints = getFriendshipPoints(friendship[profileData.uuid], friendship[partnerProfileData.uuid]);
+	const previousFriendshipPoints = getFriendshipPoints(characterData.mentions[partnerCharacterId], partnerCharacterData.mentions[characterId]);
 
-	/* This mention is being pushed to the friendship, and the friendship is pushed to the friendship list. */
-	friendship[profileData.uuid].push(message.createdTimestamp);
-	friendshipList[friendshipKey !== null ? friendshipKey : `${profileData.uuid}_${partnerProfileData.uuid}`] = friendship;
+	/* It's updating the database with the new mention, and then grabbing the updated data from the
+	database. */
+	userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+		{ uuid: userData.uuid },
+		(/** @type {import('../typedef').ProfileSchema} */ p) => {
+			if (p.characters[characterId].mentions[partnerCharacterId] === undefined) {
+				p.characters[characterId].mentions[partnerCharacterId] = [message.createdTimestamp];
+			}
+			else { p.characters[characterId].mentions[partnerCharacterId].push(message.createdTimestamp); }
+		},
+	));
 
-	/* The friendship list is saved, and then updated to remove old mentions. The old mentions are only removed now, because they need to count towards the previous friendship points. As far as the user is concerned, that was the last existing state of the friendship. */
-	writeFileSync('./database/friendshipList.json', JSON.stringify(friendshipList, null, '\t'));
-	friendshipList = checkOldMentions(profileData, partnerProfileData);
-
-	/* The friendship-key is grabbed again in case it was just created and was null before, as well as the friendship being checked again since it might've changed from the updated friendshipList that excludes old mentions. Based on this updated friendship, the new friendship points are calculated. */
-	friendshipKey = getFriendshipKey(friendshipList, profileData, partnerProfileData);
-	friendship = friendshipKey !== null ? friendshipList[friendshipKey] : { [profileData.uuid]: [], [partnerProfileData.uuid]: [] };
-	const newFriendshipPoints = getFriendshipPoints(friendship[profileData.uuid], friendship[partnerProfileData.uuid]);
+	[userData, partnerUserData] = await checkOldMentions(userData, characterData._id, partnerUserData, partnerCharacterData._id);
+	characterData = userData.characters[characterId];
+	partnerCharacterData = partnerUserData.characters[partnerCharacterId];
+	const newFriendshipPoints = getFriendshipPoints(characterData.mentions[partnerCharacterId], partnerCharacterData.mentions[characterId]);
 
 	/* A message is sent to the users if the friendship has more hearts now than it had before. */
 	if (getFriendshipHearts(previousFriendshipPoints) < getFriendshipHearts(newFriendshipPoints)) {
@@ -41,9 +43,9 @@ async function addFriendshipPoints(message, profileData, partnerProfileData) {
 		await message.channel
 			.send({
 				embeds: [new MessageEmbed({
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					title: `The friendship between ${profileData.name} and ${partnerProfileData.name} grew 💗`,
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					title: `The friendship between ${characterData.name} and ${partnerCharacterData.name} grew 💗`,
 					description: '❤️'.repeat(getFriendshipHearts(newFriendshipPoints)) + '🖤'.repeat(10 - getFriendshipHearts(newFriendshipPoints)),
 					footer: { text: getFriendshipHearts(newFriendshipPoints) === 6 ? 'You can now adventure together using the "adventure" command!' : null },
 				})],
@@ -54,40 +56,33 @@ async function addFriendshipPoints(message, profileData, partnerProfileData) {
 
 /**
  * Checks if any mentions stored in a friendship are older than a week, and if they are, remove them.
- * @param {import('../typedef').ProfileSchema} profileData
- * @param {import('../typedef').ProfileSchema} partnerProfileData
- * @returns {import('../typedef').FriendsList}
+ * @param {import('../typedef').ProfileSchema} userData
+ * @param {string} characterId
+ * @param {import('../typedef').ProfileSchema} partnerUserData
+ * @param {string} partnerCharacterId
+ * @returns {Promise<Array<import('../typedef').ProfileSchema>>}
  */
-function checkOldMentions(profileData, partnerProfileData) {
+async function checkOldMentions(userData, characterId, partnerUserData, partnerCharacterId) {
 
-	/** @type {import('../typedef').FriendsList} */
-	const friendshipList = JSON.parse(readFileSync('./database/friendshipList.json', 'utf-8'));
+	userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+		{ uuid: userData.uuid },
+		(/** @type {import('../typedef').ProfileSchema} */ p) => {
+			if (p.characters[characterId].mentions[partnerCharacterId] !== undefined) {
+				p.characters[characterId].mentions[partnerCharacterId] = p.characters[characterId].mentions[partnerCharacterId].filter(ts => ts > Date.now() - 604800000);
+			}
+		},
+	));
 
-	const friendshipKey = getFriendshipKey(friendshipList, profileData, partnerProfileData);
-	const friendship = friendshipKey !== null ? friendshipList[friendshipKey] : { [profileData.uuid]: [], [partnerProfileData.uuid]: [] };
+	partnerUserData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+		{ uuid: partnerUserData.uuid },
+		(/** @type {import('../typedef').ProfileSchema} */ p) => {
+			if (p.characters[partnerCharacterId].mentions[characterId] !== undefined) {
+				p.characters[partnerCharacterId].mentions[characterId] = p.characters[partnerCharacterId].mentions[characterId].filter(ts => ts > Date.now() - 604800000);
+			}
+		},
+	));
 
-	for (const key of Object.keys(friendship)) {
-
-		friendship[key] = friendship[key].filter(mentionTimestamp => mentionTimestamp > Date.now() - 604800000);
-	}
-
-	friendshipList[friendshipKey !== null ? friendshipKey : `${profileData.uuid}_${partnerProfileData.uuid}`] = friendship;
-
-	writeFileSync('./database/friendshipList.json', JSON.stringify(friendshipList, null, '\t'));
-
-	return friendshipList;
-}
-
-/**
- * Finds a friendship key in the friendship list and returns it. If
- * @param {import('../typedef').FriendsList} friendshipList
- * @param {import('../typedef').ProfileSchema} profileData
- * @param {import('../typedef').ProfileSchema} partnerProfileData
- * @returns {string | null}
- */
-function getFriendshipKey(friendshipList, profileData, partnerProfileData) {
-
-	return Object.hasOwn(friendshipList, `${profileData.uuid}_${partnerProfileData.uuid}`) ? `${profileData.uuid}_${partnerProfileData.uuid}` : Object.hasOwn(friendshipList, `${partnerProfileData.uuid}_${profileData.uuid}`) ? `${partnerProfileData.uuid}_${profileData.uuid}` : null;
+	return [userData, partnerUserData];
 }
 
 /**
@@ -97,6 +92,9 @@ function getFriendshipKey(friendshipList, profileData, partnerProfileData) {
  * @returns {number}
  */
 function getFriendshipPoints(array1, array2) {
+
+	if (!Array.isArray(array1)) { array1 = []; }
+	if (!Array.isArray(array2)) { array2 = []; }
 
 	const higherPoints = array1?.length >= array2?.length ? array1?.length : array2?.length;
 	const lowerPoints = array1?.length < array2?.length ? array1?.length : array2?.length;
@@ -125,7 +123,6 @@ function getFriendshipHearts(points) {
 module.exports = {
 	addFriendshipPoints,
 	checkOldMentions,
-	getFriendshipKey,
 	getFriendshipPoints,
 	getFriendshipHearts,
 };

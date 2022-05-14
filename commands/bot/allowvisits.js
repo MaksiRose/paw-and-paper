@@ -33,7 +33,9 @@ module.exports.sendMessage = async (client, message, argumentsArray) => {
 
 		await serverModel.findOneAndUpdate(
 			{ serverId: message.guild.id },
-			{ $set: { visitChannelId: null } },
+			(/** @type {import('../../typedef').ServerSchema} */ s) => {
+				s.visitChannelId = null;
+			},
 		);
 
 		await message
@@ -72,7 +74,9 @@ module.exports.sendMessage = async (client, message, argumentsArray) => {
 
 		await serverModel.findOneAndUpdate(
 			{ serverId: message.guild.id },
-			{ $set: { visitChannelId: message.mentions.channels.first().id } },
+			(/** @type {import('../../typedef').ServerSchema} */ s) => {
+				s.visitChannelId = message.mentions.channels.first().id;
+			},
 		);
 
 		await message

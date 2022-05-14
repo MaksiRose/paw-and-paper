@@ -18,7 +18,9 @@ const event = {
 
 		await serverModel.findOneAndUpdate(
 			{ serverId: newGuild.id },
-			{ $set: { name: newGuild.name } },
+			(/** @type {import('../typedef').ServerSchema} */ serverData) => {
+				serverData.name = newGuild.name;
+			},
 		);
 	},
 };

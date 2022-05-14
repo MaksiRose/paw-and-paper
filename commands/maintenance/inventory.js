@@ -20,30 +20,33 @@ module.exports.aliases = ['storage', 'i'];
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
  * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData, embedArray) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await hasNotCompletedAccount(message, profileData)) {
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	const profileData = characterData?.profiles?.[message.guild.id];
 
-		return;
-	}
-
-	if (await hasCooldown(message, profileData, [module.exports.name].concat(module.exports.aliases))) {
+	if (await hasNotCompletedAccount(message, characterData)) {
 
 		return;
 	}
 
-	profileData = await startCooldown(message, profileData);
+	if (await hasCooldown(message, userData, [module.exports.name].concat(module.exports.aliases))) {
+
+		return;
+	}
+
+	userData = await startCooldown(message);
 	const messageContent = remindOfAttack(message);
 
 	// If the commands content isn't part of this commands name and aliases list, then a new blockage won't be opened. This is to prevent the eat command from having this likelihood twice.
-	if ((profileData.rank !== 'Youngling' && serverData.blockedEntranceObject.den === null && ![module.exports.name].concat(module.exports.aliases).includes(message.content.slice(prefix.length).trim().split(/ +/).shift().toLowerCase()) && generateRandomNumber(20, 0) === 0) || serverData.blockedEntranceObject.den === 'food den') {
+	if ((profileData.rank !== 'Youngling' && serverData.blockedEntrance.den === null && [module.exports.name].concat(module.exports.aliases).includes(message.content.slice(prefix.length).trim().split(/ +/).shift().toLowerCase()) && generateRandomNumber(20, 0) === 0) || serverData.blockedEntrance.den === 'food den') {
 
-		await blockEntrance(message, messageContent, profileData, serverData, 'food den');
+		await blockEntrance(message, messageContent, characterData, serverData, 'food den');
 		return;
 	}
 
@@ -76,10 +79,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	for (const [commonPlantName, commonPlantObject] of [...commonPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
-		if (serverData.inventoryObject.commonPlants[commonPlantName] > 0) {
+		if (serverData.inventory.commonPlants[commonPlantName] > 0) {
 
-			embed.fields.push({ name: `${commonPlantName}: ${serverData.inventoryObject.commonPlants[commonPlantName]}`, value: commonPlantObject.description, inline: true });
-			/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: commonPlantName, value: commonPlantName, description: `${serverData.inventoryObject.commonPlants[commonPlantName]}` });
+			embed.fields.push({ name: `${commonPlantName}: ${serverData.inventory.commonPlants[commonPlantName]}`, value: commonPlantObject.description, inline: true });
+			/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: commonPlantName, value: commonPlantName, description: `${serverData.inventory.commonPlants[commonPlantName]}` });
 		}
 	}
 
@@ -143,10 +146,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 				for (const [commonPlantName, commonPlantObject] of [...commonPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
-					if (serverData.inventoryObject.commonPlants[commonPlantName] > 0) {
+					if (serverData.inventory.commonPlants[commonPlantName] > 0) {
 
-						embed.fields.push({ name: `${commonPlantName}: ${serverData.inventoryObject.commonPlants[commonPlantName]}`, value: commonPlantObject.description, inline: true });
-						/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: commonPlantName, value: commonPlantName, description: `${serverData.inventoryObject.commonPlants[commonPlantName]}` });
+						embed.fields.push({ name: `${commonPlantName}: ${serverData.inventory.commonPlants[commonPlantName]}`, value: commonPlantObject.description, inline: true });
+						/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: commonPlantName, value: commonPlantName, description: `${serverData.inventory.commonPlants[commonPlantName]}` });
 					}
 				}
 
@@ -176,19 +179,19 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 				for (const [uncommonPlantName, uncommonPlantObject] of [...uncommonPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
-					if (serverData.inventoryObject.uncommonPlants[uncommonPlantName] > 0) {
+					if (serverData.inventory.uncommonPlants[uncommonPlantName] > 0) {
 
-						embed.fields.push({ name: `${uncommonPlantName}: ${serverData.inventoryObject.uncommonPlants[uncommonPlantName]}`, value: uncommonPlantObject.description, inline: true });
-						/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: uncommonPlantName, value: uncommonPlantName, description: `${serverData.inventoryObject.uncommonPlants[uncommonPlantName]}` });
+						embed.fields.push({ name: `${uncommonPlantName}: ${serverData.inventory.uncommonPlants[uncommonPlantName]}`, value: uncommonPlantObject.description, inline: true });
+						/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: uncommonPlantName, value: uncommonPlantName, description: `${serverData.inventory.uncommonPlants[uncommonPlantName]}` });
 					}
 				}
 
 				for (const [rarePlantName, rarePlantObject] of [...rarePlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
-					if (serverData.inventoryObject.rarePlants[rarePlantName] > 0) {
+					if (serverData.inventory.rarePlants[rarePlantName] > 0) {
 
-						embed.fields.push({ name: `${rarePlantName}: ${serverData.inventoryObject.rarePlants[rarePlantName]}`, value: rarePlantObject.description, inline: true });
-						/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: rarePlantName, value: rarePlantName, description: `${serverData.inventoryObject.rarePlants[rarePlantName]}` });
+						embed.fields.push({ name: `${rarePlantName}: ${serverData.inventory.rarePlants[rarePlantName]}`, value: rarePlantObject.description, inline: true });
+						/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: rarePlantName, value: rarePlantName, description: `${serverData.inventory.rarePlants[rarePlantName]}` });
 					}
 				}
 
@@ -218,10 +221,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 				for (const [speciesName] of [...speciesMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
-					if (serverData.inventoryObject.meat[speciesName] > 0) {
+					if (serverData.inventory.meat[speciesName] > 0) {
 
-						embed.fields.push({ name: `${speciesName}:`, value: `${serverData.inventoryObject.meat[speciesName]}`, inline: true });
-						/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: speciesName, value: speciesName, description: `${serverData.inventoryObject.meat[speciesName]}` });
+						embed.fields.push({ name: `${speciesName}:`, value: `${serverData.inventory.meat[speciesName]}`, inline: true });
+						/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: speciesName, value: speciesName, description: `${serverData.inventory.meat[speciesName]}` });
 					}
 				}
 
@@ -256,7 +259,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 				let serverMeatOptionsAmount = 0;
 
-				for (const meatAmount of Object.values(serverData.inventoryObject.meat)) {
+				for (const meatAmount of Object.values(serverData.inventory.meat)) {
 
 					if (meatAmount > 0) {
 
@@ -281,10 +284,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 				for (const [speciesName] of speciesMap) {
 
-					if (serverData.inventoryObject.meat[speciesName] > 0) {
+					if (serverData.inventory.meat[speciesName] > 0) {
 
-						embed.fields.push({ name: `${speciesName}:`, value: `${serverData.inventoryObject.meat[speciesName]}`, inline: true });
-						/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: speciesName, value: speciesName, description: `${serverData.inventoryObject.meat[speciesName]}` });
+						embed.fields.push({ name: `${speciesName}:`, value: `${serverData.inventory.meat[speciesName]}`, inline: true });
+						/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: speciesName, value: speciesName, description: `${serverData.inventory.meat[speciesName]}` });
 					}
 				}
 

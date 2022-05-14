@@ -1,7 +1,8 @@
 // @ts-check
 const { MessageActionRow, MessageSelectMenu } = require('discord.js');
 const { error_color, default_color } = require('../../config.json');
-const { profileModel } = require('../../models/profileModel');
+const profileModel = require('../../models/profileModel');
+const { hasNoName } = require('../../utils/checkAccountCompletion');
 const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const disableAllComponents = require('../../utils/disableAllComponents');
@@ -14,11 +15,19 @@ module.exports.name = 'shop';
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData) => {
+
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	const profileData = characterData?.profiles?.[message.guild.id];
+
+	if (await hasNoName(message, characterData)) {
+
+		return;
+	}
 
 	const shop = serverData.shop.filter(item => item.wayOfEarning === 'experience');
 	const rankRoles = serverData.shop.filter(item => item.wayOfEarning === 'rank');
@@ -31,7 +40,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'There are currently no roles in the shop!',
 				}],
 				failIfNotExists: false,
@@ -122,10 +130,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			/** @type {import('../../typedef').Role} */
 			const buyItem = shop[buyIndex];
 
-			profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
-				userId: message.author.id,
-				serverId: message.guild.id,
-			}));
+			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.author.id }));
 
 			if (profileData.roles.some(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience')) {
 
@@ -136,11 +141,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 					if (userRoleIndex >= 0) { profileData.roles.splice(userRoleIndex, 1); }
 
-					profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{
-							$inc: { experience: userRole.requirement },
-							$set: { roles: profileData.roles } },
+					userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+						{ uuid: userData.uuid },
+						(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+							p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].experience += /** @type {number} */ (userRole.requirement);
+							p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].roles = profileData.roles;
+						},
 					));
 
 					if (message.member.roles.cache.has(buyItem.roleId) === true) {
@@ -161,7 +167,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 							});
 					}
 
-					await checkLevelUp(message, undefined, profileData, serverData);
+					await checkLevelUp(message, undefined, userData, serverData);
 				}
 				catch (error) {
 
@@ -196,9 +202,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 						requirement: buyItem.requirement,
 					});
 
-					profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-						{ userId: message.author.id, serverId: message.guild.id },
-						{ $set: { roles: profileData.roles } },
+					userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+						{ uuid: userData.uuid },
+						(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+							p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].roles = profileData.roles;
+						},
 					));
 
 					/** @type {number} */
@@ -208,28 +216,28 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 						if (cost <= profileData.experience) {
 
-							profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-								{ userId: message.author.id, serverId: message.guild.id },
-								{ $inc: { experience: -cost } },
+							userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+								{ uuid: userData.uuid },
+								(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+									p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].experience -= cost;
+								},
 							));
 
 							cost -= cost;
 						}
 						else {
 
-							profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-								{ userId: message.author.id, serverId: message.guild.id },
-								{
-									$inc: {
-										experience: (profileData.levels - 1) * 50,
-										levels: -1,
-									},
+							userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+								{ uuid: userData.uuid },
+								(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+									p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].experience += (profileData.levels - 1) * 50;
+									p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].levels -= 1;
 								},
 							));
 						}
 					}
 
-					const member = await botReply.guild.members.fetch(profileData.userId);
+					const member = await botReply.guild.members.fetch(userData.userId);
 					const roles = profileData.roles.filter(role => role.wayOfEarning === 'levels' && role.requirement > profileData.levels);
 
 					for (const role of roles) {
@@ -239,10 +247,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 							const userRoleIndex = profileData.roles.indexOf(role);
 							if (userRoleIndex >= 0) { profileData.roles.splice(userRoleIndex, 1); }
 
-							await profileModel.findOneAndUpdate(
-								{ userId: profileData.userId, serverId: profileData.serverId },
-								{ $set: { roles: profileData.roles } },
-							);
+							userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+								{ uuid: userData.uuid },
+								(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+									p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].roles = profileData.roles;
+								},
+							));
 
 							if (message.member.roles.cache.has(role.roleId) === true && profileData.roles.filter(profilerole => profilerole.roleId === role.roleId).length === 0) {
 
