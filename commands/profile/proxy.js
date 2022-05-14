@@ -1,7 +1,8 @@
 // @ts-check
 const { MessageEmbed } = require('discord.js');
 const { hasNoName } = require('../../utils/checkAccountCompletion');
-const { error_color } = require('../../config.json');
+const { error_color, prefix } = require('../../config.json');
+const profileModel = require('../../models/profileModel');
 
 module.exports.name = 'proxy';
 
@@ -35,7 +36,63 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 
 		if (proxy.includes('text')) {
 
-			// set proxy
+			const proxies = proxy.split('text');
+
+			if (proxies[0] === prefix) {
+
+				await message
+					.reply({
+						embeds: [ new MessageEmbed({
+							color: /** @type {`#${string}`} */ (error_color),
+							title: 'You can\'t make your proxy the bot\'s prefix.',
+						})],
+						failIfNotExists: false,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
+					});
+				return;
+			}
+
+			for (const character of Object.values(userData?.characters || {})) {
+
+				if (character.proxy.startsWith === proxies[0] && character.proxy.endsWith === proxies[1]) {
+
+					await message
+						.reply({
+							embeds: [ new MessageEmbed({
+								color: /** @type {`#${string}`} */ (error_color),
+								title: 'You can\'t have two characters with the same proxy.',
+							})],
+							failIfNotExists: false,
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) { throw new Error(error); }
+						});
+					return;
+				}
+			}
+
+			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+				{ uuid: userData.uuid },
+				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+					p.characters[p.currentCharacter[message.guild.id]].proxy.startsWith = proxies[0];
+					p.characters[p.currentCharacter[message.guild.id]].proxy.endsWith = proxies[1];
+				},
+			));
+
+			await message
+				.reply({
+					embeds: [ new MessageEmbed({
+						color: characterData.color,
+						author: { name: characterData.name, icon_url: characterData.avatarURL },
+						title: `Proxy set to ${proxies[0]}text${proxies[1]}!`,
+					})],
+					failIfNotExists: false,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
 		}
 		else {
 
@@ -58,11 +115,33 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 
 	if (subcommand === 'always') {
 
-		const autoproxy = message.mentions.channels.size > 0 ? message.mentions.channels.first().id : argumentsArray.join(' ');
+		const autoproxy = message.mentions.channels.size > 0 && message.mentions.channels.first().isText() ? message.mentions.channels.first().id : argumentsArray.join(' ');
 
-		if (message.mentions.channels.size > 0 || autoproxy.includes('everywhere')) {
+		if ((message.mentions.channels.size > 0 && message.mentions.channels.first().isText()) || autoproxy === 'everywhere') {
 
-			// add or remove autoproxy
+			const hasChannel = userData.autoproxy[message.guild.id] !== undefined && userData.autoproxy[message.guild.id].includes(autoproxy);
+
+			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+				{ uuid: userData.uuid },
+				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+					if (p.autoproxy[message.guild.id] === undefined) { p.autoproxy[message.guild.id] = []; }
+					if (hasChannel) { p.autoproxy[message.guild.id] = p.autoproxy[message.guild.id].filter(string => string !== autoproxy); }
+					else { p.autoproxy[message.guild.id].push(autoproxy); }
+				},
+			));
+
+			await message
+				.reply({
+					embeds: [ new MessageEmbed({
+						color: characterData.color,
+						author: { name: characterData.name, icon_url: characterData.avatarURL },
+						title: `${hasChannel ? 'Removed' : 'Added'} ${autoproxy === 'everywhere' ? autoproxy : message.guild.channels.cache.get(autoproxy).name} ${hasChannel ? 'from' : 'to'} the list of automatic proxy channels!`,
+					})],
+					failIfNotExists: false,
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
 		}
 		else {
 

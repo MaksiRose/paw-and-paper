@@ -85,7 +85,7 @@ module.exports.WebhookMessages = this.WebhookMessages;
  * @property {string} description - Description of the character.
  * @property {string} avatarURL - Avatar URL of the character.
  * @property {Array<Array<string>>} pronounSets - Array of Arrays of pronouns the character uses.
- * @property {string} proxy - Proxy this character uses.
+ * @property {{startsWith: string, endsWith: string}} proxy - Proxy this character uses.
  * @property {`#${number}`} color - Embed color used in messages.
  * @property {Object<string, Array<number>>} mentions - Object of character_id as key and an array of timestamps of when the mention has been done as the value
  * @property {Object<string, Profile>} profiles - Object of server IDs this character has been used on as the key and the information associated with it as the value.
@@ -98,6 +98,7 @@ module.exports.WebhookMessages = this.WebhookMessages;
  * @property {{water: boolean, resting: boolean}} reminders - Object of reminder kinds as the key and whether the user wants to be reminded/pinged for these occasions as the value.
  * @property {Object<string, Character>} characters - Object of names of characters as the key and the characters this user has created as value.
  * @property {Object<string, string>} currentCharacter - Object of the server IDs as the key and the id of the character that is currently active as the value.
+ * @property {Object<string, Array<string>>} autoproxy - Object of the server IDs as the key and an array of channel IDs as the value.
  * @property {string} uuid
  */
 module.exports.ProfileSchema = this.ProfileSchema;

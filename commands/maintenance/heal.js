@@ -146,7 +146,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		if (interaction.isButton()) {
 
-			const { embeds: woundEmbeds } = await getWoundList(chosenUserData, characterData.name);
+			const { embeds: woundEmbeds } = await getWoundList(chosenUserData, chosenCharacterData._id);
 
 			if (interaction.customId === 'healpage-1') {
 
@@ -262,7 +262,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				chosenCharacterData = chosenUserData.characters[interaction.values[0].split('_')[1]];
 				chosenProfileData = chosenCharacterData.profiles[message.guild.id];
 
-				const { embeds: woundEmbeds, components: woundComponents } = await getWoundList(chosenUserData, chosenCharacterData.name);
+				const { embeds: woundEmbeds, components: woundComponents } = await getWoundList(chosenUserData, chosenCharacterData._id);
 
 				botReply = await /** @type {import('discord.js').Message} */ (interaction.message)
 					.edit({

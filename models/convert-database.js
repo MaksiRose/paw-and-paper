@@ -40,7 +40,7 @@ createId().then(_id => {
 	for (const userId of userIds) {
 
 		const thisUserFiles = allUsersFiles.filter(f => f.userId === userId);
-		const newUserFile = {
+		const newUserFile = /** @type {import('../typedef').ProfileSchema} */ ({
 			userId: userId,
 			advice: {
 				resting: thisUserFiles.filter(f => f.advice.resting === true).length > 0,
@@ -54,25 +54,28 @@ createId().then(_id => {
 				resting: true,
 			},
 			characters: { },
-			currentCharacter: { },
-		};
+			currentCharacter: {},
+			autoproxy: {},
+		});
 
 		for (const thisUserFile of thisUserFiles) {
 
-			/** @type {import('../typedef').Character} */
-			const character = {
+			const character = /** @type {import('../typedef').Character} */ ({
 				_id: _id,
 				name: thisUserFile?.name,
 				species: thisUserFile?.species,
 				description: thisUserFile?.description,
 				avatarURL: thisUserFile?.avatarURL,
 				pronounSets: thisUserFile?.pronounSets,
-				proxy: '',
+				proxy: {
+					startsWith: '',
+					endsWith: '',
+				},
 				color: thisUserFile?.color,
 				mentions: {},
 				profiles: {},
-			};
-			character.profiles[thisUserFile?.serverId] = {
+			});
+			character.profiles[thisUserFile?.serverId] = /** @type {import('../typedef').Profile} */ ({
 				serverId: thisUserFile?.serverId,
 				rank: thisUserFile?.rank,
 				levels: thisUserFile?.levels,
@@ -106,7 +109,7 @@ createId().then(_id => {
 				},
 				inventory: thisUserFile?.inventoryObject || {},
 				roles: thisUserFile?.roles || [],
-			};
+			});
 
 			newUserFile.characters[thisUserFile._id] = character;
 		}

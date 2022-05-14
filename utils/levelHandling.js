@@ -50,9 +50,9 @@ async function checkLevelUp(message, botReply, userData, serverData) {
 
 		botReply = await module.exports.checkLevelUp(message, botReply, userData, serverData);
 		await checkLevelRequirements(serverData, message, member, profileData.levels);
-
-		return botReply;
 	}
+
+	return botReply;
 }
 
 /**

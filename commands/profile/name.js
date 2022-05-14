@@ -117,7 +117,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					description: '',
 					avatarURL: message.author.avatarURL(),
 					pronounSets: [['they', 'them', 'their', 'theirs', 'themselves', 'plural']],
-					proxy: '',
+					proxy: {
+						startsWith: '',
+						endsWith: '',
+					},
 					color: /** @type {`#${number}`} */ (default_color),
 					mentions: {},
 					profiles: {

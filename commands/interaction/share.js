@@ -168,9 +168,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				userId: allRuinUsersList[allRuinsProfilesArrayRandomIndex],
 			}));
 			partnerCharacterData = Object.values(partnerUserData.characters).find(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'ruins' && c.profiles[message.guild.id].energy > 0 && c.profiles[message.guild.id].health > 0 && c.profiles[message.guild.id].hunger > 0 && c.profiles[message.guild.id].thirst > 0 && c.profiles[message.guild.id].injuries.cold === false);
-			partnerProfileData = partnerCharacterData?.[message.guild.id];
+			partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id];
 
-			if (partnerProfileData.energy > 0 && partnerProfileData.health > 0 && partnerProfileData.hunger > 0 || partnerProfileData.thirst > 0) {
+			if (partnerUserData && partnerCharacterData && partnerCharacterData.name !== '' && partnerCharacterData.species !== '' || partnerProfileData || partnerProfileData.energy > 0 || partnerProfileData.health > 0 || partnerProfileData.hunger > 0 || partnerProfileData.thirst > 0 || !partnerProfileData.hasCooldown || !partnerProfileData.isResting) {
 
 				extraEmbeds = await shareStory();
 			}
@@ -187,10 +187,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	else {
 
 		partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first().id }));
-		partnerCharacterData = Object.values(partnerUserData.characters).find(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'ruins');
-		partnerProfileData = partnerCharacterData?.[message.guild.id];
+		partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guild.id]];
+		partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id];
 
-		if (!partnerCharacterData || partnerCharacterData.name === '' || partnerCharacterData.species === '' || !partnerProfileData || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0) {
+		if (!partnerUserData || !partnerCharacterData || partnerCharacterData.name === '' || partnerCharacterData.species === '' || !partnerProfileData || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0 || partnerProfileData.hasCooldown || partnerProfileData.isResting) {
 
 			await profileModel.findOneAndUpdate(
 				{ userId: message.author.id },
@@ -233,7 +233,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	await decreaseHealth(userData, botReply, userInjuryObject);
 	await isPassedOut(message, userData, false);
 
-	if (partnerUserData !== null) { await addFriendshipPoints(message, userData, characterData._id, partnerUserData, partnerCharacterData._id); }
+	if (partnerUserData !== null && partnerCharacterData != undefined) { await addFriendshipPoints(message, userData, characterData._id, partnerUserData, partnerCharacterData._id); }
 
 
 	/**
@@ -253,7 +253,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			},
 		));
 		partnerCharacterData = partnerUserData.characters[partnerCharacterData._id];
-		partnerProfileData = partnerCharacterData?.[message.guild.id];
+		partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id];
 
 		embed.description = `*${partnerCharacterData.name} comes running to the old wooden trunk at the ruins where ${characterData.name} sits, ready to tell an exciting story from long ago. Their eyes are sparkling as the ${characterData.species} recounts great adventures and the lessons to be learned from them.*`;
 		embed.footer.text = `${embedFooterStatsText}\n+${partnerExperiencePoints} XP for ${partnerCharacterData.name} (${partnerProfileData.experience}/${partnerProfileData.levels * 50})`;
@@ -271,7 +271,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				},
 			));
 			partnerCharacterData = partnerUserData.characters[partnerCharacterData._id];
-			partnerProfileData = partnerCharacterData?.[message.guild.id];
+			partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id];
 
 			extraEmbeds.push({
 				color: partnerCharacterData.color,

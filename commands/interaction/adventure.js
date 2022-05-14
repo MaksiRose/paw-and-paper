@@ -430,8 +430,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 								case (pullFromWeightedTable({ 0: 1, 1: 1 }) === 0 && losingInjuryObject.cold === false):
 
 									losingInjuryObject.cold = true;
-									extraDescription = `notices that ${pronounAndPlural(losingCharacterData, 0, 'is', 'are')} feeling weak and can't stop coughing. The long jouney must've given ${pronoun(losingCharacterData, 0)} a cold.`;
-									extraFooter = `-${losingHealthPoints} HP (from cold)`;
+									extraDescription = `notices that ${pronounAndPlural(losingCharacterData, 0, 'is', 'are')} feeling weak and can't stop coughing. The long jouney must've given ${pronoun(losingCharacterData, 1)} a cold.`;
+									extraFooter = `-${losingHealthPoints} HP (from cold) for ${losingCharacterData.name}`;
 
 									break;
 
@@ -439,22 +439,22 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 									losingInjuryObject.wounds += 1;
 									extraDescription = `feels blood running down ${pronoun(losingCharacterData, 2)} side. The humans must've wounded ${pronoun(losingCharacterData, 0)}.`;
-									extraFooter = `-${losingHealthPoints} HP (from wound)`;
+									extraFooter = `-${losingHealthPoints} HP (from wound) for ${losingCharacterData.name}`;
 							}
 					}
 
 					losingUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 						{ userId: losingUserData.userId },
 						(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-							p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].inventory = userInventory;
-							p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].health -= losingHealthPoints;
+							p.characters[losingCharacterData._id].profiles[message.guild.id].inventory = userInventory;
+							p.characters[losingCharacterData._id].profiles[message.guild.id].health -= losingHealthPoints;
 						},
 					));
 					losingCharacterData = losingUserData.characters[losingUserData.currentCharacter[message.guild.id]];
 					losingProfileData = losingCharacterData.profiles[message.guild.id];
 
-					userInjuryObjectPlayer1 = (otherUserData.userId === userData.userId) ? losingInjuryObject : userInjuryObjectPlayer1;
-					userInjuryObjectPlayer2 = (otherUserData.userId === userData.userId) ? userInjuryObjectPlayer2 : losingInjuryObject;
+					userInjuryObjectPlayer1 = (losingUserData.userId === userData.userId) ? losingInjuryObject : userInjuryObjectPlayer1;
+					userInjuryObjectPlayer2 = (losingUserData.userId === userData.userId) ? userInjuryObjectPlayer2 : losingInjuryObject;
 
 					userData = losingUserData.userId === userData.userId ? losingUserData : userData;
 					characterData = userData.characters[userData.currentCharacter[message.guild.id]];
@@ -470,7 +470,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							embeds: [...embedArray, {
 								color: characterData.color,
 								author: { name: characterData.name, icon_url: characterData.avatarURL },
-								description: `*The adventure didn't go as planned. Not only did the two animals get lost, they also had to run from humans. While running, the ${losingCharacterData.name} ${extraDescription} What a shame!*`,
+								description: `*The adventure didn't go as planned. Not only did the two animals get lost, they also had to run from humans. While running, ${losingCharacterData.name} ${extraDescription} What a shame!*`,
 								footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}\n\n${extraFooter}` },
 							}],
 							components: disableAllComponents(botReply.components),

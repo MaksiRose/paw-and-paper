@@ -187,8 +187,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
 				userId: allPrairieUsersList[generateRandomNumber(allPrairieUsersList.length, 0)],
 			}));
-			partnerCharacterData = Object.values(partnerUserData?.characters || {}).find(c => c?.profiles?.[message.guild.id] !== undefined && c?.profiles?.[message.guild.id].currentRegion === 'ruins' && c?.profiles?.[message.guild.id]?.energy > 0 && c?.profiles?.[message.guild.id]?.health > 0 && c?.profiles?.[message.guild.id]?.hunger > 0 && c?.profiles?.[message.guild.id]?.thirst > 0 && c?.profiles?.[message.guild.id]?.injuries?.cold === false);
-			partnerProfileData = partnerCharacterData?.[message.guild.id];
+			partnerCharacterData = Object.values(partnerUserData?.characters || {}).find(c => c?.profiles?.[message.guild.id] !== undefined && c?.profiles?.[message.guild.id].currentRegion === 'prairie' && c?.profiles?.[message.guild.id]?.energy > 0 && c?.profiles?.[message.guild.id]?.health > 0 && c?.profiles?.[message.guild.id]?.hunger > 0 && c?.profiles?.[message.guild.id]?.thirst > 0 && c?.profiles?.[message.guild.id]?.injuries?.cold === false);
+			partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id];
 
 			const playTogetherChance = pullFromWeightedTable({ 0: 3, 1: 7 });
 			if (playTogetherChance == 1 && (partnerUserData !== null || profileData.rank === 'Youngling')) {

@@ -224,6 +224,13 @@ const profileSchema = new schema({
 		type: 'nest',
 		default: 'string',
 	},
+	autoproxy: {
+		type: 'nest',
+		default: {
+			type: 'array',
+			default: { type: 'string' },
+		},
+	},
 });
 
 module.exports = new model('./database/profiles', profileSchema);

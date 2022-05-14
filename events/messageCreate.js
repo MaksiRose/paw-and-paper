@@ -24,6 +24,31 @@ const event = {
 
 		const prefix = config.prefix;
 
+		/* Getting the user's profile data from the database. */
+		let userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
+			userId: message.author.id,
+		}));
+		let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+
+		/* Checking if the message starts with the character's proxy start and ends with the character's
+		proxy end. If it does, it will set the current character to the character that the message is
+		being sent from. */
+		for (const character of Object.values(userData?.characters || {})) {
+
+			if (!(character?.proxy?.startsWith === '' && character?.proxy?.endsWith === '') && message.content.startsWith(character?.proxy?.startsWith) && message.content.endsWith(character?.proxy?.endsWith)) {
+
+				if (userData?.currentCharacter?.[message.guild.id]) { userData.currentCharacter[message.guild.id] = character._id; }
+				message.content = prefix + 'say ' + message.content.substring(character?.proxy?.startsWith.length, message.content.length - character?.proxy?.endsWith.length);
+			}
+		}
+
+		/* Checking if the message doesn't start with the prefix but the channel is set to autoproxy, and
+		if it is, it adds the prefix to the message. */
+		if (!message.content.toLowerCase().startsWith(prefix) && (userData?.autoproxy?.[message.guild.id]?.includes(message.channel.id) || userData?.autoproxy?.[message.guild.id]?.includes('everywhere'))) {
+
+			message.content = prefix + 'say ' + message.content;
+		}
+
 		/* Checking if the message starts with the prefix, if the author is a bot, or if the channel is a DM. */
 		if (!message.content.toLowerCase().startsWith(prefix) || message.author.bot || message.channel.type === 'DM') {
 
@@ -39,11 +64,6 @@ const event = {
 
 			await createGuild(client, message.guild);
 		}
-
-		/* Getting the user's profile data from the database. */
-		let userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({
-			userId: message.author.id,
-		}));
 
 		const embedArray = [];
 
@@ -123,7 +143,7 @@ const event = {
 		}
 
 		userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: userData?.uuid }));
-		const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+		characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 		const profileData = characterData?.profiles?.[message.guild.id];
 
 		const oneHourInMs = 3600000;
