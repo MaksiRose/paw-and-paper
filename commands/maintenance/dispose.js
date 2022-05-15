@@ -91,7 +91,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			embeds: [...embedArray, {
 				color: characterData.color,
 				author: { name: characterData.name, icon_url: characterData.avatarURL },
-				description: `*${characterData.name} patrols around the pack, looking for anything that blocks entrances or might be a hazard. And indeed, ${blockText} the entrance to the ${serverData.blockedEntrance.den}, making it impossible to enter safely. The ${characterData.species} should remove it immediately! But what would be the best way?*`,
+				description: `*${characterData.name} patrols around the pack, looking for anything that blocks entrances or might be a hazard. And indeed, ${blockText} the entrance to the ${serverData.blockedEntrance.den}, making it impossible to enter safely. The ${characterData.displayedSpecies || characterData.species} should remove it immediately! But what would be the best way?*`,
 			}],
 			components: [ new MessageActionRow({
 				components: [ new MessageButton({
@@ -183,7 +183,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						embeds: [...embedArray, {
 							color: characterData.color,
 							author: { name: characterData.name, icon_url: characterData.avatarURL },
-							description: `*${characterData.name} gasps and pants as ${pronounAndPlural(characterData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntrance.blockedKind}. All ${pronoun(characterData, 1)} strength might only barely be enough to clear the blockage. The ${characterData.species} should collect ${pronoun(characterData, 4)} for a moment, and then try again...*`,
+							description: `*${characterData.name} gasps and pants as ${pronounAndPlural(characterData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntrance.blockedKind}. All ${pronoun(characterData, 1)} strength might only barely be enough to clear the blockage. The ${characterData.displayedSpecies || characterData.species} should collect ${pronoun(characterData, 4)} for a moment, and then try again...*`,
 							footer: { text: footerStats },
 						}],
 						components: botReply.components,
@@ -244,7 +244,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					embeds: [...embedArray, {
 						color: characterData.color,
 						author: { name: characterData.name, icon_url: characterData.avatarURL },
-						description: `*${characterData.name} gasps and pants as ${pronounAndPlural(characterData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntrance.blockedKind}. But ${pronoun(characterData, 1)} attempts don't seem to leave any lasting impact. Maybe the ${characterData.species} is going about this the wrong way.*`,
+						description: `*${characterData.name} gasps and pants as ${pronounAndPlural(characterData, 0, 'tries', 'try')} to remove the ${serverData.blockedEntrance.blockedKind}. But ${pronoun(characterData, 1)} attempts don't seem to leave any lasting impact. Maybe the ${characterData.displayedSpecies || characterData.species} is going about this the wrong way.*`,
 						footer: { text: footerStats },
 					}],
 					components: botReply.components,

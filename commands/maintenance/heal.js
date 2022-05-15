@@ -365,7 +365,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						chosenCharacterData = chosenUserData.characters[chosenCharacterData._id];
 						chosenProfileData = chosenCharacterData.profiles[message.guild.id];
 
-						embed.description = `*${characterData.name} takes ${chosenCharacterData.name}'s body, drags it over to the river, and positions ${pronoun(chosenCharacterData, 2)} head right over the water. The ${chosenCharacterData.species} sticks ${pronoun(chosenCharacterData, 2)} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${pronoun(chosenCharacterData, 2)} body.*`;
+						embed.description = `*${characterData.name} takes ${chosenCharacterData.name}'s body, drags it over to the river, and positions ${pronoun(chosenCharacterData, 2)} head right over the water. The ${chosenCharacterData.displayedSpecies || chosenCharacterData.species} sticks ${pronoun(chosenCharacterData, 2)} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${pronoun(chosenCharacterData, 2)} body.*`;
 						embed.footer.text = `${embedFooterStatsText}\n\n+${chosenUserThirstPoints} thirst for ${chosenCharacterData.name} (${chosenProfileData.thirst}/${chosenProfileData.maxThirst})`;
 					}
 					else {
@@ -380,7 +380,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						}
 						else {
 
-							embed.description = `*${characterData.name} takes ${chosenCharacterData.name}'s body and tries to drag it over to the river. The ${characterData.species} attempts to position the ${chosenCharacterData.species}'s head right over the water, but every attempt fails miserably. ${upperCasePronounAndPlural(characterData, 0, 'need')} to concentrate and try again.*`;
+							embed.description = `*${characterData.name} takes ${chosenCharacterData.name}'s body and tries to drag it over to the river. The ${characterData.displayedSpecies || characterData.species} attempts to position the ${chosenCharacterData.displayedSpecies || chosenCharacterData.species}'s head right over the water, but every attempt fails miserably. ${upperCasePronounAndPlural(characterData, 0, 'need')} to concentrate and try again.*`;
 						}
 
 						embed.footer.text = await decreaseStats(false);
@@ -606,7 +606,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 							userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.author.id }));
 
-							embed.description = `*${characterData.name} takes a ${chosenItemName}. After a bit of preparation, the ${characterData.species} can apply it correctly. Immediately you can see the effect. ${upperCasePronounAndPlural(characterData, 0, 'feel')} much better!*`;
+							embed.description = `*${characterData.name} takes a ${chosenItemName}. After a bit of preparation, the ${characterData.displayedSpecies || characterData.species} can apply it correctly. Immediately you can see the effect. ${upperCasePronounAndPlural(characterData, 0, 'feel')} much better!*`;
 						}
 						else {
 
@@ -834,7 +834,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		}
 		else if (chosenProfileData.energy <= 0 || chosenProfileData.health <= 0 || chosenProfileData.hunger <= 0 || chosenProfileData.thirst <= 0) {
 
-			embed.description = `*${characterData.name} runs towards the pack borders, where ${chosenCharacterData.name} lies, only barely conscious. The ${profileData.rank} immediately looks for the right herbs to help the ${chosenCharacterData.species}.*`;
+			embed.description = `*${characterData.name} runs towards the pack borders, where ${chosenCharacterData.name} lies, only barely conscious. The ${profileData.rank} immediately looks for the right herbs to help the ${chosenCharacterData.displayedSpecies || chosenCharacterData.species}.*`;
 			embed.footer.text = `${chosenCharacterData.name}'s stats/illnesses/injuries:${healUserConditionText}`;
 		}
 		else if (Object.values(chosenProfileData.injuries).some(element => element > 0)) {
@@ -844,7 +844,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		}
 		else {
 
-			embed.description = `*${characterData.name} approaches ${chosenCharacterData.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${characterData.species} asks.\n${chosenCharacterData.name} shakes ${pronoun(chosenCharacterData, 2)} head.* "Not that I know of, no."\n*Disappointed, ${characterData.name} goes back to the medicine den.*`;
+			embed.description = `*${characterData.name} approaches ${chosenCharacterData.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${characterData.displayedSpecies || characterData.species} asks.\n${chosenCharacterData.name} shakes ${pronoun(chosenCharacterData, 2)} head.* "Not that I know of, no."\n*Disappointed, ${characterData.name} goes back to the medicine den.*`;
 
 			return { embeds: [...embedArray, embed], components: Object.keys(allHurtCharactersList).length > 0 ? [userSelectMenu] : [] };
 		}

@@ -341,7 +341,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			},
 		);
 
-		embed.description = `*${characterData.name} slowly trots to the sleeping dens, tired from all the hard work ${pronoun(characterData, 0)} did. For a moment, the ${characterData.species} thinks about if ${pronounAndPlural(characterData, 0, 'want')} to rest or just a break.*`;
+		embed.description = `*${characterData.name} slowly trots to the sleeping dens, tired from all the hard work ${pronoun(characterData, 0)} did. For a moment, the ${characterData.displayedSpecies || characterData.species} thinks about if ${pronounAndPlural(characterData, 0, 'want')} to rest or just a break.*`;
 		embed.fields = [];
 	}
 
@@ -445,7 +445,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			},
 		);
 
-		embed.description = `*${characterData.name} looks at ${pronoun(characterData, 2)} reflection as ${pronounAndPlural(characterData, 0, 'passes', 'pass')} the lake. Suddenly the ${characterData.species} remembers how long ${pronounAndPlural(characterData, 0, 'has', 'have')}n't drunk anything.*`;
+		embed.description = `*${characterData.name} looks at ${pronoun(characterData, 2)} reflection as ${pronounAndPlural(characterData, 0, 'passes', 'pass')} the lake. Suddenly the ${characterData.displayedSpecies || characterData.species} remembers how long ${pronounAndPlural(characterData, 0, 'has', 'have')}n't drunk anything.*`;
 		embed.fields = [];
 	}
 
@@ -458,7 +458,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			},
 		);
 
-		embed.description = `*${characterData.name} approaches the prairie, watching younger packmates testing their strength in playful fights. Maybe the ${characterData.species} could play with them!*`;
+		embed.description = `*${characterData.name} approaches the prairie, watching younger packmates testing their strength in playful fights. Maybe the ${characterData.displayedSpecies || characterData.species} could play with them!*`;
 		embed.fields = [];
 
 		/* Finding all users that have a character that is at the prairie in the guild, mapping them to

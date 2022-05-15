@@ -361,7 +361,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		const { emojiToFind, buttonsArray, correctButton } = createButtons(emojiList, -1, userHabitatEmojisArray, emojiToAvoid);
 
-		embed.description = `*${characterData.name} bounds across the den territory, chasing a bee that is just out of reach. Without looking, the ${characterData.species} crashes into a Healer, loses sight of the bee, and scurries away into the ${['forest', 'shrubland', 'river'][['cold', 'warm', 'water'].indexOf(speciesMap.get(characterData.species).habitat)]}. On ${pronoun(characterData, 2)} way back to the pack border, ${characterData.name} sees something special on the ground. It's a ${foundItem}!*`;
+		embed.description = `*${characterData.name} bounds across the den territory, chasing a bee that is just out of reach. Without looking, the ${characterData.displayedSpecies || characterData.species} crashes into a Healer, loses sight of the bee, and scurries away into the ${['forest', 'shrubland', 'river'][['cold', 'warm', 'water'].indexOf(speciesMap.get(characterData.species).habitat)]}. On ${pronoun(characterData, 2)} way back to the pack border, ${characterData.name} sees something special on the ground. It's a ${foundItem}!*`;
 		embed.footer.text = `You will be presented five buttons with five emojis each. Click the button with this emoji: ${emojiToFind}, but without the campsite (${emojiToAvoid}).`;
 
 		const herbComponent = new MessageActionRow();
@@ -430,7 +430,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		}
 		else {
 
-			embed.description = embed.description.substring(0, embed.description.length - 1) + ` But as the ${characterData.species} tries to pick it up, it just breaks into little pieces.*`;
+			embed.description = embed.description.substring(0, embed.description.length - 1) + ` But as the ${characterData.displayedSpecies || characterData.species} tries to pick it up, it just breaks into little pieces.*`;
 		}
 
 		botReply.components = disableAllComponents(botReply.components);
@@ -514,7 +514,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 				if (cycleKind === 'dodge') {
 
-					embed.description = `↪️ *Looks like ${partnerCharacterData?.name || 'the Elderly'} is preparing a maneuver for ${characterData.name}'s next move. The ${characterData.species} must think quickly about how ${pronounAndPlural(characterData, 0, 'want')} to react.*`;
+					embed.description = `↪️ *Looks like ${partnerCharacterData?.name || 'the Elderly'} is preparing a maneuver for ${characterData.name}'s next move. The ${characterData.displayedSpecies || characterData.species} must think quickly about how ${pronounAndPlural(characterData, 0, 'want')} to react.*`;
 					embed.footer.text = 'Tip: Defending a maneuver blocks it effectively, which prevents your opponent from hurting you.';
 				}
 
@@ -569,12 +569,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		if (whoWinsChance === 0) {
 
-			embed.description = `*${characterData.name} trails behind ${partnerCharacterData?.name || 'an Elderly'}'s rear end, preparing for a play attack. The ${characterData.species} launches forward, landing on top of ${isSimulated ? 'them' : pronoun(partnerCharacterData, 1)}.* "I got you${isSimulated ? '' : ', ' + partnerCharacterData?.name}!" *${pronounAndPlural(characterData, 0, 'say')}. Both creatures bounce away from each other, laughing.*`;
+			embed.description = `*${characterData.name} trails behind ${partnerCharacterData?.name || 'an Elderly'}'s rear end, preparing for a play attack. The ${characterData.displayedSpecies || characterData.species} launches forward, landing on top of ${isSimulated ? 'them' : pronoun(partnerCharacterData, 1)}.* "I got you${isSimulated ? '' : ', ' + partnerCharacterData?.name}!" *${pronounAndPlural(characterData, 0, 'say')}. Both creatures bounce away from each other, laughing.*`;
 			embed.image.url = 'https://external-preview.redd.it/iUqJpDGv2YSDitYREfnTvsUkl9GG6oPMCRogvilkIrg.gif?s=9b0ea7faad7624ec00b5f8975e2cf3636f689e27';
 		}
 		else {
 
-			embed.description = `*${characterData.name} trails behind ${partnerCharacterData?.name || 'an Elderly'}'s rear end, preparing for a play attack. Right when the ${characterData.species} launches forward, ${partnerCharacterData?.name || 'the Elderly'} dashes sideways, followed by a precise jump right on top of ${characterData.name}.* "I got you, ${characterData.name}!" *${isSimulated ? 'they say' : pronounAndPlural(partnerCharacterData, 0, 'say')}. Both creatures bounce away from each other, laughing.*`;
+			embed.description = `*${characterData.name} trails behind ${partnerCharacterData?.name || 'an Elderly'}'s rear end, preparing for a play attack. Right when the ${characterData.displayedSpecies || characterData.species} launches forward, ${partnerCharacterData?.name || 'the Elderly'} dashes sideways, followed by a precise jump right on top of ${characterData.name}.* "I got you, ${characterData.name}!" *${isSimulated ? 'they say' : pronounAndPlural(partnerCharacterData, 0, 'say')}. Both creatures bounce away from each other, laughing.*`;
 			embed.image.url = 'https://i.pinimg.com/originals/7e/e4/01/7ee4017f0152c7b7c573a3dfe2c6673f.gif';
 		}
 

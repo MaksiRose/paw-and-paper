@@ -340,7 +340,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 				if (profileData.rank === 'Youngling') {
 
-					embed.description = `*A large thump erupts into the forest, sending flocks of crows fleeing to the sky. ${characterData.name} collapses, panting and yearning for breath after the difficult task of pushing the giant boulder. Another ${characterData.species} runs out of the cave, jumping around ${characterData.name} with relief. Suddenly, an Elderly shows up behind the two.*\n"Well done, Youngling, you have proven to be worthy of the Apprentice status. If you ever choose to rank up, just come to me," *the proud elder says with a raspy voice.*`;
+					embed.description = `*A large thump erupts into the forest, sending flocks of crows fleeing to the sky. ${characterData.name} collapses, panting and yearning for breath after the difficult task of pushing the giant boulder. Another ${characterData.displayedSpecies || characterData.species} runs out of the cave, jumping around ${characterData.name} with relief. Suddenly, an Elderly shows up behind the two.*\n"Well done, Youngling, you have proven to be worthy of the Apprentice status. If you ever choose to rank up, just come to me," *the proud elder says with a raspy voice.*`;
 				}
 
 				if (profileData.rank === 'Apprentice') {
@@ -365,12 +365,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					if (speciesMap.get(characterData.species).habitat === 'warm' || speciesMap.get(characterData.species).habitat === 'cold') {
 
-						embed.description = `*The engine noise became quieter and quieter before it finally disappeared entirely after endless maneuvers. Relieved, the ${characterData.species} runs to the pack, the other ${profileData.rank} in ${pronoun(characterData, 2)} mouth. An Elderly is already coming towards ${pronoun(characterData, 1)}.*\n"You're alright! We heard the humans. And you didn't lead them straight to us, very good! Your wisdom, skill, and experience qualify you as an Elderly, ${characterData.name}. I'll talk to the other Elderlies about it. Just let me know if you want to join us."`;
+						embed.description = `*The engine noise became quieter and quieter before it finally disappeared entirely after endless maneuvers. Relieved, the ${characterData.displayedSpecies || characterData.species} runs to the pack, the other ${profileData.rank} in ${pronoun(characterData, 2)} mouth. An Elderly is already coming towards ${pronoun(characterData, 1)}.*\n"You're alright! We heard the humans. And you didn't lead them straight to us, very good! Your wisdom, skill, and experience qualify you as an Elderly, ${characterData.name}. I'll talk to the other Elderlies about it. Just let me know if you want to join us."`;
 					}
 
 					if (speciesMap.get(characterData.species).habitat === 'water') {
 
-						embed.description = `*The engine noise became quieter and quieter before it finally disappeared entirely after endless maneuvers. Relieved, the ${characterData.species} swims to the pack, the other ${profileData.rank} in ${pronoun(characterData, 2)} mouth. An Elderly is already swimming towards ${pronoun(characterData, 1)}.*\n"You're alright! We heard the humans. And you didn't lead them straight to us, very good! Your wisdom, skill, and experience qualify you as an Elderly, ${characterData.name}. I'll talk to the other Elderlies about it. Just let me know if you want to join us."`;
+						embed.description = `*The engine noise became quieter and quieter before it finally disappeared entirely after endless maneuvers. Relieved, the ${characterData.displayedSpecies || characterData.species} swims to the pack, the other ${profileData.rank} in ${pronoun(characterData, 2)} mouth. An Elderly is already swimming towards ${pronoun(characterData, 1)}.*\n"You're alright! We heard the humans. And you didn't lead them straight to us, very good! Your wisdom, skill, and experience qualify you as an Elderly, ${characterData.name}. I'll talk to the other Elderlies about it. Just let me know if you want to join us."`;
 					}
 				}
 
@@ -378,12 +378,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					if (speciesMap.get(characterData.species).habitat === 'warm' || speciesMap.get(characterData.species).habitat === 'cold') {
 
-						embed.description = `*The ${characterData.species} runs for a while before the situation seems to clear up. ${characterData.name} gasps in exhaustion. That was close. Full of adrenaline, ${pronounAndPlural(characterData, 0, 'goes', 'go')} back to the pack, another pack member in ${pronoun(characterData, 2)} mouth. ${upperCasePronounAndPlural(characterData, 0, 'feel')} strangely stronger than before.*`;
+						embed.description = `*The ${characterData.displayedSpecies || characterData.species} runs for a while before the situation seems to clear up. ${characterData.name} gasps in exhaustion. That was close. Full of adrenaline, ${pronounAndPlural(characterData, 0, 'goes', 'go')} back to the pack, another pack member in ${pronoun(characterData, 2)} mouth. ${upperCasePronounAndPlural(characterData, 0, 'feel')} strangely stronger than before.*`;
 					}
 
 					if (speciesMap.get(characterData.species).habitat === 'water') {
 
-						embed.description = `*The ${characterData.species} runs for a while before the situation seems to clear up. ${characterData.name} gasps in exhaustion. That was close. Full of adrenaline, ${pronounAndPlural(characterData, 0, 'swim')} back to the pack, another pack member in ${pronoun(characterData, 2)} mouth. ${upperCasePronounAndPlural(characterData, 0, 'feel')} strangely stronger than before.*`;
+						embed.description = `*The ${characterData.displayedSpecies || characterData.species} runs for a while before the situation seems to clear up. ${characterData.name} gasps in exhaustion. That was close. Full of adrenaline, ${pronounAndPlural(characterData, 0, 'swim')} back to the pack, another pack member in ${pronoun(characterData, 2)} mouth. ${upperCasePronounAndPlural(characterData, 0, 'feel')} strangely stronger than before.*`;
 					}
 
 					let maxHealthPoints = 0;
@@ -457,24 +457,24 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 				if (profileData.rank === 'Youngling') {
 
-					embed.description = `"I can't... I can't do it," *${characterData.name} heaves, ${pronoun(characterData, 2)} chest struggling to fall and rise.\nSuddenly the boulder shakes and falls away from the cave entrance.*\n"You are too weak for a task like this. Come back to camp, Youngling." *The Elderly turns around and slowly walks back towards camp, not dwelling long by the exhausted ${characterData.species}.*`;
+					embed.description = `"I can't... I can't do it," *${characterData.name} heaves, ${pronoun(characterData, 2)} chest struggling to fall and rise.\nSuddenly the boulder shakes and falls away from the cave entrance.*\n"You are too weak for a task like this. Come back to camp, Youngling." *The Elderly turns around and slowly walks back towards camp, not dwelling long by the exhausted ${characterData.displayedSpecies || characterData.species}.*`;
 				}
 
 				if (profileData.rank === 'Apprentice') {
 
 					if (speciesMap.get(characterData.species).habitat === 'warm') {
 
-						embed.description = `*No matter how long the ${characterData.species} pulls and tugs, ${pronoun(characterData, 0)} just can't break the Apprentice free. They both lie there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's them!" *the Elderly shouts. The other two run to the Apprentice and bite away the root.*\n"Thanks for trying, ${characterData.name}. But thank goodness we found you!" *the Elderly says.*`;
+						embed.description = `*No matter how long the ${characterData.displayedSpecies || characterData.species} pulls and tugs, ${pronoun(characterData, 0)} just can't break the Apprentice free. They both lie there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's them!" *the Elderly shouts. The other two run to the Apprentice and bite away the root.*\n"Thanks for trying, ${characterData.name}. But thank goodness we found you!" *the Elderly says.*`;
 					}
 
 					if (speciesMap.get(characterData.species).habitat === 'cold') {
 
-						embed.description = `*No matter how long the ${characterData.species} pulls and tugs, ${pronoun(characterData, 0)} just can't break the Apprentice free. They both lie there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's them!" *the Elderly shouts. The other two run to the Apprentice and pull them out from under the log with their mouths.*\n"Thanks for trying, ${characterData.name}. But thank goodness we found you!" *the Elderly says.*`;
+						embed.description = `*No matter how long the ${characterData.displayedSpecies || characterData.species} pulls and tugs, ${pronoun(characterData, 0)} just can't break the Apprentice free. They both lie there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's them!" *the Elderly shouts. The other two run to the Apprentice and pull them out from under the log with their mouths.*\n"Thanks for trying, ${characterData.name}. But thank goodness we found you!" *the Elderly says.*`;
 					}
 
 					if (speciesMap.get(characterData.species).habitat === 'water') {
 
-						embed.description = `*No matter how long the ${characterData.species} pulls and tugs, ${pronoun(characterData, 0)} just can't break the Apprentice free. They both lie there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's them!" *the Elderly shouts. The other two run to the Apprentice and push them away from the log with their heads.*\n"Thanks for trying, ${characterData.name}. But thank goodness we found you!" *the Elderly says.*`;
+						embed.description = `*No matter how long the ${characterData.displayedSpecies || characterData.species} pulls and tugs, ${pronoun(characterData, 0)} just can't break the Apprentice free. They both lie there for a while until finally, an Elderly comes. Two other packmates that accompany them are anxiously looking out.*\n"That's them!" *the Elderly shouts. The other two run to the Apprentice and push them away from the log with their heads.*\n"Thanks for trying, ${characterData.name}. But thank goodness we found you!" *the Elderly says.*`;
 					}
 				}
 
@@ -482,12 +482,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					if (speciesMap.get(characterData.species).habitat === 'warm' || speciesMap.get(characterData.species).habitat === 'cold') {
 
-						embed.description = `*It almost looks like the humans are catching up to the other ${profileData.rank} when suddenly two larger ${characterData.species}s come running from the side. They pick both of them up and run sideways as fast as lightning. Before ${pronounAndPlural(characterData, 0, 'know')} what has happened to ${pronoun(characterData, 1)}, they are already out of reach.*\n"That was close," *the Elderly says.* "Good thing I was nearby."`;
+						embed.description = `*It almost looks like the humans are catching up to the other ${profileData.rank} when suddenly two larger ${characterData.displayedSpecies || characterData.species}s come running from the side. They pick both of them up and run sideways as fast as lightning. Before ${pronounAndPlural(characterData, 0, 'know')} what has happened to ${pronoun(characterData, 1)}, they are already out of reach.*\n"That was close," *the Elderly says.* "Good thing I was nearby."`;
 					}
 
 					if (speciesMap.get(characterData.species).habitat === 'water') {
 
-						embed.description = `*It almost looks like the humans are catching up to the other ${profileData.rank} when suddenly two larger ${characterData.species}s come swimming from the side. They push them both away with their head and swim sideways as fast as lightning. Before ${pronounAndPlural(characterData, 0, 'know')} what has happened to ${pronoun(characterData, 1)}, they are already out of reach.*\n"That was close," *the Elderly says.* "Good thing I was nearby."`;
+						embed.description = `*It almost looks like the humans are catching up to the other ${profileData.rank} when suddenly two larger ${characterData.displayedSpecies || characterData.species}s come swimming from the side. They push them both away with their head and swim sideways as fast as lightning. Before ${pronounAndPlural(characterData, 0, 'know')} what has happened to ${pronoun(characterData, 1)}, they are already out of reach.*\n"That was close," *the Elderly says.* "Good thing I was nearby."`;
 					}
 				}
 
@@ -495,12 +495,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					if (speciesMap.get(characterData.species).habitat === 'warm' || speciesMap.get(characterData.species).habitat === 'cold') {
 
-						embed.description = `*The ${characterData.species} gasps as ${pronounAndPlural(characterData, 0, 'drop')} down to the ground, defeated. ${upperCasePronounAndPlural(characterData, 0, '\'s', '\'re')} just not fast enough... Suddenly a bunch of Elderlies come running and lift the pack members by their necks. Another ${characterData.species} has ${characterData.name} in their mouth and runs as fast as they can. Everyone is saved!*`;
+						embed.description = `*The ${characterData.displayedSpecies || characterData.species} gasps as ${pronounAndPlural(characterData, 0, 'drop')} down to the ground, defeated. ${upperCasePronounAndPlural(characterData, 0, '\'s', '\'re')} just not fast enough... Suddenly a bunch of Elderlies come running and lift the pack members by their necks. Another ${characterData.displayedSpecies || characterData.species} has ${characterData.name} in their mouth and runs as fast as they can. Everyone is saved!*`;
 					}
 
 					if (speciesMap.get(characterData.species).habitat === 'water') {
 
-						embed.description = `*The ${characterData.species} gasps as ${pronounAndPlural(characterData, 0, 'stop')} swimming, defeated. ${upperCasePronounAndPlural(characterData, 0, '\'s', '\'re')} just not fast enough... Suddenly a bunch of Elderlies come running and thrust the pack members from the side. Another ${characterData.species} pushes into ${characterData.name} with their head and swims as fast as they can. Everyone is saved!*`;
+						embed.description = `*The ${characterData.displayedSpecies || characterData.species} gasps as ${pronounAndPlural(characterData, 0, 'stop')} swimming, defeated. ${upperCasePronounAndPlural(characterData, 0, '\'s', '\'re')} just not fast enough... Suddenly a bunch of Elderlies come running and thrust the pack members from the side. Another ${characterData.displayedSpecies || characterData.species} pushes into ${characterData.name} with their head and swims as fast as they can. Everyone is saved!*`;
 					}
 				}
 
@@ -566,17 +566,17 @@ module.exports.introduceQuest = async (message, userData, embedArray, footerText
 
 		if (speciesMap.get(characterData.species).habitat === 'warm') {
 
-			embed.description = `*The ${characterData.species} wanders through the peaceful shrubbery, carefully surveying the undergrowth around ${pronoun(characterData, 1)}. To ${pronoun(characterData, 2)} left are thick bushes at the base of a lone tree. Suddenly, ${characterData.name} hears a pained yowl that seems to come from between the bushes. Could this be a pack member? Curious, ${pronounAndPlural(characterData, 0, 'trot')} over, and sure enough, another apprentice seems to be trapped. Now ${pronoun(characterData, 0)} must show all ${pronoun(characterData, 2)} strength and pull out ${pronoun(characterData, 2)} friend.*`;
+			embed.description = `*The ${characterData.displayedSpecies || characterData.species} wanders through the peaceful shrubbery, carefully surveying the undergrowth around ${pronoun(characterData, 1)}. To ${pronoun(characterData, 2)} left are thick bushes at the base of a lone tree. Suddenly, ${characterData.name} hears a pained yowl that seems to come from between the bushes. Could this be a pack member? Curious, ${pronounAndPlural(characterData, 0, 'trot')} over, and sure enough, another apprentice seems to be trapped. Now ${pronoun(characterData, 0)} must show all ${pronoun(characterData, 2)} strength and pull out ${pronoun(characterData, 2)} friend.*`;
 		}
 
 		if (speciesMap.get(characterData.species).habitat === 'cold') {
 
-			embed.description = `*The ${characterData.species} wanders through the peaceful forest, carefully surveying the undergrowth around ${pronoun(characterData, 1)}. To ${pronoun(characterData, 2)} left is a long, thick tree trunk overgrown with sodden moss. Suddenly, ${characterData.name} hears a pained yowl that seems to come from between the bushes. Could this be a pack member? Curious, ${pronounAndPlural(characterData, 0, 'trot')} over, and sure enough, another apprentice seems to be trapped. Now ${pronoun(characterData, 0)} must show all ${pronoun(characterData, 2)} strength and pull out ${pronoun(characterData, 2)} friend.*`;
+			embed.description = `*The ${characterData.displayedSpecies || characterData.species} wanders through the peaceful forest, carefully surveying the undergrowth around ${pronoun(characterData, 1)}. To ${pronoun(characterData, 2)} left is a long, thick tree trunk overgrown with sodden moss. Suddenly, ${characterData.name} hears a pained yowl that seems to come from between the bushes. Could this be a pack member? Curious, ${pronounAndPlural(characterData, 0, 'trot')} over, and sure enough, another apprentice seems to be trapped. Now ${pronoun(characterData, 0)} must show all ${pronoun(characterData, 2)} strength and pull out ${pronoun(characterData, 2)} friend.*`;
 		}
 
 		if (speciesMap.get(characterData.species).habitat === 'water') {
 
-			embed.description = `*The ${characterData.species} swims through the peaceful river, carefully surveying the algae around ${pronoun(characterData, 1)}. In front of ${pronoun(characterData, 2)} is a thick strainer, which through the leaves is barely passable even underneath. Suddenly, ${characterData.name} hears a pained yowl that seems to come from between the bushes. Could this be a pack member? Curious, ${pronounAndPlural(characterData, 0, 'swim')} over, and sure enough, another apprentice seems to be trapped. Now ${pronoun(characterData, 0)} must show all ${pronoun(characterData, 2)} strength and pull out ${pronoun(characterData, 2)} friend.*`;
+			embed.description = `*The ${characterData.displayedSpecies || characterData.species} swims through the peaceful river, carefully surveying the algae around ${pronoun(characterData, 1)}. In front of ${pronoun(characterData, 2)} is a thick strainer, which through the leaves is barely passable even underneath. Suddenly, ${characterData.name} hears a pained yowl that seems to come from between the bushes. Could this be a pack member? Curious, ${pronounAndPlural(characterData, 0, 'swim')} over, and sure enough, another apprentice seems to be trapped. Now ${pronoun(characterData, 0)} must show all ${pronoun(characterData, 2)} strength and pull out ${pronoun(characterData, 2)} friend.*`;
 		}
 	}
 
@@ -584,17 +584,17 @@ module.exports.introduceQuest = async (message, userData, embedArray, footerText
 
 		if (speciesMap.get(characterData.species).habitat === 'warm') {
 
-			embed.description = `*It is a quiet morning in the savanna. Only the rustling of the scarce bushes and trees breaks the silence. ${characterData.name} meanders over the sand, looking for food for ${pronoun(characterData, 2)} pack. But suddenly the ${characterData.species} hears a motor. Frightened, ${pronounAndPlural(characterData, 0, 'look')} into the distance: indeed, a jeep is in front of ${pronoun(characterData, 1)}, and the humans inside have another ${profileData.rank} of ${pronoun(characterData, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(characterData, 0, 'get')} to the rescue, the better.*`;
+			embed.description = `*It is a quiet morning in the savanna. Only the rustling of the scarce bushes and trees breaks the silence. ${characterData.name} meanders over the sand, looking for food for ${pronoun(characterData, 2)} pack. But suddenly the ${characterData.displayedSpecies || characterData.species} hears a motor. Frightened, ${pronounAndPlural(characterData, 0, 'look')} into the distance: indeed, a jeep is in front of ${pronoun(characterData, 1)}, and the humans inside have another ${profileData.rank} of ${pronoun(characterData, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(characterData, 0, 'get')} to the rescue, the better.*`;
 		}
 
 		if (speciesMap.get(characterData.species).habitat === 'cold') {
 
-			embed.description = `*It is a quiet morning in the taiga. Only the chirping of birds in the trees breaks the silence. ${characterData.name} meanders between the trees, looking for food for ${pronoun(characterData, 2)} pack. But suddenly the ${characterData.species} hears a motor. Frightened, ${pronounAndPlural(characterData, 0, 'look')} into the distance: indeed, a jeep is in front of ${pronoun(characterData, 1)}, and the humans inside have another ${profileData.rank} of ${pronoun(characterData, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(characterData, 0, 'get')} to the rescue, the better.*`;
+			embed.description = `*It is a quiet morning in the taiga. Only the chirping of birds in the trees breaks the silence. ${characterData.name} meanders between the trees, looking for food for ${pronoun(characterData, 2)} pack. But suddenly the ${characterData.displayedSpecies || characterData.species} hears a motor. Frightened, ${pronounAndPlural(characterData, 0, 'look')} into the distance: indeed, a jeep is in front of ${pronoun(characterData, 1)}, and the humans inside have another ${profileData.rank} of ${pronoun(characterData, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(characterData, 0, 'get')} to the rescue, the better.*`;
 		}
 
 		if (speciesMap.get(characterData.species).habitat === 'water') {
 
-			embed.description = `*It is a quiet morning in the coral reef. Only once in a while a fish passes by. ${characterData.name} floats through the water, looking for food for ${pronoun(characterData, 2)} pack. But suddenly the ${characterData.species} hears a motor. Frightened, ${pronounAndPlural(characterData, 0, 'look')} to the surface: indeed, a motorboat is in front of ${pronoun(characterData, 1)}, and the humans inside have another ${profileData.rank} of ${pronoun(characterData, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(characterData, 0, 'get')} to the rescue, the better.*`;
+			embed.description = `*It is a quiet morning in the coral reef. Only once in a while a fish passes by. ${characterData.name} floats through the water, looking for food for ${pronoun(characterData, 2)} pack. But suddenly the ${characterData.displayedSpecies || characterData.species} hears a motor. Frightened, ${pronounAndPlural(characterData, 0, 'look')} to the surface: indeed, a motorboat is in front of ${pronoun(characterData, 1)}, and the humans inside have another ${profileData.rank} of ${pronoun(characterData, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(characterData, 0, 'get')} to the rescue, the better.*`;
 		}
 	}
 
@@ -602,17 +602,17 @@ module.exports.introduceQuest = async (message, userData, embedArray, footerText
 
 		if (speciesMap.get(characterData.species).habitat === 'warm') {
 
-			embed.description = `*Something is off, the ${characterData.species} senses it. In the desert, it was strangely quiet, not this peaceful silence, but as if ${pronoun(characterData, 0)} were all alone. ${characterData.name} looks around and can't see a soul far and wide. Then it dawns on ${pronoun(characterData, 1)}. A glance over ${pronoun(characterData, 2)} shoulder confirms ${pronoun(characterData, 2)} fear, a big sandstorm is approaching. ${characterData.name} is out of range, but other pack members might be in danger. If ${pronounAndPlural(characterData, 0, 'doesn\'t', 'don\'t')} hurry now, ${pronoun(characterData, 2)} friends may never find their way back.*`;
+			embed.description = `*Something is off, the ${characterData.displayedSpecies || characterData.species} senses it. In the desert, it was strangely quiet, not this peaceful silence, but as if ${pronoun(characterData, 0)} were all alone. ${characterData.name} looks around and can't see a soul far and wide. Then it dawns on ${pronoun(characterData, 1)}. A glance over ${pronoun(characterData, 2)} shoulder confirms ${pronoun(characterData, 2)} fear, a big sandstorm is approaching. ${characterData.name} is out of range, but other pack members might be in danger. If ${pronounAndPlural(characterData, 0, 'doesn\'t', 'don\'t')} hurry now, ${pronoun(characterData, 2)} friends may never find their way back.*`;
 		}
 
 		if (speciesMap.get(characterData.species).habitat === 'cold') {
 
-			embed.description = `*Something is off, the ${characterData.species} senses it. In the tundra, it was strangely quiet, not this peaceful silence, but as if ${pronoun(characterData, 0)} were all alone. ${characterData.name} looks around and can't see a soul far and wide. Then it dawns on ${pronoun(characterData, 1)}. A glance over ${pronoun(characterData, 2)} shoulder confirms ${pronoun(characterData, 2)} fear, a big snowstorm is approaching. ${characterData.name} is out of range, but other pack members might be in danger. If ${pronounAndPlural(characterData, 0, 'doesn\'t', 'don\'t')} hurry now, ${pronoun(characterData, 2)} friends may never find their way back.*`;
+			embed.description = `*Something is off, the ${characterData.displayedSpecies || characterData.species} senses it. In the tundra, it was strangely quiet, not this peaceful silence, but as if ${pronoun(characterData, 0)} were all alone. ${characterData.name} looks around and can't see a soul far and wide. Then it dawns on ${pronoun(characterData, 1)}. A glance over ${pronoun(characterData, 2)} shoulder confirms ${pronoun(characterData, 2)} fear, a big snowstorm is approaching. ${characterData.name} is out of range, but other pack members might be in danger. If ${pronounAndPlural(characterData, 0, 'doesn\'t', 'don\'t')} hurry now, ${pronoun(characterData, 2)} friends may never find their way back.*`;
 		}
 
 		if (speciesMap.get(characterData.species).habitat === 'water') {
 
-			embed.description = `*Something is off, the ${characterData.species} senses it. In the ocean, it was strangely quiet, not this peaceful silence, but as if ${pronoun(characterData, 0)} were all alone. ${characterData.name} looks around and can't see a soul far and wide. Then it dawns on ${pronoun(characterData, 1)}. A glance over ${pronoun(characterData, 2)} shoulder confirms ${pronoun(characterData, 2)} fear, a big landslide is approaching. ${characterData.name} is out of range, but other pack members might be in danger. If ${pronounAndPlural(characterData, 0, 'doesn\'t', 'don\'t')} hurry now, ${pronoun(characterData, 2)} friends may never find their way back.*`;
+			embed.description = `*Something is off, the ${characterData.displayedSpecies || characterData.species} senses it. In the ocean, it was strangely quiet, not this peaceful silence, but as if ${pronoun(characterData, 0)} were all alone. ${characterData.name} looks around and can't see a soul far and wide. Then it dawns on ${pronoun(characterData, 1)}. A glance over ${pronoun(characterData, 2)} shoulder confirms ${pronoun(characterData, 2)} fear, a big landslide is approaching. ${characterData.name} is out of range, but other pack members might be in danger. If ${pronounAndPlural(characterData, 0, 'doesn\'t', 'don\'t')} hurry now, ${pronoun(characterData, 2)} friends may never find their way back.*`;
 		}
 	}
 

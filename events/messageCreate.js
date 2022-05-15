@@ -179,7 +179,7 @@ const event = {
 					embeds: [{
 						color: characterData.color,
 						author: { name: characterData.name, icon_url: characterData.avatarURL },
-						description: `*Engrossed in ${pronoun(characterData, 2)} work, ${characterData.name} suddenly remembers that ${pronounAndPlural(characterData, 0, 'has', 'have')} not yet watered ${pronoun(characterData, 2)} plant today. The ${characterData.species} should really do it soon!*`,
+						description: `*Engrossed in ${pronoun(characterData, 2)} work, ${characterData.name} suddenly remembers that ${pronounAndPlural(characterData, 0, 'has', 'have')} not yet watered ${pronoun(characterData, 2)} plant today. The ${characterData.displayedSpecies || characterData.species} should really do it soon!*`,
 						footer: { text: 'Type "rp water" to water your ginkgo sapling!' },
 					}],
 				})

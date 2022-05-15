@@ -69,7 +69,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				embeds: [...embedArray, {
 					color: characterData.color,
 					author: { name: characterData.name, icon_url: characterData.avatarURL },
-					description: `*${characterData.name} is about to begin sharing a story when an elderly interrupts them.* "Oh, young ${characterData.species}, you need to have a lot more adventures before you can start advising others!"`,
+					description: `*${characterData.name} is about to begin sharing a story when an elderly interrupts them.* "Oh, young ${characterData.displayedSpecies || characterData.species}, you need to have a lot more adventures before you can start advising others!"`,
 				}],
 				failIfNotExists: false,
 			})
@@ -255,7 +255,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		partnerCharacterData = partnerUserData.characters[partnerCharacterData._id];
 		partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id];
 
-		embed.description = `*${partnerCharacterData.name} comes running to the old wooden trunk at the ruins where ${characterData.name} sits, ready to tell an exciting story from long ago. ${upperCasePronoun(partnerCharacterData, 2)} eyes are sparkling as the ${characterData.species} recounts great adventures and the lessons to be learned from them.*`;
+		embed.description = `*${partnerCharacterData.name} comes running to the old wooden trunk at the ruins where ${characterData.name} sits, ready to tell an exciting story from long ago. ${upperCasePronoun(partnerCharacterData, 2)} eyes are sparkling as the ${characterData.displayedSpecies || characterData.species} recounts great adventures and the lessons to be learned from them.*`;
 		embed.footer.text = `${embedFooterStatsText}\n+${partnerExperiencePoints} XP for ${partnerCharacterData.name} (${partnerProfileData.experience}/${partnerProfileData.levels * 50})`;
 
 		/** @type {Array<import('discord.js').MessageEmbedOptions>} */

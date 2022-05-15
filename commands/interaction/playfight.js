@@ -119,7 +119,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			embeds: [...embedArray, {
 				color: characterData.color,
 				author: { name: characterData.name, icon_url: characterData.avatarURL },
-				description: `*${characterData.name} hangs around the prairie when ${partnerCharacterData.name} comes by. The ${partnerCharacterData.species} has things to do but ${characterData.name}'s smug expression implies ${pronoun(partnerCharacterData, 0)} wouldn't be able to beat the ${characterData.species}.*`,
+				description: `*${characterData.name} hangs around the prairie when ${partnerCharacterData.name} comes by. The ${partnerCharacterData.displayedSpecies || partnerCharacterData.species} has things to do but ${characterData.name}'s smug expression implies ${pronoun(partnerCharacterData, 0)} wouldn't be able to beat the ${characterData.displayedSpecies || characterData.species}.*`,
 				footer: { text: `You are playing ${gameType}. After 60 seconds, the invitation expires.\n\nTip: To pick a game, include 'connectfour' / 'c4' or 'tictactoe' / 'ttt' somewhere in the original command.` },
 			}],
 			components: [ new MessageActionRow({
@@ -275,7 +275,7 @@ function playTicTacToe(serverData, userData, partnerUserData, message, botReply,
 						embeds: [...embedArray, {
 							color: /** @type {`#${string}`} */ (default_color),
 							author: { name: characterData.name, icon_url: characterData.avatarURL },
-							description: `*${characterData.name} wouldn't give in so easily and simply passes the pleading looks of the ${characterData.species}.*`,
+							description: `*${characterData.name} wouldn't give in so easily and simply passes the pleading looks of the ${characterData.displayedSpecies || characterData.species}.*`,
 						}],
 						components: disableAllComponents(botReply.components),
 					})
@@ -355,9 +355,9 @@ function playTicTacToe(serverData, userData, partnerUserData, message, botReply,
 		}
 
 		const newTurnEmbedTextArray = [
-			`*${currentCharacterData.name} bites into ${otherCharacterData.name}, not very deep, but deep enough to hang onto the ${otherCharacterData.species}. ${otherCharacterData.name} needs to get the ${currentCharacterData.species} off of ${pronoun(otherCharacterData, 1)}.*`,
-			`*${currentCharacterData.name} slams into ${otherCharacterData.name}, leaving the ${otherCharacterData.species} disoriented. ${otherCharacterData.name} needs to start an attack of ${pronoun(otherCharacterData, 2)} own now.*`,
-			`*${otherCharacterData.name} has gotten hold of ${currentCharacterData.name}, but the ${currentCharacterData.species} manages to get ${pronoun(otherCharacterData, 1)} off, sending the ${otherCharacterData.species} slamming into the ground. ${otherCharacterData.name} needs to get up and try a new strategy.*`,
+			`*${currentCharacterData.name} bites into ${otherCharacterData.name}, not very deep, but deep enough to hang onto the ${otherCharacterData.displayedSpecies || otherCharacterData.species}. ${otherCharacterData.name} needs to get the ${currentCharacterData.displayedSpecies || currentCharacterData.species} off of ${pronoun(otherCharacterData, 1)}.*`,
+			`*${currentCharacterData.name} slams into ${otherCharacterData.name}, leaving the ${otherCharacterData.displayedSpecies || otherCharacterData.species} disoriented. ${otherCharacterData.name} needs to start an attack of ${pronoun(otherCharacterData, 2)} own now.*`,
+			`*${otherCharacterData.name} has gotten hold of ${currentCharacterData.name}, but the ${currentCharacterData.displayedSpecies || currentCharacterData.displayedSpecies} manages to get ${pronoun(otherCharacterData, 1)} off, sending the ${otherCharacterData.displayedSpecies || otherCharacterData.species} slamming into the ground. ${otherCharacterData.name} needs to get up and try a new strategy.*`,
 		];
 
 		newTurnEmbedTextArrayIndex = generateRandomNumberWithException(newTurnEmbedTextArray.length, 0, newTurnEmbedTextArrayIndex);
@@ -555,7 +555,7 @@ function playConnectFour(serverData, userData, partnerUserData, message, botRepl
 						embeds: [...embedArray, {
 							color: /** @type {`#${string}`} */ (default_color),
 							author: { name: characterData.name, icon_url: characterData.avatarURL },
-							description: `*${partnerCharacterData.name} wouldn't give in so easily and simply passes the pleading looks of the ${characterData.species}.*`,
+							description: `*${partnerCharacterData.name} wouldn't give in so easily and simply passes the pleading looks of the ${characterData.displayedSpecies || characterData.species}.*`,
 						}],
 						components: disableAllComponents(botReply.components),
 					})
@@ -633,9 +633,9 @@ function playConnectFour(serverData, userData, partnerUserData, message, botRepl
 		}
 
 		const newTurnEmbedTextArray = [
-			`*${currentCharacterData.name} bites into ${otherCharacterData.name}, not very deep, but deep enough to hang onto the ${otherCharacterData.species}. ${otherCharacterData.name} needs to get the ${currentCharacterData.species} off of ${pronoun(otherCharacterData, 1)}.*`,
-			`*${currentCharacterData.name} slams into ${otherCharacterData.name}, leaving the ${otherCharacterData.species} disoriented. ${otherCharacterData.name} needs to start an attack of ${pronoun(otherCharacterData, 2)} own now.*`,
-			`*${otherCharacterData.name} has gotten hold of ${currentCharacterData.name}, but the ${currentCharacterData.species} manages to get ${pronoun(otherCharacterData, 1)} off, sending the ${otherCharacterData.species} slamming into the ground. ${otherCharacterData.name} needs to get up and try a new strategy.*`,
+			`*${currentCharacterData.name} bites into ${otherCharacterData.name}, not very deep, but deep enough to hang onto the ${otherCharacterData.displayedSpecies || otherCharacterData.species}. ${otherCharacterData.name} needs to get the ${currentCharacterData.displayedSpecies || currentCharacterData.species} off of ${pronoun(otherCharacterData, 1)}.*`,
+			`*${currentCharacterData.name} slams into ${otherCharacterData.name}, leaving the ${otherCharacterData.displayedSpecies || otherCharacterData.species} disoriented. ${otherCharacterData.name} needs to start an attack of ${pronoun(otherCharacterData, 2)} own now.*`,
+			`*${otherCharacterData.name} has gotten hold of ${currentCharacterData.name}, but the ${currentCharacterData.displayedSpecies || currentCharacterData.species} manages to get ${pronoun(otherCharacterData, 1)} off, sending the ${otherCharacterData.displayedSpecies || otherCharacterData.species} slamming into the ground. ${otherCharacterData.name} needs to get up and try a new strategy.*`,
 		];
 
 		newTurnEmbedTextArrayIndex = generateRandomNumberWithException(newTurnEmbedTextArray.length, 0, newTurnEmbedTextArrayIndex);
@@ -951,7 +951,7 @@ async function executeWin(componentArray, message, userData, serverData, partner
 
 				userInjuryObject.infections += 1;
 
-				getHurtText += `*${otherCharacterData.name} has enjoyed the roughhousing, but ${pronounAndPlural(otherCharacterData, 0, 'is', 'are')} struck by exhaustion. After taking a short nap, ${pronounAndPlural(otherCharacterData, 0, 'notice')} the rash creeping along ${pronoun(otherCharacterData, 2)} back. Oh no! The ${otherCharacterData.species} has gotten an infection while playing!*`;
+				getHurtText += `*${otherCharacterData.name} has enjoyed the roughhousing, but ${pronounAndPlural(otherCharacterData, 0, 'is', 'are')} struck by exhaustion. After taking a short nap, ${pronounAndPlural(otherCharacterData, 0, 'notice')} the rash creeping along ${pronoun(otherCharacterData, 2)} back. Oh no! The ${otherCharacterData.displayedSpecies || otherCharacterData.species} has gotten an infection while playing!*`;
 
 				if (otherUserData.userId === userData.userId) {
 
@@ -968,7 +968,7 @@ async function executeWin(componentArray, message, userData, serverData, partner
 
 				userInjuryObject.sprains += 1;
 
-				getHurtText += `*${otherCharacterData.name} tries to get up with ${currentCharacterData.name}'s help, but the ${otherCharacterData.species} feels a horrible pain as ${pronoun(otherCharacterData, 0)} get up. Ironically, ${otherCharacterData.name} got a sprain from getting up after the fight.*`;
+				getHurtText += `*${otherCharacterData.name} tries to get up with ${currentCharacterData.name}'s help, but the ${otherCharacterData.displayedSpecies || otherCharacterData.species} feels a horrible pain as ${pronoun(otherCharacterData, 0)} get up. Ironically, ${otherCharacterData.name} got a sprain from getting up after the fight.*`;
 
 				if (otherUserData.userId === userData.userId) {
 
@@ -990,7 +990,7 @@ async function executeWin(componentArray, message, userData, serverData, partner
 			embeds: [...embedArray, {
 				color: characterData.color,
 				author: { name: characterData.name, icon_url: characterData.avatarURL },
-				description: `*The two animals are pressing against each other with all their might. It seems like the fight will never end this way, but ${currentCharacterData.name} has one more trick up ${pronoun(currentCharacterData, 2)} sleeve: ${pronoun(currentCharacterData, 0)} simply moves out of the way, letting ${otherCharacterData.name} crash into the ground. ${upperCasePronounAndPlural(otherCharacterData, 0, 'has', 'have')} a wry grin on ${pronoun(otherCharacterData, 2)} face as ${pronounAndPlural(otherCharacterData, 0, 'look')} up at the ${currentCharacterData.species}. ${currentCharacterData.name} wins this fight, but who knows about the next one?*\n\n${getHurtText}`,
+				description: `*The two animals are pressing against each other with all their might. It seems like the fight will never end this way, but ${currentCharacterData.name} has one more trick up ${pronoun(currentCharacterData, 2)} sleeve: ${pronoun(currentCharacterData, 0)} simply moves out of the way, letting ${otherCharacterData.name} crash into the ground. ${upperCasePronounAndPlural(otherCharacterData, 0, 'has', 'have')} a wry grin on ${pronoun(otherCharacterData, 2)} face as ${pronounAndPlural(otherCharacterData, 0, 'look')} up at the ${currentCharacterData.displayedSpecies || currentCharacterData.species}. ${currentCharacterData.name} wins this fight, but who knows about the next one?*\n\n${getHurtText}`,
 				footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
 			}],
 			components: componentArray,
@@ -1048,7 +1048,7 @@ async function executeDraw(componentArray, message, userData, serverData, partne
 			embeds: [...embedArray, {
 				color: characterData.color,
 				author: { name: characterData.name, icon_url: characterData.avatarURL },
-				description: `*The two animals wrestle with each other until ${characterData.name} falls over the ${partnerCharacterData.species} and both of them land on the ground. They pant and glare at each other, but ${partnerCharacterData.name} can't contain ${pronoun(partnerCharacterData, 2)} laughter. The ${characterData.species} starts to giggle as well. The fight has been fun, even though no one won.*`,
+				description: `*The two animals wrestle with each other until ${characterData.name} falls over the ${partnerCharacterData.displayedSpecies || partnerCharacterData.displayedSpecies || partnerCharacterData.species} and both of them land on the ground. They pant and glare at each other, but ${partnerCharacterData.name} can't contain ${pronoun(partnerCharacterData, 2)} laughter. The ${characterData.displayedSpecies || characterData.species} starts to giggle as well. The fight has been fun, even though no one won.*`,
 				footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
 			}],
 			components: componentArray,

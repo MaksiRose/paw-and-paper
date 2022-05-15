@@ -88,7 +88,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		healthPoints = pullFromWeightedTable({ 0: 6, 1: 5, 2: 4, 3: 3, 4: 2, 5: 1 }) + generateRandomNumber(Math.round(saplingObject.waterCycles / 4), 0);
 		if (profileData.health + healthPoints > profileData.maxHealth) { healthPoints = profileData.maxHealth - profileData.health; }
 
-		embed.description = `*${characterData.name} waters the seedling, and it look it's at the perfect time. The ginkgo tree looks healthy, the leaves have a strong green color, and a pleasant fragrance emanates from them. The ${characterData.species} feels warm and safe from the scent.*`,
+		embed.description = `*${characterData.name} waters the seedling, and it look it's at the perfect time. The ginkgo tree looks healthy, the leaves have a strong green color, and a pleasant fragrance emanates from them. The ${characterData.displayedSpecies || characterData.species} feels warm and safe from the scent.*`,
 		embed.footer.text = `+${experiencePoints} XP (${profileData.experience + experiencePoints}/${profileData.levels * 50})${healthPoints > 0 ? `\n+${healthPoints} health (${profileData.health + healthPoints}/${profileData.maxEnergy})` : ''}\n\n+${saplingHealthPoints} health for ginkgo sapling\nCome back to water it in 24 hours.`;
 	}
 	else if (timeDifference >= -threeHours && timeDifference <= threeHours) {
@@ -104,7 +104,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		const saplingHealthPoints = Math.floor((timeDifferenceInMinutes + 180) / 60);
 		saplingObject.health += saplingHealthPoints;
 
-		embed.description = `*The soil is already soggy when ${characterData.name} adds more water to it. The leaves are yellow-brown, the stem is muddy and has a slight mold. Next time the ${characterData.species} should wait a little with the watering.*`;
+		embed.description = `*The soil is already soggy when ${characterData.name} adds more water to it. The leaves are yellow-brown, the stem is muddy and has a slight mold. Next time the ${characterData.displayedSpecies || characterData.species} should wait a little with the watering.*`;
 		embed.footer.text = `${saplingHealthPoints} health for ginkgo tree\nCome back to water it in 24 hours.`;
 	}
 	else {

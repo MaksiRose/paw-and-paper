@@ -72,7 +72,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userDataV, 
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					description: `*${characterDataV.name} really wants to visit some packs in the area but no one there seems to have time. The ${characterDataV.species} gets back feeling a bit lonely but when ${pronounAndPlural(characterDataV, 0, 'see')} all ${pronoun(characterDataV, 2)} packmates having fun at home ${characterDataV.name} cheers up and joins them excitedly.*`,
+					description: `*${characterDataV.name} really wants to visit some packs in the area but no one there seems to have time. The ${characterDataV.displayedSpecies || characterDataV.species} gets back feeling a bit lonely but when ${pronounAndPlural(characterDataV, 0, 'see')} all ${pronoun(characterDataV, 2)} packmates having fun at home ${characterDataV.name} cheers up and joins them excitedly.*`,
 				}],
 				failIfNotExists: false,
 			})
@@ -238,7 +238,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userDataV, 
 					embeds: [{
 						color: /** @type {`#${string}`} */ (default_color),
 						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-						title: `Near the lake a ${characterDataV.species} is waiting. ${upperCasePronoun(characterDataV, 0)} came out of the direction where a pack named "${serverDataV.name}" is lying. ${upperCasePronoun(characterDataV, 0)} seems to be waiting for permission to cross the pack borders.`,
+						title: `Near the lake a ${characterDataV.displayedSpecies || characterDataV.species} is waiting. ${upperCasePronoun(characterDataV, 0)} came out of the direction where a pack named "${serverDataV.name}" is lying. ${upperCasePronoun(characterDataV, 0)} seems to be waiting for permission to cross the pack borders.`,
 						footer: { text: 'The invitation will expire in five minutes. Alternatively, you can decline it using the button below.' },
 					}],
 					components: [ new MessageActionRow({
@@ -326,7 +326,7 @@ async function declinedInvitation(message, characterData, botReplyV, botReplyH) 
 			embeds: [{
 				color: /** @type {`#${string}`} */ (default_color),
 				author: { name: botReplyH.guild.name, icon_url: botReplyH.guild.iconURL() },
-				description: `*After ${characterData.name} waited for a while, ${pronoun(characterData, 0)} couldn't deal with the boredom and left the borders of ${botReplyV.guild.name}. The ${characterData.species} gets back feeling a bit lonely but when ${pronounAndPlural(characterData, 0, 'see')} all ${pronoun(characterData, 2)} packmates having fun at home, ${characterData.name} cheers up and joins them excitedly.*`,
+				description: `*After ${characterData.name} waited for a while, ${pronoun(characterData, 0)} couldn't deal with the boredom and left the borders of ${botReplyV.guild.name}. The ${characterData.displayedSpecies || characterData.species} gets back feeling a bit lonely but when ${pronounAndPlural(characterData, 0, 'see')} all ${pronoun(characterData, 2)} packmates having fun at home, ${characterData.name} cheers up and joins them excitedly.*`,
 			}],
 			failIfNotExists: false,
 		})
@@ -347,7 +347,7 @@ async function declinedInvitation(message, characterData, botReplyV, botReplyH) 
 			embeds: [{
 				color: /** @type {`#${string}`} */ (default_color),
 				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-				description: `*After the ${characterData.species} waited for a while, the pack members of ${botReplyV.guild.name} can see them getting up and leaving, probably due to boredom. Everyone is too busy anyways, so it is probably for the best if ${pronoun(characterData, 0)} come back later.*`,
+				description: `*After the ${characterData.displayedSpecies || characterData.species} waited for a while, the pack members of ${botReplyV.guild.name} can see them getting up and leaving, probably due to boredom. Everyone is too busy anyways, so it is probably for the best if ${pronoun(characterData, 0)} come back later.*`,
 			}],
 			failIfNotExists: false,
 		})
@@ -392,7 +392,7 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 			embeds: [{
 				color: /** @type {`#${string}`} */ (default_color),
 				author: { name: botReplyH.guild.name, icon_url: botReplyH.guild.iconURL() },
-				description: `*After waiting for a bit, a ${characterDataH.species} comes closer, inviting ${characterDataV.name} and their packmates in and leading them inside where they can talk to all these new friends.*`,
+				description: `*After waiting for a bit, a ${characterDataH.displayedSpecies || characterDataH.species} comes closer, inviting ${characterDataV.name} and their packmates in and leading them inside where they can talk to all these new friends.*`,
 				footer: { text: 'Anyone with a completed profile can now send a message in this channel. It will be delivered to the other pack, and vice versa. Type "rp endvisit" to end the visit at any time.' },
 			}],
 			failIfNotExists: false,
@@ -414,7 +414,7 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 			embeds: [{
 				color: /** @type {`#${string}`} */ (default_color),
 				author: { name: botReplyV.guild.name, icon_url: botReplyV.guild.iconURL() },
-				description: `*${characterDataH.name} goes to pick up the ${characterDataV.species} and their packmates from the pack borders. The new friends seem excited to be here and to talk to everyone.*`,
+				description: `*${characterDataH.name} goes to pick up the ${characterDataV.displayedSpecies || characterDataV.species} and their packmates from the pack borders. The new friends seem excited to be here and to talk to everyone.*`,
 				footer: { text: 'Anyone with a completed profile can now send a message in this channel. It will be delivered to the other pack, and vice versa. Type "rp endvisit" to end the visit at any time.' },
 			}],
 			failIfNotExists: false,

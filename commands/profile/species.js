@@ -55,7 +55,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 	const existingSpeciesEmbed = new MessageEmbed({
 		color: characterData.color,
 		author: { name: characterData.name, icon_url: characterData.avatarURL },
-		title: `${characterData.name} is a ${characterData.species}! You cannot change ${pronoun(characterData, 2)} species, but you can create another character via \`rp profile\`. Alternatively, you can use the button below to change what species is displayed to others to anything you want.`,
+		title: `${characterData.name} is a ${characterData.displayedSpecies || characterData.species}! You cannot change ${pronoun(characterData, 2)} species, but you can create another character via \`rp profile\`. Alternatively, you can use the button below to change what species is displayed to others to anything you want.`,
 		description: `Here is a list of species that you can choose when making a new character: ${[...speciesMap.keys()].sort().join(', ')}`,
 	});
 

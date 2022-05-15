@@ -198,7 +198,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		if (cycleKind === 'dodge') {
 
-			embed.description = `↪️ *Looks like the Elderly is preparing a maneuver for ${characterData.name}'s next move. The ${characterData.species} must think quickly about how ${pronounAndPlural(characterData, 0, 'want')} to react.*`;
+			embed.description = `↪️ *Looks like the Elderly is preparing a maneuver for ${characterData.name}'s next move. The ${characterData.displayedSpecies || characterData.species} must think quickly about how ${pronounAndPlural(characterData, 0, 'want')} to react.*`;
 			embed.footer.text = 'Tip: Defending a maneuver blocks it effectively, which prevents your opponent from hurting you.';
 		}
 

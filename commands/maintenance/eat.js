@@ -49,7 +49,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				embeds: [...embedArray, {
 					color: characterData.color,
 					author: { name: characterData.name, icon_url: characterData.avatarURL },
-					description: `*${characterData.name}'s stomach bloats as ${pronounAndPlural(characterData, 0, 'roll')} around camp, stuffing food into ${pronoun(characterData, 2)} mouth. The ${characterData.species} might need to take a break from food before ${pronounAndPlural(characterData, 0, 'goes', 'go')} into a food coma.*`,
+					description: `*${characterData.name}'s stomach bloats as ${pronounAndPlural(characterData, 0, 'roll')} around camp, stuffing food into ${pronoun(characterData, 2)} mouth. The ${characterData.displayedSpecies || characterData.species} might need to take a break from food before ${pronounAndPlural(characterData, 0, 'goes', 'go')} into a food coma.*`,
 				}],
 				failIfNotExists: false,
 			})
@@ -149,7 +149,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			finalHungerPoints = function(hunger) { return profileData.hunger + hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(3, -3));
 
-			embed.description = `*${characterData.name} slowly opens ${pronoun(characterData, 2)} mouth and chomps onto the ${chosenFood}. The ${characterData.species} swallows it, but ${pronoun(characterData, 2)} face has a look of disgust. That wasn't very tasty!*`;
+			embed.description = `*${characterData.name} slowly opens ${pronoun(characterData, 2)} mouth and chomps onto the ${chosenFood}. The ${characterData.displayedSpecies || characterData.species} swallows it, but ${pronoun(characterData, 2)} face has a look of disgust. That wasn't very tasty!*`;
 		}
 
 		if (plantMap.get(chosenFood).edibality === 'e') {
@@ -158,14 +158,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 				finalHungerPoints = function(hunger) { return profileData.hunger + hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(5, 1));
 
-				embed.description = `*${characterData.name} plucks a ${chosenFood} from the pack storage and nibbles away at it. It has a bitter, foreign taste, not the usual meaty meal the ${characterData.species} prefers.*`;
+				embed.description = `*${characterData.name} plucks a ${chosenFood} from the pack storage and nibbles away at it. It has a bitter, foreign taste, not the usual meaty meal the ${characterData.displayedSpecies || characterData.species} prefers.*`;
 			}
 
 			if (speciesMap.get(characterData.species).diet === 'herbivore' || speciesMap.get(characterData.species).diet === 'omnivore') {
 
 				finalHungerPoints = function(hunger) { return profileData.hunger + hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(4, 15));
 
-				embed.description = `*Leaves flutter into the storage den, landing near ${characterData.name}'s feet. The ${characterData.species} searches around the inventory determined to find the perfect meal, and that ${pronounAndPlural(characterData, 0, 'does', 'do')}. ${characterData.name} plucks a ${chosenFood} from the pile and eats until ${pronoun(characterData, 2)} stomach is pleased.*`;
+				embed.description = `*Leaves flutter into the storage den, landing near ${characterData.name}'s feet. The ${characterData.displayedSpecies || characterData.species} searches around the inventory determined to find the perfect meal, and that ${pronounAndPlural(characterData, 0, 'does', 'do')}. ${characterData.name} plucks a ${chosenFood} from the pile and eats until ${pronoun(characterData, 2)} stomach is pleased.*`;
 			}
 		}
 
@@ -245,14 +245,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			finalHungerPoints = function(hunger) { return profileData.hunger - hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(5, 1));
 
-			embed.description = `*${characterData.name} stands by the storage den, eyeing the varieties of food. A ${chosenFood} catches ${pronoun(characterData, 2)} attention. The ${characterData.species} walks over to it and begins to eat.* "This isn't very good!" *${characterData.name} whispers to ${pronoun(characterData, 4)} and leaves the den, stomach still growling, and craving for plants to grow.*`;
+			embed.description = `*${characterData.name} stands by the storage den, eyeing the varieties of food. A ${chosenFood} catches ${pronoun(characterData, 2)} attention. The ${characterData.displayedSpecies || characterData.species} walks over to it and begins to eat.* "This isn't very good!" *${characterData.name} whispers to ${pronoun(characterData, 4)} and leaves the den, stomach still growling, and craving for plants to grow.*`;
 		}
 
 		if (speciesMap.get(characterData.species).diet === 'carnivore' || speciesMap.get(characterData.species).diet === 'omnivore') {
 
 			finalHungerPoints = function(hunger) { return profileData.hunger - hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(4, 15));
 
-			embed.description = `*${characterData.name} sits chewing maliciously on a ${chosenFood}. A dribble of blood escapes out of ${pronoun(characterData, 2)} jaw as the ${characterData.species} finishes off the meal. It was a delicious feast, but very messy!*`;
+			embed.description = `*${characterData.name} sits chewing maliciously on a ${chosenFood}. A dribble of blood escapes out of ${pronoun(characterData, 2)} jaw as the ${characterData.displayedSpecies || characterData.species} finishes off the meal. It was a delicious feast, but very messy!*`;
 		}
 
 		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
@@ -293,7 +293,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		if (taggedUserData) {
 
-			embed.description = `*${characterData.name} looks down at ${taggedCharacterData.name} as ${pronounAndPlural(characterData, 0, 'nom')} on the ${taggedCharacterData.species}'s leg.* "No eating packmates here!" *${taggedCharacterData.name} chuckled, shaking off ${characterData.name}.*`;
+			embed.description = `*${characterData.name} looks down at ${taggedCharacterData.name} as ${pronounAndPlural(characterData, 0, 'nom')} on the ${taggedCharacterData.displayedSpecies || taggedCharacterData.species}'s leg.* "No eating packmates here!" *${taggedCharacterData.name} chuckled, shaking off ${characterData.name}.*`;
 			embed.footer.text = profileData.currentRegion !== 'food den' ? '\nYou are now at the food den' : null;
 
 			await message

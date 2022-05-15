@@ -54,7 +54,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				embeds: [...embedArray, {
 					color: characterData.color,
 					author: { name: characterData.name, icon_url: characterData.avatarURL },
-					description: `*${characterData.name} is looking to go on an adventure, but going alone is very dangerous. The ${characterData.species} should find someone to take with ${pronoun(characterData, 1)}.*`,
+					description: `*${characterData.name} is looking to go on an adventure, but going alone is very dangerous. The ${characterData.displayedSpecies || characterData.species} should find someone to take with ${pronoun(characterData, 1)}.*`,
 				}],
 				failIfNotExists: false,
 			})
@@ -146,7 +146,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	const cardPositionsArray = [];
 	for (let i = 0; i < 4; i++) {
 
-		componentArray.push(new MessageActionRow({ components: [] }));
+		componentArray.push(new MessageActionRow().addComponents([]));
 		cardPositionsArray.push([]);
 		for (let j = 0; j < 5; j++) {
 
