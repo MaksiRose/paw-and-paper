@@ -7,6 +7,7 @@ const { execute, startRestingTimeout } = require('./messageCreate');
 const { sendReminder, stopReminder } = require('../commands/maintenance/water');
 const userMap = require('../utils/userMap');
 const { getMessageContent } = require('../commands/maintenance/stats');
+const { MessageEmbed } = require('discord.js');
 
 /**
  * @type {import('../typedef').Event}
@@ -18,17 +19,47 @@ const event = {
 	/**
 	 * Emitted when an interaction is created.
 	 * @param {import('../paw').client} client
-	 * @param {(import('discord.js').SelectMenuInteraction | import('discord.js').ButtonInteraction) & { message: import('discord.js').Message }} interaction
+	 * @param {(import('discord.js').SelectMenuInteraction | import('discord.js').ButtonInteraction | import('discord.js').ModalSubmitInteraction) & { message: import('discord.js').Message }} interaction
 	 */
 	async execute(client, interaction) {
 
-		await interaction
-			.deferUpdate()
-			.catch(async (error) => {
-				if (error.httpStatus === 400) { return console.error('DiscordAPIError: Interaction has already been acknowledged.'); }
-				if (error.httpStatus === 404) { return console.error('DiscordAPIError: Unknown interaction. (This probably means that there was server-side delay when receiving the interaction)'); }
-				return await errorHandling.output(interaction.message, error);
-			});
+		if (interaction.isModalSubmit()) {
+
+			if (interaction.customId.includes('displayedspecies')) {
+
+				const userId = interaction.customId.split('-')[1];
+				const characterId = interaction.customId.split('-')[2];
+				const displayedSpecies = interaction.components[0].components[0].value;
+
+				const userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+					{ userId: userId },
+					(/** @type {import('../typedef').ProfileSchema} */ p) => {
+						p.characters[characterId].displayedSpecies = displayedSpecies;
+					},
+				));
+
+				await interaction
+					.reply({
+						embeds: [new MessageEmbed({
+							color: userData.characters[characterId].color,
+							author: { name: userData.characters[characterId].name, icon_url: userData.characters[characterId].avatarURL },
+							title: displayedSpecies === '' ? 'Successfully removed your displayed species!' : `Successfully changed displayed species to ${displayedSpecies}!`,
+						})],
+					});
+				return;
+			}
+		}
+
+		if (!interaction.customId.includes('modal')) {
+
+			await interaction
+				.deferUpdate()
+				.catch(async (error) => {
+					if (error.httpStatus === 400) { return console.error('DiscordAPIError: Interaction has already been acknowledged.'); }
+					if (error.httpStatus === 404) { return console.error('DiscordAPIError: Unknown interaction. (This probably means that there was server-side delay when receiving the interaction)'); }
+					return await errorHandling.output(interaction.message, error);
+				});
+		}
 
 		// this is a DM interaction and doesn't have a referenced messages, so it gets processed before everything else
 		if (interaction.isButton() && interaction.customId === 'ticket') {
@@ -1443,7 +1474,9 @@ const event = {
 				}
 
 				await interaction.message
-					.edit(getMessageContent(profileData, characterData.name, referencedMessage.mentions.users.size > 0))
+					.edit({
+						.../** @type {import('discord.js').MessageEditOptions} */ (getMessageContent(profileData, characterData.name, referencedMessage.mentions.users.size > 0)),
+					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
 					});

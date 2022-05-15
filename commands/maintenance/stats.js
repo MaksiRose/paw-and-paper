@@ -62,7 +62,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
  * @param {import('../../typedef').Profile} profileData - The profile data from the database.
  * @param {string} name - The name of the character that the profile data belongs to.
  * @param {boolean} isYourself - Whether the profile is by the user who executed the command
- * @returns {import('discord.js').ReplyMessageOptions} The message object.
+ * @returns {import('discord.js').MessageOptions} The message object.
  */
 module.exports.getMessageContent = (profileData, name, isYourself) => {
 
@@ -102,7 +102,7 @@ module.exports.getMessageContent = (profileData, name, isYourself) => {
 		}
 	}
 
-	const message = /** @type {import('discord.js').ReplyMessageOptions} */ ({
+	const message = /** @type {import('discord.js').MessageOptions} */ ({
 		content: `🚩 Levels: \`${profileData.levels}\` - 🏷️ Rank: ${profileData.rank}\n` +
 			`✨ XP: \`${profileData.experience}/${profileData.levels * 50}\` - 🗺️ Region: ${profileData.currentRegion}\n` +
 			`❤️ HP: \`${profileData.health}/${profileData.maxHealth}\` - ⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n` +

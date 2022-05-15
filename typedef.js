@@ -82,6 +82,7 @@ module.exports.WebhookMessages = this.WebhookMessages;
  * @property {string} _id - Unique ID of the character.
  * @property {string} name - Name of the character.
  * @property {string} species - Species of the character.
+ * @property {string} displayedSpecies - Displayed species of the character.
  * @property {string} description - Description of the character.
  * @property {string} avatarURL - Avatar URL of the character.
  * @property {Array<Array<string>>} pronounSets - Array of Arrays of pronouns the character uses.

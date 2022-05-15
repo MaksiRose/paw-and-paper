@@ -54,6 +54,7 @@ const profileSchema = new schema({
 				_id: { type: 'string' },
 				name: { type: 'string' },
 				species: { type: 'string' },
+				displayedSpecies: { type: 'string' },
 				description: { type: 'string' },
 				avatarURL: { type: 'string' },
 				pronounSets: {

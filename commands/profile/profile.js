@@ -319,7 +319,7 @@ async function getMessageContent(client, userId, characterData, isYourself) {
 		description: characterData?.description,
 		thumbnail: { url: characterData?.avatarURL },
 		fields: [
-			{ name: '**🦑 Species**', value: (characterData?.species?.charAt(0)?.toUpperCase() + characterData?.species?.slice(1)) || '/', inline: true },
+			{ name: '**🦑 Species**', value: (characterData?.displayedSpecies?.charAt(0)?.toUpperCase() + characterData?.displayedSpecies?.slice(1)) || (characterData?.species?.charAt(0)?.toUpperCase() + characterData?.species?.slice(1)) || '/', inline: true },
 			{ name: '**🔑 Proxy**', value: !characterData?.proxy?.startsWith && !characterData?.proxy?.endsWith ? 'No proxy set' : `${characterData?.proxy.startsWith}text${characterData?.proxy.endsWith}`, inline: true },
 			{ name: '**🍂 Pronouns**', value: characterData?.pronounSets?.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n') || '/' },
 

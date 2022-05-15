@@ -7,7 +7,6 @@
 		"start": "git pull origin stable && pm2 start index.js --name paw --time",
 		"reload": "git pull origin stable && pm2 reload paw",
 		"stop": "pm2 stop paw",
-		"localstart": "node .",
 		"localtest": "node indextest.js",
 		"logs": "pm2 logs --timestamp --lines 0 paw"
 	},

@@ -62,6 +62,7 @@ createId().then(_id => {
 				_id: _id,
 				name: thisUserFile?.name,
 				species: thisUserFile?.species,
+				displayedSpecies: '',
 				description: thisUserFile?.description,
 				avatarURL: thisUserFile?.avatarURL,
 				pronounSets: thisUserFile?.pronounSets,
