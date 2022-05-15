@@ -359,7 +359,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 					userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: userData.uuid }));
 
 					botReply = await botReply
-						.edit(originalMessage)
+						.edit({
+							.../** @type {import('discord.js').MessageEditOptions} */ (originalMessage),
+						})
 						.catch((error) => {
 							if (error.httpStatus !== 404) { throw new Error(error); }
 							return botReply;
@@ -373,7 +375,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 				if (interaction.customId === 'delete-cancel') {
 
 					await /** @type {import('discord.js').Message} */ (interaction.message)
-						.edit(originalMessage)
+						.edit({
+							.../** @type {import('discord.js').MessageEditOptions} */ (originalMessage),
+						})
 						.catch((error) => {
 							if (error.httpStatus !== 404) { throw new Error(error); }
 						});

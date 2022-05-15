@@ -62,13 +62,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		})],
 	});
 
-	const foodSelectMenu = new MessageActionRow({
-		components: [ new MessageSelectMenu({
+	const foodSelectMenu = new MessageActionRow().addComponents(
+		[ new MessageSelectMenu({
 			customId: 'eat-options',
 			placeholder: 'Select an item to eat',
 			options: [],
 		})],
-	});
+	);
 
 	let embed = new MessageEmbed({
 		color: /** @type {`#${string}`} */ (default_color),

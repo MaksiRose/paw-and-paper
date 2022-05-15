@@ -14,8 +14,8 @@ module.exports.name = 'profilelist';
  */
 module.exports.sendMessage = async (client, message) => {
 
-	const profilelistRankComponent = new MessageActionRow({
-		components: [ new MessageSelectMenu({
+	const profilelistRankComponent = new MessageActionRow().addComponents(
+		[ new MessageSelectMenu({
 			customId: 'profilelist-rank',
 			placeholder: 'Select a rank',
 			options: [
@@ -25,10 +25,10 @@ module.exports.sendMessage = async (client, message) => {
 				{ label: 'Elderlies', value: 'profilelist-elderlies' },
 			],
 		})],
-	});
+	);
 
-	const profilelistPageComponent = new MessageActionRow({
-		components: [ new MessageButton({
+	const profilelistPageComponent = new MessageActionRow().addComponents(
+		[ new MessageButton({
 			customId: 'profilelist-left',
 			emoji: '⬅️',
 			style: 'SECONDARY',
@@ -37,7 +37,7 @@ module.exports.sendMessage = async (client, message) => {
 			emoji: '➡️',
 			style: 'SECONDARY',
 		})],
-	});
+	);
 
 	let rankProfilesPages = await getRank('Youngling');
 

@@ -61,13 +61,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 	let charactersPage = 0;
 
 	let response = await getMessageContent(client, userData.userId, characterData, isYourself);
-	if (getAccountsPage(userData, charactersPage, isYourself).options.length > 1) {
-
-		response.components = [new MessageActionRow({ components: [getAccountsPage(userData, charactersPage, isYourself)] })];
-	}
 
 	let botReply = await message
-		.reply(response)
+		.reply({
+			...response,
+			failIfNotExists: false,
+			components: (getAccountsPage(userData, charactersPage, isYourself).options.length > 1) ? [new MessageActionRow({ components: [getAccountsPage(userData, charactersPage, isYourself)] })] : [],
+		})
 		.catch((error) => { throw new Error(error); });
 
 	createCommandCollector(message.author.id, message.guild.id, botReply);
@@ -239,13 +239,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 			setTimeout(async () => {
 
 				response = await getMessageContent(client, userData.userId, characterData, isYourself);
-				if (getAccountsPage(userData, charactersPage, isYourself).options.length > 1) {
-
-					response.components = [new MessageActionRow({ components: [getAccountsPage(userData, charactersPage, isYourself)] })];
-				}
 
 				botReply = await botReply
-					.edit(response)
+					.edit({
+						.../** @type {import('discord.js').MessageEditOptions} */ (response),
+						components: (getAccountsPage(userData, charactersPage, isYourself).options.length > 1) ? [new MessageActionRow({ components: [getAccountsPage(userData, charactersPage, isYourself)] })] : [],
+					})
 					.catch((error) => { throw new Error(error); });
 
 				await interaction
@@ -286,7 +285,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 			}
 
 			botReply = await botReply
-				.edit(response)
+				.edit({
+					.../** @type {import('discord.js').MessageEditOptions} */ (response),
+					components: (getAccountsPage(userData, charactersPage, isYourself).options.length > 1) ? [new MessageActionRow({ components: [getAccountsPage(userData, charactersPage, isYourself)] })] : [],
+				})
 				.catch((error) => { throw new Error(error); });
 
 			await interactionCollector();
@@ -300,7 +302,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
  * @param {string} userId - The user's ID
  * @param {import('../../typedef').Character} characterData - The character data from the database.
  * @param {boolean} isYourself - Whether the character is by the user who executed the command
- * @returns {Promise<import('discord.js').ReplyMessageOptions>} The message object.
+ * @returns {Promise<import('discord.js').MessageOptions>} The message object.
  */
 async function getMessageContent(client, userId, characterData, isYourself) {
 
@@ -325,11 +327,11 @@ async function getMessageContent(client, userId, characterData, isYourself) {
 		footer: { text: `Character ID: ${characterData?._id}` },
 	});
 
-	const message = /** @type {import('discord.js').ReplyMessageOptions} */ ({
+	const message = /** @type {import('discord.js').MessageOptions} */ ({
 		content: !characterData ? (isYourself ? 'You are on an Empty Slot. Select a character to switch to below.' : 'Select a character to view below.') : null,
 		embeds: !characterData ? [] : [embed],
-		failIfNotExists: false,
 	});
+
 
 	return message;
 }

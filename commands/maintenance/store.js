@@ -64,13 +64,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		['meat', [...speciesMap.keys()].sort()],
 	]);
 
-	const itemSelectMenu = new MessageActionRow({
-		components: [ new MessageSelectMenu({
+	const itemSelectMenu = new MessageActionRow().addComponents(
+		[ new MessageSelectMenu({
 			customId: 'store-options',
 			placeholder: 'Select an item to store away',
 			options: [],
 		})],
-	});
+	);
 
 	for (const [itemType, itemsArray] of inventoryMap) {
 
@@ -174,13 +174,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					}
 				}
 
-				const amountSelectMenu = new MessageActionRow({
-					components: [ new MessageSelectMenu({
+				const amountSelectMenu = new MessageActionRow().addComponents(
+					[ new MessageSelectMenu({
 						customId: 'store-amount',
 						placeholder: 'Select the amount to store away',
 						options: [],
 					})],
-				});
+				);
 
 				for (let i = 0; i < maximumAmount; i++) {
 

@@ -177,13 +177,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					footer: { text: 'Choose one of the herbs above to heal the player with it!' },
 				};
 
-				const selectMenu = new MessageActionRow({
-					components: [ new MessageSelectMenu({
+				const selectMenu = new MessageActionRow().addComponents(
+					[ new MessageSelectMenu({
 						customId: 'heal-options-2',
 						placeholder: 'Select an item',
 						options: [],
 					})],
-				});
+				);
 
 				embed.fields.push({ name: 'water', value: 'Found lots and lots of in the river that flows through the pack!', inline: true });
 				/** @type {import('discord.js').MessageSelectMenuOptions} */ (selectMenu.components[0]).options.push({ label: 'water', value: 'water' });
@@ -759,13 +759,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			}
 		}
 
-		const selectMenu = new MessageActionRow({
-			components: [ new MessageSelectMenu({
+		const selectMenu = new MessageActionRow().addComponents(
+			[ new MessageSelectMenu({
 				customId: 'heal-user-options',
 				placeholder: 'Select a user to heal',
 				options: [],
 			})],
-		});
+		);
 
 		for (const key of Object.keys(allHurtCharactersList).slice((currentUserPage * 24))) {
 
@@ -791,8 +791,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	 */
 	async function getWoundList(healUserData, healCharacterId) {
 
-		const pageButtons = new MessageActionRow({
-			components: [ new MessageButton({
+		const pageButtons = new MessageActionRow().addComponents(
+			[ new MessageButton({
 				customId: 'healpage-1',
 				label: 'Page 1',
 				emoji: '🌱',
@@ -803,7 +803,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				emoji: '🍀',
 				style: 'SECONDARY',
 			})],
-		});
+		);
 
 		chosenUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: healUserData.uuid }));
 		chosenCharacterData = chosenUserData.characters[healCharacterId];
@@ -873,13 +873,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			footer: { text: 'Choose one of the herbs above to heal the player with it!' },
 		};
 
-		let selectMenu = new MessageActionRow({
-			components: [ new MessageSelectMenu({
+		let selectMenu = new MessageActionRow().addComponents(
+			[ new MessageSelectMenu({
 				customId: 'heal-options-1',
 				placeholder: 'Select an item',
 				options: [],
 			})],
-		});
+		);
 
 		for (const [commonPlantName, commonPlantObject] of [...commonPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
