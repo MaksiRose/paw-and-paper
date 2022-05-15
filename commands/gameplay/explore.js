@@ -353,7 +353,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		botReply = await findSaplingOrNothing();
 	}
-	else if (pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
+	else if (pullFromWeightedTable({ 0: profileData.rank === 'Healer' ? 2 : 1, 1: profileData.rank === 'Hunter' ? 2 : 1 }) === 0) {
 
 		botReply = await findPlant();
 	}
@@ -532,7 +532,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						label: 'Pick up',
 						emoji: '🌿',
 						style: 'PRIMARY',
-						disabled: (profileData.rank === 'Hunter') ? true : false,
 					}), new MessageButton({
 						customId: 'plant-leave',
 						label: 'Leave',
@@ -860,7 +859,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						label: 'Fight',
 						emoji: '⚔️',
 						style: 'PRIMARY',
-						disabled: (profileData.rank == 'Healer') ? true : false,
 					}), new MessageButton({
 						customId: 'enemy-flee',
 						label: 'Flee',

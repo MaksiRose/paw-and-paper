@@ -46,7 +46,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	userData = await startCooldown(message);
 	const messageContent = remindOfAttack(message);
 
-	if (profileData.rank === 'Youngling' || profileData.rank === 'Hunter') {
+	if (profileData.rank === 'Youngling') {
 
 		await message
 			.reply({
@@ -346,7 +346,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						return /** @type {import('discord.js').MessageSelectMenuOptions} */ (userSelectMenu.components[0]).options.length > 0 ? await interactionCollector() : null;
 					}
 
-					if (isSuccessful === true && profileData.rank === 'Apprentice' && pullFromWeightedTable({ 0: 30, 1: 70 + profileData.sapling.waterCycles }) === 0) {
+					if (isSuccessful === true && (profileData.rank === 'Apprentice' || profileData.rank === 'Hunter') && pullFromWeightedTable({ 0: profileData.rank === 'Hunter' ? 70 : 30, 1: 70 + profileData.sapling.waterCycles }) === 0) {
 
 						isSuccessful = false;
 					}
@@ -572,7 +572,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						return /** @type {import('discord.js').MessageSelectMenuOptions} */ (userSelectMenu.components[0]).options.length > 0 ? await interactionCollector() : null;
 					}
 
-					if (isSuccessful === true && chosenUserData.userId !== userData.userId && profileData.rank === 'Apprentice' && pullFromWeightedTable({ 0: 35, 1: 65 + profileData.sapling.waterCycles }) === 0) {
+					if (isSuccessful === true && chosenUserData.userId !== userData.userId && (profileData.rank === 'Apprentice' || profileData.rank === 'Hunter') && pullFromWeightedTable({ 0: profileData.rank === 'Hunter' ? 90 : 40, 1: 60 + profileData.sapling.waterCycles }) === 0) {
 
 						isSuccessful = false;
 					}

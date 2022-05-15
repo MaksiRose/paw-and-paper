@@ -68,24 +68,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
-	if (profileData.rank === 'Healer' || profileData.rank === 'Hunter' || profileData.rank === 'Elderly') {
-
-		await message
-			.reply({
-				content: messageContent,
-				embeds: [...embedArray, {
-					color: characterData.color,
-					author: { name: characterData.name, icon_url: characterData.avatarURL },
-					description: `*A packmate turns their head sideways as they see ${characterData.name} running towards the playground.* "Aren't you a little too old to play, ${profileData.rank}?" *they ask.*`,
-				}],
-				failIfNotExists: false,
-			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
-		return;
-	}
-
 	if (message.mentions.users.size > 0 && message.mentions.users.first().id == message.author.id) {
 
 		await message
@@ -107,7 +89,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	const thirstPoints = await decreaseThirst(profileData);
 	const hungerPoints = await decreaseHunger(profileData);
 	const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(5, 1) + await decreaseEnergy(profileData));
-	const experiencePoints = profileData.rank === 'Youngling' ? generateRandomNumber(9, 1) : generateRandomNumber(11, 5);
+	const experiencePoints = profileData.rank === 'Youngling' ? generateRandomNumber(9, 1) : profileData.rank === 'Apprentice' ? generateRandomNumber(11, 5) : 0;
 
 	userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 		{ userId: message.author.id },
@@ -121,7 +103,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	profileData = characterData?.profiles?.[message.guild.id];
 
-	let embedFooterStatsText = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
+	let embedFooterStatsText = `${experiencePoints > 0 ? `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n` : ''}-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
 
 	if (hungerPoints >= 1) {
 
@@ -323,7 +305,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		}
 
 		const getHurtChance = pullFromWeightedTable({ 0: 10, 1: 90 + profileData.sapling.waterCycles });
-		if (getHurtChance === 0 && profileData.rank !== 'Youngling') {
+		if ((getHurtChance === 0 && profileData.rank !== 'Youngling') || (profileData.rank !== 'Youngling' && profileData.rank !== 'Apprentice')) {
 
 			const healthPoints = function(health) { return (profileData.health - health < 0) ? profileData.health : health; }(generateRandomNumber(5, 3));
 
@@ -475,7 +457,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	 */
 	async function playTogether(isMentioned, isSimulated) {
 
-		if (!isSimulated) {
+		if (!isSimulated && (profileData.rank === 'Youngling' || profileData.rank === 'Apprentice')) {
 
 			const partnerHealthPoints = function(health) { return (partnerProfileData.health + health > partnerProfileData.maxHealth) ? partnerProfileData.maxHealth - partnerProfileData.health : health; }(generateRandomNumber(5, 1));
 

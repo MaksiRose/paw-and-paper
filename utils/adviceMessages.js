@@ -178,7 +178,7 @@ async function hunterhealerAdvice(message) {
 
 	await message.channel
 		.send({
-			content: `${message.author.toString()} ❓ **Tip:**\nHunters and Healers have different strengths and weaknesses!\nHealers can \`heal\` perfectly, but they are not able to use the \`practice\` and \`dispose\` commands or fight when \`exploring\`.\nHunters can \`dispose\` perfectly, but they are not able to use the \`heal\` command or pick up plants when \`exploring\`.\nHunters and Healers lose their ability to use the \`play\` command.`,
+			content: `${message.author.toString()} ❓ **Tip:**\nHunters and Healers have different strengths and weaknesses!\nHealers can \`heal\` perfectly and find more plants when \`exploring\`, but they are not so good at \`disposing\`.\nHunters can \`dispose\` perfectly and find more enemies when \`exploring\`, but they are not so good at \`healing\`.\nHunters and Healers don't get advantages from the \`play\` command.`,
 		})
 		.catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }
