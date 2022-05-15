@@ -12,6 +12,7 @@ const { pronounAndPlural, pronoun } = require('../../utils/getPronouns');
 const { restAdvice, drinkAdvice, eatAdvice, coloredButtonsAdvice } = require('../../utils/adviceMessages');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
+const { serverActiveUsers } = require('../../events/messageCreate');
 const serverMap = new Map();
 
 module.exports.name = 'attack';
@@ -252,8 +253,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			if (inventoryObject[itemType][itemName] > 0) {
 
-				embedFooterStatsText += `\n\n-${Math.round(inventoryObject[itemType][itemName] / 10)} ${itemName} for ${message.guild.name}`;
-				inventoryObject[itemType][itemName] -= Math.round(inventoryObject[itemType][itemName] / 10);
+				embedFooterStatsText += `\n\n-${Math.ceil(inventoryObject[itemType][itemName] / 10)} ${itemName} for ${message.guild.name}`;
+				inventoryObject[itemType][itemName] -= Math.ceil(inventoryObject[itemType][itemName] / 10);
 			}
 
 			await serverModel.findOneAndUpdate(
@@ -354,31 +355,24 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	}
 	else if (serverMap.get('nr' + message.guild.id).endingTimeout == null && serverMap.get('nr' + message.guild.id).currentFights <= 0) {
 
-		remainingHumans(message, serverData);
+		remainingHumans(message);
 	}
 };
 
 /**
  * Starts a timeout of 60 seconds after which an attack starts.
  * @param {import('discord.js').Message} message
- * @param {import('../../typedef').ServerSchema} serverData
+ * @param {number} humanCount
  * @returns {void}
  */
-module.exports.startAttack = (message, serverData) => {
+module.exports.startAttack = (message, humanCount) => {
 
-	serverMap.set('nr' + message.guild.id, { startsTimestamp: Date.now() + 60000, humans: serverData.activeUsers.length, endingTimeout: null, currentFights: 0 });
+	serverMap.set('nr' + message.guild.id, { startsTimestamp: Date.now() + 120_000, humans: humanCount, endingTimeout: null, currentFights: 0 });
 	setTimeout(async function() {
-
-		serverData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOne({ serverId: message.guild.id }));
-
-		if (serverData.activeUsers.length > serverMap.get('nr' + message.guild.id).humans) {
-
-			serverMap.get('nr' + message.guild.id).humans = serverData.activeUsers.length;
-		}
 
 		await message.channel
 			.send({
-				content: serverData.activeUsers.map(user => `<@!${user}>`).join(' '),
+				content: serverActiveUsers.get(message.guild.id).map(user => `<@!${user}>`).join(' '),
 				embeds: [{
 					color: /** @type {`#${string}`} */ (default_color),
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
@@ -396,10 +390,10 @@ module.exports.startAttack = (message, serverData) => {
 			serverMap.get('nr' + message.guild.id).endingTimeout = null;
 			if (serverMap.get('nr' + message.guild.id).currentFights <= 0) {
 
-				remainingHumans(message, serverData);
+				remainingHumans(message);
 			}
 		}, 300000);
-	}, 60000);
+	}, 120_000);
 };
 
 /**
@@ -424,10 +418,11 @@ module.exports.remindOfAttack = (message) => {
 /**
  * Checks if any humans are undefeated and removes items for each that is left.
  * @param {import('discord.js').Message} message
- * @param {import('../../typedef').ServerSchema} serverData
  * @returns {Promise<void>}
  */
-async function remainingHumans(message, serverData) {
+async function remainingHumans(message) {
+
+	const serverData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOne({ serverId: message.guild.id }));
 
 	const embed = {
 		color: /** @type {`#${string}`} */ (default_color),
@@ -449,8 +444,8 @@ async function remainingHumans(message, serverData) {
 
 		if (inventoryObject[itemType][itemName] > 0) {
 
-			embed.footer.text += `\n-${Math.round(inventoryObject[itemType][itemName] / 10)} ${itemName} for ${message.guild.name}`;
-			inventoryObject[itemType][itemName] -= Math.round(inventoryObject[itemType][itemName] / 10);
+			embed.footer.text += `\n-${Math.ceil(inventoryObject[itemType][itemName] / 10)} ${itemName} for ${message.guild.name}`;
+			inventoryObject[itemType][itemName] -= Math.ceil(inventoryObject[itemType][itemName] / 10);
 		}
 
 		serverMap.get('nr' + message.guild.id).humans -= 1;

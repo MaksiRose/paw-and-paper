@@ -153,7 +153,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					embeds: [ new MessageEmbed({
 						color: /** @type {`#${string}`} */ (error_color),
 						title: 'Here is how to use the always subcommand:',
-						description: alwaysDescription + `\n\nHere is a list of all the channels that you have turned this on for:\n${userData.autoproxy[message.guild.id].map(string => string === 'everwhere' ? string : `<#${string}>`).join(', ') || '/'}`,
+						description: alwaysDescription + `\n\nHere is a list of all the channels that you have turned this on for:\n${userData?.autoproxy?.[message.guild.id]?.map(string => string === 'everwhere' ? string : `<#${string}>`).join(', ') || '/'}`,
 					})],
 					failIfNotExists: false,
 				})
@@ -220,7 +220,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					embeds: [ new MessageEmbed({
 						color: /** @type {`#${string}`} */ (error_color),
 						title: 'Here is how to use the disable subcommand:',
-						description: disableDescription + `\n\nHere is a list of all the channels that this is disabled for:\nAll: ${serverData.proxysetting.all.map(string => string === 'everwhere' ? string : `<#${string}>`).join(', ') || '/'}\nAutomatic: ${serverData.proxysetting.auto.map(string => string === 'everwhere' ? string : `<#${string}>`).join(', ') || '/'}`,
+						description: disableDescription + `\n\nHere is a list of all the channels that this is disabled for:\nAll: ${serverData.proxysetting.all.map(string => string === 'everwhere' ? string : `<#${string}>`).join(', ') || '/'}\nAutomatic: ${serverData?.proxysetting?.auto?.map(string => string === 'everwhere' ? string : `<#${string}>`).join(', ') || '/'}`,
 					})],
 					failIfNotExists: false,
 				})

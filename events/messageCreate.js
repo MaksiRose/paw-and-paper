@@ -33,7 +33,7 @@ const event = {
 		}));
 		let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 
-		let serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOne({
+		const serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOne({
 			serverId: message.guild.id,
 		}));
 		const allproxyIsDisabled = serverData?.proxysetting?.all?.includes(message.channel.id) || serverData?.proxysetting?.all?.includes('everywhere');
@@ -102,6 +102,11 @@ const event = {
 			userMap.set('nr' + message.author.id + message.guild.id, { activeCommands: 0, lastGentleWaterReminderTimestamp: 0, activityTimeout: null, cooldownTimeout: null, restingTimeout: null });
 		}
 
+		if (module.exports.serverActiveUsers.has(message.guild.id) === false) {
+
+			module.exports.serverActiveUsers.set(message.guild.id, []);
+		}
+
 		clearTimeout(userMap.get('nr' + message.author.id + message.guild.id).activityTimeout);
 		clearTimeout(userMap.get('nr' + message.author.id + message.guild.id).cooldownTimeout);
 		clearTimeout(userMap.get('nr' + message.author.id + message.guild.id).restingTimeout);
@@ -115,12 +120,10 @@ const event = {
 
 			console.log(`\x1b[32m${message.author.tag} (${message.author.id})\x1b[0m successfully executed \x1b[33m${message.content} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
-			serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOneAndUpdate(
-				{ serverId: message.guild.id },
-				(/** @type {import('../typedef').ServerSchema} */ s) => {
-					if (!s.activeUsers.includes(message.author.id)) { s.activeUsers.push(message.author.id); }
-				},
-			));
+			if (!module.exports.serverActiveUsers.get(message.guild.id).includes(message.author.id)) {
+
+				module.exports.serverActiveUsers.get(message.guild.id).push(message.author.id);
+			}
 
 			userMap.get('nr' + message.author.id + message.guild.id).activeCommands += 1;
 			userMap.get('nr' + message.author.id + message.guild.id).activityTimeout = setTimeout(removeActiveUser, 300000);
@@ -216,13 +219,11 @@ const event = {
 		 */
 		async function removeActiveUser() {
 
-			/** @type {import('../typedef').ServerSchema} */ (await serverModel.findOneAndUpdate(
-				{ serverId: message.guild.id },
-				(/** @type {import('../typedef').ServerSchema} */ s) => {
-					const authorIndex = s.activeUsers.findIndex(element => element === message.author.id);
-					if (authorIndex >= 0) { s.activeUsers.splice(authorIndex, 1); }
-				},
-			));
+			const authorIndex = module.exports.serverActiveUsers.get(message.guild.id).findIndex(element => element === message.author.id);
+			if (authorIndex >= 0) {
+
+				module.exports.serverActiveUsers.get(message.guild.id).splice(authorIndex, 1);
+			}
 		}
 	},
 };
@@ -264,4 +265,7 @@ module.exports = {
 			await module.exports.execute(client, message);
 		}
 	},
+
+	/** @type {Map<string, Array<string>>} */
+	serverActiveUsers: new Map(),
 };

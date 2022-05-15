@@ -110,7 +110,6 @@ module.exports.ProfileSchema = this.ProfileSchema;
  * @property {string} name - Name of the server.
  * @property {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, meat: Object<string, number>}} inventory - Object with item kinds as the keys and an object of the item types and their quantity as the variables.
  * @property {{den: ?('sleeping dens' | 'food den' | 'medicine den'), blockedKind: ?('vines'|'burrow'|'tree trunk'|'boulder')}} blockedEntrance - Object of the blocked entrance with the name of the den and kind of block as the variables. If no entrance is blocked, they are null.
- * @property {Array<string>} activeUsers - Array of IDs of users that executed a command in this server in the last 5 minutes.
  * @property {number} nextPossibleAttack - Timestamp of the time when the next attack is possible.
  * @property {?string} visitChannelId - ID of the channel that can be visited. If no channel is seleted, this is null.
  * @property {?string} currentlyVisiting - ID of the guild that is currently being visited. If no guild is being visited, this is null.

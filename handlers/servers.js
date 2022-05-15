@@ -17,7 +17,6 @@ module.exports.execute = async (client) => {
 			.findOneAndUpdate(
 				{ uuid: file.replace('.json', '') },
 				(/** @type {import('../typedef').ServerSchema} */ s) => {
-					s.activeUsers = [];
 					s.currentlyVisiting = null;
 				},
 			);

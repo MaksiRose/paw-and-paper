@@ -1,6 +1,5 @@
 // @ts-check
 const profileModel = require('../../models/profileModel');
-const serverModel = require('../../models/serverModel');
 const startCooldown = require('../../utils/startCooldown');
 const { generateRandomNumber, pullFromWeightedTable, generateRandomNumberWithException } = require('../../utils/randomizers');
 const { pickRandomRarePlant, pickRandomUncommonPlant, pickRandomCommonPlant } = require('../../utils/pickRandomPlant');
@@ -11,7 +10,7 @@ const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = requi
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { introduceQuest } = require('./quest');
 const { prefix } = require('../../config.json');
-const { execute } = require('../../events/messageCreate');
+const { execute, serverActiveUsers } = require('../../events/messageCreate');
 const { remindOfAttack, startAttack } = require('./attack');
 const { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural } = require('../../utils/getPronouns');
 const { MessageActionRow, MessageButton } = require('discord.js');
@@ -334,10 +333,15 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	const userInjuryObject = { ...profileData.injuries };
 
 
-	serverData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOne({ serverId: message.guild.id }));
 	messageContent = remindOfAttack(message);
+	const highRankProfilesCount = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel
+		.find(
+			(/** @type {import('../../typedef').ProfileSchema} */ u) => Object.values(u.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].rank !== 'Youngling').length > 0))
+		.map(u => Object.values(u.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].rank !== 'Youngling').length)
+		.reduce((a, b) => a + b, 0);
+	const serverInventoryCount = Object.values(serverData.inventory).map(type => Object.values(type)).flat().reduce((a, b) => a + b, 0);
 
-	if (serverData.activeUsers.length >= 3 && messageContent === null && serverData.nextPossibleAttack <= Date.now()) {
+	if (serverInventoryCount > highRankProfilesCount * 5 && messageContent === null && serverData.nextPossibleAttack <= Date.now()) {
 
 		botReply = await findHumans();
 	}
@@ -371,14 +375,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	 */
 	async function findHumans() {
 
-		startAttack(message, serverData);
+		startAttack(message, Math.round(serverInventoryCount / highRankProfilesCount));
 
-		embed.description = `*${characterData.name} has just been looking around for food when ${pronounAndPlural(characterData, 0, 'suddenly hear')} voices to ${pronoun(characterData, 2)} right. Cautiously ${pronounAndPlural(characterData, 0, 'creep')} up, and sure enough: a group of humans! They seem to be discussing something, and keep pointing over towards where the pack is lying. Alarmed, the ${characterData.species} runs away. ${upperCasePronoun(characterData, 0)} must gather as many packmates as possible to protect the pack!*`;
-		embed.footer.text = `${embedFooterStatsText}\n\nYou have one minute to prepare before the humans will attack!`;
+		embed.description = `*${characterData.name} has just been looking around for food when ${pronounAndPlural(characterData, 0, 'suddenly hear')} voices to ${pronoun(characterData, 2)} right. Cautiously ${pronounAndPlural(characterData, 0, 'creep')} up, and sure enough: a group of humans! They seem to be discussing something, and keep pointing over towards where the pack is lying. Alarmed, the ${characterData.species} runs away. **${upperCasePronoun(characterData, 0)} must gather as many packmates as possible to protect the pack!***`;
+		embed.footer.text = `${embedFooterStatsText}\n\nYou have two minutes to prepare before the humans will attack!`;
 
 		return await message
 			.reply({
-				content: serverData.activeUsers.map(user => `<@${user}>`).join(' '),
+				content: serverActiveUsers.get(message.guild.id).map(user => `<@${user}>`).join(' '),
 				embeds: [...embedArray, embed],
 				failIfNotExists: false,
 			})

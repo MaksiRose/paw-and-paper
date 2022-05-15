@@ -59,10 +59,6 @@ const serverSchema = new schema({
 			},
 		},
 	},
-	activeUsers: {
-		type: 'array',
-		default: { type: 'string' },
-	},
 	nextPossibleAttack: {
 		type: 'number',
 		default: Date.now(),
