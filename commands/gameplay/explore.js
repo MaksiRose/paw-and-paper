@@ -823,6 +823,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	 */
 	async function findEnemy() {
 
+		let currentCombo = 0;
+		let highestCombo = 0;
 		let opponentLevel = generateRandomNumber(1 + Math.ceil(profileData.levels / 10) * 5, (profileData.levels > 2 ? profileData.levels : 3) - Math.ceil(profileData.levels / 10) * 2);
 		chosenBiomeNumber === 2 ? generateRandomNumber(profileData.levels > 40 ? profileData.levels - 15 : 25, 26) : chosenBiomeNumber === 1 ? generateRandomNumber(15, 11) : generateRandomNumber(10, 1);
 		const opponentsArray = [...userSpeciesMap.biome1OpponentArray];
@@ -996,7 +998,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId)]).style = 'SUCCESS';
 
 				playerLevel += Math.ceil(profileData.levels / 10);
+				currentCombo += 1;
+				if (currentCombo > highestCombo) { highestCombo = currentCombo; }
 			}
+			else { currentCombo = 0; }
 
 			/* Here we change the buttons customId's so that they will always stay unique, as well as disabling the buttons. */
 			for (const button of botReply.components[botReply.components.length - 1].components) {
@@ -1014,10 +1019,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				return await fightCycle(totalCycles, cycleKind);
 			}
 
-			opponentLevel = generateRandomNumber(opponentLevel, 0);
+			playerLevel += (highestCombo === 3 ? 2 : highestCombo === 2 ? 1 : 0) * Math.ceil(profileData.levels / 10);
 			playerLevel = generateRandomNumber(playerLevel, 0);
+			opponentLevel = generateRandomNumber(opponentLevel, 0);
 
-			if (playerLevel === opponentLevel || playerLevel + 1 === opponentLevel || playerLevel === opponentLevel + 1) {
+			if (playerLevel === opponentLevel || playerLevel === opponentLevel + 1 || playerLevel === opponentLevel + 2) {
 
 				if (userSpeciesMap.habitat == 'warm') {
 
