@@ -86,6 +86,11 @@ async function createGuild(client, guild) {
 			visitChannelId: null,
 			currentlyVisiting: null,
 			shop: [],
+			proxysetting: {
+				all: [],
+				auto: [],
+			},
+			skills: ['strength', 'dexterity', 'constitution', 'charisma', 'wisdom', 'intelligence'],
 		});
 	}
 	else {

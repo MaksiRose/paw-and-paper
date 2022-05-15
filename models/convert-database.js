@@ -11,6 +11,7 @@ for (const file of readdirSync('./database/servers').filter(f => f.endsWith('.js
 	delete serverData.inventoryObject;
 	serverData.blockedEntrance = { ...serverData.blockedEntranceObject };
 	delete serverData.blockedEntranceObject;
+	serverData.skills = ['strength', 'dexterity', 'constitution', 'charisma', 'wisdom', 'intelligence'];
 
 	writeFileSync(`./database/servers/${serverData.uuid}.json`, JSON.stringify(serverData, null, '\t'));
 }

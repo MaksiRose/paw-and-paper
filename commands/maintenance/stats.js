@@ -5,6 +5,7 @@ const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion')
 const { error_color } = require('../../config.json');
 
 module.exports.name = 'stats';
+module.exports.aliases = ['status'];
 
 /**
  *

@@ -192,6 +192,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 									meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, 0])),
 								},
 								roles: [],
+								skills: { global: {}, personal: {} },
 							};
 						},
 					));

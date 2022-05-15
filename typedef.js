@@ -75,6 +75,7 @@ module.exports.WebhookMessages = this.WebhookMessages;
  * @property {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} injuries - Object with injury types as keys and whether the user has them/how many the user has of them as variables.
  * @property {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, meat: Object<string, number>}} inventory - Object with item kinds as the keys and an object of the item types and their quantity as the variables.
  * @property {Array<Role>} roles - Array of role objects
+ * @property {{global: Object<string, number>, personal: Object<string, number>}} skills - Object of skills, with global and personal skills as key-value pairs.
  */
 
 /**
@@ -116,6 +117,7 @@ module.exports.ProfileSchema = this.ProfileSchema;
  * @property {?string} currentlyVisiting - ID of the guild that is currently being visited. If no guild is being visited, this is null.
  * @property {Array<Role>} shop - Array of role objects
  * @property {{auto: Array<string>, all: Array<string>}} proxysetting - Object with the keys "all" and "auto", which hold an array each with channels where proxying isn't allowed.
+ * @property {Array<string>} skills - Array of global skills for this server.
  * @property {string} uuid
  */
 module.exports.ServerSchema = this.ServerSchema;

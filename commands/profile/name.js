@@ -55,6 +55,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				reminders: { water: true, resting: true },
 				characters: {},
 				currentCharacter: {},
+				autoproxy: {},
 			}));
 		}
 	}
@@ -114,6 +115,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					_id: _id,
 					name: name,
 					species: '',
+					displayedSpecies: '',
 					description: '',
 					avatarURL: message.author.avatarURL(),
 					pronounSets: [['they', 'them', 'their', 'theirs', 'themselves', 'plural']],
@@ -151,6 +153,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 								meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, 0])),
 							},
 							roles: [],
+							skills: { global: {}, personal: {} },
 						},
 					},
 				};

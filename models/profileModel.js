@@ -216,6 +216,19 @@ const profileSchema = new schema({
 									},
 								},
 							},
+							skills: {
+								type: 'object',
+								default: {
+									global: {
+										type: 'nest',
+										default: 'number',
+									},
+									personal: {
+										type: 'nest',
+										default: 'number',
+									},
+								},
+							},
 						},
 					},
 				} },

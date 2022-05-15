@@ -809,7 +809,7 @@ const event = {
 							title: 'rp stats',
 							description: 'Quick view of your characters condition.',
 							fields: [
-								{ name: '**Aliases**', value: 'none' },
+								{ name: '**Aliases**', value: 'status' },
 								{ name: '**Arguments**', value: 'none' },
 								{ name: '**More information**', value: 'This shows a condensed version of the players most important stats. This includes levels, XP, health, energy, hunger, thirst and injuries/illnesses.' },
 							],

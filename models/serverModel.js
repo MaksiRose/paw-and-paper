@@ -95,6 +95,10 @@ const serverSchema = new schema({
 			},
 		},
 	},
+	skills: {
+		type: 'array',
+		default: { type: 'string' },
+	},
 });
 
 module.exports = new model('./database/servers', serverSchema);
