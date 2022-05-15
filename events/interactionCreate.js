@@ -304,6 +304,7 @@ const event = {
 								{ name: '**rp hug [@user]**', value: 'Hug a fellow packmate, if they consent.' },
 								{ name: '**rp profilelist**', value: 'View a list of all the profiles that exist on this server.' },
 								{ name: '**rp friendships**', value: 'View a list of all the friendships that you have with other players.' },
+								{ name: '**rp diceroll**', value: 'Roll a dice.' },
 								{ name: '**rp requestvisit**', value: 'Find, visit and talk to people from far away packs.' },
 								{ name: '**rp endvisit**', value: 'End a visit between your and another pack.' },
 							],
@@ -323,6 +324,7 @@ const event = {
 									{ label: 'Hug', value: 'help_hug', description: 'Hug a fellow packmate, if they consent.' },
 									{ label: 'Profilelist', value: 'help_profilelist', description: 'View a list of all the profiles that exist on this server.' },
 									{ label: 'Friendships', value: 'help_friendships', description: 'View a list of all the friendships that you have with other players.' },
+									{ label: 'Diceroll', value: 'help_diceroll', description: 'Roll a dice.' },
 									{ label: 'Requestvisit', value: 'help_requestvisit', description: 'Find, visit and talk to people from far away packs.' },
 									{ label: 'Endvisit', value: 'help_endvisit', description: 'End a visit between your and another pack.' },
 								],
@@ -1132,6 +1134,29 @@ const event = {
 								{ name: '**Aliases**', value: 'none' },
 								{ name: '**Arguments**', value: 'none' },
 								{ name: '**More information**', value: 'A list of friendships you have with other players. Displays 25 at a time, and adds buttons to go back and fourth if you have more than 25 friendships. Friendship hearts are gained by mentioning each other.' },
+							],
+						}],
+						ephemeral: true,
+					})
+					.catch(async (error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
+
+			if (interaction.values[0] === 'help_diceroll') {
+
+				return await interaction
+					.followUp({
+						embeds: [{
+							color: /** @type {`#${string}`} */ (config.default_color),
+							title: 'rp diceroll',
+							description: 'Roll a dice.',
+							fields: [
+								{ name: '**Aliases**', value: 'dice, roll, rolldice' },
+								{ name: '**Arguments**', value: '(number of dice)D[number of faces] (addition/subtraction value)' },
+								{ name: '**More information**', value: 'The command has three sections: number of dice (optional), number of faces, and addition/subtraction (optional). Number of dice and number of faces is separated by a "D" with no spaces. After that, you can include an amount that you would like to be added or subtracted from your diceroll.\n\nExamples:\n`rp diceroll D6` - Number between 1 and 6.\n`rp diceroll 2D20 + 12` - Number between 14 and 52.\n`rp rolldice 5d12 -4` - Number between 1 and 56.' },
 							],
 						}],
 						ephemeral: true,

@@ -1,6 +1,6 @@
 // @ts-check
 const profileModel = require('../../models/profileModel');
-const { default_color } = require('../../config.json');
+const { error_color } = require('../../config.json');
 const { hasNoName } = require('../../utils/checkAccountCompletion');
 const { readFileSync, writeFileSync } = require('fs');
 
@@ -51,8 +51,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		await message
 			.reply({
 				embeds: [...embedArray, {
-					color: /** @type {`#${string}`} */ (default_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+					color: /** @type {`#${string}`} */ (error_color),
 					title: 'This is a way for you to send a message as though it was coming from your character, with their name and avatar. Here is how to use the command:',
 					description: '\n\nrp say "text"\nReplace "text" with your text.',
 				}],
