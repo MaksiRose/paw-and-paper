@@ -101,6 +101,7 @@ module.exports.WebhookMessages = this.WebhookMessages;
  * @property {Object<string, Character>} characters - Object of names of characters as the key and the characters this user has created as value.
  * @property {Object<string, string>} currentCharacter - Object of the server IDs as the key and the id of the character that is currently active as the value.
  * @property {Object<string, Array<string>>} autoproxy - Object of the server IDs as the key and an array of channel IDs as the value.
+ * @property {string} lastPlayedVersion - Last major version that the user played on.
  * @property {string} uuid
  */
 module.exports.ProfileSchema = this.ProfileSchema;

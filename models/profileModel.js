@@ -245,6 +245,7 @@ const profileSchema = new schema({
 			default: { type: 'string' },
 		},
 	},
+	lastPlayedVersion: { type: 'string' },
 });
 
 module.exports = new model('./database/profiles', profileSchema);

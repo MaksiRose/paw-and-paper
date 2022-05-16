@@ -7,6 +7,7 @@ const startCooldown = require('../../utils/startCooldown');
 const { checkRankRequirements, checkLevelRequirements } = require('../../utils/checkRoleRequirements');
 const { MessageEmbed } = require('discord.js');
 const createId = require('../../utils/createId');
+const { version } = require('../../package.json');
 
 module.exports.name = 'name';
 
@@ -56,6 +57,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				characters: {},
 				currentCharacter: {},
 				autoproxy: {},
+				lastPlayedVersion: `${version.split('.').slice(0, -1).join('.')}`,
 			}));
 		}
 	}

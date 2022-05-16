@@ -55,6 +55,7 @@ createId().then(_id => {
 			characters: { },
 			currentCharacter: {},
 			autoproxy: {},
+			lastPlayedVersion: '2.11',
 		});
 
 		for (const thisUserFile of thisUserFiles) {
@@ -109,6 +110,7 @@ createId().then(_id => {
 				},
 				inventory: thisUserFile?.inventoryObject || {},
 				roles: thisUserFile?.roles || [],
+				skills: { global: {}, personal: {} },
 			});
 
 			newUserFile.characters[thisUserFile._id] = character;

@@ -8,6 +8,7 @@ const { createGuild } = require('../utils/updateGuild');
 const { pronoun, pronounAndPlural } = require('../utils/getPronouns');
 const userMap = require('../utils/userMap');
 const { sendVisitMessage } = require('../commands/interaction/requestvisit');
+const { version } = require('../package.json');
 
 /**
  * @type {import('../typedef').Event}
@@ -166,6 +167,24 @@ const event = {
 		userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: userData?.uuid }));
 		characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 		const profileData = characterData?.profiles?.[message.guild.id];
+
+		if (Number(userData?.lastPlayedVersion) < Number(version.split('.').slice(0, -1).join('.'))) {
+
+			await message
+				.reply({
+					content: `A new update has come out since you last played! You can view the changelog here: <https://github.com/MaksiRose/paw-and-paper/releases/tag/v${version.split('.').slice(0, -1).join('.')}.0>`,
+				})
+				.catch(async (error) => {
+					return await errorHandling.output(message, error);
+				});
+
+			/** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+				{ userId: message.author.id },
+				(/** @type {import('../typedef').ProfileSchema} */ p) => {
+					p.lastPlayedVersion = version.split('.').slice(0, -1).join('.');
+				},
+			));
+		}
 
 		const oneHourInMs = 3600000;
 		// If sapling exists, the watering time is between 2 hours from perfect and 3 hours from perfect, and there wasn't a reminder in the last hour
