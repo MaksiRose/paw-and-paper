@@ -90,16 +90,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	if (message.reference !== null) {
 
 		const referencedMessage = await message.channel.messages.fetch(message.reference.messageId);
-
-		if (webhookCache[referencedMessage.id] !== undefined) {
-
-			const user = await client.users.fetch(webhookCache[referencedMessage.id]);
-			referencedMessage.author = user;
-		}
+		const member = referencedMessage.member;
+		const user = referencedMessage.author;
 
 		embeds = [{
-			author: { name: referencedMessage.member.displayName, icon_url: referencedMessage.member.displayAvatarURL() },
-			color: referencedMessage.member.displayColor,
+			author: { name: member?.displayName || user.username, icon_url: member?.displayAvatarURL() || user.avatarURL() },
+			color: member?.displayColor || user.accentColor || 'WHITE',
 			description: referencedMessage.content,
 		}];
 	}
