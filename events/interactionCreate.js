@@ -305,6 +305,7 @@ const event = {
 								{ name: '**rp profilelist**', value: 'View a list of all the profiles that exist on this server.' },
 								{ name: '**rp friendships**', value: 'View a list of all the friendships that you have with other players.' },
 								{ name: '**rp diceroll**', value: 'Roll a dice.' },
+								{ name: '**rp skills (@user)**', value: 'Show a list of or edit custom skills/ability scores.' },
 								{ name: '**rp requestvisit**', value: 'Find, visit and talk to people from far away packs.' },
 								{ name: '**rp endvisit**', value: 'End a visit between your and another pack.' },
 							],
@@ -325,6 +326,7 @@ const event = {
 									{ label: 'Profilelist', value: 'help_profilelist', description: 'View a list of all the profiles that exist on this server.' },
 									{ label: 'Friendships', value: 'help_friendships', description: 'View a list of all the friendships that you have with other players.' },
 									{ label: 'Diceroll', value: 'help_diceroll', description: 'Roll a dice.' },
+									{ label: 'Skills', value: 'help_skills', description: 'Show a list of or edit custom skills/ability scores.' },
 									{ label: 'Requestvisit', value: 'help_requestvisit', description: 'Find, visit and talk to people from far away packs.' },
 									{ label: 'Endvisit', value: 'help_endvisit', description: 'End a visit between your and another pack.' },
 								],
@@ -1156,7 +1158,30 @@ const event = {
 							fields: [
 								{ name: '**Aliases**', value: 'dice, roll, rolldice' },
 								{ name: '**Arguments**', value: '(number of dice)D[number of faces] (addition/subtraction value)' },
-								{ name: '**More information**', value: 'The command has three sections: number of dice (optional), number of faces, and addition/subtraction (optional). Number of dice and number of faces is separated by a "D" with no spaces. After that, you can include an amount that you would like to be added or subtracted from your diceroll.\n\nExamples:\n`rp diceroll D6` - Number between 1 and 6.\n`rp diceroll 2D20 + 12` - Number between 14 and 52.\n`rp rolldice 5d12 -4` - Number between 1 and 56.' },
+								{ name: '**More information**', value: 'The command has three sections: number of dice (optional), number of faces, and addition/subtraction (optional). Number of dice and number of faces is separated by a "D" with no spaces. After that, you can include an amount that you would like to be added or subtracted from your diceroll. You can also use the name of a `skill` as the amount.\n\nExamples:\n`rp diceroll D6` - Number between 1 and 6.\n`rp diceroll 2D20 + 12` - Number between 14 and 52.\n`rp rolldice 5d12 -4` - Number between 1 and 56.' },
+							],
+						}],
+						ephemeral: true,
+					})
+					.catch(async (error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+			}
+
+			if (interaction.values[0] === 'help_skills') {
+
+				return await interaction
+					.followUp({
+						embeds: [{
+							color: /** @type {`#${string}`} */ (config.default_color),
+							title: 'rp skills',
+							description: 'Show a list of or edit custom skills / ability scores.',
+							fields: [
+								{ name: '**Aliases**', value: 'abilityscores, ability, scores' },
+								{ name: '**Arguments**', value: 'Optional: mention of a user' },
+								{ name: '**More information**', value: 'This command shows you custom skills/ability scores. There are two kinds, personal and global. Global are ability scores that everyone in the server has. Personal are ones that only you have. Admins can add, edit and remove global skills, and everyone can add, edit and remove their personal skills, as well as modify their value.' },
 							],
 						}],
 						ephemeral: true,
