@@ -59,7 +59,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			for (const character of Object.values(userData?.characters || {})) {
 
-				if (character.proxy.startsWith === proxies[0] && character.proxy.endsWith === proxies[1]) {
+				const isSamePrefix = proxies[0] !== '' && proxies[0] !== undefined && character.proxy.startsWith === proxies[0];
+				const isSameSuffix = proxies[1] !== '' && proxies[1] !== undefined && character.proxy.endsWith === proxies[1];
+				if (isSamePrefix && isSameSuffix) {
 
 					await message
 						.reply({
