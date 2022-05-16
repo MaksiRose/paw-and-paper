@@ -1,6 +1,6 @@
 // @ts-check
 const { default_color, error_color } = require('../config.json');
-const { profileModel } = require('../models/profileModel');
+const profileModel = require('../models/profileModel');
 
 /**
  * Checks if user has reached the requirement to get a role based on their rank.
@@ -22,21 +22,25 @@ async function checkRankRequirements(serverData, message, member, userRank) {
 
 			try {
 
-				/** @type {import('../typedef').ProfileSchema} */
-				const profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne(
-					{ userId: member.id, serverId: member.guild.id },
+				const userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne(
+					{ userId: member.id },
 				));
+				const roles = userData.characters[userData.currentCharacter[message.guild.id]].profiles[message.guild.id].roles;
 
-				profileData.roles.push({
-					roleId: item.roleId,
-					wayOfEarning: item.wayOfEarning,
-					requirement: item.requirement,
-				});
+				if (roles.some(r => r.roleId === item.roleId && r.wayOfEarning === item.wayOfEarning && r.requirement === item.requirement) === false) {
 
-				await profileModel.findOneAndUpdate(
-					{ userId: member.id, serverId: member.guild.id },
-					{ $set: { roles: profileData.roles } },
-				);
+					await profileModel.findOneAndUpdate(
+						{ userId: member.id },
+						(/** @type {import('../typedef').ProfileSchema} */ p) => {
+							p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].roles.push({
+								roleId: item.roleId,
+								wayOfEarning: item.wayOfEarning,
+								requirement: item.requirement,
+							});
+						},
+					);
+				}
+
 
 				if (message.member.roles.cache.has(item.roleId) === false) {
 
@@ -62,6 +66,8 @@ async function checkRankRequirements(serverData, message, member, userRank) {
 			}
 		}
 	}
+
+	return;
 }
 
 
@@ -82,21 +88,24 @@ async function checkLevelRequirements(serverData, message, member, userLevel) {
 
 			try {
 
-				/** @type {import('../typedef').ProfileSchema} */
-				const profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne(
-					{ userId: member.id, serverId: member.guild.id },
+				const userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne(
+					{ userId: member.id },
 				));
+				const roles = userData.characters[userData.currentCharacter[message.guild.id]].profiles[message.guild.id].roles;
 
-				profileData.roles.push({
-					roleId: item.roleId,
-					wayOfEarning: item.wayOfEarning,
-					requirement: item.requirement,
-				});
+				if (roles.some(r => r.roleId === item.roleId && r.wayOfEarning === item.wayOfEarning && r.requirement === item.requirement) === false) {
 
-				await profileModel.findOneAndUpdate(
-					{ userId: member.id, serverId: member.guild.id },
-					{ $set: { roles: profileData.roles } },
-				);
+					await profileModel.findOneAndUpdate(
+						{ userId: member.id },
+						(/** @type {import('../typedef').ProfileSchema} */ p) => {
+							p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].roles.push({
+								roleId: item.roleId,
+								wayOfEarning: item.wayOfEarning,
+								requirement: item.requirement,
+							});
+						},
+					);
+				}
 
 				if (member.roles.cache.has(item.roleId) === false) {
 
@@ -139,7 +148,6 @@ async function checkRoleCatchBlock(error, message, member) {
 				content: member.toString(),
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'I don\'t have permission to manage roles, or the role is above my highest role. Please ask an admin to edit my permissions or move the wanted role below mine.',
 				}],
 			})
@@ -155,8 +163,7 @@ async function checkRoleCatchBlock(error, message, member) {
 				content: member.toString(),
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-					title: 'There was an error trying to add the role :(',
+					title: 'There was an error trying to add/remove the role :(',
 				}],
 			})
 			.catch((err) => {

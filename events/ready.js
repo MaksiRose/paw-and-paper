@@ -34,9 +34,12 @@ const event = {
 		const allServers = await client.guilds.fetch();
 		for (const [, OAuth2Guild] of allServers) {
 
-			const serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOne({
-				serverId: OAuth2Guild.id,
-			}));
+			const serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOneAndUpdate(
+				{ serverId: OAuth2Guild.id },
+				(/** @type {import('../typedef').ServerSchema} */ s) => {
+					s.name = OAuth2Guild.name;
+				},
+			));
 
 			if (!serverData) {
 

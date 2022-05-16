@@ -1,5 +1,5 @@
 // @ts-check
-const { profileModel } = require('../../models/profileModel');
+const profileModel = require('../../models/profileModel');
 const startCooldown = require('../../utils/startCooldown');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
@@ -19,30 +19,30 @@ module.exports.aliases = ['region'];
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
  * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData, embedArray) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await hasNotCompletedAccount(message, profileData)) {
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	const profileData = characterData?.profiles?.[message.guild.id];
 
-		return;
-	}
-
-	if (await isInvalid(message, profileData, embedArray, [module.exports.name].concat(module.exports.aliases))) {
+	if (await hasNotCompletedAccount(message, characterData)) {
 
 		return;
 	}
 
-	profileData = await startCooldown(message, profileData);
+	if (await isInvalid(message, userData, embedArray, [module.exports.name].concat(module.exports.aliases))) {
+
+		return;
+	}
+
+	userData = await startCooldown(message);
 	const messageContent = remindOfAttack(message);
 
-	profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
-		userId: message.author.id,
-		serverId: message.guild.id,
-	}));
+	userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.author.id }));
 
 	const chosenRegion = argumentsArray.join(' ').toLowerCase();
 
@@ -106,8 +106,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	});
 
 	const embed = new MessageEmbed({
-		color: profileData.color,
-		author: { name: profileData.name, icon_url: profileData.avatarURL },
+		color: characterData.color,
+		author: { name: characterData.name, icon_url: characterData.avatarURL },
 		description: `You are currently at the ${profileData.currentRegion}! Here are the regions you can go to:`,
 		fields: [
 			{ name: '💤 sleeping dens', value: 'A place to sleep and relax. Go here if you need to refill your energy!' },
@@ -335,141 +335,143 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	async function sleepingDen() {
 
 		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { currentRegion: 'sleeping dens' } },
+			{ userId: message.author.id },
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'sleeping dens';
+			},
 		);
 
-		embed.description = `*${profileData.name} slowly trots to the sleeping dens, tired from all the hard work ${pronoun(profileData, 0)} did. For a moment, the ${profileData.species} thinks about if ${pronounAndPlural(profileData, 0, 'want')} to rest or just a break.*`;
+		embed.description = `*${characterData.name} slowly trots to the sleeping dens, tired from all the hard work ${pronoun(characterData, 0)} did. For a moment, the ${characterData.displayedSpecies || characterData.species} thinks about if ${pronounAndPlural(characterData, 0, 'want')} to rest or just a break.*`;
 		embed.fields = [];
 	}
 
 	async function foodDen() {
 
 		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { currentRegion: 'food den' } },
+			{ userId: message.author.id },
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'food den';
+			},
 		);
 
-		embed.description = `*${profileData.name} runs to the food den. Maybe ${pronoun(profileData, 0)} will eat something, or put ${pronoun(profileData, 2)} food onto the pile.*`;
+		embed.description = `*${characterData.name} runs to the food den. Maybe ${pronoun(characterData, 0)} will eat something, or put ${pronoun(characterData, 2)} food onto the pile.*`;
 		embed.fields = [];
 
-		const allFoodDenProfilesArray = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find({
-			serverId: message.guild.id,
-			currentRegion: 'food den',
-		})).map(user => user.userId);
+		/* Finding all users that have a character that is at the food den in the guild, mapping them to
+		a mention and returning the first 44 items. More than 44 users would exceed the field limit of 1024 characters. */
+		const allFoodDenUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				return Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'food den').length > 0;
+			},
+		)).map(user => `<@${user.userId}>`).slice(0, 45);
 
-		for (let i = 0; i < allFoodDenProfilesArray.length; i++) {
+		if (allFoodDenUsersList.length > 0) {
 
-			allFoodDenProfilesArray[i] = `<@${allFoodDenProfilesArray[i]}>`;
-		}
-
-		if (allFoodDenProfilesArray.length > 0) {
-
-			embed.addField('Packmates at the food den:', allFoodDenProfilesArray.join('\n'));
+			embed.addField('Packmates at the food den:', allFoodDenUsersList.join('\n'));
 		}
 	}
 
 	async function medicineDen() {
 
 		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { currentRegion: 'medicine den' } },
+			{ userId: message.author.id },
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'medicine den';
+			},
 		);
 
-		embed.description = `*${profileData.name} rushes over to the medicine den. Nearby are a mix of packmates, some with illnesses and injuries, others trying to heal them.*`;
+		embed.description = `*${characterData.name} rushes over to the medicine den. Nearby are a mix of packmates, some with illnesses and injuries, others trying to heal them.*`;
 		embed.fields = [];
 
-		const allMedicineDenProfilesArray = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find({
-			serverId: message.guild.id,
-			currentRegion: 'medicine den',
-		})).map(user => user.userId);
+		/* Finding all users that have a character that is at the medicine den in the guild, mapping them to
+		a mention and returning the first 44 items. More than 44 users would exceed the field limit of 1024 characters. */
+		const allMedicineDenUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				return Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'medicine den').length > 0;
+			},
+		)).map(user => `<@${user.userId}>`).slice(0, 45);
 
-		for (let i = 0; i < allMedicineDenProfilesArray.length; i++) {
+		if (allMedicineDenUsersList.length > 0) {
 
-			allMedicineDenProfilesArray[i] = `<@${allMedicineDenProfilesArray[i]}>`;
+			embed.fields.push({ name: 'Packmates at the medicine den:', value: allMedicineDenUsersList.join('\n'), inline: true });
 		}
 
-		if (allMedicineDenProfilesArray.length > 0) {
+		/* Finding all users that have a character that is not a Youngling in the guild, mapping them to
+		a mention and returning the first 44 items. More than 44 users would exceed the field limit of 1024 characters. */
+		const allHealerUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				return Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].rank !== 'Youngling').length > 0;
+			},
+		)).map(user => `<@${user.userId}>`).slice(0, 45);
 
-			embed.fields.push({ name: 'Packmates at the medicine den:', value: allMedicineDenProfilesArray.join('\n'), inline: true });
-		}
+		if (allHealerUsersList.length > 0) {
 
-		const allHealerProfilesArray = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find({
-			serverId: message.guild.id,
-			rank: { $nin: ['Youngling', 'Hunter'] },
-		})).map(user => user.userId);
-
-		for (let i = 0; i < allHealerProfilesArray.length; i++) {
-
-			allHealerProfilesArray[i] = `<@${allHealerProfilesArray[i]}>`;
-		}
-
-		if (allHealerProfilesArray.length > 0) {
-
-			embed.fields.push({ name: 'Packmates that can heal:', value: allHealerProfilesArray.join('\n'), inline: true });
+			embed.fields.push({ name: 'Packmates that can heal:', value: allHealerUsersList.join('\n'), inline: true });
 		}
 	}
 
 	async function ruins() {
 
 		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { currentRegion: 'ruins' } },
+			{ userId: message.author.id },
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'ruins';
+			},
 		);
 
-		embed.description = `*${profileData.name} walks up to the ruins, carefully stepping over broken bricks. Hopefully, ${pronoun(profileData, 0)} will find someone to talk with.*`;
+		embed.description = `*${characterData.name} walks up to the ruins, carefully stepping over broken bricks. Hopefully, ${pronoun(characterData, 0)} will find someone to talk with.*`;
 		embed.fields = [];
 
-		const allRuinProfilesArray = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find({
-			serverId: message.guild.id,
-			currentRegion: 'ruins',
-		})).map(user => user.userId);
+		/* Finding all users that have a character that is at the ruins in the guild, mapping them to
+		a mention and returning the first 44 items. More than 44 users would exceed the field limit of 1024 characters. */
+		const allRuinUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				return Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'ruins').length > 0;
+			},
+		)).map(user => `<@${user.userId}>`).slice(0, 45);
 
-		for (let i = 0; i < allRuinProfilesArray.length; i++) {
+		if (allRuinUsersList.length > 0) {
 
-			allRuinProfilesArray[i] = `<@${allRuinProfilesArray[i]}>`;
-		}
-
-		if (allRuinProfilesArray.length > 0) {
-
-			embed.addField('Packmates at the ruins:', allRuinProfilesArray.join('\n'));
+			embed.addField('Packmates at the ruins:', allRuinUsersList.join('\n'));
 		}
 	}
 
 	async function lake() {
 
 		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { currentRegion: 'lake' } },
+			{ userId: message.author.id },
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'lake';
+			},
 		);
 
-		embed.description = `*${profileData.name} looks at ${pronoun(profileData, 2)} reflection as ${pronounAndPlural(profileData, 0, 'passes', 'pass')} the lake. Suddenly the ${profileData.species} remembers how long ${pronounAndPlural(profileData, 0, 'has', 'have')}n't drunk anything.*`;
+		embed.description = `*${characterData.name} looks at ${pronoun(characterData, 2)} reflection as ${pronounAndPlural(characterData, 0, 'passes', 'pass')} the lake. Suddenly the ${characterData.displayedSpecies || characterData.species} remembers how long ${pronounAndPlural(characterData, 0, 'has', 'have')}n't drunk anything.*`;
 		embed.fields = [];
 	}
 
 	async function prairie() {
 
 		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { currentRegion: 'prairie' } },
+			{ userId: message.author.id },
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'prairie';
+			},
 		);
 
-		embed.description = `*${profileData.name} approaches the prairie, watching younger packmates testing their strength in playful fights. Maybe the ${profileData.species} could play with them!*`;
+		embed.description = `*${characterData.name} approaches the prairie, watching younger packmates testing their strength in playful fights. Maybe the ${characterData.displayedSpecies || characterData.species} could play with them!*`;
 		embed.fields = [];
 
-		const allPrairieProfilesArray = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find({
-			serverId: message.guild.id,
-			currentRegion: 'prairie',
-		})).map(user => user.userId);
+		/* Finding all users that have a character that is at the prairie in the guild, mapping them to
+		a mention and returning the first 44 items. More than 44 users would exceed the field limit of 1024 characters. */
+		const allPrairieUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				return Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'prairie').length > 0;
+			},
+		)).map(user => `<@${user.userId}>`).slice(0, 45);
 
-		for (let i = 0; i < allPrairieProfilesArray.length; i++) {
+		if (allPrairieUsersList.length > 0) {
 
-			allPrairieProfilesArray[i] = `<@${allPrairieProfilesArray[i]}>`;
-		}
-
-		if (allPrairieProfilesArray.length > 0) {
-
-			embed.addField('Packmates at the prairie:', allPrairieProfilesArray.join('\n'));
+			embed.addField('Packmates at the prairie:', allPrairieUsersList.join('\n'));
 		}
 	}
 };

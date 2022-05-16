@@ -1,23 +1,21 @@
 // @ts-check
-const { profileModel } = require('../models/profileModel');
+const profileModel = require('../models/profileModel');
 
 /**
  * Sets `hasCooldown` for an account to `true`.
  * @param {import('discord.js').Message} message
- * @param {import('../typedef').ProfileSchema} profileData
- * @returns {Promise<import('../typedef').ProfileSchema>} profileData
+ * @returns {Promise<import('../typedef').ProfileSchema>} userData
  */
-async function startCooldown(message, profileData) {
+async function startCooldown(message) {
 
-	if (profileData.hasCooldown !== true) {
-
-		profileData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { hasCooldown: true } },
-		));
-	}
-
-	return profileData;
+	return /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+		{ userId: message.author.id },
+		(/** @type {import('../typedef').ProfileSchema} */ p) => {
+			if (p?.characters?.[p?.currentCharacter?.[message.guild.id]]?.profiles?.[message.guild.id]?.hasCooldown !== undefined) {
+				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hasCooldown = true;
+			}
+		},
+	));
 }
 
 module.exports = startCooldown;

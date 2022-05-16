@@ -1,6 +1,6 @@
 // @ts-check
 const serverModel = require('../../models/serverModel');
-const { profileModel } = require('../../models/profileModel');
+const profileModel = require('../../models/profileModel');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { decreaseEnergy, decreaseHunger, decreaseThirst, decreaseHealth } = require('../../utils/checkCondition');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
@@ -12,6 +12,7 @@ const { pronounAndPlural, pronoun } = require('../../utils/getPronouns');
 const { restAdvice, drinkAdvice, eatAdvice, coloredButtonsAdvice } = require('../../utils/adviceMessages');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
+const { serverActiveUsers } = require('../../events/messageCreate');
 const serverMap = new Map();
 
 module.exports.name = 'attack';
@@ -21,19 +22,22 @@ module.exports.name = 'attack';
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
  * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData, embedArray) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await hasNotCompletedAccount(message, profileData)) {
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	const profileData = characterData?.profiles?.[message.guild.id];
+
+	if (await hasNotCompletedAccount(message, characterData)) {
 
 		return;
 	}
 
-	if (await isInvalid(message, profileData, embedArray, [module.exports.name])) {
+	if (await isInvalid(message, userData, embedArray, [module.exports.name])) {
 
 		return;
 	}
@@ -43,9 +47,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		await message
 			.reply({
 				embeds: [...embedArray, {
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: `*${profileData.name} is ready to attack any intruder. But no matter how far ${pronounAndPlural(profileData, 0, 'look')}, ${pronoun(profileData, 0)} can't see anyone. It seems that the pack is not under attack at the moment.*`,
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					description: `*${characterData.name} is ready to attack any intruder. But no matter how far ${pronounAndPlural(characterData, 0, 'look')}, ${pronoun(characterData, 0)} can't see anyone. It seems that the pack is not under attack at the moment.*`,
 				}],
 				failIfNotExists: false,
 			})
@@ -60,9 +64,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		await message
 			.reply({
 				embeds: [...embedArray, {
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: `*${profileData.name} looks around, searching for a human to attack. It looks like everyone is already being attacked by other pack members. The ${profileData.species} better not interfere before ${pronounAndPlural(profileData, 0, 'hurt')} ${pronoun(profileData, 2)} friends.*`,
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					description: `*${characterData.name} looks around, searching for a human to attack. It looks like everyone is already being attacked by other pack members. The ${characterData.displayedSpecies || characterData.species} better not interfere before ${pronounAndPlural(characterData, 0, 'hurt')} ${pronoun(characterData, 2)} friends.*`,
 				}],
 				failIfNotExists: false,
 			})
@@ -72,7 +76,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		return;
 	}
 
-	profileData = await startCooldown(message, profileData);
+	userData = await startCooldown(message);
 
 	serverMap.get('nr' + message.guild.id).humans -= 1;
 	serverMap.get('nr' + message.guild.id).currentFights += 1;
@@ -82,8 +86,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		/** @type {import('discord.js').Message} */
 		botReply;
 	const embed = {
-		color: profileData.color,
-		author: { name: profileData.name, icon_url: profileData.avatarURL },
+		color: characterData.color,
+		author: { name: characterData.name, icon_url: characterData.avatarURL },
 		description: '',
 		footer: { text: /** @type {string} */ (null) },
 	};
@@ -122,17 +126,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		if (cycleKind == 'attack') {
 
-			embed.description = `⏫ *The human gets ready to attack. ${profileData.name} must think quickly about how ${pronounAndPlural(profileData, 0, 'want')} to react.*`;
+			embed.description = `⏫ *The human gets ready to attack. ${characterData.name} must think quickly about how ${pronounAndPlural(characterData, 0, 'want')} to react.*`;
 		}
 
 		if (cycleKind == 'dodge') {
 
-			embed.description = `↪️ *Looks like the human is preparing a maneuver for ${profileData.name}'s next move. The ${profileData.species} must think quickly about how ${pronounAndPlural(profileData, 0, 'want')} to react.*`;
+			embed.description = `↪️ *Looks like the human is preparing a maneuver for ${characterData.name}'s next move. The ${characterData.displayedSpecies || characterData.species} must think quickly about how ${pronounAndPlural(characterData, 0, 'want')} to react.*`;
 		}
 
 		if (cycleKind == 'defend') {
 
-			embed.description = `⏺️ *The human gets into position to oppose an attack. ${profileData.name} must think quickly about how ${pronounAndPlural(profileData, 0, 'want')} to react.*`;
+			embed.description = `⏺️ *The human gets into position to oppose an attack. ${characterData.name} must think quickly about how ${pronounAndPlural(characterData, 0, 'want')} to react.*`;
 		}
 
 		embed.footer.text = 'You will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response.';
@@ -211,21 +215,19 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		const hungerPoints = await decreaseHunger(profileData);
 		const thirstPoints = await decreaseThirst(profileData);
 
-		profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{
-				$inc: {
-					experience: +experiencePoints,
-					energy: -energyPoints,
-					hunger: -hungerPoints,
-					thirst: -thirstPoints,
-				},
+		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+			{ userId: message.author.id },
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].experience += experiencePoints;
+				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].energy -= energyPoints;
+				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hunger -= hungerPoints;
+				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].thirst -= thirstPoints;
 			},
 		));
 
 		let embedFooterStatsText = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})${hungerPoints > 0 ? `\n-${hungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})` : ''}${thirstPoints > 0 ? `\n-${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})` : ''}`;
 
-		const userInjuryObject = { ...profileData.injuryObject };
+		const userInjuryObject = { ...profileData.injuries };
 
 
 		if (winPoints < 0) {
@@ -237,38 +239,42 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		if (winPoints == 2) {
 
-			embed.description = `*For a moment it looks like the human might get the upper hand before ${profileData.name} jumps on them with a big hop. The human falls to the ground and crawls away with a terrified look on their face. It looks like their not coming back.*`;
+			embed.description = `*For a moment it looks like the human might get the upper hand before ${characterData.name} jumps on them with a big hop. The human falls to the ground and crawls away with a terrified look on their face. It looks like they're not coming back.*`;
 		}
 		else {
 
 			const inventoryObject = {
-				commonPlants: { ...serverData.inventoryObject.commonPlants },
-				uncommonPlants: { ...serverData.inventoryObject.uncommonPlants },
-				rarePlants: { ...serverData.inventoryObject.rarePlants },
-				meat: { ...serverData.inventoryObject.meat },
+				commonPlants: { ...serverData.inventory.commonPlants },
+				uncommonPlants: { ...serverData.inventory.uncommonPlants },
+				rarePlants: { ...serverData.inventory.rarePlants },
+				meat: { ...serverData.inventory.meat },
 			};
 			const { itemType, itemName } = module.exports.getHighestItem(inventoryObject);
 
 			if (inventoryObject[itemType][itemName] > 0) {
 
-				embedFooterStatsText += `\n\n-${Math.round(inventoryObject[itemType][itemName] / 10)} ${itemName} for ${message.guild.name}`;
-				inventoryObject[itemType][itemName] -= Math.round(inventoryObject[itemType][itemName] / 10);
+				embedFooterStatsText += `\n\n-${Math.ceil(inventoryObject[itemType][itemName] / 10)} ${itemName} for ${message.guild.name}`;
+				inventoryObject[itemType][itemName] -= Math.ceil(inventoryObject[itemType][itemName] / 10);
 			}
 
 			await serverModel.findOneAndUpdate(
 				{ serverId: message.guild.id },
-				{ $set: { inventoryObject: inventoryObject } },
+				(/** @type {import('../../typedef').ServerSchema} */ s) => {
+					s.inventory = inventoryObject;
+				},
 			);
 
-			embed.description = `*The battle between the human and ${profileData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${profileData.species} tries to jump at them, but the human manages to dodge. Quickly they run in the direction of the food den. They escaped from ${pronoun(profileData, 1)}!*`;
+			embed.description = `*The battle between the human and ${characterData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${characterData.displayedSpecies || characterData.species} tries to jump at them, but the human manages to dodge. Quickly they run in the direction of the food den. They escaped from ${pronoun(characterData, 1)}!*`;
 
 			if (winPoints == 0) {
 
 				const healthPoints = function(health) { return (profileData.health - health < 0) ? profileData.health : health; }(generateRandomNumber(5, 3));
 
 				await profileModel.findOneAndUpdate(
-					{ userId: message.author.id, serverId: message.guild.id },
-					{ $inc: { health: -healthPoints } },
+					{ userId: message.author.id },
+					(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+						p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].health -= healthPoints;
+					},
 				);
 
 				switch (pullFromWeightedTable({ 0: 1, 1: 1 })) {
@@ -277,7 +283,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 						userInjuryObject.wounds += 1;
 
-						embed.description = `*The battle between the human and ${profileData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${profileData.species} tries to jump at them, but the human manages to dodge. Unfortunately, a rock is directly in ${profileData.name}'s jump line. A sharp pain runs through ${pronoun(profileData, 2)} hip. A red spot slowly spreads where ${pronoun(profileData, 0)} hit the rock. Meanwhile, the human runs into the food den.*`;
+						embed.description = `*The battle between the human and ${characterData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${characterData.displayedSpecies || characterData.species} tries to jump at them, but the human manages to dodge. Unfortunately, a rock is directly in ${characterData.name}'s jump line. A sharp pain runs through ${pronoun(characterData, 2)} hip. A red spot slowly spreads where ${pronoun(characterData, 0)} hit the rock. Meanwhile, the human runs into the food den.*`;
 
 						embedFooterStatsText = `-${healthPoints} HP (from wound)\n${embedFooterStatsText}`;
 
@@ -287,7 +293,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 						userInjuryObject.sprains += 1;
 
-						embed.description = `*The battle between the human and ${profileData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${profileData.species} tries to jump at them, but the human manages to dodge. ${profileData.name} is not prepared for the fall. A sharp pain runs through ${pronoun(profileData, 2)} arm as it bends in the fall. Meanwhile, the human runs into the food den.*`;
+						embed.description = `*The battle between the human and ${characterData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${characterData.displayedSpecies || characterData.species} tries to jump at them, but the human manages to dodge. ${characterData.name} is not prepared for the fall. A sharp pain runs through ${pronoun(characterData, 2)} arm as it bends in the fall. Meanwhile, the human runs into the food den.*`;
 
 						embedFooterStatsText = `-${healthPoints} HP (from sprain)\n${embedFooterStatsText}`;
 				}
@@ -308,14 +314,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				return botReply;
 			});
 
-		botReply = await decreaseHealth(profileData, botReply, userInjuryObject);
-		botReply = await checkLevelUp(message, botReply, profileData, serverData);
-		await isPassedOut(message, profileData, true);
+		botReply = await decreaseHealth(userData, botReply, userInjuryObject);
+		botReply = await checkLevelUp(message, botReply, userData, serverData);
+		await isPassedOut(message, userData, true);
 
-		await coloredButtonsAdvice(message, profileData);
-		await restAdvice(message, profileData);
-		await drinkAdvice(message, profileData);
-		await eatAdvice(message, profileData);
+		await coloredButtonsAdvice(message, userData);
+		await restAdvice(message, userData);
+		await drinkAdvice(message, userData);
+		await eatAdvice(message, userData);
 
 		return;
 	}
@@ -342,36 +348,31 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		await serverModel.findOneAndUpdate(
 			{ serverId: message.guild.id },
-			{ $set: { nextPossibleAttack: Date.now() + 86400000 } },
+			(/** @type {import('../../typedef').ServerSchema} */ s) => {
+				s.nextPossibleAttack = Date.now() + 86400000;
+			},
 		);
 	}
 	else if (serverMap.get('nr' + message.guild.id).endingTimeout == null && serverMap.get('nr' + message.guild.id).currentFights <= 0) {
 
-		remainingHumans(message, serverData);
+		remainingHumans(message);
 	}
 };
 
 /**
  * Starts a timeout of 60 seconds after which an attack starts.
  * @param {import('discord.js').Message} message
- * @param {import('../../typedef').ServerSchema} serverData
+ * @param {number} humanCount
  * @returns {void}
  */
-module.exports.startAttack = (message, serverData) => {
+module.exports.startAttack = (message, humanCount) => {
 
-	serverMap.set('nr' + message.guild.id, { startsTimestamp: Date.now() + 60000, humans: serverData.activeUsersArray.length, endingTimeout: null, currentFights: 0 });
+	serverMap.set('nr' + message.guild.id, { startsTimestamp: Date.now() + 120_000, humans: humanCount, endingTimeout: null, currentFights: 0 });
 	setTimeout(async function() {
-
-		serverData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOne({ serverId: message.guild.id }));
-
-		if (serverData.activeUsersArray.length > serverMap.get('nr' + message.guild.id).humans) {
-
-			serverMap.get('nr' + message.guild.id).humans = serverData.activeUsersArray.length;
-		}
 
 		await message.channel
 			.send({
-				content: serverData.activeUsersArray.map(user => `<@!${user}>`).join(' '),
+				content: serverActiveUsers.get(message.guild.id).map(user => `<@!${user}>`).join(' '),
 				embeds: [{
 					color: /** @type {`#${string}`} */ (default_color),
 					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
@@ -389,10 +390,10 @@ module.exports.startAttack = (message, serverData) => {
 			serverMap.get('nr' + message.guild.id).endingTimeout = null;
 			if (serverMap.get('nr' + message.guild.id).currentFights <= 0) {
 
-				remainingHumans(message, serverData);
+				remainingHumans(message);
 			}
 		}, 300000);
-	}, 60000);
+	}, 120_000);
 };
 
 /**
@@ -417,10 +418,11 @@ module.exports.remindOfAttack = (message) => {
 /**
  * Checks if any humans are undefeated and removes items for each that is left.
  * @param {import('discord.js').Message} message
- * @param {import('../../typedef').ServerSchema} serverData
  * @returns {Promise<void>}
  */
-async function remainingHumans(message, serverData) {
+async function remainingHumans(message) {
+
+	const serverData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOne({ serverId: message.guild.id }));
 
 	const embed = {
 		color: /** @type {`#${string}`} */ (default_color),
@@ -431,10 +433,10 @@ async function remainingHumans(message, serverData) {
 	};
 
 	const inventoryObject = {
-		commonPlants: { ...serverData.inventoryObject.commonPlants },
-		uncommonPlants: { ...serverData.inventoryObject.uncommonPlants },
-		rarePlants: { ...serverData.inventoryObject.rarePlants },
-		meat: { ...serverData.inventoryObject.meat },
+		commonPlants: { ...serverData.inventory.commonPlants },
+		uncommonPlants: { ...serverData.inventory.uncommonPlants },
+		rarePlants: { ...serverData.inventory.rarePlants },
+		meat: { ...serverData.inventory.meat },
 	};
 	while (serverMap.get('nr' + message.guild.id).humans > 0) {
 
@@ -442,8 +444,8 @@ async function remainingHumans(message, serverData) {
 
 		if (inventoryObject[itemType][itemName] > 0) {
 
-			embed.footer.text += `\n-${Math.round(inventoryObject[itemType][itemName] / 10)} ${itemName} for ${message.guild.name}`;
-			inventoryObject[itemType][itemName] -= Math.round(inventoryObject[itemType][itemName] / 10);
+			embed.footer.text += `\n-${Math.ceil(inventoryObject[itemType][itemName] / 10)} ${itemName} for ${message.guild.name}`;
+			inventoryObject[itemType][itemName] -= Math.ceil(inventoryObject[itemType][itemName] / 10);
 		}
 
 		serverMap.get('nr' + message.guild.id).humans -= 1;
@@ -456,11 +458,9 @@ async function remainingHumans(message, serverData) {
 
 	await serverModel.findOneAndUpdate(
 		{ serverId: message.guild.id },
-		{
-			$set: {
-				inventoryObject: inventoryObject,
-				nextPossibleAttack: Date.now() + 86400000,
-			},
+		(/** @type {import('../../typedef').ServerSchema} */ s) => {
+			s.inventory = inventoryObject,
+			s.nextPossibleAttack = Date.now() + 86400000;
 		},
 	);
 

@@ -1,7 +1,7 @@
 // @ts-check
 const startCooldown = require('../../utils/startCooldown');
 const { error_color, default_color } = require('../../config.json');
-const { profileModel } = require('../../models/profileModel');
+const profileModel = require('../../models/profileModel');
 const { generateRandomNumber, generateRandomNumberWithException, pullFromWeightedTable } = require('../../utils/randomizers');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
@@ -22,24 +22,27 @@ module.exports.name = 'playfight';
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
  * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData, embedArray) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await hasNotCompletedAccount(message, profileData)) {
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	const profileData = characterData?.profiles?.[message.guild.id];
 
-		return;
-	}
-
-	if (await isInvalid(message, profileData, embedArray, [module.exports.name])) {
+	if (await hasNotCompletedAccount(message, characterData)) {
 
 		return;
 	}
 
-	profileData = await startCooldown(message, profileData);
+	if (await isInvalid(message, userData, embedArray, [module.exports.name])) {
+
+		return;
+	}
+
+	userData = await startCooldown(message);
 	const messageContent = remindOfAttack(message);
 
 	if (message.mentions.users.size > 0 && message.mentions.users.first().id == message.author.id) {
@@ -48,9 +51,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			.reply({
 				content: messageContent,
 				embeds: [...embedArray, {
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
-					description: `*${profileData.name} believes that ${pronounAndPlural(profileData, 0, 'is', 'are')} so unmatched that only ${pronoun(profileData, 0)} could defeat ${pronoun(profileData, 4)}. But it doesn't take ${pronoun(profileData, 1)} long to realize that it is more fun to fight a partner after all.*`,
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					description: `*${characterData.name} believes that ${pronounAndPlural(characterData, 0, 'is', 'are')} so unmatched that only ${pronoun(characterData, 0)} could defeat ${pronoun(characterData, 4)}. But it doesn't take ${pronoun(characterData, 1)} long to realize that it is more fun to fight a partner after all.*`,
 				}],
 				failIfNotExists: false,
 			})
@@ -67,7 +70,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				content: messageContent,
 				embeds: [...embedArray, {
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Please mention a user that you want to playfight with!',
 				}],
 				failIfNotExists: false,
@@ -78,19 +80,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		return;
 	}
 
-	const partnerProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
-		userId: message.mentions.users.first().id,
-		serverId: message.guild.id,
-	}));
+	const partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first().id }));
+	const partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guild.id]];
+	const partnerProfileData = partnerCharacterData ?.profiles?.[message.guild.id];
 
-	if (!partnerProfileData || partnerProfileData.name === '' || partnerProfileData.species === '' || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0 || partnerProfileData.hasCooldown === true || partnerProfileData.isResting === true) {
+	if (!partnerUserData || !partnerCharacterData || partnerCharacterData.name === '' || partnerCharacterData.species === '' || !partnerProfileData || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0 || partnerProfileData.hasCooldown === true || partnerProfileData.isResting === true) {
 
 		await message
 			.reply({
 				content: messageContent,
 				embeds: [...embedArray, {
 					color: /** @type {`#${string}`} */ (error_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'The mentioned user has no account, is passed out or busy :(',
 				}],
 				failIfNotExists: false,
@@ -117,9 +117,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		.reply({
 			content: messageContent,
 			embeds: [...embedArray, {
-				color: profileData.color,
-				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*${profileData.name} hangs around the prairie when ${partnerProfileData.name} comes by. The ${partnerProfileData.species} has things to do but ${profileData.name}'s smug expression implies ${pronoun(partnerProfileData, 0)} wouldn't be able to beat the ${profileData.species}.*`,
+				color: characterData.color,
+				author: { name: characterData.name, icon_url: characterData.avatarURL },
+				description: `*${characterData.name} hangs around the prairie when ${partnerCharacterData.name} comes by. The ${partnerCharacterData.displayedSpecies || partnerCharacterData.species} has things to do but ${characterData.name}'s smug expression implies ${pronoun(partnerCharacterData, 0)} wouldn't be able to beat the ${characterData.displayedSpecies || characterData.species}.*`,
 				footer: { text: `You are playing ${gameType}. After 60 seconds, the invitation expires.\n\nTip: To pick a game, include 'connectfour' / 'c4' or 'tictactoe' / 'ttt' somewhere in the original command.` },
 			}],
 			components: [ new MessageActionRow({
@@ -134,17 +134,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		})
 		.catch((error) => { throw new Error(error); });
 
-	const userInjuryObjectPlayer1 = { ...profileData.injuryObject };
-	const userInjuryObjectPlayer2 = { ...partnerProfileData.injuryObject };
+	const userInjuryObjectPlayer1 = { ...profileData.injuries };
+	const userInjuryObjectPlayer2 = { ...partnerProfileData.injuries };
 
 	if (gameType === 'Connect Four') {
 
-		playConnectFour(serverData, profileData, partnerProfileData, message, botReply, embedArray, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
+		playConnectFour(serverData, userData, partnerUserData, message, botReply, embedArray, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
 	}
 
 	if (gameType === 'Tic Tac Toe') {
 
-		playTicTacToe(serverData, profileData, partnerProfileData, message, botReply, embedArray, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
+		playTicTacToe(serverData, userData, partnerUserData, message, botReply, embedArray, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
 	}
 
 };
@@ -152,8 +152,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 /**
  * This starts a game of tic tac toe.
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {import('../../typedef').ProfileSchema} profileData
- * @param {import('../../typedef').ProfileSchema} partnerProfileData
+ * @param {import('../../typedef').ProfileSchema} userData
+ * @param {import('../../typedef').ProfileSchema} partnerUserData
  * @param {import('discord.js').Message} message
  * @param {import('discord.js').Message} botReply
  * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
@@ -162,7 +162,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
  * @param {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} userInjuryObjectPlayer2
  * @returns {void}
  */
-function playTicTacToe(serverData, profileData, partnerProfileData, message, botReply, embedArray, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
+function playTicTacToe(serverData, userData, partnerUserData, message, botReply, embedArray, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
+
+	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+	const partnerCharacterData = partnerUserData.characters[partnerUserData.currentCharacter[message.guild.id]];
 
 	const emptyField = '◻️';
 	const player1Field = '⭕';
@@ -239,10 +242,12 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 		createCommandCollector(message.author.id, message.guild.id, botReply);
 		createCommandCollector(message.mentions.users.first().id, message.guild.id, botReply);
 
-		const currentProfileData = (isPartner == true) ? partnerProfileData : profileData;
-		const otherProfileData = (isPartner == true) ? profileData : partnerProfileData;
+		const currentUserData = (isPartner == true) ? partnerUserData : userData;
+		const currentCharacterData = currentUserData.characters[currentUserData.currentCharacter[message.guild.id]];
+		const otherUserData = (isPartner == true) ? userData : partnerUserData;
+		const otherCharacterData = otherUserData.characters[otherUserData.currentCharacter[message.guild.id]];
 
-		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.customId === 'playfight-confirm-tic-tac-toe' && i.user.id == message.mentions.users.first().id) || (i.customId.includes('board') && i.user.id == currentProfileData.userId);
+		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.customId === 'playfight-confirm-tic-tac-toe' && i.user.id == message.mentions.users.first().id) || (i.customId.includes('board') && i.user.id == currentUserData.userId);
 
 		const { customId } = await botReply
 			.awaitMessageComponent({ filter, time: 60_000 })
@@ -269,8 +274,8 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 					.edit({
 						embeds: [...embedArray, {
 							color: /** @type {`#${string}`} */ (default_color),
-							author: { name: profileData.name, icon_url: profileData.avatarURL },
-							description: `*${partnerProfileData.name} wouldn't give in so easily and simply passes the pleading looks of the ${profileData.species}.*`,
+							author: { name: characterData.name, icon_url: characterData.avatarURL },
+							description: `*${characterData.name} wouldn't give in so easily and simply passes the pleading looks of the ${characterData.displayedSpecies || characterData.species}.*`,
 						}],
 						components: disableAllComponents(botReply.components),
 					})
@@ -281,14 +286,14 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 			}
 			else {
 
-				const { embedFooterStatsTextPlayer1, embedFooterStatsTextPlayer2 } = await decreaseStats(message, profileData, partnerProfileData);
+				const { embedFooterStatsTextPlayer1, embedFooterStatsTextPlayer2 } = await decreaseStats(message, userData, characterData.profiles[message.guild.id], partnerUserData, partnerCharacterData.profiles[message.guild.id]);
 
 				botReply = await botReply
 					.edit({
 						embeds: [...embedArray, {
-							color: profileData.color,
-							author: { name: profileData.name, icon_url: profileData.avatarURL },
-							description: `*${currentProfileData.name} takes so long with ${pronoun(currentProfileData, 2)} decision on how to attack that ${otherProfileData.name} gets impatient and leaves.*`,
+							color: characterData.color,
+							author: { name: characterData.name, icon_url: characterData.avatarURL },
+							description: `*${currentCharacterData.name} takes so long with ${pronoun(currentCharacterData, 2)} decision on how to attack that ${otherCharacterData.name} gets impatient and leaves.*`,
 							footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
 						}],
 						components: disableAllComponents(botReply.components),
@@ -298,7 +303,7 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 						return botReply;
 					});
 
-				await checkHealthAndLevel(message, botReply, profileData, serverData, partnerProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
+				await checkHealthAndLevel(message, botReply, userData, serverData, partnerUserData, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
 			}
 
 			return;
@@ -328,7 +333,7 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 					}
 				}
 
-				await executeWin(componentArray, message, profileData, serverData, partnerProfileData, otherProfileData, currentProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, embedArray, botReply, messageContent);
+				await executeWin(componentArray, message, userData, serverData, partnerUserData, otherUserData, currentUserData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, embedArray, botReply, messageContent);
 
 				return;
 			}
@@ -343,26 +348,26 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 					}
 				}
 
-				await executeDraw(componentArray, message, profileData, serverData, partnerProfileData, embedArray, botReply, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
+				await executeDraw(componentArray, message, userData, serverData, partnerUserData, embedArray, botReply, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
 
 				return;
 			}
 		}
 
 		const newTurnEmbedTextArray = [
-			`*${currentProfileData.name} bites into ${otherProfileData.name}, not very deep, but deep enough to hang onto the ${otherProfileData.species}. ${otherProfileData.name} needs to get the ${currentProfileData.species} off of ${pronoun(otherProfileData, 1)}.*`,
-			`*${currentProfileData.name} slams into ${otherProfileData.name}, leaving the ${otherProfileData.species} disoriented. ${otherProfileData.name} needs to start an attack of ${pronoun(otherProfileData, 2)} own now.*`,
-			`*${otherProfileData.name} has gotten hold of ${currentProfileData.name}, but the ${currentProfileData.species} manages to get ${pronoun(otherProfileData, 1)} off, sending the ${otherProfileData.species} slamming into the ground. ${otherProfileData.name} needs to get up and try a new strategy.*`,
+			`*${currentCharacterData.name} bites into ${otherCharacterData.name}, not very deep, but deep enough to hang onto the ${otherCharacterData.displayedSpecies || otherCharacterData.species}. ${otherCharacterData.name} needs to get the ${currentCharacterData.displayedSpecies || currentCharacterData.species} off of ${pronoun(otherCharacterData, 1)}.*`,
+			`*${currentCharacterData.name} slams into ${otherCharacterData.name}, leaving the ${otherCharacterData.displayedSpecies || otherCharacterData.species} disoriented. ${otherCharacterData.name} needs to start an attack of ${pronoun(otherCharacterData, 2)} own now.*`,
+			`*${otherCharacterData.name} has gotten hold of ${currentCharacterData.name}, but the ${currentCharacterData.displayedSpecies || currentCharacterData.displayedSpecies} manages to get ${pronoun(otherCharacterData, 1)} off, sending the ${otherCharacterData.displayedSpecies || otherCharacterData.species} slamming into the ground. ${otherCharacterData.name} needs to get up and try a new strategy.*`,
 		];
 
 		newTurnEmbedTextArrayIndex = generateRandomNumberWithException(newTurnEmbedTextArray.length, 0, newTurnEmbedTextArrayIndex);
 
 		botReply = await message
 			.reply({
-				content: `<@${otherProfileData.userId}>` + (messageContent == null ? '' : messageContent),
+				content: `<@${otherUserData.userId}>` + (messageContent == null ? '' : messageContent),
 				embeds: [...embedArray, {
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
 					description: newTurnEmbedTextArray[newTurnEmbedTextArrayIndex],
 				}],
 				components: componentArray,
@@ -437,8 +442,8 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
 /**
  * This starts a game of connect four.
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {import('../../typedef').ProfileSchema} profileData
- * @param {import('../../typedef').ProfileSchema} partnerProfileData
+ * @param {import('../../typedef').ProfileSchema} userData
+ * @param {import('../../typedef').ProfileSchema} partnerUserData
  * @param {import('discord.js').Message} message
  * @param {import('discord.js').Message} botReply
  * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
@@ -447,7 +452,10 @@ function playTicTacToe(serverData, profileData, partnerProfileData, message, bot
  * @param {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} userInjuryObjectPlayer2
  * @returns {void}
  */
-function playConnectFour(serverData, profileData, partnerProfileData, message, botReply, embedArray, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
+function playConnectFour(serverData, userData, partnerUserData, message, botReply, embedArray, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
+
+	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+	const partnerCharacterData = partnerUserData.characters[partnerUserData.currentCharacter[message.guild.id]];
 
 	const emptyField = '⚫';
 	const player1Field = '🟡';
@@ -511,13 +519,15 @@ function playConnectFour(serverData, profileData, partnerProfileData, message, b
 	 */
 	async function startNewRound(isPartner) {
 
-		const currentProfileData = isPartner === true ? partnerProfileData : profileData;
-		const otherProfileData = isPartner === true ? profileData : partnerProfileData;
+		const currentUserData = (isPartner == true) ? partnerUserData : userData;
+		const currentCharacterData = currentUserData.characters[currentUserData.currentCharacter[message.guild.id]];
+		const otherUserData = (isPartner == true) ? userData : partnerUserData;
+		const otherCharacterData = otherUserData.characters[otherUserData.currentCharacter[message.guild.id]];
 
 		createCommandCollector(message.author.id, message.guild.id, botReply);
 		createCommandCollector(message.mentions.users.first().id, message.guild.id, botReply);
 
-		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.customId === 'playfight-confirm-connect-four' && i.user.id === message.mentions.users.first().id) || (i.customId.includes('field') && i.user.id === currentProfileData.userId);
+		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.customId === 'playfight-confirm-connect-four' && i.user.id === message.mentions.users.first().id) || (i.customId.includes('field') && i.user.id === currentUserData.userId);
 
 		const { customId } = await botReply
 			.awaitMessageComponent({ filter, time: 60_000 })
@@ -544,8 +554,8 @@ function playConnectFour(serverData, profileData, partnerProfileData, message, b
 					.edit({
 						embeds: [...embedArray, {
 							color: /** @type {`#${string}`} */ (default_color),
-							author: { name: profileData.name, icon_url: profileData.avatarURL },
-							description: `*${partnerProfileData.name} wouldn't give in so easily and simply passes the pleading looks of the ${profileData.species}.*`,
+							author: { name: characterData.name, icon_url: characterData.avatarURL },
+							description: `*${partnerCharacterData.name} wouldn't give in so easily and simply passes the pleading looks of the ${characterData.displayedSpecies || characterData.species}.*`,
 						}],
 						components: disableAllComponents(botReply.components),
 					})
@@ -556,14 +566,14 @@ function playConnectFour(serverData, profileData, partnerProfileData, message, b
 			}
 			else {
 
-				const { embedFooterStatsTextPlayer1, embedFooterStatsTextPlayer2 } = await decreaseStats(message, profileData, partnerProfileData);
+				const { embedFooterStatsTextPlayer1, embedFooterStatsTextPlayer2 } = await decreaseStats(message, userData, characterData.profiles[message.guild.id], partnerUserData, partnerCharacterData.profiles[message.guild.id]);
 
 				botReply = await botReply
 					.edit({
 						embeds: [...embedArray, {
-							color: profileData.color,
-							author: { name: profileData.name, icon_url: profileData.avatarURL },
-							description: `*${currentProfileData.name} takes so long with ${pronoun(currentProfileData, 2)} decision on how to attack that ${otherProfileData.name} gets impatient and leaves.*`,
+							color: characterData.color,
+							author: { name: characterData.name, icon_url: characterData.avatarURL },
+							description: `*${currentCharacterData.name} takes so long with ${pronoun(currentCharacterData, 2)} decision on how to attack that ${otherCharacterData.name} gets impatient and leaves.*`,
 							footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
 						}],
 						components: disableAllComponents(botReply.components),
@@ -573,7 +583,7 @@ function playConnectFour(serverData, profileData, partnerProfileData, message, b
 						return botReply;
 					});
 
-				await checkHealthAndLevel(message, botReply, profileData, serverData, partnerProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
+				await checkHealthAndLevel(message, botReply, userData, serverData, partnerUserData, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
 			}
 
 			return;
@@ -609,33 +619,33 @@ function playConnectFour(serverData, profileData, partnerProfileData, message, b
 
 			if (isWin(field, row, column, true) === true) {
 
-				await executeWin(null, message, profileData, serverData, partnerProfileData, otherProfileData, currentProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, [...embedArray, { color: profileData.color, description: field.map(r => r.join('')).join('\n') }], botReply, messageContent);
+				await executeWin(null, message, userData, serverData, partnerUserData, otherUserData, currentUserData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, [...embedArray, { color: characterData.color, description: field.map(r => r.join('')).join('\n') }], botReply, messageContent);
 
 				return;
 			}
 
 			if (isDraw(isPartner) === true) {
 
-				await executeDraw(null, message, profileData, serverData, partnerProfileData, [...embedArray, { color: profileData.color, description: field.map(r => r.join('')).join('\n') }], botReply, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
+				await executeDraw(null, message, userData, serverData, partnerUserData, [...embedArray, { color: characterData.color, description: field.map(r => r.join('')).join('\n') }], botReply, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
 
 				return;
 			}
 		}
 
 		const newTurnEmbedTextArray = [
-			`*${currentProfileData.name} bites into ${otherProfileData.name}, not very deep, but deep enough to hang onto the ${otherProfileData.species}. ${otherProfileData.name} needs to get the ${currentProfileData.species} off of ${pronoun(otherProfileData, 1)}.*`,
-			`*${currentProfileData.name} slams into ${otherProfileData.name}, leaving the ${otherProfileData.species} disoriented. ${otherProfileData.name} needs to start an attack of ${pronoun(otherProfileData, 2)} own now.*`,
-			`*${otherProfileData.name} has gotten hold of ${currentProfileData.name}, but the ${currentProfileData.species} manages to get ${pronoun(otherProfileData, 1)} off, sending the ${otherProfileData.species} slamming into the ground. ${otherProfileData.name} needs to get up and try a new strategy.*`,
+			`*${currentCharacterData.name} bites into ${otherCharacterData.name}, not very deep, but deep enough to hang onto the ${otherCharacterData.displayedSpecies || otherCharacterData.species}. ${otherCharacterData.name} needs to get the ${currentCharacterData.displayedSpecies || currentCharacterData.species} off of ${pronoun(otherCharacterData, 1)}.*`,
+			`*${currentCharacterData.name} slams into ${otherCharacterData.name}, leaving the ${otherCharacterData.displayedSpecies || otherCharacterData.species} disoriented. ${otherCharacterData.name} needs to start an attack of ${pronoun(otherCharacterData, 2)} own now.*`,
+			`*${otherCharacterData.name} has gotten hold of ${currentCharacterData.name}, but the ${currentCharacterData.displayedSpecies || currentCharacterData.species} manages to get ${pronoun(otherCharacterData, 1)} off, sending the ${otherCharacterData.displayedSpecies || otherCharacterData.species} slamming into the ground. ${otherCharacterData.name} needs to get up and try a new strategy.*`,
 		];
 
 		newTurnEmbedTextArrayIndex = generateRandomNumberWithException(newTurnEmbedTextArray.length, 0, newTurnEmbedTextArrayIndex);
 
 		botReply = await message
 			.reply({
-				content: `<@${otherProfileData.userId}>` + (messageContent == null ? '' : messageContent),
+				content: `<@${otherUserData.userId}>` + (messageContent == null ? '' : messageContent),
 				embeds: [...embedArray, {
-					color: profileData.color,
-					author: { name: profileData.name, icon_url: profileData.avatarURL },
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
 					description: `${newTurnEmbedTextArray[newTurnEmbedTextArrayIndex]}\n${field.map(row => row.join('')).join('\n')}\n1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣`,
 				}],
 				components: componentArray,
@@ -757,11 +767,13 @@ function playConnectFour(serverData, profileData, partnerProfileData, message, b
 /**
  * Decreases both players thirst, hunger and energy, and returns the footer text.
  * @param {import('discord.js').Message} message
- * @param {import('../../typedef').ProfileSchema} profileData
- * @param {import('../../typedef').ProfileSchema} partnerProfileData
+ * @param {import('../../typedef').ProfileSchema} userData
+ * @param {import('../../typedef').Profile} profileData
+ * @param {import('../../typedef').ProfileSchema} partnerUserData
+ * @param {import('../../typedef').Profile} partnerProfileData
  * @returns {Promise<{ embedFooterStatsTextPlayer1: string, embedFooterStatsTextPlayer2: string }>}
  */
-async function decreaseStats(message, profileData, partnerProfileData) {
+async function decreaseStats(message, userData, profileData, partnerUserData, partnerProfileData) {
 
 	let embedFooterStatsTextPlayer1 = '';
 	let embedFooterStatsTextPlayer2 = '';
@@ -770,31 +782,29 @@ async function decreaseStats(message, profileData, partnerProfileData) {
 	const hungerPointsPlayer1 = await decreaseHunger(profileData);
 	const energyPointsPlayer1 = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(5, 1) + await decreaseEnergy(profileData));
 
-	profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-		{ userId: message.author.id, serverId: message.guild.id },
-		{
-			$inc: {
-				energy: -energyPointsPlayer1,
-				hunger: -hungerPointsPlayer1,
-				thirst: -thirstPointsPlayer1,
-			},
-			$set: {
-				currentRegion: 'prairie',
-				hasCooldown: false,
-			},
+	userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+		{ userId: message.author.id },
+		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].energy -= energyPointsPlayer1;
+			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hunger -= hungerPointsPlayer1;
+			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].thirst -= thirstPointsPlayer1;
+			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'prairie';
+			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hasCooldown = false;
 		},
 	));
+	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+	profileData = characterData.profiles[message.guild.id];
 
-	embedFooterStatsTextPlayer1 = `-${energyPointsPlayer1} energy (${profileData.energy}/${profileData.maxEnergy}) for ${profileData.name}`;
+	embedFooterStatsTextPlayer1 = `-${energyPointsPlayer1} energy (${profileData.energy}/${profileData.maxEnergy}) for ${characterData.name}`;
 
 	if (hungerPointsPlayer1 >= 1) {
 
-		embedFooterStatsTextPlayer1 += `\n-${hungerPointsPlayer1} hunger (${profileData.hunger}/${profileData.maxHunger}) for ${profileData.name}`;
+		embedFooterStatsTextPlayer1 += `\n-${hungerPointsPlayer1} hunger (${profileData.hunger}/${profileData.maxHunger}) for ${characterData.name}`;
 	}
 
 	if (thirstPointsPlayer1 >= 1) {
 
-		embedFooterStatsTextPlayer1 += `\n-${thirstPointsPlayer1} thirst (${profileData.thirst}/${profileData.maxThirst}) for ${profileData.name}`;
+		embedFooterStatsTextPlayer1 += `\n-${thirstPointsPlayer1} thirst (${profileData.thirst}/${profileData.maxThirst}) for ${characterData.name}`;
 	}
 
 
@@ -802,31 +812,29 @@ async function decreaseStats(message, profileData, partnerProfileData) {
 	const hungerPointsPlayer2 = await decreaseHunger(partnerProfileData);
 	const energyPointsPlayer2 = function(energy) { return (partnerProfileData.energy - energy < 0) ? partnerProfileData.energy : energy; }(generateRandomNumber(5, 1) + await decreaseEnergy(partnerProfileData));
 
-	partnerProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-		{ userId: message.mentions.users.first().id, serverId: message.guild.id },
-		{
-			$inc: {
-				energy: -energyPointsPlayer2,
-				hunger: -hungerPointsPlayer2,
-				thirst: -thirstPointsPlayer2,
-			},
-			$set: {
-				currentRegion: 'prairie',
-				hasCooldown: false,
-			},
+	partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+		{ userId: message.mentions.users.first().id },
+		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].energy -= energyPointsPlayer2;
+			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hunger -= hungerPointsPlayer2;
+			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].thirst -= thirstPointsPlayer2;
+			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'prairie';
+			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hasCooldown = false;
 		},
 	));
+	const partnerCharacterData = userData.characters[userData.currentCharacter[message.guild.id]];
+	partnerProfileData = characterData.profiles[message.guild.id];
 
-	embedFooterStatsTextPlayer2 = `-${energyPointsPlayer2} energy (${partnerProfileData.energy}/${partnerProfileData.maxEnergy}) for ${partnerProfileData.name}`;
+	embedFooterStatsTextPlayer2 = `-${energyPointsPlayer2} energy (${partnerProfileData.energy}/${partnerProfileData.maxEnergy}) for ${partnerCharacterData.name}`;
 
 	if (hungerPointsPlayer2 >= 1) {
 
-		embedFooterStatsTextPlayer2 += `\n-${hungerPointsPlayer2} hunger (${partnerProfileData.hunger}/${partnerProfileData.maxHunger}) for ${partnerProfileData.name}`;
+		embedFooterStatsTextPlayer2 += `\n-${hungerPointsPlayer2} hunger (${partnerProfileData.hunger}/${partnerProfileData.maxHunger}) for ${partnerCharacterData.name}`;
 	}
 
 	if (thirstPointsPlayer2 >= 1) {
 
-		embedFooterStatsTextPlayer2 += `\n-${thirstPointsPlayer2} thirst (${partnerProfileData.thirst}/${partnerProfileData.maxThirst}) for ${partnerProfileData.name}`;
+		embedFooterStatsTextPlayer2 += `\n-${thirstPointsPlayer2} thirst (${partnerProfileData.thirst}/${partnerProfileData.maxThirst}) for ${partnerCharacterData.name}`;
 	}
 
 	return { embedFooterStatsTextPlayer1, embedFooterStatsTextPlayer2 };
@@ -836,88 +844,106 @@ async function decreaseStats(message, profileData, partnerProfileData) {
  * Checks for both level whether to decrease their health, level them up, if they are passed out and if they need to be given any advice.
  * @param {import('discord.js').Message} message
  * @param {import('discord.js').Message} botReply
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {import('../../typedef').ProfileSchema} partnerProfileData
+ * @param {import('../../typedef').ProfileSchema} partnerUserData
  * @param {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} userInjuryObjectPlayer1
  * @param {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} userInjuryObjectPlayer2
  */
-async function checkHealthAndLevel(message, botReply, profileData, serverData, partnerProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
+async function checkHealthAndLevel(message, botReply, userData, serverData, partnerUserData, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
 
-	botReply = await decreaseHealth(profileData, botReply, userInjuryObjectPlayer1);
-	botReply = await decreaseHealth(partnerProfileData, botReply, userInjuryObjectPlayer2);
+	botReply = await decreaseHealth(userData, botReply, userInjuryObjectPlayer1);
+	botReply = await decreaseHealth(partnerUserData, botReply, userInjuryObjectPlayer2);
 
-	botReply = await checkLevelUp(message, botReply, profileData, serverData);
-	botReply = await checkLevelUp(message, botReply, partnerProfileData, serverData);
+	botReply = await checkLevelUp(message, botReply, userData, serverData);
+	botReply = await checkLevelUp(message, botReply, partnerUserData, serverData);
 
-	await isPassedOut(message, profileData, true);
-	await isPassedOut(message, partnerProfileData, true);
+	await isPassedOut(message, userData, true);
+	await isPassedOut(message, partnerUserData, true);
 
-	await addFriendshipPoints(message, profileData, partnerProfileData);
+	await addFriendshipPoints(message, userData, userData.currentCharacter[message.guild.id], partnerUserData, partnerUserData.currentCharacter[message.guild.id]);
 
-	await restAdvice(message, profileData);
-	await restAdvice(message, partnerProfileData);
+	await restAdvice(message, userData);
+	await restAdvice(message, partnerUserData);
 
-	await drinkAdvice(message, profileData);
-	await drinkAdvice(message, partnerProfileData);
+	await drinkAdvice(message, userData);
+	await drinkAdvice(message, partnerUserData);
 
-	await eatAdvice(message, profileData);
-	await eatAdvice(message, partnerProfileData);
+	await eatAdvice(message, userData);
+	await eatAdvice(message, partnerUserData);
 }
 
 /**
  *
  * @param {null | Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} componentArray
  * @param {import('discord.js').Message} message
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {import('../../typedef').ProfileSchema} partnerProfileData
- * @param {import('../../typedef').ProfileSchema} otherProfileData
- * @param {import('../../typedef').ProfileSchema} currentProfileData
+ * @param {import('../../typedef').ProfileSchema} partnerUserData
+ * @param {import('../../typedef').ProfileSchema} otherUserData
+ * @param {import('../../typedef').ProfileSchema} currentUserData
  * @param {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} userInjuryObjectPlayer1
  * @param {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} userInjuryObjectPlayer2
  * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
  * @param {import('discord.js').Message} botReply
  * @param {string} messageContent
  */
-async function executeWin(componentArray, message, profileData, serverData, partnerProfileData, otherProfileData, currentProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, embedArray, botReply, messageContent) {
+async function executeWin(componentArray, message, userData, serverData, partnerUserData, otherUserData, currentUserData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, embedArray, botReply, messageContent) {
 
-	let { embedFooterStatsTextPlayer1, embedFooterStatsTextPlayer2 } = await decreaseStats(message, profileData, partnerProfileData);
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	const profileData = characterData?.profiles?.[message.guild.id];
+	const partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guild.id]];
+	const partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id];
+
+	let { embedFooterStatsTextPlayer1, embedFooterStatsTextPlayer2 } = await decreaseStats(message, userData, profileData, partnerUserData, partnerProfileData);
+
+	let currentCharacterData = currentUserData?.characters?.[currentUserData?.currentCharacter?.[message.guild.id]];
+	let currentProfileData = currentCharacterData?.profiles?.[message.guild.id];
+	let otherCharacterData = otherUserData?.characters?.[otherUserData?.currentCharacter?.[message.guild.id]];
+	let otherProfileData = otherCharacterData?.profiles?.[message.guild.id];
 
 	const x = (otherProfileData.levels - currentProfileData.levels < 0) ? 0 : otherProfileData.levels - currentProfileData.levels;
 	const extraExperience = Math.round((80 / (1 + Math.pow(Math.E, -0.09375 * x))) - 40);
 	const experiencePoints = generateRandomNumber(11, 10) + extraExperience;
 
-	if (currentProfileData.userId === profileData.userId) {
+	if (currentUserData.userId === userData.userId) {
 
-		embedFooterStatsTextPlayer1 = `+${experiencePoints} XP (${currentProfileData.experience + experiencePoints}/${currentProfileData.levels * 50}) for ${currentProfileData.name}\n${embedFooterStatsTextPlayer1}`;
+		embedFooterStatsTextPlayer1 = `+${experiencePoints} XP (${currentProfileData.experience + experiencePoints}/${currentProfileData.levels * 50}) for ${currentCharacterData.name}\n${embedFooterStatsTextPlayer1}`;
 	}
 	else {
 
-		embedFooterStatsTextPlayer2 = `+${experiencePoints} XP (${currentProfileData.experience + experiencePoints}/${currentProfileData.levels * 50}) for ${currentProfileData.name}\n${embedFooterStatsTextPlayer2}`;
+		embedFooterStatsTextPlayer2 = `+${experiencePoints} XP (${currentProfileData.experience + experiencePoints}/${currentProfileData.levels * 50}) for ${currentCharacterData.name}\n${embedFooterStatsTextPlayer2}`;
 	}
 
-	currentProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-		{ userId: currentProfileData.userId, serverId: message.guild.id },
-		{ $inc: { experience: experiencePoints } },
+	currentUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+		{ userId: currentUserData.userId },
+		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+			p.characters[currentCharacterData._id].profiles[message.guild.id].experience += experiencePoints;
+		},
 	));
+	currentCharacterData = currentUserData?.characters?.[currentUserData?.currentCharacter?.[message.guild.id]];
+	currentProfileData = currentCharacterData?.profiles?.[message.guild.id];
 
 	let getHurtText = '';
-	const getHurtChance = pullFromWeightedTable({ 0: 10, 1: 90 + otherProfileData.saplingObject.waterCycles });
+	const getHurtChance = pullFromWeightedTable({ 0: 10, 1: 90 + otherProfileData.sapling.waterCycles });
 	if (getHurtChance === 0) {
 
 		let healthPoints = generateRandomNumber(5, 3);
-		const userInjuryObject = (otherProfileData.userId === profileData.userId) ? { ...userInjuryObjectPlayer1 } : { ...userInjuryObjectPlayer2 };
+		const userInjuryObject = (otherUserData.userId === userData.userId) ? { ...userInjuryObjectPlayer1 } : { ...userInjuryObjectPlayer2 };
 
 		if (otherProfileData.health - healthPoints < 0) {
 
 			healthPoints = otherProfileData.health;
 		}
 
-		otherProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-			{ userId: otherProfileData.userId, serverId: message.guild.id },
-			{ $inc: { health: -healthPoints } },
+		otherUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+			{ userId: otherUserData.userId },
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				p.characters[otherCharacterData._id].profiles[message.guild.id].health -= healthPoints;
+			},
 		));
+		otherCharacterData = otherUserData?.characters?.[otherUserData?.currentCharacter?.[message.guild.id]];
+		otherProfileData = otherCharacterData?.profiles?.[message.guild.id];
 
 		switch (pullFromWeightedTable({ 0: 1, 1: 1 })) {
 
@@ -925,9 +951,9 @@ async function executeWin(componentArray, message, profileData, serverData, part
 
 				userInjuryObject.infections += 1;
 
-				getHurtText += `*${otherProfileData.name} has enjoyed the roughhousing, but ${pronounAndPlural(otherProfileData, 0, 'is', 'are')} struck by exhaustion. After taking a short nap, ${pronounAndPlural(otherProfileData, 0, 'notice')} the rash creeping along ${pronoun(otherProfileData, 2)} back. Oh no! The ${otherProfileData.species} has gotten an infection while playing!*`;
+				getHurtText += `*${otherCharacterData.name} has enjoyed the roughhousing, but ${pronounAndPlural(otherCharacterData, 0, 'is', 'are')} struck by exhaustion. After taking a short nap, ${pronounAndPlural(otherCharacterData, 0, 'notice')} the rash creeping along ${pronoun(otherCharacterData, 2)} back. Oh no! The ${otherCharacterData.displayedSpecies || otherCharacterData.species} has gotten an infection while playing!*`;
 
-				if (otherProfileData.userId === profileData.userId) {
+				if (otherUserData.userId === userData.userId) {
 
 					embedFooterStatsTextPlayer1 = `-${healthPoints} HP (from infection)\n${embedFooterStatsTextPlayer1}`;
 				}
@@ -942,9 +968,9 @@ async function executeWin(componentArray, message, profileData, serverData, part
 
 				userInjuryObject.sprains += 1;
 
-				getHurtText += `*${otherProfileData.name} tries to get up with ${currentProfileData.name}'s help, but the ${otherProfileData.species} feels a horrible pain as ${pronoun(otherProfileData, 0)} get up. Ironically, ${otherProfileData.name} got a sprain from getting up after the fight.*`;
+				getHurtText += `*${otherCharacterData.name} tries to get up with ${currentCharacterData.name}'s help, but the ${otherCharacterData.displayedSpecies || otherCharacterData.species} feels a horrible pain as ${pronoun(otherCharacterData, 0)} get up. Ironically, ${otherCharacterData.name} got a sprain from getting up after the fight.*`;
 
-				if (otherProfileData.userId === profileData.userId) {
+				if (otherUserData.userId === userData.userId) {
 
 					embedFooterStatsTextPlayer1 = `-${healthPoints} HP (from sprain)\n${embedFooterStatsTextPlayer1}`;
 				}
@@ -954,17 +980,17 @@ async function executeWin(componentArray, message, profileData, serverData, part
 				}
 		}
 
-		userInjuryObjectPlayer1 = (otherProfileData.userId === profileData.userId) ? userInjuryObject : userInjuryObjectPlayer1;
-		userInjuryObjectPlayer2 = (otherProfileData.userId === profileData.userId) ? userInjuryObjectPlayer2 : userInjuryObject;
+		userInjuryObjectPlayer1 = (otherUserData.userId === userData.userId) ? userInjuryObject : userInjuryObjectPlayer1;
+		userInjuryObjectPlayer2 = (otherUserData.userId === userData.userId) ? userInjuryObjectPlayer2 : userInjuryObject;
 	}
 
 	botReply = await message
 		.reply({
 			content: messageContent,
 			embeds: [...embedArray, {
-				color: profileData.color,
-				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*The two animals are pressing against each other with all their might. It seems like the fight will never end this way, but ${currentProfileData.name} has one more trick up ${pronoun(currentProfileData, 2)} sleeve: ${pronoun(currentProfileData, 0)} simply moves out of the way, letting ${otherProfileData.name} crash into the ground. ${upperCasePronounAndPlural(otherProfileData, 0, 'has', 'have')} a wry grin on ${pronoun(otherProfileData, 2)} face as ${pronounAndPlural(otherProfileData, 0, 'look')} up at the ${currentProfileData.species}. ${currentProfileData.name} wins this fight, but who knows about the next one?*\n\n${getHurtText}`,
+				color: characterData.color,
+				author: { name: characterData.name, icon_url: characterData.avatarURL },
+				description: `*The two animals are pressing against each other with all their might. It seems like the fight will never end this way, but ${currentCharacterData.name} has one more trick up ${pronoun(currentCharacterData, 2)} sleeve: ${pronoun(currentCharacterData, 0)} simply moves out of the way, letting ${otherCharacterData.name} crash into the ground. ${upperCasePronounAndPlural(otherCharacterData, 0, 'has', 'have')} a wry grin on ${pronoun(otherCharacterData, 2)} face as ${pronounAndPlural(otherCharacterData, 0, 'look')} up at the ${currentCharacterData.displayedSpecies || currentCharacterData.species}. ${currentCharacterData.name} wins this fight, but who knows about the next one?*\n\n${getHurtText}`,
 				footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
 			}],
 			components: componentArray,
@@ -972,48 +998,57 @@ async function executeWin(componentArray, message, profileData, serverData, part
 		})
 		.catch((error) => { throw new Error(error); });
 
-	await checkHealthAndLevel(message, botReply, profileData, serverData, partnerProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
+	await checkHealthAndLevel(message, botReply, userData, serverData, partnerUserData, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
 }
 
 /**
  *
  * @param {null | Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} componentArray
  * @param {import('discord.js').Message} message
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {import('../../typedef').ProfileSchema} partnerProfileData
+ * @param {import('../../typedef').ProfileSchema} partnerUserData
  * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
  * @param {import('discord.js').Message} botReply
  * @param {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} userInjuryObjectPlayer1
  * @param {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} userInjuryObjectPlayer2
  * @param {string} messageContent
  */
-async function executeDraw(componentArray, message, profileData, serverData, partnerProfileData, embedArray, botReply, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
+async function executeDraw(componentArray, message, userData, serverData, partnerUserData, embedArray, botReply, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
 
-	let { embedFooterStatsTextPlayer1, embedFooterStatsTextPlayer2 } = await decreaseStats(message, profileData, partnerProfileData);
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	const profileData = characterData?.profiles?.[message.guild.id];
+	const partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guild.id]];
+	const partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id];
+
+	let { embedFooterStatsTextPlayer1, embedFooterStatsTextPlayer2 } = await decreaseStats(message, userData, profileData, partnerUserData, partnerProfileData);
 
 	const experiencePoints = generateRandomNumber(11, 5);
 
-	embedFooterStatsTextPlayer1 = `+${experiencePoints} XP (${profileData.experience + experiencePoints}/${profileData.levels * 50}) for ${profileData.name}\n${embedFooterStatsTextPlayer1}`;
-	embedFooterStatsTextPlayer2 = `+${experiencePoints} XP (${partnerProfileData.experience + experiencePoints}/${partnerProfileData.levels * 50}) for ${partnerProfileData.name}\n${embedFooterStatsTextPlayer2}`;
+	embedFooterStatsTextPlayer1 = `+${experiencePoints} XP (${profileData.experience + experiencePoints}/${profileData.levels * 50}) for ${characterData.name}\n${embedFooterStatsTextPlayer1}`;
+	embedFooterStatsTextPlayer2 = `+${experiencePoints} XP (${partnerProfileData.experience + experiencePoints}/${partnerProfileData.levels * 50}) for ${partnerCharacterData.name}\n${embedFooterStatsTextPlayer2}`;
 
-	profileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-		{ userId: message.author.id, serverId: message.guild.id },
-		{ $inc: { experience: experiencePoints } },
+	userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+		{ userId: message.author.id },
+		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+			p.characters[characterData._id].profiles[message.guild.id].experience += experiencePoints;
+		},
 	));
 
-	partnerProfileData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-		{ userId: message.mentions.users.first().id, serverId: message.guild.id },
-		{ $inc: { experience: experiencePoints } },
+	partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+		{ userId: message.mentions.users.first().id },
+		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+			p.characters[partnerCharacterData._id].profiles[message.guild.id].experience += experiencePoints;
+		},
 	));
 
 	botReply = await message
 		.reply({
 			content: messageContent,
 			embeds: [...embedArray, {
-				color: profileData.color,
-				author: { name: profileData.name, icon_url: profileData.avatarURL },
-				description: `*The two animals wrestle with each other until ${profileData.name} falls over the ${partnerProfileData.species} and both of them land on the ground. They pant and glare at each other, but ${partnerProfileData.name} can't contain ${pronoun(partnerProfileData, 2)} laughter. The ${profileData.species} starts to giggle as well. The fight has been fun, even though no one won.*`,
+				color: characterData.color,
+				author: { name: characterData.name, icon_url: characterData.avatarURL },
+				description: `*The two animals wrestle with each other until ${characterData.name} falls over the ${partnerCharacterData.displayedSpecies || partnerCharacterData.displayedSpecies || partnerCharacterData.species} and both of them land on the ground. They pant and glare at each other, but ${partnerCharacterData.name} can't contain ${pronoun(partnerCharacterData, 2)} laughter. The ${characterData.displayedSpecies || characterData.species} starts to giggle as well. The fight has been fun, even though no one won.*`,
 				footer: { text: `${embedFooterStatsTextPlayer1}\n\n${embedFooterStatsTextPlayer2}` },
 			}],
 			components: componentArray,
@@ -1021,7 +1056,7 @@ async function executeDraw(componentArray, message, profileData, serverData, par
 		})
 		.catch((error) => { throw new Error(error); });
 
-	await checkHealthAndLevel(message, botReply, profileData, serverData, partnerProfileData, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
+	await checkHealthAndLevel(message, botReply, userData, serverData, partnerUserData, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
 }
 
 /**

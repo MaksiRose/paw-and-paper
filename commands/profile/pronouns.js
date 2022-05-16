@@ -1,8 +1,8 @@
 // @ts-check
 const { MessageEmbed } = require('discord.js');
 const { error_color, default_color } = require('../../config.json');
-const { profileModel } = require('../../models/profileModel');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const profileModel = require('../../models/profileModel');
+const { hasNoName } = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports.name = 'pronouns';
@@ -12,17 +12,19 @@ module.exports.name = 'pronouns';
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} profileData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, profileData) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
 
-	if (await hasNotCompletedAccount(message, profileData)) {
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+
+	if (await hasNoName(message, characterData)) {
 
 		return;
 	}
 
-	profileData = await startCooldown(message, profileData);
+	userData = await startCooldown(message);
 
 	const pronounList = argumentsArray.join(' ').replace(/\/ /g, '/').replace(/ \//g, '/').split(' & ');
 	/** @type {Array<Array<string>>} */
@@ -32,7 +34,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		if (pronounList[index] === 'none') {
 
-			pronounList[index] = `${profileData.name}/${profileData.name}/${profileData.name}'s/${profileData.name}'s/${profileData.name}/singular`;
+			pronounList[index] = `${characterData.name}/${characterData.name}/${characterData.name}'s/${characterData.name}'s/${characterData.name}/singular`;
 		}
 
 		pronounSets[index] = pronounList[index].split('/');
@@ -51,7 +53,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 					.reply({
 						embeds: [ new MessageEmbed({
 							color: /** @type {`#${string}`} */ (error_color),
-							author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 							title: 'The longest pronoun can only be up to 25 characters long.',
 						})],
 						failIfNotExists: false,
@@ -66,23 +67,26 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	if (pronounSets.length > 0) {
 
-		await profileModel.findOneAndUpdate(
-			{ userId: message.author.id, serverId: message.guild.id },
-			{ $set: { pronounSets: pronounSets } },
-		);
+		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+			{ uuid: userData.uuid },
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				p.characters[characterData._id].pronounSets = pronounSets;
+			},
+		));
 
 		await message
 			.reply({
 				embeds: [ new MessageEmbed({
-					color: profileData.color,
+					color: characterData.color,
 					author: { name: `${message.guild.name}`, icon_url: message.guild.iconURL() },
-					title: `You set ${profileData.name}'s pronouns to ${pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join(' and ')}!`,
+					title: `You set ${characterData.name}'s pronouns to ${pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join(' and ')}!`,
 				})],
 				failIfNotExists: false,
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
+
 		return;
 	}
 
