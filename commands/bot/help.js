@@ -17,7 +17,7 @@ module.exports.sendMessage = async (client, message) => {
 			embeds: [{
 				color: /** @type {`#${string}`} */ (default_color),
 				title: 'Welcome to Paw and Paper!',
-				description: 'This is an interactive roleplay game. After choosing a name and a species, you will be welcomed to your pack. You start as a Youngling, and your goal is to go up the ranks, gain as much experience as possible, explore all the places and help out your pack. You can go to different biomes, where you can find herbs, stumble upon animals to fight, or do quests. But beware of your stats! If one of them reaches zero, you will pass out and lose all your items.\n\nClick on the menu options below to get an overview of the available commands!\n**If you are new, start your adventure with `rp name (name)`!**',
+				description: 'This bot has powerful tools to help make your roleplay more immersive. Additionally, it features a community-driven RPG about animals surviving in the wild. Your goal is to go up the ranks, level up, find items, help your friends and keep your stats high.\n\nClick on the menu options below to get an overview of the available commands!\n**If you are new, start your adventure with `rp name (name)`!**',
 			}],
 			components: [ new MessageActionRow({
 				components: [ new MessageSelectMenu({
