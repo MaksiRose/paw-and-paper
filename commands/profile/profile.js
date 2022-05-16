@@ -268,14 +268,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 			/* Getting the id of the account the user has clicked on, and then it is updating the user's current
 			character to the account they have clicked on. */
 			const _id = interaction.values[0].split('-').slice(1, -1).join('-');
-			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-				{ uuid: userData.uuid },
-				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-					if (interaction.values[0].endsWith('-0')) { p.currentCharacter[message.guild.id] = _id; }
-					else {delete p.currentCharacter[message.guild.id];}
-				},
-			));
-			characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: userData.uuid }));
+			characterData = userData?.characters?.[_id];
 
 			/* Getting the message content and then checking if the accounts page has more than one option. If
 			it does, it will add the accounts page to the message. Then editing the message that the bot sent. */
