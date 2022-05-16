@@ -113,7 +113,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 									.setCustomId('displayedspecies-textinput')
 									.setLabel('Text')
 									.setStyle('SHORT')
-									.setMaxLength(25),
+									.setMaxLength(25)
+									.setValue(characterData.displayedSpecies),
 								],
 							}),
 						),
