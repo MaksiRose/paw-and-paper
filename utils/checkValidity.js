@@ -53,8 +53,8 @@ async function isPassedOut(message, userData, isNew) {
  */
 async function hasCooldown(message, userData, callerNameArray) {
 
-	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
-	const profileData = characterData.profiles[message.guild.id];
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	const profileData = characterData?.profiles?.[message.guild.id];
 
 	const commandName = message.content.slice(prefix.length).trim().split(/ +/).shift().toLowerCase();
 

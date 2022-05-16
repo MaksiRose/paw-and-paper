@@ -35,6 +35,22 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		isYourself = false;
 	}
 
+	/** @type {Object<string, number>} */
+	const newGlobalSkills = {};
+	for (const skill of serverData.skills) {
+
+		newGlobalSkills[skill] = profileData?.skills?.global?.[skill] || 0;
+	}
+
+	userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+		{ userId: userData.userId },
+		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+			if (characterData && profileData) { p.characters[characterData._id].profiles[profileData.serverId].skills.global = newGlobalSkills;}
+		},
+	));
+	characterData = userData?.characters?.[characterData?._id];
+	profileData = characterData?.profiles?.[message.guild.id];
+
 
 	/* Creating a message with 4 buttons and a skill list. */
 	const basicButtons = new MessageActionRow().addComponents(
