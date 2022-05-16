@@ -53,7 +53,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		await hasNoName(message, characterData);
 		return;
 	}
-	else if (await hasCooldown(message, userData, [module.exports.name].concat(module.exports.aliases))) {
+	else if (characterData && await hasCooldown(message, userData, [module.exports.name].concat(module.exports.aliases))) {
 
 		return;
 	}
