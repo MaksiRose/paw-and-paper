@@ -1414,7 +1414,7 @@ const event = {
 							fields: [
 								{ name: '**Aliases**', value: 'none' },
 								{ name: '**Arguments**', value: 'none' },
-								{ name: '**More information**', value: 'There will be three buttons with links to websites where this bot is listed. You can vote for this bot on these websites, and then come back and select that website from the drop-down list to get +30 energy. If you are less than 30 energy away from your maximum energy, you will get whatever is left to fill your energy all the way up. You can vote every 12 hours, and you can only redeem the +30 energy on one account.' },
+								{ name: '**More information**', value: 'There will be three buttons with links to websites where this bot is listed. You can vote for this bot on these websites, and then come back and select that website from the drop-down list to get +30 energy. If you are less than 30 energy away from your maximum energy, you will get whatever is left to fill your energy all the way up. You can vote every 12 hours, and you can only redeem the +30 energy on one profile.' },
 							],
 						}],
 						ephemeral: true,

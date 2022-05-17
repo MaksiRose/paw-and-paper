@@ -24,7 +24,7 @@ async function hasNoName(message, characterData) {
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (error_color),
-					title: 'Please type "rp name [name]" to begin setting up your account!',
+					title: 'Please type "rp name [name]" to create a new character!',
 					description: Object.keys(userData?.characters || {}).length > 0 ? 'I see that you already have a character. You can switch to it using `rp profile`! If you played the RPG on a different server, server-specific information like stats, levels, rank etc. will not transfer over to prevent cheating.' : null,
 				}],
 				failIfNotExists: false,

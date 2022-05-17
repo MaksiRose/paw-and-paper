@@ -89,7 +89,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 						.edit({
 							embeds: [new MessageEmbed({
 								color: /** @type {`#${string}`} */ (error_color),
-								title: 'Please select an account that you want to delete.',
+								title: 'Please select a character that you want to delete.',
 							})],
 							components: [botReply.components[0], new MessageActionRow({
 								components: [getAccountsPage(deletePage, userData)],
@@ -410,7 +410,7 @@ function getAccountsPage(deletePage, userData) {
 
 	const accountsMenu = new MessageSelectMenu({
 		customId: 'delete-individual-options',
-		placeholder: 'Select an account',
+		placeholder: 'Select a character',
 	});
 
 	for (const character of Object.values(userData.characters)) {
