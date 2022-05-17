@@ -112,7 +112,8 @@ const event = {
 		clearTimeout(userMap.get('nr' + message.author.id + message.guild.id).cooldownTimeout);
 		clearTimeout(userMap.get('nr' + message.author.id + message.guild.id).restingTimeout);
 
-		if (Object.hasOwn(activeCommandsObject, 'nr' + message.author.id + message.guild.id)) {
+		// TO DO This should be updated to be called within commands, in order to prevent more edge-cases where this doesn't need to be called
+		if (commandName !== 'say' && commandName !== 'stats' && commandName !== 'status' && Object.hasOwn(activeCommandsObject, 'nr' + message.author.id + message.guild.id)) {
 
 			await activeCommandsObject['nr' + message.author.id + message.guild.id]();
 		}
