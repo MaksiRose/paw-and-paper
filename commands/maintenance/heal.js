@@ -79,19 +79,25 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			/** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first().id })) :
 			Object.keys(allHurtCharactersList).length === 1 ?
 			/** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: Object.keys(allHurtCharactersList)[0].split('_')[0] })) : null,
-		chosenCharacterData = chosenUserData !== null ? chosenUserData.characters[Object.values(allHurtCharactersList)[0]._id] : null,
-		chosenProfileData = chosenCharacterData !== null ? chosenCharacterData.profiles[message.guild.id] : null,
+		chosenCharacterData = chosenUserData != null ? chosenUserData?.characters[
+			Object.values(chosenUserData.characters).filter(c => c.profiles[message.guild.id] !== undefined).filter(c => {
+				const p = c.profiles[message.guild.id];
+				return p.energy === 0 || p.health === 0 || p.hunger === 0 || p.thirst === 0 || Object.values(p.injuries).filter(i => i > 0).length > 0;
+			})[0]?._id || chosenUserData?.currentCharacter?.[message.guild.id] || null
+		] : null,
+		chosenProfileData = chosenCharacterData != null ? chosenCharacterData?.profiles?.[message.guild.id] : null,
 		/** @type {import('discord.js').Message} */
 		botReply = null;
 
-	if (chosenUserData === null) {
+
+	if (chosenUserData == null || chosenCharacterData == null || chosenProfileData == null) {
 
 		botReply = await message
 			.reply({
 				content: messageContent,
 				embeds: [...embedArray, {
-					color: characterData.color,
 					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					color: characterData.color,
 					description: `*${characterData.name} sits in front of the medicine den, looking if anyone needs help with injuries or illnesses.*`,
 				}],
 				components: Object.keys(allHurtCharactersList).length > 0 ? [userSelectMenu] : [],
@@ -306,8 +312,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				let userInjuryObject = { ...profileData.injuries };
 
 				const embed = {
-					color: characterData.color,
 					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					color: characterData.color,
 					description: '',
 					footer: { text: '' },
 				};
@@ -806,8 +812,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		);
 
 		chosenUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: healUserData.uuid }));
-		chosenCharacterData = chosenUserData.characters[healCharacterId];
-		chosenProfileData = chosenCharacterData.profiles[message.guild.id];
+		chosenCharacterData = chosenUserData?.characters[healCharacterId];
+		chosenProfileData = chosenCharacterData?.profiles[message.guild.id];
 
 		let healUserConditionText = '';
 
@@ -822,6 +828,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		healUserConditionText += (chosenProfileData.injuries.poison == true) ? '\nPoison: yes' : '';
 
 		const embed = {
+			author: { name: characterData.name, icon_url: characterData.avatarURL },
 			color: characterData.color,
 			description: '',
 			footer: { text: '' },
