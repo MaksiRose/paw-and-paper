@@ -84,8 +84,8 @@ async function decreaseEnergy(profileData) {
  */
 async function decreaseHealth(userData, botReply, modifiedUserInjuryObject) {
 
-	const characterData = userData.characters[userData.currentCharacter[botReply.guild.id]];
-	const profileData = characterData.profiles[botReply.guild.id];
+	let characterData = userData.characters[userData.currentCharacter[botReply.guild.id]];
+	let profileData = characterData.profiles[botReply.guild.id];
 
 	if (Object.values(profileData.injuries).every((value) => value == 0)) {
 
@@ -219,6 +219,8 @@ async function decreaseHealth(userData, botReply, modifiedUserInjuryObject) {
 			p.characters[p.currentCharacter[botReply.guild.id]].profiles[botReply.guild.id].injuries = modifiedUserInjuryObject;
 		},
 	));
+	characterData = userData.characters[userData.currentCharacter[botReply.guild.id]];
+	profileData = characterData.profiles[botReply.guild.id];
 
 	if (extraLostHealthPoints > 0) {
 
