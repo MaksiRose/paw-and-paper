@@ -2,15 +2,17 @@
 
 /**
  * Logs the error and sends a message containing it
- * @param {import('discord.js').Message} message
+ * @param {import('discord.js').Message | import('discord.js').BaseCommandInteraction} command
  * @param {*} error
  */
-async function output(message, error) {
+async function output(command, error) {
 
-	console.log(`\x1b[32m${message.author.tag}\x1b[0m unsuccessfully tried to execute \x1b[33m${message.content} \x1b[0min \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+	if (command.type === 'DEFAULT' || command.type === 'REPLY' || command.type === 'THREAD_CREATED') {
+		console.log(`\x1b[32m${command.author.tag}\x1b[0m unsuccessfully tried to execute \x1b[33m${command.content} \x1b[0min \x1b[32m${command.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+	}
 	console.error(error);
 
-	await message
+	await command
 		.reply({
 			embeds: [{
 				title: 'There was an unexpected error executing this command:',

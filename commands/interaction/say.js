@@ -102,7 +102,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 	const botMessage = await webHook
 		.send({
-			username: `${characterData.name} (${message.author.tag})`,
+			username: characterData.name,
 			avatarURL: characterData.avatarURL,
 			content: userText || undefined,
 			files: Array.from(message.attachments.values()) || undefined,
@@ -110,7 +110,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		})
 		.catch((error) => { throw new Error(error); });
 
-	webhookCache[botMessage.id] = message.author.id;
+	webhookCache[botMessage.id] = message.author.id + (characterData?._id !== undefined ? `_${characterData?._id}` : '');
 
 	writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
 

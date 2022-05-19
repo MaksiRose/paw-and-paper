@@ -15,7 +15,9 @@ class CustomClient extends Client {
 		 * @typedef {Object} Command
 		 * @property {string} name - Command name
 		 * @property {Array<string>} aliases - Command aliases
+		 * @property {import("@discordjs/builders").SlashCommandBuilder | {name: string, type: number}} data - Command data
 		 * @property {Function} sendMessage - Command function
+		 * @property {Function} sendCommand - Command function for non-text commands
 		 */
 
 		/**

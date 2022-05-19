@@ -93,7 +93,7 @@ const event = {
 		const command = client.commands[commandName] || client.commands[Object.keys(client.commands).find(cmnd => client.commands[cmnd].aliases !== undefined && client.commands[cmnd].aliases.includes(commandName))];
 
 		/* Checking if the command is undefined. If it is, it will return. */
-		if (command === undefined) {
+		if (command === undefined || !Object.hasOwn(command, 'sendMessage')) {
 
 			return;
 		}
