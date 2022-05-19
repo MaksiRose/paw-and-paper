@@ -115,6 +115,57 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
+	if (argumentsArray[0] === 'all') {
+
+		let footerText = '';
+		let maximumAmount = 0;
+
+		for (const [itemType, itemsArray] of inventoryMap) {
+
+			for (const itemName of itemsArray) {
+
+				if (profileData.inventory[itemType][itemName] > 0) {
+
+					maximumAmount = profileData.inventory[itemType][itemName];
+
+					footerText += `+${maximumAmount} ${itemName} for ${message.guild.name}\n`;
+					userInventory[itemType][itemName] -= maximumAmount;
+					serverInventory[itemType][itemName] += maximumAmount;
+				}
+			}
+		}
+
+		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+			{ uuid: userData.uuid },
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].inventory = userInventory;
+			},
+		));
+		characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+		profileData = characterData.profiles[message.guild.id];
+
+		await serverModel.findOneAndUpdate(
+			{ serverId: message.guild.id },
+			(/** @type {import('../../typedef').ServerSchema} */ s) => {
+				s.inventory = serverInventory;
+			},
+		);
+
+		await message
+			.reply({
+				content: messageContent,
+				embeds: [...embedArray, {
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					description: `*${characterData.name} wanders to the food den, ready to store away ${pronoun(characterData, 2)} findings. ${upperCasePronounAndPlural(characterData, 0, 'circle')} the food pile…*`,
+					footer: { text: footerText },
+				}],
+				failIfNotExists: false,
+			})
+			.catch((error) => { throw new Error(error); });
+		return;
+	}
+
 	const botReply = await message
 		.reply({
 			content: messageContent,
