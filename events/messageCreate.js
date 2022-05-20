@@ -280,7 +280,7 @@ module.exports = {
 				return;
 			}
 
-			message.content = `${config.prefix}rest`;
+			message.content = `${config.prefix}rest auto`;
 
 			await module.exports.execute(client, message);
 		}

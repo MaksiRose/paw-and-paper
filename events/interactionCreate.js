@@ -1602,6 +1602,86 @@ const event = {
 						});
 				}
 
+				if (interaction.customId === 'resting-reminder-off') {
+
+					userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+						{ uuid: userData.uuid },
+						(/** @type {import('../typedef').ProfileSchema} */ p) => {
+							p.reminders.resting = false;
+						},
+					));
+
+					await interaction
+						.followUp({
+							content: 'You turned pings for automatic resting off!',
+							ephemeral: true,
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+
+					return await interaction
+						.editReply({
+							components: [{
+								type: 'ACTION_ROW',
+								components: [{
+									type: 'BUTTON',
+									customId: 'resting-reminder-on',
+									label: 'Turn automatic resting pings on',
+									style: 'SECONDARY',
+								}],
+							}],
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+				}
+
+				if (interaction.customId === 'resting-reminder-on') {
+
+					userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+						{ uuid: userData.uuid },
+						(/** @type {import('../typedef').ProfileSchema} */ p) => {
+							p.reminders.resting = true;
+						},
+					));
+
+					sendReminder(client, userData, characterData, profileData);
+
+					await interaction
+						.followUp({
+							content: 'You turned pings for automatic resting on!',
+							ephemeral: true,
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+
+					return await interaction
+						.editReply({
+							components: [{
+								type: 'ACTION_ROW',
+								components: [{
+									type: 'BUTTON',
+									customId: 'resting-reminder-off',
+									label: 'Turn automatic resting pings off',
+									style: 'SECONDARY',
+								}],
+							}],
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+				}
+
 				if (interaction.customId === 'stats-refresh') {
 
 					if (referencedMessage.mentions.users.size > 0) {

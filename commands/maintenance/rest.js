@@ -1,4 +1,5 @@
 // @ts-check
+const { MessageActionRow, MessageButton } = require('discord.js');
 const profileModel = require('../../models/profileModel');
 const blockEntrance = require('../../utils/blockEntrance');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
@@ -102,11 +103,18 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				color: characterData.color,
 				author: { name: characterData.name, icon_url: characterData.avatarURL },
 				description: `*${characterData.name}'s chest rises and falls with the crickets. Snoring bounces off each wall, finally exiting the den and rising free to the clouds.*`,
-				footer: { text: `+0 energy (${profileData.energy}/${profileData.maxEnergy})\nTip: You can also do "rp vote" to get +30 energy per vote!${(profileData.currentRegion != 'sleeping dens') ? '\nYou are now at the sleeping dens' : ''}` },
+				footer: { text: `+0 energy (${profileData.energy}/${profileData.maxEnergy})${(profileData.currentRegion != 'sleeping dens') ? '\nYou are now at the sleeping dens' : ''}${argumentsArray[0] === 'auto' ? '\nYour character started resting because you were inactive for 10 minutes' : ''}\nTip: You can also do "rp vote" to get +30 energy per vote!` },
 			}],
+			components: argumentsArray[0] === 'auto' ? [ new MessageActionRow({
+				components: [ new MessageButton({
+					customId: `resting-reminder-${userData.reminders.resting === true ? 'off' : 'on'}`,
+					label: `Turn automatic resting pings ${userData.reminders.resting === true ? 'off' : 'on'}`,
+					style: 'SECONDARY',
+				})],
+			})] : [],
 			failIfNotExists: false,
 		})
 		.catch((error) => { throw new Error(error); });
 
-	await startResting(message, userData, botReply, profileData.currentRegion);
+	await startResting(message, userData, botReply, profileData.currentRegion, argumentsArray[0] === 'auto');
 };

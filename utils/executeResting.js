@@ -1,6 +1,7 @@
 // @ts-check
 /** @type {Map<string, NodeJS.Timeout>} */
 const restingTimeoutMap = new Map();
+const { MessageActionRow, MessageButton } = require('discord.js');
 const profileModel = require('../models/profileModel');
 const { pronounAndPlural } = require('./getPronouns');
 
@@ -20,8 +21,9 @@ function stopResting(userId, guildId) {
 	 * @param {import('../typedef').ProfileSchema} userData
 	 * @param {import('discord.js').Message} botReply
 	 * @param {'sleeping dens' | 'food den' | 'medicine den' | 'prairie' | 'ruins' | 'lake'} previousRegion
+	 * @param {boolean} isAutomatic
 	 */
-async function startResting(message, userData, botReply, previousRegion) {
+async function startResting(message, userData, botReply, previousRegion, isAutomatic) {
 
 	let energyPoints = 0;
 	restingTimeoutMap.set('nr' + message.author.id + message.guild.id, setTimeout(addEnergy, 30000));
@@ -43,7 +45,7 @@ async function startResting(message, userData, botReply, previousRegion) {
 		const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
 		const profileData = characterData.profiles[message.guild.id];
 
-		botReply.embeds[0].footer.text = `+${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})\nTip: You can also do "rp vote" to get +30 energy per vote!`;
+		botReply.embeds[0].footer.text = `+${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})${isAutomatic ? '\nYour character started resting because you were inactive for 10 minutes' : ''}\nTip: You can also do "rp vote" to get +30 energy per vote!`;
 
 		await botReply
 			.edit({
@@ -83,10 +85,17 @@ async function startResting(message, userData, botReply, previousRegion) {
 						color: characterData.color,
 						author: { name: characterData.name, icon_url: characterData.avatarURL },
 						description: `*${characterData.name}'s eyes blink open, ${pronounAndPlural(characterData, 0, 'sit')} up to stretch and then walk out into the light and buzz of late morning camp. Younglings are spilling out of the nursery, ambitious to start the day, Hunters and Healers are traveling in and out of the camp border. It is the start of the next good day!*`,
-						footer: { text: `+${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})\n${(previousRegion !== 'sleeping dens') ? `You are now at the ${previousRegion}` : ''}` },
+						footer: { text: `+${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})${(previousRegion !== 'sleeping dens') ? `\nYou are now at the ${previousRegion}` : ''}${isAutomatic ? '\nYour character started resting because you were inactive for 10 minutes' : ''}` },
 					}],
+					components: isAutomatic ? [ new MessageActionRow({
+						components: [ new MessageButton({
+							customId: `resting-reminder-${userData.reminders.resting === true ? 'off' : 'on'}`,
+							label: `Turn automatic resting pings ${userData.reminders.resting === true ? 'off' : 'on'}`,
+							style: 'SECONDARY',
+						})],
+					})] : [],
 					allowedMentions: {
-						repliedUser: true,
+						repliedUser: (isAutomatic && userData.reminders.resting === false) ? false : true,
 					},
 					failIfNotExists: false,
 				})
