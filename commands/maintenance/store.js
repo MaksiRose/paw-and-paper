@@ -115,7 +115,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
-	if (argumentsArray[0] === 'all') {
+	if (argumentsArray[0] === 'all' || argumentsArray[0] === 'everything') {
 
 		let footerText = '';
 		let maximumAmount = 0;

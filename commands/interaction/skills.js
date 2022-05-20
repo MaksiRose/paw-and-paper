@@ -335,6 +335,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				interaction.awaitModalSubmit({ filter: i => i.customId.includes('skill'), time: 120_000 })
 					.then(async i => {
 
+						await i
+							.deferUpdate()
+							.catch(async (error) => {
+								if (error.httpStatus === 400) { return console.error('DiscordAPIError: Interaction has already been acknowledged.'); }
+								if (error.httpStatus === 404) { return console.error('DiscordAPIError: Unknown interaction. (This probably means that there was server-side delay when receiving the interaction)'); }
+							});
+
 						hasModalCollector = false;
 
 						const type = i.customId.split('-')[1];
