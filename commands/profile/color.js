@@ -18,7 +18,7 @@ module.exports.aliases = ['colour'];
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id || 'DM']];
 
 	if (await hasNoName(message, characterData)) {
 
@@ -72,7 +72,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 	userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 		{ uuid: userData.uuid },
 		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-			p.characters[p.currentCharacter[message.guild.id]].color = /** @type {`#${number}`} */ (hexColor);
+			p.characters[p.currentCharacter[message.guild?.id || 'DM']].color = /** @type {`#${number}`} */ (hexColor);
 		},
 	));
 

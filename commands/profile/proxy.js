@@ -1,11 +1,12 @@
 // @ts-check
-const { MessageEmbed, MessageButton, MessageActionRow, MessageSelectMenu, Modal, TextInputComponent } = require('discord.js');
+const { MessageEmbed, MessageButton, MessageActionRow, MessageSelectMenu, Modal, TextInputComponent, Collection } = require('discord.js');
 const { hasNoName } = require('../../utils/checkAccountCompletion');
 const { error_color, prefix } = require('../../config.json');
 const profileModel = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const disableAllComponents = require('../../utils/disableAllComponents');
+const sendNoDM = require('../../utils/sendNoDM');
 let hasModalCollector = false;
 
 module.exports.name = 'proxy';
@@ -21,11 +22,11 @@ module.exports.name = 'proxy';
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData) => {
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id || 'DM']];
 
 	/* Checking if the user has a name set. If they don't, it will send a message telling them to set a
 	name. */
-	if (message.member.permissions.has('ADMINISTRATOR') === false && await hasNoName(message, characterData)) {
+	if ((!message.inGuild() || message.member.permissions.has('ADMINISTRATOR') === false) && await hasNoName(message, characterData)) {
 
 		return;
 	}
@@ -34,7 +35,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	let botReply;
 	let page = 0;
 
-	const allChannels = (await message.guild.channels.fetch()).filter(c => c.isText() && c.viewable && c.permissionsFor(client.user).has('SEND_MESSAGES') && c.permissionsFor(message.author.id).has('VIEW_CHANNEL') && c.permissionsFor(message.author.id).has('SEND_MESSAGES'));
+	const allChannels = (await message.guild?.channels?.fetch() || new Collection()).filter(c => c.isText() && c.viewable && c.permissionsFor(client.user).has('SEND_MESSAGES') && c.permissionsFor(message.author.id).has('VIEW_CHANNEL') && c.permissionsFor(message.author.id).has('SEND_MESSAGES'));
 
 	/* Creating a new MessageSelectMenu for each of the three options. */
 	const { disableAutoSelectMenu, disableAllSelectMenu, alwaysSelectMenu } = getSelectMenus(allChannels, userData, message, serverData, page);
@@ -71,12 +72,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							name: 'rp proxy set',
 							value: 'This sets an indicator to the bot you want your message to be proxied. Only messages with those indicators will be proxied. Click the "Set?" button below to learn more.',
 						},
-						{
+						...(message.inGuild() ? [{
 							name: 'rp proxy always',
 							value: 'This will treat every message in a specific channel as if it was proxied, even if the proxy isn\'t included. Click the "Always?" button below to learn more.',
-						},
+						}] : []),
 					] : []),
-					...(message.member.permissions.has('ADMINISTRATOR') ? [
+					...(message.inGuild() && message.member.permissions.has('ADMINISTRATOR') ? [
 						{
 							name: 'rp proxy disable',
 							value: 'This is an __administrator__ setting that can toggle whether `always` or `all` proxy should be disabled or enabled in a specific channel. Click the "Disable?" Button below to learn more.',
@@ -91,13 +92,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							customId: 'proxy-learnmore-set',
 							label: 'Set?',
 							style: 'SUCCESS',
-						}), new MessageButton({
+						}), ...(message.inGuild() ? [new MessageButton({
 							customId: 'proxy-learnmore-always',
 							label: 'Always?',
 							style: 'SUCCESS',
-						}),
+						})] : []),
 					] : []),
-					...(message.member.permissions.has('ADMINISTRATOR') ? [
+					...(message.inGuild() && message.member.permissions.has('ADMINISTRATOR') ? [
 						new MessageButton({
 							customId: 'proxy-learnmore-disable',
 							label: 'Disable?',
@@ -110,7 +111,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		})
 		.catch((error) => { throw new Error(error); });
 
-	createCommandCollector(message.author.id, message.guild.id, botReply);
+	createCommandCollector(message.author.id, message.guild?.id || '', botReply);
 	interactionCollector();
 
 	async function interactionCollector() {
@@ -276,7 +277,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 				await botReply
 					.edit({
-						components: disableAllComponents(botReply.components),
+						components: disableAllComponents(botReply?.components || []),
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
@@ -310,7 +311,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					failIfNotExists: false,
 				}).catch((error) => { throw new Error(error); });
 
-				createCommandCollector(message.author.id, message.guild.id, botReply);
+				createCommandCollector(message.author.id, message.guild?.id || '', botReply);
 				interactionCollector();
 				return;
 			}
@@ -336,7 +337,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						failIfNotExists: false,
 					}).catch((error) => { throw new Error(error); });
 
-					createCommandCollector(message.author.id, message.guild.id, botReply);
+					createCommandCollector(message.author.id, message.guild?.id || '', botReply);
 					interactionCollector();
 					return;
 				}
@@ -345,8 +346,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 				{ uuid: userData.uuid },
 				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-					p.characters[p.currentCharacter[message.guild.id]].proxy.startsWith = proxies[0];
-					p.characters[p.currentCharacter[message.guild.id]].proxy.endsWith = proxies[1];
+					p.characters[p.currentCharacter[message.guild?.id || 'DM']].proxy.startsWith = proxies[0];
+					p.characters[p.currentCharacter[message.guild?.id || 'DM']].proxy.endsWith = proxies[1];
 				},
 			));
 
@@ -356,7 +357,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					author: { name: characterData.name, icon_url: characterData.avatarURL },
 					title: `Proxy set to ${proxies[0]}text${proxies[1]}!`,
 				})],
-				components: disableAllComponents(botReply.components),
+				components: disableAllComponents(botReply?.components || []),
 				failIfNotExists: false,
 			}).catch((error) => { throw new Error(error); });
 		}
@@ -378,12 +379,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				failIfNotExists: false,
 			}).catch((error) => { throw new Error(error); });
 
-			createCommandCollector(message.author.id, message.guild.id, botReply);
+			createCommandCollector(message.author.id, message.guild?.id || '', botReply);
 			interactionCollector();
 		}
 	}
 
 	async function alwaysProxy() {
+
+		if (await sendNoDM(message)) {
+
+			return;
+		}
 
 		const autoproxy = message.mentions.channels.size > 0 && message.mentions.channels.first().isText() ? message.mentions.channels.first().id : argumentsArray.join(' ');
 
@@ -437,7 +443,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 	async function disableProxy() {
 
-		if (message.member.permissions.has('ADMINISTRATOR') === false) {
+		if (!message.inGuild() || message.member.permissions.has('ADMINISTRATOR') === false) {
 
 			await message
 				.reply({
@@ -515,6 +521,15 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	}
 };
 
+/**
+ *
+ * @param {import('discord.js').Collection<string, import('discord.js').NonThreadGuildBasedChannel>} allChannels
+ * @param {import('../../typedef').ProfileSchema} userData
+ * @param {import('discord.js').Message} message
+ * @param {import('../../typedef').ServerSchema} serverData
+ * @param {number} page
+ * @returns
+ */
 function getSelectMenus(allChannels, userData, message, serverData, page) {
 
 	const alwaysSelectMenu = new MessageSelectMenu({

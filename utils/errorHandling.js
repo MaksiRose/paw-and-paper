@@ -8,7 +8,7 @@
 async function output(command, error) {
 
 	if (command.type === 'DEFAULT' || command.type === 'REPLY' || command.type === 'THREAD_CREATED') {
-		console.log(`\x1b[32m${command.author.tag}\x1b[0m unsuccessfully tried to execute \x1b[33m${command.content} \x1b[0min \x1b[32m${command.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+		console.log(`\x1b[32m${command.author.tag}\x1b[0m unsuccessfully tried to execute \x1b[33m${command.content} \x1b[0min \x1b[32m${command.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 	}
 	console.error(error);
 

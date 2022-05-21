@@ -13,6 +13,7 @@ const { restAdvice, drinkAdvice, eatAdvice, coloredButtonsAdvice } = require('..
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { serverActiveUsers } = require('../../events/messageCreate');
+const sendNoDM = require('../../utils/sendNoDM');
 const serverMap = new Map();
 
 module.exports.name = 'attack';
@@ -28,6 +29,11 @@ module.exports.name = 'attack';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	const profileData = characterData?.profiles?.[message.guild.id];

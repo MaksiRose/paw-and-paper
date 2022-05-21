@@ -11,6 +11,11 @@ const profileModel = require('../models/profileModel');
  */
 async function checkRankRequirements(serverData, message, member, userRank) {
 
+	if (!message.inGuild()) {
+
+		return;
+	}
+
 	// the reason why Elderly is also 2 is because as Elderly, it isn't clear if you were Hunter or Healer before
 	// therefore, having the higher rank Elderly shouldn't automatically grant you a Hunter or Healer role
 	const rankList = { Youngling: 0, Apprentice: 1, Hunter: 2, Healer: 2, Elderly: 2 };
@@ -80,6 +85,11 @@ async function checkRankRequirements(serverData, message, member, userRank) {
  */
 async function checkLevelRequirements(serverData, message, member, userLevel) {
 
+	if (!message.inGuild()) {
+
+		return;
+	}
+
 	const shop = serverData.shop.filter(item => item.wayOfEarning === 'levels');
 
 	for (const item of shop) {
@@ -140,6 +150,11 @@ async function checkLevelRequirements(serverData, message, member, userLevel) {
  * @param {import('discord.js').GuildMember} member
  */
 async function checkRoleCatchBlock(error, message, member) {
+
+	if (!message.inGuild()) {
+
+		return;
+	}
 
 	if (error.httpStatus === 403) {
 

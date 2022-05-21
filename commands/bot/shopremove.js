@@ -7,6 +7,7 @@ const { checkLevelUp } = require('../../utils/levelHandling');
 const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
 const { MessageActionRow, MessageSelectMenu } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'shopremove';
 module.exports.aliases = ['shopdelete'];
@@ -22,6 +23,11 @@ module.exports.aliases = ['shopdelete'];
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	if (message.member.permissions.has('ADMINISTRATOR') === false) {
 

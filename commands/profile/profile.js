@@ -9,6 +9,7 @@ const disableAllComponents = require('../../utils/disableAllComponents');
 const { stopResting } = require('../../utils/executeResting');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
 const { error_color } = require('../../config.json');
+const getUserIds = require('../../utils/getUserIds');
 
 module.exports.name = 'profile';
 module.exports.aliases = ['info', 'about', 'profiles', 'character', 'characters', 'account', 'accounts', 'switch'];
@@ -25,13 +26,13 @@ module.exports.aliases = ['info', 'about', 'profiles', 'character', 'characters'
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id || 'DM']];
 	let isYourself = true;
 
-	if (message.mentions.users.size > 0) {
+	if (getUserIds(message).length > 0) {
 
-		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first().id }));
-		characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: getUserIds(message)[0] }));
+		characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id]];
 		isYourself = false;
 
 		if (!userData) {
@@ -55,7 +56,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		await hasNoName(message, characterData);
 		return;
 	}
-	else if (characterData && await hasCooldown(message, userData, [module.exports.name].concat(module.exports.aliases))) {
+	else if (characterData && message.inGuild() && await hasCooldown(message, userData, [module.exports.name].concat(module.exports.aliases))) {
 
 		return;
 	}
@@ -105,8 +106,7 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
 			.catch((error) => { throw new Error(error); }))
 	);
 
-	if (message.inGuild()) { createCommandCollector(message.author.id, message.guild.id, botReply); }
-
+	createCommandCollector(message.author.id, message.guild?.id || '', botReply);
 	interactionCollector();
 
 	async function interactionCollector() {
@@ -178,7 +178,7 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
 		if (interaction.isSelectMenu() && interaction.values[0].includes('switchto')) {
 
 			/* Checking if the user is resting, and if they are, it will stop the resting. */
-			if (characterData?.profiles?.[message.guild.id]?.isResting === true) {
+			if (message.inGuild() && characterData?.profiles?.[message.guild?.id]?.isResting === true) {
 
 				userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 					{ uuid: userData.uuid },
@@ -196,17 +196,17 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
 			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 				{ uuid: userData.uuid },
 				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-					if (interaction.values[0].endsWith('-0')) { p.currentCharacter[message.guild.id] = _id; }
-					else { delete p.currentCharacter[message.guild.id]; }
+					if (interaction.values[0].endsWith('-0')) { p.currentCharacter[message.guild?.id || 'DM'] = _id; }
+					else { delete p.currentCharacter[message.guild?.id || 'DM']; }
 				},
 			));
 
 			/* Getting the new character data, and then it is checking if the user has clicked on an account,
 			and if they have, it will add the roles of the account to the user. */
-			let newCharacterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-			let profileData = newCharacterData?.profiles?.[message.guild.id];
+			let newCharacterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id || 'DM']];
+			let profileData = newCharacterData?.profiles?.[message.guild?.id || 'DM'];
 
-			if (newCharacterData != null) {
+			if (newCharacterData != null && message.inGuild()) {
 
 				if (!profileData) {
 
@@ -267,7 +267,7 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
 			/* Checking if the user has any roles from the old account, and if they do, it will remove them. */
 			try {
 
-				for (const role of characterData?.profiles?.[message.guild.id]?.roles || []) {
+				for (const role of characterData?.profiles?.[message.guild?.id]?.roles || []) {
 
 					const isInNewRoles = newCharacterData !== null && newCharacterData?.profiles?.[message.guild.id]?.roles.some(r => r.roleId === role.roleId && r.wayOfEarning === role.wayOfEarning && r.requirement === role.requirement);
 					if (isInNewRoles === false && message.member.roles.cache.has(role.roleId)) {

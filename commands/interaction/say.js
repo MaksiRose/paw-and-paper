@@ -3,6 +3,7 @@ const profileModel = require('../../models/profileModel');
 const { error_color } = require('../../config.json');
 const { hasNoName } = require('../../utils/checkAccountCompletion');
 const { readFileSync, writeFileSync } = require('fs');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'say';
 
@@ -18,9 +19,14 @@ module.exports.name = 'say';
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
+	if (await sendNoDM(message)) {
+
+		return;
+	}
+
 	/** the userData.currentCharacter gets modified in messageCreate if the proxy is from an inactive account.
 	 * It is not permanently saved though, making the account practically still inactive. */
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id]];
 
 	if (await hasNoName(message, characterData)) {
 

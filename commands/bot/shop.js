@@ -7,6 +7,7 @@ const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { checkLevelUp } = require('../../utils/levelHandling');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'shop';
 
@@ -20,6 +21,11 @@ module.exports.name = 'shop';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	const profileData = characterData?.profiles?.[message.guild.id];

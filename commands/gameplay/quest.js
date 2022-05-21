@@ -11,6 +11,7 @@ const { pronoun, pronounAndPlural, upperCasePronounAndPlural, upperCasePronoun }
 const { apprenticeAdvice, hunterhealerAdvice, elderlyAdvice } = require('../../utils/adviceMessages');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { MessageEmbed, MessageActionRow, MessageButton } = require('discord.js');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'quest';
 
@@ -25,6 +26,11 @@ module.exports.name = 'quest';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	const profileData = characterData?.profiles?.[message.guild.id];

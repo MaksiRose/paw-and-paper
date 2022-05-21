@@ -7,6 +7,7 @@ const { isPassedOut, hasCooldown } = require('../../utils/checkValidity');
 const { startResting } = require('../../utils/executeResting');
 const { upperCasePronoun, pronoun, pronounAndPlural } = require('../../utils/getPronouns');
 const { generateRandomNumber } = require('../../utils/randomizers');
+const sendNoDM = require('../../utils/sendNoDM');
 const startCooldown = require('../../utils/startCooldown');
 const { remindOfAttack } = require('../gameplay/attack');
 
@@ -23,6 +24,11 @@ module.exports.aliases = ['sleep'];
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	const profileData = characterData?.profiles?.[message.guild.id];

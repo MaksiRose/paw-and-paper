@@ -21,7 +21,7 @@ module.exports.name = 'species';
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id || 'DM']];
 
 	if (await hasNoName(message, characterData)) {
 
@@ -90,7 +90,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		})
 		.catch((error) => { throw new Error(error); });
 
-	createCommandCollector(message.author.id, message.guild.id, botReply);
+	createCommandCollector(message.author.id, message.guild?.id || '', botReply);
 	interactionCollector();
 
 	async function interactionCollector() {
@@ -186,7 +186,7 @@ async function successMessage(message, chosenSpecies, characterData) {
 	await profileModel.findOneAndUpdate(
 		{ userId: message.author.id },
 		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-			p.characters[p.currentCharacter[message.guild.id]].species = chosenSpecies;
+			p.characters[p.currentCharacter[message.guild?.id || 'DM']].species = chosenSpecies;
 		},
 	);
 

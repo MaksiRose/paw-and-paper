@@ -15,6 +15,7 @@ const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = requi
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
 const { pickRandomRarePlant, pickRandomUncommonPlant, pickRandomCommonPlant } = require('../../utils/pickRandomPlant');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'adventure';
 
@@ -29,6 +30,11 @@ module.exports.name = 'adventure';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];

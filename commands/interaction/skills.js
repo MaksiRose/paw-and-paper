@@ -4,6 +4,7 @@ const profileModel = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const disableAllComponents = require('../../utils/disableAllComponents');
+const sendNoDM = require('../../utils/sendNoDM');
 let hasModalCollector = false;
 
 module.exports.name = 'skills';
@@ -19,6 +20,11 @@ module.exports.aliases = ['abilityscores', 'ability', 'scores'];
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	/* Checking if the user has a character, if they do, it checks if they have a profile, if they do, it
 	sets the isYourself variable to true. */

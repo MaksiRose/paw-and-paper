@@ -10,6 +10,7 @@ const { sendMessage } = require('./inventory');
 const { remindOfAttack } = require('../gameplay/attack');
 const { pronounAndPlural, pronoun, upperCasePronounAndPlural } = require('../../utils/getPronouns');
 const blockEntrance = require('../../utils/blockEntrance');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'eat';
 
@@ -24,6 +25,11 @@ module.exports.name = 'eat';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];

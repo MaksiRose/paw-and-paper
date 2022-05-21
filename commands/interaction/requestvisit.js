@@ -7,6 +7,7 @@ const { pronounAndPlural, pronoun, upperCasePronounAndPlural, upperCasePronoun }
 const { readFileSync, writeFileSync } = require('fs');
 const { MessageActionRow, MessageSelectMenu, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'requestvisit';
 module.exports.aliases = ['visit'];
@@ -21,6 +22,11 @@ module.exports.aliases = ['visit'];
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userDataV, serverDataV) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	const characterDataV = userDataV?.characters?.[userDataV?.currentCharacter?.[message.guild.id]];
 

@@ -69,7 +69,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 
 	let deletePage = 0;
 
-	createCommandCollector(message.author.id, message.guild.id, botReply);
+	createCommandCollector(message.author.id, message.guild?.id || '', botReply);
 	interactionCollector();
 
 	async function interactionCollector() {

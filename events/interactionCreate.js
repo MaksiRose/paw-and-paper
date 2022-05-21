@@ -225,19 +225,22 @@ const event = {
 				return;
 			}
 
-			let characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guild.id]];
-			let profileData = characterData?.profiles?.[interaction.guild.id];
+			let characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guild?.id]];
+			let profileData = characterData?.profiles?.[interaction.guild?.id];
 
-			if (userMap.has('nr' + interaction.user.id + interaction.guild.id) === false) {
+			if (interaction.inGuild()) {
 
-				userMap.set('nr' + interaction.user.id + interaction.guild.id, { activeCommands: 0, lastGentleWaterReminderTimestamp: 0, activityTimeout: null, cooldownTimeout: null, restingTimeout: null });
+				if (userMap.has('nr' + interaction.user.id + interaction.guild.id) === false) {
+
+					userMap.set('nr' + interaction.user.id + interaction.guild.id, { activeCommands: 0, lastGentleWaterReminderTimestamp: 0, activityTimeout: null, cooldownTimeout: null, restingTimeout: null });
+				}
+
+				clearTimeout(userMap.get('nr' + interaction.user.id + interaction.guild.id).restingTimeout);
 			}
-
-			clearTimeout(userMap.get('nr' + interaction.user.id + interaction.guild.id).restingTimeout);
 
 			if (interaction.isSelectMenu()) {
 
-				console.log(`\x1b[32m${interaction.user.tag}\x1b[0m successfully selected \x1b[33m${interaction.values[0]} \x1b[0mfrom the menu \x1b[33m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+				console.log(`\x1b[32m${interaction.user.tag}\x1b[0m successfully selected \x1b[33m${interaction.values[0]} \x1b[0mfrom the menu \x1b[33m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 
 				if (interaction.values[0] === 'help_page1') {
@@ -1517,7 +1520,7 @@ const event = {
 
 			if (interaction.isButton()) {
 
-				console.log(`\x1b[32m${interaction.user.tag}\x1b[0m successfully clicked the button \x1b[33m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+				console.log(`\x1b[32m${interaction.user.tag}\x1b[0m successfully clicked the button \x1b[33m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 
 				if (interaction.customId === 'water-reminder-off') {
@@ -1798,7 +1801,7 @@ const event = {
 			It is not a good idea to place clearing the timeout behind the command finish executing, since the command finish executing might take some time, and the 10 minutes from that timer might over in that time, making the user attempt to rest while executing a command.
 			It is also not a good idea to place starting the timeout before the command start executing, since the command again might take some time to finish executing, and then the 10 minute timer might be over sooner as expected.
 			*/
-			if (userMap.get('nr' + interaction.user.id + interaction.guild.id).activeCommands === 0) {
+			if (interaction.inGuild() && userMap.get('nr' + interaction.user.id + interaction.guild.id).activeCommands === 0) {
 
 				userMap.get('nr' + interaction.user.id + interaction.guild.id).restingTimeout = setTimeout(startRestingTimeout, 600000, client, referencedMessage);
 			}

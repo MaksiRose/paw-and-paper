@@ -35,10 +35,15 @@ class CustomClient extends Client {
 	}
 }
 
+/* Note: Once slash commands replace message commands, DIRECT_MESSAGES intent and CHANNEL partial can be removed */
 const client = new CustomClient({
 	intents: [
 		Intents.FLAGS.GUILDS,
 		Intents.FLAGS.GUILD_MESSAGES,
+		Intents.FLAGS.DIRECT_MESSAGES,
+	],
+	partials: [
+		'CHANNEL',
 	],
 	allowedMentions: {
 		parse: ['users', 'roles'],

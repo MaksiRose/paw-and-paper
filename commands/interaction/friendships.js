@@ -4,6 +4,7 @@ const profileModel = require('../../models/profileModel');
 const { hasNoName } = require('../../utils/checkAccountCompletion');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { getFriendshipPoints, getFriendshipHearts, checkOldMentions } = require('../../utils/friendshipHandling');
+const sendNoDM = require('../../utils/sendNoDM');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports.name = 'friendships';
@@ -17,6 +18,11 @@ module.exports.name = 'friendships';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 

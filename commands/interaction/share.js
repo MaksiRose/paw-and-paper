@@ -10,6 +10,7 @@ const { checkLevelUp } = require('../../utils/levelHandling');
 const { remindOfAttack } = require('../gameplay/attack');
 const { pronounAndPlural, pronoun, upperCasePronounAndPlural, upperCasePronoun } = require('../../utils/getPronouns');
 const { addFriendshipPoints } = require('../../utils/friendshipHandling');
+const sendNoDM = require('../../utils/sendNoDM');
 const sharingCooldownAccountsMap = new Map();
 
 module.exports.name = 'share';
@@ -25,6 +26,11 @@ module.exports.name = 'share';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];

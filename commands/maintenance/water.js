@@ -8,6 +8,7 @@ const { pullFromWeightedTable, generateRandomNumber } = require('../../utils/ran
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { pronounAndPlural } = require('../../utils/getPronouns');
 const { MessageEmbed, MessageActionRow, MessageButton } = require('discord.js');
+const sendNoDM = require('../../utils/sendNoDM');
 
 const oneMinute = 60000;
 const thirtyMinutes = oneMinute * 30;
@@ -29,6 +30,11 @@ module.exports.name = 'water';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];

@@ -14,6 +14,7 @@ const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessag
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { addFriendshipPoints } = require('../../utils/friendshipHandling');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'playfight';
 
@@ -28,6 +29,11 @@ module.exports.name = 'playfight';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	const profileData = characterData?.profiles?.[message.guild.id];

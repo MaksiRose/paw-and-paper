@@ -18,6 +18,7 @@ const { addFriendshipPoints } = require('../../utils/friendshipHandling');
 const { speciesMap } = require('../../utils/itemsInfo');
 const { createButtons } = require('./explore');
 const { MessageActionRow, MessageButton } = require('discord.js');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'play';
 
@@ -32,6 +33,11 @@ module.exports.name = 'play';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];

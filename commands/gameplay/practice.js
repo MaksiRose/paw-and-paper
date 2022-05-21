@@ -11,6 +11,7 @@ const { checkLevelUp } = require('../../utils/levelHandling');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { coloredButtonsAdvice } = require('../../utils/adviceMessages');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'practice';
 module.exports.aliases = ['train'];
@@ -26,6 +27,11 @@ module.exports.aliases = ['train'];
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	const profileData = characterData?.profiles?.[message.guild.id];

@@ -15,6 +15,7 @@ const blockEntrance = require('../../utils/blockEntrance');
 const { MessageActionRow, MessageSelectMenu, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { addFriendshipPoints } = require('../../utils/friendshipHandling');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'heal';
 
@@ -29,6 +30,11 @@ module.exports.name = 'heal';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];

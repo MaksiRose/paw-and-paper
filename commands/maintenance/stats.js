@@ -3,6 +3,7 @@ const { MessageActionRow, MessageButton } = require('discord.js');
 const profileModel = require('../../models/profileModel');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { error_color } = require('../../config.json');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'stats';
 module.exports.aliases = ['status'];
@@ -16,6 +17,11 @@ module.exports.aliases = ['status'];
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];
