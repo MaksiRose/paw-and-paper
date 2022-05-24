@@ -27,8 +27,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-	const profileData = characterData?.profiles?.[message.guild.id];
+	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	let profileData = characterData?.profiles?.[message.guild.id];
 
 	if (await hasNoName(message, characterData)) {
 
@@ -228,6 +228,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 									p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].experience -= cost;
 								},
 							));
+							characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+							profileData = characterData?.profiles?.[message.guild.id];
 
 							cost -= cost;
 						}
@@ -240,6 +242,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 									p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].levels -= 1;
 								},
 							));
+							characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+							profileData = characterData?.profiles?.[message.guild.id];
 						}
 					}
 
