@@ -298,7 +298,7 @@ const event = {
 								title: 'Page 2: 🎲 Gameplay',
 								description: 'Remember that the brackets -> [] don\'t need to be typed out. Replace the content with what you want, and leave the brackets out.',
 								fields: [
-									{ name: '**rp play (@user)**', value: 'The main activity of Younglings. Costs energy, but gives XP. Additionally, you can mention someone to play with them. __Only available to Younglings and Apprentices.__' },
+									{ name: '**rp play (@user)**', value: 'The main activity of Younglings. Costs energy, but gives XP. Additionally, you can mention someone to play with them.' },
 									{ name: '**rp practice**', value: 'Practice fighting wild animals. You cannot get hurt here. __Not available to Younglings__.' },
 									{ name: '**rp explore**', value: 'The main activity of every rank above Younglings. Find meat and herbs. Costs energy, but gives XP. __Not available to Younglings.__' },
 									{ name: '**rp go (region)**', value: 'Go to a specific region in your pack.' },
@@ -347,8 +347,8 @@ const event = {
 									{ name: '**rp drink**', value: 'Drink some water and fill up your thirst meter.' },
 									{ name: '**rp rest**', value: 'Get some sleep and fill up your energy meter. Takes some time to refill.' },
 									{ name: '**rp vote**', value: 'Vote for this bot on one of three websites and get +30 energy each time.' },
-									{ name: '**rp heal (@user)**', value: 'Heal your packmates. Costs energy, but gives XP. __Only available to Apprentices, Healers and Elderlies.__' },
-									{ name: '**rp dispose**', value: 'Remove obstacles blocking dens. Costs energy, but gives XP. __Only available to Apprentices, Hunters and Elderlies.__' },
+									{ name: '**rp heal (@user)**', value: 'Heal your packmates. Costs energy, but gives XP. __Not available to Younglings.__' },
+									{ name: '**rp dispose**', value: 'Remove obstacles blocking dens. Costs energy, but gives XP. __Not available to Younglings.__' },
 									{ name: '**rp water**', value: 'If you have a ginkgo sapling, you can water it using this command.' },
 								],
 								footer: { text: 'ℹ️ Select a command from the list below to view more information about it.' },
@@ -712,7 +712,7 @@ const event = {
 							embeds: [{
 								color: /** @type {`#${string}`} */ (config.default_color),
 								title: 'rp play (@user)',
-								description: 'The main activity of Younglings. Costs energy, but gives XP. Additionally, you can mention someone to play with them. __Only available to Younglings and Apprentices.__',
+								description: 'The main activity of Younglings. Costs energy, but gives XP. Additionally, you can mention someone to play with them.',
 								fields: [
 									{ name: '**Aliases**', value: 'none' },
 									{ name: '**Arguments**', value: 'Optional: The mention of a user that you want to play with.' },
@@ -1038,7 +1038,7 @@ const event = {
 							embeds: [{
 								color: /** @type {`#${string}`} */ (config.default_color),
 								title: 'rp heal (@user)',
-								description: 'Heal your packmates. Costs energy, but gives XP. __Only available to Apprentices, Healers and Elderlies.__',
+								description: 'Heal your packmates. Costs energy, but gives XP. __Not available to Younglings.__',
 								fields: [
 									{ name: '**Aliases**', value: 'none' },
 									{ name: '**Arguments**', value: 'Optional: A mention of the user that you want to heal.' },
@@ -1061,7 +1061,7 @@ const event = {
 							embeds: [{
 								color: /** @type {`#${string}`} */ (config.default_color),
 								title: 'rp dispose',
-								description: 'Remove obstacles blocking dens. Costs energy, but gives XP. __Only available to Apprentices, Hunters and Elderlies.__',
+								description: 'Remove obstacles blocking dens. Costs energy, but gives XP. __Not available to Younglings.__',
 								fields: [
 									{ name: '**Aliases**', value: 'none' },
 									{ name: '**Arguments**', value: 'none' },
