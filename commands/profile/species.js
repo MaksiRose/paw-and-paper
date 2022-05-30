@@ -144,6 +144,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 						.edit({
 							components: [
 								new MessageActionRow({ components: [speciesMenu] }),
+								new MessageActionRow({ components: [displayedSpeciesButton] }),
 							],
 						})
 						.catch((error) => {
