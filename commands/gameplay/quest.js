@@ -1,4 +1,5 @@
 // @ts-check
+const { default_color } = require('../../config.json');
 const profileModel = require('../../models/profileModel');
 const startCooldown = require('../../utils/startCooldown');
 const { generateRandomNumber, generateWinChance } = require('../../utils/randomizers');
@@ -61,8 +62,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			.reply({
 				content: messageContent,
 				embeds: [...embedArray, {
-					color: '#9d9e51',
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+					color: /** @type {`#${string}`} */ (default_color),
 					title: 'You have no open quests at the moment :(',
 					footer: { text: `Go ${profileData.rank === 'Youngling' ? 'playing' : 'exploring'} to get quests!` },
 				}],
