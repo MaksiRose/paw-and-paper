@@ -81,7 +81,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				content: messageContent,
 				embeds: [...embedArray, {
 					color: /** @type {`#${string}`} */ (error_color),
-					title: 'ThThe mentioned user has no (selected) character, hasn\'nt completed setting up their profile, is busy or is passed out :(',
+					title: 'The mentioned user has no (selected) character, hasn\'t completed setting up their profile, is busy or is passed out :(',
 				}],
 				failIfNotExists: false,
 			})
