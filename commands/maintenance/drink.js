@@ -79,7 +79,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			content: messageContent,
 			embeds: [...embedArray, {
 				color: /** @type {`#${string}`} */ (default_color),
-				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 				description: 'For the next 15 seconds, click the button as many times as you can!',
 			}],
 			components: [ new MessageActionRow({
@@ -100,12 +99,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		const collector = message.channel.createMessageComponentCollector({ filter, time: 15_000 });
 		collector.on('end', async collected => {
 
-			let thirstPoints = function(thirst) { return (profileData.thirst + thirst > profileData.maxThirst) ? (profileData.thirst + thirst) - profileData.maxThirst : thirst; }(generateRandomNumber(3, collected.size));
-
-			if (profileData.thirst + thirstPoints > profileData.maxThirst) {
-
-				thirstPoints -= (profileData.thirst + thirstPoints) - profileData.maxThirst;
-			}
+			const thirstPoints = function(thirst) { return (profileData.thirst + thirst > profileData.maxThirst) ? profileData.maxThirst - profileData.thirst : thirst; }(generateRandomNumber(3, collected.size));
 
 			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 				{ uuid: userData.uuid },
