@@ -8,6 +8,7 @@ const sendNoDM = require('../../utils/sendNoDM');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports.name = 'friendships';
+module.exports.aliases = ['friendship', 'relationships', 'relationship', 'friends', 'friend'];
 
 /**
  *
