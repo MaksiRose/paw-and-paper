@@ -241,7 +241,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			winPoints = 0;
 		}
 
-		winPoints = pullFromWeightedTable({ 0: 8 - winPoints, 1: 8, 2: winPoints });
+		winPoints = pullFromWeightedTable({ 0: 5 - winPoints, 1: 5, 2: winPoints });
 
 		if (winPoints == 2) {
 
@@ -283,25 +283,21 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					},
 				);
 
-				switch (pullFromWeightedTable({ 0: 1, 1: 1 })) {
+				if (pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
 
-					case 0:
+					userInjuryObject.wounds += 1;
 
-						userInjuryObject.wounds += 1;
+					embed.description = `*The battle between the human and ${characterData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${characterData.displayedSpecies || characterData.species} tries to jump at them, but the human manages to dodge. Unfortunately, a rock is directly in ${characterData.name}'s jump line. A sharp pain runs through ${pronoun(characterData, 2)} hip. A red spot slowly spreads where ${pronoun(characterData, 0)} hit the rock. Meanwhile, the human runs into the food den.*`;
 
-						embed.description = `*The battle between the human and ${characterData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${characterData.displayedSpecies || characterData.species} tries to jump at them, but the human manages to dodge. Unfortunately, a rock is directly in ${characterData.name}'s jump line. A sharp pain runs through ${pronoun(characterData, 2)} hip. A red spot slowly spreads where ${pronoun(characterData, 0)} hit the rock. Meanwhile, the human runs into the food den.*`;
+					embedFooterStatsText = `-${healthPoints} HP (from wound)\n${embedFooterStatsText}`;
+				}
+				else {
 
-						embedFooterStatsText = `-${healthPoints} HP (from wound)\n${embedFooterStatsText}`;
+					userInjuryObject.sprains += 1;
 
-						break;
+					embed.description = `*The battle between the human and ${characterData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${characterData.displayedSpecies || characterData.species} tries to jump at them, but the human manages to dodge. ${characterData.name} is not prepared for the fall. A sharp pain runs through ${pronoun(characterData, 2)} arm as it bends in the fall. Meanwhile, the human runs into the food den.*`;
 
-					default:
-
-						userInjuryObject.sprains += 1;
-
-						embed.description = `*The battle between the human and ${characterData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${characterData.displayedSpecies || characterData.species} tries to jump at them, but the human manages to dodge. ${characterData.name} is not prepared for the fall. A sharp pain runs through ${pronoun(characterData, 2)} arm as it bends in the fall. Meanwhile, the human runs into the food den.*`;
-
-						embedFooterStatsText = `-${healthPoints} HP (from sprain)\n${embedFooterStatsText}`;
+					embedFooterStatsText = `-${healthPoints} HP (from sprain)\n${embedFooterStatsText}`;
 				}
 			}
 
