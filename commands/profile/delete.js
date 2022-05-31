@@ -319,7 +319,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 							.reply({
 								embeds: [new MessageEmbed({
 									color: /** @type {`#${string}`} */ (error_color),
-									title: `All the data of ${accountsOnServer.length} characters on the server \`${server.name}\` were deleted permanently!`,
+									title: `All the data of ${accountsOnServer.length} characters on the server \`${server.name}\` was deleted permanently!`,
 								})],
 							})
 							.catch((error) => {
