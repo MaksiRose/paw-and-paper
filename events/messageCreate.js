@@ -123,7 +123,7 @@ const event = {
 
 		try {
 
-			console.log(`\x1b[32m${message.author.tag} (${message.author.id})\x1b[0m successfully executed \x1b[33m${message.content} \x1b[0min \x1b[32m${message.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			console.log(`\x1b[32m${message.author.tag} (${message.author.id})\x1b[0m successfully executed \x1b[31m${message.content} \x1b[0min \x1b[32m${message.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 			if (message.inGuild()) {
 

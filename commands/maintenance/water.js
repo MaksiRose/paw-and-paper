@@ -31,8 +31,7 @@ module.exports.name = 'water';
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	const currentTimestamp = Date.now();
-	console.log(currentTimestamp, message.createdTimestamp);
+	const currentTimestamp = message.createdTimestamp;
 
 	if (await sendNoDM(message)) {
 
