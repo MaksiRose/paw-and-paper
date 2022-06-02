@@ -227,8 +227,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 						interactionCollector();
 					}
-
-					if (!interaction.values[0].includes('page') && interaction.customId === 'proxy-always-options') {
+					else if (!interaction.values[0].includes('page') && interaction.customId === 'proxy-always-options') {
 
 						const channelId = interaction.values[0].replace('proxy-always_', '');
 
@@ -237,8 +236,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 						await alwaysProxy();
 					}
-
-					if (!interaction.values[0].includes('page') && interaction.customId === 'proxy-disableall-options') {
+					else if (!interaction.values[0].includes('page') && interaction.customId === 'proxy-disableall-options') {
 
 						const channelId = interaction.values[0].replace('proxy-disableall_', '');
 						argumentsArray[0] = 'all';
@@ -248,8 +246,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 						await disableProxy();
 					}
-
-					if (!interaction.values[0].includes('page') && interaction.customId === 'proxy-disableauto-options') {
+					else if (!interaction.values[0].includes('page') && interaction.customId === 'proxy-disableauto-options') {
 
 						const channelId = interaction.values[0].replace('proxy-disableauto_', '');
 						argumentsArray[0] = 'auto';
