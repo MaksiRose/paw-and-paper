@@ -77,6 +77,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	const timeDifference = Math.abs(currentTimestamp - saplingObject.nextWaterTimestamp);
 	const timeDifferenceInMinutes = Math.round(timeDifference / oneMinute);
 
+	console.log(timeDifference, timeDifferenceInMinutes);
+
 	let experiencePoints = 0;
 	let healthPoints = 0;
 
@@ -122,7 +124,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	else {
 
 		const weeksAlive = Math.floor(saplingObject.waterCycles / 7);
-		const overdueHours = Math.ceil(timeDifference / oneHour) - threeHours;
+		const overdueHours = Math.ceil(timeDifference / oneHour) - 3;
 		const saplingHealthPoints = overdueHours + (weeksAlive * overdueHours);
 		saplingObject.health -= saplingObject.health - saplingHealthPoints > 0 ? saplingHealthPoints : saplingObject.health - saplingHealthPoints > -weeksAlive ? saplingObject.health - 1 : saplingObject.health;
 
