@@ -847,7 +847,7 @@ async function decreaseStats(message, userData, profileData, partnerUserData, pa
 }
 
 /**
- * Checks for both level whether to decrease their health, level them up, if they are passed out and if they need to be given any advice.
+ * Checks for both players whether to decrease their health, level them up, if they are passed out and if they need to be given any advice.
  * @param {import('discord.js').Message} message
  * @param {import('discord.js').Message} botReply
  * @param {import('../../typedef').ProfileSchema} userData
