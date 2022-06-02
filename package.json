@@ -1,6 +1,6 @@
 {
 	"name": "paw-and-paper",
-	"version": "2.12.2",
+	"version": "2.13.0",
 	"description": "A Discord Bot for roleplay communities, featuring a community-based interactive RPG and powerful tools to roleplay",
 	"main": "index.js",
 	"scripts": {
