@@ -15,6 +15,8 @@ function createCommandCollector(userId, guildId, botReply) {
 
 	module.exports.activeCommandsObject['nr' + userId + guildId] = async () => {
 
+		delete activeCommandsObject['nr' + userId + guildId];
+
 		await botReply
 			.edit({
 				components: disableAllComponents(botReply.components),
@@ -22,8 +24,6 @@ function createCommandCollector(userId, guildId, botReply) {
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
-
-		delete activeCommandsObject['nr' + userId + guildId];
 	};
 }
 
