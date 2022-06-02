@@ -49,6 +49,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 	for (const _id of friendshipList) {
 
 		let otherUserData = allUsersList.find(u => u.characters[_id] !== undefined);
+		if (otherUserData == undefined) { continue; }
 		[userData, otherUserData] = await checkOldMentions(userData, characterData._id, otherUserData, _id);
 		const friendshipHearts = getFriendshipHearts(getFriendshipPoints(userData.characters[characterData._id].mentions[_id], otherUserData.characters[_id].mentions[characterData._id]));
 		friendships.push(`${otherUserData.characters[_id].name} (<@${otherUserData.userId}>) - ${'❤️'.repeat(friendshipHearts) + '🖤'.repeat(10 - friendshipHearts)}`);
