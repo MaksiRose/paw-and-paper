@@ -303,6 +303,7 @@ const event = {
 									{ name: '**rp explore**', value: 'The main activity of every rank above Younglings. Find meat and herbs. Costs energy, but gives XP. __Not available to Younglings.__' },
 									{ name: '**rp go (region)**', value: 'Go to a specific region in your pack.' },
 									{ name: '**rp attack**', value: 'If humans are attacking the pack, you can fight back using this command.' },
+									{ name: '**rp recover**', value: 'If the pack has no herbs to heal an injury, you can recover your injury using this command.' },
 									{ name: '**rp quest**', value: 'Get quests by playing (as Youngling) and exploring. Start them with this command. If you are successful, you can move up a rank.' },
 									{ name: '**rp rank**', value: 'Once you successfully finished a quest, you can move up a rank using this command.' },
 								],
@@ -320,6 +321,7 @@ const event = {
 										{ label: 'Explore', value: 'help_explore', description: 'The main activity of every rank above Younglings. Find meat and herbs. Costs energy, but gives XP.' },
 										{ label: 'Go', value: 'help_go', description: 'Go to a specific region in your pack.' },
 										{ label: 'Attack', value: 'help_attack', description: 'If humans are attacking the pack, you can fight back using this command.' },
+										{ label: 'Recover', value: 'help_recover', description: 'If the pack has no herbs to heal an injury, you can recover your injury using this command.' },
 										{ label: 'Quest', value: 'help_quest', description: 'Get quests by playing (as Youngling) and exploring. Start them with this command.' },
 										{ label: 'Rank', value: 'help_rank', description: 'Once you successfully finished a quest, you can move up a rank using this command.' },
 									],
@@ -813,6 +815,29 @@ const event = {
 									{ name: '**Aliases**', value: 'none' },
 									{ name: '**Arguments**', value: 'none' },
 									{ name: '**More information**', value: 'An attack event starts when someone explores while 3 or more players are active in a pack in the last 5 minutes. \nAfter 60 seconds of preparation time, the attack starts with as many humans as there are active players. This command can now be used to attack.\nThe attacks follow the same formula the `practice` command and the wild animal minigame of the `explore` command do, except it\'s 5 rounds. You gain and lose points by winning and losing rounds. You cannot go below 0 points.\nTieing has a 8 in 16 chance. The chance of winning is your total points in 16. Losing is the remaining amount in 16. When you win, the human you fought leaves. When you tie or loose, the human stays and steals some of the most posessed item. The amount stolen is equal to the available amount divided through ten, rounded. When you loose, there is a 50/50 chance between getting a wound and getting a sprain. After 5 minutes or once all humans are gone, the attack is over. Each remaining human steals one more time.' },
+								],
+							}],
+							ephemeral: true,
+						})
+						.catch(async (error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+				}
+
+				if (interaction.values[0] === 'help_recover') {
+
+					return await interaction
+						.followUp({
+							embeds: [{
+								color: /** @type {`#${string}`} */ (config.default_color),
+								title: 'rp recover',
+								description: 'If the pack has no herbs to heal an injury, you can recover your injury using this command.',
+								fields: [
+									{ name: '**Aliases**', value: 'regenerate' },
+									{ name: '**Arguments**', value: 'none' },
+									{ name: '**More information**', value: 'This command is only available every 12 hours for each character in a server. It checks first which injuries the user has that also have no items in the server\'s inventory that could heal it, and only allows those to be selected by the user. After selecting a type of injury, the user gets presented 3 emojis one after another, with old emojis being replaced by a black box after being shown for 1.5 seconds. The user then has to click the three buttons that show each of the emojis in the same order of the emoji being shown before. In the second round, the same 3 emojis as shown in the first round are being presented, as well as an additional 3 emojis. The user now has to press all 6 buttons accordingly. After 5 rounds (15 emojis), if the user made no mistake and did not wait more than 10 seconds between button presses, the game is won and the user loses one of the injuries that they selected. Otherwise, they gain nothing. Stats get decreased as normal, however XP is not gained.' },
 								],
 							}],
 							ephemeral: true,
