@@ -418,7 +418,7 @@ speciesMap.set('bear', {
 	name: 'bear',
 	diet: 'omnivore',
 	habitat: 'cold',
-	biome1OpponentArray: ['rabbit', 'bee', 'salmon', 'tuna'],
+	biome1OpponentArray: ['rabbit', 'salmon', 'tuna'],
 	biome2OpponentArray: ['cat', 'fox', 'dog'],
 	biome3OpponentArray: ['wolf', 'horse', 'elk'],
 });
@@ -437,7 +437,7 @@ speciesMap.set('rabbit', {
 	diet: 'herbivore',
 	habitat: 'cold',
 	biome1OpponentArray: ['squirrel', 'owl'],
-	biome2OpponentArray: ['dog', 'deer'],
+	biome2OpponentArray: ['dog', 'deer', 'otter'],
 	biome3OpponentArray: ['wolf', 'cat', 'bear'],
 });
 
@@ -581,7 +581,7 @@ speciesMap.set('weasel', {
 	diet: 'carnivore',
 	habitat: 'warm',
 	biome1OpponentArray: ['squirrel', 'rabbit', 'cricket', 'praying mantis'],
-	biome2OpponentArray: ['cat', 'fox'],
+	biome2OpponentArray: ['cat', 'fox', 'ferret'],
 	biome3OpponentArray: ['owl', 'gaboon viper'],
 });
 
@@ -708,7 +708,7 @@ speciesMap.set('bee', {
 	habitat: 'warm',
 	biome1OpponentArray: ['cricket', 'beetle'],
 	biome2OpponentArray: ['moth', 'praying mantis'],
-	biome3OpponentArray: ['bear', 'owl'],
+	biome3OpponentArray: ['bear', 'owl', 'ferret'],
 });
 
 speciesMap.set('cougar', {
@@ -726,7 +726,7 @@ speciesMap.set('frog', {
 	habitat: 'cold',
 	biome1OpponentArray: ['beetle', 'cricket', 'praying mantis'],
 	biome2OpponentArray: ['raccoon', 'fox', 'hedgehog'],
-	biome3OpponentArray: ['owl', 'crow'],
+	biome3OpponentArray: ['owl', 'crow', 'otter'],
 });
 
 speciesMap.set('crow', {
@@ -829,6 +829,28 @@ speciesMap.set('mongoose', {
 	biome1OpponentArray: ['rat', 'rabbit', 'crab'],
 	biome2OpponentArray: ['anole', 'cougar', 'leopard'],
 	biome3OpponentArray: ['tiger', 'eagle', 'hawk'],
+});
+
+// actual diet: crayfish, other fishes, crabs, frogs, birds, rabbits, rodents
+// actual predators: bobcats, alligators, coyotes, raptors
+speciesMap.set('otter', {
+	name: 'otter',
+	diet: 'carnivore',
+	habitat: 'water',
+	biome1OpponentArray: ['salmon', 'tuna', 'crab'],
+	biome2OpponentArray: ['beaver', 'rabbit', 'frog'],
+	biome3OpponentArray: ['bear', 'eagle', 'coyote'],
+});
+
+// actual diet: mice, rats, voles, quail, chickens, pigeons, grouse, rabbits, frogs, toads, snakes, insects
+// actual predators: owls, eagles, hawks, coyotes, badgers, foxes, wolves, bobcats
+speciesMap.set('ferret', {
+	name: 'ferret',
+	diet: 'carnivore',
+	habitat: 'cold',
+	biome1OpponentArray: ['frog', 'bee', 'rat'],
+	biome2OpponentArray: ['owl', 'rabbit', 'weasel'],
+	biome3OpponentArray: ['hawk', 'eagle', 'coyote'],
 });
 
 
