@@ -1,4 +1,5 @@
 // @ts-check
+const { default_color } = require('../../config.json');
 const profileModel = require('../../models/profileModel');
 const startCooldown = require('../../utils/startCooldown');
 const { generateRandomNumber, generateWinChance } = require('../../utils/randomizers');
@@ -11,6 +12,7 @@ const { pronoun, pronounAndPlural, upperCasePronounAndPlural, upperCasePronoun }
 const { apprenticeAdvice, hunterhealerAdvice, elderlyAdvice } = require('../../utils/adviceMessages');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { MessageEmbed, MessageActionRow, MessageButton } = require('discord.js');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'quest';
 
@@ -25,6 +27,11 @@ module.exports.name = 'quest';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	const profileData = characterData?.profiles?.[message.guild.id];
@@ -55,8 +62,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			.reply({
 				content: messageContent,
 				embeds: [...embedArray, {
-					color: '#9d9e51',
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+					color: /** @type {`#${string}`} */ (default_color),
 					title: 'You have no open quests at the moment :(',
 					footer: { text: `Go ${profileData.rank === 'Youngling' ? 'playing' : 'exploring'} to get quests!` },
 				}],

@@ -77,7 +77,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			.reply({
 				embeds: [ new MessageEmbed({
 					color: /** @type {`#${string}`} */ (default_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 					title: 'Use this command to name or rename your character. Here is how to use it:',
 					description: '\n\nrp name [name]\nReplace [name] with the desired name.',
 				})],
@@ -105,7 +104,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
-	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+	const characterData = userData.characters[userData.currentCharacter[message.guild?.id || 'DM']];
 	const _id = characterData ? characterData._id : await createId();
 
 	userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
@@ -127,7 +126,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					},
 					color: /** @type {`#${number}`} */ (default_color),
 					mentions: {},
-					profiles: {
+					profiles: message.inGuild() ? {
 						[message.guild.id]: {
 							serverId: message.guild.id,
 							rank: 'Youngling',
@@ -157,7 +156,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							roles: [],
 							skills: { global: {}, personal: {} },
 						},
-					},
+					} : {},
 				};
 			}
 			else {
@@ -165,7 +164,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				p.characters[_id].name = name;
 			}
 
-			p.currentCharacter[message.guild.id] = _id;
+			p.currentCharacter[message.guild?.id || 'DM'] = _id;
 		},
 	));
 
@@ -173,7 +172,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		.reply({
 			embeds: [ new MessageEmbed({
 				color: /** @type {`#${string}`} */ (default_color),
-				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
 				title: characterData === undefined ? `You successfully created the character ${name}!` : `You successfully renamed your character to ${name}!`,
 				footer: { text: characterData === undefined ? 'To continue setting up your profile for the RPG, type "rp species". For other options, review "rp help".' : null },
 			})],

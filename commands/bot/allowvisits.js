@@ -1,6 +1,7 @@
 // @ts-check
 const { error_color, default_color } = require('../../config.json');
 const serverModel = require('../../models/serverModel');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'allowvisits';
 
@@ -12,6 +13,11 @@ module.exports.name = 'allowvisits';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	if (message.member.permissions.has('ADMINISTRATOR') === false) {
 

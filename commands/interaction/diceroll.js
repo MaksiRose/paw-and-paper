@@ -20,9 +20,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 	const faces = Number(dice?.toLowerCase().split('d')[1]);
 
 	let args = argumentsArray.join('');
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-	const profileData = characterData?.profiles?.[message.guild.id];
-	for (const [skill, value] of [...Object.entries(profileData?.skills?.global), ...Object.entries(profileData?.skills?.personal)]) {
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id || 'DM']];
+	const profileData = characterData?.profiles?.[message.guild?.id];
+	for (const [skill, value] of [...Object.entries(profileData?.skills?.global || {}), ...Object.entries(profileData?.skills?.personal || {})]) {
 
 		if (args.includes(skill)) { args = args.replace(skill, `${value}`);}
 	}

@@ -15,6 +15,7 @@ const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = requi
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
 const { pickRandomRarePlant, pickRandomUncommonPlant, pickRandomCommonPlant } = require('../../utils/pickRandomPlant');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'adventure';
 
@@ -29,6 +30,11 @@ module.exports.name = 'adventure';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];
@@ -75,7 +81,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				content: messageContent,
 				embeds: [...embedArray, {
 					color: /** @type {`#${string}`} */ (error_color),
-					title: 'ThThe mentioned user has no (selected) character, hasn\'nt completed setting up their profile, is busy or is passed out :(',
+					title: 'The mentioned user has no (selected) character, hasn\'t completed setting up their profile, is busy or is passed out :(',
 				}],
 				failIfNotExists: false,
 			})
@@ -132,7 +138,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	let userInjuryObjectPlayer2 = { ...partnerProfileData.injuries };
 
 	const emptyField = '⬛';
-	const memoryCardOptions = ['🌱', '🌿', '☘️', '🍀', '🍃', '💐', '🌷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🍇', '🍊', '🫒', '🌰', '🏕️', '🌲', '🌳', '🍂', '🍁', '🍄', '🐝', '🪱', '🐛', '🦋', '🐌', '🐞', '🐁', '🦔', '🌵', '🦂', '🏜️', '🎍', '🪴', '🎋', '🪨', '🌾', '🐍', '🦎', '🐫', '🐙', '🦑', '🦀', '🐡', '🐠', '🐟', '🌊', '🐚', '🪨', '🪵', '🌴'];
+	const memoryCardOptions = ['🌱', '🌿', '☘️', '🍀', '🍃', '💐', '🌷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🍇', '🍊', '🫒', '🌰', '🏕️', '🌲', '🌳', '🍂', '🍁', '🍄', '🐝', '🪱', '🐛', '🦋', '🐌', '🐞', '🐁', '🦔', '🌵', '🦂', '🏜️', '🎍', '🪴', '🎋', '🪨', '🌾', '🐍', '🦎', '🐫', '🐙', '🦑', '🦀', '🐡', '🐠', '🐟', '🌊', '🐚', '🪵', '🌴'];
 
 	const memoryCardEmojis = [];
 	for (let i = 0; i < 10; i++) {

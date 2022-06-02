@@ -3,6 +3,7 @@ const { error_color, default_color } = require('../../config.json');
 const serverModel = require('../../models/serverModel');
 const profileModel = require('../../models/profileModel');
 const { checkLevelRequirements, checkRankRequirements } = require('../../utils/checkRoleRequirements');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'shopadd';
 
@@ -16,6 +17,11 @@ module.exports.name = 'shopadd';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	if (message.member.permissions.has('ADMINISTRATOR') === false) {
 

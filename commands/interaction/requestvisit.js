@@ -7,6 +7,7 @@ const { pronounAndPlural, pronoun, upperCasePronounAndPlural, upperCasePronoun }
 const { readFileSync, writeFileSync } = require('fs');
 const { MessageActionRow, MessageSelectMenu, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'requestvisit';
 module.exports.aliases = ['visit'];
@@ -21,6 +22,11 @@ module.exports.aliases = ['visit'];
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userDataV, serverDataV) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	const characterDataV = userDataV?.characters?.[userDataV?.currentCharacter?.[message.guild.id]];
 
@@ -571,7 +577,7 @@ module.exports.sendVisitMessage = async (client, message, userData, thisServerDa
 
 	const botMessage = await otherServerWebhook
 		.send({
-			username: `${characterData.name} (${message.guild.name})`,
+			username: characterData.name,
 			avatarURL: characterData.avatarURL,
 			content: message.content || undefined,
 			files: Array.from(message.attachments.values()) || undefined,
@@ -579,7 +585,7 @@ module.exports.sendVisitMessage = async (client, message, userData, thisServerDa
 		})
 		.catch((error) => { throw new Error(error); });
 
-	webhookCache[botMessage.id] = message.author.id;
+	webhookCache[botMessage.id] = message.author.id + (characterData?._id !== undefined ? `_${characterData?._id}` : '');
 
 	writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
 };

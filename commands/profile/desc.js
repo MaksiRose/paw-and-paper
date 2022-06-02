@@ -17,7 +17,7 @@ module.exports.aliases = ['description'];
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id || 'DM']];
 
 	if (await hasNoName(message, characterData)) {
 
@@ -31,7 +31,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		await profileModel.findOneAndUpdate(
 			{ uuid: userData.uuid },
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				p.characters[p.currentCharacter[message.guild.id]].description = '';
+				p.characters[p.currentCharacter[message.guild?.id || 'DM']].description = '';
 			},
 		);
 
@@ -54,7 +54,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 	await profileModel.findOneAndUpdate(
 		{ uuid: userData.uuid },
 		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-			p.characters[p.currentCharacter[message.guild.id]].description = description;
+			p.characters[p.currentCharacter[message.guild?.id || 'DM']].description = description;
 		},
 	);
 

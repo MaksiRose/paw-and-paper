@@ -1,5 +1,6 @@
 // @ts-check
 const { error_color, default_color, update_channel_id } = require('../../config.json');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'getupdates';
 module.exports.aliases = ['updates', 'enableupdates'];
@@ -11,6 +12,11 @@ module.exports.aliases = ['updates', 'enableupdates'];
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	if (message.member.permissions.has('ADMINISTRATOR') === false) {
 

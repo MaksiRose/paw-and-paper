@@ -15,6 +15,7 @@ const blockEntrance = require('../../utils/blockEntrance');
 const { MessageActionRow, MessageSelectMenu, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { addFriendshipPoints } = require('../../utils/friendshipHandling');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'heal';
 
@@ -29,6 +30,11 @@ module.exports.name = 'heal';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];
@@ -437,16 +443,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 							chosenUserHungerPoints = 5;
 						}
-
-						if (chosenProfileData.hunger + chosenUserHungerPoints > chosenProfileData.maxHunger) {
-
-							chosenUserHungerPoints -= (chosenProfileData.hunger + chosenUserHungerPoints) - chosenProfileData.maxHunger;
-						}
-
-						if (chosenUserHungerPoints > 0) {
-
-							embedFooterChosenUserStatsText += `\n+${chosenUserHungerPoints} hunger for ${chosenCharacterData.name} (${chosenProfileData.hunger + chosenUserHungerPoints}/${chosenProfileData.maxHunger})`;
-						}
 					}
 
 					if (chosenProfileData.health <= 0) {
@@ -536,16 +532,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						}
 
 						chosenUserEnergyPoints = 30;
-
-						if (chosenProfileData.energy + chosenUserEnergyPoints > chosenProfileData.maxEnergy) {
-
-							chosenUserEnergyPoints -= (chosenProfileData.energy + chosenUserEnergyPoints) - chosenProfileData.maxEnergy;
-						}
-
-						if (chosenUserEnergyPoints >= 1) {
-
-							embedFooterChosenUserStatsText += `\n+${chosenUserEnergyPoints} energy for ${chosenCharacterData.name} (${chosenProfileData.energy + chosenUserEnergyPoints}/${chosenProfileData.maxEnergy})`;
-						}
 					}
 
 
@@ -556,7 +542,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						},
 					));
 
-					if (isSuccessful === true && chosenUserData.userId === userData.userId && pullFromWeightedTable({ 0: 75, 1: 25 + profileData.sapling.waterCycles }) === 0) {
+					if (isSuccessful && chosenUserData.userId === userData.userId && pullFromWeightedTable({ 0: 75, 1: 25 + profileData.sapling.waterCycles }) === 0) {
 
 						isSuccessful = false;
 					}
@@ -578,7 +564,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						return /** @type {import('discord.js').MessageSelectMenuOptions} */ (userSelectMenu.components[0]).options.length > 0 ? await interactionCollector() : null;
 					}
 
-					if (isSuccessful === true && chosenUserData.userId !== userData.userId && (profileData.rank === 'Apprentice' || profileData.rank === 'Hunter') && pullFromWeightedTable({ 0: profileData.rank === 'Hunter' ? 90 : 40, 1: 60 + profileData.sapling.waterCycles }) === 0) {
+					if (isSuccessful && chosenUserData.userId !== userData.userId && (profileData.rank === 'Apprentice' || profileData.rank === 'Hunter') && pullFromWeightedTable({ 0: profileData.rank === 'Hunter' ? 90 : 40, 1: 60 + profileData.sapling.waterCycles }) === 0) {
 
 						isSuccessful = false;
 					}
@@ -591,7 +577,32 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						let chosenUserHealthPoints = generateRandomNumber(10, 6);
 						if (chosenProfileData.health + chosenUserHealthPoints > chosenProfileData.maxHealth) {
 
-							chosenUserHealthPoints -= (chosenProfileData.health + chosenUserHealthPoints) - chosenProfileData.maxHealth;
+							chosenUserHealthPoints = chosenProfileData.maxHealth - chosenProfileData.health;
+						}
+
+						/* We do this over here rather than at the top in the if statements for edibality and givesEnergy,
+						because if chosenUserData === userData, then these might not be accurate
+						ie, the hunger/energy might have gone down enough in order not to decrease chosenUserHungerPoints/chosenUserEnergyPoints,
+						as well as the stats not showing the correct amount based on what was lost from decreaseStats()
+						in decreaseStats(), the chosenUserData, chosenCharacterData and chosenProfileData is updated to account for this */
+						if (chosenProfileData.hunger + chosenUserHungerPoints > chosenProfileData.maxHunger) {
+
+							chosenUserHungerPoints = chosenProfileData.maxHunger - chosenProfileData.hunger;
+						}
+
+						if (chosenUserHungerPoints > 0) {
+
+							embedFooterChosenUserStatsText += `\n+${chosenUserHungerPoints} hunger for ${chosenCharacterData.name} (${chosenProfileData.hunger + chosenUserHungerPoints}/${chosenProfileData.maxHunger})`;
+						}
+
+						if (chosenProfileData.energy + chosenUserEnergyPoints > chosenProfileData.maxEnergy) {
+
+							chosenUserEnergyPoints = chosenProfileData.maxEnergy - chosenProfileData.energy;
+						}
+
+						if (chosenUserEnergyPoints >= 1) {
+
+							embedFooterChosenUserStatsText += `\n+${chosenUserEnergyPoints} energy for ${chosenCharacterData.name} (${chosenProfileData.energy + chosenUserEnergyPoints}/${chosenProfileData.maxEnergy})`;
 						}
 
 						chosenUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
@@ -718,6 +729,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		));
 		characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 		profileData = characterData?.profiles?.[message.guild.id];
+
+		if (chosenUserData.userId === userData.userId) {
+
+			chosenUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: chosenUserData.userId }));
+			chosenCharacterData = chosenUserData.characters[chosenCharacterData._id];
+			chosenProfileData = chosenCharacterData.profiles[message.guild.id];
+		}
 
 		let footerStats = `-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
 

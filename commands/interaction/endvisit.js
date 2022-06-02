@@ -2,6 +2,7 @@
 const { hasNoName } = require('../../utils/checkAccountCompletion');
 const { error_color, default_color } = require('../../config.json');
 const serverModel = require('../../models/serverModel');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'endvisit';
 
@@ -15,6 +16,11 @@ module.exports.name = 'endvisit';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	if (await hasNoName(message, userData?.characters?.[userData?.currentCharacter?.[message.guild.id]])) {
 

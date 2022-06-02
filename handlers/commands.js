@@ -1,6 +1,9 @@
 // @ts-check
 const { readdirSync, lstatSync } = require('fs');
 const path = require('path');
+const { REST } = require('@discordjs/rest');
+const { Routes } = require('discord-api-types/v9');
+const { token, test_guild_id } = require('../config.json');
 
 /**
  * Adds all the commands to the client
@@ -8,15 +11,27 @@ const path = require('path');
  */
 module.exports.execute = (client) => {
 
+	/** @type {Array<import('discord-api-types/v9').RESTPostAPIApplicationCommandsJSONBody>} */
+	const commands = [];
+
 	for (const commandPath of getFiles('../commands')) {
 
-		/**
-		 * @type {{name: string, aliases: Array<string>, sendMessage: Function}}
-		 */
+		/** @type {{name: string, aliases: Array<string>, data: import("@discordjs/builders").SlashCommandBuilder | {name: string, type: number}, sendMessage: Function, sendCommand: Function}} */
 		const command = require(commandPath);
+
+		if (command.data !== undefined) { commands.push(JSON.parse(JSON.stringify(command.data))); }
 
 		client.commands[command.name] = command;
 	}
+
+	const rest = new REST({ version: '9' }).setToken(client.token);
+
+	rest
+		.put(
+			client.token === token ? Routes.applicationCommands(client.user.id) : Routes.applicationGuildCommands(client.user.id, test_guild_id),
+			{ body: commands },
+		)
+		.catch(console.error);
 };
 
 /**

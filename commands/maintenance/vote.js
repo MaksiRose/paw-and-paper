@@ -22,8 +22,8 @@ module.exports.name = 'vote';
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-	const profileData = characterData?.profiles?.[message.guild.id];
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id]];
+	const profileData = characterData?.profiles?.[message.guild?.id];
 
 	if (await hasNotCompletedAccount(message, characterData)) {
 
@@ -58,6 +58,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						{ label: 'discords.com', value: 'discords.com-vote' },
 						{ label: 'discordbotlist.com', value: 'discordbotlist.com-vote' },
 					],
+					disabled: message.inGuild(),
 				})],
 			})],
 			failIfNotExists: false,

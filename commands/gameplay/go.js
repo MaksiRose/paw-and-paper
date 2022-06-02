@@ -10,6 +10,7 @@ const { remindOfAttack } = require('./attack');
 const { pronoun, pronounAndPlural } = require('../../utils/getPronouns');
 const { MessageSelectMenu, MessageActionRow, MessageButton, MessageEmbed } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'go';
 module.exports.aliases = ['region'];
@@ -25,6 +26,11 @@ module.exports.aliases = ['region'];
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	const profileData = characterData?.profiles?.[message.guild.id];

@@ -9,6 +9,7 @@ const { remindOfAttack } = require('./attack');
 const { checkRankRequirements } = require('../../utils/checkRoleRequirements');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'rank';
 module.exports.aliases = ['role'];
@@ -24,6 +25,11 @@ module.exports.aliases = ['role'];
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	const profileData = characterData?.profiles?.[message.guild.id];

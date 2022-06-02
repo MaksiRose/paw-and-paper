@@ -16,6 +16,7 @@ const { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural }
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { coloredButtonsAdvice } = require('../../utils/adviceMessages');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'explore';
 module.exports.aliases = ['e'];
@@ -31,6 +32,11 @@ module.exports.aliases = ['e'];
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];
@@ -341,7 +347,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		.reduce((a, b) => a + b, 0);
 	const serverInventoryCount = Object.values(serverData.inventory).map(type => Object.values(type)).flat().reduce((a, b) => a + b, 0);
 
-	if (serverInventoryCount > highRankProfilesCount * 5 && messageContent === null && serverData.nextPossibleAttack <= Date.now()) {
+	// If the server has more items than 8 per profile. It's 2 more than counted when the humans spawn, to give users a bit of leeway
+	if (serverInventoryCount > highRankProfilesCount * 8 && messageContent === null && serverData.nextPossibleAttack <= Date.now()) {
 
 		botReply = await findHumans();
 	}
@@ -375,9 +382,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	 */
 	async function findHumans() {
 
-		startAttack(message, Math.round(serverInventoryCount / highRankProfilesCount));
+		// The numerator is the amount of items above 6 per profile, the denominator is the amount of profiles
+		const humanCount = Math.round((serverInventoryCount - (highRankProfilesCount * 6)) / highRankProfilesCount);
+		startAttack(message, humanCount);
 
-		embed.description = `*${characterData.name} has just been looking around for food when ${pronounAndPlural(characterData, 0, 'suddenly hear')} voices to ${pronoun(characterData, 2)} right. Cautiously ${pronounAndPlural(characterData, 0, 'creep')} up, and sure enough: a group of humans! They seem to be discussing something, and keep pointing over towards where the pack is lying. Alarmed, the ${characterData.displayedSpecies || characterData.species} runs away. **${upperCasePronoun(characterData, 0)} must gather as many packmates as possible to protect the pack!***`;
+		embed.description = `*${characterData.name} has just been looking around for food when ${pronounAndPlural(characterData, 0, 'suddenly hear')} voices to ${pronoun(characterData, 2)} right. Cautiously ${pronounAndPlural(characterData, 0, 'creep')} up, and sure enough: a group of humans! It looks like it's around ${humanCount}. They seem to be discussing something, and keep pointing over towards where the pack is lying. Alarmed, the ${characterData.displayedSpecies || characterData.species} runs away. **${upperCasePronoun(characterData, 0)} must gather as many packmates as possible to protect the pack!***`;
 		embed.footer.text = `${embedFooterStatsText}\n\nYou have two minutes to prepare before the humans will attack!`;
 
 		return await message

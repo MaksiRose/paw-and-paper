@@ -4,9 +4,11 @@ const profileModel = require('../../models/profileModel');
 const { hasNoName } = require('../../utils/checkAccountCompletion');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { getFriendshipPoints, getFriendshipHearts, checkOldMentions } = require('../../utils/friendshipHandling');
+const sendNoDM = require('../../utils/sendNoDM');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports.name = 'friendships';
+module.exports.aliases = ['friendship', 'relationships', 'relationship', 'friends', 'friend'];
 
 /**
  *
@@ -17,6 +19,11 @@ module.exports.name = 'friendships';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 
@@ -42,6 +49,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 	for (const _id of friendshipList) {
 
 		let otherUserData = allUsersList.find(u => u.characters[_id] !== undefined);
+		if (otherUserData == undefined) { continue; }
 		[userData, otherUserData] = await checkOldMentions(userData, characterData._id, otherUserData, _id);
 		const friendshipHearts = getFriendshipHearts(getFriendshipPoints(userData.characters[characterData._id].mentions[_id], otherUserData.characters[_id].mentions[characterData._id]));
 		friendships.push(`${otherUserData.characters[_id].name} (<@${otherUserData.userId}>) - ${'❤️'.repeat(friendshipHearts) + '🖤'.repeat(10 - friendshipHearts)}`);

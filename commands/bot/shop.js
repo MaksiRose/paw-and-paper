@@ -7,6 +7,7 @@ const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { checkLevelUp } = require('../../utils/levelHandling');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'shop';
 
@@ -21,8 +22,13 @@ module.exports.name = 'shop';
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData) => {
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-	const profileData = characterData?.profiles?.[message.guild.id];
+	if (await sendNoDM(message)) {
+
+		return;
+	}
+
+	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	let profileData = characterData?.profiles?.[message.guild.id];
 
 	if (await hasNoName(message, characterData)) {
 
@@ -222,6 +228,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 									p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].experience -= cost;
 								},
 							));
+							characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+							profileData = characterData?.profiles?.[message.guild.id];
 
 							cost -= cost;
 						}
@@ -234,6 +242,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 									p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].levels -= 1;
 								},
 							));
+							characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+							profileData = characterData?.profiles?.[message.guild.id];
 						}
 					}
 

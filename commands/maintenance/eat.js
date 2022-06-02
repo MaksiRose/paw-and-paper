@@ -10,6 +10,7 @@ const { sendMessage } = require('./inventory');
 const { remindOfAttack } = require('../gameplay/attack');
 const { pronounAndPlural, pronoun, upperCasePronounAndPlural } = require('../../utils/getPronouns');
 const blockEntrance = require('../../utils/blockEntrance');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'eat';
 
@@ -24,6 +25,11 @@ module.exports.name = 'eat';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];
@@ -243,14 +249,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		if (speciesMap.get(characterData.species).diet === 'herbivore') {
 
-			finalHungerPoints = function(hunger) { return profileData.hunger - hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(5, 1));
+			finalHungerPoints = function(hunger) { return profileData.hunger + hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(5, 1));
 
 			embed.description = `*${characterData.name} stands by the storage den, eyeing the varieties of food. A ${chosenFood} catches ${pronoun(characterData, 2)} attention. The ${characterData.displayedSpecies || characterData.species} walks over to it and begins to eat.* "This isn't very good!" *${characterData.name} whispers to ${pronoun(characterData, 4)} and leaves the den, stomach still growling, and craving for plants to grow.*`;
 		}
 
 		if (speciesMap.get(characterData.species).diet === 'carnivore' || speciesMap.get(characterData.species).diet === 'omnivore') {
 
-			finalHungerPoints = function(hunger) { return profileData.hunger - hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(4, 15));
+			finalHungerPoints = function(hunger) { return profileData.hunger + hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(4, 15));
 
 			embed.description = `*${characterData.name} sits chewing maliciously on a ${chosenFood}. A dribble of blood escapes out of ${pronoun(characterData, 2)} jaw as the ${characterData.displayedSpecies || characterData.species} finishes off the meal. It was a delicious feast, but very messy!*`;
 		}

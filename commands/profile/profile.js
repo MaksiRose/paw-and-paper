@@ -1,5 +1,5 @@
 // @ts-check
-const { MessageEmbed, MessageSelectMenu, MessageActionRow } = require('discord.js');
+const { MessageEmbed, MessageSelectMenu, MessageActionRow, MessageButton } = require('discord.js');
 const profileModel = require('../../models/profileModel');
 const { hasNoName } = require('../../utils/checkAccountCompletion');
 const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
@@ -9,6 +9,7 @@ const disableAllComponents = require('../../utils/disableAllComponents');
 const { stopResting } = require('../../utils/executeResting');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
 const { error_color } = require('../../config.json');
+const getUserIds = require('../../utils/getUserIds');
 
 module.exports.name = 'profile';
 module.exports.aliases = ['info', 'about', 'profiles', 'character', 'characters', 'account', 'accounts', 'switch'];
@@ -19,17 +20,19 @@ module.exports.aliases = ['info', 'about', 'profiles', 'character', 'characters'
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} userData
+ * @param {import('../../typedef').ServerSchema} serverData
+ * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
  * @returns {Promise<void>}
  */
-module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
+module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id || 'DM']];
 	let isYourself = true;
 
-	if (message.mentions.users.size > 0) {
+	if (getUserIds(message).length > 0) {
 
-		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first().id }));
-		characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: getUserIds(message)[0] }));
+		characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id]];
 		isYourself = false;
 
 		if (!userData) {
@@ -53,34 +56,66 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		await hasNoName(message, characterData);
 		return;
 	}
-	else if (characterData && await hasCooldown(message, userData, [module.exports.name].concat(module.exports.aliases))) {
+	else if (characterData && message.inGuild() && await hasCooldown(message, userData, [module.exports.name].concat(module.exports.aliases))) {
 
 		return;
 	}
 
+	await module.exports.sendProfile(client, message, embedArray, userData, characterData, isYourself, false);
+};
+
+/**
+ * Sends a profile
+ * @param {import('../../paw').client} client
+ * @param {import('discord.js').Message} message
+ * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {import('../../typedef').ProfileSchema} userData
+ * @param {import('../../typedef').Character} characterData
+ * @param {boolean} isYourself
+ * @param {boolean} isInteraction
+ * @param {import('discord.js').MessageContextMenuInteraction} [contextMenuInteraction]
+ * @returns
+ */
+module.exports.sendProfile = async (client, message, embedArray, userData, characterData, isYourself, isInteraction, contextMenuInteraction) => {
+
 	let charactersPage = 0;
 
-	let response = await getMessageContent(client, userData.userId, characterData, isYourself);
+	let response = await getMessageContent(client, userData.userId, characterData, isYourself, embedArray);
 
-	let botReply = await message
-		.reply({
-			...response,
-			failIfNotExists: false,
-			components: (getAccountsPage(userData, charactersPage, isYourself).options.length > 1) ? [new MessageActionRow({ components: [getAccountsPage(userData, charactersPage, isYourself)] })] : [],
-		})
-		.catch((error) => { throw new Error(error); });
+	let botReply = (isInteraction === false ?
+		(await message
+			.reply({
+				...response,
+				failIfNotExists: false,
+				components: (getAccountsPage(userData, charactersPage, isYourself).options.length > 1) ? [new MessageActionRow({ components: [getAccountsPage(userData, charactersPage, isYourself)] })] : [],
+			})
+			.catch((error) => { throw new Error(error); }))
+		: /** @type {import('discord.js').Message} */ (await contextMenuInteraction
+			.reply({
+				... /** @type {import('discord.js').InteractionReplyOptions} */(response),
+				components: [ new MessageActionRow({
+					components: [ new MessageButton({
+						customId: `learnabout-${userData?.userId}-${characterData?._id}`,
+						label: 'Learn more (sends a DM)',
+						style: 'SUCCESS',
+					})],
+				})],
+				ephemeral: true,
+				fetchReply: true,
+			})
+			.catch((error) => { throw new Error(error); }))
+	);
 
-	createCommandCollector(message.author.id, message.guild.id, botReply);
-
+	createCommandCollector(message.author.id, message.guild?.id || '', botReply);
 	interactionCollector();
 
 	async function interactionCollector() {
 
-		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.isSelectMenu() && i.customId === 'characters-options' && i.user.id === message.author.id;
+		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => ((i.isSelectMenu() && i.customId === 'characters-options') || i.isButton() && i.customId.includes('learnabout')) && i.user.id === message.author.id;
 
 		/** @type {import('discord.js').MessageComponentInteraction | null} } */
 		const interaction = await botReply
-			.awaitMessageComponent({ filter, time: 300_000 })
+			.awaitMessageComponent({ filter, time: 300000 })
 			.catch(() => { return null; });
 
 		await botReply
@@ -88,13 +123,26 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 				components: disableAllComponents(botReply.components),
 			})
 			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
+				if (error.httpStatus === 403) { console.error('Missing Access: Cannot edit this message'); }
+				else if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 
 		/* Checking if the user has not clicked on any of the options, and if they haven't, it will return. */
 		if (interaction === null) {
 
 			return;
+		}
+
+		if (interaction.isButton() && interaction.customId.includes('learnabout')) {
+
+			const dmChannel = await message.author
+				.createDM()
+				.catch((error) => { throw new Error(error); });
+
+			botReply.channelId = dmChannel.id;
+			botReply.author.id = interaction.user.id;
+
+			await module.exports.sendProfile(client, botReply, embedArray, userData, characterData, false, false);
 		}
 
 		/* Checking if the user has clicked on the "Show more accounts" button, and if they have, it will
@@ -130,7 +178,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		if (interaction.isSelectMenu() && interaction.values[0].includes('switchto')) {
 
 			/* Checking if the user is resting, and if they are, it will stop the resting. */
-			if (characterData?.profiles?.[message.guild.id]?.isResting === true) {
+			if (message.inGuild() && characterData?.profiles?.[message.guild?.id]?.isResting === true) {
 
 				userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 					{ uuid: userData.uuid },
@@ -148,17 +196,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 				{ uuid: userData.uuid },
 				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-					if (interaction.values[0].endsWith('-0')) { p.currentCharacter[message.guild.id] = _id; }
-					else {delete p.currentCharacter[message.guild.id];}
+					if (interaction.values[0].endsWith('-0')) { p.currentCharacter[message.guild?.id || 'DM'] = _id; }
+					else { delete p.currentCharacter[message.guild?.id || 'DM']; }
 				},
 			));
 
 			/* Getting the new character data, and then it is checking if the user has clicked on an account,
 			and if they have, it will add the roles of the account to the user. */
-			let newCharacterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-			let profileData = newCharacterData?.profiles?.[message.guild.id];
+			let newCharacterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id || 'DM']];
+			let profileData = newCharacterData?.profiles?.[message.guild?.id || 'DM'];
 
-			if (newCharacterData != null) {
+			if (newCharacterData != null && message.inGuild()) {
 
 				if (!profileData) {
 
@@ -219,7 +267,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 			/* Checking if the user has any roles from the old account, and if they do, it will remove them. */
 			try {
 
-				for (const role of characterData?.profiles?.[message.guild.id]?.roles || []) {
+				for (const role of characterData?.profiles?.[message.guild?.id]?.roles || []) {
 
 					const isInNewRoles = newCharacterData !== null && newCharacterData?.profiles?.[message.guild.id]?.roles.some(r => r.roleId === role.roleId && r.wayOfEarning === role.wayOfEarning && r.requirement === role.requirement);
 					if (isInNewRoles === false && message.member.roles.cache.has(role.roleId)) {
@@ -239,11 +287,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 			account they have clicked on. */
 			setTimeout(async () => {
 
-				response = await getMessageContent(client, userData.userId, characterData, isYourself);
+				response = await getMessageContent(client, userData.userId, characterData, isYourself, embedArray);
 
 				botReply = await botReply
 					.edit({
-						.../** @type {import('discord.js').MessageEditOptions} */ (response),
+						... /** @type {import('discord.js').MessageEditOptions} */(response),
 						components: (getAccountsPage(userData, charactersPage, isYourself).options.length > 1) ? [new MessageActionRow({ components: [getAccountsPage(userData, charactersPage, isYourself)] })] : [],
 					})
 					.catch((error) => { throw new Error(error); });
@@ -273,7 +321,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 
 			/* Getting the message content and then checking if the accounts page has more than one option. If
 			it does, it will add the accounts page to the message. Then editing the message that the bot sent. */
-			response = await getMessageContent(client, userData.userId, characterData, isYourself);
+			response = await getMessageContent(client, userData.userId, characterData, isYourself, embedArray);
 			if (getAccountsPage(userData, charactersPage, isYourself).options.length > 1) {
 
 				response.components = [new MessageActionRow({ components: [getAccountsPage(userData, charactersPage, isYourself)] })];
@@ -281,7 +329,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 
 			botReply = await botReply
 				.edit({
-					.../** @type {import('discord.js').MessageEditOptions} */ (response),
+					... /** @type {import('discord.js').MessageEditOptions} */(response),
 					components: (getAccountsPage(userData, charactersPage, isYourself).options.length > 1) ? [new MessageActionRow({ components: [getAccountsPage(userData, charactersPage, isYourself)] })] : [],
 				})
 				.catch((error) => { throw new Error(error); });
@@ -289,6 +337,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 			await interactionCollector();
 		}
 	}
+	return { response, userData, charactersPage, characterData };
 };
 
 /**
@@ -297,9 +346,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
  * @param {string} userId - The user's ID
  * @param {import('../../typedef').Character} characterData - The character data from the database.
  * @param {boolean} isYourself - Whether the character is by the user who executed the command
+ * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
  * @returns {Promise<import('discord.js').MessageOptions>} The message object.
  */
-async function getMessageContent(client, userId, characterData, isYourself) {
+async function getMessageContent(client, userId, characterData, isYourself, embedArray) {
 
 	const user = await client.users
 		.fetch(userId)
@@ -324,7 +374,7 @@ async function getMessageContent(client, userId, characterData, isYourself) {
 
 	const message = /** @type {import('discord.js').MessageOptions} */ ({
 		content: !characterData ? (isYourself ? 'You are on an Empty Slot. Select a character to switch to below.' : 'Select a character to view below.') : null,
-		embeds: !characterData ? [] : [embed],
+		embeds: !characterData ? embedArray : [...embedArray, embed],
 	});
 
 

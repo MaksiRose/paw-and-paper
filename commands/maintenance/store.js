@@ -12,6 +12,7 @@ const { generateRandomNumber } = require('../../utils/randomizers');
 const blockEntrance = require('../../utils/blockEntrance');
 const { MessageActionRow, MessageSelectMenu, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'store';
 
@@ -26,6 +27,11 @@ module.exports.name = 'store';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];
@@ -112,6 +118,57 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	if (serverData.blockedEntrance.den === 'food den' || (profileData.rank !== 'Youngling' && serverData.blockedEntrance.den === null && generateRandomNumber(20, 0) === 0)) {
 
 		await blockEntrance(message, messageContent, characterData, serverData, 'food den');
+		return;
+	}
+
+	if (argumentsArray[0] === 'all' || argumentsArray[0] === 'everything') {
+
+		let footerText = '';
+		let maximumAmount = 0;
+
+		for (const [itemType, itemsArray] of inventoryMap) {
+
+			for (const itemName of itemsArray) {
+
+				if (profileData.inventory[itemType][itemName] > 0) {
+
+					maximumAmount = profileData.inventory[itemType][itemName];
+
+					footerText += `+${maximumAmount} ${itemName} for ${message.guild.name}\n`;
+					userInventory[itemType][itemName] -= maximumAmount;
+					serverInventory[itemType][itemName] += maximumAmount;
+				}
+			}
+		}
+
+		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+			{ uuid: userData.uuid },
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].inventory = userInventory;
+			},
+		));
+		characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+		profileData = characterData.profiles[message.guild.id];
+
+		await serverModel.findOneAndUpdate(
+			{ serverId: message.guild.id },
+			(/** @type {import('../../typedef').ServerSchema} */ s) => {
+				s.inventory = serverInventory;
+			},
+		);
+
+		await message
+			.reply({
+				content: messageContent,
+				embeds: [...embedArray, {
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					description: `*${characterData.name} wanders to the food den, ready to store away ${pronoun(characterData, 2)} findings. ${upperCasePronounAndPlural(characterData, 0, 'circle')} the food pile…*`,
+					footer: { text: footerText },
+				}],
+				failIfNotExists: false,
+			})
+			.catch((error) => { throw new Error(error); });
 		return;
 	}
 

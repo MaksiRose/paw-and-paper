@@ -11,6 +11,7 @@ const blockEntrance = require('../../utils/blockEntrance');
 const { execute } = require('../../events/messageCreate');
 const { MessageActionRow, MessageSelectMenu, MessageEmbed } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'inventory';
 module.exports.aliases = ['storage', 'i'];
@@ -26,6 +27,11 @@ module.exports.aliases = ['storage', 'i'];
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	const profileData = characterData?.profiles?.[message.guild.id];

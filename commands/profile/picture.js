@@ -18,7 +18,7 @@ module.exports.aliases = ['pic', 'pfp', 'avatar'];
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id || 'DM']];
 
 	if (await hasNoName(message, characterData)) {
 
@@ -32,7 +32,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		await profileModel.findOneAndUpdate(
 			{ uuid: userData.uuid },
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				p.characters[p.currentCharacter[message.guild.id]].avatarURL = message.author.avatarURL();
+				p.characters[p.currentCharacter[message.guild?.id || 'DM']].avatarURL = message.author.avatarURL();
 			},
 		);
 
@@ -89,7 +89,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 	userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 		{ uuid: userData.uuid },
 		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-			p.characters[p.currentCharacter[message.guild.id]].avatarURL = ImageLink;
+			p.characters[p.currentCharacter[message.guild?.id || 'DM']].avatarURL = ImageLink;
 		},
 	));
 

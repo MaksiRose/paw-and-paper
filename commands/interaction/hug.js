@@ -21,7 +21,7 @@ module.exports.aliases = ['snuggle'];
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id]];
 
 	if (message.mentions.users.size > 0 && message.mentions.users.first().id === message.author.id) {
 
@@ -132,7 +132,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				});
 
 			const partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first().id }));
-			const partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guild.id]];
+			const partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guild?.id]];
 
 			if (characterData !== undefined && partnerCharacterData !== undefined) { await addFriendshipPoints(message, userData, characterData._id, partnerUserData, partnerCharacterData._id); }
 		})

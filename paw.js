@@ -15,7 +15,9 @@ class CustomClient extends Client {
 		 * @typedef {Object} Command
 		 * @property {string} name - Command name
 		 * @property {Array<string>} aliases - Command aliases
+		 * @property {import("@discordjs/builders").SlashCommandBuilder | {name: string, type: number}} data - Command data
 		 * @property {Function} sendMessage - Command function
+		 * @property {Function} sendCommand - Command function for non-text commands
 		 */
 
 		/**
@@ -33,10 +35,15 @@ class CustomClient extends Client {
 	}
 }
 
+/* Note: Once slash commands replace message commands, DIRECT_MESSAGES intent and CHANNEL partial can be removed */
 const client = new CustomClient({
 	intents: [
 		Intents.FLAGS.GUILDS,
 		Intents.FLAGS.GUILD_MESSAGES,
+		Intents.FLAGS.DIRECT_MESSAGES,
+	],
+	partials: [
+		'CHANNEL',
 	],
 	allowedMentions: {
 		parse: ['users', 'roles'],

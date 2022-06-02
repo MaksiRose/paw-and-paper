@@ -21,7 +21,7 @@ module.exports.name = 'species';
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id || 'DM']];
 
 	if (await hasNoName(message, characterData)) {
 
@@ -30,7 +30,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 
 	userData = await startCooldown(message);
 
-	const chosenSpecies = argumentsArray.join(' ').toLowerCase();
+	let chosenSpecies = argumentsArray.join(' ').toLowerCase();
 	const speciesNameArray = [...speciesMap.keys()].sort();
 
 	const displayedSpeciesButton = new MessageButton({
@@ -49,14 +49,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		color: characterData.color,
 		author: { name: characterData.name, icon_url: characterData.avatarURL },
 		title: `What species is ${characterData.name}?`,
-		description: 'Choosing a species is only necessary for the RPG parts of the bot, and is **permanent**. If you want an earthly, extant species added that is not on the list, [use this form](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement%2Cnon-code&template=species_request.yaml&title=New+species%3A+) to suggest it. Alternatively, you can choose a species that\'s similar and use the button below to change what species is displayed to anything you want. You can change the displayed species as many times as you want.',
+		description: 'Choosing a species is only necessary for the RPG parts of the bot, and is **permanent**. If you want an earthly, extant species added that is not on the list, [use this form](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement%2Cnon-code&template=species_request.yaml&title=New+species%3A+) to suggest it. Alternatively, you can choose a species that\'s similar and use the button below to change what species is displayed to be anything you want. You can change the displayed species as many times as you want.',
 	});
 
 	const existingSpeciesEmbed = new MessageEmbed({
 		color: characterData.color,
 		author: { name: characterData.name, icon_url: characterData.avatarURL },
-		title: `${characterData.name} is a ${characterData.displayedSpecies || characterData.species}! You cannot change ${pronoun(characterData, 2)} species, but you can create another character via \`rp profile\`. Alternatively, you can use the button below to change what species is displayed to others to anything you want.`,
-		description: `Here is a list of species that you can choose when making a new character: ${[...speciesMap.keys()].sort().join(', ')}`,
+		description: `${characterData.name} is a ${characterData.displayedSpecies || characterData.species}! You cannot change ${pronoun(characterData, 2)} species, but you can create another character via \`rp profile\`. Alternatively, you can use the button below to change what species is displayed to be anything you want.`,
+		footer: { text: `Here is a list of species that you can choose when making a new character: ${[...speciesMap.keys()].sort().join(', ')}` },
 	});
 
 	let speciesPage = 0;
@@ -74,12 +74,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 
 	if (characterData.species === '' && chosenSpecies !== null && speciesMap.has(chosenSpecies)) {
 
-		await successMessage(message, chosenSpecies, characterData);
+		await successMessage();
 
 		return;
 	}
 
-	const botReply = await message
+	let botReply = await message
 		.reply({
 			embeds: (characterData.species === '') ? [newSpeciesEmbed] : [existingSpeciesEmbed],
 			components: [
@@ -90,7 +90,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		})
 		.catch((error) => { throw new Error(error); });
 
-	createCommandCollector(message.author.id, message.guild.id, botReply);
+	createCommandCollector(message.author.id, message.guild?.id || '', botReply);
 	interactionCollector();
 
 	async function interactionCollector() {
@@ -99,7 +99,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 
 		/** @type {import('discord.js').MessageComponentInteraction | null} */
 		await botReply
-			.awaitMessageComponent({ filter, time: 120_000 })
+			.awaitMessageComponent({ filter, time: 300_000 })
 			.then(async interaction => {
 
 				if (interaction.isButton() && interaction.customId === 'displayedspecies-modal') {
@@ -144,6 +144,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 						.edit({
 							components: [
 								new MessageActionRow({ components: [speciesMenu] }),
+								new MessageActionRow({ components: [displayedSpeciesButton] }),
 							],
 						})
 						.catch((error) => {
@@ -155,9 +156,18 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 
 				if (interaction.isSelectMenu() && speciesMap.has(interaction.values[0])) {
 
-					await successMessage(message, interaction.values[0], characterData);
+					chosenSpecies = interaction.values[0];
 
-					return;
+					await botReply
+						.delete()
+						.catch((error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+					await successMessage();
+
+					return await interactionCollector();
 				}
 			})
 			.catch(async () => {
@@ -172,37 +182,34 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 				return;
 			});
 	}
+
+	/**
+	 * It sends a message to the user who ran the command, and it's supposed to be a success message.
+	 */
+	async function successMessage() {
+
+		await profileModel.findOneAndUpdate(
+			{ userId: message.author.id },
+			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				p.characters[p.currentCharacter[message.guild?.id || 'DM']].species = chosenSpecies;
+			},
+		);
+
+		botReply = await message
+			.reply({
+				embeds: [new MessageEmbed({
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					description: `*A stranger carefully steps over the pack's borders. ${upperCasePronoun(characterData, 2)} face seems friendly. Curious eyes watch ${pronoun(characterData, 1)} as ${pronoun(characterData, 0)} come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n"${characterData.name}," *the ${chosenSpecies} responds. The Alpha takes a friendly step towards ${pronoun(characterData, 1)}.* "It's nice to have you here, ${characterData.name}," *they say. More and more packmates come closer to greet the newcomer.*`,
+					footer: { text: 'You are now done setting up your character for RPGing! Type "rp profile" to look at it.\nWith "rp help" you can see how else you can customize your profile, as well as your other options.\nYou can use the button below to change your displayed species.' },
+				})],
+				components: [
+					new MessageActionRow({ components: [displayedSpeciesButton] }),
+				],
+				failIfNotExists: false,
+			})
+			.catch((error) => { throw new Error(error); });
+
+		await playAdvice(message);
+	}
 };
-
-
-/**
- * It sends a message to the user who ran the command, and it's supposed to be a success message.
- * @param {import('discord.js').Message} message - The message object.
- * @param {string} chosenSpecies - The species the user chose.
- * @param {import('../../typedef').Character} characterData - {
- */
-async function successMessage(message, chosenSpecies, characterData) {
-
-	await profileModel.findOneAndUpdate(
-		{ userId: message.author.id },
-		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-			p.characters[p.currentCharacter[message.guild.id]].species = chosenSpecies;
-		},
-	);
-
-	await message
-		.reply({
-			embeds: [new MessageEmbed({
-				color: characterData.color,
-				author: { name: characterData.name, icon_url: characterData.avatarURL },
-				description: `*A stranger carefully steps over the pack's borders. ${upperCasePronoun(characterData, 2)} face seems friendly. Curious eyes watch ${pronoun(characterData, 1)} as ${pronoun(characterData, 0)} come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n"${characterData.name}," *the ${chosenSpecies} responds. The Alpha takes a friendly step towards ${pronoun(characterData, 1)}.* "It's nice to have you here, ${characterData.name}," *they say. More and more packmates come closer to greet the newcomer.*`,
-				footer: { text: 'You are now done setting up your character for RPGing! Type "rp profile" to look at it. With "rp help" you can see how else you can customize your profile, as well as your other options.' },
-			})],
-			failIfNotExists: false,
-		})
-		.catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-		});
-
-	await playAdvice(message);
-}

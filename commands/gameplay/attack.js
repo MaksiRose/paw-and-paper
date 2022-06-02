@@ -13,6 +13,7 @@ const { restAdvice, drinkAdvice, eatAdvice, coloredButtonsAdvice } = require('..
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { serverActiveUsers } = require('../../events/messageCreate');
+const sendNoDM = require('../../utils/sendNoDM');
 const serverMap = new Map();
 
 module.exports.name = 'attack';
@@ -29,8 +30,13 @@ module.exports.name = 'attack';
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-	const profileData = characterData?.profiles?.[message.guild.id];
+	if (await sendNoDM(message)) {
+
+		return;
+	}
+
+	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	let profileData = characterData?.profiles?.[message.guild.id];
 
 	if (await hasNotCompletedAccount(message, characterData)) {
 
@@ -224,6 +230,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].thirst -= thirstPoints;
 			},
 		));
+		characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+		profileData = characterData?.profiles?.[message.guild.id];
 
 		let embedFooterStatsText = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})${hungerPoints > 0 ? `\n-${hungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})` : ''}${thirstPoints > 0 ? `\n-${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})` : ''}`;
 
@@ -235,7 +243,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			winPoints = 0;
 		}
 
-		winPoints = pullFromWeightedTable({ 0: 8 - winPoints, 1: 8, 2: winPoints });
+		winPoints = pullFromWeightedTable({ 0: 5 - winPoints, 1: 5, 2: winPoints });
 
 		if (winPoints == 2) {
 
@@ -277,25 +285,21 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					},
 				);
 
-				switch (pullFromWeightedTable({ 0: 1, 1: 1 })) {
+				if (pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
 
-					case 0:
+					userInjuryObject.wounds += 1;
 
-						userInjuryObject.wounds += 1;
+					embed.description = `*The battle between the human and ${characterData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${characterData.displayedSpecies || characterData.species} tries to jump at them, but the human manages to dodge. Unfortunately, a rock is directly in ${characterData.name}'s jump line. A sharp pain runs through ${pronoun(characterData, 2)} hip. A red spot slowly spreads where ${pronoun(characterData, 0)} hit the rock. Meanwhile, the human runs into the food den.*`;
 
-						embed.description = `*The battle between the human and ${characterData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${characterData.displayedSpecies || characterData.species} tries to jump at them, but the human manages to dodge. Unfortunately, a rock is directly in ${characterData.name}'s jump line. A sharp pain runs through ${pronoun(characterData, 2)} hip. A red spot slowly spreads where ${pronoun(characterData, 0)} hit the rock. Meanwhile, the human runs into the food den.*`;
+					embedFooterStatsText = `-${healthPoints} HP (from wound)\n${embedFooterStatsText}`;
+				}
+				else {
 
-						embedFooterStatsText = `-${healthPoints} HP (from wound)\n${embedFooterStatsText}`;
+					userInjuryObject.sprains += 1;
 
-						break;
+					embed.description = `*The battle between the human and ${characterData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${characterData.displayedSpecies || characterData.species} tries to jump at them, but the human manages to dodge. ${characterData.name} is not prepared for the fall. A sharp pain runs through ${pronoun(characterData, 2)} arm as it bends in the fall. Meanwhile, the human runs into the food den.*`;
 
-					default:
-
-						userInjuryObject.sprains += 1;
-
-						embed.description = `*The battle between the human and ${characterData.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${characterData.displayedSpecies || characterData.species} tries to jump at them, but the human manages to dodge. ${characterData.name} is not prepared for the fall. A sharp pain runs through ${pronoun(characterData, 2)} arm as it bends in the fall. Meanwhile, the human runs into the food den.*`;
-
-						embedFooterStatsText = `-${healthPoints} HP (from sprain)\n${embedFooterStatsText}`;
+					embedFooterStatsText = `-${healthPoints} HP (from sprain)\n${embedFooterStatsText}`;
 				}
 			}
 

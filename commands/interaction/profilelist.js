@@ -3,6 +3,7 @@ const profileModel = require('../../models/profileModel');
 const { default_color } = require('../../config.json');
 const { MessageActionRow, MessageSelectMenu, MessageButton, MessageEmbed } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
+const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'profilelist';
 
@@ -13,6 +14,11 @@ module.exports.name = 'profilelist';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message) => {
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	const profilelistRankComponent = new MessageActionRow().addComponents(
 		[ new MessageSelectMenu({

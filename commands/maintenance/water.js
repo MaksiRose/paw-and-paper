@@ -8,8 +8,9 @@ const { pullFromWeightedTable, generateRandomNumber } = require('../../utils/ran
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { pronounAndPlural } = require('../../utils/getPronouns');
 const { MessageEmbed, MessageActionRow, MessageButton } = require('discord.js');
+const sendNoDM = require('../../utils/sendNoDM');
 
-const oneMinute = 60000;
+const oneMinute = 60_000;
 const thirtyMinutes = oneMinute * 30;
 const oneHour = thirtyMinutes * 2;
 const threeHours = oneHour * 3;
@@ -29,6 +30,13 @@ module.exports.name = 'water';
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
+
+	const currentTimestamp = message.createdTimestamp;
+
+	if (await sendNoDM(message)) {
+
+		return;
+	}
 
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];
@@ -65,8 +73,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	}
 
 	const saplingObject = { ...profileData.sapling };
-	const timeDifference = Date.now() - saplingObject.nextWaterTimestamp;
-	const timeDifferenceInMinutes = timeDifference / oneMinute;
+	// timeDifference is positive if nextWaterTimestamp is in the past, and negative if nextWaterTimestamp is in the future
+	const timeDifference = Math.abs(currentTimestamp - saplingObject.nextWaterTimestamp);
+	const timeDifferenceInMinutes = Math.round(timeDifference / oneMinute);
 
 	let experiencePoints = 0;
 	let healthPoints = 0;
@@ -78,46 +87,57 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		footer: { text: null },
 	});
 
-	if (timeDifference >= -thirtyMinutes && timeDifference <= thirtyMinutes) {
+	/* This is the first of three `if` statements that check the time difference between the current
+	timestamp and the timestamp of the perfect watering time. If the time difference is less than or equal to
+	30 minutes, the sapling's health is increased by a number between 1 and 4, the number of watering
+	cycles is increased by 1, the experience points are set to the number of watering cycles, the
+	health points are set to a number between 1 and 6, and the embed's description and footer are set. */
+	if (timeDifference <= thirtyMinutes) {
 
 		const saplingHealthPoints = 4 - Math.round(timeDifferenceInMinutes / 10);
 		saplingObject.health += saplingHealthPoints;
 		saplingObject.waterCycles += 1;
 
-		experiencePoints = saplingObject.waterCycles * 2;
-		healthPoints = pullFromWeightedTable({ 0: 6, 1: 5, 2: 4, 3: 3, 4: 2, 5: 1 }) + generateRandomNumber(Math.round(saplingObject.waterCycles / 4), 0);
+		experiencePoints = saplingObject.waterCycles;
+		healthPoints = pullFromWeightedTable({ 1: 5, 2: 4, 3: 3, 4: 2, 5: 1 }) + generateRandomNumber(Math.round(saplingObject.waterCycles / 4), 0);
 		if (profileData.health + healthPoints > profileData.maxHealth) { healthPoints = profileData.maxHealth - profileData.health; }
 
 		embed.description = `*${characterData.name} waters the seedling, and it look it's at the perfect time. The ginkgo tree looks healthy, the leaves have a strong green color, and a pleasant fragrance emanates from them. The ${characterData.displayedSpecies || characterData.species} feels warm and safe from the scent.*`,
 		embed.footer.text = `+${experiencePoints} XP (${profileData.experience + experiencePoints}/${profileData.levels * 50})${healthPoints > 0 ? `\n+${healthPoints} health (${profileData.health + healthPoints}/${profileData.maxEnergy})` : ''}\n\n+${saplingHealthPoints} health for ginkgo sapling\nCome back to water it in 24 hours.`;
 	}
-	else if (timeDifference >= -threeHours && timeDifference <= threeHours) {
+	/* This is the second of three `if` statements that check the time difference between the current
+	timestamp and the timestamp of the perfect watering time. If the time difference is less than or
+	equal to 3 hours, the number of watering cycles is increased by 1, the experience points are set
+	to the number of watering cycles, and the embed's description and footer are set. */
+	else if (timeDifference <= threeHours) {
 
 		saplingObject.waterCycles += 1;
-		experiencePoints = saplingObject.waterCycles * 2;
+		experiencePoints = saplingObject.waterCycles;
 
 		embed.description = `*${characterData.name} waters the seedling, and it look like the sapling needs it. Although the ginkgo tree looks healthy, with leaves of beautiful green color and a light scent, the soil seems to be already quite dry.*`;
 		embed.footer.text = `+${experiencePoints} XP (${profileData.experience + experiencePoints}/${profileData.levels * 50})\n\nCome back to water the ginkgo sapling in 24 hours.`;
 	}
-	else if (timeDifference < -threeHours) {
-
-		const saplingHealthPoints = Math.floor((timeDifferenceInMinutes + 180) / 60);
-		saplingObject.health += saplingHealthPoints;
-
-		embed.description = `*The soil is already soggy when ${characterData.name} adds more water to it. The leaves are yellow-brown, the stem is muddy and has a slight mold. Next time the ${characterData.displayedSpecies || characterData.species} should wait a little with the watering.*`;
-		embed.footer.text = `${saplingHealthPoints} health for ginkgo tree\nCome back to water it in 24 hours.`;
-	}
+	/* Checking if the sapling is overdue for watering, and if it is, it is calculating how much health it
+	has lost. */
 	else {
 
-		const overdueHours = Math.ceil(timeDifference / oneHour);
-		const saplingHealthPoints = overdueHours + (Math.floor(saplingObject.waterCycles / 7) * overdueHours);
-		saplingObject.health -= saplingObject.health - saplingHealthPoints > 0 ? saplingHealthPoints : saplingHealthPoints - saplingHealthPoints > -10 ? saplingObject.health - 1 : saplingObject.health;
+		const weeksAlive = Math.floor(saplingObject.waterCycles / 7);
+		const overdueHours = Math.ceil(timeDifference / oneHour) - threeHours;
+		const saplingHealthPoints = overdueHours + (weeksAlive * overdueHours);
+		saplingObject.health -= saplingObject.health - saplingHealthPoints > 0 ? saplingHealthPoints : saplingObject.health - saplingHealthPoints > -weeksAlive ? saplingObject.health - 1 : saplingObject.health;
 
-		embed.description = `*${characterData.name} decides to see if the ginkgo tree needs watering, and sure enough: the leaves are drooping, some have lost color, and many of them fell on the ground. It is about time that the poor tree gets some water.*`,
+		if (currentTimestamp < saplingObject.nextWaterTimestamp) {
+
+			embed.description = `*The soil is already soggy when ${characterData.name} adds more water to it. The leaves are yellow-brown, the stem is muddy and has a slight mold. Next time the ${characterData.displayedSpecies || characterData.species} should wait a little with the watering.*`;
+		}
+		else {
+
+			embed.description = `*${characterData.name} decides to see if the ginkgo tree needs watering, and sure enough: the leaves are drooping, some have lost color, and many of them fell on the ground. It is about time that the poor tree gets some water.*`;
+		}
 		embed.footer.text = `-${saplingHealthPoints} health for ginkgo tree\nCome back to water it in 24 hours.`;
 	}
 
-	saplingObject.nextWaterTimestamp = Date.now() + twentyFourHours;
+	saplingObject.nextWaterTimestamp = currentTimestamp + twentyFourHours;
 	saplingObject.lastMessageChannelId = message.channel.id;
 
 	userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
