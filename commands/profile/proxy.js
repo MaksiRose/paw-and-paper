@@ -195,7 +195,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					botReply = await botReply
 						.edit({
-							components: [...botReply.components, new MessageActionRow({
+							components: [botReply.components[0], new MessageActionRow({
 								components: [disableAutoSelectMenu],
 							})],
 						})
@@ -207,7 +207,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					botReply = await botReply
 						.edit({
-							components: [...botReply.components, new MessageActionRow({
+							components: [botReply.components[0], new MessageActionRow({
 								components: [disableAllSelectMenu],
 							})],
 						})
@@ -263,15 +263,16 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					botReply = await botReply
 						.edit({
-							components: [new MessageActionRow({
+							components: [...(interaction.customId.includes('disable') ? [botReply.components[0]] : []), new MessageActionRow({
 								components: [component],
 							})],
 						})
 						.catch((error) => { throw new Error(error); });
 				}
 			})
-			.catch(async () => {
+			.catch(async (err) => {
 
+				console.error(err);
 				await botReply
 					.edit({
 						components: disableAllComponents(botReply?.components || []),
