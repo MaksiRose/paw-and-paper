@@ -309,8 +309,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					failIfNotExists: false,
 				}).catch((error) => { throw new Error(error); });
 
-				createCommandCollector(message.author.id, message.guild?.id || '', botReply);
-				interactionCollector();
+				if (botReply) {
+
+					createCommandCollector(message.author.id, message.guild?.id || '', botReply);
+					interactionCollector();
+				}
 				return;
 			}
 
@@ -335,8 +338,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						failIfNotExists: false,
 					}).catch((error) => { throw new Error(error); });
 
-					createCommandCollector(message.author.id, message.guild?.id || '', botReply);
-					interactionCollector();
+					if (botReply) {
+
+						createCommandCollector(message.author.id, message.guild?.id || '', botReply);
+						interactionCollector();
+					}
 					return;
 				}
 			}
@@ -377,8 +383,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				failIfNotExists: false,
 			}).catch((error) => { throw new Error(error); });
 
-			createCommandCollector(message.author.id, message.guild?.id || '', botReply);
-			interactionCollector();
+			if (botReply) {
+
+				createCommandCollector(message.author.id, message.guild?.id || '', botReply);
+				interactionCollector();
+			}
 		}
 	}
 
@@ -417,8 +426,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 
-			createCommandCollector(message.author.id, message.guild.id, botReply);
-			interactionCollector();
+			if (botReply) {
+
+				createCommandCollector(message.author.id, message.guild?.id || '', botReply);
+				interactionCollector();
+			}
 		}
 		else {
 
@@ -434,8 +446,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				failIfNotExists: false,
 			}).catch((error) => { throw new Error(error); });
 
-			createCommandCollector(message.author.id, message.guild.id, botReply);
-			interactionCollector();
+			if (botReply) {
+
+				createCommandCollector(message.author.id, message.guild?.id || '', botReply);
+				interactionCollector();
+			}
 		}
 	}
 
@@ -486,8 +501,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 
-			createCommandCollector(message.author.id, message.guild.id, botReply);
-			interactionCollector();
+			if (botReply) {
+
+				createCommandCollector(message.author.id, message.guild?.id || '', botReply);
+				interactionCollector();
+			}
 		}
 		else {
 
@@ -513,8 +531,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				failIfNotExists: false,
 			}).catch((error) => { throw new Error(error); });
 
-			createCommandCollector(message.author.id, message.guild.id, botReply);
-			interactionCollector();
+			if (botReply) {
+
+				createCommandCollector(message.author.id, message.guild?.id || '', botReply);
+				interactionCollector();
+			}
 		}
 	}
 };
