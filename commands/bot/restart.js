@@ -10,7 +10,7 @@ module.exports.name = 'restart';
  */
 module.exports.sendMessage = async (client, message) => {
 
-	if (message.author.id !== client.application.owner.id && /** @type {import('discord.js').Team} */ (client.application.owner).members?.has(message.author.id) === false) {
+	if (message.author.id !== client.application.owner.id) {
 
 		return;
 	}
