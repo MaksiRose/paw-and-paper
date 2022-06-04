@@ -453,6 +453,10 @@ const event = {
 						.fetch(config.elliott)
 						.catch(() => { return null; });
 
+					const hazenith = await client.users
+						.fetch(config.hazenith)
+						.catch(() => { return null; });
+
 					await interaction.message
 						.edit({
 							embeds: [{
@@ -466,7 +470,7 @@ const event = {
 									{ name: '**rp allowvisits [#channel/off]**', value: '__Server admins only.__ Allow or disallow visits between your and other packs.' },
 									{ name: '**rp getupdates [#channel]**', value: '__Server admins only.__ Specify a channel in which updates, new features etc. should be posted.' },
 									{ name: '**rp ticket [text]**', value: 'Report a bug, give feedback, suggest a feature!' },
-									{ name: '\n**__CREDITS:__**', value: `This bot was made with love by ${maksi?.tag}. Special thanks goes out to ${ezra?.tag}, ${ren?.tag} and ${elliott.tag}, who did a lot of the custom bot responses, and ${jags.tag} who did the profile picture. Thank you also to everyone who tested the bot and gave feedback.\nThis bot was originally created for a Discord server called [Rushing River Pack](https://disboard.org/server/854522091328110595). If you are otherkin, therian, or supporter of those, you are welcome to join.` },
+									{ name: '\n**__CREDITS:__**', value: `This bot was made with love by ${maksi?.tag}. Special thanks goes out to ${ezra?.tag}, ${ren?.tag}, ${hazenith.tag} and ${elliott.tag}, who did a lot of the custom bot responses and helped come up with ideas and improvements, and ${jags.tag} who did the profile picture. Thank you also to everyone who tested the bot and gave feedback.\nThis bot was originally created for a Discord server called [Rushing River Pack](https://disboard.org/server/854522091328110595). If you are therian, otherkin, or supporter of those, you are welcome to join.` },
 									{ name: '\n**__OTHER:__**', value: `If you want to support me, you can donate [here](https://streamlabs.com/maksirose/tip)! :)\nYou can find the GitHub repository for this project [here](https://github.com/MaksiRose/paw-and-paper).\nBy using this bot, you agree to its [Terms and Service](https://github.com/MaksiRose/paw-and-paper/blob/stable/Terms%20of%20Service.md) and [Privacy Policy](https://github.com/MaksiRose/paw-and-paper/blob/stable/Privacy%20Policy.md).\nThe bot is currently running on version ${version}.` },
 								],
 								footer: { text: 'ℹ️ Select a command from the list below to view more information about it.' },

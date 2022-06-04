@@ -195,7 +195,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					botReply = await botReply
 						.edit({
-							components: [...botReply.components, new MessageActionRow({
+							components: [botReply.components[0], new MessageActionRow({
 								components: [disableAutoSelectMenu],
 							})],
 						})
@@ -207,7 +207,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					botReply = await botReply
 						.edit({
-							components: [...botReply.components, new MessageActionRow({
+							components: [botReply.components[0], new MessageActionRow({
 								components: [disableAllSelectMenu],
 							})],
 						})
@@ -227,8 +227,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 						interactionCollector();
 					}
-
-					if (!interaction.values[0].includes('page') && interaction.customId === 'proxy-always-options') {
+					else if (!interaction.values[0].includes('page') && interaction.customId === 'proxy-always-options') {
 
 						const channelId = interaction.values[0].replace('proxy-always_', '');
 
@@ -237,8 +236,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 						await alwaysProxy();
 					}
-
-					if (!interaction.values[0].includes('page') && interaction.customId === 'proxy-disableall-options') {
+					else if (!interaction.values[0].includes('page') && interaction.customId === 'proxy-disableall-options') {
 
 						const channelId = interaction.values[0].replace('proxy-disableall_', '');
 						argumentsArray[0] = 'all';
@@ -248,8 +246,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 						await disableProxy();
 					}
-
-					if (!interaction.values[0].includes('page') && interaction.customId === 'proxy-disableauto-options') {
+					else if (!interaction.values[0].includes('page') && interaction.customId === 'proxy-disableauto-options') {
 
 						const channelId = interaction.values[0].replace('proxy-disableauto_', '');
 						argumentsArray[0] = 'auto';
@@ -266,15 +263,16 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					botReply = await botReply
 						.edit({
-							components: [new MessageActionRow({
+							components: [...(interaction.customId.includes('disable') ? [botReply.components[0]] : []), new MessageActionRow({
 								components: [component],
 							})],
 						})
 						.catch((error) => { throw new Error(error); });
 				}
 			})
-			.catch(async () => {
+			.catch(async (err) => {
 
+				console.error(err);
 				await botReply
 					.edit({
 						components: disableAllComponents(botReply?.components || []),
@@ -311,8 +309,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					failIfNotExists: false,
 				}).catch((error) => { throw new Error(error); });
 
-				createCommandCollector(message.author.id, message.guild?.id || '', botReply);
-				interactionCollector();
+				if (botReply) {
+
+					createCommandCollector(message.author.id, message.guild?.id || '', botReply);
+					interactionCollector();
+				}
 				return;
 			}
 
@@ -337,8 +338,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						failIfNotExists: false,
 					}).catch((error) => { throw new Error(error); });
 
-					createCommandCollector(message.author.id, message.guild?.id || '', botReply);
-					interactionCollector();
+					if (botReply) {
+
+						createCommandCollector(message.author.id, message.guild?.id || '', botReply);
+						interactionCollector();
+					}
 					return;
 				}
 			}
@@ -379,8 +383,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				failIfNotExists: false,
 			}).catch((error) => { throw new Error(error); });
 
-			createCommandCollector(message.author.id, message.guild?.id || '', botReply);
-			interactionCollector();
+			if (botReply) {
+
+				createCommandCollector(message.author.id, message.guild?.id || '', botReply);
+				interactionCollector();
+			}
 		}
 	}
 
@@ -419,8 +426,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 
-			createCommandCollector(message.author.id, message.guild.id, botReply);
-			interactionCollector();
+			if (botReply) {
+
+				createCommandCollector(message.author.id, message.guild?.id || '', botReply);
+				interactionCollector();
+			}
 		}
 		else {
 
@@ -436,8 +446,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				failIfNotExists: false,
 			}).catch((error) => { throw new Error(error); });
 
-			createCommandCollector(message.author.id, message.guild.id, botReply);
-			interactionCollector();
+			if (botReply) {
+
+				createCommandCollector(message.author.id, message.guild?.id || '', botReply);
+				interactionCollector();
+			}
 		}
 	}
 
@@ -488,8 +501,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 
-			createCommandCollector(message.author.id, message.guild.id, botReply);
-			interactionCollector();
+			if (botReply) {
+
+				createCommandCollector(message.author.id, message.guild?.id || '', botReply);
+				interactionCollector();
+			}
 		}
 		else {
 
@@ -515,8 +531,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				failIfNotExists: false,
 			}).catch((error) => { throw new Error(error); });
 
-			createCommandCollector(message.author.id, message.guild.id, botReply);
-			interactionCollector();
+			if (botReply) {
+
+				createCommandCollector(message.author.id, message.guild?.id || '', botReply);
+				interactionCollector();
+			}
 		}
 	}
 };

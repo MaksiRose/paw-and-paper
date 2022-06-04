@@ -329,7 +329,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 								embeds: [{
 									color: characterData.color,
 									author: { name: characterData.name, icon_url: characterData.avatarURL },
-									description: '✅'.repeat(choosingEmoji - 1) + '❌\n\n' + `*${characterData.name} makes every effort to take full advantage of the grotto to heal ${pronoun(characterData, 2)} own injuries. But ${pronounAndPlural(characterData, 0, 'just doesn\'t', 'just don\'t')} seem to get better. The ${characterData.displayedSpecies || characterData.species} may has to try again...*`,
+									description: '✅'.repeat(choosingEmoji - 1) + '❌\n\n' + `*${characterData.name} makes every effort to take full advantage of the grotto to heal ${pronoun(characterData, 2)} own injuries. But ${pronounAndPlural(characterData, 0, 'just doesn\'t', 'just don\'t')} seem to get better. The ${characterData.displayedSpecies || characterData.species} may have to try again...*`,
 									footer: { text: embedFooterStatsText },
 								}],
 								components: disableAllComponents(componentArray),

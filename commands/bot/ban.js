@@ -1,4 +1,5 @@
 // @ts-check
+const { User } = require('discord.js');
 const { readFileSync, writeFileSync } = require('fs');
 const profileModel = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
@@ -14,7 +15,9 @@ module.exports.name = 'ban';
  */
 module.exports.sendMessage = async (client, message, argumentsArray) => {
 
-	if (message.author.id !== client.application.owner.id && /** @type {import('discord.js').Team} */ (client.application.owner).members?.has(message.author.id) === false) {
+	await client.application.fetch();
+
+	if ((client.application.owner instanceof User) ? message.author.id !== client.application.owner.id : !client.application.owner.members.has(message.author.id)) {
 
 		return;
 	}

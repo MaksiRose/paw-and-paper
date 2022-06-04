@@ -339,7 +339,7 @@ function playTicTacToe(serverData, userData, partnerUserData, message, botReply,
 					}
 				}
 
-				await executeWin(componentArray, message, userData, serverData, partnerUserData, otherUserData, currentUserData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, embedArray, botReply, messageContent);
+				await executeWin(componentArray, message, serverData, userData, partnerUserData, otherUserData, currentUserData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, embedArray, botReply, messageContent);
 
 				return;
 			}
@@ -354,7 +354,7 @@ function playTicTacToe(serverData, userData, partnerUserData, message, botReply,
 					}
 				}
 
-				await executeDraw(componentArray, message, userData, serverData, partnerUserData, embedArray, botReply, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
+				await executeDraw(componentArray, message, serverData, userData, partnerUserData, embedArray, botReply, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
 
 				return;
 			}
@@ -625,14 +625,14 @@ function playConnectFour(serverData, userData, partnerUserData, message, botRepl
 
 			if (isWin(field, row, column, true) === true) {
 
-				await executeWin(null, message, userData, serverData, partnerUserData, otherUserData, currentUserData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, [...embedArray, { color: characterData.color, description: field.map(r => r.join('')).join('\n') }], botReply, messageContent);
+				await executeWin(null, message, serverData, userData, partnerUserData, otherUserData, currentUserData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, [...embedArray, { color: characterData.color, description: field.map(r => r.join('')).join('\n') }], botReply, messageContent);
 
 				return;
 			}
 
 			if (isDraw(isPartner) === true) {
 
-				await executeDraw(null, message, userData, serverData, partnerUserData, [...embedArray, { color: characterData.color, description: field.map(r => r.join('')).join('\n') }], botReply, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
+				await executeDraw(null, message, serverData, userData, partnerUserData, [...embedArray, { color: characterData.color, description: field.map(r => r.join('')).join('\n') }], botReply, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
 
 				return;
 			}
@@ -828,8 +828,8 @@ async function decreaseStats(message, userData, profileData, partnerUserData, pa
 			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hasCooldown = false;
 		},
 	));
-	const partnerCharacterData = userData.characters[userData.currentCharacter[message.guild.id]];
-	partnerProfileData = characterData.profiles[message.guild.id];
+	const partnerCharacterData = partnerUserData.characters[partnerUserData.currentCharacter[message.guild.id]];
+	partnerProfileData = partnerCharacterData.profiles[message.guild.id];
 
 	embedFooterStatsTextPlayer2 = `-${energyPointsPlayer2} energy (${partnerProfileData.energy}/${partnerProfileData.maxEnergy}) for ${partnerCharacterData.name}`;
 
@@ -883,8 +883,8 @@ async function checkHealthAndLevel(message, botReply, userData, serverData, part
  *
  * @param {null | Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} componentArray
  * @param {import('discord.js').Message} message
- * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ProfileSchema} partnerUserData
  * @param {import('../../typedef').ProfileSchema} otherUserData
  * @param {import('../../typedef').ProfileSchema} currentUserData
@@ -894,7 +894,7 @@ async function checkHealthAndLevel(message, botReply, userData, serverData, part
  * @param {import('discord.js').Message} botReply
  * @param {string} messageContent
  */
-async function executeWin(componentArray, message, userData, serverData, partnerUserData, otherUserData, currentUserData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, embedArray, botReply, messageContent) {
+async function executeWin(componentArray, message, serverData, userData, partnerUserData, otherUserData, currentUserData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, embedArray, botReply, messageContent) {
 
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	const profileData = characterData?.profiles?.[message.guild.id];
@@ -1011,8 +1011,8 @@ async function executeWin(componentArray, message, userData, serverData, partner
  *
  * @param {null | Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} componentArray
  * @param {import('discord.js').Message} message
- * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
+ * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ProfileSchema} partnerUserData
  * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
  * @param {import('discord.js').Message} botReply
@@ -1020,7 +1020,7 @@ async function executeWin(componentArray, message, userData, serverData, partner
  * @param {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} userInjuryObjectPlayer2
  * @param {string} messageContent
  */
-async function executeDraw(componentArray, message, userData, serverData, partnerUserData, embedArray, botReply, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
+async function executeDraw(componentArray, message, serverData, userData, partnerUserData, embedArray, botReply, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
 
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	const profileData = characterData?.profiles?.[message.guild.id];
