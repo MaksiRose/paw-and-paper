@@ -207,10 +207,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
  */
 module.exports.sendReminder = (client, userData, characterData, profileData) => {
 
+	console.log(characterData.name);
+
 	module.exports.stopReminder(characterData._id, userData.userId, profileData.serverId);
 
 	if (typeof profileData.sapling.lastMessageChannelId !== 'string') {
 
+		console.log('1');
 		module.exports.removeChannel(userData, profileData.serverId);
 	}
 
@@ -232,7 +235,6 @@ module.exports.sendReminder = (client, userData, characterData, profileData) => 
 			const channel = await client.channels
 				.fetch(profileData.sapling.lastMessageChannelId)
 				.catch((error) => {
-
 					if (error.httpStatus === '403' || error.httpStatus === '404') {
 						module.exports.removeChannel(userData, profileData.serverId);
 						throw new Error('Missing Access: Cannot fetch this channel');
@@ -245,14 +247,15 @@ module.exports.sendReminder = (client, userData, characterData, profileData) => 
 				return;
 			}
 
-			const members = await channel.guild.members
-				.fetch()
-				.catch((error) => { throw new Error(error); });
-
-			if (!members.has(userData.userId)) {
-
-				return;
-			}
+			await channel.guild.members
+				.fetch(userData.userId)
+				.catch((error) => {
+					if (error.httpStatus === '403' || error.httpStatus === '404') {
+						module.exports.removeChannel(userData, profileData.serverId);
+						throw new Error('Missing Access: Cannot find this user');
+					}
+					throw new Error(error);
+				});
 
 			await channel
 				.send({
