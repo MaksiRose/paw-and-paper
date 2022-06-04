@@ -371,7 +371,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						chosenUserData = (/** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 							{ uuid: chosenUserData.uuid },
 							(/** @type {import('../../typedef').ProfileSchema} */ cP) => {
-								cP.characters[cP.currentCharacter[message.guild.id]].profiles[message.guild.id].thirst += chosenUserThirstPoints;
+								cP.characters[chosenCharacterData._id].profiles[message.guild.id].thirst += chosenUserThirstPoints;
 							},
 						)));
 						chosenCharacterData = chosenUserData.characters[chosenCharacterData._id];
