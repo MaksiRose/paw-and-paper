@@ -118,7 +118,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					species: '',
 					displayedSpecies: '',
 					description: '',
-					avatarURL: message.author.avatarURL(),
+					avatarURL: 'https://cdn.discordapp.com/embed/avatars/1.png',
 					pronounSets: [['they', 'them', 'their', 'theirs', 'themselves', 'plural']],
 					proxy: {
 						startsWith: '',

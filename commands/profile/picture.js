@@ -27,31 +27,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 
 	userData = await startCooldown(message);
 
-	if (!argumentsArray.length && message.attachments.size <= 0) {
-
-		await profileModel.findOneAndUpdate(
-			{ uuid: userData.uuid },
-			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				p.characters[p.currentCharacter[message.guild?.id || 'DM']].avatarURL = message.author.avatarURL();
-			},
-		);
-
-		await message
-			.reply({
-				embeds: [ new MessageEmbed({
-					color: characterData.color,
-					author: { name: characterData.name, icon_url: message.author.avatarURL() },
-					title: `The profile picture for ${characterData.name} is now the accounts profile picture!`,
-					footer: { text: 'If you want to set a new picture, just send it together in one message with this command!' },
-				})],
-				failIfNotExists: false,
-			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
-		return;
-	}
-
 	if (message.attachments.size <= 0) {
 
 		await message
