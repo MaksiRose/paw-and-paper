@@ -1,4 +1,5 @@
 // @ts-check
+const { User } = require('discord.js');
 
 module.exports.name = 'restart';
 
@@ -10,7 +11,9 @@ module.exports.name = 'restart';
  */
 module.exports.sendMessage = async (client, message) => {
 
-	if (message.author.id !== client.application.owner.id) {
+	await client.application.fetch();
+
+	if ((client.application.owner instanceof User) ? message.author.id !== client.application.owner.id : !client.application.owner.members.has(message.author.id)) {
 
 		return;
 	}
