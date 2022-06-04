@@ -578,19 +578,19 @@ function getSelectMenus(allChannels, userData, message, serverData, page) {
 
 	if (alwaysSelectMenu.options.length > 25) {
 
-		alwaysSelectMenu.options = alwaysSelectMenu.options.splice(page * 24, (page + 1) * 24);
+		alwaysSelectMenu.options = alwaysSelectMenu.options.splice(page * 24, 24);
 		alwaysSelectMenu.addOptions({ label: 'Show more channels', value: 'proxy-always_page', description: `You are currently on page ${page + 1}`, emoji: '📋' });
 	}
 
 	if (disableAllSelectMenu.options.length > 25) {
 
-		disableAllSelectMenu.options = disableAllSelectMenu.options.splice(page * 24, (page + 1) * 24);
+		disableAllSelectMenu.options = disableAllSelectMenu.options.splice(page * 24, 24);
 		disableAllSelectMenu.addOptions({ label: 'Show more channels', value: 'proxy-disableall_page', description: `You are currently on page ${page + 1}`, emoji: '📋' });
 	}
 
 	if (disableAutoSelectMenu.options.length > 25) {
 
-		disableAutoSelectMenu.options = disableAutoSelectMenu.options.splice(page * 24, (page + 1) * 24);
+		disableAutoSelectMenu.options = disableAutoSelectMenu.options.splice(page * 24, 24);
 		disableAutoSelectMenu.addOptions({ label: 'Show more channels', value: 'proxy-disableauto_page', description: `You are currently on page ${page + 1}`, emoji: '📋' });
 	}
 
