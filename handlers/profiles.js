@@ -22,7 +22,7 @@ module.exports.execute = async (client) => {
 
 				for (const profile of Object.values(character.profiles)) {
 
-					sendReminder(client, userData, character, profile);
+					if (typeof profile.sapling.lastMessageChannelId === 'string') { sendReminder(client, userData, character, profile); }
 				}
 			}
 		}

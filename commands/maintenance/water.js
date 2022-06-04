@@ -209,11 +209,21 @@ module.exports.sendReminder = (client, userData, characterData, profileData) => 
 
 	module.exports.stopReminder(characterData._id, userData.userId, profileData.serverId);
 
+	if (typeof profileData.sapling.lastMessageChannelId !== 'string') {
+
+		module.exports.removeChannel(userData, profileData.serverId);
+	}
+
 	userMap.set(characterData._id + userData.userId + profileData.serverId, setTimeout(async () => {
 
 		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: userData.uuid }));
 		characterData = userData.characters[characterData._id];
 		profileData = characterData?.profiles?.[profileData.serverId];
+
+		if (typeof profileData.sapling.lastMessageChannelId !== 'string') {
+
+			module.exports.removeChannel(userData, profileData.serverId);
+		}
 
 		const isInactive = (userData !== null && userData.currentCharacter[profileData.serverId] !== characterData._id);
 
@@ -221,9 +231,25 @@ module.exports.sendReminder = (client, userData, characterData, profileData) => 
 
 			const channel = await client.channels
 				.fetch(profileData.sapling.lastMessageChannelId)
+				.catch((error) => {
+
+					if (error.httpStatus === '403' || error.httpStatus === '404') {
+						module.exports.removeChannel(userData, profileData.serverId);
+						throw new Error('Missing Access: Cannot fetch this channel');
+					}
+					throw new Error(error);
+				});
+
+			if (!channel.isText() || channel.type === 'DM') {
+
+				return;
+			}
+
+			const members = await channel.guild.members
+				.fetch()
 				.catch((error) => { throw new Error(error); });
 
-			if (!channel.isText()) {
+			if (!members.has(userData.userId)) {
 
 				return;
 			}
@@ -239,7 +265,11 @@ module.exports.sendReminder = (client, userData, characterData, profileData) => 
 					}],
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
+					if (error.httpStatus === '403' || error.httpStatus === '404') {
+						module.exports.removeChannel(userData, profileData.serverId);
+						throw new Error('Missing Access: Cannot send to this channel');
+					}
+					else { throw new Error(error); }
 				});
 		}
 	}, profileData.sapling.nextWaterTimestamp - Date.now()));
@@ -253,8 +283,20 @@ module.exports.sendReminder = (client, userData, characterData, profileData) => 
  */
 module.exports.stopReminder = (_id, userId, serverId) => {
 
-	if (userMap.has(_id + userId + serverId)) {
+	if (userMap.has(_id + userId + serverId)) { clearTimeout(userMap.get(_id + userId + serverId)); }
+};
 
-		clearTimeout(userMap.get(_id + userId + serverId));
-	}
+/**
+ *
+ * @param {import('../../typedef').ProfileSchema} userData
+ * @param {string} serverId
+ */
+module.exports.removeChannel = async (userData, serverId) => {
+
+	await profileModel.findOneAndUpdate(
+		{ uuid: userData.uuid },
+		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+			p.characters[p.currentCharacter[serverId]].profiles[serverId].sapling.lastMessageChannelId = null;
+		},
+	);
 };
