@@ -77,8 +77,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	const timeDifference = Math.abs(currentTimestamp - saplingObject.nextWaterTimestamp);
 	const timeDifferenceInMinutes = Math.round(timeDifference / oneMinute);
 
-	console.log(timeDifference, timeDifferenceInMinutes);
-
 	let experiencePoints = 0;
 	let healthPoints = 0;
 
@@ -207,13 +205,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
  */
 module.exports.sendReminder = (client, userData, characterData, profileData) => {
 
-	console.log(characterData.name);
-
 	module.exports.stopReminder(characterData._id, userData.userId, profileData.serverId);
 
 	if (typeof profileData.sapling.lastMessageChannelId !== 'string') {
 
-		console.log('1');
 		module.exports.removeChannel(userData, profileData.serverId);
 	}
 
