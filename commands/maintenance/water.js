@@ -77,8 +77,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	const timeDifference = Math.abs(currentTimestamp - saplingObject.nextWaterTimestamp);
 	const timeDifferenceInMinutes = Math.round(timeDifference / oneMinute);
 
-	console.log(timeDifference, timeDifferenceInMinutes);
-
 	let experiencePoints = 0;
 	let healthPoints = 0;
 
@@ -207,14 +205,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
  */
 module.exports.sendReminder = (client, userData, characterData, profileData) => {
 
-	console.log(characterData.name);
-
 	module.exports.stopReminder(characterData._id, userData.userId, profileData.serverId);
 
 	if (typeof profileData.sapling.lastMessageChannelId !== 'string') {
 
-		console.log('1');
 		module.exports.removeChannel(userData, profileData.serverId);
+		return;
 	}
 
 	userMap.set(characterData._id + userData.userId + profileData.serverId, setTimeout(async () => {
@@ -225,7 +221,8 @@ module.exports.sendReminder = (client, userData, characterData, profileData) => 
 
 		if (typeof profileData.sapling.lastMessageChannelId !== 'string') {
 
-			module.exports.removeChannel(userData, profileData.serverId);
+			await module.exports.removeChannel(userData, profileData.serverId);
+			return;
 		}
 
 		const isInactive = (userData !== null && userData.currentCharacter[profileData.serverId] !== characterData._id);
@@ -234,12 +231,12 @@ module.exports.sendReminder = (client, userData, characterData, profileData) => 
 
 			const channel = await client.channels
 				.fetch(profileData.sapling.lastMessageChannelId)
-				.catch((error) => {
+				.catch(async (error) => {
 					if (error.httpStatus === '403' || error.httpStatus === '404') {
-						module.exports.removeChannel(userData, profileData.serverId);
+						await module.exports.removeChannel(userData, profileData.serverId);
 						throw new Error('Missing Access: Cannot fetch this channel');
 					}
-					throw new Error(error);
+					else { throw new Error(error); }
 				});
 
 			if (!channel.isText() || channel.type === 'DM') {
@@ -249,12 +246,12 @@ module.exports.sendReminder = (client, userData, characterData, profileData) => 
 
 			await channel.guild.members
 				.fetch(userData.userId)
-				.catch((error) => {
+				.catch(async (error) => {
 					if (error.httpStatus === '403' || error.httpStatus === '404') {
-						module.exports.removeChannel(userData, profileData.serverId);
+						await module.exports.removeChannel(userData, profileData.serverId);
 						throw new Error('Missing Access: Cannot find this user');
 					}
-					throw new Error(error);
+					else { throw new Error(error); }
 				});
 
 			await channel
@@ -267,9 +264,9 @@ module.exports.sendReminder = (client, userData, characterData, profileData) => 
 						footer: isInactive ? { text: '⚠️ CAUTION! The character associated with this reminder is currently inactive. Type "rp profile" and select the character from the drop-down list before watering your tree.' } : null,
 					}],
 				})
-				.catch((error) => {
+				.catch(async (error) => {
 					if (error.httpStatus === '403' || error.httpStatus === '404') {
-						module.exports.removeChannel(userData, profileData.serverId);
+						await module.exports.removeChannel(userData, profileData.serverId);
 						throw new Error('Missing Access: Cannot send to this channel');
 					}
 					else { throw new Error(error); }
