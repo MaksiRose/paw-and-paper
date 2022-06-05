@@ -60,6 +60,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 	});
 
 	let speciesPage = 0;
+	let botReply;
 
 	for (const speciesName of speciesNameArray.slice(0, 24)) {
 
@@ -79,7 +80,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		return;
 	}
 
-	let botReply = await message
+	botReply = await message
 		.reply({
 			embeds: (characterData.species === '') ? [newSpeciesEmbed] : [existingSpeciesEmbed],
 			components: [
