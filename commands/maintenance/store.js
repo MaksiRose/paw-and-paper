@@ -8,8 +8,6 @@ const { isInvalid } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { remindOfAttack } = require('../gameplay/attack');
 const { pronoun, upperCasePronounAndPlural } = require('../../utils/getPronouns');
-const { generateRandomNumber } = require('../../utils/randomizers');
-const blockEntrance = require('../../utils/blockEntrance');
 const { MessageActionRow, MessageSelectMenu, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const sendNoDM = require('../../utils/sendNoDM');
@@ -54,6 +52,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		uncommonPlants: { ...profileData.inventory.uncommonPlants },
 		rarePlants: { ...profileData.inventory.rarePlants },
 		meat: { ...profileData.inventory.meat },
+		materials: { ...profileData.inventory.materials },
 	};
 
 	const serverInventory = {
@@ -61,6 +60,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		uncommonPlants: { ...serverData.inventory.uncommonPlants },
 		rarePlants: { ...serverData.inventory.rarePlants },
 		meat: { ...serverData.inventory.meat },
+		materials: { ...serverData.inventory.materials },
 	};
 
 	const inventoryMap = new Map([
@@ -112,12 +112,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
-		return;
-	}
-
-	if (serverData.blockedEntrance.den === 'food den' || (profileData.rank !== 'Youngling' && serverData.blockedEntrance.den === null && generateRandomNumber(20, 0) === 0)) {
-
-		await blockEntrance(message, messageContent, characterData, serverData, 'food den');
 		return;
 	}
 
