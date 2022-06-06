@@ -350,6 +350,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						uncommonPlants: { ...winningProfileData.inventory.uncommonPlants },
 						rarePlants: { ...winningProfileData.inventory.rarePlants },
 						meat: { ...winningProfileData.inventory.meat },
+						materials: { ...winningProfileData.inventory.materials },
 					};
 
 					for (const itemCategory of Object.keys(userInventory)) {
@@ -412,6 +413,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						uncommonPlants: { ...losingProfileData.inventory.uncommonPlants },
 						rarePlants: { ...losingProfileData.inventory.rarePlants },
 						meat: { ...losingProfileData.inventory.meat },
+						materials: { ...losingProfileData.inventory.materials },
 					};
 
 					const { itemType, itemName } = getHighestItem(userInventory);

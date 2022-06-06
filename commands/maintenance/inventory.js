@@ -6,8 +6,6 @@ const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion')
 const { hasCooldown } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { remindOfAttack } = require('../gameplay/attack');
-const { generateRandomNumber } = require('../../utils/randomizers');
-const blockEntrance = require('../../utils/blockEntrance');
 const { execute } = require('../../events/messageCreate');
 const { MessageActionRow, MessageSelectMenu, MessageEmbed } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
@@ -48,13 +46,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 	userData = await startCooldown(message);
 	const messageContent = remindOfAttack(message);
-
-	// If the commands content isn't part of this commands name and aliases list, then a new blockage won't be opened. This is to prevent the eat command from having this likelihood twice.
-	if ((profileData.rank !== 'Youngling' && serverData.blockedEntrance.den === null && [module.exports.name].concat(module.exports.aliases).includes(message.content.slice(prefix.length).trim().split(/ +/).shift().toLowerCase()) && generateRandomNumber(20, 0) === 0) || serverData.blockedEntrance.den === 'food den') {
-
-		await blockEntrance(message, messageContent, characterData, serverData, 'food den');
-		return;
-	}
 
 	const inventorySelectMenu = new MessageActionRow({
 		components: [ new MessageSelectMenu({

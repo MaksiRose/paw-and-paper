@@ -273,11 +273,9 @@ module.exports = {
 		const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
 		const profileData = characterData.profiles[message.guild.id];
 
-		const serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOne({ serverId: message.guild.id }));
-
 		if (profileData && profileData.isResting === false && profileData.energy < profileData.maxEnergy) {
 
-			if (profileData.energy <= 0 || profileData.health <= 0 || profileData.hunger <= 0 || profileData.thirst <= 0 || serverData.blockedEntrance.den === 'sleeping dens') {
+			if (profileData.energy <= 0 || profileData.health <= 0 || profileData.hunger <= 0 || profileData.thirst <= 0) {
 
 				/*
 				This if block ensures that no two timeouts are set at the same time, and only one of them being cleared. When a command that doesn't immediately return (ie explore) is called, this timeout doesn't exist yet, but the old timeout was already cleared. If a second command (ie stats) is started while the old one is still running, it will try to delete the same timeout that the first command (aka explore) already cleared, and create a new one, that subsequently is going to be overwritten by the first command (aka explore) once it is finished. That means that the timeout created by the other command (aka stats) is never going to be cleared, and instead only the timeout of the last finished command (aka explore) is going to be cleared, which means that 10 minutes after the other command (aka stats) was executed, the user will start automatically resting, even if they were still actively playing in that time.

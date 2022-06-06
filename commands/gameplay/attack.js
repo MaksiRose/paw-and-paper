@@ -256,6 +256,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				uncommonPlants: { ...serverData.inventory.uncommonPlants },
 				rarePlants: { ...serverData.inventory.rarePlants },
 				meat: { ...serverData.inventory.meat },
+				materials: { ...serverData.inventory.materials },
 			};
 			const { itemType, itemName } = module.exports.getHighestItem(inventoryObject);
 
@@ -441,6 +442,7 @@ async function remainingHumans(message) {
 		uncommonPlants: { ...serverData.inventory.uncommonPlants },
 		rarePlants: { ...serverData.inventory.rarePlants },
 		meat: { ...serverData.inventory.meat },
+		materials: { ...serverData.inventory.materials },
 	};
 	while (serverMap.get('nr' + message.guild.id).humans > 0) {
 
