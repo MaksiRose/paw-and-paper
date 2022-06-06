@@ -9,8 +9,8 @@ const { isInvalid } = require('../../utils/checkValidity');
 const { sendMessage } = require('./inventory');
 const { remindOfAttack } = require('../gameplay/attack');
 const { pronounAndPlural, pronoun, upperCasePronounAndPlural } = require('../../utils/getPronouns');
-const blockEntrance = require('../../utils/blockEntrance');
 const sendNoDM = require('../../utils/sendNoDM');
+const wearDownDen = require('../../utils/wearDownDen');
 
 module.exports.name = 'eat';
 
@@ -62,12 +62,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
-		return;
-	}
-
-	if ((profileData.rank !== 'Youngling' && serverData.blockedEntrance.den === null && generateRandomNumber(20, 0) === 0) || serverData.blockedEntrance.den === 'food den') {
-
-		await blockEntrance(message, messageContent, characterData, serverData, 'food den');
 		return;
 	}
 
@@ -133,7 +127,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						color: characterData.color,
 						author: { name: characterData.name, icon_url: characterData.avatarURL },
 						description: `*${characterData.name} searches for a ${chosenFood} all over the pack, but couldn't find one...*`,
-						footer: { text: profileData.currentRegion !== 'food den' ? '\nYou are now at the food den' : null },
+						footer: { text: `${profileData.currentRegion !== 'food den' ? '\nYou are now at the food den' : ''}\n\n${await wearDownDen(serverData, 'food den')}` },
 					}],
 					failIfNotExists: false,
 				})
@@ -212,7 +206,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			embed.footer.text += `\n${finalHealthPoints} health (${profileData.health}/${profileData.maxHealth})`;
 		}
 
-		embed.footer.text += `${profileData.currentRegion !== 'food den' ? '\nYou are now at the food den' : ''}\n\n-1 ${chosenFood} for ${message.guild.name}`;
+		embed.footer.text += `${profileData.currentRegion !== 'food den' ? '\nYou are now at the food den' : ''}\n\n${await wearDownDen(serverData, 'food den')}\n-1 ${chosenFood} for ${message.guild.name}`;
 
 		await message
 			.reply({
@@ -237,7 +231,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						color: characterData.color,
 						author: { name: characterData.name, icon_url: characterData.avatarURL },
 						description: `*${characterData.name} searches for a ${chosenFood} all over the pack, but couldn't find one...*`,
-						footer: { text: profileData.currentRegion !== 'food den' ? '\nYou are now at the food den' : null },
+						footer: { text:  `${profileData.currentRegion !== 'food den' ? '\nYou are now at the food den' : ''}\n\n${await wearDownDen(serverData, 'food den')}` },
 					}],
 					failIfNotExists: false,
 				})
@@ -278,7 +272,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			},
 		));
 
-		embed.footer.text = `+${finalHungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})${(profileData.currentRegion != 'food den') ? '\nYou are now at the food den' : ''}\n\n-1 ${chosenFood} for ${message.guild.name}`;
+		embed.footer.text = `+${finalHungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})${(profileData.currentRegion != 'food den') ? '\nYou are now at the food den' : ''}\n\n${await wearDownDen(serverData, 'food den')}\n-1 ${chosenFood} for ${message.guild.name}`;
 
 		await message
 			.reply({
