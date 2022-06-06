@@ -336,6 +336,118 @@ rarePlantsMap.set('marsh mallow', {
 });
 
 
+/** @type {Map<string, import('../typedef').MaterialsMapObject>} */
+const materialsMap = new Map();
+
+materialsMap.set('stick', {
+	name: 'stick',
+	description: '',
+	reinforcesStructure: true,
+	improvesBedding: false,
+	thickensWalls: false,
+	removesOverhang: false,
+});
+
+materialsMap.set('pine cone', {
+	name: 'pine cone',
+	description: '',
+	reinforcesStructure: true,
+	improvesBedding: false,
+	thickensWalls: false,
+	removesOverhang: false,
+});
+
+materialsMap.set('root', {
+	name: 'root',
+	description: '',
+	reinforcesStructure: true,
+	improvesBedding: false,
+	thickensWalls: false,
+	removesOverhang: false,
+});
+
+materialsMap.set('moss', {
+	name: 'moss',
+	description: '',
+	reinforcesStructure: false,
+	improvesBedding: true,
+	thickensWalls: false,
+	removesOverhang: false,
+});
+
+materialsMap.set('leaf', {
+	name: 'leaf',
+	description: '',
+	reinforcesStructure: false,
+	improvesBedding: true,
+	thickensWalls: false,
+	removesOverhang: false,
+});
+
+materialsMap.set('vine', {
+	name: 'vine',
+	description: '',
+	reinforcesStructure: false,
+	improvesBedding: true,
+	thickensWalls: false,
+	removesOverhang: false,
+});
+
+materialsMap.set('clay', {
+	name: 'clay',
+	description: '',
+	reinforcesStructure: false,
+	improvesBedding: false,
+	thickensWalls: true,
+	removesOverhang: false,
+});
+
+materialsMap.set('algae', {
+	name: 'algae',
+	description: '',
+	reinforcesStructure: false,
+	improvesBedding: false,
+	thickensWalls: true,
+	removesOverhang: false,
+});
+
+materialsMap.set('soil', {
+	name: 'soil',
+	description: '',
+	reinforcesStructure: false,
+	improvesBedding: false,
+	thickensWalls: true,
+	removesOverhang: false,
+});
+
+materialsMap.set('rock', {
+	name: 'rock',
+	description: '',
+	reinforcesStructure: false,
+	improvesBedding: false,
+	thickensWalls: false,
+	removesOverhang: true,
+});
+
+materialsMap.set('shell', {
+	name: 'shell',
+	description: '',
+	reinforcesStructure: false,
+	improvesBedding: false,
+	thickensWalls: false,
+	removesOverhang: true,
+});
+
+materialsMap.set('bone', {
+	name: 'bone',
+	description: '',
+	reinforcesStructure: false,
+	improvesBedding: false,
+	thickensWalls: false,
+	removesOverhang: true,
+});
+
+
 // *rodents incl.: mice, rats, squirrels, prairie dogs, porcupines, beavers, guinea pigs, hamsters, rabbits, hares, pikas
 // every animal should have ~3-4 opponents per biome, and be mentioned 9-12 times in total
 /** @type {Map<string, import('../typedef').SpeciesMapObject>} */
@@ -859,6 +971,7 @@ module.exports = {
 	commonPlantsMap: commonPlantsMap,
 	uncommonPlantsMap: uncommonPlantsMap,
 	rarePlantsMap: rarePlantsMap,
+	materialsMap: materialsMap,
 	speciesMap: speciesMap,
 
 };
