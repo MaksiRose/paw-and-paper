@@ -12,7 +12,7 @@ const { generateRandomNumber } = require('./randomizers');
 async function wearDownDen(serverData, denKind) {
 
 	const denName = ['sleepingDens', 'foodDen', 'medicineDen'][
-		['sleeping dens', 'medicine den', 'food den'].indexOf(denKind)
+		['sleeping dens', 'food den', 'medicine den'].indexOf(denKind)
 	];
 	const denStatkind = ['structure', 'bedding', 'thickness', 'evenness'][generateRandomNumber(4, 0)];
 	const denWeardownPoints = function(weardown) { return (serverData.dens[denName][denStatkind] - weardown < 0) ? serverData.dens[denName][denStatkind] : weardown; } (generateRandomNumber(5, 1));
