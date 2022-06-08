@@ -134,7 +134,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		/** @type {import('discord.js').MessageComponentInteraction | null} } */
 		const interaction = await botReply
-			.awaitMessageComponent({ filter, time: 60_000 })
+			.awaitMessageComponent({ filter, time: 120_000 })
 			.catch(() => { return null; });
 
 		if (interaction === null) {
@@ -352,7 +352,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						return /** @type {import('discord.js').MessageSelectMenuOptions} */ (userSelectMenu.components[0]).options.length > 0 ? await interactionCollector() : null;
 					}
 
-					if (isSuccessful === true && (profileData.rank === 'Apprentice' || profileData.rank === 'Hunter') && pullFromWeightedTable({ 0: profileData.rank === 'Hunter' ? 70 : 30, 1: 70 + profileData.sapling.waterCycles }) === 0) {
+					if (isSuccessful === true && (profileData.rank === 'Apprentice' || profileData.rank === 'Hunter') && pullFromWeightedTable({ 0: profileData.rank === 'Hunter' ? 90 : 40, 1: 60 + profileData.sapling.waterCycles }) === 0) {
 
 						isSuccessful = false;
 					}
