@@ -341,7 +341,7 @@ const materialsMap = new Map();
 
 materialsMap.set('stick', {
 	name: 'stick',
-	description: '',
+	description: 'These are not the sturdiest material out there, but they can help holding together constructions.',
 	reinforcesStructure: true,
 	improvesBedding: false,
 	thickensWalls: false,
@@ -350,7 +350,7 @@ materialsMap.set('stick', {
 
 materialsMap.set('pine cone', {
 	name: 'pine cone',
-	description: '',
+	description: 'The seed-bearing fruit of the pine tree. The wooden exterior and shape make it great for reinforcing walls.',
 	reinforcesStructure: true,
 	improvesBedding: false,
 	thickensWalls: false,
@@ -359,7 +359,7 @@ materialsMap.set('pine cone', {
 
 materialsMap.set('root', {
 	name: 'root',
-	description: '',
+	description: 'Remainders of dead trees. With their toughness as support, they can be like a skeleton or frame of a structure.',
 	reinforcesStructure: true,
 	improvesBedding: false,
 	thickensWalls: false,
@@ -368,7 +368,7 @@ materialsMap.set('root', {
 
 materialsMap.set('moss', {
 	name: 'moss',
-	description: '',
+	description: 'A soft and easy to maintain plant that makes for a great floor component.',
 	reinforcesStructure: false,
 	improvesBedding: true,
 	thickensWalls: false,
@@ -377,34 +377,34 @@ materialsMap.set('moss', {
 
 materialsMap.set('leaf', {
 	name: 'leaf',
-	description: '',
+	description: 'Foilage is not only vital to most plants, but also has a great texture and acts as a dampening effect when walked over.',
 	reinforcesStructure: false,
 	improvesBedding: true,
 	thickensWalls: false,
 	removesOverhang: false,
 });
 
-materialsMap.set('vine', {
-	name: 'vine',
-	description: '',
-	reinforcesStructure: false,
-	improvesBedding: true,
-	thickensWalls: false,
-	removesOverhang: false,
-});
-
-materialsMap.set('clay', {
-	name: 'clay',
-	description: '',
+materialsMap.set('algae', {
+	name: 'algae',
+	description: 'Seaweed is not only pretty, but also spongy and comfortable, making it perfect as ground material.',
 	reinforcesStructure: false,
 	improvesBedding: false,
 	thickensWalls: true,
 	removesOverhang: false,
 });
 
-materialsMap.set('algae', {
-	name: 'algae',
-	description: '',
+materialsMap.set('clay', {
+	name: 'clay',
+	description: 'This type of dirt is deformable when wet, but tough and brittle when dry, making it a great filler-material for walls.',
+	reinforcesStructure: false,
+	improvesBedding: false,
+	thickensWalls: true,
+	removesOverhang: false,
+});
+
+materialsMap.set('vine', {
+	name: 'vine',
+	description: 'The long-growing plant will spread and twist around walls. They are not robust, but their leaves will densen whatever they are growing on.',
 	reinforcesStructure: false,
 	improvesBedding: false,
 	thickensWalls: true,
@@ -413,7 +413,7 @@ materialsMap.set('algae', {
 
 materialsMap.set('soil', {
 	name: 'soil',
-	description: '',
+	description: 'This common material is easy to deform, but still strong when pressed together, making it perfect for thickening walls and ceilings.',
 	reinforcesStructure: false,
 	improvesBedding: false,
 	thickensWalls: true,
@@ -422,16 +422,16 @@ materialsMap.set('soil', {
 
 materialsMap.set('rock', {
 	name: 'rock',
-	description: '',
+	description: 'A small piece formed from minerals, its hardness making it a great tool to remove overhang from walls.',
 	reinforcesStructure: false,
 	improvesBedding: false,
 	thickensWalls: false,
 	removesOverhang: true,
 });
 
-materialsMap.set('shell', {
-	name: 'shell',
-	description: '',
+materialsMap.set('seashell', {
+	name: 'seashell',
+	description: 'Hard, protective outer layer by an animal that lives in the sea. Can be used to even out irregularities.',
 	reinforcesStructure: false,
 	improvesBedding: false,
 	thickensWalls: false,
@@ -440,7 +440,7 @@ materialsMap.set('shell', {
 
 materialsMap.set('bone', {
 	name: 'bone',
-	description: '',
+	description: 'One of the hard parts of animal\'s skeletons. Good way to get rid of bumps and material sticking out of walls.',
 	reinforcesStructure: false,
 	improvesBedding: false,
 	thickensWalls: false,
