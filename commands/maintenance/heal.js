@@ -352,7 +352,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						return /** @type {import('discord.js').MessageSelectMenuOptions} */ (userSelectMenu.components[0]).options.length > 0 ? await interactionCollector() : null;
 					}
 
-					if (isSuccessful === true && (profileData.rank === 'Apprentice' || profileData.rank === 'Hunter') && pullFromWeightedTable({ 0: profileData.rank === 'Hunter' ? 90 : 40, 1: 60 + profileData.sapling.waterCycles }) === 0) {
+					if (isSuccessful === true && (profileData.rank === 'Apprentice' || profileData.rank === 'Hunter') && pullFromWeightedTable({ 0: profileData.rank === 'Hunter' ? 90 : 40, 1: 60 + profileData.sapling.waterCycles - await decreaseSuccessChance(message) }) === 0) {
 
 						isSuccessful = false;
 					}
@@ -536,7 +536,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						},
 					));
 
-					if (isSuccessful && chosenUserData.userId === userData.userId && pullFromWeightedTable({ 0: 75, 1: 25 + profileData.sapling.waterCycles }) === 0) {
+					if (isSuccessful && chosenUserData.userId === userData.userId && pullFromWeightedTable({ 0: 75, 1: 25 + profileData.sapling.waterCycles - await decreaseSuccessChance(message) }) === 0) {
 
 						isSuccessful = false;
 					}
@@ -558,7 +558,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						return /** @type {import('discord.js').MessageSelectMenuOptions} */ (userSelectMenu.components[0]).options.length > 0 ? await interactionCollector() : null;
 					}
 
-					if (isSuccessful && chosenUserData.userId !== userData.userId && (profileData.rank === 'Apprentice' || profileData.rank === 'Hunter') && pullFromWeightedTable({ 0: profileData.rank === 'Hunter' ? 90 : 40, 1: 60 + profileData.sapling.waterCycles }) === 0) {
+					if (isSuccessful && chosenUserData.userId !== userData.userId && (profileData.rank === 'Apprentice' || profileData.rank === 'Hunter') && pullFromWeightedTable({ 0: profileData.rank === 'Hunter' ? 90 : 40, 1: 60 + profileData.sapling.waterCycles - await decreaseSuccessChance(message) }) === 0) {
 
 						isSuccessful = false;
 					}
@@ -916,3 +916,19 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return { embed, selectMenu };
 	}
 };
+
+/**
+ * It takes a message object and returns a number that represents the decreased success chance of a den
+ * @param {import('discord.js').Message} message - The message object that was sent.
+ * @returns {Promise<number>} the decreased success chance of the den.
+ */
+async function decreaseSuccessChance(message) {
+
+	const serverData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOne({
+		serverId: message.guild?.id,
+	}));
+
+	const denStats = serverData.dens.medicineDen.structure + serverData.dens.medicineDen.bedding + serverData.dens.medicineDen.thickness + serverData.dens.medicineDen.evenness;
+	const multiplier = denStats / 400;
+	return 20 - Math.round(20 * multiplier);
+}
