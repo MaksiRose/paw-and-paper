@@ -664,6 +664,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					uncommonPlants: { ...profileData.inventory.uncommonPlants },
 					rarePlants: { ...profileData.inventory.rarePlants },
 					meat: { ...profileData.inventory.meat },
+					materials: { ...profileData.inventory.materials },
 				};
 
 				for (const itemCategory of Object.keys(userInventory)) {
@@ -1058,6 +1059,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					uncommonPlants: { ...profileData.inventory.uncommonPlants },
 					rarePlants: { ...profileData.inventory.rarePlants },
 					meat: { ...profileData.inventory.meat },
+					materials: { ...profileData.inventory.materials },
 				};
 
 				userInventory.meat[opponentSpecies] += 1;

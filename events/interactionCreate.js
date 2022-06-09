@@ -350,7 +350,7 @@ const event = {
 									{ name: '**rp rest**', value: 'Get some sleep and fill up your energy meter. Takes some time to refill.' },
 									{ name: '**rp vote**', value: 'Vote for this bot on one of three websites and get +30 energy each time.' },
 									{ name: '**rp heal (@user)**', value: 'Heal your packmates. Costs energy, but gives XP. __Not available to Younglings.__' },
-									{ name: '**rp dispose**', value: 'Remove obstacles blocking dens. Costs energy, but gives XP. __Not available to Younglings.__' },
+									{ name: '**rp repair**', value: 'Repair dens. Costs energy, but gives XP. __Not available to Younglings.__' },
 									{ name: '**rp water**', value: 'If you have a ginkgo sapling, you can water it using this command.' },
 								],
 								footer: { text: 'ℹ️ Select a command from the list below to view more information about it.' },
@@ -370,7 +370,7 @@ const event = {
 										{ label: 'Rest', value: 'help_rest', description: 'Get some sleep and fill up your energy meter. Takes some time to refill.' },
 										{ label: 'Vote*', value: 'help_vote', description: 'Vote for this bot on one of three websites and get +30 energy each time.' },
 										{ label: 'Heal', value: 'help_heal', description: 'Heal your packmates. Costs energy, but gives XP.' },
-										{ label: 'Dispose', value: 'help_dispose', description: 'Remove obstacles blocking dens. Costs energy, but gives XP.' },
+										{ label: 'Repair', value: 'help_repair', description: 'Repair dens. Costs energy, but gives XP.' },
 										{ label: 'Water', value: 'help_water', description: 'If you have a ginkgo sapling, you can water it using this command.' },
 									],
 								}],
@@ -1083,18 +1083,18 @@ const event = {
 						});
 				}
 
-				if (interaction.values[0] === 'help_dispose') {
+				if (interaction.values[0] === 'help_repair') {
 
 					return await interaction
 						.followUp({
 							embeds: [{
 								color: /** @type {`#${string}`} */ (config.default_color),
-								title: 'rp dispose',
-								description: 'Remove obstacles blocking dens. Costs energy, but gives XP. __Not available to Younglings.__',
+								title: 'rp repair',
+								description: 'Repair dens. Costs energy, but gives XP. __Not available to Younglings.__',
 								fields: [
 									{ name: '**Aliases**', value: 'none' },
 									{ name: '**Arguments**', value: 'none' },
-									{ name: '**More information**', value: 'This command is used when the entrance to a den is blocked. When any player that isn\'t a Youngling executes a command associated with a den, and there isn\'t already something blocking a den, there is a 1 in 20 chance that the den will be blocked off. After that, the command associated with that den can\'t be executed anymore until someone uses `dispose` successfully.\nDens and commands that are associated with each other are the sleeping dens with `rest`, the food den with `eat`, `store` and `inventory`, and the medicine den with `heal`.\nDepending on what is blocking the den, the player has to choose the right way to get rid of it.\nApprentices have a lowered chance of 70 in 100 to be successful, even if they chose correctly. If you have a living ginkgo sapling, that chance is increased in your favor by one for the amount of times you watered the sapling successfully.' },
+									{ name: '**More information**', value: 'This command is used to repair dens. When any player that isn\'t a Youngling executes a command associated with a den, the den will lose between 1-5% of one of its stats. The lower these stats are, the less effective the den becomes.\nDens and commands that are associated with each other are the sleeping dens with `rest`, the food den with `eat`, and the medicine den with `heal`.\nDepending on what needs to be repaired, the player has to choose the right items to fix it.\nApprentices have a lowered chance of 70 in 100 to be successful, even if they chose correctly. If you have a living ginkgo sapling, that chance is increased in your favor by one for the amount of times you watered the sapling successfully.' },
 								],
 							}],
 							ephemeral: true,

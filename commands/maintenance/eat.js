@@ -9,8 +9,8 @@ const { isInvalid } = require('../../utils/checkValidity');
 const { sendMessage } = require('./inventory');
 const { remindOfAttack } = require('../gameplay/attack');
 const { pronounAndPlural, pronoun, upperCasePronounAndPlural } = require('../../utils/getPronouns');
-const blockEntrance = require('../../utils/blockEntrance');
 const sendNoDM = require('../../utils/sendNoDM');
+const wearDownDen = require('../../utils/wearDownDen');
 
 module.exports.name = 'eat';
 
@@ -62,12 +62,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
-		return;
-	}
-
-	if ((profileData.rank !== 'Youngling' && serverData.blockedEntrance.den === null && generateRandomNumber(20, 0) === 0) || serverData.blockedEntrance.den === 'food den') {
-
-		await blockEntrance(message, messageContent, characterData, serverData, 'food den');
 		return;
 	}
 
@@ -133,7 +127,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						color: characterData.color,
 						author: { name: characterData.name, icon_url: characterData.avatarURL },
 						description: `*${characterData.name} searches for a ${chosenFood} all over the pack, but couldn't find one...*`,
-						footer: { text: profileData.currentRegion !== 'food den' ? '\nYou are now at the food den' : null },
+						footer: { text: `${profileData.currentRegion !== 'food den' ? '\nYou are now at the food den' : ''}\n\n${await wearDownDen(serverData, 'food den')}` },
 					}],
 					failIfNotExists: false,
 				})
@@ -145,7 +139,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		if (plantMap.get(chosenFood).edibality === 't') {
 
-			finalHungerPoints = function(hunger) { return profileData.hunger + hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(3, -5));
+			finalHungerPoints = function(hunger) { return profileData.hunger + hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(3, -5) - await removeHungerPoints(message));
 			finalHealthPoints = function(health) { return (profileData.health - health < 0) ? profileData.health : health; }(generateRandomNumber(3, -10));
 
 			embed.description = `*A yucky feeling drifts down ${characterData.name}'s throat. ${upperCasePronounAndPlural(characterData, 0, 'shakes and spits', 'shake and spit')} it out, trying to rid ${pronoun(characterData, 2)} mouth of the taste. The plant is poisonous!*`;
@@ -153,7 +147,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		if (plantMap.get(chosenFood).edibality === 'i') {
 
-			finalHungerPoints = function(hunger) { return profileData.hunger + hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(3, -3));
+			finalHungerPoints = function(hunger) { return profileData.hunger + hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(3, -3) - await removeHungerPoints(message));
 
 			embed.description = `*${characterData.name} slowly opens ${pronoun(characterData, 2)} mouth and chomps onto the ${chosenFood}. The ${characterData.displayedSpecies || characterData.species} swallows it, but ${pronoun(characterData, 2)} face has a look of disgust. That wasn't very tasty!*`;
 		}
@@ -162,14 +156,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			if (speciesMap.get(characterData.species).diet === 'carnivore') {
 
-				finalHungerPoints = function(hunger) { return profileData.hunger + hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(5, 1));
+				finalHungerPoints = function(hunger) { return profileData.hunger + hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(5, 1) - await removeHungerPoints(message));
 
 				embed.description = `*${characterData.name} plucks a ${chosenFood} from the pack storage and nibbles away at it. It has a bitter, foreign taste, not the usual meaty meal the ${characterData.displayedSpecies || characterData.species} prefers.*`;
 			}
 
 			if (speciesMap.get(characterData.species).diet === 'herbivore' || speciesMap.get(characterData.species).diet === 'omnivore') {
 
-				finalHungerPoints = function(hunger) { return profileData.hunger + hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(4, 15));
+				finalHungerPoints = function(hunger) { return profileData.hunger + hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(4, 15) - await removeHungerPoints(message));
 
 				embed.description = `*Leaves flutter into the storage den, landing near ${characterData.name}'s feet. The ${characterData.displayedSpecies || characterData.species} searches around the inventory determined to find the perfect meal, and that ${pronounAndPlural(characterData, 0, 'does', 'do')}. ${characterData.name} plucks a ${chosenFood} from the pile and eats until ${pronoun(characterData, 2)} stomach is pleased.*`;
 			}
@@ -212,7 +206,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			embed.footer.text += `\n${finalHealthPoints} health (${profileData.health}/${profileData.maxHealth})`;
 		}
 
-		embed.footer.text += `${profileData.currentRegion !== 'food den' ? '\nYou are now at the food den' : ''}\n\n-1 ${chosenFood} for ${message.guild.name}`;
+		embed.footer.text += `${profileData.currentRegion !== 'food den' ? '\nYou are now at the food den' : ''}\n\n${await wearDownDen(serverData, 'food den')}\n-1 ${chosenFood} for ${message.guild.name}`;
 
 		await message
 			.reply({
@@ -237,7 +231,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						color: characterData.color,
 						author: { name: characterData.name, icon_url: characterData.avatarURL },
 						description: `*${characterData.name} searches for a ${chosenFood} all over the pack, but couldn't find one...*`,
-						footer: { text: profileData.currentRegion !== 'food den' ? '\nYou are now at the food den' : null },
+						footer: { text:  `${profileData.currentRegion !== 'food den' ? '\nYou are now at the food den' : ''}\n\n${await wearDownDen(serverData, 'food den')}` },
 					}],
 					failIfNotExists: false,
 				})
@@ -249,14 +243,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		if (speciesMap.get(characterData.species).diet === 'herbivore') {
 
-			finalHungerPoints = function(hunger) { return profileData.hunger + hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(5, 1));
+			finalHungerPoints = function(hunger) { return profileData.hunger + hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(5, 1) - await removeHungerPoints(message));
 
 			embed.description = `*${characterData.name} stands by the storage den, eyeing the varieties of food. A ${chosenFood} catches ${pronoun(characterData, 2)} attention. The ${characterData.displayedSpecies || characterData.species} walks over to it and begins to eat.* "This isn't very good!" *${characterData.name} whispers to ${pronoun(characterData, 4)} and leaves the den, stomach still growling, and craving for plants to grow.*`;
 		}
 
 		if (speciesMap.get(characterData.species).diet === 'carnivore' || speciesMap.get(characterData.species).diet === 'omnivore') {
 
-			finalHungerPoints = function(hunger) { return profileData.hunger + hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(4, 15));
+			finalHungerPoints = function(hunger) { return profileData.hunger + hunger < 0 ? profileData.hunger : profileData.hunger + hunger > profileData.maxHunger ? profileData.maxHunger - profileData.hunger : hunger; }(generateRandomNumber(4, 15) - await removeHungerPoints(message));
 
 			embed.description = `*${characterData.name} sits chewing maliciously on a ${chosenFood}. A dribble of blood escapes out of ${pronoun(characterData, 2)} jaw as the ${characterData.displayedSpecies || characterData.species} finishes off the meal. It was a delicious feast, but very messy!*`;
 		}
@@ -278,7 +272,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			},
 		));
 
-		embed.footer.text = `+${finalHungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})${(profileData.currentRegion != 'food den') ? '\nYou are now at the food den' : ''}\n\n-1 ${chosenFood} for ${message.guild.name}`;
+		embed.footer.text = `+${finalHungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})${(profileData.currentRegion != 'food den') ? '\nYou are now at the food den' : ''}\n\n${await wearDownDen(serverData, 'food den')}\n-1 ${chosenFood} for ${message.guild.name}`;
 
 		await message
 			.reply({
@@ -319,3 +313,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	await sendMessage(client, message, argumentsArray, userData, serverData, embedArray);
 	return;
 };
+
+/**
+ * It takes a message, finds the server data, calculates the den stats, calculates the multiplier, and
+ * returns the amount of hunger points to remove
+ * @param {import('discord.js').Message} message - The message object that triggered the command.
+ * @returns {Promise<number>} the number of hunger points that will be removed from the user's character.
+ */
+async function removeHungerPoints(message) {
+
+	const serverData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOne({
+		serverId: message.guild?.id,
+	}));
+
+	const denStats = serverData.dens.foodDen.structure + serverData.dens.foodDen.bedding + serverData.dens.foodDen.thickness + serverData.dens.foodDen.evenness;
+	const multiplier = denStats / 400;
+	return 10 - Math.round(10 * multiplier);
+}

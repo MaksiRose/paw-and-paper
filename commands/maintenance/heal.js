@@ -11,11 +11,11 @@ const { checkLevelUp } = require('../../utils/levelHandling');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { remindOfAttack } = require('../gameplay/attack');
 const { pronoun, upperCasePronounAndPlural, pronounAndPlural } = require('../../utils/getPronouns');
-const blockEntrance = require('../../utils/blockEntrance');
 const { MessageActionRow, MessageSelectMenu, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { addFriendshipPoints } = require('../../utils/friendshipHandling');
 const sendNoDM = require('../../utils/sendNoDM');
+const wearDownDen = require('../../utils/wearDownDen');
 
 module.exports.name = 'heal';
 
@@ -67,12 +67,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
-		return;
-	}
-
-	if ((serverData.blockedEntrance.den === null && generateRandomNumber(20, 0) === 0) || serverData.blockedEntrance.den === 'medicine den') {
-
-		await blockEntrance(message, messageContent, characterData, serverData, 'medicine den');
 		return;
 	}
 
@@ -140,7 +134,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		/** @type {import('discord.js').MessageComponentInteraction | null} } */
 		const interaction = await botReply
-			.awaitMessageComponent({ filter, time: 60_000 })
+			.awaitMessageComponent({ filter, time: 120_000 })
 			.catch(() => { return null; });
 
 		if (interaction === null) {
@@ -358,7 +352,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						return /** @type {import('discord.js').MessageSelectMenuOptions} */ (userSelectMenu.components[0]).options.length > 0 ? await interactionCollector() : null;
 					}
 
-					if (isSuccessful === true && (profileData.rank === 'Apprentice' || profileData.rank === 'Hunter') && pullFromWeightedTable({ 0: profileData.rank === 'Hunter' ? 70 : 30, 1: 70 + profileData.sapling.waterCycles }) === 0) {
+					if (isSuccessful === true && (profileData.rank === 'Apprentice' || profileData.rank === 'Hunter') && pullFromWeightedTable({ 0: profileData.rank === 'Hunter' ? 90 : 40, 1: 60 + profileData.sapling.waterCycles - await decreaseSuccessChance(message) }) === 0) {
 
 						isSuccessful = false;
 					}
@@ -378,7 +372,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						chosenProfileData = chosenCharacterData.profiles[message.guild.id];
 
 						embed.description = `*${characterData.name} takes ${chosenCharacterData.name}'s body, drags it over to the river, and positions ${pronoun(chosenCharacterData, 2)} head right over the water. The ${chosenCharacterData.displayedSpecies || chosenCharacterData.species} sticks ${pronoun(chosenCharacterData, 2)} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${pronoun(chosenCharacterData, 2)} body.*`;
-						embed.footer.text = `${embedFooterStatsText}\n\n+${chosenUserThirstPoints} thirst for ${chosenCharacterData.name} (${chosenProfileData.thirst}/${chosenProfileData.maxThirst})`;
+						embed.footer.text = `${embedFooterStatsText}\n\n+${chosenUserThirstPoints} thirst for ${chosenCharacterData.name} (${chosenProfileData.thirst}/${chosenProfileData.maxThirst})\n\n${await wearDownDen(serverData, 'medicine den')}`;
 					}
 					else {
 
@@ -395,7 +389,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							embed.description = `*${characterData.name} takes ${chosenCharacterData.name}'s body and tries to drag it over to the river. The ${characterData.displayedSpecies || characterData.species} attempts to position the ${chosenCharacterData.displayedSpecies || chosenCharacterData.species}'s head right over the water, but every attempt fails miserably. ${upperCasePronounAndPlural(characterData, 0, 'need')} to concentrate and try again.*`;
 						}
 
-						embed.footer.text = await decreaseStats(false);
+						embed.footer.text = await decreaseStats(false) + `\n\n${await wearDownDen(serverData, 'medicine den')}`;
 					}
 				}
 				else {
@@ -542,7 +536,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						},
 					));
 
-					if (isSuccessful && chosenUserData.userId === userData.userId && pullFromWeightedTable({ 0: 75, 1: 25 + profileData.sapling.waterCycles }) === 0) {
+					if (isSuccessful && chosenUserData.userId === userData.userId && pullFromWeightedTable({ 0: 75, 1: 25 + profileData.sapling.waterCycles - await decreaseSuccessChance(message) }) === 0) {
 
 						isSuccessful = false;
 					}
@@ -564,7 +558,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						return /** @type {import('discord.js').MessageSelectMenuOptions} */ (userSelectMenu.components[0]).options.length > 0 ? await interactionCollector() : null;
 					}
 
-					if (isSuccessful && chosenUserData.userId !== userData.userId && (profileData.rank === 'Apprentice' || profileData.rank === 'Hunter') && pullFromWeightedTable({ 0: profileData.rank === 'Hunter' ? 90 : 40, 1: 60 + profileData.sapling.waterCycles }) === 0) {
+					if (isSuccessful && chosenUserData.userId !== userData.userId && (profileData.rank === 'Apprentice' || profileData.rank === 'Hunter') && pullFromWeightedTable({ 0: profileData.rank === 'Hunter' ? 90 : 40, 1: 60 + profileData.sapling.waterCycles - await decreaseSuccessChance(message) }) === 0) {
 
 						isSuccessful = false;
 					}
@@ -630,7 +624,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							embed.description = `*${characterData.name} takes a ${chosenItemName}. After a  bit of preparation, ${pronounAndPlural(characterData, 0, 'give')} it to ${chosenCharacterData.name}. Immediately you can see the effect. ${upperCasePronounAndPlural(chosenCharacterData, 0, 'feel')} much better!*`;
 						}
 
-						embed.footer.text = `${embedFooterStatsText}\n${embedFooterChosenUserStatsText}\n+${chosenUserHealthPoints} HP for ${chosenCharacterData.name} (${chosenProfileData.health}/${chosenProfileData.maxHealth})${embedFooterChosenUserInjuryText}\n\n-1 ${chosenItemName} for ${message.guild.name}`;
+						embed.footer.text = `${embedFooterStatsText}\n${embedFooterChosenUserStatsText}\n+${chosenUserHealthPoints} HP for ${chosenCharacterData.name} (${chosenProfileData.health}/${chosenProfileData.maxHealth})${embedFooterChosenUserInjuryText}\n\n${await wearDownDen(serverData, 'medicine den')}\n-1 ${chosenItemName} for ${message.guild.name}`;
 					}
 					else {
 
@@ -643,7 +637,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							embed.description = `*${characterData.name} takes a ${chosenItemName}. After a bit of preparation, ${pronounAndPlural(characterData, 0, 'give')} it to ${chosenCharacterData.name}. But no matter how long ${pronoun(characterData, 0)} wait, it does not seem to help. Looks like ${characterData.name} has to try again...*`;
 						}
 
-						embed.footer.text = `${embedFooterStatsText}\n\n-1 ${chosenItemName} for ${message.guild.name}`;
+						embed.footer.text = `${embedFooterStatsText}\n\n${await wearDownDen(serverData, 'medicine den')}\n-1 ${chosenItemName} for ${message.guild.name}`;
 					}
 				}
 
@@ -922,3 +916,19 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return { embed, selectMenu };
 	}
 };
+
+/**
+ * It takes a message object and returns a number that represents the decreased success chance of a den
+ * @param {import('discord.js').Message} message - The message object that was sent.
+ * @returns {Promise<number>} the decreased success chance of the den.
+ */
+async function decreaseSuccessChance(message) {
+
+	const serverData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOne({
+		serverId: message.guild?.id,
+	}));
+
+	const denStats = serverData.dens.medicineDen.structure + serverData.dens.medicineDen.bedding + serverData.dens.medicineDen.thickness + serverData.dens.medicineDen.evenness;
+	const multiplier = denStats / 400;
+	return 20 - Math.round(20 * multiplier);
+}

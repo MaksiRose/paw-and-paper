@@ -192,7 +192,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.customId === 'adventure-confirm' && i.user.id === message.mentions.users.first().id) || (i.customId.includes('board') && i.user.id == currentUserData.userId);
 
 		const { customId } = await botReply
-			.awaitMessageComponent({ filter, time: 60_000 })
+			.awaitMessageComponent({ filter, time: 120_000 })
 			.catch(() => { return { customId: '' }; });
 
 		if (customId === '') {
@@ -350,6 +350,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						uncommonPlants: { ...winningProfileData.inventory.uncommonPlants },
 						rarePlants: { ...winningProfileData.inventory.rarePlants },
 						meat: { ...winningProfileData.inventory.meat },
+						materials: { ...winningProfileData.inventory.materials },
 					};
 
 					for (const itemCategory of Object.keys(userInventory)) {
@@ -412,6 +413,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						uncommonPlants: { ...losingProfileData.inventory.uncommonPlants },
 						rarePlants: { ...losingProfileData.inventory.rarePlants },
 						meat: { ...losingProfileData.inventory.meat },
+						materials: { ...losingProfileData.inventory.materials },
 					};
 
 					const { itemType, itemName } = getHighestItem(userInventory);

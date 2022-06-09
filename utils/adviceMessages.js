@@ -163,7 +163,7 @@ async function apprenticeAdvice(message) {
 
 	await message.channel
 		.send({
-			content: `${message.author.toString()} ❓ **Tip:**\nAs apprentice, you unlock new commands: \`explore\`, \`heal\`, \`practice\`, and \`dispose\`.\nCheck \`rp help\` to see what they do!\nGo exploring via \`rp explore\` to find more quests and rank up higher!`,
+			content: `${message.author.toString()} ❓ **Tip:**\nAs apprentice, you unlock new commands: \`explore\`, \`heal\`, \`practice\`, and \`repair\`.\nCheck \`rp help\` to see what they do!\nGo exploring via \`rp explore\` to find more quests and rank up higher!`,
 		})
 		.catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }
@@ -178,7 +178,7 @@ async function hunterhealerAdvice(message) {
 
 	await message.channel
 		.send({
-			content: `${message.author.toString()} ❓ **Tip:**\nHunters and Healers have different strengths and weaknesses!\nHealers can \`heal\` perfectly and find more plants when \`exploring\`, but they are not so good at \`disposing\`.\nHunters can \`dispose\` perfectly and find more enemies when \`exploring\`, but they are not so good at \`healing\`.\nHunters and Healers don't get advantages from the \`play\` command.`,
+			content: `${message.author.toString()} ❓ **Tip:**\nHunters and Healers have different strengths and weaknesses!\nHealers can \`heal\` perfectly and find more plants when \`exploring\`, but they are not so good at \`repairing\`.\nHunters can \`repair\` perfectly and find more enemies when \`exploring\`, but they are not so good at \`healing\`.\nHunters and Healers don't get advantages from the \`play\` command.`,
 		})
 		.catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }

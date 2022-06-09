@@ -95,7 +95,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	let filter = (/** @type {{ customId: string; user: { id: string; }; }} */ i) => (i.customId === 'practice-accept' || i.customId === 'practice-decline') && i.user.id == message.author.id;
 
 	const shouldContinue = await botReply
-		.awaitMessageComponent({ filter, time: 15_000 })
+		.awaitMessageComponent({ filter, time: 120_000 })
 		.then(async interaction => {
 
 			if (interaction.customId === 'practice-decline') {
