@@ -251,7 +251,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							},
 						));
 					}
-					else if (serverMaterialsCount < 72) {
+					else if (serverMaterialsCount < 36) {
 
 						const foundMaterial = Array.from(materialsMap.keys())[generateRandomNumber(Array.from(materialsMap.keys()).length, 0)];
 
