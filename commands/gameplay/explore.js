@@ -3,7 +3,7 @@ const profileModel = require('../../models/profileModel');
 const startCooldown = require('../../utils/startCooldown');
 const { generateRandomNumber, pullFromWeightedTable, generateRandomNumberWithException } = require('../../utils/randomizers');
 const { pickRandomRarePlant, pickRandomUncommonPlant, pickRandomCommonPlant } = require('../../utils/pickRandomPlant');
-const { speciesMap } = require('../../utils/itemsInfo');
+const { speciesMap, materialsMap } = require('../../utils/itemsInfo');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
@@ -358,7 +358,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	}
 	else if (pullFromWeightedTable({ 0: 10, 1: 90 + profileData.sapling.waterCycles }) === 0) {
 
-		botReply = await findSaplingOrNothing();
+		botReply = await findSaplingOrMaterial();
 	}
 	else if (pullFromWeightedTable({ 0: profileData.rank === 'Healer' ? 2 : 1, 1: profileData.rank === 'Hunter' ? 2 : 1 }) === 0) {
 
@@ -450,7 +450,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	 * Gives the user a ginkgo sapling, or nothing if they already have one.
 	 * @returns {Promise<import('discord.js').Message>}
 	 */
-	async function findSaplingOrNothing() {
+	async function findSaplingOrMaterial() {
 
 		if (profileData.sapling.exists === false) {
 
@@ -466,8 +466,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		}
 		else {
 
-			embed.description = `*${characterData.name} trots back into camp, mouth empty, and luck run out. Maybe ${pronoun(characterData, 0)} will go exploring again later, bring something that time!*`;
-			embed.footer.text = embedFooterStatsText;
+			const foundMaterial = Array.from(materialsMap.keys())[generateRandomNumber(Array.from(materialsMap.keys()).length, 0)];
+
+			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+				{ userId: message.author.id },
+				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+					p.characters[characterData._id].profiles[message.guild.id].inventory.materials[foundMaterial] += 1;
+				},
+			));
+
+			embed.description = `*${characterData.name} is looking around for things around ${pronoun(characterData, 1)} but there doesn't appear to be anything useful. The ${characterData.displayedSpecies || characterData.species} decides to grab a ${foundMaterial} as to not go back with nothing to show.*`;
+			embed.footer.text = `${embedFooterStatsText}\n\n+1 ${foundMaterial}`;
 		}
 
 		return await message
