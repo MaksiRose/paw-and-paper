@@ -1,7 +1,7 @@
 // @ts-check
 const { default_color, prefix } = require('../../config.json');
 const startCooldown = require('../../utils/startCooldown');
-const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap, materialsMap } = require('../../utils/itemsInfo');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { hasCooldown } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
@@ -55,7 +55,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				{ label: 'Page 1', value: 'inventory_page1', description: 'common herbs', emoji: '🌱' },
 				{ label: 'Page 2', value: 'inventory_page2', description: 'uncommon & rare herbs', emoji: '🍀' },
 				{ label: 'Page 3', value: 'inventory_page3', description: 'meat', emoji: '🥩' },
-			],
+			].concat(...(argumentsArray[0] === 'eating something' ? [] : [{ label: 'Page 4', value: 'inventory_page4', description:'materials', emoji: '🪵' }])),
 		})],
 	});
 
@@ -237,6 +237,34 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				if (profileData.hunger < profileData.maxHunger && /** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.length > 0) {
 
 					messageComponentArray.push(foodSelectMenu);
+				}
+
+				await /** @type {import('discord.js').Message} */ (interaction.message)
+					.edit({
+						embeds: [...embedArray, embed],
+						components: messageComponentArray,
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
+					});
+			}
+
+			if (interaction.values[0] === 'inventory_page4') {
+
+				embed = new MessageEmbed({
+					color: /** @type {`#${string}`} */ (default_color),
+					author: { name: interaction.guild.name, icon_url: interaction.guild.iconURL() },
+					title: `Inventory of ${interaction.guild.name} - Page 4`,
+					fields: [],
+				});
+
+				for (const [materialName, materialObject] of [...materialsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
+
+					if (serverData.inventory.materials[materialName] > 0) {
+
+						embed.fields.push({ name: `${materialName}: ${serverData.inventory.materials[materialName]}`, value: materialObject.description, inline: true });
+						/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: materialName, value: materialName, description: `${serverData.inventory.materials[materialName]}` });
+					}
 				}
 
 				await /** @type {import('discord.js').Message} */ (interaction.message)
