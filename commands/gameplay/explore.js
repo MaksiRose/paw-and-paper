@@ -385,8 +385,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	 */
 	async function findHumans() {
 
-		// The numerator is the amount of items above 6 per profile, the denominator is the amount of profiles
-		const humanCount = Math.round((serverInventoryCount - (highRankProfilesCount * 6)) / highRankProfilesCount);
+		// The numerator is the amount of items above 7 per profile, the denominator is the amount of profiles
+		const humanCount = Math.round((serverInventoryCount - (highRankProfilesCount * 7)) / highRankProfilesCount);
 		startAttack(message, humanCount);
 
 		embed.description = `*${characterData.name} has just been looking around for food when ${pronounAndPlural(characterData, 0, 'suddenly hear')} voices to ${pronoun(characterData, 2)} right. Cautiously ${pronounAndPlural(characterData, 0, 'creep')} up, and sure enough: a group of humans! It looks like it's around ${humanCount}. They seem to be discussing something, and keep pointing over towards where the pack is lying. Alarmed, the ${characterData.displayedSpecies || characterData.species} runs away. **${upperCasePronoun(characterData, 0)} must gather as many packmates as possible to protect the pack!***`;
