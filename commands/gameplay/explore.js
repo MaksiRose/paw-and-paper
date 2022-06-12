@@ -358,7 +358,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	}
 	else if (pullFromWeightedTable({ 0: 10, 1: 90 + profileData.sapling.waterCycles }) === 0) {
 
-		botReply = await findSaplingOrMaterial();
+		botReply = await findSaplingOrMaterialOrNothing();
 	}
 	else if (pullFromWeightedTable({ 0: profileData.rank === 'Healer' ? 2 : 1, 1: profileData.rank === 'Hunter' ? 2 : 1 }) === 0) {
 
@@ -447,10 +447,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	}
 
 	/**
-	 * Gives the user a ginkgo sapling, or nothing if they already have one.
+	 * Gives the user a ginkgo sapling if they don't have one, material if the server has below 36, or nothing.
 	 * @returns {Promise<import('discord.js').Message>}
 	 */
-	async function findSaplingOrMaterial() {
+	async function findSaplingOrMaterialOrNothing() {
+
+		const serverMaterialsCount = Object.values(serverData.inventory.materials).flat().reduce((a, b) => a + b, 0);
 
 		if (profileData.sapling.exists === false) {
 
@@ -464,7 +466,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			embed.description = `*${characterData.name} is looking around for useful things around ${pronoun(characterData, 1)} when ${pronounAndPlural(characterData, 0, 'discover')} the sapling of a ginkgo tree. The ${characterData.displayedSpecies || characterData.species} remembers that they bring good luck and health. Surely it can't hurt to bring it back to the pack!*`;
 			embed.footer.text = embedFooterStatsText + '\nWater the ginkgo sapling with \'rp water\'.';
 		}
-		else {
+		else if (serverMaterialsCount < 36) {
 
 			const foundMaterial = Array.from(materialsMap.keys())[generateRandomNumber(Array.from(materialsMap.keys()).length, 0)];
 
@@ -475,8 +477,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				},
 			));
 
-			embed.description = `*${characterData.name} is looking around for things around ${pronoun(characterData, 1)} but there doesn't appear to be anything useful. The ${characterData.displayedSpecies || characterData.species} decides to grab a ${foundMaterial} as to not go back with nothing to show.*`;
+			embed.description = `*${characterData.name} is looking around for things around ${pronoun(characterData, 1)} but there doesn't appear to be anything useful. The ${characterData.displayedSpecies || characterData.species} decides to grab a ${foundMaterial} as to not go back with nothing to showy.*`;
 			embed.footer.text = `${embedFooterStatsText}\n\n+1 ${foundMaterial}`;
+		}
+		else {
+
+			embed.description = `*${characterData.name} trots back into camp, mouth empty, and luck run out. Maybe ${pronoun(characterData, 0)} will go exploring again later, bring something that time!*`;
+			embed.footer.text = embedFooterStatsText;
 		}
 
 		return await message
