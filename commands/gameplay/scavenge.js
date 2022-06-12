@@ -1,6 +1,7 @@
 // @ts-check
 const { MessageActionRow, MessageButton } = require('discord.js');
 const profileModel = require('../../models/profileModel');
+const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { decreaseEnergy, decreaseHunger, decreaseThirst, decreaseHealth } = require('../../utils/checkCondition');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
@@ -353,6 +354,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		botReply = await decreaseHealth(userData, botReply, userInjuryObject);
 		botReply = await checkLevelUp(message, botReply, userData, serverData);
 		await isPassedOut(message, userData, true);
+
+		await restAdvice(message, userData);
+		await drinkAdvice(message, userData);
+		await eatAdvice(message, userData);
 	}
 
 	/**

@@ -14,6 +14,7 @@ const { MessageActionRow, MessageButton, MessageSelectMenu } = require('discord.
 const disableAllComponents = require('../../utils/disableAllComponents');
 const sendNoDM = require('../../utils/sendNoDM');
 const { materialsMap } = require('../../utils/itemsInfo');
+const { eatAdvice, drinkAdvice, restAdvice } = require('../../utils/adviceMessages');
 
 module.exports.name = 'repair';
 
@@ -250,6 +251,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			botReply = await decreaseHealth(userData, botReply, { ...profileData.injuries });
 			botReply = await checkLevelUp(message, botReply, userData, serverData);
 			await isPassedOut(message, userData, true);
+
+			await restAdvice(message, userData);
+			await drinkAdvice(message, userData);
+			await eatAdvice(message, userData);
 		}
 
 
