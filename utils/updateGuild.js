@@ -88,7 +88,7 @@ async function createGuild(client, guild) {
 					evenness: 100,
 				},
 				foodDen: {
-					structure: null,
+					structure: 100,
 					bedding: 100,
 					thickness: 100,
 					evenness: 100,
