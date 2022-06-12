@@ -345,7 +345,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			(/** @type {import('../../typedef').ProfileSchema} */ u) => Object.values(u.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].rank !== 'Youngling').length > 0))
 		.map(u => Object.values(u.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].rank !== 'Youngling').length)
 		.reduce((a, b) => a + b, 0);
-	const serverInventoryCount = Object.values(serverData.inventory).map(type => Object.values(type)).flat().reduce((a, b) => a + b, 0);
+	const serverInventoryCount = Object.entries(serverData.inventory).map(([type, content]) => type != 'materials' ? Object.values(content) : 0).flat().reduce((a, b) => a + b, 0);
 
 	// If the server has more items than 8 per profile. It's 2 more than counted when the humans spawn, to give users a bit of leeway
 	if (serverInventoryCount > highRankProfilesCount * 8 && messageContent === null && serverData.nextPossibleAttack <= Date.now()) {
