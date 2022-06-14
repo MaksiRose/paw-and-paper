@@ -16,7 +16,7 @@ const { checkLevelUp } = require('../../utils/levelHandling');
 const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
 const { pickRandomRarePlant, pickRandomUncommonPlant, pickRandomCommonPlant } = require('../../utils/pickRandomPlant');
 const sendNoDM = require('../../utils/sendNoDM');
-const { materialsMap } = require('../../utils/itemsInfo');
+const { materialsMap, specialPlantsMap } = require('../../utils/itemsInfo');
 
 module.exports.name = 'adventure';
 
@@ -311,40 +311,32 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					let winningCharacterData = winningUserData.characters[winningUserData.currentCharacter[message.guild.id]];
 					let winningProfileData = winningCharacterData.profiles[message.guild.id];
 
-					switch (true) {
+					if (winningProfileData.health < winningProfileData.maxHealth) {
 
-						case (winningProfileData.health < winningProfileData.maxHealth):
+						extraHealthPoints = function(health) { return (winningProfileData.health + health > winningProfileData.maxHealth) ? winningProfileData.maxHealth - winningProfileData.health : health; }(generateRandomNumber(5, 8));
+					}
+					else if (pullFromWeightedTable({ 0: rounds * 3, 1: 45 - rounds }) === 1 && Object.keys(winningProfileData.temporaryStatIncrease).length <= 1) {
 
-							extraHealthPoints = function(health) { return (winningProfileData.health + health > winningProfileData.maxHealth) ? winningProfileData.maxHealth - winningProfileData.health : health; }(generateRandomNumber(5, 8));
+						foundItem = Array.from(specialPlantsMap.keys())[generateRandomNumber(Array.from(specialPlantsMap.keys()).length, 0)];
+					}
+					else if (Object.values(serverData.inventory.materials).reduce((a, b) => a + b, 0) < 36) {
 
-							break;
+						foundItem = Array.from(materialsMap.keys())[generateRandomNumber(Array.from(materialsMap.keys()).length, 0)];
+					}
+					else if (pullFromWeightedTable({ 0: rounds * 8, 1: 30 - rounds }) === 1) {
 
-						case (Object.values(serverData.inventory.materials).flat().reduce((a, b) => a + b, 0) < 36):
+						if (pullFromWeightedTable({ 0: rounds * 8, 1: 30 - rounds }) === 1) {
 
-							foundItem = Array.from(materialsMap.keys())[generateRandomNumber(Array.from(materialsMap.keys()).length, 0)];
+							foundItem = await pickRandomRarePlant();
+						}
+						else {
 
-							break;
+							foundItem = await pickRandomUncommonPlant();
+						}
+					}
+					else {
 
-						case (pullFromWeightedTable({ 0: rounds * 8, 1: 30 - rounds }) === 1):
-
-							switch (true) {
-
-								case (pullFromWeightedTable({ 0: rounds * 8, 1: 30 - rounds }) === 1):
-
-									foundItem = await pickRandomRarePlant();
-
-									break;
-
-								default:
-
-									foundItem = await pickRandomUncommonPlant();
-							}
-
-							break;
-
-						default:
-
-							foundItem = await pickRandomCommonPlant();
+						foundItem = await pickRandomCommonPlant();
 					}
 
 					const userInventory = {
