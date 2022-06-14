@@ -336,6 +336,22 @@ rarePlantsMap.set('marsh mallow', {
 });
 
 
+/** @type {Map<string, import('../typedef').PlantMapObject>} */
+const specialPlantsMap = new Map();
+
+specialPlantsMap.set('black-eyed Susan', {
+	name: 'black-eyed Susan',
+	description: 'This flower from the sunflower family is thought to give a temporary boost to one\'s maximum health, energy, hunger or thirst.',
+	edibality: 'e',
+	healsWounds: false,
+	healsInfections: false,
+	healsColds: false,
+	healsSprains: false,
+	healsPoison: false,
+	givesEnergy: false,
+});
+
+
 /** @type {Map<string, import('../typedef').MaterialsMapObject>} */
 const materialsMap = new Map();
 
@@ -971,6 +987,7 @@ module.exports = {
 	commonPlantsMap: commonPlantsMap,
 	uncommonPlantsMap: uncommonPlantsMap,
 	rarePlantsMap: rarePlantsMap,
+	specialPlantsMap: specialPlantsMap,
 	materialsMap: materialsMap,
 	speciesMap: speciesMap,
 

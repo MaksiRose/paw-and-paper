@@ -1,7 +1,7 @@
 // @ts-check
 const { schema, model } = require('./constructor');
 const config = require('../config.json');
-const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap, materialsMap } = require('../utils/itemsInfo');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap, materialsMap, specialPlantsMap } = require('../utils/itemsInfo');
 
 const profileSchema = new schema({
 	userId: {
@@ -192,6 +192,14 @@ const profileSchema = new schema({
 										type: 'object',
 										default: Object.fromEntries(
 											[...rarePlantsMap.keys()].sort().map(key => {
+												return [key, { type: 'number', default: 0 }];
+											}),
+										),
+									},
+									specialPlants: {
+										type: 'object',
+										default: Object.fromEntries(
+											[...specialPlantsMap.keys()].sort().map(key => {
 												return [key, { type: 'number', default: 0 }];
 											}),
 										),

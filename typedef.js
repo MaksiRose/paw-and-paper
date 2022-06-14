@@ -73,7 +73,7 @@ module.exports.WebhookMessages = this.WebhookMessages;
  * @property {number} unlockedRanks - How many ranks the character has unlocked.
  * @property {Sapling} sapling - The sapling of the character
  * @property {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} injuries - Object with injury types as keys and whether the user has them/how many the user has of them as variables.
- * @property {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, meat: Object<string, number>, materials: Object<string, number>}} inventory - Object with item kinds as the keys and an object of the item types and their quantity as the variables.
+ * @property {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, specialPlants: Object<string, number>, meat: Object<string, number>, materials: Object<string, number>}} inventory - Object with item kinds as the keys and an object of the item types and their quantity as the variables.
  * @property {Array<Role>} roles - Array of role objects
  * @property {{global: Object<string, number>, personal: Object<string, number>}} skills - Object of skills, with global and personal skills as key-value pairs.
  */
@@ -111,7 +111,7 @@ module.exports.ProfileSchema = this.ProfileSchema;
  * @typedef {Object} ServerSchema
  * @property {string} serverId - ID of the server. Cannot be modified.
  * @property {string} name - Name of the server.
- * @property {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, meat: Object<string, number>, materials: Object<string, number>}} inventory - Object with item kinds as the keys and an object of the item types and their quantity as the variables.
+ * @property {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, specialPlants: Object<string, number>, meat: Object<string, number>, materials: Object<string, number>}} inventory - Object with item kinds as the keys and an object of the item types and their quantity as the variables.
  * @property {{sleepingDens: DenSchema, foodDen: DenSchema, medicineDen: DenSchema}} dens - Object of the blocked entrance with the name of the den and kind of block as the variables. If no entrance is blocked, they are null.
  * @property {number} nextPossibleAttack - Timestamp of the time when the next attack is possible.
  * @property {?string} visitChannelId - ID of the channel that can be visited. If no channel is seleted, this is null.

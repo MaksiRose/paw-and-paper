@@ -1,6 +1,6 @@
 // @ts-check
 const { readFileSync, renameSync, writeFileSync, readdirSync } = require('fs');
-const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('./itemsInfo');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap, specialPlantsMap } = require('./itemsInfo');
 const serverModel = require('../models/serverModel');
 
 /**
@@ -73,6 +73,7 @@ async function createGuild(client, guild) {
 			commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, 0])),
 			uncommonPlants: Object.fromEntries([...uncommonPlantsMap.keys()].sort().map(key => [key, 0])),
 			rarePlants: Object.fromEntries([...rarePlantsMap.keys()].sort().map(key => [key, 0])),
+			specialPlants: Object.fromEntries([...specialPlantsMap.keys()].sort().map(key => [key, 0])),
 			meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, 0])),
 		};
 

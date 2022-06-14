@@ -2,7 +2,7 @@
 const { default_color, error_color } = require('../../config.json');
 const { readFileSync } = require('fs');
 const profileModel = require('../../models/profileModel');
-const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap, materialsMap } = require('../../utils/itemsInfo');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap, materialsMap, specialPlantsMap } = require('../../utils/itemsInfo');
 const startCooldown = require('../../utils/startCooldown');
 const { checkRankRequirements, checkLevelRequirements } = require('../../utils/checkRoleRequirements');
 const { MessageEmbed } = require('discord.js');
@@ -151,6 +151,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 								commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, 0])),
 								uncommonPlants: Object.fromEntries([...uncommonPlantsMap.keys()].sort().map(key => [key, 0])),
 								rarePlants: Object.fromEntries([...rarePlantsMap.keys()].sort().map(key => [key, 0])),
+								specialPlants: Object.fromEntries([...specialPlantsMap.keys()].sort().map(key => [key, 0])),
 								meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, 0])),
 								materials: Object.fromEntries([...materialsMap.keys()].sort().map(key => [key, 0])),
 							},

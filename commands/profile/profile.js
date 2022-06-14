@@ -7,7 +7,7 @@ const { hasCooldown } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { stopResting } = require('../../utils/executeResting');
-const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap, materialsMap } = require('../../utils/itemsInfo');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap, materialsMap, specialPlantsMap } = require('../../utils/itemsInfo');
 const { error_color } = require('../../config.json');
 const getUserIds = require('../../utils/getUserIds');
 
@@ -237,6 +237,7 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
 									commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, 0])),
 									uncommonPlants: Object.fromEntries([...uncommonPlantsMap.keys()].sort().map(key => [key, 0])),
 									rarePlants: Object.fromEntries([...rarePlantsMap.keys()].sort().map(key => [key, 0])),
+									specialPlants: Object.fromEntries([...specialPlantsMap.keys()].sort().map(key => [key, 0])),
 									meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, 0])),
 									materials: Object.fromEntries([...materialsMap.keys()].sort().map(key => [key, 0])),
 								},
