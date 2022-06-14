@@ -80,8 +80,26 @@ async function createGuild(client, guild) {
 			serverId: guild.id,
 			name: guild.name,
 			inventory: serverInventoryObject,
-			blockedEntrance: { den: null, blockedKind: null },
-			activeUsers: [],
+			dens: {
+				sleepingDens: {
+					structure: 100,
+					bedding: 100,
+					thickness: 100,
+					evenness: 100,
+				},
+				foodDen: {
+					structure: 100,
+					bedding: 100,
+					thickness: 100,
+					evenness: 100,
+				},
+				medicineDen: {
+					structure: 100,
+					bedding: 100,
+					thickness: 100,
+					evenness: 100,
+				},
+			},
 			nextPossibleAttack: Date.now(),
 			visitChannelId: null,
 			currentlyVisiting: null,

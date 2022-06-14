@@ -2,7 +2,7 @@
 const profileModel = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
 const startCooldown = require('../../utils/startCooldown');
-const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap, materialsMap } = require('../../utils/itemsInfo');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
@@ -68,6 +68,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		['uncommonPlants', [...uncommonPlantsMap.keys()].sort()],
 		['rarePlants', [...rarePlantsMap.keys()].sort()],
 		['meat', [...speciesMap.keys()].sort()],
+		['materials', [...materialsMap.keys()].sort()],
 	]);
 
 	const itemSelectMenu = new MessageActionRow().addComponents(

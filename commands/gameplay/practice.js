@@ -10,7 +10,7 @@ const { pronoun, pronounAndPlural } = require('../../utils/getPronouns');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
-const { coloredButtonsAdvice } = require('../../utils/adviceMessages');
+const { coloredButtonsAdvice, restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
 const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'practice';
@@ -302,6 +302,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		await isPassedOut(message, userData, true);
 
 		await coloredButtonsAdvice(message, userData);
+		await restAdvice(message, userData);
+		await drinkAdvice(message, userData);
+		await eatAdvice(message, userData);
 
 		return;
 	}

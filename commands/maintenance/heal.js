@@ -16,6 +16,7 @@ const disableAllComponents = require('../../utils/disableAllComponents');
 const { addFriendshipPoints } = require('../../utils/friendshipHandling');
 const sendNoDM = require('../../utils/sendNoDM');
 const wearDownDen = require('../../utils/wearDownDen');
+const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
 
 module.exports.name = 'heal';
 
@@ -690,6 +691,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				botReply = await decreaseHealth(userData, botReply, userInjuryObject);
 				botReply = await checkLevelUp(message, botReply, userData, serverData);
 				await isPassedOut(message, userData, true);
+
+				await restAdvice(message, userData);
+				await drinkAdvice(message, userData);
+				await eatAdvice(message, userData);
 
 				if (chosenUserData.userId !== userData.userId) { await addFriendshipPoints(message, userData, characterData._id, chosenUserData, chosenCharacterData._id); }
 

@@ -3,7 +3,7 @@ const profileModel = require('../../models/profileModel');
 const startCooldown = require('../../utils/startCooldown');
 const { generateRandomNumber, pullFromWeightedTable, generateRandomNumberWithException } = require('../../utils/randomizers');
 const { pickRandomRarePlant, pickRandomUncommonPlant, pickRandomCommonPlant } = require('../../utils/pickRandomPlant');
-const { speciesMap } = require('../../utils/itemsInfo');
+const { speciesMap, materialsMap } = require('../../utils/itemsInfo');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
@@ -15,7 +15,7 @@ const { remindOfAttack, startAttack } = require('./attack');
 const { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural } = require('../../utils/getPronouns');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
-const { coloredButtonsAdvice } = require('../../utils/adviceMessages');
+const { coloredButtonsAdvice, restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
 const sendNoDM = require('../../utils/sendNoDM');
 
 module.exports.name = 'explore';
@@ -345,7 +345,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			(/** @type {import('../../typedef').ProfileSchema} */ u) => Object.values(u.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].rank !== 'Youngling').length > 0))
 		.map(u => Object.values(u.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].rank !== 'Youngling').length)
 		.reduce((a, b) => a + b, 0);
-	const serverInventoryCount = Object.values(serverData.inventory).map(type => Object.values(type)).flat().reduce((a, b) => a + b, 0);
+	const serverInventoryCount = Object.entries(serverData.inventory).map(([type, content]) => type != 'materials' ? Object.values(content) : 0).flat().reduce((a, b) => a + b, 0);
 
 	// If the server has more items than 8 per profile. It's 2 more than counted when the humans spawn, to give users a bit of leeway
 	if (serverInventoryCount > highRankProfilesCount * 8 && messageContent === null && serverData.nextPossibleAttack <= Date.now()) {
@@ -358,7 +358,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	}
 	else if (pullFromWeightedTable({ 0: 10, 1: 90 + profileData.sapling.waterCycles }) === 0) {
 
-		botReply = await findSaplingOrNothing();
+		botReply = await findSaplingOrMaterialOrNothing();
 	}
 	else if (pullFromWeightedTable({ 0: profileData.rank === 'Healer' ? 2 : 1, 1: profileData.rank === 'Hunter' ? 2 : 1 }) === 0) {
 
@@ -374,6 +374,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	await isPassedOut(message, userData, true);
 
 	await coloredButtonsAdvice(message, userData);
+	await restAdvice(message, userData);
+	await drinkAdvice(message, userData);
+	await eatAdvice(message, userData);
 
 
 	/**
@@ -382,8 +385,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	 */
 	async function findHumans() {
 
-		// The numerator is the amount of items above 6 per profile, the denominator is the amount of profiles
-		const humanCount = Math.round((serverInventoryCount - (highRankProfilesCount * 6)) / highRankProfilesCount);
+		// The numerator is the amount of items above 7 per profile, the denominator is the amount of profiles
+		const humanCount = Math.round((serverInventoryCount - (highRankProfilesCount * 7)) / highRankProfilesCount);
 		startAttack(message, humanCount);
 
 		embed.description = `*${characterData.name} has just been looking around for food when ${pronounAndPlural(characterData, 0, 'suddenly hear')} voices to ${pronoun(characterData, 2)} right. Cautiously ${pronounAndPlural(characterData, 0, 'creep')} up, and sure enough: a group of humans! It looks like it's around ${humanCount}. They seem to be discussing something, and keep pointing over towards where the pack is lying. Alarmed, the ${characterData.displayedSpecies || characterData.species} runs away. **${upperCasePronoun(characterData, 0)} must gather as many packmates as possible to protect the pack!***`;
@@ -444,10 +447,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	}
 
 	/**
-	 * Gives the user a ginkgo sapling, or nothing if they already have one.
+	 * Gives the user a ginkgo sapling if they don't have one, material if the server has below 36, or nothing.
 	 * @returns {Promise<import('discord.js').Message>}
 	 */
-	async function findSaplingOrNothing() {
+	async function findSaplingOrMaterialOrNothing() {
+
+		const serverMaterialsCount = Object.values(serverData.inventory.materials).flat().reduce((a, b) => a + b, 0);
 
 		if (profileData.sapling.exists === false) {
 
@@ -460,6 +465,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			embed.description = `*${characterData.name} is looking around for useful things around ${pronoun(characterData, 1)} when ${pronounAndPlural(characterData, 0, 'discover')} the sapling of a ginkgo tree. The ${characterData.displayedSpecies || characterData.species} remembers that they bring good luck and health. Surely it can't hurt to bring it back to the pack!*`;
 			embed.footer.text = embedFooterStatsText + '\nWater the ginkgo sapling with \'rp water\'.';
+		}
+		else if (serverMaterialsCount < 36) {
+
+			const foundMaterial = Array.from(materialsMap.keys())[generateRandomNumber(Array.from(materialsMap.keys()).length, 0)];
+
+			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+				{ userId: message.author.id },
+				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+					p.characters[characterData._id].profiles[message.guild.id].inventory.materials[foundMaterial] += 1;
+				},
+			));
+
+			embed.description = `*${characterData.name} is looking around for things around ${pronoun(characterData, 1)} but there doesn't appear to be anything useful. The ${characterData.displayedSpecies || characterData.species} decides to grab a ${foundMaterial} as to not go back with nothing to showy.*`;
+			embed.footer.text = `${embedFooterStatsText}\n\n+1 ${foundMaterial}`;
 		}
 		else {
 

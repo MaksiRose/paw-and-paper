@@ -75,7 +75,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	if (!argumentsArray.length) {
 
 		// I have to call the inventory command directly here instead of executing messageCreate.js, since doing otherwise would always return profileData.hasCooldown as true
-		await sendMessage(client, message, argumentsArray, userData, serverData, embedArray);
+		await sendMessage(client, message, ['eating something'], userData, serverData, embedArray);
 		return;
 	}
 
@@ -310,7 +310,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	}
 
 	// I have to call the inventory command directly here instead of executing messageCreate.js, since doing otherwise would always return profileData.hasCooldown as true
-	await sendMessage(client, message, argumentsArray, userData, serverData, embedArray);
+	await sendMessage(client, message, ['eating something'], userData, serverData, embedArray);
 	return;
 };
 

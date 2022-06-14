@@ -16,6 +16,7 @@ const { checkLevelUp } = require('../../utils/levelHandling');
 const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
 const { pickRandomRarePlant, pickRandomUncommonPlant, pickRandomCommonPlant } = require('../../utils/pickRandomPlant');
 const sendNoDM = require('../../utils/sendNoDM');
+const { materialsMap } = require('../../utils/itemsInfo');
 
 module.exports.name = 'adventure';
 
@@ -312,37 +313,38 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					switch (true) {
 
-						case (pullFromWeightedTable({ 0: 1, 1: 1 }) === 0 && winningProfileData.health < winningProfileData.maxHealth):
+						case (winningProfileData.health < winningProfileData.maxHealth):
 
-							extraHealthPoints = function(health) { return (winningProfileData.health + health > winningProfileData.maxHealth) ? winningProfileData.maxHealth - winningProfileData.health : health; }(generateRandomNumber(3, 6));
+							extraHealthPoints = function(health) { return (winningProfileData.health + health > winningProfileData.maxHealth) ? winningProfileData.maxHealth - winningProfileData.health : health; }(generateRandomNumber(5, 8));
 
 							break;
 
-						default:
+						case (Object.values(serverData.inventory.materials).flat().reduce((a, b) => a + b, 0) < 36):
+
+							foundItem = Array.from(materialsMap.keys())[generateRandomNumber(Array.from(materialsMap.keys()).length, 0)];
+
+							break;
+
+						case (pullFromWeightedTable({ 0: rounds * 8, 1: 30 - rounds }) === 1):
 
 							switch (true) {
 
 								case (pullFromWeightedTable({ 0: rounds * 8, 1: 30 - rounds }) === 1):
 
-									switch (true) {
-
-										case (pullFromWeightedTable({ 0: rounds * 8, 1: 30 - rounds }) === 1):
-
-											foundItem = await pickRandomRarePlant();
-
-											break;
-
-										default:
-
-											foundItem = await pickRandomUncommonPlant();
-									}
+									foundItem = await pickRandomRarePlant();
 
 									break;
 
 								default:
 
-									foundItem = await pickRandomCommonPlant();
+									foundItem = await pickRandomUncommonPlant();
 							}
+
+							break;
+
+						default:
+
+							foundItem = await pickRandomCommonPlant();
 					}
 
 					const userInventory = {

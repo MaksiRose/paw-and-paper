@@ -301,6 +301,7 @@ const event = {
 									{ name: '**rp play (@user)**', value: 'The main activity of Younglings. Costs energy, but gives XP. Additionally, you can mention someone to play with them.' },
 									{ name: '**rp practice**', value: 'Practice fighting wild animals. You cannot get hurt here. __Not available to Younglings__.' },
 									{ name: '**rp explore**', value: 'The main activity of every rank above Younglings. Find meat and herbs. Costs energy, but gives XP. __Not available to Younglings.__' },
+									{ name: '**rp scavenge**', value: 'Scavenge for carrion and materials. Costs energy, but gives XP. __Not available to Younglings__.' },
 									{ name: '**rp go (region)**', value: 'Go to a specific region in your pack.' },
 									{ name: '**rp attack**', value: 'If humans are attacking the pack, you can fight back using this command.' },
 									{ name: '**rp recover**', value: 'If the pack has no herbs to heal an injury, you can recover your injury using this command.' },
@@ -319,6 +320,7 @@ const event = {
 										{ label: 'Play', value: 'help_play', description: 'The main activity of Younglings. Costs energy, but gives XP.' },
 										{ label: 'Practice', value: 'help_practice', description: 'Practice fighting wild animals. You cannot get hurt here.' },
 										{ label: 'Explore', value: 'help_explore', description: 'The main activity of every rank above Younglings. Find meat and herbs. Costs energy, but gives XP.' },
+										{ label: 'Scavenge', value: 'help_scavenge', description: 'Scavenge for carrion and materials. Costs energy, but gives XP.' },
 										{ label: 'Go', value: 'help_go', description: 'Go to a specific region in your pack.' },
 										{ label: 'Attack', value: 'help_attack', description: 'If humans are attacking the pack, you can fight back using this command.' },
 										{ label: 'Recover', value: 'help_recover', description: 'If the pack has no herbs to heal an injury, you can recover your injury using this command.' },
@@ -764,7 +766,7 @@ const event = {
 							embeds: [{
 								color: /** @type {`#${string}`} */ (config.default_color),
 								title: 'rp explore (biome)',
-								description: 'The main activity of every rank above Younglings. Find meat and herbs. Costs energy, but gives XP. __Not available to Younglings.__',
+								description: 'The main activity of every rank above Younglings. Find meat and herbs. Costs energy, but gives XP.',
 								fields: [
 									{ name: '**Aliases**', value: 'e' },
 									{ name: '**Arguments**', value: 'Optional: The biome that you want to explore.' },
@@ -772,6 +774,29 @@ const event = {
 									{ name: '**About the plant minigame**', value: 'An emoji that is to be found is pulled from a list of plant emojis. From the other plant emojis plus the aforementioned habitat-emoji list, 5 emojis will be randomly placed on 5 buttons, with emojis being able to repeat once. The emoji to find is being placed randomly on two different buttons, and a campsite emoji is also placed on one of those buttons.\nTo win, you have to press the button with the emoji to find that doesn\'t also contain the campsite emoji.\nIf you pick wrong, you have a 1 in 3 chance to be poisoned if there is an Elderly in the pack, else a 50/50 between getting a cold and geting an infection. If you win, you get a random plant. There is a 30 in 100 chance that you find something other than a common plant (except if you are in the 1st biome), and a 30 in 100 chance that that other plant is a rare plant (if you are in the 3rd biome) instead of an uncommon plant.\nThe chance of a better plant is increased by one for the amount of times you watered your ginkgo sapling successfully.' },
 									{ name: '**About the wild animal minigame**', value: 'An opponent level is randomly chosen. It is between 1 and 10 (1st biome), 11 and 25 (2nd biome), or between 26 and 50 or 10 higher than your level (3rd biome). The opponents species is randomly chosen based on who your species can encounter. You are presented three buttons: Attack (⏫), dodge (⏺️) and defend (↪️). Your opponent choses one, and you have to respond based on what you memorize in the `practice` command. If you choose correct, your temporary level goes up. If you don\'t choose or choose wrong, your opponents level goes up. If you choose the same as your opponent, no one gains levels. The amount you and your opponents level goes up by is equal to your normal level divided by ten, rounded up. After three rounds, of your final scores are chosen as a random number between 0 and your respective levels. If both scores are equal or differ by one, it is a tie. If your score is higher, you get the animal\'s meat. If their score is higher, you get a wound or a sprain with a 50/50 chance.' },
 									{ name: '**Example**', value: '`rp explore forest`' },
+								],
+							}],
+							ephemeral: true,
+						})
+						.catch(async (error) => {
+							if (error.httpStatus !== 404) {
+								throw new Error(error);
+							}
+						});
+				}
+
+				if (interaction.values[0] === 'help_scavenge') {
+
+					return await interaction
+						.followUp({
+							embeds: [{
+								color: /** @type {`#${string}`} */ (config.default_color),
+								title: 'rp scavenge',
+								description: 'Scavenge for carrion and materials. Costs energy, but gives XP. __Not available to Younglings__.',
+								fields: [
+									{ name: '**Aliases**', value: 'none' },
+									{ name: '**Arguments**', value: 'none' },
+									{ name: '**More information**', value: 'When starting the game, a 5x5 grid of question marks is shown. Clicking the fields reveals what\'s underneath. Based on how close the player is to the correct field, a color on a scale from green (closest) to red (farthest) is going to appear. The player can click 4 times and has 2 minutes to win. If the correct field is found in that time, the player wins the game and can either find carrion meat, materials, or nothing (in that order) based on how much the server has of that kind of item. When losing the game, another game is started, in which 5 random buttons will appear, one of which has the \'🕸️\' emoji. This emoji should be clicked. Whenever any button is clicked, the buttons reshuffle. After 10 seconds, the amount of buttons the player has clicked determines (times 10 in %) how likely the player is to not get hurt. When getting hurt, there is a 50/50 chance between getting a sprain and an infection.' },
 								],
 							}],
 							ephemeral: true,

@@ -350,7 +350,7 @@ materialsMap.set('stick', {
 
 materialsMap.set('pine cone', {
 	name: 'pine cone',
-	description: 'The seed-bearing fruit of the pine tree. The wooden exterior and shape make it great for reinforcing walls.',
+	description: 'The seed-bearing fruit of the pine tree. The wooden exterior and shape make it great for reinforcing structures.',
 	reinforcesStructure: true,
 	improvesBedding: false,
 	thickensWalls: false,

@@ -33,12 +33,11 @@ async function decreaseThirst(profileData) {
  */
 async function decreaseHunger(profileData) {
 
-	let minimumHungerPoints = Math.round(10 - (profileData.energy / 10));
+	const minimumHungerPoints = Math.round(10 - (profileData.energy / 10));
 	let hungerPoints = 0;
 
 	if (minimumHungerPoints > 0) {
 
-		minimumHungerPoints = Math.round(minimumHungerPoints / 2);
 		hungerPoints = Math.floor(Math.random() * 3) + minimumHungerPoints;
 
 		if (profileData.hunger - hungerPoints < 0) {

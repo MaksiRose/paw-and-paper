@@ -11,6 +11,7 @@ const { remindOfAttack } = require('../gameplay/attack');
 const { pronounAndPlural, pronoun, upperCasePronounAndPlural, upperCasePronoun } = require('../../utils/getPronouns');
 const { addFriendshipPoints } = require('../../utils/friendshipHandling');
 const sendNoDM = require('../../utils/sendNoDM');
+const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
 const sharingCooldownAccountsMap = new Map();
 
 module.exports.name = 'share';
@@ -238,6 +239,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	botReply = await checkLevelUp(message, botReply, userData, serverData);
 	await decreaseHealth(userData, botReply, userInjuryObject);
 	await isPassedOut(message, userData, false);
+
+	await restAdvice(message, userData);
+	await drinkAdvice(message, userData);
+	await eatAdvice(message, userData);
 
 	if (partnerUserData !== null && partnerCharacterData != undefined) { await addFriendshipPoints(message, userData, characterData._id, partnerUserData, partnerCharacterData._id); }
 
