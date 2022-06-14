@@ -255,6 +255,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				commonPlants: { ...serverData.inventory.commonPlants },
 				uncommonPlants: { ...serverData.inventory.uncommonPlants },
 				rarePlants: { ...serverData.inventory.rarePlants },
+				specialPlants: { ...serverData.inventory.specialPlants },
 				meat: { ...serverData.inventory.meat },
 				materials: { ...serverData.inventory.materials },
 			};
@@ -441,6 +442,7 @@ async function remainingHumans(message) {
 		commonPlants: { ...serverData.inventory.commonPlants },
 		uncommonPlants: { ...serverData.inventory.uncommonPlants },
 		rarePlants: { ...serverData.inventory.rarePlants },
+		specialPlants: { ...serverData.inventory.specialPlants },
 		meat: { ...serverData.inventory.meat },
 		materials: { ...serverData.inventory.materials },
 	};

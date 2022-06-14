@@ -226,6 +226,7 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
 								maxEnergy: 100,
 								maxHunger: 100,
 								maxThirst: 100,
+								temporaryStatIncrease: {},
 								isResting: false,
 								hasCooldown: false,
 								hasQuest: false,

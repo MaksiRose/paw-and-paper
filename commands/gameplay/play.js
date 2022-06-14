@@ -411,6 +411,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				commonPlants: { ...profileData.inventory.commonPlants },
 				uncommonPlants: { ...profileData.inventory.uncommonPlants },
 				rarePlants: { ...profileData.inventory.rarePlants },
+				specialPlants: { ...profileData.inventory.specialPlants },
 				meat: { ...profileData.inventory.meat },
 				materials: { ...profileData.inventory.materials },
 			};

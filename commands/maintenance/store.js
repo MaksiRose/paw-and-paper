@@ -51,6 +51,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		commonPlants: { ...profileData.inventory.commonPlants },
 		uncommonPlants: { ...profileData.inventory.uncommonPlants },
 		rarePlants: { ...profileData.inventory.rarePlants },
+		specialPlants: { ...profileData.inventory.specialPlants },
 		meat: { ...profileData.inventory.meat },
 		materials: { ...profileData.inventory.materials },
 	};
@@ -59,6 +60,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		commonPlants: { ...serverData.inventory.commonPlants },
 		uncommonPlants: { ...serverData.inventory.uncommonPlants },
 		rarePlants: { ...serverData.inventory.rarePlants },
+		specialPlants: { ...serverData.inventory.specialPlants },
 		meat: { ...serverData.inventory.meat },
 		materials: { ...serverData.inventory.materials },
 	};
