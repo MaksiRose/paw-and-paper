@@ -124,6 +124,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			plantType = 'specialPlants';
 			plantMap = new Map([...specialPlantsMap]);
+
+			increasedStatType = /** @type {'health' | 'energy' | 'hunger' | 'thirst'} */ (['health', 'energy', 'hunger', 'thirst'][generateRandomNumber(4, 0)]);
+			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+				{ uuid: userData.uuid },
+				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+					p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].temporaryStatIncrease[Date.now()] = 'max' + increasedStatType.charAt(0).toUpperCase() + increasedStatType.slice(1);
+				},
+			));
 		}
 
 		if (serverData.inventory[plantType][chosenFood] <= 0) {
@@ -186,8 +194,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			if (finalHungerPoints < 0) { finalHungerPoints = 0; }
 
-			increasedStatType = /** @type {'health' | 'energy' | 'hunger' | 'thirst'} */ (['health', 'energy', 'hunger', 'thirst'][generateRandomNumber(4, 0)]);
-
 			embed.description = `*${characterData.name} decides to have a special treat today. Slowly, ${pronounAndPlural(characterData, 0, 'chew')} on the ${chosenFood}, enjoying the fresh taste. It doesn't take long for the ${characterData.displayedSpecies || characterData.species} to feel a special effect kick in: It's as if ${pronoun(characterData, 0)} can have much more ${increasedStatType} than before. What a magical sensation!*`;
 		}
 
@@ -228,7 +234,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		if (plantMap.get(chosenFood).increasesMaxCondition === true) {
 
-			embed.footer.text += `\n+10 maximum ${increasedStatType} (${profileData['max' + increasedStatType.charAt(0).toUpperCase() + increasedStatType.slice(1)]})`;
+			embed.footer.text += `\n+10 maximum ${increasedStatType} (${profileData['max' + increasedStatType.charAt(0).toUpperCase() + increasedStatType.slice(1)]}) for one week`;
 		}
 
 		embed.footer.text += `${profileData.currentRegion !== 'food den' ? '\nYou are now at the food den' : ''}\n\n${await wearDownDen(serverData, 'food den')}\n-1 ${chosenFood} for ${message.guild.name}`;

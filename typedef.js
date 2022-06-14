@@ -66,6 +66,7 @@ module.exports.WebhookMessages = this.WebhookMessages;
  * @property {number} maxEnergy - Maximum Energy Points of the character.
  * @property {number} maxHunger - Maximum Hunger Points of the character.
  * @property {number} maxThirst - Maximum Thirst Points of the character.
+ * @property {Object<string, string>} temporaryStatIncrease - Object with a timestamp as the key and the kind of stat that is increased as the value.
  * @property {boolean} isResting - Whether the character is resting.
  * @property {boolean} hasCooldown - Whether the character is on a cooldown.
  * @property {boolean} hasQuest - Whether the character has an open quest.

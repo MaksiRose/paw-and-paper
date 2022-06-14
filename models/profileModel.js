@@ -132,6 +132,10 @@ const profileSchema = new schema({
 								type: 'number',
 								default: 100,
 							},
+							temporaryStatIncrease: {
+								type: 'nest',
+								default: 'string',
+							},
 							isResting: { type: 'boolean' },
 							hasCooldown: { type: 'boolean' },
 							hasQuest: { type: 'boolean' },

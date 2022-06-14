@@ -1,5 +1,6 @@
 // @ts-check
 const { readFileSync, unlinkSync, writeFileSync } = require('fs');
+const profileModel = require('../models/profileModel');
 const serverModel = require('../models/serverModel');
 const { createGuild } = require('../utils/updateGuild');
 
@@ -48,7 +49,7 @@ const event = {
 			}
 		}
 
-		setInterval(() => {
+		setInterval(async () => {
 
 			/** @type {import('../typedef').DeleteList} */
 			const toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8'));
@@ -63,6 +64,35 @@ const event = {
 			}
 
 			writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
+
+
+			const userList = /** @type {Array<import('../typedef').ProfileSchema>} */ (await profileModel.find());
+
+			for (const userData of userList) {
+
+				for (const characterData of Object.values(userData.characters)) {
+
+					for (const profileData of Object.values(characterData.profiles)) {
+
+						for (const [timestamp, statKind] of Object.entries(profileData.temporaryStatIncrease)) {
+
+							if (Number(timestamp) < Date.now() - 604800000) {
+
+								await profileModel.findOneAndUpdate(
+									{ uuid: userData.uuid },
+									(/** @type {import('../typedef').ProfileSchema} */ p) => {
+										p.characters[characterData._id].profiles[profileData.serverId][statKind] -= 10;
+										if (p.characters[characterData._id].profiles[profileData.serverId][statKind.replace('max', '').toLowerCase()] > p.characters[characterData._id].profiles[profileData.serverId][statKind]) {
+											p.characters[characterData._id].profiles[profileData.serverId][statKind.replace('max', '').toLowerCase()] = p.characters[characterData._id].profiles[profileData.serverId][statKind];
+										}
+										delete p.characters[characterData._id].profiles[profileData.serverId].temporaryStatIncrease[timestamp];
+									},
+								);
+							}
+						}
+					}
+				}
+			}
 		}, 3600000);
 	},
 };
