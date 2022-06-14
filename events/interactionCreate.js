@@ -1750,7 +1750,7 @@ const event = {
 
 					await interaction.message
 						.edit({
-							.../** @type {import('discord.js').MessageEditOptions} */ (getMessageContent(profileData, characterData.name, referencedMessage.mentions.users.size > 0)),
+							.../** @type {import('discord.js').MessageEditOptions} */ (getMessageContent(profileData, characterData.name, referencedMessage.mentions.users.size <= 0)),
 						})
 						.catch((error) => {
 							if (error.httpStatus !== 404) { throw new Error(error); }
