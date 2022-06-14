@@ -151,6 +151,7 @@ module.exports.Event = this.Event;
  * @property {boolean} healsSprains - Whether the plant heals sprains.
  * @property {boolean} healsPoison - Whether the plant heals poison.
  * @property {boolean} givesEnergy - Whether the plant gives energy.
+ * @property {boolean} increasesMaxCondition - Whether the plant increases the maximum of one condition.
  */
 module.exports.PlantMapObject = this.PlantMapObject;
 

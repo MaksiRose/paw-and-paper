@@ -1,7 +1,7 @@
 // @ts-check
 const { default_color, prefix } = require('../../config.json');
 const startCooldown = require('../../utils/startCooldown');
-const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap, materialsMap } = require('../../utils/itemsInfo');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap, materialsMap, specialPlantsMap } = require('../../utils/itemsInfo');
 const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { hasCooldown } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
@@ -192,6 +192,15 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					}
 				}
 
+				for (const [specialPlantName, specialPlantObject] of [...specialPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
+
+					if (serverData.inventory.specialPlants[specialPlantName] > 0) {
+
+						embed.fields.push({ name: `${specialPlantName}: ${serverData.inventory.specialPlants[specialPlantName]}`, value: specialPlantObject.description, inline: true });
+						/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: specialPlantName, value: specialPlantName, description: `${serverData.inventory.specialPlants[specialPlantName]}` });
+					}
+				}
+
 				if (profileData.hunger < profileData.maxHunger && /** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.length > 0) {
 
 					messageComponentArray.push(foodSelectMenu);
@@ -343,7 +352,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					});
 			}
 
-			const plantNamesArray = [...commonPlantsMap.keys(), ...uncommonPlantsMap.keys(), ...rarePlantsMap.keys(), ...speciesMap.keys() ].sort();
+			const plantNamesArray = [...commonPlantsMap.keys(), ...uncommonPlantsMap.keys(), ...rarePlantsMap.keys(), ...specialPlantsMap.keys(), ...speciesMap.keys() ].sort();
 
 			if (interaction.customId === 'eat-options' && plantNamesArray.some(elem => elem === interaction.values[0])) {
 

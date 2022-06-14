@@ -13,6 +13,7 @@ commonPlantsMap.set('raspberry', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('garlic', {
@@ -25,6 +26,7 @@ commonPlantsMap.set('garlic', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('herb Robert', {
@@ -37,6 +39,7 @@ commonPlantsMap.set('herb Robert', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('field scabious', {
@@ -49,6 +52,7 @@ commonPlantsMap.set('field scabious', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('henna', {
@@ -61,6 +65,7 @@ commonPlantsMap.set('henna', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('elderberry', {
@@ -73,6 +78,7 @@ commonPlantsMap.set('elderberry', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('comfrey', {
@@ -85,6 +91,7 @@ commonPlantsMap.set('comfrey', {
 	healsSprains: true,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('marigold', {
@@ -97,6 +104,7 @@ commonPlantsMap.set('marigold', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('common hollyhock', {
@@ -109,6 +117,7 @@ commonPlantsMap.set('common hollyhock', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('arnica', {
@@ -121,6 +130,7 @@ commonPlantsMap.set('arnica', {
 	healsSprains: true,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('clover', {
@@ -133,6 +143,7 @@ commonPlantsMap.set('clover', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('passion fruit', {
@@ -145,6 +156,7 @@ commonPlantsMap.set('passion fruit', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('bergamot orange', {
@@ -157,6 +169,7 @@ commonPlantsMap.set('bergamot orange', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('cicely', {
@@ -169,6 +182,7 @@ commonPlantsMap.set('cicely', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('acorn', {
@@ -181,6 +195,7 @@ commonPlantsMap.set('acorn', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('rhodiola', {
@@ -193,6 +208,7 @@ commonPlantsMap.set('rhodiola', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: true,
+	increasesMaxCondition: false,
 });
 
 
@@ -209,6 +225,7 @@ uncommonPlantsMap.set('solomon\'s seal', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 uncommonPlantsMap.set('gotu kola', {
@@ -221,6 +238,7 @@ uncommonPlantsMap.set('gotu kola', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: true,
+	increasesMaxCondition: false,
 });
 
 uncommonPlantsMap.set('great mullein', {
@@ -233,6 +251,7 @@ uncommonPlantsMap.set('great mullein', {
 	healsSprains: true,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 uncommonPlantsMap.set('purple coneflower', {
@@ -245,6 +264,7 @@ uncommonPlantsMap.set('purple coneflower', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 uncommonPlantsMap.set('field horsetail', {
@@ -257,6 +277,7 @@ uncommonPlantsMap.set('field horsetail', {
 	healsSprains: true,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 uncommonPlantsMap.set('bay laurel', {
@@ -269,6 +290,7 @@ uncommonPlantsMap.set('bay laurel', {
 	healsSprains: true,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 uncommonPlantsMap.set('chick weed', {
@@ -281,6 +303,7 @@ uncommonPlantsMap.set('chick weed', {
 	healsSprains: true,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 uncommonPlantsMap.set('yerba mate', {
@@ -293,6 +316,7 @@ uncommonPlantsMap.set('yerba mate', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: true,
+	increasesMaxCondition: false,
 });
 
 
@@ -309,6 +333,7 @@ rarePlantsMap.set('ribwort plantain', {
 	healsSprains: true,
 	healsPoison: true,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 rarePlantsMap.set('charcoal-tree leaves', {
@@ -321,6 +346,7 @@ rarePlantsMap.set('charcoal-tree leaves', {
 	healsSprains: false,
 	healsPoison: true,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 rarePlantsMap.set('marsh mallow', {
@@ -333,6 +359,7 @@ rarePlantsMap.set('marsh mallow', {
 	healsSprains: true,
 	healsPoison: false,
 	givesEnergy: true,
+	increasesMaxCondition: false,
 });
 
 
@@ -349,6 +376,7 @@ specialPlantsMap.set('black-eyed Susan', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: true,
 });
 
 
