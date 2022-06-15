@@ -194,7 +194,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			if (finalHungerPoints < 0) { finalHungerPoints = 0; }
 
-			embed.description = `*${characterData.name} decides to have a special treat today. Slowly, ${pronounAndPlural(characterData, 0, 'chew')} on the ${chosenFood}, enjoying the fresh taste. It doesn't take long for the ${characterData.displayedSpecies || characterData.species} to feel a special effect kick in: It's as if ${pronoun(characterData, 0)} can have much more ${increasedStatType} than before. What a magical sensation!*`;
+			embed.description = `*${characterData.name} decides to have a special treat today. Slowly, ${pronounAndPlural(characterData, 0, 'chew')} on the ${chosenFood}, enjoying the fresh taste. It doesn't take long for the ${characterData.displayedSpecies || characterData.species} to feel a special effect kick in: It's as if ${pronoun(characterData, 0)} can have much more ${increasedStatType} than before. What an enchanting sensation!*`;
 		}
 
 
