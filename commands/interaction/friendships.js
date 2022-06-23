@@ -1,10 +1,10 @@
 // @ts-check
 const { MessageEmbed, MessageActionRow, MessageButton } = require('discord.js');
 const profileModel = require('../../models/profileModel');
-const { hasNoName } = require('../../utils/checkAccountCompletion');
+const { hasName } = require('../../utils/checkAccountCompletion');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { getFriendshipPoints, getFriendshipHearts, checkOldMentions } = require('../../utils/friendshipHandling');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports.name = 'friendships';
@@ -20,14 +20,14 @@ module.exports.aliases = ['friendship', 'relationships', 'relationship', 'friend
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
 
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 
-	if (await hasNoName(message, characterData)) {
+	if (!hasName(message, characterData)) {
 
 		return;
 	}

@@ -2,7 +2,7 @@
 const { MessageActionRow, MessageButton } = require('discord.js');
 const profileModel = require('../../models/profileModel');
 const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { decreaseEnergy, decreaseHunger, decreaseThirst, decreaseHealth } = require('../../utils/checkCondition');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const disableAllComponents = require('../../utils/disableAllComponents');
@@ -10,7 +10,7 @@ const { pronoun, pronounAndPlural } = require('../../utils/getPronouns');
 const { speciesMap, materialsMap } = require('../../utils/itemsInfo');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { generateRandomNumber, pullFromWeightedTable } = require('../../utils/randomizers');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 const startCooldown = require('../../utils/startCooldown');
 const { remindOfAttack } = require('./attack');
 
@@ -23,21 +23,21 @@ module.exports.name = 'scavenge';
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
 	/* Checking if the user is sending the command in a DM. If they are, it will send a message saying
 	that the command can only be used in a server. */
-	if (await sendNoDM(message)) { return; }
+	if (!isInGuild(message)) { return; }
 
 	/* Getting the character data and profile data of the user. */
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];
 
 	/* Checking if the user has completed their account and if the user is invalid. */
-	if (await hasNotCompletedAccount(message, characterData) || await isInvalid(message, userData, embedArray, [module.exports.name])) { return; }
+	if (!hasCompletedAccount(message, characterData) || await isInvalid(message, userData, embedArray, [module.exports.name])) { return; }
 
 	/* Starting the cooldown for the command and checking if the user is in a battle and
 	if they are, it will send a message reminding them to use the `rp attack` command. */
@@ -165,7 +165,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	 */
 	async function interactionCollector(isHumanTrap) {
 
-		await new Promise((resolve) => {
+		await /** @type {Promise<void>} */(new Promise((resolve) => {
 
 			let correctButtonPresses = 0;
 
@@ -228,8 +228,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					and the amount of materials in the server's inventory. */
 					const highRankProfilesCount = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel
 						.find(
-							(/** @type {import('../../typedef').ProfileSchema} */ u) => Object.values(u.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].rank !== 'Youngling').length > 0))
-						.map(u => Object.values(u.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].rank !== 'Youngling').length)
+							// @ts-ignore, as message is must be in server
+							(/** @type {import('../../typedef').ProfileSchema} */ u) => Object.values(u.characters).filter(c => c.profiles[message.guildId] !== undefined && c.profiles[message.guildId].rank !== 'Youngling').length > 0))
+						// @ts-ignore, as message is must be in server
+						.map(u => Object.values(u.characters).filter(c => c.profiles[message.guildId] !== undefined && c.profiles[message.guildId].rank !== 'Youngling').length)
 						.reduce((a, b) => a + b, 0);
 					const serverMeatCount = Object.values(serverData.inventory.meat).flat().reduce((a, b) => a + b, 0);
 					const serverMaterialsCount = Object.values(serverData.inventory.materials).flat().reduce((a, b) => a + b, 0);
@@ -238,7 +240,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					if the server has enough materials, if it doesn't, give the user material. If it does, do nothing. */
 					if (serverMeatCount < highRankProfilesCount * 2) {
 
-						const carrionArray = [...speciesMap.get(characterData.species).biome1OpponentArray];
+						const carrionArray = [...speciesMap.get(characterData.species)?.biome1OpponentArray || []];
 						const foundCarrion = carrionArray[generateRandomNumber(carrionArray.length, 0)];
 
 						embed.description = 'You found some carrion';
@@ -247,7 +249,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 							{ userId: message.author.id },
 							(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-								p.characters[characterData._id].profiles[message.guild.id].inventory.meat[foundCarrion] += 1;
+								// @ts-ignore, as message is must be in server
+								p.characters[characterData._id].profiles[message.guildId].inventory.meat[foundCarrion] += 1;
 							},
 						));
 					}
@@ -261,7 +264,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 							{ userId: message.author.id },
 							(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-								p.characters[characterData._id].profiles[message.guild.id].inventory.materials[foundMaterial] += 1;
+								// @ts-ignore, as message is must be in server
+								p.characters[characterData._id].profiles[message.guildId].inventory.materials[foundMaterial] += 1;
 							},
 						));
 					}
@@ -301,11 +305,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 							{ userId: message.author.id },
 							(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-								p.characters[characterData._id].profiles[message.guild.id].health -= healthPoints;
+								// @ts-ignore, as message is must be in server
+								p.characters[characterData._id].profiles[message.guildId].health -= healthPoints;
 							},
 						));
-						characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-						profileData = characterData?.profiles?.[message.guild.id];
+						// @ts-ignore, as message is must be in server
+						characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId]];
+						// @ts-ignore, as message is must be in server
+						profileData = characterData?.profiles?.[message.guildId];
 
 						switch (pullFromWeightedTable({ 0: 1, 1: 1 })) {
 
@@ -343,7 +350,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 				resolve();
 			});
-		});
+		}));
 	}
 
 	/**
@@ -352,11 +359,16 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	async function checkHealthAndLevel() {
 
 		botReply = await decreaseHealth(userData, botReply, userInjuryObject);
-		botReply = await checkLevelUp(message, botReply, userData, serverData);
+		// @ts-ignore, as message is must be in server
+		botReply = await checkLevelUp(message, userData, serverData, botReply);
+		// @ts-ignore, as message is must be in server
 		await isPassedOut(message, userData, true);
 
+		// @ts-ignore, as message is must be in server
 		await restAdvice(message, userData);
+		// @ts-ignore, as message is must be in server
 		await drinkAdvice(message, userData);
+		// @ts-ignore, as message is must be in server
 		await eatAdvice(message, userData);
 	}
 

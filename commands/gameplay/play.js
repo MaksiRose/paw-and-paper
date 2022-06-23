@@ -4,7 +4,7 @@ const startCooldown = require('../../utils/startCooldown');
 const { error_color, prefix } = require('../../config.json');
 const { generateRandomNumber, pullFromWeightedTable } = require('../../utils/randomizers');
 const { pickRandomCommonPlant } = require('../../utils/pickRandomPlant');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
 const { checkLevelUp } = require('../../utils/levelHandling');
@@ -18,7 +18,7 @@ const { addFriendshipPoints } = require('../../utils/friendshipHandling');
 const { speciesMap } = require('../../utils/itemsInfo');
 const { createButtons } = require('./explore');
 const { MessageActionRow, MessageButton } = require('discord.js');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 
 module.exports.name = 'play';
 
@@ -29,12 +29,12 @@ module.exports.name = 'play';
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
@@ -42,7 +42,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];
 
-	if (await hasNotCompletedAccount(message, characterData)) {
+	if (!hasCompletedAccount(message, characterData)) {
 
 		return;
 	}
@@ -74,7 +74,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
-	if (message.mentions.users.size > 0 && message.mentions.users.first().id == message.author.id) {
+	const firstMentionedUser = message.mentions.users.first();
+	if (firstMentionedUser && firstMentionedUser.id == message.author.id) {
 
 		await message
 			.reply({
@@ -143,19 +144,19 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		image: { url: '' },
 	};
 
-	/** @type {import('discord.js').Message} */
+	/** @type {import('discord.js').Message | null} */
 	let botReply = null;
 
 	/** @type {import('../../typedef').ProfileSchema | null} */
 	let partnerUserData = null;
-	/** @type {import('../../typedef').Character} */
-	let partnerCharacterData;
-	/** @type {import('../../typedef').Profile} */
-	let partnerProfileData;
+	/** @type {import('../../typedef').Character | null} */
+	let partnerCharacterData = null;
+	/** @type {import('../../typedef').Profile | null} */
+	let partnerProfileData = null;
 
 	const responseTime = profileData.rank === 'Apprentice' ? 5_000 : 10_000;
 
-	if (message.mentions.users.size === 0) {
+	if (!firstMentionedUser) {
 
 		const allPrairieUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel
 			.find(
@@ -175,8 +176,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
 				userId: allPrairieUsersList[generateRandomNumber(allPrairieUsersList.length, 0)],
 			}));
-			partnerCharacterData = Object.values(partnerUserData?.characters || {}).find(c => c?.profiles?.[message.guild.id] !== undefined && c?.profiles?.[message.guild.id].currentRegion === 'prairie' && c?.profiles?.[message.guild.id]?.energy > 0 && c?.profiles?.[message.guild.id]?.health > 0 && c?.profiles?.[message.guild.id]?.hunger > 0 && c?.profiles?.[message.guild.id]?.thirst > 0 && c?.profiles?.[message.guild.id]?.injuries?.cold === false);
-			partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id];
+			partnerCharacterData = Object.values(partnerUserData?.characters || {}).find(c => c?.profiles?.[message.guild.id] !== undefined && c?.profiles?.[message.guild.id].currentRegion === 'prairie' && c?.profiles?.[message.guild.id]?.energy > 0 && c?.profiles?.[message.guild.id]?.health > 0 && c?.profiles?.[message.guild.id]?.hunger > 0 && c?.profiles?.[message.guild.id]?.thirst > 0 && c?.profiles?.[message.guild.id]?.injuries?.cold === false) || null;
+			partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id] || null;
 
 			const playTogetherChance = pullFromWeightedTable({ 0: 3, 1: 7 });
 			if (playTogetherChance == 1 && (partnerUserData !== null || profileData.rank === 'Youngling')) {
@@ -197,7 +198,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	}
 	else {
 
-		partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first().id }));
+		partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: firstMentionedUser.id }));
 		partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guild.id]];
 		partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id];
 
@@ -232,10 +233,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	}
 
 	botReply = await decreaseHealth(userData, botReply, userInjuryObject);
-	await checkLevelUp(message, botReply, userData, serverData);
+	await checkLevelUp(message, userData, serverData, botReply);
 	await isPassedOut(message, userData, true);
 
-	if (partnerUserData !== null) { await addFriendshipPoints(message, userData, characterData._id, partnerUserData, partnerCharacterData._id); }
+	if (partnerUserData && partnerCharacterData) { await addFriendshipPoints(message, userData, characterData._id, partnerUserData, partnerCharacterData._id); }
 
 	await coloredButtonsAdvice(message, userData);
 	await restAdvice(message, userData);
@@ -252,7 +253,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		await profileModel.findOneAndUpdate(
 			{ userId: message.author.id },
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hasQuest = true;
+				// @ts-ignore, since message is safe to be in guild
+				p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].hasQuest = true;
 			},
 		);
 
@@ -278,12 +280,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			})
 			.catch(async () => {
 
-				return await botReply
+				return botReply ? await botReply
 					.edit({ components: disableAllComponents(botReply.components) })
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
 						return botReply;
-					});
+					}) : null;
 			});
 
 		return botReply;
@@ -318,11 +320,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 				{ userId: message.author.id },
 				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-					p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].health -= healthPoints;
+					// @ts-ignore, since message is safe to be in guild
+					p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].health -= healthPoints;
 				},
 			));
-			characterData = userData.characters[userData.currentCharacter[message.guild.id]];
-			profileData = characterData.profiles[message.guild.id];
+			// @ts-ignore, since message is safe to be in guild
+			characterData = userData.characters[userData.currentCharacter[message.guildId]];
+			// @ts-ignore, since message is safe to be in guild
+			profileData = characterData.profiles[message.guildId];
 
 			switch (true) {
 
@@ -352,12 +357,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				.catch((error) => { throw new Error(error); });
 		}
 
+		const userSpeciesMap = speciesMap.get(characterData.species);
+		if (!userSpeciesMap) { throw new Error('userSpeciesMap is missing'); }
 		const userHabitatEmojisArray = [
 			['🌲', '🌳', '🍂', '🍁', '🍄', '🐝', '🪱', '🐛', '🦋', '🐌', '🐞', '🐁', '🦔'],
 			['🌵', '🦂', '🏜️', '🎍', '🪴', '🎋', '🪨', '🌾', '🐍', '🦎', '🐫'],
 			['🐙', '🦑', '🦀', '🐡', '🐠', '🐟', '🌊', '🐚', '🪨', '🪵', '🌴'],
 		][
-			['cold', 'warm', 'water'].indexOf(speciesMap.get(characterData.species).habitat)
+			['cold', 'warm', 'water'].indexOf(userSpeciesMap.habitat)
 		];
 		const emojiToAvoid = '🏕️';
 		const emojiList = ['🌱', '🌿', '☘️', '🍀', '🍃', '💐', '🌷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🍇', '🍊', '🫒', '🌰'];
@@ -367,7 +374,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		const { emojiToFind, buttonsArray, correctButton } = createButtons(emojiList, -1, userHabitatEmojisArray, emojiToAvoid);
 
-		embed.description = `*${characterData.name} bounds across the den territory, chasing a bee that is just out of reach. Without looking, the ${characterData.displayedSpecies || characterData.species} crashes into a Healer, loses sight of the bee, and scurries away into the ${['forest', 'shrubland', 'river'][['cold', 'warm', 'water'].indexOf(speciesMap.get(characterData.species).habitat)]}. On ${pronoun(characterData, 2)} way back to the pack border, ${characterData.name} sees something special on the ground. It's a ${foundItem}!*`;
+		embed.description = `*${characterData.name} bounds across the den territory, chasing a bee that is just out of reach. Without looking, the ${characterData.displayedSpecies || characterData.species} crashes into a Healer, loses sight of the bee, and scurries away into the ${['forest', 'shrubland', 'river'][['cold', 'warm', 'water'].indexOf(userSpeciesMap.habitat)]}. On ${pronoun(characterData, 2)} way back to the pack border, ${characterData.name} sees something special on the ground. It's a ${foundItem}!*`;
 		embed.footer.text = `You will be presented five buttons with five emojis each. Click the button with this emoji: ${emojiToFind}, but without the campsite (${emojiToAvoid}).`;
 
 		const herbComponent = new MessageActionRow();
@@ -392,7 +399,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			.catch(() => { return { customId: '' }; });
 
 		/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
-		/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId.includes(`${correctButton}`))]).style = 'PRIMARY';
+		/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId?.includes(`${correctButton}`))]).style = 'PRIMARY';
 
 		if (customId !== '') {
 
@@ -428,11 +435,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 				{ userId: message.author.id },
 				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-					p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].inventory = userInventory;
+					// @ts-ignore, since message is safe to be in guild
+					p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].inventory = userInventory;
 				},
 			));
-			characterData = userData.characters[userData.currentCharacter[message.guild.id]];
-			profileData = characterData.profiles[message.guild.id];
+			// @ts-ignore, since message is safe to be in guild
+			characterData = userData.characters[userData.currentCharacter[message.guildId]];
+			// @ts-ignore, since message is safe to be in guild
+			profileData = characterData.profiles[message.guildId];
 
 			embed.footer.text += `\n\n+1 ${foundItem}`;
 		}
@@ -467,19 +477,25 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		if (!isSimulated && (profileData.rank === 'Youngling' || profileData.rank === 'Apprentice')) {
 
+			// @ts-ignore, since partnerData can't be null
 			const partnerHealthPoints = function(health) { return (partnerProfileData.health + health > partnerProfileData.maxHealth) ? partnerProfileData.maxHealth - partnerProfileData.health : health; }(generateRandomNumber(5, 1));
 
 			partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+			// @ts-ignore, since partnerData can't be null
 				{ userId: partnerUserData.userId },
 				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-					p.characters[partnerCharacterData._id].profiles[message.guild.id].health += partnerHealthPoints;
+					// @ts-ignore, since partnerData can't be null and message must be in guild
+					p.characters[partnerCharacterData._id].profiles[message.guildId].health += partnerHealthPoints;
 				},
 			));
+			// @ts-ignore, since partnerData can't be null
 			partnerCharacterData = partnerUserData.characters[partnerCharacterData._id];
-			partnerProfileData = partnerCharacterData.profiles[message.guild.id];
+			// @ts-ignore, since message must be in guild
+			partnerProfileData = partnerCharacterData.profiles[message.guildId];
 
 			if (partnerHealthPoints > 0) {
 
+				// @ts-ignore, since partnerData can't be null
 				embedFooterStatsText += `\n\n+${partnerHealthPoints} HP for ${partnerCharacterData.name} (${partnerProfileData.health}/${partnerProfileData.maxHealth})`;
 			}
 		}
@@ -507,7 +523,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		if (!isMentioned) {
 
-			await new Promise((resolve) => {
+			await /** @type {Promise<void>} */(new Promise((resolve) => {
 
 				whoWinsChance = 1;
 
@@ -572,16 +588,18 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						resolve();
 					})
 					.catch((error) => { throw new Error(error); });
-			});
+			}));
 		}
 
 		if (whoWinsChance === 0) {
 
+			// @ts-ignore, since partnerData can't be null
 			embed.description = `*${characterData.name} trails behind ${partnerCharacterData?.name || 'an Elderly'}'s rear end, preparing for a play attack. The ${characterData.displayedSpecies || characterData.species} launches forward, landing on top of ${isSimulated ? 'them' : pronoun(partnerCharacterData, 1)}.* "I got you${isSimulated ? '' : ', ' + partnerCharacterData?.name}!" *${pronounAndPlural(characterData, 0, 'say')}. Both creatures bounce away from each other, laughing.*`;
 			embed.image.url = 'https://external-preview.redd.it/iUqJpDGv2YSDitYREfnTvsUkl9GG6oPMCRogvilkIrg.gif?s=9b0ea7faad7624ec00b5f8975e2cf3636f689e27';
 		}
 		else {
 
+			// @ts-ignore, since partnerData can't be null
 			embed.description = `*${characterData.name} trails behind ${partnerCharacterData?.name || 'an Elderly'}'s rear end, preparing for a play attack. Right when the ${characterData.displayedSpecies || characterData.species} launches forward, ${partnerCharacterData?.name || 'the Elderly'} dashes sideways, followed by a precise jump right on top of ${characterData.name}.* "I got you, ${characterData.name}!" *${isSimulated ? 'they say' : pronounAndPlural(partnerCharacterData, 0, 'say')}. Both creatures bounce away from each other, laughing.*`;
 			embed.image.url = 'https://i.pinimg.com/originals/7e/e4/01/7ee4017f0152c7b7c573a3dfe2c6673f.gif';
 		}
@@ -598,6 +616,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			failIfNotExists: false,
 		}).catch((error) => { throw new Error(error); });
 
+		// @ts-ignore, since partnerData can't be null
 		if (!isSimulated && partnerProfileData.injuries.cold === true && profileData.injuries.cold === false && pullFromWeightedTable({ 0: 3, 1: 7 }) === 0) {
 
 			const healthPoints = function(health) { return (profileData.health - health < 0) ? profileData.health : health; }(generateRandomNumber(5, 3));
@@ -605,7 +624,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 				{ userId: message.author.id },
 				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-					p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].health -= healthPoints;
+					// @ts-ignore, since message must be in guild
+					p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].health -= healthPoints;
 				},
 			));
 
@@ -616,13 +636,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					embeds: [...botReply.embeds, {
 						color: characterData.color,
 						author: { name: characterData.name, icon_url: characterData.avatarURL },
+						// @ts-ignore, since partnerData can't be null
 						description: `*Suddenly, ${characterData.name} starts coughing uncontrollably. Thinking back, ${pronoun(characterData, 0)} spent all day alongside ${partnerCharacterData.name}, who was coughing as well. That was probably not the best idea!*`,
 						footer: { text: `-${healthPoints} HP (from cold)` },
 					}],
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
-					return botReply;
+					return /** @type {import('discord.js').Message} */ (botReply);
 				});
 		}
 

@@ -1,6 +1,6 @@
 // @ts-check
 const { error_color, default_color, update_channel_id } = require('../../config.json');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 
 module.exports.name = 'getupdates';
 module.exports.aliases = ['updates', 'enableupdates'];
@@ -13,12 +13,12 @@ module.exports.aliases = ['updates', 'enableupdates'];
  */
 module.exports.sendMessage = async (client, message) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
 
-	if (message.member.permissions.has('ADMINISTRATOR') === false) {
+	if (!message.member || !message.member.permissions.has('ADMINISTRATOR')) {
 
 		await message
 			.reply({
@@ -34,17 +34,18 @@ module.exports.sendMessage = async (client, message) => {
 		return;
 	}
 
-	if (message.mentions.channels.size > 0) {
+	const firstMentionedUser = message.mentions.channels.first();
+	if (firstMentionedUser) {
 
 		const newsChannel = /** @type {import('discord.js').NewsChannel} */ (await client.channels.fetch(update_channel_id));
-		await newsChannel.addFollower(message.mentions.channels.first().id);
+		await newsChannel.addFollower(firstMentionedUser.id);
 
 		await message
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (default_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-					description: `Updates are now posted to ${message.mentions.channels.first().toString()}!`,
+					author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
+					description: `Updates are now posted to ${firstMentionedUser.toString()}!`,
 				}],
 				failIfNotExists: false,
 			})

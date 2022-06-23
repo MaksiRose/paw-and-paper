@@ -6,15 +6,29 @@ module.exports.name = 'Delete ❌';
 module.exports.data = {
 	'name': module.exports.name,
 	'type': 3,
+	'dm_permission': false,
 };
 
 /**
  *
  * @param {import('../../paw').client} client
- * @param {import('discord.js').MessageContextMenuInteraction<"cached">} interaction
+ * @param {import('discord.js').MessageContextMenuInteraction} interaction
  * @returns {Promise<void>}
  */
 module.exports.sendCommand = async (client, interaction) => {
+
+	if (!interaction.inCachedGuild()) {
+
+		await interaction
+			.reply({
+				content: 'This interaction is guild-only!',
+				ephemeral: true,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+		return;
+	}
 
 	const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8'));
 	const userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: webhookCache?.[interaction.targetId]?.split('_')?.[0] }));
@@ -36,7 +50,7 @@ module.exports.sendCommand = async (client, interaction) => {
 		.fetchWebhooks()
 		.catch((error) => {
 			if (error.httpStatus === 403) {
-				interaction.channel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
+				interaction.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
 			}
 			throw new Error(error);
 		})
@@ -44,7 +58,7 @@ module.exports.sendCommand = async (client, interaction) => {
 		.createWebhook('PnP Profile Webhook')
 		.catch((error) => {
 			if (error.httpStatus === 403) {
-				interaction.channel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
+				interaction.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
 			}
 			throw new Error(error);
 		});

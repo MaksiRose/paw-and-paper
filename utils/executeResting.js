@@ -18,7 +18,7 @@ function stopResting(userId, guildId) {
 
 /**
  * Starts a Timeout that gives the user one energy point every 30 seconds.
- * @param {import('discord.js').Message} message
+ * @param {import('discord.js').Message<true>} message
  * @param {import('../typedef').ProfileSchema} userData
  * @param {import('discord.js').Message} botReply
  * @param {'sleeping dens' | 'food den' | 'medicine den' | 'prairie' | 'ruins' | 'lake'} previousRegion
@@ -47,7 +47,7 @@ async function startResting(message, userData, botReply, previousRegion, isAutom
 		const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
 		const profileData = characterData.profiles[message.guild.id];
 
-		botReply.embeds[0].footer.text = `+${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})${isAutomatic ? '\nYour character started resting because you were inactive for 10 minutes' : ''}\n\n${weardownText}\n\nTip: You can also do "rp vote" to get +30 energy per vote!`;
+		botReply.embeds[botReply.embeds.length - 1].setFooter({ text: `+${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})${isAutomatic ? '\nYour character started resting because you were inactive for 10 minutes' : ''}\n\n${weardownText}\n\nTip: You can also do "rp vote" to get +30 energy per vote!` });
 
 		await botReply
 			.edit({

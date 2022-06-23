@@ -4,17 +4,17 @@ const serverModel = require('../../models/serverModel');
 const startCooldown = require('../../utils/startCooldown');
 const { generateRandomNumber, pullFromWeightedTable } = require('../../utils/randomizers');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseHealth, decreaseEnergy } = require('../../utils/checkCondition');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { remindOfAttack } = require('../gameplay/attack');
 const { pronoun, upperCasePronounAndPlural, pronounAndPlural } = require('../../utils/getPronouns');
-const { MessageActionRow, MessageSelectMenu, MessageButton } = require('discord.js');
+const { MessageActionRow, MessageSelectMenu, MessageButton, MessageEmbed } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { addFriendshipPoints } = require('../../utils/friendshipHandling');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 const wearDownDen = require('../../utils/wearDownDen');
 const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
 
@@ -27,12 +27,12 @@ module.exports.name = 'heal';
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
@@ -40,7 +40,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];
 
-	if (await hasNotCompletedAccount(message, characterData)) {
+	if (!hasCompletedAccount(message, characterData)) {
 
 		return;
 	}
@@ -75,20 +75,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		/** @type {Object<string, import('../../typedef').Character>} */
 		allHurtCharactersList = {},
 		currentUserPage = 0,
-		userSelectMenu = await getUserSelectMenu(),
+		userSelectMenu = await getUserSelectMenu(message),
 		chosenUserData = message.mentions.users.size > 0 ?
-			/** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first().id })) :
+			/** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first()?.id })) :
 			Object.keys(allHurtCharactersList).length === 1 ?
 			/** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: Object.keys(allHurtCharactersList)[0].split('_')[0] })) : null,
-		chosenCharacterData = chosenUserData != null ? chosenUserData?.characters[
+		chosenCharacterData = chosenUserData ? chosenUserData?.characters[
 			Object.values(chosenUserData.characters).filter(c => c.profiles[message.guild.id] !== undefined).filter(c => {
 				const p = c.profiles[message.guild.id];
 				return p.energy === 0 || p.health === 0 || p.hunger === 0 || p.thirst === 0 || Object.values(p.injuries).filter(i => i > 0).length > 0;
-			})[0]?._id || chosenUserData?.currentCharacter?.[message.guild.id] || null
+			})[0]?._id || chosenUserData?.currentCharacter?.[message.guild.id] || ''
 		] : null,
 		chosenProfileData = chosenCharacterData != null ? chosenCharacterData?.profiles?.[message.guild.id] : null,
 		/** @type {import('discord.js').Message} */
-		botReply = null;
+		botReply;
 
 
 	if (chosenUserData == null || chosenCharacterData == null || chosenProfileData == null) {
@@ -101,14 +101,16 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					color: characterData.color,
 					description: `*${characterData.name} sits in front of the medicine den, looking if anyone needs help with injuries or illnesses.*`,
 				}],
-				components: Object.keys(allHurtCharactersList).length > 0 ? [userSelectMenu] : [],
+				components: Object.keys(allHurtCharactersList).length > 0 && userSelectMenu ?
+					[ new MessageActionRow().addComponents([userSelectMenu])] :
+					[],
 				failIfNotExists: false,
 			})
 			.catch((error) => { throw new Error(error); });
 	}
 	else {
 
-		const { embeds: woundEmbeds, components: woundComponents } = await getWoundList(chosenUserData, chosenCharacterData._id) ?? { embeds: undefined, components: undefined };
+		const { embeds: woundEmbeds, components: woundComponents } = await getWoundList(chosenUserData, chosenCharacterData._id, message) ?? { embeds: undefined, components: undefined };
 
 		botReply = await message
 			.reply({
@@ -121,24 +123,30 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	}
 
 
-	if (/** @type {import('discord.js').MessageSelectMenuOptions} */ (userSelectMenu.components[0]).options.length === 0) {
+	if (!userSelectMenu) {
 
 		return;
 	}
 
 	createCommandCollector(message.author.id, message.guild.id, botReply);
-	interactionCollector();
+	interactionCollector(message);
 
-	async function interactionCollector() {
-
-		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.user.id === message.author.id;
+	/**
+	 *
+	 * @param {import('discord.js').Message<true>} message
+	 * @returns
+	 */
+	async function interactionCollector(message) {
 
 		/** @type {import('discord.js').MessageComponentInteraction | null} } */
 		const interaction = await botReply
-			.awaitMessageComponent({ filter, time: 120_000 })
+			.awaitMessageComponent({
+				filter: (i) => i.user.id === message.author.id,
+				time: 120_000,
+			})
 			.catch(() => { return null; });
 
-		if (interaction === null) {
+		if (interaction === null || !interaction.inCachedGuild()) {
 
 			await botReply
 				.edit({
@@ -153,54 +161,50 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		if (interaction.isButton()) {
 
-			const { embeds: woundEmbeds } = await getWoundList(chosenUserData, chosenCharacterData._id);
+			// @ts-ignore, since chosenUserData and chosenCharacterData can only be null for "heal-user-options"-select menu
+			const { embeds: woundEmbeds } = await getWoundList(chosenUserData, chosenCharacterData._id, message);
 
 			if (interaction.customId === 'healpage-1') {
 
-				const { embed, selectMenu } = getFirstHealPage();
+				const { inventory1Embed, inventory1SelectMenu } = getFirstHealPage(message);
 
-				woundEmbeds.splice(-1, 1, embed);
+				woundEmbeds.splice(-1, 1, inventory1Embed);
 
 				interaction.message.components.length = 2;
-				const componentArray = /** @type {import('discord.js').Message} */ (interaction.message).components;
+				const componentArray = interaction.message.components;
 
-				botReply = await /** @type {import('discord.js').Message} */ (interaction.message)
+				botReply = await interaction.message
 					.edit({
 						embeds: woundEmbeds,
-						components: /** @type {import('discord.js').MessageSelectMenuOptions} */ (selectMenu.components[0]).options.length > 0 ? [...componentArray, selectMenu] : componentArray,
+						components: inventory1SelectMenu ?
+							[...componentArray, new MessageActionRow().addComponents([inventory1SelectMenu])]
+							: componentArray,
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
-						return /** @type {import('discord.js').Message} */ (interaction.message);
+						return interaction.message;
 					});
 			}
 
 			if (interaction.customId === 'healpage-2') {
 
-				const embed = {
-					color: characterData.color,
-					title: `Inventory of ${message.guild.name} - Page 2`,
-					fields: [],
-					footer: { text: 'Choose one of the herbs above to heal the player with it!' },
-				};
+				const embed = new MessageEmbed()
+					.setColor(characterData.color)
+					.setTitle(`Inventory of ${message.guild.name} - Page 2`)
+					.addField('water', 'Found lots and lots of in the river that flows through the pack!', true)
+					.setFooter({ text: 'Choose one of the herbs above to heal the player with it!' });
 
-				const selectMenu = new MessageActionRow().addComponents(
-					[ new MessageSelectMenu({
-						customId: 'heal-options-2',
-						placeholder: 'Select an item',
-						options: [],
-					})],
-				);
-
-				embed.fields.push({ name: 'water', value: 'Found lots and lots of in the river that flows through the pack!', inline: true });
-				/** @type {import('discord.js').MessageSelectMenuOptions} */ (selectMenu.components[0]).options.push({ label: 'water', value: 'water' });
+				const selectMenu = new MessageSelectMenu()
+					.setCustomId('heal-options-2')
+					.setPlaceholder('Select an item')
+					.addOptions([{ label: 'water', value: 'water' }]);
 
 				for (const [uncommonPlantName, uncommonPlantObject] of [...uncommonPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
 					if (serverData.inventory.uncommonPlants[uncommonPlantName] > 0) {
 
 						embed.fields.push({ name: `${uncommonPlantName}: ${serverData.inventory.uncommonPlants[uncommonPlantName]}`, value: uncommonPlantObject.description, inline: true });
-						/** @type {import('discord.js').MessageSelectMenuOptions} */ (selectMenu.components[0]).options.push({ label: uncommonPlantName, value: uncommonPlantName, description: `${serverData.inventory.uncommonPlants[uncommonPlantName]}` });
+						selectMenu.addOptions([{ label: uncommonPlantName, value: uncommonPlantName, description: `${serverData.inventory.uncommonPlants[uncommonPlantName]}` }]);
 					}
 				}
 
@@ -209,7 +213,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					if (serverData.inventory.rarePlants[rarePlantName] > 0) {
 
 						embed.fields.push({ name: `${rarePlantName}: ${serverData.inventory.rarePlants[rarePlantName]}`, value: rarePlantObject.description, inline: true });
-						/** @type {import('discord.js').MessageSelectMenuOptions} */ (selectMenu.components[0]).options.push({ label: rarePlantName, value: rarePlantName, description: `${serverData.inventory.rarePlants[rarePlantName]}` });
+						selectMenu.addOptions([{ label: rarePlantName, value: rarePlantName, description: `${serverData.inventory.rarePlants[rarePlantName]}` }]);
 					}
 				}
 
@@ -221,7 +225,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				botReply = await /** @type {import('discord.js').Message} */ (interaction.message)
 					.edit({
 						embeds: woundEmbeds,
-						components: [...componentArray, selectMenu],
+						components: [...componentArray, new MessageActionRow().addComponents([selectMenu])],
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
@@ -242,23 +246,23 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					currentUserPage = 0;
 				}
 
-				userSelectMenu = await getUserSelectMenu();
+				userSelectMenu = await getUserSelectMenu(message);
 
 				/** @type {Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} */
-				const componentArray = /** @type {import('discord.js').Message} */ (interaction.message).components;
+				const componentArray = interaction.message.components;
 				componentArray.splice(0, 1);
 
-				if (Object.keys(allHurtCharactersList).length > 0) { componentArray.unshift(userSelectMenu); }
+				if (Object.keys(allHurtCharactersList).length > 0 && userSelectMenu) { componentArray.unshift(new MessageActionRow().addComponents([userSelectMenu])); }
 
-				botReply = await /** @type {import('discord.js').Message} */ (interaction.message)
+				botReply = await interaction.message
 					.edit({ components: componentArray })
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
-						return /** @type {import('discord.js').Message} */ (interaction.message);
+						return interaction.message;
 					});
 			}
 
-			userSelectMenu = await getUserSelectMenu();
+			userSelectMenu = await getUserSelectMenu(message);
 
 			/* Checking if the user input is a valid character name. If it is, it will get the character data
 			and the profile data for that character. It will then get the wound list for that character and
@@ -269,12 +273,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				chosenCharacterData = chosenUserData.characters[interaction.values[0].split('_')[1]];
 				chosenProfileData = chosenCharacterData.profiles[message.guild.id];
 
-				const { embeds: woundEmbeds, components: woundComponents } = await getWoundList(chosenUserData, chosenCharacterData._id);
-
 				botReply = await /** @type {import('discord.js').Message} */ (interaction.message)
 					.edit({
-						embeds: woundEmbeds,
-						components: woundComponents,
+						embeds: (await getWoundList(chosenUserData, chosenCharacterData._id, message)).embeds,
+						components: (await getWoundList(chosenUserData, chosenCharacterData._id, message)).components,
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
@@ -284,29 +286,33 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			if (commonPlantsMap.has(interaction.values[0]) || uncommonPlantsMap.has(interaction.values[0]) || rarePlantsMap.has(interaction.values[0]) || interaction.values[0] === 'water') {
 
+				// @ts-ignore, since chosenUserData and chosenCharacterData can only be null for "heal-user-options"-select menu
 				if (Object.keys(allHurtCharactersList).includes(chosenUserData.userId + '_' + chosenCharacterData._id) === false) {
 
 					botReply = await /** @type {import('discord.js').Message} */ (interaction.message)
 						.edit({
 							embeds: [...embedArray, {
 								color: characterData.color,
+								// @ts-ignore, since chosenUserData and chosenCharacterData can only be null for "heal-user-options"-select menu
 								title: `${chosenCharacterData.name} doesn't need to be healed anymore. Please select another user to heal if available.`,
 							}],
-							components: /** @type {import('discord.js').MessageSelectMenuOptions} */ (userSelectMenu.components[0]).options.length > 0 ? [userSelectMenu] : [],
+							components: userSelectMenu ? [ new MessageActionRow().addComponents([userSelectMenu])] : [],
 						})
 						.catch((error) => {
 							if (error.httpStatus !== 404) { throw new Error(error); }
 							return /** @type {import('discord.js').Message} */ (interaction.message);
 						});
 
-					return /** @type {import('discord.js').MessageSelectMenuOptions} */ (userSelectMenu.components[0]).options.length > 0 ? await interactionCollector() : null;
+					return userSelectMenu ? await interactionCollector(message) : null;
 				}
 
+				// @ts-ignore, since chosenUserData and chosenCharacterData can only be null for "heal-user-options"-select menu
 				chosenUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: chosenUserData.userId }));
+				// @ts-ignore, since chosenUserData and chosenCharacterData can only be null for "heal-user-options"-select menu
 				chosenCharacterData = chosenUserData.characters[chosenCharacterData._id];
 				chosenProfileData = chosenCharacterData.profiles[message.guild.id];
 
-				const userCondition = botReply.embeds[botReply.embeds.length - 2].footer.text.toLowerCase();
+				const userCondition = botReply.embeds[botReply.embeds.length - 2].footer?.text?.toLowerCase();
 				let userHasChangedCondition = false;
 
 				let healthPoints = 0;
@@ -325,7 +331,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					if (chosenProfileData.thirst > 0) {
 
-						if (userCondition.includes('thirst')) {
+						if (userCondition?.includes('thirst')) {
 
 							userHasChangedCondition = true;
 						}
@@ -343,14 +349,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 									color: characterData.color,
 									title: `${chosenCharacterData.name}'s stats/illnesses/injuries changed before you healed them. Please try again.`,
 								}],
-								components: /** @type {import('discord.js').MessageSelectMenuOptions} */ (userSelectMenu.components[0]).options.length > 0 ? [userSelectMenu] : [],
+								components: userSelectMenu ? [ new MessageActionRow().addComponents([userSelectMenu])] : [],
 							})
 							.catch((error) => {
 								if (error.httpStatus !== 404) { throw new Error(error); }
 								return /** @type {import('discord.js').Message} */ (interaction.message);
 							});
 
-						return /** @type {import('discord.js').MessageSelectMenuOptions} */ (userSelectMenu.components[0]).options.length > 0 ? await interactionCollector() : null;
+						return userSelectMenu ? await interactionCollector(message) : null;
 					}
 
 					if (isSuccessful === true && (profileData.rank === 'Apprentice' || profileData.rank === 'Hunter') && pullFromWeightedTable({ 0: profileData.rank === 'Hunter' ? 90 : 40, 1: 60 + profileData.sapling.waterCycles - await decreaseSuccessChance(message) }) === 0) {
@@ -360,12 +366,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					if (isSuccessful === true) {
 
-						const embedFooterStatsText = await decreaseStats(true);
+						const embedFooterStatsText = await decreaseStats(true, message);
 						const chosenUserThirstPoints = generateRandomNumber(10, 6);
 
 						chosenUserData = (/** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 							{ uuid: chosenUserData.uuid },
 							(/** @type {import('../../typedef').ProfileSchema} */ cP) => {
+								// @ts-ignore, since chosenUserData and chosenCharacterData can only be null for "heal-user-options"-select menu
 								cP.characters[chosenCharacterData._id].profiles[message.guild.id].thirst += chosenUserThirstPoints;
 							},
 						)));
@@ -390,7 +397,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							embed.description = `*${characterData.name} takes ${chosenCharacterData.name}'s body and tries to drag it over to the river. The ${characterData.displayedSpecies || characterData.species} attempts to position the ${chosenCharacterData.displayedSpecies || chosenCharacterData.species}'s head right over the water, but every attempt fails miserably. ${upperCasePronounAndPlural(characterData, 0, 'need')} to concentrate and try again.*`;
 						}
 
-						embed.footer.text = await decreaseStats(false) + `\n\n${await wearDownDen(serverData, 'medicine den')}`;
+						embed.footer.text = await decreaseStats(false, message) + `\n\n${await wearDownDen(serverData, 'medicine den')}`;
 					}
 				}
 				else {
@@ -418,23 +425,23 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					let embedFooterChosenUserStatsText = '';
 					let embedFooterChosenUserInjuryText = '';
 
-					if (plantMap.get(interaction.values[0]).edibality === 'e') {
+					if (plantMap.get(interaction.values[0])?.edibality === 'e') {
 
 						if (chosenProfileData.hunger <= 0) {
 
 							isSuccessful = true;
 						}
-						else if (userCondition.includes('hunger')) {
+						else if (userCondition?.includes('hunger')) {
 
 							userHasChangedCondition = true;
 						}
 
-						if (speciesMap.get(chosenCharacterData.species).diet === 'carnivore') {
+						if (speciesMap.get(chosenCharacterData.species)?.diet === 'carnivore') {
 
 							chosenUserHungerPoints = 1;
 						}
 
-						if (speciesMap.get(chosenCharacterData.species).diet === 'herbivore' || speciesMap.get(chosenCharacterData.species).diet === 'omnivore') {
+						if (speciesMap.get(chosenCharacterData.species)?.diet === 'herbivore' || speciesMap.get(chosenCharacterData.species)?.diet === 'omnivore') {
 
 							chosenUserHungerPoints = 5;
 						}
@@ -444,12 +451,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 						isSuccessful = true;
 					}
-					else if (userCondition.includes('health')) {
+					else if (userCondition?.includes('health')) {
 
 						userHasChangedCondition = true;
 					}
 
-					if (plantMap.get(interaction.values[0]).healsWounds === true) {
+					if (plantMap.get(interaction.values[0])?.healsWounds === true) {
 
 						if (chosenUserInjuryObject.wounds > 0) {
 
@@ -457,13 +464,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							embedFooterChosenUserInjuryText += `\n-1 wound for ${chosenCharacterData.name}`;
 							chosenUserInjuryObject.wounds -= 1;
 						}
-						else if (userCondition.includes('wounds')) {
+						else if (userCondition?.includes('wounds')) {
 
 							userHasChangedCondition = true;
 						}
 					}
 
-					if (plantMap.get(interaction.values[0]).healsInfections === true) {
+					if (plantMap.get(interaction.values[0])?.healsInfections === true) {
 
 						if (chosenUserInjuryObject.infections > 0) {
 
@@ -471,13 +478,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							embedFooterChosenUserInjuryText += `\n-1 infection for ${chosenCharacterData.name}`;
 							chosenUserInjuryObject.infections -= 1;
 						}
-						else if (userCondition.includes('infections')) {
+						else if (userCondition?.includes('infections')) {
 
 							userHasChangedCondition = true;
 						}
 					}
 
-					if (plantMap.get(interaction.values[0]).healsColds === true) {
+					if (plantMap.get(interaction.values[0])?.healsColds === true) {
 
 						if (chosenUserInjuryObject.cold == true) {
 
@@ -485,13 +492,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							embedFooterChosenUserInjuryText += `\ncold healed for ${chosenCharacterData.name}`;
 							chosenUserInjuryObject.cold = false;
 						}
-						else if (userCondition.includes('cold')) {
+						else if (userCondition?.includes('cold')) {
 
 							userHasChangedCondition = true;
 						}
 					}
 
-					if (plantMap.get(interaction.values[0]).healsSprains === true) {
+					if (plantMap.get(interaction.values[0])?.healsSprains === true) {
 
 						if (chosenUserInjuryObject.sprains > 0) {
 
@@ -499,13 +506,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							embedFooterChosenUserInjuryText += `\n-1 sprain for ${chosenCharacterData.name}`;
 							chosenUserInjuryObject.sprains -= 1;
 						}
-						else if (userCondition.includes('sprains')) {
+						else if (userCondition?.includes('sprains')) {
 
 							userHasChangedCondition = true;
 						}
 					}
 
-					if (plantMap.get(interaction.values[0]).healsPoison === true) {
+					if (plantMap.get(interaction.values[0])?.healsPoison === true) {
 
 						if (chosenUserInjuryObject.poison == true) {
 
@@ -513,13 +520,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							embedFooterChosenUserInjuryText += `\npoison healed for ${chosenCharacterData.name}`;
 							chosenUserInjuryObject.poison = false;
 						}
-						else if (userCondition.includes('poison')) {
+						else if (userCondition?.includes('poison')) {
 
 							userHasChangedCondition = true;
 						}
 					}
 
-					if (plantMap.get(interaction.values[0]).givesEnergy === true) {
+					if (plantMap.get(interaction.values[0])?.givesEnergy === true) {
 
 						if (chosenProfileData.energy <= 0) {
 
@@ -549,14 +556,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 									color: characterData.color,
 									title: `${chosenCharacterData.name}'s stats/illnesses/injuries changed before you healed them. Please try again.`,
 								}],
-								components: /** @type {import('discord.js').MessageSelectMenuOptions} */ (userSelectMenu.components[0]).options.length > 0 ? [userSelectMenu] : [],
+								components: userSelectMenu ? [ new MessageActionRow().addComponents([userSelectMenu])] : [],
 							})
 							.catch((error) => {
 								if (error.httpStatus !== 404) { throw new Error(error); }
 								return /** @type {import('discord.js').Message} */ (interaction.message);
 							});
 
-						return /** @type {import('discord.js').MessageSelectMenuOptions} */ (userSelectMenu.components[0]).options.length > 0 ? await interactionCollector() : null;
+						return userSelectMenu ? await interactionCollector(message) : null;
 					}
 
 					if (isSuccessful && chosenUserData.userId !== userData.userId && (profileData.rank === 'Apprentice' || profileData.rank === 'Hunter') && pullFromWeightedTable({ 0: profileData.rank === 'Hunter' ? 90 : 40, 1: 60 + profileData.sapling.waterCycles - await decreaseSuccessChance(message) }) === 0) {
@@ -564,7 +571,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						isSuccessful = false;
 					}
 
-					const embedFooterStatsText = await decreaseStats(isSuccessful);
+					const embedFooterStatsText = await decreaseStats(isSuccessful, message);
 					const chosenItemName = interaction.values[0];
 
 					if (isSuccessful === true) {
@@ -603,9 +610,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						chosenUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 							{ uuid: chosenUserData.uuid },
 							(/** @type {import('../../typedef').ProfileSchema} */ cP) => {
+								// @ts-ignore, since chosenUserData and chosenCharacterData can only be null for "heal-user-options"-select menu
 								cP.characters[chosenCharacterData._id].profiles[message.guild.id].hunger += chosenUserHungerPoints;
+								// @ts-ignore, since chosenUserData and chosenCharacterData can only be null for "heal-user-options"-select menu
 								cP.characters[chosenCharacterData._id].profiles[message.guild.id].energy += chosenUserEnergyPoints;
+								// @ts-ignore, since chosenUserData and chosenCharacterData can only be null for "heal-user-options"-select menu
 								cP.characters[chosenCharacterData._id].profiles[message.guild.id].health += chosenUserHealthPoints;
+								// @ts-ignore, since chosenUserData and chosenCharacterData can only be null for "heal-user-options"-select menu
 								cP.characters[chosenCharacterData._id].profiles[message.guild.id].injuries = chosenUserInjuryObject;
 							},
 						));
@@ -642,7 +653,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					}
 				}
 
-				/** @type {import('discord.js').MessageEmbedOptions} */
+				/** @type {import('discord.js').MessageEmbedOptions | null} */
 				let extraEmbed = null;
 
 				if (chosenProfileData.injuries.cold === true && chosenUserData.userId !== userData.userId && profileData.injuries.cold === false && pullFromWeightedTable({ 0: 3, 1: 7 }) === 0) {
@@ -689,7 +700,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					.catch((error) => { throw new Error(error); });
 
 				botReply = await decreaseHealth(userData, botReply, userInjuryObject);
-				botReply = await checkLevelUp(message, botReply, userData, serverData);
+				botReply = await checkLevelUp(message, userData, serverData, botReply) || botReply;
 				await isPassedOut(message, userData, true);
 
 				await restAdvice(message, userData);
@@ -702,15 +713,16 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			}
 		}
 
-		await interactionCollector();
+		await interactionCollector(message);
 	}
 
 	/**
 	 *
 	 * @param {boolean} isSuccessful
+	 * @param {import('discord.js').Message<true>} message
 	 * @returns {Promise<string>} footerStats
 	 */
-	async function decreaseStats(isSuccessful) {
+	async function decreaseStats(isSuccessful, message) {
 
 		const experiencePoints = isSuccessful === false ? 0 : profileData.rank == 'Elderly' ? generateRandomNumber(41, 20) : profileData.rank == 'Healer' ? generateRandomNumber(21, 10) : generateRandomNumber(11, 5);
 		const energyPoints = function(energy) { return (profileData.energy - energy < 0) ? profileData.energy : energy; }(generateRandomNumber(5, 1) + await decreaseEnergy(profileData));
@@ -729,9 +741,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 		profileData = characterData?.profiles?.[message.guild.id];
 
+		// @ts-ignore, since chosenUserData and chosenCharacterData can only be null for "heal-user-options"-select menu
 		if (chosenUserData.userId === userData.userId) {
 
+			// @ts-ignore, since chosenUserData and chosenCharacterData can only be null for "heal-user-options"-select menu
 			chosenUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: chosenUserData.userId }));
+			// @ts-ignore, since chosenUserData and chosenCharacterData can only be null for "heal-user-options"-select menu
 			chosenCharacterData = chosenUserData.characters[chosenCharacterData._id];
 			chosenProfileData = chosenCharacterData.profiles[message.guild.id];
 		}
@@ -758,9 +773,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 	/**
 	 * Updates `allHurtProfilesList`, then iterates through it to update the select menu and returns it.
-	 * @returns {Promise<import('discord.js').MessageActionRow>}
+	 * @param {import('discord.js').Message<true>} message
+	 * @returns {Promise<import('discord.js').MessageSelectMenu | null>}
 	 */
-	async function getUserSelectMenu() {
+	async function getUserSelectMenu(message) {
 
 		allHurtCharactersList = {};
 
@@ -784,26 +800,25 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			}
 		}
 
-		const selectMenu = new MessageActionRow().addComponents(
-			[ new MessageSelectMenu({
-				customId: 'heal-user-options',
-				placeholder: 'Select a user to heal',
-				options: [],
-			})],
-		);
+		/** @type {import('discord.js').MessageSelectMenu | null} */
+		let selectMenu = new MessageSelectMenu()
+			.setCustomId('heal-user-options')
+			.setPlaceholder('Select a user to heal');
 
 		for (const key of Object.keys(allHurtCharactersList).slice((currentUserPage * 24))) {
 
-			if (/** @type {import('discord.js').MessageSelectMenuOptions} */ (selectMenu.components[0]).options.length > 25) {
+			if (selectMenu.options.length > 25) {
 
 				// In case there are exactly 25 user options, only once a 26th option is detected, it would set the array back to 24 and add the Page Switcher.
 				// Otherwise, if there are exactly 25 user options, it would split it up onto two pages unnecessarily
-				/** @type {import('discord.js').MessageSelectMenuOptions} */ (selectMenu.components[0]).options.length = 24;
-				/** @type {import('discord.js').MessageSelectMenuOptions} */ (selectMenu.components[0]).options.push({ label: 'Show more user options', value: 'heal_user_page', description: 'You are currently on page 1', emoji: '📋' });
+				selectMenu.options.length = 24;
+				selectMenu.addOptions({ label: 'Show more user options', value: 'heal_user_page', description: 'You are currently on page 1', emoji: '📋' });
 			}
 
-			/** @type {import('discord.js').MessageSelectMenuOptions} */ (selectMenu.components[0]).options.push({ label: allHurtCharactersList[key].name, value: key });
+			selectMenu.addOptions({ label: allHurtCharactersList[key].name, value: key });
 		}
+
+		if (selectMenu.options.length <= 0) { selectMenu = null;}
 
 		return selectMenu;
 	}
@@ -812,12 +827,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	 * Finds all health-related problems the selected user has, and return the messages components and embeds.
 	 * @param {import('../../typedef').ProfileSchema} healUserData - The user data of the user that should be scanned.
 	 * @param {string} healCharacterId - The ID of the character that should be scanned.
-	 * @returns { Promise<{embeds: Array<import('discord.js').MessageEmbedOptions>, components: Array<import('discord.js').MessageActionRow>}> }
+	 * @param {import('discord.js').Message<true>} message - The message object
+	 * @returns { Promise<{embeds: Array<import('discord.js').MessageEmbed>, components: Array<import('discord.js').MessageActionRow>}> }
 	 */
-	async function getWoundList(healUserData, healCharacterId) {
+	async function getWoundList(healUserData, healCharacterId, message) {
 
-		const pageButtons = new MessageActionRow().addComponents(
-			[ new MessageButton({
+		const inventoryPagesButtons = [
+			new MessageButton({
 				customId: 'healpage-1',
 				label: 'Page 1',
 				emoji: '🌱',
@@ -827,8 +843,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				label: 'Page 2',
 				emoji: '🍀',
 				style: 'SECONDARY',
-			})],
-		);
+			}),
+		];
 
 		chosenUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: healUserData.uuid }));
 		chosenCharacterData = chosenUserData?.characters[healCharacterId];
@@ -846,79 +862,79 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		healUserConditionText += (chosenProfileData.injuries.sprains > 0) ? `\nSprains: ${chosenProfileData.injuries.sprains}` : '';
 		healUserConditionText += (chosenProfileData.injuries.poison == true) ? '\nPoison: yes' : '';
 
-		const embed = {
-			author: { name: characterData.name, icon_url: characterData.avatarURL },
-			color: characterData.color,
-			description: '',
-			footer: { text: '' },
-		};
+		const characterConditionEmbed = new MessageEmbed()
+			.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
+			.setColor(characterData.color);
 
 		if (chosenUserData.userId === userData.userId) {
 
-			embed.description = `*${chosenCharacterData.name} pushes aside the leaves acting as the entrance to the healer's den. With tired eyes ${pronounAndPlural(chosenCharacterData, 0, 'inspect')} the rows of herbs, hoping to find one that can ease ${pronoun(chosenCharacterData, 2)} pain.*`;
-			embed.footer.text = `${chosenCharacterData.name}'s stats/illnesses/injuries:${healUserConditionText}`;
+			characterConditionEmbed.setDescription(`*${chosenCharacterData.name} pushes aside the leaves acting as the entrance to the healer's den. With tired eyes ${pronounAndPlural(chosenCharacterData, 0, 'inspect')} the rows of herbs, hoping to find one that can ease ${pronoun(chosenCharacterData, 2)} pain.*`);
+			characterConditionEmbed.setFooter({ text: `${chosenCharacterData.name}'s stats/illnesses/injuries:${healUserConditionText}` });
 		}
 		else if (chosenProfileData.energy <= 0 || chosenProfileData.health <= 0 || chosenProfileData.hunger <= 0 || chosenProfileData.thirst <= 0) {
 
-			embed.description = `*${characterData.name} runs towards the pack borders, where ${chosenCharacterData.name} lies, only barely conscious. The ${profileData.rank} immediately looks for the right herbs to help the ${chosenCharacterData.displayedSpecies || chosenCharacterData.species}.*`;
-			embed.footer.text = `${chosenCharacterData.name}'s stats/illnesses/injuries:${healUserConditionText}`;
+			characterConditionEmbed.setDescription(`*${characterData.name} runs towards the pack borders, where ${chosenCharacterData.name} lies, only barely conscious. The ${profileData.rank} immediately looks for the right herbs to help the ${chosenCharacterData.displayedSpecies || chosenCharacterData.species}.*`);
+			characterConditionEmbed.setFooter({ text: `${chosenCharacterData.name}'s stats/illnesses/injuries:${healUserConditionText}` });
 		}
 		else if (Object.values(chosenProfileData.injuries).some(element => element > 0)) {
 
-			embed.description = `*${chosenCharacterData.name} enters the medicine den with tired eyes.* "Please help me!" *${pronounAndPlural(chosenCharacterData, 0, 'say')}, ${pronoun(chosenCharacterData, 2)} face contorted in pain. ${characterData.name} looks up with worry.* "I'll see what I can do for you."`;
-			embed.footer.text = `${chosenCharacterData.name}'s stats/illnesses/injuries:${healUserConditionText}`;
+			characterConditionEmbed.setDescription(`*${chosenCharacterData.name} enters the medicine den with tired eyes.* "Please help me!" *${pronounAndPlural(chosenCharacterData, 0, 'say')}, ${pronoun(chosenCharacterData, 2)} face contorted in pain. ${characterData.name} looks up with worry.* "I'll see what I can do for you."`);
+			characterConditionEmbed.setFooter({ text: `${chosenCharacterData.name}'s stats/illnesses/injuries:${healUserConditionText}` });
 		}
 		else {
 
-			embed.description = `*${characterData.name} approaches ${chosenCharacterData.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${characterData.displayedSpecies || characterData.species} asks.\n${chosenCharacterData.name} shakes ${pronoun(chosenCharacterData, 2)} head.* "Not that I know of, no."\n*Disappointed, ${characterData.name} goes back to the medicine den.*`;
+			characterConditionEmbed.setDescription(`*${characterData.name} approaches ${chosenCharacterData.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${characterData.displayedSpecies || characterData.species} asks.\n${chosenCharacterData.name} shakes ${pronoun(chosenCharacterData, 2)} head.* "Not that I know of, no."\n*Disappointed, ${characterData.name} goes back to the medicine den.*`);
 
-			return { embeds: [...embedArray, embed], components: Object.keys(allHurtCharactersList).length > 0 ? [userSelectMenu] : [] };
+			return { embeds: [...embedArray, characterConditionEmbed], components: Object.keys(allHurtCharactersList).length > 0 && userSelectMenu ? [new MessageActionRow().addComponents([userSelectMenu])] : [] };
 		}
 
-		const { embed: embed2, selectMenu } = getFirstHealPage();
+		const { inventory1Embed, inventory1SelectMenu } = getFirstHealPage(message);
 
-		if (embed2.fields.length === 0) { pageButtons.components[0].disabled = true; }
+		if (inventory1Embed.fields.length === 0) { inventoryPagesButtons[0].disabled = true; }
 
 		const
-			embeds = [...embedArray, embed, ...Object.keys(allHurtCharactersList).length > 0 ? [embed2] : []],
-			components = [...Object.keys(allHurtCharactersList).length > 0 ? [userSelectMenu, pageButtons, ...selectMenu !== null ? [selectMenu] : []] : []];
+			embeds = [...embedArray, characterConditionEmbed, ...Object.keys(allHurtCharactersList).length > 0 ? [inventory1Embed] : []],
+			components = [...Object.keys(allHurtCharactersList).length > 0 ?
+				[
+					...(userSelectMenu ? [ new MessageActionRow().addComponents([userSelectMenu])] : []),
+					new MessageActionRow().addComponents(inventoryPagesButtons),
+					...(inventory1SelectMenu ? [new MessageActionRow().addComponents([inventory1SelectMenu])] : []),
+				]
+				: [],
+			];
 
 		return { embeds, components };
 	}
 
 	/**
 	 * Iterates through the first inventory page and returns embed and component.
-	 * @returns { {embed: import('discord.js').MessageEmbedOptions, selectMenu: import('discord.js').MessageActionRow} }
+	 * @param {import('discord.js').Message<true>} message - The message object
+	 * @returns { {inventory1Embed: import('discord.js').MessageEmbed, inventory1SelectMenu: import('discord.js').MessageSelectMenu | null} }
 	 */
-	function getFirstHealPage() {
+	function getFirstHealPage(message) {
 
-		const embed = {
-			color: characterData.color,
-			title: `Inventory of ${message.guild.name} - Page 1`,
-			fields: [],
-			footer: { text: 'Choose one of the herbs above to heal the player with it!' },
-		};
+		const inventory1Embed = new MessageEmbed()
+			.setColor(characterData.color)
+			.setTitle(`Inventory of ${message.guild.name} - Page 1`)
+			.setFooter({ text: 'Choose one of the herbs above to heal the player with it!' });
 
-		let selectMenu = new MessageActionRow().addComponents(
-			[ new MessageSelectMenu({
-				customId: 'heal-options-1',
-				placeholder: 'Select an item',
-				options: [],
-			})],
-		);
+		/** @type {import('discord.js').MessageSelectMenu | null} */
+		let inventory1SelectMenu = new MessageSelectMenu()
+			.setCustomId('heal-options-1')
+			.setPlaceholder('Select an item');
 
 		for (const [commonPlantName, commonPlantObject] of [...commonPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
 			if (serverData.inventory.commonPlants[commonPlantName] > 0) {
 
-				embed.fields.push({ name: `${commonPlantName}: ${serverData.inventory.commonPlants[commonPlantName]}`, value: commonPlantObject.description, inline: true });
-				/** @type {import('discord.js').MessageSelectMenuOptions} */ (selectMenu.components[0]).options.push({ label: commonPlantName, value: commonPlantName, description: `${serverData.inventory.commonPlants[commonPlantName]}` });
+				inventory1Embed.addField(`${commonPlantName}: ${serverData.inventory.commonPlants[commonPlantName]}`, commonPlantObject.description, true);
+				inventory1SelectMenu.addOptions({ label: commonPlantName, value: commonPlantName, description: `${serverData.inventory.commonPlants[commonPlantName]}` });
 			}
 		}
 
-		if (/** @type {import('discord.js').MessageSelectMenuOptions} */ (selectMenu.components[0]).options.length === 0) { selectMenu = null; }
+		if (inventory1SelectMenu.options.length === 0) { inventory1SelectMenu = null; }
 
-		return { embed, selectMenu };
+		return { inventory1Embed, inventory1SelectMenu };
 	}
 };
 

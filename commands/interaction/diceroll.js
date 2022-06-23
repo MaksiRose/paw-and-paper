@@ -21,7 +21,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 
 	let args = argumentsArray.join('');
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id || 'DM']];
-	const profileData = characterData?.profiles?.[message.guild?.id];
+	const profileData = characterData?.profiles?.[message.guildId || 'DM'];
 	for (const [skill, value] of [...Object.entries(profileData?.skills?.global || {}), ...Object.entries(profileData?.skills?.personal || {})]) {
 
 		if (args.includes(skill)) { args = args.replace(skill, `${value}`);}
@@ -59,8 +59,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 	await message
 		.reply({
 			embeds: [{
-				color: characterData?.color || message.member.displayHexColor,
-				author: { name: characterData?.name || message.member.displayName, icon_url: characterData?.avatarURL || message.member.displayAvatarURL() },
+				color: characterData?.color || message.member?.displayColor || message.author.accentColor || '#ffffff',
+				author: {
+					name: characterData?.name || message.member?.displayName || message.author?.tag,
+					icon_url: characterData?.avatarURL || message.member?.displayAvatarURL() || message.author?.avatarURL() || undefined,
+				},
 				description: `You rolled a \`${result}\`!`,
 				footer: { text: rolledDice.join(', ').length > 2048 ? rolledDice.join(', ').substring(0, 2045) + '...' : rolledDice.join(', ') },
 			}],

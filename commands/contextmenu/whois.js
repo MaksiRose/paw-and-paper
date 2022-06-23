@@ -9,15 +9,29 @@ module.exports.name = 'Who is ❓';
 module.exports.data = {
 	'name': module.exports.name,
 	'type': 3,
+	'dm_permission': false,
 };
 
 /**
  *
  * @param {import('../../paw').client} client
- * @param {import('discord.js').MessageContextMenuInteraction<"cached">} interaction
+ * @param {import('discord.js').MessageContextMenuInteraction} interaction
  * @returns {Promise<void>}
  */
 module.exports.sendCommand = async (client, interaction) => {
+
+	if (!interaction.inCachedGuild()) {
+
+		await interaction
+			.reply({
+				content: 'This interaction is guild-only!',
+				ephemeral: true,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+		return;
+	}
 
 	let userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: interaction.targetMessage.author.id }));
 
@@ -25,7 +39,7 @@ module.exports.sendCommand = async (client, interaction) => {
 	if (webhookCache[interaction.targetId] !== undefined && webhookCache[interaction.targetId].split('_')[1] !== undefined) {
 
 		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: webhookCache[interaction.targetId].split('_')[0] }));
-		userData.currentCharacter[interaction.guild.id] = webhookCache[interaction.targetId].split('_')[1];
+		userData.currentCharacter[interaction.guildId || 'DM'] = webhookCache[interaction.targetId].split('_')[1];
 		interaction.targetMessage.author.id = userData.userId;
 	}
 
@@ -42,7 +56,7 @@ module.exports.sendCommand = async (client, interaction) => {
 		return;
 	}
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guild.id]];
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guildId || 'DM']];
 
 	const member = !interaction.targetMessage.member ? await interaction.guild.members.fetch(interaction.targetMessage.author.id) : interaction.targetMessage.member;
 
@@ -50,7 +64,7 @@ module.exports.sendCommand = async (client, interaction) => {
 		color: member?.displayColor || interaction.targetMessage.author.accentColor || '#ffffff',
 		author: {
 			name: member?.displayName || interaction.targetMessage.author?.tag,
-			icon_url: member?.displayAvatarURL() || interaction.targetMessage.author?.avatarURL(),
+			icon_url: member?.displayAvatarURL() || interaction.targetMessage.author?.avatarURL() || undefined,
 		},
 		description: `${interaction.targetMessage.content}\n[jump](${interaction.targetMessage.url})`,
 		fields: [
@@ -62,5 +76,5 @@ module.exports.sendCommand = async (client, interaction) => {
 		timestamp: new Date(),
 	})];
 
-	await sendProfile(client, interaction.targetMessage, embedArray, userData, characterData, false, true, interaction);
+	await sendProfile(client, interaction.targetMessage, embedArray, userData, characterData, false, interaction);
 };

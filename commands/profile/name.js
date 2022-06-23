@@ -16,54 +16,47 @@ module.exports.name = 'name';
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} userData
- * @param {import('../../typedef').ServerSchema} serverData
+ * @param {import('../../typedef').ProfileSchema | null} userData
+ * @param {import('../../typedef').ServerSchema | null} serverData
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData) => {
 
-	try {
+	if (!userData) {
 
-		if (!userData) {
+		/** @type {import('../../typedef').BanList} */
+		const bannedList = JSON.parse(readFileSync('./database/bannedList.json', 'utf-8'));
 
-			/** @type {import('../../typedef').BanList} */
-			const bannedList = JSON.parse(readFileSync('./database/bannedList.json', 'utf-8'));
+		if (bannedList.users.includes(message.author.id)) {
 
-			if (bannedList.users.includes(message.author.id)) {
+			const user = await client.users.fetch(message.author.id);
 
-				const user = await client.users.fetch(message.author.id);
+			await user
+				.createDM()
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						throw new Error(error);
+					}
+				});
 
-				await user
-					.createDM()
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
+			await user
+				.send({ content: 'I am sorry to inform you that you have been banned from using this bot.' })
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
 
-				await user
-					.send({ content: 'I am sorry to inform you that you have been banned from using this bot.' })
-					.catch((error) => {
-						if (error.httpStatus !== 404) { throw new Error(error); }
-					});
-
-				return;
-			}
-
-			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.create({
-				userId: message.author.id,
-				advice: { resting: false, drinking: false, eating: false, passingout: false, coloredbuttons: false },
-				reminders: { water: true, resting: true },
-				characters: {},
-				currentCharacter: {},
-				autoproxy: {},
-				lastPlayedVersion: `${version.split('.').slice(0, -1).join('.')}`,
-			}));
+			return;
 		}
-	}
-	catch (error) {
 
-		throw new Error(error);
+		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.create({
+			userId: message.author.id,
+			advice: { resting: false, drinking: false, eating: false, passingout: false, coloredbuttons: false },
+			reminders: { water: true, resting: true },
+			characters: {},
+			currentCharacter: {},
+			autoproxy: {},
+			lastPlayedVersion: `${version.split('.').slice(0, -1).join('.')}`,
+		}));
 	}
 
 	userData = await startCooldown(message);
@@ -140,6 +133,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							maxEnergy: 100,
 							maxHunger: 100,
 							maxThirst: 100,
+							temporaryStatIncrease: {},
 							isResting: false,
 							hasCooldown: false,
 							hasQuest: false,
@@ -175,7 +169,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			embeds: [ new MessageEmbed({
 				color: /** @type {`#${string}`} */ (default_color),
 				title: characterData === undefined ? `You successfully created the character ${name}!` : `You successfully renamed your character to ${name}!`,
-				footer: { text: characterData === undefined ? 'To continue setting up your profile for the RPG, type "rp species". For other options, review "rp help".' : null },
+				footer: { text: characterData === undefined ? 'To continue setting up your profile for the RPG, type "rp species". For other options, review "rp help".' : undefined },
 			})],
 			failIfNotExists: false,
 		})
@@ -183,6 +177,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 
-	await checkRankRequirements(serverData, message, message.member, 'Youngling');
-	await checkLevelRequirements(serverData, message, message.member, 1);
+	if (message.inGuild() && serverData) {
+
+		const member = message.member ? message.member : (await message.guild.members.fetch(message.author.id).catch((error) => { throw new Error(error);}));
+		await checkRankRequirements(serverData, message, member, 'Youngling');
+		await checkLevelRequirements(serverData, message, member, 1);
+	}
 };

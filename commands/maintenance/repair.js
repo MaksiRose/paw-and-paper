@@ -1,5 +1,5 @@
 // @ts-check
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { pronoun, pronounAndPlural } = require('../../utils/getPronouns');
 const startCooldown = require('../../utils/startCooldown');
@@ -10,9 +10,9 @@ const { pullFromWeightedTable, generateRandomNumber } = require('../../utils/ran
 const { decreaseEnergy, decreaseHunger, decreaseThirst, decreaseHealth } = require('../../utils/checkCondition');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { checkLevelUp } = require('../../utils/levelHandling');
-const { MessageActionRow, MessageButton, MessageSelectMenu } = require('discord.js');
+const { MessageActionRow, MessageButton, MessageSelectMenu, MessageEmbed } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 const { materialsMap } = require('../../utils/itemsInfo');
 const { eatAdvice, drinkAdvice, restAdvice } = require('../../utils/adviceMessages');
 
@@ -25,12 +25,12 @@ module.exports.name = 'repair';
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
@@ -38,7 +38,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];
 
-	if (await hasNotCompletedAccount(message, characterData)) {
+	if (!hasCompletedAccount(message, characterData)) {
 
 		return;
 	}
@@ -88,8 +88,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
-	/** @type {import('discord.js').Message} */
-	let botReply = null;
 	let chosenDen = ['sleeping dens', 'food den', 'medicine den'].includes(argumentsArray.join(' ').toLowerCase()) ?
 		['sleepingDens', 'foodDen', 'medicineDen'][
 			['sleeping dens', 'food den', 'medicine den'].indexOf(argumentsArray.join(' ').toLowerCase())
@@ -110,48 +108,38 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		})],
 	);
 
-	if (chosenDen == null) {
-
-		botReply = await message
-			.reply({
-				content: messageContent,
-				embeds: [...embedArray, {
-					author: { name: characterData.name, icon_url: characterData.avatarURL },
-					color: characterData.color,
-					description: `*${characterData.name} roams around the pack, looking if any dens need to be repaired.*`,
-				}],
-				components: [denSelectMenu],
-				failIfNotExists: false,
-			})
-			.catch((error) => { throw new Error(error); });
-	}
-	else {
-
-		const { embeds: embeds, components: components } = await getMaterials() ?? { embeds: undefined, components: undefined };
-
-		botReply = await message
-			.reply({
-				content: messageContent,
-				embeds: embeds,
-				components: components,
-				failIfNotExists: false,
-			})
-			.catch((error) => { throw new Error(error); });
-	}
+	let botReply = await message
+		.reply(!chosenDen ? {
+			content: messageContent,
+			embeds: [...embedArray, {
+				author: { name: characterData.name, icon_url: characterData.avatarURL },
+				color: characterData.color,
+				description: `*${characterData.name} roams around the pack, looking if any dens need to be repaired.*`,
+			}],
+			components: [denSelectMenu],
+			failIfNotExists: false,
+		} : {
+			content: messageContent,
+			embeds: (await getMaterials()).embeds || undefined,
+			components: (await getMaterials()).components || undefined,
+			failIfNotExists: false,
+		})
+		.catch((error) => { throw new Error(error); });
 
 	createCommandCollector(message.author.id, message.guild.id, botReply);
 	interactionCollector();
 
 	async function interactionCollector() {
 
-		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId.includes('repair') && i.user.id === message.author.id;
-
-		/** @type {import('discord.js').MessageComponentInteraction<"cached"> | null} } */
+		/** @type {import('discord.js').MessageComponentInteraction | null} } */
 		const interaction = await botReply
-			.awaitMessageComponent({ filter, time: 120_000 })
+			.awaitMessageComponent({
+				filter: (i) => i.user.id === message.author.id,
+				time: 120_000,
+			})
 			.catch(() => { return null; });
 
-		if (interaction === null) {
+		if (interaction === null || !interaction.inCachedGuild()) {
 
 			await botReply
 				.edit({
@@ -168,13 +156,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			chosenDen = interaction.customId.replace('repair-', '');
 
-			const { embeds: embeds, components: components } = await getMaterials() ?? { embeds: undefined, components: undefined };
-
-			botReply = await interaction.message
-				.edit({
+			botReply = await interaction
+				.editReply({
 					content: messageContent,
-					embeds: embeds,
-					components: components,
+					embeds: (await getMaterials()).embeds || undefined,
+					components: (await getMaterials()).components || undefined,
 				})
 				.catch((error) => { throw new Error(error); });
 			interactionCollector();
@@ -182,17 +168,19 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		if (interaction.isSelectMenu()) {
 
-			const repairKind = materialsMap.get(interaction.values[0]).reinforcesStructure ? 'structure' : materialsMap.get(interaction.values[0]).improvesBedding ? 'bedding' : materialsMap.get(interaction.values[0]).thickensWalls ? 'thickness' : 'evenness';
+			const repairKind = materialsMap.get(interaction.values[0])?.reinforcesStructure ? 'structure' : materialsMap.get(interaction.values[0])?.improvesBedding ? 'bedding' : materialsMap.get(interaction.values[0])?.thickensWalls ? 'thickness' : 'evenness';
 			const repairAmount = function(points) {
+				// @ts-ignore, since select menus always have a chosen den
 				return (serverData.dens[chosenDen][repairKind] + points > 100) ? 100 - serverData.dens[chosenDen][repairKind] : points;
 			}(generateRandomNumber(5, 6));
 
 			const isSuccessful = repairAmount > 0 && !((profileData.rank === 'Apprentice' || profileData.rank === 'Healer') && pullFromWeightedTable({ 0: profileData.rank === 'Healer' ? 90 : 40, 1: 60 + profileData.sapling.waterCycles }) === 0);
 
 			serverData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOneAndUpdate(
-				{ serverId: message.guild.id },
+				{ serverId: interaction.guild.id },
 				(/** @type {import('../../typedef').ServerSchema} */ s) => {
 					s.inventory.materials[interaction.values[0]] -= 1;
+					// @ts-ignore, since select menus always have a chosen den
 					if (isSuccessful) { s.dens[chosenDen][repairKind] += repairAmount; }
 				},
 			));
@@ -205,14 +193,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 				{ userId: message.author.id },
 				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-					p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].experience += experiencePoints;
-					p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].energy -= energyPoints;
-					p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hunger -= hungerPoints;
-					p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].thirst -= thirstPoints;
+					p.characters[p.currentCharacter[interaction.guild.id]].profiles[interaction.guild.id].experience += experiencePoints;
+					p.characters[p.currentCharacter[interaction.guild.id]].profiles[interaction.guild.id].energy -= energyPoints;
+					p.characters[p.currentCharacter[interaction.guild.id]].profiles[interaction.guild.id].hunger -= hungerPoints;
+					p.characters[p.currentCharacter[interaction.guild.id]].profiles[interaction.guild.id].thirst -= thirstPoints;
 				},
 			));
-			characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-			profileData = characterData?.profiles?.[message.guild.id];
+			characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guild.id]];
+			profileData = characterData?.profiles?.[interaction.guild.id];
 
 			let footerStats = `-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
 
@@ -232,6 +220,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			}
 
 			const denName = ['sleeping dens', 'food den', 'medicine den'][
+				// @ts-ignore, since select menus always have a chosen den
 				['sleepingDens', 'foodDen', 'medicineDen'].indexOf(chosenDen)
 			];
 
@@ -242,18 +231,24 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						author: { name: characterData.name, icon_url: characterData.avatarURL },
 						color: characterData.color,
 						description: `*${characterData.name} takes a ${interaction.values[0]} and tries to ${repairKind === 'structure' ? 'tuck it into parts of the walls and ceiling that look less stable.' : repairKind === 'bedding' ? 'spread it over parts of the floor that look harsh and rocky.' : repairKind === 'thickness' ? 'cover parts of the walls that look a little thin with it.' : 'drag it over parts of the walls with bumps and material sticking out.'} ` + (isSuccessful ? `Immediately you can see the ${repairKind} of the den improving. What a success!*` : `After a few attempts, the material breaks into little pieces, rendering it useless. Looks like the ${characterData.displayedSpecies || characterData.species} has to try again...*`),
-						footer: { text: `${footerStats}\n\n-1 ${interaction.values[0]} for ${message.guild.name}\n${isSuccessful ? `+${repairAmount}% ${repairKind} for ${denName} (${serverData.dens[chosenDen][repairKind]}%  total)` : ''}` },
+						// @ts-ignore, since select menus always have a chosen den
+						footer: { text: `${footerStats}\n\n-1 ${interaction.values[0]} for ${interaction.guild.name}\n${isSuccessful ? `+${repairAmount}% ${repairKind} for ${denName} (${serverData.dens[chosenDen][repairKind]}%  total)` : ''}` },
 					}],
 					components: disableAllComponents(botReply.components),
 				})
 				.catch((error) => { throw new Error(error); });
 
 			botReply = await decreaseHealth(userData, botReply, { ...profileData.injuries });
-			botReply = await checkLevelUp(message, botReply, userData, serverData);
+			// @ts-ignore, since message must be in guild
+			botReply = await checkLevelUp(message, userData, serverData, botReply) || botReply;
+			// @ts-ignore, since message must be in guild
 			await isPassedOut(message, userData, true);
 
+			// @ts-ignore, since message must be in guild
 			await restAdvice(message, userData);
+			// @ts-ignore, since message must be in guild
 			await drinkAdvice(message, userData);
+			// @ts-ignore, since message must be in guild
 			await eatAdvice(message, userData);
 		}
 
@@ -265,46 +260,39 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 	/**
 	 * Displays the condition of the currently chosen den, as well as a list of the packs materials.
-	 * @returns { Promise<{embeds: Array<import('discord.js').MessageEmbedOptions>, components: Array<import('discord.js').MessageActionRow>}> }
+	 * @returns { Promise<{embeds: Array<import('discord.js').MessageEmbed>, components: Array<import('discord.js').MessageActionRow>}> }
 	 */
 	async function getMaterials() {
 
-		const embed = {
-			author: { name: characterData.name, icon_url: characterData.avatarURL },
-			color: characterData.color,
-			description: `*${characterData.name} patrols around the den, looking for anything that has to be repaired. The condition isn't perfect, and reinforcing it would definitely improve its quality. But what would be the best way?*`,
-			footer: { text: `Structure: ${serverData.dens[chosenDen].structure}%\nBedding: ${serverData.dens[chosenDen].bedding}%\nThickness: ${serverData.dens[chosenDen].thickness}%\nEvenness: ${serverData.dens[chosenDen].evenness}%` },
-		};
+		const embed = new MessageEmbed()
+			.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
+			.setColor(characterData.color)
+			.setDescription(`*${characterData.name} patrols around the den, looking for anything that has to be repaired. The condition isn't perfect, and reinforcing it would definitely improve its quality. But what would be the best way?*`)
+			// @ts-ignore, since select menus always have a chosen den
+			.setFooter({ text: `Structure: ${serverData.dens[chosenDen].structure}%\nBedding: ${serverData.dens[chosenDen].bedding}%\nThickness: ${serverData.dens[chosenDen].thickness}%\nEvenness: ${serverData.dens[chosenDen].evenness}%` });
 
-		const embed2 = {
-			color: characterData.color,
-			title: `Inventory of ${message.guild.name} - Materials`,
-			fields: [],
-			footer: { text: 'Choose one of the materials above to repair the den with it!' },
-		};
+		const embed2 = new MessageEmbed()
+			.setColor(characterData.color)
+			.setTitle(`Inventory of ${profileData.serverId} - Materials`)
+			.setFooter({ text: 'Choose one of the materials above to repair the den with it!' });
 
-		let selectMenu = new MessageActionRow().addComponents(
-			[ new MessageSelectMenu({
-				customId: 'repair-options',
-				placeholder: 'Select an item',
-				options: [],
-			})],
-		);
+		const selectMenu = new MessageSelectMenu({
+			customId: 'repair-options',
+			placeholder: 'Select an item',
+		});
 
 		for (const [materialName, materialObject] of [...materialsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
 			if (serverData.inventory.materials[materialName] > 0) {
 
-				embed2.fields.push({ name: `${materialName}: ${serverData.inventory.materials[materialName]}`, value: materialObject.description, inline: true });
-				/** @type {import('discord.js').MessageSelectMenuOptions} */ (selectMenu.components[0]).options.push({ label: materialName, value: materialName, description: `${serverData.inventory.materials[materialName]}` });
+				embed2.addField(`${materialName}: ${serverData.inventory.materials[materialName]}`, materialObject.description, true);
+				selectMenu.addOptions({ label: materialName, value: materialName, description: `${serverData.inventory.materials[materialName]}` });
 			}
 		}
 
-		if (/** @type {import('discord.js').MessageSelectMenuOptions} */ (selectMenu.components[0]).options.length === 0) { selectMenu = null; }
-
 		const
 			embeds = [...embedArray, embed, embed2],
-			components = [denSelectMenu, ...selectMenu != null ? [selectMenu] : []];
+			components = [denSelectMenu, ...selectMenu.options.length > 0 ? [new MessageActionRow().addComponents([selectMenu])] : []];
 
 		return { embeds, components };
 	}

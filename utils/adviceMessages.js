@@ -18,7 +18,7 @@ async function playAdvice(message) {
 
 /**
  * Sends advice to rest.
- * @param {import('discord.js').Message} message
+ * @param {import('discord.js').Message<true>} message
  * @param {import('../typedef').ProfileSchema} userData
  */
 async function restAdvice(message, userData) {
@@ -47,7 +47,7 @@ async function restAdvice(message, userData) {
 
 /**
  * Sends advice to drink.
- * @param {import('discord.js').Message} message
+ * @param {import('discord.js').Message<true>} message
  * @param {import('../typedef').ProfileSchema} userData
  */
 async function drinkAdvice(message, userData) {
@@ -76,7 +76,7 @@ async function drinkAdvice(message, userData) {
 
 /**
  * Sends advice to eat.
- * @param {import('discord.js').Message} message
+ * @param {import('discord.js').Message<true>} message
  * @param {import('../typedef').ProfileSchema} userData
  */
 async function eatAdvice(message, userData) {

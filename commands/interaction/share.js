@@ -3,14 +3,14 @@ const profileModel = require('../../models/profileModel');
 const startCooldown = require('../../utils/startCooldown');
 const { error_color } = require('../../config.json');
 const { generateRandomNumber, pullFromWeightedTable } = require('../../utils/randomizers');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { remindOfAttack } = require('../gameplay/attack');
 const { pronounAndPlural, pronoun, upperCasePronounAndPlural, upperCasePronoun } = require('../../utils/getPronouns');
 const { addFriendshipPoints } = require('../../utils/friendshipHandling');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
 const sharingCooldownAccountsMap = new Map();
 
@@ -23,20 +23,20 @@ module.exports.name = 'share';
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
 
-	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-	let profileData = characterData?.profiles?.[message.guild.id];
+	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId]];
+	let profileData = characterData?.profiles?.[message.guildId];
 
-	if (await hasNotCompletedAccount(message, characterData)) {
+	if (!hasCompletedAccount(message, characterData)) {
 
 		return;
 	}
@@ -49,7 +49,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	userData = await startCooldown(message);
 	const messageContent = remindOfAttack(message);
 
-	if (sharingCooldownAccountsMap.has('nr' + message.author.id + message.guild.id) && Date.now() - sharingCooldownAccountsMap.get('nr' + message.author.id + message.guild.id) < 7200000) {
+	if (sharingCooldownAccountsMap.has('nr' + message.author.id + message.guildId) && Date.now() - sharingCooldownAccountsMap.get('nr' + message.author.id + message.guildId) < 7200000) {
 
 		await message
 			.reply({
@@ -58,7 +58,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					color: characterData.color,
 					author: { name: characterData.name, icon_url: characterData.avatarURL },
 					title: 'You can only share every 2 hours!',
-					description: `You can share again <t:${Math.floor((sharingCooldownAccountsMap.get('nr' + message.author.id + message.guild.id) + 7200000) / 1000)}:R>.`,
+					description: `You can share again <t:${Math.floor((sharingCooldownAccountsMap.get('nr' + message.author.id + message.guildId) + 7200000) / 1000)}:R>.`,
 				}],
 				failIfNotExists: false,
 			})
@@ -86,7 +86,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
-	if (message.mentions.users.size > 0 && message.mentions.users.first().id == message.author.id) {
+	const firstMentionedUser = message.mentions.users.first();
+	if (firstMentionedUser && firstMentionedUser.id == message.author.id) {
 
 		await message
 			.reply({
@@ -111,14 +112,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 		{ userId: message.author.id },
 		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].energy -= energyPoints;
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hunger -= hungerPoints;
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].thirst -= thirstPoints;
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'ruins';
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].energy -= energyPoints;
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].hunger -= hungerPoints;
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].thirst -= thirstPoints;
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].currentRegion = 'ruins';
 		},
 	));
-	characterData = userData.characters[userData.currentCharacter[message.guild.id]];
-	profileData = characterData.profiles[message.guild.id];
+	characterData = userData.characters[userData.currentCharacter[message.guildId]];
+	profileData = characterData.profiles[message.guildId];
 
 	let embedFooterStatsText = `-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})`;
 
@@ -147,21 +148,21 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		footer: { text: '' },
 	};
 
-	/** @type {import('../../typedef').ProfileSchema} */
-	let partnerUserData;
-	/** @type {import('../../typedef').Character} */
-	let partnerCharacterData;
-	/** @type {import('../../typedef').Profile} */
-	let partnerProfileData;
+	/** @type {import('../../typedef').ProfileSchema | null} */
+	let partnerUserData = null;
+	/** @type {import('../../typedef').Character | null} */
+	let partnerCharacterData = null;
+	/** @type {import('../../typedef').Profile | null} */
+	let partnerProfileData = null;
 	/** @type {Array<import('discord.js').MessageEmbedOptions>} */
 	let extraEmbeds = [];
 
-	if (!message.mentions.users.size) {
+	if (!firstMentionedUser) {
 
 		const allRuinUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel
 			.find(
 				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-					return Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'ruins' && c.profiles[message.guild.id].energy > 0 && c.profiles[message.guild.id].health > 0 && c.profiles[message.guild.id].hunger > 0 && c.profiles[message.guild.id].thirst > 0 && c.profiles[message.guild.id].injuries.cold === false).length > 0;
+					return Object.values(p.characters).filter(c => c.profiles[message.guildId] !== undefined && c.profiles[message.guildId].currentRegion === 'ruins' && c.profiles[message.guildId].energy > 0 && c.profiles[message.guildId].health > 0 && c.profiles[message.guildId].hunger > 0 && c.profiles[message.guildId].thirst > 0 && c.profiles[message.guildId].injuries.cold === false).length > 0;
 				},
 			))
 			.map(user => user.userId)
@@ -174,10 +175,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({
 				userId: allRuinUsersList[allRuinsProfilesArrayRandomIndex],
 			}));
-			partnerCharacterData = Object.values(partnerUserData.characters).find(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'ruins' && c.profiles[message.guild.id].energy > 0 && c.profiles[message.guild.id].health > 0 && c.profiles[message.guild.id].hunger > 0 && c.profiles[message.guild.id].thirst > 0 && c.profiles[message.guild.id].injuries.cold === false);
-			partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id];
+			partnerCharacterData = Object.values(partnerUserData.characters).find(c => c.profiles[message.guildId] !== undefined && c.profiles[message.guildId].currentRegion === 'ruins' && c.profiles[message.guildId].energy > 0 && c.profiles[message.guildId].health > 0 && c.profiles[message.guildId].hunger > 0 && c.profiles[message.guildId].thirst > 0 && c.profiles[message.guildId].injuries.cold === false) || null;
+			partnerProfileData = partnerCharacterData?.profiles?.[message.guildId] || null;
 
-			if (partnerUserData && partnerCharacterData && partnerCharacterData.name !== '' && partnerCharacterData.species !== '' || partnerProfileData || partnerProfileData.energy > 0 || partnerProfileData.health > 0 || partnerProfileData.hunger > 0 || partnerProfileData.thirst > 0 || !partnerProfileData.hasCooldown || !partnerProfileData.isResting) {
+			if (partnerUserData && partnerCharacterData && partnerCharacterData.name !== '' && partnerCharacterData.species !== '' && partnerProfileData && partnerProfileData.energy > 0 && partnerProfileData.health > 0 && partnerProfileData.hunger > 0 && partnerProfileData.thirst > 0 && !partnerProfileData.hasCooldown && !partnerProfileData.isResting) {
 
 				extraEmbeds = await shareStory();
 			}
@@ -193,18 +194,18 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	}
 	else {
 
-		partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first().id }));
-		partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guild.id]];
-		partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id];
+		partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: firstMentionedUser.id }));
+		partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guildId]];
+		partnerProfileData = partnerCharacterData?.profiles?.[message.guildId];
 
 		if (!partnerUserData || !partnerCharacterData || partnerCharacterData.name === '' || partnerCharacterData.species === '' || !partnerProfileData || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0 || partnerProfileData.hasCooldown || partnerProfileData.isResting) {
 
 			await profileModel.findOneAndUpdate(
 				{ userId: message.author.id },
 				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-					p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].energy += energyPoints;
-					p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hunger += hungerPoints;
-					p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].thirst += thirstPoints;
+					p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].energy += energyPoints;
+					p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].hunger += hungerPoints;
+					p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].thirst += thirstPoints;
 				},
 			);
 
@@ -236,7 +237,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		})
 		.catch((error) => { throw new Error(error); });
 
-	botReply = await checkLevelUp(message, botReply, userData, serverData);
+	botReply = await checkLevelUp(message, userData, serverData, botReply) || botReply;
 	await decreaseHealth(userData, botReply, userInjuryObject);
 	await isPassedOut(message, userData, false);
 
@@ -253,44 +254,56 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	 */
 	async function shareStory() {
 
-		sharingCooldownAccountsMap.set('nr' + message.author.id + message.guild.id, Date.now());
+		sharingCooldownAccountsMap.set('nr' + message.author.id + message.guildId, Date.now());
 
+		// @ts-ignore, since partnerData cant be null
 		const partnerExperiencePoints = generateRandomNumber(Math.round((partnerProfileData.levels * 50) * 0.15), Math.round((partnerProfileData.levels * 50) * 0.05));
 
 		partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+		// @ts-ignore, since partnerData cant be null
 			{ userId: partnerUserData.userId },
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				p.characters[partnerCharacterData._id].profiles[message.guild.id].experience += partnerExperiencePoints;
+				// @ts-ignore, since partnerData cant be null and message must be in guild
+				p.characters[partnerCharacterData._id].profiles[message.guildId].experience += partnerExperiencePoints;
 			},
 		));
+		// @ts-ignore, since partnerData cant be null
 		partnerCharacterData = partnerUserData.characters[partnerCharacterData._id];
-		partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id];
+		// @ts-ignore, since message must be in guild
+		partnerProfileData = partnerCharacterData?.profiles?.[message.guildId];
 
 		embed.description = `*${partnerCharacterData.name} comes running to the old wooden trunk at the ruins where ${characterData.name} sits, ready to tell an exciting story from long ago. ${upperCasePronoun(partnerCharacterData, 2)} eyes are sparkling as the ${characterData.displayedSpecies || characterData.species} recounts great adventures and the lessons to be learned from them.*`;
+		// @ts-ignore, since partnerData cant be null
 		embed.footer.text = `${embedFooterStatsText}\n+${partnerExperiencePoints} XP for ${partnerCharacterData.name} (${partnerProfileData.experience}/${partnerProfileData.levels * 50})`;
 
 		/** @type {Array<import('discord.js').MessageEmbedOptions>} */
 		extraEmbeds = [embed];
 
+		// @ts-ignore, since partnerData cant be null
 		if (partnerProfileData.experience >= partnerProfileData.levels * 50) {
 
 			partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 				{ userId: partnerUserData.userId },
 				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-					p.characters[partnerCharacterData._id].profiles[message.guild.id].experience += -(p.characters[partnerCharacterData._id].profiles[message.guild.id].levels * 50);
-					p.characters[partnerCharacterData._id].profiles[message.guild.id].levels += 1;
+					// @ts-ignore, since partnerData cant be null and message must be in guild
+					p.characters[partnerCharacterData._id].profiles[message.guildId].experience += -(p.characters[partnerCharacterData._id].profiles[message.guildId].levels * 50);
+					// @ts-ignore, since partnerData cant be null and message must be in guild
+					p.characters[partnerCharacterData._id].profiles[message.guildId].levels += 1;
 				},
 			));
 			partnerCharacterData = partnerUserData.characters[partnerCharacterData._id];
-			partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id];
+			// @ts-ignore, since message must be in guild
+			partnerProfileData = partnerCharacterData?.profiles?.[message.guildId];
 
 			extraEmbeds.push({
 				color: partnerCharacterData.color,
 				author: { name: partnerCharacterData.name, icon_url: partnerCharacterData.avatarURL },
+				// @ts-ignore, since partnerData cant be null
 				title: `${partnerCharacterData.name} just leveled up! ${upperCasePronounAndPlural(partnerCharacterData, 2, 'is', 'are')} now level ${partnerProfileData.levels}.`,
 			});
 		}
 
+		// @ts-ignore, since partnerData cant be null
 		if (partnerProfileData.injuries.cold === true && profileData.injuries.cold === false && pullFromWeightedTable({ 0: 3, 1: 7 }) === 0) {
 
 			healthPoints = generateRandomNumber(5, 3);
@@ -303,7 +316,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 				{ userId: message.author.id },
 				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-					p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].health -= healthPoints;
+					// @ts-ignore, since message must be in guild
+					p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].health -= healthPoints;
 				},
 			));
 
@@ -332,9 +346,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 			{ userId: message.author.id },
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].energy += energyPoints;
-				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hunger += hungerPoints;
-				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].thirst += thirstPoints;
+				// @ts-ignore, since message must be in guild
+				p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].energy += energyPoints;
+				// @ts-ignore, since message must be in guild
+				p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].hunger += hungerPoints;
+				// @ts-ignore, since message must be in guild
+				p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].thirst += thirstPoints;
 			},
 		));
 

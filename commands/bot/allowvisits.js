@@ -1,7 +1,7 @@
 // @ts-check
 const { error_color, default_color } = require('../../config.json');
 const serverModel = require('../../models/serverModel');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 
 module.exports.name = 'allowvisits';
 
@@ -14,12 +14,12 @@ module.exports.name = 'allowvisits';
  */
 module.exports.sendMessage = async (client, message, argumentsArray) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
 
-	if (message.member.permissions.has('ADMINISTRATOR') === false) {
+	if (!message.member || !message.member.permissions.has('ADMINISTRATOR')) {
 
 		await message
 			.reply({
@@ -48,7 +48,7 @@ module.exports.sendMessage = async (client, message, argumentsArray) => {
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (default_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+					author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
 					description: 'Visits have successfully been turned off!',
 				}],
 				failIfNotExists: false,
@@ -59,9 +59,10 @@ module.exports.sendMessage = async (client, message, argumentsArray) => {
 		return;
 	}
 
-	if (message.mentions.channels.size > 0) {
+	const firstMentionedUser = message.mentions.channels.first();
+	if (firstMentionedUser) {
 
-		if (message.mentions.channels.first().isText() === false) {
+		if (firstMentionedUser.isText() === false) {
 
 			await message
 				.reply({
@@ -81,7 +82,7 @@ module.exports.sendMessage = async (client, message, argumentsArray) => {
 		await serverModel.findOneAndUpdate(
 			{ serverId: message.guild.id },
 			(/** @type {import('../../typedef').ServerSchema} */ s) => {
-				s.visitChannelId = message.mentions.channels.first().id;
+				s.visitChannelId = firstMentionedUser.id;
 			},
 		);
 
@@ -89,8 +90,8 @@ module.exports.sendMessage = async (client, message, argumentsArray) => {
 			.reply({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (default_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-					description: `Visits are now possible in ${message.mentions.channels.first().toString()}!`,
+					author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
+					description: `Visits are now possible in ${firstMentionedUser.toString()}!`,
 				}],
 				failIfNotExists: false,
 			})

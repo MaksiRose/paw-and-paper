@@ -2,7 +2,7 @@
 const { MessageActionRow, MessageButton } = require('discord.js');
 const profileModel = require('../../models/profileModel');
 const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { decreaseHunger, decreaseThirst, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
@@ -10,7 +10,7 @@ const disableAllComponents = require('../../utils/disableAllComponents');
 const { pronoun, pronounAndPlural } = require('../../utils/getPronouns');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap } = require('../../utils/itemsInfo');
 const { generateRandomNumber } = require('../../utils/randomizers');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 const startCooldown = require('../../utils/startCooldown');
 const { remindOfAttack } = require('./attack');
 const recoverCooldownProfilesMap = new Map();
@@ -25,12 +25,12 @@ module.exports.aliases = ['regenerate'];
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
@@ -38,12 +38,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];
 
-	if (await hasNotCompletedAccount(message, characterData)) {
+	if (!hasCompletedAccount(message, characterData)) {
 
 		return;
 	}
 
-	if (await isInvalid(message, userData, embedArray, [module.exports.name].concat(module.exports.aliases))) {
+	if (await isInvalid(message, userData, embedArray, module.exports.aliases.concat(module.exports.name))) {
 
 		return;
 	}
@@ -86,27 +86,27 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				components: [ new MessageButton({
 					customId: 'recover-wounds',
 					label: 'Wound',
-					disabled: profileData.injuries.wounds <= 0 || serverInventory.filter(([key]) => allPlantMaps.get(key).healsWounds === true).length > 0,
+					disabled: profileData.injuries.wounds <= 0 || serverInventory.filter(([key]) => allPlantMaps.get(key)?.healsWounds === true).length > 0,
 					style: 'SECONDARY',
 				}), new MessageButton({
 					customId: 'recover-infections',
 					label: 'Infection',
-					disabled: profileData.injuries.infections <= 0 || serverInventory.filter(([key]) => allPlantMaps.get(key).healsInfections === true).length > 0,
+					disabled: profileData.injuries.infections <= 0 || serverInventory.filter(([key]) => allPlantMaps.get(key)?.healsInfections === true).length > 0,
 					style: 'SECONDARY',
 				}), new MessageButton({
 					customId: 'recover-cold',
 					label: 'Cold',
-					disabled: profileData.injuries.cold === false || serverInventory.filter(([key]) => allPlantMaps.get(key).healsColds === true).length > 0,
+					disabled: profileData.injuries.cold === false || serverInventory.filter(([key]) => allPlantMaps.get(key)?.healsColds === true).length > 0,
 					style: 'SECONDARY',
 				}), new MessageButton({
 					customId: 'recover-sprains',
 					label: 'Sprain',
-					disabled: profileData.injuries.sprains <= 0 || serverInventory.filter(([key]) => allPlantMaps.get(key).healsSprains === true).length > 0,
+					disabled: profileData.injuries.sprains <= 0 || serverInventory.filter(([key]) => allPlantMaps.get(key)?.healsSprains === true).length > 0,
 					style: 'SECONDARY',
 				}), new MessageButton({
 					customId: 'recover-poison',
 					label: 'Poison',
-					disabled: profileData.injuries.poison === false || serverInventory.filter(([key]) => allPlantMaps.get(key).healsPoison === true).length > 0,
+					disabled: profileData.injuries.poison === false || serverInventory.filter(([key]) => allPlantMaps.get(key)?.healsPoison === true).length > 0,
 					style: 'SECONDARY',
 				})],
 			})],
@@ -189,7 +189,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				let displayingEmoji = 0;
 				let choosingEmoji = 0;
 
-				await new Promise((resolve) => {
+				await /** @type {Promise<void>} */(new Promise((resolve) => {
 
 					const viewingInterval = setInterval(async function() {
 
@@ -218,7 +218,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						displayingEmoji += 1;
 
 					}, 1_500);
-				});
+				}));
 
 				interactionCollector();
 
@@ -305,12 +305,16 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 								userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 									{ userId: message.author.id },
 									(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-										p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].injuries = userInjuryObject;
+										// @ts-ignore, as message is must be in server
+										p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].injuries = userInjuryObject;
 									},
 								));
-								characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-								profileData = characterData?.profiles?.[message.guild.id];
+								// @ts-ignore, as message is must be in server
+								characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId]];
+								// @ts-ignore, as message is must be in server
+								profileData = characterData?.profiles?.[message.guildId];
 
+								// @ts-ignore, as message is must be in server
 								checkHealth(botReply, userData, userInjuryObject, message);
 
 								return;
@@ -338,6 +342,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 								if (error.httpStatus !== 404) { throw new Error(error); }
 								return botReply;
 							});
+						// @ts-ignore, as message is must be in server
 						checkHealth(botReply, userData, userInjuryObject, message);
 
 						return;
@@ -369,7 +374,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
  * @param {import('discord.js').Message} botReply
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} userInjuryObject
- * @param {import('discord.js').Message} message
+ * @param {import('discord.js').Message<true>} message
  */
 async function checkHealth(botReply, userData, userInjuryObject, message) {
 

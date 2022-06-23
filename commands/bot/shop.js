@@ -2,12 +2,12 @@
 const { MessageActionRow, MessageSelectMenu } = require('discord.js');
 const { error_color, default_color } = require('../../config.json');
 const profileModel = require('../../models/profileModel');
-const { hasNoName } = require('../../utils/checkAccountCompletion');
+const { hasName } = require('../../utils/checkAccountCompletion');
 const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { checkLevelUp } = require('../../utils/levelHandling');
-const sendNoDM = require('../../utils/sendNoDM');
+const sendNoDM = require('../../utils/isInGuild');
 
 module.exports.name = 'shop';
 
@@ -22,7 +22,7 @@ module.exports.name = 'shop';
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData) => {
 
-	if (await sendNoDM(message)) {
+	if (!sendNoDM(message)) {
 
 		return;
 	}
@@ -30,7 +30,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];
 
-	if (await hasNoName(message, characterData)) {
+	if (!hasName(message, characterData)) {
 
 		return;
 	}
@@ -63,7 +63,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		.reply({
 			embeds: [{
 				color: /** @type {`#${string}`} */ (default_color),
-				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+				author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
 				description: description,
 			}],
 			components: [ new MessageActionRow({
@@ -84,12 +84,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.user.id === message.author.id && i.customId === 'shopbuy-options';
 
-		/** @type {import('discord.js').SelectMenuInteraction | null} } */
+		/** @type {import('discord.js').MessageComponentInteraction | null} } */
 		const interaction = await botReply
 			.awaitMessageComponent({ filter, time: 120_000 })
 			.catch(() => { return null; });
 
-		if (interaction === null) {
+		if (!interaction || !interaction.isSelectMenu()) {
 
 			return await botReply
 				.edit({
@@ -114,7 +114,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				.edit({
 					embeds: [{
 						color: /** @type {`#${string}`} */ (default_color),
-						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+						// @ts-ignore, since message is guaranteed to be in guild
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
 						description: newDescription,
 					}],
 					components: [ new MessageActionRow({
@@ -143,6 +144,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				try {
 
 					const userRole = profileData.roles.find(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience');
+					if (!userRole) { throw new Error('userRole not found'); }
 					const userRoleIndex = profileData.roles.indexOf(userRole);
 
 					if (userRoleIndex >= 0) { profileData.roles.splice(userRoleIndex, 1); }
@@ -150,12 +152,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 						{ uuid: userData.uuid },
 						(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+						// @ts-ignore, since message is guaranteed to be in guild
 							p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].experience += /** @type {number} */ (userRole.requirement);
+							// @ts-ignore, since message is guaranteed to be in guild
 							p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].roles = profileData.roles;
 						},
 					));
 
-					if (message.member.roles.cache.has(buyItem.roleId) === true) {
+					if (message.member && message.member.roles.cache.has(buyItem.roleId) === true) {
 
 						await message.member.roles.remove(buyItem.roleId);
 
@@ -163,7 +167,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							.edit({
 								embeds: [{
 									color: /** @type {`#${string}`} */ (default_color),
-									author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+									// @ts-ignore, since message is guaranteed to be in guild
+									author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
 									description: `You refunded the <@&${buyItem.roleId}> role!`,
 								}],
 								components: disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components),
@@ -173,18 +178,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							});
 					}
 
-					await checkLevelUp(message, undefined, userData, serverData);
+					// @ts-ignore, since message is guaranteed to be in guild
+					await checkLevelUp(message, userData, serverData, undefined);
 				}
 				catch (error) {
 
-					await checkRoleCatchBlock(error, message, message.member);
+					if (!message.member) { throw new Error(error); }
+					else { await checkRoleCatchBlock(error, message, message.member); }
 				}
 			}
 			else if ((profileData.levels * (profileData.levels - 1) / 2) * 50 + profileData.experience >= buyItem.requirement) {
 
 				try {
 
-					if (message.member.roles.cache.has(buyItem.roleId) === false) {
+					if (message.member && !message.member.roles.cache.has(buyItem.roleId)) {
 
 						await message.member.roles.add(buyItem.roleId);
 
@@ -192,7 +199,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							.edit({
 								embeds: [{
 									color: /** @type {`#${string}`} */ (default_color),
-									author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+									// @ts-ignore, since message is guaranteed to be in guild
+									author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
 									description: `You bought the <@&${buyItem.roleId}> role for ${buyItem.requirement} experience!`,
 								}],
 								components: disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components),
@@ -211,6 +219,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 						{ uuid: userData.uuid },
 						(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+							// @ts-ignore, since message is guaranteed to be in guild
 							p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].roles = profileData.roles;
 						},
 					));
@@ -225,10 +234,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 								{ uuid: userData.uuid },
 								(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+									// @ts-ignore, since message is guaranteed to be in guild
 									p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].experience -= cost;
 								},
 							));
+							// @ts-ignore, since message is guaranteed to be in guild
 							characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+							// @ts-ignore, since message is guaranteed to be in guild
 							profileData = characterData?.profiles?.[message.guild.id];
 
 							cost -= cost;
@@ -238,15 +250,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 								{ uuid: userData.uuid },
 								(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+									// @ts-ignore, since message is guaranteed to be in guild
 									p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].experience += (profileData.levels - 1) * 50;
+									// @ts-ignore, since message is guaranteed to be in guild
 									p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].levels -= 1;
 								},
 							));
+							// @ts-ignore, since message is guaranteed to be in guild
 							characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+							// @ts-ignore, since message is guaranteed to be in guild
 							profileData = characterData?.profiles?.[message.guild.id];
 						}
 					}
 
+					// @ts-ignore, since botReply is guaranteed to be in guild
 					const member = await botReply.guild.members.fetch(userData.userId);
 					const roles = profileData.roles.filter(role => role.wayOfEarning === 'levels' && role.requirement > profileData.levels);
 
@@ -260,11 +277,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 								{ uuid: userData.uuid },
 								(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+									// @ts-ignore, since message is guaranteed to be in guild
 									p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].roles = profileData.roles;
 								},
 							));
 
-							if (message.member.roles.cache.has(role.roleId) === true && profileData.roles.filter(profilerole => profilerole.roleId === role.roleId).length === 0) {
+							if (message.member && message.member.roles.cache.has(role.roleId) === true && profileData.roles.filter(profilerole => profilerole.roleId === role.roleId).length === 0) {
 
 								await message.member.roles.remove(role.roleId);
 
@@ -273,7 +291,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 										content: member.toString(),
 										embeds: [{
 											color: /** @type {`#${string}`} */ (default_color),
-											author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+											// @ts-ignore, since message is guaranteed to be in guild
+											author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
 											description: `You lost the <@&${role.roleId}> role because of a lack of levels!`,
 										}],
 									})
@@ -290,7 +309,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				}
 				catch (error) {
 
-					await checkRoleCatchBlock(error, message, message.member);
+					if (!message.member) { throw new Error(error); }
+					else { await checkRoleCatchBlock(error, message, message.member); }
 				}
 			}
 			else {

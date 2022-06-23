@@ -3,14 +3,14 @@ const profileModel = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
 const startCooldown = require('../../utils/startCooldown');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap, materialsMap } = require('../../utils/itemsInfo');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { remindOfAttack } = require('../gameplay/attack');
 const { pronoun, upperCasePronounAndPlural } = require('../../utils/getPronouns');
 const { MessageActionRow, MessageSelectMenu, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 
 module.exports.name = 'store';
 
@@ -21,12 +21,12 @@ module.exports.name = 'store';
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
@@ -34,7 +34,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];
 
-	if (await hasNotCompletedAccount(message, characterData)) {
+	if (!hasCompletedAccount(message, characterData)) {
 
 		return;
 	}
@@ -73,13 +73,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		['materials', [...materialsMap.keys()].sort()],
 	]);
 
-	const itemSelectMenu = new MessageActionRow().addComponents(
-		[ new MessageSelectMenu({
-			customId: 'store-options',
-			placeholder: 'Select an item to store away',
-			options: [],
-		})],
-	);
+	const itemSelectMenu = new MessageSelectMenu({
+		customId: 'store-options',
+		placeholder: 'Select an item to store away',
+		options: [],
+	});
 
 	for (const [itemType, itemsArray] of inventoryMap) {
 
@@ -87,7 +85,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			if (profileData.inventory[itemType][itemName] > 0) {
 
-				/** @type {import('discord.js').MessageSelectMenuOptions} */ (itemSelectMenu.components[0]).options.push({ label: itemName, value: itemName, description: `${profileData.inventory[itemType][itemName]}` });
+				itemSelectMenu.addOptions({ label: itemName, value: itemName, description: `${profileData.inventory[itemType][itemName]}` });
 			}
 		}
 	}
@@ -100,7 +98,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		})],
 	});
 
-	if (/** @type {import('discord.js').MessageSelectMenuOptions} */ (itemSelectMenu.components[0]).options.length === 0) {
+	if (itemSelectMenu.options.length === 0) {
 
 		await message
 			.reply({
@@ -177,7 +175,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				author: { name: characterData.name, icon_url: characterData.avatarURL },
 				description: `*${characterData.name} wanders to the food den, ready to store away ${pronoun(characterData, 2)} findings. ${upperCasePronounAndPlural(characterData, 0, 'circle')} the food pile…*`,
 			}],
-			components: [.../** @type {import('discord.js').MessageSelectMenuOptions} */ (itemSelectMenu.components[0]).options.length > 25 ? [] : [itemSelectMenu], storeAllButton],
+			components: [...itemSelectMenu.options.length > 25 ? [] : [new MessageActionRow().addComponents([itemSelectMenu])], storeAllButton],
 			failIfNotExists: false,
 		})
 		.catch((error) => { throw new Error(error); });
@@ -228,22 +226,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					}
 				}
 
-				const amountSelectMenu = new MessageActionRow().addComponents(
-					[ new MessageSelectMenu({
-						customId: 'store-amount',
-						placeholder: 'Select the amount to store away',
-						options: [],
-					})],
-				);
+				const amountSelectMenu = new MessageSelectMenu({
+					customId: 'store-amount',
+					placeholder: 'Select the amount to store away',
+					options: [],
+				});
 
 				for (let i = 0; i < maximumAmount; i++) {
 
-					/** @type {import('discord.js').MessageSelectMenuOptions} */ (amountSelectMenu.components[0]).options.push({ label: `${i + 1}`, value: `${i + 1}` });
+					amountSelectMenu.addOptions({ label: `${i + 1}`, value: `${i + 1}` });
 				}
 
 				await /** @type {import('discord.js').Message} */ (interaction.message)
 					.edit({
-						components: [itemSelectMenu, amountSelectMenu],
+						components: [new MessageActionRow().addComponents([itemSelectMenu]), new MessageActionRow().addComponents([amountSelectMenu])],
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
@@ -255,51 +251,58 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			if (interaction.customId === 'store-amount') {
 
 				const chosenAmount = parseInt(interaction.values[0], 10);
+				// @ts-ignore, as chosenFood is always string when this interaction is done
 				userInventory[foodCategory][chosenFood] -= chosenAmount;
+				// @ts-ignore, as chosenFood is always string when this interaction is done
 				serverInventory[foodCategory][chosenFood] += chosenAmount;
 
 				userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 					{ uuid: userData.uuid },
 					(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+						// @ts-ignore, since guild is safe to be
 						p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].inventory = userInventory;
 					},
 				));
+				// @ts-ignore, since guild is safe to be
 				characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+				// @ts-ignore, since guild is safe to be
 				profileData = characterData.profiles[message.guild.id];
 
 				await serverModel.findOneAndUpdate(
+				// @ts-ignore, since guild is safe to be
 					{ serverId: message.guild.id },
 					(/** @type {import('../../typedef').ServerSchema} */ s) => {
 						s.inventory = serverInventory;
 					},
 				);
 
-				/** @type {import('discord.js').MessageSelectMenuOptions} */ (itemSelectMenu.components[0]).options = [];
+				itemSelectMenu.options = [];
 				for (const [itemType, itemsArray] of inventoryMap) {
 
 					for (const itemName of itemsArray) {
 
 						if (profileData.inventory[itemType][itemName] > 0) {
 
-							/** @type {import('discord.js').MessageSelectMenuOptions} */ (itemSelectMenu.components[0]).options.push({ label: itemName, value: itemName, description: `${profileData.inventory[itemType][itemName]}` });
+							itemSelectMenu.addOptions({ label: itemName, value: itemName, description: `${profileData.inventory[itemType][itemName]}` });
 						}
 					}
 				}
 
 				let footerText = interaction.message.embeds[interaction.message.embeds.length - 1].footer?.text ?? '';
+				// @ts-ignore, since guild is safe to be
 				footerText += `\n+${chosenAmount} ${chosenFood} for ${message.guild.name}`;
 				interaction.message.embeds[interaction.message.embeds.length - 1].footer = { text: footerText };
 
 				await /** @type {import('discord.js').Message} */ (interaction.message)
 					.edit({
 						embeds: interaction.message.embeds,
-						components: /** @type {import('discord.js').MessageSelectMenuOptions} */ (itemSelectMenu.components[0]).options.length === 0 ? disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components) : [itemSelectMenu, storeAllButton],
+						components: itemSelectMenu.options.length === 0 ? disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components) : [new MessageActionRow().addComponents([itemSelectMenu]), storeAllButton],
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 
-				/** @type {import('discord.js').MessageSelectMenuOptions} */ (itemSelectMenu.components[0]).options.length > 0 && await interactionCollector(null, null);
+				itemSelectMenu.options.length > 0 && await interactionCollector(null, null);
 				return;
 			}
 		}
@@ -307,7 +310,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		if (interaction.isButton() && interaction.customId === 'store-all') {
 
 			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: userData.uuid }));
+			// @ts-ignore, since guild is safe to be
 			characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+			// @ts-ignore, since guild is safe to be
 			profileData = characterData.profiles[message.guild.id];
 
 			let footerText = interaction.message.embeds[interaction.message.embeds.length - 1].footer?.text ?? '';
@@ -321,6 +326,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 						maximumAmount = profileData.inventory[itemType][itemName];
 
+						// @ts-ignore, since guild is safe to be
 						footerText += `+${maximumAmount} ${itemName} for ${message.guild.name}\n`;
 						userInventory[itemType][itemName] -= maximumAmount;
 						serverInventory[itemType][itemName] += maximumAmount;
@@ -331,13 +337,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 				{ uuid: userData.uuid },
 				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				// @ts-ignore, since guild is safe to be
 					p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].inventory = userInventory;
 				},
 			));
+			// @ts-ignore, since guild is safe to be
 			characterData = userData.characters[userData.currentCharacter[message.guild.id]];
+			// @ts-ignore, since guild is safe to be
 			profileData = characterData.profiles[message.guild.id];
 
 			await serverModel.findOneAndUpdate(
+				// @ts-ignore, since guild is checked to exist
 				{ serverId: message.guild.id },
 				(/** @type {import('../../typedef').ServerSchema} */ s) => {
 					s.inventory = serverInventory;

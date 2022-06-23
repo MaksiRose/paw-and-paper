@@ -2,7 +2,7 @@
 const { MessageEmbed } = require('discord.js');
 const { error_color } = require('../../config.json');
 const profileModel = require('../../models/profileModel');
-const { hasNoName } = require('../../utils/checkAccountCompletion');
+const { hasName } = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports.name = 'color';
@@ -13,14 +13,14 @@ module.exports.aliases = ['colour'];
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} userData
+ * @param {import('../../typedef').ProfileSchema | null} userData
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id || 'DM']];
+	const characterData = userData ? userData.characters[userData.currentCharacter[message.guildId || 'DM']] : null;
 
-	if (await hasNoName(message, characterData)) {
+	if (!hasName(message, characterData)) {
 
 		return;
 	}
@@ -51,7 +51,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		hexColor = hexColor.slice(1);
 	}
 
-	if (!isHexValid(hexColor)) {
+	if (!isValidHex(hexColor)) {
 
 		await message
 			.reply({
@@ -97,7 +97,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
  * @param {string} input - The string to check.
  * @returns {boolean}
  */
-function isHexValid(input) {
+function isValidHex(input) {
 
 	const hexLegend = '0123456789abcdef';
 

@@ -3,13 +3,13 @@ const { default_color } = require('../../config.json');
 const profileModel = require('../../models/profileModel');
 const startCooldown = require('../../utils/startCooldown');
 const { generateRandomNumber } = require('../../utils/randomizers');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
 const { remindOfAttack } = require('../gameplay/attack');
 const { pronounAndPlural, pronoun } = require('../../utils/getPronouns');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 
 module.exports.name = 'drink';
 
@@ -20,20 +20,20 @@ module.exports.name = 'drink';
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
 
-	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-	let profileData = characterData?.profiles?.[message.guild.id];
+	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId]];
+	let profileData = characterData?.profiles?.[message.guildId];
 
-	if (await hasNotCompletedAccount(message, characterData)) {
+	if (!hasCompletedAccount(message, characterData)) {
 
 		return;
 	}

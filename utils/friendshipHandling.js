@@ -47,7 +47,7 @@ async function addFriendshipPoints(message, userData, characterId, partnerUserDa
 					author: { name: characterData.name, icon_url: characterData.avatarURL },
 					title: `The friendship between ${characterData.name} and ${partnerCharacterData.name} grew 💗`,
 					description: '❤️'.repeat(getFriendshipHearts(newFriendshipPoints)) + '🖤'.repeat(10 - getFriendshipHearts(newFriendshipPoints)),
-					footer: { text: getFriendshipHearts(newFriendshipPoints) === 6 ? 'You can now adventure together using the "adventure" command!' : null },
+					footer: { text: getFriendshipHearts(newFriendshipPoints) === 6 ? 'You can now adventure together using the "adventure" command!' : undefined },
 				})],
 			})
 			.catch((newError) => { throw new Error(newError); });

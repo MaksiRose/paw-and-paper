@@ -3,7 +3,7 @@ const startCooldown = require('../../utils/startCooldown');
 const { error_color, default_color } = require('../../config.json');
 const profileModel = require('../../models/profileModel');
 const { generateRandomNumber, generateRandomNumberWithException, pullFromWeightedTable } = require('../../utils/randomizers');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseHealth, decreaseThirst, decreaseHunger, decreaseEnergy } = require('../../utils/checkCondition');
 const { checkLevelUp } = require('../../utils/levelHandling');
@@ -11,10 +11,10 @@ const { createCommandCollector } = require('../../utils/commandCollector');
 const { remindOfAttack } = require('../gameplay/attack');
 const { pronoun, pronounAndPlural, upperCasePronounAndPlural } = require('../../utils/getPronouns');
 const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
-const { MessageActionRow, MessageButton } = require('discord.js');
+const { MessageActionRow, MessageButton, MessageEmbed } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { addFriendshipPoints } = require('../../utils/friendshipHandling');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 
 module.exports.name = 'playfight';
 
@@ -25,20 +25,20 @@ module.exports.name = 'playfight';
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-	const profileData = characterData?.profiles?.[message.guild.id];
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId]];
+	const profileData = characterData?.profiles?.[message.guildId];
 
-	if (await hasNotCompletedAccount(message, characterData)) {
+	if (!hasCompletedAccount(message, characterData)) {
 
 		return;
 	}
@@ -51,7 +51,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	userData = await startCooldown(message);
 	const messageContent = remindOfAttack(message);
 
-	if (message.mentions.users.size > 0 && message.mentions.users.first().id == message.author.id) {
+	const firstMentionedUser = message.mentions.users.first();
+	if (firstMentionedUser && firstMentionedUser.id == message.author.id) {
 
 		await message
 			.reply({
@@ -69,7 +70,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
-	if (!message.mentions.users.size) {
+	if (!firstMentionedUser) {
 
 		await message
 			.reply({
@@ -86,9 +87,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
-	const partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first().id }));
-	const partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guild.id]];
-	const partnerProfileData = partnerCharacterData ?.profiles?.[message.guild.id];
+	const partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: firstMentionedUser.id }));
+	const partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guildId]];
+	const partnerProfileData = partnerCharacterData ?.profiles?.[message.guildId];
 
 	if (!partnerUserData || !partnerCharacterData || partnerCharacterData.name === '' || partnerCharacterData.species === '' || !partnerProfileData || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0 || partnerProfileData.hasCooldown === true || partnerProfileData.isResting === true) {
 
@@ -160,18 +161,18 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
  * @param {import('../../typedef').ServerSchema} serverData
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ProfileSchema} partnerUserData
- * @param {import('discord.js').Message} message
+ * @param {import('discord.js').Message<true>} message
  * @param {import('discord.js').Message} botReply
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
- * @param {string} messageContent
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
+ * @param {string | null} messageContent
  * @param {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} userInjuryObjectPlayer1
  * @param {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} userInjuryObjectPlayer2
  * @returns {void}
  */
 function playTicTacToe(serverData, userData, partnerUserData, message, botReply, embedArray, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
 
-	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
-	const partnerCharacterData = partnerUserData.characters[partnerUserData.currentCharacter[message.guild.id]];
+	const characterData = userData.characters[userData.currentCharacter[message.guildId]];
+	const partnerCharacterData = partnerUserData.characters[partnerUserData.currentCharacter[message.guildId]];
 
 	const emptyField = '◻️';
 	const player1Field = '⭕';
@@ -245,14 +246,16 @@ function playTicTacToe(serverData, userData, partnerUserData, message, botReply,
 	 */
 	async function startNewRound(isPartner) {
 
-		createCommandCollector(message.author.id, message.guild.id, botReply);
-		createCommandCollector(message.mentions.users.first().id, message.guild.id, botReply);
+		createCommandCollector(message.author.id, message.guildId, botReply);
+		// @ts-ignore, since mentioned user must exist
+		createCommandCollector(message.mentions.users.first().id, message.guildId, botReply);
 
 		const currentUserData = (isPartner == true) ? partnerUserData : userData;
-		const currentCharacterData = currentUserData.characters[currentUserData.currentCharacter[message.guild.id]];
+		const currentCharacterData = currentUserData.characters[currentUserData.currentCharacter[message.guildId]];
 		const otherUserData = (isPartner == true) ? userData : partnerUserData;
-		const otherCharacterData = otherUserData.characters[otherUserData.currentCharacter[message.guild.id]];
+		const otherCharacterData = otherUserData.characters[otherUserData.currentCharacter[message.guildId]];
 
+		// @ts-ignore, since mentioned user must exist
 		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.customId === 'playfight-confirm-tic-tac-toe' && i.user.id == message.mentions.users.first().id) || (i.customId.includes('board') && i.user.id == currentUserData.userId);
 
 		const { customId } = await botReply
@@ -264,7 +267,7 @@ function playTicTacToe(serverData, userData, partnerUserData, message, botReply,
 
 			for (const rowArray of columnArray.components) {
 
-				if (/** @type {import('discord.js').MessageButton} */ (rowArray).emoji.name === player1Field || /** @type {import('discord.js').MessageButton} */ (rowArray).emoji.name === player2Field) {
+				if (/** @type {import('discord.js').MessageButton} */ (rowArray).emoji?.name === player1Field || /** @type {import('discord.js').MessageButton} */ (rowArray).emoji?.name === player2Field) {
 
 					isEmptyBoard = false;
 					break forLoop;
@@ -292,7 +295,7 @@ function playTicTacToe(serverData, userData, partnerUserData, message, botReply,
 			}
 			else {
 
-				const { embedFooterStatsTextPlayer1, embedFooterStatsTextPlayer2 } = await decreaseStats(message, userData, characterData.profiles[message.guild.id], partnerUserData, partnerCharacterData.profiles[message.guild.id]);
+				const { embedFooterStatsTextPlayer1, embedFooterStatsTextPlayer2 } = await decreaseStats(message, userData, characterData.profiles[message.guildId], partnerUserData, partnerCharacterData.profiles[message.guildId]);
 
 				botReply = await botReply
 					.edit({
@@ -326,7 +329,7 @@ function playTicTacToe(serverData, userData, partnerUserData, message, botReply,
 			const column = Number(customId.split('-', 2).pop()) - 1;
 			const row = Number(customId.split('-').pop()) - 1;
 
-			/** @type {import('discord.js').MessageButton} */ (componentArray[column].components[row]).emoji.name = isPartner === true ? player1Field : player2Field;
+			/** @type {import('discord.js').MessageButton} */ (componentArray[column].components[row]).setEmoji(isPartner ? player1Field : player2Field);
 			componentArray[column].components[row].disabled = true;
 
 			if (isWin()) {
@@ -390,13 +393,13 @@ function playTicTacToe(serverData, userData, partnerUserData, message, botReply,
 	 */
 	function isWin() {
 
-		const diagonal_1_1 = /** @type {import('discord.js').MessageButton} */ (componentArray[1].components[1]).emoji.name;
+		const diagonal_1_1 = /** @type {import('discord.js').MessageButton} */ (componentArray[1].components[1]).emoji?.name;
 
-		const diagonal_0_0 = /** @type {import('discord.js').MessageButton} */ (componentArray[0].components[0]).emoji.name;
-		const diagonal_2_2 = /** @type {import('discord.js').MessageButton} */ (componentArray[2].components[2]).emoji.name;
+		const diagonal_0_0 = /** @type {import('discord.js').MessageButton} */ (componentArray[0].components[0]).emoji?.name;
+		const diagonal_2_2 = /** @type {import('discord.js').MessageButton} */ (componentArray[2].components[2]).emoji?.name;
 
-		const diagonal_0_2 = /** @type {import('discord.js').MessageButton} */ (componentArray[0].components[2]).emoji.name;
-		const diagonal_2_0 = /** @type {import('discord.js').MessageButton} */ (componentArray[2].components[0]).emoji.name;
+		const diagonal_0_2 = /** @type {import('discord.js').MessageButton} */ (componentArray[0].components[2]).emoji?.name;
+		const diagonal_2_0 = /** @type {import('discord.js').MessageButton} */ (componentArray[2].components[0]).emoji?.name;
 
 		if (diagonal_1_1 !== emptyField && ((diagonal_1_1 === diagonal_0_0 && diagonal_1_1 === diagonal_2_2) || (diagonal_1_1 === diagonal_0_2 && diagonal_1_1 === diagonal_2_0))) {
 
@@ -405,13 +408,13 @@ function playTicTacToe(serverData, userData, partnerUserData, message, botReply,
 
 		for (const value of [0, 1, 2]) {
 
-			const column_1 = /** @type {import('discord.js').MessageButton} */ (componentArray[value].components[0]).emoji.name;
-			const column_2 = /** @type {import('discord.js').MessageButton} */ (componentArray[value].components[1]).emoji.name;
-			const column_3 = /** @type {import('discord.js').MessageButton} */ (componentArray[value].components[2]).emoji.name;
+			const column_1 = /** @type {import('discord.js').MessageButton} */ (componentArray[value].components[0]).emoji?.name;
+			const column_2 = /** @type {import('discord.js').MessageButton} */ (componentArray[value].components[1]).emoji?.name;
+			const column_3 = /** @type {import('discord.js').MessageButton} */ (componentArray[value].components[2]).emoji?.name;
 
-			const row_1 = /** @type {import('discord.js').MessageButton} */ (componentArray[0].components[value]).emoji.name;
-			const row_2 = /** @type {import('discord.js').MessageButton} */ (componentArray[1].components[value]).emoji.name;
-			const row_3 = /** @type {import('discord.js').MessageButton} */ (componentArray[2].components[value]).emoji.name;
+			const row_1 = /** @type {import('discord.js').MessageButton} */ (componentArray[0].components[value]).emoji?.name;
+			const row_2 = /** @type {import('discord.js').MessageButton} */ (componentArray[1].components[value]).emoji?.name;
+			const row_3 = /** @type {import('discord.js').MessageButton} */ (componentArray[2].components[value]).emoji?.name;
 
 			if ((column_1 === column_2 && column_1 === column_3 && column_1 !== emptyField) || (row_1 === row_2 && row_1 === row_3 && row_1 !== emptyField)) {
 
@@ -432,7 +435,7 @@ function playTicTacToe(serverData, userData, partnerUserData, message, botReply,
 
 			for (const rowArray of columnArray.components) {
 
-				if (/** @type {import('discord.js').MessageButton} */ (rowArray).emoji.name === emptyField) {
+				if (/** @type {import('discord.js').MessageButton} */ (rowArray).emoji?.name === emptyField) {
 
 					return false;
 				}
@@ -450,18 +453,18 @@ function playTicTacToe(serverData, userData, partnerUserData, message, botReply,
  * @param {import('../../typedef').ServerSchema} serverData
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ProfileSchema} partnerUserData
- * @param {import('discord.js').Message} message
+ * @param {import('discord.js').Message<true>} message
  * @param {import('discord.js').Message} botReply
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
- * @param {string} messageContent
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
+ * @param {string | null} messageContent
  * @param {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} userInjuryObjectPlayer1
  * @param {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} userInjuryObjectPlayer2
  * @returns {void}
  */
 function playConnectFour(serverData, userData, partnerUserData, message, botReply, embedArray, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
 
-	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
-	const partnerCharacterData = partnerUserData.characters[partnerUserData.currentCharacter[message.guild.id]];
+	const characterData = userData.characters[userData.currentCharacter[message.guildId]];
+	const partnerCharacterData = partnerUserData.characters[partnerUserData.currentCharacter[message.guildId]];
 
 	const emptyField = '⚫';
 	const player1Field = '🟡';
@@ -526,13 +529,15 @@ function playConnectFour(serverData, userData, partnerUserData, message, botRepl
 	async function startNewRound(isPartner) {
 
 		const currentUserData = (isPartner == true) ? partnerUserData : userData;
-		const currentCharacterData = currentUserData.characters[currentUserData.currentCharacter[message.guild.id]];
+		const currentCharacterData = currentUserData.characters[currentUserData.currentCharacter[message.guildId]];
 		const otherUserData = (isPartner == true) ? userData : partnerUserData;
-		const otherCharacterData = otherUserData.characters[otherUserData.currentCharacter[message.guild.id]];
+		const otherCharacterData = otherUserData.characters[otherUserData.currentCharacter[message.guildId]];
 
-		createCommandCollector(message.author.id, message.guild.id, botReply);
-		createCommandCollector(message.mentions.users.first().id, message.guild.id, botReply);
+		createCommandCollector(message.author.id, message.guildId, botReply);
+		// @ts-ignore, since mentioned user must exist
+		createCommandCollector(message.mentions.users.first().id, message.guildId, botReply);
 
+		// @ts-ignore, since mentioned user must exist
 		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.customId === 'playfight-confirm-connect-four' && i.user.id === message.mentions.users.first().id) || (i.customId.includes('field') && i.user.id === currentUserData.userId);
 
 		const { customId } = await botReply
@@ -572,7 +577,7 @@ function playConnectFour(serverData, userData, partnerUserData, message, botRepl
 			}
 			else {
 
-				const { embedFooterStatsTextPlayer1, embedFooterStatsTextPlayer2 } = await decreaseStats(message, userData, characterData.profiles[message.guild.id], partnerUserData, partnerCharacterData.profiles[message.guild.id]);
+				const { embedFooterStatsTextPlayer1, embedFooterStatsTextPlayer2 } = await decreaseStats(message, userData, characterData.profiles[message.guildId], partnerUserData, partnerCharacterData.profiles[message.guildId]);
 
 				botReply = await botReply
 					.edit({
@@ -623,16 +628,16 @@ function playConnectFour(serverData, userData, partnerUserData, message, botRepl
 				}
 			}
 
-			if (isWin(field, row, column, true) === true) {
+			if (row && isWin(field, row, column, true)) {
 
-				await executeWin(null, message, serverData, userData, partnerUserData, otherUserData, currentUserData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, [...embedArray, { color: characterData.color, description: field.map(r => r.join('')).join('\n') }], botReply, messageContent);
+				await executeWin(undefined, message, serverData, userData, partnerUserData, otherUserData, currentUserData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, [...embedArray, new MessageEmbed({ color: characterData.color, description: field.map(r => r.join('')).join('\n') })], botReply, messageContent);
 
 				return;
 			}
 
-			if (isDraw(isPartner) === true) {
+			if (isDraw(isPartner)) {
 
-				await executeDraw(null, message, serverData, userData, partnerUserData, [...embedArray, { color: characterData.color, description: field.map(r => r.join('')).join('\n') }], botReply, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
+				await executeDraw(undefined, message, serverData, userData, partnerUserData, [...embedArray, new MessageEmbed({ color: characterData.color, description: field.map(r => r.join('')).join('\n') })], botReply, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2);
 
 				return;
 			}
@@ -772,7 +777,7 @@ function playConnectFour(serverData, userData, partnerUserData, message, botRepl
 
 /**
  * Decreases both players thirst, hunger and energy, and returns the footer text.
- * @param {import('discord.js').Message} message
+ * @param {import('discord.js').Message<true>} message
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').Profile} profileData
  * @param {import('../../typedef').ProfileSchema} partnerUserData
@@ -791,15 +796,15 @@ async function decreaseStats(message, userData, profileData, partnerUserData, pa
 	userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 		{ userId: message.author.id },
 		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].energy -= energyPointsPlayer1;
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hunger -= hungerPointsPlayer1;
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].thirst -= thirstPointsPlayer1;
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'prairie';
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hasCooldown = false;
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].energy -= energyPointsPlayer1;
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].hunger -= hungerPointsPlayer1;
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].thirst -= thirstPointsPlayer1;
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].currentRegion = 'prairie';
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].hasCooldown = false;
 		},
 	));
-	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
-	profileData = characterData.profiles[message.guild.id];
+	const characterData = userData.characters[userData.currentCharacter[message.guildId]];
+	profileData = characterData.profiles[message.guildId];
 
 	embedFooterStatsTextPlayer1 = `-${energyPointsPlayer1} energy (${profileData.energy}/${profileData.maxEnergy}) for ${characterData.name}`;
 
@@ -819,17 +824,18 @@ async function decreaseStats(message, userData, profileData, partnerUserData, pa
 	const energyPointsPlayer2 = function(energy) { return (partnerProfileData.energy - energy < 0) ? partnerProfileData.energy : energy; }(generateRandomNumber(5, 1) + await decreaseEnergy(partnerProfileData));
 
 	partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+		// @ts-ignore, since mentioned user must exist
 		{ userId: message.mentions.users.first().id },
 		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].energy -= energyPointsPlayer2;
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hunger -= hungerPointsPlayer2;
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].thirst -= thirstPointsPlayer2;
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'prairie';
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hasCooldown = false;
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].energy -= energyPointsPlayer2;
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].hunger -= hungerPointsPlayer2;
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].thirst -= thirstPointsPlayer2;
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].currentRegion = 'prairie';
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].hasCooldown = false;
 		},
 	));
-	const partnerCharacterData = partnerUserData.characters[partnerUserData.currentCharacter[message.guild.id]];
-	partnerProfileData = partnerCharacterData.profiles[message.guild.id];
+	const partnerCharacterData = partnerUserData.characters[partnerUserData.currentCharacter[message.guildId]];
+	partnerProfileData = partnerCharacterData.profiles[message.guildId];
 
 	embedFooterStatsTextPlayer2 = `-${energyPointsPlayer2} energy (${partnerProfileData.energy}/${partnerProfileData.maxEnergy}) for ${partnerCharacterData.name}`;
 
@@ -848,7 +854,7 @@ async function decreaseStats(message, userData, profileData, partnerUserData, pa
 
 /**
  * Checks for both players whether to decrease their health, level them up, if they are passed out and if they need to be given any advice.
- * @param {import('discord.js').Message} message
+ * @param {import('discord.js').Message<true>} message
  * @param {import('discord.js').Message} botReply
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
@@ -861,13 +867,13 @@ async function checkHealthAndLevel(message, botReply, userData, serverData, part
 	botReply = await decreaseHealth(userData, botReply, userInjuryObjectPlayer1);
 	botReply = await decreaseHealth(partnerUserData, botReply, userInjuryObjectPlayer2);
 
-	botReply = await checkLevelUp(message, botReply, userData, serverData);
-	botReply = await checkLevelUp(message, botReply, partnerUserData, serverData);
+	botReply = await checkLevelUp(message, userData, serverData, botReply) || botReply;
+	botReply = await checkLevelUp(message, partnerUserData, serverData, botReply) || botReply;
 
 	await isPassedOut(message, userData, true);
 	await isPassedOut(message, partnerUserData, true);
 
-	await addFriendshipPoints(message, userData, userData.currentCharacter[message.guild.id], partnerUserData, partnerUserData.currentCharacter[message.guild.id]);
+	await addFriendshipPoints(message, userData, userData.currentCharacter[message.guildId], partnerUserData, partnerUserData.currentCharacter[message.guildId]);
 
 	await restAdvice(message, userData);
 	await restAdvice(message, partnerUserData);
@@ -881,8 +887,8 @@ async function checkHealthAndLevel(message, botReply, userData, serverData, part
 
 /**
  *
- * @param {null | Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} componentArray
- * @param {import('discord.js').Message} message
+ * @param {undefined | Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} componentArray
+ * @param {import('discord.js').Message<true>} message
  * @param {import('../../typedef').ServerSchema} serverData
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ProfileSchema} partnerUserData
@@ -890,23 +896,23 @@ async function checkHealthAndLevel(message, botReply, userData, serverData, part
  * @param {import('../../typedef').ProfileSchema} currentUserData
  * @param {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} userInjuryObjectPlayer1
  * @param {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} userInjuryObjectPlayer2
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @param {import('discord.js').Message} botReply
- * @param {string} messageContent
+ * @param {string | null} messageContent
  */
 async function executeWin(componentArray, message, serverData, userData, partnerUserData, otherUserData, currentUserData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, embedArray, botReply, messageContent) {
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-	const profileData = characterData?.profiles?.[message.guild.id];
-	const partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guild.id]];
-	const partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id];
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId]];
+	const profileData = characterData?.profiles?.[message.guildId];
+	const partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guildId]];
+	const partnerProfileData = partnerCharacterData?.profiles?.[message.guildId];
 
 	let { embedFooterStatsTextPlayer1, embedFooterStatsTextPlayer2 } = await decreaseStats(message, userData, profileData, partnerUserData, partnerProfileData);
 
-	let currentCharacterData = currentUserData?.characters?.[currentUserData?.currentCharacter?.[message.guild.id]];
-	let currentProfileData = currentCharacterData?.profiles?.[message.guild.id];
-	let otherCharacterData = otherUserData?.characters?.[otherUserData?.currentCharacter?.[message.guild.id]];
-	let otherProfileData = otherCharacterData?.profiles?.[message.guild.id];
+	let currentCharacterData = currentUserData?.characters?.[currentUserData?.currentCharacter?.[message.guildId]];
+	let currentProfileData = currentCharacterData?.profiles?.[message.guildId];
+	let otherCharacterData = otherUserData?.characters?.[otherUserData?.currentCharacter?.[message.guildId]];
+	let otherProfileData = otherCharacterData?.profiles?.[message.guildId];
 
 	const x = (otherProfileData.levels - currentProfileData.levels < 0) ? 0 : otherProfileData.levels - currentProfileData.levels;
 	const extraExperience = Math.round((80 / (1 + Math.pow(Math.E, -0.09375 * x))) - 40);
@@ -924,11 +930,11 @@ async function executeWin(componentArray, message, serverData, userData, partner
 	currentUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 		{ userId: currentUserData.userId },
 		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-			p.characters[currentCharacterData._id].profiles[message.guild.id].experience += experiencePoints;
+			p.characters[currentCharacterData._id].profiles[message.guildId].experience += experiencePoints;
 		},
 	));
-	currentCharacterData = currentUserData?.characters?.[currentUserData?.currentCharacter?.[message.guild.id]];
-	currentProfileData = currentCharacterData?.profiles?.[message.guild.id];
+	currentCharacterData = currentUserData?.characters?.[currentUserData?.currentCharacter?.[message.guildId]];
+	currentProfileData = currentCharacterData?.profiles?.[message.guildId];
 
 	let getHurtText = '';
 	const getHurtChance = pullFromWeightedTable({ 0: 10, 1: 90 + otherProfileData.sapling.waterCycles });
@@ -945,11 +951,11 @@ async function executeWin(componentArray, message, serverData, userData, partner
 		otherUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 			{ userId: otherUserData.userId },
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				p.characters[otherCharacterData._id].profiles[message.guild.id].health -= healthPoints;
+				p.characters[otherCharacterData._id].profiles[message.guildId].health -= healthPoints;
 			},
 		));
-		otherCharacterData = otherUserData?.characters?.[otherUserData?.currentCharacter?.[message.guild.id]];
-		otherProfileData = otherCharacterData?.profiles?.[message.guild.id];
+		otherCharacterData = otherUserData?.characters?.[otherUserData?.currentCharacter?.[message.guildId]];
+		otherProfileData = otherCharacterData?.profiles?.[message.guildId];
 
 		switch (pullFromWeightedTable({ 0: 1, 1: 1 })) {
 
@@ -1009,23 +1015,23 @@ async function executeWin(componentArray, message, serverData, userData, partner
 
 /**
  *
- * @param {null | Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} componentArray
- * @param {import('discord.js').Message} message
+ * @param {undefined | Array<Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions>} componentArray
+ * @param {import('discord.js').Message<true>} message
  * @param {import('../../typedef').ServerSchema} serverData
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ProfileSchema} partnerUserData
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @param {import('discord.js').Message} botReply
  * @param {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} userInjuryObjectPlayer1
  * @param {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} userInjuryObjectPlayer2
- * @param {string} messageContent
+ * @param {string | null} messageContent
  */
 async function executeDraw(componentArray, message, serverData, userData, partnerUserData, embedArray, botReply, messageContent, userInjuryObjectPlayer1, userInjuryObjectPlayer2) {
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-	const profileData = characterData?.profiles?.[message.guild.id];
-	const partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guild.id]];
-	const partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id];
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId]];
+	const profileData = characterData?.profiles?.[message.guildId];
+	const partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guildId]];
+	const partnerProfileData = partnerCharacterData?.profiles?.[message.guildId];
 
 	let { embedFooterStatsTextPlayer1, embedFooterStatsTextPlayer2 } = await decreaseStats(message, userData, profileData, partnerUserData, partnerProfileData);
 
@@ -1037,14 +1043,15 @@ async function executeDraw(componentArray, message, serverData, userData, partne
 	userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 		{ userId: message.author.id },
 		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-			p.characters[characterData._id].profiles[message.guild.id].experience += experiencePoints;
+			p.characters[characterData._id].profiles[message.guildId].experience += experiencePoints;
 		},
 	));
 
 	partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+		// @ts-ignore, since mentioned user must exist
 		{ userId: message.mentions.users.first().id },
 		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-			p.characters[partnerCharacterData._id].profiles[message.guild.id].experience += experiencePoints;
+			p.characters[partnerCharacterData._id].profiles[message.guildId].experience += experiencePoints;
 		},
 	));
 

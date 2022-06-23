@@ -1,11 +1,11 @@
 // @ts-check
 const { MessageActionRow, MessageButton } = require('discord.js');
 const profileModel = require('../../models/profileModel');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isPassedOut, hasCooldown } = require('../../utils/checkValidity');
 const { startResting } = require('../../utils/executeResting');
 const { upperCasePronoun, pronoun, pronounAndPlural } = require('../../utils/getPronouns');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 const startCooldown = require('../../utils/startCooldown');
 const wearDownDen = require('../../utils/wearDownDen');
 const { remindOfAttack } = require('../gameplay/attack');
@@ -24,7 +24,7 @@ module.exports.aliases = ['sleep'];
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
@@ -32,7 +32,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	const profileData = characterData?.profiles?.[message.guild.id];
 
-	if (await hasNotCompletedAccount(message, characterData)) {
+	if (!hasCompletedAccount(message, characterData)) {
 
 		return;
 	}
@@ -42,7 +42,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
-	if (await hasCooldown(message, userData, [module.exports.name].concat(module.exports.aliases))) {
+	if (await hasCooldown(message, userData, module.exports.aliases.concat(module.exports.name))) {
 
 		return;
 	}

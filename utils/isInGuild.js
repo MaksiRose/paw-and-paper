@@ -6,13 +6,13 @@ const { error_color } = require('../config.json');
  * This is checking if the message is in a guild, if it is not, it will reply to the user with a
  * message saying that the command cannot be executed in DMs.
  * @param {import('discord.js').Message} message
- * @returns {Promise<boolean>}
+ * @returns {message is import('discord.js').Message<true>}
  */
-module.exports = async (message) => {
+module.exports = (message) => {
 
 	if (!message.inGuild()) {
 
-		await message
+		message
 			.reply({
 				embeds: [ new MessageEmbed({
 					color: /** @type {`#${string}`} */ (error_color),
@@ -24,8 +24,8 @@ module.exports = async (message) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 
-		return true;
+		return false;
 	}
 
-	return false;
+	return true;
 };

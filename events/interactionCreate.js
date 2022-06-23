@@ -7,7 +7,7 @@ const { execute, startRestingTimeout } = require('./messageCreate');
 const { sendReminder, stopReminder } = require('../commands/maintenance/water');
 const userMap = require('../utils/userMap');
 const { getMessageContent } = require('../commands/maintenance/stats');
-const { MessageEmbed } = require('discord.js');
+const { MessageEmbed, Message, MessageActionRow, MessageButton } = require('discord.js');
 const serverModel = require('../models/serverModel');
 
 /**
@@ -23,6 +23,8 @@ const event = {
 	 * @param {(import('discord.js').Interaction)} interaction
 	 */
 	async execute(client, interaction) {
+
+		if (!interaction.channel) { throw new Error('Interaction channel cannot be found.'); }
 
 		let userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: interaction.user.id }));
 		const serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOne({ serverId: interaction.guild?.id }));
@@ -55,21 +57,44 @@ const event = {
 
 			if (interaction.customId.includes('edit')) {
 
-				const messageId = interaction.customId.split('-')[1];
+				if (interaction.channel.type === 'DM') {
 
-				const webHook = (await /** @type {import('discord.js').TextChannel} */ (interaction.channel)
+					await interaction
+						.reply({
+							content: 'Oops, I cannot edit proxied messages in DM\'s!',
+							ephemeral: true,
+						})
+						.catch((error) => {
+							if (error.httpStatus !== 404) { throw new Error(error); }
+						});
+					return;
+				}
+
+				await interaction
+					.deferUpdate()
+					.catch(async (error) => {
+						if (error.httpStatus === 400) { return console.error('DiscordAPIError: Interaction has already been acknowledged.'); }
+						if (error.httpStatus === 404) { return console.error('DiscordAPIError: Unknown interaction. (This probably means that there was server-side delay when receiving the interaction)'); }
+					});
+
+				const messageId = interaction.customId.split('-')[1];
+				const webhookChannel = interaction.channel.isThread() ? interaction.channel.parent : interaction.channel;
+
+				if (!webhookChannel) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
+
+				const webHook = (await webhookChannel
 					.fetchWebhooks()
-					.catch((error) => {
+					.catch(async (error) => {
 						if (error.httpStatus === 403) {
-							interaction.channel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
+							await interaction.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
 						}
 						throw new Error(error);
 					})
-				).find(webhook => webhook.name === 'PnP Profile Webhook') || await /** @type {import('discord.js').TextChannel} */ (interaction.channel)
+				).find(webhook => webhook.name === 'PnP Profile Webhook') || await webhookChannel
 					.createWebhook('PnP Profile Webhook')
-					.catch((error) => {
+					.catch(async (error) => {
 						if (error.httpStatus === 403) {
-							interaction.channel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
+							await interaction.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
 						}
 						throw new Error(error);
 					});
@@ -79,13 +104,6 @@ const event = {
 						content: interaction.components[0].components[0].value,
 					})
 					.catch((error) => { throw new Error(error); });
-
-				await interaction
-					.deferUpdate()
-					.catch(async (error) => {
-						if (error.httpStatus === 400) { return console.error('DiscordAPIError: Interaction has already been acknowledged.'); }
-						if (error.httpStatus === 404) { return console.error('DiscordAPIError: Unknown interaction. (This probably means that there was server-side delay when receiving the interaction)'); }
-					});
 				return;
 			}
 		}
@@ -114,20 +132,22 @@ const event = {
 
 			try {
 
-				console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully executed \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+				console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully executed \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.inCachedGuild() ? interaction.guild.name : 'DM'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 				await command
 					.sendCommand(client, interaction, userData, serverData, []);
 			}
 			catch (error) {
 
-				await errorHandling.output(interaction.isCommand() ? interaction : interaction.targetMessage, error);
+				await errorHandling.output(interaction.isCommand() ? interaction : interaction.targetMessage instanceof Message ? interaction.targetMessage : (await interaction.channel.messages.fetch(interaction.targetId)), error);
 			}
 
 			return;
 		}
 
 		if ((interaction.isButton() || interaction.isSelectMenu()) && !interaction.customId.includes('modal')) {
+
+			if (!(interaction.message instanceof Message)) { return; }
 
 			if (!interaction.inCachedGuild() && interaction.inGuild()) {
 
@@ -142,31 +162,33 @@ const event = {
 				return;
 			}
 
-			await interaction
-				.deferUpdate()
-				.catch(async (error) => {
-					if (error.httpStatus === 400) { return console.error('DiscordAPIError: Interaction has already been acknowledged.'); }
-					if (error.httpStatus === 404) { return console.error('DiscordAPIError: Unknown interaction. (This probably means that there was server-side delay when receiving the interaction)'); }
-					return await errorHandling.output(interaction.message, error);
-				});
+			try {
+
+				await interaction.deferUpdate();
+			}
+			catch (error) {
+
+				if (error.httpStatus === 400) { return console.error('DiscordAPIError: Interaction has already been acknowledged.'); }
+				if (error.httpStatus === 404) { return console.error('DiscordAPIError: Unknown interaction. (This probably means that there was server-side delay when receiving the interaction)'); }
+				return await errorHandling.output(interaction.message, error);
+			}
 
 			// this is a DM interaction and doesn't have a referenced messages, so it gets processed before everything else
-			if (interaction.isButton() && interaction.customId === 'ticket') {
+			if (interaction.isButton() && interaction.customId === 'ticket' && interaction.channel.type === 'DM') {
 
 				const user = await client.users.fetch(interaction.user.id);
+				if (!user.dmChannel) { throw new Error ('User\'s DM Channel could not be found.');}
 				const message = await user.dmChannel.messages.fetch(interaction.message.id);
 
 				return await message
 					.delete()
 					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							return await errorHandling.output(interaction.message, error);
-						}
+						throw new Error(error);
 					});
 			}
 
 			// report messages respond to the bot message that had the issue, so referenced messages don't work with it
-			if (interaction.isButton() && interaction.customId === 'report') {
+			if (interaction.isButton() && interaction.customId === 'report' && interaction.inGuild()) {
 
 				interaction.message
 					.edit({
@@ -179,7 +201,7 @@ const event = {
 				const maksi = await client.users.fetch(config.maksi);
 				return await maksi
 					.send({
-						content: `https://discord.com/channels/${interaction.guild.id}/${interaction.message.channel.id}/${interaction.message.id}`,
+						content: `https://discord.com/channels/${interaction.guildId}/${interaction.message.channel.id}/${interaction.message.id}`,
 						embeds: interaction.message.embeds,
 						components: [{
 							type: 'ACTION_ROW',
@@ -192,7 +214,7 @@ const event = {
 						}],
 					})
 					.catch(async (error) => {
-						return await errorHandling.output(interaction.message, error);
+						throw new Error(error);
 					});
 			}
 
@@ -225,17 +247,17 @@ const event = {
 				return;
 			}
 
-			let characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guild?.id]];
-			let profileData = characterData?.profiles?.[interaction.guild?.id];
+			let characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guildId || 'DM']];
+			let profileData = characterData?.profiles?.[interaction.guildId || 'DM'];
 
 			if (interaction.inGuild()) {
 
-				if (userMap.has('nr' + interaction.user.id + interaction.guild.id) === false) {
+				if (!userMap.has('nr' + interaction.user.id + interaction.guildId)) {
 
-					userMap.set('nr' + interaction.user.id + interaction.guild.id, { activeCommands: 0, lastGentleWaterReminderTimestamp: 0, activityTimeout: null, cooldownTimeout: null, restingTimeout: null });
+					userMap.set('nr' + interaction.user.id + interaction.guildId, { activeCommands: 0, lastGentleWaterReminderTimestamp: 0, activityTimeout: null, cooldownTimeout: null, restingTimeout: null });
 				}
 
-				clearTimeout(userMap.get('nr' + interaction.user.id + interaction.guild.id).restingTimeout);
+				clearTimeout(userMap.get('nr' + interaction.user.id + interaction.guildId)?.restingTimeout || undefined);
 			}
 
 			if (interaction.isSelectMenu()) {
@@ -472,7 +494,7 @@ const event = {
 									{ name: '**rp allowvisits [#channel/off]**', value: '__Server admins only.__ Allow or disallow visits between your and other packs.' },
 									{ name: '**rp getupdates [#channel]**', value: '__Server admins only.__ Specify a channel in which updates, new features etc. should be posted.' },
 									{ name: '**rp ticket [text]**', value: 'Report a bug, give feedback, suggest a feature!' },
-									{ name: '\n**__CREDITS:__**', value: `This bot was made with love by ${maksi?.tag}. Special thanks goes out to ${ezra?.tag}, ${ren?.tag}, ${hazenith.tag} and ${elliott.tag}, who did a lot of the custom bot responses and helped come up with ideas and improvements, and ${jags.tag} who did the profile picture. Thank you also to everyone who tested the bot and gave feedback.\nThis bot was originally created for a Discord server called [Rushing River Pack](https://disboard.org/server/854522091328110595). If you are therian, otherkin, or supporter of those, you are welcome to join.` },
+									{ name: '\n**__CREDITS:__**', value: `This bot was made with love by ${maksi?.tag}. Special thanks goes out to ${ezra?.tag}, ${ren?.tag}, ${hazenith?.tag} and ${elliott?.tag}, who did a lot of the custom bot responses and helped come up with ideas and improvements, and ${jags?.tag} who did the profile picture. Thank you also to everyone who tested the bot and gave feedback.\nThis bot was originally created for a Discord server called [Rushing River Pack](https://disboard.org/server/854522091328110595). If you are therian, otherkin, or supporter of those, you are welcome to join.` },
 									{ name: '\n**__OTHER:__**', value: `If you want to support me, you can donate [here](https://streamlabs.com/maksirose/tip)! :)\nYou can find the GitHub repository for this project [here](https://github.com/MaksiRose/paw-and-paper).\nBy using this bot, you agree to its [Terms and Service](https://github.com/MaksiRose/paw-and-paper/blob/stable/Terms%20of%20Service.md) and [Privacy Policy](https://github.com/MaksiRose/paw-and-paper/blob/stable/Privacy%20Policy.md).\nThe bot is currently running on version ${version}.` },
 								],
 								footer: { text: 'ℹ️ Select a command from the list below to view more information about it.' },
@@ -1741,11 +1763,12 @@ const event = {
 
 				if (interaction.customId === 'stats-refresh') {
 
-					if (referencedMessage.mentions.users.size > 0) {
+					const mentionedUser = referencedMessage.mentions.users.first();
+					if (mentionedUser) {
 
-						userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: referencedMessage.mentions.users.first().id }));
-						characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guild.id]];
-						profileData = characterData?.profiles?.[interaction.guild.id];
+						userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: mentionedUser.id }));
+						characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guildId || 'DM']];
+						profileData = characterData?.profiles?.[interaction.guildId || 'DM'];
 					}
 
 					await interaction.message
@@ -1759,24 +1782,22 @@ const event = {
 
 				if (interaction.customId === 'profile-refresh') {
 
-					const components = [{
-						type: 'ACTION_ROW',
-						components: [{
-							type: 'BUTTON',
+					const components = new MessageActionRow({
+						components: [ new MessageButton({
 							customId: 'profile-refresh',
-							emoji: { name: '🔁' },
+							emoji: '🔁',
 							style: 'SECONDARY',
-						}, {
-							type: 'BUTTON',
+						}), new MessageButton({
 							customId: 'profile-store',
 							label: 'Store food away',
 							style: 'SECONDARY',
-						}],
-					}];
+						})],
+					});
 
-					if (referencedMessage.mentions.users.size > 0) {
+					const mentionedUser = referencedMessage.mentions.users.first();
+					if (mentionedUser) {
 
-						userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: referencedMessage.mentions.users.first().id }));
+						userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: mentionedUser.id }));
 
 						components[0].components.pop();
 					}
@@ -1806,7 +1827,7 @@ const event = {
 							embeds: [{
 								color: characterData.color,
 								title: characterData.name,
-								author: { name: `Profile - ${user.tag}` },
+								author: { name: `Profile - ${user?.tag}` },
 								description: description,
 								thumbnail: { url: characterData.avatarURL },
 								fields: [
@@ -1823,11 +1844,11 @@ const event = {
 								description: `🚩 Levels: \`${profileData.levels}\` - ✨ XP: \`${profileData.experience}/${profileData.levels * 50}\`\n❤️ Health: \`${profileData.health}/${profileData.maxHealth}\`\n⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\`\n🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\``,
 								fields: [
 									{ name: '**🩹 Injuries/Illnesses**', value: injuryText, inline: true },
-									{ name: '**🌱 Ginkgo Sapling**', value: profileData.sapling.exists === false ? 'none' : `${profileData.sapling.waterCycles} days alive - ${profileData.sapling.health} health\nNext watering <t:${Math.floor(profileData.sapling.nextWaterTimestamp / 1000)}:R>`, inline: true },
+									{ name: '**🌱 Ginkgo Sapling**', value: profileData.sapling.exists === false ? 'none' : `${profileData.sapling.waterCycles} days alive - ${profileData.sapling.health} health\nNext watering <t:${Math.floor((profileData.sapling.nextWaterTimestamp || 0) / 1000)}:R>`, inline: true },
 								],
-								footer: { text: profileData.hasQuest === true ? 'There is one open quest!' : null },
+								footer: { text: profileData.hasQuest === true ? 'There is one open quest!' : undefined },
 							}],
-							components: /** @type {Array<import('discord.js').MessageActionRow>} */ (components),
+							components: [components],
 						})
 						.catch((error) => {
 							if (error.httpStatus !== 404) { throw new Error(error); }
@@ -1855,9 +1876,10 @@ const event = {
 			It is not a good idea to place clearing the timeout behind the command finish executing, since the command finish executing might take some time, and the 10 minutes from that timer might over in that time, making the user attempt to rest while executing a command.
 			It is also not a good idea to place starting the timeout before the command start executing, since the command again might take some time to finish executing, and then the 10 minute timer might be over sooner as expected.
 			*/
-			if (interaction.inGuild() && userMap.get('nr' + interaction.user.id + interaction.guild.id).activeCommands === 0) {
+			if (interaction.inGuild() && userMap.has('nr' + interaction.user.id + interaction.guildId) && userMap.get('nr' + interaction.user.id + interaction.guildId)?.activeCommands === 0) {
 
-				userMap.get('nr' + interaction.user.id + interaction.guild.id).restingTimeout = setTimeout(startRestingTimeout, 600000, client, referencedMessage);
+				// @ts-ignore
+				userMap.get('nr' + interaction.user.id + interaction.guildId).restingTimeout = setTimeout(startRestingTimeout, 600000, client, referencedMessage);
 			}
 		}
 	},

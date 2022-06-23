@@ -1,8 +1,8 @@
 // @ts-check
-const { hasNoName } = require('../../utils/checkAccountCompletion');
+const { hasName } = require('../../utils/checkAccountCompletion');
 const { error_color, default_color } = require('../../config.json');
 const serverModel = require('../../models/serverModel');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 
 module.exports.name = 'endvisit';
 
@@ -17,12 +17,12 @@ module.exports.name = 'endvisit';
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
 
-	if (await hasNoName(message, userData?.characters?.[userData?.currentCharacter?.[message.guild.id]])) {
+	if (!hasName(message, userData?.characters?.[userData?.currentCharacter?.[message.guild.id]])) {
 
 		return;
 	}
@@ -43,12 +43,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
-	const otherServerData = await serverModel.findOne(
+	const otherServerData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOne(
 		{ serverId: serverData.currentlyVisiting },
-	);
+	));
 
-	const thisChannel = /** @type {import('discord.js').TextChannel} */ (await client.channels.fetch(serverData.visitChannelId));
-	const otherChannel = /** @type {import('discord.js').TextChannel} */ (await client.channels.fetch(otherServerData.visitChannelId));
+	const thisChannel = /** @type {import('discord.js').TextChannel} */ (await client.channels.fetch(serverData.visitChannelId || ''));
+	const otherChannel = /** @type {import('discord.js').TextChannel} */ (await client.channels.fetch(otherServerData?.visitChannelId || ''));
 
 	if (thisChannel.isText() === false || otherChannel.isText() === false) {
 
@@ -73,7 +73,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		.send({
 			embeds: [{
 				color: /** @type {`#${string}`} */ (default_color),
-				author: { name: otherChannel.guild.name, icon_url: otherChannel.guild.iconURL() },
+				author: { name: otherChannel.guild.name, icon_url: otherChannel.guild.iconURL() || undefined },
 				description: `*Hanging out with friends is always nice but has to end eventually. And so the friends from ${message.guild.name} went back to their territory. Until next time.*`,
 			}],
 		})
@@ -85,7 +85,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		.send({
 			embeds: [{
 				color: /** @type {`#${string}`} */ (default_color),
-				author: { name: thisChannel.guild.name, icon_url: thisChannel.guild.iconURL() },
+				author: { name: thisChannel.guild.name, icon_url: thisChannel.guild.iconURL() || undefined },
 				description: `*Hanging out with friends is always nice but has to end eventually. And so the friends from ${message.guild.name} went back to their territory. Until next time.*`,
 			}],
 		})

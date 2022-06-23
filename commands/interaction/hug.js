@@ -16,14 +16,15 @@ module.exports.aliases = ['snuggle'];
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id]];
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId || 'DM']];
 
-	if (message.mentions.users.size > 0 && message.mentions.users.first().id === message.author.id) {
+	const firstMentionedUser = message.mentions.users.first();
+	if (firstMentionedUser && firstMentionedUser.id === message.author.id) {
 
 		const selfHugURLs = [
 			'https://c.tenor.com/kkW-x5TKP-YAAAAC/seal-hug.gif',
@@ -32,8 +33,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			'https://c.tenor.com/P5lPftY1nzUAAAAd/tired-exhausted.gif'];
 
 		const embed = {
-			color: characterData?.color || message.member.displayHexColor,
-			author: { name: characterData?.name || message.member.displayName, icon_url: characterData?.avatarURL || message.member.displayAvatarURL() },
+			color: characterData?.color || message.member?.displayColor || message.author.accentColor || '#ffffff',
+			author: {
+				name: characterData?.name || message.member?.displayName || message.author?.tag,
+				icon_url: characterData?.avatarURL || message.member?.displayAvatarURL() || message.author?.avatarURL() || undefined,
+			},
 			image: { url: selfHugURLs[generateRandomNumber(selfHugURLs.length, 0)] },
 		};
 
@@ -48,7 +52,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
-	if (message.mentions.users.size <= 0) {
+	if (!firstMentionedUser) {
 
 		const embed = {
 			color: /** @type {`#${string}`} */ (error_color),
@@ -69,9 +73,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	const botReply = await message
 		.reply({
 			embeds: [...embedArray, {
-				color: characterData?.color || message.member.displayHexColor,
-				author: { name: characterData?.name || message.member.displayName, icon_url: characterData?.avatarURL || message.member.displayAvatarURL() },
-				description: `${message.mentions.users.first().toString()}, do you accept the hug?`,
+				color: characterData?.color || message.member?.displayColor || message.author.accentColor || '#ffffff',
+				author: {
+					name: characterData?.name || message.member?.displayName || message.author?.tag,
+					icon_url: characterData?.avatarURL || message.member?.displayAvatarURL() || message.author?.avatarURL() || undefined,
+				},
+				description: `${firstMentionedUser.toString()}, do you accept the hug?`,
 			}],
 			components: [ new MessageActionRow({
 				components: [ new MessageButton({
@@ -89,7 +96,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		})
 		.catch((error) => { throw new Error(error); });
 
-	const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.user.id === message.mentions.users.first().id && i.customId.includes('hug');
+	const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.user.id === firstMentionedUser.id && i.customId.includes('hug');
 
 	botReply
 		.awaitMessageComponent({ filter, time: 120_000 })
@@ -121,8 +128,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			await botReply
 				.edit({
 					embeds: [...embedArray, {
-						color: characterData?.color || message.member.displayHexColor,
-						author: { name: characterData?.name || message.member.displayName, icon_url: characterData?.avatarURL || message.member.displayAvatarURL() },
+						color: characterData?.color || message.member?.displayColor || message.author.accentColor || '#ffffff',
+						author: {
+							name: characterData?.name || message.member?.displayName || message.author?.tag,
+							icon_url: characterData?.avatarURL || message.member?.displayAvatarURL() || message.author?.avatarURL() || undefined,
+						},
 						image: { url: hugURLs[generateRandomNumber(hugURLs.length, 0)] },
 					}],
 					components: [],
@@ -131,8 +141,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 
-			const partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first().id }));
-			const partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guild?.id]];
+			const partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: firstMentionedUser.id }));
+			const partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guildId || 'DM']];
 
 			if (characterData !== undefined && partnerCharacterData !== undefined) { await addFriendshipPoints(message, userData, characterData._id, partnerUserData, partnerCharacterData._id); }
 		})
@@ -141,9 +151,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			return await botReply
 				.edit({
 					embeds: [...embedArray, {
-						color: characterData?.color || message.member.displayHexColor,
-						author: { name: characterData?.name || message.member.displayName, icon_url: characterData?.avatarURL || message.member.displayAvatarURL() },
-						description:`${message.mentions.users.first().toString()} did not accept the hug.`,
+						color: characterData?.color || message.member?.displayColor || message.author.accentColor || '#ffffff',
+						author: {
+							name: characterData?.name || message.member?.displayName || message.author?.tag,
+							icon_url: characterData?.avatarURL || message.member?.displayAvatarURL() || message.author?.avatarURL() || undefined,
+						},
+						description:`${firstMentionedUser.toString()} did not accept the hug.`,
 					}],
 					components: disableAllComponents(botReply.components),
 				})

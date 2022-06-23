@@ -1,9 +1,9 @@
 // @ts-check
 const profileModel = require('../../models/profileModel');
 const { error_color } = require('../../config.json');
-const { hasNoName } = require('../../utils/checkAccountCompletion');
+const { hasName } = require('../../utils/checkAccountCompletion');
 const { readFileSync, writeFileSync } = require('fs');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 
 module.exports.name = 'say';
 
@@ -14,12 +14,12 @@ module.exports.name = 'say';
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
@@ -28,7 +28,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	 * It is not permanently saved though, making the account practically still inactive. */
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id]];
 
-	if (await hasNoName(message, characterData)) {
+	if (!hasName(message, characterData)) {
 
 		return;
 	}
@@ -93,15 +93,18 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	/** @type {Array<import('discord.js').MessageEmbedOptions>} */
 	let embeds = [];
 
-	if (message.reference !== null) {
+	if (message.reference && message.reference.messageId) {
 
 		const referencedMessage = await message.channel.messages.fetch(message.reference.messageId);
 		const member = referencedMessage.member;
 		const user = referencedMessage.author;
 
 		embeds = [{
-			author: { name: member?.displayName || user.username, icon_url: member?.displayAvatarURL() || user.avatarURL() },
-			color: member?.displayColor || user.accentColor || 'WHITE',
+			color: member?.displayColor || user.accentColor || '#ffffff',
+			author: {
+				name: member?.displayName || user.username,
+				icon_url: member?.displayAvatarURL() || user.avatarURL() || undefined,
+			},
 			description: referencedMessage.content,
 		}];
 	}

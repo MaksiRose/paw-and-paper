@@ -1,7 +1,7 @@
 // @ts-check
 const { MessageEmbed, MessageSelectMenu, MessageActionRow, MessageButton } = require('discord.js');
 const profileModel = require('../../models/profileModel');
-const { hasNoName } = require('../../utils/checkAccountCompletion');
+const { hasName } = require('../../utils/checkAccountCompletion');
 const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
 const { hasCooldown } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
@@ -19,20 +19,21 @@ module.exports.aliases = ['info', 'about', 'profiles', 'character', 'characters'
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} userData
- * @param {import('../../typedef').ServerSchema} serverData
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {import('../../typedef').ProfileSchema | null} userData
+ * @param {import('../../typedef').ServerSchema | null} serverData
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id || 'DM']];
+	let characterData = userData ? userData.characters[userData.currentCharacter[message.guildId || 'DM']] : null;
 	let isYourself = true;
 
+	/* Checking if a user was mentioned and if that user has an account. */
 	if (getUserIds(message).length > 0) {
 
-		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: getUserIds(message)[0] }));
-		characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id]];
+		userData = /** @type {import('../../typedef').ProfileSchema | null} */ (await profileModel.findOne({ userId: getUserIds(message)[0] }));
+		characterData = userData ? userData.characters[userData.currentCharacter[message.guildId || 'DM']] : null;
 		isYourself = false;
 
 		if (!userData) {
@@ -51,48 +52,49 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			return;
 		}
 	}
+	/* Checking if the userData is empty. If it is, it will call the hasName function. */
 	else if (!userData) {
 
-		await hasNoName(message, characterData);
+		hasName(message, characterData);
 		return;
 	}
-	else if (characterData && message.inGuild() && await hasCooldown(message, userData, [module.exports.name].concat(module.exports.aliases))) {
+	/* Checking if the user has a cooldown. */
+	else if (characterData && message.inGuild() && await hasCooldown(message, userData, module.exports.aliases.concat(module.exports.name))) {
 
 		return;
 	}
 
-	await module.exports.sendProfile(client, message, embedArray, userData, characterData, isYourself, false);
+	await module.exports.sendProfile(client, message, embedArray, userData, characterData, isYourself);
 };
+
 
 /**
  * Sends a profile
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @param {import('../../typedef').ProfileSchema} userData
- * @param {import('../../typedef').Character} characterData
+ * @param {import('../../typedef').Character | null} characterData
  * @param {boolean} isYourself
- * @param {boolean} isInteraction
- * @param {import('discord.js').MessageContextMenuInteraction} [contextMenuInteraction]
+ * @param {import('discord.js').MessageContextMenuInteraction<"cached">} [contextMenuInteraction]
  * @returns
  */
-module.exports.sendProfile = async (client, message, embedArray, userData, characterData, isYourself, isInteraction, contextMenuInteraction) => {
+module.exports.sendProfile = async (client, message, embedArray, userData, characterData, isYourself, contextMenuInteraction) => {
 
 	let charactersPage = 0;
-
 	let response = await getMessageContent(client, userData.userId, characterData, isYourself, embedArray);
 
-	let botReply = (isInteraction === false ?
+	let botReply = (!contextMenuInteraction ?
 		(await message
 			.reply({
 				...response,
 				failIfNotExists: false,
-				components: (getAccountsPage(userData, charactersPage, isYourself).options.length > 1) ? [new MessageActionRow({ components: [getAccountsPage(userData, charactersPage, isYourself)] })] : [],
+				components: (getAccountsPage(userData, charactersPage, isYourself).options.length > 0) ? [new MessageActionRow({ components: [getAccountsPage(userData, charactersPage, isYourself)] })] : [],
 			})
 			.catch((error) => { throw new Error(error); }))
-		: /** @type {import('discord.js').Message} */ (await contextMenuInteraction
+		: (await contextMenuInteraction
 			.reply({
-				... /** @type {import('discord.js').InteractionReplyOptions} */(response),
+				...response,
 				components: [ new MessageActionRow({
 					components: [ new MessageButton({
 						customId: `learnabout-${userData?.userId}-${characterData?._id}`,
@@ -106,16 +108,16 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
 			.catch((error) => { throw new Error(error); }))
 	);
 
-	createCommandCollector(message.author.id, message.guild?.id || '', botReply);
+	createCommandCollector(message.author.id, message.guildId || '', botReply);
 	interactionCollector();
 
 	async function interactionCollector() {
 
-		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => ((i.isSelectMenu() && i.customId === 'characters-options') || i.isButton() && i.customId.includes('learnabout')) && i.user.id === message.author.id;
-
-		/** @type {import('discord.js').MessageComponentInteraction | null} } */
 		const interaction = await botReply
-			.awaitMessageComponent({ filter, time: 300_000 })
+			.awaitMessageComponent({
+				filter: (i) => i.user.id === message.author.id,
+				time: 300_000,
+			})
 			.catch(() => { return null; });
 
 		await botReply
@@ -142,7 +144,7 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
 			botReply.channelId = dmChannel.id;
 			botReply.author.id = interaction.user.id;
 
-			await module.exports.sendProfile(client, botReply, embedArray, userData, characterData, false, false);
+			await module.exports.sendProfile(client, botReply, embedArray, userData, characterData, false);
 		}
 
 		/* Checking if the user has clicked on the "Show more accounts" button, and if they have, it will
@@ -178,16 +180,16 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
 		if (interaction.isSelectMenu() && interaction.values[0].includes('switchto')) {
 
 			/* Checking if the user is resting, and if they are, it will stop the resting. */
-			if (message.inGuild() && characterData?.profiles?.[message.guild?.id]?.isResting === true) {
+			if (message.inGuild() && characterData?.profiles?.[message.guildId]?.isResting === true) {
 
 				userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 					{ uuid: userData.uuid },
 					(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-						p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].isResting = false;
+						p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].isResting = false;
 					},
 				));
 
-				stopResting(message.author.id, message.guild.id);
+				stopResting(message.author.id, message.guildId);
 			}
 
 			/* Getting the id of the account the user has clicked on, and then it is updating the user's current
@@ -196,92 +198,98 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
 			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 				{ uuid: userData.uuid },
 				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-					if (interaction.values[0].endsWith('-0')) { p.currentCharacter[message.guild?.id || 'DM'] = _id; }
-					else { delete p.currentCharacter[message.guild?.id || 'DM']; }
+					if (interaction.values[0].endsWith('-0')) { p.currentCharacter[message.guildId || 'DM'] = _id; }
+					else { delete p.currentCharacter[message.guildId || 'DM']; }
 				},
 			));
 
 			/* Getting the new character data, and then it is checking if the user has clicked on an account,
 			and if they have, it will add the roles of the account to the user. */
-			let newCharacterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id || 'DM']];
-			let profileData = newCharacterData?.profiles?.[message.guild?.id || 'DM'];
+			let newCharacterData = userData ? userData.characters[userData.currentCharacter[message.guildId || 'DM']] : null;
+			let profileData = newCharacterData ? newCharacterData?.profiles?.[message.guildId || 'DM'] : null;
 
-			if (newCharacterData != null && message.inGuild()) {
+			if (message.inGuild()) {
 
-				if (!profileData) {
+				const member = message.member ? message.member : (await message.guild.members.fetch(message.author.id).catch((error) => { throw new Error(error); }));
 
-					userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-						{ uuid: userData.uuid },
-						(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-							p.characters[newCharacterData._id].profiles[message.guild.id] = {
-								serverId: message.guild.id,
-								rank: 'Youngling',
-								levels: 1,
-								experience: 0,
-								health: 100,
-								energy: 100,
-								hunger: 100,
-								thirst: 100,
-								maxHealth: 100,
-								maxEnergy: 100,
-								maxHunger: 100,
-								maxThirst: 100,
-								temporaryStatIncrease: {},
-								isResting: false,
-								hasCooldown: false,
-								hasQuest: false,
-								currentRegion: 'ruins',
-								unlockedRanks: 0,
-								sapling: { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, lastMessageChannelId: null },
-								injuries: { wounds: 0, infections: 0, cold: false, sprains: 0, poison: false },
-								inventory: {
-									commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, 0])),
-									uncommonPlants: Object.fromEntries([...uncommonPlantsMap.keys()].sort().map(key => [key, 0])),
-									rarePlants: Object.fromEntries([...rarePlantsMap.keys()].sort().map(key => [key, 0])),
-									specialPlants: Object.fromEntries([...specialPlantsMap.keys()].sort().map(key => [key, 0])),
-									meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, 0])),
-									materials: Object.fromEntries([...materialsMap.keys()].sort().map(key => [key, 0])),
-								},
-								roles: [],
-								skills: { global: {}, personal: {} },
-							};
-						},
-					));
-					newCharacterData = userData.characters[userData.currentCharacter[message.guild.id]];
-					profileData = newCharacterData.profiles[message.guild.id];
+				if (newCharacterData) {
+
+					if (!profileData) {
+
+						userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+							{ uuid: userData.uuid },
+							(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+								// @ts-ignore
+								p.characters[newCharacterData._id].profiles[message.guildId] = {
+									serverId: message.guildId,
+									rank: 'Youngling',
+									levels: 1,
+									experience: 0,
+									health: 100,
+									energy: 100,
+									hunger: 100,
+									thirst: 100,
+									maxHealth: 100,
+									maxEnergy: 100,
+									maxHunger: 100,
+									maxThirst: 100,
+									temporaryStatIncrease: {},
+									isResting: false,
+									hasCooldown: false,
+									hasQuest: false,
+									currentRegion: 'ruins',
+									unlockedRanks: 0,
+									sapling: { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, lastMessageChannelId: null },
+									injuries: { wounds: 0, infections: 0, cold: false, sprains: 0, poison: false },
+									inventory: {
+										commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, 0])),
+										uncommonPlants: Object.fromEntries([...uncommonPlantsMap.keys()].sort().map(key => [key, 0])),
+										rarePlants: Object.fromEntries([...rarePlantsMap.keys()].sort().map(key => [key, 0])),
+										specialPlants: Object.fromEntries([...specialPlantsMap.keys()].sort().map(key => [key, 0])),
+										meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, 0])),
+										materials: Object.fromEntries([...materialsMap.keys()].sort().map(key => [key, 0])),
+									},
+									roles: [],
+									skills: { global: {}, personal: {} },
+								};
+							},
+						));
+						newCharacterData = userData.characters[userData.currentCharacter[message.guildId]];
+						profileData = newCharacterData.profiles[message.guildId];
+					}
+
+					try {
+
+						for (const role of newCharacterData.profiles[message.guildId].roles) {
+
+							if (member.roles.cache.has(role.roleId) === false) {
+
+								member.roles.add(role.roleId);
+							}
+						}
+					}
+					catch (error) {
+
+						await checkRoleCatchBlock(error, message, member);
+					}
 				}
 
+				/* Checking if the user has any roles from the old account, and if they do, it will remove them. */
 				try {
 
-					for (const role of newCharacterData.profiles[message.guild.id].roles) {
+					for (const role of characterData?.profiles?.[message.guildId || 'DM']?.roles || []) {
 
-						if (message.member.roles.cache.has(role.roleId) === false) {
+						const isInNewRoles = newCharacterData !== null && newCharacterData?.profiles?.[message.guildId || 'DM']?.roles.some(r => r.roleId === role.roleId && r.wayOfEarning === role.wayOfEarning && r.requirement === role.requirement);
+						if (isInNewRoles === false && member.roles.cache.has(role.roleId)) {
 
-							message.member.roles.add(role.roleId);
+							member.roles.remove(role.roleId);
 						}
 					}
 				}
 				catch (error) {
 
-					await checkRoleCatchBlock(error, message, message.member);
+					await checkRoleCatchBlock(error, message, member);
 				}
-			}
-
-			/* Checking if the user has any roles from the old account, and if they do, it will remove them. */
-			try {
-
-				for (const role of characterData?.profiles?.[message.guild?.id]?.roles || []) {
-
-					const isInNewRoles = newCharacterData !== null && newCharacterData?.profiles?.[message.guild.id]?.roles.some(r => r.roleId === role.roleId && r.wayOfEarning === role.wayOfEarning && r.requirement === role.requirement);
-					if (isInNewRoles === false && message.member.roles.cache.has(role.roleId)) {
-
-						message.member.roles.remove(role.roleId);
-					}
-				}
-			}
-			catch (error) {
-
-				await checkRoleCatchBlock(error, message, message.member);
 			}
 
 			characterData = newCharacterData;
@@ -294,8 +302,8 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
 
 				botReply = await botReply
 					.edit({
-						... /** @type {import('discord.js').MessageEditOptions} */(response),
-						components: (getAccountsPage(userData, charactersPage, isYourself).options.length > 1) ? [new MessageActionRow({ components: [getAccountsPage(userData, charactersPage, isYourself)] })] : [],
+						...response,
+						components: (getAccountsPage(userData, charactersPage, isYourself).options.length > 0) ? [new MessageActionRow({ components: [getAccountsPage(userData, charactersPage, isYourself)] })] : [],
 					})
 					.catch((error) => { throw new Error(error); });
 
@@ -327,7 +335,7 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
 			response = await getMessageContent(client, userData.userId, characterData, isYourself, embedArray);
 			if (getAccountsPage(userData, charactersPage, isYourself).options.length > 1) {
 
-				response.components = [new MessageActionRow({ components: [getAccountsPage(userData, charactersPage, isYourself)] })];
+				response.components = [new MessageActionRow().addComponents([getAccountsPage(userData, charactersPage, isYourself)])];
 			}
 
 			botReply = await botReply
@@ -347,10 +355,10 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
  * It takes in a client, userId, characterData, and isYourself, and returns a message object
  * @param {import('../../paw').client} client - Discords Client
  * @param {string} userId - The user's ID
- * @param {import('../../typedef').Character} characterData - The character data from the database.
+ * @param {import('../../typedef').Character | null} characterData - The character data from the database.
  * @param {boolean} isYourself - Whether the character is by the user who executed the command
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
- * @returns {Promise<import('discord.js').MessageOptions>} The message object.
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
+ * @returns {Promise<{content: string | null, embeds: Array<import('discord.js').MessageEmbed>, components: Array<import('discord.js').MessageActionRow>}>} The message object.
  */
 async function getMessageContent(client, userId, characterData, isYourself, embedArray) {
 
@@ -360,26 +368,24 @@ async function getMessageContent(client, userId, characterData, isYourself, embe
 			throw new Error(error);
 		});
 
-	const embed = new MessageEmbed({
-		color: characterData?.color,
-		title: characterData?.name,
-		author: { name: `Profile - ${user.tag}` },
-		description: characterData?.description,
-		thumbnail: { url: characterData?.avatarURL },
-		fields: [
-			{ name: '**🦑 Species**', value: (characterData?.displayedSpecies?.charAt(0)?.toUpperCase() + characterData?.displayedSpecies?.slice(1)) || (characterData?.species?.charAt(0)?.toUpperCase() + characterData?.species?.slice(1)) || '/', inline: true },
-			{ name: '**🔑 Proxy**', value: !characterData?.proxy?.startsWith && !characterData?.proxy?.endsWith ? 'No proxy set' : `${characterData?.proxy.startsWith}text${characterData?.proxy.endsWith}`, inline: true },
-			{ name: '**🍂 Pronouns**', value: characterData?.pronounSets?.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n') || '/' },
-
-		],
-		footer: { text: `Character ID: ${characterData?._id}` },
-	});
-
-	const message = /** @type {import('discord.js').MessageOptions} */ ({
+	const message = {
 		content: !characterData ? (isYourself ? 'You are on an Empty Slot. Select a character to switch to below.' : 'Select a character to view below.') : null,
-		embeds: !characterData ? embedArray : [...embedArray, embed],
-	});
+		embeds: !characterData ? embedArray : [...embedArray, new MessageEmbed({
+			color: characterData.color,
+			title: characterData.name,
+			author: { name: `Profile - ${user.tag}` },
+			description: characterData.description,
+			thumbnail: { url: characterData.avatarURL },
+			fields: [
+				{ name: '**🦑 Species**', value: characterData.displayedSpecies ? (characterData.displayedSpecies.charAt(0).toUpperCase() + characterData.displayedSpecies.slice(1)) : characterData.species ? (characterData.species.charAt(0).toUpperCase() + characterData.species.slice(1)) : '/', inline: true },
+				{ name: '**🔑 Proxy**', value: !characterData.proxy.startsWith && !characterData.proxy.endsWith ? 'No proxy set' : `${characterData.proxy.startsWith}text${characterData.proxy.endsWith}`, inline: true },
+				{ name: '**🍂 Pronouns**', value: characterData.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n') || '/' },
 
+			],
+			footer: { text: `Character ID: ${characterData._id}` },
+		})],
+		components: [],
+	};
 
 	return message;
 }

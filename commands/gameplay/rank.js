@@ -1,6 +1,6 @@
 // @ts-check
 const profileModel = require('../../models/profileModel');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { hasCooldown } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { pronoun } = require('../../utils/getPronouns');
@@ -9,7 +9,7 @@ const { remindOfAttack } = require('./attack');
 const { checkRankRequirements } = require('../../utils/checkRoleRequirements');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 
 module.exports.name = 'rank';
 module.exports.aliases = ['role'];
@@ -21,12 +21,12 @@ module.exports.aliases = ['role'];
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
@@ -34,12 +34,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	const profileData = characterData?.profiles?.[message.guild.id];
 
-	if (await hasNotCompletedAccount(message, characterData)) {
+	if (!hasCompletedAccount(message, characterData)) {
 
 		return;
 	}
 
-	if (await hasCooldown(message, userData, [module.exports.name].concat(module.exports.aliases))) {
+	if (await hasCooldown(message, userData, module.exports.aliases.concat(module.exports.name))) {
 
 		return;
 	}
@@ -70,7 +70,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 
-		await checkRankRequirements(serverData, message, message.member, 'Apprentice');
+		const member = message.member ? message.member : (await message.guild.members.fetch(message.author.id).catch((error) => { throw new Error(error);}));
+		await checkRankRequirements(serverData, message, member, 'Apprentice');
 
 		return;
 	}
@@ -130,7 +131,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 
-		await checkRankRequirements(serverData, message, message.member, 'Elderly');
+		const member = message.member ? message.member : (await message.guild.members.fetch(message.author.id).catch((error) => { throw new Error(error);}));
+		await checkRankRequirements(serverData, message, member, 'Elderly');
 
 		return;
 	}
@@ -164,7 +166,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					await profileModel.findOneAndUpdate(
 						{ userId: message.author.id },
 						(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-							p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].rank = 'Healer';
+							// @ts-ignore, as message is must be in server
+							p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].rank = 'Healer';
 						},
 					);
 
@@ -181,7 +184,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							if (error.httpStatus !== 404) { throw new Error(error); }
 						});
 
-					await checkRankRequirements(serverData, message, message.member, 'Healer');
+					// @ts-ignore, as message is must be in server
+					const member = message.member ? message.member : (await message.guild.members.fetch(message.author.id).catch((error) => { throw new Error(error);}));
+					await checkRankRequirements(serverData, message, member, 'Healer');
 
 					return;
 				}
@@ -191,7 +196,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					await profileModel.findOneAndUpdate(
 						{ userId: message.author.id },
 						(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-							p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].rank = 'Hunter';
+							// @ts-ignore, as message is must be in server
+							p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].rank = 'Hunter';
 						},
 					);
 
@@ -208,7 +214,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							if (error.httpStatus !== 404) { throw new Error(error); }
 						});
 
-					await checkRankRequirements(serverData, message, message.member, 'Hunter');
+					// @ts-ignore, as message is must be in server
+					const member = message.member ? message.member : (await message.guild.members.fetch(message.author.id).catch((error) => { throw new Error(error);}));
+					await checkRankRequirements(serverData, message, member, 'Hunter');
 
 					return;
 				}

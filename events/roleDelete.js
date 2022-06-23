@@ -43,7 +43,7 @@ const event = {
 					if (profile.roles.some(profilerole => profilerole.roleId === shoprole.roleId && profilerole.wayOfEarning === shoprole.wayOfEarning && profilerole.requirement === shoprole.requirement)) {
 
 						const userRole = profile.roles.find(profilerole => profilerole.roleId === shoprole.roleId && profilerole.wayOfEarning === shoprole.wayOfEarning && profilerole.requirement === shoprole.requirement);
-						const userRoleIndex = profile.roles.indexOf(userRole);
+						const userRoleIndex = userRole ? profile.roles.indexOf(userRole) : -1;
 
 						if (userRoleIndex >= 0) { profile.roles.splice(userRoleIndex, 1); }
 
@@ -51,7 +51,7 @@ const event = {
 							{ uuid: user.uuid },
 							(/** @type {import('../typedef').ProfileSchema} */ p) => {
 								p.characters[character._id].profiles[profile.serverId].roles = profile.roles;
-								if (userRole.wayOfEarning === 'experience') {
+								if (userRole && userRole.wayOfEarning === 'experience') {
 									p.characters[character._id].profiles[profile.serverId].experience += (Number(userRole.requirement) || 0);
 								}
 							},

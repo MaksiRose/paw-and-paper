@@ -2,7 +2,7 @@
 const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
 const { generateRandomNumber, generateRandomNumberWithException } = require('../../utils/randomizers');
 const profileModel = require('../../models/profileModel');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const startCooldown = require('../../utils/startCooldown');
 const { remindOfAttack } = require('./attack');
@@ -11,7 +11,7 @@ const { checkLevelUp } = require('../../utils/levelHandling');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { coloredButtonsAdvice, restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 
 module.exports.name = 'practice';
 module.exports.aliases = ['train'];
@@ -23,12 +23,12 @@ module.exports.aliases = ['train'];
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
@@ -36,7 +36,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	const profileData = characterData?.profiles?.[message.guild.id];
 
-	if (await hasNotCompletedAccount(message, characterData)) {
+	if (!hasCompletedAccount(message, characterData)) {
 
 		return;
 	}
@@ -259,7 +259,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		/* Here we change the buttons customId's so that they will always stay unique, as well as disabling the buttons. */
 		for (const button of botReply.components[botReply.components.length - 1].components) {
 
-			button.customId += totalCycles;
+			if (button.customId) button.customId += totalCycles;
 		}
 
 		botReply.components = disableAllComponents(botReply.components);
@@ -298,12 +298,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			});
 
 		botReply = await decreaseHealth(userData, botReply, { ...profileData.injuries });
-		botReply = await checkLevelUp(message, botReply, userData, serverData);
+		// @ts-ignore, as message is must be in server
+		botReply = await checkLevelUp(message, userData, serverData, botReply) || botReply;
+		// @ts-ignore, as message is must be in server
 		await isPassedOut(message, userData, true);
 
 		await coloredButtonsAdvice(message, userData);
+		// @ts-ignore, as message is must be in server
 		await restAdvice(message, userData);
+		// @ts-ignore, as message is must be in server
 		await drinkAdvice(message, userData);
+		// @ts-ignore, as message is must be in server
 		await eatAdvice(message, userData);
 
 		return;

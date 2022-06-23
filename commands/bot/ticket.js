@@ -42,7 +42,6 @@ module.exports.sendMessage = async (client, message, argumentsArray) => {
 	}
 
 	const octokit = new Octokit({
-
 		auth: github_token,
 		userAgent: 'paw-and-paper',
 	});
@@ -52,7 +51,7 @@ module.exports.sendMessage = async (client, message, argumentsArray) => {
 			owner: 'MaksiRose',
 			repo: 'paw-and-paper',
 			title: argumentsArray.join(' '),
-			body: `Created by: ${message.author.tag} (${message.author.id})\n[Link to original Discord message](https://discord.com/channels/${message.guild.id}/${message.channel.id}/${message.id})\n${attachmentURLs}`,
+			body: `Created by: ${message.author.tag} (${message.author.id})` + message.inGuild() ? `\n[Link to original Discord message](https://discord.com/channels/${message.guildId}/${message.channel.id}/${message.id})\n${attachmentURLs}` : 'Message was sent from DMs, a link is not available.',
 		})
 		.catch((error) => {
 			throw new Error(error);
@@ -69,7 +68,7 @@ module.exports.sendMessage = async (client, message, argumentsArray) => {
 			embeds: [{
 				author: { name: message.author.tag },
 				title: `Ticket #${githubIssue.data.number}`,
-				url: `https://discord.com/channels/${message.guild.id}/${message.channel.id}/${message.id}`,
+				url: message.inGuild() ? `https://discord.com/channels/${message.guildId}/${message.channel.id}/${message.id}` : undefined,
 				description: argumentsArray.join(' '),
 			}],
 			components: [ new MessageActionRow({

@@ -2,7 +2,7 @@
 const { MessageEmbed } = require('discord.js');
 const { error_color } = require('../../config.json');
 const profileModel = require('../../models/profileModel');
-const { hasNoName } = require('../../utils/checkAccountCompletion');
+const { hasName } = require('../../utils/checkAccountCompletion');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports.name = 'picture';
@@ -13,21 +13,22 @@ module.exports.aliases = ['pic', 'pfp', 'avatar'];
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} userData
+ * @param {import('../../typedef').ProfileSchema | null} userData
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id || 'DM']];
+	const characterData = userData ? userData.characters[userData.currentCharacter[message.guildId || 'DM']] : null;
 
-	if (await hasNoName(message, characterData)) {
+	if (!hasName(message, characterData)) {
 
 		return;
 	}
 
 	userData = await startCooldown(message);
 
-	if (message.attachments.size <= 0) {
+	const firstAttachment = message.attachments.first();
+	if (!firstAttachment) {
 
 		await message
 			.reply({
@@ -42,8 +43,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 			});
 		return;
 	}
-
-	const ImageLink = message.attachments.first().url;
+	const ImageLink = firstAttachment.url;
 
 	if (!ImageLink.endsWith('.png') && !ImageLink.endsWith('.jpeg') && !ImageLink.endsWith('.jpg') && !ImageLink.endsWith('.raw') && !ImageLink.endsWith('.webp')) {
 

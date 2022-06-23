@@ -2,14 +2,14 @@
 const { default_color, prefix } = require('../../config.json');
 const startCooldown = require('../../utils/startCooldown');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap, materialsMap, specialPlantsMap } = require('../../utils/itemsInfo');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { hasCooldown } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { remindOfAttack } = require('../gameplay/attack');
 const { execute } = require('../../events/messageCreate');
 const { MessageActionRow, MessageSelectMenu, MessageEmbed } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 
 module.exports.name = 'inventory';
 module.exports.aliases = ['storage', 'i'];
@@ -21,12 +21,12 @@ module.exports.aliases = ['storage', 'i'];
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
@@ -34,12 +34,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	const profileData = characterData?.profiles?.[message.guild.id];
 
-	if (await hasNotCompletedAccount(message, characterData)) {
+	if (!hasCompletedAccount(message, characterData)) {
 
 		return;
 	}
 
-	if (await hasCooldown(message, userData, [module.exports.name].concat(module.exports.aliases))) {
+	if (await hasCooldown(message, userData, module.exports.aliases.concat(module.exports.name))) {
 
 		return;
 	}
@@ -59,27 +59,25 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		})],
 	});
 
-	const foodSelectMenu = new MessageActionRow().addComponents(
-		[ new MessageSelectMenu({
-			customId: 'eat-options',
-			placeholder: 'Select an item to eat',
-			options: [],
-		})],
-	);
-
-	let embed = new MessageEmbed({
-		color: /** @type {`#${string}`} */ (default_color),
-		author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-		title: `Inventory of ${message.guild.name} - Page 1`,
-		fields: [],
+	const foodSelectMenu = new MessageSelectMenu({
+		customId: 'eat-options',
+		placeholder: 'Select an item to eat',
+		options: [],
 	});
+
+	let embed = new MessageEmbed()
+		.setColor(/** @type {`#${string}`} */ (default_color))
+		// @ts-ignore, since interaction.guild can never be null here
+		.setAuthor({ name: message.guild.name, iconURL: message.guild.iconURL() || undefined })
+		// @ts-ignore, since interaction.guild can never be null here
+		.setTitle(`Inventory of ${message.guild.name} - Page 1`);
 
 	for (const [commonPlantName, commonPlantObject] of [...commonPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
 		if (serverData.inventory.commonPlants[commonPlantName] > 0) {
 
-			embed.fields.push({ name: `${commonPlantName}: ${serverData.inventory.commonPlants[commonPlantName]}`, value: commonPlantObject.description, inline: true });
-			/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: commonPlantName, value: commonPlantName, description: `${serverData.inventory.commonPlants[commonPlantName]}` });
+			embed.addField(`${commonPlantName}: ${serverData.inventory.commonPlants[commonPlantName]}`, commonPlantObject.description, true);
+			foodSelectMenu.addOptions({ label: commonPlantName, value: commonPlantName, description: `${serverData.inventory.commonPlants[commonPlantName]}` });
 		}
 	}
 
@@ -87,7 +85,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		.reply({
 			content: messageContent,
 			embeds: [...embedArray, embed],
-			components: [inventorySelectMenu, ...profileData.hunger < profileData.maxHunger && /** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.length > 0 ? [foodSelectMenu] : []],
+			components: [inventorySelectMenu, ...profileData.hunger < profileData.maxHunger && foodSelectMenu.options.length > 0 ? [new MessageActionRow().addComponents([foodSelectMenu])] : []],
 			failIfNotExists: false,
 		})
 		.catch((error) => { throw new Error(error); });
@@ -120,7 +118,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		/** @type {Array<(Required<import('discord.js').BaseMessageComponentOptions> & import('discord.js').MessageActionRowOptions) | import('discord.js').MessageActionRow>} */
 		const messageComponentArray = [];
-		/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options = [];
+		foodSelectMenu.options = [];
 
 		if (interaction.isSelectMenu() && interaction.customId === 'inventory-page') {
 
@@ -134,25 +132,25 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			if (interaction.values[0] == 'inventory_page1') {
 
-				embed = new MessageEmbed({
-					color: /** @type {`#${string}`} */ (default_color),
-					author: { name: interaction.guild.name, icon_url: interaction.guild.iconURL() },
-					title: `Inventory of ${interaction.guild.name} - Page 1`,
-					fields: [],
-				});
+				embed = new MessageEmbed()
+					.setColor(/** @type {`#${string}`} */ (default_color))
+					// @ts-ignore, since interaction.guild can never be null here
+					.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined })
+					// @ts-ignore, since interaction.guild can never be null here
+					.setTitle(`Inventory of ${interaction.guild.name} - Page 1`);
 
 				for (const [commonPlantName, commonPlantObject] of [...commonPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
 					if (serverData.inventory.commonPlants[commonPlantName] > 0) {
 
-						embed.fields.push({ name: `${commonPlantName}: ${serverData.inventory.commonPlants[commonPlantName]}`, value: commonPlantObject.description, inline: true });
-						/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: commonPlantName, value: commonPlantName, description: `${serverData.inventory.commonPlants[commonPlantName]}` });
+						embed.addField(`${commonPlantName}: ${serverData.inventory.commonPlants[commonPlantName]}`, commonPlantObject.description, true);
+						foodSelectMenu.addOptions({ label: commonPlantName, value: commonPlantName, description: `${serverData.inventory.commonPlants[commonPlantName]}` });
 					}
 				}
 
-				if (profileData.hunger < profileData.maxHunger && /** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.length > 0) {
+				if (profileData.hunger < profileData.maxHunger && foodSelectMenu.options.length > 0) {
 
-					messageComponentArray.push(foodSelectMenu);
+					messageComponentArray.push(new MessageActionRow().addComponents([foodSelectMenu]));
 				}
 
 				await /** @type {import('discord.js').Message} */ (interaction.message)
@@ -167,19 +165,19 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			if (interaction.values[0] === 'inventory_page2') {
 
-				embed = new MessageEmbed({
-					color: /** @type {`#${string}`} */ (default_color),
-					author: { name: interaction.guild.name, icon_url: interaction.guild.iconURL() },
-					title: `Inventory of ${interaction.guild.name} - Page 2`,
-					fields: [],
-				});
+				embed = new MessageEmbed()
+					.setColor(/** @type {`#${string}`} */ (default_color))
+					// @ts-ignore, since interaction.guild can never be null here
+					.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined })
+					// @ts-ignore, since interaction.guild can never be null here
+					.setTitle(`Inventory of ${interaction.guild.name} - Page 2`);
 
 				for (const [uncommonPlantName, uncommonPlantObject] of [...uncommonPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
 					if (serverData.inventory.uncommonPlants[uncommonPlantName] > 0) {
 
-						embed.fields.push({ name: `${uncommonPlantName}: ${serverData.inventory.uncommonPlants[uncommonPlantName]}`, value: uncommonPlantObject.description, inline: true });
-						/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: uncommonPlantName, value: uncommonPlantName, description: `${serverData.inventory.uncommonPlants[uncommonPlantName]}` });
+						embed.addField(`${uncommonPlantName}: ${serverData.inventory.uncommonPlants[uncommonPlantName]}`, uncommonPlantObject.description, true);
+						foodSelectMenu.addOptions({ label: uncommonPlantName, value: uncommonPlantName, description: `${serverData.inventory.uncommonPlants[uncommonPlantName]}` });
 					}
 				}
 
@@ -187,8 +185,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					if (serverData.inventory.rarePlants[rarePlantName] > 0) {
 
-						embed.fields.push({ name: `${rarePlantName}: ${serverData.inventory.rarePlants[rarePlantName]}`, value: rarePlantObject.description, inline: true });
-						/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: rarePlantName, value: rarePlantName, description: `${serverData.inventory.rarePlants[rarePlantName]}` });
+						embed.addField(`${rarePlantName}: ${serverData.inventory.rarePlants[rarePlantName]}`, rarePlantObject.description, true);
+						foodSelectMenu.addOptions({ label: rarePlantName, value: rarePlantName, description: `${serverData.inventory.rarePlants[rarePlantName]}` });
 					}
 				}
 
@@ -196,14 +194,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					if (serverData.inventory.specialPlants[specialPlantName] > 0) {
 
-						embed.fields.push({ name: `${specialPlantName}: ${serverData.inventory.specialPlants[specialPlantName]}`, value: specialPlantObject.description, inline: true });
-						/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: specialPlantName, value: specialPlantName, description: `${serverData.inventory.specialPlants[specialPlantName]}` });
+						embed.addField(`${specialPlantName}: ${serverData.inventory.specialPlants[specialPlantName]}`, specialPlantObject.description, true);
+						foodSelectMenu.addOptions({ label: specialPlantName, value: specialPlantName, description: `${serverData.inventory.specialPlants[specialPlantName]}` });
 					}
 				}
 
-				if (profileData.hunger < profileData.maxHunger && /** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.length > 0) {
+				if (profileData.hunger < profileData.maxHunger && foodSelectMenu.options.length > 0) {
 
-					messageComponentArray.push(foodSelectMenu);
+					messageComponentArray.push(new MessageActionRow().addComponents([foodSelectMenu]));
 				}
 
 				await /** @type {import('discord.js').Message} */ (interaction.message)
@@ -218,34 +216,35 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			if (interaction.values[0] === 'inventory_page3') {
 
-				embed = new MessageEmbed({
-					color: /** @type {`#${string}`} */ (default_color),
-					author: { name: interaction.guild.name, icon_url: interaction.guild.iconURL() },
-					title: `Inventory of ${interaction.guild.name} - Page 3`,
-					fields: [],
-				});
+				embed = new MessageEmbed()
+					.setColor(/** @type {`#${string}`} */ (default_color))
+					// @ts-ignore, since interaction.guild can never be null here
+					.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined })
+					// @ts-ignore, since interaction.guild can never be null here
+					.setTitle(`Inventory of ${interaction.guild.name} - Page 3`);
 
 				for (const [speciesName] of [...speciesMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
 					if (serverData.inventory.meat[speciesName] > 0) {
 
-						embed.fields.push({ name: `${speciesName}:`, value: `${serverData.inventory.meat[speciesName]}`, inline: true });
-						/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: speciesName, value: speciesName, description: `${serverData.inventory.meat[speciesName]}` });
+						embed.addField(`${speciesName}:`, `${serverData.inventory.meat[speciesName]}`, true);
+						foodSelectMenu.addOptions({ label: speciesName, value: speciesName, description: `${serverData.inventory.meat[speciesName]}` });
 					}
 				}
 
-				if (embed.fields.length > 25 || /** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.length > 25) {
+				if (embed.fields.length > 25 || foodSelectMenu.options.length > 25) {
 
 					embed.fields.length = 24;
-					/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.length = 24;
+					foodSelectMenu.options.length = 24;
 
+					// @ts-ignore, since interaction.guild can never be null here
 					embed.title = `Inventory of ${interaction.guild.name} - Page 3.1`;
-					/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: 'Show more meat options', value: 'inventory_meat_page', description: 'You are currently on page 1', emoji: '📋' });
+					foodSelectMenu.addOptions({ label: 'Show more meat options', value: 'inventory_meat_page', description: 'You are currently on page 1', emoji: '📋' });
 				}
 
-				if (profileData.hunger < profileData.maxHunger && /** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.length > 0) {
+				if (profileData.hunger < profileData.maxHunger && foodSelectMenu.options.length > 0) {
 
-					messageComponentArray.push(foodSelectMenu);
+					messageComponentArray.push(new MessageActionRow().addComponents([foodSelectMenu]));
 				}
 
 				await /** @type {import('discord.js').Message} */ (interaction.message)
@@ -260,19 +259,19 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			if (interaction.values[0] === 'inventory_page4') {
 
-				embed = new MessageEmbed({
-					color: /** @type {`#${string}`} */ (default_color),
-					author: { name: interaction.guild.name, icon_url: interaction.guild.iconURL() },
-					title: `Inventory of ${interaction.guild.name} - Page 4`,
-					fields: [],
-				});
+				embed = new MessageEmbed()
+					.setColor(/** @type {`#${string}`} */ (default_color))
+					// @ts-ignore, since interaction.guild can never be null here
+					.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined })
+					// @ts-ignore, since interaction.guild can never be null here
+					.setTitle(`Inventory of ${interaction.guild.name} - Page 4`);
 
 				for (const [materialName, materialObject] of [...materialsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
 
 					if (serverData.inventory.materials[materialName] > 0) {
 
-						embed.fields.push({ name: `${materialName}: ${serverData.inventory.materials[materialName]}`, value: materialObject.description, inline: true });
-						/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: materialName, value: materialName, description: `${serverData.inventory.materials[materialName]}` });
+						embed.addField(`${materialName}: ${serverData.inventory.materials[materialName]}`, materialObject.description, true);
+						foodSelectMenu.addOptions({ label: materialName, value: materialName, description: `${serverData.inventory.materials[materialName]}` });
 					}
 				}
 
@@ -309,37 +308,37 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					currentPage = 0;
 				}
 
-				embed = new MessageEmbed({
-					color: /** @type {`#${string}`} */ (default_color),
-					author: { name: interaction.guild.name, icon_url: interaction.guild.iconURL() },
-					title: `Inventory of ${interaction.guild.name} - Page 3.${currentPage + 1}`,
-					fields: [],
-				});
+				embed = new MessageEmbed()
+					.setColor(/** @type {`#${string}`} */ (default_color))
+					// @ts-ignore, since interaction.guild can never be null here
+					.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined })
+					// @ts-ignore, since interaction.guild can never be null here
+					.setTitle(`Inventory of ${interaction.guild.name} - Page 3.${currentPage + 1}`);
 
 				for (const [speciesName] of speciesMap) {
 
 					if (serverData.inventory.meat[speciesName] > 0) {
 
-						embed.fields.push({ name: `${speciesName}:`, value: `${serverData.inventory.meat[speciesName]}`, inline: true });
-						/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: speciesName, value: speciesName, description: `${serverData.inventory.meat[speciesName]}` });
+						embed.addField(`${speciesName}:`, `${serverData.inventory.meat[speciesName]}`, true);
+						foodSelectMenu.addOptions({ label: speciesName, value: speciesName, description: `${serverData.inventory.meat[speciesName]}` });
 					}
 				}
 
 				embed.fields.splice(0, pagesAmount * 24);
-				/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.splice(0, pagesAmount * 24);
+				foodSelectMenu.options.splice(0, pagesAmount * 24);
 
 				// this is length > 24 rather than length > 25 because a page switcher is now a definite part
-				if (embed.fields.length > 24 || /** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.length > 24) {
+				if (embed.fields.length > 24 || foodSelectMenu.options.length > 24) {
 
 					embed.fields.length = 24;
-					/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.length = 24;
+					foodSelectMenu.options.length = 24;
 				}
 
-				/** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.push({ label: 'Show more meat options', value: 'inventory_meat_page', description: 'You are currently on page 1', emoji: '📋' });
+				foodSelectMenu.addOptions({ label: 'Show more meat options', value: 'inventory_meat_page', description: 'You are currently on page 1', emoji: '📋' });
 
-				if (profileData.hunger < profileData.maxHunger && /** @type {import('discord.js').MessageSelectMenuOptions} */ (foodSelectMenu.components[0]).options.length > 0) {
+				if (profileData.hunger < profileData.maxHunger && foodSelectMenu.options.length > 0) {
 
-					messageComponentArray.push(foodSelectMenu);
+					messageComponentArray.push(new MessageActionRow().addComponents([foodSelectMenu]));
 				}
 
 				await /** @type {import('discord.js').Message} */ (interaction.message)
