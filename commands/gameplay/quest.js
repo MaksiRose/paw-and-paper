@@ -417,7 +417,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						maxThirstPoints = 10;
 						embed.setFooter({ text: '+10 maximum thirst\n\n' });
 					}
-					embed.setFooter({ text: embed.footer?.text || '' + 'Type \'rp rank\' to rank up.' });
 
 					await profileModel.findOneAndUpdate(
 						{ userId: message.author.id },
@@ -433,6 +432,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						},
 					);
 				}
+
+				embed.setFooter({ text: embed.footer?.text || '' + 'Type \'rp rank\' to rank up.' });
 
 				await botReply
 					.edit({

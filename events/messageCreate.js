@@ -61,7 +61,7 @@ const event = {
 
 			/* Checking if the user has autoproxy enabled in the current channel, and if so, it is adding the
 			prefix to the message. */
-			const autoproxyIsToggled = userData.autoproxy[message.guildId]?.includes(message.channel.id) || userData.autoproxy[message.guildId].includes('everywhere');
+			const autoproxyIsToggled = userData.autoproxy[message.guildId]?.includes(message.channel.id) || userData.autoproxy[message.guildId]?.includes('everywhere');
 			if (!message.content.toLowerCase().startsWith(prefix) && autoproxyIsToggled && !allproxyIsDisabled && !autoproxyIsDisabled) {
 
 				message.content = prefix + 'say ' + message.content;

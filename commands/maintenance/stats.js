@@ -116,7 +116,7 @@ module.exports.getMessageContent = (profileData, name, isYourself) => {
 			`❤️ HP: \`${profileData.health}/${profileData.maxHealth}\` - ⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n` +
 			`🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\` - 🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`` +
 			(injuryText === null ? '' : `\n🩹 Injuries/Illnesses: ${injuryText.slice(2)}`) +
-			(profileData.sapling.exists === false ? '' : `\n🌱 Ginkgo Sapling: ${profileData.sapling.waterCycles} days alive - ${profileData.sapling.health} health - Next watering <t:${Math.floor(profileData.sapling.nextWaterTimestamp || 0 / 1000)}:R>`) +
+			(profileData.sapling.exists === false ? '' : `\n🌱 Ginkgo Sapling: ${profileData.sapling.waterCycles} days alive - ${profileData.sapling.health} health - Next watering <t:${Math.floor((profileData.sapling.nextWaterTimestamp || 0) / 1000)}:R>`) +
 			(profileData.hasQuest === false ? '' : `\n${name} has one open quest!`),
 		components: components,
 		failIfNotExists: false,

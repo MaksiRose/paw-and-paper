@@ -432,14 +432,14 @@ materialsMap.set('algae', {
 	name: 'algae',
 	description: 'Seaweed is not only pretty, but also spongy and comfortable, making it perfect as ground material.',
 	reinforcesStructure: false,
-	improvesBedding: false,
-	thickensWalls: true,
+	improvesBedding: true,
+	thickensWalls: false,
 	removesOverhang: false,
 });
 
 materialsMap.set('clay', {
 	name: 'clay',
-	description: 'This type of dirt is deformable when wet, but tough and brittle when dry, making it a great filler-material for walls.',
+	description: 'This type of dirt is deformable when wet, but tough and brittle when dry, making it a great thickening material for walls.',
 	reinforcesStructure: false,
 	improvesBedding: false,
 	thickensWalls: true,
@@ -448,7 +448,7 @@ materialsMap.set('clay', {
 
 materialsMap.set('vine', {
 	name: 'vine',
-	description: 'The long-growing plant will spread and twist around walls. They are not robust, but their leaves will densen whatever they are growing on.',
+	description: 'The long-growing plant will spread and twist around walls. They are not robust, but their leaves will thicken whatever they are growing on.',
 	reinforcesStructure: false,
 	improvesBedding: false,
 	thickensWalls: true,
@@ -466,7 +466,7 @@ materialsMap.set('soil', {
 
 materialsMap.set('rock', {
 	name: 'rock',
-	description: 'A small piece formed from minerals, its hardness making it a great tool to remove overhang from walls.',
+	description: 'A small piece formed from minerals, its hardness making it a great tool to remove overhang from and even out walls.',
 	reinforcesStructure: false,
 	improvesBedding: false,
 	thickensWalls: false,
@@ -475,7 +475,7 @@ materialsMap.set('rock', {
 
 materialsMap.set('seashell', {
 	name: 'seashell',
-	description: 'Hard, protective outer layer by an animal that lives in the sea. Can be used to even out irregularities.',
+	description: 'Hard, protective outer layer by an animal that lives in the sea. Can be used to even out irregularities .',
 	reinforcesStructure: false,
 	improvesBedding: false,
 	thickensWalls: false,
@@ -484,7 +484,7 @@ materialsMap.set('seashell', {
 
 materialsMap.set('bone', {
 	name: 'bone',
-	description: 'One of the hard parts of animal\'s skeletons. Good way to get rid of bumps and material sticking out of walls.',
+	description: 'One of the hard parts of animal\'s skeletons. Good way to get rid of bumps and material sticking out of walls to even them out.',
 	reinforcesStructure: false,
 	improvesBedding: false,
 	thickensWalls: false,

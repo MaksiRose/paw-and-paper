@@ -156,8 +156,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			chosenDen = interaction.customId.replace('repair-', '');
 
-			botReply = await interaction
-				.editReply({
+			botReply = await interaction.message
+				.edit({
 					content: messageContent,
 					embeds: (await getMaterials()).embeds || undefined,
 					components: (await getMaterials()).components || undefined,

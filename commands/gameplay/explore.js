@@ -203,7 +203,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 	collector.on('collect', interaction => {
 
-		if (newPushpinPosition.vertical && newPushpinPosition.horizontal && waitingArray[newPushpinPosition.vertical][newPushpinPosition.horizontal] === '📍') {
+		if (newPushpinPosition.vertical !== null && newPushpinPosition.horizontal !== null && waitingArray[newPushpinPosition.vertical][newPushpinPosition.horizontal] === '📍') {
 
 			if (interaction.customId === 'explore-left') { newPushpinPosition.horizontal -= 1; }
 			if (interaction.customId === 'explore-up') { newPushpinPosition.vertical -= 1; }
@@ -234,11 +234,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		const waitingInterval = setInterval(async function(array) {
 
 			let options = [
-				{ vertical: currentGoalPosition.vertical, horizontal: currentGoalPosition.horizontal ? currentGoalPosition.horizontal - 1 : null },
-				{ vertical: currentGoalPosition.vertical, horizontal: currentGoalPosition.horizontal ? currentGoalPosition.horizontal + 1 : null },
-				{ vertical: currentGoalPosition.vertical ? currentGoalPosition.vertical - 1 : null, horizontal: currentGoalPosition.horizontal },
-				{ vertical: currentGoalPosition.vertical ? currentGoalPosition.vertical + 1 : null, horizontal: currentGoalPosition.horizontal },
-			].filter(position => position.vertical && array[position.vertical] != undefined && position.horizontal && (array[position.vertical][position.horizontal] === '⬛' || array[position.vertical][position.horizontal] === '📍'));
+				{ vertical: currentGoalPosition.vertical, horizontal: currentGoalPosition.horizontal !== null ? currentGoalPosition.horizontal - 1 : null },
+				{ vertical: currentGoalPosition.vertical, horizontal: currentGoalPosition.horizontal !== null ? currentGoalPosition.horizontal + 1 : null },
+				{ vertical: currentGoalPosition.vertical !== null ? currentGoalPosition.vertical - 1 : null, horizontal: currentGoalPosition.horizontal },
+				{ vertical: currentGoalPosition.vertical !== null ? currentGoalPosition.vertical + 1 : null, horizontal: currentGoalPosition.horizontal },
+			].filter(position => position.vertical !== null && array[position.vertical] != undefined && position.horizontal !== null && (array[position.vertical][position.horizontal] === '⬛' || array[position.vertical][position.horizontal] === '📍'));
 
 			if (options.length > 1) {
 
@@ -248,18 +248,15 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			const newGoalPosition = options[generateRandomNumber(options.length, 0)];
 
 
-			if (newGoalPosition && newGoalPosition.vertical && newGoalPosition.horizontal && currentGoalPosition.vertical && currentGoalPosition.horizontal && currentPushpinPosition.vertical && currentPushpinPosition.horizontal && newPushpinPosition.vertical && newPushpinPosition.horizontal) {
+			if (newGoalPosition && newGoalPosition.vertical !== null && newGoalPosition.horizontal !== null && currentGoalPosition.vertical !== null && currentGoalPosition.horizontal !== null && currentPushpinPosition.vertical !== null && currentPushpinPosition.horizontal !== null && newPushpinPosition.vertical !== null && newPushpinPosition.horizontal !== null) {
 
-				array[newGoalPosition.vertical][newGoalPosition.horizontal] = '🚩';
 				array[currentGoalPosition.vertical][currentGoalPosition.horizontal] = '⬛';
+				array[currentPushpinPosition.vertical][currentPushpinPosition.horizontal] = '⬛';
+				array[newGoalPosition.vertical][newGoalPosition.horizontal] = '🚩';
+				array[newPushpinPosition.vertical][newPushpinPosition.horizontal] = '📍';
 
 				oldGoalPosition = { ...currentGoalPosition };
 				currentGoalPosition = { ...newGoalPosition };
-
-
-				array[currentPushpinPosition.vertical][currentPushpinPosition.horizontal] = '⬛';
-				array[newPushpinPosition.vertical][newPushpinPosition.horizontal] = '📍';
-
 				const oldPushPinPosition = { ...currentPushpinPosition };
 				currentPushpinPosition = { ...newPushpinPosition };
 
