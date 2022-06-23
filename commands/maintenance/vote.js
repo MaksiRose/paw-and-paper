@@ -58,7 +58,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						{ label: 'discords.com', value: 'discords.com-vote' },
 						{ label: 'discordbotlist.com', value: 'discordbotlist.com-vote' },
 					],
-					disabled: message.inGuild(),
+					disabled: !message.inGuild(),
 				})],
 			})],
 			failIfNotExists: false,
