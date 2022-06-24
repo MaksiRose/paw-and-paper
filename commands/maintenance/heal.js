@@ -3,7 +3,7 @@ const profileModel = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
 const startCooldown = require('../../utils/startCooldown');
 const { generateRandomNumber, pullFromWeightedTable } = require('../../utils/randomizers');
-const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../../utils/itemsInfo');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap, specialPlantsMap } = require('../../utils/itemsInfo');
 const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseHealth, decreaseEnergy } = require('../../utils/checkCondition');
@@ -214,6 +214,15 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 						embed.fields.push({ name: `${rarePlantName}: ${serverData.inventory.rarePlants[rarePlantName]}`, value: rarePlantObject.description, inline: true });
 						selectMenu.addOptions([{ label: rarePlantName, value: rarePlantName, description: `${serverData.inventory.rarePlants[rarePlantName]}` }]);
+					}
+				}
+
+				for (const [specialPlantName, specialPlantObject] of [...specialPlantsMap.entries()].sort((a, b) => (a[0] < b[0]) ? -1 : (a[0] > b[0]) ? 1 : 0)) {
+
+					if (serverData.inventory.specialPlants[specialPlantName] > 0) {
+
+						embed.fields.push({ name: `${specialPlantName}: ${serverData.inventory.specialPlants[specialPlantName]}`, value: specialPlantObject.description, inline: true });
+						selectMenu.addOptions({ label: specialPlantName, value: specialPlantName, description: `${serverData.inventory.specialPlants[specialPlantName]}` });
 					}
 				}
 
