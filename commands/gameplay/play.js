@@ -399,12 +399,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			.catch(() => { return { customId: '' }; });
 
 		/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
-		/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId?.includes(`${correctButton}`))]).style = 'PRIMARY';
+		const correctButtonIndex = botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId?.includes(`${correctButton}`));
+		if (correctButtonIndex >= 0) { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[correctButtonIndex]).style = 'PRIMARY'; }
 
 		if (customId !== '') {
 
 			/* Here we make the button the player choses red, this will apply always except if the player choses the correct button, then this will be overwritten. */
-			/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId)]).style = 'DANGER';
+			const buttonIndex = botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId);
+			if (buttonIndex >= 0) { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[buttonIndex]).style = 'DANGER'; }
 		}
 
 		embed.footer.text = embedFooterStatsText;
@@ -412,7 +414,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		if (customId?.includes(`${correctButton}`) === true) {
 
 			/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
-			/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId)]).style = 'SUCCESS';
+			const buttonIndex = botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId);
+			if (buttonIndex >= 0) { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[buttonIndex]).style = 'SUCCESS'; }
 
 			const userInventory = {
 				commonPlants: { ...profileData.inventory.commonPlants },
@@ -565,20 +568,21 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							.catch(() => { return { customId: '' }; });
 
 						/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
-						if (cycleKind === 'defend') { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === 'play-attack')]).style = 'PRIMARY'; }
-						if (cycleKind === 'dodge') { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === 'play-defend')]).style = 'PRIMARY'; }
-						if (cycleKind === 'attack') { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === 'play-dodge')]).style = 'PRIMARY'; }
+						const correctButtonIndex = botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === (cycleKind === 'defend' ? 'play-attack' : cycleKind === 'dodge' ? 'play-defend' : cycleKind === 'attack' ? 'play-dodge' : ''));
+						if (correctButtonIndex >= 0) { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[correctButtonIndex]).style = 'PRIMARY'; }
 
 						if (customId !== '') {
 
 							/* Here we make the button the player choses red, this will apply always except if the player choses the correct button, then this will be overwritten. */
-							/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId)]).style = 'DANGER';
+							const buttonIndex = botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId);
+							if (buttonIndex >= 0) { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[buttonIndex]).style = 'DANGER'; }
 						}
 
 						if ((customId === 'play-attack' && cycleKind === 'defend') || (customId === 'play-defend' && cycleKind === 'dodge') || (customId === 'play-dodge' && cycleKind === 'attack')) {
 
 							/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
-							/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId)]).style = 'SUCCESS';
+							const buttonIndex = botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId);
+							if (buttonIndex >= 0) { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[buttonIndex]).style = 'SUCCESS'; }
 
 							whoWinsChance = 0;
 						}

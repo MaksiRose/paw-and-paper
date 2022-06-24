@@ -301,13 +301,15 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			if (customId !== '') {
 
 				/* The button the user chose will get the "radio button"-emoji. */
-				/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId)]).setEmoji('🔘');
+				const buttonIndex = botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId);
+				if (buttonIndex >= 0) { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[buttonIndex]).setEmoji('🔘'); }
 			}
 
 			if (randomNumber <= winChance) {
 
 				/* The correct button will get the "checkbox"-emoji. */
-				/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId?.includes(`${buttonColorKind}${buttonTextOrColor}`))]).setEmoji('☑️');
+				const buttonIndex = botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId?.includes(`${buttonColorKind}${buttonTextOrColor}`));
+				if (buttonIndex >= 0) { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[buttonIndex]).setEmoji('☑️'); }
 			}
 
 			if (customId === '' || !customId.includes(`${buttonColorKind}${buttonTextOrColor}`) || randomNumber > winChance) {
