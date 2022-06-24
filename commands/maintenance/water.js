@@ -120,8 +120,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		const weeksAlive = Math.floor(saplingObject.waterCycles / 7);
 		const overdueHours = Math.ceil(timeDifference / oneHour) - 3;
-		const saplingHealthPoints = overdueHours + (weeksAlive * overdueHours);
-		saplingObject.health -= saplingObject.health - saplingHealthPoints > 0 ? saplingHealthPoints : saplingObject.health - saplingHealthPoints > -weeksAlive ? saplingObject.health - 1 : saplingObject.health;
+		const percentage = (overdueHours * 3) / 100;
+		const lostHealthPoints = Math.round(saplingObject.health * percentage) + weeksAlive;
+		saplingObject.health -= (saplingObject.health - lostHealthPoints > 0 ? lostHealthPoints : saplingObject.health - lostHealthPoints > -weeksAlive ? saplingObject.health - 1 : saplingObject.health);
 
 		if (currentTimestamp < (saplingObject.nextWaterTimestamp || 0)) {
 
@@ -131,7 +132,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			embed.setDescription(`*${characterData.name} decides to see if the ginkgo tree needs watering, and sure enough: the leaves are drooping, some have lost color, and many of them fell on the ground. It is about time that the poor tree gets some water.*`);
 		}
-		embed.setFooter({ text: `-${saplingHealthPoints} health for ginkgo tree\nCome back to water it in 24 hours.` });
+		embed.setFooter({ text: `-${lostHealthPoints} health for ginkgo tree\nCome back to water it in 24 hours.` });
 	}
 
 	saplingObject.nextWaterTimestamp = currentTimestamp + twentyFourHours;
