@@ -284,8 +284,8 @@ module.exports = {
 	async startRestingTimeout(client, message) {
 
 		const userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.author.id }));
-		const characterData = userData.characters[userData.currentCharacter[message.guildId || 'DM']];
-		const profileData = characterData.profiles[message.guildId || 'DM'];
+		const characterData = userData?.characters?.[userData?.currentCharacter?.[message?.guildId || 'DM']];
+		const profileData = characterData?.profiles?.[message?.guildId || 'DM'];
 
 		if (profileData && profileData.isResting === false && profileData.energy < profileData.maxEnergy) {
 

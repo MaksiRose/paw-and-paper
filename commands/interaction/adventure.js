@@ -53,6 +53,25 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	userData = await startCooldown(message);
 	const messageContent = remindOfAttack(message);
 
+	if (Object.values(profileData.inventory).map(type => Object.values(type)).flat().reduce((a, b) => a + b) >= 5) {
+
+		await message
+			.reply({
+				content: messageContent,
+				embeds: [...embedArray, {
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					description: `*${characterData.name} approaches the pack borders, ${pronoun(characterData, 2)} mouth filled with various things. As eager as ${pronounAndPlural(characterData, 0, 'is', 'are')} to go exploring, ${pronounAndPlural(characterData, 0, 'decide')} to store some things away first.*`,
+					footer: { text: 'You can only hold up to 25 items in your personal inventory. Type "rp store" to put things into the pack inventory!' },
+				}],
+				failIfNotExists: false,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+		return;
+	}
+
 	const firstMentionedUser = message.mentions.users.first();
 	if (firstMentionedUser && firstMentionedUser.id === message.author.id) {
 
@@ -72,7 +91,24 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
-	let partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first()?.id }));
+	if (!firstMentionedUser) {
+
+		await message
+			.reply({
+				content: messageContent,
+				embeds: [...embedArray, {
+					color: /** @type {`#${string}`} */ (error_color),
+					title: 'Please mention a user that you want to adventure with!',
+				}],
+				failIfNotExists: false,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+		return;
+	}
+
+	let partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: firstMentionedUser.id }));
 	let partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guildId]];
 	let partnerProfileData = partnerCharacterData?.profiles?.[message.guildId];
 
