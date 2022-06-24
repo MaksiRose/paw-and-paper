@@ -328,7 +328,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						maximumAmount = profileData.inventory[itemType][itemName];
 
 						// @ts-ignore, since guild is safe to be
-						footerText += `+${maximumAmount} ${itemName} for ${message.guild.name}\n`;
+						footerText += `\n+${maximumAmount} ${itemName} for ${message.guild.name}`;
 						userInventory[itemType][itemName] -= maximumAmount;
 						serverInventory[itemType][itemName] += maximumAmount;
 					}
