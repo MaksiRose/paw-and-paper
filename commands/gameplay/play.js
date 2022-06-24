@@ -55,7 +55,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	userData = await startCooldown(message);
 	const messageContent = remindOfAttack(message);
 
-	if (/** @type {Array<number>} */ Object.values(profileData.inventory).map(type => Object.values(type)).flat().filter(value => value > 0).length > 25) {
+	if (Object.values(profileData.inventory).map(type => Object.values(type)).flat().reduce((a, b) => a + b) >= 5) {
 
 		await message
 			.reply({

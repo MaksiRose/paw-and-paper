@@ -44,8 +44,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	userData = await startCooldown(message);
 	const messageContent = remindOfAttack(message);
 
-	/* Checking if the user has more than 25 items in their inventory. */
-	if (/** @type {Array<number>} */ Object.values(profileData.inventory).map(type => Object.values(type)).flat().filter(value => value > 0).length > 25) {
+	/* Checking if the user has more than 5 items in their inventory. */
+	if (Object.values(profileData.inventory).map(type => Object.values(type)).flat().reduce((a, b) => a + b) >= 5) {
 
 		await message
 			.reply({

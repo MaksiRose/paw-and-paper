@@ -93,6 +93,23 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
+	if (Object.values(partnerProfileData.inventory).map(type => Object.values(type)).flat().reduce((a, b) => a + b) >= 5) {
+
+		await message
+			.reply({
+				content: messageContent,
+				embeds: [...embedArray, {
+					color: /** @type {`#${string}`} */ (error_color),
+					title: `${partnerCharacterData.name} is carrying too many items with ${pronoun(partnerCharacterData, 1)}. Ask ${pronoun(partnerCharacterData, 1)} to store those away first.`,
+				}],
+				failIfNotExists: false,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+		return;
+	}
+
 	checkOldMentions(userData, characterData._id, partnerUserData, partnerCharacterData._id);
 	const friendshipPoints = getFriendshipPoints(characterData.mentions[partnerCharacterData._id], partnerCharacterData.mentions[characterData._id]);
 	const friendshipHearts = getFriendshipHearts(friendshipPoints);
@@ -106,6 +123,25 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					color: /** @type {`#${string}`} */ (error_color),
 					title: `You and ${partnerCharacterData.name} need at least 6 ❤️ to be able to adventure together!`,
 					description: 'You gain ❤️ by mentioning and interacting with each other. To check your friendships, type `rp friendships`.',
+				}],
+				failIfNotExists: false,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+		return;
+	}
+
+	if (Object.values(profileData.inventory).map(type => Object.values(type)).flat().reduce((a, b) => a + b) >= 5) {
+
+		await message
+			.reply({
+				content: messageContent,
+				embeds: [...embedArray, {
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					description: `*${characterData.name} approaches the pack borders, ${pronoun(characterData, 2)} mouth filled with various things. As eager as ${pronounAndPlural(characterData, 0, 'is', 'are')} to go adventuring, ${pronounAndPlural(characterData, 0, 'decide')} to store some things away first.*`,
+					footer: { text: 'You can only hold up to 25 items in your personal inventory. Type "rp store" to put things into the pack inventory!' },
 				}],
 				failIfNotExists: false,
 			})
