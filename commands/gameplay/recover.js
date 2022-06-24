@@ -217,7 +217,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 						displayingEmoji += 1;
 
-					}, 1_500);
+					}, 2_000);
 				}));
 
 				interactionCollector();
@@ -250,7 +250,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 						if (choosingEmoji === emojisToClick.length) {
 
-							if (emojisToClick.length < 15) { startNewRound(emojisToClick); }
+							if (emojisToClick.length < 12) { startNewRound(emojisToClick); }
 							else {
 
 								recoverCooldownProfilesMap.set('nr' + characterData._id + profileData.serverId, Date.now());

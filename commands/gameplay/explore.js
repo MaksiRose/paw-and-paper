@@ -160,6 +160,22 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		}
 	}
 
+	/** @type {{vertical: number | null, horizontal: number | null}} */
+	let oldGoalPosition = { vertical: null, horizontal: null };
+	/** @type {{vertical: number | null, horizontal: number | null}} */
+	let currentGoalPosition = { vertical: null, horizontal: null };
+
+	for (let line = 0; line < waitingArray.length; line++) {
+
+		for (let element = 0; element < waitingArray[line].length; element++) {
+
+			if (waitingArray[line][element] === '🚩') {
+
+				currentGoalPosition = { vertical: line, horizontal: element };
+			}
+		}
+	}
+
 	const waitingComponent = new MessageActionRow({
 		components: [ new MessageButton({
 			customId: 'explore-left',
@@ -198,11 +214,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		})
 		.catch((error) => { throw new Error(error); });
 
-	filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId.includes('explore-') && i.user.id === message.author.id;
 
-	const collector = message.channel.createMessageComponentCollector({ filter, time: 15_000 });
+	const collector = message.channel.createMessageComponentCollector({
+		filter: (i) => i.customId.includes('explore-') && i.user.id === message.author.id,
+		time: 15_000,
+	});
 
-	collector.on('collect', interaction => {
+	collector.on('collect', async (interaction) => {
 
 		if (newPushpinPosition.vertical !== null && newPushpinPosition.horizontal !== null && waitingArray[newPushpinPosition.vertical][newPushpinPosition.horizontal] === '📍') {
 
@@ -210,36 +228,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			if (interaction.customId === 'explore-up') { newPushpinPosition.vertical -= 1; }
 			if (interaction.customId === 'explore-down') { newPushpinPosition.vertical += 1; }
 			if (interaction.customId === 'explore-right') { newPushpinPosition.horizontal += 1; }
-		}
-	});
-
-	/** @type {{vertical: number | null, horizontal: number | null}} */
-	let oldGoalPosition = { vertical: null, horizontal: null };
-	/** @type {{vertical: number | null, horizontal: number | null}} */
-	let currentGoalPosition = { vertical: null, horizontal: null };
-
-	for (let line = 0; line < waitingArray.length; line++) {
-
-		for (let element = 0; element < waitingArray[line].length; element++) {
-
-			if (waitingArray[line][element] === '🚩') {
-
-				currentGoalPosition = { vertical: line, horizontal: element };
-			}
-		}
-	}
-
-
-	await /** @type {Promise<void>} */(new Promise((resolve) => {
-
-		const waitingInterval = setInterval(async function(array) {
 
 			let options = [
 				{ vertical: currentGoalPosition.vertical, horizontal: currentGoalPosition.horizontal !== null ? currentGoalPosition.horizontal - 1 : null },
 				{ vertical: currentGoalPosition.vertical, horizontal: currentGoalPosition.horizontal !== null ? currentGoalPosition.horizontal + 1 : null },
 				{ vertical: currentGoalPosition.vertical !== null ? currentGoalPosition.vertical - 1 : null, horizontal: currentGoalPosition.horizontal },
 				{ vertical: currentGoalPosition.vertical !== null ? currentGoalPosition.vertical + 1 : null, horizontal: currentGoalPosition.horizontal },
-			].filter(position => position.vertical !== null && array[position.vertical] != undefined && position.horizontal !== null && (array[position.vertical][position.horizontal] === '⬛' || array[position.vertical][position.horizontal] === '📍'));
+			].filter(position => position.vertical !== null && waitingArray[position.vertical] != undefined && position.horizontal !== null && (waitingArray[position.vertical][position.horizontal] === '⬛' || waitingArray[position.vertical][position.horizontal] === '📍'));
 
 			if (options.length > 1) {
 
@@ -251,10 +246,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			if (newGoalPosition && newGoalPosition.vertical !== null && newGoalPosition.horizontal !== null && currentGoalPosition.vertical !== null && currentGoalPosition.horizontal !== null && currentPushpinPosition.vertical !== null && currentPushpinPosition.horizontal !== null && newPushpinPosition.vertical !== null && newPushpinPosition.horizontal !== null) {
 
-				array[currentGoalPosition.vertical][currentGoalPosition.horizontal] = '⬛';
-				array[currentPushpinPosition.vertical][currentPushpinPosition.horizontal] = '⬛';
-				array[newGoalPosition.vertical][newGoalPosition.horizontal] = '🚩';
-				array[newPushpinPosition.vertical][newPushpinPosition.horizontal] = '📍';
+				waitingArray[currentGoalPosition.vertical][currentGoalPosition.horizontal] = '⬛';
+				waitingArray[currentPushpinPosition.vertical][currentPushpinPosition.horizontal] = '⬛';
+				waitingArray[newGoalPosition.vertical][newGoalPosition.horizontal] = '🚩';
+				waitingArray[newPushpinPosition.vertical][newPushpinPosition.horizontal] = '📍';
 
 				oldGoalPosition = { ...currentGoalPosition };
 				currentGoalPosition = { ...newGoalPosition };
@@ -265,8 +260,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				// if the currentpushpinposition is equal to the currentgoalposition OR if both the oldgoalposition is equal to the newpushpinposition and the oldpinposition equal to the newgoalposition, end the game early
 				if ((currentGoalPosition.vertical === currentPushpinPosition.vertical && currentGoalPosition.horizontal === currentPushpinPosition.horizontal) || ((oldGoalPosition.vertical === newPushpinPosition.vertical && oldGoalPosition.horizontal === newPushpinPosition.horizontal) && (oldPushPinPosition.vertical === newGoalPosition.vertical && oldPushPinPosition.horizontal === newGoalPosition.horizontal))) {
 
-					clearInterval(waitingInterval);
-					resolve();
+					collector.stop();
 				}
 
 
@@ -284,7 +278,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						embeds: [...embedArray, {
 							color: characterData.color,
 							author: { name: characterData.name, icon_url: characterData.avatarURL },
-							description: waitingString + joinNestedArray(array),
+							description: waitingString + joinNestedArray(waitingArray),
 							footer: { text: 'This game is voluntary to skip waiting time. If you don\'t mind waiting, you can ignore this game.' },
 						}],
 						components: [waitingComponent],
@@ -294,13 +288,21 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						return botReply;
 					});
 			}
-		}, 1500, waitingArray);
+		}
+	});
+
+
+	await /** @type {Promise<void>} */(new Promise((resolve) => {
+
+		collector.on('end', async () => {
+
+			resolve();
+		});
 
 		setTimeout(() => {
 
-			clearInterval(waitingInterval);
 			resolve();
-		}, 15000);
+		}, 20_000);
 	}));
 
 
