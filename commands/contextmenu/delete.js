@@ -46,25 +46,28 @@ module.exports.sendCommand = async (client, interaction) => {
 		return;
 	}
 
-	const webHook = (await /** @type {import('discord.js').TextChannel} */ (interaction.channel)
+	if (!interaction.channel) { throw new Error('Interaction channel cannot be found.'); }
+	const webhookChannel = interaction.channel.isThread() ? interaction.channel.parent : interaction.channel;
+	if (!webhookChannel) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
+	const webhook = (await webhookChannel
 		.fetchWebhooks()
-		.catch((error) => {
+		.catch(async (error) => {
 			if (error.httpStatus === 403) {
-				interaction.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
+				await interaction.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
 			}
 			throw new Error(error);
 		})
-	).find(webhook => webhook.name === 'PnP Profile Webhook') || await /** @type {import('discord.js').TextChannel} */ (interaction.channel)
+	).find(webhook => webhook.name === 'PnP Profile Webhook') || await webhookChannel
 		.createWebhook('PnP Profile Webhook')
-		.catch((error) => {
+		.catch(async (error) => {
 			if (error.httpStatus === 403) {
-				interaction.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
+				await interaction.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
 			}
 			throw new Error(error);
 		});
 
-	await webHook
-		.deleteMessage(interaction.targetId)
+	await webhook
+		.deleteMessage(interaction.targetId, interaction.channel.isThread() ? interaction.channel.id : undefined)
 		.catch((error) => { throw new Error(error); });
 
 	await interaction

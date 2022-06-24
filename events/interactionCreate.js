@@ -79,11 +79,10 @@ const event = {
 					});
 
 				const messageId = interaction.customId.split('-')[1];
+
 				const webhookChannel = interaction.channel.isThread() ? interaction.channel.parent : interaction.channel;
-
 				if (!webhookChannel) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
-
-				const webHook = (await webhookChannel
+				const webhook = (await webhookChannel
 					.fetchWebhooks()
 					.catch(async (error) => {
 						if (error.httpStatus === 403) {
@@ -100,9 +99,10 @@ const event = {
 						throw new Error(error);
 					});
 
-				await webHook
+				await webhook
 					.editMessage(messageId, {
 						content: interaction.components[0].components[0].value,
+						threadId: interaction.channel.isThread() ? interaction.channel.id : undefined,
 					})
 					.catch((error) => { throw new Error(error); });
 				return;

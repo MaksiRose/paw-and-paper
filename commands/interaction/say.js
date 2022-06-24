@@ -33,19 +33,21 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
-	const webHook = (await /** @type {import('discord.js').TextChannel} */ (message.channel)
+	const webhookChannel = message.channel.isThread() ? message.channel.parent : message.channel;
+	if (!webhookChannel) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
+	const webhook = (await webhookChannel
 		.fetchWebhooks()
-		.catch((error) => {
+		.catch(async (error) => {
 			if (error.httpStatus === 403) {
-				message.channel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
+				await message.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
 			}
 			throw new Error(error);
 		})
-	).find(webhook => webhook.name === 'PnP Profile Webhook') || await /** @type {import('discord.js').TextChannel} */ (message.channel)
+	).find(webhook => webhook.name === 'PnP Profile Webhook') || await webhookChannel
 		.createWebhook('PnP Profile Webhook')
-		.catch((error) => {
+		.catch(async (error) => {
 			if (error.httpStatus === 403) {
-				message.channel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
+				await message.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
 			}
 			throw new Error(error);
 		});
@@ -109,13 +111,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		}];
 	}
 
-	const botMessage = await webHook
+	const botMessage = await webhook
 		.send({
 			username: characterData.name,
 			avatarURL: characterData.avatarURL,
 			content: userText || undefined,
 			files: Array.from(message.attachments.values()) || undefined,
 			embeds: embeds,
+			threadId: message.channel.isThread() ? message.channelId : undefined,
 		})
 		.catch((error) => { throw new Error(error); });
 

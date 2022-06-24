@@ -541,10 +541,12 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
  */
 module.exports.sendVisitMessage = async (client, message, userData, thisServerData, otherServerData) => {
 
-	const thisServerChannel = /** @type {import('discord.js').TextChannel} */ (await client.channels.fetch(thisServerData.visitChannelId || ''));
-	const otherServerChannel = /** @type {import('discord.js').TextChannel} */ (await client.channels.fetch(otherServerData.visitChannelId || ''));
+	const thisServerChannel = /** @type {import('discord.js').GuildTextBasedChannel} */ (await client.channels.fetch(thisServerData.visitChannelId || ''));
+	const otherServerChannel = /** @type {import('discord.js').GuildTextBasedChannel} */ (await client.channels.fetch(otherServerData.visitChannelId || ''));
 
-	const otherServerWebhook = (await otherServerChannel
+	const webhookChannel = otherServerChannel.isThread() ? otherServerChannel.parent : otherServerChannel;
+	if (!webhookChannel) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
+	const otherServerWebhook = (await webhookChannel
 		.fetchWebhooks()
 		.catch((error) => {
 			if (error.httpStatus === 403) {
@@ -553,7 +555,7 @@ module.exports.sendVisitMessage = async (client, message, userData, thisServerDa
 			}
 			throw new Error(error);
 		})
-	).find(webhook => webhook.name === 'PnP Profile Webhook') || await otherServerChannel
+	).find(webhook => webhook.name === 'PnP Profile Webhook') || await webhookChannel
 		.createWebhook('PnP Profile Webhook')
 		.catch((error) => {
 			if (error.httpStatus === 403) {
@@ -597,6 +599,7 @@ module.exports.sendVisitMessage = async (client, message, userData, thisServerDa
 			content: message.content || undefined,
 			files: Array.from(message.attachments.values()) || undefined,
 			embeds: embeds,
+			threadId: otherServerChannel.isThread() ? otherServerChannel.id : undefined,
 		})
 		.catch((error) => { throw new Error(error); });
 
