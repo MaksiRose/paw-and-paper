@@ -93,7 +93,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
-	const responseTime = profileData.rank === 'Elderly' ? 3_000 : profileData.rank === 'Hunter' || profileData.rank === 'Healer' ? 4_000 : 5_000;
 	const userSpeciesMap = speciesMap.get(characterData.species);
 	if (!userSpeciesMap) { throw new Error('userSpeciesMap is missing'); }
 
@@ -116,6 +115,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		return;
 	}
+
+	const responseTime = chosenBiomeNumber === 2 ? 3_000 : chosenBiomeNumber === 1 ? 4_000 : 5_000;
 
 	const waitingArray = [
 		['⬛', '⬛', '⬛', '🚩', '⬛', '⬛', '⬛'],
