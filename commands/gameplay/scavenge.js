@@ -6,7 +6,7 @@ const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { decreaseEnergy, decreaseHunger, decreaseThirst, decreaseHealth } = require('../../utils/checkCondition');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const disableAllComponents = require('../../utils/disableAllComponents');
-const { pronoun, pronounAndPlural } = require('../../utils/getPronouns');
+const { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural } = require('../../utils/getPronouns');
 const { speciesMap, materialsMap } = require('../../utils/itemsInfo');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { generateRandomNumber, pullFromWeightedTable } = require('../../utils/randomizers');
@@ -149,6 +149,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			embeds: [...embedArray, {
 				color: characterData.color,
 				author: { name: characterData.name, icon_url: characterData.avatarURL },
+				description: `*${characterData.name} carefully examines the terrain around the pack, hoping to find useful materials or carcasses. The ${characterData.displayedSpecies || characterData.species} must now prove prudence and a keen eye...*`,
 				footer: { text: 'Click the fields to reveal what\'s underneath. Based on how close you are to the correct field, a color on a scale from green (closest) to red (farthest) is going to appear. You can click 4 times and have 2 minutes to win.' },
 			}],
 			components: componentArray,
@@ -240,17 +241,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					if the server has enough materials, if it doesn't, give the user material. If it does, do nothing. */
 					if (serverMeatCount < highRankProfilesCount * 2) {
 
-						const carrionArray = [...speciesMap.get(characterData.species)?.biome1OpponentArray || []];
-						const foundCarrion = carrionArray[generateRandomNumber(carrionArray.length, 0)];
+						const carcassArray = [...speciesMap.get(characterData.species)?.biome1OpponentArray || []];
+						const foundCarcass = carcassArray[generateRandomNumber(carcassArray.length, 0)];
 
-						embed.description = 'You found some carrion';
-						embed.footer.text = `${embedFooterStatsText}\n\n+1 ${foundCarrion}`;
+						embed.description = `*After a while, ${characterData.name} can indeed find something useful: On the floor is a ${foundCarcass} that seems to have recently lost a fight fatally. Although the animal has a few injuries, it can still serve as great nourishment. What a success!*`;
+						embed.footer.text = `${embedFooterStatsText}\n\n+1 ${foundCarcass}`;
 
 						userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 							{ userId: message.author.id },
 							(/** @type {import('../../typedef').ProfileSchema} */ p) => {
 								// @ts-ignore, as message is must be in server
-								p.characters[characterData._id].profiles[message.guildId].inventory.meat[foundCarrion] += 1;
+								p.characters[characterData._id].profiles[message.guildId].inventory.meat[foundCarcass] += 1;
 							},
 						));
 					}
@@ -258,7 +259,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 						const foundMaterial = Array.from(materialsMap.keys())[generateRandomNumber(Array.from(materialsMap.keys()).length, 0)];
 
-						embed.description = 'You found some material';
+						embed.description = `*${characterData.name} searches in vain for edible remains of deceased animals. But the expedition is not without success: the ${characterData.displayedSpecies || characterData.species} sees a stick, which can serve as a great material for repairs and work in the pack. ${upperCasePronoun(characterData, 0)} happily takes it home with ${pronoun(characterData, 1)}.*`;
 						embed.footer.text = `${embedFooterStatsText}\n\n+1 ${foundMaterial}`;
 
 						userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
@@ -271,7 +272,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					}
 					else {
 
-						embed.description = 'You found nothing, come back later';
+						embed.description = `*Although ${characterData.name} searches everything very thoroughly, there doesn't seem to be anything in the area that can be used at the moment. Probably everything has already been found. The ${characterData.displayedSpecies || characterData.species} decides to look again later.*`;
 						embed.footer.text = embedFooterStatsText;
 					}
 
@@ -295,7 +296,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					the user and give them an injury. */
 					if (isHurt == 0) {
 
-						embed.description = 'You escaped the human trap safely';
+						embed.description = `*After ${characterData.name} gets over the initial shock, the ${characterData.displayedSpecies || characterData.species} quickly manages to free ${pronoun(characterData, 4)} from the net. That was close!*`;
 						embed.footer.text = embedFooterStatsText;
 					}
 					else {
@@ -320,7 +321,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 								userInjuryObject.infections += 1;
 
-								embed.description = 'You got an infection from the human trap';
+								embed.description = `*${characterData.name} is still shocked for a while, but finally manages to free ${pronoun(characterData, 4)}. Not long after, however, ${pronounAndPlural(characterData, 0, 'feel')} a shock wave run through ${pronoun(characterData, 2)} body. Something sharp must have pressed into the ${characterData.displayedSpecies || characterData.species}. It looks infected.*`;
 								embed.footer.text = `-${healthPoints} HP (from infection)\n${embedFooterStatsText}`;
 
 								break;
@@ -329,7 +330,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 								userInjuryObject.sprains += 1;
 
-								embed.description = 'You got a sprain from the human trap';
+								embed.description = `*${characterData.name} is still shocked for a while, but finally manages to free ${pronoun(characterData, 4)}. But the escape was not perfect: while the ${characterData.displayedSpecies || characterData.species} was untangling ${pronoun(characterData, 4)} from the net, ${pronoun(characterData, 0)} got entangled and stuck. It looks sprained.*`;
 								embed.footer.text = `-${healthPoints} HP (from sprain)\n${embedFooterStatsText}`;
 						}
 					}
@@ -397,6 +398,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				embeds: [...embedArray, {
 					color: characterData.color,
 					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					description: `*${characterData.name} has been searching for quite some time now, when a mishap happens to ${pronoun(characterData, 1)}. ${upperCasePronounAndPlural(characterData, 0, '\'s', '\'re')} not paying attention for only a moment, and suddenly everything happens very quickly. The ${characterData.displayedSpecies || characterData.species} has fallen into a trap that a human must have set here! Now ${pronoun(characterData, 0)} must quickly catch ${pronoun(characterData, 4)} again and try to free ${pronoun(characterData, 4)} before it comes to an accident.*`,
 					footer: { text: `Click the "${humanTrapCorrectEmoji}" as many times as you can!` },
 				}],
 				components: componentArray,
