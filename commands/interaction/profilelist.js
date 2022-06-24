@@ -157,9 +157,9 @@ module.exports.sendMessage = async (client, message) => {
 
 			for (const c of Object.values(u.characters)) {
 
+				const p = c.profiles[message.guildId || ''];
 				// @ts-ignore, since message must be in guild
-				const p = c.profiles[message.guildId];
-				if (p !== undefined && (p.rank === rankName1 || p.rank === rankName2)) { allRankProfilesArray.push(`${c.name} - <@${u.userId}>`); }
+				if (p !== undefined && (p.rank === rankName1 || p.rank === rankName2)) { allRankProfilesArray.push(`${c.name} (\`${p.health}/${p.maxHealth} HP\`) - <@${u.userId}>`); }
 			}
 		}
 
