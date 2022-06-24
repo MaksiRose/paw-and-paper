@@ -347,7 +347,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			setTimeout(async () => {
 
-				if (lastPickPosition[0] && lastPickPosition[1] && column && row && /** @type {import('discord.js').MessageButton} */ (componentArray[lastPickPosition[0]]?.components[lastPickPosition[1]])?.emoji?.name !== /** @type {import('discord.js').MessageButton} */ (componentArray[column]?.components[row])?.emoji?.name) {
+				if (lastPickPosition[0] !== null && lastPickPosition[1] !== null && column !== null && row !== null && /** @type {import('discord.js').MessageButton} */ (componentArray[lastPickPosition[0]]?.components[lastPickPosition[1]])?.emoji?.name !== /** @type {import('discord.js').MessageButton} */ (componentArray[column]?.components[row])?.emoji?.name) {
 
 					/** @type {import('discord.js').MessageButton} */ (componentArray[lastPickPosition[0]].components[lastPickPosition[1]]).setEmoji(emptyField);
 					componentArray[lastPickPosition[0]].components[lastPickPosition[1]].disabled = false;
@@ -431,7 +431,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					for (const itemCategory of Object.keys(userInventory)) {
 
-						if (foundItem && Object.hasOwn(userInventory[itemCategory], foundItem)) {
+						if (foundItem !== null && Object.hasOwn(userInventory[itemCategory], foundItem)) {
 
 							userInventory[itemCategory][foundItem] += 1;
 						}
@@ -643,7 +643,7 @@ async function decreaseStats(message, userData, profileData, partnerUserData, pa
 	profileData = characterData.profiles[message.guildId];
 
 
-	embedFooterStatsTextPlayer1 = `+${experiencePoints} XP (${profileData.experience + experiencePoints}/${profileData.levels * 50}) for ${characterData.name}\n-${energyPointsPlayer1} energy (${profileData.energy}/${profileData.maxEnergy}) for ${characterData.name}`;
+	embedFooterStatsTextPlayer1 = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50}) for ${characterData.name}\n-${energyPointsPlayer1} energy (${profileData.energy}/${profileData.maxEnergy}) for ${characterData.name}`;
 
 	if (hungerPointsPlayer1 >= 1) {
 
@@ -683,7 +683,7 @@ async function decreaseStats(message, userData, profileData, partnerUserData, pa
 	// @ts-ignore, since message must be in guild
 	partnerProfileData = partnerCharacterData.profiles[message.guildId];
 
-	embedFooterStatsTextPlayer2 = `+${experiencePoints} XP (${partnerProfileData.experience + experiencePoints}/${partnerProfileData.levels * 50}) for ${partnerCharacterData.name}\n-${energyPointsPlayer2} energy (${partnerProfileData.energy}/${partnerProfileData.maxEnergy}) for ${partnerCharacterData.name}`;
+	embedFooterStatsTextPlayer2 = `+${experiencePoints} XP (${partnerProfileData.experience}/${partnerProfileData.levels * 50}) for ${partnerCharacterData.name}\n-${energyPointsPlayer2} energy (${partnerProfileData.energy}/${partnerProfileData.maxEnergy}) for ${partnerCharacterData.name}`;
 
 	if (hungerPointsPlayer2 >= 1) {
 
