@@ -98,7 +98,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	botReply = await module.exports.introduceQuest(message, userData, embedArray, '');
 
 	await botReply
-		.awaitMessageComponent({ filter, time: 30_000 })
+		.awaitMessageComponent({ filter, time: 300_000 })
 		.then(async () => await startQuest())
 		.catch(async () => {
 
@@ -178,58 +178,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			const buttonTextOrColor = generateRandomNumber(2, 0) === 0 ? 'color' : 'text';
 			const buttonColorKind = generateRandomNumber(3, 0) === 0 ? 'green' : generateRandomNumber(2, 0) === 0 ? 'blue' : 'red';
-			let embedFooterText = `Click the ${(buttonTextOrColor === 'color' ? `${buttonColorKind} button` : `button labeled as ${buttonColorKind}`)} to `;
-
-			if (profileData.rank === 'Youngling') {
-
-				embedFooterText += 'push the rock!';
-			}
-
-			if (profileData.rank === 'Apprentice') {
-
-				if (speciesMap.get(characterData.species)?.habitat === 'warm') {
-
-					embedFooterText += 'push the root!';
-				}
-
-				if (speciesMap.get(characterData.species)?.habitat === 'cold' || speciesMap.get(characterData.species)?.habitat === 'water') {
-
-					embedFooterText += 'push the tree!';
-				}
-			}
-
-			if (profileData.rank === 'Hunter' || profileData.rank === 'Healer') {
-
-				if (speciesMap.get(characterData.species)?.habitat === 'warm' || speciesMap.get(characterData.species)?.habitat === 'cold') {
-
-					embedFooterText += 'run from the humans!';
-				}
-
-				if (speciesMap.get(characterData.species)?.habitat === 'water') {
-
-					embedFooterText += 'swim from the humans!';
-				}
-			}
-
-			if (profileData.rank === 'Elderly') {
-
-				if (speciesMap.get(characterData.species)?.habitat === 'warm') {
-
-					embedFooterText += 'run from the sandstorm!';
-				}
-
-				if (speciesMap.get(characterData.species)?.habitat === 'cold') {
-
-					embedFooterText += 'run from the snowstorm!';
-				}
-
-				if (speciesMap.get(characterData.species)?.habitat === 'water') {
-
-					embedFooterText += 'swim from the underwater landslide!';
-				}
-			}
-
-			embedFooterText += ' But watch out for your energy bar.\nSometimes you will lose energy even if you chose right, depending on how many levels you have.';
+			const embedFooterText = `Click the ${(buttonTextOrColor === 'color' ? `${buttonColorKind} button` : `button labeled as ${buttonColorKind}`)}.`;
 
 			const questButtons = [
 				[ new MessageButton({
@@ -634,7 +583,7 @@ module.exports.introduceQuest = async (message, userData, embedArray, footerText
 		}
 	}
 
-	embed.setFooter({ text: `${footerText}\n\nClick the button to continue. *Level ${profileData.rank == 'Elderly' ? '35' : (profileData.rank == 'Hunter' || profileData.rank == 'Healer') ? '20' : profileData.rank == 'Apprentice' ? '10' : '2'} is recommended for this!*\n\nTip: The button you chose will get a "radio button"-emoji, and the correct button will get a checkmark emoji. Sometimes you will lose a round even if you chose right, depending on how many levels you have, then there will be no checkmark emoji.` });
+	embed.setFooter({ text: `${footerText}\n\nClick the button or type "rp quest" to continue. *Level ${profileData.rank == 'Elderly' ? '35' : (profileData.rank == 'Hunter' || profileData.rank == 'Healer') ? '20' : profileData.rank == 'Apprentice' ? '10' : '2'} is recommended for this!*\n\nTip: Read the bottom text during the game carefully to find out which button to click. The button you chose will get a "radio button"-emoji, and the correct button will get a checkmark emoji. Sometimes you will lose a round even if you chose right, depending on how many levels you have, then there will be no checkmark emoji.` });
 
 
 	const botReply = await message
