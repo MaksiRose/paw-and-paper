@@ -1,7 +1,7 @@
 // @ts-check
 const serverModel = require('../../models/serverModel');
 const profileModel = require('../../models/profileModel');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { decreaseEnergy, decreaseHunger, decreaseThirst, decreaseHealth } = require('../../utils/checkCondition');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { generateRandomNumberWithException, pullFromWeightedTable, generateRandomNumber } = require('../../utils/randomizers');
@@ -10,10 +10,10 @@ const { checkLevelUp } = require('../../utils/levelHandling');
 const { default_color } = require('../../config.json');
 const { pronounAndPlural, pronoun } = require('../../utils/getPronouns');
 const { restAdvice, drinkAdvice, eatAdvice, coloredButtonsAdvice } = require('../../utils/adviceMessages');
-const { MessageActionRow, MessageButton } = require('discord.js');
+const { MessageActionRow, MessageButton, MessageEmbed } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { serverActiveUsers } = require('../../events/messageCreate');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 const serverMap = new Map();
 
 module.exports.name = 'attack';
@@ -25,12 +25,12 @@ module.exports.name = 'attack';
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
@@ -38,7 +38,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];
 
-	if (await hasNotCompletedAccount(message, characterData)) {
+	if (!hasCompletedAccount(message, characterData)) {
 
 		return;
 	}
@@ -91,12 +91,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		winPoints = 0,
 		/** @type {import('discord.js').Message} */
 		botReply;
-	const embed = {
-		color: characterData.color,
-		author: { name: characterData.name, icon_url: characterData.avatarURL },
-		description: '',
-		footer: { text: /** @type {string} */ (null) },
-	};
+	const embed = new MessageEmbed()
+		.setColor(characterData.color)
+		.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL });
 
 	await fightCycle(0, '');
 
@@ -132,20 +129,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		if (cycleKind == 'attack') {
 
-			embed.description = `⏫ *The human gets ready to attack. ${characterData.name} must think quickly about how ${pronounAndPlural(characterData, 0, 'want')} to react.*`;
+			embed.setDescription(`⏫ *The human gets ready to attack. ${characterData.name} must think quickly about how ${pronounAndPlural(characterData, 0, 'want')} to react.*`);
 		}
 
 		if (cycleKind == 'dodge') {
 
-			embed.description = `↪️ *Looks like the human is preparing a maneuver for ${characterData.name}'s next move. The ${characterData.displayedSpecies || characterData.species} must think quickly about how ${pronounAndPlural(characterData, 0, 'want')} to react.*`;
+			embed.setDescription(`↪️ *Looks like the human is preparing a maneuver for ${characterData.name}'s next move. The ${characterData.displayedSpecies || characterData.species} must think quickly about how ${pronounAndPlural(characterData, 0, 'want')} to react.*`);
 		}
 
 		if (cycleKind == 'defend') {
 
-			embed.description = `⏺️ *The human gets into position to oppose an attack. ${characterData.name} must think quickly about how ${pronounAndPlural(characterData, 0, 'want')} to react.*`;
+			embed.setDescription(`⏺️ *The human gets into position to oppose an attack. ${characterData.name} must think quickly about how ${pronounAndPlural(characterData, 0, 'want')} to react.*`);
 		}
 
-		embed.footer.text = 'You will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response.';
+		embed.setFooter({ text: 'You will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response.' });
 
 		if (totalCycles == 0) {
 
@@ -171,9 +168,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		}
 
 		/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
-		if (cycleKind === 'defend') { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === 'fight-attack')]).style = 'PRIMARY'; }
-		if (cycleKind === 'dodge') { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === 'fight-defend')]).style = 'PRIMARY'; }
-		if (cycleKind === 'attack') { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === 'fight-dodge')]).style = 'PRIMARY'; }
+		const correctButtonIndex = botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === (cycleKind === 'defend' ? 'fight-attack' : cycleKind === 'dodge' ? 'fight-defend' : cycleKind === 'attack' ? 'fight-dodge' : ''));
+		if (correctButtonIndex >= 0) { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[correctButtonIndex]).style = 'PRIMARY'; }
 
 		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.customId === 'fight-attack' || i.customId === 'fight-defend' || i.customId === 'fight-dodge') && i.user.id === message.author.id;
 
@@ -184,7 +180,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		if (customId !== '') {
 
 			/* Here we make the button the player choses red, this will apply always except if the player choses the correct button, then this will be overwritten. */
-			/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId)]).style = 'DANGER';
+			const buttonIndex = botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId);
+			if (buttonIndex >= 0) { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[buttonIndex]).style = 'DANGER'; }
 		}
 
 		if (customId === '' || (customId === 'fight-attack' && cycleKind === 'dodge') || (customId === 'fight-defend' && cycleKind === 'attack') || (customId === 'fight-dodge' && cycleKind === 'defend')) {
@@ -195,7 +192,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		if ((customId === 'fight-attack' && cycleKind === 'defend') || (customId === 'fight-defend' && cycleKind === 'dodge') || (customId === 'fight-dodge' && cycleKind === 'attack')) {
 
 			/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
-			/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId)]).style = 'SUCCESS';
+			const buttonIndex = botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId);
+			if (buttonIndex >= 0) { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[buttonIndex]).style = 'SUCCESS'; }
 
 			winPoints += 1;
 		}
@@ -203,7 +201,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		/* Here we change the buttons customId's so that they will always stay unique, as well as disabling the buttons. */
 		for (const button of botReply.components[botReply.components.length - 1].components) {
 
-			button.customId += totalCycles;
+			if (button.customId) { button.customId += totalCycles; }
 		}
 
 		botReply.components = disableAllComponents(botReply.components);
@@ -224,13 +222,19 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 			{ userId: message.author.id },
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+				// @ts-ignore, as message is safe to be in guild
 				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].experience += experiencePoints;
+				// @ts-ignore, as message is safe to be in guild
 				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].energy -= energyPoints;
+				// @ts-ignore, as message is safe to be in guild
 				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hunger -= hungerPoints;
+				// @ts-ignore, as message is safe to be in guild
 				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].thirst -= thirstPoints;
 			},
 		));
+		// @ts-ignore, as message is safe to be in guild
 		characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+		// @ts-ignore, as message is safe to be in guild
 		profileData = characterData?.profiles?.[message.guild.id];
 
 		let embedFooterStatsText = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})${hungerPoints > 0 ? `\n-${hungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})` : ''}${thirstPoints > 0 ? `\n-${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})` : ''}`;
@@ -255,17 +259,21 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				commonPlants: { ...serverData.inventory.commonPlants },
 				uncommonPlants: { ...serverData.inventory.uncommonPlants },
 				rarePlants: { ...serverData.inventory.rarePlants },
+				specialPlants: { ...serverData.inventory.specialPlants },
 				meat: { ...serverData.inventory.meat },
+				materials: { ...serverData.inventory.materials },
 			};
 			const { itemType, itemName } = module.exports.getHighestItem(inventoryObject);
 
 			if (inventoryObject[itemType][itemName] > 0) {
 
+				// @ts-ignore, as message is safe to be in guild
 				embedFooterStatsText += `\n\n-${Math.ceil(inventoryObject[itemType][itemName] / 10)} ${itemName} for ${message.guild.name}`;
 				inventoryObject[itemType][itemName] -= Math.ceil(inventoryObject[itemType][itemName] / 10);
 			}
 
 			await serverModel.findOneAndUpdate(
+				// @ts-ignore, as message is safe to be in guild
 				{ serverId: message.guild.id },
 				(/** @type {import('../../typedef').ServerSchema} */ s) => {
 					s.inventory = inventoryObject;
@@ -281,6 +289,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				await profileModel.findOneAndUpdate(
 					{ userId: message.author.id },
 					(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+						// @ts-ignore, as message is safe to be in guild
 						p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].health -= healthPoints;
 					},
 				);
@@ -303,10 +312,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				}
 			}
 
+			// @ts-ignore, as message is safe to be in guild
 			serverMap.get('nr' + message.guild.id).humans += 1;
 		}
 
-		embed.footer.text = embedFooterStatsText + `\n${serverMap.get('nr' + message.guild.id).humans} humans remaining`;
+		// @ts-ignore, as message is safe to be in guild
+		embed.setFooter({ text: embedFooterStatsText + `\n${serverMap.get('nr' + message.guild.id).humans} humans remaining` });
 
 		botReply = await botReply
 			.edit({
@@ -319,12 +330,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			});
 
 		botReply = await decreaseHealth(userData, botReply, userInjuryObject);
-		botReply = await checkLevelUp(message, botReply, userData, serverData);
-		await isPassedOut(message, userData, true);
+		// @ts-ignore, as message is safe to be in guild
+		botReply = await checkLevelUp(message, userData, serverData, botReply) || botReply;
+		// @ts-ignore, as message is safe to be in guild
+		await isPassedOut(message, userData.uuid, true);
 
 		await coloredButtonsAdvice(message, userData);
+		// @ts-ignore, as message is safe to be in guild
 		await restAdvice(message, userData);
+		// @ts-ignore, as message is safe to be in guild
 		await drinkAdvice(message, userData);
+		// @ts-ignore, as message is safe to be in guild
 		await eatAdvice(message, userData);
 
 		return;
@@ -338,7 +354,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			.send({
 				embeds: [{
 					color: /** @type {`#${string}`} */ (default_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+					author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
 					title: 'The attack is over!',
 					description: '*The packmates howl, dance and cheer as the humans run back into the woods. The battle wasn\'t easy, but they were victorious nonetheless.*',
 				}],
@@ -371,15 +387,19 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
  */
 module.exports.startAttack = (message, humanCount) => {
 
+	// @ts-ignore, as message is safe to be in guild
 	serverMap.set('nr' + message.guild.id, { startsTimestamp: Date.now() + 120_000, humans: humanCount, endingTimeout: null, currentFights: 0 });
 	setTimeout(async function() {
 
 		await message.channel
 			.send({
-				content: serverActiveUsers.get(message.guild.id).map(user => `<@!${user}>`).join(' '),
+				// @ts-ignore, as message is safe to be in guild
+				content: serverActiveUsers.get(message.guild.id)?.map(user => `<@!${user}>`).join(' '),
 				embeds: [{
 					color: /** @type {`#${string}`} */ (default_color),
-					author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+					// @ts-ignore, as message is safe to be in guild
+					author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
+					// @ts-ignore, as message is safe to be in guild
 					description: `*The packmates get ready as ${serverMap.get('nr' + message.guild.id).humans} humans run over the borders. Now it is up to them to defend their land.*`,
 					footer: { text: 'You have 5 minutes to defeat all the humans. Type \'rp attack\' to attack one.' },
 				}],
@@ -388,10 +408,14 @@ module.exports.startAttack = (message, humanCount) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 
+		// @ts-ignore, as message is safe to be in guild
 		serverMap.get('nr' + message.guild.id).startsTimestamp = null;
+		// @ts-ignore, as message is safe to be in guild
 		serverMap.get('nr' + message.guild.id).endingTimeout = setTimeout(async function() {
 
+			// @ts-ignore, as message is safe to be in guild
 			serverMap.get('nr' + message.guild.id).endingTimeout = null;
+			// @ts-ignore, as message is safe to be in guild
 			if (serverMap.get('nr' + message.guild.id).currentFights <= 0) {
 
 				remainingHumans(message);
@@ -407,10 +431,13 @@ module.exports.startAttack = (message, humanCount) => {
  */
 module.exports.remindOfAttack = (message) => {
 
+	// @ts-ignore, as message is safe to be in guild
 	if (serverMap.has('nr' + message.guild.id) && serverMap.get('nr' + message.guild.id).startsTimestamp != null) {
 
+		// @ts-ignore, as message is safe to be in guild
 		return `Humans will attack in ${Math.floor((serverMap.get('nr' + message.guild.id).startsTimestamp - Date.now()) / 1000)} seconds!`;
 	}
+	// @ts-ignore, as message is safe to be in guild
 	else if (serverMap.has('nr' + message.guild.id) && serverMap.get('nr' + message.guild.id).startsTimestamp == null) {
 
 		return 'Humans are attacking the pack! Type `rp attack` to attack.';
@@ -426,41 +453,48 @@ module.exports.remindOfAttack = (message) => {
  */
 async function remainingHumans(message) {
 
+	// @ts-ignore, as message is safe to be in guild
 	const serverData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOne({ serverId: message.guild.id }));
 
-	const embed = {
-		color: /** @type {`#${string}`} */ (default_color),
-		author: { name: message.guild.name, icon_url: message.guild.iconURL() },
-		title: 'The attack is over!',
-		description: `*Before anyone could stop them, the last ${serverMap.get('nr' + message.guild.id).humans} humans run into the food den, take whatever they can grab and run away. The battle wasn't easy, but it is over at last.*`,
-		footer: { text: '' },
-	};
+	const embed = new MessageEmbed()
+		.setColor(/** @type {`#${string}`} */(default_color))
+		// @ts-ignore, as message is safe to be in guild
+		.setAuthor({ name: message.guild.name, iconURL: message.guild.iconURL() || undefined })
+		.setTitle('The attack is over!')
+		// @ts-ignore, as message is safe to be in guild
+		.setDescription(`*Before anyone could stop them, the last ${serverMap.get('nr' + message.guild.id).humans} humans run into the food den, take whatever they can grab and run away. The battle wasn't easy, but it is over at last.*`);
 
 	const inventoryObject = {
 		commonPlants: { ...serverData.inventory.commonPlants },
 		uncommonPlants: { ...serverData.inventory.uncommonPlants },
 		rarePlants: { ...serverData.inventory.rarePlants },
+		specialPlants: { ...serverData.inventory.specialPlants },
 		meat: { ...serverData.inventory.meat },
+		materials: { ...serverData.inventory.materials },
 	};
+	// @ts-ignore, as message is safe to be in guild
 	while (serverMap.get('nr' + message.guild.id).humans > 0) {
 
 		const { itemType, itemName } = module.exports.getHighestItem(inventoryObject);
 
 		if (inventoryObject[itemType][itemName] > 0) {
 
-			embed.footer.text += `\n-${Math.ceil(inventoryObject[itemType][itemName] / 10)} ${itemName} for ${message.guild.name}`;
+			// @ts-ignore, as message is safe to be in guild
+			embed.setFooter({ text: `\n-${Math.ceil(inventoryObject[itemType][itemName] / 10)} ${itemName} for ${message.guild.name}` });
 			inventoryObject[itemType][itemName] -= Math.ceil(inventoryObject[itemType][itemName] / 10);
 		}
 
+		// @ts-ignore, as message is safe to be in guild
 		serverMap.get('nr' + message.guild.id).humans -= 1;
 	}
 
-	if (embed.footer.text === '') {
+	if (!embed.footer || !embed.footer.text) {
 
-		embed.footer.text = null;
+		embed.setFooter(null);
 	}
 
 	await serverModel.findOneAndUpdate(
+		// @ts-ignore, as message is safe to be in guild
 		{ serverId: message.guild.id },
 		(/** @type {import('../../typedef').ServerSchema} */ s) => {
 			s.inventory = inventoryObject,
@@ -474,19 +508,20 @@ async function remainingHumans(message) {
 			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 
+	// @ts-ignore, as message is safe to be in guild
 	serverMap.delete('nr' + message.guild.id);
 }
 
 /**
  * Finds whichever item there is most of, and returns its type and name.
- * @param {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, meat: Object<string, number>}} inventoryObject
+ * @param {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, meat: Object<string, number>, materials: Object<string, number>}} inventoryObject
  * @returns {{itemType: 'commonPlants' | 'uncommonPlants' | 'rarePlants' | 'meat', itemName: string}}
  */
 module.exports.getHighestItem = (inventoryObject) => {
 
-	/** @type {{commonPlants?: number, uncommonPlants?: number, rarePlants?: number, meat?: number}} */
+	/** @type {{commonPlants?: number, uncommonPlants?: number, rarePlants?: number, meat?: number, materials?: number}} */
 	const inventoryReduced = {};
-	Object.entries(inventoryObject).map(([itemType, items]) => inventoryReduced[itemType] = Math.max(...Object.values(items)));
+	Object.entries(inventoryObject).map(([itemType, items]) => inventoryReduced[itemType] = itemType != 'materials' ? Math.max(...Object.values(items)) : 0);
 	/** @type {'commonPlants' | 'uncommonPlants' | 'rarePlants' | 'meat'} */
 	const itemType = /** @type {'commonPlants' | 'uncommonPlants' | 'rarePlants' | 'meat'} */ (Object.keys(inventoryReduced).reduce((a, b) => inventoryReduced[a] > inventoryReduced[b] ? a : b));
 	const itemName = Object.keys(inventoryObject[itemType]).reduce((a, b) => inventoryObject[itemType][a] > inventoryObject[itemType][b] ? a : b);

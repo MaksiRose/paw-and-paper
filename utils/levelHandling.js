@@ -6,13 +6,13 @@ const { default_color } = require('../config.json');
 
 /**
  * Checks if the user is eligable for a level up, and sends a message if so.
- * @param {import('discord.js').Message} message
- * @param {import('discord.js').Message} botReply
+ * @param {import('discord.js').Message<true>} message
  * @param {import('../typedef').ProfileSchema} userData
  * @param {import('../typedef').ServerSchema} serverData
- * @returns {Promise<import('discord.js').Message>}
+ * @param {import('discord.js').Message} [botReply]
+ * @returns {Promise<import('discord.js').Message | undefined>}
  */
-async function checkLevelUp(message, botReply, userData, serverData) {
+async function checkLevelUp(message, userData, serverData, botReply) {
 
 	let characterData = userData.characters[userData.currentCharacter[message.guild.id]];
 	let profileData = characterData.profiles[message.guild.id];
@@ -48,7 +48,7 @@ async function checkLevelUp(message, botReply, userData, serverData) {
 
 		const member = await message.guild.members.fetch(userData.userId);
 
-		botReply = await module.exports.checkLevelUp(message, botReply, userData, serverData);
+		botReply = await module.exports.checkLevelUp(message, userData, serverData, botReply);
 		await checkLevelRequirements(serverData, message, member, profileData.levels);
 	}
 
@@ -63,7 +63,9 @@ async function checkLevelUp(message, botReply, userData, serverData) {
  */
 async function decreaseLevel(userData, botReply) {
 
+	// @ts-ignore, since botReply is guaranteed to be in a guild
 	let characterData = userData.characters[userData.currentCharacter[botReply.guild.id]];
+	// @ts-ignore, since botReply is guaranteed to be in a guild
 	let profileData = characterData.profiles[botReply.guild.id];
 
 	const newUserLevel = Math.round(profileData.levels - (profileData.levels / 10));
@@ -75,7 +77,9 @@ async function decreaseLevel(userData, botReply) {
 		commonPlants: { ...profileData.inventory.commonPlants },
 		uncommonPlants: { ...profileData.inventory.uncommonPlants },
 		rarePlants: { ...profileData.inventory.rarePlants },
+		specialPlants: { ...profileData.inventory.specialPlants },
 		meat: { ...profileData.inventory.meat },
+		materials: { ...profileData.inventory.materials },
 	};
 
 	for (const itemType of Object.keys(profileData.inventory)) {
@@ -93,12 +97,17 @@ async function decreaseLevel(userData, botReply) {
 	userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 		{ uuid: userData.uuid },
 		(/** @type {import('../typedef').ProfileSchema} */ p) => {
+			// @ts-ignore, since botReply is guaranteed to be in a guild
 			p.characters[p.currentCharacter[botReply.guild.id]].profiles[botReply.guild.id].levels = newUserLevel;
+			// @ts-ignore, since botReply is guaranteed to be in a guild
 			p.characters[p.currentCharacter[botReply.guild.id]].profiles[botReply.guild.id].experience = 0;
+			// @ts-ignore, since botReply is guaranteed to be in a guild
 			p.characters[p.currentCharacter[botReply.guild.id]].profiles[botReply.guild.id].inventory = profileData.inventory;
 		},
 	));
+	// @ts-ignore, since botReply is guaranteed to be in a guild
 	characterData = userData.characters[userData.currentCharacter[botReply.guild.id]];
+	// @ts-ignore, since botReply is guaranteed to be in a guild
 	profileData = characterData.profiles[botReply.guild.id];
 
 	if (botReply.embeds[0].footer.text === '') { botReply.embeds[0].footer = null; }
@@ -113,6 +122,7 @@ async function decreaseLevel(userData, botReply) {
 		});
 
 
+	// @ts-ignore, since botReply is guaranteed to be in a guild
 	const member = await botReply.guild.members.fetch(userData.userId);
 	const roles = profileData.roles.filter(role => role.wayOfEarning === 'levels' && role.requirement > profileData.levels);
 
@@ -126,6 +136,7 @@ async function decreaseLevel(userData, botReply) {
 			await profileModel.findOneAndUpdate(
 				{ uuid: userData.uuid },
 				(/** @type {import('../typedef').ProfileSchema} */ p) => {
+					// @ts-ignore, since botReply is guaranteed to be in a guild
 					p.characters[p.currentCharacter[botReply.guild.id]].profiles[botReply.guild.id].roles = profileData.roles;
 				},
 			);
@@ -139,7 +150,8 @@ async function decreaseLevel(userData, botReply) {
 						content: member.toString(),
 						embeds: [{
 							color: /** @type {`#${string}`} */ (default_color),
-							author: { name: botReply.guild.name, icon_url: botReply.guild.iconURL() },
+							// @ts-ignore, since botReply is guaranteed to be in a guild
+							author: { name: botReply.guild.name, icon_url: botReply.guild.iconURL() || undefined },
 							description: `You lost the <@&${role.roleId}> role because of a lack of levels!`,
 						}],
 					})

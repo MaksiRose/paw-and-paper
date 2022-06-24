@@ -13,7 +13,7 @@ const event = {
 	 */
 	async execute(client) {
 
-		client.user.setActivity('this awesome RPG :)\nrp help', { type: 'PLAYING' });
+		client.user?.setActivity('this awesome RPG :)\nrp help', { type: 'PLAYING' });
 	},
 };
 module.exports = event;

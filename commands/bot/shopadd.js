@@ -3,7 +3,7 @@ const { error_color, default_color } = require('../../config.json');
 const serverModel = require('../../models/serverModel');
 const profileModel = require('../../models/profileModel');
 const { checkLevelRequirements, checkRankRequirements } = require('../../utils/checkRoleRequirements');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 
 module.exports.name = 'shopadd';
 
@@ -18,12 +18,12 @@ module.exports.name = 'shopadd';
  */
 module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
 
-	if (message.member.permissions.has('ADMINISTRATOR') === false) {
+	if (!message.member || !message.member.permissions.has('ADMINISTRATOR')) {
 
 		await message
 			.reply({
@@ -45,12 +45,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 	let wayOfEarning = argumentsArray.pop()?.toLowerCase();
 	const role = message.mentions.roles.first();
 
-	if (['rank', 'level', 'levels', 'xp', 'experience'].indexOf(wayOfEarning) === -1) {
+	if (!wayOfEarning || ['rank', 'level', 'levels', 'xp', 'experience'].indexOf(wayOfEarning) === -1) {
 
 		wayOfEarning = undefined;
 	}
 
-	if (['level', 'levels', 'xp', 'experience'].indexOf(wayOfEarning) !== -1) {
+	if (!wayOfEarning || ['level', 'levels', 'xp', 'experience'].indexOf(wayOfEarning) !== -1) {
 
 		if (Number.isInteger(Number(requirement)) === false || Number(requirement) <= 0) {
 
@@ -65,7 +65,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 	if (wayOfEarning === 'rank') {
 
-		if (['youngling', 'apprentice', 'hunter', 'healer', 'elderly'].indexOf(/** @type {string | undefined} */ (requirement)?.toLowerCase()) === -1) {
+		if (!requirement || ['youngling', 'apprentice', 'hunter', 'healer', 'elderly'].indexOf(/** @type {string} */ (requirement)?.toLowerCase()) === -1) {
 
 			requirement = undefined;
 		}
@@ -159,7 +159,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		.reply({
 			embeds: [{
 				color: /** @type {`#${string}`} */ (default_color),
-				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+				author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
 				description: `${role.toString()} was added to the shop! The requirement is ${requirement} ${wayOfEarning}.`,
 			}],
 			failIfNotExists: false,

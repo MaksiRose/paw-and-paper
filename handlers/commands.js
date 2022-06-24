@@ -24,14 +24,17 @@ module.exports.execute = (client) => {
 		client.commands[command.name] = command;
 	}
 
-	const rest = new REST({ version: '9' }).setToken(client.token);
+	if (client.token && client.user) {
 
-	rest
-		.put(
-			client.token === token ? Routes.applicationCommands(client.user.id) : Routes.applicationGuildCommands(client.user.id, test_guild_id),
-			{ body: commands },
-		)
-		.catch(console.error);
+		const rest = new REST({ version: '9' }).setToken(client.token);
+
+		rest
+			.put(
+				client.token === token ? Routes.applicationCommands(client.user.id) : Routes.applicationGuildCommands(client.user.id, test_guild_id),
+				{ body: commands },
+			)
+			.catch(console.error);
+	}
 };
 
 /**

@@ -42,7 +42,7 @@ module.exports.WebhookMessages = this.WebhookMessages;
  * @property {number} health - The health of the sapling.
  * @property {number} waterCycles - How many times the sapling has been watered.
  * @property {?number} nextWaterTimestamp - Timestamp of the next perfect watering.
- * @property {string} lastMessageChannelId - The ID of the last channel the sapling was watered in.
+ * @property {string | null} lastMessageChannelId - The ID of the last channel the sapling was watered in.
  */
 
 /**
@@ -66,6 +66,7 @@ module.exports.WebhookMessages = this.WebhookMessages;
  * @property {number} maxEnergy - Maximum Energy Points of the character.
  * @property {number} maxHunger - Maximum Hunger Points of the character.
  * @property {number} maxThirst - Maximum Thirst Points of the character.
+ * @property {Object<string, string>} temporaryStatIncrease - Object with a timestamp as the key and the kind of stat that is increased as the value.
  * @property {boolean} isResting - Whether the character is resting.
  * @property {boolean} hasCooldown - Whether the character is on a cooldown.
  * @property {boolean} hasQuest - Whether the character has an open quest.
@@ -73,7 +74,7 @@ module.exports.WebhookMessages = this.WebhookMessages;
  * @property {number} unlockedRanks - How many ranks the character has unlocked.
  * @property {Sapling} sapling - The sapling of the character
  * @property {{wounds: number, infections: number, cold: boolean, sprains: number, poison: boolean}} injuries - Object with injury types as keys and whether the user has them/how many the user has of them as variables.
- * @property {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, meat: Object<string, number>}} inventory - Object with item kinds as the keys and an object of the item types and their quantity as the variables.
+ * @property {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, specialPlants: Object<string, number>, meat: Object<string, number>, materials: Object<string, number>}} inventory - Object with item kinds as the keys and an object of the item types and their quantity as the variables.
  * @property {Array<Role>} roles - Array of role objects
  * @property {{global: Object<string, number>, personal: Object<string, number>}} skills - Object of skills, with global and personal skills as key-value pairs.
  */
@@ -111,8 +112,8 @@ module.exports.ProfileSchema = this.ProfileSchema;
  * @typedef {Object} ServerSchema
  * @property {string} serverId - ID of the server. Cannot be modified.
  * @property {string} name - Name of the server.
- * @property {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, meat: Object<string, number>}} inventory - Object with item kinds as the keys and an object of the item types and their quantity as the variables.
- * @property {{den: ?('sleeping dens' | 'food den' | 'medicine den'), blockedKind: ?('vines'|'burrow'|'tree trunk'|'boulder')}} blockedEntrance - Object of the blocked entrance with the name of the den and kind of block as the variables. If no entrance is blocked, they are null.
+ * @property {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, specialPlants: Object<string, number>, meat: Object<string, number>, materials: Object<string, number>}} inventory - Object with item kinds as the keys and an object of the item types and their quantity as the variables.
+ * @property {{sleepingDens: DenSchema, foodDen: DenSchema, medicineDen: DenSchema}} dens - Object of the blocked entrance with the name of the den and kind of block as the variables. If no entrance is blocked, they are null.
  * @property {number} nextPossibleAttack - Timestamp of the time when the next attack is possible.
  * @property {?string} visitChannelId - ID of the channel that can be visited. If no channel is seleted, this is null.
  * @property {?string} currentlyVisiting - ID of the guild that is currently being visited. If no guild is being visited, this is null.
@@ -122,6 +123,14 @@ module.exports.ProfileSchema = this.ProfileSchema;
  * @property {string} uuid
  */
 module.exports.ServerSchema = this.ServerSchema;
+
+/**
+ * @typedef {Object} DenSchema
+ * @property {number} structure - How strong the structure of the den is
+ * @property {number} bedding - How nice the ground of the den is
+ * @property {number} thickness - How thick the walls of the den are
+ * @property {number} evenness - How even the walls of the den are
+ */
 
 /**
  * @typedef {Object} Event
@@ -143,8 +152,21 @@ module.exports.Event = this.Event;
  * @property {boolean} healsSprains - Whether the plant heals sprains.
  * @property {boolean} healsPoison - Whether the plant heals poison.
  * @property {boolean} givesEnergy - Whether the plant gives energy.
+ * @property {boolean} increasesMaxCondition - Whether the plant increases the maximum of one condition.
  */
 module.exports.PlantMapObject = this.PlantMapObject;
+
+
+/**
+ * @typedef {Object} MaterialsMapObject
+ * @property {string} name - Name of the material.
+ * @property {string} description - Description of the material.
+ * @property {boolean} reinforcesStructure - Whether the material reinforces the structure of a den
+ * @property {boolean} improvesBedding - Whether the material improves the bedding of the den
+ * @property {boolean} thickensWalls - Whether the material thickens the walls of the den
+ * @property {boolean} removesOverhang - Whether the material removes overhang from the walls of the hang
+ */
+module.exports.MaterialsMapObject = this.MaterialsMapObject;
 
 
 /**

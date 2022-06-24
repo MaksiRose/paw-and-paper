@@ -13,6 +13,7 @@ commonPlantsMap.set('raspberry', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('garlic', {
@@ -25,6 +26,7 @@ commonPlantsMap.set('garlic', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('herb Robert', {
@@ -37,6 +39,7 @@ commonPlantsMap.set('herb Robert', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('field scabious', {
@@ -49,6 +52,7 @@ commonPlantsMap.set('field scabious', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('henna', {
@@ -61,6 +65,7 @@ commonPlantsMap.set('henna', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('elderberry', {
@@ -73,6 +78,7 @@ commonPlantsMap.set('elderberry', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('comfrey', {
@@ -85,6 +91,7 @@ commonPlantsMap.set('comfrey', {
 	healsSprains: true,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('marigold', {
@@ -97,6 +104,7 @@ commonPlantsMap.set('marigold', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('common hollyhock', {
@@ -109,6 +117,7 @@ commonPlantsMap.set('common hollyhock', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('arnica', {
@@ -121,6 +130,7 @@ commonPlantsMap.set('arnica', {
 	healsSprains: true,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('clover', {
@@ -133,6 +143,7 @@ commonPlantsMap.set('clover', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('passion fruit', {
@@ -145,6 +156,7 @@ commonPlantsMap.set('passion fruit', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('bergamot orange', {
@@ -157,6 +169,7 @@ commonPlantsMap.set('bergamot orange', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('cicely', {
@@ -169,6 +182,7 @@ commonPlantsMap.set('cicely', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('acorn', {
@@ -181,6 +195,7 @@ commonPlantsMap.set('acorn', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 commonPlantsMap.set('rhodiola', {
@@ -193,6 +208,7 @@ commonPlantsMap.set('rhodiola', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: true,
+	increasesMaxCondition: false,
 });
 
 
@@ -209,6 +225,7 @@ uncommonPlantsMap.set('solomon\'s seal', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 uncommonPlantsMap.set('gotu kola', {
@@ -221,6 +238,7 @@ uncommonPlantsMap.set('gotu kola', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: true,
+	increasesMaxCondition: false,
 });
 
 uncommonPlantsMap.set('great mullein', {
@@ -233,6 +251,7 @@ uncommonPlantsMap.set('great mullein', {
 	healsSprains: true,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 uncommonPlantsMap.set('purple coneflower', {
@@ -245,6 +264,7 @@ uncommonPlantsMap.set('purple coneflower', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 uncommonPlantsMap.set('field horsetail', {
@@ -257,6 +277,7 @@ uncommonPlantsMap.set('field horsetail', {
 	healsSprains: true,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 uncommonPlantsMap.set('bay laurel', {
@@ -269,6 +290,7 @@ uncommonPlantsMap.set('bay laurel', {
 	healsSprains: true,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 uncommonPlantsMap.set('chick weed', {
@@ -281,6 +303,7 @@ uncommonPlantsMap.set('chick weed', {
 	healsSprains: true,
 	healsPoison: false,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 uncommonPlantsMap.set('yerba mate', {
@@ -293,6 +316,7 @@ uncommonPlantsMap.set('yerba mate', {
 	healsSprains: false,
 	healsPoison: false,
 	givesEnergy: true,
+	increasesMaxCondition: false,
 });
 
 
@@ -309,6 +333,7 @@ rarePlantsMap.set('ribwort plantain', {
 	healsSprains: true,
 	healsPoison: true,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 rarePlantsMap.set('charcoal-tree leaves', {
@@ -321,6 +346,7 @@ rarePlantsMap.set('charcoal-tree leaves', {
 	healsSprains: false,
 	healsPoison: true,
 	givesEnergy: false,
+	increasesMaxCondition: false,
 });
 
 rarePlantsMap.set('marsh mallow', {
@@ -333,6 +359,136 @@ rarePlantsMap.set('marsh mallow', {
 	healsSprains: true,
 	healsPoison: false,
 	givesEnergy: true,
+	increasesMaxCondition: false,
+});
+
+
+/** @type {Map<string, import('../typedef').PlantMapObject>} */
+const specialPlantsMap = new Map();
+
+specialPlantsMap.set('black-eyed Susan', {
+	name: 'black-eyed Susan',
+	description: 'This flower from the sunflower family is thought to give a temporary boost to one\'s maximum health, energy, hunger or thirst.',
+	edibality: 'e',
+	healsWounds: false,
+	healsInfections: false,
+	healsColds: false,
+	healsSprains: false,
+	healsPoison: false,
+	givesEnergy: false,
+	increasesMaxCondition: true,
+});
+
+
+/** @type {Map<string, import('../typedef').MaterialsMapObject>} */
+const materialsMap = new Map();
+
+materialsMap.set('stick', {
+	name: 'stick',
+	description: 'These are not the sturdiest material out there, but they can help holding together constructions.',
+	reinforcesStructure: true,
+	improvesBedding: false,
+	thickensWalls: false,
+	removesOverhang: false,
+});
+
+materialsMap.set('pine cone', {
+	name: 'pine cone',
+	description: 'The seed-bearing fruit of the pine tree. The wooden exterior and shape make it great for reinforcing structures.',
+	reinforcesStructure: true,
+	improvesBedding: false,
+	thickensWalls: false,
+	removesOverhang: false,
+});
+
+materialsMap.set('root', {
+	name: 'root',
+	description: 'Remainders of dead trees. With their toughness as support, they can be like a skeleton or frame of a structure.',
+	reinforcesStructure: true,
+	improvesBedding: false,
+	thickensWalls: false,
+	removesOverhang: false,
+});
+
+materialsMap.set('moss', {
+	name: 'moss',
+	description: 'A soft and easy to maintain plant that makes for a great floor component.',
+	reinforcesStructure: false,
+	improvesBedding: true,
+	thickensWalls: false,
+	removesOverhang: false,
+});
+
+materialsMap.set('leaf', {
+	name: 'leaf',
+	description: 'Foilage is not only vital to most plants, but also has a great texture and acts as a dampening effect when walked over.',
+	reinforcesStructure: false,
+	improvesBedding: true,
+	thickensWalls: false,
+	removesOverhang: false,
+});
+
+materialsMap.set('algae', {
+	name: 'algae',
+	description: 'Seaweed is not only pretty, but also spongy and comfortable, making it perfect as ground material.',
+	reinforcesStructure: false,
+	improvesBedding: true,
+	thickensWalls: false,
+	removesOverhang: false,
+});
+
+materialsMap.set('clay', {
+	name: 'clay',
+	description: 'This type of dirt is deformable when wet, but tough and brittle when dry, making it a great thickening material for walls.',
+	reinforcesStructure: false,
+	improvesBedding: false,
+	thickensWalls: true,
+	removesOverhang: false,
+});
+
+materialsMap.set('vine', {
+	name: 'vine',
+	description: 'The long-growing plant will spread and twist around walls. They are not robust, but their leaves will thicken whatever they are growing on.',
+	reinforcesStructure: false,
+	improvesBedding: false,
+	thickensWalls: true,
+	removesOverhang: false,
+});
+
+materialsMap.set('soil', {
+	name: 'soil',
+	description: 'This common material is easy to deform, but still strong when pressed together, making it perfect for thickening walls and ceilings.',
+	reinforcesStructure: false,
+	improvesBedding: false,
+	thickensWalls: true,
+	removesOverhang: false,
+});
+
+materialsMap.set('rock', {
+	name: 'rock',
+	description: 'A small piece formed from minerals, its hardness making it a great tool to remove overhang from and even out walls.',
+	reinforcesStructure: false,
+	improvesBedding: false,
+	thickensWalls: false,
+	removesOverhang: true,
+});
+
+materialsMap.set('seashell', {
+	name: 'seashell',
+	description: 'Hard, protective outer layer by an animal that lives in the sea. Can be used to even out irregularities .',
+	reinforcesStructure: false,
+	improvesBedding: false,
+	thickensWalls: false,
+	removesOverhang: true,
+});
+
+materialsMap.set('bone', {
+	name: 'bone',
+	description: 'One of the hard parts of animal\'s skeletons. Good way to get rid of bumps and material sticking out of walls to even them out.',
+	reinforcesStructure: false,
+	improvesBedding: false,
+	thickensWalls: false,
+	removesOverhang: true,
 });
 
 
@@ -859,6 +1015,8 @@ module.exports = {
 	commonPlantsMap: commonPlantsMap,
 	uncommonPlantsMap: uncommonPlantsMap,
 	rarePlantsMap: rarePlantsMap,
+	specialPlantsMap: specialPlantsMap,
+	materialsMap: materialsMap,
 	speciesMap: speciesMap,
 
 };

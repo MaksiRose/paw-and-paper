@@ -3,7 +3,7 @@ const profileModel = require('../../models/profileModel');
 const { default_color } = require('../../config.json');
 const { MessageActionRow, MessageSelectMenu, MessageButton, MessageEmbed } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 
 module.exports.name = 'profilelist';
 
@@ -15,7 +15,7 @@ module.exports.name = 'profilelist';
  */
 module.exports.sendMessage = async (client, message) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
@@ -52,7 +52,7 @@ module.exports.sendMessage = async (client, message) => {
 		.reply({
 			embeds: [ new MessageEmbed({
 				color: /** @type {`#${string}`} */ (default_color),
-				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+				author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
 				title: 'Profiles - Younglings',
 				description: rankProfilesPages[pageNumber],
 			})],
@@ -72,7 +72,7 @@ module.exports.sendMessage = async (client, message) => {
 			.awaitMessageComponent({ filter, time: 120_000 })
 			.then(async interaction => {
 
-				if (interaction.isSelectMenu() && interaction.customId === 'profilelist-rank') {
+				if (interaction.inCachedGuild() && interaction.isSelectMenu() && interaction.customId === 'profilelist-rank') {
 
 					const rankName = (interaction.values[0] === 'profilelist-elderlies') ? 'Elderly' : (interaction.values[0] === 'profilelist-huntershealers') ? 'Hunter' : (interaction.values[0] === 'profilelist-apprentices') ? 'Apprentice' : 'Youngling';
 
@@ -81,7 +81,7 @@ module.exports.sendMessage = async (client, message) => {
 					botReply.components = [profilelistRankComponent, ...rankProfilesPages.length > 1 ? [profilelistPageComponent] : []];
 
 					pageNumber = 0;
-					botReply.embeds[0].title = `Profiles - ${interaction.component.options.find(element => element.value == interaction.values[0]).label}`;
+					botReply.embeds[0].title = `Profiles - ${interaction.component.options.find(element => element.value == interaction.values[0])?.label}`;
 					botReply.embeds[0].description = rankProfilesPages[pageNumber];
 				}
 
@@ -146,7 +146,8 @@ module.exports.sendMessage = async (client, message) => {
 
 		const allRankUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
 			(/** @type {import('../../typedef').ProfileSchema} */ u) => {
-				const thisServerProfiles = Object.values(u.characters).filter(c => c.profiles[message.guild.id] !== undefined).map(c => c.profiles[message.guild.id]);
+				// @ts-ignore, since message must be in guild
+				const thisServerProfiles = Object.values(u.characters).filter(c => c.profiles[message.guildId] !== undefined).map(c => c.profiles[message.guildId]);
 				return thisServerProfiles.filter(p => {
 					return p.rank === rankName1 || p.rank === rankName2;
 				}).length > 0;
@@ -156,8 +157,9 @@ module.exports.sendMessage = async (client, message) => {
 
 			for (const c of Object.values(u.characters)) {
 
-				const p = c.profiles[message.guild.id];
-				if (p !== undefined && (p.rank === rankName1 || p.rank === rankName2)) { allRankProfilesArray.push(`${c.name} - <@${u.userId}>`); }
+				const p = c.profiles[message.guildId || ''];
+				// @ts-ignore, since message must be in guild
+				if (p !== undefined && (p.rank === rankName1 || p.rank === rankName2)) { allRankProfilesArray.push(`${c.name} (\`${p.health}/${p.maxHealth} HP\`) - <@${u.userId}>`); }
 			}
 		}
 

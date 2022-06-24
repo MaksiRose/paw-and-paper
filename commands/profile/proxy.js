@@ -1,44 +1,43 @@
 // @ts-check
 const { MessageEmbed, MessageButton, MessageActionRow, MessageSelectMenu, Modal, TextInputComponent, Collection } = require('discord.js');
-const { hasNoName } = require('../../utils/checkAccountCompletion');
+const { hasName } = require('../../utils/checkAccountCompletion');
 const { error_color, prefix } = require('../../config.json');
 const profileModel = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const disableAllComponents = require('../../utils/disableAllComponents');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 let hasModalCollector = false;
 
 module.exports.name = 'proxy';
 
 /**
  *
- * @param {import('../../paw').client} client
+ * @param {import('../../paw').client & import('discord.js').Client<true>} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} userData
- * @param {import('../../typedef').ServerSchema} serverData
+ * @param {import('../../typedef').ProfileSchema | null} userData
+ * @param {import('../../typedef').ServerSchema | null} serverData
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData) => {
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id || 'DM']];
+	const characterData = userData ? userData.characters[userData.currentCharacter[message.guildId || 'DM']] : null;
 
 	/* Checking if the user has a name set. If they don't, it will send a message telling them to set a
 	name. */
-	if ((!message.inGuild() || message.member.permissions.has('ADMINISTRATOR') === false) && await hasNoName(message, characterData)) {
+	if (!(message.inGuild() && message.member && message.member.permissions.has('ADMINISTRATOR')) && !hasName(message, characterData)) {
 
 		return;
 	}
+
+	client.user;
 
 	/** @type {import('discord.js').Message} */
 	let botReply;
 	let page = 0;
 
-	const allChannels = (await message.guild?.channels?.fetch() || new Collection()).filter(c => c.isText() && c.viewable && c.permissionsFor(client.user).has('SEND_MESSAGES') && c.permissionsFor(message.author.id).has('VIEW_CHANNEL') && c.permissionsFor(message.author.id).has('SEND_MESSAGES'));
-
-	/* Creating a new MessageSelectMenu for each of the three options. */
-	const { disableAutoSelectMenu, disableAllSelectMenu, alwaysSelectMenu } = getSelectMenus(allChannels, userData, message, serverData, page);
+	const allChannels = (await message.guild?.channels?.fetch() || new Collection()).filter(c => c.isText() && c.viewable && c.permissionsFor(client.user.id)?.has('SEND_MESSAGES') == true && c.permissionsFor(message.author.id)?.has('VIEW_CHANNEL') == true && c.permissionsFor(message.author.id)?.has('SEND_MESSAGES') == true);
 
 	const subcommand = argumentsArray.splice(0, 1)[0];
 
@@ -77,7 +76,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							value: 'This will treat every message in a specific channel as if it was proxied, even if the proxy isn\'t included. Click the "Always?" button below to learn more.',
 						}] : []),
 					] : []),
-					...(message.inGuild() && message.member.permissions.has('ADMINISTRATOR') ? [
+					...(message.inGuild() && message.member && message.member.permissions.has('ADMINISTRATOR') ? [
 						{
 							name: 'rp proxy disable',
 							value: 'This is an __administrator__ setting that can toggle whether `always` or `all` proxy should be disabled or enabled in a specific channel. Click the "Disable?" Button below to learn more.',
@@ -98,7 +97,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							style: 'SUCCESS',
 						})] : []),
 					] : []),
-					...(message.inGuild() && message.member.permissions.has('ADMINISTRATOR') ? [
+					...(message.inGuild() && message.member && message.member.permissions.has('ADMINISTRATOR') ? [
 						new MessageButton({
 							customId: 'proxy-learnmore-disable',
 							label: 'Disable?',
@@ -138,7 +137,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					await disableProxy();
 				}
 
-				if (interaction.isButton() && interaction.customId === 'proxy-set-modal') {
+				if (interaction.isButton() && interaction.customId === 'proxy-set-modal' && characterData) {
 
 					interaction.showModal(new Modal()
 						.setCustomId('proxy-set')
@@ -191,31 +190,31 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						});
 				}
 
-				if (interaction.isButton() && interaction.customId === 'proxy-disable-automatic') {
+				if (interaction.isButton() && interaction.customId === 'proxy-disable-automatic' && message.inGuild()) {
 
 					botReply = await botReply
 						.edit({
 							components: [botReply.components[0], new MessageActionRow({
-								components: [disableAutoSelectMenu],
+								components: [getSelectMenus(allChannels, userData, message, serverData, page).disableAutoSelectMenu],
 							})],
 						})
 						.catch((error) => { throw new Error(error); });
 					interactionCollector();
 				}
 
-				if (interaction.isButton() && interaction.customId === 'proxy-disable-all') {
+				if (interaction.isButton() && interaction.customId === 'proxy-disable-all' && message.inGuild()) {
 
 					botReply = await botReply
 						.edit({
 							components: [botReply.components[0], new MessageActionRow({
-								components: [disableAllSelectMenu],
+								components: [getSelectMenus(allChannels, userData, message, serverData, page).disableAllSelectMenu],
 							})],
 						})
 						.catch((error) => { throw new Error(error); });
 					interactionCollector();
 				}
 
-				if (interaction.isSelectMenu()) {
+				if (interaction.isSelectMenu() && message.inGuild()) {
 
 					if (interaction.values[0].includes('page')) {
 
@@ -232,6 +231,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						const channelId = interaction.values[0].replace('proxy-always_', '');
 
 						if (channelId === 'everywhere') { argumentsArray[0] = channelId; }
+						// @ts-ignore, since that channelId variable is derived from the allChannels Collection
 						else { message.mentions.channels.set(channelId, allChannels.get(channelId)); }
 
 						await alwaysProxy();
@@ -242,6 +242,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						argumentsArray[0] = 'all';
 
 						if (channelId === 'everywhere') { argumentsArray[1] = channelId; }
+						// @ts-ignore, since that channelId variable is derived from the allChannels Collection
 						else { message.mentions.channels.set(channelId, allChannels.get(channelId)); }
 
 						await disableProxy();
@@ -252,6 +253,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						argumentsArray[0] = 'auto';
 
 						if (channelId === 'everywhere') { argumentsArray[1] = channelId; }
+						// @ts-ignore, since that channelId variable is derived from the allChannels Collection
 						else { message.mentions.channels.set(channelId, allChannels.get(channelId)); }
 
 						await disableProxy();
@@ -288,7 +290,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		const proxy = argumentsArray.join(' ');
 
-		if (proxy.includes('text')) {
+		if (proxy.includes('text') && characterData) {
 
 			const proxies = proxy.split('text');
 
@@ -348,7 +350,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			}
 
 			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-				{ uuid: userData.uuid },
+				{ uuid: userData?.uuid },
 				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
 					p.characters[p.currentCharacter[message.guild?.id || 'DM']].proxy.startsWith = proxies[0];
 					p.characters[p.currentCharacter[message.guild?.id || 'DM']].proxy.endsWith = proxies[1];
@@ -393,14 +395,15 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 	async function alwaysProxy() {
 
-		if (await sendNoDM(message)) {
+		if (!isInGuild(message) || !serverData || !userData || !characterData) {
 
 			return;
 		}
 
-		const autoproxy = message.mentions.channels.size > 0 && message.mentions.channels.first().isText() ? message.mentions.channels.first().id : argumentsArray.join(' ');
+		const firstMentionedChannel = message.mentions.channels.first();
+		const autoproxy = firstMentionedChannel && firstMentionedChannel.isText() == true ? firstMentionedChannel.id : argumentsArray.join(' ');
 
-		if ((message.mentions.channels.size > 0 && message.mentions.channels.first().isText()) || autoproxy === 'everywhere') {
+		if ((firstMentionedChannel && firstMentionedChannel.isText()) || autoproxy === 'everywhere') {
 
 			const hasChannel = userData.autoproxy[message.guild.id] !== undefined && userData.autoproxy[message.guild.id].includes(autoproxy);
 
@@ -418,7 +421,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					embeds: [ new MessageEmbed({
 						color: characterData.color,
 						author: { name: characterData.name, icon_url: characterData.avatarURL },
-						title: `${hasChannel ? 'Removed' : 'Added'} ${autoproxy === 'everywhere' ? autoproxy : message.guild.channels.cache.get(autoproxy).name} ${hasChannel ? 'from' : 'to'} the list of automatic proxy channels!`,
+						title: `${hasChannel ? 'Removed' : 'Added'} ${autoproxy === 'everywhere' ? autoproxy : message.guild.channels.cache.get(autoproxy)?.name} ${hasChannel ? 'from' : 'to'} the list of automatic proxy channels!`,
 					})],
 					failIfNotExists: false,
 				})
@@ -441,7 +444,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					description: 'When this feature is enabled, every message you sent will be treated as if it was proxied, even if the proxy isn\'t included.\nYou can either toggle it for the entire server (by adding the word "everywhere" to the command), or just one channel (by mentioning the channel). Repeating the command will toggle the feature off again for that channel/for the server.\n\nSo it\'s either `rp proxy always everywhere` or `rp proxy always #channel`.\n\nYou can also toggle channels with the drop-down menu below. Enabled channels will have a radio emoji next to it.',
 				})],
 				components: [ new MessageActionRow({
-					components: [alwaysSelectMenu],
+					components: [getSelectMenus(allChannels, userData, message, serverData, page).alwaysSelectMenu],
 				})],
 				failIfNotExists: false,
 			}).catch((error) => { throw new Error(error); });
@@ -456,7 +459,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 	async function disableProxy() {
 
-		if (!message.inGuild() || message.member.permissions.has('ADMINISTRATOR') === false) {
+		if (!message.inGuild() || !serverData || message.member?.permissions?.has('ADMINISTRATOR') === false) {
 
 			await message
 				.reply({
@@ -472,11 +475,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			return;
 		}
 
+		const firstMentionedChannel = message.mentions.channels.first();
 		const subsubcommand = argumentsArray.splice(0, 1)[0];
 		const kind = (subsubcommand === 'any') ? 'all' : (subsubcommand === 'always' || subsubcommand === 'automatic') ? 'auto' : subsubcommand;
-		const place = message.mentions.channels.size > 0 && message.mentions.channels.first().isText() ? message.mentions.channels.first().id : argumentsArray.join(' ');
+		const place = firstMentionedChannel && firstMentionedChannel.isText() ? firstMentionedChannel.id : argumentsArray.join(' ');
 
-		if (((message.mentions.channels.size > 0 && message.mentions.channels.first().isText()) || place === 'everywhere') && (kind === 'all' || kind === 'auto')) {
+		if (((firstMentionedChannel && firstMentionedChannel.isText()) || place === 'everywhere') && (kind === 'all' || kind === 'auto')) {
 
 			const hasChannel = serverData.proxysetting[kind].includes(place);
 
@@ -488,12 +492,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				},
 			));
 
+			const member = message.member ? message.member : (await message.guild.members.fetch(message.author.id).catch((error) => { throw new Error(error);}));
+
 			await message
 				.reply({
 					embeds: [ new MessageEmbed({
-						color: characterData.color,
-						author: { name: characterData.name, icon_url: characterData.avatarURL },
-						title: `${hasChannel ? 'Enabled' : 'Disabled'} ${kind} proxies ${place === 'everywhere' ? place : 'in ' + message.guild.channels.cache.get(place).name}!`,
+						color: member?.displayColor || message.author.accentColor || '#ffffff',
+						author: {
+							name: member?.displayName || message.author?.tag,
+							icon_url: member?.displayAvatarURL() || message.author?.avatarURL() || undefined,
+						},
+						title: `${hasChannel ? 'Enabled' : 'Disabled'} ${kind} proxies ${place === 'everywhere' ? place : 'in ' + message.guild.channels.cache.get(place)?.name}!`,
 					})],
 					failIfNotExists: false,
 				})
@@ -526,7 +535,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						style: 'SUCCESS',
 					})],
 				}), ...(kind === 'all' || kind === 'auto') ? [new MessageActionRow({
-					components: [kind === 'all' ? disableAllSelectMenu : disableAutoSelectMenu],
+					components: [kind === 'all' ? getSelectMenus(allChannels, userData, message, serverData, page).disableAllSelectMenu : getSelectMenus(allChannels, userData, message, serverData, page).disableAutoSelectMenu],
 				})] : []],
 				failIfNotExists: false,
 			}).catch((error) => { throw new Error(error); });
@@ -543,9 +552,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 /**
  *
  * @param {import('discord.js').Collection<string, import('discord.js').NonThreadGuildBasedChannel>} allChannels
- * @param {import('../../typedef').ProfileSchema} userData
+ * @param {import('../../typedef').ProfileSchema | null} userData
  * @param {import('discord.js').Message} message
- * @param {import('../../typedef').ServerSchema} serverData
+ * @param {import('../../typedef').ServerSchema | null} serverData
  * @param {number} page
  * @returns
  */
@@ -571,26 +580,26 @@ function getSelectMenus(allChannels, userData, message, serverData, page) {
 
 	for (const [channelId, channel] of allChannels) {
 
-		alwaysSelectMenu.addOptions({ label: channel.name, value: `proxy-always_${channelId}`, emoji: userData.autoproxy[message.guild.id]?.includes(channelId) ? '🔘' : null });
-		disableAllSelectMenu.addOptions({ label: channel.name, value: `proxy-disableall_${channelId}`, emoji: serverData.proxysetting.all?.includes(channelId) ? '🔘' : null });
-		disableAutoSelectMenu.addOptions({ label: channel.name, value: `proxy-disableauto_${channelId}`, emoji: serverData.proxysetting.auto?.includes(channelId) ? '🔘' : null });
+		alwaysSelectMenu.addOptions({ label: channel.name, value: `proxy-always_${channelId}`, emoji: userData?.autoproxy?.[message?.guildId || '']?.includes(channelId) ? '🔘' : undefined });
+		disableAllSelectMenu.addOptions({ label: channel.name, value: `proxy-disableall_${channelId}`, emoji: serverData?.proxysetting?.all?.includes(channelId) ? '🔘' : undefined });
+		disableAutoSelectMenu.addOptions({ label: channel.name, value: `proxy-disableauto_${channelId}`, emoji: serverData?.proxysetting?.auto?.includes(channelId) ? '🔘' : undefined });
 	}
 
 	if (alwaysSelectMenu.options.length > 25) {
 
-		alwaysSelectMenu.options = alwaysSelectMenu.options.splice(page * 24, (page + 1) * 24);
+		alwaysSelectMenu.options = alwaysSelectMenu.options.splice(page * 24, 24);
 		alwaysSelectMenu.addOptions({ label: 'Show more channels', value: 'proxy-always_page', description: `You are currently on page ${page + 1}`, emoji: '📋' });
 	}
 
 	if (disableAllSelectMenu.options.length > 25) {
 
-		disableAllSelectMenu.options = disableAllSelectMenu.options.splice(page * 24, (page + 1) * 24);
+		disableAllSelectMenu.options = disableAllSelectMenu.options.splice(page * 24, 24);
 		disableAllSelectMenu.addOptions({ label: 'Show more channels', value: 'proxy-disableall_page', description: `You are currently on page ${page + 1}`, emoji: '📋' });
 	}
 
 	if (disableAutoSelectMenu.options.length > 25) {
 
-		disableAutoSelectMenu.options = disableAutoSelectMenu.options.splice(page * 24, (page + 1) * 24);
+		disableAutoSelectMenu.options = disableAutoSelectMenu.options.splice(page * 24, 24);
 		disableAutoSelectMenu.addOptions({ label: 'Show more channels', value: 'proxy-disableauto_page', description: `You are currently on page ${page + 1}`, emoji: '📋' });
 	}
 

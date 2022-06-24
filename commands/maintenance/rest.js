@@ -1,14 +1,13 @@
 // @ts-check
 const { MessageActionRow, MessageButton } = require('discord.js');
 const profileModel = require('../../models/profileModel');
-const blockEntrance = require('../../utils/blockEntrance');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isPassedOut, hasCooldown } = require('../../utils/checkValidity');
 const { startResting } = require('../../utils/executeResting');
 const { upperCasePronoun, pronoun, pronounAndPlural } = require('../../utils/getPronouns');
-const { generateRandomNumber } = require('../../utils/randomizers');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 const startCooldown = require('../../utils/startCooldown');
+const wearDownDen = require('../../utils/wearDownDen');
 const { remindOfAttack } = require('../gameplay/attack');
 
 module.exports.name = 'rest';
@@ -25,7 +24,7 @@ module.exports.aliases = ['sleep'];
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
@@ -33,17 +32,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	const profileData = characterData?.profiles?.[message.guild.id];
 
-	if (await hasNotCompletedAccount(message, characterData)) {
+	if (!hasCompletedAccount(message, characterData)) {
 
 		return;
 	}
 
-	if (await isPassedOut(message, userData, false)) {
+	if (await isPassedOut(message, userData.uuid, false)) {
 
 		return;
 	}
 
-	if (await hasCooldown(message, userData, [module.exports.name].concat(module.exports.aliases))) {
+	if (await hasCooldown(message, userData, module.exports.aliases.concat(module.exports.name))) {
 
 		return;
 	}
@@ -87,12 +86,6 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
-	if ((profileData.rank !== 'Youngling' && serverData.blockedEntrance.den === null && generateRandomNumber(20, 0) === 0) || serverData.blockedEntrance.den === 'sleeping dens') {
-
-		await blockEntrance(message, messageContent, characterData, serverData, 'sleeping dens');
-		return;
-	}
-
 	await profileModel.findOneAndUpdate(
 		{ uuid: userData.uuid },
 		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
@@ -102,6 +95,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		},
 	);
 
+	const weardownText = await wearDownDen(serverData, 'sleeping dens');
+
 	const botReply = await message
 		.reply({
 			content: messageContent,
@@ -109,7 +104,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				color: characterData.color,
 				author: { name: characterData.name, icon_url: characterData.avatarURL },
 				description: `*${characterData.name}'s chest rises and falls with the crickets. Snoring bounces off each wall, finally exiting the den and rising free to the clouds.*`,
-				footer: { text: `+0 energy (${profileData.energy}/${profileData.maxEnergy})${(profileData.currentRegion != 'sleeping dens') ? '\nYou are now at the sleeping dens' : ''}${argumentsArray[0] === 'auto' ? '\nYour character started resting because you were inactive for 10 minutes' : ''}\nTip: You can also do "rp vote" to get +30 energy per vote!` },
+				footer: { text: `+0 energy (${profileData.energy}/${profileData.maxEnergy})${(profileData.currentRegion != 'sleeping dens') ? '\nYou are now at the sleeping dens' : ''}${argumentsArray[0] === 'auto' ? '\nYour character started resting because you were inactive for 10 minutes' : ''}\n\n${weardownText}\n\nTip: You can also do "rp vote" to get +30 energy per vote!` },
 			}],
 			components: argumentsArray[0] === 'auto' ? [ new MessageActionRow({
 				components: [ new MessageButton({
@@ -122,5 +117,5 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		})
 		.catch((error) => { throw new Error(error); });
 
-	await startResting(message, userData, botReply, profileData.currentRegion, argumentsArray[0] === 'auto');
+	await startResting(message, userData, botReply, profileData.currentRegion, argumentsArray[0] === 'auto', weardownText);
 };

@@ -1,7 +1,7 @@
 // @ts-check
 const { schema, model } = require('./constructor');
 const config = require('../config.json');
-const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap, materialsMap, specialPlantsMap } = require('../utils/itemsInfo');
 
 const profileSchema = new schema({
 	userId: {
@@ -132,6 +132,10 @@ const profileSchema = new schema({
 								type: 'number',
 								default: 100,
 							},
+							temporaryStatIncrease: {
+								type: 'nest',
+								default: 'string',
+							},
 							isResting: { type: 'boolean' },
 							hasCooldown: { type: 'boolean' },
 							hasQuest: { type: 'boolean' },
@@ -196,10 +200,26 @@ const profileSchema = new schema({
 											}),
 										),
 									},
+									specialPlants: {
+										type: 'object',
+										default: Object.fromEntries(
+											[...specialPlantsMap.keys()].sort().map(key => {
+												return [key, { type: 'number', default: 0 }];
+											}),
+										),
+									},
 									meat: {
 										type: 'object',
 										default: Object.fromEntries(
 											[...speciesMap.keys()].sort().map(key => {
+												return [key, { type: 'number', default: 0 }];
+											}),
+										),
+									},
+									materials: {
+										type: 'object',
+										default: Object.fromEntries(
+											[...materialsMap.keys()].sort().map(key => {
 												return [key, { type: 'number', default: 0 }];
 											}),
 										),

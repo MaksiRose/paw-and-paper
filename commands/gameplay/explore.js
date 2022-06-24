@@ -3,8 +3,8 @@ const profileModel = require('../../models/profileModel');
 const startCooldown = require('../../utils/startCooldown');
 const { generateRandomNumber, pullFromWeightedTable, generateRandomNumberWithException } = require('../../utils/randomizers');
 const { pickRandomRarePlant, pickRandomUncommonPlant, pickRandomCommonPlant } = require('../../utils/pickRandomPlant');
-const { speciesMap } = require('../../utils/itemsInfo');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { speciesMap, materialsMap } = require('../../utils/itemsInfo');
+const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
 const { checkLevelUp } = require('../../utils/levelHandling');
@@ -15,8 +15,8 @@ const { remindOfAttack, startAttack } = require('./attack');
 const { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural } = require('../../utils/getPronouns');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
-const { coloredButtonsAdvice } = require('../../utils/adviceMessages');
-const sendNoDM = require('../../utils/sendNoDM');
+const { coloredButtonsAdvice, restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
+const isInGuild = require('../../utils/isInGuild');
 
 module.exports.name = 'explore';
 module.exports.aliases = ['e'];
@@ -28,25 +28,27 @@ module.exports.aliases = ['e'];
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await sendNoDM(message)) {
-
+	if (!isInGuild(message)) {
+		message;
 		return;
 	}
+
+	message;
 
 	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	let profileData = characterData?.profiles?.[message.guild.id];
 
-	if (await hasNotCompletedAccount(message, characterData)) {
+	if (!hasCompletedAccount(message, characterData)) {
 
 		return;
 	}
 
-	if (await isInvalid(message, userData, embedArray, [module.exports.name].concat(module.exports.aliases))) {
+	if (await isInvalid(message, userData, embedArray, module.exports.aliases.concat(module.exports.name))) {
 
 		return;
 	}
@@ -54,7 +56,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	userData = await startCooldown(message);
 	let messageContent = remindOfAttack(message);
 
-	if (/** @type {Array<number>} */ Object.values(profileData.inventory).map(type => Object.values(type)).flat().filter(value => value > 0).length > 25) {
+	if (Object.values(profileData.inventory).map(type => Object.values(type)).flat().reduce((a, b) => a + b) >= 5) {
 
 		await message
 			.reply({
@@ -91,8 +93,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
-	const responseTime = profileData.rank === 'Elderly' ? 3_000 : profileData.rank === 'Hunter' || profileData.rank === 'Healer' ? 4_000 : 5_000;
 	const userSpeciesMap = speciesMap.get(characterData.species);
+	if (!userSpeciesMap) { throw new Error('userSpeciesMap is missing'); }
 
 	const allBiomesArray = [
 		['forest', 'taiga', 'tundra'],
@@ -113,6 +115,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		return;
 	}
+
+	const responseTime = chosenBiomeNumber === 2 ? 3_000 : chosenBiomeNumber === 1 ? 4_000 : 5_000;
 
 	const waitingArray = [
 		['⬛', '⬛', '⬛', '🚩', '⬛', '⬛', '⬛'],
@@ -156,26 +160,42 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		}
 	}
 
+	/** @type {{vertical: number | null, horizontal: number | null}} */
+	let oldGoalPosition = { vertical: null, horizontal: null };
+	/** @type {{vertical: number | null, horizontal: number | null}} */
+	let currentGoalPosition = { vertical: null, horizontal: null };
+
+	for (let line = 0; line < waitingArray.length; line++) {
+
+		for (let element = 0; element < waitingArray[line].length; element++) {
+
+			if (waitingArray[line][element] === '🚩') {
+
+				currentGoalPosition = { vertical: line, horizontal: element };
+			}
+		}
+	}
+
 	const waitingComponent = new MessageActionRow({
 		components: [ new MessageButton({
 			customId: 'explore-left',
 			emoji: '⬅️',
-			disabled: waitingArray[currentPushpinPosition.vertical][currentPushpinPosition.horizontal - 1] === '⬛' ? false : true,
+			disabled: currentPushpinPosition.vertical && currentPushpinPosition.horizontal && waitingArray[currentPushpinPosition.vertical][currentPushpinPosition.horizontal - 1] === '⬛' ? false : true,
 			style: 'SECONDARY',
 		}), new MessageButton({
 			customId: 'explore-up',
 			emoji: '⬆️',
-			disabled: waitingArray[currentPushpinPosition.vertical - 1] !== undefined && waitingArray[currentPushpinPosition.vertical - 1][currentPushpinPosition.horizontal] === '⬛' ? false : true,
+			disabled: currentPushpinPosition.vertical && currentPushpinPosition.horizontal && waitingArray[currentPushpinPosition.vertical - 1] !== undefined && waitingArray[currentPushpinPosition.vertical - 1][currentPushpinPosition.horizontal] === '⬛' ? false : true,
 			style: 'SECONDARY',
 		}), new MessageButton({
 			customId: 'explore-down',
 			emoji: '⬇️',
-			disabled: waitingArray[currentPushpinPosition.vertical + 1] !== undefined && waitingArray[currentPushpinPosition.vertical + 1][currentPushpinPosition.horizontal] === '⬛' ? false : true,
+			disabled: currentPushpinPosition.vertical && currentPushpinPosition.horizontal && waitingArray[currentPushpinPosition.vertical + 1] !== undefined && waitingArray[currentPushpinPosition.vertical + 1][currentPushpinPosition.horizontal] === '⬛' ? false : true,
 			style: 'SECONDARY',
 		}), new MessageButton({
 			customId: 'explore-right',
 			emoji: '➡️',
-			disabled: waitingArray[currentPushpinPosition.vertical][currentPushpinPosition.horizontal + 1] === '⬛' ? false : true,
+			disabled: currentPushpinPosition.vertical && currentPushpinPosition.horizontal && waitingArray[currentPushpinPosition.vertical][currentPushpinPosition.horizontal + 1] === '⬛' ? false : true,
 			style: 'SECONDARY',
 		})],
 	});
@@ -194,48 +214,27 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		})
 		.catch((error) => { throw new Error(error); });
 
-	filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId.includes('explore-') && i.user.id === message.author.id;
 
-	const collector = message.channel.createMessageComponentCollector({ filter, time: 15_000 });
+	const collector = message.channel.createMessageComponentCollector({
+		filter: (i) => i.customId.includes('explore-') && i.user.id === message.author.id,
+		time: 15_000,
+	});
 
-	collector.on('collect', interaction => {
+	collector.on('collect', async (interaction) => {
 
-		if (waitingArray[newPushpinPosition.vertical][newPushpinPosition.horizontal] === '📍') {
+		if (newPushpinPosition.vertical !== null && newPushpinPosition.horizontal !== null && waitingArray[newPushpinPosition.vertical][newPushpinPosition.horizontal] === '📍') {
 
 			if (interaction.customId === 'explore-left') { newPushpinPosition.horizontal -= 1; }
 			if (interaction.customId === 'explore-up') { newPushpinPosition.vertical -= 1; }
 			if (interaction.customId === 'explore-down') { newPushpinPosition.vertical += 1; }
 			if (interaction.customId === 'explore-right') { newPushpinPosition.horizontal += 1; }
-		}
-	});
-
-	/** @type {{vertical: number | null, horizontal: number | null}} */
-	let oldGoalPosition = { vertical: null, horizontal: null };
-	/** @type {{vertical: number | null, horizontal: number | null}} */
-	let currentGoalPosition = { vertical: null, horizontal: null };
-
-	for (let line = 0; line < waitingArray.length; line++) {
-
-		for (let element = 0; element < waitingArray[line].length; element++) {
-
-			if (waitingArray[line][element] === '🚩') {
-
-				currentGoalPosition = { vertical: line, horizontal: element };
-			}
-		}
-	}
-
-
-	await new Promise((resolve) => {
-
-		const waitingInterval = setInterval(async function(array) {
 
 			let options = [
-				{ vertical: currentGoalPosition.vertical, horizontal: currentGoalPosition.horizontal - 1 },
-				{ vertical: currentGoalPosition.vertical, horizontal: currentGoalPosition.horizontal + 1 },
-				{ vertical: currentGoalPosition.vertical - 1, horizontal: currentGoalPosition.horizontal },
-				{ vertical: currentGoalPosition.vertical + 1, horizontal: currentGoalPosition.horizontal },
-			].filter(position => array[position.vertical] !== undefined && (array[position.vertical][position.horizontal] === '⬛' || array[position.vertical][position.horizontal] === '📍'));
+				{ vertical: currentGoalPosition.vertical, horizontal: currentGoalPosition.horizontal !== null ? currentGoalPosition.horizontal - 1 : null },
+				{ vertical: currentGoalPosition.vertical, horizontal: currentGoalPosition.horizontal !== null ? currentGoalPosition.horizontal + 1 : null },
+				{ vertical: currentGoalPosition.vertical !== null ? currentGoalPosition.vertical - 1 : null, horizontal: currentGoalPosition.horizontal },
+				{ vertical: currentGoalPosition.vertical !== null ? currentGoalPosition.vertical + 1 : null, horizontal: currentGoalPosition.horizontal },
+			].filter(position => position.vertical !== null && waitingArray[position.vertical] != undefined && position.horizontal !== null && (waitingArray[position.vertical][position.horizontal] === '⬛' || waitingArray[position.vertical][position.horizontal] === '📍'));
 
 			if (options.length > 1) {
 
@@ -245,55 +244,66 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			const newGoalPosition = options[generateRandomNumber(options.length, 0)];
 
 
-			array[newGoalPosition.vertical][newGoalPosition.horizontal] = '🚩';
-			array[currentGoalPosition.vertical][currentGoalPosition.horizontal] = '⬛';
+			if (newGoalPosition && newGoalPosition.vertical !== null && newGoalPosition.horizontal !== null && currentGoalPosition.vertical !== null && currentGoalPosition.horizontal !== null && currentPushpinPosition.vertical !== null && currentPushpinPosition.horizontal !== null && newPushpinPosition.vertical !== null && newPushpinPosition.horizontal !== null) {
 
-			oldGoalPosition = { ...currentGoalPosition };
-			currentGoalPosition = { ...newGoalPosition };
+				waitingArray[currentGoalPosition.vertical][currentGoalPosition.horizontal] = '⬛';
+				waitingArray[currentPushpinPosition.vertical][currentPushpinPosition.horizontal] = '⬛';
+				waitingArray[newGoalPosition.vertical][newGoalPosition.horizontal] = '🚩';
+				waitingArray[newPushpinPosition.vertical][newPushpinPosition.horizontal] = '📍';
+
+				oldGoalPosition = { ...currentGoalPosition };
+				currentGoalPosition = { ...newGoalPosition };
+				const oldPushPinPosition = { ...currentPushpinPosition };
+				currentPushpinPosition = { ...newPushpinPosition };
 
 
-			array[currentPushpinPosition.vertical][currentPushpinPosition.horizontal] = '⬛';
-			array[newPushpinPosition.vertical][newPushpinPosition.horizontal] = '📍';
+				// if the currentpushpinposition is equal to the currentgoalposition OR if both the oldgoalposition is equal to the newpushpinposition and the oldpinposition equal to the newgoalposition, end the game early
+				if ((currentGoalPosition.vertical === currentPushpinPosition.vertical && currentGoalPosition.horizontal === currentPushpinPosition.horizontal) || ((oldGoalPosition.vertical === newPushpinPosition.vertical && oldGoalPosition.horizontal === newPushpinPosition.horizontal) && (oldPushPinPosition.vertical === newGoalPosition.vertical && oldPushPinPosition.horizontal === newGoalPosition.horizontal))) {
 
-			const oldPushPinPosition = { ...currentPushpinPosition };
-			currentPushpinPosition = { ...newPushpinPosition };
+					collector.stop();
+				}
 
 
-			// if the currentpushpinposition is equal to the currentgoalposition OR if both the oldgoalposition is equal to the newpushpinposition and the oldpinposition equal to the newgoalposition, end the game early
-			if ((currentGoalPosition.vertical === currentPushpinPosition.vertical && currentGoalPosition.horizontal === currentPushpinPosition.horizontal) || ((oldGoalPosition.vertical === newPushpinPosition.vertical && oldGoalPosition.horizontal === newPushpinPosition.horizontal) && (oldPushPinPosition.vertical === newGoalPosition.vertical && oldPushPinPosition.horizontal === newGoalPosition.horizontal))) {
+				// @ts-ignore
+				waitingComponent.components[0].disabled = waitingArray[currentPushpinPosition.vertical][currentPushpinPosition.horizontal - 1] === '⬛' || waitingArray[currentPushpinPosition.vertical][currentPushpinPosition.horizontal - 1] === '🚩' ? false : true;
+				// @ts-ignore
+				waitingComponent.components[1].disabled = waitingArray[currentPushpinPosition.vertical - 1] !== undefined && (waitingArray[currentPushpinPosition.vertical - 1][currentPushpinPosition.horizontal] === '⬛' || waitingArray[currentPushpinPosition.vertical - 1][currentPushpinPosition.horizontal] === '🚩') ? false : true;
+				// @ts-ignore
+				waitingComponent.components[2].disabled = waitingArray[currentPushpinPosition.vertical + 1] !== undefined && (waitingArray[currentPushpinPosition.vertical + 1][currentPushpinPosition.horizontal] === '⬛' || waitingArray[currentPushpinPosition.vertical + 1][currentPushpinPosition.horizontal] === '🚩') ? false : true;
+				// @ts-ignore
+				waitingComponent.components[3].disabled = waitingArray[currentPushpinPosition.vertical][currentPushpinPosition.horizontal + 1] === '⬛' || waitingArray[currentPushpinPosition.vertical][currentPushpinPosition.horizontal + 1] === '🚩' ? false : true;
 
-				clearInterval(waitingInterval);
-				resolve();
+				botReply = await botReply
+					.edit({
+						embeds: [...embedArray, {
+							color: characterData.color,
+							author: { name: characterData.name, icon_url: characterData.avatarURL },
+							description: waitingString + joinNestedArray(waitingArray),
+							footer: { text: 'This game is voluntary to skip waiting time. If you don\'t mind waiting, you can ignore this game.' },
+						}],
+						components: [waitingComponent],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
+						return botReply;
+					});
 			}
+		}
+	});
 
 
-			waitingComponent.components[0].disabled = waitingArray[currentPushpinPosition.vertical][currentPushpinPosition.horizontal - 1] === '⬛' || waitingArray[currentPushpinPosition.vertical][currentPushpinPosition.horizontal - 1] === '🚩' ? false : true;
-			waitingComponent.components[1].disabled = waitingArray[currentPushpinPosition.vertical - 1] !== undefined && (waitingArray[currentPushpinPosition.vertical - 1][currentPushpinPosition.horizontal] === '⬛' || waitingArray[currentPushpinPosition.vertical - 1][currentPushpinPosition.horizontal] === '🚩') ? false : true;
-			waitingComponent.components[2].disabled = waitingArray[currentPushpinPosition.vertical + 1] !== undefined && (waitingArray[currentPushpinPosition.vertical + 1][currentPushpinPosition.horizontal] === '⬛' || waitingArray[currentPushpinPosition.vertical + 1][currentPushpinPosition.horizontal] === '🚩') ? false : true;
-			waitingComponent.components[3].disabled = waitingArray[currentPushpinPosition.vertical][currentPushpinPosition.horizontal + 1] === '⬛' || waitingArray[currentPushpinPosition.vertical][currentPushpinPosition.horizontal + 1] === '🚩' ? false : true;
+	await /** @type {Promise<void>} */(new Promise((resolve) => {
 
-			botReply = await botReply
-				.edit({
-					embeds: [...embedArray, {
-						color: characterData.color,
-						author: { name: characterData.name, icon_url: characterData.avatarURL },
-						description: waitingString + joinNestedArray(array),
-						footer: { text: 'This game is voluntary to skip waiting time. If you don\'t mind waiting, you can ignore this game.' },
-					}],
-					components: [waitingComponent],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-					return botReply;
-				});
-		}, 1500, waitingArray);
+		collector.on('end', async () => {
+
+			resolve();
+		});
 
 		setTimeout(() => {
 
-			clearInterval(waitingInterval);
 			resolve();
-		}, 15000);
-	});
+		}, 20_000);
+	}));
 
 
 	await botReply
@@ -345,7 +355,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			(/** @type {import('../../typedef').ProfileSchema} */ u) => Object.values(u.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].rank !== 'Youngling').length > 0))
 		.map(u => Object.values(u.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].rank !== 'Youngling').length)
 		.reduce((a, b) => a + b, 0);
-	const serverInventoryCount = Object.values(serverData.inventory).map(type => Object.values(type)).flat().reduce((a, b) => a + b, 0);
+	const serverInventoryCount = Object.entries(serverData.inventory).map(([type, content]) => type != 'materials' ? Object.values(content) : 0).flat().reduce((a, b) => a + b, 0);
 
 	// If the server has more items than 8 per profile. It's 2 more than counted when the humans spawn, to give users a bit of leeway
 	if (serverInventoryCount > highRankProfilesCount * 8 && messageContent === null && serverData.nextPossibleAttack <= Date.now()) {
@@ -358,7 +368,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	}
 	else if (pullFromWeightedTable({ 0: 10, 1: 90 + profileData.sapling.waterCycles }) === 0) {
 
-		botReply = await findSaplingOrNothing();
+		botReply = await findSaplingOrMaterialOrNothing();
 	}
 	else if (pullFromWeightedTable({ 0: profileData.rank === 'Healer' ? 2 : 1, 1: profileData.rank === 'Hunter' ? 2 : 1 }) === 0) {
 
@@ -370,10 +380,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	}
 
 	botReply = await decreaseHealth(userData, botReply, userInjuryObject);
-	botReply = await checkLevelUp(message, botReply, userData, serverData);
-	await isPassedOut(message, userData, true);
+	botReply = await checkLevelUp(message, userData, serverData, botReply) || botReply;
+	await isPassedOut(message, userData.uuid, true);
 
 	await coloredButtonsAdvice(message, userData);
+	await restAdvice(message, userData);
+	await drinkAdvice(message, userData);
+	await eatAdvice(message, userData);
 
 
 	/**
@@ -382,8 +395,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	 */
 	async function findHumans() {
 
-		// The numerator is the amount of items above 6 per profile, the denominator is the amount of profiles
-		const humanCount = Math.round((serverInventoryCount - (highRankProfilesCount * 6)) / highRankProfilesCount);
+		// The numerator is the amount of items above 7 per profile, the denominator is the amount of profiles
+		const humanCount = Math.round((serverInventoryCount - (highRankProfilesCount * 7)) / highRankProfilesCount);
 		startAttack(message, humanCount);
 
 		embed.description = `*${characterData.name} has just been looking around for food when ${pronounAndPlural(characterData, 0, 'suddenly hear')} voices to ${pronoun(characterData, 2)} right. Cautiously ${pronounAndPlural(characterData, 0, 'creep')} up, and sure enough: a group of humans! It looks like it's around ${humanCount}. They seem to be discussing something, and keep pointing over towards where the pack is lying. Alarmed, the ${characterData.displayedSpecies || characterData.species} runs away. **${upperCasePronoun(characterData, 0)} must gather as many packmates as possible to protect the pack!***`;
@@ -391,7 +404,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		return await message
 			.reply({
-				content: serverActiveUsers.get(message.guild.id).map(user => `<@${user}>`).join(' '),
+				// @ts-ignore, since message is safe to be in guild
+				content: serverActiveUsers.get(message.guildId)?.map(user => `<@${user}>`).join(' '),
 				embeds: [...embedArray, embed],
 				failIfNotExists: false,
 			})
@@ -407,7 +421,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		await profileModel.findOneAndUpdate(
 			{ userId: message.author.id },
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				p.characters[characterData._id].profiles[message.guild.id].hasQuest = true;
+				// @ts-ignore, since message is safe to be in guildv
+				p.characters[characterData._id].profiles[message.guildId].hasQuest = true;
 			},
 		);
 
@@ -416,7 +431,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.customId === 'quest-start' && i.user.id === message.author.id;
 
 		botReply
-			.awaitMessageComponent({ filter, time: 30_000 })
+			.awaitMessageComponent({ filter, time: 300_000 })
 			.then(async interaction => {
 
 				await /** @type {import('discord.js').Message} */ (interaction.message)
@@ -444,22 +459,40 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	}
 
 	/**
-	 * Gives the user a ginkgo sapling, or nothing if they already have one.
+	 * Gives the user a ginkgo sapling if they don't have one, material if the server has below 36, or nothing.
 	 * @returns {Promise<import('discord.js').Message>}
 	 */
-	async function findSaplingOrNothing() {
+	async function findSaplingOrMaterialOrNothing() {
+
+		const serverMaterialsCount = Object.values(serverData.inventory.materials).flat().reduce((a, b) => a + b, 0);
 
 		if (profileData.sapling.exists === false) {
 
 			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 				{ userId: message.author.id },
 				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-					p.characters[characterData._id].profiles[message.guild.id].sapling = { exists: true, health: 50, waterCycles: 0, nextWaterTimestamp: Date.now(), lastMessageChannelId: message.channel.id };
+					// @ts-ignore, since message is safe to be in guild
+					p.characters[characterData._id].profiles[message.guildId].sapling = { exists: true, health: 50, waterCycles: 0, nextWaterTimestamp: Date.now(), lastMessageChannelId: message.channel.id };
 				},
 			));
 
 			embed.description = `*${characterData.name} is looking around for useful things around ${pronoun(characterData, 1)} when ${pronounAndPlural(characterData, 0, 'discover')} the sapling of a ginkgo tree. The ${characterData.displayedSpecies || characterData.species} remembers that they bring good luck and health. Surely it can't hurt to bring it back to the pack!*`;
 			embed.footer.text = embedFooterStatsText + '\nWater the ginkgo sapling with \'rp water\'.';
+		}
+		else if (serverMaterialsCount < 36) {
+
+			const foundMaterial = Array.from(materialsMap.keys())[generateRandomNumber(Array.from(materialsMap.keys()).length, 0)];
+
+			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+				{ userId: message.author.id },
+				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
+					// @ts-ignore, since message is safe to be in guild
+					p.characters[characterData._id].profiles[message.guildId].inventory.materials[foundMaterial] += 1;
+				},
+			));
+
+			embed.description = `*${characterData.name} is looking around for things around ${pronoun(characterData, 1)} but there doesn't appear to be anything useful. The ${characterData.displayedSpecies || characterData.species} decides to grab a ${foundMaterial} as to not go back with nothing to showy.*`;
+			embed.footer.text = `${embedFooterStatsText}\n\n+1 ${foundMaterial}`;
 		}
 		else {
 
@@ -514,17 +547,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				foundItem = await pickRandomCommonPlant();
 		}
 
-		if (userSpeciesMap.habitat === 'warm') {
+		if (userSpeciesMap?.habitat === 'warm') {
 
 			embed.description = `*For a while, ${characterData.name} has been trudging through the hot sand, searching in vain for something useful. ${upperCasePronounAndPlural(characterData, 0, 'was', 'were')} about to give up when ${pronounAndPlural(characterData, 0, 'discover')} a ${foundItem} in a small, lone bush. Now ${pronounAndPlural(characterData, 0, 'just need')} to pick it up gently...*`;
 		}
 
-		if (userSpeciesMap.habitat === 'cold') {
+		if (userSpeciesMap?.habitat === 'cold') {
 
 			embed.description = `*For a while, ${characterData.name} has been trudging through the dense undergrowth, searching in vain for something useful. ${upperCasePronounAndPlural(characterData, 0, 'was', 'were')} about to give up when ${pronounAndPlural(characterData, 0, 'discover')} a ${foundItem} at the end of a tree trunk. Now ${pronounAndPlural(characterData, 0, 'just need')} to pick it up gently...*`;
 		}
 
-		if (userSpeciesMap.habitat === 'water') {
+		if (userSpeciesMap?.habitat === 'water') {
 
 			embed.description = `*For a while, ${characterData.name} has been swimming through the water, searching in vain for something useful. ${upperCasePronounAndPlural(characterData, 0, 'was', 'were')} about to give up when ${pronounAndPlural(characterData, 0, 'discover')} a ${foundItem} among large algae. Now ${pronounAndPlural(characterData, 0, 'just need')} to pick it up gently...*`;
 		}
@@ -612,7 +645,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				});
 
 			/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
-			/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId.includes(`${correctButton}`))]).style = 'PRIMARY';
+			const correctButtonIndex = botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId?.includes(`${correctButton}`));
+			if (correctButtonIndex >= 0) { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[correctButtonIndex]).style = 'PRIMARY'; }
 
 			const { customId } = await botReply
 				.awaitMessageComponent({ filter, time: responseTime })
@@ -621,7 +655,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			if (customId !== '') {
 
 				/* Here we make the button the player choses red, this will apply always except if the player choses the correct button, then this will be overwritten. */
-				/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId)]).style = 'DANGER';
+				const buttonIndex = botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId);
+				if (buttonIndex >= 0) { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[buttonIndex]).style = 'DANGER'; }
 			}
 
 			if (customId.includes(`${incorrectButton}`) === true) {
@@ -632,7 +667,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			if (customId?.includes(`${correctButton}`) === true) {
 
 				/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
-				/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId)]).style = 'SUCCESS';
+				const buttonIndex = botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId);
+				if (buttonIndex >= 0) { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[buttonIndex]).style = 'SUCCESS'; }
 
 				winPoints += 1;
 			}
@@ -640,9 +676,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			/* Here we change the buttons customId's so that they will always stay unique, as well as disabling the buttons. */
 			for (const button of botReply.components[botReply.components.length - 1].components) {
 
-				button.customId += totalCycles;
+				if (button.customId) { button.customId += totalCycles; }
 			}
-
 			botReply.components = disableAllComponents(botReply.components);
 
 
@@ -663,7 +698,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					commonPlants: { ...profileData.inventory.commonPlants },
 					uncommonPlants: { ...profileData.inventory.uncommonPlants },
 					rarePlants: { ...profileData.inventory.rarePlants },
+					specialPlants: { ...profileData.inventory.specialPlants },
 					meat: { ...profileData.inventory.meat },
+					materials: { ...profileData.inventory.materials },
 				};
 
 				for (const itemCategory of Object.keys(userInventory)) {
@@ -671,6 +708,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					// @ts-ignore
 					if (Object.hasOwn(userInventory[itemCategory], foundItem)) {
 
+						// @ts-ignore, since foundItem is safe to be assigned
 						userInventory[itemCategory][foundItem] += 1;
 					}
 				}
@@ -678,7 +716,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 					{ userId: message.author.id },
 					(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-						p.characters[characterData._id].profiles[message.guild.id].inventory = userInventory;
+						// @ts-ignore, since message is safe to be in guild
+						p.characters[characterData._id].profiles[message.guildId].inventory = userInventory;
 					},
 				));
 
@@ -699,17 +738,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			if (winPoints === 1) {
 
-				if (userSpeciesMap.habitat === 'warm') {
+				if (userSpeciesMap?.habitat === 'warm') {
 
 					embed.description = `*${characterData.name} tries really hard to pick up the ${foundItem} that ${pronoun(characterData, 0)} discovered in a small, lone bush. But as the ${characterData.displayedSpecies || characterData.species} tries to pick it up, it just breaks into little pieces.*`;
 				}
 
-				if (userSpeciesMap.habitat === 'cold') {
+				if (userSpeciesMap?.habitat === 'cold') {
 
 					embed.description = `*${characterData.name} tries really hard to pick up the ${foundItem} that ${pronoun(characterData, 0)} discovered at the end of a tree trunk. But as the ${characterData.displayedSpecies || characterData.species} tries to pick it up, it just breaks into little pieces.*`;
 				}
 
-				if (userSpeciesMap.habitat === 'water') {
+				if (userSpeciesMap?.habitat === 'water') {
 
 					embed.description = `*${characterData.name} tries really hard to pick up the ${foundItem} that ${pronoun(characterData, 0)} discovered among large algae. But as the ${characterData.displayedSpecies || characterData.species} tries to pick it up, it just breaks into little pieces.*`;
 				}
@@ -732,13 +771,15 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 				{ userId: message.author.id },
 				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-					p.characters[characterData._id].profiles[message.guild.id].health -= healthPoints;
+					// @ts-ignore, since message is safe to be in guild
+					p.characters[characterData._id].profiles[message.guildId].health -= healthPoints;
 				},
 			));
 
 			const allElderlyUsersArray = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
 				(/** @type {import('../../typedef').ProfileSchema} */ u) => {
-					const thisServerProfiles = Object.values(u.characters).filter(c => c.profiles[message.guild.id] !== undefined).map(c => c.profiles[message.guild.id]);
+					// @ts-ignore, since message is safe to be in guild
+					const thisServerProfiles = Object.values(u.characters).filter(c => c.profiles[message.guildId] !== undefined).map(c => c.profiles[message.guildId]);
 					return thisServerProfiles.filter(p => {
 						return p.rank === 'Elderly';
 					}).length > 0;
@@ -750,17 +791,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					userInjuryObject.poison = true;
 
-					if (userSpeciesMap.habitat == 'warm') {
+					if (userSpeciesMap?.habitat == 'warm') {
 
 						embed.description = `*Piles of sand and lone, scraggly bushes are dotting the landscape all around ${characterData.name}. ${upperCasePronounAndPlural(characterData, 0, 'pad')} through the scattered branches from long-dead trees, carefully avoiding the cacti, trying to reach the ${foundItem} ${pronoun(characterData, 0)} saw. The ${characterData.displayedSpecies || characterData.species} steps on a root but feels it twist and pulse before it leaps from its camouflage and latches onto ${pronoun(characterData, 2)} body. The snake pumps poison into ${pronoun(characterData, 1)} while ${pronounAndPlural(characterData, 0, 'lashes', 'lash')} around, trying to throw it off, finally succeeding and rushing away.*`;
 					}
 
-					if (userSpeciesMap.habitat == 'cold') {
+					if (userSpeciesMap?.habitat == 'cold') {
 
 						embed.description = `*Many sticks and roots are popping up all around ${characterData.name}. ${upperCasePronounAndPlural(characterData, 0, 'shuffle')} through the fallen branches and twisting vines, trying to reach the ${foundItem} ${pronoun(characterData, 0)} found. The ${characterData.displayedSpecies || characterData.species} steps on a root but feels it weave and pulse before it leaps from its camouflage and latches onto ${pronoun(characterData, 2)} body. The snake pumps poison into ${pronoun(characterData, 1)} while ${pronounAndPlural(characterData, 0, 'lashes', 'lash')} around, trying to throw it off, finally succeeding and rushing away.*`;
 					}
 
-					if (userSpeciesMap.habitat == 'water') {
+					if (userSpeciesMap?.habitat == 'water') {
 
 						embed.description = `*Many plants and jellyfish are popping up all around ${characterData.name}. ${upperCasePronounAndPlural(characterData, 0, 'weave')} through the jellyfish and twisting kelp, trying to reach the ${foundItem} ${pronoun(characterData, 0)} found. The ${characterData.displayedSpecies || characterData.species} pushes through a piece of kelp but feels it twist and pulse before it latches onto ${pronoun(characterData, 2)} body. The jellyfish wraps ${pronoun(characterData, 1)} with its stingers, poison flowing into ${pronoun(characterData, 1)} while ${pronounAndPlural(characterData, 0, 'thrashes', 'trash')} around trying to throw it off, finally succeeding and rushing away to the surface.*`;
 					}
@@ -773,17 +814,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					userInjuryObject.cold = true;
 
-					if (userSpeciesMap.habitat == 'warm') {
+					if (userSpeciesMap?.habitat == 'warm') {
 
 						embed.description = `*${characterData.name} pads along the ground, dashing from bush to bush, inspecting every corner for something ${pronoun(characterData, 0)} could add to the inventory. Suddenly, the ${characterData.displayedSpecies || characterData.species} sways, feeling tired and feeble. A coughing fit grew louder, escaping ${pronoun(characterData, 2)} throat.*`;
 					}
 
-					if (userSpeciesMap.habitat == 'cold') {
+					if (userSpeciesMap?.habitat == 'cold') {
 
 						embed.description = `*${characterData.name} plots around the forest, dashing from tree to tree, inspecting every corner for something ${pronoun(characterData, 0)} could add to the inventory. Suddenly, the ${characterData.displayedSpecies || characterData.species} sways, feeling tired and feeble. A coughing fit grew louder, escaping ${pronoun(characterData, 2)} throat.*`;
 					}
 
-					if (userSpeciesMap.habitat == 'water') {
+					if (userSpeciesMap?.habitat == 'water') {
 
 						embed.description = `*${characterData.name} flips around in the water, swimming from rock to rock, inspecting every nook for something ${pronoun(characterData, 0)} could add to the inventory. Suddenly, the ${characterData.displayedSpecies || characterData.species} falters in ${pronoun(characterData, 2)} stroke, feeling tired and feeble. A coughing fit grew louder, bubbles escaping ${pronoun(characterData, 2)} throat to rise to the surface.*`;
 					}
@@ -796,17 +837,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					userInjuryObject.infections += 1;
 
-					if (userSpeciesMap.habitat == 'warm') {
+					if (userSpeciesMap?.habitat == 'warm') {
 
 						embed.description = `*The soft noise of sand shifting on the ground spooks ${characterData.name} as ${pronounAndPlural(characterData, 0, 'walk')} around the area, searching for something useful for ${pronoun(characterData, 2)} pack. A warm wind brushes against ${pronoun(characterData, 2)} side, and a cactus bush sweeps atop ${pronoun(characterData, 2)} path, going unnoticed. A needle pricks into ${pronoun(characterData, 2)} skin, sending pain waves through ${pronoun(characterData, 2)} body. While removing the needle ${characterData.name} notices how swollen the wound looks. It is infected.*`;
 					}
 
-					if (userSpeciesMap.habitat == 'cold') {
+					if (userSpeciesMap?.habitat == 'cold') {
 
 						embed.description = `*The thunks of acorns falling from trees spook ${characterData.name} as ${pronounAndPlural(characterData, 0, 'prance')} around the forest, searching for something useful for ${pronoun(characterData, 2)} pack. A warm wind brushes against ${pronoun(characterData, 2)} side, and a thorn bush sweeps atop ${pronoun(characterData, 2)} path, going unnoticed. A thorn pricks into ${pronoun(characterData, 2)} skin, sending pain waves through ${pronoun(characterData, 2)} body. While removing the thorn ${characterData.name} notices how swollen the wound looks. It is infected.*`;
 					}
 
-					if (userSpeciesMap.habitat == 'water') {
+					if (userSpeciesMap?.habitat == 'water') {
 
 						embed.description = `*The sudden silence in the water spooks ${characterData.name} as ${pronounAndPlural(characterData, 0, 'swim')} around in the water, searching for something useful for ${pronoun(characterData, 2)} pack. A rocky outcropping appears next to ${pronoun(characterData, 1)}, unnoticed. The rocks scrape into ${pronoun(characterData, 2)} side, sending shockwaves of pain up ${pronoun(characterData, 2)} flank. ${characterData.name} takes a closer look and notices how swollen the wound is. It is infected.*`;
 					}
@@ -836,24 +877,24 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		let highestCombo = 0;
 		let opponentLevel = generateRandomNumber(1 + Math.ceil(profileData.levels / 10) * 5, (profileData.levels > 2 ? profileData.levels : 3) - Math.ceil(profileData.levels / 10) * 2);
 		chosenBiomeNumber === 2 ? generateRandomNumber(profileData.levels > 40 ? profileData.levels - 15 : 25, 26) : chosenBiomeNumber === 1 ? generateRandomNumber(15, 11) : generateRandomNumber(10, 1);
-		const opponentsArray = [...userSpeciesMap.biome1OpponentArray];
-		if (chosenBiomeNumber > 0) { opponentsArray.push(...userSpeciesMap.biome2OpponentArray); }
-		if (chosenBiomeNumber === 2) { opponentsArray.push(...userSpeciesMap.biome3OpponentArray); }
+		const opponentsArray = [...userSpeciesMap?.biome1OpponentArray || []];
+		if (chosenBiomeNumber > 0) { opponentsArray.push(...userSpeciesMap?.biome2OpponentArray || []); }
+		if (chosenBiomeNumber === 2) { opponentsArray.push(...userSpeciesMap?.biome3OpponentArray || []); }
 
 		const opponentSpecies = opponentsArray[generateRandomNumber(opponentsArray.length, 0)];
 		let playerLevel = profileData.levels;
 
-		if (userSpeciesMap.habitat == 'warm') {
+		if (userSpeciesMap?.habitat == 'warm') {
 
 			embed.description = `*${characterData.name} creeps close to the ground, ${pronoun(characterData, 2)} pelt blending with the sand surrounding ${pronoun(characterData, 1)}. The ${characterData.displayedSpecies || characterData.species} watches a pile of shrubs, ${pronoun(characterData, 2)} eyes flitting around before catching a motion out of the corner of ${pronoun(characterData, 2)} eyes. A particularly daring ${opponentSpecies} walks on the ground surrounding the bushes before sitting down and cleaning itself.*`;
 		}
 
-		if (userSpeciesMap.habitat == 'cold') {
+		if (userSpeciesMap?.habitat == 'cold') {
 
 			embed.description = `*${characterData.name} pads silently to the clearing, stopping just shy of leaving the safety of the thick trees that housed ${pronoun(characterData, 2)} pack, camp, and home. A lone ${opponentSpecies} stands in the clearing, snout in the stream that cuts the clearing in two, leaving it unaware of the ${characterData.displayedSpecies || characterData.species} a few meters behind it, ready to pounce.*`;
 		}
 
-		if (userSpeciesMap.habitat == 'water') {
+		if (userSpeciesMap?.habitat == 'water') {
 
 			embed.description = `*${characterData.name} hides behind some kelp, looking around the clear water for any prey. A lone ${opponentSpecies} swims around aimlessly, not alarmed of any potential attacks. The ${characterData.displayedSpecies || characterData.species} gets in position, contemplating an ambush.*`;
 		}
@@ -891,17 +932,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		if (interaction === null || interaction.customId === 'enemy-flee') {
 
-			if (userSpeciesMap.habitat == 'warm') {
+			if (userSpeciesMap?.habitat == 'warm') {
 
 				embed.description = `*${characterData.name} eyes the ${opponentSpecies}, which is still unaware of the possible danger. The ${characterData.displayedSpecies || characterData.species} paces, still unsure whether to attack. Suddenly, the ${characterData.displayedSpecies || characterData.species}'s head shoots up as it tries to find the source of the sound before running away. Looks like this hunt was unsuccessful.*`;
 			}
 
-			if (userSpeciesMap.habitat == 'cold') {
+			if (userSpeciesMap?.habitat == 'cold') {
 
 				embed.description = `*The ${opponentSpecies} sits in the clearing, unaware of ${characterData.name} hiding in the thicket behind it. The ${characterData.displayedSpecies || characterData.species} watches as the animal gets up, shakes the loose water droplets from its mouth, and walks into the forest, its shadow fading from ${characterData.name}'s sight. Looks like this hunt was unsuccessful.*`;
 			}
 
-			if (userSpeciesMap.habitat == 'water') {
+			if (userSpeciesMap?.habitat == 'water') {
 
 				embed.description = `*${characterData.name} looks at the ${opponentSpecies}, which is still unaware of ${pronoun(characterData, 1)} watching through the kelp. Subconsciously, the ${characterData.displayedSpecies || characterData.species} starts swimming back and fourth, still unsure whether to attack. The ${opponentSpecies}'s head turns in a flash to eye the suddenly moving kelp before it frantically swims away. Looks like this hunt was unsuccessful.*`;
 			}
@@ -980,9 +1021,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				});
 
 			/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
-			if (cycleKind === 'defend') { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === 'fight-attack')]).style = 'PRIMARY'; }
-			if (cycleKind === 'dodge') { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === 'fight-defend')]).style = 'PRIMARY'; }
-			if (cycleKind === 'attack') { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === 'fight-dodge')]).style = 'PRIMARY'; }
+			const correctButtonIndex = botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === (cycleKind === 'defend' ? 'fight-attack' : cycleKind === 'dodge' ? 'fight-defend' : cycleKind === 'attack' ? 'fight-dodge' : ''));
+			if (correctButtonIndex >= 0) { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[correctButtonIndex]).style = 'PRIMARY'; }
 
 			filter = i => (i.customId === 'fight-attack' || i.customId === 'fight-defend' || i.customId === 'fight-dodge') && i.user.id === message.author.id;
 
@@ -993,7 +1033,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			if (customId !== '') {
 
 				/* Here we make the button the player choses red, this will apply always except if the player choses the correct button, then this will be overwritten. */
-				/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId)]).style = 'DANGER';
+				const buttonIndex = botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId);
+				if (buttonIndex >= 0) { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[buttonIndex]).style = 'DANGER'; }
 			}
 
 			if ((customId === 'fight-attack' && cycleKind === 'dodge') || (customId === 'fight-defend' && cycleKind === 'attack') || (customId === 'fight-dodge' && cycleKind === 'defend')) {
@@ -1004,7 +1045,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			if ((customId === 'fight-attack' && cycleKind === 'defend') || (customId === 'fight-defend' && cycleKind === 'dodge') || (customId === 'fight-dodge' && cycleKind === 'attack')) {
 
 				/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
-				/** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId)]).style = 'SUCCESS';
+				const buttonIndex = botReply.components[botReply.components.length - 1].components.findIndex(button => button.customId === customId);
+				if (buttonIndex >= 0) { /** @type {import('discord.js').MessageButton} */ (botReply.components[botReply.components.length - 1].components[buttonIndex]).style = 'SUCCESS'; }
 
 				playerLevel += Math.ceil(profileData.levels / 10);
 				currentCombo += 1;
@@ -1015,7 +1057,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			/* Here we change the buttons customId's so that they will always stay unique, as well as disabling the buttons. */
 			for (const button of botReply.components[botReply.components.length - 1].components) {
 
-				button.customId += totalCycles;
+				if (button.customId) { button.customId += totalCycles; }
 			}
 
 			botReply.components = disableAllComponents(botReply.components);
@@ -1034,17 +1076,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			if (playerLevel === opponentLevel || playerLevel === opponentLevel + 1 || playerLevel === opponentLevel + 2) {
 
-				if (userSpeciesMap.habitat == 'warm') {
+				if (userSpeciesMap?.habitat == 'warm') {
 
 					embed.description = `*${characterData.name} and the ${opponentSpecies} are snarling at one another as they retreat to the opposite sides of the hill, now stirred up and filled with sticks from the surrounding bushes. The ${characterData.displayedSpecies || characterData.species} runs back to camp, ${pronoun(characterData, 2)} mouth empty as before.*`;
 				}
 
-				if (userSpeciesMap.habitat == 'cold') {
+				if (userSpeciesMap?.habitat == 'cold') {
 
 					embed.description = `*${characterData.name} and the ${opponentSpecies} are snarling at one another as they retreat into the bushes surrounding the clearing, now covered in trampled grass and loose clumps of dirt. The ${characterData.displayedSpecies || characterData.species} runs back to camp, ${pronoun(characterData, 2)} mouth empty as before.*`;
 				}
 
-				if (userSpeciesMap.habitat == 'water') {
+				if (userSpeciesMap?.habitat == 'water') {
 
 					embed.description = `*${characterData.name} and the ${opponentSpecies} glance at one another as they swim in opposite directions from the kelp, now cloudy from the stirred up dirt. The ${characterData.displayedSpecies || characterData.species} swims back to camp, ${pronoun(characterData, 2)} mouth empty as before.*`;
 				}
@@ -1057,22 +1099,24 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					commonPlants: { ...profileData.inventory.commonPlants },
 					uncommonPlants: { ...profileData.inventory.uncommonPlants },
 					rarePlants: { ...profileData.inventory.rarePlants },
+					specialPlants: { ...profileData.inventory.specialPlants },
 					meat: { ...profileData.inventory.meat },
+					materials: { ...profileData.inventory.materials },
 				};
 
 				userInventory.meat[opponentSpecies] += 1;
 
-				if (userSpeciesMap.habitat == 'warm') {
+				if (userSpeciesMap?.habitat == 'warm') {
 
 					embed.description = `*${characterData.name} shakes the sand from ${pronoun(characterData, 2)} paws, the still figure of the ${opponentSpecies} casting a shadow for ${pronoun(characterData, 1)} to rest in before returning home with the meat. ${upperCasePronounAndPlural(characterData, 0, 'turn')} to the dead ${opponentSpecies} to start dragging it back to camp. The meat would be well-stored in the camp, added to the den of food for the night, after being cleaned.*`;
 				}
 
-				if (userSpeciesMap.habitat == 'cold') {
+				if (userSpeciesMap?.habitat == 'cold') {
 
 					embed.description = `*${characterData.name} licks ${pronoun(characterData, 2)} paws, freeing the dirt that is under ${pronoun(characterData, 2)} claws. The ${characterData.displayedSpecies || characterData.species} turns to the dead ${opponentSpecies} behind ${pronoun(characterData, 1)}, marveling at the size of it. Then, ${upperCasePronounAndPlural(characterData, 0, 'grab')} the ${opponentSpecies} by the neck, dragging it into the bushes and back to the camp.*`;
 				}
 
-				if (userSpeciesMap.habitat == 'water') {
+				if (userSpeciesMap?.habitat == 'water') {
 
 					embed.description = `*The ${characterData.displayedSpecies || characterData.species} swims quickly to the surface, trying to stay as stealthy and unnoticed as possible. ${upperCasePronounAndPlural(characterData, 0, 'break')} the surface, gain ${pronoun(characterData, 2)} bearing, and the ${characterData.displayedSpecies || characterData.species} begins swimming to the shore, dragging the dead ${opponentSpecies} up the shore to the camp.*`;
 				}
@@ -1082,7 +1126,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 					{ userId: message.author.id },
 					(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-						p.characters[characterData._id].profiles[message.guild.id].inventory = userInventory;
+						// @ts-ignore, since message is safe to be in guild
+						p.characters[characterData._id].profiles[message.guildId].inventory = userInventory;
 					},
 				));
 			}
@@ -1093,7 +1138,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 					{ userId: message.author.id },
 					(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-						p.characters[characterData._id].profiles[message.guild.id].health -= healthPoints;
+						// @ts-ignore, since message is safe to be in guild
+						p.characters[characterData._id].profiles[message.guildId].health -= healthPoints;
 					},
 				));
 
@@ -1103,17 +1149,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 						userInjuryObject.wounds += 1;
 
-						if (userSpeciesMap.habitat == 'warm') {
+						if (userSpeciesMap?.habitat == 'warm') {
 
 							embed.description = `*The ${characterData.displayedSpecies || characterData.species} rolls over in the sand, pinned down by the ${opponentSpecies}.* "Get off my territory," *it growls before walking away from the shaking form of ${characterData.name} laying on the sand. ${upperCasePronounAndPlural(characterData, 0, 'let')} the ${opponentSpecies} walk away for a little, trying to put space between the two animals. After catching ${pronoun(characterData, 2)} breath, the ${characterData.displayedSpecies || characterData.species} pulls ${pronoun(characterData, 4)} off the ground, noticing sand sticking to ${pronoun(characterData, 2)} side. ${upperCasePronounAndPlural(characterData, 0, 'shake')} ${pronoun(characterData, 2)} body, sending bolts of pain up ${pronoun(characterData, 2)} side from the wound. ${upperCasePronounAndPlural(characterData, 0, 'slowly walk')} away from the valley that the ${opponentSpecies} was sitting in before running back towards camp.*`;
 						}
 
-						if (userSpeciesMap.habitat == 'cold') {
+						if (userSpeciesMap?.habitat == 'cold') {
 
 							embed.description = `*${characterData.name} runs into the brush, trying to avoid making the wound from the ${opponentSpecies} any worse than it already is. The ${characterData.displayedSpecies || characterData.species} stops and confirms that the ${opponentSpecies} isn't following ${pronoun(characterData, 1)}, before walking back inside the camp borders.*`;
 						}
 
-						if (userSpeciesMap.habitat == 'water') {
+						if (userSpeciesMap?.habitat == 'water') {
 
 							embed.description = `*Running from the ${opponentSpecies}, ${characterData.name} flips and spins around in the water, trying to escape from the grasp of the animal behind ${pronoun(characterData, 1)}. ${upperCasePronounAndPlural(characterData, 0, 'slip')} into a small crack in a wall, waiting silently for the creature to give up. Finally, the ${opponentSpecies} swims away, leaving the ${characterData.displayedSpecies || characterData.species} alone. Slowly emerging from the crevice, ${characterData.name} flinches away from the wall as ${pronounAndPlural(characterData, 0, 'hit')} it, a wound making itself known from the fight. Hopefully, it can be treated back at the camp.*`;
 						}
@@ -1126,17 +1172,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 						userInjuryObject.sprains += 1;
 
-						if (userSpeciesMap.habitat == 'warm') {
+						if (userSpeciesMap?.habitat == 'warm') {
 
 							embed.description = `*${characterData.name} limps back to camp, ${pronoun(characterData, 2)} paw sprained from the fight with the ${opponentSpecies}. Only barely did ${pronoun(characterData, 0)} get away, leaving the enemy alone in the sand that is now stirred up and filled with sticks from the surrounding bushes. Maybe next time, the ${characterData.displayedSpecies || characterData.species} will be successful in ${pronoun(characterData, 2)} hunt.*`;
 						}
 
-						if (userSpeciesMap.habitat == 'cold') {
+						if (userSpeciesMap?.habitat == 'cold') {
 
 							embed.description = `*${characterData.name} limps back to camp, ${pronoun(characterData, 2)} paw sprained from the fight with the ${opponentSpecies}. Only barely did ${pronoun(characterData, 0)} get away, leaving the enemy alone in a clearing now filled with trampled grass and dirt clumps. Maybe next time, the ${characterData.displayedSpecies || characterData.species} will be successful in ${pronoun(characterData, 2)} hunt.*`;
 						}
 
-						if (userSpeciesMap.habitat == 'water') {
+						if (userSpeciesMap?.habitat == 'water') {
 
 							embed.description = `*${characterData.name} swims back to camp in pain, ${pronoun(characterData, 2)} fin sprained from the fight with the ${opponentSpecies}. Only barely did ${pronoun(characterData, 0)} get away, leaving the enemy alone in the water that is now cloudy from the stirred up dirt. Maybe next time, the ${characterData.displayedSpecies || characterData.species} will be successful in ${pronoun(characterData, 2)} hunt.*`;
 						}
@@ -1197,7 +1243,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						}
 					});
 
-				return interaction.customId;
+				return /** @type {'forest' | 'taiga' | 'tundra' | 'shrubland' | 'savanna' | 'desert' | 'river' | 'coral reef' | 'ocean'} */ (interaction.customId);
 			})
 			.catch(async () => {
 

@@ -4,7 +4,7 @@ const profileModel = require('../../models/profileModel');
 const serverModel = require('../../models/serverModel');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const disableAllComponents = require('../../utils/disableAllComponents');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 let hasModalCollector = false;
 
 module.exports.name = 'skills';
@@ -21,23 +21,24 @@ module.exports.aliases = ['abilityscores', 'ability', 'scores'];
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
 
 	/* Checking if the user has a character, if they do, it checks if they have a profile, if they do, it
 	sets the isYourself variable to true. */
-	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-	let profileData = characterData?.profiles?.[message.guild.id];
+	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId]];
+	let profileData = characterData?.profiles?.[message.guildId];
 	let isYourself = true;
 
 	/* Checking if the message mentions a user. If it does, it will get the user's data from the database. */
-	if (message.mentions.users.size > 0) {
+	const firstMentionedUser = message.mentions.users.first();
+	if (firstMentionedUser) {
 
-		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first().id }));
-		characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-		profileData = characterData?.profiles?.[message.guild.id];
+		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: firstMentionedUser.id }));
+		characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId]];
+		profileData = characterData?.profiles?.[message.guildId];
 		isYourself = false;
 	}
 
@@ -55,7 +56,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		},
 	));
 	characterData = userData?.characters?.[characterData?._id];
-	profileData = characterData?.profiles?.[message.guild.id];
+	profileData = characterData?.profiles?.[message.guildId];
 
 
 	/* Creating a message with 4 buttons and a skill list. */
@@ -75,7 +76,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			customId: 'skills-remove',
 			label: 'Delete',
 			emoji: '🗑️',
-			disabled: !(Object.keys(profileData?.skills?.personal || {}).length > 0 || (message.member.permissions.has('ADMINISTRATOR') && serverData?.skills?.length > 0)),
+			disabled: !(Object.keys(profileData?.skills?.personal || {}).length > 0 || (message.member?.permissions?.has('ADMINISTRATOR') && serverData?.skills?.length > 0)),
 			style: 'SECONDARY',
 		}), new MessageButton({
 			customId: 'skills-modify',
@@ -96,7 +97,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		})
 		.catch((error) => { throw new Error(error); });
 
-	createCommandCollector(message.author.id, message.guild.id, botReply);
+	createCommandCollector(message.author.id, message.guildId, botReply);
 	interactionCollector();
 
 	async function interactionCollector() {
@@ -113,8 +114,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				if (interaction.isButton() && interaction.customId === 'skills-refresh') {
 
 					userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: userData.userId }));
-					characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-					profileData = characterData?.profiles?.[message.guild.id];
+					// @ts-ignore, since message must be in guild
+					characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId]];
+					// @ts-ignore, since message must be in guild
+					profileData = characterData?.profiles?.[message.guildId];
 					botReply = await botReply
 						.edit({
 							content: getSkillList(profileData),
@@ -142,7 +145,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 										customId: `${interaction.customId}-global${interaction.customId === 'skills-add' ? '-modal' : ''}`,
 										label: 'Global',
 										emoji: '👥',
-										disabled: message.member.permissions.has('ADMINISTRATOR') === false,
+										disabled: message.member?.permissions?.has('ADMINISTRATOR') === false,
 										style: 'SECONDARY',
 									})],
 								),
@@ -226,7 +229,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 							{ userId: message.author.id },
 							(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-								delete p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].skills[category][name];
+								// @ts-ignore, since message must be in guild
+								delete p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].skills[category][name];
 							},
 						));
 					}
@@ -240,8 +244,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 								{ userId: user.userId },
 								(/** @type {import('../../typedef').ProfileSchema} */ p) => {
 									for (const c of Object.values(p.characters)) {
-										if (c.profiles[message.guild.id] !== undefined) {
-											delete p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].skills[category][name];
+										// @ts-ignore, since message must be in guild
+										if (c.profiles[message.guildId] !== undefined) {
+											// @ts-ignore, since message must be in guild
+											delete p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].skills[category][name];
 										}
 									}
 								},
@@ -249,7 +255,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						}
 
 						await serverModel.findOneAndUpdate(
-							{ serverId: message.guild.id },
+							{ serverId: message.guildId },
 							(/** @type {import('../../typedef').ServerSchema} */ s) => {
 								s.skills = s.skills.filter(n => n !== name);
 							},
@@ -258,8 +264,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: userData.userId }));
 					}
 
-					characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-					profileData = characterData?.profiles?.[message.guild.id];
+					// @ts-ignore, since message must be in guild
+					characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId]];
+					// @ts-ignore, since message must be in guild
+					profileData = characterData?.profiles?.[message.guildId];
 					botReply = await botReply
 						.edit({
 							content: getSkillList(profileData),
@@ -376,7 +384,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 								userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 									{ userId: i.user.id },
 									(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-										p.characters[p.currentCharacter[i.guild.id]].profiles[i.guild.id].skills.personal[newName] = 0;
+										// @ts-ignore, since message must be in guild
+										p.characters[p.currentCharacter[i.guildId]].profiles[i.guildId].skills.personal[newName] = 0;
 									},
 								));
 							}
@@ -384,7 +393,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 								const allUsers = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find());
 
-								const allSkillNamesList = [...new Set(allUsers.map(u => Object.values(u.characters).map(c => Object.keys(c.profiles[message.guild.id]?.skills?.personal || {}))).map(array1 => array1.filter(array2 => array2.length > 0)).filter(array => array.length > 0).flat(2)), ...serverData.skills];
+								// @ts-ignore, since message must be in guild
+								const allSkillNamesList = [...new Set(allUsers.map(u => Object.values(u.characters).map(c => Object.keys(c.profiles[message.guildId]?.skills?.personal || {}))).map(array1 => array1.filter(array2 => array2.length > 0)).filter(array => array.length > 0).flat(2)), ...serverData.skills];
 								if (allSkillNamesList.includes(newName)) {
 
 									await botReply
@@ -405,8 +415,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 										{ userId: user.userId },
 										(/** @type {import('../../typedef').ProfileSchema} */ p) => {
 											for (const c of Object.values(p.characters)) {
-												if (c.profiles[i.guild.id] !== undefined) {
-													p.characters[c._id].profiles[i.guild.id].skills.global[newName] = 0;
+												// @ts-ignore, since message must be in guild
+												if (c.profiles[i.guildId] !== undefined) {
+													// @ts-ignore, since message must be in guild
+													p.characters[c._id].profiles[i.guildId].skills.global[newName] = 0;
 												}
 											}
 										},
@@ -414,7 +426,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 								}
 
 								await serverModel.findOneAndUpdate(
-									{ serverId: i.guild.id },
+									{ serverId: i.guildId },
 									(/** @type {import('../../typedef').ServerSchema} */ s) => {
 										s.skills.push(newName);
 									},
@@ -423,8 +435,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 								userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: userData.userId }));
 							}
 
-							characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-							profileData = characterData?.profiles?.[message.guild.id];
+							// @ts-ignore, since message must be in guild
+							characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId]];
+							// @ts-ignore, since message must be in guild
+							profileData = characterData?.profiles?.[message.guildId];
 							botReply = await botReply
 								.edit({
 									content: getSkillList(profileData),
@@ -463,8 +477,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 								userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 									{ userId: i.user.id },
 									(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-										p.characters[p.currentCharacter[i.guild.id]].profiles[i.guild.id].skills.personal[newName] = p.characters[p.currentCharacter[i.guild.id]].profiles[i.guild.id].skills.personal[name];
-										delete p.characters[p.currentCharacter[i.guild.id]].profiles[i.guild.id].skills.personal[name];
+										// @ts-ignore, since message must be in guild
+										p.characters[p.currentCharacter[i.guildId]].profiles[i.guildId].skills.personal[newName] = p.characters[p.currentCharacter[i.guildId]].profiles[i.guildId].skills.personal[name];
+										// @ts-ignore, since message must be in guild
+										delete p.characters[p.currentCharacter[i.guildId]].profiles[i.guildId].skills.personal[name];
 									},
 								));
 							}
@@ -472,7 +488,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 								const allUsers = await profileModel.find();
 
-								const allSkillNamesList = [...new Set(allUsers.map(u => Object.values(u.characters).map(c => Object.keys(c.profiles[message.guild.id]?.skills?.personal || {}))).map(array1 => array1.filter(array2 => array2.length > 0)).filter(array => array.length > 0).flat(2)), ...serverData.skills];
+								// @ts-ignore, since message must be in guild
+								const allSkillNamesList = [...new Set(allUsers.map(u => Object.values(u.characters).map(c => Object.keys(c.profiles[message.guildId]?.skills?.personal || {}))).map(array1 => array1.filter(array2 => array2.length > 0)).filter(array => array.length > 0).flat(2)), ...serverData.skills];
 								if (allSkillNamesList.includes(newName)) {
 
 									await botReply
@@ -493,9 +510,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 										{ userId: user.userId },
 										(/** @type {import('../../typedef').ProfileSchema} */ p) => {
 											for (const c of Object.values(p.characters)) {
-												if (c.profiles[i.guild.id] !== undefined) {
-													p.characters[c._id].profiles[i.guild.id].skills.global[newName] = p.characters[c._id].profiles[i.guild.id].skills.global[name];
-													delete p.characters[c._id].profiles[i.guild.id].skills.global[name];
+												// @ts-ignore, since message must be in guild
+												if (c.profiles[i.guildId] !== undefined) {
+													// @ts-ignore, since message must be in guild
+													p.characters[c._id].profiles[i.guildId].skills.global[newName] = p.characters[c._id].profiles[i.guildId].skills.global[name];
+													// @ts-ignore, since message must be in guild
+													delete p.characters[c._id].profiles[i.guildId].skills.global[name];
 												}
 											}
 										},
@@ -503,7 +523,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 								}
 
 								await serverModel.findOneAndUpdate(
-									{ serverId: i.guild.id },
+									{ serverId: i.guildId },
 									(/** @type {import('../../typedef').ServerSchema} */ s) => {
 										s.skills.push(newName);
 										s.skills = s.skills.filter(n => n !== name);
@@ -513,8 +533,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 								userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: userData.userId }));
 							}
 
-							characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-							profileData = characterData?.profiles?.[message.guild.id];
+							// @ts-ignore, since message must be in guild
+							characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId]];
+							// @ts-ignore, since message must be in guild
+							profileData = characterData?.profiles?.[message.guildId];
 							botReply = await botReply
 								.edit({
 									content: getSkillList(profileData),
@@ -555,13 +577,18 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 								{ userId: i.user.id },
 								(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-									if (plusOrMinus === '+') { p.characters[p.currentCharacter[i.guild.id]].profiles[i.guild.id].skills[category][name] += newValue; }
-									else if (plusOrMinus === '-') { p.characters[p.currentCharacter[i.guild.id]].profiles[i.guild.id].skills[category][name] -= newValue; }
-									else { p.characters[p.currentCharacter[i.guild.id]].profiles[i.guild.id].skills[category][name] = newValue; }
+									// @ts-ignore, since message must be in guild
+									if (plusOrMinus === '+') { p.characters[p.currentCharacter[i.guildId]].profiles[i.guildId].skills[category][name] += newValue; }
+									// @ts-ignore, since message must be in guild
+									else if (plusOrMinus === '-') { p.characters[p.currentCharacter[i.guildId]].profiles[i.guildId].skills[category][name] -= newValue; }
+									// @ts-ignore, since message must be in guild
+									else { p.characters[p.currentCharacter[i.guildId]].profiles[i.guildId].skills[category][name] = newValue; }
 								},
 							));
-							characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-							profileData = characterData?.profiles?.[message.guild.id];
+							// @ts-ignore, since message must be in guild
+							characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId]];
+							// @ts-ignore, since message must be in guild
+							profileData = characterData?.profiles?.[message.guildId];
 							botReply = await botReply
 								.edit({
 									content: getSkillList(profileData),

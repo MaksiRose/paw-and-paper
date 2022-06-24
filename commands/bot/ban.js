@@ -15,9 +15,10 @@ module.exports.name = 'ban';
  */
 module.exports.sendMessage = async (client, message, argumentsArray) => {
 
+	if (!client.isReady()) { return; }
 	await client.application.fetch();
 
-	if ((client.application.owner instanceof User) ? message.author.id !== client.application.owner.id : !client.application.owner.members.has(message.author.id)) {
+	if ((client.application.owner instanceof User) ? message.author.id !== client.application.owner.id : client.application.owner ? !client.application.owner.members.has(message.author.id) : false) {
 
 		return;
 	}
@@ -28,12 +29,14 @@ module.exports.sendMessage = async (client, message, argumentsArray) => {
 	const id = argumentsArray.pop();
 	const type = argumentsArray.pop();
 
+	if (!id) { return; }
+
 	if (type === 'user') {
 
 		bannedList.users.push(id);
 		writeFileSync('./database/bannedList.json', JSON.stringify(bannedList, null, '\t'));
 
-		const profile = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.findOne({ userId: id }));
+		const profile = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: id }));
 
 		await profileModel.findOneAndDelete({ userId: id });
 
@@ -60,7 +63,7 @@ module.exports.sendMessage = async (client, message, argumentsArray) => {
 		bannedList.servers.push(id);
 		writeFileSync('./database/bannedList.json', JSON.stringify(bannedList, null, '\t'));
 
-		const server = /** @type {Array<import('../../typedef').ServerSchema>} */ (await serverModel.findOne({ serverId: id }));
+		const server = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOne({ serverId: id }));
 
 		await serverModel.findOneAndDelete({ serverId: id });
 

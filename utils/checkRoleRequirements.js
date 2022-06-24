@@ -47,7 +47,7 @@ async function checkRankRequirements(serverData, message, member, userRank) {
 				}
 
 
-				if (message.member.roles.cache.has(item.roleId) === false) {
+				if (message.member && !message.member.roles.cache.has(item.roleId)) {
 
 					await member.roles.add(item.roleId);
 
@@ -56,7 +56,7 @@ async function checkRankRequirements(serverData, message, member, userRank) {
 							content: member.toString(),
 							embeds: [{
 								color: /** @type {`#${string}`} */ (default_color),
-								author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+								author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
 								description: `You got the <@&${item.roleId}> role for being ${item.requirement}!`,
 							}],
 						})
@@ -126,7 +126,7 @@ async function checkLevelRequirements(serverData, message, member, userLevel) {
 							content: member.toString(),
 							embeds: [{
 								color: /** @type {`#${string}`} */ (default_color),
-								author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+								author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
 								description: `You got the <@&${item.roleId}> role for being level ${item.requirement}!`,
 							}],
 						})

@@ -1,4 +1,5 @@
 // @ts-check
+const { MessageEmbed } = require('discord.js');
 const profileModel = require('../models/profileModel');
 const { pronoun } = require('./getPronouns');
 const { generateRandomNumber, pullFromWeightedTable } = require('./randomizers');
@@ -33,12 +34,11 @@ async function decreaseThirst(profileData) {
  */
 async function decreaseHunger(profileData) {
 
-	let minimumHungerPoints = Math.round(10 - (profileData.energy / 10));
+	const minimumHungerPoints = Math.round(10 - (profileData.energy / 10));
 	let hungerPoints = 0;
 
 	if (minimumHungerPoints > 0) {
 
-		minimumHungerPoints = Math.round(minimumHungerPoints / 2);
 		hungerPoints = Math.floor(Math.random() * 3) + minimumHungerPoints;
 
 		if (profileData.hunger - hungerPoints < 0) {
@@ -84,7 +84,9 @@ async function decreaseEnergy(profileData) {
  */
 async function decreaseHealth(userData, botReply, modifiedUserInjuryObject) {
 
+	// @ts-ignore, since botReply is always in guild here
 	let characterData = userData.characters[userData.currentCharacter[botReply.guild.id]];
+	// @ts-ignore, since botReply is always in guild here
 	let profileData = characterData.profiles[botReply.guild.id];
 
 	if (Object.values(profileData.injuries).every((value) => value == 0)) {
@@ -92,6 +94,7 @@ async function decreaseHealth(userData, botReply, modifiedUserInjuryObject) {
 		userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 			{ uuid: userData.uuid },
 			(/** @type {import('../typedef').ProfileSchema} */ p) => {
+				// @ts-ignore, since botReply is always in guild here
 				p.characters[p.currentCharacter[botReply.guild.id]].profiles[botReply.guild.id].injuries = modifiedUserInjuryObject;
 			},
 		));
@@ -100,12 +103,9 @@ async function decreaseHealth(userData, botReply, modifiedUserInjuryObject) {
 	}
 
 	let extraLostHealthPoints = 0;
-	/** @type {import('discord.js').MessageEmbedOptions} */
-	const embed = {
-		color: characterData.color,
-		description: '',
-		footer: { text: '' },
-	};
+	const embed = new MessageEmbed()
+		.setColor(characterData.color);
+	embed.description = '';
 
 	for (let i = 0; i < profileData.injuries.wounds; i++) {
 
@@ -215,16 +215,20 @@ async function decreaseHealth(userData, botReply, modifiedUserInjuryObject) {
 	userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 		{ uuid: userData.uuid },
 		(/** @type {import('../typedef').ProfileSchema} */ p) => {
+			// @ts-ignore, since botReply is always in guild here
 			p.characters[p.currentCharacter[botReply.guild.id]].profiles[botReply.guild.id].health -= extraLostHealthPoints;
+			// @ts-ignore, since botReply is always in guild here
 			p.characters[p.currentCharacter[botReply.guild.id]].profiles[botReply.guild.id].injuries = modifiedUserInjuryObject;
 		},
 	));
+	// @ts-ignore, since botReply is always in guild here
 	characterData = userData.characters[userData.currentCharacter[botReply.guild.id]];
+	// @ts-ignore, since botReply is always in guild here
 	profileData = characterData.profiles[botReply.guild.id];
 
 	if (extraLostHealthPoints > 0) {
 
-		embed.footer.text = `-${extraLostHealthPoints} HP (${profileData.health}/${profileData.maxHealth})`;
+		embed.setFooter({ text: `-${extraLostHealthPoints} HP (${profileData.health}/${profileData.maxHealth})` });
 	}
 
 	botReply.embeds.push(/** @type {import('discord.js').MessageEmbed} */ (embed));

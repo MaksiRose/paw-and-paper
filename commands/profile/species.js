@@ -2,7 +2,7 @@
 const profileModel = require('../../models/profileModel');
 const startCooldown = require('../../utils/startCooldown');
 const { speciesMap } = require('../../utils/itemsInfo');
-const { hasNoName } = require('../../utils/checkAccountCompletion');
+const { hasName } = require('../../utils/checkAccountCompletion');
 const { pronoun, upperCasePronoun } = require('../../utils/getPronouns');
 const { playAdvice } = require('../../utils/adviceMessages');
 const { MessageSelectMenu, MessageActionRow, MessageEmbed, MessageButton, Modal, TextInputComponent } = require('discord.js');
@@ -16,14 +16,14 @@ module.exports.name = 'species';
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray
- * @param {import('../../typedef').ProfileSchema} userData
+ * @param {import('../../typedef').ProfileSchema | null} userData
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild?.id || 'DM']];
+	const characterData = userData ? userData.characters[userData.currentCharacter[message.guildId || 'DM']] : null;
 
-	if (await hasNoName(message, characterData)) {
+	if (!hasName(message, characterData)) {
 
 		return;
 	}
@@ -60,6 +60,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 	});
 
 	let speciesPage = 0;
+	let botReply;
 
 	for (const speciesName of speciesNameArray.slice(0, 24)) {
 
@@ -79,7 +80,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		return;
 	}
 
-	let botReply = await message
+	botReply = await message
 		.reply({
 			embeds: (characterData.species === '') ? [newSpeciesEmbed] : [existingSpeciesEmbed],
 			components: [
@@ -105,6 +106,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 				if (interaction.isButton() && interaction.customId === 'displayedspecies-modal') {
 
 					interaction.showModal(new Modal()
+						// @ts-ignore, characterData is guaranteed not to be null
 						.setCustomId(`displayedspecies-${message.author.id}-${characterData._id}`)
 						.setTitle('Change displayed species')
 						.addComponents(
@@ -114,6 +116,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 									.setLabel('Text')
 									.setStyle('SHORT')
 									.setMaxLength(25)
+									// @ts-ignore, characterData is guaranteed not to be null
 									.setValue(characterData.displayedSpecies),
 								],
 							}),
@@ -198,8 +201,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		botReply = await message
 			.reply({
 				embeds: [new MessageEmbed({
+					// @ts-ignore, characterData is guaranteed not to be null
 					color: characterData.color,
+					// @ts-ignore, characterData is guaranteed not to be null
 					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					// @ts-ignore, characterData is guaranteed not to be null
 					description: `*A stranger carefully steps over the pack's borders. ${upperCasePronoun(characterData, 2)} face seems friendly. Curious eyes watch ${pronoun(characterData, 1)} as ${pronoun(characterData, 0)} come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n"${characterData.name}," *the ${chosenSpecies} responds. The Alpha takes a friendly step towards ${pronoun(characterData, 1)}.* "It's nice to have you here, ${characterData.name}," *they say. More and more packmates come closer to greet the newcomer.*`,
 					footer: { text: 'You are now done setting up your character for RPGing! Type "rp profile" to look at it.\nWith "rp help" you can see how else you can customize your profile, as well as your other options.\nYou can use the button below to change your displayed species.' },
 				})],

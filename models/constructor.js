@@ -126,7 +126,7 @@ class model {
 
 			if (dataObject === null) {
 
-				return null;
+				return;
 			}
 
 			fs.unlinkSync(`${path}/${dataObject.uuid}.json`);
@@ -185,7 +185,7 @@ class model {
 
 				if (logOutputter(oldVariable) !== logOutputter(newVariable)) {
 
-					console.log(`\x1b[32m${dataObject.uuid}: \x1b[0m${variablePath} changed from \x1b[33m${logOutputter(objectReducer(oldVariable, newVariable))} \x1b[0mto \x1b[33m${logOutputter(objectReducer(newVariable, oldVariable))} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+					console.log(`\x1b[32m${dataObject?.uuid}: \x1b[0m${variablePath} changed from \x1b[33m${logOutputter(objectReducer(oldVariable, newVariable))} \x1b[0mto \x1b[33m${logOutputter(objectReducer(newVariable, oldVariable))} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 				}
 			}
 

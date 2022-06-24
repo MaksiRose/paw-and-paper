@@ -8,17 +8,18 @@ const { passingoutAdvice } = require('./adviceMessages');
 
 /**
  * Checks if the user is passed out. If yes, then send a message and return true, as well as decrease their level if it's new. Else, return false.
- * @param {import('discord.js').Message} message
- * @param {import('../typedef').ProfileSchema} userData
+ * @param {import('discord.js').Message<true>} message
+ * @param {string} uuid
  * @param {boolean} isNew
  * @returns {Promise<boolean>}
  */
-async function isPassedOut(message, userData, isNew) {
+async function isPassedOut(message, uuid, isNew) {
 
-	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
-	const profileData = characterData.profiles[message.guild.id];
+	const userData = /** @type {import('../typedef').ProfileSchema | null} */ (await profileModel.findOne({ uuid: uuid }));
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message?.guildId]];
+	const profileData = characterData?.profiles?.[message?.guildId];
 
-	if (profileData.energy <= 0 || profileData.health <= 0 || profileData.hunger <= 0 || profileData.thirst <= 0) {
+	if (userData && characterData && profileData && (profileData.energy <= 0 || profileData.health <= 0 || profileData.hunger <= 0 || profileData.thirst <= 0)) {
 
 		const botReply = await message
 			.reply({
@@ -46,7 +47,7 @@ async function isPassedOut(message, userData, isNew) {
 
 /**
  * Checks if the user is on a cooldown. If yes, then send a message and return true, as well as decrease their level if it's new. Else, return false.
- * @param {import('discord.js').Message} message
+ * @param {import('discord.js').Message<true>} message
  * @param {import('../typedef').ProfileSchema} userData
  * @param {Array<string>} callerNameArray
  * @returns {Promise<boolean>}
@@ -56,7 +57,7 @@ async function hasCooldown(message, userData, callerNameArray) {
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	const profileData = characterData?.profiles?.[message.guild.id];
 
-	const commandName = message.content.slice(prefix.length).trim().split(/ +/).shift().toLowerCase();
+	const commandName = message.content.slice(prefix.length).trim().split(/ +/).shift()?.toLowerCase() || '';
 
 	if (profileData.hasCooldown === true && callerNameArray.includes(commandName)) {
 
@@ -91,7 +92,7 @@ async function hasCooldown(message, userData, callerNameArray) {
 
 /**
  * Checks if the user is resting. If yes, then wake user up and attach an embed to the message. Returns the updated `userData`.
- * @param {import('discord.js').Message} message
+ * @param {import('discord.js').Message<true>} message
  * @param {import('../typedef').ProfileSchema} userData
  * @param {Array<import('discord.js').MessageEmbed | import('discord.js').MessageEmbedOptions>} embedArray
  * @returns {Promise<import('../typedef').ProfileSchema>}
@@ -125,7 +126,7 @@ async function isResting(message, userData, embedArray) {
 
 /**
  * Checks if the user is passed out, on a cooldown or resting, sends or attaches the appropriate message/embed, and returns a boolean of the result.
- * @param {import('discord.js').Message} message
+ * @param {import('discord.js').Message<true>} message
  * @param {import('../typedef').ProfileSchema} userData
  * @param {Array<import('discord.js').MessageEmbed | import('discord.js').MessageEmbedOptions>} embedArray
  * @param {Array<string>} callerNameArray
@@ -133,7 +134,7 @@ async function isResting(message, userData, embedArray) {
  */
 async function isInvalid(message, userData, embedArray, callerNameArray) {
 
-	if (await isPassedOut(message, userData, false)) {
+	if (await isPassedOut(message, userData.uuid, false)) {
 
 		return true;
 	}

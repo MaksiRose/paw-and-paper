@@ -72,16 +72,6 @@
 				"maxBOF": 0
 			}
 		],
-		"no-shadow": [
-			"error",
-			{
-				"allow": [
-					"err",
-					"resolve",
-					"reject"
-				]
-			}
-		],
 		"no-trailing-spaces": [
 			"error"
 		],

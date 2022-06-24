@@ -7,7 +7,7 @@ const { checkLevelUp } = require('../../utils/levelHandling');
 const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
 const { MessageActionRow, MessageSelectMenu } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 
 module.exports.name = 'shopremove';
 module.exports.aliases = ['shopdelete'];
@@ -24,12 +24,12 @@ module.exports.aliases = ['shopdelete'];
  */
 module.exports.sendMessage = async (client, message, argumentsArray, profileData, serverData) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
 
-	if (message.member.permissions.has('ADMINISTRATOR') === false) {
+	if (!message.member || !message.member.permissions.has('ADMINISTRATOR')) {
 
 		await message
 			.reply({
@@ -68,7 +68,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 		.reply({
 			embeds: [{
 				color: /** @type {`#${string}`} */ (default_color),
-				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+				author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
 				description: description,
 			}],
 			components: [ new MessageActionRow({
@@ -89,12 +89,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.user.id === message.author.id && i.customId === 'shopdelete-options';
 
-		/** @type {import('discord.js').SelectMenuInteraction | null} } */
+		/** @type {import('discord.js').MessageComponentInteraction | null} } */
 		const interaction = await botReply
 			.awaitMessageComponent({ filter, time: 120_000 })
 			.catch(() => { return null; });
 
-		if (interaction === null) {
+		if (interaction === null || !interaction.isSelectMenu()) {
 
 			await botReply
 				.edit({
@@ -120,7 +120,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				.edit({
 					embeds: [{
 						color: /** @type {`#${string}`} */ (default_color),
-						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+						// @ts-ignore, because message must be in guild
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
 						description: newDescription,
 					}],
 					components: [ new MessageActionRow({
@@ -142,6 +143,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 			const deleteItem = serverData.shop.splice(deleteIndex, 1);
 
 			serverData = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOneAndUpdate(
+				// @ts-ignore, because message must be in guild
 				{ serverId: message.guild.id },
 				(/** @type {import('../../typedef').ServerSchema} */ s) => {
 					s.shop = serverData.shop;
@@ -152,7 +154,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 				.edit({
 					embeds: [{
 						color: /** @type {`#${string}`} */ (default_color),
-						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+						// @ts-ignore, because message must be in guild
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
 						description: `<@&${deleteItem[0].roleId}> with the requirement of ${deleteItem[0].requirement} ${deleteItem[0].wayOfEarning} was deleted from the shop.`,
 					}],
 					components: disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components),
@@ -163,6 +166,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 			const allServerUsers = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
 				(/** @type {import('../../typedef').ProfileSchema} */ u) => {
+					// @ts-ignore, because message must be in guild
 					return Object.values(u.characters).filter(c => c.profiles[message.guild.id] !== undefined).length > 0;
 				}));
 
@@ -170,9 +174,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 
 				for (const c of Object.values(u.characters)) {
 
+					// @ts-ignore, because message must be in guild
 					const p = c.profiles[message.guild.id];
 					if (p !== undefined) {
 
+						// @ts-ignore, because message must be in guild
 						const member = await message.guild.members.fetch(u.userId);
 
 						if (p.roles.some(role => role.roleId === deleteItem[0].roleId && role.wayOfEarning === deleteItem[0].wayOfEarning && role.requirement === deleteItem[0].requirement)) {
@@ -180,19 +186,21 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 							try {
 
 								const userRole = p.roles.find(role => role.roleId === deleteItem[0].roleId && role.wayOfEarning === deleteItem[0].wayOfEarning && role.requirement === deleteItem[0].requirement);
-								const userRoleIndex = p.roles.indexOf(userRole);
+								const userRoleIndex = userRole ? p.roles.indexOf(userRole) : -1;
 
 								if (userRoleIndex >= 0) { p.roles.splice(userRoleIndex, 1); }
 
 								await profileModel.findOneAndUpdate(
 									{ userId: u.userId },
 									(/** @type {import('../../typedef').ProfileSchema} */ usr) => {
-										usr.characters[c._id].profiles[message.guild.id].experience += userRole.wayOfEarning === 'experience' ? /** @type {number} */ (userRole.requirement) : 0;
+										// @ts-ignore, because message must be in guild
+										usr.characters[c._id].profiles[message.guild.id].experience += userRole?.wayOfEarning === 'experience' ? /** @type {number} */ (userRole.requirement) : 0;
+										// @ts-ignore, because message must be in guild
 										usr.characters[c._id].profiles[message.guild.id].roles = p.roles;
 									},
 								);
 
-								if (message.member.roles.cache.has(deleteItem[0].roleId) === true && p.roles.filter(role => role.roleId === deleteItem[0].roleId).length === 0) {
+								if (message.member && message.member.roles.cache.has(deleteItem[0].roleId) === true && p.roles.filter(role => role.roleId === deleteItem[0].roleId).length === 0) {
 
 									await member.roles.remove(deleteItem[0].roleId);
 
@@ -201,7 +209,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 											content: member.toString(),
 											embeds: [{
 												color: /** @type {`#${string}`} */ (default_color),
-												author: { name: botReply.guild.name, icon_url: botReply.guild.iconURL() },
+												// @ts-ignore, because message must be in guild
+												author: { name: botReply.guild.name, icon_url: botReply.guild.iconURL() || undefined },
 												description: `You lost the <@&${deleteItem[0].roleId}> role because it was removed from the shop!`,
 											}],
 										})
@@ -210,11 +219,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, profileData
 										});
 								}
 
-								checkLevelUp(message, undefined, u, serverData);
+								// @ts-ignore, since message is guaranteed to be in guild
+								checkLevelUp(message, u, serverData);
 							}
 							catch (error) {
 
-								await checkRoleCatchBlock(error, message, message.member);
+								if (message.member) { await checkRoleCatchBlock(error, message, message.member); }
+								else { throw new Error(error); }
 							}
 						}
 					}

@@ -13,25 +13,29 @@ module.exports.execute = async (client) => {
 
 	for (const file of files) {
 
-		const serverData = await serverModel
+		const serverData = /** @type {import('../typedef').ServerSchema | null} */ (await serverModel
 			.findOneAndUpdate(
 				{ uuid: file.replace('.json', '') },
 				(/** @type {import('../typedef').ServerSchema} */ s) => {
 					s.currentlyVisiting = null;
 				},
-			);
+			)
+		);
 
-		await client.guilds
-			.fetch(serverData.serverId)
-			.catch(error => {
+		if (serverData) {
 
-				if (error.httpStatus === 403) {
+			await client.guilds
+				.fetch(serverData.serverId)
+				.catch(error => {
 
-					deleteGuild(serverData.serverId);
-				}
-				else {
-					console.error(error);
-				}
-			});
+					if (error.httpStatus === 403) {
+
+						deleteGuild(serverData.serverId);
+					}
+					else {
+						console.error(error);
+					}
+				});
+		}
 	}
 };

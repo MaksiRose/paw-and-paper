@@ -1,13 +1,13 @@
 // @ts-check
-const { hasNoName } = require('../../utils/checkAccountCompletion');
+const { hasName } = require('../../utils/checkAccountCompletion');
 const serverModel = require('../../models/serverModel');
 const profileModel = require('../../models/profileModel');
 const { error_color, default_color, prefix } = require('../../config.json');
 const { pronounAndPlural, pronoun, upperCasePronounAndPlural, upperCasePronoun } = require('../../utils/getPronouns');
 const { readFileSync, writeFileSync } = require('fs');
-const { MessageActionRow, MessageSelectMenu, MessageButton } = require('discord.js');
+const { MessageActionRow, MessageSelectMenu, MessageButton, MessageEmbed } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 
 module.exports.name = 'requestvisit';
 module.exports.aliases = ['visit'];
@@ -23,14 +23,14 @@ module.exports.aliases = ['visit'];
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userDataV, serverDataV) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
 
 	const characterDataV = userDataV?.characters?.[userDataV?.currentCharacter?.[message.guild.id]];
 
-	if (await hasNoName(message, characterDataV)) {
+	if (!hasName(message, characterDataV)) {
 
 		return;
 	}
@@ -95,7 +95,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userDataV, 
 		.reply({
 			embeds: [{
 				color: /** @type {`#${string}`} */ (default_color),
-				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+				author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
 				description: `*${characterDataV.name} is looking to meet some new friends. There are other packs in the area. Who should ${pronoun(characterDataV, 0)} visit?*`,
 			}],
 			components: [ new MessageActionRow({
@@ -118,12 +118,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userDataV, 
 
 		let filter = async (/** @type {import('discord.js').MessageComponentInteraction} */ i) => i.user.id === message.author.id;
 
-		/** @type {import('discord.js').SelectMenuInteraction | null} } */
+		/** @type {import('discord.js').MessageComponentInteraction | null} } */
 		const interaction = await botReplyV
 			.awaitMessageComponent({ filter, time: 300_000 })
 			.catch(() => { return null; });
 
-		if (interaction === null) {
+		if (interaction === null || !interaction.inCachedGuild() || !interaction.isSelectMenu()) {
 
 			return await botReplyV
 				.edit({
@@ -143,7 +143,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userDataV, 
 
 			visitableServers = /** @type {Array<import('../../typedef').ServerSchema>} */ (await serverModel.find(
 				(/** @type {import('../../typedef').ServerSchema} */ s) => {
-					return s.serverId !== message.guild.id && s.visitChannelId !== null && s.currentlyVisiting === null;
+					return s.serverId !== message.guildId && s.visitChannelId !== null && s.currentlyVisiting === null;
 				}));
 
 			packPage++;
@@ -211,10 +211,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userDataV, 
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 
-			const visitChannelV = await client.channels.fetch(serverDataV.visitChannelId);
-			const visitChannelH = await client.channels.fetch(serverDataH.visitChannelId);
+			const visitChannelV = await client.channels.fetch(serverDataV.visitChannelId || '');
+			const visitChannelH = await client.channels.fetch(serverDataH.visitChannelId || '');
 
-			if (!visitChannelV.isText() || !visitChannelH.isText()) {
+			if (!visitChannelV || !visitChannelV.isText() || !visitChannelH || !visitChannelH.isText()) {
 
 				return;
 			}
@@ -223,7 +223,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userDataV, 
 				.send({
 					embeds: [{
 						color: /** @type {`#${string}`} */ (default_color),
-						author: { name: /** @type {import('discord.js').TextChannel} */ (visitChannelH).guild.name, icon_url: /** @type {import('discord.js').TextChannel} */ (visitChannelH).guild.iconURL() },
+						author: { name: /** @type {import('discord.js').TextChannel} */ (visitChannelH).guild.name, icon_url: /** @type {import('discord.js').TextChannel} */ (visitChannelH).guild.iconURL() || undefined },
 						description: `*${characterDataV.name} strolls over to ${serverDataH.name}. ${upperCasePronounAndPlural(characterDataV, 0, 'is', 'are')} waiting patiently at the pack borders to be invited in as to not invade the pack's territory without permission.*`,
 						footer: { text: 'The invitation will expire in five minutes. Alternatively, you can cancel it using the button below.' },
 					}],
@@ -243,7 +243,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userDataV, 
 				.send({
 					embeds: [{
 						color: /** @type {`#${string}`} */ (default_color),
-						author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+						// @ts-ignore, since message must be in guild
+						author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
 						title: `Near the lake a ${characterDataV.displayedSpecies || characterDataV.species} is waiting. ${upperCasePronoun(characterDataV, 0)} came out of the direction where a pack named "${serverDataV.name}" is lying. ${upperCasePronoun(characterDataV, 0)} seems to be waiting for permission to cross the pack borders.`,
 						footer: { text: 'The invitation will expire in five minutes. Alternatively, you can decline it using the button below.' },
 					}],
@@ -274,7 +275,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userDataV, 
 					}
 
 					const profileDataH = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: button.user.id }));
-					const characterDataH = profileDataH.characters[profileDataH.currentCharacter[button.guild.id]];
+					// @ts-ignore, since message must be in guild
+					const characterDataH = profileDataH.characters[profileDataH.currentCharacter[button.guildId]];
 
 					if (button.customId === 'visit_accept') {
 
@@ -331,7 +333,9 @@ async function declinedInvitation(message, characterData, botReplyV, botReplyH) 
 		.reply({
 			embeds: [{
 				color: /** @type {`#${string}`} */ (default_color),
-				author: { name: botReplyH.guild.name, icon_url: botReplyH.guild.iconURL() },
+				// @ts-ignore, since message must be in guild
+				author: { name: botReplyH.guild.name, icon_url: botReplyH.guild.iconURL() || undefined },
+				// @ts-ignore, since message must be in guild
 				description: `*After ${characterData.name} waited for a while, ${pronoun(characterData, 0)} couldn't deal with the boredom and left the borders of ${botReplyV.guild.name}. The ${characterData.displayedSpecies || characterData.species} gets back feeling a bit lonely but when ${pronounAndPlural(characterData, 0, 'see')} all ${pronoun(characterData, 2)} packmates having fun at home, ${characterData.name} cheers up and joins them excitedly.*`,
 			}],
 			failIfNotExists: false,
@@ -352,7 +356,9 @@ async function declinedInvitation(message, characterData, botReplyV, botReplyH) 
 		.reply({
 			embeds: [{
 				color: /** @type {`#${string}`} */ (default_color),
-				author: { name: message.guild.name, icon_url: message.guild.iconURL() },
+				// @ts-ignore, since message must be in guild
+				author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
+				// @ts-ignore, since message must be in guild
 				description: `*After the ${characterData.displayedSpecies || characterData.species} waited for a while, the pack members of ${botReplyV.guild.name} can see them getting up and leaving, probably due to boredom. Everyone is too busy anyways, so it is probably for the best if ${pronoun(characterData, 0)} come back later.*`,
 			}],
 			failIfNotExists: false,
@@ -397,7 +403,8 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 		.reply({
 			embeds: [{
 				color: /** @type {`#${string}`} */ (default_color),
-				author: { name: botReplyH.guild.name, icon_url: botReplyH.guild.iconURL() },
+				// @ts-ignore, since message must be in guild
+				author: { name: botReplyH.guild.name, icon_url: botReplyH.guild.iconURL() || undefined },
 				description: `*After waiting for a bit, a ${characterDataH.displayedSpecies || characterDataH.species} comes closer, inviting ${characterDataV.name} and their packmates in and leading them inside where they can talk to all these new friends.*`,
 				footer: { text: 'Anyone with a completed profile can now send a message in this channel. It will be delivered to the other pack, and vice versa. Type "rp endvisit" to end the visit at any time.' },
 			}],
@@ -419,7 +426,8 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 		.reply({
 			embeds: [{
 				color: /** @type {`#${string}`} */ (default_color),
-				author: { name: botReplyV.guild.name, icon_url: botReplyV.guild.iconURL() },
+				// @ts-ignore, since message must be in guild
+				author: { name: botReplyV.guild.name, icon_url: botReplyV.guild.iconURL() || undefined },
 				description: `*${characterDataH.name} goes to pick up the ${characterDataV.displayedSpecies || characterDataV.species} and their packmates from the pack borders. The new friends seem excited to be here and to talk to everyone.*`,
 				footer: { text: 'Anyone with a completed profile can now send a message in this channel. It will be delivered to the other pack, and vice versa. Type "rp endvisit" to end the visit at any time.' },
 			}],
@@ -431,10 +439,10 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 
 	const filter = async (/** @type {import('discord.js').Message} */ m) => m.content.startsWith(prefix) === false && (await profileModel.findOne({ userId: m.author.id })) !== null;
 
-	const hostChannel = await client.channels.fetch(serverDataH.visitChannelId);
-	const guestChannel = await client.channels.fetch(serverDataV.visitChannelId);
+	const hostChannel = await client.channels.fetch(serverDataH.visitChannelId || '');
+	const guestChannel = await client.channels.fetch(serverDataV.visitChannelId || '');
 
-	if (!hostChannel.isText() || !guestChannel.isText()) {
+	if (!hostChannel || !hostChannel.isText() || !guestChannel || !guestChannel.isText()) {
 
 		return;
 	}
@@ -459,6 +467,7 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 			}
 
 			const server = /** @type {import('../../typedef').ServerSchema} */ (await serverModel.findOne(
+				// @ts-ignore, since message must be in guild
 				{ serverId: msg.guild.id },
 			));
 
@@ -496,7 +505,8 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 					.send({
 						embeds: [{
 							color: /** @type {`#${string}`} */ (default_color),
-							author: { name: otherServerChannel.guild.name, icon_url: otherServerChannel.guild.iconURL() },
+							author: { name: otherServerChannel.guild.name, icon_url: otherServerChannel.guild.iconURL() || undefined },
+							// @ts-ignore, since message must be in guild
 							description: `*Hanging out with friends is always nice but has to end eventually. And so the friends from ${message.guild.name} went back to their territory. Until next time.*`,
 						}],
 					})
@@ -508,7 +518,8 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
 					.send({
 						embeds: [{
 							color: /** @type {`#${string}`} */ (default_color),
-							author: { name: thisServerChannel.guild.name, icon_url: thisServerChannel.guild.iconURL() },
+							author: { name: thisServerChannel.guild.name, icon_url: thisServerChannel.guild.iconURL() || undefined },
+							// @ts-ignore, since message must be in guild
 							description: `*Hanging out with friends is always nice but has to end eventually. And so the friends from ${message.guild.name} went back to their territory. Until next time.*`,
 						}],
 					})
@@ -530,10 +541,12 @@ async function acceptedInvitation(client, message, botReplyV, botReplyH, serverD
  */
 module.exports.sendVisitMessage = async (client, message, userData, thisServerData, otherServerData) => {
 
-	const thisServerChannel = /** @type {import('discord.js').TextChannel} */ (await client.channels.fetch(thisServerData.visitChannelId));
-	const otherServerChannel = /** @type {import('discord.js').TextChannel} */ (await client.channels.fetch(otherServerData.visitChannelId));
+	const thisServerChannel = /** @type {import('discord.js').GuildTextBasedChannel} */ (await client.channels.fetch(thisServerData.visitChannelId || ''));
+	const otherServerChannel = /** @type {import('discord.js').GuildTextBasedChannel} */ (await client.channels.fetch(otherServerData.visitChannelId || ''));
 
-	const otherServerWebhook = (await otherServerChannel
+	const webhookChannel = otherServerChannel.isThread() ? otherServerChannel.parent : otherServerChannel;
+	if (!webhookChannel) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
+	const otherServerWebhook = (await webhookChannel
 		.fetchWebhooks()
 		.catch((error) => {
 			if (error.httpStatus === 403) {
@@ -542,7 +555,7 @@ module.exports.sendVisitMessage = async (client, message, userData, thisServerDa
 			}
 			throw new Error(error);
 		})
-	).find(webhook => webhook.name === 'PnP Profile Webhook') || await otherServerChannel
+	).find(webhook => webhook.name === 'PnP Profile Webhook') || await webhookChannel
 		.createWebhook('PnP Profile Webhook')
 		.catch((error) => {
 			if (error.httpStatus === 403) {
@@ -552,13 +565,14 @@ module.exports.sendVisitMessage = async (client, message, userData, thisServerDa
 			throw new Error(error);
 		});
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	// @ts-ignore, since message must be in guild
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId]];
 	if (characterData === undefined) { return; }
 	/** @type {import('../../typedef').WebhookMessages} */
 	const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8'));
 	let embeds = undefined;
 
-	if (message.reference !== null) {
+	if (message.reference && message.reference.messageId) {
 
 		const referencedMessage = await message.channel.messages.fetch(message.reference.messageId);
 
@@ -568,11 +582,14 @@ module.exports.sendVisitMessage = async (client, message, userData, thisServerDa
 			referencedMessage.author = user;
 		}
 
-		embeds = [{
-			author: { name: referencedMessage.member.displayName, icon_url: referencedMessage.member.displayAvatarURL() },
-			color: referencedMessage.member.displayHexColor,
+		embeds = [ new MessageEmbed({
+			color: referencedMessage.member?.displayColor || referencedMessage.author.accentColor || '#ffffff',
+			author: {
+				name: referencedMessage.member?.displayName || referencedMessage.author?.tag,
+				icon_url: referencedMessage.member?.displayAvatarURL() || referencedMessage.author?.avatarURL() || undefined,
+			},
 			description: referencedMessage.content,
-		}];
+		})];
 	}
 
 	const botMessage = await otherServerWebhook
@@ -582,6 +599,7 @@ module.exports.sendVisitMessage = async (client, message, userData, thisServerDa
 			content: message.content || undefined,
 			files: Array.from(message.attachments.values()) || undefined,
 			embeds: embeds,
+			threadId: otherServerChannel.isThread() ? otherServerChannel.id : undefined,
 		})
 		.catch((error) => { throw new Error(error); });
 

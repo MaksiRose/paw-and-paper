@@ -2,7 +2,7 @@
 const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
 const { generateRandomNumber, generateRandomNumberWithException } = require('../../utils/randomizers');
 const profileModel = require('../../models/profileModel');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const startCooldown = require('../../utils/startCooldown');
 const { remindOfAttack } = require('./attack');
@@ -10,8 +10,8 @@ const { pronoun, pronounAndPlural } = require('../../utils/getPronouns');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
-const { coloredButtonsAdvice } = require('../../utils/adviceMessages');
-const sendNoDM = require('../../utils/sendNoDM');
+const { coloredButtonsAdvice, restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
+const isInGuild = require('../../utils/isInGuild');
 
 module.exports.name = 'practice';
 module.exports.aliases = ['train'];
@@ -23,20 +23,20 @@ module.exports.aliases = ['train'];
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-	const profileData = characterData?.profiles?.[message.guild.id];
+	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	let profileData = characterData?.profiles?.[message.guild.id];
 
-	if (await hasNotCompletedAccount(message, characterData)) {
+	if (!hasCompletedAccount(message, characterData)) {
 
 		return;
 	}
@@ -95,7 +95,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	let filter = (/** @type {{ customId: string; user: { id: string; }; }} */ i) => (i.customId === 'practice-accept' || i.customId === 'practice-decline') && i.user.id == message.author.id;
 
 	const shouldContinue = await botReply
-		.awaitMessageComponent({ filter, time: 15_000 })
+		.awaitMessageComponent({ filter, time: 120_000 })
 		.then(async interaction => {
 
 			if (interaction.customId === 'practice-decline') {
@@ -146,6 +146,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].thirst -= thirstPoints;
 		},
 	));
+	characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	profileData = characterData?.profiles?.[message.guild.id];
 
 	const embed = {
 		color: characterData.color,
@@ -259,7 +261,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		/* Here we change the buttons customId's so that they will always stay unique, as well as disabling the buttons. */
 		for (const button of botReply.components[botReply.components.length - 1].components) {
 
-			button.customId += totalCycles;
+			if (button.customId) button.customId += totalCycles;
 		}
 
 		botReply.components = disableAllComponents(botReply.components);
@@ -298,10 +300,18 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			});
 
 		botReply = await decreaseHealth(userData, botReply, { ...profileData.injuries });
-		botReply = await checkLevelUp(message, botReply, userData, serverData);
-		await isPassedOut(message, userData, true);
+		// @ts-ignore, as message is must be in server
+		botReply = await checkLevelUp(message, userData, serverData, botReply) || botReply;
+		// @ts-ignore, as message is must be in server
+		await isPassedOut(message, userData.uuid, true);
 
 		await coloredButtonsAdvice(message, userData);
+		// @ts-ignore, as message is must be in server
+		await restAdvice(message, userData);
+		// @ts-ignore, as message is must be in server
+		await drinkAdvice(message, userData);
+		// @ts-ignore, as message is must be in server
+		await eatAdvice(message, userData);
 
 		return;
 	}

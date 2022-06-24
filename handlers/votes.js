@@ -19,7 +19,7 @@ module.exports.execute = (client) => {
 
 	if (/** @type {{token: string, authorization: string}} */ (client.votes.bfd).token !== '' || /** @type {{token: string, authorization: string}} */ (client.votes.bfd).authorization != '') {
 
-		const bfdClient = new bfd(/** @type {{token: string, authorization: string}} */(client.votes.bfd).token, client.user.id);
+		const bfdClient = new bfd(/** @type {{token: string, authorization: string}} */(client.votes.bfd).token, client.user?.id);
 		const bfdAuthorization = /** @type {{token: string, authorization: string}} */ (client.votes.bfd).authorization;
 		client.votes.bfd = bfdClient;
 

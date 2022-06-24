@@ -1,7 +1,7 @@
 // @ts-check
 const profileModel = require('../../models/profileModel');
 const startCooldown = require('../../utils/startCooldown');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { prefix } = require('../../config.json');
@@ -10,7 +10,7 @@ const { remindOfAttack } = require('./attack');
 const { pronoun, pronounAndPlural } = require('../../utils/getPronouns');
 const { MessageSelectMenu, MessageActionRow, MessageButton, MessageEmbed } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 
 module.exports.name = 'go';
 module.exports.aliases = ['region'];
@@ -22,12 +22,12 @@ module.exports.aliases = ['region'];
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
@@ -35,12 +35,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	const profileData = characterData?.profiles?.[message.guild.id];
 
-	if (await hasNotCompletedAccount(message, characterData)) {
+	if (!hasCompletedAccount(message, characterData)) {
 
 		return;
 	}
 
-	if (await isInvalid(message, userData, embedArray, [module.exports.name].concat(module.exports.aliases))) {
+	if (await isInvalid(message, userData, embedArray, module.exports.aliases.concat(module.exports.name))) {
 
 		return;
 	}
@@ -343,7 +343,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		await profileModel.findOneAndUpdate(
 			{ userId: message.author.id },
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'sleeping dens';
+				// @ts-ignore, since message is safe to be in guild
+				p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].currentRegion = 'sleeping dens';
 			},
 		);
 
@@ -356,7 +357,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		await profileModel.findOneAndUpdate(
 			{ userId: message.author.id },
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'food den';
+				// @ts-ignore, since message is safe to be in guild
+				p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].currentRegion = 'food den';
 			},
 		);
 
@@ -367,7 +369,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		a mention and returning the first 44 items. More than 44 users would exceed the field limit of 1024 characters. */
 		const allFoodDenUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				return Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'food den').length > 0;
+				// @ts-ignore, since message is safe to be in guild
+				return Object.values(p.characters).filter(c => c.profiles[message.guildId] !== undefined && c.profiles[message.guildId].currentRegion === 'food den').length > 0;
 			},
 		)).map(user => `<@${user.userId}>`).slice(0, 45);
 
@@ -382,7 +385,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		await profileModel.findOneAndUpdate(
 			{ userId: message.author.id },
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'medicine den';
+				// @ts-ignore, since message is safe to be in guild
+				p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].currentRegion = 'medicine den';
 			},
 		);
 
@@ -393,7 +397,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		a mention and returning the first 44 items. More than 44 users would exceed the field limit of 1024 characters. */
 		const allMedicineDenUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				return Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'medicine den').length > 0;
+				// @ts-ignore, since message is safe to be in guild
+				return Object.values(p.characters).filter(c => c.profiles[message.guildId] !== undefined && c.profiles[message.guildId].currentRegion === 'medicine den').length > 0;
 			},
 		)).map(user => `<@${user.userId}>`).slice(0, 45);
 
@@ -406,7 +411,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		a mention and returning the first 44 items. More than 44 users would exceed the field limit of 1024 characters. */
 		const allHealerUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				return Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].rank !== 'Youngling').length > 0;
+				// @ts-ignore, since message is safe to be in guild
+				return Object.values(p.characters).filter(c => c.profiles[message.guildId] !== undefined && c.profiles[message.guildId].rank !== 'Youngling').length > 0;
 			},
 		)).map(user => `<@${user.userId}>`).slice(0, 45);
 
@@ -421,7 +427,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		await profileModel.findOneAndUpdate(
 			{ userId: message.author.id },
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'ruins';
+				// @ts-ignore, since message is safe to be in guild
+				p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].currentRegion = 'ruins';
 			},
 		);
 
@@ -432,7 +439,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		a mention and returning the first 44 items. More than 44 users would exceed the field limit of 1024 characters. */
 		const allRuinUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				return Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'ruins').length > 0;
+				// @ts-ignore, since message is safe to be in guild
+				return Object.values(p.characters).filter(c => c.profiles[message.guildId] !== undefined && c.profiles[message.guildId].currentRegion === 'ruins').length > 0;
 			},
 		)).map(user => `<@${user.userId}>`).slice(0, 45);
 
@@ -447,7 +455,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		await profileModel.findOneAndUpdate(
 			{ userId: message.author.id },
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'lake';
+				// @ts-ignore, since message is safe to be in guild
+				p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].currentRegion = 'lake';
 			},
 		);
 
@@ -460,7 +469,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		await profileModel.findOneAndUpdate(
 			{ userId: message.author.id },
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'prairie';
+				// @ts-ignore, since message is safe to be in guild
+				p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].currentRegion = 'prairie';
 			},
 		);
 
@@ -471,7 +481,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		a mention and returning the first 44 items. More than 44 users would exceed the field limit of 1024 characters. */
 		const allPrairieUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				return Object.values(p.characters).filter(c => c.profiles[message.guild.id] !== undefined && c.profiles[message.guild.id].currentRegion === 'prairie').length > 0;
+				// @ts-ignore, since message is safe to be in guild
+				return Object.values(p.characters).filter(c => c.profiles[message.guildId] !== undefined && c.profiles[message.guildId].currentRegion === 'prairie').length > 0;
 			},
 		)).map(user => `<@${user.userId}>`).slice(0, 45);
 

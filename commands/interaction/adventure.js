@@ -1,6 +1,6 @@
 // @ts-check
 const profileModel = require('../../models/profileModel');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { getFriendshipHearts, getFriendshipPoints, addFriendshipPoints, checkOldMentions } = require('../../utils/friendshipHandling');
 const { pronoun, pronounAndPlural } = require('../../utils/getPronouns');
@@ -15,7 +15,8 @@ const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = requi
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
 const { pickRandomRarePlant, pickRandomUncommonPlant, pickRandomCommonPlant } = require('../../utils/pickRandomPlant');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
+const { materialsMap, specialPlantsMap } = require('../../utils/itemsInfo');
 
 module.exports.name = 'adventure';
 
@@ -26,20 +27,20 @@ module.exports.name = 'adventure';
  * @param {Array<string>} argumentsArray
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ServerSchema} serverData
- * @param {Array<import('discord.js').MessageEmbedOptions>} embedArray
+ * @param {Array<import('discord.js').MessageEmbed>} embedArray
  * @returns {Promise<void>}
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData, serverData, embedArray) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
 
-	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-	let profileData = characterData?.profiles?.[message.guild.id];
+	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId]];
+	let profileData = characterData?.profiles?.[message.guildId];
 
-	if (await hasNotCompletedAccount(message, characterData)) {
+	if (!hasCompletedAccount(message, characterData)) {
 
 		return;
 	}
@@ -52,7 +53,27 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	userData = await startCooldown(message);
 	const messageContent = remindOfAttack(message);
 
-	if (!message.mentions.users.size || message.mentions.users.first().id === message.author.id) {
+	if (Object.values(profileData.inventory).map(type => Object.values(type)).flat().reduce((a, b) => a + b) >= 5) {
+
+		await message
+			.reply({
+				content: messageContent,
+				embeds: [...embedArray, {
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					description: `*${characterData.name} approaches the pack borders, ${pronoun(characterData, 2)} mouth filled with various things. As eager as ${pronounAndPlural(characterData, 0, 'is', 'are')} to go exploring, ${pronounAndPlural(characterData, 0, 'decide')} to store some things away first.*`,
+					footer: { text: 'You can only hold up to 25 items in your personal inventory. Type "rp store" to put things into the pack inventory!' },
+				}],
+				failIfNotExists: false,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+		return;
+	}
+
+	const firstMentionedUser = message.mentions.users.first();
+	if (firstMentionedUser && firstMentionedUser.id === message.author.id) {
 
 		await message
 			.reply({
@@ -70,9 +91,26 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
-	let partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first()?.id }));
-	let partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guild.id]];
-	let partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id];
+	if (!firstMentionedUser) {
+
+		await message
+			.reply({
+				content: messageContent,
+				embeds: [...embedArray, {
+					color: /** @type {`#${string}`} */ (error_color),
+					title: 'Please mention a user that you want to adventure with!',
+				}],
+				failIfNotExists: false,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+		return;
+	}
+
+	let partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: firstMentionedUser.id }));
+	let partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guildId]];
+	let partnerProfileData = partnerCharacterData?.profiles?.[message.guildId];
 
 	if (!partnerUserData || !partnerCharacterData || partnerCharacterData.name === '' || partnerCharacterData.species === '' || !partnerProfileData || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0 || partnerProfileData.hasCooldown === true || partnerProfileData.isResting === true) {
 
@@ -82,6 +120,23 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				embeds: [...embedArray, {
 					color: /** @type {`#${string}`} */ (error_color),
 					title: 'The mentioned user has no (selected) character, hasn\'t completed setting up their profile, is busy or is passed out :(',
+				}],
+				failIfNotExists: false,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+		return;
+	}
+
+	if (Object.values(partnerProfileData.inventory).map(type => Object.values(type)).flat().reduce((a, b) => a + b) >= 5) {
+
+		await message
+			.reply({
+				content: messageContent,
+				embeds: [...embedArray, {
+					color: /** @type {`#${string}`} */ (error_color),
+					title: `${partnerCharacterData.name} is carrying too many items with ${pronoun(partnerCharacterData, 1)}. Ask ${pronoun(partnerCharacterData, 1)} to store those away first.`,
 				}],
 				failIfNotExists: false,
 			})
@@ -104,6 +159,25 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					color: /** @type {`#${string}`} */ (error_color),
 					title: `You and ${partnerCharacterData.name} need at least 6 ❤️ to be able to adventure together!`,
 					description: 'You gain ❤️ by mentioning and interacting with each other. To check your friendships, type `rp friendships`.',
+				}],
+				failIfNotExists: false,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+		return;
+	}
+
+	if (Object.values(profileData.inventory).map(type => Object.values(type)).flat().reduce((a, b) => a + b) >= 5) {
+
+		await message
+			.reply({
+				content: messageContent,
+				embeds: [...embedArray, {
+					color: characterData.color,
+					author: { name: characterData.name, icon_url: characterData.avatarURL },
+					description: `*${characterData.name} approaches the pack borders, ${pronoun(characterData, 2)} mouth filled with various things. As eager as ${pronounAndPlural(characterData, 0, 'is', 'are')} to go adventuring, ${pronounAndPlural(characterData, 0, 'decide')} to store some things away first.*`,
+					footer: { text: 'You can only hold up to 25 items in your personal inventory. Type "rp store" to put things into the pack inventory!' },
 				}],
 				failIfNotExists: false,
 			})
@@ -149,7 +223,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 	/** @type {Array<import('discord.js').MessageActionRow>} */
 	const componentArray = [];
-	const cardPositionsArray = [];
+	const cardPositionsArray = /** @type {Array<Array<string>>} */ ([]);
 	for (let i = 0; i < 4; i++) {
 
 		componentArray.push(new MessageActionRow().addComponents([]));
@@ -177,22 +251,27 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	 *
 	 * @param {boolean} isPartner
 	 * @param {boolean} isFirstPick
-	 * @param {Array<number>} lastPickPosition
+	 * @param {Array<number | null>} lastPickPosition
 	 */
 	async function startNewRound(isPartner, isFirstPick, lastPickPosition) {
 
-		createCommandCollector(message.author.id, message.guild.id, botReply);
-		createCommandCollector(message.mentions.users.first().id, message.guild.id, botReply);
+		// @ts-ignore, since message must be in guild
+		createCommandCollector(message.author.id, message.guildId, botReply);
+		// @ts-ignore, since message must be in guild and there must be mentioned user
+		createCommandCollector(firstMentionedUser.id, message.guildId, botReply);
 
 		const currentUserData = (isPartner === true) ? partnerUserData : userData;
-		const currentCharacterData = currentUserData.characters[currentUserData.currentCharacter[message.guild.id]];
+		// @ts-ignore, since message must be in guild
+		const currentCharacterData = currentUserData.characters[currentUserData.currentCharacter[message.guildId]];
 		const otherUserData = (isPartner === true) ? userData : partnerUserData;
-		const otherCharacterData = otherUserData.characters[otherUserData.currentCharacter[message.guild.id]];
+		// @ts-ignore, since message must be in guild
+		const otherCharacterData = otherUserData.characters[otherUserData.currentCharacter[message.guildId]];
 
-		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.customId === 'adventure-confirm' && i.user.id === message.mentions.users.first().id) || (i.customId.includes('board') && i.user.id == currentUserData.userId);
+		// @ts-ignore, since there must be mentioned user
+		const filter = (/** @type {import('discord.js').MessageComponentInteraction} */ i) => (i.customId === 'adventure-confirm' && i.user.id === firstMentionedUser.id) || (i.customId.includes('board') && i.user.id == currentUserData.userId);
 
 		const { customId } = await botReply
-			.awaitMessageComponent({ filter, time: 60_000 })
+			.awaitMessageComponent({ filter, time: 120_000 })
 			.catch(() => { return { customId: '' }; });
 
 		if (customId === '') {
@@ -232,14 +311,15 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						return botReply;
 					});
 
+				// @ts-ignore, since message must be in guild
 				await checkHealthAndLevel(message, botReply, userData, partnerUserData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, serverData);
 			}
 			return;
 		}
 
-		/** @type {number} */
+		/** @type {number | null} */
 		let column = null;
-		/** @type {number} */
+		/** @type {number | null} */
 		let row = null;
 
 		if (customId.includes('board')) {
@@ -247,7 +327,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			column = Number(customId.split('-', 2).pop());
 			row = Number(customId.split('-').pop());
 
-			/** @type {import('discord.js').MessageButton} */ (componentArray[column].components[row]).emoji.name = cardPositionsArray[column][row];
+			/** @type {import('discord.js').MessageButton} */ (componentArray[column].components[row]).setEmoji(cardPositionsArray[column][row]);
 			componentArray[column].components[row].disabled = true;
 
 
@@ -267,12 +347,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			setTimeout(async () => {
 
-				if (/** @type {import('discord.js').MessageButton} */ (componentArray[lastPickPosition[0]]?.components[lastPickPosition[1]])?.emoji?.name !== /** @type {import('discord.js').MessageButton} */ (componentArray[column]?.components[row])?.emoji?.name) {
+				if (lastPickPosition[0] !== null && lastPickPosition[1] !== null && column !== null && row !== null && /** @type {import('discord.js').MessageButton} */ (componentArray[lastPickPosition[0]]?.components[lastPickPosition[1]])?.emoji?.name !== /** @type {import('discord.js').MessageButton} */ (componentArray[column]?.components[row])?.emoji?.name) {
 
-					/** @type {import('discord.js').MessageButton} */ (componentArray[lastPickPosition[0]].components[lastPickPosition[1]]).emoji.name = emptyField;
+					/** @type {import('discord.js').MessageButton} */ (componentArray[lastPickPosition[0]].components[lastPickPosition[1]]).setEmoji(emptyField);
 					componentArray[lastPickPosition[0]].components[lastPickPosition[1]].disabled = false;
 
-					/** @type {import('discord.js').MessageButton} */ (componentArray[column].components[row]).emoji.name = emptyField;
+					/** @type {import('discord.js').MessageButton} */ (componentArray[column].components[row]).setEmoji(emptyField);
 					componentArray[column].components[row].disabled = false;
 				}
 				else if (customId.includes('board')) {
@@ -307,54 +387,51 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					let foundItem = null;
 					let extraHealthPoints = 0;
 					let winningUserData = uncoveredCardsPlayer1 > uncoveredCardsPlayer2 ? userData : uncoveredCardsPlayer2 > uncoveredCardsPlayer1 ? partnerUserData : generateRandomNumber(2, 0) === 0 ? userData : partnerUserData;
-					let winningCharacterData = winningUserData.characters[winningUserData.currentCharacter[message.guild.id]];
-					let winningProfileData = winningCharacterData.profiles[message.guild.id];
+					// @ts-ignore, since message must be in guild
+					let winningCharacterData = winningUserData.characters[winningUserData.currentCharacter[message.guildId]];
+					// @ts-ignore, since message must be in guild
+					let winningProfileData = winningCharacterData.profiles[message.guildId];
 
-					switch (true) {
+					if (winningProfileData.health < winningProfileData.maxHealth) {
 
-						case (pullFromWeightedTable({ 0: 1, 1: 1 }) === 0 && winningProfileData.health < winningProfileData.maxHealth):
+						extraHealthPoints = function(health) { return (winningProfileData.health + health > winningProfileData.maxHealth) ? winningProfileData.maxHealth - winningProfileData.health : health; }(generateRandomNumber(5, 8));
+					}
+					else if (pullFromWeightedTable({ 0: rounds * 3, 1: 45 - rounds }) === 1 && Object.keys(winningProfileData.temporaryStatIncrease).length <= 1) {
 
-							extraHealthPoints = function(health) { return (winningProfileData.health + health > winningProfileData.maxHealth) ? winningProfileData.maxHealth - winningProfileData.health : health; }(generateRandomNumber(3, 6));
+						foundItem = Array.from(specialPlantsMap.keys())[generateRandomNumber(Array.from(specialPlantsMap.keys()).length, 0)];
+					}
+					else if (Object.values(serverData.inventory.materials).reduce((a, b) => a + b, 0) < 36) {
 
-							break;
+						foundItem = Array.from(materialsMap.keys())[generateRandomNumber(Array.from(materialsMap.keys()).length, 0)];
+					}
+					else if (pullFromWeightedTable({ 0: rounds * 8, 1: 30 - rounds }) === 1) {
 
-						default:
+						if (pullFromWeightedTable({ 0: rounds * 8, 1: 30 - rounds }) === 1) {
 
-							switch (true) {
+							foundItem = await pickRandomRarePlant();
+						}
+						else {
 
-								case (pullFromWeightedTable({ 0: rounds * 8, 1: 30 - rounds }) === 1):
+							foundItem = await pickRandomUncommonPlant();
+						}
+					}
+					else {
 
-									switch (true) {
-
-										case (pullFromWeightedTable({ 0: rounds * 8, 1: 30 - rounds }) === 1):
-
-											foundItem = await pickRandomRarePlant();
-
-											break;
-
-										default:
-
-											foundItem = await pickRandomUncommonPlant();
-									}
-
-									break;
-
-								default:
-
-									foundItem = await pickRandomCommonPlant();
-							}
+						foundItem = await pickRandomCommonPlant();
 					}
 
 					const userInventory = {
 						commonPlants: { ...winningProfileData.inventory.commonPlants },
 						uncommonPlants: { ...winningProfileData.inventory.uncommonPlants },
 						rarePlants: { ...winningProfileData.inventory.rarePlants },
+						specialPlants: { ...winningProfileData.inventory.specialPlants },
 						meat: { ...winningProfileData.inventory.meat },
+						materials: { ...winningProfileData.inventory.materials },
 					};
 
 					for (const itemCategory of Object.keys(userInventory)) {
 
-						if (Object.hasOwn(userInventory[itemCategory], foundItem)) {
+						if (foundItem !== null && Object.hasOwn(userInventory[itemCategory], foundItem)) {
 
 							userInventory[itemCategory][foundItem] += 1;
 						}
@@ -363,19 +440,27 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					winningUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 						{ userId: winningUserData.userId },
 						(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-							p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].inventory = userInventory;
-							p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].health += extraHealthPoints;
+							// @ts-ignore, since message must be in guild
+							p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].inventory = userInventory;
+							// @ts-ignore, since message must be in guild
+							p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].health += extraHealthPoints;
 						},
 					));
-					winningCharacterData = winningUserData.characters[winningUserData.currentCharacter[message.guild.id]];
-					winningProfileData = winningCharacterData.profiles[message.guild.id];
+					// @ts-ignore, since message must be in guild
+					winningCharacterData = winningUserData.characters[winningUserData.currentCharacter[message.guildId]];
+					// @ts-ignore, since message must be in guild
+					winningProfileData = winningCharacterData.profiles[message.guildId];
 
 					userData = winningUserData.userId === userData.userId ? winningUserData : userData;
-					characterData = userData.characters[userData.currentCharacter[message.guild.id]];
-					profileData = characterData.profiles[message.guild.id];
+					// @ts-ignore, since message must be in guild
+					characterData = userData.characters[userData.currentCharacter[message.guildId]];
+					// @ts-ignore, since message must be in guild
+					profileData = characterData.profiles[message.guildId];
 					partnerUserData = winningUserData.userId === partnerUserData.userId ? winningUserData : partnerUserData;
-					partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guild.id]];
-					partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id];
+					// @ts-ignore, since message must be in guild
+					partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guildId]];
+					// @ts-ignore, since message must be in guild
+					partnerProfileData = partnerCharacterData?.profiles?.[message.guildId];
 
 
 					botReply = await botReply
@@ -394,6 +479,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							return botReply;
 						});
 
+					// @ts-ignore, since message must be in guild
 					await checkHealthAndLevel(message, botReply, userData, partnerUserData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, serverData);
 				}
 				else if (rounds >= 20) {
@@ -401,8 +487,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					const { embedFooterStatsTextPlayer1, embedFooterStatsTextPlayer2 } = await decreaseStats(message, userData, profileData, partnerUserData, partnerProfileData);
 
 					let losingUserData = uncoveredCardsPlayer1 < uncoveredCardsPlayer2 ? userData : uncoveredCardsPlayer2 < uncoveredCardsPlayer1 ? partnerUserData : generateRandomNumber(2, 0) === 0 ? userData : partnerUserData;
-					let losingCharacterData = losingUserData.characters[losingUserData.currentCharacter[message.guild.id]];
-					let losingProfileData = losingCharacterData.profiles[message.guild.id];
+					// @ts-ignore, since message must be in guild
+					let losingCharacterData = losingUserData.characters[losingUserData.currentCharacter[message.guildId]];
+					// @ts-ignore, since message must be in guild
+					let losingProfileData = losingCharacterData.profiles[message.guildId];
 
 					const losingHealthPoints = function(health) { return (losingProfileData.health - health < 0) ? losingProfileData.health : health; }(generateRandomNumber(5, 3));
 					const losingInjuryObject = (losingUserData.userId === userData.userId) ? { ...userInjuryObjectPlayer1 } : { ...userInjuryObjectPlayer2 };
@@ -411,7 +499,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						commonPlants: { ...losingProfileData.inventory.commonPlants },
 						uncommonPlants: { ...losingProfileData.inventory.uncommonPlants },
 						rarePlants: { ...losingProfileData.inventory.rarePlants },
+						specialPlants: { ...losingProfileData.inventory.specialPlants },
 						meat: { ...losingProfileData.inventory.meat },
+						materials: { ...losingProfileData.inventory.materials },
 					};
 
 					const { itemType, itemName } = getHighestItem(userInventory);
@@ -452,22 +542,30 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					losingUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 						{ userId: losingUserData.userId },
 						(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-							p.characters[losingCharacterData._id].profiles[message.guild.id].inventory = userInventory;
-							p.characters[losingCharacterData._id].profiles[message.guild.id].health -= losingHealthPoints;
+							// @ts-ignore, since message must be in guild
+							p.characters[losingCharacterData._id].profiles[message.guildId].inventory = userInventory;
+							// @ts-ignore, since message must be in guild
+							p.characters[losingCharacterData._id].profiles[message.guildId].health -= losingHealthPoints;
 						},
 					));
-					losingCharacterData = losingUserData.characters[losingUserData.currentCharacter[message.guild.id]];
-					losingProfileData = losingCharacterData.profiles[message.guild.id];
+					// @ts-ignore, since message must be in guild
+					losingCharacterData = losingUserData.characters[losingUserData.currentCharacter[message.guildId]];
+					// @ts-ignore, since message must be in guild
+					losingProfileData = losingCharacterData.profiles[message.guildId];
 
 					userInjuryObjectPlayer1 = (losingUserData.userId === userData.userId) ? losingInjuryObject : userInjuryObjectPlayer1;
 					userInjuryObjectPlayer2 = (losingUserData.userId === userData.userId) ? userInjuryObjectPlayer2 : losingInjuryObject;
 
 					userData = losingUserData.userId === userData.userId ? losingUserData : userData;
-					characterData = userData.characters[userData.currentCharacter[message.guild.id]];
-					profileData = characterData.profiles[message.guild.id];
+					// @ts-ignore, since message must be in guild
+					characterData = userData.characters[userData.currentCharacter[message.guildId]];
+					// @ts-ignore, since message must be in guild
+					profileData = characterData.profiles[message.guildId];
 					partnerUserData = losingUserData.userId === partnerUserData.userId ? losingUserData : partnerUserData;
-					partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guild.id]];
-					partnerProfileData = partnerCharacterData?.profiles?.[message.guild.id];
+					// @ts-ignore, since message must be in guild
+					partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guildId]];
+					// @ts-ignore, since message must be in guild
+					partnerProfileData = partnerCharacterData?.profiles?.[message.guildId];
 
 
 					botReply = await botReply
@@ -486,6 +584,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							return botReply;
 						});
 
+					// @ts-ignore, since message must be in guild
 					await checkHealthAndLevel(message, botReply, userData, partnerUserData, userInjuryObjectPlayer1, userInjuryObjectPlayer2, serverData);
 				}
 				else {
@@ -524,19 +623,27 @@ async function decreaseStats(message, userData, profileData, partnerUserData, pa
 	userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 		{ userId: message.author.id },
 		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].energy -= energyPointsPlayer1;
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hunger -= hungerPointsPlayer1;
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].thirst -= thirstPointsPlayer1;
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].experience += experiencePoints;
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'prairie';
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hasCooldown = false;
+		// @ts-ignore, since message must be in guild
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].energy -= energyPointsPlayer1;
+			// @ts-ignore, since message must be in guild
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].hunger -= hungerPointsPlayer1;
+			// @ts-ignore, since message must be in guild
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].thirst -= thirstPointsPlayer1;
+			// @ts-ignore, since message must be in guild
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].experience += experiencePoints;
+			// @ts-ignore, since message must be in guild
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].currentRegion = 'prairie';
+			// @ts-ignore, since message must be in guild
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].hasCooldown = false;
 		},
 	));
-	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
-	profileData = characterData.profiles[message.guild.id];
+	// @ts-ignore, since message must be in guild
+	const characterData = userData.characters[userData.currentCharacter[message.guildId]];
+	// @ts-ignore, since message must be in guild
+	profileData = characterData.profiles[message.guildId];
 
 
-	embedFooterStatsTextPlayer1 = `+${experiencePoints} XP (${profileData.experience + experiencePoints}/${profileData.levels * 50}) for ${characterData.name}\n-${energyPointsPlayer1} energy (${profileData.energy}/${profileData.maxEnergy}) for ${characterData.name}`;
+	embedFooterStatsTextPlayer1 = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50}) for ${characterData.name}\n-${energyPointsPlayer1} energy (${profileData.energy}/${profileData.maxEnergy}) for ${characterData.name}`;
 
 	if (hungerPointsPlayer1 >= 1) {
 
@@ -554,20 +661,29 @@ async function decreaseStats(message, userData, profileData, partnerUserData, pa
 	const energyPointsPlayer2 = function(energy) { return (partnerProfileData.energy - energy < 0) ? partnerProfileData.energy : energy; }(generateRandomNumber(5, 1) + await decreaseEnergy(partnerProfileData));
 
 	partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
+		// @ts-ignore, since mentioned user must exist
 		{ userId: message.mentions.users.first().id },
 		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].energy -= energyPointsPlayer2;
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hunger -= hungerPointsPlayer2;
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].thirst -= thirstPointsPlayer2;
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].experience += experiencePoints;
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].currentRegion = 'prairie';
-			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].hasCooldown = false;
+		// @ts-ignore, since message must be in guild
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].energy -= energyPointsPlayer2;
+			// @ts-ignore, since message must be in guild
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].hunger -= hungerPointsPlayer2;
+			// @ts-ignore, since message must be in guild
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].thirst -= thirstPointsPlayer2;
+			// @ts-ignore, since message must be in guild
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].experience += experiencePoints;
+			// @ts-ignore, since message must be in guild
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].currentRegion = 'prairie';
+			// @ts-ignore, since message must be in guild
+			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].hasCooldown = false;
 		},
 	));
-	const partnerCharacterData = partnerUserData.characters[partnerUserData.currentCharacter[message.guild.id]];
-	partnerProfileData = partnerCharacterData.profiles[message.guild.id];
+	// @ts-ignore, since message must be in guild
+	const partnerCharacterData = partnerUserData.characters[partnerUserData.currentCharacter[message.guildId]];
+	// @ts-ignore, since message must be in guild
+	partnerProfileData = partnerCharacterData.profiles[message.guildId];
 
-	embedFooterStatsTextPlayer2 = `+${experiencePoints} XP (${partnerProfileData.experience + experiencePoints}/${partnerProfileData.levels * 50}) for ${partnerCharacterData.name}\n-${energyPointsPlayer2} energy (${partnerProfileData.energy}/${partnerProfileData.maxEnergy}) for ${partnerCharacterData.name}`;
+	embedFooterStatsTextPlayer2 = `+${experiencePoints} XP (${partnerProfileData.experience}/${partnerProfileData.levels * 50}) for ${partnerCharacterData.name}\n-${energyPointsPlayer2} energy (${partnerProfileData.energy}/${partnerProfileData.maxEnergy}) for ${partnerCharacterData.name}`;
 
 	if (hungerPointsPlayer2 >= 1) {
 
@@ -584,7 +700,7 @@ async function decreaseStats(message, userData, profileData, partnerUserData, pa
 
 /**
  * Checks for both level whether to decrease their health, level them up, if they are passed out and if they need to be given any advice.
- * @param {import('discord.js').Message} message
+ * @param {import('discord.js').Message<true>} message
  * @param {import('discord.js').Message} botReply
  * @param {import('../../typedef').ProfileSchema} userData
  * @param {import('../../typedef').ProfileSchema} partnerUserData
@@ -597,13 +713,13 @@ async function checkHealthAndLevel(message, botReply, userData, partnerUserData,
 	botReply = await decreaseHealth(userData, botReply, userInjuryObjectPlayer1);
 	botReply = await decreaseHealth(partnerUserData, botReply, userInjuryObjectPlayer2);
 
-	botReply = await checkLevelUp(message, botReply, userData, serverData);
-	botReply = await checkLevelUp(message, botReply, partnerUserData, serverData);
+	botReply = await checkLevelUp(message, userData, serverData, botReply) || botReply;
+	botReply = await checkLevelUp(message, partnerUserData, serverData, botReply) || botReply;
 
-	await isPassedOut(message, userData, true);
-	await isPassedOut(message, partnerUserData, true);
+	await isPassedOut(message, userData.uuid, true);
+	await isPassedOut(message, partnerUserData.uuid, true);
 
-	await addFriendshipPoints(message, userData, userData.currentCharacter[message.guild.id], partnerUserData, partnerUserData.currentCharacter[message.guild.id]);
+	await addFriendshipPoints(message, userData, userData.currentCharacter[message.guildId], partnerUserData, partnerUserData.currentCharacter[message.guildId]);
 
 	await restAdvice(message, userData);
 	await restAdvice(message, partnerUserData);

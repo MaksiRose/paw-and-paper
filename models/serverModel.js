@@ -1,6 +1,6 @@
 // @ts-check
 const { schema, model } = require('./constructor');
-const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap } = require('../utils/itemsInfo');
+const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap, materialsMap, specialPlantsMap } = require('../utils/itemsInfo');
 
 const serverSchema = new schema({
 	serverId: {
@@ -37,6 +37,14 @@ const serverSchema = new schema({
 					}),
 				),
 			},
+			specialPlants: {
+				type: 'object',
+				default: Object.fromEntries(
+					[...specialPlantsMap.keys()].sort().map(key => {
+						return [key, { type: 'number', default: 0 }];
+					}),
+				),
+			},
 			meat: {
 				type: 'object',
 				default: Object.fromEntries(
@@ -45,17 +53,80 @@ const serverSchema = new schema({
 					}),
 				),
 			},
+			materials: {
+				type: 'object',
+				default: Object.fromEntries(
+					[...materialsMap.keys()].sort().map(key => {
+						return [key, { type: 'number', default: 0 }];
+					}),
+				),
+			},
 		} },
-	blockedEntrance: {
+	dens: {
 		type: 'object',
 		default: {
-			den: {
-				type: 'string',
-				default: null,
+			sleepingDens: {
+				type: 'object',
+				default: {
+					structure: {
+						type: 'number',
+						default: 100,
+					},
+					bedding: {
+						type: 'number',
+						default: 100,
+					},
+					thickness: {
+						type: 'number',
+						default: 100,
+					},
+					evenness: {
+						type: 'number',
+						default: 100,
+					},
+				},
 			},
-			blockedKind: {
-				type: 'string',
-				default: null,
+			foodDen: {
+				type: 'object',
+				default: {
+					structure: {
+						type: 'number',
+						default: 100,
+					},
+					bedding: {
+						type: 'number',
+						default: 100,
+					},
+					thickness: {
+						type: 'number',
+						default: 100,
+					},
+					evenness: {
+						type: 'number',
+						default: 100,
+					},
+				},
+			},
+			medicineDen: {
+				type: 'object',
+				default: {
+					structure: {
+						type: 'number',
+						default: 100,
+					},
+					bedding: {
+						type: 'number',
+						default: 100,
+					},
+					thickness: {
+						type: 'number',
+						default: 100,
+					},
+					evenness: {
+						type: 'number',
+						default: 100,
+					},
+				},
 			},
 		},
 	},

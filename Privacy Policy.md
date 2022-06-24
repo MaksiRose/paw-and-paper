@@ -17,7 +17,7 @@ The Service collects and stores the following data in its database:
   - The server ID provided by Discord
   - The name of the server as set in Discord
   - A list of in-game items with the amount the server has of them
-  - If an in-game den is blocked: The kind of den and kind of blockage
+  - A list of in-game dens and their status
   - A timestamp for the next possible in-game attack
   - If given, the channel ID provided by Discord of the channel that will be used for in-game visits
   - If given, the server ID provided by Discord of another server that is currently in-game visiting this server

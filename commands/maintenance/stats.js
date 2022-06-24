@@ -1,9 +1,9 @@
 // @ts-check
 const { MessageActionRow, MessageButton } = require('discord.js');
 const profileModel = require('../../models/profileModel');
-const { hasNotCompletedAccount } = require('../../utils/checkAccountCompletion');
+const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { error_color } = require('../../config.json');
-const sendNoDM = require('../../utils/sendNoDM');
+const isInGuild = require('../../utils/isInGuild');
 
 module.exports.name = 'stats';
 module.exports.aliases = ['status'];
@@ -18,7 +18,7 @@ module.exports.aliases = ['status'];
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
 
-	if (await sendNoDM(message)) {
+	if (!isInGuild(message)) {
 
 		return;
 	}
@@ -27,9 +27,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 	let profileData = characterData?.profiles?.[message.guild.id];
 	let isYourself = true;
 
-	if (message.mentions.users.size > 0) {
+	const firstMentionedUser = message.mentions.users.first();
+	if (firstMentionedUser) {
 
-		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: message.mentions.users.first().id }));
+		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: firstMentionedUser.id }));
 		characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 		profileData = characterData?.profiles?.[message.guild.id];
 		isYourself = false;
@@ -50,7 +51,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 			return;
 		}
 	}
-	else if (await hasNotCompletedAccount(message, characterData)) {
+	else if (!hasCompletedAccount(message, characterData)) {
 
 		return;
 	}
@@ -115,7 +116,7 @@ module.exports.getMessageContent = (profileData, name, isYourself) => {
 			`❤️ HP: \`${profileData.health}/${profileData.maxHealth}\` - ⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n` +
 			`🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\` - 🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`` +
 			(injuryText === null ? '' : `\n🩹 Injuries/Illnesses: ${injuryText.slice(2)}`) +
-			(profileData.sapling.exists === false ? '' : `\n🌱 Ginkgo Sapling: ${profileData.sapling.waterCycles} days alive - ${profileData.sapling.health} health - Next watering <t:${Math.floor(profileData.sapling.nextWaterTimestamp / 1000)}:R>`) +
+			(profileData.sapling.exists === false ? '' : `\n🌱 Ginkgo Sapling: ${profileData.sapling.waterCycles} days alive - ${profileData.sapling.health} health - Next watering <t:${Math.floor((profileData.sapling.nextWaterTimestamp || 0) / 1000)}:R>`) +
 			(profileData.hasQuest === false ? '' : `\n${name} has one open quest!`),
 		components: components,
 		failIfNotExists: false,
