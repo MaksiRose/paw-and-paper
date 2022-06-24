@@ -242,7 +242,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			// @ts-ignore, since message must be in guild
 			botReply = await checkLevelUp(message, userData, serverData, botReply) || botReply;
 			// @ts-ignore, since message must be in guild
-			await isPassedOut(message, userData, true);
+			await isPassedOut(message, userData.uuid, true);
 
 			// @ts-ignore, since message must be in guild
 			await restAdvice(message, userData);

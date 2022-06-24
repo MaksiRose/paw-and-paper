@@ -9,16 +9,17 @@ const { passingoutAdvice } = require('./adviceMessages');
 /**
  * Checks if the user is passed out. If yes, then send a message and return true, as well as decrease their level if it's new. Else, return false.
  * @param {import('discord.js').Message<true>} message
- * @param {import('../typedef').ProfileSchema} userData
+ * @param {string} uuid
  * @param {boolean} isNew
  * @returns {Promise<boolean>}
  */
-async function isPassedOut(message, userData, isNew) {
+async function isPassedOut(message, uuid, isNew) {
 
-	const characterData = userData.characters[userData.currentCharacter[message.guild.id]];
-	const profileData = characterData.profiles[message.guild.id];
+	const userData = /** @type {import('../typedef').ProfileSchema | null} */ (await profileModel.findOne({ uuid: uuid }));
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message?.guildId]];
+	const profileData = characterData?.profiles?.[message?.guildId];
 
-	if (profileData.energy <= 0 || profileData.health <= 0 || profileData.hunger <= 0 || profileData.thirst <= 0) {
+	if (userData && characterData && profileData && (profileData.energy <= 0 || profileData.health <= 0 || profileData.hunger <= 0 || profileData.thirst <= 0)) {
 
 		const botReply = await message
 			.reply({
@@ -133,7 +134,7 @@ async function isResting(message, userData, embedArray) {
  */
 async function isInvalid(message, userData, embedArray, callerNameArray) {
 
-	if (await isPassedOut(message, userData, false)) {
+	if (await isPassedOut(message, userData.uuid, false)) {
 
 		return true;
 	}

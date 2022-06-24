@@ -33,8 +33,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
-	const profileData = characterData?.profiles?.[message.guild.id];
+	let characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	let profileData = characterData?.profiles?.[message.guild.id];
 
 	if (!hasCompletedAccount(message, characterData)) {
 
@@ -146,6 +146,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].thirst -= thirstPoints;
 		},
 	));
+	characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	profileData = characterData?.profiles?.[message.guild.id];
 
 	const embed = {
 		color: characterData.color,
@@ -301,7 +303,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		// @ts-ignore, as message is must be in server
 		botReply = await checkLevelUp(message, userData, serverData, botReply) || botReply;
 		// @ts-ignore, as message is must be in server
-		await isPassedOut(message, userData, true);
+		await isPassedOut(message, userData.uuid, true);
 
 		await coloredButtonsAdvice(message, userData);
 		// @ts-ignore, as message is must be in server

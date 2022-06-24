@@ -362,7 +362,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		// @ts-ignore, as message is must be in server
 		botReply = await checkLevelUp(message, userData, serverData, botReply);
 		// @ts-ignore, as message is must be in server
-		await isPassedOut(message, userData, true);
+		await isPassedOut(message, userData.uuid, true);
 
 		// @ts-ignore, as message is must be in server
 		await restAdvice(message, userData);

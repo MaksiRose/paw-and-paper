@@ -77,7 +77,9 @@ async function decreaseLevel(userData, botReply) {
 		commonPlants: { ...profileData.inventory.commonPlants },
 		uncommonPlants: { ...profileData.inventory.uncommonPlants },
 		rarePlants: { ...profileData.inventory.rarePlants },
+		specialPlants: { ...profileData.inventory.specialPlants },
 		meat: { ...profileData.inventory.meat },
+		materials: { ...profileData.inventory.materials },
 	};
 
 	for (const itemType of Object.keys(profileData.inventory)) {

@@ -37,7 +37,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		return;
 	}
 
-	if (await isPassedOut(message, userData, false)) {
+	if (await isPassedOut(message, userData.uuid, false)) {
 
 		return;
 	}

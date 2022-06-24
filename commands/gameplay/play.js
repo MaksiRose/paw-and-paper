@@ -234,7 +234,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 	botReply = await decreaseHealth(userData, botReply, userInjuryObject);
 	await checkLevelUp(message, userData, serverData, botReply);
-	await isPassedOut(message, userData, true);
+	await isPassedOut(message, true);
 
 	if (partnerUserData && partnerCharacterData) { await addFriendshipPoints(message, userData, characterData._id, partnerUserData, partnerCharacterData._id); }
 

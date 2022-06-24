@@ -239,7 +239,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 	botReply = await checkLevelUp(message, userData, serverData, botReply) || botReply;
 	await decreaseHealth(userData, botReply, userInjuryObject);
-	await isPassedOut(message, userData, false);
+	await isPassedOut(message, userData.uuid, false);
 
 	await restAdvice(message, userData);
 	await drinkAdvice(message, userData);

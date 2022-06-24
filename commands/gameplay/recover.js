@@ -379,7 +379,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 async function checkHealth(botReply, userData, userInjuryObject, message) {
 
 	botReply = await decreaseHealth(userData, botReply, userInjuryObject);
-	await isPassedOut(message, userData, true);
+	await isPassedOut(message, userData.uuid, true);
 
 	await restAdvice(message, userData);
 	await drinkAdvice(message, userData);

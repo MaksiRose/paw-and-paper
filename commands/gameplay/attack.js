@@ -333,7 +333,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		// @ts-ignore, as message is safe to be in guild
 		botReply = await checkLevelUp(message, userData, serverData, botReply) || botReply;
 		// @ts-ignore, as message is safe to be in guild
-		await isPassedOut(message, userData, true);
+		await isPassedOut(message, userData.uuid, true);
 
 		await coloredButtonsAdvice(message, userData);
 		// @ts-ignore, as message is safe to be in guild

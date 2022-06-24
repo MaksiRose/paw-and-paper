@@ -680,8 +680,8 @@ async function checkHealthAndLevel(message, botReply, userData, partnerUserData,
 	botReply = await checkLevelUp(message, userData, serverData, botReply) || botReply;
 	botReply = await checkLevelUp(message, partnerUserData, serverData, botReply) || botReply;
 
-	await isPassedOut(message, userData, true);
-	await isPassedOut(message, partnerUserData, true);
+	await isPassedOut(message, userData.uuid, true);
+	await isPassedOut(message, partnerUserData.uuid, true);
 
 	await addFriendshipPoints(message, userData, userData.currentCharacter[message.guildId], partnerUserData, partnerUserData.currentCharacter[message.guildId]);
 
