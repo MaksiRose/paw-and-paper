@@ -196,6 +196,7 @@ const event = {
 			await message
 				.reply({
 					content: `A new update has come out since you last played! You can view the changelog here: <https://github.com/MaksiRose/paw-and-paper/releases/tag/v${version.split('.').slice(0, -1).join('.')}.0>`,
+					failIfNotExists: false,
 				})
 				.catch(async (error) => {
 					return await errorHandling.output(message, error);
