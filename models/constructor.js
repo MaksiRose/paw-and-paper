@@ -93,6 +93,8 @@ class model {
 
 			this.save(updateObject);
 
+			console.log('Created File: ', updateObject.uuid);
+
 			return dataObject;
 
 			/**
