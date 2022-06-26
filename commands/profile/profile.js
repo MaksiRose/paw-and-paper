@@ -4,7 +4,6 @@ const profileModel = require('../../models/profileModel');
 const { hasName } = require('../../utils/checkAccountCompletion');
 const { checkRoleCatchBlock } = require('../../utils/checkRoleRequirements');
 const { hasCooldown } = require('../../utils/checkValidity');
-const { createCommandCollector } = require('../../utils/commandCollector');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { stopResting } = require('../../utils/executeResting');
 const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap, materialsMap, specialPlantsMap } = require('../../utils/itemsInfo');
@@ -83,13 +82,14 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
 
 	let charactersPage = 0;
 	let response = await getMessageContent(client, userData.userId, characterData, isYourself, embedArray);
+	const selectMenu = getAccountsPage(userData, charactersPage, isYourself);
 
 	let botReply = (!contextMenuInteraction ?
 		(await message
 			.reply({
 				...response,
 				failIfNotExists: false,
-				components: (getAccountsPage(userData, charactersPage, isYourself).options.length > 0) ? [new MessageActionRow({ components: [getAccountsPage(userData, charactersPage, isYourself)] })] : [],
+				components: (selectMenu.options.length > 0) ? [new MessageActionRow({ components: [selectMenu] })] : [],
 			})
 			.catch((error) => { throw new Error(error); }))
 		: (await contextMenuInteraction
@@ -108,36 +108,33 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
 			.catch((error) => { throw new Error(error); }))
 	);
 
-	createCommandCollector(message.author.id, message.guildId || '', botReply);
 	interactionCollector();
 
 	async function interactionCollector() {
 
 		const interaction = await botReply
 			.awaitMessageComponent({
-				filter: (i) => i.user.id === message.author.id,
-				time: 300_000,
+				filter: i => i.user.id === (!contextMenuInteraction ? message.author.id : contextMenuInteraction.user.id),
+				time: 86_400_000,
 			})
 			.catch(() => { return null; });
 
-		await botReply
-			.edit({
-				components: disableAllComponents(botReply.components),
-			})
-			.catch((error) => {
-				if (error.httpStatus === 403) { console.error('Missing Access: Cannot edit this message'); }
-				else if (error.httpStatus !== 404) { throw new Error(error); }
-			});
-
-		/* Checking if the user has not clicked on any of the options, and if they haven't, it will return. */
 		if (interaction === null) {
 
+			await botReply
+				.edit({
+					components: disableAllComponents(botReply.components),
+				})
+				.catch((error) => {
+					if (error.httpStatus === 403) { console.error('Missing Access: Cannot edit this message'); }
+					else if (error.httpStatus !== 404) { throw new Error(error); }
+				});
 			return;
 		}
 
 		if (interaction.isButton() && interaction.customId.includes('learnabout')) {
 
-			const dmChannel = await message.author
+			const dmChannel = await interaction.user
 				.createDM()
 				.catch((error) => { throw new Error(error); });
 
@@ -145,6 +142,9 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
 			botReply.author.id = interaction.user.id;
 
 			await module.exports.sendProfile(client, botReply, embedArray, userData, characterData, false);
+
+			interactionCollector();
+			return;
 		}
 
 		/* Checking if the user has clicked on the "Show more accounts" button, and if they have, it will
@@ -165,19 +165,41 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
 				})
 				.catch((error) => { throw new Error(error); });
 
-			await interactionCollector();
+			interactionCollector();
 			return;
 		}
 
 		/* It checks if the user has clicked on one of the accounts, and if they have, it will check if the
-		user is resting, and if they are, it will stop the resting. Then, it will get the name of the
-		account the user has clicked on, and it will update the user's current character to the account
-		they have clicked on. Then, it will get the new character data, and it will check if the user has
-		clicked on an account, and if they have, it will add the roles of the account to the user. Then,
-		it will check if the user has any roles from the old account, and if they do, it will remove them.
-		Then, it will send a follow up message to the user saying that they have successfully switched to
-		the account they have clicked on. */
+				user is resting, and if they are, it will stop the resting. Then, it will get the name of the
+				account the user has clicked on, and it will update the user's current character to the account
+				they have clicked on. Then, it will get the new character data, and it will check if the user has
+				clicked on an account, and if they have, it will add the roles of the account to the user. Then,
+				it will check if the user has any roles from the old account, and if they do, it will remove them.
+				Then, it will send a follow up message to the user saying that they have successfully switched to
+				the account they have clicked on. */
 		if (interaction.isSelectMenu() && interaction.values[0].includes('switchto')) {
+
+			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: userData.uuid }));
+			characterData = userData.characters[userData.currentCharacter[message.guildId || 'DM']];
+			if (characterData?.profiles?.[message.guildId || 'DM'].hasCooldown === true) {
+
+				(async (content) => {
+					await interaction
+						.reply(content)
+						.catch(async () => {
+							await interaction.followUp(content);
+						});
+				})({
+					content: 'You can\'t switch characters because your current character is busy!',
+					ephemeral: true,
+				})
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
+					});
+
+				interactionCollector();
+				return;
+			}
 
 			/* Checking if the user is resting, and if they are, it will stop the resting. */
 			if (message.inGuild() && characterData?.profiles?.[message.guildId]?.isResting === true) {
@@ -193,7 +215,7 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
 			}
 
 			/* Getting the id of the account the user has clicked on, and then it is updating the user's current
-			character to the account they have clicked on. */
+					character to the account they have clicked on. */
 			const _id = interaction.values[0].split('-').slice(1, -1).join('-');
 			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 				{ uuid: userData.uuid },
@@ -204,7 +226,7 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
 			));
 
 			/* Getting the new character data, and then it is checking if the user has clicked on an account,
-			and if they have, it will add the roles of the account to the user. */
+					and if they have, it will add the roles of the account to the user. */
 			let newCharacterData = userData ? userData.characters[userData.currentCharacter[message.guildId || 'DM']] : null;
 			let profileData = newCharacterData ? newCharacterData?.profiles?.[message.guildId || 'DM'] : null;
 
@@ -264,7 +286,7 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
 
 							if (member.roles.cache.has(role.roleId) === false) {
 
-								member.roles.add(role.roleId);
+								await member.roles.add(role.roleId);
 							}
 						}
 					}
@@ -282,7 +304,7 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
 						const isInNewRoles = newCharacterData !== null && newCharacterData?.profiles?.[message.guildId || 'DM']?.roles.some(r => r.roleId === role.roleId && r.wayOfEarning === role.wayOfEarning && r.requirement === role.requirement);
 						if (isInNewRoles === false && member.roles.cache.has(role.roleId)) {
 
-							member.roles.remove(role.roleId);
+							await member.roles.remove(role.roleId);
 						}
 					}
 				}
@@ -295,60 +317,62 @@ module.exports.sendProfile = async (client, message, embedArray, userData, chara
 			characterData = newCharacterData;
 
 			/* Sending a follow up message to the user saying that they have successfully switched to the
-			account they have clicked on. */
-			setTimeout(async () => {
+					account they have clicked on. */
+			response = await getMessageContent(client, userData.userId, characterData, isYourself, embedArray);
+			const selectMenu = getAccountsPage(userData, charactersPage, isYourself);
 
-				response = await getMessageContent(client, userData.userId, characterData, isYourself, embedArray);
+			botReply = await botReply
+				.edit({
+					...response,
+					components: (selectMenu.options.length > 0) ? [new MessageActionRow({ components: [selectMenu] })] : [],
+				})
+				.catch((error) => { throw new Error(error); });
 
-				botReply = await botReply
-					.edit({
-						...response,
-						components: (getAccountsPage(userData, charactersPage, isYourself).options.length > 0) ? [new MessageActionRow({ components: [getAccountsPage(userData, charactersPage, isYourself)] })] : [],
-					})
-					.catch((error) => { throw new Error(error); });
-
+			(async (content) => {
 				await interaction
-					.followUp({
-						content: `You successfully switched to \`${characterData?.name || 'Empty Slot'}\`!`,
-						ephemeral: true,
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) { throw new Error(error); }
+					.reply(content)
+					.catch(async () => {
+						await interaction.followUp(content);
 					});
+			})({
+				content: `You successfully switched to \`${characterData?.name || 'Empty Slot'}\`!`,
+				ephemeral: true,
+			})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
 
-				await interactionCollector();
-			}, 500);
+			interactionCollector();
+			return;
 		}
 
 		/* The below code is checking if the user has clicked on the view button, and if they have, it will
-		edit the message to show the character they have clicked on. */
+				edit the message to show the character they have clicked on. */
 		if (interaction.isSelectMenu() && interaction.values[0].includes('view')) {
 
 			/* Getting the id of the account the user has clicked on, and then it is updating the user's current
-			character to the account they have clicked on. */
+					character to the account they have clicked on. */
 			const _id = interaction.values[0].split('-').slice(1, -1).join('-');
 			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ uuid: userData.uuid }));
 			characterData = userData?.characters?.[_id];
 
 			/* Getting the message content and then checking if the accounts page has more than one option. If
-			it does, it will add the accounts page to the message. Then editing the message that the bot sent. */
+					it does, it will add the accounts page to the message. Then editing the message that the bot sent. */
 			response = await getMessageContent(client, userData.userId, characterData, isYourself, embedArray);
-			if (getAccountsPage(userData, charactersPage, isYourself).options.length > 1) {
-
-				response.components = [new MessageActionRow().addComponents([getAccountsPage(userData, charactersPage, isYourself)])];
-			}
+			const selectMenu = getAccountsPage(userData, charactersPage, isYourself);
 
 			botReply = await botReply
 				.edit({
 					... /** @type {import('discord.js').MessageEditOptions} */(response),
-					components: (getAccountsPage(userData, charactersPage, isYourself).options.length > 1) ? [new MessageActionRow({ components: [getAccountsPage(userData, charactersPage, isYourself)] })] : [],
+					components: (selectMenu.options.length > 0) ? [new MessageActionRow({ components: [selectMenu] })] : [],
 				})
 				.catch((error) => { throw new Error(error); });
 
-			await interactionCollector();
+			interactionCollector();
+			return;
 		}
+
 	}
-	return { response, userData, charactersPage, characterData };
 };
 
 /**
