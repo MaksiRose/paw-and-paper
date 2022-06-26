@@ -20,6 +20,10 @@ module.exports.sendMessage = async (client, message) => {
 		return;
 	}
 
+	await message.guild.members
+		.fetch()
+		.catch((error) => { throw new Error(error); });
+
 	const profilelistRankComponent = new MessageActionRow().addComponents(
 		[ new MessageSelectMenu({
 			customId: 'profilelist-rank',
@@ -143,6 +147,7 @@ module.exports.sendMessage = async (client, message) => {
 	async function getRank(rankName1, rankName2) {
 
 		const allRankProfilesArray = [];
+		if (!message.inGuild()) { return []; }
 
 		const allRankUsersList = /** @type {Array<import('../../typedef').ProfileSchema>} */ (await profileModel.find(
 			(/** @type {import('../../typedef').ProfileSchema} */ u) => {
@@ -155,10 +160,10 @@ module.exports.sendMessage = async (client, message) => {
 
 		for (const u of Object.values(allRankUsersList)) {
 
+			if (!message.guild.members.cache.has(u.userId)) { continue; }
 			for (const c of Object.values(u.characters)) {
 
-				const p = c.profiles[message.guildId || ''];
-				// @ts-ignore, since message must be in guild
+				const p = c.profiles[message.guildId];
 				if (p !== undefined && (p.rank === rankName1 || p.rank === rankName2)) { allRankProfilesArray.push(`${c.name} (\`${p.health}/${p.maxHealth} HP\`) - <@${u.userId}>`); }
 			}
 		}

@@ -16,6 +16,7 @@ const event = {
 	 */
 	async execute(client, guild) {
 
+		console.log(`\x1b[44m${guild.name} (${guild.id})\x1b[0m successfully removed the bot - it is now in ${client.guilds.cache.size} servers`);
 		const serverData = /** @type {import('../typedef').ServerSchema} */ (await serverModel.findOne({
 			serverId: guild.id,
 		}));

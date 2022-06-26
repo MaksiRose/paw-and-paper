@@ -21,7 +21,6 @@ class model {
 		 */
 		this.save = async function(updateObject) {
 
-			// console.log(updateObject?.characters?.['0tfprz']?.pronounSets);
 			fs.writeFileSync(`${path}/${updateObject.uuid}.json`, JSON.stringify(updateObject, null, '\t'));
 		};
 
@@ -93,6 +92,8 @@ class model {
 			}
 
 			this.save(updateObject);
+
+			console.log('Created File: ', updateObject.uuid);
 
 			return dataObject;
 
