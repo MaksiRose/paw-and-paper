@@ -692,7 +692,7 @@ speciesMap.set('owl', {
 	diet: 'carnivore',
 	habitat: 'cold',
 	biome1OpponentArray: ['rabbit', 'squirrel', 'moth', 'beetle'],
-	biome2OpponentArray: ['cat', 'fox'],
+	biome2OpponentArray: ['cat', 'fox', 'tropical parrot'],
 	biome3OpponentArray: ['wolf', 'bear'],
 });
 
@@ -897,7 +897,7 @@ speciesMap.set('crow', {
 speciesMap.set('king cobra', {
 	name: 'king cobra',
 	diet: 'carnivore',
-	habitat: 'cold',
+	habitat: 'warm',
 	biome1OpponentArray: ['frog', 'rabbit', 'hedgehog'],
 	biome2OpponentArray: ['gaboon viper', 'cassowary', 'hoatzin'],
 	biome3OpponentArray: ['hawk', 'eagle'],
@@ -954,17 +954,6 @@ speciesMap.set('anole', {
 	biome3OpponentArray: ['weasel', 'king cobra', 'raccoon'],
 });
 
-// actual diet: crickets, beetles, ants, flies, grasshoppers, caterpillars, moths, butterflies, arachnids like spiders, sometimes mice, small birds, lizards, fish, shrimp
-// actual predators: skinks, snakes, birds, large frogs, lizards, monkeys, carnivorous mammals
-speciesMap.set('anole', {
-	name: 'anole',
-	diet: 'carnivore',
-	habitat: 'cold',
-	biome1OpponentArray: ['beetle', 'cricket', 'moth'],
-	biome2OpponentArray: ['salmon', 'frog', 'owl'],
-	biome3OpponentArray: ['weasel', 'king cobra', 'raccoon'],
-});
-
 // actual diet: lizard, grub
 // actual predators: coyote, cougar, bobcat, bear, wolf, owl, fox, lynx
 speciesMap.set('porcupine', {
@@ -1007,6 +996,17 @@ speciesMap.set('ferret', {
 	biome1OpponentArray: ['frog', 'bee', 'rat'],
 	biome2OpponentArray: ['owl', 'rabbit', 'weasel'],
 	biome3OpponentArray: ['hawk', 'eagle', 'coyote'],
+});
+
+// actual diet: Leaves, fruits, vegetables, nuts, snails, insects, clay soil
+// actual predators: Larger birds, snakes, monkeys, and sometimes eagles, hawks, and falcons
+speciesMap.set('tropical parrot', {
+	name: 'tropical parrot',
+	diet: 'omnivore',
+	habitat: 'warm',
+	biome1OpponentArray: ['beetle', 'bee', 'cricket'],
+	biome2OpponentArray: ['owl', 'mongoose', 'hoatzin'],
+	biome3OpponentArray: ['hawk', 'eagle', 'gaboon viper'],
 });
 
 
