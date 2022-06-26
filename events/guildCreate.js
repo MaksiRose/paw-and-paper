@@ -15,6 +15,7 @@ const event = {
 	 */
 	async execute(client, guild) {
 
+		console.log(`\x1b[44m${guild.name} (${guild.id})\x1b[0m successfully added the bot - It is now in ${client.guilds.cache.size} servers`);
 		await createGuild(client, guild);
 	},
 };
