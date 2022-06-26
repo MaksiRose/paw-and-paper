@@ -13,7 +13,7 @@ const { prefix } = require('../../config.json');
 const { execute, serverActiveUsers } = require('../../events/messageCreate');
 const { remindOfAttack, startAttack } = require('./attack');
 const { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural } = require('../../utils/getPronouns');
-const { MessageActionRow, MessageButton } = require('discord.js');
+const { MessageActionRow, MessageButton, MessageEmbed } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { coloredButtonsAdvice, restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
 const isInGuild = require('../../utils/isInGuild');
@@ -337,12 +337,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
 	profileData = characterData?.profiles?.[message.guild.id];
 
-	const embed = {
-		color: characterData.color,
-		author: { name: characterData.name, icon_url: characterData.avatarURL },
-		description: '',
-		footer: { text: '' },
-	};
+	const embed = new MessageEmbed()
+		.setColor(characterData.color)
+		.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL });
 
 	const embedFooterStatsText = `+${experiencePoints} XP (${profileData.experience}/${profileData.levels * 50})\n-${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})${(hungerPoints > 0) ? `\n-${hungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})` : ''}${(thirstPoints > 0) ? `\n-${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})` : ''}`;
 
@@ -399,8 +396,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		const humanCount = Math.round((serverInventoryCount - (highRankProfilesCount * 7)) / highRankProfilesCount);
 		startAttack(message, humanCount);
 
-		embed.description = `*${characterData.name} has just been looking around for food when ${pronounAndPlural(characterData, 0, 'suddenly hear')} voices to ${pronoun(characterData, 2)} right. Cautiously ${pronounAndPlural(characterData, 0, 'creep')} up, and sure enough: a group of humans! It looks like it's around ${humanCount}. They seem to be discussing something, and keep pointing over towards where the pack is lying. Alarmed, the ${characterData.displayedSpecies || characterData.species} runs away. **${upperCasePronoun(characterData, 0)} must gather as many packmates as possible to protect the pack!***`;
-		embed.footer.text = `${embedFooterStatsText}\n\nYou have two minutes to prepare before the humans will attack!`;
+		embed.setDescription(`*${characterData.name} has just been looking around for food when ${pronounAndPlural(characterData, 0, 'suddenly hear')} voices to ${pronoun(characterData, 2)} right. Cautiously ${pronounAndPlural(characterData, 0, 'creep')} up, and sure enough: a group of humans! It looks like it's around ${humanCount}. They seem to be discussing something, and keep pointing over towards where the pack is lying. Alarmed, the ${characterData.displayedSpecies || characterData.species} runs away. **${upperCasePronoun(characterData, 0)} must gather as many packmates as possible to protect the pack!***`);
+		embed.setFooter({ text: `${embedFooterStatsText}\n\nYou have two minutes to prepare before the humans will attack!` });
 
 		return await message
 			.reply({
@@ -476,8 +473,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				},
 			));
 
-			embed.description = `*${characterData.name} is looking around for useful things around ${pronoun(characterData, 1)} when ${pronounAndPlural(characterData, 0, 'discover')} the sapling of a ginkgo tree. The ${characterData.displayedSpecies || characterData.species} remembers that they bring good luck and health. Surely it can't hurt to bring it back to the pack!*`;
-			embed.footer.text = embedFooterStatsText + '\nWater the ginkgo sapling with \'rp water\'.';
+			embed.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Discovery.png');
+			embed.setDescription(`*${characterData.name} is looking around for useful things around ${pronoun(characterData, 1)} when ${pronounAndPlural(characterData, 0, 'discover')} the sapling of a ginkgo tree. The ${characterData.displayedSpecies || characterData.species} remembers that they bring good luck and health. Surely it can't hurt to bring it back to the pack!*`);
+			embed.setFooter({ text: embedFooterStatsText + '\nWater the ginkgo sapling with \'rp water\'.' });
 		}
 		else if (serverMaterialsCount < 36) {
 
@@ -491,13 +489,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				},
 			));
 
-			embed.description = `*${characterData.name} is looking around for things around ${pronoun(characterData, 1)} but there doesn't appear to be anything useful. The ${characterData.displayedSpecies || characterData.species} decides to grab a ${foundMaterial} as to not go back with nothing to showy.*`;
-			embed.footer.text = `${embedFooterStatsText}\n\n+1 ${foundMaterial}`;
+			embed.setDescription(`*${characterData.name} is looking around for things around ${pronoun(characterData, 1)} but there doesn't appear to be anything useful. The ${characterData.displayedSpecies || characterData.species} decides to grab a ${foundMaterial} as to not go back with nothing to showy.*`);
+			embed.setFooter({ text: `${embedFooterStatsText}\n\n+1 ${foundMaterial}` });
 		}
 		else {
 
-			embed.description = `*${characterData.name} trots back into camp, mouth empty, and luck run out. Maybe ${pronoun(characterData, 0)} will go exploring again later, bring something that time!*`;
-			embed.footer.text = embedFooterStatsText;
+			embed.setDescription(`*${characterData.name} trots back into camp, mouth empty, and luck run out. Maybe ${pronoun(characterData, 0)} will go exploring again later, bring something that time!*`);
+			embed.setFooter({ text: embedFooterStatsText });
 		}
 
 		return await message
@@ -549,20 +547,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		if (userSpeciesMap?.habitat === 'warm') {
 
-			embed.description = `*For a while, ${characterData.name} has been trudging through the hot sand, searching in vain for something useful. ${upperCasePronounAndPlural(characterData, 0, 'was', 'were')} about to give up when ${pronounAndPlural(characterData, 0, 'discover')} a ${foundItem} in a small, lone bush. Now ${pronounAndPlural(characterData, 0, 'just need')} to pick it up gently...*`;
+			embed.setDescription(`*For a while, ${characterData.name} has been trudging through the hot sand, searching in vain for something useful. ${upperCasePronounAndPlural(characterData, 0, 'was', 'were')} about to give up when ${pronounAndPlural(characterData, 0, 'discover')} a ${foundItem} in a small, lone bush. Now ${pronounAndPlural(characterData, 0, 'just need')} to pick it up gently...*`);
 		}
 
 		if (userSpeciesMap?.habitat === 'cold') {
 
-			embed.description = `*For a while, ${characterData.name} has been trudging through the dense undergrowth, searching in vain for something useful. ${upperCasePronounAndPlural(characterData, 0, 'was', 'were')} about to give up when ${pronounAndPlural(characterData, 0, 'discover')} a ${foundItem} at the end of a tree trunk. Now ${pronounAndPlural(characterData, 0, 'just need')} to pick it up gently...*`;
+			embed.setDescription(`*For a while, ${characterData.name} has been trudging through the dense undergrowth, searching in vain for something useful. ${upperCasePronounAndPlural(characterData, 0, 'was', 'were')} about to give up when ${pronounAndPlural(characterData, 0, 'discover')} a ${foundItem} at the end of a tree trunk. Now ${pronounAndPlural(characterData, 0, 'just need')} to pick it up gently...*`);
 		}
 
 		if (userSpeciesMap?.habitat === 'water') {
 
-			embed.description = `*For a while, ${characterData.name} has been swimming through the water, searching in vain for something useful. ${upperCasePronounAndPlural(characterData, 0, 'was', 'were')} about to give up when ${pronounAndPlural(characterData, 0, 'discover')} a ${foundItem} among large algae. Now ${pronounAndPlural(characterData, 0, 'just need')} to pick it up gently...*`;
+			embed.setDescription(`*For a while, ${characterData.name} has been swimming through the water, searching in vain for something useful. ${upperCasePronounAndPlural(characterData, 0, 'was', 'were')} about to give up when ${pronounAndPlural(characterData, 0, 'discover')} a ${foundItem} among large algae. Now ${pronounAndPlural(characterData, 0, 'just need')} to pick it up gently...*`);
 		}
 
-		embed.footer.text = `You will be presented five buttons with five emojis each. The footer will show you an emoji, and you have to find the button with that emoji, but without the campsite (${emojiToAvoid}).`;
+		embed.setFooter({ text: `You will be presented five buttons with five emojis each. The footer will show you an emoji, and you have to find the button with that emoji, but without the campsite (${emojiToAvoid}).` });
 
 		botReply = await message
 			.reply({
@@ -595,8 +593,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		if (interaction === null || interaction.customId === 'plant-leave') {
 
-			embed.description = `*After thinking about it for a moment, ${characterData.name} decides ${pronounAndPlural(characterData, 0, 'is', 'are')} too tired to focus on picking up the plant. It's better to leave it there in case another pack member comes along.*`;
-			embed.footer.text = `${embedFooterStatsText}`;
+			embed.setDescription(`*After thinking about it for a moment, ${characterData.name} decides ${pronounAndPlural(characterData, 0, 'is', 'are')} too tired to focus on picking up the plant. It's better to leave it there in case another pack member comes along.*`);
+			embed.setFooter({ text: `${embedFooterStatsText}` });
 
 			return await botReply
 				.edit({
@@ -625,7 +623,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			const { emojiToFind, buttonsArray, correctButton, incorrectButton, thisRoundEmojiIndex } = module.exports.createButtons(emojiList, lastRoundEmojiIndex, userHabitatEmojisArray, emojiToAvoid);
 
-			embed.footer.text = `Click the button with this emoji: ${emojiToFind}. But watch out for the campsite (🏕️)!`;
+			embed.setFooter({ text: `Click the button with this emoji: ${emojiToFind}. But watch out for the campsite (🏕️)!` });
 
 			const herbComponent = new MessageActionRow();
 
@@ -721,9 +719,9 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					},
 				));
 
-				embed.description = `*${characterData.name} gently lowers ${pronoun(characterData, 2)} head, picking up the ${foundItem} and carrying it back in ${pronoun(characterData, 2)} mouth. What a success!*`;
+				embed.setDescription(`*${characterData.name} gently lowers ${pronoun(characterData, 2)} head, picking up the ${foundItem} and carrying it back in ${pronoun(characterData, 2)} mouth. What a success!*`);
 
-				embed.footer.text = `${embedFooterStatsText}\n\n+1 ${foundItem}`;
+				embed.setFooter({ text: `${embedFooterStatsText}\n\n+1 ${foundItem}` });
 
 				return await botReply
 					.edit({
@@ -740,20 +738,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 				if (userSpeciesMap?.habitat === 'warm') {
 
-					embed.description = `*${characterData.name} tries really hard to pick up the ${foundItem} that ${pronoun(characterData, 0)} discovered in a small, lone bush. But as the ${characterData.displayedSpecies || characterData.species} tries to pick it up, it just breaks into little pieces.*`;
+					embed.setDescription(`*${characterData.name} tries really hard to pick up the ${foundItem} that ${pronoun(characterData, 0)} discovered in a small, lone bush. But as the ${characterData.displayedSpecies || characterData.species} tries to pick it up, it just breaks into little pieces.*`);
 				}
 
 				if (userSpeciesMap?.habitat === 'cold') {
 
-					embed.description = `*${characterData.name} tries really hard to pick up the ${foundItem} that ${pronoun(characterData, 0)} discovered at the end of a tree trunk. But as the ${characterData.displayedSpecies || characterData.species} tries to pick it up, it just breaks into little pieces.*`;
+					embed.setDescription(`*${characterData.name} tries really hard to pick up the ${foundItem} that ${pronoun(characterData, 0)} discovered at the end of a tree trunk. But as the ${characterData.displayedSpecies || characterData.species} tries to pick it up, it just breaks into little pieces.*`);
 				}
 
 				if (userSpeciesMap?.habitat === 'water') {
 
-					embed.description = `*${characterData.name} tries really hard to pick up the ${foundItem} that ${pronoun(characterData, 0)} discovered among large algae. But as the ${characterData.displayedSpecies || characterData.species} tries to pick it up, it just breaks into little pieces.*`;
+					embed.setDescription(`*${characterData.name} tries really hard to pick up the ${foundItem} that ${pronoun(characterData, 0)} discovered among large algae. But as the ${characterData.displayedSpecies || characterData.species} tries to pick it up, it just breaks into little pieces.*`);
 				}
 
-				embed.footer.text = embedFooterStatsText;
+				embed.setFooter({ text: embedFooterStatsText });
 
 				return await botReply
 					.edit({
@@ -793,20 +791,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					if (userSpeciesMap?.habitat == 'warm') {
 
-						embed.description = `*Piles of sand and lone, scraggly bushes are dotting the landscape all around ${characterData.name}. ${upperCasePronounAndPlural(characterData, 0, 'pad')} through the scattered branches from long-dead trees, carefully avoiding the cacti, trying to reach the ${foundItem} ${pronoun(characterData, 0)} saw. The ${characterData.displayedSpecies || characterData.species} steps on a root but feels it twist and pulse before it leaps from its camouflage and latches onto ${pronoun(characterData, 2)} body. The snake pumps poison into ${pronoun(characterData, 1)} while ${pronounAndPlural(characterData, 0, 'lashes', 'lash')} around, trying to throw it off, finally succeeding and rushing away.*`;
+						embed.setDescription(`*Piles of sand and lone, scraggly bushes are dotting the landscape all around ${characterData.name}. ${upperCasePronounAndPlural(characterData, 0, 'pad')} through the scattered branches from long-dead trees, carefully avoiding the cacti, trying to reach the ${foundItem} ${pronoun(characterData, 0)} saw. The ${characterData.displayedSpecies || characterData.species} steps on a root but feels it twist and pulse before it leaps from its camouflage and latches onto ${pronoun(characterData, 2)} body. The snake pumps poison into ${pronoun(characterData, 1)} while ${pronounAndPlural(characterData, 0, 'lashes', 'lash')} around, trying to throw it off, finally succeeding and rushing away.*`);
 					}
 
 					if (userSpeciesMap?.habitat == 'cold') {
 
-						embed.description = `*Many sticks and roots are popping up all around ${characterData.name}. ${upperCasePronounAndPlural(characterData, 0, 'shuffle')} through the fallen branches and twisting vines, trying to reach the ${foundItem} ${pronoun(characterData, 0)} found. The ${characterData.displayedSpecies || characterData.species} steps on a root but feels it weave and pulse before it leaps from its camouflage and latches onto ${pronoun(characterData, 2)} body. The snake pumps poison into ${pronoun(characterData, 1)} while ${pronounAndPlural(characterData, 0, 'lashes', 'lash')} around, trying to throw it off, finally succeeding and rushing away.*`;
+						embed.setDescription(`*Many sticks and roots are popping up all around ${characterData.name}. ${upperCasePronounAndPlural(characterData, 0, 'shuffle')} through the fallen branches and twisting vines, trying to reach the ${foundItem} ${pronoun(characterData, 0)} found. The ${characterData.displayedSpecies || characterData.species} steps on a root but feels it weave and pulse before it leaps from its camouflage and latches onto ${pronoun(characterData, 2)} body. The snake pumps poison into ${pronoun(characterData, 1)} while ${pronounAndPlural(characterData, 0, 'lashes', 'lash')} around, trying to throw it off, finally succeeding and rushing away.*`);
 					}
 
 					if (userSpeciesMap?.habitat == 'water') {
 
-						embed.description = `*Many plants and jellyfish are popping up all around ${characterData.name}. ${upperCasePronounAndPlural(characterData, 0, 'weave')} through the jellyfish and twisting kelp, trying to reach the ${foundItem} ${pronoun(characterData, 0)} found. The ${characterData.displayedSpecies || characterData.species} pushes through a piece of kelp but feels it twist and pulse before it latches onto ${pronoun(characterData, 2)} body. The jellyfish wraps ${pronoun(characterData, 1)} with its stingers, poison flowing into ${pronoun(characterData, 1)} while ${pronounAndPlural(characterData, 0, 'thrashes', 'trash')} around trying to throw it off, finally succeeding and rushing away to the surface.*`;
+						embed.setDescription(`*Many plants and jellyfish are popping up all around ${characterData.name}. ${upperCasePronounAndPlural(characterData, 0, 'weave')} through the jellyfish and twisting kelp, trying to reach the ${foundItem} ${pronoun(characterData, 0)} found. The ${characterData.displayedSpecies || characterData.species} pushes through a piece of kelp but feels it twist and pulse before it latches onto ${pronoun(characterData, 2)} body. The jellyfish wraps ${pronoun(characterData, 1)} with its stingers, poison flowing into ${pronoun(characterData, 1)} while ${pronounAndPlural(characterData, 0, 'thrashes', 'trash')} around trying to throw it off, finally succeeding and rushing away to the surface.*`);
 					}
 
-					embed.footer.text = `-${healthPoints} HP (from poison)\n${embedFooterStatsText}`;
+					embed.setFooter({ text: `-${healthPoints} HP (from poison)\n${embedFooterStatsText}` });
 
 					break;
 
@@ -816,20 +814,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					if (userSpeciesMap?.habitat == 'warm') {
 
-						embed.description = `*${characterData.name} pads along the ground, dashing from bush to bush, inspecting every corner for something ${pronoun(characterData, 0)} could add to the inventory. Suddenly, the ${characterData.displayedSpecies || characterData.species} sways, feeling tired and feeble. A coughing fit grew louder, escaping ${pronoun(characterData, 2)} throat.*`;
+						embed.setDescription(`*${characterData.name} pads along the ground, dashing from bush to bush, inspecting every corner for something ${pronoun(characterData, 0)} could add to the inventory. Suddenly, the ${characterData.displayedSpecies || characterData.species} sways, feeling tired and feeble. A coughing fit grew louder, escaping ${pronoun(characterData, 2)} throat.*`);
 					}
 
 					if (userSpeciesMap?.habitat == 'cold') {
 
-						embed.description = `*${characterData.name} plots around the forest, dashing from tree to tree, inspecting every corner for something ${pronoun(characterData, 0)} could add to the inventory. Suddenly, the ${characterData.displayedSpecies || characterData.species} sways, feeling tired and feeble. A coughing fit grew louder, escaping ${pronoun(characterData, 2)} throat.*`;
+						embed.setDescription(`*${characterData.name} plots around the forest, dashing from tree to tree, inspecting every corner for something ${pronoun(characterData, 0)} could add to the inventory. Suddenly, the ${characterData.displayedSpecies || characterData.species} sways, feeling tired and feeble. A coughing fit grew louder, escaping ${pronoun(characterData, 2)} throat.*`);
 					}
 
 					if (userSpeciesMap?.habitat == 'water') {
 
-						embed.description = `*${characterData.name} flips around in the water, swimming from rock to rock, inspecting every nook for something ${pronoun(characterData, 0)} could add to the inventory. Suddenly, the ${characterData.displayedSpecies || characterData.species} falters in ${pronoun(characterData, 2)} stroke, feeling tired and feeble. A coughing fit grew louder, bubbles escaping ${pronoun(characterData, 2)} throat to rise to the surface.*`;
+						embed.setDescription(`*${characterData.name} flips around in the water, swimming from rock to rock, inspecting every nook for something ${pronoun(characterData, 0)} could add to the inventory. Suddenly, the ${characterData.displayedSpecies || characterData.species} falters in ${pronoun(characterData, 2)} stroke, feeling tired and feeble. A coughing fit grew louder, bubbles escaping ${pronoun(characterData, 2)} throat to rise to the surface.*`);
 					}
 
-					embed.footer.text = `-${healthPoints} HP (from cold)\n${embedFooterStatsText}`;
+					embed.setFooter({ text: `-${healthPoints} HP (from cold)\n${embedFooterStatsText}` });
 
 					break;
 
@@ -839,20 +837,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 					if (userSpeciesMap?.habitat == 'warm') {
 
-						embed.description = `*The soft noise of sand shifting on the ground spooks ${characterData.name} as ${pronounAndPlural(characterData, 0, 'walk')} around the area, searching for something useful for ${pronoun(characterData, 2)} pack. A warm wind brushes against ${pronoun(characterData, 2)} side, and a cactus bush sweeps atop ${pronoun(characterData, 2)} path, going unnoticed. A needle pricks into ${pronoun(characterData, 2)} skin, sending pain waves through ${pronoun(characterData, 2)} body. While removing the needle ${characterData.name} notices how swollen the wound looks. It is infected.*`;
+						embed.setDescription(`*The soft noise of sand shifting on the ground spooks ${characterData.name} as ${pronounAndPlural(characterData, 0, 'walk')} around the area, searching for something useful for ${pronoun(characterData, 2)} pack. A warm wind brushes against ${pronoun(characterData, 2)} side, and a cactus bush sweeps atop ${pronoun(characterData, 2)} path, going unnoticed. A needle pricks into ${pronoun(characterData, 2)} skin, sending pain waves through ${pronoun(characterData, 2)} body. While removing the needle ${characterData.name} notices how swollen the wound looks. It is infected.*`);
 					}
 
 					if (userSpeciesMap?.habitat == 'cold') {
 
-						embed.description = `*The thunks of acorns falling from trees spook ${characterData.name} as ${pronounAndPlural(characterData, 0, 'prance')} around the forest, searching for something useful for ${pronoun(characterData, 2)} pack. A warm wind brushes against ${pronoun(characterData, 2)} side, and a thorn bush sweeps atop ${pronoun(characterData, 2)} path, going unnoticed. A thorn pricks into ${pronoun(characterData, 2)} skin, sending pain waves through ${pronoun(characterData, 2)} body. While removing the thorn ${characterData.name} notices how swollen the wound looks. It is infected.*`;
+						embed.setDescription(`*The thunks of acorns falling from trees spook ${characterData.name} as ${pronounAndPlural(characterData, 0, 'prance')} around the forest, searching for something useful for ${pronoun(characterData, 2)} pack. A warm wind brushes against ${pronoun(characterData, 2)} side, and a thorn bush sweeps atop ${pronoun(characterData, 2)} path, going unnoticed. A thorn pricks into ${pronoun(characterData, 2)} skin, sending pain waves through ${pronoun(characterData, 2)} body. While removing the thorn ${characterData.name} notices how swollen the wound looks. It is infected.*`);
 					}
 
 					if (userSpeciesMap?.habitat == 'water') {
 
-						embed.description = `*The sudden silence in the water spooks ${characterData.name} as ${pronounAndPlural(characterData, 0, 'swim')} around in the water, searching for something useful for ${pronoun(characterData, 2)} pack. A rocky outcropping appears next to ${pronoun(characterData, 1)}, unnoticed. The rocks scrape into ${pronoun(characterData, 2)} side, sending shockwaves of pain up ${pronoun(characterData, 2)} flank. ${characterData.name} takes a closer look and notices how swollen the wound is. It is infected.*`;
+						embed.setDescription(`*The sudden silence in the water spooks ${characterData.name} as ${pronounAndPlural(characterData, 0, 'swim')} around in the water, searching for something useful for ${pronoun(characterData, 2)} pack. A rocky outcropping appears next to ${pronoun(characterData, 1)}, unnoticed. The rocks scrape into ${pronoun(characterData, 2)} side, sending shockwaves of pain up ${pronoun(characterData, 2)} flank. ${characterData.name} takes a closer look and notices how swollen the wound is. It is infected.*`);
 					}
 
-					embed.footer.text = `-${healthPoints} HP (from infection)\n${embedFooterStatsText}`;
+					embed.setFooter({ text: `-${healthPoints} HP (from infection)\n${embedFooterStatsText}` });
 			}
 
 			return await botReply
@@ -886,20 +884,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		if (userSpeciesMap?.habitat == 'warm') {
 
-			embed.description = `*${characterData.name} creeps close to the ground, ${pronoun(characterData, 2)} pelt blending with the sand surrounding ${pronoun(characterData, 1)}. The ${characterData.displayedSpecies || characterData.species} watches a pile of shrubs, ${pronoun(characterData, 2)} eyes flitting around before catching a motion out of the corner of ${pronoun(characterData, 2)} eyes. A particularly daring ${opponentSpecies} walks on the ground surrounding the bushes before sitting down and cleaning itself.*`;
+			embed.setDescription(`*${characterData.name} creeps close to the ground, ${pronoun(characterData, 2)} pelt blending with the sand surrounding ${pronoun(characterData, 1)}. The ${characterData.displayedSpecies || characterData.species} watches a pile of shrubs, ${pronoun(characterData, 2)} eyes flitting around before catching a motion out of the corner of ${pronoun(characterData, 2)} eyes. A particularly daring ${opponentSpecies} walks on the ground surrounding the bushes before sitting down and cleaning itself.*`);
 		}
 
 		if (userSpeciesMap?.habitat == 'cold') {
 
-			embed.description = `*${characterData.name} pads silently to the clearing, stopping just shy of leaving the safety of the thick trees that housed ${pronoun(characterData, 2)} pack, camp, and home. A lone ${opponentSpecies} stands in the clearing, snout in the stream that cuts the clearing in two, leaving it unaware of the ${characterData.displayedSpecies || characterData.species} a few meters behind it, ready to pounce.*`;
+			embed.setDescription(`*${characterData.name} pads silently to the clearing, stopping just shy of leaving the safety of the thick trees that housed ${pronoun(characterData, 2)} pack, camp, and home. A lone ${opponentSpecies} stands in the clearing, snout in the stream that cuts the clearing in two, leaving it unaware of the ${characterData.displayedSpecies || characterData.species} a few meters behind it, ready to pounce.*`);
 		}
 
 		if (userSpeciesMap?.habitat == 'water') {
 
-			embed.description = `*${characterData.name} hides behind some kelp, looking around the clear water for any prey. A lone ${opponentSpecies} swims around aimlessly, not alarmed of any potential attacks. The ${characterData.displayedSpecies || characterData.species} gets in position, contemplating an ambush.*`;
+			embed.setDescription(`*${characterData.name} hides behind some kelp, looking around the clear water for any prey. A lone ${opponentSpecies} swims around aimlessly, not alarmed of any potential attacks. The ${characterData.displayedSpecies || characterData.species} gets in position, contemplating an ambush.*`);
 		}
 
-		embed.footer.text = `The ${opponentSpecies} is level ${opponentLevel}.\nYou will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response.`;
+		embed.setFooter({ text: `The ${opponentSpecies} is level ${opponentLevel}.\nYou will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response.` });
 
 		botReply = await message
 			.reply({
@@ -934,20 +932,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			if (userSpeciesMap?.habitat == 'warm') {
 
-				embed.description = `*${characterData.name} eyes the ${opponentSpecies}, which is still unaware of the possible danger. The ${characterData.displayedSpecies || characterData.species} paces, still unsure whether to attack. Suddenly, the ${characterData.displayedSpecies || characterData.species}'s head shoots up as it tries to find the source of the sound before running away. Looks like this hunt was unsuccessful.*`;
+				embed.setDescription(`*${characterData.name} eyes the ${opponentSpecies}, which is still unaware of the possible danger. The ${characterData.displayedSpecies || characterData.species} paces, still unsure whether to attack. Suddenly, the ${characterData.displayedSpecies || characterData.species}'s head shoots up as it tries to find the source of the sound before running away. Looks like this hunt was unsuccessful.*`);
 			}
 
 			if (userSpeciesMap?.habitat == 'cold') {
 
-				embed.description = `*The ${opponentSpecies} sits in the clearing, unaware of ${characterData.name} hiding in the thicket behind it. The ${characterData.displayedSpecies || characterData.species} watches as the animal gets up, shakes the loose water droplets from its mouth, and walks into the forest, its shadow fading from ${characterData.name}'s sight. Looks like this hunt was unsuccessful.*`;
+				embed.setDescription(`*The ${opponentSpecies} sits in the clearing, unaware of ${characterData.name} hiding in the thicket behind it. The ${characterData.displayedSpecies || characterData.species} watches as the animal gets up, shakes the loose water droplets from its mouth, and walks into the forest, its shadow fading from ${characterData.name}'s sight. Looks like this hunt was unsuccessful.*`);
 			}
 
 			if (userSpeciesMap?.habitat == 'water') {
 
-				embed.description = `*${characterData.name} looks at the ${opponentSpecies}, which is still unaware of ${pronoun(characterData, 1)} watching through the kelp. Subconsciously, the ${characterData.displayedSpecies || characterData.species} starts swimming back and fourth, still unsure whether to attack. The ${opponentSpecies}'s head turns in a flash to eye the suddenly moving kelp before it frantically swims away. Looks like this hunt was unsuccessful.*`;
+				embed.setDescription(`*${characterData.name} looks at the ${opponentSpecies}, which is still unaware of ${pronoun(characterData, 1)} watching through the kelp. Subconsciously, the ${characterData.displayedSpecies || characterData.species} starts swimming back and fourth, still unsure whether to attack. The ${opponentSpecies}'s head turns in a flash to eye the suddenly moving kelp before it frantically swims away. Looks like this hunt was unsuccessful.*`);
 			}
 
-			embed.footer.text = embedFooterStatsText;
+			embed.setFooter({ text: embedFooterStatsText });
 
 			return await botReply
 				.edit({
@@ -997,17 +995,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			if (cycleKind == 'attack') {
 
-				embed.description = `⏫ *The ${opponentSpecies} gets ready to attack. ${characterData.name} must think quickly about how ${pronounAndPlural(characterData, 0, 'want')} to react.*`;
+				embed.setDescription(`⏫ *The ${opponentSpecies} gets ready to attack. ${characterData.name} must think quickly about how ${pronounAndPlural(characterData, 0, 'want')} to react.*`);
 			}
 
 			if (cycleKind == 'dodge') {
 
-				embed.description = `↪️ *Looks like the ${opponentSpecies} is preparing a maneuver for ${characterData.name}'s next move. The ${characterData.displayedSpecies || characterData.species} must think quickly about how ${pronounAndPlural(characterData, 0, 'want')} to react.*`;
+				embed.setDescription(`↪️ *Looks like the ${opponentSpecies} is preparing a maneuver for ${characterData.name}'s next move. The ${characterData.displayedSpecies || characterData.species} must think quickly about how ${pronounAndPlural(characterData, 0, 'want')} to react.*`);
 			}
 
 			if (cycleKind == 'defend') {
 
-				embed.description = `⏺️ *The ${opponentSpecies} gets into position to oppose an attack. ${characterData.name} must think quickly about how ${pronounAndPlural(characterData, 0, 'want')} to react.*`;
+				embed.setDescription(`⏺️ *The ${opponentSpecies} gets into position to oppose an attack. ${characterData.name} must think quickly about how ${pronounAndPlural(characterData, 0, 'want')} to react.*`);
 			}
 
 			botReply = await botReply
@@ -1078,20 +1076,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 				if (userSpeciesMap?.habitat == 'warm') {
 
-					embed.description = `*${characterData.name} and the ${opponentSpecies} are snarling at one another as they retreat to the opposite sides of the hill, now stirred up and filled with sticks from the surrounding bushes. The ${characterData.displayedSpecies || characterData.species} runs back to camp, ${pronoun(characterData, 2)} mouth empty as before.*`;
+					embed.setDescription(`*${characterData.name} and the ${opponentSpecies} are snarling at one another as they retreat to the opposite sides of the hill, now stirred up and filled with sticks from the surrounding bushes. The ${characterData.displayedSpecies || characterData.species} runs back to camp, ${pronoun(characterData, 2)} mouth empty as before.*`);
 				}
 
 				if (userSpeciesMap?.habitat == 'cold') {
 
-					embed.description = `*${characterData.name} and the ${opponentSpecies} are snarling at one another as they retreat into the bushes surrounding the clearing, now covered in trampled grass and loose clumps of dirt. The ${characterData.displayedSpecies || characterData.species} runs back to camp, ${pronoun(characterData, 2)} mouth empty as before.*`;
+					embed.setDescription(`*${characterData.name} and the ${opponentSpecies} are snarling at one another as they retreat into the bushes surrounding the clearing, now covered in trampled grass and loose clumps of dirt. The ${characterData.displayedSpecies || characterData.species} runs back to camp, ${pronoun(characterData, 2)} mouth empty as before.*`);
 				}
 
 				if (userSpeciesMap?.habitat == 'water') {
 
-					embed.description = `*${characterData.name} and the ${opponentSpecies} glance at one another as they swim in opposite directions from the kelp, now cloudy from the stirred up dirt. The ${characterData.displayedSpecies || characterData.species} swims back to camp, ${pronoun(characterData, 2)} mouth empty as before.*`;
+					embed.setDescription(`*${characterData.name} and the ${opponentSpecies} glance at one another as they swim in opposite directions from the kelp, now cloudy from the stirred up dirt. The ${characterData.displayedSpecies || characterData.species} swims back to camp, ${pronoun(characterData, 2)} mouth empty as before.*`);
 				}
 
-				embed.footer.text = `${embedFooterStatsText}`;
+				embed.setFooter({ text: `${embedFooterStatsText}` });
 			}
 			else if (playerLevel > opponentLevel) {
 
@@ -1108,20 +1106,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 				if (userSpeciesMap?.habitat == 'warm') {
 
-					embed.description = `*${characterData.name} shakes the sand from ${pronoun(characterData, 2)} paws, the still figure of the ${opponentSpecies} casting a shadow for ${pronoun(characterData, 1)} to rest in before returning home with the meat. ${upperCasePronounAndPlural(characterData, 0, 'turn')} to the dead ${opponentSpecies} to start dragging it back to camp. The meat would be well-stored in the camp, added to the den of food for the night, after being cleaned.*`;
+					embed.setDescription(`*${characterData.name} shakes the sand from ${pronoun(characterData, 2)} paws, the still figure of the ${opponentSpecies} casting a shadow for ${pronoun(characterData, 1)} to rest in before returning home with the meat. ${upperCasePronounAndPlural(characterData, 0, 'turn')} to the dead ${opponentSpecies} to start dragging it back to camp. The meat would be well-stored in the camp, added to the den of food for the night, after being cleaned.*`);
 				}
 
 				if (userSpeciesMap?.habitat == 'cold') {
 
-					embed.description = `*${characterData.name} licks ${pronoun(characterData, 2)} paws, freeing the dirt that is under ${pronoun(characterData, 2)} claws. The ${characterData.displayedSpecies || characterData.species} turns to the dead ${opponentSpecies} behind ${pronoun(characterData, 1)}, marveling at the size of it. Then, ${upperCasePronounAndPlural(characterData, 0, 'grab')} the ${opponentSpecies} by the neck, dragging it into the bushes and back to the camp.*`;
+					embed.setDescription(`*${characterData.name} licks ${pronoun(characterData, 2)} paws, freeing the dirt that is under ${pronoun(characterData, 2)} claws. The ${characterData.displayedSpecies || characterData.species} turns to the dead ${opponentSpecies} behind ${pronoun(characterData, 1)}, marveling at the size of it. Then, ${upperCasePronounAndPlural(characterData, 0, 'grab')} the ${opponentSpecies} by the neck, dragging it into the bushes and back to the camp.*`);
 				}
 
 				if (userSpeciesMap?.habitat == 'water') {
 
-					embed.description = `*The ${characterData.displayedSpecies || characterData.species} swims quickly to the surface, trying to stay as stealthy and unnoticed as possible. ${upperCasePronounAndPlural(characterData, 0, 'break')} the surface, gain ${pronoun(characterData, 2)} bearing, and the ${characterData.displayedSpecies || characterData.species} begins swimming to the shore, dragging the dead ${opponentSpecies} up the shore to the camp.*`;
+					embed.setDescription(`*The ${characterData.displayedSpecies || characterData.species} swims quickly to the surface, trying to stay as stealthy and unnoticed as possible. ${upperCasePronounAndPlural(characterData, 0, 'break')} the surface, gain ${pronoun(characterData, 2)} bearing, and the ${characterData.displayedSpecies || characterData.species} begins swimming to the shore, dragging the dead ${opponentSpecies} up the shore to the camp.*`);
 				}
 
-				embed.footer.text = `${embedFooterStatsText}\n\n+1 ${opponentSpecies}`;
+				embed.setFooter({ text: `${embedFooterStatsText}\n\n+1 ${opponentSpecies}` });
 
 				userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 					{ userId: message.author.id },
@@ -1151,20 +1149,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 						if (userSpeciesMap?.habitat == 'warm') {
 
-							embed.description = `*The ${characterData.displayedSpecies || characterData.species} rolls over in the sand, pinned down by the ${opponentSpecies}.* "Get off my territory," *it growls before walking away from the shaking form of ${characterData.name} laying on the sand. ${upperCasePronounAndPlural(characterData, 0, 'let')} the ${opponentSpecies} walk away for a little, trying to put space between the two animals. After catching ${pronoun(characterData, 2)} breath, the ${characterData.displayedSpecies || characterData.species} pulls ${pronoun(characterData, 4)} off the ground, noticing sand sticking to ${pronoun(characterData, 2)} side. ${upperCasePronounAndPlural(characterData, 0, 'shake')} ${pronoun(characterData, 2)} body, sending bolts of pain up ${pronoun(characterData, 2)} side from the wound. ${upperCasePronounAndPlural(characterData, 0, 'slowly walk')} away from the valley that the ${opponentSpecies} was sitting in before running back towards camp.*`;
+							embed.setDescription(`*The ${characterData.displayedSpecies || characterData.species} rolls over in the sand, pinned down by the ${opponentSpecies}.* "Get off my territory," *it growls before walking away from the shaking form of ${characterData.name} laying on the sand. ${upperCasePronounAndPlural(characterData, 0, 'let')} the ${opponentSpecies} walk away for a little, trying to put space between the two animals. After catching ${pronoun(characterData, 2)} breath, the ${characterData.displayedSpecies || characterData.species} pulls ${pronoun(characterData, 4)} off the ground, noticing sand sticking to ${pronoun(characterData, 2)} side. ${upperCasePronounAndPlural(characterData, 0, 'shake')} ${pronoun(characterData, 2)} body, sending bolts of pain up ${pronoun(characterData, 2)} side from the wound. ${upperCasePronounAndPlural(characterData, 0, 'slowly walk')} away from the valley that the ${opponentSpecies} was sitting in before running back towards camp.*`);
 						}
 
 						if (userSpeciesMap?.habitat == 'cold') {
 
-							embed.description = `*${characterData.name} runs into the brush, trying to avoid making the wound from the ${opponentSpecies} any worse than it already is. The ${characterData.displayedSpecies || characterData.species} stops and confirms that the ${opponentSpecies} isn't following ${pronoun(characterData, 1)}, before walking back inside the camp borders.*`;
+							embed.setDescription(`*${characterData.name} runs into the brush, trying to avoid making the wound from the ${opponentSpecies} any worse than it already is. The ${characterData.displayedSpecies || characterData.species} stops and confirms that the ${opponentSpecies} isn't following ${pronoun(characterData, 1)}, before walking back inside the camp borders.*`);
 						}
 
 						if (userSpeciesMap?.habitat == 'water') {
 
-							embed.description = `*Running from the ${opponentSpecies}, ${characterData.name} flips and spins around in the water, trying to escape from the grasp of the animal behind ${pronoun(characterData, 1)}. ${upperCasePronounAndPlural(characterData, 0, 'slip')} into a small crack in a wall, waiting silently for the creature to give up. Finally, the ${opponentSpecies} swims away, leaving the ${characterData.displayedSpecies || characterData.species} alone. Slowly emerging from the crevice, ${characterData.name} flinches away from the wall as ${pronounAndPlural(characterData, 0, 'hit')} it, a wound making itself known from the fight. Hopefully, it can be treated back at the camp.*`;
+							embed.setDescription(`*Running from the ${opponentSpecies}, ${characterData.name} flips and spins around in the water, trying to escape from the grasp of the animal behind ${pronoun(characterData, 1)}. ${upperCasePronounAndPlural(characterData, 0, 'slip')} into a small crack in a wall, waiting silently for the creature to give up. Finally, the ${opponentSpecies} swims away, leaving the ${characterData.displayedSpecies || characterData.species} alone. Slowly emerging from the crevice, ${characterData.name} flinches away from the wall as ${pronounAndPlural(characterData, 0, 'hit')} it, a wound making itself known from the fight. Hopefully, it can be treated back at the camp.*`);
 						}
 
-						embed.footer.text = `-${healthPoints} HP (from wound)\n${embedFooterStatsText}`;
+						embed.setFooter({ text: `-${healthPoints} HP (from wound)\n${embedFooterStatsText}` });
 
 						break;
 
@@ -1174,20 +1172,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 						if (userSpeciesMap?.habitat == 'warm') {
 
-							embed.description = `*${characterData.name} limps back to camp, ${pronoun(characterData, 2)} paw sprained from the fight with the ${opponentSpecies}. Only barely did ${pronoun(characterData, 0)} get away, leaving the enemy alone in the sand that is now stirred up and filled with sticks from the surrounding bushes. Maybe next time, the ${characterData.displayedSpecies || characterData.species} will be successful in ${pronoun(characterData, 2)} hunt.*`;
+							embed.setDescription(`*${characterData.name} limps back to camp, ${pronoun(characterData, 2)} paw sprained from the fight with the ${opponentSpecies}. Only barely did ${pronoun(characterData, 0)} get away, leaving the enemy alone in the sand that is now stirred up and filled with sticks from the surrounding bushes. Maybe next time, the ${characterData.displayedSpecies || characterData.species} will be successful in ${pronoun(characterData, 2)} hunt.*`);
 						}
 
 						if (userSpeciesMap?.habitat == 'cold') {
 
-							embed.description = `*${characterData.name} limps back to camp, ${pronoun(characterData, 2)} paw sprained from the fight with the ${opponentSpecies}. Only barely did ${pronoun(characterData, 0)} get away, leaving the enemy alone in a clearing now filled with trampled grass and dirt clumps. Maybe next time, the ${characterData.displayedSpecies || characterData.species} will be successful in ${pronoun(characterData, 2)} hunt.*`;
+							embed.setDescription(`*${characterData.name} limps back to camp, ${pronoun(characterData, 2)} paw sprained from the fight with the ${opponentSpecies}. Only barely did ${pronoun(characterData, 0)} get away, leaving the enemy alone in a clearing now filled with trampled grass and dirt clumps. Maybe next time, the ${characterData.displayedSpecies || characterData.species} will be successful in ${pronoun(characterData, 2)} hunt.*`);
 						}
 
 						if (userSpeciesMap?.habitat == 'water') {
 
-							embed.description = `*${characterData.name} swims back to camp in pain, ${pronoun(characterData, 2)} fin sprained from the fight with the ${opponentSpecies}. Only barely did ${pronoun(characterData, 0)} get away, leaving the enemy alone in the water that is now cloudy from the stirred up dirt. Maybe next time, the ${characterData.displayedSpecies || characterData.species} will be successful in ${pronoun(characterData, 2)} hunt.*`;
+							embed.setDescription(`*${characterData.name} swims back to camp in pain, ${pronoun(characterData, 2)} fin sprained from the fight with the ${opponentSpecies}. Only barely did ${pronoun(characterData, 0)} get away, leaving the enemy alone in the water that is now cloudy from the stirred up dirt. Maybe next time, the ${characterData.displayedSpecies || characterData.species} will be successful in ${pronoun(characterData, 2)} hunt.*`);
 						}
 
-						embed.footer.text = `-${healthPoints} HP (from sprain)\n${embedFooterStatsText}`;
+						embed.setFooter({ text: `-${healthPoints} HP (from sprain)\n${embedFooterStatsText}` });
 				}
 			}
 

@@ -99,6 +99,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		healthPoints = pullFromWeightedTable({ 1: 5, 2: 4, 3: 3, 4: 2, 5: 1 }) + generateRandomNumber(Math.round(saplingObject.waterCycles / 4), 0);
 		if (profileData.health + healthPoints > profileData.maxHealth) { healthPoints = profileData.maxHealth - profileData.health; }
 
+		embed.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Perfect.png');
 		embed.setDescription(`*${characterData.name} waters the seedling, and it look it's at the perfect time. The ginkgo tree looks healthy, the leaves have a strong green color, and a pleasant fragrance emanates from them. The ${characterData.displayedSpecies || characterData.species} feels warm and safe from the scent.*`),
 		embed.setFooter({ text: `+${experiencePoints} XP (${profileData.experience + experiencePoints}/${profileData.levels * 50})${healthPoints > 0 ? `\n+${healthPoints} health (${profileData.health + healthPoints}/${profileData.maxEnergy})` : ''}\n\n+${saplingHealthPoints} health for ginkgo sapling\nCome back to water it in 24 hours.` });
 	}
@@ -111,6 +112,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		saplingObject.waterCycles += 1;
 		experiencePoints = saplingObject.waterCycles;
 
+		embed.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Good.png');
 		embed.setDescription(`*${characterData.name} waters the seedling, and it look like the sapling needs it. Although the ginkgo tree looks healthy, with leaves of beautiful green color and a light scent, the soil seems to be already quite dry.*`);
 		embed.setFooter({ text: `+${experiencePoints} XP (${profileData.experience + experiencePoints}/${profileData.levels * 50})\n\nCome back to water the ginkgo sapling in 24 hours.` });
 	}
@@ -124,6 +126,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		const lostHealthPoints = Math.round(saplingObject.health * percentage) + weeksAlive;
 		saplingObject.health -= (saplingObject.health - lostHealthPoints > 0 ? lostHealthPoints : saplingObject.health - lostHealthPoints > -weeksAlive ? saplingObject.health - 1 : saplingObject.health);
 
+		embed.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Miss.png');
 		if (currentTimestamp < (saplingObject.nextWaterTimestamp || 0)) {
 
 			embed.setDescription(`*The soil is already soggy when ${characterData.name} adds more water to it. The leaves are yellow-brown, the stem is muddy and has a slight mold. Next time the ${characterData.displayedSpecies || characterData.species} should wait a little with the watering.*`);
@@ -179,6 +182,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					color: characterData.color,
 					author: { name: characterData.name, icon_url: characterData.avatarURL },
 					description: `*No matter what ${characterData.name} does, all the leaves on the ginkgo tree have either fallen off, or are dark brown and hang limply. It's time to say goodbye to the tree.*`,
+					image: { url: 'https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Dead.png' },
 				}],
 			})
 			.catch((error) => {

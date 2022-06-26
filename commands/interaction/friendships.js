@@ -4,7 +4,6 @@ const profileModel = require('../../models/profileModel');
 const { hasName } = require('../../utils/checkAccountCompletion');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { getFriendshipPoints, getFriendshipHearts, checkOldMentions } = require('../../utils/friendshipHandling');
-const isInGuild = require('../../utils/isInGuild');
 const startCooldown = require('../../utils/startCooldown');
 
 module.exports.name = 'friendships';
@@ -20,12 +19,7 @@ module.exports.aliases = ['friendship', 'relationships', 'relationship', 'friend
  */
 module.exports.sendMessage = async (client, message, argumentsArray, userData) => {
 
-	if (!isInGuild(message)) {
-
-		return;
-	}
-
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guild.id]];
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId || 'DM']];
 
 	if (!hasName(message, characterData)) {
 
@@ -52,6 +46,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		if (otherUserData == undefined) { continue; }
 		[userData, otherUserData] = await checkOldMentions(userData, characterData._id, otherUserData, _id);
 		const friendshipHearts = getFriendshipHearts(getFriendshipPoints(userData.characters[characterData._id].mentions[_id], otherUserData.characters[_id].mentions[characterData._id]));
+		if (friendshipHearts <= 0) { continue; }
 		friendships.push(`${otherUserData.characters[_id].name} (<@${otherUserData.userId}>) - ${'❤️'.repeat(friendshipHearts) + '🖤'.repeat(10 - friendshipHearts)}`);
 	}
 
@@ -74,7 +69,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 			embeds: [ new MessageEmbed({
 				color: characterData.color,
 				author: { name: characterData.name, icon_url: characterData.avatarURL },
-				description: friendships.length > 0 ? friendships.slice(pageNumber, 25).join('\n') : 'You have not formed any friendships yet :(',
+				description: friendships.length > 0 ? friendships.slice(pageNumber * 25, (pageNumber + 1) * 25).join('\n') : 'You have not formed any friendships yet :(',
 			})],
 			components: friendships.length > 25 ? [friendshipPageComponent] : [],
 			failIfNotExists: false,
@@ -95,25 +90,17 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 				if (interaction.customId === 'friendship-left') {
 
 					pageNumber -= 1;
-
-					if (pageNumber < 0) {
-
-						pageNumber = Math.ceil(friendships.length / 25) - 1;
-					}
+					if (pageNumber < 0) { pageNumber = Math.ceil(friendships.length / 25) - 1; }
 
 				}
 
 				if (interaction.customId === 'friendship-right') {
 
 					pageNumber += 1;
-
-					if (pageNumber >= Math.ceil(friendships.length / 25)) {
-
-						pageNumber = 0;
-					}
+					if (pageNumber >= Math.ceil(friendships.length / 25)) { pageNumber = 0; }
 				}
 
-				botReply.embeds[0].description = friendships.slice(pageNumber, 25).join('\n');
+				botReply.embeds[0].description = friendships.slice(pageNumber * 25, (pageNumber + 1) * 25).join('\n');
 
 				botReply = await botReply
 					.edit({
