@@ -101,11 +101,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
  * A function that is called when the user accepts the hug. It edits the message to show a hug gif and
  * adds friendship points.
  * @param {import('discord.js').ButtonInteraction} interaction
- * @param {import('../../typedef').ProfileSchema} userData
- * @param {import('../../typedef').Character} characterData
+ * @param {import('../../typedef').ProfileSchema} partnerUserData
+ * @param {import('../../typedef').Character} partnerCharacterData
  * @param {import('discord.js').Message} referencedMessage
  */
-module.exports.sendHugMessage = async (interaction, userData, characterData, referencedMessage) => {
+module.exports.sendHugMessage = async (interaction, partnerUserData, partnerCharacterData, referencedMessage) => {
 
 	if (!(interaction.message instanceof Message)) { return; }
 
@@ -127,6 +127,9 @@ module.exports.sendHugMessage = async (interaction, userData, characterData, ref
 		'https://c.tenor.com/N4wxlSS6s6YAAAAd/wake-up-360baby-pandas.gif',
 	];
 
+	const userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: referencedMessage.author.id }));
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[referencedMessage.guildId || 'DM']];
+
 	const embedArray = interaction.message.embeds.slice(0, interaction.message.embeds.length - 1);
 	await interaction.message
 		.edit({
@@ -144,9 +147,6 @@ module.exports.sendHugMessage = async (interaction, userData, characterData, ref
 			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 
-	const partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: referencedMessage.mentions.users.first()?.id }));
-	const partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[referencedMessage.guildId || 'DM']];
-
 	if (characterData !== undefined && partnerCharacterData !== undefined) { await addFriendshipPoints(referencedMessage, userData, characterData._id, partnerUserData, partnerCharacterData._id); }
 };
 
@@ -154,12 +154,14 @@ module.exports.sendHugMessage = async (interaction, userData, characterData, ref
  * A function that is called when the user declines the hug. It edits the message to show that the user
  * declined the hug.
  * @param {import('discord.js').ButtonInteraction} interaction
- * @param {import('../../typedef').Character} characterData
  * @param {import('discord.js').Message} referencedMessage
  */
-module.exports.sendNoHugMessage = async (interaction, characterData, referencedMessage) => {
+module.exports.sendNoHugMessage = async (interaction, referencedMessage) => {
 
 	if (!(interaction.message instanceof Message)) { return; }
+
+	const userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: referencedMessage.author.id }));
+	const characterData = userData?.characters?.[userData?.currentCharacter?.[referencedMessage.guildId || 'DM']];
 
 	const embedArray = interaction.message.embeds.slice(0, interaction.message.embeds.length - 1);
 	await interaction.message

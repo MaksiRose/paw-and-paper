@@ -256,7 +256,7 @@ const event = {
 
 				if (interaction.isButton() && referencedMessage !== null && interaction.customId === 'hug-decline' && interaction.user.id === referencedMessage.mentions.users.first()?.id) {
 
-					sendNoHugMessage(interaction, characterData, referencedMessage);
+					sendNoHugMessage(interaction, referencedMessage);
 				}
 
 				return;
