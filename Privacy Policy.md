@@ -87,4 +87,4 @@ The current release version of the Bot can be checked using the `help` command u
 
 You can request any data that we collect about you, as well as the deletion of that data. Request of this kind go to this email: maksilucy1@gmail.com
 
-To delete your account, you can also use the `delete` command, click "Everything", then click "Confirm".
+To delete all your data, you can also use the `delete` command, click "Everything", then click "Confirm".
