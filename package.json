@@ -2,12 +2,12 @@
 	"name": "paw-and-paper",
 	"version": "2.14.2",
 	"description": "A Discord Bot for roleplay communities, featuring a community-based interactive RPG and powerful tools to roleplay",
-	"main": "index.js",
+	"main": "index.ts",
 	"scripts": {
 		"start": "git pull origin stable && npm i && pm2 start dist/index.js --name paw --time",
 		"reload": "git pull origin stable && npm i && pm2 reload paw",
 		"stop": "pm2 stop paw",
-		"localtest": "node dist/indextest.js",
+		"localtest": "ts-node src/indextest.ts",
 		"logs": "pm2 logs --timestamp --lines 0 paw",
 		"build": "tsc -p tsconfig.json"
 	},
@@ -26,6 +26,7 @@
 		"topgg-autoposter": "^2.0.1"
 	},
 	"devDependencies": {
-		"eslint": "^8.15.0"
+		"eslint": "^8.15.0",
+		"ts-node": "^10.8.1"
 	}
 }

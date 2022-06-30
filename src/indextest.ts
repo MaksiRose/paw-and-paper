@@ -1,4 +1,4 @@
 const { test_token } = require('../config.json');
-const { start } = require('./paw');
+import { start } from './paw';
 
 start(test_token, '', '', '', '', '', '');

@@ -1,5 +1,5 @@
 // @ts-check
-const { default_color } = require('../../../config.json');
+const { default_color } = require('../../config.json');
 const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
 const startCooldown = require('../../utils/startCooldown');
