@@ -6,7 +6,6 @@ export function execute(client: CustomClient) {
 
 	for (const file of readdirSync('./dist/events/')) {
 
-		// eslint-disable-next-line @typescript-eslint/no-var-requires
 		const event: Event = require(`../events/${file}`);
 		if (event.once) {
 

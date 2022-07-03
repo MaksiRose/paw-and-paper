@@ -106,7 +106,7 @@ type Profile = {
 	maxEnergy: number; // Maximum Energy Points of the character
 	maxHunger: number; // Maximum Hunger Points of the character
 	maxThirst: number; // Maximum Thirst Points of the character
-	temporaryStatIncrease: Record<string, string>; // Object with a timestamp as the key and the kind of stat that is increased as the value
+	temporaryStatIncrease: Record<string, 'maxHealth' | 'maxEnergy' | 'maxHunger' | 'maxThirst'>; // Object with a timestamp as the key and the kind of stat that is increased as the value
 	isResting: boolean; // Whether the character is resting
 	hasCooldown: boolean; // Whether the character is on a cooldown
 	hasQuest: boolean; // Whether the character has an open quest.
