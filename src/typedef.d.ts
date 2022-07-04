@@ -6,7 +6,7 @@ import bfd from 'bfd-api-redux/src/main';
 
 export type Command = {
 	name: string;
-	data: SlashCommandBuilder | { name: string, type: number; };
+	data?: SlashCommandBuilder | { name: string, type: number; };
 	sendCommand: (client?: CustomClient, interaction?: MessageContextMenuInteraction | CommandInteraction, argumentsArray?: Array<string>, userData?: ProfileSchema, serverData?: ServerSchema, embedArray?: Array<MessageEmbed>) => Promise<void>;
 };
 
