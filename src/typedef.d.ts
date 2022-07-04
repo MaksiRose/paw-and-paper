@@ -151,7 +151,7 @@ type Reminders = {
 	resting: boolean;
 };
 
-export type ProfileSchema = {
+export type UserSchema = {
 	userId: string; // ID of the user that created the account. Cannot be modified
 	advice: Advice; // Object of advice kinds as the key and whether the advice has been given as the value
 	reminders: Reminders; // Object of reminder kinds as the key and whether the user wants to be reminded/pinged for these occasions as the value

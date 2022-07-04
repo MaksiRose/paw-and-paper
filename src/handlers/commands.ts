@@ -11,6 +11,8 @@ export function execute(client: CustomClient) {
 
 	const applicationCommands: Array<RESTPostAPIApplicationCommandsJSONBody> = [];
 
+	/* Adds all commands to client.commands property, and to the applicationCommands array if
+	the command.data is not undefined. */
 	for (const commandPath of getFiles('../commands')) {
 
 		const command = require(commandPath) as Command;
@@ -20,6 +22,7 @@ export function execute(client: CustomClient) {
 		client.commands[command.name] = command;
 	}
 
+	/* Registers the applicationCommands array to Discord. */
 	if (client.token && client.user) {
 
 		const rest = new REST({ version: '9' }).setToken(client.token);
