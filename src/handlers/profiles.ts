@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from 'fs';
 import { sendReminder } from '../commands/maintenance/water';
-import profileModel from '../models/profileModel';
+import profileModel from '../models/userModel';
 import { CustomClient, UserSchema } from '../typedef';
 
 /** Updates all profiles */

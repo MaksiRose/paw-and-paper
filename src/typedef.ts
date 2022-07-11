@@ -1,20 +1,19 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { Api } from '@top-gg/sdk';
 import { Client, ClientOptions, CommandInteraction, MessageContextMenuInteraction, MessageEmbed } from 'discord.js';
-import { CustomClient } from './paw';
 import bfd from 'bfd-api-redux/src/main';
 
-export type Command = {
+export interface Command {
 	name: string;
 	data?: SlashCommandBuilder | { name: string, type: number; };
-	sendCommand: (client?: CustomClient, interaction?: MessageContextMenuInteraction | CommandInteraction, argumentsArray?: Array<string>, userData?: ProfileSchema, serverData?: ServerSchema, embedArray?: Array<MessageEmbed>) => Promise<void>;
-};
+	sendCommand: (client?: CustomClient, interaction?: MessageContextMenuInteraction | CommandInteraction, argumentsArray?: Array<string>, userData?: UserSchema, serverData?: ServerSchema, embedArray?: Array<MessageEmbed>) => Promise<void>;
+}
 
-export type Votes = {
+export interface Votes {
 	token: string;
 	authorization: string;
 	client: bfd | Api | null;
-};
+}
 
 export class CustomClient extends Client {
 
@@ -31,10 +30,10 @@ export class CustomClient extends Client {
 
 
 /** This object holds references to guilds and users that cannot make accounts in their respective Arrays. */
-export type BanList = {
+export interface BanList {
 	users: Array<string>;
 	servers: Array<string>;
-};
+}
 
 /** This object holds references to user accounts that are friends. */
 export type GivenIdList = Array<string>;
@@ -52,49 +51,89 @@ export type VoteList = Record<string, {
 	nextRedeemableDblVote?: number;
 }>;
 
-
 /** This object holds references to webhook messages and who the original author is, with the webhook message ID as the key, and the orginal user ID as the variable. */
 export type WebhookMessages = Record<string, string>;
 
 
-type Inventory = {
+export type Schema<T> = {
+	[K in keyof T]: T[K] extends string ? {
+		type: 'string',
+		default: string,
+		locked: boolean;
+	} : T[K] extends string | null ? {
+		type: 'string?',
+		default: string | null,
+		locked: boolean;
+	} : T[K] extends number ? {
+		type: 'number',
+		default: number,
+		locked: boolean;
+	} : T[K] extends number | null ? {
+		type: 'number?',
+		default: string | null,
+		locked: boolean;
+	} : T[K] extends string | number ? {
+		type: 'string|number',
+		default: string | number,
+		locked: boolean;
+	} : T[K] extends boolean ? {
+		type: 'boolean',
+		default: boolean,
+		locked: boolean;
+	} : T[K] extends Array<any> ? {
+		type: 'array',
+		of: Schema<T[K]>[number],
+		locked: boolean;
+	} : T[K] extends Record<string, any> ? {
+		type: 'object',
+		default: Schema<T[K]>;
+		locked: boolean;
+	} | {
+		type: 'map',
+		of: Schema<T[K]>[string],
+		locked: boolean;
+	} : never;
+};
+
+
+interface Inventory {
 	commonPlants: Record<string, number>,
 	uncommonPlants: Record<string, number>,
 	rarePlants: Record<string, number>,
 	specialPlants: Record<string, number>,
 	meat: Record<string, number>,
 	materials: Record<string, number>;
-};
+}
 
-type Sapling = {
+interface Sapling {
 	exists: boolean; // Whether there is a sapling
 	health: number; // The health of the sapling
 	waterCycles: number; // How many times the sapling has been watered
-	nextWaterTimestamp: number?; // Timestamp of the next perfect watering
-	lastMessageChannelId: string?; // The ID of the last channel the sapling was watered in
-};
+	nextWaterTimestamp: number | null; // Timestamp of the next perfect watering
+	lastMessageChannelId: string | null; // The ID of the last channel the sapling was watered in
+}
 
-type Injuries = {
+interface Injuries {
 	wounds: number,
 	infections: number,
 	cold: boolean,
 	sprains: number,
 	poison: boolean;
-};
+}
 
-type Role = {
+interface Role {
 	roleId: string; // ID of the role
 	wayOfEarning: 'rank' | 'levels' | 'experience'; // The kind of requirement to meet to earn the role
 	requirement: ('Youngling' | 'Apprentice' | 'Hunter' | 'Healer' | 'Elderly') | number; // The requirement to meet to earn the role
-};
+}
 
-type Skills = {
+interface Skills {
 	global: Record<string, number>,
 	personal: Record<string, number>;
-};
+}
 
-type Profile = {
-	serverId: string; // ID of the server that this information is associated with
+interface Profile {
+	readonly serverId: string; // ID of the server that this information is associated with
 	rank: 'Youngling' | 'Apprentice' | 'Hunter' | 'Healer' | 'Elderly'; // Rank of the character
 	levels: number; // Levels of the character
 	experience: number; // Experience Points of the character
@@ -117,15 +156,15 @@ type Profile = {
 	inventory: Inventory; // Object with item kinds as the keys and an object of the item types and their quantity as the variables
 	roles: Array<Role>; // Array of role objects
 	skills: Skills; // Object of skills, with global and personal skills as key-value pairs
-};
+}
 
-type Proxy = {
+interface Proxy {
 	startsWith: string,
 	endsWith: string;
-};
+}
 
-type Character = {
-	_id: string; // Unique ID of the character
+interface Character {
+	readonly _id: string; // Unique ID of the character
 	name: string; // Name of the character
 	species: string; // Species of the character
 	displayedSpecies: string; // Displayed species of the character
@@ -136,74 +175,74 @@ type Character = {
 	color: `#${number}`; // Embed color used in messages
 	mentions: Record<string, Array<number>>; // Object of character_id as key and an array of timestamps of when the mention has been done as the value
 	profiles: Record<string, Profile>; // Object of server IDs this character has been used on as the key and the information associated with it as the value
-};
+}
 
-type Advice = {
+interface Advice {
 	resting: boolean,
 	drinking: boolean,
 	eating: boolean,
 	passingout: boolean,
 	coloredbuttons: boolean;
-};
+}
 
-type Reminders = {
+interface Reminders {
 	water: boolean,
 	resting: boolean;
-};
+}
 
-export type UserSchema = {
-	userId: string; // ID of the user that created the account. Cannot be modified
+export interface UserSchema {
+	readonly userId: string; // ID of the user that created the account. Cannot be modified
 	advice: Advice; // Object of advice kinds as the key and whether the advice has been given as the value
 	reminders: Reminders; // Object of reminder kinds as the key and whether the user wants to be reminded/pinged for these occasions as the value
 	characters: Record<string, Character>; // Object of names of characters as the key and the characters this user has created as value
 	currentCharacter: Record<string, string>; // Object of the server IDs as the key and the id of the character that is currently active as the value
 	autoproxy: Record<string, Array<string>>; // Object of the server IDs as the key and an array of channel IDs as the value
 	lastPlayedVersion: string; // Last major version that the user played on
-	uuid: string;
-};
+	readonly uuid: string;
+}
 
 
-type DenSchema = {
+interface DenSchema {
 	structure: number; // How strong the structure of the den is
 	bedding: number; // How nice the ground of the den is
 	thickness: number; // How thick the walls of the den are
 	evenness: number; // How even the walls of the den are
-};
+}
 
-type Dens = {
+export interface Dens {
 	sleepingDens: DenSchema,
 	foodDen: DenSchema,
 	medicineDen: DenSchema;
-};
+}
 
-type ProxySetting = {
+interface ProxySetting {
 	auto: Array<string>,
 	all: Array<string>;
-};
+}
 
-export type ServerSchema = {
-	serverId: string; // ID of the server. Cannot be modified
+export interface ServerSchema {
+	readonly serverId: string; // ID of the server. Cannot be modified
 	name: string; // Name of the server
 	inventory: Inventory; // Object with item kinds as the keys and an object of the item types and their quantity as the variables
 	dens: Dens; // Object of the blocked entrance with the name of the den and kind of block as the variables. If no entrance is blocked, they are null
 	nextPossibleAttack: number; // Timestamp of the time when the next attack is possible
-	visitChannelId: string?; // ID of the channel that can be visited. If no channel is seleted, this is null
-	currentlyVisiting: string?; // ID of the guild that is currently being visited. If no guild is being visited, this is null
+	visitChannelId: string | null; // ID of the channel that can be visited. If no channel is seleted, this is null
+	currentlyVisiting: string | null; // ID of the guild that is currently being visited. If no guild is being visited, this is null
 	shop: Array<Role>; // Array of role objects
 	proxysetting: ProxySetting; // Object with the keys "all" and "auto", which hold an array each with channels where proxying isn't allowed
 	skills: Array<string>; // Array of global skills for this server
-	uuid: string;
-};
+	readonly uuid: string;
+}
 
-export type Event = {
+export interface Event {
 	name: string; // Name of the event
 	once: boolean; // Whether the event should be executed once
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	execute: (client: CustomClient, ...args: Array<any>) => Awaitable<void>;
-};
+	execute: (client: CustomClient, ...args: Array<any>) => Promise<void>;
+}
 
 
-export type PlantMapObject = {
+export interface PlantMapObject {
 	name: string; // Name of the plant
 	description: string; // Description of the plant
 	edibility: 'e' | 'i' | 't'; // Edibabilty of the plant: `e` for edible, `i` for inedible and `t` for toxic
@@ -214,24 +253,24 @@ export type PlantMapObject = {
 	healsPoison: boolean; // Whether the plant heals poison
 	givesEnergy: boolean; // Whether the plant gives energy
 	increasesMaxCondition: boolean; // Whether the plant increases the maximum of one condition
-};
+}
 
 
-export type MaterialsMapObject = {
+export interface MaterialsMapObject {
 	name: string; // Name of the material
 	description: string; // Description of the material
 	reinforcesStructure: boolean; // Whether the material reinforces the structure of a den
 	improvesBedding: boolean; // Whether the material improves the bedding of the den
 	thickensWalls: boolean; // Whether the material thickens the walls of the den
 	removesOverhang: boolean; // Whether the material removes overhang from the walls of the hang
-};
+}
 
 
-export type SpeciesMapObject = {
+export interface SpeciesMapObject {
 	name: string; // Name of the species
 	diet: 'omnivore' | 'herbivore' | 'carnivore'; // Diet of the species
 	habitat: 'cold' | 'warm' | 'water'; // Habitat that the species lives in
 	biome1OpponentArray: Array<string>; // Opponents that the species meets in biome 1
 	biome2OpponentArray: Array<string>; // Opponents that the species meets in biome 2
 	biome3OpponentArray: Array<string>; // Opponents that the species meets in biome 3
-};
+}

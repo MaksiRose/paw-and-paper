@@ -1,7 +1,7 @@
 import { readFileSync, unlinkSync, writeFileSync } from 'fs';
-import profileModel from '../models/profileModel';
+import userModel from '../models/userModel';
 import serverModel from '../models/serverModel';
-import { CustomClient, DeleteList, Event, UserSchema, ServerSchema } from '../typedef';
+import { CustomClient, DeleteList, Event, ServerSchema } from '../typedef';
 import { createGuild } from '../utils/updateGuild';
 
 export const event: Event = {
@@ -66,7 +66,7 @@ export const event: Event = {
 
 			/* It's checking whether a profile has a temporaryStatIncrease with a timestamp that is older than a
 			week ago, and if it does, bring the stat back and delete the property from temporaryStatIncrease. */
-			const userList = (await profileModel.find()) as Array<UserSchema>;
+			const userList = userModel.find();
 			for (const userData of userList) {
 
 				for (const characterData of Object.values(userData.characters)) {
@@ -77,15 +77,15 @@ export const event: Event = {
 
 							if (Number(timestamp) < Date.now() - 604_800_000) {
 
-								await profileModel.findOneAndUpdate(
+								userModel.findOneAndUpdate(
 									{ uuid: userData.uuid },
-									(p: UserSchema) => {
-										p.characters[characterData._id].profiles[profileData.serverId][statKind] -= 10;
+									(u) => {
+										u.characters[characterData._id].profiles[profileData.serverId][statKind] -= 10;
 										const stat = (statKind.replace('max', '').toLowerCase()) as 'health' | 'energy' | 'hunger' | 'thirst';
-										if (p.characters[characterData._id].profiles[profileData.serverId][stat] > p.characters[characterData._id].profiles[profileData.serverId][statKind]) {
-											p.characters[characterData._id].profiles[profileData.serverId][stat] = p.characters[characterData._id].profiles[profileData.serverId][statKind];
+										if (u.characters[characterData._id].profiles[profileData.serverId][stat] > u.characters[characterData._id].profiles[profileData.serverId][statKind]) {
+											u.characters[characterData._id].profiles[profileData.serverId][stat] = u.characters[characterData._id].profiles[profileData.serverId][statKind];
 										}
-										delete p.characters[characterData._id].profiles[profileData.serverId].temporaryStatIncrease[timestamp];
+										delete u.characters[characterData._id].profiles[profileData.serverId].temporaryStatIncrease[timestamp];
 									},
 								);
 							}
