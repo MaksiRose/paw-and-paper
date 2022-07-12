@@ -108,7 +108,7 @@ export async function createGuild(client: CustomClient, guild: Guild): Promise<S
 /**
  * This moves a guild and the user profiles from that guild into the toDelete folder and adds them to the toDeleteList.
  */
-export async function deleteGuild(guildId) {
+export function deleteGuild(guildId: string): void {
 
 	const toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8')) as DeleteList;
 
