@@ -15,6 +15,7 @@ export default class Model<T extends UUIDObject> {
 	create: (dataObject: T) => T;
 	findOneAndDelete: (updateObject: Partial<T>) => void;
 	findOneAndUpdate: (filterObject: Partial<T>, update: (value: T) => void) => null | T;
+	update: (uuid: string) => T;
 
 	constructor(path: string, schema: Schema<T>) {
 
@@ -219,7 +220,7 @@ export default class Model<T extends UUIDObject> {
 
 
 		/** Updates the information of a file to be accurate to the schema */
-		const update = (uuid: string): T => {
+		this.update = (uuid: string): T => {
 
 			let dataObject = this.findOne({ uuid: uuid } as Partial<T>); // Technically unsafe, due to literal-string uuid types... but unrealistic
 
@@ -242,7 +243,7 @@ export default class Model<T extends UUIDObject> {
 		};
 		for (const file of readdirSync(path).filter(f => f.endsWith('.json'))) {
 
-			update(file.replace('.json', ''));
+			this.update(file.replace('.json', ''));
 		}
 	}
 }
