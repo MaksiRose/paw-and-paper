@@ -20,7 +20,7 @@ export const event: Event = {
 		if (!interaction.channel) { throw new Error('Interaction channel cannot be found.'); }
 
 		let userData = await userModel.findOne({ userId: interaction.user.id }).catch(() => { return null; });
-		let serverData = await serverModel.findOne({ serverId: interaction.guild?.id }).catch(() => { return null; });
+		let serverData = await serverModel.findOne({ serverId: interaction.guildId || '' }).catch(() => { return null; });
 
 		/* It's setting the last interaction timestamp for the user to now. */
 		if (userData) { lastInteractionTimestampMap.set(userData.uuid + interaction.guildId, Date.now()); }

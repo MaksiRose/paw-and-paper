@@ -1,7 +1,7 @@
 import { readFileSync, unlinkSync, writeFileSync } from 'fs';
 import userModel from '../models/userModel';
 import serverModel from '../models/serverModel';
-import { CustomClient, DeleteList, Event, ServerSchema } from '../typedef';
+import { CustomClient, DeleteList, Event } from '../typedef';
 import { createGuild } from '../utils/updateGuild';
 
 export const event: Event = {
