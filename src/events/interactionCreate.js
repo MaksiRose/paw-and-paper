@@ -58,54 +58,7 @@ const event = {
 
 			if (interaction.customId.includes('edit')) {
 
-				if (interaction.channel.type === 'DM') {
 
-					await interaction
-						.reply({
-							content: 'Oops, I cannot edit proxied messages in DM\'s!',
-							ephemeral: true,
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) { throw new Error(error); }
-						});
-					return;
-				}
-
-				await interaction
-					.deferUpdate()
-					.catch(async (error) => {
-						if (error.httpStatus === 400) { return console.error('DiscordAPIError: Interaction has already been acknowledged.'); }
-						if (error.httpStatus === 404) { return console.error('DiscordAPIError: Unknown interaction. (This probably means that there was server-side delay when receiving the interaction)'); }
-					});
-
-				const messageId = interaction.customId.split('-')[1];
-
-				const webhookChannel = interaction.channel.isThread() ? interaction.channel.parent : interaction.channel;
-				if (!webhookChannel) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
-				const webhook = (await webhookChannel
-					.fetchWebhooks()
-					.catch(async (error) => {
-						if (error.httpStatus === 403) {
-							await interaction.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
-						}
-						throw new Error(error);
-					})
-				).find(webhook => webhook.name === 'PnP Profile Webhook') || await webhookChannel
-					.createWebhook('PnP Profile Webhook')
-					.catch(async (error) => {
-						if (error.httpStatus === 403) {
-							await interaction.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
-						}
-						throw new Error(error);
-					});
-
-				await webhook
-					.editMessage(messageId, {
-						content: interaction.components[0].components[0].value,
-						threadId: interaction.channel.isThread() ? interaction.channel.id : undefined,
-					})
-					.catch((error) => { throw new Error(error); });
-				return;
 			}
 		}
 
