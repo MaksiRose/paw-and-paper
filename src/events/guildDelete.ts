@@ -8,6 +8,6 @@ export const event: Event = {
 	async execute(client: CustomClient, guild: Guild) {
 
 		console.log(`\x1b[44m${guild.name} (${guild.id})\x1b[0m successfully removed the bot - it is now in ${client.guilds.cache.size} servers`);
-		deleteGuild(guild.id);
+		await deleteGuild(guild.id);
 	},
 };

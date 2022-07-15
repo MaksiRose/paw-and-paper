@@ -11,27 +11,14 @@ module.exports.data = {
 
 /**
  *
- * @param {import('../../paw').client} client
+ * @param {import('../paw').client} client
  * @param {import('discord.js').MessageContextMenuInteraction} interaction
  * @returns {Promise<void>}
  */
 module.exports.sendCommand = async (client, interaction) => {
 
-	if (!interaction.inCachedGuild()) {
-
-		await interaction
-			.reply({
-				content: 'This interaction is guild-only!',
-				ephemeral: true,
-			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
-		return;
-	}
-
 	const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8'));
-	const userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: webhookCache?.[interaction.targetId]?.split('_')?.[0] }));
+	const userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: webhookCache?.[interaction.targetId]?.split('_')?.[0] }));
 
 	if (userData === null || userData.userId !== interaction.user.id) {
 
@@ -48,7 +35,7 @@ module.exports.sendCommand = async (client, interaction) => {
 
 	if (!interaction.channel) { throw new Error('Interaction channel cannot be found.'); }
 	const webhookChannel = interaction.channel.isThread() ? interaction.channel.parent : interaction.channel;
-	if (!webhookChannel) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
+	if (!webhookChannel || webhookChannel.type === 'DM') { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
 	const webhook = (await webhookChannel
 		.fetchWebhooks()
 		.catch(async (error) => {

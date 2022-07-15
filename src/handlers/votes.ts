@@ -14,7 +14,7 @@ export function execute(client: CustomClient) {
 		max: 20,
 	});
 
-	if (client.votes.bfd.token !== '' && client.votes.bfd.authorization !== '') {
+	if (client.votes.bfd && client.votes.bfd.token !== '' && client.votes.bfd.authorization !== '') {
 
 		client.votes.bfd.client = new bfd(client.votes.bfd.token, client.user?.id);
 		client.votes.bfd.client.setServers(client.guilds.cache.size);
@@ -26,7 +26,7 @@ export function execute(client: CustomClient) {
 
 		bfdApp.post('/discords', (request, response) => {
 
-			if (request.headers.authorization === client.votes.bfd.authorization) {
+			if (request.headers.authorization === client.votes.bfd?.authorization) {
 
 				const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8')) as VoteList;
 
@@ -46,7 +46,7 @@ export function execute(client: CustomClient) {
 		bfdApp.listen(3002);
 	}
 
-	if (client.votes.top.token !== '' && client.votes.top.authorization !== '') {
+	if (client.votes.top && client.votes.top.token !== '' && client.votes.top.authorization !== '') {
 
 		AutoPoster(client.votes.top.token, client);
 
@@ -75,7 +75,7 @@ export function execute(client: CustomClient) {
 		topApp.listen(3000);
 	}
 
-	if (client.votes.dbl.token !== '' && client.votes.dbl.authorization !== '') {
+	if (client.votes.dbl && client.votes.dbl.token !== '' && client.votes.dbl.authorization !== '') {
 
 		const dblApp = express();
 
@@ -84,7 +84,7 @@ export function execute(client: CustomClient) {
 
 		dblApp.post('/dbl', (request, response) => {
 
-			if (request.headers.authorization === client.votes.dbl.authorization) {
+			if (request.headers.authorization === client.votes.dbl?.authorization) {
 
 				const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8')) as VoteList;
 

@@ -9,13 +9,13 @@ export default class Model<T extends UUIDObject> {
 
 	path: string;
 	schema: Schema<T>;
-	save: (updateObject: T) => void;
-	findOne: (filterObject: Partial<T>) => T;
-	find: (filter?: (value: T) => boolean) => Array<T>;
-	create: (dataObject: T) => T;
-	findOneAndDelete: (updateObject: Partial<T>) => void;
-	findOneAndUpdate: (filterObject: Partial<T>, update: (value: T) => void) => null | T;
-	update: (uuid: string) => T;
+	save: (updateObject: T) => Promise<void>;
+	findOne: (filterObject: Partial<T>) => Promise<T>;
+	find: (filter?: (value: T) => boolean) => Promise<Array<T>>;
+	create: (dataObject: T) => Promise<T>;
+	findOneAndDelete: (updateObject: Partial<T>) => Promise<void>;
+	findOneAndUpdate: (filterObject: Partial<T>, update: (value: T) => void) => Promise<T>;
+	update: (uuid: string) => Promise<T>;
 
 	constructor(path: string, schema: Schema<T>) {
 
@@ -23,7 +23,7 @@ export default class Model<T extends UUIDObject> {
 		this.schema = schema;
 
 		/** Overwrites a file in the database. **Caution:** This could make unexpected changes to the file! */
-		this.save = (updateObject: T): void => {
+		this.save = async (updateObject: T): Promise<void> => {
 
 			let dataObject = JSON.parse(JSON.stringify(updateObject)) as T;
 
@@ -50,7 +50,7 @@ export default class Model<T extends UUIDObject> {
 		};
 
 		/** Searches for an object that meets the filter, and returns it. If several objects meet the requirement, the first that is found is returned. */
-		this.findOne = (filterObject: Partial<T>): T => {
+		this.findOne = async (filterObject: Partial<T>): Promise<T> => {
 
 			const allDocumentNames = readdirSync(path).filter(f => f.endsWith('.json'));
 			file_iteration: for (const documentName of allDocumentNames) {
@@ -72,7 +72,7 @@ export default class Model<T extends UUIDObject> {
 		};
 
 		/** Searches for all objects that meet the filter, and returns an array of them. */
-		this.find = (filter?: (value: T) => boolean): Array<T> => {
+		this.find = async (filter?: (value: T) => boolean): Promise<Array<T>> => {
 
 			const allDocumentNames = readdirSync(path).filter(f => f.endsWith('.json'));
 			return allDocumentNames
@@ -86,7 +86,7 @@ export default class Model<T extends UUIDObject> {
 		};
 
 		/** Creates a new database entry. */
-		this.create = (dataObject: T): T => {
+		this.create = async (dataObject: T): Promise<T> => {
 
 			const uuid = crypto.randomUUID();
 
@@ -112,9 +112,9 @@ export default class Model<T extends UUIDObject> {
 		};
 
 		/** Searches for an object that meets the filter, and deletes it. If several objects meet the requirement, the first that is found is deleted. */
-		this.findOneAndDelete = (filterObject: Partial<T>): void => {
+		this.findOneAndDelete = async (filterObject: Partial<T>): Promise<void> => {
 
-			const dataObject = this.findOne(filterObject);
+			const dataObject = await this.findOne(filterObject);
 
 			unlinkSync(`${path}/${dataObject.uuid}.json`);
 
@@ -124,14 +124,14 @@ export default class Model<T extends UUIDObject> {
 		};
 
 		/** Searches for an object that meets the filter, and updates it. If several objects meet the requirement, the first that is found is updated. */
-		this.findOneAndUpdate = (filterObject: Partial<T>, update: (value: T) => void): T => {
+		this.findOneAndUpdate = async (filterObject: Partial<T>, update: (value: T) => void): Promise<T> => {
 
-			const dataObject = this.findOne(filterObject);
+			const dataObject = await this.findOne(filterObject);
 			const newDataObject = JSON.parse(JSON.stringify(update(dataObject))) as T;
 
 			createLog(createLogArray(dataObject, newDataObject, ''));
 
-			this.save(dataObject);
+			await this.save(dataObject);
 
 			return dataObject;
 
@@ -220,9 +220,9 @@ export default class Model<T extends UUIDObject> {
 
 
 		/** Updates the information of a file to be accurate to the schema */
-		this.update = (uuid: string): T => {
+		this.update = async (uuid: string): Promise<T> => {
 
-			let dataObject = this.findOne({ uuid: uuid } as Partial<T>); // Technically unsafe, due to literal-string uuid types... but unrealistic
+			let dataObject = await this.findOne({ uuid: uuid } as Partial<T>); // Technically unsafe, due to literal-string uuid types... but unrealistic
 
 			/* Add / Update existing keys */
 			for (const [key, value] of Object.entries(schema)) {
@@ -237,7 +237,7 @@ export default class Model<T extends UUIDObject> {
 				if (!keys.includes(key)) { delete dataObject[key]; }
 			}
 
-			this.save(dataObject);
+			await this.save(dataObject);
 
 			return dataObject;
 		};

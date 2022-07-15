@@ -19,9 +19,6 @@ export const client = new CustomClient({
 	},
 });
 
-client.commands = {};
-client.votes = {};
-
 export function start(botToken: string, bfdToken: string, bfdAuthorization: string, topToken: string, topAuthorization: string, dblToken: string, dblAuthorization: string): void {
 
 	client.votes.bfd = { token: bfdToken, authorization: bfdAuthorization, client: null };

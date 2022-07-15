@@ -31,18 +31,15 @@ export const event: Event = {
 		const allServers = await client.guilds.fetch();
 		for (const [, OAuth2Guild] of allServers) {
 
-			const serverData = (await serverModel.findOneAndUpdate(
+			await serverModel.findOneAndUpdate(
 				{ serverId: OAuth2Guild.id },
-				(s: ServerSchema) => {
+				(s) => {
 					s.name = OAuth2Guild.name;
 				},
-			)) as ServerSchema | null;
-
-			if (!serverData) {
-
+			).catch(async () => {
 				const guild = await client.guilds.fetch(OAuth2Guild.id);
 				await createGuild(client, guild);
-			}
+			});
 		}
 
 		/* It's checking every hour whether  */
@@ -66,7 +63,7 @@ export const event: Event = {
 
 			/* It's checking whether a profile has a temporaryStatIncrease with a timestamp that is older than a
 			week ago, and if it does, bring the stat back and delete the property from temporaryStatIncrease. */
-			const userList = userModel.find();
+			const userList = await userModel.find();
 			for (const userData of userList) {
 
 				for (const characterData of Object.values(userData.characters)) {

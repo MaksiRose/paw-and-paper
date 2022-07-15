@@ -54,12 +54,12 @@ export async function createGuild(client: CustomClient, guild: Guild): Promise<S
 			delete toDeleteList[serverData.uuid];
 			renameSync(`./database/toDelete/${fileName}`, `./database/servers/${fileName}`);
 			writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
-			serverData = serverModel.update(serverData.uuid);
+			serverData = await serverModel.update(serverData.uuid);
 			return serverData;
 		}
 	}
 
-	serverData = serverModel.create({
+	serverData = await serverModel.create({
 		serverId: guild.id,
 		name: guild.name,
 		inventory: {
@@ -108,11 +108,11 @@ export async function createGuild(client: CustomClient, guild: Guild): Promise<S
 /**
  * This moves a guild and the user profiles from that guild into the toDelete folder and adds them to the toDeleteList.
  */
-export function deleteGuild(guildId: string): void {
+export async function deleteGuild(guildId: string): Promise<void> {
 
 	const toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8')) as DeleteList;
 
-	const serverData = serverModel.findOne({ serverId: guildId });
+	const serverData = await serverModel.findOne({ serverId: guildId });
 	renameSync(`./database/servers/${serverData.uuid}.json`, `./database/toDelete/${serverData.uuid}.json`);
 
 	const thirtyDaysInMs = 2_592_000_000;

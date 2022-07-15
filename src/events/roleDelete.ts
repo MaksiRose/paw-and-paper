@@ -8,12 +8,12 @@ export const event: Event = {
 	once: false,
 	async execute(client: CustomClient, role: Role) {
 
-		const serverData = serverModel.findOne({ serverId: role.guild.id });
+		const serverData = await serverModel.findOne({ serverId: role.guild.id });
 		const roles = serverData.shop.filter(shoprole => shoprole.roleId === role.id);
 
 		for (const shoprole of roles) {
 
-			const allServerUsers = userModel.find(
+			const allServerUsers = await userModel.find(
 				(u) => Object.keys(u.currentCharacter).includes(role.guild.id),
 			);
 

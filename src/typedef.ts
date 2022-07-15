@@ -1,12 +1,21 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { Api } from '@top-gg/sdk';
-import { Client, ClientOptions, CommandInteraction, MessageContextMenuInteraction, MessageEmbed } from 'discord.js';
+import { AutocompleteInteraction, Client, ClientOptions, CommandInteraction, MessageContextMenuInteraction, MessageEmbed } from 'discord.js';
 import bfd from 'bfd-api-redux/src/main';
+import { RESTPostAPIContextMenuApplicationCommandsJSONBody } from 'discord-api-types/v10';
 
-export interface Command {
+export interface SlashCommand {
 	name: string;
-	data?: SlashCommandBuilder | { name: string, type: number; };
-	sendCommand: (client?: CustomClient, interaction?: MessageContextMenuInteraction | CommandInteraction, argumentsArray?: Array<string>, userData?: UserSchema, serverData?: ServerSchema, embedArray?: Array<MessageEmbed>) => Promise<void>;
+	data: SlashCommandBuilder;
+	disablePreviousCommand: boolean;
+	sendCommand: (client: CustomClient, interaction: CommandInteraction, userData: UserSchema | null, serverData: ServerSchema | null, embedArray: Array<MessageEmbed>) => Promise<void>;
+	sendAutocomplete?: (client: CustomClient, interaction: AutocompleteInteraction, userData: UserSchema | null, serverData: ServerSchema | null) => Promise<void>
+}
+
+export interface ContextMenuCommand {
+	name: string;
+	data: RESTPostAPIContextMenuApplicationCommandsJSONBody;
+	sendCommand: (client: CustomClient, interaction: MessageContextMenuInteraction) => Promise<void>;
 }
 
 export interface Votes {
@@ -17,17 +26,18 @@ export interface Votes {
 
 export class CustomClient extends Client {
 
-	commands: Record<string, Command>;
-	votes: Record<string, Votes>;
+	slashCommands: Record<string, SlashCommand | undefined>;
+	contextMenuCommands: Record<string, ContextMenuCommand | undefined>;
+	votes: Record<string, Votes | undefined>;
 
 	constructor(options: ClientOptions) {
 
 		super(options);
-		this.commands = {};
+		this.slashCommands = {};
+		this.contextMenuCommands = {};
 		this.votes = {};
 	}
 }
-
 
 /** This object holds references to guilds and users that cannot make accounts in their respective Arrays. */
 export interface BanList {
@@ -111,6 +121,8 @@ interface Sapling {
 	waterCycles: number; // How many times the sapling has been watered
 	nextWaterTimestamp: number | null; // Timestamp of the next perfect watering
 	lastMessageChannelId: string | null; // The ID of the last channel the sapling was watered in
+	sentReminder: boolean; // Whether a reminder was sent
+	sentGentleReminder: boolean; // Whether a gentle reminder was sent
 }
 
 interface Injuries {
@@ -147,7 +159,6 @@ interface Profile {
 	maxThirst: number; // Maximum Thirst Points of the character
 	temporaryStatIncrease: Record<string, 'maxHealth' | 'maxEnergy' | 'maxHunger' | 'maxThirst'>; // Object with a timestamp as the key and the kind of stat that is increased as the value
 	isResting: boolean; // Whether the character is resting
-	hasCooldown: boolean; // Whether the character is on a cooldown
 	hasQuest: boolean; // Whether the character has an open quest.
 	currentRegion: 'sleeping dens' | 'food den' | 'medicine den' | 'prairie' | 'ruins' | 'lake'; // The current region the character is in
 	unlockedRanks: number; // How many ranks the character has unlocked

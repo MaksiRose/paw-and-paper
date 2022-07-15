@@ -23,6 +23,15 @@ module.exports.aliases = ['e'];
 
 /**
  *
+ * This command should really make use of the autocomplete feature to suggest the possible biomes.
+ * Since users can still enter options that aren't suggested/autocompleted, this doesn't get rid of
+ * the check of whether the biome is correct, aka the message with the button options might still
+ * have to be shown.
+ *
+ */
+
+/**
+ *
  * @param {import('../../paw').client} client
  * @param {import('discord.js').Message} message
  * @param {Array<string>} argumentsArray

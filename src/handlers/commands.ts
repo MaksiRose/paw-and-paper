@@ -1,6 +1,6 @@
 import { RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v9';
 import { lstatSync, readdirSync } from 'fs';
-import { Command, CustomClient } from '../typedef';
+import { ContextMenuCommand, CustomClient, SlashCommand } from '../typedef';
 import path from 'path';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
@@ -15,11 +15,16 @@ export function execute(client: CustomClient) {
 	the command.data is not undefined. */
 	for (const commandPath of getFiles('../commands')) {
 
-		const command = require(commandPath) as Command;
+		const command = require(commandPath) as SlashCommand;
+		if (command.data !== undefined) { applicationCommands.push(command.data.toJSON()); }
+		client.slashCommands[command.name] = command;
+	}
 
-		if (command.data !== undefined) { applicationCommands.push(JSON.parse(JSON.stringify(command.data))); }
+	for (const commandPath of getFiles('../contextmenu')) {
 
-		client.commands[command.name] = command;
+		const command = require(commandPath) as ContextMenuCommand;
+		if (command.data !== undefined) { applicationCommands.push(command.data); }
+		client.contextMenuCommands[command.name] = command;
 	}
 
 	/* Registers the applicationCommands array to Discord. */

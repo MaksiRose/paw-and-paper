@@ -3,7 +3,7 @@
 const { MessageEmbed } = require('discord.js');
 const { readFileSync } = require('fs');
 const profileModel = require('../../models/profileModel');
-const { sendProfile } = require('../profile/profile');
+const { sendProfile } = require('../commands/profile/profile');
 
 module.exports.name = 'Who is ❓';
 module.exports.data = {
@@ -14,7 +14,7 @@ module.exports.data = {
 
 /**
  *
- * @param {import('../../paw').client} client
+ * @param {import('../paw').client} client
  * @param {import('discord.js').MessageContextMenuInteraction} interaction
  * @returns {Promise<void>}
  */
@@ -33,12 +33,12 @@ module.exports.sendCommand = async (client, interaction) => {
 		return;
 	}
 
-	let userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: interaction.targetMessage.author.id }));
+	let userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: interaction.targetMessage.author.id }));
 
 	const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8'));
 	if (webhookCache[interaction.targetId] !== undefined && webhookCache[interaction.targetId].split('_')[1] !== undefined) {
 
-		userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: webhookCache[interaction.targetId].split('_')[0] }));
+		userData = /** @type {import('../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: webhookCache[interaction.targetId].split('_')[0] }));
 		userData.currentCharacter[interaction.guildId || 'DM'] = webhookCache[interaction.targetId].split('_')[1];
 		interaction.targetMessage.author.id = userData.userId;
 	}
