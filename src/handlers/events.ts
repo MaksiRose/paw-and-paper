@@ -6,7 +6,8 @@ export function execute(client: CustomClient) {
 
 	for (const file of readdirSync('./dist/events/')) {
 
-		const event: Event = require(`../events/${file}`);
+		const { event } = require(`../events/${file}`) as {event: Event};
+
 		if (event.once) {
 
 			client.once(event.name, (...args) => event.execute(client, ...args));

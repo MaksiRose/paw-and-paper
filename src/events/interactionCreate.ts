@@ -1,5 +1,6 @@
 import { APIMessage } from 'discord-api-types/v9';
-import { CommandInteraction, Interaction, InteractionReplyOptions, Message, MessageContextMenuInteraction, MessagePayload, WebhookEditMessageOptions } from 'discord.js';
+import { CommandInteraction, Interaction, InteractionReplyOptions, Message, MessageContextMenuInteraction, MessagePayload, ModalSubmitInteraction, WebhookEditMessageOptions } from 'discord.js';
+import { sendEditCommandModalResponse } from '../contextmenu/edit';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
 import { CustomClient, Event } from '../typedef';
@@ -16,7 +17,7 @@ export const event: Event = {
 	once: false,
 	async execute(client: CustomClient, interaction: Interaction) {
 
-		/* This is only null when in DM without CHANNEL partial */
+		/* This is only null when in DM without CHANNEL partial, or when channel cache is sweeped. Therefore, this is technically unsafe since this value could become null after this check. This scenario is unlikely though. */
 		if (!interaction.channel) { throw new Error('Interaction channel cannot be found.'); }
 
 		let userData = await userModel.findOne({ userId: interaction.user.id }).catch(() => { return null; });
@@ -155,10 +156,19 @@ export const event: Event = {
 				.catch(async (error) => { await sendErrorMessage(interaction, error); });
 			return;
 		}
+
+		if (interaction.isModalSubmit()) {
+
+			if (interaction.customId.includes('edit')) {
+
+				await sendEditCommandModalResponse(interaction);
+				return;
+			}
+		}
 	},
 };
 
-export const respond = async (interaction: CommandInteraction | MessageContextMenuInteraction, options: MessagePayload | WebhookEditMessageOptions | InteractionReplyOptions, editMessage: boolean): Promise<Message<boolean>> => {
+export const respond = async (interaction: CommandInteraction | MessageContextMenuInteraction | ModalSubmitInteraction, options: MessagePayload | WebhookEditMessageOptions | InteractionReplyOptions, editMessage: boolean): Promise<Message<boolean>> => {
 	let botReply: APIMessage | Message<boolean>;
 	if (!interaction.replied) {
 		botReply = await interaction.reply(options && { fetchReply: true });

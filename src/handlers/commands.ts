@@ -15,14 +15,14 @@ export function execute(client: CustomClient) {
 	the command.data is not undefined. */
 	for (const commandPath of getFiles('../commands')) {
 
-		const command = require(commandPath) as SlashCommand;
+		const { command } = require(commandPath) as {command: SlashCommand};
 		if (command.data !== undefined) { applicationCommands.push(command.data.toJSON()); }
 		client.slashCommands[command.name] = command;
 	}
 
 	for (const commandPath of getFiles('../contextmenu')) {
 
-		const command = require(commandPath) as ContextMenuCommand;
+		const { command } = require(commandPath) as {command: ContextMenuCommand};
 		if (command.data !== undefined) { applicationCommands.push(command.data); }
 		client.contextMenuCommands[command.name] = command;
 	}
