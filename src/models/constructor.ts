@@ -14,7 +14,7 @@ export default class Model<T extends UUIDObject> {
 	find: (filter?: (value: T) => boolean) => Promise<Array<T>>;
 	create: (dataObject: T) => Promise<T>;
 	findOneAndDelete: (updateObject: Partial<T>) => Promise<void>;
-	findOneAndUpdate: (filterObject: Partial<T>, update: (value: T) => void) => Promise<T>;
+	findOneAndUpdate: (filterObject: Partial<T>, updateFunction: (value: T) => void) => Promise<T>;
 	update: (uuid: string) => Promise<T>;
 
 	constructor(path: string, schema: Schema<T>) {
@@ -124,31 +124,32 @@ export default class Model<T extends UUIDObject> {
 		};
 
 		/** Searches for an object that meets the filter, and updates it. If several objects meet the requirement, the first that is found is updated. */
-		this.findOneAndUpdate = async (filterObject: Partial<T>, update: (value: T) => void): Promise<T> => {
+		this.findOneAndUpdate = async (filterObject: Partial<T>, updateFunction: (value: T) => void): Promise<T> => {
 
 			const dataObject = await this.findOne(filterObject);
-			const newDataObject = JSON.parse(JSON.stringify(update(dataObject))) as T;
+			updateFunction(dataObject);
+			const newDataObject = JSON.parse(JSON.stringify(dataObject)) as T;
 
 			createLog(createLogArray(dataObject, newDataObject, ''));
 
-			await this.save(dataObject);
+			await this.save(newDataObject);
 
-			return dataObject;
+			return newDataObject;
 
 
 			type LogArray = Array<{ path: string, oldValue: string, newValue: string; }>;
 			/** It takes two objects, compares them, and logs the differences */
 			function createLogArray<Type>(oldObject: Type, newObject: Type, variablePath: string): LogArray {
 
-				const allPaths: LogArray = [];
+				let allPaths: LogArray = [];
 
 				for (const [key, value] of Object.entries(newObject)) {
 
-					const isObject = (val: any) => typeof val === 'object' && !Array.isArray(val) && val !== null;
+					const isObject = (val: any) => typeof val === 'object' && val !== null;
 					const hasObjectsAsValues = (val: any) => Object.values(val).filter(v => isObject(v)).length > 0;
 					if (isObject(value) && hasObjectsAsValues(value)) {
 
-						allPaths.concat(createLogArray(oldObject?.[key], newObject?.[key], variablePath + `.${key}`));
+						allPaths = allPaths.concat(createLogArray(oldObject?.[key], newObject?.[key], variablePath + `.${key}`));
 					}
 					else if (formatLog(oldObject?.[key], newObject?.[key]) != formatLog(newObject?.[key], oldObject?.[key])) {
 
@@ -213,7 +214,7 @@ export default class Model<T extends UUIDObject> {
 
 				for (const { path, oldValue, newValue } of logArray) {
 
-					console.log(`\x1b[32m${dataObject?.uuid}\x1b[0m.${path} changed from \x1b[33m${oldValue} \x1b[0mto \x1b[33m${newValue} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+					console.log(`\x1b[32m${dataObject?.uuid}\x1b[0m${path} changed from \x1b[33m${oldValue} \x1b[0mto \x1b[33m${newValue} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 				}
 			}
 		};
@@ -265,11 +266,12 @@ function checkTypeMatching<T extends object | Array<any>>(obj: T, key: string | 
 	if (!Array.isArray(obj) && !Object.hasOwn(obj, key)) {
 
 		if (value.type === 'array') { obj[key] = []; }
-		else if (value.type === 'map') { obj[key] = {}; }
+		else if (value.type === 'map' || value.type === 'object') { obj[key] = {}; }
 		else { obj[key] = value.default; }
 	}
+
 	// Change value to default value if value type is primitive and doesn't match
-	else if (primitiveTypeDoesNotMatch(value, obj[key])) { obj[key] = value.default; }
+	if (primitiveTypeDoesNotMatch(value, obj[key])) { obj[key] = value.default; }
 	// Change value if value type is array
 	else if (value.type === 'array') {
 
@@ -301,21 +303,18 @@ function checkTypeMatching<T extends object | Array<any>>(obj: T, key: string | 
 
 		// Change value to object if value isn't
 		if (obj[key] !== Object(obj[key]) && !Array.isArray(obj[key])) { obj[key] = {}; }
-		// Change value if value is object
-		else {
 
-			/* Add / Update existing keys */
-			for (const [k, v] of Object.entries(value.default)) {
+		/* Add / Update existing keys */
+		for (const [k, v] of Object.entries(value.default)) {
 
-				obj[key] = checkTypeMatching(obj[key], k, v);
-			}
+			obj[key] = checkTypeMatching(obj[key], k, v);
+		}
 
-			/* Get rid of keys that aren't in schema */
-			for (const key of Object.keys(obj)) {
+		/* Get rid of keys that aren't in schema */
+		for (const k of Object.keys(obj[key])) {
 
-				const keys = Object.keys(value.default);
-				if (!keys.includes(key)) { delete obj[key]; }
-			}
+			const keys = Object.keys(value.default);
+			if (!keys.includes(k)) { delete obj[key][k]; }
 		}
 	}
 

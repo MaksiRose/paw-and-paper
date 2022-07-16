@@ -10,7 +10,7 @@ import { speciesMap } from '../../utils/itemsInfo';
 
 const speciesNameArray = [...speciesMap.keys()].sort();
 
-const name: SlashCommand['name'] = 'name';
+const name: SlashCommand['name'] = 'species';
 const description: SlashCommand['description'] = 'Get an overview of the available species for you character.';
 export const command: SlashCommand = {
 	name: name,
@@ -62,18 +62,18 @@ export const command: SlashCommand = {
 function getSpeciesSelectMenu(page: number, uuid: string, characterId: string): MessageSelectMenu {
 
 	const speciesMenu = new MessageSelectMenu({
-		customId: `species-speciesselect-${uuid}-${characterId}`,
+		customId: `species_speciesselect_${uuid}_${characterId}`,
 		placeholder: 'Select a species',
 	});
 
 	for (const speciesName of speciesNameArray.slice((page * 24), 24 + (page * 24))) {
 
-		speciesMenu.addOptions({ label: speciesName, value: `species-${speciesName}` });
+		speciesMenu.addOptions({ label: speciesName, value: `species_${speciesName}` });
 	}
 
 	if (speciesNameArray.length > 25) {
 
-		speciesMenu.addOptions({ label: 'Show more species options', value: `species-nextpage-${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+		speciesMenu.addOptions({ label: 'Show more species options', value: `species_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
 	}
 
 	return speciesMenu;
@@ -82,7 +82,7 @@ function getSpeciesSelectMenu(page: number, uuid: string, characterId: string): 
 function getDisplayedSpeciesButton(uuid: string, characterId: string): MessageButton {
 
 	return new MessageButton({
-		customId: `species-displayedspeciesmodal-${uuid}-${characterId}`,
+		customId: `species_displayedspeciesmodal_${uuid}_${characterId}`,
 		label: 'Change displayed species',
 		emoji: '📝',
 		style: 'SECONDARY',
@@ -93,17 +93,17 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 
 	if (interaction.isButton() && interaction.customId.includes('displayedspeciesmodal')) {
 
-		const userData = await userModel.findOne({ uuid: interaction.customId.split('-')[2] });
-		const characterData = userData.characters[interaction.customId.split('-')[3]];
+		const userData = await userModel.findOne({ uuid: interaction.customId.split('_')[2] });
+		const characterData = userData.characters[interaction.customId.split('_')[3]];
 
 		await interaction
 			.showModal(new Modal()
-				.setCustomId(`species-${userData.uuid}-${characterData._id}`)
+				.setCustomId(`species_${userData.uuid}_${characterData._id}`)
 				.setTitle('Change displayed species')
 				.addComponents(
 					new MessageActionRow({
 						components: [ new TextInputComponent()
-							.setCustomId('species-textinput')
+							.setCustomId('species_textinput')
 							.setLabel('Text')
 							.setStyle('SHORT')
 							.setMaxLength(25)
@@ -118,11 +118,11 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 	if (interaction.isSelectMenu() && interaction.values[0].includes('nextpage')) {
 
 		/* Getting the UUID and characterId from the customId */
-		const userDataUUID = interaction.customId.split('-')[2];
-		const characterId = interaction.customId.split('-')[3];
+		const userDataUUID = interaction.customId.split('_')[2];
+		const characterId = interaction.customId.split('_')[3];
 
 		/* Getting the charactersPage from the value Id, incrementing it by one or setting it to zero if the page number is bigger than the total amount of pages. */
-		let speciesPage = Number(interaction.values[0].split('-')[2]) + 1;
+		let speciesPage = Number(interaction.values[0].split('_')[2]) + 1;
 		if (speciesPage >= Math.ceil(speciesNameArray.length / 24)) { speciesPage = 0; }
 
 		/* Editing the message if its a Message object, else throw an error. */
@@ -142,14 +142,14 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 		return;
 	}
 
-	if (interaction.isSelectMenu() && speciesMap.has(interaction.values[0].split('-')[0])) {
+	if (interaction.isSelectMenu() && speciesMap.has(interaction.values[0].split('_')[0])) {
 
 		/* Getting the UUID and characterId from the customId */
-		const userDataUUID = interaction.customId.split('-')[2];
-		const characterId = interaction.customId.split('-')[3];
+		const userDataUUID = interaction.customId.split('_')[2];
+		const characterId = interaction.customId.split('_')[3];
 
 		/* getting the species from the value */
-		const chosenSpecies = interaction.values[0].split('-')[0];
+		const chosenSpecies = interaction.values[0].split('_')[0];
 
 		const userData = await userModel.findOneAndUpdate(
 			{ uuid: userDataUUID },
@@ -193,8 +193,8 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 
 export async function sendEditDisplayedSpeciesModalResponse(interaction: ModalSubmitInteraction): Promise<void> {
 
-	const uuid = interaction.customId.split('-')[1];
-	const characterId = interaction.customId.split('-')[2];
+	const uuid = interaction.customId.split('_')[1];
+	const characterId = interaction.customId.split('_')[2];
 	const displayedSpecies = interaction.components[0].components[0].value;
 
 	const userData = await userModel.findOneAndUpdate(

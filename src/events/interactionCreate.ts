@@ -1,5 +1,5 @@
 import { APIMessage } from 'discord-api-types/v9';
-import { ButtonInteraction, CommandInteraction, Interaction, InteractionReplyOptions, Message, MessageContextMenuInteraction, MessagePayload, ModalSubmitInteraction, SelectMenuInteraction, WebhookEditMessageOptions } from 'discord.js';
+import { ButtonInteraction, CommandInteraction, Interaction, InteractionReplyOptions, Message, MessageContextMenuInteraction, ModalSubmitInteraction, SelectMenuInteraction, WebhookEditMessageOptions } from 'discord.js';
 import { profileInteractionCollector } from '../commands/profile/profile';
 import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../commands/profile/pronouns';
 import { sendEditDisplayedSpeciesModalResponse, speciesInteractionCollector } from '../commands/profile/species';
@@ -207,19 +207,19 @@ export const event: Event = {
 				console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully clicked the button \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			}
 
-			if (interaction.customId.startsWith('profile-')) {
+			if (interaction.customId.startsWith('profile_')) {
 
 				await profileInteractionCollector(client, interaction);
 				return;
 			}
 
-			if (interaction.customId.startsWith('species-')) {
+			if (interaction.customId.startsWith('species_')) {
 
 				await speciesInteractionCollector(interaction);
 				return;
 			}
 
-			if (interaction.customId.startsWith('pronouns-')) {
+			if (interaction.customId.startsWith('pronouns_')) {
 
 				await pronounsInteractionCollector(interaction);
 				return;
@@ -228,10 +228,10 @@ export const event: Event = {
 	},
 };
 
-export const respond = async (interaction: CommandInteraction | MessageContextMenuInteraction | ModalSubmitInteraction | ButtonInteraction | SelectMenuInteraction, options: MessagePayload | WebhookEditMessageOptions | InteractionReplyOptions, editMessage: boolean): Promise<Message<boolean>> => {
+export const respond = async (interaction: CommandInteraction | MessageContextMenuInteraction | ModalSubmitInteraction | ButtonInteraction | SelectMenuInteraction, options: WebhookEditMessageOptions | InteractionReplyOptions, editMessage: boolean): Promise<Message<boolean>> => {
 	let botReply: APIMessage | Message<boolean>;
 	if (!interaction.replied) {
-		botReply = await interaction.reply(options && { fetchReply: true });
+		botReply = await interaction.reply({ ...options, ...{ fetchReply: true } });
 	}
 	else if (editMessage) {
 		botReply = await interaction.editReply(options);
@@ -250,7 +250,7 @@ setInterval(async function() {
 	for (const user of userArray) {
 
 		const currentCharacters = user.currentCharacter;
-		for (const [serverId, characterId] of Object.values(currentCharacters)) {
+		for (const [serverId, characterId] of Object.entries(currentCharacters)) {
 
 			const activeProfile = user.characters[characterId].profiles[serverId];
 			const tenMinutesInMs = 600_000;

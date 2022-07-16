@@ -11,7 +11,7 @@ export const event: Event = {
 
 		/* Logging to the console that the bot is online and setting the bot's activity. */
 		console.log('Paw and Paper is online!');
-		client.user?.setActivity('this awesome RPG :) /help', { type: 'PLAYING' });
+		client.user?.setActivity('/help', { type: 'PLAYING' });
 
 		/* It's loading all the files in the handlers folder. */
 		for (const file of ['commands', 'votes', 'servers', 'profiles']) {

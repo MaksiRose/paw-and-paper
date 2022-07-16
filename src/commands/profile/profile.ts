@@ -52,7 +52,7 @@ export const command: SlashCommand = {
 			return;
 		}
 		/* Checking if the user has a cooldown. */
-		else if (characterData && interaction.inGuild() && await hasCooldown(interaction, userData, module.exports.aliases.concat(module.exports.name))) {
+		else if (characterData && interaction.inGuild() && await hasCooldown(interaction, userData, interaction.commandName)) {
 
 			return;
 		}
@@ -117,21 +117,21 @@ export async function getMessageContent(client: CustomClient, userId: string, ch
 function getAccountsPage(userData: UserSchema, charactersPage: number, isYourself: boolean): MessageSelectMenu {
 
 	const accountsMenu = new MessageSelectMenu({
-		customId: `profile-accountselect-${userData.uuid}`,
+		customId: `profile_accountselect_${userData.uuid}`,
 		placeholder: `Select a character to ${isYourself ? 'switch to' : 'view'}`,
 	});
 
 	for (const character of Object.values(userData.characters)) {
 
-		accountsMenu.addOptions({ label: character.name, value: `profile-${isYourself ? 'switchto' : 'view'}-${character._id}` });
+		accountsMenu.addOptions({ label: character.name, value: `profile_${isYourself ? 'switchto' : 'view'}_${character._id}` });
 	}
 
-	if (isYourself) { accountsMenu.addOptions({ label: 'Empty Slot', value: 'profile-switchto-Empty Slot' }); }
+	if (isYourself) { accountsMenu.addOptions({ label: 'Empty Slot', value: 'profile_switchto_Empty Slot' }); }
 
 	if (accountsMenu.options.length > 25) {
 
 		accountsMenu.options = accountsMenu.options.splice(charactersPage * 24, (charactersPage + 1) * 24);
-		accountsMenu.addOptions({ label: 'Show more characters', value: `profile-nextpage-${charactersPage}`, description: `You are currently on page ${charactersPage + 1}`, emoji: '📋' });
+		accountsMenu.addOptions({ label: 'Show more characters', value: `profile_nextpage_${charactersPage}`, description: `You are currently on page ${charactersPage + 1}`, emoji: '📋' });
 	}
 
 	return accountsMenu;
@@ -143,7 +143,7 @@ export async function profileInteractionCollector(client: CustomClient, interact
 	if (interaction.isButton() && interaction.customId.includes('learnabout')) {
 
 		/* Getting the userData from the customId */
-		const userDataUUID = interaction.customId.split('-')[2];
+		const userDataUUID = interaction.customId.split('_')[2];
 		const userData = await userModel.findOne({ uuid: userDataUUID });
 
 		/* Getting the DM channel, the select menu, and sending the message to the DM channel. */
@@ -169,11 +169,11 @@ export async function profileInteractionCollector(client: CustomClient, interact
 	if (interaction.isSelectMenu() && interaction.values[0].includes('nextpage')) {
 
 		/* Getting the userData from the customId */
-		const userDataUUID = interaction.customId.split('-')[2];
+		const userDataUUID = interaction.customId.split('_')[2];
 		const userData = await userModel.findOne({ uuid: userDataUUID });
 
 		/* Getting the charactersPage from the value Id, incrementing it by one or setting it to zero if the page number is bigger than the total amount of pages. */
-		let charactersPage = Number(interaction.values[0].split('-')[2]) + 1;
+		let charactersPage = Number(interaction.values[0].split('_')[2]) + 1;
 		if (charactersPage >= Math.ceil((Object.keys(userData.characters).length + 1) / 24)) { charactersPage = 0; }
 
 		/* Editing the message if its a Message object, else throw an error. */
@@ -194,7 +194,7 @@ export async function profileInteractionCollector(client: CustomClient, interact
 	if (interaction.isSelectMenu() && interaction.values[0].includes('switchto')) {
 
 		/* Getting the userData from the customId */
-		const userDataUUID = interaction.customId.split('-')[2];
+		const userDataUUID = interaction.customId.split('_')[2];
 		let userData = await userModel.findOne({ uuid: userDataUUID });
 
 		/* Checking if the user is on a cooldown, and if they are, it will respond that they can't switch characters. */
@@ -215,7 +215,7 @@ export async function profileInteractionCollector(client: CustomClient, interact
 
 		/* Getting the old character and the id of the character the user has clicked on. Then it is updating the user's current character to the character they have clicked on. Then it is getting the new character and profile. */
 		const oldCharacterData = (userData?.characters?.[userData?.currentCharacter?.[interaction.guildId || 'DM']] || null) as Character | null;
-		const _id = interaction.values[0].split('-')[2];
+		const _id = interaction.values[0].split('_')[2];
 		userData = await userModel.findOneAndUpdate(
 			{ uuid: userData.uuid },
 			(u) => {
@@ -333,11 +333,11 @@ export async function profileInteractionCollector(client: CustomClient, interact
 	if (interaction.isSelectMenu() && interaction.values[0].includes('view')) {
 
 		/* Getting the userData from the customId */
-		const userDataUUID = interaction.customId.split('-')[2];
+		const userDataUUID = interaction.customId.split('_')[2];
 		const userData = await userModel.findOne({ uuid: userDataUUID });
 
 		/* Getting the character from the interaction value */
-		const _id = interaction.values[0].split('-')[2];
+		const _id = interaction.values[0].split('_')[2];
 		const characterData = userData.characters[_id];
 
 		/* Editing the message if its a Message object, else throw an error. */
