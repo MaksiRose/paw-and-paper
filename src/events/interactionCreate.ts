@@ -5,7 +5,7 @@ import { sendEditCommandModalResponse } from '../contextmenu/edit';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
 import { CustomClient, Event } from '../typedef';
-import { activeCommandsObject } from '../utils/commandCollector';
+import { disableCommandComponent } from '../utils/componentDisabling';
 import { pronoun, pronounAndPlural } from '../utils/getPronouns';
 import { createGuild } from '../utils/updateGuild';
 const { version } = require('../../package.json');
@@ -76,10 +76,7 @@ export const event: Event = {
 			if (userData) { hasCooldownMap.set(userData.uuid + interaction.guildId, false); }
 
 			/* It's disabling all components if userData exists, the interaction is in a guild and the command is set to disable a previous command. */
-			if (userData && interaction.inGuild() && command.disablePreviousCommand) {
-
-				await activeCommandsObject[userData.uuid + interaction.guildId]();
-			}
+			if (userData && command.disablePreviousCommand) { await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.(); }
 
 			/* This sends the command and error message if an error occurs. */
 			console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully executed \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
@@ -170,9 +167,9 @@ export const event: Event = {
 		if (interaction.isButton() || interaction.isSelectMenu()) {
 
 			/* It's checking if the user that created the command is the same as the user that is interacting with the command, or if the user that is interacting is mentioned in the interaction.customId. If neither is true, it will send an error message. */
-			const isCommandCreator = interaction.message.interaction && interaction.message.interaction.user.id === interaction.user.id;
+			const isNotCommandCreator = interaction.message.interaction && interaction.message.interaction.user.id !== interaction.user.id;
 			const isMentioned = interaction.customId.includes(userData?.uuid || interaction.user.id);
-			if (!isCommandCreator && !isMentioned) {
+			if (isNotCommandCreator && !isMentioned) {
 
 				await respond(interaction, {
 					content: 'Sorry, I only listen to the person that created the command 😣',

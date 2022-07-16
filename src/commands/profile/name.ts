@@ -23,7 +23,7 @@ export const command: SlashCommand = {
 				.setDescription('The name that you want your character to have.')
 				.setRequired(true))
 		.toJSON(),
-	disablePreviousCommand: false,
+	disablePreviousCommand: true,
 	sendCommand: async (client: CustomClient, interaction: CommandInteraction, userData: UserSchema | null, serverData: ServerSchema | null) => {
 
 		/* This is checking if the user has any data saved in the database. If they don't, it will create a new user. */
