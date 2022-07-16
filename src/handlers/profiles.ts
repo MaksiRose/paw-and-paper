@@ -35,7 +35,6 @@ export async function execute(client: CustomClient) {
 
 						for (const profile of Object.values(character.profiles)) {
 
-							u.characters[character._id].profiles[profile.serverId].hasCooldown = false;
 							u.characters[character._id].profiles[profile.serverId].isResting = false;
 							u.characters[character._id].profiles[profile.serverId].energy = u.characters[character._id].profiles[profile.serverId].energy === 0 ? 0 : u.characters[character._id].profiles[profile.serverId].maxEnergy;
 						}

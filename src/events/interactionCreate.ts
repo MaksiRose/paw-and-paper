@@ -1,6 +1,7 @@
 import { APIMessage } from 'discord-api-types/v9';
 import { ButtonInteraction, CommandInteraction, Interaction, InteractionReplyOptions, Message, MessageContextMenuInteraction, MessagePayload, ModalSubmitInteraction, SelectMenuInteraction, WebhookEditMessageOptions } from 'discord.js';
 import { profileInteractionCollector } from '../commands/profile/profile';
+import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../commands/profile/pronouns';
 import { sendEditDisplayedSpeciesModalResponse, speciesInteractionCollector } from '../commands/profile/species';
 import { sendEditMessageModalResponse } from '../contextmenu/edit';
 import serverModel from '../models/serverModel';
@@ -169,6 +170,12 @@ export const event: Event = {
 				await sendEditDisplayedSpeciesModalResponse(interaction);
 				return;
 			}
+
+			if (interaction.customId.includes('pronouns')) {
+
+				await sendEditPronounsModalResponse(interaction);
+				return;
+			}
 		}
 
 		if (interaction.isButton() || interaction.isSelectMenu()) {
@@ -209,6 +216,12 @@ export const event: Event = {
 			if (interaction.customId.startsWith('species-')) {
 
 				await speciesInteractionCollector(interaction);
+				return;
+			}
+
+			if (interaction.customId.startsWith('pronouns-')) {
+
+				await pronounsInteractionCollector(interaction);
 				return;
 			}
 		}

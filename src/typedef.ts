@@ -258,7 +258,7 @@ export interface PlantMapObject {
 	description: string; // Description of the plant
 	edibility: 'e' | 'i' | 't'; // Edibabilty of the plant: `e` for edible, `i` for inedible and `t` for toxic
 	healsWounds: boolean; // Whether the plant heals wounds
-	healsInfectios: boolean; // Whether the plant heals infections
+	healsInfections: boolean; // Whether the plant heals infections
 	healsColds: boolean; // Whether the plant heals colds
 	healsSprains: boolean; // Whether the plant heals sprains
 	healsPoison: boolean; // Whether the plant heals poison

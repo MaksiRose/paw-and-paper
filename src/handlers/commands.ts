@@ -16,7 +16,7 @@ export function execute(client: CustomClient) {
 	for (const commandPath of getFiles('../commands')) {
 
 		const { command } = require(commandPath) as {command: SlashCommand};
-		if (command.data !== undefined) { applicationCommands.push(command.data.toJSON()); }
+		if (command.data !== undefined) { applicationCommands.push(command.data); }
 		client.slashCommands[command.name] = command;
 	}
 
