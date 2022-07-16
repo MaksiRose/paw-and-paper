@@ -1,6 +1,5 @@
 import { CommandInteraction } from 'discord.js';
 import { respond } from '../events/interactionCreate';
-import userModel from '../models/userModel';
 import { UserSchema } from '../typedef';
 const { error_color } = require('../../config.json');
 
@@ -13,21 +12,16 @@ export function hasName(interaction: CommandInteraction, userData: UserSchema | 
 
 	if (!characterData || characterData.name === '') {
 
-		userModel.findOne({ userId: interaction.user.id })
-			.then(u => {
-
-				respond(interaction, {
-					embeds: [{
-						color: error_color,
-						title: 'Please type "rp name [name]" to create a new character!',
-						description: Object.keys(u?.characters || {}).length > 0 ? 'I see that you already have a character. You can switch to it using `rp profile`! If you played the RPG on a different server, server-specific information like stats, levels, rank etc. will not transfer over to prevent cheating.' : undefined,
-					}],
-				}, true)
-					.catch((error) => {
-						if (error.httpStatus !== 404) { throw new Error(error); }
-					});
-			})
-			.catch(() => { return false; });
+		respond(interaction, {
+			embeds: [{
+				color: error_color,
+				title: 'Please type "/name" to create a new character!',
+				description: Object.keys(userData?.characters || {}).length > 0 ? 'I see that you already have a character. You can switch to it using `rp profile`! If you played the RPG on a different server, server-specific information like stats, levels, rank etc. will not transfer over to prevent cheating.' : undefined,
+			}],
+		}, true)
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
 
 		return false;
 	}

@@ -41,7 +41,7 @@ export const command: SlashCommand = {
 		const botReply = await respond(interaction, {
 			embeds: [ new MessageEmbed({
 				color: default_color,
-				description: 'To change your characters pronouns, select an existing one from the drop-down menu below to edit it, or select "Add another pronoun" to add another one. A pop-up with a text box will open.\n\nTo set the pronouns to they/them for example, type `they/them/their/theirs/themselves/plural`.\nThe 6th argument should be either `singular` ("he/she __is__") or `plural` ("they __are__").\nTo set the pronouns to your own name, you can type `none`.\nTo delete the pronouns, leave the text box empty.\n\nThis is how it would look during roleplay:\n> **They** and the friend that came with **them** laid in **their** den. It was **theirs** because they built it **themselves**. \nYou can use this as reference when thinking about how to add your own (neo-)pronouns.',
+				description: 'To change your characters pronouns, select an existing one from the drop-down menu below to edit it, or select "Add another pronoun" to add another one. A pop-up with a text box will open.\n\nTo set the pronouns to they/them for example, type `they/them/their/theirs/themselves/plural`.\nThe 6th spot should be either `singular` ("he/she __is__") or `plural` ("they __are__").\nTo set the pronouns to your own name, you can type `none`.\nTo delete the pronouns, leave the text box empty.\n\nThis is how it would look during roleplay:\n> **They** and the friend that came with **them** laid in **their** den. It was **theirs** because they built it **themselves**. \nYou can use this as reference when thinking about how to add your own (neo-)pronouns.',
 			})],
 			components: [new MessageActionRow({ components: [pronounsMenu] })],
 		}, true)
@@ -99,13 +99,14 @@ export async function sendEditPronounsModalResponse(interaction: ModalSubmitInte
 
 	const pronounNumber = Number(interaction.customId.split('_')[3]);
 	let chosenPronouns = interaction.components[0].components[0].value.split('/');
+	const willBeDeleted = interaction.components[0].components[0].value === '';
 
-	if (chosenPronouns[0] === 'none') {
+	if (!willBeDeleted && chosenPronouns[0] === 'none') {
 
 		chosenPronouns = [characterData.name, characterData.name, `${characterData.name}'s`, `${characterData.name}'s`, characterData.name, 'singular'];
 	}
 
-	if (chosenPronouns.length !== 6) {
+	if (!willBeDeleted && chosenPronouns.length !== 6) {
 
 		chosenPronouns.forEach((pronoun, value) => chosenPronouns[value] = `"${pronoun}"`);
 		chosenPronouns[chosenPronouns.length - 1] = `and ${chosenPronouns[chosenPronouns.length - 1]}`;
@@ -120,19 +121,19 @@ export async function sendEditPronounsModalResponse(interaction: ModalSubmitInte
 		return;
 	}
 
-	if (chosenPronouns[5] !== 'singular' && chosenPronouns[5] !== 'plural') {
+	if (!willBeDeleted && chosenPronouns[5] !== 'singular' && chosenPronouns[5] !== 'plural') {
 
 		await respond(interaction, {
 			embeds: [ new MessageEmbed({
 				color: error_color,
-				description: `For the 6th argument, you wrote "${chosenPronouns[5]}". The first 5 arguments should be of the pronoun you want, and the 6th argument should be either "singular" or "plural".`,
+				description: `For the 6th spot, you wrote "${chosenPronouns[5]}". The 6th spot should be either "singular" or "plural".`,
 			})],
 			ephemeral: true,
 		}, false);
 		return;
 	}
 
-	chosenPronouns.forEach(async (pronoun) => {
+	!willBeDeleted && chosenPronouns.forEach(async (pronoun) => {
 		if (pronoun.length < 1 || pronoun.length > 25) {
 
 			await respond(interaction, {
@@ -153,7 +154,12 @@ export async function sendEditPronounsModalResponse(interaction: ModalSubmitInte
 	await userModel.findOneAndUpdate(
 		{ uuid: userData.uuid },
 		(u) => {
-			u.characters[characterData._id].pronounSets[isNaN(pronounNumber) ? characterData.pronounSets.length : pronounNumber] = chosenPronouns;
+			if (willBeDeleted) {
+				u.characters[characterData._id].pronounSets.splice(pronounNumber, 1);
+			}
+			else {
+				u.characters[characterData._id].pronounSets[isNaN(pronounNumber) ? characterData.pronounSets.length : pronounNumber] = chosenPronouns;
+			}
 		},
 	);
 
@@ -163,7 +169,7 @@ export async function sendEditPronounsModalResponse(interaction: ModalSubmitInte
 		embeds: [new MessageEmbed({
 			color: characterData.color,
 			author: { name: characterData.name, icon_url: characterData.avatarURL },
-			title: `Succcessfully ${addedOrEditedTo} ${chosenPronouns.join('/')}!`,
+			title: `Succcessfully ${willBeDeleted ? `deleted pronoun ${characterData.pronounSets[pronounNumber].join('/')}` : `${addedOrEditedTo} ${chosenPronouns.join('/')}`}!`,
 		})],
 	}, false);
 	return;
