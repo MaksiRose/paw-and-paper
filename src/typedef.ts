@@ -1,12 +1,12 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
 import { Api } from '@top-gg/sdk';
 import { AutocompleteInteraction, Client, ClientOptions, CommandInteraction, MessageContextMenuInteraction, MessageEmbed } from 'discord.js';
 import bfd from 'bfd-api-redux/src/main';
-import { RESTPostAPIContextMenuApplicationCommandsJSONBody } from 'discord-api-types/v10';
+import { RESTPostAPIContextMenuApplicationCommandsJSONBody, RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v10';
 
 export interface SlashCommand {
-	name: string;
-	data: SlashCommandBuilder;
+	name: string
+	description: string;
+	data: RESTPostAPIApplicationCommandsJSONBody;
 	disablePreviousCommand: boolean;
 	sendCommand: (client: CustomClient, interaction: CommandInteraction, userData: UserSchema | null, serverData: ServerSchema | null, embedArray: Array<MessageEmbed>) => Promise<void>;
 	sendAutocomplete?: (client: CustomClient, interaction: AutocompleteInteraction, userData: UserSchema | null, serverData: ServerSchema | null) => Promise<void>
@@ -174,7 +174,7 @@ interface Proxy {
 	endsWith: string;
 }
 
-interface Character {
+export interface Character {
 	readonly _id: string; // Unique ID of the character
 	name: string; // Name of the character
 	species: string; // Species of the character

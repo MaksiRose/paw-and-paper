@@ -18,7 +18,7 @@ module.exports.sendMessage = async (client, message) => {
 			embeds: [{
 				color: /** @type {`#${string}`} */ (config.default_color),
 				title: 'Welcome to Paw and Paper!',
-				description: 'This bot has powerful tools to help make your roleplay more immersive. Additionally, it features a community-driven RPG about animals surviving in the wild. Your goal is to go up the ranks, level up, find items, help your friends and keep your stats high.\n\nClick on the menu options below to get an overview of the available commands!\n**If you are new, start your adventure with `rp name (name)`!**',
+				description: 'This bot has powerful tools to help make your roleplay more immersive or to express your mental shifts. Additionally, it features a community-driven RPG about animals surviving in the wild. Your goal is to go up the ranks, level up, find items, help your friends and keep your stats high.\n\nClick on the menu options below to get an overview of the available commands!\n**If you are new, start your adventure with `rp name (name)`!**',
 			}],
 			components: [ new MessageActionRow({
 				components: [ new MessageSelectMenu({
