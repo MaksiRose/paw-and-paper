@@ -1,7 +1,8 @@
 import { APIMessage } from 'discord-api-types/v9';
 import { ButtonInteraction, CommandInteraction, Interaction, InteractionReplyOptions, Message, MessageContextMenuInteraction, MessagePayload, ModalSubmitInteraction, SelectMenuInteraction, WebhookEditMessageOptions } from 'discord.js';
 import { profileInteractionCollector } from '../commands/profile/profile';
-import { sendEditCommandModalResponse } from '../contextmenu/edit';
+import { sendEditDisplayedSpeciesModalResponse, speciesInteractionCollector } from '../commands/profile/species';
+import { sendEditMessageModalResponse } from '../contextmenu/edit';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
 import { CustomClient, Event } from '../typedef';
@@ -159,7 +160,13 @@ export const event: Event = {
 
 			if (interaction.customId.includes('edit')) {
 
-				await sendEditCommandModalResponse(interaction);
+				await sendEditMessageModalResponse(interaction);
+				return;
+			}
+
+			if (interaction.customId.includes('species')) {
+
+				await sendEditDisplayedSpeciesModalResponse(interaction);
 				return;
 			}
 		}
@@ -193,7 +200,17 @@ export const event: Event = {
 				console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully clicked the button \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			}
 
-			if (interaction.customId.startsWith('profile-')) { await profileInteractionCollector(client, interaction); }
+			if (interaction.customId.startsWith('profile-')) {
+
+				await profileInteractionCollector(client, interaction);
+				return;
+			}
+
+			if (interaction.customId.startsWith('species-')) {
+
+				await speciesInteractionCollector(interaction);
+				return;
+			}
 		}
 	},
 };

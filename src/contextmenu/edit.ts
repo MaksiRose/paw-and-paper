@@ -51,7 +51,7 @@ export const command: ContextMenuCommand = {
 	},
 };
 
-export const sendEditCommandModalResponse = async (interaction: ModalSubmitInteraction) => {
+export const sendEditMessageModalResponse = async (interaction: ModalSubmitInteraction) => {
 
 	/* Returns if interaction.channel is null. This should not happen as this is checked in interactionCreate. */
 	if (!interaction.channel) { return; }
