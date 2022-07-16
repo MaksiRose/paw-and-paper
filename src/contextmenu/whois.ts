@@ -1,6 +1,7 @@
-import { MessageContextMenuInteraction, MessageEmbed } from 'discord.js';
+import { MessageActionRow, MessageButton, MessageContextMenuInteraction, MessageEmbed } from 'discord.js';
 import { readFileSync } from 'fs';
-import { sendProfile } from '../commands/profile/profile';
+import { getMessageContent } from '../commands/profile/profile';
+import { respond } from '../events/interactionCreate';
 import userModel from '../models/userModel';
 import { ContextMenuCommand, CustomClient, WebhookMessages } from '../typedef';
 
@@ -35,7 +36,7 @@ export const command: ContextMenuCommand = {
 		userId is its own variable here to ensure maintainability for when one account could be associated with several userIds. */
 		let userId = interaction.targetMessage.author.id;
 		let userData = await userModel.findOne({ userId: userId }).catch(() => { return null; });
-		let characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guildId || 'DM']];
+		let characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guildId || 'DM']] || null;
 
 		/* This checks whether there is an entry for this message in webhookCache, and sets the userId, userData and characterData to the entry data if it exist. */
 		const webhookCacheEntry: Array<string> | undefined = webhookCache[interaction.targetId]?.split('_');
@@ -43,7 +44,7 @@ export const command: ContextMenuCommand = {
 
 			userId = webhookCacheEntry[0];
 			userData = await userModel.findOne({ userId: userId }).catch(() => { return null; });
-			characterData = userData?.characters?.[webhookCacheEntry[1]];
+			characterData = userData?.characters?.[webhookCacheEntry[1]] || null;
 		}
 
 		/* This is checking whether the userData is null, and if it is, it will send a message to the user who clicked on the context menu. */
@@ -78,7 +79,20 @@ export const command: ContextMenuCommand = {
 			timestamp: new Date(),
 		})];
 
-		// Instead of calling the sendProfile function from the profile command, getMessageContent should be exported, so that it all can be done in here. The button would then include the uuid and characterId, so that the userData and characterData can be gotten for the profile interactionCollector.
-		await sendProfile(client, interaction.targetMessage, embedArray, userData, characterData, false, interaction);
+		const response = await getMessageContent(client, userData.userId, characterData, interaction.user.id === userData.userId, embedArray);
+
+		await respond(interaction, {
+			...response,
+			components: [ new MessageActionRow({
+				components: [ new MessageButton({
+					customId: `profile-learnabout-${userData.userId}`,
+					label: 'Learn more (sends a DM)',
+					style: 'SUCCESS',
+				})],
+			})],
+			ephemeral: true,
+			fetchReply: true,
+		}, true)
+			.catch((error) => { throw new Error(error); });
 	},
 };

@@ -1,4 +1,4 @@
-import { CommandInteraction, GuildMember } from 'discord.js';
+import { CommandInteraction, GuildMember, SelectMenuInteraction } from 'discord.js';
 import { respond } from '../events/interactionCreate';
 import userModel from '../models/userModel';
 import { ServerSchema } from '../typedef';
@@ -137,7 +137,7 @@ export async function checkLevelRequirements(serverData: ServerSchema, interacti
 /**
  * Check if the bot has permission to add the role. If not, then send a message explaining the problem, else send a generic error message.
  */
-export async function checkRoleCatchBlock(error: any, interaction: CommandInteraction, member: GuildMember): Promise<void> {
+export async function checkRoleCatchBlock(error: any, interaction: CommandInteraction | SelectMenuInteraction, member: GuildMember): Promise<void> {
 
 	/* If interaction is not in guild, return */
 	if (!interaction.inGuild()) { return; }

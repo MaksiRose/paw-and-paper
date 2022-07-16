@@ -1,5 +1,6 @@
 import { APIMessage } from 'discord-api-types/v9';
-import { CommandInteraction, Interaction, InteractionReplyOptions, Message, MessageContextMenuInteraction, MessagePayload, ModalSubmitInteraction, WebhookEditMessageOptions } from 'discord.js';
+import { ButtonInteraction, CommandInteraction, Interaction, InteractionReplyOptions, Message, MessageContextMenuInteraction, MessagePayload, ModalSubmitInteraction, SelectMenuInteraction, WebhookEditMessageOptions } from 'discord.js';
+import { profileInteractionCollector } from '../commands/profile/profile';
 import { sendEditCommandModalResponse } from '../contextmenu/edit';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
@@ -165,10 +166,42 @@ export const event: Event = {
 				return;
 			}
 		}
+
+		if (interaction.isButton() || interaction.isSelectMenu()) {
+
+			/* It's checking if the user that created the command is the same as the user that is interacting with the command, or if the user that is interacting is mentioned in the interaction.customId. If neither is true, it will send an error message. */
+			const isCommandCreator = interaction.message.interaction && interaction.message.interaction.user.id === interaction.user.id;
+			const isMentioned = interaction.customId.includes(userData?.uuid || interaction.user.id);
+			if (!isCommandCreator && !isMentioned) {
+
+				await respond(interaction, {
+					content: 'Sorry, I only listen to the person that created the command 😣',
+					ephemeral: true,
+				}, false)
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+				return;
+			}
+
+			if (interaction.isSelectMenu()) {
+
+				console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully selected \x1b[31m${interaction.values[0]} \x1b[0mfrom the menu \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			}
+
+			if (interaction.isButton()) {
+
+				console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully clicked the button \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			}
+
+			if (interaction.customId.startsWith('profile-')) { await profileInteractionCollector(client, interaction); }
+		}
 	},
 };
 
-export const respond = async (interaction: CommandInteraction | MessageContextMenuInteraction | ModalSubmitInteraction, options: MessagePayload | WebhookEditMessageOptions | InteractionReplyOptions, editMessage: boolean): Promise<Message<boolean>> => {
+export const respond = async (interaction: CommandInteraction | MessageContextMenuInteraction | ModalSubmitInteraction | ButtonInteraction | SelectMenuInteraction, options: MessagePayload | WebhookEditMessageOptions | InteractionReplyOptions, editMessage: boolean): Promise<Message<boolean>> => {
 	let botReply: APIMessage | Message<boolean>;
 	if (!interaction.replied) {
 		botReply = await interaction.reply(options && { fetchReply: true });

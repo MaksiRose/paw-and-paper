@@ -1,4 +1,4 @@
-import { CommandInteraction, MessageEmbed } from 'discord.js';
+import { CommandInteraction, MessageEmbed, SelectMenuInteraction } from 'discord.js';
 import { hasCooldownMap, respond } from '../events/interactionCreate';
 import userModel from '../models/userModel';
 import { UserSchema } from '../typedef';
@@ -10,8 +10,8 @@ export async function isPassedOut(interaction: CommandInteraction<'cached' | 'ra
 
 	/* Defining the userData, characterData and profileData */
 	const userData = await userModel.findOne({ uuid: uuid }).catch(() => { return null; });
-	const characterData = userData?.characters?.[userData.currentCharacter?.[interaction.guildId || 'DMs']];
-	const profileData = characterData?.profiles?.[interaction.guildId || 'DMs'];
+	const characterData = userData?.characters?.[userData.currentCharacter?.[interaction.guildId]];
+	const profileData = characterData?.profiles?.[interaction.guildId];
 
 	/* This is a function that checks if the user has passed out. If they have, it will send a message to the channel and return true. */
 	if (userData && characterData && profileData && (profileData.energy <= 0 || profileData.health <= 0 || profileData.hunger <= 0 || profileData.thirst <= 0)) {
@@ -87,7 +87,7 @@ export async function hasCooldown(interaction: CommandInteraction<'cached' | 'ra
 /**
  * Checks if the user is resting. If yes, then wake user up and attach an embed to the message. Returns the updated `userData`.
  */
-export async function isResting(interaction: CommandInteraction<'cached' | 'raw'>, userData: UserSchema, embedArray: Array<MessageEmbed>): Promise<UserSchema> {
+export async function isResting(interaction: CommandInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached' | 'raw'>, userData: UserSchema, embedArray: Array<MessageEmbed>): Promise<UserSchema> {
 
 	const characterData = userData.characters[userData.currentCharacter[interaction.guildId]];
 	const profileData = characterData.profiles[interaction.guildId];
