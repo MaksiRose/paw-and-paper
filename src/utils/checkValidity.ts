@@ -19,5 +19,14 @@ export async function isPassedOut(interaction: CommandInteraction, uuid: string,
 			}],
 		}, true)
 			.catch((error) => { throw new Error(error); });
+
+		if (isNew === true) {
+
+			await decreaseLevel(userData, botReply);
+		}
+
+		await passingoutAdvice(message, userData);
+
+		return true;
 	}
 }
