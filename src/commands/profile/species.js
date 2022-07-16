@@ -4,7 +4,6 @@ const startCooldown = require('../../utils/startCooldown');
 const { speciesMap } = require('../../utils/itemsInfo');
 const { hasName } = require('../../utils/checkAccountCompletion');
 const { pronoun, upperCasePronoun } = require('../../utils/getPronouns');
-const { playAdvice } = require('../../utils/adviceMessages');
 const { MessageSelectMenu, MessageActionRow, MessageEmbed, MessageButton, Modal, TextInputComponent } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { createCommandCollector } = require('../../utils/commandCollector');
@@ -219,3 +218,18 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData) =
 		await playAdvice(message);
 	}
 };
+
+/**
+ * Sends advice message to play.
+ * @param {import('discord.js').Message} message
+ */
+async function playAdvice(message) {
+
+	await message.channel
+		.send({
+			content: `${message.author.toString()} ❓ **Tip:**\nGo playing via \`rp play\` to find quests and rank up!`,
+		})
+		.catch((error) => {
+			if (error.httpStatus !== 404) { throw new Error(error); }
+		});
+}

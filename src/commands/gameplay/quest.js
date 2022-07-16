@@ -9,7 +9,6 @@ const { isPassedOut, hasCooldown, isResting } = require('../../utils/checkValidi
 const { createCommandCollector } = require('../../utils/commandCollector');
 const { remindOfAttack } = require('./attack');
 const { pronoun, pronounAndPlural, upperCasePronounAndPlural, upperCasePronoun } = require('../../utils/getPronouns');
-const { apprenticeAdvice, hunterhealerAdvice, elderlyAdvice } = require('../../utils/adviceMessages');
 const disableAllComponents = require('../../utils/disableAllComponents');
 const { MessageEmbed, MessageActionRow, MessageButton } = require('discord.js');
 const isInGuild = require('../../utils/isInGuild');
@@ -607,3 +606,49 @@ module.exports.introduceQuest = async (message, userData, embedArray, footerText
 
 	return botReply;
 };
+
+
+/**
+ * Sends advice of what changes as Apprentice.
+ * @param {import('discord.js').Message} message
+ */
+async function apprenticeAdvice(message) {
+
+	await message.channel
+		.send({
+			content: `${message.author.toString()} ❓ **Tip:**\nAs apprentice, you unlock new commands: \`explore\`, \`heal\`, \`practice\`, and \`repair\`.\nCheck \`rp help\` to see what they do!\nGo exploring via \`rp explore\` to find more quests and rank up higher!`,
+		})
+		.catch((error) => {
+			if (error.httpStatus !== 404) { throw new Error(error); }
+		});
+}
+
+/**
+ * Sends advice of what changes as Hunter/Healer.
+ * @param {import('discord.js').Message} message
+ */
+async function hunterhealerAdvice(message) {
+
+	await message.channel
+		.send({
+			content: `${message.author.toString()} ❓ **Tip:**\nHunters and Healers have different strengths and weaknesses!\nHealers can \`heal\` perfectly and find more plants when \`exploring\`, but they are not so good at \`repairing\`.\nHunters can \`repair\` perfectly and find more enemies when \`exploring\`, but they are not so good at \`healing\`.\nHunters and Healers don't get advantages from the \`play\` command.`,
+		})
+		.catch((error) => {
+			if (error.httpStatus !== 404) { throw new Error(error); }
+		});
+}
+
+/**
+ * Sends advice of what changes as Elderly.
+ * @param {import('discord.js').Message} message
+ */
+async function elderlyAdvice(message) {
+
+	await message.channel
+		.send({
+			content: `${message.author.toString()} ❓ **Tip:**\nElderlies have the abilities of both Hunters and Healers!\nAdditionally, they can use the \`share\` command.`,
+		})
+		.catch((error) => {
+			if (error.httpStatus !== 404) { throw new Error(error); }
+		});
+}

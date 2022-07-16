@@ -34,7 +34,7 @@ export const command: SlashCommand = {
 
 			if (!mentionedUser) {
 
-				hasName(interaction, characterData);
+				hasName(interaction, userData);
 			}
 			else {
 
@@ -47,8 +47,8 @@ export const command: SlashCommand = {
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
-				return;
 			}
+			return;
 		}
 		/* Checking if the user has a cooldown. */
 		else if (characterData && interaction.inGuild() && await hasCooldown(interaction, userData, module.exports.aliases.concat(module.exports.name))) {
