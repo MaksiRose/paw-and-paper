@@ -14,7 +14,7 @@ export const event: Event = {
 
 		if (message.content.toLowerCase().startsWith('rp ')) {
 
-			await message.reply({ content: '**Regular commands are being replaced in favour of slash (`/`) commands.**\n\nIf you don\'t know what slash commands are or how to use them, read this article: https://support.discord.com/hc/en-us/articles/1500000368501-Slash-Commands-FAQ\n\nIf no slash commands for this bot appear, re-invite this bot by clicking on its profile and then on "Add to server".' });
+			await message.reply({ content: '**Regular commands were replaced in favour of slash (`/`) commands.**\n\nIf you don\'t know what slash commands are or how to use them, read this article: <https://support.discord.com/hc/en-us/articles/1500000368501-Slash-Commands-FAQ>\n\nIf no slash commands for this bot appear, re-invite this bot by clicking on its profile and then on "Add to server".' });
 			return;
 		}
 
