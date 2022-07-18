@@ -10,7 +10,7 @@ export function pronoun(characterData: Character, pronounNumber: 0 | 1 | 2 | 3 |
 
 	for (const pronounSet of characterData.pronounSets) {
 
-		possiblePronouns.push(pronounSet[pronounNumber]);
+		if (pronounSet.length === 6) { possiblePronouns.push(pronounSet[pronounNumber]); }
 	}
 
 	return possiblePronouns[generateRandomNumber(possiblePronouns.length, 0)];

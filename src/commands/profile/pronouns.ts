@@ -4,7 +4,11 @@ import userModel from '../../models/userModel';
 import { SlashCommand } from '../../typedef';
 import { hasName } from '../../utils/checkAccountCompletion';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
+import { pronounCompromiser } from './profile';
 const { error_color, default_color } = require('../../../config.json');
+
+const maxPronounLength = 16;
+const maxModalLength = (maxPronounLength * 5) + 8 + 5; // In the modal, the most you can input is 5 pronouns, the word 'singular' plus 5 slashes
 
 const name: SlashCommand['name'] = 'pronouns';
 const description: SlashCommand['description'] = 'Choose the pronouns you are using during roleplay.';
@@ -21,6 +25,7 @@ export const command: SlashCommand = {
 		if (!hasName(interaction, userData)) { return; }
 
 		const characterData = userData.characters[userData.currentCharacter[interaction.guildId || 'DM']];
+		const profilePronounFieldLengthLeft = 1024 - characterData.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n').length;
 
 		const pronounsMenu = new SelectMenuBuilder()
 			.setCustomId(`pronouns_selectmodal_${userData.uuid}_${characterData._id}`)
@@ -31,7 +36,7 @@ export const command: SlashCommand = {
 			pronounsMenu.addOptions({ label: `${pronounSet[0]}/${pronounSet[1]}`, description: `(${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]}/${pronounSet[5]})`, value: `pronouns_${value}` });
 		});
 
-		if (characterData.pronounSets.length < 25) {
+		if (characterData.pronounSets.length < 25 && profilePronounFieldLengthLeft >= 4) {
 
 			pronounsMenu.addOptions({ label: 'Add another pronoun', value: 'pronouns_add' });
 		}
@@ -61,6 +66,8 @@ export async function pronounsInteractionCollector(interaction: ButtonInteractio
 		const pronounNumber = interaction.values[0].split('_')[0];
 		const pronounSet = pronounNumber === 'add' ? [] : characterData.pronounSets[Number(pronounNumber)];
 
+		const profilePronounFieldLengthLeft = 1024 - characterData.pronounSets.map(pronounSet => pronounCompromiser(pronounSet)).join('\n').length + pronounCompromiser(pronounSet).length;
+
 		await interaction
 			.showModal(new ModalBuilder()
 				.setCustomId(`pronouns_${userData.uuid}_${characterData._id}_${pronounNumber}`)
@@ -72,7 +79,8 @@ export async function pronounsInteractionCollector(interaction: ButtonInteractio
 							.setLabel('Text')
 							.setStyle(TextInputStyle.Short)
 							.setMinLength(characterData.pronounSets.length > 1 ? 0 : 4)
-							.setMaxLength(138)
+							// Max Length is either maxModalLength or, if that would exceed the max field value length, make it what is left for a field value length.
+							.setMaxLength((profilePronounFieldLengthLeft < maxModalLength) ? profilePronounFieldLengthLeft : maxModalLength)
 							.setValue(pronounSet.join('/')),
 						]),
 				),
@@ -96,15 +104,16 @@ export async function sendEditPronounsModalResponse(interaction: ModalSubmitInte
 	const characterData = userData.characters[interaction.customId.split('_')[2]];
 
 	const pronounNumber = Number(interaction.customId.split('_')[3]);
-	let chosenPronouns = interaction.fields.getTextInputValue('pronouns_textinput').split('/');
+	const chosenPronouns = interaction.fields.getTextInputValue('pronouns_textinput').split('/');
 	const willBeDeleted = interaction.fields.getTextInputValue('pronouns_textinput') === '';
+	let isNone = false;
 
-	if (!willBeDeleted && chosenPronouns[0] === 'none') {
+	if (!willBeDeleted && chosenPronouns[0] === 'none' && chosenPronouns.length == 1) {
 
-		chosenPronouns = [characterData.name, characterData.name, `${characterData.name}'s`, `${characterData.name}'s`, characterData.name, 'singular'];
+		isNone = true;
 	}
 
-	if (!willBeDeleted && chosenPronouns.length !== 6) {
+	if (!willBeDeleted && !isNone && chosenPronouns.length !== 6) {
 
 		chosenPronouns.forEach((pronoun, value) => chosenPronouns[value] = `"${pronoun}"`);
 		chosenPronouns[chosenPronouns.length - 1] = `and ${chosenPronouns[chosenPronouns.length - 1]}`;
@@ -118,7 +127,7 @@ export async function sendEditPronounsModalResponse(interaction: ModalSubmitInte
 		return;
 	}
 
-	if (!willBeDeleted && chosenPronouns[5] !== 'singular' && chosenPronouns[5] !== 'plural') {
+	if (!willBeDeleted && !isNone && chosenPronouns[5] !== 'singular' && chosenPronouns[5] !== 'plural') {
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
@@ -129,13 +138,24 @@ export async function sendEditPronounsModalResponse(interaction: ModalSubmitInte
 		return;
 	}
 
-	!willBeDeleted && chosenPronouns.forEach(async (pronoun) => {
-		if (pronoun.length < 1 || pronoun.length > 25) {
+	if (!willBeDeleted && characterData.pronounSets.map(pronounSet => pronounSet.join('/')).includes(chosenPronouns.join('/'))) {
+
+		await respond(interaction, {
+			embeds: [new EmbedBuilder()
+				.setColor(error_color)
+				.setDescription('The character alrady has this pronoun!')],
+			ephemeral: true,
+		}, false);
+		return;
+	}
+
+	!willBeDeleted && !isNone && chosenPronouns.forEach(async (pronoun) => {
+		if (pronoun.length < 1 || pronoun.length > maxPronounLength) {
 
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
-					.setDescription('Each pronoun must be between 1 and 25 characters long.')],
+					.setDescription('Each pronoun must be between 1 and 29 characters long.')],
 				ephemeral: true,
 			}, false)
 				.catch((error) => {

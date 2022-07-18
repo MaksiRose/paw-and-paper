@@ -25,7 +25,7 @@ export const command: SlashCommand = {
 
 		if (!hasName(interaction, userData)) { return; }
 
-		/* Checking if the user has sent an attachment. If they have not, it will send an error message. */
+		/* Checking if the user has sent a valid hex code. If they have not, it will send an error message. */
 		const hexColor = interaction.options.getString('color');
 		if (!hexColor || !isValidHex(hexColor)) {
 
@@ -41,6 +41,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
+		/* Changing the hex code and sending a success message. */
 		userData = await userModel.findOneAndUpdate(
 			{ uuid: userData.uuid },
 			(u) => {

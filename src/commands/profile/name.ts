@@ -20,7 +20,7 @@ export const command: SlashCommand = {
 		.addStringOption(option =>
 			option.setName('name')
 				.setDescription('The name that you want your character to have.')
-				.setMaxLength(25)
+				.setMaxLength(32)
 				.setRequired(true))
 		.toJSON(),
 	disablePreviousCommand: false,

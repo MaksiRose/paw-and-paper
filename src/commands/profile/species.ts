@@ -101,7 +101,7 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 							.setCustomId('species_textinput')
 							.setLabel('Displayed species')
 							.setStyle(TextInputStyle.Short)
-							.setMaxLength(25)
+							.setMaxLength(24)
 							.setValue(characterData.displayedSpecies),
 						]),
 				),

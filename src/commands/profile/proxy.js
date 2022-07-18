@@ -61,7 +61,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 	botReply = await message
 		.reply({
-			embeds: [ new MessageEmbed({
+			embeds: [new MessageEmbed({
 				color: /** @type {`#${string}`} */ (error_color),
 				title: 'What is a proxy and how do I use this command?',
 				description: 'Proxying is a way to speak as if your character was saying it. This means that your message will be replaced by one that has your characters name and avatar.',
@@ -84,7 +84,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					] : []),
 				],
 			})],
-			components: [ new MessageActionRow({
+			components: [new MessageActionRow({
 				components: [
 					...(characterData && characterData?.name !== '' ? [
 						new MessageButton({
@@ -144,18 +144,20 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						.setTitle('Set a proxy')
 						.addComponents(
 							new MessageActionRow({
-								components: [ new TextInputComponent()
+								components: [new TextInputComponent()
 									.setCustomId('proxy-set-textinput-startsWith')
 									.setLabel('Prefix (indicator before the word "text")')
 									.setStyle('SHORT')
+									.setMaxLength(16)
 									.setValue(characterData.proxy.startsWith),
 								],
 							}),
 							new MessageActionRow({
-								components: [ new TextInputComponent()
+								components: [new TextInputComponent()
 									.setCustomId('proxy-set-textinput-endsWith')
 									.setLabel('Suffix (indicator after the word "text")')
 									.setStyle('SHORT')
+									.setMaxLength(16)
 									.setValue(characterData.proxy.endsWith),
 								],
 							}),
@@ -301,8 +303,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						color: /** @type {`#${string}`} */ (error_color),
 						title: 'You can\'t make your proxy the bot\'s prefix.',
 					})],
-					components: [ new MessageActionRow({
-						components: [ new MessageButton({
+					components: [new MessageActionRow({
+						components: [new MessageButton({
 							customId: 'proxy-set-modal',
 							label: 'Set proxy',
 							style: 'SUCCESS',
@@ -330,8 +332,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 							color: /** @type {`#${string}`} */ (error_color),
 							title: 'You can\'t have two characters with the same proxy.',
 						})],
-						components: [ new MessageActionRow({
-							components: [ new MessageButton({
+						components: [new MessageActionRow({
+							components: [new MessageButton({
 								customId: 'proxy-set-modal',
 								label: 'Set proxy',
 								style: 'SUCCESS',
@@ -375,8 +377,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					title: 'Here is how to use the set subcommand:',
 					description: 'Proxying is a way to speak as if your character was saying it. The proxy is an indicator to the bot you want your message to be proxied. You can set your proxy by putting the indicator around the word "text". In a message, "text" would be replaced by whatever you want your character to say.\n\nExamples:\n`rp proxy set <text>`\n`rp proxy set P: text`\n`rp proxy set text -p`\nThis is case-sensitive (meaning that upper and lowercase matters).\n\nYou can also use the button below to set your proxy.',
 				})],
-				components: [ new MessageActionRow({
-					components: [ new MessageButton({
+				components: [new MessageActionRow({
+					components: [new MessageButton({
 						customId: 'proxy-set-modal',
 						label: 'Set proxy',
 						style: 'SUCCESS',
@@ -418,7 +420,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			await message
 				.reply({
-					embeds: [ new MessageEmbed({
+					embeds: [new MessageEmbed({
 						color: characterData.color,
 						author: { name: characterData.name, icon_url: characterData.avatarURL },
 						title: `${hasChannel ? 'Removed' : 'Added'} ${autoproxy === 'everywhere' ? autoproxy : message.guild.channels.cache.get(autoproxy)?.name} ${hasChannel ? 'from' : 'to'} the list of automatic proxy channels!`,
@@ -438,12 +440,12 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		else {
 
 			botReply = await ((content) => !botReply ? message.reply(content) : botReply.edit(content))({
-				embeds: [ new MessageEmbed({
+				embeds: [new MessageEmbed({
 					color: /** @type {`#${string}`} */ (error_color),
 					title: 'Here is how to use the always subcommand:',
 					description: 'When this feature is enabled, every message you sent will be treated as if it was proxied, even if the proxy isn\'t included.\nYou can either toggle it for the entire server (by adding the word "everywhere" to the command), or just one channel (by mentioning the channel). Repeating the command will toggle the feature off again for that channel/for the server.\n\nSo it\'s either `rp proxy always everywhere` or `rp proxy always #channel`.\n\nYou can also toggle channels with the drop-down menu below. Enabled channels will have a radio emoji next to it.',
 				})],
-				components: [ new MessageActionRow({
+				components: [new MessageActionRow({
 					components: [getSelectMenus(allChannels, userData, message, serverData, page).alwaysSelectMenu],
 				})],
 				failIfNotExists: false,
@@ -463,7 +465,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 			await message
 				.reply({
-					embeds: [ new MessageEmbed({
+					embeds: [new MessageEmbed({
 						color: /** @type {`#${string}`} */ (error_color),
 						title: 'Only administrators of a server can use this command!',
 					})],
@@ -492,11 +494,11 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				},
 			));
 
-			const member = message.member ? message.member : (await message.guild.members.fetch(message.author.id).catch((error) => { throw new Error(error);}));
+			const member = message.member ? message.member : (await message.guild.members.fetch(message.author.id).catch((error) => { throw new Error(error); }));
 
 			await message
 				.reply({
-					embeds: [ new MessageEmbed({
+					embeds: [new MessageEmbed({
 						color: member?.displayColor || message.author.accentColor || '#ffffff',
 						author: {
 							name: member?.displayName || message.author?.tag,
@@ -519,13 +521,13 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		else {
 
 			botReply = await ((content) => !botReply ? message.reply(content) : botReply.edit(content))({
-				embeds: [ new MessageEmbed({
+				embeds: [new MessageEmbed({
 					color: /** @type {`#${string}`} */ (error_color),
 					title: 'Here is how to use the disable subcommand:',
 					description: 'This is an **administrator** setting that can toggle whether `automatic` or `all` proxy should be disabled or enabled in a specific channel, or everywhere. Repeating the command will allow that kind of proxying again for that channel/for the server.\n\nExamples:\n`rp proxy disable automatic everywhere`\n`rp proxy disable all #channel`\n\nYou can also toggle channels with a drop-down menu, once you choose what you want to toggle below. Disabled channels will have a radio emoji next to it.',
 				})],
-				components: [ new MessageActionRow({
-					components: [ new MessageButton({
+				components: [new MessageActionRow({
+					components: [new MessageButton({
 						customId: 'proxy-disable-automatic',
 						label: 'Disable automatic',
 						style: 'SUCCESS',
