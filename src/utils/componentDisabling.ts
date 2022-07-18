@@ -1,4 +1,4 @@
-import { Message, MessageActionRow } from 'discord.js';
+import { Message, ActionRow, MessageActionRowComponent, ComponentType, ButtonStyle } from 'discord.js';
 
 export const disableCommandComponent: Record<string, (() => Promise<void>) | undefined> = {};
 
@@ -21,14 +21,15 @@ export function createCommandComponentDisabler(uuid: string, guildId: string, bo
 /**
  * Goes through all components in a message and disables them.
  */
-export function disableAllComponents(messageComponents: Array<MessageActionRow>): Array<MessageActionRow> {
+export function disableAllComponents(messageComponents: Array<ActionRow<MessageActionRowComponent>>): Array<ActionRow<MessageActionRowComponent>> {
 
-	for (const actionRow of messageComponents) {
+	for (const actionRow in messageComponents) {
 
-		for (const component of actionRow.components) {
+		for (const component in messageComponents[actionRow].components) {
 
-			if (component.type === 'BUTTON' && component.style === 'LINK') { continue; }
-			component.disabled = true;
+			const actionRowComponent = messageComponents[actionRow].components[component];
+			if (actionRowComponent.type === ComponentType.Button && actionRowComponent.style === ButtonStyle.Link) { continue; }
+			messageComponents[actionRow].components[component] = { ...actionRowComponent && { disabled: true } } as MessageActionRowComponent;
 		}
 	}
 

@@ -1,9 +1,8 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
-import { CommandInteraction, GuildMember, MessageEmbed } from 'discord.js';
+import { EmbedBuilder, GuildMember, SlashCommandBuilder } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 import { respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
-import { BanList, Character, CustomClient, GivenIdList, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
+import { BanList, Character, GivenIdList, SlashCommand } from '../../typedef';
 import { checkLevelRequirements, checkRankRequirements } from '../../utils/checkRoleRequirements';
 import { commonPlantsMap, materialsMap, rarePlantsMap, specialPlantsMap, speciesMap, uncommonPlantsMap } from '../../utils/itemsInfo';
 import { generateRandomNumber } from '../../utils/randomizers';
@@ -24,7 +23,7 @@ export const command: SlashCommand = {
 				.setRequired(true))
 		.toJSON(),
 	disablePreviousCommand: true,
-	sendCommand: async (client: CustomClient, interaction: CommandInteraction, userData: UserSchema | null, serverData: ServerSchema | null) => {
+	sendCommand: async (client, interaction, userData, serverData) => {
 
 		/* This is checking if the user has any data saved in the database. If they don't, it will create a new user. */
 		if (!userData) {
@@ -61,10 +60,9 @@ export const command: SlashCommand = {
 		if (!name) {
 
 			await respond(interaction, {
-				embeds: [ new MessageEmbed({
-					color: error_color,
-					title: 'Please input a name for your character.',
-				})],
+				embeds: [new EmbedBuilder()
+					.setColor(error_color)
+					.setTitle('Please input a name for your character.')],
 				ephemeral: true,
 			}, true)
 				.catch((error) => {
@@ -76,10 +74,9 @@ export const command: SlashCommand = {
 		if (name.length > 25) {
 
 			await respond(interaction, {
-				embeds: [ new MessageEmbed({
-					color: error_color,
-					title: 'Names can only be up to 25 characters long.',
-				})],
+				embeds: [new EmbedBuilder()
+					.setColor(error_color)
+					.setTitle('Names can only be up to 25 characters long.')],
 				ephemeral: true,
 			}, true)
 				.catch((error) => {
@@ -156,11 +153,10 @@ export const command: SlashCommand = {
 		);
 
 		await respond(interaction, {
-			embeds: [ new MessageEmbed({
-				color: /** @type {`#${string}`} */ (default_color),
-				title: characterData === undefined ? `You successfully created the character ${name}!` : `You successfully renamed your character to ${name}!`,
-				footer: { text: characterData === undefined ? 'To continue setting up your profile for the RPG, type "rp species". For other options, review "rp help".' : undefined },
-			})],
+			embeds: [new EmbedBuilder()
+				.setColor(default_color)
+				.setTitle(characterData === undefined ? `You successfully created the character ${name}!` : `You successfully renamed your character to ${name}!`)
+				.setFooter(characterData === undefined ? { text: 'To continue setting up your profile for the RPG, type "rp species". For other options, review "rp help".' } : null)],
 		}, true)
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }

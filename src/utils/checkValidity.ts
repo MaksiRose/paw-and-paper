@@ -1,4 +1,4 @@
-import { CommandInteraction, MessageEmbed, SelectMenuInteraction } from 'discord.js';
+import { CommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
 import { hasCooldownMap, respond } from '../events/interactionCreate';
 import userModel from '../models/userModel';
 import { UserSchema } from '../typedef';
@@ -17,12 +17,11 @@ export async function isPassedOut(interaction: CommandInteraction<'cached' | 'ra
 	if (userData && characterData && profileData && (profileData.energy <= 0 || profileData.health <= 0 || profileData.hunger <= 0 || profileData.thirst <= 0)) {
 
 		await respond(interaction, {
-			embeds: [ new MessageEmbed({
-				color: characterData.color,
-				author: { name: characterData.name, icon_url: characterData.avatarURL },
-				description: `*${characterData.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${pronounAndPlural(characterData, 0, 'screeches', 'screech')} with ${pronoun(characterData, 2)} last energy. Without help, ${pronoun(characterData, 0)} will not be able to continue.*`,
-				footer: isNew ? { text: await decreaseLevel(userData, interaction) } : undefined,
-			})],
+			embeds: [new EmbedBuilder()
+				.setColor(characterData.color)
+				.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
+				.setDescription(`*${characterData.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${pronounAndPlural(characterData, 0, 'screeches', 'screech')} with ${pronoun(characterData, 2)} last energy. Without help, ${pronoun(characterData, 0)} will not be able to continue.*`)
+				.setFooter(isNew ? { text: await decreaseLevel(userData, interaction) } : null)],
 		}, true)
 			.catch((error) => { throw new Error(error); });
 
@@ -58,11 +57,10 @@ export async function hasCooldown(interaction: CommandInteraction<'cached' | 'ra
 	if (hasCooldownMap.get(userData?.uuid + interaction.guildId) === true && commandName === interaction.commandName) {
 
 		await respond(interaction, {
-			embeds: [{
-				color: characterData.color,
-				author: { name: characterData.name, icon_url: characterData.avatarURL },
-				description: `*${characterData.name} is so eager to get things done today that ${pronounAndPlural(characterData, 0, 'is', 'are')} somersaulting. ${upperCasePronoun(characterData, 0)} should probably take a few seconds to calm down.*`,
-			}],
+			embeds: [new EmbedBuilder()
+				.setColor(characterData.color)
+				.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
+				.setDescription(`*${characterData.name} is so eager to get things done today that ${pronounAndPlural(characterData, 0, 'is', 'are')} somersaulting. ${upperCasePronoun(characterData, 0)} should probably take a few seconds to calm down.*`)],
 		}, false)
 			.then(reply => {
 				setTimeout(async function() {
@@ -87,7 +85,7 @@ export async function hasCooldown(interaction: CommandInteraction<'cached' | 'ra
 /**
  * Checks if the user is resting. If yes, then wake user up and attach an embed to the message. Returns the updated `userData`.
  */
-export async function isResting(interaction: CommandInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached' | 'raw'>, userData: UserSchema, embedArray: Array<MessageEmbed>): Promise<UserSchema> {
+export async function isResting(interaction: CommandInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached' | 'raw'>, userData: UserSchema, embedArray: Array<EmbedBuilder>): Promise<UserSchema> {
 
 	const characterData = userData.characters[userData.currentCharacter[interaction.guildId]];
 	const profileData = characterData.profiles[interaction.guildId];
@@ -104,12 +102,11 @@ export async function isResting(interaction: CommandInteraction<'cached' | 'raw'
 
 		stopResting(interaction.user.id, interaction.guildId);
 
-		embedArray.unshift(new MessageEmbed({
-			color: characterData.color,
-			author: { name: characterData.name, icon_url: characterData.avatarURL },
-			description: `*${characterData.name} opens ${pronoun(characterData, 2)} eyes, blinking at the bright sun. After a long stretch, ${pronounAndPlural(characterData, 0, 'leave')} ${pronoun(characterData, 2)} den to continue ${pronoun(characterData, 2)} day.*`,
-			footer: { text: `Current energy: ${profileData.energy}` },
-		}));
+		embedArray.unshift(new EmbedBuilder()
+			.setColor(characterData.color)
+			.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
+			.setDescription(`*${characterData.name} opens ${pronoun(characterData, 2)} eyes, blinking at the bright sun. After a long stretch, ${pronounAndPlural(characterData, 0, 'leave')} ${pronoun(characterData, 2)} den to continue ${pronoun(characterData, 2)} day.*`)
+			.setFooter({ text: `Current energy: ${profileData.energy}` }));
 	}
 
 	return userData;
@@ -118,7 +115,7 @@ export async function isResting(interaction: CommandInteraction<'cached' | 'raw'
 /**
  * Checks if the user is passed out, on a cooldown or resting, sends or attaches the appropriate message/embed, and returns a boolean of the result.
  */
-export async function isInvalid(interaction: CommandInteraction<'cached' | 'raw'>, userData: UserSchema, embedArray: Array<MessageEmbed>, commandName: string): Promise<boolean> {
+export async function isInvalid(interaction: CommandInteraction<'cached' | 'raw'>, userData: UserSchema, embedArray: Array<EmbedBuilder>, commandName: string): Promise<boolean> {
 
 	if (await isPassedOut(interaction, userData.uuid, false)) {
 

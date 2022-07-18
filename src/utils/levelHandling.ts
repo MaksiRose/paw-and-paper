@@ -1,4 +1,4 @@
-import { CommandInteraction, Message, MessageEmbed } from 'discord.js';
+import { CommandInteraction, EmbedBuilder, Message } from 'discord.js';
 import { respond } from '../events/interactionCreate';
 import userModel from '../models/userModel';
 import { ServerSchema, UserSchema } from '../typedef';
@@ -31,12 +31,13 @@ export async function checkLevelUp(interaction: CommandInteraction<'cached' | 'r
 
 		if (botReply) {
 
-			botReply.embeds.push(new MessageEmbed()
-				.setColor(characterData.color)
-				.setTitle(`${characterData.name} just leveled up! ${upperCasePronounAndPlural(characterData, 0, 'is', 'are')} now level ${profileData.levels}.`));
-
 			await botReply
-				.edit({ embeds: botReply.embeds })
+				.edit({
+					embeds: [...botReply.embeds, new EmbedBuilder()
+						.setColor(characterData.color)
+						.setTitle(`${characterData.name} just leveled up! ${upperCasePronounAndPlural(characterData, 0, 'is', 'are')} now level ${profileData.levels}.`)
+						.toJSON()],
+				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
@@ -122,11 +123,10 @@ export async function decreaseLevel(userData: UserSchema, interaction: CommandIn
 
 				await respond(interaction, {
 					content: member.toString(),
-					embeds: [{
-						color: default_color,
-						author: { name: guild.name, icon_url: guild.iconURL() || undefined },
-						description: `You lost the <@&${role.roleId}> role because of a lack of levels!`,
-					}],
+					embeds: [new EmbedBuilder()
+						.setColor(default_color)
+						.setAuthor({ name: guild.name, iconURL: guild.iconURL() || undefined })
+						.setDescription(`You lost the <@&${role.roleId}> role because of a lack of levels!`)],
 				}, false)
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }

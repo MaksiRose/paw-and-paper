@@ -1,9 +1,9 @@
-import { MessageActionRow, MessageButton, MessageContextMenuInteraction, MessageEmbed } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
 import { readFileSync } from 'fs';
 import { getMessageContent } from '../commands/profile/profile';
 import { respond } from '../events/interactionCreate';
 import userModel from '../models/userModel';
-import { ContextMenuCommand, CustomClient, WebhookMessages } from '../typedef';
+import { ContextMenuCommand, WebhookMessages } from '../typedef';
 
 const name: ContextMenuCommand['name'] = 'Who is ❓';
 export const command: ContextMenuCommand = {
@@ -13,7 +13,7 @@ export const command: ContextMenuCommand = {
 		type: 3,
 		dm_permission: false,
 	},
-	sendCommand: async (client: CustomClient, interaction: MessageContextMenuInteraction) => {
+	sendCommand: async (client, interaction) => {
 
 		/* This shouldn't happen as dm_permission is false. */
 		if (!interaction.inCachedGuild()) {
@@ -63,33 +63,28 @@ export const command: ContextMenuCommand = {
 
 		const member = await interaction.guild.members.fetch(userId);
 
-		const embedArray = [new MessageEmbed({
-			color: member?.displayColor || interaction.targetMessage.author.accentColor || '#ffffff',
-			author: {
+		const embedArray = [new EmbedBuilder()
+			.setColor(member?.displayColor || interaction.targetMessage.author.accentColor || '#ffffff')
+			.setAuthor({
 				name: member?.displayName || interaction.targetMessage.author?.tag,
-				icon_url: member?.displayAvatarURL() || interaction.targetMessage.author?.avatarURL() || undefined,
-			},
-			description: `${interaction.targetMessage.content}\n[jump](${interaction.targetMessage.url})`,
-			fields: [
-				{
-					name: 'Sent by:',
-					value: `${interaction.targetMessage.author.toString()} ${member?.nickname ? `/ ${member?.nickname}` : ''}`,
-				},
-			],
-			timestamp: new Date(),
-		})];
+				iconURL: member?.displayAvatarURL() || interaction.targetMessage.author?.avatarURL() || undefined,
+			})
+			.setDescription(`${interaction.targetMessage.content}\n[jump](${interaction.targetMessage.url})`)
+			.setFields([{
+				name: 'Sent by:',
+				value: `${interaction.targetMessage.author.toString()} ${member?.nickname ? `/ ${member?.nickname}` : ''}`,
+			}])
+			.setTimestamp(new Date())];
 
 		const response = await getMessageContent(client, userData.userId, characterData, interaction.user.id === userData.userId, embedArray);
 
 		await respond(interaction, {
 			...response,
-			components: [ new MessageActionRow({
-				components: [ new MessageButton({
-					customId: `profile-learnabout-${userData.userId}`,
-					label: 'Learn more (sends a DM)',
-					style: 'SUCCESS',
-				})],
-			})],
+			components: [new ActionRowBuilder<ButtonBuilder>()
+				.setComponents([new ButtonBuilder()
+					.setCustomId(`profile-learnabout-${userData.userId}`)
+					.setLabel('Learn more (sends a DM)')
+					.setStyle(ButtonStyle.Success)])],
 			ephemeral: true,
 			fetchReply: true,
 		}, true)

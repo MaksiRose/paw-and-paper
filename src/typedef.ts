@@ -1,21 +1,21 @@
 import { Api } from '@top-gg/sdk';
-import { AutocompleteInteraction, Client, ClientOptions, CommandInteraction, MessageContextMenuInteraction, MessageEmbed } from 'discord.js';
+import { AutocompleteInteraction, Client, ClientOptions, MessageContextMenuCommandInteraction, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 import bfd from 'bfd-api-redux/src/main';
 import { RESTPostAPIContextMenuApplicationCommandsJSONBody, RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v10';
 
 export interface SlashCommand {
-	name: string
+	name: string;
 	description: string;
 	data: RESTPostAPIApplicationCommandsJSONBody;
 	disablePreviousCommand: boolean;
-	sendCommand: (client: CustomClient, interaction: CommandInteraction, userData: UserSchema | null, serverData: ServerSchema | null, embedArray: Array<MessageEmbed>) => Promise<void>;
-	sendAutocomplete?: (client: CustomClient, interaction: AutocompleteInteraction, userData: UserSchema | null, serverData: ServerSchema | null) => Promise<void>
+	sendCommand: (client: CustomClient, interaction: ChatInputCommandInteraction, userData: UserSchema | null, serverData: ServerSchema | null, embedArray: Array<EmbedBuilder>) => Promise<void>;
+	sendAutocomplete?: (client: CustomClient, interaction: AutocompleteInteraction, userData: UserSchema | null, serverData: ServerSchema | null) => Promise<void>;
 }
 
 export interface ContextMenuCommand {
 	name: string;
 	data: RESTPostAPIContextMenuApplicationCommandsJSONBody;
-	sendCommand: (client: CustomClient, interaction: MessageContextMenuInteraction) => Promise<void>;
+	sendCommand: (client: CustomClient, interaction: MessageContextMenuCommandInteraction) => Promise<void>;
 }
 
 export interface Votes {

@@ -3,6 +3,7 @@ import userModel from '../models/userModel';
 import serverModel from '../models/serverModel';
 import { CustomClient, DeleteList, Event } from '../typedef';
 import { createGuild } from '../utils/updateGuild';
+import { ActivityType } from 'discord.js';
 
 export const event: Event = {
 	name: 'ready',
@@ -11,7 +12,7 @@ export const event: Event = {
 
 		/* Logging to the console that the bot is online and setting the bot's activity. */
 		console.log('Paw and Paper is online!');
-		client.user?.setActivity('/help', { type: 'PLAYING' });
+		client.user?.setActivity('/help', { type: ActivityType.Listening });
 
 		/* It's loading all the files in the handlers folder. */
 		for (const file of ['commands', 'votes', 'servers', 'profiles']) {

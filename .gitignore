@@ -6,3 +6,4 @@ database/givenIds.json
 database/toDeleteList.json
 database/voteCache.json
 database/webhookCache.json
+dist

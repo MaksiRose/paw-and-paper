@@ -1,12 +1,12 @@
 import { APIMessage } from 'discord-api-types/v9';
-import { ButtonInteraction, CommandInteraction, Interaction, InteractionReplyOptions, Message, MessageContextMenuInteraction, ModalSubmitInteraction, SelectMenuInteraction, WebhookEditMessageOptions } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, CommandInteraction, EmbedBuilder, Interaction, InteractionReplyOptions, InteractionType, Message, MessageContextMenuCommandInteraction, ModalSubmitInteraction, SelectMenuInteraction, UserContextMenuCommandInteraction, WebhookEditMessageOptions } from 'discord.js';
 import { profileInteractionCollector } from '../commands/profile/profile';
 import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../commands/profile/pronouns';
 import { sendEditDisplayedSpeciesModalResponse, speciesInteractionCollector } from '../commands/profile/species';
 import { sendEditMessageModalResponse } from '../contextmenu/edit';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
-import { CustomClient, Event } from '../typedef';
+import { Event } from '../typedef';
 import { disableCommandComponent } from '../utils/componentDisabling';
 import { pronoun, pronounAndPlural } from '../utils/getPronouns';
 import { createGuild } from '../utils/updateGuild';
@@ -18,10 +18,14 @@ export const lastInteractionTimestampMap: Map<string, number> = new Map();
 export const event: Event = {
 	name: 'interactionCreate',
 	once: false,
-	async execute(client: CustomClient, interaction: Interaction) {
+	async execute(client, interaction: Interaction) {
 
 		/* This is only null when in DM without CHANNEL partial, or when channel cache is sweeped. Therefore, this is technically unsafe since this value could become null after this check. This scenario is unlikely though. */
-		if (!interaction.channel) { throw new Error('Interaction channel cannot be found.'); }
+		if (!interaction.channel) {
+
+			await client.channels.fetch(interaction.channelId || '')
+				.catch(() => { throw new Error('Interaction channel cannot be found.'); });
+		}
 
 		let userData = await userModel.findOne({ userId: interaction.user.id }).catch(() => { return null; });
 		let serverData = await serverModel.findOne({ serverId: interaction.guildId || '' }).catch(() => { return null; });
@@ -48,7 +52,7 @@ export const event: Event = {
 			return;
 		}
 
-		if (interaction.isAutocomplete()) {
+		if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
 
 			/**
 			 * https://discordjs.guide/interactions/autocomplete.html#responding-to-autocomplete-interactions
@@ -64,7 +68,7 @@ export const event: Event = {
 			return;
 		}
 
-		if (interaction.isCommand()) {
+		if (interaction instanceof ChatInputCommandInteraction) {
 
 			/* Getting the command from the client and checking if the command is undefined.
 			If it is, it will error. */
@@ -104,12 +108,11 @@ export const event: Event = {
 
 					await interaction
 						.followUp({
-							embeds: [{
-								color: characterData.color,
-								author: { name: characterData.name, icon_url: characterData.avatarURL },
-								description: `*Engrossed in ${pronoun(characterData, 2)} work, ${characterData.name} suddenly remembers that ${pronounAndPlural(characterData, 0, 'has', 'have')} not yet watered ${pronoun(characterData, 2)} plant today. The ${characterData.displayedSpecies || characterData.species} should really do it soon!*`,
-								footer: { text: 'Type "rp water" to water your ginkgo sapling!' },
-							}],
+							embeds: [new EmbedBuilder()
+								.setColor(characterData.color)
+								.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
+								.setDescription(`*Engrossed in ${pronoun(characterData, 2)} work, ${characterData.name} suddenly remembers that ${pronounAndPlural(characterData, 0, 'has', 'have')} not yet watered ${pronoun(characterData, 2)} plant today. The ${characterData.displayedSpecies || characterData.species} should really do it soon!*`)
+								.setFooter({ text: 'Type "/water" to water your ginkgo sapling!' })],
 						})
 						.catch(async (error) => {
 							return await sendErrorMessage(interaction, error);
@@ -139,7 +142,9 @@ export const event: Event = {
 			return;
 		}
 
-		if (interaction.isMessageContextMenu()) {
+		if (interaction instanceof UserContextMenuCommandInteraction) { return; }
+
+		if (interaction instanceof MessageContextMenuCommandInteraction) {
 
 			/* Getting the command from the client and checking if the command is undefined.
 			If it is, it will error. */
@@ -157,7 +162,7 @@ export const event: Event = {
 			return;
 		}
 
-		if (interaction.isModalSubmit()) {
+		if (interaction.type === InteractionType.ModalSubmit) {
 
 			if (interaction.customId.includes('edit')) {
 
@@ -176,9 +181,10 @@ export const event: Event = {
 				await sendEditPronounsModalResponse(interaction);
 				return;
 			}
+			return;
 		}
 
-		if (interaction.isButton() || interaction.isSelectMenu()) {
+		if (interaction.type === InteractionType.MessageComponent) {
 
 			/* It's checking if the user that created the command is the same as the user that is interacting with the command, or if the user that is interacting is mentioned in the interaction.customId. If neither is true, it will send an error message. */
 			const isNotCommandCreator = interaction.message.interaction && interaction.message.interaction.user.id !== interaction.user.id;
@@ -228,7 +234,7 @@ export const event: Event = {
 	},
 };
 
-export const respond = async (interaction: CommandInteraction | MessageContextMenuInteraction | ModalSubmitInteraction | ButtonInteraction | SelectMenuInteraction, options: WebhookEditMessageOptions | InteractionReplyOptions, editMessage: boolean): Promise<Message<boolean>> => {
+export const respond = async (interaction: CommandInteraction | MessageContextMenuCommandInteraction | ModalSubmitInteraction | ButtonInteraction | SelectMenuInteraction, options: WebhookEditMessageOptions | InteractionReplyOptions, editMessage: boolean): Promise<Message<boolean>> => {
 	let botReply: APIMessage | Message<boolean>;
 	if (!interaction.replied) {
 		botReply = await interaction.reply({ ...options, ...{ fetchReply: true } });
@@ -266,27 +272,22 @@ setInterval(async function() {
 	}
 }, 60_000);
 
-async function sendErrorMessage(interaction: CommandInteraction | MessageContextMenuInteraction, error: any) {
+async function sendErrorMessage(interaction: CommandInteraction | MessageContextMenuCommandInteraction, error: any) {
 
 	console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to execute \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 	console.error(error);
 
 	// "Reply" can't be used here in case the interaction is already responded to. A new "respond" method should be added to the interaction as an extended class/type, which would default to replying to an interaction, and a second argument would decide whether "editReply" or "followUp" would act as a replacement
 	await respond(interaction, {
-		embeds: [{
-			title: 'There was an unexpected error executing this command:',
-			description: `\`\`\`${error?.message || String(error).substring(0, 4090)}\`\`\``,
-			footer: { text: 'If this is the first time you encountered the issue, please report it using the button below. After that, only report it again if the issue was supposed to be fixed after an update came out. To receive updates, ask a server administrator to do the "getupdates" command.' },
-		}],
-		components: [{
-			type: 'ACTION_ROW',
-			components: [{
-				type: 'BUTTON',
-				customId: 'report',
-				label: 'Report',
-				style: 'SUCCESS',
-			}],
-		}],
+		embeds: [new EmbedBuilder()
+			.setTitle('There was an unexpected error executing this command:')
+			.setDescription(`\`\`\`${error?.message || String(error).substring(0, 4090)}\`\`\``)
+			.setFooter({ text: 'If this is the first time you encountered the issue, please report it using the button below. After that, only report it again if the issue was supposed to be fixed after an update came out. To receive updates, ask a server administrator to do the "getupdates" command.' })],
+		components: [new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId('report')
+				.setLabel('Report')
+				.setStyle(ButtonStyle.Success)])],
 	}, false)
 		.catch((newError) => {
 			console.error(newError);

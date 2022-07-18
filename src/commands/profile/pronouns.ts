@@ -1,8 +1,7 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
-import { ButtonInteraction, CommandInteraction, Message, MessageActionRow, MessageEmbed, MessageSelectMenu, Modal, ModalSubmitInteraction, SelectMenuInteraction, TextInputComponent } from 'discord.js';
+import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, Message, ModalBuilder, ModalSubmitInteraction, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
-import { CustomClient, SlashCommand, UserSchema } from '../../typedef';
+import { SlashCommand } from '../../typedef';
 import { hasName } from '../../utils/checkAccountCompletion';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 const { error_color, default_color } = require('../../../config.json');
@@ -17,16 +16,15 @@ export const command: SlashCommand = {
 		.setDescription(description)
 		.toJSON(),
 	disablePreviousCommand: true,
-	sendCommand: async (client: CustomClient, interaction: CommandInteraction, userData: UserSchema | null) => {
+	sendCommand: async (client, interaction, userData) => {
 
 		if (!hasName(interaction, userData)) { return; }
 
 		const characterData = userData.characters[userData.currentCharacter[interaction.guildId || 'DM']];
 
-		const pronounsMenu = new MessageSelectMenu({
-			customId: `pronouns_selectmodal_${userData.uuid}_${characterData._id}`,
-			placeholder: 'Select a pronoun to change',
-		});
+		const pronounsMenu = new SelectMenuBuilder()
+			.setCustomId(`pronouns_selectmodal_${userData.uuid}_${characterData._id}`)
+			.setPlaceholder('Select a pronoun to change');
 
 		characterData.pronounSets.forEach((pronounSet, value) => {
 
@@ -39,11 +37,12 @@ export const command: SlashCommand = {
 		}
 
 		const botReply = await respond(interaction, {
-			embeds: [ new MessageEmbed({
-				color: default_color,
-				description: 'To change your characters pronouns, select an existing one from the drop-down menu below to edit it, or select "Add another pronoun" to add another one. A pop-up with a text box will open.\n\nTo set the pronouns to they/them for example, type `they/them/their/theirs/themselves/plural`.\nThe 6th spot should be either `singular` ("he/she __is__") or `plural` ("they __are__").\nTo set the pronouns to your own name, you can type `none`.\nTo delete the pronouns, leave the text box empty.\n\nThis is how it would look during roleplay:\n> **They** and the friend that came with **them** laid in **their** den. It was **theirs** because they built it **themselves**. \nYou can use this as reference when thinking about how to add your own (neo-)pronouns.',
-			})],
-			components: [new MessageActionRow({ components: [pronounsMenu] })],
+			embeds: [new EmbedBuilder()
+				.setColor(default_color)
+				.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
+				.setTitle(`What pronouns does ${characterData.name} have?`)
+				.setDescription('To change your characters pronouns, select an existing one from the drop-down menu below to edit it, or select "Add another pronoun" to add another one. A pop-up with a text box will open.\n\nTo set the pronouns to they/them for example, type `they/them/their/theirs/themselves/plural`.\nThe 6th spot should be either `singular` ("he/she __is__") or `plural` ("they __are__").\nTo set the pronouns to your own name, you can type `none`.\nTo delete the pronouns, leave the text box empty.\n\nThis is how it would look during roleplay:\n> **They** and the friend that came with **them** laid in **their** den. It was **theirs** because they built it **themselves**. \nYou can use this as reference when thinking about how to add your own (neo-)pronouns.')],
+			components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([pronounsMenu])],
 		}, true)
 			.catch((error) => { throw new Error(error); });
 
@@ -63,20 +62,19 @@ export async function pronounsInteractionCollector(interaction: ButtonInteractio
 		const pronounSet = pronounNumber === 'add' ? [] : characterData.pronounSets[Number(pronounNumber)];
 
 		await interaction
-			.showModal(new Modal()
+			.showModal(new ModalBuilder()
 				.setCustomId(`pronouns_${userData.uuid}_${characterData._id}_${pronounNumber}`)
 				.setTitle('Change pronouns')
 				.addComponents(
-					new MessageActionRow({
-						components: [new TextInputComponent()
+					new ActionRowBuilder<TextInputBuilder>()
+						.setComponents([new TextInputBuilder()
 							.setCustomId('pronouns_textinput')
 							.setLabel('Text')
-							.setStyle('SHORT')
+							.setStyle(TextInputStyle.Short)
 							.setMinLength(characterData.pronounSets.length > 1 ? 0 : 4)
 							.setMaxLength(138)
 							.setValue(pronounSet.join('/')),
-						],
-					}),
+						]),
 				),
 			);
 
@@ -98,8 +96,8 @@ export async function sendEditPronounsModalResponse(interaction: ModalSubmitInte
 	const characterData = userData.characters[interaction.customId.split('_')[2]];
 
 	const pronounNumber = Number(interaction.customId.split('_')[3]);
-	let chosenPronouns = interaction.components[0].components[0].value.split('/');
-	const willBeDeleted = interaction.components[0].components[0].value === '';
+	let chosenPronouns = interaction.fields.getTextInputValue('pronouns_textinput').split('/');
+	const willBeDeleted = interaction.fields.getTextInputValue('pronouns_textinput') === '';
 
 	if (!willBeDeleted && chosenPronouns[0] === 'none') {
 
@@ -112,10 +110,9 @@ export async function sendEditPronounsModalResponse(interaction: ModalSubmitInte
 		chosenPronouns[chosenPronouns.length - 1] = `and ${chosenPronouns[chosenPronouns.length - 1]}`;
 
 		await respond(interaction, {
-			embeds: [ new MessageEmbed({
-				color: error_color,
-				description: `You provided **${chosenPronouns.length}** arguments: ${chosenPronouns.join(', ')}.\nThe first 5 arguments should be of the pronoun you want, and the 6th argument should be either "singular" or "plural".`,
-			})],
+			embeds: [new EmbedBuilder()
+				.setColor(error_color)
+				.setDescription(`You provided **${chosenPronouns.length}** arguments: ${chosenPronouns.join(', ')}.\nThe first 5 arguments should be of the pronoun you want, and the 6th argument should be either "singular" or "plural".`)],
 			ephemeral: true,
 		}, false);
 		return;
@@ -124,10 +121,9 @@ export async function sendEditPronounsModalResponse(interaction: ModalSubmitInte
 	if (!willBeDeleted && chosenPronouns[5] !== 'singular' && chosenPronouns[5] !== 'plural') {
 
 		await respond(interaction, {
-			embeds: [ new MessageEmbed({
-				color: error_color,
-				description: `For the 6th spot, you wrote "${chosenPronouns[5]}". The 6th spot should be either "singular" or "plural".`,
-			})],
+			embeds: [new EmbedBuilder()
+				.setColor(error_color)
+				.setDescription(`For the 6th spot, you wrote "${chosenPronouns[5]}". The 6th spot should be either "singular" or "plural".`)],
 			ephemeral: true,
 		}, false);
 		return;
@@ -137,10 +133,9 @@ export async function sendEditPronounsModalResponse(interaction: ModalSubmitInte
 		if (pronoun.length < 1 || pronoun.length > 25) {
 
 			await respond(interaction, {
-				embeds: [ new MessageEmbed({
-					color: error_color,
-					description: 'Each pronoun must be between 1 and 25 characters long.',
-				})],
+				embeds: [new EmbedBuilder()
+					.setColor(error_color)
+					.setDescription('Each pronoun must be between 1 and 25 characters long.')],
 				ephemeral: true,
 			}, false)
 				.catch((error) => {
@@ -166,11 +161,10 @@ export async function sendEditPronounsModalResponse(interaction: ModalSubmitInte
 	const addedOrEditedTo = isNaN(pronounNumber) ? 'added pronoun' : `edited pronoun from ${characterData.pronounSets[pronounNumber].join('/')} to`;
 
 	await respond(interaction, {
-		embeds: [new MessageEmbed({
-			color: characterData.color,
-			author: { name: characterData.name, icon_url: characterData.avatarURL },
-			title: `Succcessfully ${willBeDeleted ? `deleted pronoun ${characterData.pronounSets[pronounNumber].join('/')}` : `${addedOrEditedTo} ${chosenPronouns.join('/')}`}!`,
-		})],
+		embeds: [new EmbedBuilder()
+			.setColor(characterData.color)
+			.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
+			.setTitle(`Succcessfully ${willBeDeleted ? `deleted pronoun ${characterData.pronounSets[pronounNumber].join('/')}` : `${addedOrEditedTo} ${chosenPronouns.join('/')}`}!`)],
 	}, false);
 	return;
 }

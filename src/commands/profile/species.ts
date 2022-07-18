@@ -1,8 +1,7 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
-import { ButtonInteraction, CommandInteraction, Message, MessageActionRow, MessageButton, MessageEmbed, MessageSelectMenu, Modal, ModalSubmitInteraction, SelectMenuInteraction, TextInputComponent } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, Message, ModalBuilder, ModalSubmitInteraction, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
-import { CustomClient, SlashCommand, UserSchema } from '../../typedef';
+import { SlashCommand } from '../../typedef';
 import { hasName } from '../../utils/checkAccountCompletion';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { pronoun, upperCasePronoun } from '../../utils/getPronouns';
@@ -20,7 +19,7 @@ export const command: SlashCommand = {
 		.setDescription(description)
 		.toJSON(),
 	disablePreviousCommand: true,
-	sendCommand: async (client: CustomClient, interaction: CommandInteraction, userData: UserSchema | null) => {
+	sendCommand: async (client, interaction, userData) => {
 
 		if (!hasName(interaction, userData)) { return; }
 
@@ -33,24 +32,22 @@ export const command: SlashCommand = {
 		const speciesMenu = getSpeciesSelectMenu(0, userData.uuid, characterData._id);
 
 		/* Define embeds */
-		const newSpeciesEmbed = new MessageEmbed({
-			color: characterData.color,
-			author: { name: characterData.name, icon_url: characterData.avatarURL },
-			title: `What species is ${characterData.name}?`,
-			description: 'Choosing a species is only necessary for the RPG parts of the bot, and is **permanent**. If you want an earthly, extant species added that is not on the list, [use this form](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement%2Cnon-code&template=species_request.yaml&title=New+species%3A+) to suggest it. Alternatively, you can choose a species that\'s similar and use the button below to change what species is displayed to be anything you want. You can change the displayed species as many times as you want.',
-		});
-		const existingSpeciesEmbed = new MessageEmbed({
-			color: characterData.color,
-			author: { name: characterData.name, icon_url: characterData.avatarURL },
-			description: `${characterData.name} is a ${characterData.displayedSpecies || characterData.species}! You cannot change ${pronoun(characterData, 2)} species, but you can create another character via \`/profile\`. Alternatively, you can use the button below to change what species is displayed to be anything you want.`,
-			footer: { text: `Here is a list of species that you can choose when making a new character: ${[...speciesMap.keys()].sort().join(', ')}` },
-		});
+		const newSpeciesEmbed = new EmbedBuilder()
+			.setColor(characterData.color)
+			.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
+			.setTitle(`What species is ${characterData.name}?`)
+			.setDescription('Choosing a species is only necessary for the RPG parts of the bot, and is **permanent**. If you want an earthly, extant species added that is not on the list, [use this form](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement%2Cnon-code&template=species_request.yaml&title=New+species%3A+) to suggest it. Alternatively, you can choose a species that\'s similar and use the button below to change what species is displayed to be anything you want. You can change the displayed species as many times as you want.');
+		const existingSpeciesEmbed = new EmbedBuilder()
+			.setColor(characterData.color)
+			.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
+			.setDescription(`${characterData.name} is a ${characterData.displayedSpecies || characterData.species}! You cannot change ${pronoun(characterData, 2)} species, but you can create another character via \`/profile\`. Alternatively, you can use the button below to change what species is displayed to be anything you want.`)
+			.setFooter({ text: `Here is a list of species that you can choose when making a new character: ${[...speciesMap.keys()].sort().join(', ')}` });
 
 		const botReply = await respond(interaction, {
 			embeds: characterData.species === '' ? [newSpeciesEmbed] : [existingSpeciesEmbed],
 			components: [
-				...(characterData.species === '' ? [new MessageActionRow({ components: [speciesMenu] })] : []),
-				new MessageActionRow({ components: [displayedSpeciesButton] }),
+				...(characterData.species === '' ? [new ActionRowBuilder<SelectMenuBuilder>().setComponents([speciesMenu])] : []),
+				new ActionRowBuilder<ButtonBuilder>().setComponents([displayedSpeciesButton]),
 			],
 		}, true)
 			.catch((error) => { throw new Error(error); });
@@ -59,12 +56,11 @@ export const command: SlashCommand = {
 	},
 };
 
-function getSpeciesSelectMenu(page: number, uuid: string, characterId: string): MessageSelectMenu {
+function getSpeciesSelectMenu(page: number, uuid: string, characterId: string): SelectMenuBuilder {
 
-	const speciesMenu = new MessageSelectMenu({
-		customId: `species_speciesselect_${uuid}_${characterId}`,
-		placeholder: 'Select a species',
-	});
+	const speciesMenu = new SelectMenuBuilder()
+		.setCustomId(`species_speciesselect_${uuid}_${characterId}`)
+		.setPlaceholder('Select a species');
 
 	for (const speciesName of speciesNameArray.slice((page * 24), 24 + (page * 24))) {
 
@@ -79,14 +75,13 @@ function getSpeciesSelectMenu(page: number, uuid: string, characterId: string): 
 	return speciesMenu;
 }
 
-function getDisplayedSpeciesButton(uuid: string, characterId: string): MessageButton {
+function getDisplayedSpeciesButton(uuid: string, characterId: string): ButtonBuilder {
 
-	return new MessageButton({
-		customId: `species_displayedspeciesmodal_${uuid}_${characterId}`,
-		label: 'Change displayed species',
-		emoji: '📝',
-		style: 'SECONDARY',
-	});
+	return new ButtonBuilder()
+		.setCustomId(`species_displayedspeciesmodal_${uuid}_${characterId}`)
+		.setLabel('Change displayed species')
+		.setEmoji('📝')
+		.setStyle(ButtonStyle.Secondary);
 }
 
 export async function speciesInteractionCollector(interaction: ButtonInteraction | SelectMenuInteraction): Promise<void> {
@@ -97,19 +92,18 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 		const characterData = userData.characters[interaction.customId.split('_')[3]];
 
 		await interaction
-			.showModal(new Modal()
+			.showModal(new ModalBuilder()
 				.setCustomId(`species_${userData.uuid}_${characterData._id}`)
 				.setTitle('Change displayed species')
-				.addComponents(
-					new MessageActionRow({
-						components: [ new TextInputComponent()
+				.setComponents(
+					new ActionRowBuilder<TextInputBuilder>()
+						.setComponents([new TextInputBuilder()
 							.setCustomId('species_textinput')
-							.setLabel('Text')
-							.setStyle('SHORT')
+							.setLabel('Displayed species')
+							.setStyle(TextInputStyle.Short)
 							.setMaxLength(25)
 							.setValue(characterData.displayedSpecies),
-						],
-					}),
+						]),
 				),
 			);
 		return;
@@ -131,8 +125,8 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 			await interaction.message
 				.edit({
 					components: [
-						new MessageActionRow({ components: [getSpeciesSelectMenu(speciesPage, userDataUUID, characterId)] }),
-						new MessageActionRow({ components: [getDisplayedSpeciesButton(userDataUUID, characterId)] }),
+						new ActionRowBuilder<SelectMenuBuilder>().setComponents([getSpeciesSelectMenu(speciesPage, userDataUUID, characterId)]),
+						new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(userDataUUID, characterId)]),
 					],
 				})
 				.catch((error) => { throw new Error(error); });
@@ -166,14 +160,13 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 
 			await interaction.message
 				.edit({
-					embeds: [new MessageEmbed({
-						color: characterData.color,
-						author: { name: characterData.name, icon_url: characterData.avatarURL },
-						description: `*A stranger carefully steps over the pack's borders. ${upperCasePronoun(characterData, 2)} face seems friendly. Curious eyes watch ${pronoun(characterData, 1)} as ${pronoun(characterData, 0)} come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n"${characterData.name}," *the ${chosenSpecies} responds. The Alpha takes a friendly step towards ${pronoun(characterData, 1)}.* "It's nice to have you here, ${characterData.name}," *they say. More and more packmates come closer to greet the newcomer.*`,
-						footer: { text: 'You are now done setting up your character for RPGing! Type "/profile" to look at it.\nWith "/help" you can see how else you can customize your profile, as well as your other options.\nYou can use the button below to change your displayed species.' },
-					})],
+					embeds: [new EmbedBuilder()
+						.setColor(characterData.color)
+						.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
+						.setDescription(`*A stranger carefully steps over the pack's borders. ${upperCasePronoun(characterData, 2)} face seems friendly. Curious eyes watch ${pronoun(characterData, 1)} as ${pronoun(characterData, 0)} come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n"${characterData.name}," *the ${chosenSpecies} responds. The Alpha takes a friendly step towards ${pronoun(characterData, 1)}.* "It's nice to have you here, ${characterData.name}," *they say. More and more packmates come closer to greet the newcomer.*`)
+						.setFooter({ text: 'You are now done setting up your character for RPGing! Type "/profile" to look at it.\nWith "/help" you can see how else you can customize your profile, as well as your other options.\nYou can use the button below to change your displayed species.' })],
 					components: [
-						new MessageActionRow({ components: [getDisplayedSpeciesButton(userDataUUID, characterId)] }),
+						new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(userDataUUID, characterId)]),
 					],
 				})
 				.catch((error) => { throw new Error(error); });
@@ -195,7 +188,7 @@ export async function sendEditDisplayedSpeciesModalResponse(interaction: ModalSu
 
 	const uuid = interaction.customId.split('_')[1];
 	const characterId = interaction.customId.split('_')[2];
-	const displayedSpecies = interaction.components[0].components[0].value;
+	const displayedSpecies = interaction.fields.getTextInputValue('species_textinput');
 
 	const userData = await userModel.findOneAndUpdate(
 		{ uuid: uuid },
@@ -205,11 +198,10 @@ export async function sendEditDisplayedSpeciesModalResponse(interaction: ModalSu
 	);
 
 	await respond(interaction, {
-		embeds: [new MessageEmbed({
-			color: userData.characters[characterId].color,
-			author: { name: userData.characters[characterId].name, icon_url: userData.characters[characterId].avatarURL },
-			title: displayedSpecies === '' ? 'Successfully removed your displayed species!' : `Successfully changed displayed species to ${displayedSpecies}!`,
-		})],
+		embeds: [new EmbedBuilder()
+			.setColor(userData.characters[characterId].color)
+			.setAuthor({ name: userData.characters[characterId].name, iconURL: userData.characters[characterId].avatarURL })
+			.setTitle(displayedSpecies === '' ? 'Successfully removed your displayed species!' : `Successfully changed displayed species to ${displayedSpecies}!`)],
 	}, false);
 	return;
 }

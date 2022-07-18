@@ -1,8 +1,7 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
-import { ButtonInteraction, CommandInteraction, GuildMember, Message, MessageActionRow, MessageEmbed, MessageSelectMenu, SelectMenuInteraction } from 'discord.js';
+import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, GuildMember, InteractionReplyOptions, Message, MessageEditOptions, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { hasCooldownMap, respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
-import { Character, CustomClient, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
+import { Character, CustomClient, SlashCommand, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkAccountCompletion';
 import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
 import { hasCooldown, isResting } from '../../utils/checkValidity';
@@ -23,7 +22,7 @@ export const command: SlashCommand = {
 				.setRequired(false))
 		.toJSON(),
 	disablePreviousCommand: true,
-	sendCommand: async (client: CustomClient, interaction: CommandInteraction, userData: UserSchema | null, serverData: ServerSchema | null, embedArray: MessageEmbed[]) => {
+	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
 
 		/* Getting userData and characterData either for mentionedUser if there is one or for interaction user otherwise */
 		const mentionedUser = interaction.options.getUser('user');
@@ -62,7 +61,7 @@ export const command: SlashCommand = {
 
 		await respond(interaction, {
 			...response,
-			components: (selectMenu.options.length > 0) ? [new MessageActionRow({ components: [selectMenu] })] : [],
+			components: (selectMenu.options.length > 0) ? [new ActionRowBuilder<SelectMenuBuilder>().setComponents([selectMenu])] : [],
 		}, true)
 			.catch((error) => { throw new Error(error); });
 	},
@@ -70,14 +69,14 @@ export const command: SlashCommand = {
 
 /**
  * It takes in a client, userId, characterData, and isYourself, and returns a message object
- * @param {CustomClient} client - Discords Client
- * @param {string} userId - The user's ID
- * @param {Character | null} characterData - The character data from the database.
- * @param {boolean} isYourself - Whether the character is by the user who executed the command
- * @param {Array<MessageEmbed>} embedArray
- * @returns {Promise<{content: string | null, embeds: Array<MessageEmbed>}>} The message object.
+ * @param client - Discords Client
+ * @param userId - The user's ID
+ * @param characterData - The character data from the database.
+ * @param isYourself - Whether the character is by the user who executed the command
+ * @param embedArray
+ * @returns The message object.
  */
-export async function getMessageContent(client: CustomClient, userId: string, characterData: Character | null, isYourself: boolean, embedArray: Array<MessageEmbed>): Promise<{content: string | null, embeds: Array<MessageEmbed>}> {
+export async function getMessageContent(client: CustomClient, userId: string, characterData: Character | null, isYourself: boolean, embedArray: Array<EmbedBuilder>): Promise<InteractionReplyOptions & MessageEditOptions> {
 
 	const user = await client.users
 		.fetch(userId)
@@ -85,25 +84,22 @@ export async function getMessageContent(client: CustomClient, userId: string, ch
 			throw new Error(error);
 		});
 
-	const message = {
+	return {
 		content: !characterData ? (isYourself ? 'You are on an Empty Slot. Select a character to switch to below.' : 'Select a character to view below.') : null,
-		embeds: !characterData ? embedArray : [...embedArray, new MessageEmbed({
-			color: characterData.color,
-			title: characterData.name,
-			author: { name: `Profile - ${user.tag}` },
-			description: characterData.description,
-			thumbnail: { url: characterData.avatarURL },
-			fields: [
+		embeds: !characterData ? embedArray : [...embedArray, new EmbedBuilder()
+			.setColor(characterData.color)
+			.setTitle(characterData.name)
+			.setAuthor({ name: `Profile - ${user.tag}` })
+			.setDescription(characterData.description)
+			.setThumbnail(characterData.avatarURL)
+			.setFields([
 				{ name: '**🦑 Species**', value: characterData.displayedSpecies ? (characterData.displayedSpecies.charAt(0).toUpperCase() + characterData.displayedSpecies.slice(1)) : characterData.species ? (characterData.species.charAt(0).toUpperCase() + characterData.species.slice(1)) : '/', inline: true },
 				{ name: '**🔑 Proxy**', value: !characterData.proxy.startsWith && !characterData.proxy.endsWith ? 'No proxy set' : `${characterData.proxy.startsWith}text${characterData.proxy.endsWith}`, inline: true },
 				{ name: '**🍂 Pronouns**', value: characterData.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n') || '/' },
 
-			],
-			footer: { text: `Character ID: ${characterData._id}` },
-		})],
+			])
+			.setFooter({ text: `Character ID: ${characterData._id}` })],
 	};
-
-	return message;
 }
 
 /**
@@ -114,12 +110,11 @@ export async function getMessageContent(client: CustomClient, userId: string, ch
  * @param {boolean} isYourself - Whether the character is by the user who executed the command
  * @returns {MessageSelectMenu} A MessageSelectMenu object
  */
-function getAccountsPage(userData: UserSchema, charactersPage: number, isYourself: boolean): MessageSelectMenu {
+function getAccountsPage(userData: UserSchema, charactersPage: number, isYourself: boolean): SelectMenuBuilder {
 
-	const accountsMenu = new MessageSelectMenu({
-		customId: `profile_accountselect_${userData.uuid}`,
-		placeholder: `Select a character to ${isYourself ? 'switch to' : 'view'}`,
-	});
+	const accountsMenu = new SelectMenuBuilder()
+		.setCustomId(`profile_accountselect_${userData.uuid}`)
+		.setPlaceholder(`Select a character to ${isYourself ? 'switch to' : 'view'}`);
 
 	for (const character of Object.values(userData.characters)) {
 
@@ -130,7 +125,7 @@ function getAccountsPage(userData: UserSchema, charactersPage: number, isYoursel
 
 	if (accountsMenu.options.length > 25) {
 
-		accountsMenu.options = accountsMenu.options.splice(charactersPage * 24, (charactersPage + 1) * 24);
+		accountsMenu.setOptions(accountsMenu.options.splice(charactersPage * 24, (charactersPage + 1) * 24));
 		accountsMenu.addOptions({ label: 'Show more characters', value: `profile_nextpage_${charactersPage}`, description: `You are currently on page ${charactersPage + 1}`, emoji: '📋' });
 	}
 
@@ -157,7 +152,7 @@ export async function profileInteractionCollector(client: CustomClient, interact
 			.send({
 				content: interaction.message.content || null,
 				embeds: interaction.message.embeds,
-				components: (selectMenu.options.length > 0) ? [new MessageActionRow({ components: [selectMenu] })] : [],
+				components: (selectMenu.options.length > 0) ? [new ActionRowBuilder<SelectMenuBuilder>().setComponents([selectMenu])] : [],
 			})
 			.catch((error) => { throw new Error(error); });
 
@@ -181,7 +176,7 @@ export async function profileInteractionCollector(client: CustomClient, interact
 
 			await interaction.message
 				.edit({
-					components: [new MessageActionRow({ components: [getAccountsPage(userData, charactersPage, userData.userId === interaction.user.id)] })],
+					components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getAccountsPage(userData, charactersPage, userData.userId === interaction.user.id)])],
 				})
 				.catch((error) => { throw new Error(error); });
 			await interaction.deferUpdate();

@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { Schema } from '../typedef';
+import crypto from 'crypto';
 
 interface UUIDObject {
 	uuid: string;
@@ -127,8 +128,8 @@ export default class Model<T extends UUIDObject> {
 		this.findOneAndUpdate = async (filterObject: Partial<T>, updateFunction: (value: T) => void): Promise<T> => {
 
 			const dataObject = await this.findOne(filterObject);
-			updateFunction(dataObject);
 			const newDataObject = JSON.parse(JSON.stringify(dataObject)) as T;
+			updateFunction(newDataObject);
 
 			createLog(createLogArray(dataObject, newDataObject, ''));
 

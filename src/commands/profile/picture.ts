@@ -1,8 +1,7 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
-import { CommandInteraction, MessageEmbed } from 'discord.js';
+import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
-import { CustomClient, SlashCommand, UserSchema } from '../../typedef';
+import { SlashCommand } from '../../typedef';
 import { hasName } from '../../utils/checkAccountCompletion';
 const { error_color } = require('../../../config.json');
 
@@ -20,7 +19,7 @@ export const command: SlashCommand = {
 				.setRequired(true))
 		.toJSON(),
 	disablePreviousCommand: true,
-	sendCommand: async (client: CustomClient, interaction: CommandInteraction, userData: UserSchema | null) => {
+	sendCommand: async (client, interaction, userData) => {
 
 		if (!hasName(interaction, userData)) { return; }
 
@@ -29,10 +28,9 @@ export const command: SlashCommand = {
 		if (!attachment) {
 
 			await respond(interaction, {
-				embeds: [ new MessageEmbed({
-					color: error_color,
-					title: 'Please send an image to set as your characters profile picture!',
-				})],
+				embeds: [new EmbedBuilder()
+					.setColor(error_color)
+					.setTitle('Please send an image to set as your characters profile picture!')],
 				ephemeral: true,
 			}, true)
 				.catch((error) => {
@@ -46,10 +44,9 @@ export const command: SlashCommand = {
 		if (!imageURL.endsWith('.png') && !imageURL.endsWith('.jpeg') && !imageURL.endsWith('.jpg') && !imageURL.endsWith('.raw') && !imageURL.endsWith('.webp')) {
 
 			await respond(interaction, {
-				embeds: [ new MessageEmbed({
-					color: error_color,
-					title: 'This image extension is not supported! Please send a .png, .jp(e)g, .raw or .webp image.',
-				})],
+				embeds: [new EmbedBuilder()
+					.setColor(error_color)
+					.setTitle('This image extension is not supported! Please send a .png, .jp(e)g, .raw or .webp image.')],
 				ephemeral: true,
 			}, true)
 				.catch((error) => {
@@ -67,12 +64,11 @@ export const command: SlashCommand = {
 		const characterData = userData.characters[userData.currentCharacter[interaction.guildId || 'DM']];
 
 		await respond(interaction, {
-			embeds: [new MessageEmbed({
-				color: characterData.color,
-				author: { name: characterData.name, icon_url: imageURL },
-				title: `Profile picture for ${characterData.name} set!`,
-				image: { url: imageURL },
-			})],
+			embeds: [new EmbedBuilder()
+				.setColor(characterData.color)
+				.setAuthor({ name: characterData.name, iconURL: imageURL })
+				.setTitle('Profile picture for ${characterData.name} set!')
+				.setImage(imageURL)],
 		}, true)
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }

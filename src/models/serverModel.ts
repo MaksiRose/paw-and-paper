@@ -122,6 +122,6 @@ const serverModel = new Model<ServerSchema>('./database/servers', {
 		of: { type: 'string', default: '', locked: false },
 		locked: false,
 	},
-	uuid: { type: 'string', default: '', locked: false },
+	uuid: { type: 'string', default: '', locked: true },
 });
 export default serverModel;

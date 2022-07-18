@@ -1,8 +1,8 @@
-import { MessageContextMenuInteraction } from 'discord.js';
+import { ChannelType } from 'discord.js';
 import { readFileSync } from 'fs';
 import { respond } from '../events/interactionCreate';
 import userModel from '../models/userModel';
-import { ContextMenuCommand, CustomClient, WebhookMessages } from '../typedef';
+import { ContextMenuCommand, WebhookMessages } from '../typedef';
 
 const name: ContextMenuCommand['name'] = 'Delete ❌';
 export const command: ContextMenuCommand = {
@@ -12,7 +12,7 @@ export const command: ContextMenuCommand = {
 		type: 3,
 		dm_permission: false,
 	},
-	sendCommand: async (client: CustomClient, interaction: MessageContextMenuInteraction) => {
+	sendCommand: async (client, interaction) => {
 
 		/* This gets the webhookCache and userData */
 		const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8')) as WebhookMessages;
@@ -38,7 +38,7 @@ export const command: ContextMenuCommand = {
 		if (!interaction.channel) { throw new Error('Interaction channel cannot be found.'); }
 		const webhookChannel = interaction.channel.isThread() ? interaction.channel.parent : interaction.channel;
 		if (!webhookChannel) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
-		if (webhookChannel.type === 'DM') { throw new Error('Webhook can\'t be edited, channel is DMChannel.');}
+		if (webhookChannel.type === ChannelType.DM) { throw new Error('Webhook can\'t be edited, channel is DMChannel.'); }
 		const webhook = (await webhookChannel
 			.fetchWebhooks()
 			.catch(async (error) => {
@@ -48,7 +48,7 @@ export const command: ContextMenuCommand = {
 				throw new Error(error);
 			})
 		).find(webhook => webhook.name === 'PnP Profile Webhook') || await webhookChannel
-			.createWebhook('PnP Profile Webhook')
+			.createWebhook({ name: 'PnP Profile Webhook' })
 			.catch(async (error) => {
 				if (error.httpStatus === 403) {
 					await interaction.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });

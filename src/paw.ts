@@ -1,4 +1,4 @@
-import { Intents } from 'discord.js';
+import { GatewayIntentBits, Partials } from 'discord.js';
 import { existsSync, writeFileSync } from 'fs';
 import { BanList, CustomClient, DeleteList, GivenIdList, VoteList, WebhookMessages } from './typedef';
 import { execute } from './handlers/events';
@@ -6,12 +6,12 @@ import { execute } from './handlers/events';
 /* Note: Once slash commands replace message commands, DIRECT_MESSAGES intent and CHANNEL partial can be removed */
 export const client = new CustomClient({
 	intents: [
-		Intents.FLAGS.GUILDS,
-		Intents.FLAGS.GUILD_MESSAGES,
-		Intents.FLAGS.DIRECT_MESSAGES,
+		GatewayIntentBits.Guilds,
+		GatewayIntentBits.GuildMessages,
+		GatewayIntentBits.DirectMessages,
 	],
 	partials: [
-		'CHANNEL',
+		Partials.Channel,
 	],
 	allowedMentions: {
 		parse: ['users', 'roles'],

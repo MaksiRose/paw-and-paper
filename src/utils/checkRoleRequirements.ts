@@ -1,4 +1,4 @@
-import { CommandInteraction, GuildMember, SelectMenuInteraction } from 'discord.js';
+import { CommandInteraction, EmbedBuilder, GuildMember, SelectMenuInteraction } from 'discord.js';
 import { respond } from '../events/interactionCreate';
 import userModel from '../models/userModel';
 import { ServerSchema } from '../typedef';
@@ -50,11 +50,10 @@ export async function checkRankRequirements(serverData: ServerSchema, interactio
 
 					await respond(interaction, {
 						content: member.toString(),
-						embeds: [{
-							color: default_color,
-							author: { name: interaction.guild?.name, icon_url: interaction.guild?.iconURL() || undefined },
-							description: `You got the <@&${item.roleId}> role for being ${item.requirement}!`,
-						}],
+						embeds: [new EmbedBuilder()
+							.setColor(default_color)
+							.setAuthor(interaction.guild ? { name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined } : null)
+							.setDescription(`You got the <@&${item.roleId}> role for being ${item.requirement}!`)],
 					}, false)
 						.catch((error) => {
 							if (error.httpStatus !== 404) { throw new Error(error); }
@@ -115,11 +114,10 @@ export async function checkLevelRequirements(serverData: ServerSchema, interacti
 
 					await respond(interaction, {
 						content: member.toString(),
-						embeds: [{
-							color: default_color,
-							author: { name: interaction.guild?.name, icon_url: interaction.guild?.iconURL() || undefined },
-							description: `You got the <@&${item.roleId}> role for being level ${item.requirement}!`,
-						}],
+						embeds: [new EmbedBuilder()
+							.setColor(default_color)
+							.setAuthor(interaction.guild ? { name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined } : null)
+							.setDescription(`You got the <@&${item.roleId}> role for being level ${item.requirement}!`)],
 					}, false)
 						.catch((error) => {
 							if (error.httpStatus !== 404) { throw new Error(error); }
@@ -147,10 +145,9 @@ export async function checkRoleCatchBlock(error: any, interaction: CommandIntera
 
 		await respond(interaction, {
 			content: member.toString(),
-			embeds: [{
-				color: /** @type {`#${string}`} */ (error_color),
-				title: 'I don\'t have permission to manage roles, or the role is above my highest role. Please ask an admin to edit my permissions or move the wanted role below mine.',
-			}],
+			embeds: [new EmbedBuilder()
+				.setColor(error_color)
+				.setTitle('I don\'t have permission to manage roles, or the role is above my highest role. Please ask an admin to edit my permissions or move the wanted role below mine.')],
 		}, false)
 			.catch((err) => {
 				if (err.httpStatus !== 404) { throw new Error(err); }
@@ -161,10 +158,9 @@ export async function checkRoleCatchBlock(error: any, interaction: CommandIntera
 		console.error(error);
 		await respond(interaction, {
 			content: member.toString(),
-			embeds: [{
-				color: /** @type {`#${string}`} */ (error_color),
-				title: 'There was an error trying to add/remove the role :(',
-			}],
+			embeds: [new EmbedBuilder()
+				.setColor(error_color)
+				.setTitle('There was an error trying to add/remove the role :(')],
 		}, false)
 			.catch((err) => {
 				if (err.httpStatus !== 404) { throw new Error(err); }
