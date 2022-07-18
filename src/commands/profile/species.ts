@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, Message, ModalBuilder, ModalSubmitInteraction, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
-import { SlashCommand } from '../../typedef';
+import { SlashCommand, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkAccountCompletion';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { pronoun, upperCasePronoun } from '../../utils/getPronouns';
@@ -26,10 +26,10 @@ export const command: SlashCommand = {
 		const characterData = userData.characters[userData.currentCharacter[interaction.guildId || 'DM']];
 
 		/* Define displayed species button */
-		const displayedSpeciesButton = getDisplayedSpeciesButton(userData.uuid, characterData._id);
+		const displayedSpeciesButton = getDisplayedSpeciesButton(characterData._id);
 
 		/* Define species select menu */
-		const speciesMenu = getSpeciesSelectMenu(0, userData.uuid, characterData._id);
+		const speciesMenu = getSpeciesSelectMenu(0, characterData._id);
 
 		/* Define embeds */
 		const newSpeciesEmbed = new EmbedBuilder()
@@ -56,10 +56,10 @@ export const command: SlashCommand = {
 	},
 };
 
-function getSpeciesSelectMenu(page: number, uuid: string, characterId: string): SelectMenuBuilder {
+function getSpeciesSelectMenu(page: number, characterId: string): SelectMenuBuilder {
 
 	const speciesMenu = new SelectMenuBuilder()
-		.setCustomId(`species_speciesselect_${uuid}_${characterId}`)
+		.setCustomId(`species_speciesselect_${characterId}`)
 		.setPlaceholder('Select a species');
 
 	for (const speciesName of speciesNameArray.slice((page * 24), 24 + (page * 24))) {
@@ -75,25 +75,25 @@ function getSpeciesSelectMenu(page: number, uuid: string, characterId: string): 
 	return speciesMenu;
 }
 
-function getDisplayedSpeciesButton(uuid: string, characterId: string): ButtonBuilder {
+function getDisplayedSpeciesButton(characterId: string): ButtonBuilder {
 
 	return new ButtonBuilder()
-		.setCustomId(`species_displayedspeciesmodal_${uuid}_${characterId}`)
+		.setCustomId(`species_displayedspeciesmodal_${characterId}`)
 		.setLabel('Change displayed species')
 		.setEmoji('📝')
 		.setStyle(ButtonStyle.Secondary);
 }
 
-export async function speciesInteractionCollector(interaction: ButtonInteraction | SelectMenuInteraction): Promise<void> {
+export async function speciesInteractionCollector(interaction: ButtonInteraction | SelectMenuInteraction, userData: UserSchema | null): Promise<void> {
 
 	if (interaction.isButton() && interaction.customId.includes('displayedspeciesmodal')) {
 
-		const userData = await userModel.findOne({ uuid: interaction.customId.split('_')[2] });
-		const characterData = userData.characters[interaction.customId.split('_')[3]];
+		if (!userData) { throw new Error('userData is null'); }
+		const characterData = userData.characters[interaction.customId.split('_')[2]];
 
 		await interaction
 			.showModal(new ModalBuilder()
-				.setCustomId(`species_${userData.uuid}_${characterData._id}`)
+				.setCustomId(`species_${characterData._id}`)
 				.setTitle('Change displayed species')
 				.setComponents(
 					new ActionRowBuilder<TextInputBuilder>()
@@ -111,9 +111,8 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 
 	if (interaction.isSelectMenu() && interaction.values[0].includes('nextpage')) {
 
-		/* Getting the UUID and characterId from the customId */
-		const userDataUUID = interaction.customId.split('_')[2];
-		const characterId = interaction.customId.split('_')[3];
+		/* Getting the characterId from the customId */
+		const characterId = interaction.customId.split('_')[2];
 
 		/* Getting the charactersPage from the value Id, incrementing it by one or setting it to zero if the page number is bigger than the total amount of pages. */
 		let speciesPage = Number(interaction.values[0].split('_')[2]) + 1;
@@ -125,28 +124,27 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 			await interaction.message
 				.edit({
 					components: [
-						new ActionRowBuilder<SelectMenuBuilder>().setComponents([getSpeciesSelectMenu(speciesPage, userDataUUID, characterId)]),
-						new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(userDataUUID, characterId)]),
+						new ActionRowBuilder<SelectMenuBuilder>().setComponents([getSpeciesSelectMenu(speciesPage, characterId)]),
+						new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(characterId)]),
 					],
 				})
 				.catch((error) => { throw new Error(error); });
 			await interaction.deferUpdate();
 		}
-		else { throw new Error('Message could not be found.'); }
+		else { throw new Error('Message is APIMessage.'); }
 		return;
 	}
 
 	if (interaction.isSelectMenu() && speciesMap.has(interaction.values[0].split('_')[0])) {
 
-		/* Getting the UUID and characterId from the customId */
-		const userDataUUID = interaction.customId.split('_')[2];
-		const characterId = interaction.customId.split('_')[3];
+		/* Getting the characterId from the customId */
+		const characterId = interaction.customId.split('_')[2];
 
 		/* getting the species from the value */
 		const chosenSpecies = interaction.values[0].split('_')[0];
 
-		const userData = await userModel.findOneAndUpdate(
-			{ uuid: userDataUUID },
+		userData = await userModel.findOneAndUpdate(
+			{ uuid: userData?.uuid },
 			(u) => {
 				u.characters[characterId].species = chosenSpecies;
 			},
@@ -166,7 +164,7 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 						.setDescription(`*A stranger carefully steps over the pack's borders. ${upperCasePronoun(characterData, 2)} face seems friendly. Curious eyes watch ${pronoun(characterData, 1)} as ${pronoun(characterData, 0)} come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n"${characterData.name}," *the ${chosenSpecies} responds. The Alpha takes a friendly step towards ${pronoun(characterData, 1)}.* "It's nice to have you here, ${characterData.name}," *they say. More and more packmates come closer to greet the newcomer.*`)
 						.setFooter({ text: 'You are now done setting up your character for RPGing! Type "/profile" to look at it.\nWith "/help" you can see how else you can customize your profile, as well as your other options.\nYou can use the button below to change your displayed species.' })],
 					components: [
-						new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(userDataUUID, characterId)]),
+						new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(characterId)]),
 					],
 				})
 				.catch((error) => { throw new Error(error); });
@@ -179,19 +177,18 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
-		else { throw new Error('Message could not be found.'); }
+		else { throw new Error('Message is APIMessage.'); }
 		return;
 	}
 }
 
-export async function sendEditDisplayedSpeciesModalResponse(interaction: ModalSubmitInteraction): Promise<void> {
+export async function sendEditDisplayedSpeciesModalResponse(interaction: ModalSubmitInteraction, userData: UserSchema | null): Promise<void> {
 
-	const uuid = interaction.customId.split('_')[1];
-	const characterId = interaction.customId.split('_')[2];
+	const characterId = interaction.customId.split('_')[1];
 	const displayedSpecies = interaction.fields.getTextInputValue('species_textinput');
 
-	const userData = await userModel.findOneAndUpdate(
-		{ uuid: uuid },
+	userData = await userModel.findOneAndUpdate(
+		{ uuid: userData?.uuid },
 		(u) => {
 			u.characters[characterId].displayedSpecies = displayedSpecies;
 		},

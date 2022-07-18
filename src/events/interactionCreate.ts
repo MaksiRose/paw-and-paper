@@ -172,7 +172,7 @@ export const event: Event = {
 
 			if (interaction.customId.includes('species')) {
 
-				await sendEditDisplayedSpeciesModalResponse(interaction);
+				await sendEditDisplayedSpeciesModalResponse(interaction, userData);
 				return;
 			}
 
@@ -221,7 +221,7 @@ export const event: Event = {
 
 			if (interaction.customId.startsWith('species_')) {
 
-				await speciesInteractionCollector(interaction);
+				await speciesInteractionCollector(interaction, userData);
 				return;
 			}
 
