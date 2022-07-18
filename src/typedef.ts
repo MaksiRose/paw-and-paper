@@ -117,13 +117,20 @@ interface Inventory {
 }
 
 interface Sapling {
-	exists: boolean; // Whether there is a sapling
-	health: number; // The health of the sapling
-	waterCycles: number; // How many times the sapling has been watered
-	nextWaterTimestamp: number | null; // Timestamp of the next perfect watering
-	lastMessageChannelId: string | null; // The ID of the last channel the sapling was watered in
-	sentReminder: boolean; // Whether a reminder was sent
-	sentGentleReminder: boolean; // Whether a gentle reminder was sent
+	/** Whether there is a sapling */
+	exists: boolean;
+	/** The health of the sapling */
+	health: number;
+	/** How many times the sapling has been watered */
+	waterCycles: number;
+	/** Timestamp of the next perfect watering */
+	nextWaterTimestamp: number | null;
+	/** The ID of the last channel the sapling was watered in */
+	lastMessageChannelId: string | null;
+	/** Whether a reminder was sent */
+	sentReminder: boolean;
+	/** Whether a gentle reminder was sent */
+	sentGentleReminder: boolean;
 }
 
 interface Injuries {
@@ -135,9 +142,12 @@ interface Injuries {
 }
 
 interface Role {
-	roleId: string; // ID of the role
-	wayOfEarning: 'rank' | 'levels' | 'experience'; // The kind of requirement to meet to earn the role
-	requirement: ('Youngling' | 'Apprentice' | 'Hunter' | 'Healer' | 'Elderly') | number; // The requirement to meet to earn the role
+	/** ID of the role */
+	roleId: string;
+	/** The kind of requirement to meet to earn the role */
+	wayOfEarning: 'rank' | 'levels' | 'experience';
+	/** The requirement to meet to earn the role */
+	requirement: ('Youngling' | 'Apprentice' | 'Hunter' | 'Healer' | 'Elderly') | number;
 }
 
 interface Skills {
@@ -146,28 +156,50 @@ interface Skills {
 }
 
 interface Profile {
-	readonly serverId: string; // ID of the server that this information is associated with
-	rank: 'Youngling' | 'Apprentice' | 'Hunter' | 'Healer' | 'Elderly'; // Rank of the character
-	levels: number; // Levels of the character
-	experience: number; // Experience Points of the character
-	health: number; // Health Points of the character
-	energy: number; // Energy Points of the character
-	hunger: number; // Hunger Points of the character
-	thirst: number; // Thirst Points of the character
-	maxHealth: number; // Maximum Health Points of the character
-	maxEnergy: number; // Maximum Energy Points of the character
-	maxHunger: number; // Maximum Hunger Points of the character
-	maxThirst: number; // Maximum Thirst Points of the character
-	temporaryStatIncrease: Record<string, 'maxHealth' | 'maxEnergy' | 'maxHunger' | 'maxThirst'>; // Object with a timestamp as the key and the kind of stat that is increased as the value
-	isResting: boolean; // Whether the character is resting
-	hasQuest: boolean; // Whether the character has an open quest.
-	currentRegion: 'sleeping dens' | 'food den' | 'medicine den' | 'prairie' | 'ruins' | 'lake'; // The current region the character is in
-	unlockedRanks: number; // How many ranks the character has unlocked
-	sapling: Sapling; // The sapling of the character
-	injuries: Injuries; // Object with injury types as keys and whether the user has them/how many the user has of them as variables
-	inventory: Inventory; // Object with item kinds as the keys and an object of the item types and their quantity as the variables
-	roles: Array<Role>; // Array of role objects
-	skills: Skills; // Object of skills, with global and personal skills as key-value pairs
+	/** ID of the server that this information is associated with */
+	readonly serverId: string;
+	/** Rank of the character */
+	rank: 'Youngling' | 'Apprentice' | 'Hunter' | 'Healer' | 'Elderly';
+	/** Levels of the character */
+	levels: number;
+	/** Experience Points of the character */
+	experience: number;
+	/** Health Points of the character */
+	health: number;
+	/** Energy Points of the character */
+	energy: number;
+	/** Hunger Points of the character */
+	hunger: number;
+	/** Thirst Points of the character */
+	thirst: number;
+	/** Maximum Health Points of the characterMaximum Health Points of the character */
+	maxHealth: number;
+	/** Maximum Energy Points of the character */
+	maxEnergy: number;
+	/** Maximum Hunger Points of the character */
+	maxHunger: number;
+	/** Maximum Thirst Points of the character */
+	maxThirst: number;
+	/** Object with a timestamp as the key and the kind of stat that is increased as the value */
+	temporaryStatIncrease: Record<string, 'maxHealth' | 'maxEnergy' | 'maxHunger' | 'maxThirst'>;
+	/** Whether the character is resting */
+	isResting: boolean;
+	/** Whether the character has an open quest */
+	hasQuest: boolean;
+	/** The current region the character is in */
+	currentRegion: 'sleeping dens' | 'food den' | 'medicine den' | 'prairie' | 'ruins' | 'lake';
+	/** How many ranks the character has unlocked */
+	unlockedRanks: number;
+	/** The sapling of the character */
+	sapling: Sapling;
+	/** Object with injury types as keys and whether the user has them/how many the user has of them as variables */
+	injuries: Injuries;
+	/** Object with item kinds as the keys and an object of the item types and their quantity as the variables */
+	inventory: Inventory;
+	/** Array of role objects */
+	roles: Array<Role>;
+	/** Object of skills, with global and personal skills as key-value pairs */
+	skills: Skills;
 }
 
 interface Proxy {
@@ -176,17 +208,28 @@ interface Proxy {
 }
 
 export interface Character {
-	readonly _id: string; // Unique ID of the character
-	name: string; // Name of the character
-	species: string; // Species of the character
-	displayedSpecies: string; // Displayed species of the character
-	description: string; // Description of the character
-	avatarURL: string; // Avatar URL of the character
-	pronounSets: Array<Array<string>>; // Array of Arrays of pronouns the character uses
-	proxy: Proxy; // Proxy this character uses
-	color: `#${string}`; // Embed color used in messages
-	mentions: Record<string, Array<number>>; // Object of character_id as key and an array of timestamps of when the mention has been done as the value
-	profiles: Record<string, Profile>; // Object of server IDs this character has been used on as the key and the information associated with it as the value
+	/** Unique ID of the character */
+	readonly _id: string;
+	/** Name of the character */
+	name: string;
+	/** Species of the character */
+	species: string;
+	/** Displayed species of the character */
+	displayedSpecies: string;
+	/** Description of the character */
+	description: string;
+	/** Avatar URL of the character */
+	avatarURL: string;
+	/** Array of Arrays of pronouns the character uses */
+	pronounSets: Array<Array<string>>;
+	/** Proxy this character uses */
+	proxy: Proxy;
+	/** Embed color used in messages */
+	color: `#${string}`;
+	/** Object of character_id as key and an array of timestamps of when the mention has been done as the value */
+	mentions: Record<string, Array<number>>;
+	/** Object of server IDs this character has been used on as the key and the information associated with it as the value */
+	profiles: Record<string, Profile>;
 }
 
 interface Advice {
@@ -203,22 +246,33 @@ interface Reminders {
 }
 
 export interface UserSchema {
-	readonly userId: string; // ID of the user that created the account. Cannot be modified
-	advice: Advice; // Object of advice kinds as the key and whether the advice has been given as the value
-	reminders: Reminders; // Object of reminder kinds as the key and whether the user wants to be reminded/pinged for these occasions as the value
-	characters: Record<string, Character>; // Object of names of characters as the key and the characters this user has created as value
-	currentCharacter: Record<string, string>; // Object of the server IDs as the key and the id of the character that is currently active as the value
-	autoproxy: Record<string, Array<string>>; // Object of the server IDs as the key and an array of channel IDs as the value
-	lastPlayedVersion: string; // Last major version that the user played on
+	/** ID of the user that created the account. Cannot be modified */
+	readonly userId: string;
+	/** Object of advice kinds as the key and whether the advice has been given as the value */
+	advice: Advice;
+	/** Object of reminder kinds as the key and whether the user wants to be reminded/pinged for these occasions as the valuev */
+	reminders: Reminders;
+	/** Object of names of characters as the key and the characters this user has created as value */
+	characters: Record<string, Character>;
+	/** Object of the server IDs as the key and the id of the character that is currently active as the value */
+	currentCharacter: Record<string, string>;
+	/** Object of the server IDs as the key and an array of channel IDs as the value */
+	autoproxy: Record<string, Array<string>>;
+	/** Last major version that the user played on */
+	lastPlayedVersion: string;
 	readonly uuid: string;
 }
 
 
 interface DenSchema {
-	structure: number; // How strong the structure of the den is
-	bedding: number; // How nice the ground of the den is
-	thickness: number; // How thick the walls of the den are
-	evenness: number; // How even the walls of the den are
+	/** How strong the structure of the den is */
+	structure: number;
+	/** How nice the ground of the den is */
+	bedding: number;
+	/** How thick the walls of the den are */
+	thickness: number;
+	/** How even the walls of the den arev */
+	evenness: number;
 }
 
 export interface Dens {
@@ -233,56 +287,89 @@ interface ProxySetting {
 }
 
 export interface ServerSchema {
-	readonly serverId: string; // ID of the server. Cannot be modified
-	name: string; // Name of the server
-	inventory: Inventory; // Object with item kinds as the keys and an object of the item types and their quantity as the variables
-	dens: Dens; // Object of the blocked entrance with the name of the den and kind of block as the variables. If no entrance is blocked, they are null
-	nextPossibleAttack: number; // Timestamp of the time when the next attack is possible
-	visitChannelId: string | null; // ID of the channel that can be visited. If no channel is seleted, this is null
-	currentlyVisiting: string | null; // ID of the guild that is currently being visited. If no guild is being visited, this is null
-	shop: Array<Role>; // Array of role objects
-	proxysetting: ProxySetting; // Object with the keys "all" and "auto", which hold an array each with channels where proxying isn't allowed
-	skills: Array<string>; // Array of global skills for this server
+	/** ID of the server. Cannot be modified */
+	readonly serverId: string;
+	/** Name of the server */
+	name: string;
+	/** Object with item kinds as the keys and an object of the item types and their quantity as the variables */
+	inventory: Inventory;
+	/** Object of the blocked entrance with the name of the den and kind of block as the variables. If no entrance is blocked, they are null */
+	dens: Dens;
+	/** Timestamp of the time when the next attack is possible */
+	nextPossibleAttack: number;
+	/** ID of the channel that can be visited. If no channel is seleted, this is null */
+	visitChannelId: string | null;
+	/** ID of the guild that is currently being visited. If no guild is being visited, this is null */
+	currentlyVisiting: string | null;
+	/** Array of role objects */
+	shop: Array<Role>;
+	/** Object with the keys "all" and "auto", which hold an array each with channels where proxying isn't allowedv */
+	proxysetting: ProxySetting;
+	/** Array of global skills for this server */
+	skills: Array<string>;
 	readonly uuid: string;
 }
 
 export interface Event {
-	name: string; // Name of the event
-	once: boolean; // Whether the event should be executed once
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	/** Name of the event */
+	name: string;
+	/** Whether the event should be executed once */
+	once: boolean;
 	execute: (client: CustomClient, ...args: Array<any>) => Promise<void>;
 }
 
 
 export interface PlantMapObject {
-	name: string; // Name of the plant
-	description: string; // Description of the plant
-	edibility: 'e' | 'i' | 't'; // Edibabilty of the plant: `e` for edible, `i` for inedible and `t` for toxic
-	healsWounds: boolean; // Whether the plant heals wounds
-	healsInfections: boolean; // Whether the plant heals infections
-	healsColds: boolean; // Whether the plant heals colds
-	healsSprains: boolean; // Whether the plant heals sprains
-	healsPoison: boolean; // Whether the plant heals poison
-	givesEnergy: boolean; // Whether the plant gives energy
-	increasesMaxCondition: boolean; // Whether the plant increases the maximum of one condition
+	/** Name of the plant */
+	name: string;
+	/** Description of the plant */
+	description: string;
+	/** Edibabilty of the plant: `e` for edible, `i` for inedible and `t` for toxic */
+	edibility: 'e' | 'i' | 't';
+	/** Whether the plant heals wounds */
+	healsWounds: boolean;
+	/** Whether the plant heals infectionsWhether the plant heals infections */
+	healsInfections: boolean;
+	/** Whether the plant heals colds */
+	healsColds: boolean;
+	/** Whether the plant heals sprains */
+	healsSprains: boolean;
+	/** Whether the plant heals poison */
+	healsPoison: boolean;
+	/** Whether the plant gives energy */
+	givesEnergy: boolean;
+	/** Whether the plant increases the maximum of one condition */
+	increasesMaxCondition: boolean;
 }
 
 
 export interface MaterialsMapObject {
-	name: string; // Name of the material
-	description: string; // Description of the material
-	reinforcesStructure: boolean; // Whether the material reinforces the structure of a den
-	improvesBedding: boolean; // Whether the material improves the bedding of the den
-	thickensWalls: boolean; // Whether the material thickens the walls of the den
-	removesOverhang: boolean; // Whether the material removes overhang from the walls of the hang
+	/** Name of the material */
+	name: string;
+	/** Description of the material */
+	description: string;
+	/** Whether the material reinforces the structure of a den */
+	reinforcesStructure: boolean;
+	/** Whether the material improves the bedding of the den */
+	improvesBedding: boolean;
+	/** Whether the material thickens the walls of the den */
+	thickensWalls: boolean;
+	/** Whether the material removes overhang from the walls of the hang */
+	removesOverhang: boolean;
 }
 
 
 export interface SpeciesMapObject {
-	name: string; // Name of the species
-	diet: 'omnivore' | 'herbivore' | 'carnivore'; // Diet of the species
-	habitat: 'cold' | 'warm' | 'water'; // Habitat that the species lives in
-	biome1OpponentArray: Array<string>; // Opponents that the species meets in biome 1
-	biome2OpponentArray: Array<string>; // Opponents that the species meets in biome 2
-	biome3OpponentArray: Array<string>; // Opponents that the species meets in biome 3
+	/** Name of the species */
+	name: string;
+	/** Diet of the species */
+	diet: 'omnivore' | 'herbivore' | 'carnivore';
+	/** Habitat that the species lives in */
+	habitat: 'cold' | 'warm' | 'water';
+	/** Opponents that the species meets in biome 1 */
+	biome1OpponentArray: Array<string>;
+	/** Opponents that the species meets in biome 2 */
+	biome2OpponentArray: Array<string>;
+	/** Opponents that the species meets in biome 3 */
+	biome3OpponentArray: Array<string>;
 }

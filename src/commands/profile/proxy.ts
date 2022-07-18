@@ -25,6 +25,7 @@ export const command: SlashCommand = {
 
 		const characterData = userData ? userData.characters[userData.currentCharacter[interaction.guildId || 'DM']] : null;
 
+		/* Send a response to the user. */
 		const botReply = await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(characterData?.color || default_color)
@@ -73,6 +74,7 @@ export const command: SlashCommand = {
 
 export async function proxyInteractionCollector(interaction: ButtonInteraction | SelectMenuInteraction, userData: UserSchema | null, serverData: ServerSchema | null): Promise<void> {
 
+	/* If the user pressed the button to learn more about the set subcommand, explain it with a button that opens a modal. */
 	if (interaction.isButton() && interaction.customId.startsWith('proxy_set_learnmore')) {
 
 		const characterDataId = interaction.customId.split('_')[3];
@@ -93,6 +95,7 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 		return;
 	}
 
+	/* If the user pressed the button to set their proxy, open the modal. */
 	if (interaction.isButton() && interaction.customId.startsWith('proxy_set_modal')) {
 
 		const characterData = userData ? userData.characters[interaction.customId.split('_')[3]] : null;
@@ -126,6 +129,7 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 
 	const allChannels = (await interaction.guild?.channels?.fetch() || new Collection()).filter(c => c.type === ChannelType.GuildText && c.viewable && c.permissionsFor(interaction.client.user?.id || '')?.has('SendMessages') == true && c.permissionsFor(interaction.user.id)?.has('ViewChannel') == true && c.permissionsFor(interaction.user.id)?.has('SendMessages') == true);
 
+	/* If the user pressed the button to learn more about the always subcommand, explain it with a select menu to select channels. */
 	if (interaction.isButton() && interaction.customId.startsWith('proxy_always_learnmore')) {
 
 		if (!interaction.inGuild()) { throw new Error('Interaction is not in guild'); }
@@ -145,6 +149,7 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 		return;
 	}
 
+	/* If the user pressed the button to learn more about the disable subcommand, explain it with two select menus to select channels. */
 	if (interaction.isButton() && interaction.customId.startsWith('proxy_disable_learnmore')) {
 
 		if (!interaction.inGuild()) { throw new Error('Interaction is not in guild'); }
@@ -165,16 +170,19 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 		return;
 	}
 
+	/* Responses for select menu selections */
 	if (interaction.isSelectMenu() && interaction.inCachedGuild()) {
 
 		let page = 0;
 		let characterData: Character | null = null;
 
+		/* If the user clicked the next page option, increment the page. */
 		if (interaction.values[0].includes('nextpage')) {
 
 			page = Number(interaction.values[0].split('nextpage_')[1]) + 1;
 			if (page >= Math.ceil((allChannels.size + 1) / 24)) { page = 0; }
 		}
+		/* If the user clicked an always subcommand option, add/remove the channel and send a success message. */
 		else if (interaction.customId.startsWith('proxy_always_options')) {
 
 			const channelId = interaction.values[0].replace('proxy_', '');
@@ -201,6 +209,7 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
+		/* If the user clicked a disable subcommand option, add/remove the channel and send a success message. */
 		else if (interaction.customId.startsWith('proxy_disable_')) {
 
 			const kind = interaction.customId.includes('all') ? 'all' : 'auto';
@@ -227,6 +236,7 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 				});
 		}
 
+		/* This edits the original message where the select menu originates, to have the correct pages get rid of any selections made. */
 		const { disableAutoSelectMenu, alwaysSelectMenu, disableAllSelectMenu } = await getSelectMenus(allChannels, userData, characterData, serverData, page);
 
 		await interaction.message
@@ -242,13 +252,15 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 	}
 }
 
-export async function sendEditDisplayedSpeciesModalResponse(interaction: ModalSubmitInteraction, userData: UserSchema | null): Promise<void> {
+export async function sendEditProxyModalResponse(interaction: ModalSubmitInteraction, userData: UserSchema | null): Promise<void> {
 
+	/* Check if user data exists, and get characterData, the chosen prefix and the chosen suffix */
 	if (!userData) { throw new Error('userData is null'); }
 	const characterData = userData.characters[interaction.customId.split('_')[2]];
 	const chosenPrefix = interaction.fields.getTextInputValue('proxy_textinput_startsWith');
 	const chosenSuffix = interaction.fields.getTextInputValue('proxy_textinput_endsWith');
 
+	/* For each character but the selected one, check if they already have the same prefix and suffix and send an error message if they do. */
 	for (const character of Object.values(userData.characters)) {
 
 		if (character._id === characterData._id) { continue; }
@@ -268,6 +280,7 @@ export async function sendEditDisplayedSpeciesModalResponse(interaction: ModalSu
 		}
 	}
 
+	/* Update the database and send a success messsage. */
 	await userModel.findOneAndUpdate(
 		{ uuid: userData.uuid },
 		(u) => {

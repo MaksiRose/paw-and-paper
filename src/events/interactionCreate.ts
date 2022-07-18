@@ -2,6 +2,7 @@ import { APIMessage } from 'discord-api-types/v9';
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, CommandInteraction, EmbedBuilder, Interaction, InteractionReplyOptions, InteractionType, Message, MessageContextMenuCommandInteraction, ModalSubmitInteraction, SelectMenuInteraction, UserContextMenuCommandInteraction, WebhookEditMessageOptions } from 'discord.js';
 import { profileInteractionCollector } from '../commands/profile/profile';
 import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../commands/profile/pronouns';
+import { proxyInteractionCollector, sendEditProxyModalResponse } from '../commands/profile/proxy';
 import { sendEditDisplayedSpeciesModalResponse, speciesInteractionCollector } from '../commands/profile/species';
 import { sendEditMessageModalResponse } from '../contextmenu/edit';
 import serverModel from '../models/serverModel';
@@ -164,21 +165,33 @@ export const event: Event = {
 
 		if (interaction.type === InteractionType.ModalSubmit) {
 
+			console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully submitted the modal \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+
 			if (interaction.customId.includes('edit')) {
 
-				await sendEditMessageModalResponse(interaction);
+				await sendEditMessageModalResponse(interaction)
+					.catch(async (error) => { await sendErrorMessage(interaction, error); });
 				return;
 			}
 
 			if (interaction.customId.includes('species')) {
 
-				await sendEditDisplayedSpeciesModalResponse(interaction, userData);
+				await sendEditDisplayedSpeciesModalResponse(interaction, userData)
+					.catch(async (error) => { await sendErrorMessage(interaction, error); });
 				return;
 			}
 
 			if (interaction.customId.includes('pronouns')) {
 
-				await sendEditPronounsModalResponse(interaction);
+				await sendEditPronounsModalResponse(interaction)
+					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+				return;
+			}
+
+			if (interaction.customId.includes('proxy')) {
+
+				await sendEditProxyModalResponse(interaction, userData)
+					.catch(async (error) => { await sendErrorMessage(interaction, error); });
 				return;
 			}
 			return;
@@ -195,9 +208,9 @@ export const event: Event = {
 					content: 'Sorry, I only listen to the person that created the command 😣',
 					ephemeral: true,
 				}, false)
-					.catch((error) => {
+					.catch(async (error) => {
 						if (error.httpStatus !== 404) {
-							throw new Error(error);
+							return await sendErrorMessage(interaction, error);
 						}
 					});
 				return;
@@ -215,21 +228,32 @@ export const event: Event = {
 
 			if (interaction.customId.startsWith('profile_')) {
 
-				await profileInteractionCollector(client, interaction);
+				await profileInteractionCollector(client, interaction)
+					.catch(async (error) => { await sendErrorMessage(interaction, error); });
 				return;
 			}
 
 			if (interaction.customId.startsWith('species_')) {
 
-				await speciesInteractionCollector(interaction, userData);
+				await speciesInteractionCollector(interaction, userData)
+					.catch(async (error) => { await sendErrorMessage(interaction, error); });
 				return;
 			}
 
 			if (interaction.customId.startsWith('pronouns_')) {
 
-				await pronounsInteractionCollector(interaction);
+				await pronounsInteractionCollector(interaction)
+					.catch(async (error) => { await sendErrorMessage(interaction, error); });
 				return;
 			}
+
+			if (interaction.customId.startsWith('proxy_')) {
+
+				await proxyInteractionCollector(interaction, userData, serverData)
+					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+				return;
+			}
+			return;
 		}
 	},
 };
@@ -272,24 +296,37 @@ setInterval(async function() {
 	}
 }, 60_000);
 
-async function sendErrorMessage(interaction: CommandInteraction | MessageContextMenuCommandInteraction, error: any) {
+async function sendErrorMessage(interaction: CommandInteraction | MessageContextMenuCommandInteraction | ButtonInteraction | SelectMenuInteraction | ModalSubmitInteraction, error: any) {
 
-	console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to execute \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-	console.error(error);
+	if (interaction instanceof ChatInputCommandInteraction || interaction instanceof MessageContextMenuCommandInteraction) {
+		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to execute \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+		console.error(error);
+	}
+	else if (interaction.isSelectMenu()) {
+		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to select \x1b[31m${interaction.values[0]} \x1b[0mfrom the menu \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+	}
+	else if (interaction.isButton()) {
+		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to click the button \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+	}
+	else if (interaction.type === InteractionType.ModalSubmit) {
+		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to submit the modal \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+	}
 
 	// "Reply" can't be used here in case the interaction is already responded to. A new "respond" method should be added to the interaction as an extended class/type, which would default to replying to an interaction, and a second argument would decide whether "editReply" or "followUp" would act as a replacement
-	await respond(interaction, {
-		embeds: [new EmbedBuilder()
-			.setTitle('There was an unexpected error executing this command:')
-			.setDescription(`\`\`\`${error?.message || String(error).substring(0, 4090)}\`\`\``)
-			.setFooter({ text: 'If this is the first time you encountered the issue, please report it using the button below. After that, only report it again if the issue was supposed to be fixed after an update came out. To receive updates, ask a server administrator to do the "getupdates" command.' })],
-		components: [new ActionRowBuilder<ButtonBuilder>()
-			.setComponents([new ButtonBuilder()
-				.setCustomId('report')
-				.setLabel('Report')
-				.setStyle(ButtonStyle.Success)])],
-	}, false)
-		.catch((newError) => {
-			console.error(newError);
-		});
+	{
+		await respond(interaction, {
+			embeds: [new EmbedBuilder()
+				.setTitle('There was an unexpected error executing this command:')
+				.setDescription(`\`\`\`${error?.message || String(error).substring(0, 4090)}\`\`\``)
+				.setFooter({ text: 'If this is the first time you encountered the issue, please report it using the button below. After that, only report it again if the issue was supposed to be fixed after an update came out. To receive updates, ask a server administrator to do the "getupdates" command.' })],
+			components: [new ActionRowBuilder<ButtonBuilder>()
+				.setComponents([new ButtonBuilder()
+					.setCustomId('report')
+					.setLabel('Report')
+					.setStyle(ButtonStyle.Success)])],
+		}, false)
+			.catch((newError) => {
+				console.error(newError);
+			});
+	}
 }

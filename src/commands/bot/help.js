@@ -67,7 +67,7 @@ module.exports.sendInteractionResponse = async (client, interaction) => {
 						{ name: '**rp description [description text]**', value: 'Give a more detailed description of your character.' },
 						{ name: '**rp proxy**', value: 'Add a proxy or autoproxy for your character.' },
 						{ name: '**rp profile (@user)**', value: 'Look up all the available info about a character or change the character you are using.' },
-						{ name: '**rp delete**', value: 'Delete your account and reset your data permanently.' },
+						{ name: '**rp delete**', value: 'Delete parts of or your entire account.' },
 					],
 					footer: { text: 'ℹ️ Select a command from the list below to view more information about it.' },
 				}],
