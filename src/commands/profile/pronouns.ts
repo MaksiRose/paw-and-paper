@@ -6,8 +6,8 @@ import { hasName } from '../../utils/checkAccountCompletion';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 const { error_color, default_color } = require('../../../config.json');
 
-export const name: SlashCommand['name'] = 'pronouns';
-export const description: SlashCommand['description'] = 'Choose the pronouns you are using during roleplay.';
+const name: SlashCommand['name'] = 'pronouns';
+const description: SlashCommand['description'] = 'Choose the pronouns you are using during roleplay.';
 export const command: SlashCommand = {
 	name: name,
 	description: description,

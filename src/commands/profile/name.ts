@@ -20,9 +20,10 @@ export const command: SlashCommand = {
 		.addStringOption(option =>
 			option.setName('name')
 				.setDescription('The name that you want your character to have.')
+				.setMaxLength(25)
 				.setRequired(true))
 		.toJSON(),
-	disablePreviousCommand: true,
+	disablePreviousCommand: false,
 	sendCommand: async (client, interaction, userData, serverData) => {
 
 		/* This is checking if the user has any data saved in the database. If they don't, it will create a new user. */
@@ -63,20 +64,6 @@ export const command: SlashCommand = {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('Please input a name for your character.')],
-				ephemeral: true,
-			}, true)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
-			return;
-		}
-
-		if (name.length > 25) {
-
-			await respond(interaction, {
-				embeds: [new EmbedBuilder()
-					.setColor(error_color)
-					.setTitle('Names can only be up to 25 characters long.')],
 				ephemeral: true,
 			}, true)
 				.catch((error) => {

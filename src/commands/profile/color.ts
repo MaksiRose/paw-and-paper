@@ -5,17 +5,19 @@ import { SlashCommand } from '../../typedef';
 import { hasName } from '../../utils/checkAccountCompletion';
 const { error_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'avatar';
-const description: SlashCommand['description'] = 'Choose an avatar for your character.';
+const name: SlashCommand['name'] = 'color';
+const description: SlashCommand['description'] = 'Enter a valid hex code to give your messages and profile that color.';
 export const command: SlashCommand = {
 	name: name,
 	description: description,
 	data: new SlashCommandBuilder()
 		.setName(name)
 		.setDescription(description)
-		.addAttachmentOption(option =>
-			option.setName('picture')
-				.setDescription('The picture that you want the avatar to be')
+		.addStringOption(option =>
+			option.setName('color')
+				.setDescription('A hex code. Valid hex codes contain only letters from \'a\' to \'f\' and/or numbers.')
+				.setMinLength(6)
+				.setMaxLength(6)
 				.setRequired(true))
 		.toJSON(),
 	disablePreviousCommand: false,
@@ -24,29 +26,13 @@ export const command: SlashCommand = {
 		if (!hasName(interaction, userData)) { return; }
 
 		/* Checking if the user has sent an attachment. If they have not, it will send an error message. */
-		const attachment = interaction.options.getAttachment('picture');
-		if (!attachment) {
+		const hexColor = interaction.options.getString('color');
+		if (!hexColor || !isValidHex(hexColor)) {
 
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
-					.setTitle('Please send an image to set as your characters profile picture!')],
-				ephemeral: true,
-			}, true)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
-			return;
-		}
-
-		/* Checking if the image is a .png, .jpeg, .jpg, .raw or .webp image. If it is not, it will send an error message. */
-		const imageURL = attachment.url;
-		if (!imageURL.endsWith('.png') && !imageURL.endsWith('.jpeg') && !imageURL.endsWith('.jpg') && !imageURL.endsWith('.raw') && !imageURL.endsWith('.webp')) {
-
-			await respond(interaction, {
-				embeds: [new EmbedBuilder()
-					.setColor(error_color)
-					.setTitle('This image extension is not supported! Please send a .png, .jp(e)g, .raw or .webp image.')],
+					.setTitle('Please send a valid hex code! Valid hex codes consist of 6 characters and contain only letters from \'a\' to \'f\' and/or numbers.')],
 				ephemeral: true,
 			}, true)
 				.catch((error) => {
@@ -58,7 +44,7 @@ export const command: SlashCommand = {
 		userData = await userModel.findOneAndUpdate(
 			{ uuid: userData.uuid },
 			(u) => {
-				u.characters[u.currentCharacter[interaction.guildId || 'DM']].avatarURL = imageURL;
+				u.characters[u.currentCharacter[interaction.guildId || 'DM']].color = `#${hexColor}`;
 			},
 		);
 		const characterData = userData.characters[userData.currentCharacter[interaction.guildId || 'DM']];
@@ -66,9 +52,8 @@ export const command: SlashCommand = {
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(characterData.color)
-				.setAuthor({ name: characterData.name, iconURL: imageURL })
-				.setTitle('Profile picture for ${characterData.name} set!')
-				.setImage(imageURL)],
+				.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
+				.setTitle(`Profile color set to ${characterData.color}!`)],
 		}, true)
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
@@ -76,3 +61,30 @@ export const command: SlashCommand = {
 		return;
 	},
 };
+
+/**
+ * Checks if a string is a valid hex code.
+ * @param input - The string to check.
+ * @returns Whether the string is a valid hex code.
+ */
+function isValidHex(input: string): boolean {
+
+	const hexLegend = '0123456789abcdef';
+
+	if (input.length !== 6) {
+
+		return false;
+	}
+
+	for (let i = 0; i < input.length; i++) {
+
+		if (hexLegend.includes(input[i])) {
+
+			continue;
+		}
+
+		return false;
+	}
+
+	return true;
+}

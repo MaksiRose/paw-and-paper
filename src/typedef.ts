@@ -7,6 +7,7 @@ export interface SlashCommand {
 	name: string;
 	description: string;
 	data: RESTPostAPIApplicationCommandsJSONBody;
+	/** Best practice is that only commands that immediately return without any form of interaction (Button, Select Menu, Modal) that changes something in the database are set to false. */
 	disablePreviousCommand: boolean;
 	sendCommand: (client: CustomClient, interaction: ChatInputCommandInteraction, userData: UserSchema | null, serverData: ServerSchema | null, embedArray: Array<EmbedBuilder>) => Promise<void>;
 	sendAutocomplete?: (client: CustomClient, interaction: AutocompleteInteraction, userData: UserSchema | null, serverData: ServerSchema | null) => Promise<void>;
@@ -183,7 +184,7 @@ export interface Character {
 	avatarURL: string; // Avatar URL of the character
 	pronounSets: Array<Array<string>>; // Array of Arrays of pronouns the character uses
 	proxy: Proxy; // Proxy this character uses
-	color: `#${number}`; // Embed color used in messages
+	color: `#${string}`; // Embed color used in messages
 	mentions: Record<string, Array<number>>; // Object of character_id as key and an array of timestamps of when the mention has been done as the value
 	profiles: Record<string, Profile>; // Object of server IDs this character has been used on as the key and the information associated with it as the value
 }
