@@ -1,9 +1,9 @@
 import { APIMessage } from 'discord-api-types/v9';
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, CommandInteraction, EmbedBuilder, Interaction, InteractionReplyOptions, InteractionType, Message, MessageContextMenuCommandInteraction, ModalSubmitInteraction, SelectMenuInteraction, UserContextMenuCommandInteraction, WebhookEditMessageOptions } from 'discord.js';
-import { profileInteractionCollector } from '../commands/profile/profile';
-import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../commands/profile/pronouns';
-import { proxyInteractionCollector, sendEditProxyModalResponse } from '../commands/profile/proxy';
-import { sendEditDisplayedSpeciesModalResponse, speciesInteractionCollector } from '../commands/profile/species';
+import { profileInteractionCollector } from '../commands/character_customization/profile';
+import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../commands/character_customization/pronouns';
+import { proxyInteractionCollector, sendEditProxyModalResponse } from '../commands/character_customization/proxy';
+import { sendEditDisplayedSpeciesModalResponse, speciesInteractionCollector } from '../commands/character_customization/species';
 import { sendEditMessageModalResponse } from '../contextmenu/edit';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';

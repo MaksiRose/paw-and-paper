@@ -3,7 +3,7 @@ const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { pronoun, pronounAndPlural } = require('../../utils/getPronouns');
 const startCooldown = require('../../utils/startCooldown');
-const { remindOfAttack } = require('../gameplay/attack');
+const { remindOfAttack } = require('../gameplay_primary/attack');
 const serverModel = require('../../models/serverModel');
 const profileModel = require('../../models/profileModel');
 const { pullFromWeightedTable, generateRandomNumber } = require('../../utils/randomizers');
@@ -90,10 +90,10 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 	let chosenDen = ['sleeping dens', 'food den', 'medicine den'].includes(argumentsArray.join(' ').toLowerCase()) ?
 		['sleepingDens', 'foodDen', 'medicineDen'][
-			['sleeping dens', 'food den', 'medicine den'].indexOf(argumentsArray.join(' ').toLowerCase())
+		['sleeping dens', 'food den', 'medicine den'].indexOf(argumentsArray.join(' ').toLowerCase())
 		] : null;
 	const denSelectMenu = new MessageActionRow().addComponents(
-		[ new MessageButton({
+		[new MessageButton({
 			customId: 'repair-sleepingDens',
 			label: 'Sleeping Dens',
 			style: 'SECONDARY',

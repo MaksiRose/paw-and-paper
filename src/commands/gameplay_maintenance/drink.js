@@ -5,7 +5,7 @@ const startCooldown = require('../../utils/startCooldown');
 const { generateRandomNumber } = require('../../utils/randomizers');
 const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
-const { remindOfAttack } = require('../gameplay/attack');
+const { remindOfAttack } = require('../gameplay_primary/attack');
 const { pronounAndPlural, pronoun } = require('../../utils/getPronouns');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
@@ -81,8 +81,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				color: /** @type {`#${string}`} */ (default_color),
 				description: 'For the next 15 seconds, click the button as many times as you can!',
 			}],
-			components: [ new MessageActionRow({
-				components: [ new MessageButton({
+			components: [new MessageActionRow({
+				components: [new MessageButton({
 					customId: 'water',
 					emoji: '💧',
 					style: 'PRIMARY',

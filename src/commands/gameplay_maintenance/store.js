@@ -6,7 +6,7 @@ const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap, materials
 const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
-const { remindOfAttack } = require('../gameplay/attack');
+const { remindOfAttack } = require('../gameplay_primary/attack');
 const { pronoun, upperCasePronounAndPlural } = require('../../utils/getPronouns');
 const { MessageActionRow, MessageSelectMenu, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
@@ -92,7 +92,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	}
 
 	const storeAllButton = new MessageActionRow({
-		components: [ new MessageButton({
+		components: [new MessageButton({
 			customId: 'store-all',
 			label: 'Store everything',
 			style: 'SUCCESS',
@@ -197,7 +197,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		/** @type {import('discord.js').MessageComponentInteraction | null} } */
 		const interaction = await botReply
 			.awaitMessageComponent({ filter, time: 120_000 })
-			.catch(() => { return null;});
+			.catch(() => { return null; });
 
 		if (interaction == null) {
 
@@ -270,7 +270,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				profileData = characterData.profiles[message.guild.id];
 
 				await serverModel.findOneAndUpdate(
-				// @ts-ignore, since guild is safe to be
+					// @ts-ignore, since guild is safe to be
 					{ serverId: message.guild.id },
 					(/** @type {import('../../typedef').ServerSchema} */ s) => {
 						s.inventory = serverInventory;
@@ -297,7 +297,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				await /** @type {import('discord.js').Message} */ (interaction.message)
 					.edit({
 						embeds: interaction.message.embeds,
-						components: itemSelectMenu.options.length === 0 ? disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components) : [new MessageActionRow().addComponents([itemSelectMenu]), storeAllButton],
+						components: itemSelectMenu.options.length === 0 ? disableAllComponents(/** @type {import('discord.js').Message} */(interaction.message).components) : [new MessageActionRow().addComponents([itemSelectMenu]), storeAllButton],
 					})
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
@@ -338,7 +338,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 				{ uuid: userData.uuid },
 				(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-				// @ts-ignore, since guild is safe to be
+					// @ts-ignore, since guild is safe to be
 					p.characters[p.currentCharacter[message.guild.id]].profiles[message.guild.id].inventory = userInventory;
 				},
 			));
@@ -359,7 +359,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			await /** @type {import('discord.js').Message} */ (interaction.message)
 				.edit({
 					embeds: interaction.message.embeds,
-					components: disableAllComponents(/** @type {import('discord.js').Message} */ (interaction.message).components),
+					components: disableAllComponents(/** @type {import('discord.js').Message} */(interaction.message).components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }

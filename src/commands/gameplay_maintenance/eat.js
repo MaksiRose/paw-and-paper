@@ -7,7 +7,7 @@ const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap, specialPl
 const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
 const { sendMessage } = require('./inventory');
-const { remindOfAttack } = require('../gameplay/attack');
+const { remindOfAttack } = require('../gameplay_primary/attack');
 const { pronounAndPlural, pronoun, upperCasePronounAndPlural } = require('../../utils/getPronouns');
 const isInGuild = require('../../utils/isInGuild');
 const wearDownDen = require('../../utils/wearDownDen');
@@ -258,7 +258,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 						color: characterData.color,
 						author: { name: characterData.name, icon_url: characterData.avatarURL },
 						description: `*${characterData.name} searches for a ${chosenFood} all over the pack, but couldn't find one...*`,
-						footer: { text:  `${profileData.currentRegion !== 'food den' ? '\nYou are now at the food den' : ''}\n\n${await wearDownDen(serverData, 'food den')}` },
+						footer: { text: `${profileData.currentRegion !== 'food den' ? '\nYou are now at the food den' : ''}\n\n${await wearDownDen(serverData, 'food den')}` },
 					}],
 					failIfNotExists: false,
 				})

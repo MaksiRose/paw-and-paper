@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, GuildMember, InteractionReplyOptions, Message, MessageEditOptions, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, GuildMember, InteractionReplyOptions, MessageEditOptions, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { hasCooldownMap, respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
 import { Character, CustomClient, SlashCommand, UserSchema } from '../../typedef';
@@ -171,22 +171,18 @@ export async function profileInteractionCollector(client: CustomClient, interact
 		let charactersPage = Number(interaction.values[0].split('_')[2]) + 1;
 		if (charactersPage >= Math.ceil((Object.keys(userData.characters).length + 1) / 24)) { charactersPage = 0; }
 
-		/* Editing the message if its a Message object, else throw an error. */
-		if (interaction.message instanceof Message) {
-
-			await interaction.message
-				.edit({
-					components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getAccountsPage(userData, charactersPage, userData.userId === interaction.user.id)])],
-				})
-				.catch((error) => { throw new Error(error); });
-			await interaction.deferUpdate();
-		}
-		else { throw new Error('Message could not be found.'); }
+		await interaction
+			.update({
+				components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getAccountsPage(userData, charactersPage, userData.userId === interaction.user.id)])],
+			})
+			.catch((error) => { throw new Error(error); });
 		return;
 	}
 
 	/* Checking if the user has clicked on a switchto button, and if they have, it will switch the user's current character to the character they have clicked on. */
 	if (interaction.isSelectMenu() && interaction.values[0].includes('switchto')) {
+
+		await interaction.deferUpdate();
 
 		/* Getting the userData from the customId */
 		const userDataUUID = interaction.customId.split('_')[2];
@@ -302,25 +298,21 @@ export async function profileInteractionCollector(client: CustomClient, interact
 			}
 		}
 
-		/* Editing the message if its a Message object, else throw an error. */
-		if (interaction.message instanceof Message) {
+		/* This has to be editReply because we do deferUpdate earlier. We do that because sorting out the roles might take a while. */
+		await interaction
+			.editReply({
+				...await getMessageContent(client, userData.userId, newCharacterData, userData.userId === interaction.user.id, []),
+				components: interaction.message.components,
+			})
+			.catch((error) => { throw new Error(error); });
 
-			await interaction.message
-				.edit({
-					...await getMessageContent(client, userData.userId, newCharacterData, userData.userId === interaction.user.id, []),
-					components: interaction.message.components,
-				})
-				.catch((error) => { throw new Error(error); });
-
-			respond(interaction, {
-				content: `You successfully switched to \`${newCharacterData?.name || 'Empty Slot'}\`!`,
-				ephemeral: true,
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
-		}
-		else { throw new Error('Message could not be found.'); }
+		respond(interaction, {
+			content: `You successfully switched to \`${newCharacterData?.name || 'Empty Slot'}\`!`,
+			ephemeral: true,
+		}, false)
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
 		return;
 	}
 
@@ -335,17 +327,12 @@ export async function profileInteractionCollector(client: CustomClient, interact
 		const _id = interaction.values[0].split('_')[2];
 		const characterData = userData.characters[_id];
 
-		/* Editing the message if its a Message object, else throw an error. */
-		if (interaction.message instanceof Message) {
-
-			await interaction.message
-				.edit({
-					...await getMessageContent(client, userData.userId, characterData, userData.userId === interaction.user.id, []),
-					components: interaction.message.components,
-				})
-				.catch((error) => { throw new Error(error); });
-		}
-		else { throw new Error('Message could not be found.'); }
+		await interaction
+			.update({
+				...await getMessageContent(client, userData.userId, characterData, userData.userId === interaction.user.id, []),
+				components: interaction.message.components,
+			})
+			.catch((error) => { throw new Error(error); });
 		return;
 	}
 }

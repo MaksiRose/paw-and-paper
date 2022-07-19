@@ -5,7 +5,7 @@ const { commonPlantsMap, uncommonPlantsMap, rarePlantsMap, speciesMap, materials
 const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { hasCooldown } = require('../../utils/checkValidity');
 const { createCommandCollector } = require('../../utils/commandCollector');
-const { remindOfAttack } = require('../gameplay/attack');
+const { remindOfAttack } = require('../gameplay_primary/attack');
 const { execute } = require('../../events/messageCreate');
 const { MessageActionRow, MessageSelectMenu, MessageEmbed } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
@@ -48,14 +48,14 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	const messageContent = remindOfAttack(message);
 
 	const inventorySelectMenu = new MessageActionRow({
-		components: [ new MessageSelectMenu({
+		components: [new MessageSelectMenu({
 			customId: 'inventory-page',
 			placeholder: 'Select a page',
 			options: [
 				{ label: 'Page 1', value: 'inventory_page1', description: 'common herbs', emoji: '🌱' },
 				{ label: 'Page 2', value: 'inventory_page2', description: 'uncommon & rare herbs', emoji: '🍀' },
 				{ label: 'Page 3', value: 'inventory_page3', description: 'meat', emoji: '🥩' },
-			].concat(...(argumentsArray[0] === 'eating something' ? [] : [{ label: 'Page 4', value: 'inventory_page4', description:'materials', emoji: '🪵' }])),
+			].concat(...(argumentsArray[0] === 'eating something' ? [] : [{ label: 'Page 4', value: 'inventory_page4', description: 'materials', emoji: '🪵' }])),
 		})],
 	});
 
@@ -66,7 +66,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	});
 
 	let embed = new MessageEmbed()
-		.setColor(/** @type {`#${string}`} */ (default_color))
+		.setColor(/** @type {`#${string}`} */(default_color))
 		// @ts-ignore, since interaction.guild can never be null here
 		.setAuthor({ name: message.guild.name, iconURL: message.guild.iconURL() || undefined })
 		// @ts-ignore, since interaction.guild can never be null here
@@ -133,7 +133,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			if (interaction.values[0] == 'inventory_page1') {
 
 				embed = new MessageEmbed()
-					.setColor(/** @type {`#${string}`} */ (default_color))
+					.setColor(/** @type {`#${string}`} */(default_color))
 					// @ts-ignore, since interaction.guild can never be null here
 					.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined })
 					// @ts-ignore, since interaction.guild can never be null here
@@ -166,7 +166,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			if (interaction.values[0] === 'inventory_page2') {
 
 				embed = new MessageEmbed()
-					.setColor(/** @type {`#${string}`} */ (default_color))
+					.setColor(/** @type {`#${string}`} */(default_color))
 					// @ts-ignore, since interaction.guild can never be null here
 					.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined })
 					// @ts-ignore, since interaction.guild can never be null here
@@ -217,7 +217,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			if (interaction.values[0] === 'inventory_page3') {
 
 				embed = new MessageEmbed()
-					.setColor(/** @type {`#${string}`} */ (default_color))
+					.setColor(/** @type {`#${string}`} */(default_color))
 					// @ts-ignore, since interaction.guild can never be null here
 					.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined })
 					// @ts-ignore, since interaction.guild can never be null here
@@ -260,7 +260,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			if (interaction.values[0] === 'inventory_page4') {
 
 				embed = new MessageEmbed()
-					.setColor(/** @type {`#${string}`} */ (default_color))
+					.setColor(/** @type {`#${string}`} */(default_color))
 					// @ts-ignore, since interaction.guild can never be null here
 					.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined })
 					// @ts-ignore, since interaction.guild can never be null here
@@ -309,7 +309,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				}
 
 				embed = new MessageEmbed()
-					.setColor(/** @type {`#${string}`} */ (default_color))
+					.setColor(/** @type {`#${string}`} */(default_color))
 					// @ts-ignore, since interaction.guild can never be null here
 					.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined })
 					// @ts-ignore, since interaction.guild can never be null here
@@ -351,7 +351,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					});
 			}
 
-			const plantNamesArray = [...commonPlantsMap.keys(), ...uncommonPlantsMap.keys(), ...rarePlantsMap.keys(), ...specialPlantsMap.keys(), ...speciesMap.keys() ].sort();
+			const plantNamesArray = [...commonPlantsMap.keys(), ...uncommonPlantsMap.keys(), ...rarePlantsMap.keys(), ...specialPlantsMap.keys(), ...speciesMap.keys()].sort();
 
 			if (interaction.customId === 'eat-options' && plantNamesArray.some(elem => elem === interaction.values[0])) {
 

@@ -8,7 +8,7 @@ const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseHealth, decreaseThirst, decreaseHunger, decreaseEnergy } = require('../../utils/checkCondition');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { createCommandCollector } = require('../../utils/commandCollector');
-const { remindOfAttack } = require('../gameplay/attack');
+const { remindOfAttack } = require('../gameplay_primary/attack');
 const { pronoun, pronounAndPlural, upperCasePronounAndPlural } = require('../../utils/getPronouns');
 const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
 const { MessageActionRow, MessageButton, MessageEmbed } = require('discord.js');
@@ -89,7 +89,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 	const partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: firstMentionedUser.id }));
 	const partnerCharacterData = partnerUserData?.characters?.[partnerUserData?.currentCharacter?.[message.guildId]];
-	const partnerProfileData = partnerCharacterData ?.profiles?.[message.guildId];
+	const partnerProfileData = partnerCharacterData?.profiles?.[message.guildId];
 
 	if (!partnerUserData || !partnerCharacterData || partnerCharacterData.name === '' || partnerCharacterData.species === '' || !partnerProfileData || partnerProfileData.energy <= 0 || partnerProfileData.health <= 0 || partnerProfileData.hunger <= 0 || partnerProfileData.thirst <= 0 || partnerProfileData.hasCooldown === true || partnerProfileData.isResting === true) {
 
@@ -129,8 +129,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				description: `*${characterData.name} hangs around the prairie when ${partnerCharacterData.name} comes by. The ${partnerCharacterData.displayedSpecies || partnerCharacterData.species} has things to do but ${characterData.name}'s smug expression implies ${pronoun(partnerCharacterData, 0)} wouldn't be able to beat the ${characterData.displayedSpecies || characterData.species}.*`,
 				footer: { text: `You are playing ${gameType}. After 60 seconds, the invitation expires.\n\nTip: To pick a game, include 'connectfour' / 'c4' or 'tictactoe' / 'ttt' somewhere in the original command.` },
 			}],
-			components: [ new MessageActionRow({
-				components: [ new MessageButton({
+			components: [new MessageActionRow({
+				components: [new MessageButton({
 					customId: `playfight-confirm-${gameType.split(' ').join('-').toLowerCase()}`,
 					label: 'Accept challenge',
 					emoji: '🎭',
@@ -180,7 +180,7 @@ function playTicTacToe(serverData, userData, partnerUserData, message, botReply,
 
 	const componentArray = [
 		new MessageActionRow({
-			components: [ new MessageButton({
+			components: [new MessageButton({
 				customId: 'board-1-1',
 				emoji: emptyField,
 				disabled: false,
@@ -192,13 +192,13 @@ function playTicTacToe(serverData, userData, partnerUserData, message, botReply,
 				style: 'SECONDARY',
 			}), new MessageButton({
 				customId: 'board-1-3',
-				emoji:  emptyField,
+				emoji: emptyField,
 				disabled: false,
 				style: 'SECONDARY',
 			})],
 		}),
 		new MessageActionRow({
-			components: [ new MessageButton({
+			components: [new MessageButton({
 				customId: 'board-2-1',
 				emoji: emptyField,
 				disabled: false,
@@ -216,7 +216,7 @@ function playTicTacToe(serverData, userData, partnerUserData, message, botReply,
 			})],
 		}),
 		new MessageActionRow({
-			components: [ new MessageButton({
+			components: [new MessageButton({
 				customId: 'board-3-1',
 				emoji: emptyField,
 				disabled: false,
@@ -475,19 +475,19 @@ function playConnectFour(serverData, userData, partnerUserData, message, botRepl
 
 	const componentArray = [
 		new MessageActionRow({
-			components: [ new MessageButton({
+			components: [new MessageButton({
 				customId: 'field-1',
 				emoji: '1️⃣',
 				disabled: false,
 				style: 'SECONDARY',
 			}), new MessageButton({
 				customId: 'field-2',
-				emoji:'2️⃣',
+				emoji: '2️⃣',
 				disabled: false,
 				style: 'SECONDARY',
 			}), new MessageButton({
 				customId: 'field-3',
-				emoji:  '3️⃣',
+				emoji: '3️⃣',
 				disabled: false,
 				style: 'SECONDARY',
 			}), new MessageButton({
@@ -498,7 +498,7 @@ function playConnectFour(serverData, userData, partnerUserData, message, botRepl
 			})],
 		}),
 		new MessageActionRow({
-			components: [ new MessageButton({
+			components: [new MessageButton({
 				customId: 'field-5',
 				emoji: '5️⃣',
 				disabled: false,

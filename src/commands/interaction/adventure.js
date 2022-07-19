@@ -5,7 +5,7 @@ const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { getFriendshipHearts, getFriendshipPoints, addFriendshipPoints, checkOldMentions } = require('../../utils/friendshipHandling');
 const { pronoun, pronounAndPlural } = require('../../utils/getPronouns');
 const startCooldown = require('../../utils/startCooldown');
-const { remindOfAttack, getHighestItem } = require('../gameplay/attack');
+const { remindOfAttack, getHighestItem } = require('../gameplay_primary/attack');
 const { error_color } = require('../../../config.json');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const { generateRandomNumber, pullFromWeightedTable } = require('../../utils/randomizers');
@@ -196,8 +196,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				description: `*${characterData.name} impatiently paces at the pack borders, hoping for ${partnerCharacterData.name} to come and adventure with ${pronoun(characterData, 1)}.*`,
 				footer: { text: 'The game that is being played is memory, meaning that a player has to uncover two cards. If the emojis match, the cards are left uncovered.\nThe invitation expires after 60 seconds.' },
 			}],
-			components: [ new MessageActionRow({
-				components: [ new MessageButton({
+			components: [new MessageActionRow({
+				components: [new MessageButton({
 					customId: 'adventure-confirm',
 					label: 'Start adventure',
 					emoji: '🧭',
@@ -623,7 +623,7 @@ async function decreaseStats(message, userData, profileData, partnerUserData, pa
 	userData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
 		{ userId: message.author.id },
 		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-		// @ts-ignore, since message must be in guild
+			// @ts-ignore, since message must be in guild
 			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].energy -= energyPointsPlayer1;
 			// @ts-ignore, since message must be in guild
 			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].hunger -= hungerPointsPlayer1;
@@ -664,7 +664,7 @@ async function decreaseStats(message, userData, profileData, partnerUserData, pa
 		// @ts-ignore, since mentioned user must exist
 		{ userId: message.mentions.users.first().id },
 		(/** @type {import('../../typedef').ProfileSchema} */ p) => {
-		// @ts-ignore, since message must be in guild
+			// @ts-ignore, since message must be in guild
 			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].energy -= energyPointsPlayer2;
 			// @ts-ignore, since message must be in guild
 			p.characters[p.currentCharacter[message.guildId]].profiles[message.guildId].hunger -= hungerPointsPlayer2;

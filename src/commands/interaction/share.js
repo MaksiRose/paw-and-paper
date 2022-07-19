@@ -7,7 +7,7 @@ const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
 const { checkLevelUp } = require('../../utils/levelHandling');
-const { remindOfAttack } = require('../gameplay/attack');
+const { remindOfAttack } = require('../gameplay_primary/attack');
 const { pronounAndPlural, pronoun, upperCasePronounAndPlural, upperCasePronoun } = require('../../utils/getPronouns');
 const { addFriendshipPoints } = require('../../utils/friendshipHandling');
 const isInGuild = require('../../utils/isInGuild');
@@ -260,7 +260,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		const partnerExperiencePoints = generateRandomNumber(Math.round((partnerProfileData.levels * 50) * 0.15), Math.round((partnerProfileData.levels * 50) * 0.05));
 
 		partnerUserData = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOneAndUpdate(
-		// @ts-ignore, since partnerData cant be null
+			// @ts-ignore, since partnerData cant be null
 			{ userId: partnerUserData.userId },
 			(/** @type {import('../../typedef').ProfileSchema} */ p) => {
 				// @ts-ignore, since partnerData cant be null and message must be in guild

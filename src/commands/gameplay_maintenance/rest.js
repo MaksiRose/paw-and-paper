@@ -8,7 +8,7 @@ const { upperCasePronoun, pronoun, pronounAndPlural } = require('../../utils/get
 const isInGuild = require('../../utils/isInGuild');
 const startCooldown = require('../../utils/startCooldown');
 const wearDownDen = require('../../utils/wearDownDen');
-const { remindOfAttack } = require('../gameplay/attack');
+const { remindOfAttack } = require('../gameplay_primary/attack');
 
 module.exports.name = 'rest';
 module.exports.aliases = ['sleep'];
@@ -106,8 +106,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				description: `*${characterData.name}'s chest rises and falls with the crickets. Snoring bounces off each wall, finally exiting the den and rising free to the clouds.*`,
 				footer: { text: `+0 energy (${profileData.energy}/${profileData.maxEnergy})${(profileData.currentRegion != 'sleeping dens') ? '\nYou are now at the sleeping dens' : ''}${argumentsArray[0] === 'auto' ? '\nYour character started resting because you were inactive for 10 minutes' : ''}\n\n${weardownText}\n\nTip: You can also do "rp vote" to get +30 energy per vote!` },
 			}],
-			components: argumentsArray[0] === 'auto' ? [ new MessageActionRow({
-				components: [ new MessageButton({
+			components: argumentsArray[0] === 'auto' ? [new MessageActionRow({
+				components: [new MessageButton({
 					customId: `resting-reminder-${userData.reminders.resting === true ? 'off' : 'on'}`,
 					label: `Turn automatic resting pings ${userData.reminders.resting === true ? 'off' : 'on'}`,
 					style: 'SECONDARY',

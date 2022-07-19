@@ -2,7 +2,7 @@
 const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { isInvalid } = require('../../utils/checkValidity');
 const startCooldown = require('../../utils/startCooldown');
-const { remindOfAttack } = require('../gameplay/attack');
+const { remindOfAttack } = require('../gameplay_primary/attack');
 const profileModel = require('../../models/profileModel');
 const { pullFromWeightedTable, generateRandomNumber } = require('../../utils/randomizers');
 const { checkLevelUp } = require('../../utils/levelHandling');
@@ -101,7 +101,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 		embed.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Perfect.png');
 		embed.setDescription(`*${characterData.name} waters the seedling, and it look it's at the perfect time. The ginkgo tree looks healthy, the leaves have a strong green color, and a pleasant fragrance emanates from them. The ${characterData.displayedSpecies || characterData.species} feels warm and safe from the scent.*`),
-		embed.setFooter({ text: `+${experiencePoints} XP (${profileData.experience + experiencePoints}/${profileData.levels * 50})${healthPoints > 0 ? `\n+${healthPoints} health (${profileData.health + healthPoints}/${profileData.maxEnergy})` : ''}\n\n+${saplingHealthPoints} health for ginkgo sapling\nCome back to water it in 24 hours.` });
+			embed.setFooter({ text: `+${experiencePoints} XP (${profileData.experience + experiencePoints}/${profileData.levels * 50})${healthPoints > 0 ? `\n+${healthPoints} health (${profileData.health + healthPoints}/${profileData.maxEnergy})` : ''}\n\n+${saplingHealthPoints} health for ginkgo sapling\nCome back to water it in 24 hours.` });
 	}
 	/* This is the second of three `if` statements that check the time difference between the current
 	timestamp and the timestamp of the perfect watering time. If the time difference is less than or
@@ -156,8 +156,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 		.reply({
 			content: messageContent,
 			embeds: [...embedArray, embed],
-			components: [ new MessageActionRow({
-				components: [ new MessageButton({
+			components: [new MessageActionRow({
+				components: [new MessageButton({
 					customId: `water-reminder-${userData.reminders.water === true ? 'off' : 'on'}`,
 					label: `Turn water reminders ${userData.reminders.water === true ? 'off' : 'on'}`,
 					style: 'SECONDARY',

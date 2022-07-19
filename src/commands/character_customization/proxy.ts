@@ -79,8 +79,8 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 
 		const characterDataId = interaction.customId.split('_')[3];
 
-		await interaction.message
-			.edit({
+		await interaction
+			.update({
 				embeds: [new EmbedBuilder(interaction.message.embeds[0].toJSON())
 					.setTitle('Here is how to use the set subcommand:')
 					.setDescription('Proxying is a way to speak as if your character was saying it. The proxy is an indicator to the bot you want your message to be proxied. It exists of a prefix (indicator before the message) and a suffix (indicator after the message). You can either set both or one of them.\n\nExamples:\nprefix: `<`, suffix: `>`, example message: `<hello friends>`\n`prefix: `P: `, no suffix, example message: `P: hello friends`\n`no prefix, suffix: ` -p`, example message: `hello friends -p`\nThis is case-sensitive (meaning that upper and lowercase matters).')],
@@ -90,8 +90,6 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 						.setLabel('Set proxy')
 						.setStyle(ButtonStyle.Success)])],
 			}).catch((error) => { throw new Error(error); });
-
-		await interaction.deferUpdate();
 		return;
 	}
 
@@ -136,16 +134,14 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 		const characterData = userData ? userData.characters[interaction.customId.split('_')[3]] : null;
 		const { alwaysSelectMenu } = await getSelectMenus(allChannels, userData, characterData, serverData, 0);
 
-		await interaction.message
-			.edit({
+		await interaction
+			.update({
 				embeds: [new EmbedBuilder(interaction.message.embeds[0].toJSON())
 					.setTitle('Here is how to use the always subcommand:')
 					.setDescription('When this feature is enabled, every message you sent will be treated as if it was proxied, even if the proxy isn\'t included.\nYou can either toggle it for the entire server, or specific channels, using the drop-down menu below. Enabled channels will have a radio emoji next to it.')],
 				components: [new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents([alwaysSelectMenu])],
 			}).catch((error) => { throw new Error(error); });
-
-		await interaction.deferUpdate();
 		return;
 	}
 
@@ -155,8 +151,8 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 		if (!interaction.inGuild()) { throw new Error('Interaction is not in guild'); }
 		const { disableAutoSelectMenu, disableAllSelectMenu } = await getSelectMenus(allChannels, null, null, serverData, 0);
 
-		await interaction.message
-			.edit({
+		await interaction
+			.update({
 				embeds: [new EmbedBuilder(interaction.message.embeds[0].toJSON())
 					.setTitle('Here is how to use the disable subcommand:')
 					.setDescription('This is an **administrator** setting that can toggle whether `automatic` or `all` proxy should be disabled or enabled in specific channels, or in the entire server, using the drop-down menus below. Disabled channels will have a radio emoji next to it.')],
@@ -165,8 +161,6 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 				new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents([disableAllSelectMenu])],
 			}).catch((error) => { throw new Error(error); });
-
-		await interaction.deferUpdate();
 		return;
 	}
 

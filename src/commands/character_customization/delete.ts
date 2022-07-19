@@ -45,8 +45,8 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 	/* Creating a new page for the user to select an account to delete. */
 	if (interaction.isButton() && interaction.customId === 'delete_individual') {
 
-		await interaction.message
-			.edit({
+		await interaction
+			.update({
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('Please select a character that you want to delete.')],
@@ -57,8 +57,6 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 				],
 			})
 			.catch((error) => { throw new Error(error); });
-
-		interaction.deferUpdate();
 		return;
 	}
 
@@ -68,8 +66,8 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 		let deletePage = Number(interaction.values[0].replace('delete_individual_nextpage_', '')) + 1;
 		if (deletePage >= Math.ceil(Object.keys(userData.characters).length / 24)) { deletePage = 0; }
 
-		await interaction.message
-			.edit({
+		await interaction
+			.update({
 				components: [
 					getOriginalComponents(),
 					new ActionRowBuilder<SelectMenuBuilder>()
@@ -77,8 +75,6 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 				],
 			})
 			.catch((error) => { throw new Error(error); });
-
-		interaction.deferUpdate();
 		return;
 	}
 
@@ -88,8 +84,8 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 		const _id = interaction.values[0].replace('delete_individual_', '');
 		const character = userData.characters[_id];
 
-		await interaction.message
-			.edit({
+		await interaction
+			.update({
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle(`Are you sure you want to delete the character named "${character.name}" ? This will be **permanent**!!!`)],
@@ -111,16 +107,14 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 				],
 			})
 			.catch((error) => { throw new Error(error); });
-
-		interaction.deferUpdate();
 		return;
 	}
 
 	/* Creating a new page for the user to select their accounts on a server to delete. */
 	if (interaction.isButton() && interaction.customId === 'delete_server') {
 
-		await interaction.message
-			.edit({
+		await interaction
+			.update({
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('Please select a server that you want to delete all information off of.')],
@@ -131,8 +125,6 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 				],
 			})
 			.catch((error) => { throw new Error(error); });
-
-		interaction.deferUpdate();
 		return;
 	}
 
@@ -142,8 +134,8 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 		let deletePage = Number(interaction.values[0].replace('delete_server_nextpage_', '')) + 1;
 		if (deletePage >= Math.ceil([...new Set(Object.values(userData.characters).map(c => Object.keys(c.profiles)).flat())].length / 24)) { deletePage = 0; }
 
-		await interaction.message
-			.edit({
+		await interaction
+			.update({
 				components: [
 					getOriginalComponents(),
 					new ActionRowBuilder<SelectMenuBuilder>()
@@ -151,8 +143,6 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 				],
 			})
 			.catch((error) => { throw new Error(error); });
-
-		interaction.deferUpdate();
 		return;
 	}
 
@@ -162,8 +152,8 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 		const server = await serverModel.findOne({ serverId: interaction.values[0].replace('delete_server_', '') });
 		const accountsOnServer = Object.values(userData.characters).map(c => c.profiles[server.serverId]).filter(p => p !== undefined);
 
-		await interaction.message
-			.edit({
+		await interaction
+			.update({
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle(`Are you sure you want to delete all the information of ${accountsOnServer.length} characters on the server ${server.name}? This will be **permanent**!!!`)],
@@ -185,16 +175,14 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 				],
 			})
 			.catch((error) => { throw new Error(error); });
-
-		interaction.deferUpdate();
 		return;
 	}
 
 	/* Creating a new message asking the user if they are sure that they want to delete all their data. */
 	if (interaction.isButton() && interaction.customId === 'delete-all') {
 
-		await interaction.message
-			.edit({
+		await interaction
+			.update({
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('Are you sure you want to delete all your data? This will be **permanent**!!!')
@@ -217,8 +205,6 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 				],
 			})
 			.catch((error) => { throw new Error(error); });
-
-		interaction.deferUpdate();
 		return;
 	}
 
@@ -316,13 +302,11 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 	/* Editing the message to the original message. */
 	if (interaction.customId === 'delete_cancel') {
 
-		await interaction.message
-			.edit(sendOriginalMessage())
+		await interaction
+			.update(sendOriginalMessage())
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
-
-		interaction.deferUpdate();
 		return;
 	}
 }

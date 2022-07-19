@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, Message, ModalBuilder, ModalSubmitInteraction, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
 import { SlashCommand, UserSchema } from '../../typedef';
@@ -10,7 +10,7 @@ import { speciesMap } from '../../utils/itemsInfo';
 const speciesNameArray = [...speciesMap.keys()].sort();
 
 const name: SlashCommand['name'] = 'species';
-const description: SlashCommand['description'] = 'Get an overview of the available species for you character.';
+const description: SlashCommand['description'] = 'Change your character\'s species or displayed species.';
 export const command: SlashCommand = {
 	name: name,
 	description: description,
@@ -119,19 +119,14 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 		if (speciesPage >= Math.ceil(speciesNameArray.length / 24)) { speciesPage = 0; }
 
 		/* Editing the message if its a Message object, else throw an error. */
-		if (interaction.message instanceof Message) {
-
-			await interaction.message
-				.edit({
-					components: [
-						new ActionRowBuilder<SelectMenuBuilder>().setComponents([getSpeciesSelectMenu(speciesPage, characterId)]),
-						new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(characterId)]),
-					],
-				})
-				.catch((error) => { throw new Error(error); });
-			await interaction.deferUpdate();
-		}
-		else { throw new Error('Message is APIMessage.'); }
+		await interaction
+			.update({
+				components: [
+					new ActionRowBuilder<SelectMenuBuilder>().setComponents([getSpeciesSelectMenu(speciesPage, characterId)]),
+					new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(characterId)]),
+				],
+			})
+			.catch((error) => { throw new Error(error); });
 		return;
 	}
 
@@ -151,33 +146,26 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 		);
 		const characterData = userData.characters[characterId];
 
-		/* Editing the message if its a Message object, else throw an error. */
-		if (interaction.message instanceof Message) {
+		await interaction
+			.update({
+				embeds: [new EmbedBuilder()
+					.setColor(characterData.color)
+					.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
+					.setDescription(`*A stranger carefully steps over the pack's borders. ${upperCasePronoun(characterData, 2)} face seems friendly. Curious eyes watch ${pronoun(characterData, 1)} as ${pronoun(characterData, 0)} come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n"${characterData.name}," *the ${chosenSpecies} responds. The Alpha takes a friendly step towards ${pronoun(characterData, 1)}.* "It's nice to have you here, ${characterData.name}," *they say. More and more packmates come closer to greet the newcomer.*`)
+					.setFooter({ text: 'You are now done setting up your character for RPGing! Type "/profile" to look at it.\nWith "/help" you can see how else you can customize your profile, as well as your other options.\nYou can use the button below to change your displayed species.' })],
+				components: [
+					new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(characterId)]),
+				],
+			})
+			.catch((error) => { throw new Error(error); });
 
-			await interaction.deferUpdate();
-
-			await interaction.message
-				.edit({
-					embeds: [new EmbedBuilder()
-						.setColor(characterData.color)
-						.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
-						.setDescription(`*A stranger carefully steps over the pack's borders. ${upperCasePronoun(characterData, 2)} face seems friendly. Curious eyes watch ${pronoun(characterData, 1)} as ${pronoun(characterData, 0)} come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n"${characterData.name}," *the ${chosenSpecies} responds. The Alpha takes a friendly step towards ${pronoun(characterData, 1)}.* "It's nice to have you here, ${characterData.name}," *they say. More and more packmates come closer to greet the newcomer.*`)
-						.setFooter({ text: 'You are now done setting up your character for RPGing! Type "/profile" to look at it.\nWith "/help" you can see how else you can customize your profile, as well as your other options.\nYou can use the button below to change your displayed species.' })],
-					components: [
-						new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(characterId)]),
-					],
-				})
-				.catch((error) => { throw new Error(error); });
-
-			await interaction.message.channel
-				.send({
-					content: `${interaction.user.toString()} ❓ **Tip:**\nGo playing via \`/play\` to find quests and rank up!`,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
-		}
-		else { throw new Error('Message is APIMessage.'); }
+		await interaction.message.channel
+			.send({
+				content: `${interaction.user.toString()} ❓ **Tip:**\nGo playing via \`/play\` to find quests and rank up!`,
+			})
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
 		return;
 	}
 }

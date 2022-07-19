@@ -9,7 +9,7 @@ const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
 const { decreaseThirst, decreaseHunger, decreaseHealth, decreaseEnergy } = require('../../utils/checkCondition');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { createCommandCollector } = require('../../utils/commandCollector');
-const { remindOfAttack } = require('../gameplay/attack');
+const { remindOfAttack } = require('../gameplay_primary/attack');
 const { pronoun, upperCasePronounAndPlural, pronounAndPlural } = require('../../utils/getPronouns');
 const { MessageActionRow, MessageSelectMenu, MessageButton, MessageEmbed } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
@@ -102,7 +102,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					description: `*${characterData.name} sits in front of the medicine den, looking if anyone needs help with injuries or illnesses.*`,
 				}],
 				components: Object.keys(allHurtCharactersList).length > 0 && userSelectMenu ?
-					[ new MessageActionRow().addComponents([userSelectMenu])] :
+					[new MessageActionRow().addComponents([userSelectMenu])] :
 					[],
 				failIfNotExists: false,
 			})
@@ -305,7 +305,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 								// @ts-ignore, since chosenUserData and chosenCharacterData can only be null for "heal-user-options"-select menu
 								title: `${chosenCharacterData.name} doesn't need to be healed anymore. Please select another user to heal if available.`,
 							}],
-							components: userSelectMenu ? [ new MessageActionRow().addComponents([userSelectMenu])] : [],
+							components: userSelectMenu ? [new MessageActionRow().addComponents([userSelectMenu])] : [],
 						})
 						.catch((error) => {
 							if (error.httpStatus !== 404) { throw new Error(error); }
@@ -358,7 +358,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 									color: characterData.color,
 									title: `${chosenCharacterData.name}'s stats/illnesses/injuries changed before you healed them. Please try again.`,
 								}],
-								components: userSelectMenu ? [ new MessageActionRow().addComponents([userSelectMenu])] : [],
+								components: userSelectMenu ? [new MessageActionRow().addComponents([userSelectMenu])] : [],
 							})
 							.catch((error) => {
 								if (error.httpStatus !== 404) { throw new Error(error); }
@@ -565,7 +565,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 									color: characterData.color,
 									title: `${chosenCharacterData.name}'s stats/illnesses/injuries changed before you healed them. Please try again.`,
 								}],
-								components: userSelectMenu ? [ new MessageActionRow().addComponents([userSelectMenu])] : [],
+								components: userSelectMenu ? [new MessageActionRow().addComponents([userSelectMenu])] : [],
 							})
 							.catch((error) => {
 								if (error.httpStatus !== 404) { throw new Error(error); }
@@ -827,7 +827,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			selectMenu.addOptions({ label: allHurtCharactersList[key].name, value: key });
 		}
 
-		if (selectMenu.options.length <= 0) { selectMenu = null;}
+		if (selectMenu.options.length <= 0) { selectMenu = null; }
 
 		return selectMenu;
 	}
@@ -905,7 +905,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 			embeds = [...embedArray, characterConditionEmbed, ...Object.keys(allHurtCharactersList).length > 0 ? [inventory1Embed] : []],
 			components = [...Object.keys(allHurtCharactersList).length > 0 ?
 				[
-					...(userSelectMenu ? [ new MessageActionRow().addComponents([userSelectMenu])] : []),
+					...(userSelectMenu ? [new MessageActionRow().addComponents([userSelectMenu])] : []),
 					new MessageActionRow().addComponents(inventoryPagesButtons),
 					...(inventory1SelectMenu ? [new MessageActionRow().addComponents([inventory1SelectMenu])] : []),
 				]
