@@ -25,7 +25,7 @@ export const command: SlashCommand = {
 
 		const description = interaction.options.getString('description') || '';
 
-		await userModel.findOneAndUpdate(
+		userData = await userModel.findOneAndUpdate(
 			{ uuid: userData.uuid },
 			(u) => {
 				u.characters[u.currentCharacter[interaction.guildId || 'DM']].description = description;
