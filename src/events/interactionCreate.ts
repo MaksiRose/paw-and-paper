@@ -260,7 +260,7 @@ export const event: Event = {
 
 export const respond = async (interaction: CommandInteraction | MessageContextMenuCommandInteraction | ModalSubmitInteraction | ButtonInteraction | SelectMenuInteraction, options: WebhookEditMessageOptions | InteractionReplyOptions, editMessage: boolean): Promise<Message<boolean>> => {
 	let botReply: APIMessage | Message<boolean>;
-	if (!interaction.replied) {
+	if (!interaction.replied && !interaction.deferred) {
 		botReply = await interaction.reply({ ...options, ...{ fetchReply: true } });
 	}
 	else if (editMessage) {
