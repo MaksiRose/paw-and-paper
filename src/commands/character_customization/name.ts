@@ -142,8 +142,8 @@ export const command: SlashCommand = {
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
-				.setTitle(characterData === undefined ? `You successfully created the character ${name}!` : `You successfully renamed your character to ${name}!`)
-				.setFooter(characterData === undefined ? { text: 'To continue setting up your profile for the RPG, type "rp species". For other options, review "rp help".' } : null)],
+				.setTitle(characterData === null ? `You successfully created the character ${name}!` : `You successfully renamed your character to ${name}!`)
+				.setFooter(characterData === null ? { text: 'To continue setting up your profile for the RPG, type "rp species". For other options, review "rp help".' } : null)],
 		}, true)
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
