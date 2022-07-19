@@ -90,7 +90,7 @@ export async function getMessageContent(client: CustomClient, userId: string, ch
 			.setColor(characterData.color)
 			.setTitle(characterData.name)
 			.setAuthor({ name: `Profile - ${user.tag}` })
-			.setDescription(characterData.description)
+			.setDescription(characterData.description || null)
 			.setThumbnail(characterData.avatarURL)
 			.setFields([
 				{ name: '**🦑 Species**', value: characterData.displayedSpecies ? (characterData.displayedSpecies.charAt(0).toUpperCase() + characterData.displayedSpecies.slice(1)) : characterData.species ? (characterData.species.charAt(0).toUpperCase() + characterData.species.slice(1)) : '/', inline: true },
