@@ -63,10 +63,10 @@ export async function pronounsInteractionCollector(interaction: ButtonInteractio
 		const userData = await userModel.findOne({ uuid: interaction.customId.split('_')[2] });
 		const characterData = userData.characters[interaction.customId.split('_')[3]];
 
-		const pronounNumber = interaction.values[0].split('_')[0];
+		const pronounNumber = interaction.values[0].split('_')[1];
 		const pronounSet = pronounNumber === 'add' ? [] : characterData.pronounSets[Number(pronounNumber)];
 
-		const profilePronounFieldLengthLeft = 1024 - characterData.pronounSets.map(pronounSet => pronounCompromiser(pronounSet)).join('\n').length + pronounCompromiser(pronounSet).length;
+		const profilePronounFieldLengthLeft = 1024 - characterData.pronounSets.map(pSet => pronounCompromiser(pSet)).join('\n').length + pronounCompromiser(pronounSet).length;
 
 		await interaction
 			.showModal(new ModalBuilder()
