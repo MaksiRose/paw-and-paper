@@ -20,7 +20,7 @@ export const command: SlashCommand = {
 		.addStringOption(option =>
 			option.setName('name')
 				.setDescription('The name that you want your character to have.')
-				.setMaxLength(32)
+				.setMaxLength(16) // A normal name should only have 16 characters, but a displayname/nickname should still have 32 characters max length.
 				.setRequired(true))
 		.toJSON(),
 	disablePreviousCommand: false,
