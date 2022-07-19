@@ -6,7 +6,7 @@ const commonPlantsMap = new Map();
 commonPlantsMap.set('raspberry', {
 	name: 'raspberry',
 	description: 'A tasty berry! Good for the quick hunger.',
-	edibality: 'e',
+	edibility: 'e',
 	healsWounds: false,
 	healsInfections: false,
 	healsColds: false,
@@ -19,7 +19,7 @@ commonPlantsMap.set('raspberry', {
 commonPlantsMap.set('garlic', {
 	name: 'garlic',
 	description: 'A nourishing plant in the onion genus.',
-	edibality: 'e',
+	edibility: 'e',
 	healsWounds: false,
 	healsInfections: false,
 	healsColds: false,
@@ -32,7 +32,7 @@ commonPlantsMap.set('garlic', {
 commonPlantsMap.set('herb Robert', {
 	name: 'herb Robert',
 	description: 'The herb Robert is a common species of plants useful for healing wounds.',
-	edibality: 'i',
+	edibility: 'i',
 	healsWounds: true,
 	healsInfections: false,
 	healsColds: false,
@@ -45,7 +45,7 @@ commonPlantsMap.set('herb Robert', {
 commonPlantsMap.set('field scabious', {
 	name: 'field scabious',
 	description: 'This pretty flower is used to fight colds.',
-	edibality: 'i',
+	edibility: 'i',
 	healsWounds: false,
 	healsInfections: false,
 	healsColds: true,
@@ -58,7 +58,7 @@ commonPlantsMap.set('field scabious', {
 commonPlantsMap.set('henna', {
 	name: 'henna',
 	description: 'A flowering plant often used as dye, but also used against infections and inflammations.',
-	edibality: 'i',
+	edibility: 'i',
 	healsWounds: false,
 	healsInfections: true,
 	healsColds: false,
@@ -71,7 +71,7 @@ commonPlantsMap.set('henna', {
 commonPlantsMap.set('elderberry', {
 	name: 'elderberry',
 	description: 'This berry is poisonous when eaten uncooked, but it helps against colds when used as a medicine.',
-	edibality: 't',
+	edibility: 't',
 	healsWounds: false,
 	healsInfections: false,
 	healsColds: true,
@@ -84,7 +84,7 @@ commonPlantsMap.set('elderberry', {
 commonPlantsMap.set('comfrey', {
 	name: 'comfrey',
 	description: 'Comfrey is a flowering plant that is toxic when eaten, but heals sprains and swellings when applied directly.',
-	edibality: 't',
+	edibility: 't',
 	healsWounds: false,
 	healsInfections: false,
 	healsColds: false,
@@ -97,7 +97,7 @@ commonPlantsMap.set('comfrey', {
 commonPlantsMap.set('marigold', {
 	name: 'marigold',
 	description: 'This flowering plant is great when used to heal infection.',
-	edibality: 'i',
+	edibility: 'i',
 	healsWounds: false,
 	healsInfections: true,
 	healsColds: false,
@@ -110,7 +110,7 @@ commonPlantsMap.set('marigold', {
 commonPlantsMap.set('common hollyhock', {
 	name: 'common hollyhock',
 	description: 'A flower frequently used to fight wounds and bruises.',
-	edibality: 'i',
+	edibility: 'i',
 	healsWounds: true,
 	healsInfections: false,
 	healsColds: false,
@@ -123,7 +123,7 @@ commonPlantsMap.set('common hollyhock', {
 commonPlantsMap.set('arnica', {
 	name: 'neem',
 	description: 'This plant of the sunflower family contains a toxin and shouldn\'t be eaten, though it helps reduce pain from sprains.',
-	edibality: 't',
+	edibility: 't',
 	healsWounds: false,
 	healsInfections: false,
 	healsColds: false,
@@ -136,7 +136,7 @@ commonPlantsMap.set('arnica', {
 commonPlantsMap.set('clover', {
 	name: 'clover',
 	description: 'Several plants of the genus Trifolium. A common source of nourishment.',
-	edibality: 'e',
+	edibility: 'e',
 	healsWounds: false,
 	healsInfections: false,
 	healsColds: false,
@@ -149,7 +149,7 @@ commonPlantsMap.set('clover', {
 commonPlantsMap.set('passion fruit', {
 	name: 'passion fruit',
 	description: 'Vine species of the passion flower. Very nutritious.',
-	edibality: 'e',
+	edibility: 'e',
 	healsWounds: false,
 	healsInfections: false,
 	healsColds: false,
@@ -162,7 +162,7 @@ commonPlantsMap.set('passion fruit', {
 commonPlantsMap.set('bergamot orange', {
 	name: 'bergamot orange',
 	description: 'A citrus fruit the size of an orange. Less sour than lemon, but more bitter than grapefruit.',
-	edibality: 'e',
+	edibility: 'e',
 	healsWounds: false,
 	healsInfections: false,
 	healsColds: false,
@@ -175,7 +175,7 @@ commonPlantsMap.set('bergamot orange', {
 commonPlantsMap.set('cicely', {
 	name: 'cicely',
 	description: 'This plant grows 6ft 6in (2m) high. Both the leaves and the roots are edible.',
-	edibality: 'e',
+	edibility: 'e',
 	healsWounds: false,
 	healsInfections: false,
 	healsColds: false,
@@ -188,7 +188,7 @@ commonPlantsMap.set('cicely', {
 commonPlantsMap.set('acorn', {
 	name: 'acorn',
 	description: 'This nut is highly nutritious and therefore serves as an excellent source of food.',
-	edibality: 'e',
+	edibility: 'e',
 	healsWounds: false,
 	healsInfections: false,
 	healsColds: false,
@@ -201,7 +201,7 @@ commonPlantsMap.set('acorn', {
 commonPlantsMap.set('rhodiola', {
 	name: 'rhodiola',
 	description: 'The root of a perennial plant, searched after as a food source and for its ability to help fight fatigue and exhaustion.',
-	edibality: 'e',
+	edibility: 'e',
 	healsWounds: false,
 	healsInfections: false,
 	healsColds: false,
@@ -218,7 +218,7 @@ const uncommonPlantsMap = new Map();
 uncommonPlantsMap.set('solomon\'s seal', {
 	name: 'solomon\'s seal',
 	description: 'This flowering plant is a great source of food, but also excellent for healing colds as well as wounds!',
-	edibality: 'e',
+	edibility: 'e',
 	healsWounds: true,
 	healsInfections: false,
 	healsColds: true,
@@ -231,7 +231,7 @@ uncommonPlantsMap.set('solomon\'s seal', {
 uncommonPlantsMap.set('gotu kola', {
 	name: 'gotu kola',
 	description: 'A vegetable often used to treat infections, as well as being very energizing!',
-	edibality: 'e',
+	edibility: 'e',
 	healsWounds: false,
 	healsInfections: true,
 	healsColds: false,
@@ -244,7 +244,7 @@ uncommonPlantsMap.set('gotu kola', {
 uncommonPlantsMap.set('great mullein', {
 	name: 'great mullein',
 	description: 'The great mullein is a high growing biennal plant not only used for consumption but also for colds and sprains.',
-	edibality: 'e',
+	edibility: 'e',
 	healsWounds: false,
 	healsInfections: false,
 	healsColds: true,
@@ -257,7 +257,7 @@ uncommonPlantsMap.set('great mullein', {
 uncommonPlantsMap.set('purple coneflower', {
 	name: 'purple coneflower',
 	description: 'This flower is not only part of the sunflower family, but also a treatment against colds, infections, and hunger!',
-	edibality: 'e',
+	edibility: 'e',
 	healsWounds: false,
 	healsInfections: true,
 	healsColds: true,
@@ -270,7 +270,7 @@ uncommonPlantsMap.set('purple coneflower', {
 uncommonPlantsMap.set('field horsetail', {
 	name: 'field horsetail',
 	description: 'A perenniel plant that is useful against wounds and sprains, but toxic if consumed.',
-	edibality: 't',
+	edibility: 't',
 	healsWounds: true,
 	healsInfections: false,
 	healsColds: false,
@@ -283,7 +283,7 @@ uncommonPlantsMap.set('field horsetail', {
 uncommonPlantsMap.set('bay laurel', {
 	name: 'bay laurel',
 	description: 'An aromatic large shrub used to treat wounds and sprains!',
-	edibality: 'e',
+	edibility: 'e',
 	healsWounds: true,
 	healsInfections: false,
 	healsColds: false,
@@ -296,7 +296,7 @@ uncommonPlantsMap.set('bay laurel', {
 uncommonPlantsMap.set('chick weed', {
 	name: 'chick weed',
 	description: 'The chick weed is not only very tasty, but also able to heal wounds and sprains.',
-	edibality: 'e',
+	edibility: 'e',
 	healsWounds: true,
 	healsInfections: false,
 	healsColds: false,
@@ -309,7 +309,7 @@ uncommonPlantsMap.set('chick weed', {
 uncommonPlantsMap.set('yerba mate', {
 	name: 'yerba mate',
 	description: 'This plants leaves are useful for healing infections, but also energizing due to it containing caffeine.',
-	edibality: 'e',
+	edibility: 'e',
 	healsWounds: false,
 	healsInfections: true,
 	healsColds: false,
@@ -326,7 +326,7 @@ const rarePlantsMap = new Map();
 rarePlantsMap.set('ribwort plantain', {
 	name: 'ribwort plantain',
 	description: 'A weed for treating wounds, colds and poison! Highly nutritious.',
-	edibality: 'e',
+	edibility: 'e',
 	healsWounds: true,
 	healsInfections: false,
 	healsColds: false,
@@ -339,7 +339,7 @@ rarePlantsMap.set('ribwort plantain', {
 rarePlantsMap.set('charcoal-tree leaves', {
 	name: 'charcoal-tree leaves',
 	description: 'These leaves do wonders against poison, wounds and colds, as well as being very tasty.',
-	edibality: 'e',
+	edibility: 'e',
 	healsWounds: true,
 	healsInfections: false,
 	healsColds: true,
@@ -352,7 +352,7 @@ rarePlantsMap.set('charcoal-tree leaves', {
 rarePlantsMap.set('marsh mallow', {
 	name: 'marsh mallow',
 	description: 'This sweet tasting, energizing plant is very effective against infections, sprains!',
-	edibality: 'e',
+	edibility: 'e',
 	healsWounds: false,
 	healsInfections: true,
 	healsColds: false,
@@ -369,7 +369,7 @@ const specialPlantsMap = new Map();
 specialPlantsMap.set('black-eyed Susan', {
 	name: 'black-eyed Susan',
 	description: 'This flower from the sunflower family is thought to give a temporary boost to one\'s maximum health, energy, hunger or thirst.',
-	edibality: 'e',
+	edibility: 'e',
 	healsWounds: false,
 	healsInfections: false,
 	healsColds: false,
