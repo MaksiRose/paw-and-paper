@@ -8,7 +8,7 @@ const { error_color } = require('../../../config.json');
 
 const name: SlashCommand['name'] = 'delete';
 const description: SlashCommand['description'] = 'Delete parts of or your entire account.';
-export const data: SlashCommand = {
+export const command: SlashCommand = {
 	name: name,
 	description: description,
 	data: new SlashCommandBuilder()

@@ -30,7 +30,7 @@ export const command: SlashCommand = {
 						{ label: 'Page 2', value: 'help_page2', description: 'Gameplay (Primary)', emoji: '🎲' },
 						{ label: 'Page 3', value: 'help_page3', description: 'Gameplay (Maintenance)', emoji: '🍗' },
 						{ label: 'Page 4', value: 'help_page4', description: 'Interaction', emoji: '👥' },
-						{ label: 'Page 5', value: 'help_page5', description: 'Miscellanious', emoji: '⚙️' },
+						{ label: 'Page 5', value: 'help_page5', description: 'Miscellaneous', emoji: '⚙️' },
 					])])],
 		}, true)
 			.catch((error) => {
@@ -144,7 +144,7 @@ export async function helpInteractionCollector(client: CustomClient, interaction
 			.update({
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
-					.setTitle('Page 5: ⚙️ Miscellanious')
+					.setTitle('Page 5: ⚙️ Miscellaneous')
 					.setDescription('**`/shop`** - Buy roles with experience points.\n**`/server-settings`** - List of server-specific settings like shop roles, update notifications and more.\n**`/ticket`** - Report a bug, give feedback, suggest a feature!')
 					.setFields(
 						{ name: '\n**__CREDITS:__**', value: `This bot was made with love by **${maksiUser?.tag}**. Special thanks goes out to:\n\`${elliottUser?.tag}\` - RPG texts, testing, ideas\n\`${ezraUser?.tag}\` - RPG texts, testing\n\`${hazenithUser?.tag}\` - testing, ideas\n\`${skyUser?.tag}\` - testing, \`${asrielUser?.tag}\` - ideas, \`${renUser?.tag}\` - RPG texts\n\`${jagsUser?.tag}\` - drawing the profile picture, \`${johannaUser?.tag}\` - drawing the ginkgo tree.\n\nThis bot was originally created for a Discord server called [Rushing River Pack](https://disboard.org/server/854522091328110595). If you are therian, otherkin, or supporter of those, you are welcome to join.` },
