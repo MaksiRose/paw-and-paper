@@ -139,7 +139,7 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 			.update({
 				embeds: [new EmbedBuilder(interaction.message.embeds[0].toJSON())
 					.setTitle('Here is how to use the always subcommand:')
-					.setDescription('When this feature is enabled, every message you sent will be treated as if it was proxied, even if the proxy isn\'t included.\nYou can either toggle it for the entire server, or specific channels, using the drop-down menu below. Enabled channels will have a radio emoji next to it.')
+					.setDescription('When this feature is enabled, every message you send will be treated as if it was proxied, even if the proxy isn\'t included.\nYou can either toggle it for the entire server, or specific channels, using the drop-down menu below. Enabled channels will have a radio emoji next to it.')
 					.setFields()],
 				components: [new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents([alwaysSelectMenu])],
