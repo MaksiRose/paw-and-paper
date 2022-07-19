@@ -29,7 +29,7 @@ export function disableAllComponents(messageComponents: Array<APIActionRowCompon
 
 			const actionRowComponent = messageComponents[actionRow].components[component];
 			if (actionRowComponent.type === ComponentType.Button && actionRowComponent.style === ButtonStyle.Link) { continue; }
-			messageComponents[actionRow].components[component] = { ...actionRowComponent && { disabled: true } } as APIButtonComponent;
+			messageComponents[actionRow].components[component] = { ...actionRowComponent, ...{ disabled: true } };
 		}
 	}
 

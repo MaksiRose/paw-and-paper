@@ -88,7 +88,7 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 			.update({
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
-					.setTitle(`Are you sure you want to delete the character named "${character.name}" ? This will be **permanent**!!!`)],
+					.setTitle(`Are you sure you want to delete the character named "${character.name}"? This will be **permanent**!!!`)],
 				components: [
 					...disableAllComponents([getOriginalComponents().toJSON(), new ActionRowBuilder<SelectMenuBuilder>().setComponents([SelectMenuBuilder.from(interaction.component)]).toJSON()]),
 					new ActionRowBuilder<ButtonBuilder>()
