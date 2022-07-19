@@ -202,7 +202,7 @@ export async function profileInteractionCollector(client: CustomClient, interact
 		}
 
 		/* Checking if the user is resting, and if they are, it will stop the resting. */
-		if (interaction.inGuild()) { await isResting(interaction, userData, []); }
+		if (interaction.inGuild() && userData?.currentCharacter?.[interaction.guildId || 'DM'] !== undefined) { await isResting(interaction, userData, []); }
 
 		/* Getting the old character and the id of the character the user has clicked on. Then it is updating the user's current character to the character they have clicked on. Then it is getting the new character and profile. */
 		const oldCharacterData = (userData?.characters?.[userData?.currentCharacter?.[interaction.guildId || 'DM']] || null) as Character | null;
