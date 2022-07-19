@@ -300,7 +300,6 @@ async function sendErrorMessage(interaction: CommandInteraction | MessageContext
 
 	if (interaction instanceof ChatInputCommandInteraction || interaction instanceof MessageContextMenuCommandInteraction) {
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to execute \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-		console.error(error);
 	}
 	else if (interaction.isSelectMenu()) {
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to select \x1b[31m${interaction.values[0]} \x1b[0mfrom the menu \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
@@ -311,6 +310,7 @@ async function sendErrorMessage(interaction: CommandInteraction | MessageContext
 	else if (interaction.type === InteractionType.ModalSubmit) {
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to submit the modal \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 	}
+	console.error(error);
 
 	// "Reply" can't be used here in case the interaction is already responded to. A new "respond" method should be added to the interaction as an extended class/type, which would default to replying to an interaction, and a second argument would decide whether "editReply" or "followUp" would act as a replacement
 	{
