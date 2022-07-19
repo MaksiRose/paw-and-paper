@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from 'fs';
-import { sendReminder } from '../commands/maintenance/water';
+import { sendReminder } from '../commands/gameplay_maintenance/water-tree';
 import profileModel from '../models/userModel';
 import { CustomClient, UserSchema } from '../typedef';
 
