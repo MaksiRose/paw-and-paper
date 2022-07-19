@@ -83,7 +83,7 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 			.update({
 				embeds: [new EmbedBuilder(interaction.message.embeds[0].toJSON())
 					.setTitle('Here is how to use the set subcommand:')
-					.setDescription('Proxying is a way to speak as if your character was saying it. The proxy is an indicator to the bot you want your message to be proxied. It exists of a prefix (indicator before the message) and a suffix (indicator after the message). You can either set both or one of them.\n\nExamples:\nprefix: `<`, suffix: `>`, example message: `<hello friends>`\n`prefix: `P: `, no suffix, example message: `P: hello friends`\n`no prefix, suffix: ` -p`, example message: `hello friends -p`\nThis is case-sensitive (meaning that upper and lowercase matters).')],
+					.setDescription('Proxying is a way to speak as if your character was saying it. The proxy is an indicator to the bot you want your message to be proxied. It consists of a prefix (indicator before the message) and a suffix (indicator after the message). You can either set both or one of them.\n\nExamples:\nprefix: `<`, suffix: `>`, example message: `<hello friends>`\n`prefix: `P: `, no suffix, example message: `P: hello friends`\n`no prefix, suffix: ` -p`, example message: `hello friends -p`\nThis is case-sensitive (meaning that upper and lowercase matters).')],
 				components: [new ActionRowBuilder<ButtonBuilder>()
 					.setComponents([new ButtonBuilder()
 						.setCustomId(`proxy_set_modal_${characterDataId}`)
