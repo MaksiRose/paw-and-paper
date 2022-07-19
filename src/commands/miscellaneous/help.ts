@@ -49,7 +49,7 @@ export async function helpInteractionCollector(client: CustomClient, interaction
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
 					.setTitle('Page 1: 📝 Character Customization')
-					.setDescription('**`/name`** - Start your adventure! (Re-)name a character.\n**`/species`** - Change your character\'s species or displayed species.\n**`/pronouns`** - Choose the pronouns you are using during roleplay.\n**`/picture`** - Choose an avatar for your character.\n**`/color`** - Enter a valid hex code to give your messages and profile that color.\n**`/description`** - Give a more detailed description of your character.\n**`/proxy`** - Add a proxy or autoproxy for your character.\n**`/profile`** - Look up all the available info about a character or change the character you are using.\n**`/delete`** - Delete parts of or your entire account.')],
+					.setDescription('**`/name`** - Start your adventure! (Re-)name a character.\n**`/species`** - Change your character\'s species or displayed species.\n**`/pronouns`** - Choose the pronouns you are using during roleplay.\n**`/avatar`** - Choose an avatar for your character.\n**`/color`** - Enter a valid hex code to give your messages and profile that color.\n**`/description`** - Give a more detailed description of your character.\n**`/proxy`** - Add a proxy or autoproxy for your character.\n**`/profile`** - Look up all the available info about a character or change the character you are using.\n**`/delete`** - Delete parts of or your entire account.')],
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
