@@ -4,6 +4,7 @@ import { profileInteractionCollector } from '../commands/character_customization
 import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../commands/character_customization/pronouns';
 import { proxyInteractionCollector, sendEditProxyModalResponse } from '../commands/character_customization/proxy';
 import { sendEditDisplayedSpeciesModalResponse, speciesInteractionCollector } from '../commands/character_customization/species';
+import { helpInteractionCollector } from '../commands/miscellaneous/help';
 import { sendEditMessageModalResponse } from '../contextmenu/edit';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
@@ -219,6 +220,13 @@ export const event: Event = {
 			if (interaction.isSelectMenu()) {
 
 				console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully selected \x1b[31m${interaction.values[0]} \x1b[0mfrom the menu \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+
+				if (interaction.customId.startsWith('help_')) {
+
+					await helpInteractionCollector(client, interaction)
+						.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					return;
+				}
 			}
 
 			if (interaction.isButton()) {
