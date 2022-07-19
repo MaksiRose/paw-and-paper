@@ -183,7 +183,7 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 		else if (interaction.customId.startsWith('proxy_always_options')) {
 
 			const channelId = interaction.values[0].replace('proxy_', '');
-			const hasChannel = userData && userData.autoproxy[interaction.guildId].includes(channelId);
+			const hasChannel = userData && userData.autoproxy[interaction.guildId] !== undefined && userData.autoproxy[interaction.guildId].includes(channelId);
 
 			userData = await userModel.findOneAndUpdate(
 				{ uuid: userData?.uuid },
