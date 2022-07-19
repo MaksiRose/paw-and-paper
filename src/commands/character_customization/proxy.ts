@@ -303,17 +303,17 @@ async function getSelectMenus(allChannels: Collection<string, NonThreadGuildBase
 	const alwaysSelectMenu = new SelectMenuBuilder()
 		.setCustomId(`proxy_always_options_${characterData?._id}`)
 		.setPlaceholder('Select channels to automatically be proxied in')
-		.addOptions({ label: 'Everywhere', value: 'proxy_everywhere' });
+		.addOptions({ label: 'Everywhere', value: 'proxy_everywhere', emoji: userData && userData.autoproxy[serverData?.serverId || '']?.includes('everywhere') ? '🔘' : undefined });
 
 	const disableAllSelectMenu = new SelectMenuBuilder()
 		.setCustomId(`proxy_disable_all_options_${serverData?.serverId}`)
 		.setPlaceholder('Select channels to disable all proxying for')
-		.addOptions({ label: 'Everywhere', value: 'proxy_all_everywhere' });
+		.addOptions({ label: 'Everywhere', value: 'proxy_all_everywhere', emoji: serverData?.proxysetting?.all?.includes('everywhere') ? '🔘' : undefined });
 
 	const disableAutoSelectMenu = new SelectMenuBuilder()
 		.setCustomId(`proxy_disable_auto_options_${serverData?.serverId}`)
 		.setPlaceholder('Select channels to disable automatic proxying for')
-		.addOptions({ label: 'Everywhere', value: 'proxy_auto_everywhere' });
+		.addOptions({ label: 'Everywhere', value: 'proxy_auto_everywhere', emoji: serverData?.proxysetting?.auto?.includes('everywhere') ? '🔘' : undefined });
 
 	for (const [channelId, channel] of allChannels) {
 
