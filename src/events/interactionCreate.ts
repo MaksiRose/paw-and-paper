@@ -1,5 +1,6 @@
 import { APIMessage } from 'discord-api-types/v9';
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, CommandInteraction, EmbedBuilder, Interaction, InteractionReplyOptions, InteractionType, Message, MessageContextMenuCommandInteraction, ModalSubmitInteraction, SelectMenuInteraction, UserContextMenuCommandInteraction, WebhookEditMessageOptions } from 'discord.js';
+import { deleteInteractionCollector } from '../commands/character_customization/delete';
 import { profileInteractionCollector } from '../commands/character_customization/profile';
 import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../commands/character_customization/pronouns';
 import { proxyInteractionCollector, sendEditProxyModalResponse } from '../commands/character_customization/proxy';
@@ -258,6 +259,13 @@ export const event: Event = {
 			if (interaction.customId.startsWith('proxy_')) {
 
 				await proxyInteractionCollector(interaction, userData, serverData)
+					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+				return;
+			}
+
+			if (interaction.customId.startsWith('delete_')) {
+
+				await deleteInteractionCollector(interaction, userData)
 					.catch(async (error) => { await sendErrorMessage(interaction, error); });
 				return;
 			}
