@@ -179,7 +179,7 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 	}
 
 	/* Creating a new message asking the user if they are sure that they want to delete all their data. */
-	if (interaction.isButton() && interaction.customId === 'delete-all') {
+	if (interaction.isButton() && interaction.customId === 'delete_all') {
 
 		await interaction
 			.update({
