@@ -189,9 +189,6 @@ export default class Model<T extends UUIDObject> {
 
 					for (const key of Object.keys(mainObject)) {
 
-						// If otherObject doesn't have this key, continue
-						if (otherObject !== undefined && !Object.prototype.hasOwnProperty.call(otherObject, key)) { continue; }
-
 						if (!isObjectOrArray(mainObject[key])) {
 
 							if (mainObject[key] != otherObject?.[key]) {
