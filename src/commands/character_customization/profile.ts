@@ -210,7 +210,7 @@ export async function profileInteractionCollector(client: CustomClient, interact
 		userData = await userModel.findOneAndUpdate(
 			{ uuid: userData.uuid },
 			(u) => {
-				if (_id === 'Empty Slot') { u.currentCharacter[interaction.guildId || 'DM'] = _id; }
+				if (_id !== 'Empty Slot') { u.currentCharacter[interaction.guildId || 'DM'] = _id; }
 				else { delete u.currentCharacter[interaction.guildId || 'DM']; }
 			},
 		);
