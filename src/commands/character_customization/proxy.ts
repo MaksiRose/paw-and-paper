@@ -83,7 +83,8 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 			.update({
 				embeds: [new EmbedBuilder(interaction.message.embeds[0].toJSON())
 					.setTitle('Here is how to use the set subcommand:')
-					.setDescription('Proxying is a way to speak as if your character was saying it. The proxy is an indicator to the bot you want your message to be proxied. It consists of a prefix (indicator before the message) and a suffix (indicator after the message). You can either set both or one of them.\n\nExamples:\nprefix: `<`, suffix: `>`, example message: `<hello friends>`\nprefix: `P: `, no suffix, example message: `P: hello friends`\nno prefix, suffix: ` -p`, example message: `hello friends -p`\nThis is case-sensitive (meaning that upper and lowercase matters).')],
+					.setDescription('Proxying is a way to speak as if your character was saying it. The proxy is an indicator to the bot you want your message to be proxied. It consists of a prefix (indicator before the message) and a suffix (indicator after the message). You can either set both or one of them.\n\nExamples:\nprefix: `<`, suffix: `>`, example message: `<hello friends>`\nprefix: `P: `, no suffix, example message: `P: hello friends`\nno prefix, suffix: ` -p`, example message: `hello friends -p`\nThis is case-sensitive (meaning that upper and lowercase matters).')
+					.setFields()],
 				components: [new ActionRowBuilder<ButtonBuilder>()
 					.setComponents([new ButtonBuilder()
 						.setCustomId(`proxy_set_modal_${characterDataId}`)
@@ -138,7 +139,8 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 			.update({
 				embeds: [new EmbedBuilder(interaction.message.embeds[0].toJSON())
 					.setTitle('Here is how to use the always subcommand:')
-					.setDescription('When this feature is enabled, every message you sent will be treated as if it was proxied, even if the proxy isn\'t included.\nYou can either toggle it for the entire server, or specific channels, using the drop-down menu below. Enabled channels will have a radio emoji next to it.')],
+					.setDescription('When this feature is enabled, every message you sent will be treated as if it was proxied, even if the proxy isn\'t included.\nYou can either toggle it for the entire server, or specific channels, using the drop-down menu below. Enabled channels will have a radio emoji next to it.')
+					.setFields()],
 				components: [new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents([alwaysSelectMenu])],
 			}).catch((error) => { throw new Error(error); });
@@ -155,7 +157,8 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 			.update({
 				embeds: [new EmbedBuilder(interaction.message.embeds[0].toJSON())
 					.setTitle('Here is how to use the disable subcommand:')
-					.setDescription('This is an **administrator** setting that can toggle whether `automatic` or `all` proxy should be disabled or enabled in specific channels, or in the entire server, using the drop-down menus below. Disabled channels will have a radio emoji next to it.')],
+					.setDescription('This is an **administrator** setting that can toggle whether `automatic` or `all` proxy should be disabled or enabled in specific channels, or in the entire server, using the drop-down menus below. Disabled channels will have a radio emoji next to it.')
+					.setFields()],
 				components: [new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents([disableAutoSelectMenu]),
 				new ActionRowBuilder<SelectMenuBuilder>()
