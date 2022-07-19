@@ -67,7 +67,7 @@ export const command: SlashCommand = {
 			embeds: [new EmbedBuilder()
 				.setColor(characterData.color)
 				.setAuthor({ name: characterData.name, iconURL: imageURL })
-				.setTitle('Profile picture for ${characterData.name} set!')
+				.setTitle(`Profile picture for ${characterData.name} set!`)
 				.setImage(imageURL)],
 		}, true)
 			.catch((error) => {
