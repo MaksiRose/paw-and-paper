@@ -130,7 +130,7 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 		return;
 	}
 
-	if (interaction.isSelectMenu() && speciesMap.has(interaction.values[0].split('_')[0])) {
+	if (interaction.isSelectMenu() && speciesMap.has(interaction.values[0].split('_')[1])) {
 
 		/* Getting the characterId from the customId */
 		const characterId = interaction.customId.split('_')[2];
