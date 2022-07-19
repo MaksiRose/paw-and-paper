@@ -210,7 +210,7 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 		else if (interaction.customId.startsWith('proxy_disable_')) {
 
 			const kind = interaction.customId.includes('all') ? 'all' : 'auto';
-			const channelId = interaction.values[0].replace('proxy_all_', '');
+			const channelId = interaction.values[0].replace('proxy_all_', '').replace('proxy_auto_', '');
 			const hasChannel = serverData && serverData.proxysetting[kind].includes(channelId);
 
 			serverData = await serverModel.findOneAndUpdate(
