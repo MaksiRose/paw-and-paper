@@ -1,6 +1,6 @@
 name: Bug report
 description: Create a report to help us improve
-title: 'Bug using command / feature X: Y is faulty / missing'
+title: ''
 labels: ["bug"]
 body:
   - type: textarea

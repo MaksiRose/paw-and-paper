@@ -6,6 +6,7 @@ import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../
 import { proxyInteractionCollector, sendEditProxyModalResponse } from '../commands/character_customization/proxy';
 import { sendEditDisplayedSpeciesModalResponse, speciesInteractionCollector } from '../commands/character_customization/species';
 import { helpInteractionCollector } from '../commands/miscellaneous/help';
+import { sendRespondToTicketModalResponse, ticketInteractionCollector } from '../commands/miscellaneous/ticket';
 import { sendEditMessageModalResponse } from '../contextmenu/edit';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
@@ -196,6 +197,13 @@ export const event: Event = {
 					.catch(async (error) => { await sendErrorMessage(interaction, error); });
 				return;
 			}
+
+			if (interaction.customId.includes('ticket') && interaction.isFromMessage()) {
+
+				await sendRespondToTicketModalResponse(interaction)
+					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+				return;
+			}
 			return;
 		}
 
@@ -203,7 +211,7 @@ export const event: Event = {
 
 			/* It's checking if the user that created the command is the same as the user that is interacting with the command, or if the user that is interacting is mentioned in the interaction.customId. If neither is true, it will send an error message. */
 			const isNotCommandCreator = interaction.message.interaction && interaction.message.interaction.user.id !== interaction.user.id;
-			const isMentioned = interaction.customId.includes(userData?.uuid || interaction.user.id);
+			const isMentioned = interaction.customId.includes(userData?.uuid || interaction.user.id || 'ANYONECANCLICK');
 			if (isNotCommandCreator && !isMentioned) {
 
 				await respond(interaction, {
@@ -233,6 +241,13 @@ export const event: Event = {
 			if (interaction.isButton()) {
 
 				console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully clicked the button \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+
+				if (interaction.customId.startsWith('ticket_')) {
+
+					await ticketInteractionCollector(interaction)
+						.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					return;
+				}
 			}
 
 			if (interaction.customId.startsWith('profile_')) {
