@@ -115,7 +115,7 @@ export const command: SlashCommand = {
 				.setColor(default_color)
 				.setTitle('Thank you for your contribution!')
 				.setDescription('You help improve the bot.\nNote: To suggest a species [use this form](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement%2Cnon-code&template=species_request.yaml&title=New+species%3A+).')
-				.setFooter({ text: 'We might need to get in contact with you for clarification regarding your ticket. If we have no way of contacting you (i.e. DMs being closed, not allowing friend request and not being in the support server), your ticket might not be considered.' }), ticketEmbed],
+				.setFooter({ text: 'We might need to get in contact with you for clarification regarding your ticket. If we have no way of contacting you (i.e. DMs being closed, not allowing friend requests and not being in the support server), your ticket might not be considered.' }), ticketEmbed],
 		}, true)
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
