@@ -1,4 +1,4 @@
-import { CommandInteraction, EmbedBuilder, GuildMember, SelectMenuInteraction } from 'discord.js';
+import { ButtonInteraction, CommandInteraction, EmbedBuilder, GuildMember, SelectMenuInteraction } from 'discord.js';
 import { respond } from '../events/interactionCreate';
 import userModel from '../models/userModel';
 import { ServerSchema } from '../typedef';
@@ -7,14 +7,14 @@ const { default_color, error_color } = require('../../config.json');
 /**
  * Checks if user has reached the requirement to get a role based on their rank.
  */
-export async function checkRankRequirements(serverData: ServerSchema, interaction: CommandInteraction, member: GuildMember, userRank: 'Youngling' | 'Apprentice' | 'Hunter' | 'Healer' | 'Elderly'): Promise<void> {
+export async function checkRankRequirements(serverData: ServerSchema, interaction: CommandInteraction | ButtonInteraction, member: GuildMember, userRank: 'Youngling' | 'Apprentice' | 'Hunter' | 'Healer' | 'Elderly', sendMessage = false): Promise<void> {
 
 	/* If interaction is not in guild, return */
 	if (!interaction.inGuild()) { return; }
 
 	/* Defining a rankList and a shop of items with the wayOfEarning being rank.
 	The reason why Elderly is also 2 is because as Elderly, it isn't clear if you were Hunter or Healer before. Therefore, having the higher rank Elderly shouldn't automatically grant you a Hunter or Healer role. */
-	const rankList = { Youngling: 0, Apprentice: 1, Hunter: 2, Healer: 2, Eldery: 2 };
+	const rankList = { Youngling: 0, Apprentice: 1, Hunter: 2, Healer: 2, Elderly: 2 };
 	const shop = serverData.shop.filter(item => item.wayOfEarning === 'rank');
 
 	/* For each item in the shop, check if its requirement is equal to the userRank or higher in the rankList. If so, add that item to the users role database and the corresponding role to their roles. */
@@ -48,16 +48,18 @@ export async function checkRankRequirements(serverData: ServerSchema, interactio
 
 					await member.roles.add(item.roleId);
 
-					await respond(interaction, {
-						content: member.toString(),
-						embeds: [new EmbedBuilder()
-							.setColor(default_color)
-							.setAuthor(interaction.guild ? { name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined } : null)
-							.setDescription(`You got the <@&${item.roleId}> role for being ${item.requirement}!`)],
-					}, false)
-						.catch((error) => {
-							if (error.httpStatus !== 404) { throw new Error(error); }
-						});
+					if (sendMessage) {
+						await respond(interaction, {
+							content: member.toString(),
+							embeds: [new EmbedBuilder()
+								.setColor(default_color)
+								.setAuthor(interaction.guild ? { name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined } : null)
+								.setDescription(`You got the <@&${item.roleId}> role for being ${item.requirement}!`)],
+						}, false)
+							.catch((error) => {
+								if (error.httpStatus !== 404) { throw new Error(error); }
+							});
+					}
 				}
 			}
 			catch (error) {
@@ -73,7 +75,7 @@ export async function checkRankRequirements(serverData: ServerSchema, interactio
 /**
  * Checks if user has reached the requirement to get a role based on their level.
  */
-export async function checkLevelRequirements(serverData: ServerSchema, interaction: CommandInteraction, member: GuildMember, userLevel: number) {
+export async function checkLevelRequirements(serverData: ServerSchema, interaction: CommandInteraction | ButtonInteraction, member: GuildMember, userLevel: number, sendMessage = false) {
 
 	/* If interaction is not in guild, return */
 	if (!interaction.inGuild()) { return; }
@@ -112,16 +114,18 @@ export async function checkLevelRequirements(serverData: ServerSchema, interacti
 
 					await member.roles.add(item.roleId);
 
-					await respond(interaction, {
-						content: member.toString(),
-						embeds: [new EmbedBuilder()
-							.setColor(default_color)
-							.setAuthor(interaction.guild ? { name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined } : null)
-							.setDescription(`You got the <@&${item.roleId}> role for being level ${item.requirement}!`)],
-					}, false)
-						.catch((error) => {
-							if (error.httpStatus !== 404) { throw new Error(error); }
-						});
+					if (sendMessage) {
+						await respond(interaction, {
+							content: member.toString(),
+							embeds: [new EmbedBuilder()
+								.setColor(default_color)
+								.setAuthor(interaction.guild ? { name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined } : null)
+								.setDescription(`You got the <@&${item.roleId}> role for being level ${item.requirement}!`)],
+						}, false)
+							.catch((error) => {
+								if (error.httpStatus !== 404) { throw new Error(error); }
+							});
+					}
 				}
 			}
 			catch (error) {
@@ -135,7 +139,7 @@ export async function checkLevelRequirements(serverData: ServerSchema, interacti
 /**
  * Check if the bot has permission to add the role. If not, then send a message explaining the problem, else send a generic error message.
  */
-export async function checkRoleCatchBlock(error: any, interaction: CommandInteraction | SelectMenuInteraction, member: GuildMember): Promise<void> {
+export async function checkRoleCatchBlock(error: any, interaction: CommandInteraction | SelectMenuInteraction | ButtonInteraction, member: GuildMember): Promise<void> {
 
 	/* If interaction is not in guild, return */
 	if (!interaction.inGuild()) { return; }

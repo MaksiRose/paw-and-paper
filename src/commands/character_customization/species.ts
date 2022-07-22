@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
 import { SlashCommand, UserSchema } from '../../typedef';
@@ -58,21 +58,18 @@ export const command: SlashCommand = {
 
 function getSpeciesSelectMenu(page: number, characterId: string): SelectMenuBuilder {
 
-	const speciesMenu = new SelectMenuBuilder()
+	let speciesMenuOptions: RestOrArray<SelectMenuComponentOptionData> = speciesNameArray.map(speciesName => ({ label: speciesName, value: `species_${speciesName}` }));
+
+	if (speciesMenuOptions.length > 25) {
+
+		speciesMenuOptions = speciesMenuOptions.splice(page * 24, 24);
+		speciesMenuOptions.push({ label: 'Show more species options', value: `species_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+	}
+
+	return new SelectMenuBuilder()
 		.setCustomId(`species_speciesselect_${characterId}`)
-		.setPlaceholder('Select a species');
-
-	for (const speciesName of speciesNameArray.slice((page * 24), 24 + (page * 24))) {
-
-		speciesMenu.addOptions({ label: speciesName, value: `species_${speciesName}` });
-	}
-
-	if (speciesNameArray.length > 25) {
-
-		speciesMenu.addOptions({ label: 'Show more species options', value: `species_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
-	}
-
-	return speciesMenu;
+		.setPlaceholder('Select a species')
+		.setOptions(speciesMenuOptions);
 }
 
 function getDisplayedSpeciesButton(characterId: string): ButtonBuilder {

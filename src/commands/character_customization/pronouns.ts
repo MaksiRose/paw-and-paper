@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, Message, ModalBuilder, ModalSubmitInteraction, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, Message, ModalBuilder, ModalSubmitInteraction, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
 import { Character, SlashCommand, UserSchema } from '../../typedef';
@@ -48,22 +48,23 @@ function getPronounsMenu(userData: UserSchema, characterData: Character) {
 	/* Getting the remaining length for the pronoun field in the profile command. */
 	const profilePronounFieldLengthLeft = 1024 - characterData.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n').length;
 
-	/* Creating the pronouns menu and adding the options */
-	const pronounsMenu = new SelectMenuBuilder()
-		.setCustomId(`pronouns_selectmodal_${userData.uuid}_${characterData._id}`)
-		.setPlaceholder('Select a pronoun to change');
+	/* Creating the pronouns menu options */
+	const pronounsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
 
 	characterData.pronounSets.forEach((pronounSet, value) => {
 
-		pronounsMenu.addOptions({ label: `${pronounSet[0]}/${pronounSet[1]}`, description: `(${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]}/${pronounSet[5]})`, value: `pronouns_${value}` });
+		pronounsMenuOptions.push({ label: `${pronounSet[0]}/${pronounSet[1]}`, description: `(${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]}/${pronounSet[5]})`, value: `pronouns_${value}` });
 	});
 
-	if (characterData.pronounSets.length < 25 && profilePronounFieldLengthLeft >= 4) {
+	if (pronounsMenuOptions.length < 25 && profilePronounFieldLengthLeft >= 4) {
 
-		pronounsMenu.addOptions({ label: 'Add another pronoun', value: 'pronouns_add' });
+		pronounsMenuOptions.push({ label: 'Add another pronoun', value: 'pronouns_add' });
 	}
 
-	return pronounsMenu;
+	return new SelectMenuBuilder()
+		.setCustomId(`pronouns_selectmodal_${userData.uuid}_${characterData._id}`)
+		.setPlaceholder('Select a pronoun to change')
+		.setOptions(pronounsMenuOptions);
 }
 
 export async function pronounsInteractionCollector(interaction: ButtonInteraction | SelectMenuInteraction): Promise<void> {

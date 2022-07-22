@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, Collection, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, NonThreadGuildBasedChannel, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, Collection, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, NonThreadGuildBasedChannel, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { respond } from '../../events/interactionCreate';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
@@ -232,20 +232,6 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 		}
-
-		/* This edits the original message where the select menu originates, to have the correct pages get rid of any selections made. */
-		const { disableAutoSelectMenu, alwaysSelectMenu, disableAllSelectMenu } = await getSelectMenus(allChannels, userData, characterData, serverData, page);
-
-		await interaction.message
-			.edit({
-				components: interaction.customId.includes('always') ? [new ActionRowBuilder<SelectMenuBuilder>()
-					.setComponents([alwaysSelectMenu])] :
-					[new ActionRowBuilder<SelectMenuBuilder>()
-						.setComponents([disableAutoSelectMenu]),
-					new ActionRowBuilder<SelectMenuBuilder>()
-						.setComponents([disableAllSelectMenu])],
-			})
-			.catch((error) => { throw new Error(error); });
 	}
 }
 
@@ -300,45 +286,42 @@ export async function sendEditProxyModalResponse(interaction: ModalSubmitInterac
 
 async function getSelectMenus(allChannels: Collection<string, NonThreadGuildBasedChannel>, userData: UserSchema | null, characterData: Character | null, serverData: ServerSchema | null, page: number): Promise<{ alwaysSelectMenu: SelectMenuBuilder, disableAllSelectMenu: SelectMenuBuilder, disableAutoSelectMenu: SelectMenuBuilder; }> {
 
-	const alwaysSelectMenu = new SelectMenuBuilder()
-		.setCustomId(`proxy_always_options_${characterData?._id}`)
-		.setPlaceholder('Select channels to automatically be proxied in')
-		.addOptions({ label: 'Everywhere', value: 'proxy_everywhere', emoji: userData && userData.autoproxy[serverData?.serverId || '']?.includes('everywhere') ? '🔘' : undefined });
+	let alwaysSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [{ label: 'Everywhere', value: 'proxy_everywhere', emoji: userData && userData.autoproxy[serverData?.serverId || '']?.includes('everywhere') ? '🔘' : undefined }, ...allChannels.map((channel, channelId) => ({ label: channel.name, value: `proxy_${channelId}`, emoji: userData && userData.autoproxy[serverData?.serverId || '']?.includes(channelId) ? '🔘' : undefined }))];
 
-	const disableAllSelectMenu = new SelectMenuBuilder()
-		.setCustomId(`proxy_disable_all_options_${serverData?.serverId}`)
-		.setPlaceholder('Select channels to disable all proxying for')
-		.addOptions({ label: 'Everywhere', value: 'proxy_all_everywhere', emoji: serverData?.proxysetting?.all?.includes('everywhere') ? '🔘' : undefined });
+	let disableAllSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [{ label: 'Everywhere', value: 'proxy_all_everywhere', emoji: serverData?.proxysetting?.all?.includes('everywhere') ? '🔘' : undefined }, ...allChannels.map((channel, channelId) => ({ label: channel.name, value: `proxy_all_${channelId}`, emoji: serverData?.proxysetting?.all?.includes(channelId) ? '🔘' : undefined }))];
 
-	const disableAutoSelectMenu = new SelectMenuBuilder()
-		.setCustomId(`proxy_disable_auto_options_${serverData?.serverId}`)
-		.setPlaceholder('Select channels to disable automatic proxying for')
-		.addOptions({ label: 'Everywhere', value: 'proxy_auto_everywhere', emoji: serverData?.proxysetting?.auto?.includes('everywhere') ? '🔘' : undefined });
+	let disableAutoSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [{ label: 'Everywhere', value: 'proxy_auto_everywhere', emoji: serverData?.proxysetting?.auto?.includes('everywhere') ? '🔘' : undefined }, ...allChannels.map((channel, channelId) => ({ label: channel.name, value: `proxy_auto_${channelId}`, emoji: serverData?.proxysetting?.auto?.includes(channelId) ? '🔘' : undefined }))];
 
-	for (const [channelId, channel] of allChannels) {
+	if (alwaysSelectMenuOptions.length > 25) {
 
-		alwaysSelectMenu.addOptions({ label: channel.name, value: `proxy_${channelId}`, emoji: userData && userData.autoproxy[serverData?.serverId || '']?.includes(channelId) ? '🔘' : undefined });
-		disableAllSelectMenu.addOptions({ label: channel.name, value: `proxy_all_${channelId}`, emoji: serverData?.proxysetting?.all?.includes(channelId) ? '🔘' : undefined });
-		disableAutoSelectMenu.addOptions({ label: channel.name, value: `proxy_auto_${channelId}`, emoji: serverData?.proxysetting?.auto?.includes(channelId) ? '🔘' : undefined });
+		alwaysSelectMenuOptions = alwaysSelectMenuOptions.splice(page * 24, 24);
+		alwaysSelectMenuOptions.push({ label: 'Show more channels', value: `proxy_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
 	}
 
-	if (alwaysSelectMenu.options.length > 25) {
+	if (disableAllSelectMenuOptions.length > 25) {
 
-		alwaysSelectMenu.setOptions(alwaysSelectMenu.options.splice(page * 24, 24));
-		alwaysSelectMenu.addOptions({ label: 'Show more channels', value: `proxy_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+		disableAllSelectMenuOptions = disableAllSelectMenuOptions.splice(page * 24, 24);
+		disableAllSelectMenuOptions.push({ label: 'Show more channels', value: `proxy_all_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
 	}
 
-	if (disableAllSelectMenu.options.length > 25) {
+	if (disableAutoSelectMenuOptions.length > 25) {
 
-		disableAllSelectMenu.setOptions(disableAllSelectMenu.options.splice(page * 24, 24));
-		disableAllSelectMenu.addOptions({ label: 'Show more channels', value: `proxy_all_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+		disableAutoSelectMenuOptions = disableAutoSelectMenuOptions.splice(page * 24, 24);
+		disableAutoSelectMenuOptions.push({ label: 'Show more channels', value: `proxy_auto_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
 	}
 
-	if (disableAutoSelectMenu.options.length > 25) {
-
-		disableAutoSelectMenu.setOptions(disableAutoSelectMenu.options.splice(page * 24, 24));
-		disableAutoSelectMenu.addOptions({ label: 'Show more channels', value: `proxy_auto_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
-	}
-
-	return { alwaysSelectMenu, disableAllSelectMenu, disableAutoSelectMenu };
+	return {
+		alwaysSelectMenu: new SelectMenuBuilder()
+			.setCustomId(`proxy_always_options_${characterData?._id}`)
+			.setPlaceholder('Select channels to automatically be proxied in')
+			.setOptions(alwaysSelectMenuOptions),
+		disableAllSelectMenu: new SelectMenuBuilder()
+			.setCustomId(`proxy_disable_all_options_${serverData?.serverId}`)
+			.setPlaceholder('Select channels to disable all proxying for')
+			.setOptions(disableAllSelectMenuOptions),
+		disableAutoSelectMenu: new SelectMenuBuilder()
+			.setCustomId(`proxy_disable_auto_options_${serverData?.serverId}`)
+			.setPlaceholder('Select channels to disable automatic proxying for')
+			.setOptions(disableAutoSelectMenuOptions),
+	};
 }

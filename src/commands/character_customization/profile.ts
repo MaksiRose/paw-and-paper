@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, GuildMember, InteractionReplyOptions, MessageEditOptions, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, GuildMember, InteractionReplyOptions, InteractionUpdateOptions, MessageEditOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { hasCooldownMap, respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
 import { Character, CustomClient, SlashCommand, UserSchema } from '../../typedef';
@@ -21,7 +21,7 @@ export const command: SlashCommand = {
 				.setDescription('A user that you want to look up the profile of.')
 				.setRequired(false))
 		.toJSON(),
-	disablePreviousCommand: true,
+	disablePreviousCommand: false, // This command has checks in place that only change something if no other command is active
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
 
 		/* Getting userData and characterData either for mentionedUser if there is one or for interaction user otherwise */
@@ -76,7 +76,7 @@ export const command: SlashCommand = {
  * @param embedArray
  * @returns The message object.
  */
-export async function getMessageContent(client: CustomClient, userId: string, characterData: Character | null, isYourself: boolean, embedArray: Array<EmbedBuilder>): Promise<InteractionReplyOptions & MessageEditOptions> {
+export async function getMessageContent(client: CustomClient, userId: string, characterData: Character | null, isYourself: boolean, embedArray: Array<EmbedBuilder>): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
 
 	const user = await client.users
 		.fetch(userId)
@@ -112,24 +112,20 @@ export async function getMessageContent(client: CustomClient, userId: string, ch
  */
 function getAccountsPage(userData: UserSchema, charactersPage: number, isYourself: boolean): SelectMenuBuilder {
 
-	const accountsMenu = new SelectMenuBuilder()
+	let accountMenuOptions: RestOrArray<SelectMenuComponentOptionData> = Object.values(userData.characters).map(character => ({ label: character.name, value: `profile_${isYourself ? 'switchto' : 'view'}_${character._id}` }));
+
+	if (isYourself) { accountMenuOptions.push({ label: 'Empty Slot', value: 'profile_switchto_Empty Slot' }); }
+
+	if (accountMenuOptions.length > 25) {
+
+		accountMenuOptions = accountMenuOptions.splice(charactersPage * 24, 24);
+		accountMenuOptions.push({ label: 'Show more characters', value: `profile_nextpage_${charactersPage}`, description: `You are currently on page ${charactersPage + 1}`, emoji: '📋' });
+	}
+
+	return new SelectMenuBuilder()
 		.setCustomId(`profile_accountselect_${userData.uuid}`)
-		.setPlaceholder(`Select a character to ${isYourself ? 'switch to' : 'view'}`);
-
-	for (const character of Object.values(userData.characters)) {
-
-		accountsMenu.addOptions({ label: character.name, value: `profile_${isYourself ? 'switchto' : 'view'}_${character._id}` });
-	}
-
-	if (isYourself) { accountsMenu.addOptions({ label: 'Empty Slot', value: 'profile_switchto_Empty Slot' }); }
-
-	if (accountsMenu.options.length > 25) {
-
-		accountsMenu.setOptions(accountsMenu.options.splice(charactersPage * 24, (charactersPage + 1) * 24));
-		accountsMenu.addOptions({ label: 'Show more characters', value: `profile_nextpage_${charactersPage}`, description: `You are currently on page ${charactersPage + 1}`, emoji: '📋' });
-	}
-
-	return accountsMenu;
+		.setPlaceholder(`Select a character to ${isYourself ? 'switch to' : 'view'}`)
+		.setOptions(accountMenuOptions);
 }
 
 export async function profileInteractionCollector(client: CustomClient, interaction: ButtonInteraction | SelectMenuInteraction): Promise<void> {

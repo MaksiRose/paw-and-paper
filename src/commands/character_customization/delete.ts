@@ -1,9 +1,9 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder, WebhookEditMessageOptions } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, WebhookEditMessageOptions } from 'discord.js';
 import { respond } from '../../events/interactionCreate';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
 import { SlashCommand, UserSchema } from '../../typedef';
-import { disableAllComponents } from '../../utils/componentDisabling';
+import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
 const { error_color } = require('../../../config.json');
 
 const name: SlashCommand['name'] = 'delete';
@@ -30,10 +30,13 @@ export const command: SlashCommand = {
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
+			return;
 		}
 
-		await respond(interaction, sendOriginalMessage(), true)
+		const botReply = await respond(interaction, sendOriginalMessage(), true)
 			.catch((error) => { throw new Error(error); });
+
+		createCommandComponentDisabler(userData.uuid, interaction.guildId || 'DM', botReply);
 		return;
 	},
 };
@@ -343,22 +346,18 @@ function getOriginalComponents(): ActionRowBuilder<ButtonBuilder> {
  */
 function getCharactersPage(deletePage: number, userData: UserSchema): SelectMenuBuilder {
 
-	const accountsMenu = new SelectMenuBuilder()
+	let accountsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = Object.values(userData.characters).map(character => ({ label: character.name, value: `delete_individual_${character._id}` }));
+
+	if (accountsMenuOptions.length > 25) {
+
+		accountsMenuOptions = accountsMenuOptions.splice(deletePage * 24, 24);
+		accountsMenuOptions.push({ label: 'Show more characters', value: `delete_individual_nextpage_${deletePage}`, description: `You are currently on page ${deletePage + 1}`, emoji: '📋' });
+	}
+
+	return new SelectMenuBuilder()
 		.setCustomId('delete_individual_options')
-		.setPlaceholder('Select a character');
-
-	for (const character of Object.values(userData.characters)) {
-
-		accountsMenu.addOptions({ label: character.name, value: `delete_individual_${character._id}` });
-	}
-
-	if (accountsMenu.options.length > 25) {
-
-		accountsMenu.setOptions(accountsMenu.options.splice(deletePage * 24, (deletePage + 1) * 24));
-		accountsMenu.addOptions({ label: 'Show more characters', value: `delete_individual_nextpage_${deletePage}`, description: `You are currently on page ${deletePage + 1}`, emoji: '📋' });
-	}
-
-	return accountsMenu;
+		.setPlaceholder('Select a character')
+		.setOptions(accountsMenuOptions);
 }
 
 /**
@@ -366,24 +365,24 @@ function getCharactersPage(deletePage: number, userData: UserSchema): SelectMenu
  */
 async function getServersPage(deletePage: number, userData: UserSchema): Promise<SelectMenuBuilder> {
 
-	const accountsMenu = new SelectMenuBuilder()
-		.setCustomId('delete_server_options')
-		.setPlaceholder('Select a server');
+	let accountsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
 
 	const serverIdList = [...new Set([...Object.values(userData.characters).map(c => Object.keys(c.profiles)), ...Object.keys(userData.currentCharacter)].flat())];
-
 	for (const serverId of serverIdList) {
 
 		const server = await serverModel.findOne({ serverId: serverId }).catch(() => { return null; });
 		if (server === null) { continue; }
-		accountsMenu.addOptions({ label: server.name, value: `delete_server_${server.serverId}` });
+		accountsMenuOptions.push({ label: server.name, value: `delete_server_${server.serverId}` });
 	}
 
-	if (accountsMenu.options.length > 25) {
+	if (accountsMenuOptions.length > 25) {
 
-		accountsMenu.setOptions(accountsMenu.options.splice(deletePage * 24, (deletePage + 1) * 24));
-		accountsMenu.addOptions({ label: 'Show more servers', value: `delete_server_nextpage_${deletePage}`, description: `You are currently on page ${deletePage + 1}`, emoji: '📋' });
+		accountsMenuOptions = accountsMenuOptions.splice(deletePage * 24, 24);
+		accountsMenuOptions.push({ label: 'Show more servers', value: `delete_server_nextpage_${deletePage}`, description: `You are currently on page ${deletePage + 1}`, emoji: '📋' });
 	}
 
-	return accountsMenu;
+	return new SelectMenuBuilder()
+		.setCustomId('delete_server_options')
+		.setPlaceholder('Select a server')
+		.setOptions(accountsMenuOptions);
 }

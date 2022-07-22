@@ -38,7 +38,7 @@ export async function createGuild(client: CustomClient, guild: Guild): Promise<S
 	}
 
 	await owner
-		.send({ content: `Thank you for adding Paw and Paper to **${guild.name}**! 🥰\nYour server can receive updates about new releases and features. This is important since the bot is frequently being updated. Just go in your server and type \`rp getupdates #channel\`, with #channel being the channel that you want to receive updates in. Don't worry, I won't spam you! 😊\n\nThere are more features such as being able to visit other servers (\`rp allowvisits\`) or earning roles (\`rp shopadd\`). You can check page 5 of the \`rp help\` command to find out more.` })
+		.send({ content: `Thank you for adding Paw and Paper to **${guild.name}**! 🥰\nYour server can receive updates about new releases and features. This is important since the bot is frequently being updated. You can configure this and more by typing **\`/server-settings\`** Don't worry, I won't spam you! 😊` })
 		.catch((error) => { console.error(error); });
 
 	const toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8')) as DeleteList;

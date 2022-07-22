@@ -144,11 +144,11 @@ export default class Model<T extends UUIDObject> {
 
 				let allPaths: LogArray = [];
 
-				for (const [key, value] of Object.entries(newObject)) {
+				for (const key of Object.keys(Object.keys(newObject).length === 0 && Object.keys(oldObject).length > 0 ? oldObject : newObject)) {
 
 					const isObject = (val: any) => typeof val === 'object' && val !== null;
 					const hasObjectsAsValues = (val: any) => Object.values(val).filter(v => isObject(v)).length > 0;
-					if (isObject(value) && hasObjectsAsValues(value)) {
+					if (isObject(newObject?.[key]) && (hasObjectsAsValues(newObject?.[key]) || (isObject(oldObject?.[key]) && hasObjectsAsValues(oldObject?.[key])))) {
 
 						allPaths = allPaths.concat(createLogArray(oldObject?.[key], newObject?.[key], variablePath + `.${key}`));
 					}
