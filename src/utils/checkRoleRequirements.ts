@@ -25,14 +25,14 @@ export async function checkRankRequirements(serverData: ServerSchema, interactio
 			try {
 
 				/* Get the userData and the roles of the current character. */
-				const userData = await userModel.findOne({ userId: member.id });
+				const userData = await userModel.findOne(u => u.userId.includes(member.id));
 				const roles = userData.characters[userData.currentCharacter[interaction.guildId]].profiles[interaction.guildId].roles;
 
 				/* It's checking if the role is in the database. If it's not, it will add it to the database. */
 				if (!roles.some(r => r.roleId === item.roleId && r.wayOfEarning === item.wayOfEarning && r.requirement === item.requirement)) {
 
 					await userModel.findOneAndUpdate(
-						{ userId: member.id },
+						u => u.uuid === userData.uuid,
 						(u) => {
 							u.characters[u.currentCharacter[interaction.guildId]].profiles[interaction.guildId].roles.push({
 								roleId: item.roleId,
@@ -91,14 +91,14 @@ export async function checkLevelRequirements(serverData: ServerSchema, interacti
 			try {
 
 				/* Get the userData and the roles of the current character. */
-				const userData = await userModel.findOne({ userId: member.id });
+				const userData = await userModel.findOne(u => u.userId.includes(member.id));
 				const roles = userData.characters[userData.currentCharacter[interaction.guildId]].profiles[interaction.guildId].roles;
 
 				/* It's checking if the role is in the database. If it's not, it will add it to the database. */
 				if (roles.some(r => r.roleId === item.roleId && r.wayOfEarning === item.wayOfEarning && r.requirement === item.requirement) === false) {
 
 					await userModel.findOneAndUpdate(
-						{ userId: member.id },
+						u => u.uuid === userData.uuid,
 						(u) => {
 							u.characters[u.currentCharacter[interaction.guildId]].profiles[interaction.guildId].roles.push({
 								roleId: item.roleId,

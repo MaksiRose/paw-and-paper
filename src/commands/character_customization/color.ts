@@ -43,7 +43,7 @@ export const command: SlashCommand = {
 
 		/* Changing the hex code and sending a success message. */
 		userData = await userModel.findOneAndUpdate(
-			{ uuid: userData.uuid },
+			u => u.uuid === userData?.uuid,
 			(u) => {
 				u.characters[u.currentCharacter[interaction.guildId || 'DM']].color = `#${hexColor}`;
 			},

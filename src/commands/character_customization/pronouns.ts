@@ -71,7 +71,7 @@ export async function pronounsInteractionCollector(interaction: ButtonInteractio
 
 	if (interaction.isSelectMenu() && interaction.customId.includes('selectmodal')) {
 
-		const userData = await userModel.findOne({ uuid: interaction.customId.split('_')[2] });
+		const userData = await userModel.findOne(u => u.uuid === interaction.customId.split('_')[2]);
 		const characterData = userData.characters[interaction.customId.split('_')[3]];
 
 		/* Getting the position of the pronoun in the array, and the existing pronoun in that place */
@@ -113,7 +113,7 @@ export async function pronounsInteractionCollector(interaction: ButtonInteractio
 
 export async function sendEditPronounsModalResponse(interaction: ModalSubmitInteraction): Promise<void> {
 
-	const userData = await userModel.findOne({ uuid: interaction.customId.split('_')[1] });
+	const userData = await userModel.findOne(u => u.uuid === interaction.customId.split('_')[1]);
 	const characterData = userData.characters[interaction.customId.split('_')[2]];
 
 	/* Getting the array position of the pronoun that is being edited, the pronouns that are being set, whether
@@ -185,7 +185,7 @@ export async function sendEditPronounsModalResponse(interaction: ModalSubmitInte
 
 	/* Add the pronouns, send a success message and update the original one. */
 	await userModel.findOneAndUpdate(
-		{ uuid: userData.uuid },
+		u => u.uuid === userData?.uuid,
 		(u) => {
 			if (willBeDeleted) {
 				u.characters[characterData._id].pronounSets.splice(pronounNumber, 1);

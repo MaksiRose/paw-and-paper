@@ -44,12 +44,16 @@ export const command: SlashCommand = {
 			}
 
 			userData = await userModel.create({
-				userId: interaction.user.id,
+				userId: [interaction.user.id],
 				advice: { resting: false, drinking: false, eating: false, passingout: false, coloredbuttons: false },
-				reminders: { water: true, resting: true },
+				settings: { reminders: { water: true, resting: true } },
 				characters: {},
 				currentCharacter: {},
-				autoproxy: {},
+				serverProxySettings: {},
+				globalProxySettings: {
+					autoproxy: false,
+					stickymode: false,
+				},
 				lastPlayedVersion: `${version.split('.').slice(0, -1).join('.')}`,
 				uuid: '',
 			});
@@ -77,7 +81,7 @@ export const command: SlashCommand = {
 		const _id = characterData ? characterData._id : await createId();
 
 		userData = await userModel.findOneAndUpdate(
-			{ uuid: userData.uuid },
+			u => u.uuid === userData?.uuid,
 			(u) => {
 				if (!characterData) {
 

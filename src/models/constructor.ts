@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { Schema } from '../typedef';
-import crypto from 'crypto';
+import { generateId } from 'crystalid';
 
 interface UUIDObject {
 	uuid: string;
@@ -11,11 +11,11 @@ export default class Model<T extends UUIDObject> {
 	path: string;
 	schema: Schema<T>;
 	save: (updateObject: T) => Promise<void>;
-	findOne: (filterObject: Partial<T>) => Promise<T>;
 	find: (filter?: (value: T) => boolean) => Promise<Array<T>>;
+	findOne: (filter: (value: T) => boolean) => Promise<T>;
 	create: (dataObject: T) => Promise<T>;
-	findOneAndDelete: (updateObject: Partial<T>) => Promise<void>;
-	findOneAndUpdate: (filterObject: Partial<T>, updateFunction: (value: T) => void) => Promise<T>;
+	findOneAndDelete: (filter: (value: T) => boolean) => Promise<void>;
+	findOneAndUpdate: (filter: (value: T) => boolean, updateFunction: (value: T) => void) => Promise<T>;
 	update: (uuid: string) => Promise<T>;
 
 	constructor(path: string, schema: Schema<T>) {
@@ -50,28 +50,6 @@ export default class Model<T extends UUIDObject> {
 			writeFileSync(`${path}/${updateObject.uuid}.json`, JSON.stringify(updateObject, null, '\t'));
 		};
 
-		/** Searches for an object that meets the filter, and returns it. If several objects meet the requirement, the first that is found is returned. */
-		this.findOne = async (filterObject: Partial<T>): Promise<T> => {
-
-			const allDocumentNames = readdirSync(path).filter(f => f.endsWith('.json'));
-			file_iteration: for (const documentName of allDocumentNames) {
-
-				const dataObject = JSON.parse(readFileSync(`${path}/${documentName}`, 'utf-8')) as T;
-
-				for (const [key, value] of Object.entries(filterObject)) {
-
-					if (Object.hasOwn(dataObject, key) === false || dataObject[key] !== value) {
-
-						continue file_iteration;
-					}
-				}
-
-				return dataObject;
-			}
-
-			throw new Error('Could not find a document with the given filter.');
-		};
-
 		/** Searches for all objects that meet the filter, and returns an array of them. */
 		this.find = async (filter?: (value: T) => boolean): Promise<Array<T>> => {
 
@@ -86,36 +64,29 @@ export default class Model<T extends UUIDObject> {
 				});
 		};
 
+		/** Searches for an object that meets the filter, and returns it. If several objects meet the requirement, the first that is found is returned. */
+		this.findOne = async (filter: (value: T) => boolean): Promise<T> => {
+
+			const foundDocuments = await this.find(filter);
+			if (foundDocuments.length > 0) { return foundDocuments[0]; }
+
+			throw new Error('Could not find a document with the given filter.');
+		};
+
 		/** Creates a new database entry. */
 		this.create = async (dataObject: T): Promise<T> => {
 
-			const uuid = crypto.randomUUID();
-
-			dataObject.uuid = checkNewUUID(uuid);
+			dataObject.uuid = generateId();
 			this.save(dataObject);
 
 			console.log('Created File: ', dataObject.uuid);
 			return dataObject;
-
-			/** Checks if any file in this path has the uuid as its name, and returns a new uuid if so. */
-			function checkNewUUID(uuidToCheck: string): string {
-
-				for (const fileName of readdirSync(path).filter(f => f.endsWith('.json'))) {
-
-					if (fileName.includes(uuidToCheck)) {
-
-						return checkNewUUID(crypto.randomUUID());
-					}
-				}
-
-				return uuidToCheck;
-			}
 		};
 
 		/** Searches for an object that meets the filter, and deletes it. If several objects meet the requirement, the first that is found is deleted. */
-		this.findOneAndDelete = async (filterObject: Partial<T>): Promise<void> => {
+		this.findOneAndDelete = async (filter: (value: T) => boolean): Promise<void> => {
 
-			const dataObject = await this.findOne(filterObject);
+			const dataObject = await this.findOne(filter);
 
 			unlinkSync(`${path}/${dataObject.uuid}.json`);
 
@@ -125,9 +96,9 @@ export default class Model<T extends UUIDObject> {
 		};
 
 		/** Searches for an object that meets the filter, and updates it. If several objects meet the requirement, the first that is found is updated. */
-		this.findOneAndUpdate = async (filterObject: Partial<T>, updateFunction: (value: T) => void): Promise<T> => {
+		this.findOneAndUpdate = async (filter: (value: T) => boolean, updateFunction: (value: T) => void): Promise<T> => {
 
-			const dataObject = await this.findOne(filterObject);
+			const dataObject = await this.findOne(filter);
 			const newDataObject = JSON.parse(JSON.stringify(dataObject)) as T;
 			updateFunction(newDataObject);
 
@@ -221,7 +192,7 @@ export default class Model<T extends UUIDObject> {
 		/** Updates the information of a file to be accurate to the schema */
 		this.update = async (uuid: string): Promise<T> => {
 
-			let dataObject = await this.findOne({ uuid: uuid } as Partial<T>); // Technically unsafe, due to literal-string uuid types... but unrealistic
+			let dataObject = await this.findOne(v => v.uuid === uuid); // Technically unsafe, due to literal-string uuid types... but unrealistic
 
 			/* Add / Update existing keys */
 			for (const [key, value] of Object.entries(schema)) {

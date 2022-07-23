@@ -6,7 +6,14 @@ const config = require('../../config.json');
 const pkg = require('../../package.json');
 
 const userModel = new Model<UserSchema>('./database/profiles', {
-	userId: { type: 'string', default: '', locked: true,
+	userId: {
+		type: 'array',
+		of: {
+			type: 'string',
+			default: '',
+			locked: true,
+		},
+		locked: false,
 	},
 	advice: {
 		type: 'object',
@@ -19,11 +26,17 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 		},
 		locked: false,
 	},
-	reminders: {
+	settings: {
 		type: 'object',
 		default: {
-			water: { type: 'boolean', default: true, locked: false },
-			resting: { type: 'boolean', default: true, locked: false },
+			reminders: {
+				type: 'object',
+				default: {
+					water: { type: 'boolean', default: true, locked: false },
+					resting: { type: 'boolean', default: true, locked: false },
+				},
+				locked: false,
+			},
 		},
 		locked: false,
 	},
@@ -219,12 +232,46 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 		of: { type: 'string', default: '', locked: false },
 		locked: false,
 	},
-	autoproxy: {
+	serverProxySettings: {
 		type: 'map',
 		of: {
-			type: 'array',
-			of: { type: 'string', default: '', locked: false },
+			type: 'object',
+			default: {
+				autoproxy: {
+					type: 'object',
+					default: {
+						setTo: { type: 'number', default: 0, locked: false },
+						channels: {
+							type: 'object',
+							default: {
+								setTo: { type: 'string', default: 'whitelist', locked: false },
+								whitelist: {
+									type: 'array',
+									of: { type: 'string', default: '', locked: false },
+									locked: false,
+								},
+								blacklist: {
+									type: 'array',
+									of: { type: 'string', default: '', locked: false },
+									locked: false,
+								},
+							},
+							locked: false,
+						},
+					},
+					locked: false,
+				},
+				stickymode: { type: 'number', default: 0, locked: false },
+			},
 			locked: false,
+		},
+		locked: false,
+	},
+	globalProxySettings: {
+		type: 'object',
+		default: {
+			autoproxy: { type: 'boolean', default: false, locked: false },
+			stickymode: { type: 'boolean', default: false, locked: false },
 		},
 		locked: false,
 	},
@@ -232,3 +279,4 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 	uuid: { type: 'string', default: '', locked: true },
 });
 export default userModel;
+

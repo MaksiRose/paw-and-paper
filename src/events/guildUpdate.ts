@@ -8,7 +8,7 @@ export const event: Event = {
 	async execute(client, oldGuild: Guild, newGuild: Guild) {
 
 		await serverModel.findOneAndUpdate(
-			{ serverId: newGuild.id },
+			s => s.serverId === newGuild.id,
 			(s) => {
 				s.name = newGuild.name;
 			},

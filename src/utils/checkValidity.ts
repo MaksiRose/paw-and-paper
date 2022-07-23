@@ -9,7 +9,7 @@ import { decreaseLevel } from './levelHandling';
 export async function isPassedOut(interaction: CommandInteraction<'cached' | 'raw'>, uuid: string, isNew: boolean): Promise<boolean> {
 
 	/* Defining the userData, characterData and profileData */
-	const userData = await userModel.findOne({ uuid: uuid }).catch(() => { return null; });
+	const userData = await userModel.findOne(u => u.uuid === uuid).catch(() => { return null; });
 	const characterData = userData?.characters?.[userData.currentCharacter?.[interaction.guildId]];
 	const profileData = characterData?.profiles?.[interaction.guildId];
 
@@ -29,7 +29,7 @@ export async function isPassedOut(interaction: CommandInteraction<'cached' | 'ra
 		if (userData.advice.passingout === false) {
 
 			await userModel.findOneAndUpdate(
-				{ uuid: userData.uuid },
+				u => u.uuid === userData.uuid,
 				(u) => { u.advice.passingout = true; },
 			);
 
@@ -94,7 +94,7 @@ export async function isResting(interaction: CommandInteraction<'cached' | 'raw'
 	if (profileData.isResting == true) {
 
 		userData = await userModel.findOneAndUpdate(
-			{ uuid: userData.uuid },
+			u => u.uuid === userData.uuid,
 			(u) => {
 				u.characters[u.currentCharacter[interaction.guildId]].profiles[interaction.guildId].isResting = false;
 			},

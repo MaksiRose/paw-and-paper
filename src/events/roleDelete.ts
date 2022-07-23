@@ -8,7 +8,7 @@ export const event: Event = {
 	once: false,
 	async execute(client: CustomClient, role: Role) {
 
-		const serverData = await serverModel.findOne({ serverId: role.guild.id });
+		const serverData = await serverModel.findOne(s => s.serverId === role.guild.id);
 		const roles = serverData.shop.filter(shoprole => shoprole.roleId === role.id);
 
 		for (const shoprole of roles) {
@@ -30,7 +30,7 @@ export const event: Event = {
 
 						const userRole = profile.roles[userRoleIndex];
 						userModel.findOneAndUpdate(
-							{ uuid: user.uuid },
+							u => u.uuid === user.uuid,
 							(u) => {
 								u.characters[character._id].profiles[profile.serverId].roles.splice(userRoleIndex, 1);
 

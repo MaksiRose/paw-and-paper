@@ -10,7 +10,7 @@ export async function execute() {
 	for (const file of serverFiles) {
 
 		await serverModel.findOneAndUpdate(
-			{ uuid: file.replace('.json', '') },
+			s => s.uuid === file.replace('.json', ''),
 			(s: ServerSchema) => {
 				s.currentlyVisiting = null;
 			},

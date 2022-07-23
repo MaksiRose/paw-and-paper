@@ -94,9 +94,20 @@ export async function createGuild(client: CustomClient, guild: Guild): Promise<S
 		visitChannelId: null,
 		currentlyVisiting: null,
 		shop: [],
-		proxysetting: {
-			all: [],
-			auto: [],
+		proxySettings: {
+			channels: {
+				setTo: 'blacklist',
+				blacklist: [],
+				whitelist: [],
+			},
+			roles: {
+				setTo: 'blacklist',
+				blacklist: [],
+				whitelist: [],
+			},
+			requiredInTag: [],
+			tagInDisplayname: false,
+			logChannelId: null,
 		},
 		skills: ['strength', 'dexterity', 'constitution', 'charisma', 'wisdom', 'intelligence'],
 		uuid: '',
@@ -112,7 +123,7 @@ export async function deleteGuild(guildId: string): Promise<void> {
 
 	const toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8')) as DeleteList;
 
-	const serverData = await serverModel.findOne({ serverId: guildId });
+	const serverData = await serverModel.findOne(s => s.serverId === guildId);
 	renameSync(`./database/servers/${serverData.uuid}.json`, `./database/toDelete/${serverData.uuid}.json`);
 
 	const thirtyDaysInMs = 2_592_000_000;

@@ -31,8 +31,8 @@ export const event: Event = {
 				.catch(() => { throw new Error('Interaction channel cannot be found.'); });
 		}
 
-		let userData = await userModel.findOne({ userId: interaction.user.id }).catch(() => { return null; });
-		let serverData = await serverModel.findOne({ serverId: interaction.guildId || '' }).catch(() => { return null; });
+		let userData = await userModel.findOne(u => u.userId.includes(interaction.user.id)).catch(() => { return null; });
+		let serverData = await serverModel.findOne(s => s.serverId === interaction.guildId).catch(() => { return null; });
 
 		/* It's setting the last interaction timestamp for the user to now. */
 		if (userData) { lastInteractionTimestampMap.set(userData.uuid + interaction.guildId, Date.now()); }
@@ -96,7 +96,7 @@ export const event: Event = {
 
 			if (interaction.inGuild()) {
 
-				userData = await userModel.findOne({ userId: interaction.user.id }).catch(() => { return null; });
+				userData = await userModel.findOne(u => u.userId.includes(interaction.user.id)).catch(() => { return null; });
 				const characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guildId]];
 				const profileData = characterData?.profiles?.[interaction.guildId];
 
@@ -104,7 +104,7 @@ export const event: Event = {
 				if (userData && profileData && profileData.sapling.exists && !profileData.sapling?.sentGentleReminder && Date.now() > (profileData.sapling.nextWaterTimestamp || 0)) {
 
 					await userModel.findOneAndUpdate(
-						{ uuid: userData.uuid },
+						u => u.uuid === userData?.uuid,
 						(u) => {
 							u.characters[u.currentCharacter[interaction.guildId]].profiles[interaction.guildId].sapling.sentGentleReminder = true;
 						},
@@ -137,7 +137,7 @@ export const event: Event = {
 					});
 
 				await userModel.findOneAndUpdate(
-					{ userId: interaction.user.id },
+					u => u.userId.includes(interaction.user.id),
 					(u) => {
 						u.lastPlayedVersion = version.split('.').slice(0, -1).join('.');
 					},

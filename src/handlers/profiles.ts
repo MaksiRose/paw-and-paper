@@ -14,7 +14,7 @@ export async function execute(client: CustomClient) {
 
 		/* This executes the sendReminder function for each profile for which the sapling exists
 		and where lastMessageChannelId is a string, if the user has enabled water reminders. */
-		if (userData.reminders.water === true) {
+		if (userData.settings.reminders.water === true) {
 
 			for (const character of Object.values(userData.characters)) {
 
@@ -29,7 +29,7 @@ export async function execute(client: CustomClient) {
 		/* This updates each profile to have no cooldown, not rest, and maximum energy. */
 		await profileModel
 			.findOneAndUpdate(
-				{ uuid: userData.uuid },
+				u => u.uuid === userData.uuid,
 				(u: UserSchema) => {
 					for (const character of Object.values(u.characters)) {
 

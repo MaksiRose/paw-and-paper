@@ -33,7 +33,7 @@ export const event: Event = {
 		for (const [, OAuth2Guild] of allServers) {
 
 			await serverModel.findOneAndUpdate(
-				{ serverId: OAuth2Guild.id },
+				s => s.serverId === OAuth2Guild.id,
 				(s) => {
 					s.name = OAuth2Guild.name;
 				},
@@ -76,7 +76,7 @@ export const event: Event = {
 							if (Number(timestamp) < Date.now() - 604_800_000) {
 
 								userModel.findOneAndUpdate(
-									{ uuid: userData.uuid },
+									u => u.uuid === userData.uuid,
 									(u) => {
 										u.characters[characterData._id].profiles[profileData.serverId][statKind] -= 10;
 										const stat = (statKind.replace('max', '').toLowerCase()) as 'health' | 'energy' | 'hunger' | 'thirst';

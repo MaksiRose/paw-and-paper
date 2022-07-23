@@ -170,7 +170,7 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 
 					/* Update the serverData, by removing a potential existing entry and making a new entry. */
 					serverData = await serverModel.findOneAndUpdate(
-						{ serverId: i.guildId },
+						s => s.serverId === i.guildId,
 						(s) => {
 							if (role === null || wayOfEarning === null || requirement === null) { return; }
 							s.shop = s.shop.filter(r => r.roleId !== role);
@@ -205,7 +205,7 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 
 								/* Update the user by checking if there is a role with the roleId, and if there is, deleting it */
 								await userModel.findOneAndUpdate(
-									{ uuid: u.uuid },
+									user => user.uuid === u.uuid,
 									(user) => {
 										user.characters[c._id].profiles[p.serverId].roles = user.characters[c._id].profiles[p.serverId].roles.filter(r => r.roleId !== role);
 									},
@@ -214,7 +214,7 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 								/* Giving users the role if they meet the requirements or removing it if they don't. */
 								if (wayOfEarning === 'levels') {
 
-									const member = await i.guild.members.fetch(u.userId);
+									const member = await i.guild.members.fetch(u.userId[0]);
 									await checkLevelRequirements(serverData, i, member, p.levels, false);
 
 									if (p.levels < requirement && member.roles.cache.has(role)) {
@@ -227,7 +227,7 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 
 								if (wayOfEarning === 'rank') {
 
-									const member = await i.guild.members.fetch(u.userId);
+									const member = await i.guild.members.fetch(u.userId[0]);
 									await checkRankRequirements(serverData, i, member, p.rank, false);
 
 									const rankList = { Youngling: 0, Apprentice: 1, Hunter: 2, Healer: 2, Eldery: 2 };
@@ -241,7 +241,7 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 
 								if (wayOfEarning === 'experience') {
 
-									const member = await i.guild.members.fetch(u.userId);
+									const member = await i.guild.members.fetch(u.userId[0]);
 									if (member.roles.cache.has(role)) {
 
 										await member.roles
@@ -273,7 +273,7 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 
 					/* Update the serverData, by removing a potential existing entry and making a new entry. */
 					serverData = await serverModel.findOneAndUpdate(
-						{ serverId: i.guildId },
+						s => s.serverId === i.guildId,
 						(s) => {
 							s.shop = s.shop.filter(r => r.roleId !== role);
 						},
@@ -302,14 +302,14 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 
 								/* Update the user by checking if there is a role with the roleId, and if there is, deleting it */
 								await userModel.findOneAndUpdate(
-									{ uuid: u.uuid },
+									user => user.uuid === u.uuid,
 									(user) => {
 										user.characters[c._id].profiles[p.serverId].roles = user.characters[c._id].profiles[p.serverId].roles.filter(r => r.roleId !== role);
 									},
 								);
 
 								/* Remove the role from users that have it. */
-								const member = await i.guild.members.fetch(u.userId);
+								const member = await i.guild.members.fetch(u.userId[0]);
 
 								if (member.roles.cache.has(role)) {
 
@@ -452,7 +452,7 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 			if (channelIdOrOff === 'off') {
 
 				await serverModel.findOneAndUpdate(
-					{ serverId: interaction.guildId },
+					s => s.serverId === interaction.guildId,
 					(s) => {
 						s.visitChannelId = null;
 					},
@@ -469,7 +469,7 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 			else {
 
 				await serverModel.findOneAndUpdate(
-					{ serverId: interaction.guildId },
+					s => s.serverId === interaction.guildId,
 					(s) => {
 						s.visitChannelId = channelIdOrOff;
 					},
@@ -505,7 +505,7 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 	}
 
 	/* It's checking if the interaction is the visits select menu */
-	if (interaction.isSelectMenu() && (interaction.customId === 'serversettings_proxying_all_options' || interaction.customId === 'serversettings_proxying_auto_options')) {
+	if (interaction.isSelectMenu() && interaction.customId === 'serversettings_proxying_options') {
 
 		/* It's checking if the value is for turning a page. If it is, it's getting the page number from the value, and it's updating the message with the shop message with the page number. */
 		if (interaction.values[0].includes('nextpage')) {
@@ -521,20 +521,19 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 		}
 		else {
 
-			const kind = interaction.customId.includes('all') ? 'all' : 'auto';
-			const channelId = interaction.values[0].replace('serversettings_proxying_all_', '').replace('serversettings_proxying_auto_', '');
-			const hasChannel = serverData && serverData.proxysetting[kind].includes(channelId);
+			const channelId = interaction.values[0].replace('serversettings_proxying_', '');
+			const hasChannel = serverData && serverData.proxySettings.channels.blacklist.includes(channelId);
 
 			serverData = await serverModel.findOneAndUpdate(
-				{ serverId: interaction.guildId },
+				s => s.serverId === interaction.guildId,
 				(s) => {
-					if (!hasChannel) { s.proxysetting[kind].push(channelId); }
-					else { s.proxysetting[kind] = s.proxysetting[kind].filter(string => string !== channelId); }
+					if (!hasChannel) { s.proxySettings.channels.blacklist.push(channelId); }
+					else { s.proxySettings.channels.blacklist = s.proxySettings.channels.blacklist.filter(string => string !== channelId); }
 				},
 			);
 
 			await respond(interaction, {
-				content: `${hasChannel ? 'Enabled' : 'Disabled'} ${kind} proxies ${channelId === 'everywhere' ? channelId : `in <#${channelId}>`}!`,
+				content: `${hasChannel ? 'Enabled' : 'Disabled'} proxying in <#${channelId}>!`,
 				ephemeral: true,
 			}, false)
 				.catch((error) => {
@@ -756,20 +755,12 @@ async function getVisitsMessage(interaction: SelectMenuInteraction<'cached'>, se
 
 async function getProxyingMessage(interaction: SelectMenuInteraction<'cached'>, serverData: ServerSchema, page: number): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
 
-	let disableAllSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [{ label: 'Everywhere', value: 'serversettings_proxying_all_everywhere', emoji: serverData?.proxysetting?.all?.includes('everywhere') ? '🔘' : undefined }, ...(await interaction.guild.channels.fetch()).map((channel, channelId) => ({ label: channel.name, value: `serversettings_proxying_all_${channelId}`, emoji: serverData?.proxysetting?.all?.includes(channelId) ? '🔘' : undefined }))];
+	let disableSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).map((channel, channelId) => ({ label: channel.name, value: `serversettings_proxying_all_${channelId}`, emoji: serverData?.proxySettings.channels.blacklist?.includes(channelId) ? '🔘' : undefined }));
 
-	let disableAutoSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [{ label: 'Everywhere', value: 'serversettings_proxying_auto_everywhere', emoji: serverData?.proxysetting?.auto?.includes('everywhere') ? '🔘' : undefined }, ...(await interaction.guild.channels.fetch()).map((channel, channelId) => ({ label: channel.name, value: `serversettings_proxying_auto_${channelId}`, emoji: serverData?.proxysetting?.auto?.includes(channelId) ? '🔘' : undefined }))];
+	if (disableSelectMenuOptions.length > 25) {
 
-	if (disableAllSelectMenuOptions.length > 25) {
-
-		disableAllSelectMenuOptions = disableAllSelectMenuOptions.splice(page * 24, 24);
-		disableAllSelectMenuOptions.push({ label: 'Show more channels', value: `serversettings_proxying_all_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
-	}
-
-	if (disableAutoSelectMenuOptions.length > 25) {
-
-		disableAutoSelectMenuOptions = disableAutoSelectMenuOptions.splice(page * 24, 24);
-		disableAutoSelectMenuOptions.push({ label: 'Show more channels', value: `serversettings_proxying_auto_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+		disableSelectMenuOptions = disableSelectMenuOptions.splice(page * 24, 24);
+		disableSelectMenuOptions.push({ label: 'Show more channels', value: `serversettings_proxying_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
 	}
 
 	return {
@@ -786,13 +777,8 @@ async function getProxyingMessage(interaction: SelectMenuInteraction<'cached'>, 
 				.setStyle(ButtonStyle.Secondary)]),
 		new ActionRowBuilder<SelectMenuBuilder>()
 			.setComponents([new SelectMenuBuilder()
-				.setCustomId('serversettings_proxying_all_options')
-				.setPlaceholder('Select channels to disable all proxying for')
-				.setOptions(disableAllSelectMenuOptions)]),
-		new ActionRowBuilder<SelectMenuBuilder>()
-			.setComponents([new SelectMenuBuilder()
-				.setCustomId('serversettings_proxying_auto_options')
-				.setPlaceholder('Select channels to disable automatic proxying for')
-				.setOptions(disableAutoSelectMenuOptions)])],
+				.setCustomId('serversettings_proxying_options')
+				.setPlaceholder('Select channels to disable proxying for')
+				.setOptions(disableSelectMenuOptions)])],
 	};
 }

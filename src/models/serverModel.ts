@@ -101,19 +101,50 @@ const serverModel = new Model<ServerSchema>('./database/servers', {
 		},
 		locked: false,
 	},
-	proxysetting: {
+	proxySettings: {
 		type: 'object',
 		default: {
-			all: {
+			channels: {
+				type: 'object',
+				default: {
+					setTo: { type: 'string', default: 'blacklist', locked: false },
+					whitelist: {
+						type: 'array',
+						of: { type: 'string', default: '', locked: false },
+						locked: false,
+					},
+					blacklist: {
+						type: 'array',
+						of: { type: 'string', default: '', locked: false },
+						locked: false,
+					},
+				},
+				locked: false,
+			},
+			roles: {
+				type: 'object',
+				default: {
+					setTo: { type: 'string', default: 'blacklist', locked: false },
+					whitelist: {
+						type: 'array',
+						of: { type: 'string', default: '', locked: false },
+						locked: false,
+					},
+					blacklist: {
+						type: 'array',
+						of: { type: 'string', default: '', locked: false },
+						locked: false,
+					},
+				},
+				locked: false,
+			},
+			requiredInTag: {
 				type: 'array',
 				of: { type: 'string', default: '', locked: false },
 				locked: false,
 			},
-			auto: {
-				type: 'array',
-				of: { type: 'string', default: '', locked: false },
-				locked: false,
-			},
+			tagInDisplayname: { type: 'boolean', default: false, locked: false },
+			logChannelId: { type: 'string?', default: null, locked: false },
 		},
 		locked: false,
 	},

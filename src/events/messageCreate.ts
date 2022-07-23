@@ -1,5 +1,5 @@
 import { Message } from 'discord.js';
-import { sendVisitMessage } from '../commands/interaction/requestvisit';
+// import { sendVisitMessage } from '../commands/interaction/requestvisit';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
 import { CustomClient, Event } from '../typedef';
@@ -18,9 +18,9 @@ export const event: Event = {
 			return;
 		}
 
-		const userData = await userModel.findOne({ userId: message.author.id }).catch(() => { return null; });
+		const userData = await userModel.findOne(u => u.userId.includes(message.author.id)).catch(() => { return null; });
 		const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId || 'DM']];
-		let serverData = await serverModel.findOne({ serverId: message.guildId }).catch(() => { return null; });
+		let serverData = await serverModel.findOne(s => s.serverId === message.guildId).catch(() => { return null; });
 
 		/* Checking if the serverData is null. If it is null, it will create a guild. */
 		if (!serverData && message.inGuild()) {
@@ -32,8 +32,7 @@ export const event: Event = {
 
 		let replaceMessage = false;
 
-		const allproxyIsDisabled = serverData.proxysetting.all.includes(message.channel.id) || serverData.proxysetting.all.includes('everywhere');
-		const autoproxyIsDisabled = serverData.proxysetting.auto.includes(message.channel.id) || serverData.proxysetting.auto.includes('everywhere');
+		const proxyIsDisabled = (serverData.proxySettings.channels.setTo === 'blacklist' && serverData.proxySettings.channels.blacklist.includes(message.channelId)) || (serverData.proxySettings.channels.setTo === 'whitelist' && !serverData.proxySettings.channels.whitelist.includes(message.channelId));
 
 		/* Checking if the message starts with the character's proxy start and ends with the character's
 		proxy end. If it does, it will set the current character to the character that the message is
@@ -44,7 +43,7 @@ export const event: Event = {
 			to the prefix + 'say ' + the message content without the proxy. */
 			const hasProxy = character.proxy.startsWith !== '' || character.proxy.endsWith !== '';
 			const messageIncludesProxy = message.content.startsWith(character.proxy.startsWith) && message.content.endsWith(character.proxy.endsWith);
-			if (hasProxy && messageIncludesProxy && !allproxyIsDisabled) {
+			if (hasProxy && messageIncludesProxy && !proxyIsDisabled) {
 
 				if (userData.currentCharacter[message.guildId]) { userData.currentCharacter[message.guildId] = character._id; }
 				message.content = message.content.substring(character.proxy.startsWith.length, message.content.length - character.proxy.endsWith.length);
@@ -54,19 +53,19 @@ export const event: Event = {
 
 		/* Checking if the user has autoproxy enabled in the current channel, and if so, it is adding the
 		prefix to the message. */
-		const autoproxyIsToggled = userData.autoproxy[message.guildId]?.includes(message.channel.id) || userData.autoproxy[message.guildId]?.includes('everywhere');
-		if (autoproxyIsToggled && !allproxyIsDisabled && !autoproxyIsDisabled) {
+		const autoproxyIsToggled = (userData.serverProxySettings[message.guildId]?.autoproxy.setTo === 1 && (userData.serverProxySettings[message.guildId]?.autoproxy.channels.setTo === 'blacklist' && !userData.serverProxySettings[message.guildId]?.autoproxy.channels.blacklist.includes(message.channelId)) || (userData.serverProxySettings[message.guildId]?.autoproxy.channels.setTo === 'whitelist' && userData.serverProxySettings[message.guildId]?.autoproxy.channels.whitelist.includes(message.channelId))) || (userData.serverProxySettings[message.guildId]?.autoproxy.setTo === 0 && userData.globalProxySettings.autoproxy === true);
+		if (autoproxyIsToggled && !proxyIsDisabled) {
 
 			replaceMessage = true;
 		}
 
 		if (serverData.currentlyVisiting !== null && message.channel.id === serverData.visitChannelId) {
 
-			const otherServerData = /** @type {import('../typedef').ServerSchema | null} */ (await serverModel.findOne({ serverId: serverData.currentlyVisiting }));
+			const otherServerData = /** @type {import('../typedef').ServerSchema | null} */ (await serverModel.findOne(s => s.serverId === serverData?.currentlyVisiting));
 
 			if (otherServerData) {
 
-				await sendVisitMessage(client, message, userData, serverData, otherServerData);
+				// await sendVisitMessage(client, message, userData, serverData, otherServerData);
 				replaceMessage = true;
 			}
 		}

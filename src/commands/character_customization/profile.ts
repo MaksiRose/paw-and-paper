@@ -26,7 +26,7 @@ export const command: SlashCommand = {
 
 		/* Getting userData and characterData either for mentionedUser if there is one or for interaction user otherwise */
 		const mentionedUser = interaction.options.getUser('user');
-		userData = await userModel.findOne({ userId: !mentionedUser ? interaction.user.id : mentionedUser.id }).catch(() => { return null; });
+		userData = await userModel.findOne(u => u.userId.includes(!mentionedUser ? interaction.user.id : mentionedUser.id)).catch(() => { return null; });
 		const characterData = userData ? userData.characters[userData.currentCharacter[interaction.guildId || 'DM']] : null;
 
 		/* Responding if there is no userData */
@@ -56,7 +56,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		const response = await getMessageContent(client, userData.userId, characterData, !mentionedUser, embedArray);
+		const response = await getMessageContent(client, userData.userId[0], characterData, !mentionedUser, embedArray);
 		const selectMenu = getAccountsPage(userData, 0, !mentionedUser);
 
 		await respond(interaction, {
@@ -135,14 +135,14 @@ export async function profileInteractionCollector(client: CustomClient, interact
 
 		/* Getting the userData from the customId */
 		const userDataUUID = interaction.customId.split('_')[2];
-		const userData = await userModel.findOne({ uuid: userDataUUID });
+		const userData = await userModel.findOne(u => u.uuid === userDataUUID);
 
 		/* Getting the DM channel, the select menu, and sending the message to the DM channel. */
 		const dmChannel = await interaction.user
 			.createDM()
 			.catch((error) => { throw new Error(error); });
 
-		const selectMenu = getAccountsPage(userData, 0, userData.userId === interaction.user.id);
+		const selectMenu = getAccountsPage(userData, 0, userData.userId.includes(interaction.user.id));
 
 		dmChannel
 			.send({
@@ -161,7 +161,7 @@ export async function profileInteractionCollector(client: CustomClient, interact
 
 		/* Getting the userData from the customId */
 		const userDataUUID = interaction.customId.split('_')[2];
-		const userData = await userModel.findOne({ uuid: userDataUUID });
+		const userData = await userModel.findOne(u => u.uuid === userDataUUID);
 
 		/* Getting the charactersPage from the value Id, incrementing it by one or setting it to zero if the page number is bigger than the total amount of pages. */
 		let charactersPage = Number(interaction.values[0].split('_')[2]) + 1;
@@ -169,7 +169,7 @@ export async function profileInteractionCollector(client: CustomClient, interact
 
 		await interaction
 			.update({
-				components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getAccountsPage(userData, charactersPage, userData.userId === interaction.user.id)])],
+				components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getAccountsPage(userData, charactersPage, userData.userId.includes(interaction.user.id))])],
 			})
 			.catch((error) => { throw new Error(error); });
 		return;
@@ -182,7 +182,7 @@ export async function profileInteractionCollector(client: CustomClient, interact
 
 		/* Getting the userData from the customId */
 		const userDataUUID = interaction.customId.split('_')[2];
-		let userData = await userModel.findOne({ uuid: userDataUUID });
+		let userData = await userModel.findOne(u => u.uuid === userDataUUID);
 
 		/* Checking if the user is on a cooldown, and if they are, it will respond that they can't switch characters. */
 		if (hasCooldownMap.get(userData.uuid + interaction.guildId) === true) {
@@ -204,7 +204,7 @@ export async function profileInteractionCollector(client: CustomClient, interact
 		const oldCharacterData = (userData?.characters?.[userData?.currentCharacter?.[interaction.guildId || 'DM']] || null) as Character | null;
 		const _id = interaction.values[0].split('_')[2];
 		userData = await userModel.findOneAndUpdate(
-			{ uuid: userData.uuid },
+			u => u.uuid === userDataUUID,
 			(u) => {
 				if (_id !== 'Empty Slot') { u.currentCharacter[interaction.guildId || 'DM'] = _id; }
 				else { delete u.currentCharacter[interaction.guildId || 'DM']; }
@@ -226,7 +226,7 @@ export async function profileInteractionCollector(client: CustomClient, interact
 				if (!profileData) {
 
 					userData = await userModel.findOneAndUpdate(
-						{ uuid: userData.uuid },
+						u => u.uuid === userDataUUID,
 						(u) => {
 							u.characters[_id].profiles[interaction.guildId] = {
 								serverId: interaction.guildId,
@@ -297,7 +297,7 @@ export async function profileInteractionCollector(client: CustomClient, interact
 		/* This has to be editReply because we do deferUpdate earlier. We do that because sorting out the roles might take a while. */
 		await interaction
 			.editReply({
-				...await getMessageContent(client, userData.userId, newCharacterData, userData.userId === interaction.user.id, []),
+				...await getMessageContent(client, userData.userId[0], newCharacterData, userData.userId.includes(interaction.user.id), []),
 				components: interaction.message.components,
 			})
 			.catch((error) => { throw new Error(error); });
@@ -317,7 +317,7 @@ export async function profileInteractionCollector(client: CustomClient, interact
 
 		/* Getting the userData from the customId */
 		const userDataUUID = interaction.customId.split('_')[2];
-		const userData = await userModel.findOne({ uuid: userDataUUID });
+		const userData = await userModel.findOne(u => u.uuid === userDataUUID);
 
 		/* Getting the character from the interaction value */
 		const _id = interaction.values[0].split('_')[2];
@@ -325,7 +325,7 @@ export async function profileInteractionCollector(client: CustomClient, interact
 
 		await interaction
 			.update({
-				...await getMessageContent(client, userData.userId, characterData, userData.userId === interaction.user.id, []),
+				...await getMessageContent(client, userData.userId[0], characterData, userData.userId.includes(interaction.user.id), []),
 				components: interaction.message.components,
 			})
 			.catch((error) => { throw new Error(error); });

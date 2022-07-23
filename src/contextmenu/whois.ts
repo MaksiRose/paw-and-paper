@@ -35,7 +35,7 @@ export const command: ContextMenuCommand = {
 		/* This sets the userId, userData and characterData to the default for the author of the selected message.
 		userId is its own variable here to ensure maintainability for when one account could be associated with several userIds. */
 		let userId = interaction.targetMessage.author.id;
-		let userData = await userModel.findOne({ userId: userId }).catch(() => { return null; });
+		let userData = await userModel.findOne(u => u.userId.includes(userId)).catch(() => { return null; });
 		let characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guildId || 'DM']] || null;
 
 		/* This checks whether there is an entry for this message in webhookCache, and sets the userId, userData and characterData to the entry data if it exist. */
@@ -43,7 +43,7 @@ export const command: ContextMenuCommand = {
 		if (webhookCacheEntry !== undefined) {
 
 			userId = webhookCacheEntry[0];
-			userData = await userModel.findOne({ userId: userId }).catch(() => { return null; });
+			userData = await userModel.findOne(u => u.userId.includes(userId)).catch(() => { return null; });
 			characterData = userData?.characters?.[webhookCacheEntry[1]] || null;
 		}
 
@@ -76,7 +76,7 @@ export const command: ContextMenuCommand = {
 			}])
 			.setTimestamp(new Date())];
 
-		const response = await getMessageContent(client, userData.userId, characterData, interaction.user.id === userData.userId, embedArray);
+		const response = await getMessageContent(client, userData.userId[0], characterData, userData.userId.includes(interaction.user.id), embedArray);
 
 		await respond(interaction, {
 			...response,

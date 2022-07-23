@@ -20,7 +20,7 @@ export async function checkLevelUp(interaction: CommandInteraction<'cached' | 'r
 	if (profileData.experience >= requiredExperiencePoints) {
 
 		userData = await userModel.findOneAndUpdate(
-			{ uuid: userData.uuid },
+			u => u.uuid === userData.uuid,
 			(u) => {
 				u.characters[u.currentCharacter[interaction.guildId]].profiles[interaction.guildId].experience -= requiredExperiencePoints;
 				u.characters[u.currentCharacter[interaction.guildId]].profiles[interaction.guildId].levels += 1;
@@ -46,7 +46,7 @@ export async function checkLevelUp(interaction: CommandInteraction<'cached' | 'r
 		botReply = await checkLevelUp(interaction, userData, serverData, botReply);
 
 		const guild = interaction.guild || await interaction.client.guilds.fetch(interaction.guildId);
-		const member = await guild.members.fetch(userData.userId);
+		const member = await guild.members.fetch(interaction.user.id);
 		await checkLevelRequirements(serverData, interaction, member, profileData.levels);
 	}
 
@@ -84,7 +84,7 @@ export async function decreaseLevel(userData: UserSchema, interaction: CommandIn
 	}
 
 	userData = await userModel.findOneAndUpdate(
-		{ uuid: userData.uuid },
+		u => u.uuid === userData.uuid,
 		(u) => {
 			u.characters[u.currentCharacter[interaction.guildId]].profiles[interaction.guildId].levels = newUserLevel;
 			u.characters[u.currentCharacter[interaction.guildId]].profiles[interaction.guildId].experience = 0;
@@ -97,7 +97,7 @@ export async function decreaseLevel(userData: UserSchema, interaction: CommandIn
 
 	/* Get the guild, member, and the profileData roles where the wayOfEarning is levels and the role requirement bigger than the profile level. */
 	const guild = interaction.guild || await interaction.client.guilds.fetch(interaction.guildId);
-	const member = await guild.members.fetch(userData.userId);
+	const member = await guild.members.fetch(interaction.user.id);
 	const roles = profileData.roles.filter(role => role.wayOfEarning === 'levels' && role.requirement > profileData.levels);
 
 	/* It's checking if the user has any roles that are earned by leveling up, and if they do, it will remove them from the user's profileData.roles and remove the role from the user. */
@@ -110,7 +110,7 @@ export async function decreaseLevel(userData: UserSchema, interaction: CommandIn
 			if (userRoleIndex >= 0) { profileData.roles.splice(userRoleIndex, 1); }
 
 			await userModel.findOneAndUpdate(
-				{ uuid: userData.uuid },
+				u => u.uuid === userData.uuid,
 				(u) => {
 					u.characters[u.currentCharacter[interaction.guildId]].profiles[interaction.guildId].roles = profileData.roles;
 				},

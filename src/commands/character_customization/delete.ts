@@ -152,7 +152,7 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 	/* Checking if the interaction is a select menu and if the server ID is in the array of all servers. If it is, it will edit the message to ask the user if they are sure they want to delete all their information on the server. */
 	if (interaction.isSelectMenu() && [...new Set([...Object.values(userData.characters).map(c => Object.keys(c.profiles)), ...Object.keys(userData.currentCharacter)].flat())].includes(interaction.values[0].replace('delete_server_', ''))) {
 
-		const server = await serverModel.findOne({ serverId: interaction.values[0].replace('delete_server_', '') });
+		const server = await serverModel.findOne(s => s.serverId === interaction.values[0].replace('delete_server_', ''));
 		const accountsOnServer = Object.values(userData.characters).map(c => c.profiles[server.serverId]).filter(p => p !== undefined);
 
 		await interaction
@@ -223,7 +223,7 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 			const character = userData.characters[_id];
 
 			await userModel.findOneAndUpdate(
-				{ uuid: userData.uuid },
+				u => u.uuid === userData?.uuid,
 				(u) => {
 					delete u.characters[_id];
 					for (const serverId of Object.keys(u.currentCharacter)) {
@@ -249,7 +249,7 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 			const accountsOnServer = Object.values(userData.characters).map(c => c.profiles[serverId]).filter(p => p !== undefined);
 
 			await userModel.findOneAndUpdate(
-				{ uuid: userData.uuid },
+				u => u.uuid === userData?.uuid,
 				(u) => {
 					for (const c of Object.values(u.characters)) {
 						if (c.profiles[serverId] !== undefined) { delete c.profiles[serverId]; }
@@ -258,7 +258,7 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 				},
 			);
 
-			const server = await serverModel.findOne({ serverId: serverId });
+			const server = await serverModel.findOne(s => s.serverId === serverId);
 
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
@@ -273,7 +273,7 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 		/* Deleting all the data of the user. */
 		if (type === 'all') {
 
-			await userModel.findOneAndDelete({ uuid: userData.uuid });
+			await userModel.findOneAndDelete(u => u.uuid === userData?.uuid);
 
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
@@ -370,7 +370,7 @@ async function getServersPage(deletePage: number, userData: UserSchema): Promise
 	const serverIdList = [...new Set([...Object.values(userData.characters).map(c => Object.keys(c.profiles)), ...Object.keys(userData.currentCharacter)].flat())];
 	for (const serverId of serverIdList) {
 
-		const server = await serverModel.findOne({ serverId: serverId }).catch(() => { return null; });
+		const server = await serverModel.findOne(s => s.serverId === serverId).catch(() => { return null; });
 		if (server === null) { continue; }
 		accountsMenuOptions.push({ label: server.name, value: `delete_server_${server.serverId}` });
 	}

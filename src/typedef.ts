@@ -116,31 +116,6 @@ interface Inventory {
 	materials: Record<string, number>;
 }
 
-interface Sapling {
-	/** Whether there is a sapling */
-	exists: boolean;
-	/** The health of the sapling */
-	health: number;
-	/** How many times the sapling has been watered */
-	waterCycles: number;
-	/** Timestamp of the next perfect watering */
-	nextWaterTimestamp: number | null;
-	/** The ID of the last channel the sapling was watered in */
-	lastMessageChannelId: string | null;
-	/** Whether a reminder was sent */
-	sentReminder: boolean;
-	/** Whether a gentle reminder was sent */
-	sentGentleReminder: boolean;
-}
-
-interface Injuries {
-	wounds: number,
-	infections: number,
-	cold: boolean,
-	sprains: number,
-	poison: boolean;
-}
-
 interface Role {
 	/** ID of the role */
 	roleId: string;
@@ -150,12 +125,7 @@ interface Role {
 	requirement: ('Youngling' | 'Apprentice' | 'Hunter' | 'Healer' | 'Elderly') | number;
 }
 
-interface Skills {
-	global: Record<string, number>,
-	personal: Record<string, number>;
-}
-
-interface Profile {
+export interface Profile {
 	/** ID of the server that this information is associated with */
 	readonly serverId: string;
 	/** Rank of the character */
@@ -191,20 +161,39 @@ interface Profile {
 	/** How many ranks the character has unlocked */
 	unlockedRanks: number;
 	/** The sapling of the character */
-	sapling: Sapling;
+	sapling: {
+		/** Whether there is a sapling */
+		exists: boolean;
+		/** The health of the sapling */
+		health: number;
+		/** How many times the sapling has been watered */
+		waterCycles: number;
+		/** Timestamp of the next perfect watering */
+		nextWaterTimestamp: number | null;
+		/** The ID of the last channel the sapling was watered in */
+		lastMessageChannelId: string | null;
+		/** Whether a reminder was sent */
+		sentReminder: boolean;
+		/** Whether a gentle reminder was sent */
+		sentGentleReminder: boolean;
+	};
 	/** Object with injury types as keys and whether the user has them/how many the user has of them as variables */
-	injuries: Injuries;
+	injuries: {
+		wounds: number,
+		infections: number,
+		cold: boolean,
+		sprains: number,
+		poison: boolean;
+	};
 	/** Object with item kinds as the keys and an object of the item types and their quantity as the variables */
 	inventory: Inventory;
 	/** Array of role objects */
 	roles: Array<Role>;
 	/** Object of skills, with global and personal skills as key-value pairs */
-	skills: Skills;
-}
-
-interface Proxy {
-	startsWith: string,
-	endsWith: string;
+	skills: {
+		global: Record<string, number>,
+		personal: Record<string, number>;
+	};
 }
 
 export interface Character {
@@ -223,7 +212,10 @@ export interface Character {
 	/** Array of Arrays of pronouns the character uses */
 	pronounSets: Array<Array<string>>;
 	/** Proxy this character uses */
-	proxy: Proxy;
+	proxy: {
+		startsWith: string,
+		endsWith: string;
+	};
 	/** Embed color used in messages */
 	color: `#${string}`;
 	/** Object of character_id as key and an array of timestamps of when the mention has been done as the value */
@@ -232,32 +224,59 @@ export interface Character {
 	profiles: Record<string, Profile>;
 }
 
-interface Advice {
-	resting: boolean,
-	drinking: boolean,
-	eating: boolean,
-	passingout: boolean,
-	coloredbuttons: boolean;
-}
-
-interface Reminders {
-	water: boolean,
-	resting: boolean;
+/** Object with a whitelist and blacklist and which one it is set to */
+interface ProxyLimitedList {
+	/** Whether the whitelist or blacklist is enabled */
+	setTo: 'whitelist' | 'blacklist',
+	/** Array of IDs that are on the whitelist */
+	whitelist: Array<string>,
+	/** Array of IDs that are on the blacklist */
+	blacklist: Array<string>;
 }
 
 export interface UserSchema {
-	/** ID of the user that created the account. Cannot be modified */
-	readonly userId: string;
+	/** Array of IDs of the users associated with this account */
+	userId: Array<string>;
 	/** Object of advice kinds as the key and whether the advice has been given as the value */
-	advice: Advice;
-	/** Object of reminder kinds as the key and whether the user wants to be reminded/pinged for these occasions as the valuev */
-	reminders: Reminders;
+	advice: {
+		resting: boolean,
+		drinking: boolean,
+		eating: boolean,
+		passingout: boolean,
+		coloredbuttons: boolean;
+	};
+	/** Object of settings the user has configured */
+	settings: {
+		/** Object of reminder kinds as the key and whether the user wants to be reminded/pinged for these occasions as the value */
+		reminders: {
+			water: boolean,
+			resting: boolean;
+		};
+	};
 	/** Object of names of characters as the key and the characters this user has created as value */
 	characters: Record<string, Character>;
 	/** Object of the server IDs as the key and the id of the character that is currently active as the value */
 	currentCharacter: Record<string, string>;
-	/** Object of the server IDs as the key and an array of channel IDs as the value */
-	autoproxy: Record<string, Array<string>>;
+	/** Object of the server IDs as the key and object of proxy settings as the value */
+	serverProxySettings: {
+		[index: string]: {
+			/** Object of autoproxy settings to follow */
+			autoproxy: {
+				/** 0 to follow global settings, 1 to enable, 2 to disable */
+				setTo: 0 | 1 | 2;
+				channels: ProxyLimitedList;
+			};
+			/** 0 to follow global settings, 1 to enable, 2 to disable */
+			stickymode: 0 | 1 | 2;
+		};
+	};
+	/** Object of proxy settings that are configured globally */
+	globalProxySettings: {
+		/** Whether autoproxy is enabled globally */
+		autoproxy: boolean,
+		/** Whether stickymode is enabled globally */
+		stickymode: boolean;
+	};
 	/** Last major version that the user played on */
 	lastPlayedVersion: string;
 	readonly uuid: string;
@@ -281,11 +300,6 @@ export interface Dens {
 	medicineDen: DenSchema;
 }
 
-interface ProxySetting {
-	auto: Array<string>,
-	all: Array<string>;
-}
-
 export interface ServerSchema {
 	/** ID of the server. Cannot be modified */
 	readonly serverId: string;
@@ -303,8 +317,19 @@ export interface ServerSchema {
 	currentlyVisiting: string | null;
 	/** Array of role objects */
 	shop: Array<Role>;
-	/** Object with the keys "all" and "auto", which hold an array each with channels where proxying isn't allowedv */
-	proxysetting: ProxySetting;
+	/** Object with settings for the server */
+	proxySettings: {
+		/** Object with limits for which channels are allowed */
+		channels: ProxyLimitedList,
+		/** Object with limits for which roles are allowed */
+		roles: ProxyLimitedList,
+		/** Array of strings of which one has to be included in the tag */
+		requiredInTag: Array<string>,
+		/** Whether the tag also has to be in a members display name */
+		tagInDisplayname: boolean,
+		/** The ID of the channel that messages should be logged to */
+		logChannelId: string | null;
+	};
 	/** Array of global skills for this server */
 	skills: Array<string>;
 	readonly uuid: string;

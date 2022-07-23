@@ -136,7 +136,7 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 		const chosenSpecies = interaction.values[0].split('_')[0];
 
 		userData = await userModel.findOneAndUpdate(
-			{ uuid: userData?.uuid },
+			u => u.uuid === userData?.uuid,
 			(u) => {
 				u.characters[characterId].species = chosenSpecies;
 			},
@@ -173,7 +173,7 @@ export async function sendEditDisplayedSpeciesModalResponse(interaction: ModalSu
 	const displayedSpecies = interaction.fields.getTextInputValue('species_textinput');
 
 	userData = await userModel.findOneAndUpdate(
-		{ uuid: userData?.uuid },
+		u => u.uuid === userData?.uuid,
 		(u) => {
 			u.characters[characterId].displayedSpecies = displayedSpecies;
 		},

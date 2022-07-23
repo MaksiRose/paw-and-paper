@@ -1,6 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, Collection, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, NonThreadGuildBasedChannel, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { respond } from '../../events/interactionCreate';
-import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
 import { Character, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkAccountCompletion';
@@ -19,11 +18,10 @@ export const command: SlashCommand = {
 	disablePreviousCommand: true,
 	sendCommand: async (client, interaction, userData) => {
 
-		/* If the user is not the admin of a server nor do they have a character selected, return.
-		The admin check is done since admins can configure where messages can be sent. */
-		if (!(interaction.inCachedGuild() && interaction.member.permissions.has('Administrator')) && !hasName(interaction, userData)) { return; }
+		/* If the user does not have a character selected, return. */
+		if (!hasName(interaction, userData)) { return; }
 
-		const characterData = userData ? userData.characters[userData.currentCharacter[interaction.guildId || 'DM']] : null;
+		const characterData = userData.characters[userData.currentCharacter[interaction.guildId || 'DM']];
 
 		/* Send a response to the user. */
 		const botReply = await respond(interaction, {
@@ -33,17 +31,12 @@ export const command: SlashCommand = {
 				.setTitle('What is a proxy and how do I use this command?')
 				.setDescription('Proxying is a way to speak as if your character was saying it. This means that your message will be replaced by one that has your characters name and avatar.')
 				.setFields([
-					...(characterData && characterData?.name !== '' ? [{
+					{
 						name: 'set proxy',
 						value: 'This sets an indicator to the bot you want your message to be proxied. Only messages with those indicators will be proxied. Click the "Set?" button below to learn more.',
 					}, ...(interaction.inGuild() ? [{
 						name: 'always proxy',
 						value: 'This will treat every message in a specific channel as if it was proxied, even if the proxy isn\'t included. Click the "Always?" button below to learn more.',
-					}] : []),
-					] : []),
-					...(interaction.inCachedGuild() && interaction.member.permissions.has('Administrator') ? [{
-						name: 'disable proxy',
-						value: 'This is an __administrator__ setting that can toggle whether `always` or `all` proxy should be disabled or enabled in a specific channel. Click the "Disable?" Button below to learn more.',
 					}] : []),
 				])],
 			components: [new ActionRowBuilder<ButtonBuilder>()
@@ -57,12 +50,6 @@ export const command: SlashCommand = {
 							.setCustomId(`proxy_always_learnmore_${characterData._id}`)
 							.setLabel('Always?')
 							.setStyle(ButtonStyle.Success)] : []),
-					] : []),
-					...(interaction.inCachedGuild() && interaction.member.permissions.has('Administrator') ? [
-						new ButtonBuilder()
-							.setCustomId('proxy_disable_learnmore')
-							.setLabel('Disable?')
-							.setStyle(ButtonStyle.Success),
 					] : []),
 				])],
 		}, true)
@@ -133,7 +120,7 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 
 		if (!interaction.inGuild()) { throw new Error('Interaction is not in guild'); }
 		const characterData = userData ? userData.characters[interaction.customId.split('_')[3]] : null;
-		const { alwaysSelectMenu } = await getSelectMenus(allChannels, userData, characterData, serverData, 0);
+		const alwaysSelectMenu = await getSelectMenus(allChannels, userData, characterData, serverData, 0);
 
 		await interaction
 			.update({
@@ -143,26 +130,6 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 					.setFields()],
 				components: [new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents([alwaysSelectMenu])],
-			}).catch((error) => { throw new Error(error); });
-		return;
-	}
-
-	/* If the user pressed the button to learn more about the disable subcommand, explain it with two select menus to select channels. */
-	if (interaction.isButton() && interaction.customId.startsWith('proxy_disable_learnmore')) {
-
-		if (!interaction.inGuild()) { throw new Error('Interaction is not in guild'); }
-		const { disableAutoSelectMenu, disableAllSelectMenu } = await getSelectMenus(allChannels, null, null, serverData, 0);
-
-		await interaction
-			.update({
-				embeds: [new EmbedBuilder(interaction.message.embeds[0].toJSON())
-					.setTitle('Here is how to use the disable subcommand:')
-					.setDescription('This is an **administrator** setting that can toggle whether `automatic` or `all` proxy should be disabled or enabled in specific channels, or in the entire server, using the drop-down menus below. Disabled channels will have a radio emoji next to it.')
-					.setFields()],
-				components: [new ActionRowBuilder<SelectMenuBuilder>()
-					.setComponents([disableAutoSelectMenu]),
-				new ActionRowBuilder<SelectMenuBuilder>()
-					.setComponents([disableAllSelectMenu])],
 			}).catch((error) => { throw new Error(error); });
 		return;
 	}
@@ -183,14 +150,26 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 		else if (interaction.customId.startsWith('proxy_always_options')) {
 
 			const channelId = interaction.values[0].replace('proxy_', '');
-			const hasChannel = userData && userData.autoproxy[interaction.guildId] !== undefined && userData.autoproxy[interaction.guildId].includes(channelId);
+			const hasChannel = userData && userData.serverProxySettings[interaction.guildId] !== undefined && userData.serverProxySettings[interaction.guildId].autoproxy.channels.whitelist.includes(channelId);
 
 			userData = await userModel.findOneAndUpdate(
-				{ uuid: userData?.uuid },
+				u => u.uuid === userData?.uuid,
 				(u) => {
-					if (u.autoproxy[interaction.guildId] === undefined) { u.autoproxy[interaction.guildId] = [channelId]; }
-					else if (!hasChannel) { u.autoproxy[interaction.guildId].push(channelId); }
-					else { u.autoproxy[interaction.guildId] = u.autoproxy[interaction.guildId].filter(string => string !== channelId); }
+					if (u.serverProxySettings[interaction.guildId] === undefined) {
+						u.serverProxySettings[interaction.guildId] = {
+							autoproxy: {
+								setTo: 1,
+								channels: {
+									setTo: 'whitelist',
+									whitelist: [channelId],
+									blacklist: [],
+								},
+							},
+							stickymode: 0,
+						};
+					}
+					else if (!hasChannel) { u.serverProxySettings[interaction.guildId].autoproxy.channels.whitelist.push(channelId); }
+					else { u.serverProxySettings[interaction.guildId].autoproxy.channels.whitelist = u.serverProxySettings[interaction.guildId].autoproxy.channels.whitelist.filter(string => string !== channelId); }
 				},
 			);
 			characterData = userData.characters[interaction.customId.split('_')[3]];
@@ -200,32 +179,6 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 					.setColor(characterData.color)
 					.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
 					.setTitle(`${hasChannel ? 'Removed' : 'Added'} ${channelId === 'everywhere' ? channelId : interaction.guild.channels.cache.get(channelId)?.name} ${hasChannel ? 'from' : 'to'} the list of automatic proxy channels!`)],
-				ephemeral: true,
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
-		}
-		/* If the user clicked a disable subcommand option, add/remove the channel and send a success message. */
-		else if (interaction.customId.startsWith('proxy_disable_')) {
-
-			const kind = interaction.customId.includes('all') ? 'all' : 'auto';
-			const channelId = interaction.values[0].replace('proxy_all_', '').replace('proxy_auto_', '');
-			const hasChannel = serverData && serverData.proxysetting[kind].includes(channelId);
-
-			serverData = await serverModel.findOneAndUpdate(
-				{ serverId: interaction.guildId },
-				(s) => {
-					if (!hasChannel) { s.proxysetting[kind].push(channelId); }
-					else { s.proxysetting[kind] = s.proxysetting[kind].filter(string => string !== channelId); }
-				},
-			);
-
-			await respond(interaction, {
-				embeds: [new EmbedBuilder()
-					.setColor(interaction.member.displayColor)
-					.setAuthor({ name: interaction.member.displayName, iconURL: interaction.member.displayAvatarURL() })
-					.setTitle(`${hasChannel ? 'Enabled' : 'Disabled'} ${kind} proxies ${channelId === 'everywhere' ? channelId : 'in ' + interaction.guild.channels.cache.get(channelId)?.name}!`)],
 				ephemeral: true,
 			}, false)
 				.catch((error) => {
@@ -265,7 +218,7 @@ export async function sendEditProxyModalResponse(interaction: ModalSubmitInterac
 
 	/* Update the database and send a success messsage. */
 	await userModel.findOneAndUpdate(
-		{ uuid: userData.uuid },
+		u => u.uuid === userData?.uuid,
 		(u) => {
 			u.characters[characterData._id].proxy.startsWith = chosenPrefix;
 			u.characters[characterData._id].proxy.endsWith = chosenSuffix;
@@ -284,13 +237,9 @@ export async function sendEditProxyModalResponse(interaction: ModalSubmitInterac
 	return;
 }
 
-async function getSelectMenus(allChannels: Collection<string, NonThreadGuildBasedChannel>, userData: UserSchema | null, characterData: Character | null, serverData: ServerSchema | null, page: number): Promise<{ alwaysSelectMenu: SelectMenuBuilder, disableAllSelectMenu: SelectMenuBuilder, disableAutoSelectMenu: SelectMenuBuilder; }> {
+async function getSelectMenus(allChannels: Collection<string, NonThreadGuildBasedChannel>, userData: UserSchema | null, characterData: Character | null, serverData: ServerSchema | null, page: number): Promise<SelectMenuBuilder> {
 
-	let alwaysSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [{ label: 'Everywhere', value: 'proxy_everywhere', emoji: userData && userData.autoproxy[serverData?.serverId || '']?.includes('everywhere') ? '🔘' : undefined }, ...allChannels.map((channel, channelId) => ({ label: channel.name, value: `proxy_${channelId}`, emoji: userData && userData.autoproxy[serverData?.serverId || '']?.includes(channelId) ? '🔘' : undefined }))];
-
-	let disableAllSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [{ label: 'Everywhere', value: 'proxy_all_everywhere', emoji: serverData?.proxysetting?.all?.includes('everywhere') ? '🔘' : undefined }, ...allChannels.map((channel, channelId) => ({ label: channel.name, value: `proxy_all_${channelId}`, emoji: serverData?.proxysetting?.all?.includes(channelId) ? '🔘' : undefined }))];
-
-	let disableAutoSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [{ label: 'Everywhere', value: 'proxy_auto_everywhere', emoji: serverData?.proxysetting?.auto?.includes('everywhere') ? '🔘' : undefined }, ...allChannels.map((channel, channelId) => ({ label: channel.name, value: `proxy_auto_${channelId}`, emoji: serverData?.proxysetting?.auto?.includes(channelId) ? '🔘' : undefined }))];
+	let alwaysSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = allChannels.map((channel, channelId) => ({ label: channel.name, value: `proxy_${channelId}`, emoji: userData && userData.serverProxySettings[serverData?.serverId || '']?.autoproxy.channels.whitelist.includes(channelId) ? '🔘' : undefined }));
 
 	if (alwaysSelectMenuOptions.length > 25) {
 
@@ -298,30 +247,8 @@ async function getSelectMenus(allChannels: Collection<string, NonThreadGuildBase
 		alwaysSelectMenuOptions.push({ label: 'Show more channels', value: `proxy_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
 	}
 
-	if (disableAllSelectMenuOptions.length > 25) {
-
-		disableAllSelectMenuOptions = disableAllSelectMenuOptions.splice(page * 24, 24);
-		disableAllSelectMenuOptions.push({ label: 'Show more channels', value: `proxy_all_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
-	}
-
-	if (disableAutoSelectMenuOptions.length > 25) {
-
-		disableAutoSelectMenuOptions = disableAutoSelectMenuOptions.splice(page * 24, 24);
-		disableAutoSelectMenuOptions.push({ label: 'Show more channels', value: `proxy_auto_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
-	}
-
-	return {
-		alwaysSelectMenu: new SelectMenuBuilder()
-			.setCustomId(`proxy_always_options_${characterData?._id}`)
-			.setPlaceholder('Select channels to automatically be proxied in')
-			.setOptions(alwaysSelectMenuOptions),
-		disableAllSelectMenu: new SelectMenuBuilder()
-			.setCustomId(`proxy_disable_all_options_${serverData?.serverId}`)
-			.setPlaceholder('Select channels to disable all proxying for')
-			.setOptions(disableAllSelectMenuOptions),
-		disableAutoSelectMenu: new SelectMenuBuilder()
-			.setCustomId(`proxy_disable_auto_options_${serverData?.serverId}`)
-			.setPlaceholder('Select channels to disable automatic proxying for')
-			.setOptions(disableAutoSelectMenuOptions),
-	};
+	return new SelectMenuBuilder()
+		.setCustomId(`proxy_always_options_${characterData?._id}`)
+		.setPlaceholder('Select channels to automatically be proxied in')
+		.setOptions(alwaysSelectMenuOptions);
 }

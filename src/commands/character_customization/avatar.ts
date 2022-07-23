@@ -56,7 +56,7 @@ export const command: SlashCommand = {
 		}
 
 		userData = await userModel.findOneAndUpdate(
-			{ uuid: userData.uuid },
+			u => u.uuid === userData?.uuid,
 			(u) => {
 				u.characters[u.currentCharacter[interaction.guildId || 'DM']].avatarURL = imageURL;
 			},
