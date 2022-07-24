@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedB
 import { respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
 import { SlashCommand, speciesInfo, speciesNames, UserSchema } from '../../typedef';
-import { hasName } from '../../utils/checkAccountCompletion';
+import { hasName } from '../../utils/checkUserState';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { pronoun, upperCasePronoun } from '../../utils/getPronouns';
 

@@ -2,7 +2,7 @@ import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
 import { SlashCommand } from '../../typedef';
-import { hasName } from '../../utils/checkAccountCompletion';
+import { hasName } from '../../utils/checkUserState';
 
 const name: SlashCommand['name'] = 'description';
 const description: SlashCommand['description'] = 'Give a more detailed description of your character.';

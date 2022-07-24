@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, Message, ModalBuilde
 import { respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
 import { Character, SlashCommand, UserSchema } from '../../typedef';
-import { hasName } from '../../utils/checkAccountCompletion';
+import { hasName } from '../../utils/checkUserState';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { pronounCompromiser } from './profile';
 const { error_color, default_color } = require('../../../config.json');

@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, Channe
 import { respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
 import { Character, ProxyConfigType, ProxyListType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
-import { hasName } from '../../utils/checkAccountCompletion';
+import { hasName } from '../../utils/checkUserState';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 const { default_color, error_color } = require('../../../config.json');
 

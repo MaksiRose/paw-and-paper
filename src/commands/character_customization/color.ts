@@ -2,7 +2,7 @@ import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
 import { SlashCommand } from '../../typedef';
-import { hasName } from '../../utils/checkAccountCompletion';
+import { hasName } from '../../utils/checkUserState';
 const { error_color } = require('../../../config.json');
 
 const name: SlashCommand['name'] = 'color';
