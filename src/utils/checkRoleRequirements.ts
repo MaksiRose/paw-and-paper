@@ -1,13 +1,13 @@
 import { ButtonInteraction, CommandInteraction, EmbedBuilder, GuildMember, SelectMenuInteraction } from 'discord.js';
 import { respond } from '../events/interactionCreate';
 import userModel from '../models/userModel';
-import { ServerSchema } from '../typedef';
+import { RankType, ServerSchema, WayOfEarningType } from '../typedef';
 const { default_color, error_color } = require('../../config.json');
 
 /**
  * Checks if user has reached the requirement to get a role based on their rank.
  */
-export async function checkRankRequirements(serverData: ServerSchema, interaction: CommandInteraction | ButtonInteraction, member: GuildMember, userRank: 'Youngling' | 'Apprentice' | 'Hunter' | 'Healer' | 'Elderly', sendMessage = false): Promise<void> {
+export async function checkRankRequirements(serverData: ServerSchema, interaction: CommandInteraction | ButtonInteraction, member: GuildMember, userRank: RankType, sendMessage = false): Promise<void> {
 
 	/* If interaction is not in guild, return */
 	if (!interaction.inGuild()) { return; }
@@ -15,7 +15,7 @@ export async function checkRankRequirements(serverData: ServerSchema, interactio
 	/* Defining a rankList and a shop of items with the wayOfEarning being rank.
 	The reason why Elderly is also 2 is because as Elderly, it isn't clear if you were Hunter or Healer before. Therefore, having the higher rank Elderly shouldn't automatically grant you a Hunter or Healer role. */
 	const rankList = { Youngling: 0, Apprentice: 1, Hunter: 2, Healer: 2, Elderly: 2 };
-	const shop = serverData.shop.filter(item => item.wayOfEarning === 'rank');
+	const shop = serverData.shop.filter(item => item.wayOfEarning === WayOfEarningType.Rank);
 
 	/* For each item in the shop, check if its requirement is equal to the userRank or higher in the rankList. If so, add that item to the users role database and the corresponding role to their roles. */
 	for (const item of shop) {
@@ -81,7 +81,7 @@ export async function checkLevelRequirements(serverData: ServerSchema, interacti
 	if (!interaction.inGuild()) { return; }
 
 	/* Defining a shop of items with the wayOfEarning being levels. */
-	const shop = serverData.shop.filter(item => item.wayOfEarning === 'levels');
+	const shop = serverData.shop.filter(item => item.wayOfEarning === WayOfEarningType.Levels);
 
 	/* For each item in the shop, check if the userLevel is equal or higher than the item requirement. If so, add that item to the users role database and the corresponding role to their roles. */
 	for (const item of shop) {

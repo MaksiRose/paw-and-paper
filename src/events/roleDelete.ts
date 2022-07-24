@@ -1,7 +1,7 @@
 import { Role } from 'discord.js';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
-import { CustomClient, Event } from '../typedef';
+import { CustomClient, Event, WayOfEarningType } from '../typedef';
 
 export const event: Event = {
 	name: 'roleDelete',
@@ -34,7 +34,7 @@ export const event: Event = {
 							(u) => {
 								u.characters[character._id].profiles[profile.serverId].roles.splice(userRoleIndex, 1);
 
-								if (userRole.wayOfEarning === 'experience') {
+								if (userRole.wayOfEarning === WayOfEarningType.Experience) {
 
 									u.characters[character._id].profiles[profile.serverId].experience += (Number(userRole.requirement) || 0);
 								}

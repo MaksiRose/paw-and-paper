@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, Channe
 import { respond } from '../../events/interactionCreate';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
-import { ServerSchema, SlashCommand } from '../../typedef';
+import { RankType, ServerSchema, SlashCommand, WayOfEarningType } from '../../typedef';
 import { checkLevelRequirements, checkRankRequirements } from '../../utils/checkRoleRequirements';
 const { default_color, update_channel_id } = require('../../../config.json');
 
@@ -121,7 +121,7 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 
 				if (i.isSelectMenu() && i.customId === 'serversettings_shop_wayofearning') {
 
-					wayOfEarning = i.values[0].replace('serversettings_shop_wayofearning_', '') as 'rank' | 'levels' | 'experience';
+					wayOfEarning = i.values[0].replace('serversettings_shop_wayofearning_', '') as WayOfEarningType;
 					requirement = null;
 					await i
 						.update(getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
@@ -130,7 +130,7 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 
 				if (i.isSelectMenu() && i.customId === 'serversettings_shop_requirements') {
 
-					requirement = i.values[0].replace('serversettings_shop_requirements_', '') as 'Youngling' | 'Apprentice' | 'Hunter' | 'Healer' | 'Elderly';
+					requirement = i.values[0].replace('serversettings_shop_requirements_', '') as RankType;
 					await i
 						.update(getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
 						.catch(error => { console.error(error); });
@@ -150,7 +150,7 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 										.setStyle(TextInputStyle.Short)
 										.setRequired(true)
 										.setMaxLength(9)
-										.setPlaceholder(`The amount of ${wayOfEarning} the user needs, i.e. ${wayOfEarning === 'experience' ? '10000' : '10'}`),
+										.setPlaceholder(`The amount of ${wayOfEarning} the user needs, i.e. ${wayOfEarning === WayOfEarningType.Experience ? '10000' : '10'}`),
 									]),
 							),
 						)
@@ -212,7 +212,7 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 								);
 
 								/* Giving users the role if they meet the requirements or removing it if they don't. */
-								if (wayOfEarning === 'levels') {
+								if (wayOfEarning === WayOfEarningType.Levels) {
 
 									const member = await i.guild.members.fetch(u.userId[0]);
 									await checkLevelRequirements(serverData, i, member, p.levels, false);
@@ -225,7 +225,7 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 									}
 								}
 
-								if (wayOfEarning === 'rank') {
+								if (wayOfEarning === WayOfEarningType.Rank) {
 
 									const member = await i.guild.members.fetch(u.userId[0]);
 									await checkRankRequirements(serverData, i, member, p.rank, false);
@@ -239,7 +239,7 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 									}
 								}
 
-								if (wayOfEarning === 'experience') {
+								if (wayOfEarning === WayOfEarningType.Experience) {
 
 									const member = await i.guild.members.fetch(u.userId[0]);
 									if (member.roles.cache.has(role)) {
@@ -665,22 +665,22 @@ function getShopRoleMessage(interaction: ButtonInteraction<'cached'> | SelectMen
 					.setCustomId('serversettings_shop_wayofearning')
 					.setPlaceholder('Select the way of earning the role')
 					.setOptions(
-						{ value: 'serversettings_shop_wayofearning_experience', label: 'Experience Points', description: 'Users can buy this role by spending XP' },
-						{ value: 'serversettings_shop_wayofearning_levels', label: 'Levels', description: 'Users earn this role when reaching a level' },
-						{ value: 'serversettings_shop_wayofearning_rank', label: 'Rank', description: 'Users earn this role when reaching a rank' },
+						{ value: `serversettings_shop_wayofearning_${WayOfEarningType.Experience}`, label: 'Experience Points', description: 'Users can buy this role by spending XP' },
+						{ value: `serversettings_shop_wayofearning_${WayOfEarningType.Levels}`, label: 'Levels', description: 'Users earn this role when reaching a level' },
+						{ value: `serversettings_shop_wayofearning_${WayOfEarningType.Rank}`, label: 'Rank', description: 'Users earn this role when reaching a rank' },
 					)]),
 			/* When no way of earning is selected, do not have this, if the way of earning is rank, make it a select for a required rank, else make it a button that opens a modal */
 			...(wayOfEarning === null ? [] :
 				[new ActionRowBuilder<SelectMenuBuilder | ButtonBuilder>()
-					.setComponents(wayOfEarning === 'rank' ? [new SelectMenuBuilder()
+					.setComponents(wayOfEarning === WayOfEarningType.Rank ? [new SelectMenuBuilder()
 						.setCustomId('serversettings_shop_requirements')
 						.setPlaceholder('Select a required rank')
 						.setOptions(
-							{ value: 'serversettings_shop_requirements_Youngling', label: 'Youngling' },
-							{ value: 'serversettings_shop_requirements_Apprentice', label: 'Apprentice' },
-							{ value: 'serversettings_shop_requirements_Healer', label: 'Healer' },
-							{ value: 'serversettings_shop_requirements_Hunter', label: 'Hunter' },
-							{ value: 'serversettings_shop_requirements_Eldery', label: 'Elderly' },
+							{ value: `serversettings_shop_requirements_${RankType.Youngling}`, label: RankType.Youngling },
+							{ value: `serversettings_shop_requirements_${RankType.Apprentice}`, label: RankType.Apprentice },
+							{ value: `serversettings_shop_requirements_${RankType.Healer}`, label: RankType.Healer },
+							{ value: `serversettings_shop_requirements_${RankType.Hunter}`, label: RankType.Hunter },
+							{ value: `serversettings_shop_requirements_${RankType.Elderly}`, label: RankType.Elderly },
 						)] :
 						[new ButtonBuilder()
 							.setCustomId('serversettings_shop_requirementsmodal')

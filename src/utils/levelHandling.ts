@@ -1,7 +1,7 @@
 import { CommandInteraction, EmbedBuilder, Message } from 'discord.js';
 import { respond } from '../events/interactionCreate';
 import userModel from '../models/userModel';
-import { ServerSchema, UserSchema } from '../typedef';
+import { ServerSchema, UserSchema, WayOfEarningType } from '../typedef';
 import { checkLevelRequirements, checkRoleCatchBlock } from './checkRoleRequirements';
 import { upperCasePronounAndPlural } from './getPronouns';
 const { default_color } = require('../../config.json');
@@ -98,7 +98,7 @@ export async function decreaseLevel(userData: UserSchema, interaction: CommandIn
 	/* Get the guild, member, and the profileData roles where the wayOfEarning is levels and the role requirement bigger than the profile level. */
 	const guild = interaction.guild || await interaction.client.guilds.fetch(interaction.guildId);
 	const member = await guild.members.fetch(interaction.user.id);
-	const roles = profileData.roles.filter(role => role.wayOfEarning === 'levels' && role.requirement > profileData.levels);
+	const roles = profileData.roles.filter(role => role.wayOfEarning === WayOfEarningType.Levels && role.requirement > profileData.levels);
 
 	/* It's checking if the user has any roles that are earned by leveling up, and if they do, it will remove them from the user's profileData.roles and remove the role from the user. */
 	for (const role of roles) {

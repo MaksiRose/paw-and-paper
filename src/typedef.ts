@@ -130,13 +130,10 @@ export interface Inventory {
 	materials: { [key in materialNames]: number };
 }
 
-interface Role {
-	/** ID of the role */
-	roleId: string;
-	/** The kind of requirement to meet to earn the role */
-	wayOfEarning: 'rank' | 'levels' | 'experience';
-	/** The requirement to meet to earn the role */
-	requirement: ('Youngling' | 'Apprentice' | 'Hunter' | 'Healer' | 'Elderly') | number;
+export enum WayOfEarningType {
+	Rank = 'rank',
+	Levels = 'levels',
+	Experience = 'experience'
 }
 
 export enum RankType {
@@ -161,6 +158,15 @@ export enum CurrentRegionType {
 	Prairie = 'prairie',
 	Ruins = 'ruins',
 	Lake = 'lake'
+}
+
+interface ShopRole {
+	/** ID of the role */
+	roleId: string;
+	/** The kind of requirement to meet to earn the role */
+	wayOfEarning: WayOfEarningType;
+	/** The requirement to meet to earn the role */
+	requirement: RankType | number;
 }
 
 export interface Profile {
@@ -226,7 +232,7 @@ export interface Profile {
 	/** Object with item kinds as the keys and an object of the item types and their quantity as the variables */
 	inventory: Inventory;
 	/** Array of role objects */
-	roles: Array<Role>;
+	roles: Array<ShopRole>;
 	/** Object of skills, with global and personal skills as key-value pairs */
 	skills: {
 		global: { [key in string]: number };
@@ -365,7 +371,7 @@ export interface ServerSchema {
 	/** ID of the guild that is currently being visited. If no guild is being visited, this is null */
 	currentlyVisiting: string | null;
 	/** Array of role objects */
-	shop: Array<Role>;
+	shop: Array<ShopRole>;
 	/** Object with settings for the server */
 	proxySettings: {
 		/** Object with limits for which channels are allowed */

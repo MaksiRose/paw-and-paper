@@ -156,7 +156,7 @@ export const command: SlashCommand = {
 		/* This is checking if the user is in a guild, if the server has data saved in the database, and if the guildmember data is cached. If all of these are true, it will check if the user has reached the requirements to get roles based on their rank and level. */
 		if (interaction.inGuild() && serverData && (interaction.member instanceof GuildMember)) {
 
-			await checkRankRequirements(serverData, interaction, interaction.member, 'Youngling');
+			await checkRankRequirements(serverData, interaction, interaction.member, RankType.Youngling);
 			await checkLevelRequirements(serverData, interaction, interaction.member, 1);
 		}
 	},

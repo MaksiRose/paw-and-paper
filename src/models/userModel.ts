@@ -1,6 +1,6 @@
 // @ts-check
 import Model from './constructor';
-import { commonPlantsInfo, materialsInfo, ProxyConfigType, ProxyListType, rarePlantsInfo, Schema, specialPlantsInfo, speciesInfo, uncommonPlantsInfo, UserSchema } from '../typedef';
+import { commonPlantsInfo, materialsInfo, ProxyConfigType, ProxyListType, RankType, rarePlantsInfo, Schema, specialPlantsInfo, speciesInfo, uncommonPlantsInfo, UserSchema } from '../typedef';
 const config = require('../../config.json');
 const pkg = require('../../package.json');
 
@@ -83,7 +83,7 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 						type: 'object',
 						default: {
 							serverId: { type: 'string', default: '', locked: true },
-							rank: { type: 'string', default: 'Youngling', locked: false },
+							rank: { type: 'string', default: RankType.Youngling, locked: false },
 							levels: { type: 'number', default: 1, locked: false },
 							experience: { type: 'number', default: 0, locked: false },
 							health: { type: 'number', default: 100, locked: false },
