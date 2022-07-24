@@ -224,14 +224,25 @@ export interface Character {
 	profiles: Record<string, Profile>;
 }
 
+export enum ProxyListType {
+	Whitelist = 1,
+	Blacklist = 2
+}
+
 /** Object with a whitelist and blacklist and which one it is set to */
 interface ProxyLimitedList {
 	/** Whether the whitelist or blacklist is enabled */
-	setTo: 'whitelist' | 'blacklist',
+	setTo: ProxyListType,
 	/** Array of IDs that are on the whitelist */
 	whitelist: Array<string>,
 	/** Array of IDs that are on the blacklist */
 	blacklist: Array<string>;
+}
+
+export enum ProxyConfigType {
+	FollowGlobal = 1,
+	Enabled = 2,
+	Disabled = 3
 }
 
 export interface UserSchema {
@@ -262,12 +273,12 @@ export interface UserSchema {
 		[index: string]: {
 			/** Object of autoproxy settings to follow */
 			autoproxy: {
-				/** 0 to follow global settings, 1 to enable, 2 to disable */
-				setTo: 0 | 1 | 2;
+				/** The config for this setting */
+				setTo: ProxyConfigType;
 				channels: ProxyLimitedList;
 			};
-			/** 0 to follow global settings, 1 to enable, 2 to disable */
-			stickymode: 0 | 1 | 2;
+			/** The config for this setting */
+			stickymode: ProxyConfigType;
 		};
 	};
 	/** Object of proxy settings that are configured globally */
@@ -343,14 +354,19 @@ export interface Event {
 	execute: (client: CustomClient, ...args: Array<any>) => Promise<void>;
 }
 
+export enum PlantEdibilityType {
+	Edible = 1,
+	Inedible = 2,
+	Toxic = 3
+}
 
 export interface PlantMapObject {
 	/** Name of the plant */
 	name: string;
 	/** Description of the plant */
 	description: string;
-	/** Edibabilty of the plant: `e` for edible, `i` for inedible and `t` for toxic */
-	edibility: 'e' | 'i' | 't';
+	/** Edibabilty of the plant */
+	edibility: PlantEdibilityType;
 	/** Whether the plant heals wounds */
 	healsWounds: boolean;
 	/** Whether the plant heals infectionsWhether the plant heals infections */
@@ -384,13 +400,25 @@ export interface MaterialsMapObject {
 }
 
 
+export enum SpeciesDietType {
+	Omnivore = 1,
+	Herbivore = 2,
+	Carnivore = 3
+}
+
+export enum SpeciesHabitatType {
+	Cold = 1,
+	Warm = 2,
+	Water = 3
+}
+
 export interface SpeciesMapObject {
 	/** Name of the species */
 	name: string;
 	/** Diet of the species */
-	diet: 'omnivore' | 'herbivore' | 'carnivore';
+	diet: SpeciesDietType;
 	/** Habitat that the species lives in */
-	habitat: 'cold' | 'warm' | 'water';
+	habitat: SpeciesHabitatType;
 	/** Opponents that the species meets in biome 1 */
 	biome1OpponentArray: Array<string>;
 	/** Opponents that the species meets in biome 2 */

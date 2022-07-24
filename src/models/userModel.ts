@@ -1,6 +1,6 @@
 // @ts-check
 import Model from './constructor';
-import { UserSchema } from '../typedef';
+import { ProxyConfigType, ProxyListType, UserSchema } from '../typedef';
 import { commonPlantsMap, materialsMap, rarePlantsMap, specialPlantsMap, speciesMap, uncommonPlantsMap } from '../utils/itemsInfo';
 const config = require('../../config.json');
 const pkg = require('../../package.json');
@@ -240,11 +240,11 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 				autoproxy: {
 					type: 'object',
 					default: {
-						setTo: { type: 'number', default: 0, locked: false },
+						setTo: { type: 'number', default: ProxyConfigType.FollowGlobal, locked: false },
 						channels: {
 							type: 'object',
 							default: {
-								setTo: { type: 'string', default: 'whitelist', locked: false },
+								setTo: { type: 'number', default: ProxyListType.Whitelist, locked: false },
 								whitelist: {
 									type: 'array',
 									of: { type: 'string', default: '', locked: false },
@@ -261,7 +261,7 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 					},
 					locked: false,
 				},
-				stickymode: { type: 'number', default: 0, locked: false },
+				stickymode: { type: 'number', default: ProxyConfigType.FollowGlobal, locked: false },
 			},
 			locked: false,
 		},

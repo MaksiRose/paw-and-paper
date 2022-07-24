@@ -2,7 +2,7 @@ import { Message } from 'discord.js';
 // import { sendVisitMessage } from '../commands/interaction/requestvisit';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
-import { CustomClient, Event } from '../typedef';
+import { CustomClient, Event, ProxyConfigType, ProxyListType } from '../typedef';
 import { createGuild } from '../utils/updateGuild';
 
 export const event: Event = {
@@ -32,7 +32,7 @@ export const event: Event = {
 
 		let replaceMessage = false;
 
-		const proxyIsDisabled = (serverData.proxySettings.channels.setTo === 'blacklist' && serverData.proxySettings.channels.blacklist.includes(message.channelId)) || (serverData.proxySettings.channels.setTo === 'whitelist' && !serverData.proxySettings.channels.whitelist.includes(message.channelId));
+		const proxyIsDisabled = (serverData.proxySettings.channels.setTo === ProxyListType.Blacklist && serverData.proxySettings.channels.blacklist.includes(message.channelId)) || (serverData.proxySettings.channels.setTo === ProxyListType.Whitelist && !serverData.proxySettings.channels.whitelist.includes(message.channelId));
 
 		/* Checking if the message starts with the character's proxy start and ends with the character's
 		proxy end. If it does, it will set the current character to the character that the message is
@@ -53,7 +53,7 @@ export const event: Event = {
 
 		/* Checking if the user has autoproxy enabled in the current channel, and if so, it is adding the
 		prefix to the message. */
-		const autoproxyIsToggled = (userData.serverProxySettings[message.guildId]?.autoproxy.setTo === 1 && (userData.serverProxySettings[message.guildId]?.autoproxy.channels.setTo === 'blacklist' && !userData.serverProxySettings[message.guildId]?.autoproxy.channels.blacklist.includes(message.channelId)) || (userData.serverProxySettings[message.guildId]?.autoproxy.channels.setTo === 'whitelist' && userData.serverProxySettings[message.guildId]?.autoproxy.channels.whitelist.includes(message.channelId))) || (userData.serverProxySettings[message.guildId]?.autoproxy.setTo === 0 && userData.globalProxySettings.autoproxy === true);
+		const autoproxyIsToggled = (userData.serverProxySettings[message.guildId]?.autoproxy.setTo === ProxyConfigType.Enabled && (userData.serverProxySettings[message.guildId]?.autoproxy.channels.setTo === ProxyListType.Blacklist && !userData.serverProxySettings[message.guildId]?.autoproxy.channels.blacklist.includes(message.channelId)) || (userData.serverProxySettings[message.guildId]?.autoproxy.channels.setTo === ProxyListType.Whitelist && userData.serverProxySettings[message.guildId]?.autoproxy.channels.whitelist.includes(message.channelId))) || (userData.serverProxySettings[message.guildId]?.autoproxy.setTo === ProxyConfigType.FollowGlobal && userData.globalProxySettings.autoproxy === true);
 		if (autoproxyIsToggled && !proxyIsDisabled) {
 
 			replaceMessage = true;

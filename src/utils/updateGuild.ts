@@ -1,7 +1,7 @@
 import { Guild } from 'discord.js';
 import { readdirSync, readFileSync, renameSync, writeFileSync } from 'fs';
 import serverModel from '../models/serverModel';
-import { BanList, CustomClient, DeleteList, ServerSchema } from '../typedef';
+import { BanList, CustomClient, DeleteList, ProxyListType, ServerSchema } from '../typedef';
 import { commonPlantsMap, materialsMap, rarePlantsMap, specialPlantsMap, speciesMap, uncommonPlantsMap } from './itemsInfo';
 
 /**
@@ -96,12 +96,12 @@ export async function createGuild(client: CustomClient, guild: Guild): Promise<S
 		shop: [],
 		proxySettings: {
 			channels: {
-				setTo: 'blacklist',
+				setTo: ProxyListType.Blacklist,
 				blacklist: [],
 				whitelist: [],
 			},
 			roles: {
-				setTo: 'blacklist',
+				setTo: ProxyListType.Blacklist,
 				blacklist: [],
 				whitelist: [],
 			},

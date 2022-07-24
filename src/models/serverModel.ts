@@ -1,5 +1,5 @@
 import Model from './constructor';
-import { Dens, Schema, ServerSchema } from '../typedef';
+import { Dens, ProxyListType, Schema, ServerSchema } from '../typedef';
 import { commonPlantsMap, materialsMap, rarePlantsMap, specialPlantsMap, speciesMap, uncommonPlantsMap } from '../utils/itemsInfo';
 
 const denType: Schema<Dens>['foodDen' | 'sleepingDens' | 'medicineDen'] = {
@@ -107,7 +107,7 @@ const serverModel = new Model<ServerSchema>('./database/servers', {
 			channels: {
 				type: 'object',
 				default: {
-					setTo: { type: 'string', default: 'blacklist', locked: false },
+					setTo: { type: 'number', default: ProxyListType.Blacklist, locked: false },
 					whitelist: {
 						type: 'array',
 						of: { type: 'string', default: '', locked: false },
@@ -124,7 +124,7 @@ const serverModel = new Model<ServerSchema>('./database/servers', {
 			roles: {
 				type: 'object',
 				default: {
-					setTo: { type: 'string', default: 'blacklist', locked: false },
+					setTo: { type: 'number', default: ProxyListType.Blacklist, locked: false },
 					whitelist: {
 						type: 'array',
 						of: { type: 'string', default: '', locked: false },

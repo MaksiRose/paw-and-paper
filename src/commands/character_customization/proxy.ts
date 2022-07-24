@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, Collection, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, NonThreadGuildBasedChannel, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
-import { Character, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
+import { Character, ProxyConfigType, ProxyListType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkAccountCompletion';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 const { default_color, error_color } = require('../../../config.json');
@@ -158,14 +158,14 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 					if (u.serverProxySettings[interaction.guildId] === undefined) {
 						u.serverProxySettings[interaction.guildId] = {
 							autoproxy: {
-								setTo: 1,
+								setTo: ProxyConfigType.Enabled,
 								channels: {
-									setTo: 'whitelist',
+									setTo: ProxyListType.Whitelist,
 									whitelist: [channelId],
 									blacklist: [],
 								},
 							},
-							stickymode: 0,
+							stickymode: ProxyConfigType.FollowGlobal,
 						};
 					}
 					else if (!hasChannel) { u.serverProxySettings[interaction.guildId].autoproxy.channels.whitelist.push(channelId); }
