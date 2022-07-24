@@ -1,8 +1,7 @@
 import { Guild } from 'discord.js';
 import { readdirSync, readFileSync, renameSync, writeFileSync } from 'fs';
 import serverModel from '../models/serverModel';
-import { BanList, CustomClient, DeleteList, ProxyListType, ServerSchema } from '../typedef';
-import { commonPlantsMap, materialsMap, rarePlantsMap, specialPlantsMap, speciesMap, uncommonPlantsMap } from './itemsInfo';
+import { BanList, commonPlantsInfo, CustomClient, DeleteList, materialsInfo, ProxyListType, rarePlantsInfo, ServerSchema, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../typedef';
 
 /**
  * This creates a new guild if the guild isn't on the ban list, or restores it from the guilds that are to be deleted.
@@ -63,12 +62,12 @@ export async function createGuild(client: CustomClient, guild: Guild): Promise<S
 		serverId: guild.id,
 		name: guild.name,
 		inventory: {
-			commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, 0])),
-			uncommonPlants: Object.fromEntries([...uncommonPlantsMap.keys()].sort().map(key => [key, 0])),
-			rarePlants: Object.fromEntries([...rarePlantsMap.keys()].sort().map(key => [key, 0])),
-			specialPlants: Object.fromEntries([...specialPlantsMap.keys()].sort().map(key => [key, 0])),
-			meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, 0])),
-			materials: Object.fromEntries([...materialsMap.keys()].sort().map(key => [key, 0])),
+			commonPlants: Object.fromEntries(Object.keys(commonPlantsInfo).map(k => [k, 0]).sort()) as Record<keyof typeof commonPlantsInfo, number>,
+			uncommonPlants: Object.fromEntries(Object.keys(uncommonPlantsInfo).map(k => [k, 0]).sort()) as Record<keyof typeof uncommonPlantsInfo, number>,
+			rarePlants: Object.fromEntries(Object.keys(rarePlantsInfo).map(k => [k, 0]).sort()) as Record<keyof typeof rarePlantsInfo, number>,
+			specialPlants: Object.fromEntries(Object.keys(specialPlantsInfo).map(k => [k, 0]).sort()) as Record<keyof typeof specialPlantsInfo, number>,
+			meat: Object.fromEntries(Object.keys(speciesInfo).map(k => [k, 0]).sort()) as Record<keyof typeof speciesInfo, number>,
+			materials: Object.fromEntries(Object.keys(materialsInfo).map(k => [k, 0]).sort()) as Record<keyof typeof materialsInfo, number>,
 		},
 		dens: {
 			sleepingDens: {

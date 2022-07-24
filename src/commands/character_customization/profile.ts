@@ -1,11 +1,10 @@
 import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, GuildMember, InteractionReplyOptions, InteractionUpdateOptions, MessageEditOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { hasCooldownMap, respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
-import { Character, CustomClient, SlashCommand, UserSchema } from '../../typedef';
+import { Character, commonPlantsInfo, CurrentRegionType, CustomClient, materialsInfo, RankType, rarePlantsInfo, SlashCommand, specialPlantsInfo, speciesInfo, uncommonPlantsInfo, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkAccountCompletion';
 import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
 import { hasCooldown, isResting } from '../../utils/checkValidity';
-import { commonPlantsMap, materialsMap, rarePlantsMap, specialPlantsMap, speciesMap, uncommonPlantsMap } from '../../utils/itemsInfo';
 const { error_color } = require('../../../config.json');
 
 const name: SlashCommand['name'] = 'profile';
@@ -230,7 +229,7 @@ export async function profileInteractionCollector(client: CustomClient, interact
 						(u) => {
 							u.characters[_id].profiles[interaction.guildId] = {
 								serverId: interaction.guildId,
-								rank: 'Youngling',
+								rank: RankType.Youngling,
 								levels: 1,
 								experience: 0,
 								health: 100,
@@ -244,17 +243,17 @@ export async function profileInteractionCollector(client: CustomClient, interact
 								temporaryStatIncrease: {},
 								isResting: false,
 								hasQuest: false,
-								currentRegion: 'ruins',
+								currentRegion: CurrentRegionType.Ruins,
 								unlockedRanks: 0,
 								sapling: { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, lastMessageChannelId: null, sentReminder: false, sentGentleReminder: false },
 								injuries: { wounds: 0, infections: 0, cold: false, sprains: 0, poison: false },
 								inventory: {
-									commonPlants: Object.fromEntries([...commonPlantsMap.keys()].sort().map(key => [key, 0])),
-									uncommonPlants: Object.fromEntries([...uncommonPlantsMap.keys()].sort().map(key => [key, 0])),
-									rarePlants: Object.fromEntries([...rarePlantsMap.keys()].sort().map(key => [key, 0])),
-									specialPlants: Object.fromEntries([...specialPlantsMap.keys()].sort().map(key => [key, 0])),
-									meat: Object.fromEntries([...speciesMap.keys()].sort().map(key => [key, 0])),
-									materials: Object.fromEntries([...materialsMap.keys()].sort().map(key => [key, 0])),
+									commonPlants: Object.fromEntries(Object.keys(commonPlantsInfo).map(k => [k, 0]).sort()) as Record<keyof typeof commonPlantsInfo, number>,
+									uncommonPlants: Object.fromEntries(Object.keys(uncommonPlantsInfo).map(k => [k, 0]).sort()) as Record<keyof typeof uncommonPlantsInfo, number>,
+									rarePlants: Object.fromEntries(Object.keys(rarePlantsInfo).map(k => [k, 0]).sort()) as Record<keyof typeof rarePlantsInfo, number>,
+									specialPlants: Object.fromEntries(Object.keys(specialPlantsInfo).map(k => [k, 0]).sort()) as Record<keyof typeof specialPlantsInfo, number>,
+									meat: Object.fromEntries(Object.keys(speciesInfo).map(k => [k, 0]).sort()) as Record<keyof typeof speciesInfo, number>,
+									materials: Object.fromEntries(Object.keys(materialsInfo).map(k => [k, 0]).sort()) as Record<keyof typeof materialsInfo, number>,
 								},
 								roles: [],
 								skills: { global: {}, personal: {} },

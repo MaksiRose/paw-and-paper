@@ -1,13 +1,12 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
-import { SlashCommand, UserSchema } from '../../typedef';
+import { SlashCommand, speciesInfo, speciesNames, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkAccountCompletion';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { pronoun, upperCasePronoun } from '../../utils/getPronouns';
-import { speciesMap } from '../../utils/itemsInfo';
 
-const speciesNameArray = [...speciesMap.keys()].sort();
+const speciesNameArray = (Object.keys(speciesInfo) as speciesNames[]).sort();
 
 const name: SlashCommand['name'] = 'species';
 const description: SlashCommand['description'] = 'Change your character\'s species or displayed species.';
@@ -41,7 +40,7 @@ export const command: SlashCommand = {
 			.setColor(characterData.color)
 			.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
 			.setDescription(`${characterData.name} is a ${characterData.displayedSpecies || characterData.species}! You cannot change ${pronoun(characterData, 2)} species, but you can create another character via \`/profile\`. Alternatively, you can use the button below to change what species is displayed to be anything you want.`)
-			.setFooter({ text: `Here is a list of species that you can choose when making a new character: ${[...speciesMap.keys()].sort().join(', ')}` });
+			.setFooter({ text: `Here is a list of species that you can choose when making a new character: ${speciesNameArray.join(', ')}` });
 
 		const botReply = await respond(interaction, {
 			embeds: characterData.species === '' ? [newSpeciesEmbed] : [existingSpeciesEmbed],
@@ -127,13 +126,13 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 		return;
 	}
 
-	if (interaction.isSelectMenu() && speciesMap.has(interaction.values[0].split('_')[1])) {
+	if (interaction.isSelectMenu() && speciesInfo[interaction.values[0].split('_')[1]] !== undefined) {
 
 		/* Getting the characterId from the customId */
 		const characterId = interaction.customId.split('_')[2];
 
-		/* getting the species from the value */
-		const chosenSpecies = interaction.values[0].split('_')[0];
+		/* Getting the species from the value */
+		const chosenSpecies = interaction.values[0].split('_')[1] as speciesNames;
 
 		userData = await userModel.findOneAndUpdate(
 			u => u.uuid === userData?.uuid,
