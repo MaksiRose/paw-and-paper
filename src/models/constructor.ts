@@ -68,7 +68,8 @@ export default class Model<T extends UUIDObject> {
 		this.findOne = async (filter: (value: T) => boolean): Promise<T> => {
 
 			const foundDocuments = await this.find(filter);
-			if (foundDocuments.length > 0) { return foundDocuments[0]; }
+			const returnDocument = foundDocuments[0];
+			if (returnDocument) { return returnDocument; }
 
 			throw new Error('Could not find a document with the given filter.');
 		};

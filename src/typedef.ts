@@ -27,9 +27,9 @@ export interface Votes {
 
 export class CustomClient extends Client {
 
-	slashCommands: { [key in string]?: SlashCommand };
-	contextMenuCommands: { [key in string]?: ContextMenuCommand };
-	votes: { [key in string]?: Votes };
+	slashCommands: { [key in string]: SlashCommand };
+	contextMenuCommands: { [key in string]: ContextMenuCommand };
+	votes: { [key in string]: Votes };
 
 	constructor(options: ClientOptions) {
 

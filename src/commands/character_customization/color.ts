@@ -3,6 +3,7 @@ import { respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
 import { SlashCommand } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
+import { getMapData } from '../../utils/getInfo';
 const { error_color } = require('../../../config.json');
 
 const name: SlashCommand['name'] = 'color';
@@ -45,10 +46,11 @@ export const command: SlashCommand = {
 		userData = await userModel.findOneAndUpdate(
 			u => u.uuid === userData?.uuid,
 			(u) => {
-				u.characters[u.currentCharacter[interaction.guildId || 'DM']].color = `#${hexColor}`;
+				const p = getMapData(u.characters, getMapData(u.currentCharacter, interaction.guildId || 'DM'));
+				p.color = `#${hexColor}`;
 			},
 		);
-		const characterData = userData.characters[userData.currentCharacter[interaction.guildId || 'DM']];
+		const characterData = getMapData(userData.characters, getMapData(userData.currentCharacter, interaction.guildId || 'DM'));
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
@@ -79,11 +81,8 @@ function isValidHex(input: string): boolean {
 
 	for (let i = 0; i < input.length; i++) {
 
-		if (hexLegend.includes(input[i])) {
-
-			continue;
-		}
-
+		const char = input[i];
+		if (char && hexLegend.includes(char)) { continue; }
 		return false;
 	}
 

@@ -2,8 +2,9 @@ import { EmbedBuilder, GuildMember, SlashCommandBuilder } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 import { respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
-import { BanList, Character, commonPlantsInfo, CurrentRegionType, GivenIdList, materialsInfo, RankType, rarePlantsInfo, SlashCommand, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../../typedef';
+import { BanList, commonPlantsInfo, CurrentRegionType, GivenIdList, materialsInfo, RankType, rarePlantsInfo, SlashCommand, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../../typedef';
 import { checkLevelRequirements, checkRankRequirements } from '../../utils/checkRoleRequirements';
+import { getMapData } from '../../utils/getInfo';
 import { generateRandomNumber } from '../../utils/randomizers';
 const { version } = require('../../../package.json');
 const { default_color, error_color } = require('../../../config.json');
@@ -76,16 +77,16 @@ export const command: SlashCommand = {
 		}
 
 		/* This is checking if the user has a character in the database. If they don't, it will create a new user. */
-		const characterData = (userData.characters[userData.currentCharacter[interaction.guildId || 'DM']] || null) as Character | null;
-		const _id = characterData ? characterData._id : await createId();
+		const _id = userData.currentCharacter[interaction.guildId || 'DM'] || await createId();
 
 
 		userData = await userModel.findOneAndUpdate(
 			u => u.uuid === userData?.uuid,
 			(u) => {
-				if (!characterData) {
+				let c = u.characters[_id];
+				if (!c) {
 
-					u.characters[_id] = {
+					c = {
 						_id: _id,
 						name: name,
 						species: '',
@@ -134,14 +135,12 @@ export const command: SlashCommand = {
 						} : {},
 					};
 				}
-				else {
-
-					u.characters[_id].name = name;
-				}
+				else { c.name = name; }
 
 				u.currentCharacter[interaction.guildId || 'DM'] = _id;
 			},
 		);
+		const characterData = getMapData(userData.characters, _id);
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
@@ -170,10 +169,7 @@ async function createId(): Promise<string> {
 	const legend = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 	let uuid = '';
 
-	for (let index = 0; index < 6; index++) {
-
-		uuid += legend[generateRandomNumber(legend.length)];
-	}
+	for (let index = 0; index < 6; index++) { uuid += legend[generateRandomNumber(legend.length)]; }
 
 	const givenIds = JSON.parse(readFileSync('./database/givenIds.json', 'utf-8')) as GivenIdList;
 

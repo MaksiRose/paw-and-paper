@@ -4,6 +4,7 @@ import userModel from '../../models/userModel';
 import { SlashCommand, speciesInfo, speciesNames, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
+import { getMapData } from '../../utils/getInfo';
 import { pronoun, upperCasePronoun } from '../../utils/getPronouns';
 
 const speciesNameArray = (Object.keys(speciesInfo) as speciesNames[]).sort();
@@ -21,12 +22,10 @@ export const command: SlashCommand = {
 	sendCommand: async (client, interaction, userData) => {
 
 		if (!hasName(interaction, userData)) { return; }
-
-		const characterData = userData.characters[userData.currentCharacter[interaction.guildId || 'DM']];
+		const characterData = getMapData(userData.characters, getMapData(userData.currentCharacter, interaction.guildId || 'DM'));
 
 		/* Define displayed species button */
 		const displayedSpeciesButton = getDisplayedSpeciesButton(characterData._id);
-
 		/* Define species select menu */
 		const speciesMenu = getSpeciesSelectMenu(0, characterData._id);
 
@@ -82,10 +81,13 @@ function getDisplayedSpeciesButton(characterId: string): ButtonBuilder {
 
 export async function speciesInteractionCollector(interaction: ButtonInteraction | SelectMenuInteraction, userData: UserSchema | null): Promise<void> {
 
+	const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
+
 	if (interaction.isButton() && interaction.customId.includes('displayedspeciesmodal')) {
 
 		if (!userData) { throw new Error('userData is null'); }
-		const characterData = userData.characters[interaction.customId.split('_')[2]];
+		const characterId = interaction.customId.split('_')[2] || '';
+		const characterData = getMapData(userData.characters, characterId);
 
 		await interaction
 			.showModal(new ModalBuilder()
@@ -105,13 +107,13 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 		return;
 	}
 
-	if (interaction.isSelectMenu() && interaction.values[0].includes('nextpage')) {
+	if (interaction.isSelectMenu() && selectOptionId && selectOptionId.includes('nextpage')) {
 
 		/* Getting the characterId from the customId */
-		const characterId = interaction.customId.split('_')[2];
+		const characterId = interaction.customId.split('_')[2] || '';
 
 		/* Getting the charactersPage from the value Id, incrementing it by one or setting it to zero if the page number is bigger than the total amount of pages. */
-		let speciesPage = Number(interaction.values[0].split('_')[2]) + 1;
+		let speciesPage = Number(selectOptionId.split('_')[2]) + 1;
 		if (speciesPage >= Math.ceil(speciesNameArray.length / 24)) { speciesPage = 0; }
 
 		/* Editing the message if its a Message object, else throw an error. */
@@ -126,21 +128,21 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 		return;
 	}
 
-	if (interaction.isSelectMenu() && speciesInfo[interaction.values[0].split('_')[1]] !== undefined) {
+	if (interaction.isSelectMenu() && selectOptionId && speciesInfo[selectOptionId.split('_')[1] || '']) {
 
 		/* Getting the characterId from the customId */
-		const characterId = interaction.customId.split('_')[2];
-
+		const characterId = interaction.customId.split('_')[2] || '';
 		/* Getting the species from the value */
-		const chosenSpecies = interaction.values[0].split('_')[1] as speciesNames;
+		const chosenSpecies = selectOptionId.split('_')[1] as speciesNames;
 
 		userData = await userModel.findOneAndUpdate(
 			u => u.uuid === userData?.uuid,
 			(u) => {
-				u.characters[characterId].species = chosenSpecies;
+				const c = getMapData(u.characters, characterId);
+				c.species = chosenSpecies;
 			},
 		);
-		const characterData = userData.characters[characterId];
+		const characterData = getMapData(userData.characters, characterId);
 
 		await interaction
 			.update({
@@ -168,20 +170,22 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 
 export async function sendEditDisplayedSpeciesModalResponse(interaction: ModalSubmitInteraction, userData: UserSchema | null): Promise<void> {
 
-	const characterId = interaction.customId.split('_')[1];
+	const characterId = interaction.customId.split('_')[1] || '';
 	const displayedSpecies = interaction.fields.getTextInputValue('species_textinput');
 
 	userData = await userModel.findOneAndUpdate(
 		u => u.uuid === userData?.uuid,
 		(u) => {
-			u.characters[characterId].displayedSpecies = displayedSpecies;
+			const c = getMapData(u.characters, characterId);
+			c.displayedSpecies = displayedSpecies;
 		},
 	);
+	const characterData = getMapData(userData.characters, characterId);
 
 	await respond(interaction, {
 		embeds: [new EmbedBuilder()
-			.setColor(userData.characters[characterId].color)
-			.setAuthor({ name: userData.characters[characterId].name, iconURL: userData.characters[characterId].avatarURL })
+			.setColor(characterData.color)
+			.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
 			.setTitle(displayedSpecies === '' ? 'Successfully removed your displayed species!' : `Successfully changed displayed species to ${displayedSpecies}!`)],
 	}, false);
 	return;

@@ -4,6 +4,7 @@ import serverModel from '../models/serverModel';
 import { CustomClient, DeleteList, Event } from '../typedef';
 import { createGuild } from '../utils/updateGuild';
 import { ActivityType } from 'discord.js';
+import { getMapData } from '../utils/getInfo';
 
 export const event: Event = {
 	name: 'ready',
@@ -78,12 +79,11 @@ export const event: Event = {
 								userModel.findOneAndUpdate(
 									u => u.uuid === userData.uuid,
 									(u) => {
-										u.characters[characterData._id].profiles[profileData.serverId][statKind] -= 10;
+										const p = getMapData(getMapData(u.characters, characterData._id).profiles, profileData.serverId);
+										p[statKind] -= 10;
 										const stat = (statKind.replace('max', '').toLowerCase()) as 'health' | 'energy' | 'hunger' | 'thirst';
-										if (u.characters[characterData._id].profiles[profileData.serverId][stat] > u.characters[characterData._id].profiles[profileData.serverId][statKind]) {
-											u.characters[characterData._id].profiles[profileData.serverId][stat] = u.characters[characterData._id].profiles[profileData.serverId][statKind];
-										}
-										delete u.characters[characterData._id].profiles[profileData.serverId].temporaryStatIncrease[timestamp];
+										if (p[stat] > p[statKind]) { p[stat] = p[statKind]; }
+										delete p.temporaryStatIncrease[timestamp];
 									},
 								);
 							}

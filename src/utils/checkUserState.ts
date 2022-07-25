@@ -8,8 +8,7 @@ const { error_color } = require('../../config.json');
  */
 export function hasName(interaction: ChatInputCommandInteraction, userData: UserSchema | null): userData is UserSchema {
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guildId || 'DM']];
-
+	const characterData = userData?.characters[userData.currentCharacter[interaction.guildId || 'DM'] || ''];
 	if (!characterData || characterData.name === '') {
 
 		respond(interaction, {
@@ -33,8 +32,7 @@ export function hasName(interaction: ChatInputCommandInteraction, userData: User
  */
 function hasSpecies(interaction: ChatInputCommandInteraction, userData: UserSchema | null): boolean {
 
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guildId || 'DM']];
-
+	const characterData = userData?.characters[userData.currentCharacter[interaction.guildId || 'DM'] || ''];
 	if (characterData?.species === '') {
 
 		respond(interaction, {

@@ -30,8 +30,9 @@ export function execute(client: CustomClient) {
 
 				const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8')) as VoteList;
 
-				voteCache['id_' + request.body.user] = voteCache['id_' + request.body.user] ?? {};
-				voteCache['id_' + request.body.user].lastRecordedDiscordsVote = Date.now();
+				let user = voteCache['id_' + request.body.user];
+				if (!user) { user = {}; }
+				user.lastRecordedDiscordsVote = Date.now();
 
 				writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 			}
@@ -62,8 +63,9 @@ export function execute(client: CustomClient) {
 
 			const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8')) as VoteList;
 
-			voteCache['id_' + vote.user] = voteCache['id_' + vote.user] ?? {};
-			voteCache['id_' + vote.user].lastRecordedTopVote = Date.now();
+			let user = voteCache['id_' + vote.user];
+			if (!user) { user = {}; }
+			user.lastRecordedTopVote = Date.now();
 
 			writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 		}));
@@ -88,8 +90,9 @@ export function execute(client: CustomClient) {
 
 				const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8')) as VoteList;
 
-				voteCache['id_' + request.body.id] = voteCache['id_' + request.body.id] ?? {};
-				voteCache['id_' + request.body.id].lastRecordedDblVote = Date.now();
+				let user = voteCache['id_' + request.body.id];
+				if (!user) { user = {}; }
+				user.lastRecordedDblVote = Date.now();
 
 				writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 			}

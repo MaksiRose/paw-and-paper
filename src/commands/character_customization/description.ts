@@ -3,6 +3,7 @@ import { respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
 import { SlashCommand } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
+import { getMapData } from '../../utils/getInfo';
 
 const name: SlashCommand['name'] = 'description';
 const description: SlashCommand['description'] = 'Give a more detailed description of your character.';
@@ -28,10 +29,11 @@ export const command: SlashCommand = {
 		userData = await userModel.findOneAndUpdate(
 			u => u.uuid === userData?.uuid,
 			(u) => {
-				u.characters[u.currentCharacter[interaction.guildId || 'DM']].description = description;
+				const p = getMapData(u.characters, getMapData(u.currentCharacter, interaction.guildId || 'DM'));
+				p.description = description;
 			},
 		);
-		const characterData = userData.characters[userData.currentCharacter[interaction.guildId || 'DM']];
+		const characterData = getMapData(userData.characters, getMapData(userData.currentCharacter, interaction.guildId || 'DM'));
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()

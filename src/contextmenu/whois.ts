@@ -36,15 +36,17 @@ export const command: ContextMenuCommand = {
 		userId is its own variable here to ensure maintainability for when one account could be associated with several userIds. */
 		let userId = interaction.targetMessage.author.id;
 		let userData = await userModel.findOne(u => u.userId.includes(userId)).catch(() => { return null; });
-		let characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guildId || 'DM']] || null;
+		let characterData = userData?.characters[userData.currentCharacter[interaction.guildId || 'DM'] || ''];
 
 		/* This checks whether there is an entry for this message in webhookCache, and sets the userId, userData and characterData to the entry data if it exist. */
-		const webhookCacheEntry: Array<string> | undefined = webhookCache[interaction.targetId]?.split('_');
-		if (webhookCacheEntry !== undefined) {
+		const webhookCacheEntry = webhookCache[interaction.targetId]?.split('_') || [];
+		const uid = webhookCacheEntry[0];
+		const charid = webhookCacheEntry[1];
+		if (uid && charid) {
 
-			userId = webhookCacheEntry[0];
+			userId = uid;
 			userData = await userModel.findOne(u => u.userId.includes(userId)).catch(() => { return null; });
-			characterData = userData?.characters?.[webhookCacheEntry[1]] || null;
+			characterData = userData?.characters[charid];
 		}
 
 		/* This is checking whether the userData is null, and if it is, it will send a message to the user who clicked on the context menu. */
@@ -76,13 +78,13 @@ export const command: ContextMenuCommand = {
 			}])
 			.setTimestamp(new Date())];
 
-		const response = await getMessageContent(client, userData.userId[0], characterData, userData.userId.includes(interaction.user.id), embedArray);
+		const response = await getMessageContent(client, userId, characterData, userData.userId.includes(interaction.user.id), embedArray);
 
 		await respond(interaction, {
 			...response,
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([new ButtonBuilder()
-					.setCustomId(`profile-learnabout-${userData.userId}`)
+					.setCustomId(`profile-learnabout-${interaction.user.id}`)
 					.setLabel('Learn more (sends a DM)')
 					.setStyle(ButtonStyle.Success)])],
 			ephemeral: true,

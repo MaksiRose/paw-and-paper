@@ -4,6 +4,7 @@ import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
 import { SlashCommand, UserSchema } from '../../typedef';
 import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
+import { getMapData } from '../../utils/getInfo';
 const { error_color } = require('../../../config.json');
 
 const name: SlashCommand['name'] = 'delete';
@@ -44,6 +45,7 @@ export const command: SlashCommand = {
 export async function deleteInteractionCollector(interaction: ButtonInteraction | SelectMenuInteraction, userData: UserSchema | null) {
 
 	if (!userData) { throw new Error('userData is null'); }
+	const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
 
 	/* Creating a new page for the user to select an account to delete. */
 	if (interaction.isButton() && interaction.customId === 'delete_individual') {
@@ -64,9 +66,9 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 	}
 
 	/* Checking if the interaction is a select menu and if the value starts with delete_individual_nextpage_. If it is, it increments the page number, and if the page number is greater than the number of pages, it sets the page number to 0. It will then edit the reply to have the new page of character. */
-	if (interaction.isSelectMenu() && interaction.values[0].startsWith('delete_individual_nextpage_')) {
+	if (interaction.isSelectMenu() && selectOptionId && selectOptionId.startsWith('delete_individual_nextpage_')) {
 
-		let deletePage = Number(interaction.values[0].replace('delete_individual_nextpage_', '')) + 1;
+		let deletePage = Number(selectOptionId.replace('delete_individual_nextpage_', '')) + 1;
 		if (deletePage >= Math.ceil(Object.keys(userData.characters).length / 24)) { deletePage = 0; }
 
 		await interaction
@@ -82,10 +84,10 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 	}
 
 	/* Checking if the interaction is a select menu and if the character ID of the value exists as a character. If it does, it will edit the message to ask the user if they are sure they want to delete the character. */
-	if (interaction.isSelectMenu() && Object.keys(userData.characters).includes(interaction.values[0].replace('delete_individual_', ''))) {
+	if (interaction.isSelectMenu() && selectOptionId && Object.keys(userData.characters).includes(selectOptionId.replace('delete_individual_', ''))) {
 
-		const _id = interaction.values[0].replace('delete_individual_', '');
-		const character = userData.characters[_id];
+		const _id = selectOptionId.replace('delete_individual_', '');
+		const character = getMapData(userData.characters, _id);
 
 		await interaction
 			.update({
@@ -132,9 +134,9 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 	}
 
 	/* Checking if the interaction is a select menu and if the value starts with delete_server_nextpage_. If it does, it increments the page number, and if the page number is greater than the number of pages, it sets the page number to 0. It will then edit the reply to have the new page of servers. */
-	if (interaction.isSelectMenu() && interaction.values[0].startsWith('delete_server_nextpage_')) {
+	if (interaction.isSelectMenu() && selectOptionId && selectOptionId.startsWith('delete_server_nextpage_')) {
 
-		let deletePage = Number(interaction.values[0].replace('delete_server_nextpage_', '')) + 1;
+		let deletePage = Number(selectOptionId.replace('delete_server_nextpage_', '')) + 1;
 		if (deletePage >= Math.ceil([...new Set(Object.values(userData.characters).map(c => Object.keys(c.profiles)).flat())].length / 24)) { deletePage = 0; }
 
 		await interaction
@@ -150,9 +152,9 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 	}
 
 	/* Checking if the interaction is a select menu and if the server ID is in the array of all servers. If it is, it will edit the message to ask the user if they are sure they want to delete all their information on the server. */
-	if (interaction.isSelectMenu() && [...new Set([...Object.values(userData.characters).map(c => Object.keys(c.profiles)), ...Object.keys(userData.currentCharacter)].flat())].includes(interaction.values[0].replace('delete_server_', ''))) {
+	if (interaction.isSelectMenu() && selectOptionId && [...new Set([...Object.values(userData.characters).map(c => Object.keys(c.profiles)), ...Object.keys(userData.currentCharacter)].flat())].includes(selectOptionId.replace('delete_server_', ''))) {
 
-		const server = await serverModel.findOne(s => s.serverId === interaction.values[0].replace('delete_server_', ''));
+		const server = await serverModel.findOne(s => s.serverId === selectOptionId.replace('delete_server_', ''));
 		const accountsOnServer = Object.values(userData.characters).map(c => c.profiles[server.serverId]).filter(p => p !== undefined);
 
 		await interaction
@@ -220,7 +222,7 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 		if (type === 'individual') {
 
 			const _id = interaction.customId.replace('delete_confirm_individual_', '');
-			const character = userData.characters[_id];
+			const character = getMapData(userData.characters, _id);
 
 			await userModel.findOneAndUpdate(
 				u => u.uuid === userData?.uuid,

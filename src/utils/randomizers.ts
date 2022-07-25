@@ -39,7 +39,9 @@ export function pullFromWeightedTable(values: { [n: number]: number; }): number 
 		}
 	}
 
-	return table[generateRandomNumber(table.length)];
+	const returnNumber = table[generateRandomNumber(table.length)];
+	if (!returnNumber) { throw new TypeError('returnNumber is not a number'); }
+	return returnNumber;
 }
 
 /**

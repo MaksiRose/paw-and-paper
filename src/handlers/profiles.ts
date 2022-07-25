@@ -2,11 +2,12 @@ import { readdirSync, readFileSync } from 'fs';
 import { sendReminder } from '../commands/gameplay_maintenance/water-tree';
 import profileModel from '../models/userModel';
 import { CustomClient, UserSchema } from '../typedef';
+import { getMapData } from '../utils/getInfo';
 
 /** Updates all profiles */
 export async function execute(client: CustomClient) {
 
-	const userFiles = readdirSync('./database/profiles').map(file => ['./database/profiles', file]).filter(([, file]) => file.endsWith('.json'));
+	const userFiles = readdirSync('./database/profiles').filter(file => file.endsWith('.json')).map(file => ['./database/profiles', file]);
 
 	for (const [path, file] of userFiles) {
 
@@ -35,8 +36,9 @@ export async function execute(client: CustomClient) {
 
 						for (const profile of Object.values(character.profiles)) {
 
-							u.characters[character._id].profiles[profile.serverId].isResting = false;
-							u.characters[character._id].profiles[profile.serverId].energy = u.characters[character._id].profiles[profile.serverId].energy === 0 ? 0 : u.characters[character._id].profiles[profile.serverId].maxEnergy;
+							const p = getMapData(getMapData(u.characters, character._id).profiles, profile.serverId);
+							p.isResting = false;
+							p.energy = p.energy === 0 ? 0 : p.maxEnergy;
 						}
 					}
 				},

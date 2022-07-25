@@ -1,28 +1,24 @@
 import { CommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
 import { hasCooldownMap, respond } from '../events/interactionCreate';
 import userModel from '../models/userModel';
-import { UserSchema } from '../typedef';
+import { Character, Profile, UserSchema } from '../typedef';
 import { stopResting } from './executeResting';
+import { getMapData } from './getInfo';
 import { pronoun, pronounAndPlural, upperCasePronoun } from './getPronouns';
 import { decreaseLevel } from './levelHandling';
 
-export async function isPassedOut(interaction: CommandInteraction<'cached' | 'raw'>, uuid: string, isNew: boolean): Promise<boolean> {
-
-	/* Defining the userData, characterData and profileData */
-	const userData = await userModel.findOne(u => u.uuid === uuid).catch(() => { return null; });
-	const characterData = userData?.characters?.[userData.currentCharacter?.[interaction.guildId]];
-	const profileData = characterData?.profiles?.[interaction.guildId];
+export async function isPassedOut(interaction: CommandInteraction<'cached' | 'raw'>, userData: UserSchema, characterData: Character, profileData: Profile, isNew: boolean): Promise<boolean> {
 
 	/* This is a function that checks if the user has passed out. If they have, it will send a message to the channel and return true. */
-	if (userData && characterData && profileData && (profileData.energy <= 0 || profileData.health <= 0 || profileData.hunger <= 0 || profileData.thirst <= 0)) {
+	if (profileData.energy <= 0 || profileData.health <= 0 || profileData.hunger <= 0 || profileData.thirst <= 0) {
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(characterData.color)
 				.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
 				.setDescription(`*${characterData.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${pronounAndPlural(characterData, 0, 'screeches', 'screech')} with ${pronoun(characterData, 2)} last energy. Without help, ${pronoun(characterData, 0)} will not be able to continue.*`)
-				.setFooter(isNew ? { text: await decreaseLevel(userData, interaction) } : null)],
-		}, true)
+				.setFooter(isNew ? { text: await decreaseLevel(userData, characterData, profileData, interaction) } : null)],
+		}, false)
 			.catch((error) => { throw new Error(error); });
 
 		/* This is a tip that is sent to the user when they pass out for the first time. */
@@ -50,9 +46,7 @@ export async function isPassedOut(interaction: CommandInteraction<'cached' | 'ra
 /**
  * Checks if the user is on a cooldown. If yes, then send a message and return true, as well as decrease their level if it's new. Else, return false.
  */
-export async function hasCooldown(interaction: CommandInteraction<'cached' | 'raw'>, userData: UserSchema, commandName: string): Promise<boolean> {
-
-	const characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guildId]];
+export async function hasCooldown(interaction: CommandInteraction<'cached' | 'raw'>, userData: UserSchema, characterData: Character, commandName: string): Promise<boolean> {
 
 	if (hasCooldownMap.get(userData?.uuid + interaction.guildId) === true && commandName === interaction.commandName) {
 
@@ -85,10 +79,7 @@ export async function hasCooldown(interaction: CommandInteraction<'cached' | 'ra
 /**
  * Checks if the user is resting. If yes, then wake user up and attach an embed to the message. Returns the updated `userData`.
  */
-export async function isResting(interaction: CommandInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached' | 'raw'>, userData: UserSchema, embedArray: Array<EmbedBuilder>): Promise<UserSchema> {
-
-	const characterData = userData.characters[userData.currentCharacter[interaction.guildId]];
-	const profileData = characterData.profiles[interaction.guildId];
+export async function isResting(interaction: CommandInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached' | 'raw'>, userData: UserSchema, characterData: Character, profileData: Profile, embedArray: Array<EmbedBuilder>): Promise<UserSchema> {
 
 	/* This is a function that checks if the user is resting. If they are, it will wake them up and attach an embed to the message. */
 	if (profileData.isResting == true) {
@@ -96,7 +87,8 @@ export async function isResting(interaction: CommandInteraction<'cached' | 'raw'
 		userData = await userModel.findOneAndUpdate(
 			u => u.uuid === userData.uuid,
 			(u) => {
-				u.characters[u.currentCharacter[interaction.guildId]].profiles[interaction.guildId].isResting = false;
+				const p = getMapData(getMapData(u.characters, characterData._id).profiles, interaction.guildId);
+				p.isResting = false;
 			},
 		);
 
@@ -115,19 +107,19 @@ export async function isResting(interaction: CommandInteraction<'cached' | 'raw'
 /**
  * Checks if the user is passed out, on a cooldown or resting, sends or attaches the appropriate message/embed, and returns a boolean of the result.
  */
-export async function isInvalid(interaction: CommandInteraction<'cached' | 'raw'>, userData: UserSchema, embedArray: Array<EmbedBuilder>, commandName: string): Promise<boolean> {
+export async function isInvalid(interaction: CommandInteraction<'cached' | 'raw'>, userData: UserSchema, characterData: Character, profileData: Profile, embedArray: Array<EmbedBuilder>, commandName: string): Promise<boolean> {
 
-	if (await isPassedOut(interaction, userData.uuid, false)) {
-
-		return true;
-	}
-
-	if (await hasCooldown(interaction, userData, commandName)) {
+	if (await isPassedOut(interaction, userData, characterData, profileData, false)) {
 
 		return true;
 	}
 
-	await isResting(interaction, userData, embedArray);
+	if (await hasCooldown(interaction, userData, characterData, commandName)) {
+
+		return true;
+	}
+
+	await isResting(interaction, userData, characterData, profileData, embedArray);
 
 	return false;
 }

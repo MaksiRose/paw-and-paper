@@ -4,6 +4,7 @@ import userModel from '../../models/userModel';
 import { Character, SlashCommand, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
+import { getMapData } from '../../utils/getInfo';
 import { pronounCompromiser } from './profile';
 const { error_color, default_color } = require('../../../config.json');
 
@@ -25,7 +26,7 @@ export const command: SlashCommand = {
 		if (!hasName(interaction, userData)) { return; }
 
 		/* Getting the character data and sending the initial response */
-		const characterData = userData.characters[userData.currentCharacter[interaction.guildId || 'DM']];
+		const characterData = getMapData(userData.characters, getMapData(userData.currentCharacter, interaction.guildId || 'DM'));
 
 		const botReply = await respond(interaction, {
 			embeds: [new EmbedBuilder()
@@ -72,11 +73,11 @@ export async function pronounsInteractionCollector(interaction: ButtonInteractio
 	if (interaction.isSelectMenu() && interaction.customId.includes('selectmodal')) {
 
 		const userData = await userModel.findOne(u => u.uuid === interaction.customId.split('_')[2]);
-		const characterData = userData.characters[interaction.customId.split('_')[3]];
+		const characterData = getMapData(userData.characters, interaction.customId.split('_')[3] || '');
 
 		/* Getting the position of the pronoun in the array, and the existing pronoun in that place */
-		const pronounNumber = interaction.values[0].split('_')[1];
-		const pronounSet = pronounNumber === 'add' ? [] : characterData.pronounSets[Number(pronounNumber)];
+		const pronounNumber = interaction.values[0]?.split('_')[1] || 'add';
+		const pronounSet = pronounNumber === 'add' ? [] : characterData.pronounSets[Number(pronounNumber)] || [];
 
 		/* Getting the remaining length for the pronoun field in the profile command. */
 		const profilePronounFieldLengthLeft = 1024 - characterData.pronounSets.map(pSet => pronounCompromiser(pSet)).join('\n').length + pronounCompromiser(pronounSet).length;
@@ -114,7 +115,7 @@ export async function pronounsInteractionCollector(interaction: ButtonInteractio
 export async function sendEditPronounsModalResponse(interaction: ModalSubmitInteraction): Promise<void> {
 
 	const userData = await userModel.findOne(u => u.uuid === interaction.customId.split('_')[1]);
-	const characterData = userData.characters[interaction.customId.split('_')[2]];
+	const characterData = getMapData(userData.characters, interaction.customId.split('_')[2] || '');
 
 	/* Getting the array position of the pronoun that is being edited, the pronouns that are being set, whether
 	the pronouns are being deleted, and whether the pronouns are being set to none. */
@@ -187,22 +188,23 @@ export async function sendEditPronounsModalResponse(interaction: ModalSubmitInte
 	await userModel.findOneAndUpdate(
 		u => u.uuid === userData?.uuid,
 		(u) => {
+			const p = getMapData(u.characters, characterData._id);
 			if (willBeDeleted) {
-				u.characters[characterData._id].pronounSets.splice(pronounNumber, 1);
+				p.pronounSets.splice(pronounNumber, 1);
 			}
 			else {
-				u.characters[characterData._id].pronounSets[isNaN(pronounNumber) ? characterData.pronounSets.length : pronounNumber] = chosenPronouns;
+				p.pronounSets[isNaN(pronounNumber) ? characterData.pronounSets.length : pronounNumber] = chosenPronouns;
 			}
 		},
 	);
 
-	const addedOrEditedTo = isNaN(pronounNumber) ? 'added pronoun' : `edited pronoun from ${characterData.pronounSets[pronounNumber].join('/')} to`;
+	const addedOrEditedTo = isNaN(pronounNumber) ? 'added pronoun' : `edited pronoun from ${characterData.pronounSets[pronounNumber]?.join('/')} to`;
 
 	await respond(interaction, {
 		embeds: [new EmbedBuilder()
 			.setColor(characterData.color)
 			.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
-			.setTitle(`Successfully ${willBeDeleted ? `deleted pronoun ${characterData.pronounSets[pronounNumber].join('/')}` : `${addedOrEditedTo} ${chosenPronouns.join('/')}`}!`)],
+			.setTitle(`Successfully ${willBeDeleted ? `deleted pronoun ${characterData.pronounSets[pronounNumber]?.join('/')}` : `${addedOrEditedTo} ${chosenPronouns.join('/')}`}!`)],
 	}, false)
 		.catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }

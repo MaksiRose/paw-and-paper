@@ -10,10 +10,13 @@ export function pronoun(characterData: Character, pronounNumber: 0 | 1 | 2 | 3 |
 
 	for (const pronounSet of characterData.pronounSets) {
 
-		if (pronounSet.length === 6) { possiblePronouns.push(pronounSet[pronounNumber]); }
+		const pronoun = pronounSet[pronounNumber];
+		if (pronoun) { possiblePronouns.push(pronoun); }
 	}
 
-	return possiblePronouns[generateRandomNumber(possiblePronouns.length, 0)];
+	const returnString = possiblePronouns[generateRandomNumber(possiblePronouns.length, 0)];
+	if (!returnString) { throw new TypeError('returnString is not a string'); }
+	return returnString;
 }
 
 /**

@@ -1,19 +1,16 @@
 import { CommandInteraction, EmbedBuilder, Message } from 'discord.js';
 import { respond } from '../events/interactionCreate';
 import userModel from '../models/userModel';
-import { ServerSchema, UserSchema, WayOfEarningType } from '../typedef';
+import { Character, Profile, ServerSchema, UserSchema, WayOfEarningType } from '../typedef';
 import { checkLevelRequirements, checkRoleCatchBlock } from './checkRoleRequirements';
+import { getMapData } from './getInfo';
 import { upperCasePronounAndPlural } from './getPronouns';
 const { default_color } = require('../../config.json');
 
 /**
  * Checks if the user is eligable for a level up, and sends a message if so.
  */
-export async function checkLevelUp(interaction: CommandInteraction<'cached' | 'raw'>, userData: UserSchema, serverData: ServerSchema, botReply?: Message): Promise<Message | undefined> {
-
-	/* Getting characterData and profileData */
-	let characterData = userData.characters[userData.currentCharacter[interaction.guildId]];
-	let profileData = characterData.profiles[interaction.guildId];
+export async function checkLevelUp(interaction: CommandInteraction<'cached' | 'raw'>, userData: UserSchema, characterData: Character, profileData: Profile, serverData: ServerSchema, botReply?: Message): Promise<Message | undefined> {
 
 	/* It's checking if the user has enough experience to level up. If they do, it will level them up and then check if they leveled up again. */
 	const requiredExperiencePoints = profileData.levels * 50;
@@ -22,12 +19,13 @@ export async function checkLevelUp(interaction: CommandInteraction<'cached' | 'r
 		userData = await userModel.findOneAndUpdate(
 			u => u.uuid === userData.uuid,
 			(u) => {
-				u.characters[u.currentCharacter[interaction.guildId]].profiles[interaction.guildId].experience -= requiredExperiencePoints;
-				u.characters[u.currentCharacter[interaction.guildId]].profiles[interaction.guildId].levels += 1;
+				const p = getMapData(getMapData(u.characters, characterData._id).profiles, interaction.guildId);
+				p.experience -= requiredExperiencePoints;
+				p.levels += 1;
 			},
 		);
-		characterData = userData.characters[userData.currentCharacter[interaction.guildId]];
-		profileData = characterData.profiles[interaction.guildId];
+		characterData = getMapData(userData.characters, characterData._id);
+		profileData = getMapData(characterData.profiles, interaction.guildId);
 
 		if (botReply) {
 
@@ -43,7 +41,7 @@ export async function checkLevelUp(interaction: CommandInteraction<'cached' | 'r
 				});
 		}
 
-		botReply = await checkLevelUp(interaction, userData, serverData, botReply);
+		botReply = await checkLevelUp(interaction, userData, characterData, profileData, serverData, botReply);
 
 		const guild = interaction.guild || await interaction.client.guilds.fetch(interaction.guildId);
 		const member = await guild.members.fetch(interaction.user.id);
@@ -56,11 +54,7 @@ export async function checkLevelUp(interaction: CommandInteraction<'cached' | 'r
 /**
  * Decreases the users level based on their current levels and removes their inventory, returns footerText for an updated bot reply.
  */
-export async function decreaseLevel(userData: UserSchema, interaction: CommandInteraction<'cached' | 'raw'>): Promise<string> {
-
-	/* Defining characterData and profileData */
-	let characterData = userData.characters[userData.currentCharacter[interaction.guildId]];
-	let profileData = characterData.profiles[interaction.guildId];
+export async function decreaseLevel(userData: UserSchema, characterData: Character, profileData: Profile, interaction: CommandInteraction<'cached' | 'raw'>): Promise<string> {
 
 	/* newUserLevel is nine tenths of current profile level. */
 	const newUserLevel = Math.round(profileData.levels - (profileData.levels / 10));
@@ -86,13 +80,14 @@ export async function decreaseLevel(userData: UserSchema, interaction: CommandIn
 	userData = await userModel.findOneAndUpdate(
 		u => u.uuid === userData.uuid,
 		(u) => {
-			u.characters[u.currentCharacter[interaction.guildId]].profiles[interaction.guildId].levels = newUserLevel;
-			u.characters[u.currentCharacter[interaction.guildId]].profiles[interaction.guildId].experience = 0;
-			u.characters[u.currentCharacter[interaction.guildId]].profiles[interaction.guildId].inventory = profileData.inventory;
+			const p = getMapData(getMapData(u.characters, characterData._id).profiles, interaction.guildId);
+			p.levels = newUserLevel;
+			p.experience = 0;
+			p.inventory = profileData.inventory;
 		},
 	);
-	characterData = userData.characters[userData.currentCharacter[interaction.guildId]];
-	profileData = characterData.profiles[interaction.guildId];
+	characterData = getMapData(userData.characters, characterData._id);
+	profileData = getMapData(characterData.profiles, interaction.guildId);
 
 
 	/* Get the guild, member, and the profileData roles where the wayOfEarning is levels and the role requirement bigger than the profile level. */
@@ -112,7 +107,8 @@ export async function decreaseLevel(userData: UserSchema, interaction: CommandIn
 			await userModel.findOneAndUpdate(
 				u => u.uuid === userData.uuid,
 				(u) => {
-					u.characters[u.currentCharacter[interaction.guildId]].profiles[interaction.guildId].roles = profileData.roles;
+					const p = getMapData(getMapData(u.characters, characterData._id).profiles, interaction.guildId);
+					p.roles = profileData.roles;
 				},
 			);
 

@@ -25,11 +25,13 @@ export function disableAllComponents(messageComponents: Array<APIActionRowCompon
 
 	for (const actionRow in messageComponents) {
 
-		for (const component in messageComponents[actionRow].components) {
+		const messageComponent = messageComponents[actionRow];
+		if (!messageComponent) { return messageComponents; }
+		for (const component in messageComponent.components) {
 
-			const actionRowComponent = messageComponents[actionRow].components[component];
-			if (actionRowComponent.type === ComponentType.Button && actionRowComponent.style === ButtonStyle.Link) { continue; }
-			messageComponents[actionRow].components[component] = { ...actionRowComponent, ...{ disabled: true } };
+			const actionRowComponent = messageComponent.components[component];
+			if (!actionRowComponent || (actionRowComponent.type === ComponentType.Button && actionRowComponent.style === ButtonStyle.Link)) { continue; }
+			actionRowComponent.disabled = true;
 		}
 	}
 

@@ -16,7 +16,7 @@ export const command: ContextMenuCommand = {
 
 		/* This gets the webhookCache and userData */
 		const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8')) as WebhookMessages;
-		const userData = await userModel.findOne(u => u.userId.includes(webhookCache[interaction.targetId]?.split('_')?.[0])).catch(() => { return null; });
+		const userData = await userModel.findOne(u => u.userId.includes(webhookCache[interaction.targetId]?.split('_')[0] || '')).catch(() => { return null; });
 
 		/* This is checking if the user who is trying to edit the message is the same user who sent the message. */
 		if (userData === null || !userData.userId.includes(interaction.user.id)) {
@@ -57,7 +57,7 @@ export const sendEditMessageModalResponse = async (interaction: ModalSubmitInter
 	if (!interaction.channel) { return; }
 
 	/* This gets the messageId of the message that will be edited. */
-	const messageId = interaction.customId.split('-')[1];
+	const messageId = interaction.customId.split('-')[1] || '';
 
 	/* This is checking if the channel is a thread, if it is, it will get the parent channel. If the
 	channel is a DM, it will throw an error. If the channel is a guild channel, it will get the

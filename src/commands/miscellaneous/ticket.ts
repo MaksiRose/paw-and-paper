@@ -131,7 +131,7 @@ export async function ticketInteractionCollector(interaction: ButtonInteraction)
 
 		if (interaction.customId.includes('user')) {
 
-			const userId = interaction.customId.split('_')[3].replace('user', '');
+			const userId = interaction.customId.split('_')[3]?.replace('user', '') || '';
 
 			const user = await interaction.client.users
 				.fetch(userId)
@@ -183,9 +183,9 @@ export async function ticketInteractionCollector(interaction: ButtonInteraction)
 			.create({
 				owner: 'MaksiRose',
 				repo: 'paw-and-paper',
-				title: embed.title || 'New issue',
-				body: `Created by: ${interaction.user.tag} (${interaction.user.id})\n\n${embed.description}\n\n${embed.image ? `![](${embed.image?.url})` : ''}`,
-				labels: embed.footer ? [embed.footer.text] : [],
+				title: embed?.title || 'New issue',
+				body: `Created by: ${interaction.user.tag} (${interaction.user.id})\n\n${embed?.description}\n\n${embed?.image ? `![](${embed.image?.url})` : ''}`,
+				labels: embed?.footer ? [embed.footer.text] : [],
 			})
 			.catch((error) => { throw new Error(error); });
 	}

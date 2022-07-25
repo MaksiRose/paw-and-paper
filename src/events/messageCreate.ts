@@ -19,7 +19,7 @@ export const event: Event = {
 		}
 
 		const userData = await userModel.findOne(u => u.userId.includes(message.author.id)).catch(() => { return null; });
-		const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId || 'DM']];
+		const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId || 'DM'] || ''];
 		let serverData = await serverModel.findOne(s => s.serverId === message.guildId).catch(() => { return null; });
 
 		/* Checking if the serverData is null. If it is null, it will create a guild. */

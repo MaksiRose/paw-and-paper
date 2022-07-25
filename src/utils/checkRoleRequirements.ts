@@ -2,15 +2,16 @@ import { ButtonInteraction, CommandInteraction, EmbedBuilder, GuildMember, Selec
 import { respond } from '../events/interactionCreate';
 import userModel from '../models/userModel';
 import { RankType, ServerSchema, WayOfEarningType } from '../typedef';
+import { getMapData } from './getInfo';
 const { default_color, error_color } = require('../../config.json');
 
 /**
  * Checks if user has reached the requirement to get a role based on their rank.
  */
-export async function checkRankRequirements(serverData: ServerSchema, interaction: CommandInteraction | ButtonInteraction, member: GuildMember, userRank: RankType, sendMessage = false): Promise<void> {
+export async function checkRankRequirements(serverData: ServerSchema, interaction: CommandInteraction | ButtonInteraction, member: GuildMember | undefined, userRank: RankType, sendMessage = false): Promise<void> {
 
-	/* If interaction is not in guild, return */
-	if (!interaction.inGuild()) { return; }
+	/* If interaction is not in guild or member undefined, return */
+	if (!interaction.inGuild() || !member) { return; }
 
 	/* Defining a rankList and a shop of items with the wayOfEarning being rank.
 	The reason why Elderly is also 2 is because as Elderly, it isn't clear if you were Hunter or Healer before. Therefore, having the higher rank Elderly shouldn't automatically grant you a Hunter or Healer role. */
@@ -26,15 +27,16 @@ export async function checkRankRequirements(serverData: ServerSchema, interactio
 
 				/* Get the userData and the roles of the current character. */
 				const userData = await userModel.findOne(u => u.userId.includes(member.id));
-				const roles = userData.characters[userData.currentCharacter[interaction.guildId]].profiles[interaction.guildId].roles;
+				const roles = userData.characters[userData.currentCharacter[interaction.guildId] || '']?.profiles[interaction.guildId]?.roles;
 
 				/* It's checking if the role is in the database. If it's not, it will add it to the database. */
-				if (!roles.some(r => r.roleId === item.roleId && r.wayOfEarning === item.wayOfEarning && r.requirement === item.requirement)) {
+				if (roles && !roles.some(r => r.roleId === item.roleId && r.wayOfEarning === item.wayOfEarning && r.requirement === item.requirement)) {
 
 					await userModel.findOneAndUpdate(
 						u => u.uuid === userData.uuid,
 						(u) => {
-							u.characters[u.currentCharacter[interaction.guildId]].profiles[interaction.guildId].roles.push({
+							const p = getMapData(getMapData(u.characters, getMapData(u.currentCharacter, interaction.guildId)).profiles, interaction.guildId);
+							p.roles.push({
 								roleId: item.roleId,
 								wayOfEarning: item.wayOfEarning,
 								requirement: item.requirement,
@@ -75,10 +77,10 @@ export async function checkRankRequirements(serverData: ServerSchema, interactio
 /**
  * Checks if user has reached the requirement to get a role based on their level.
  */
-export async function checkLevelRequirements(serverData: ServerSchema, interaction: CommandInteraction | ButtonInteraction, member: GuildMember, userLevel: number, sendMessage = false) {
+export async function checkLevelRequirements(serverData: ServerSchema, interaction: CommandInteraction | ButtonInteraction, member: GuildMember | undefined, userLevel: number, sendMessage = false) {
 
-	/* If interaction is not in guild, return */
-	if (!interaction.inGuild()) { return; }
+	/* If interaction is not in guild or member undefined, return */
+	if (!interaction.inGuild() || !member) { return; }
 
 	/* Defining a shop of items with the wayOfEarning being levels. */
 	const shop = serverData.shop.filter(item => item.wayOfEarning === WayOfEarningType.Levels);
@@ -92,15 +94,16 @@ export async function checkLevelRequirements(serverData: ServerSchema, interacti
 
 				/* Get the userData and the roles of the current character. */
 				const userData = await userModel.findOne(u => u.userId.includes(member.id));
-				const roles = userData.characters[userData.currentCharacter[interaction.guildId]].profiles[interaction.guildId].roles;
+				const roles = userData.characters[userData.currentCharacter[interaction.guildId] || '']?.profiles[interaction.guildId]?.roles;
 
 				/* It's checking if the role is in the database. If it's not, it will add it to the database. */
-				if (roles.some(r => r.roleId === item.roleId && r.wayOfEarning === item.wayOfEarning && r.requirement === item.requirement) === false) {
+				if (roles && roles.some(r => r.roleId === item.roleId && r.wayOfEarning === item.wayOfEarning && r.requirement === item.requirement) === false) {
 
 					await userModel.findOneAndUpdate(
 						u => u.uuid === userData.uuid,
 						(u) => {
-							u.characters[u.currentCharacter[interaction.guildId]].profiles[interaction.guildId].roles.push({
+							const p = getMapData(getMapData(u.characters, getMapData(u.currentCharacter, interaction.guildId)).profiles, interaction.guildId);
+							p.roles.push({
 								roleId: item.roleId,
 								wayOfEarning: item.wayOfEarning,
 								requirement: item.requirement,

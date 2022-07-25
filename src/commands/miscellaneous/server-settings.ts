@@ -4,6 +4,7 @@ import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
 import { RankType, ServerSchema, SlashCommand, WayOfEarningType } from '../../typedef';
 import { checkLevelRequirements, checkRankRequirements } from '../../utils/checkRoleRequirements';
+import { getMapData } from '../../utils/getInfo';
 const { default_color, update_channel_id } = require('../../../config.json');
 
 const name: SlashCommand['name'] = 'server-settings';
@@ -39,6 +40,8 @@ export const command: SlashCommand = {
 
 export async function serversettingsInteractionCollector(interaction: ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>, serverData: ServerSchema) {
 
+	const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
+
 	/* It's checking if the interaction is a button that leads back to the main page, and it's updating the message with the main page content. */
 	if (interaction.isButton() && interaction.customId === 'serversettings_mainpage') {
 
@@ -62,12 +65,12 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 	}
 
 	/* It's checking if the interaction is the shop select menu. */
-	if (interaction.isSelectMenu() && interaction.customId === 'serversettings_shop_options') {
+	if (interaction.isSelectMenu() && selectOptionId && interaction.customId === 'serversettings_shop_options') {
 
 		/* It's checking if the value is for turning a page. If it is, it's getting the page number from the value, and it's updating the message with the shop message with the page number. */
-		if (interaction.values[0].includes('nextpage')) {
+		if (selectOptionId.includes('nextpage')) {
 
-			const page = Number(interaction.values[0].split('_')[3]);
+			const page = Number(selectOptionId.split('_')[3]);
 
 			await interaction
 				.update(await getShopMessage(interaction, serverData, page))
@@ -78,7 +81,7 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 		}
 		else {
 
-			const roleIdOrAdd = interaction.values[0].split('_')[2];
+			const roleIdOrAdd = selectOptionId.split('_')[2] || '';
 
 			let rolePage = 0;
 			let role: ServerSchema['shop'][number]['roleId'] | null = serverData.shop.find(shopItem => shopItem.roleId === roleIdOrAdd)?.roleId || null;
@@ -103,34 +106,36 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 
 			interactionCollector.on('collect', async i => {
 
+				const collectorSelectOptionId = i.isSelectMenu() ? i.values[0] : undefined;
+
 				if (i.isButton() && i.customId === 'serversettings_shop') { interactionCollector.stop('back'); }
 
-				if (i.isSelectMenu() && i.customId === 'serversettings_shop_add_options') {
+				if (i.isSelectMenu() && collectorSelectOptionId && i.customId === 'serversettings_shop_add_options') {
 
-					if (i.values[0].startsWith('serversettings_shop_add_nextpage_')) {
+					if (collectorSelectOptionId.startsWith('serversettings_shop_add_nextpage_')) {
 
-						rolePage = Number(i.values[0].replace('serversettings_shop_add_nextpage_', ''));
+						rolePage = Number(collectorSelectOptionId.replace('serversettings_shop_add_nextpage_', ''));
 						roleMenu = await getNewRoleMenu(i, serverData, rolePage).catch(() => { return null; });
 					}
-					else { role = i.values[0].replace('serversettings_shop_add_', ''); }
+					else { role = collectorSelectOptionId.replace('serversettings_shop_add_', ''); }
 
 					await i
 						.update(getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
 						.catch(error => { console.error(error); });
 				}
 
-				if (i.isSelectMenu() && i.customId === 'serversettings_shop_wayofearning') {
+				if (i.isSelectMenu() && collectorSelectOptionId && i.customId === 'serversettings_shop_wayofearning') {
 
-					wayOfEarning = i.values[0].replace('serversettings_shop_wayofearning_', '') as WayOfEarningType;
+					wayOfEarning = collectorSelectOptionId.replace('serversettings_shop_wayofearning_', '') as WayOfEarningType;
 					requirement = null;
 					await i
 						.update(getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
 						.catch(error => { console.error(error); });
 				}
 
-				if (i.isSelectMenu() && i.customId === 'serversettings_shop_requirements') {
+				if (i.isSelectMenu() && collectorSelectOptionId && i.customId === 'serversettings_shop_requirements') {
 
-					requirement = i.values[0].replace('serversettings_shop_requirements_', '') as RankType;
+					requirement = collectorSelectOptionId.replace('serversettings_shop_requirements_', '') as RankType;
 					await i
 						.update(getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
 						.catch(error => { console.error(error); });
@@ -207,17 +212,18 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 								await userModel.findOneAndUpdate(
 									user => user.uuid === u.uuid,
 									(user) => {
-										user.characters[c._id].profiles[p.serverId].roles = user.characters[c._id].profiles[p.serverId].roles.filter(r => r.roleId !== role);
+										const prof = getMapData(getMapData(user.characters, c._id).profiles, p.serverId);
+										prof.roles = prof.roles.filter(r => r.roleId !== role);
 									},
 								);
 
 								/* Giving users the role if they meet the requirements or removing it if they don't. */
 								if (wayOfEarning === WayOfEarningType.Levels) {
 
-									const member = await i.guild.members.fetch(u.userId[0]);
+									const member = await i.guild.members.fetch(u.userId[0] || '').catch(() => { return undefined; });
 									await checkLevelRequirements(serverData, i, member, p.levels, false);
 
-									if (p.levels < requirement && member.roles.cache.has(role)) {
+									if (p.levels < requirement && member && member.roles.cache.has(role)) {
 
 										await member.roles
 											.remove(role)
@@ -227,11 +233,11 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 
 								if (wayOfEarning === WayOfEarningType.Rank) {
 
-									const member = await i.guild.members.fetch(u.userId[0]);
+									const member = await i.guild.members.fetch(u.userId[0] || '').catch(() => { return undefined; });
 									await checkRankRequirements(serverData, i, member, p.rank, false);
 
 									const rankList = { Youngling: 0, Apprentice: 1, Hunter: 2, Healer: 2, Eldery: 2 };
-									if (rankList[p.rank] < rankList[requirement] && member.roles.cache.has(role)) {
+									if (rankList[p.rank] < rankList[requirement] && member && member.roles.cache.has(role)) {
 
 										await member.roles
 											.remove(role)
@@ -241,8 +247,8 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 
 								if (wayOfEarning === WayOfEarningType.Experience) {
 
-									const member = await i.guild.members.fetch(u.userId[0]);
-									if (member.roles.cache.has(role)) {
+									const member = await i.guild.members.fetch(u.userId[0] || '').catch(() => { return undefined; });
+									if (member && member.roles.cache.has(role)) {
 
 										await member.roles
 											.remove(role)
@@ -304,14 +310,15 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 								await userModel.findOneAndUpdate(
 									user => user.uuid === u.uuid,
 									(user) => {
-										user.characters[c._id].profiles[p.serverId].roles = user.characters[c._id].profiles[p.serverId].roles.filter(r => r.roleId !== role);
+										const prof = getMapData(getMapData(user.characters, c._id).profiles, p.serverId);
+										prof.roles = prof.roles.filter(r => r.roleId !== role);
 									},
 								);
 
 								/* Remove the role from users that have it. */
-								const member = await i.guild.members.fetch(u.userId[0]);
+								const member = await i.guild.members.fetch(u.userId[0] || '').catch(() => { return undefined; });
 
-								if (member.roles.cache.has(role)) {
+								if (member && member.roles.cache.has(role)) {
 
 									await member.roles
 										.remove(role)
@@ -377,12 +384,12 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 	}
 
 	/* It's checking if the interaction is the updates select menu */
-	if (interaction.isSelectMenu() && interaction.customId === 'serversettings_updates_options') {
+	if (interaction.isSelectMenu() && selectOptionId && interaction.customId === 'serversettings_updates_options') {
 
 		/* It's checking if the value is for turning a page. If it is, it's getting the page number from the value, and it's updating the message with the shop message with the page number. */
-		if (interaction.values[0].includes('nextpage')) {
+		if (selectOptionId.includes('nextpage')) {
 
-			const page = Number(interaction.values[0].split('_')[3]);
+			const page = Number(selectOptionId.split('_')[3]);
 
 			await interaction
 				.update(await getUpdateMessage(interaction, serverData, page))
@@ -393,7 +400,7 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 		}
 		else {
 
-			const channelId = interaction.values[0].split('_')[2];
+			const channelId = selectOptionId.split('_')[2];
 			if (!channelId) { throw new Error('Missing channelId'); }
 
 			const newsChannel = await interaction.client.channels.fetch(update_channel_id);
@@ -430,12 +437,12 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 	}
 
 	/* It's checking if the interaction is the visits select menu */
-	if (interaction.isSelectMenu() && interaction.customId === 'serversettings_visits_options') {
+	if (interaction.isSelectMenu() && selectOptionId && interaction.customId === 'serversettings_visits_options') {
 
 		/* It's checking if the value is for turning a page. If it is, it's getting the page number from the value, and it's updating the message with the shop message with the page number. */
-		if (interaction.values[0].includes('nextpage')) {
+		if (selectOptionId.includes('nextpage')) {
 
-			const page = Number(interaction.values[0].split('_')[3]);
+			const page = Number(selectOptionId.split('_')[3]);
 
 			await interaction
 				.update(await getVisitsMessage(interaction, serverData, page))
@@ -446,7 +453,7 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 		}
 		else {
 
-			const channelIdOrOff = interaction.values[0].split('_')[2];
+			const channelIdOrOff = selectOptionId.split('_')[2];
 			if (!channelIdOrOff) { throw new Error('Missing channelId'); }
 
 			if (channelIdOrOff === 'off') {
@@ -505,12 +512,12 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 	}
 
 	/* It's checking if the interaction is the visits select menu */
-	if (interaction.isSelectMenu() && interaction.customId === 'serversettings_proxying_options') {
+	if (interaction.isSelectMenu() && selectOptionId && interaction.customId === 'serversettings_proxying_options') {
 
 		/* It's checking if the value is for turning a page. If it is, it's getting the page number from the value, and it's updating the message with the shop message with the page number. */
-		if (interaction.values[0].includes('nextpage')) {
+		if (selectOptionId.includes('nextpage')) {
 
-			const page = Number(interaction.values[0].split('_')[3]);
+			const page = Number(selectOptionId.split('_')[3]);
 
 			await interaction
 				.update(await getProxyingMessage(interaction, serverData, page))
@@ -521,7 +528,7 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 		}
 		else {
 
-			const channelId = interaction.values[0].replace('serversettings_proxying_', '');
+			const channelId = selectOptionId.replace('serversettings_proxying_', '');
 			const hasChannel = serverData && serverData.proxySettings.channels.blacklist.includes(channelId);
 
 			serverData = await serverModel.findOneAndUpdate(

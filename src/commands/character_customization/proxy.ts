@@ -4,6 +4,7 @@ import userModel from '../../models/userModel';
 import { Character, ProxyConfigType, ProxyListType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
+import { getMapData } from '../../utils/getInfo';
 const { default_color, error_color } = require('../../../config.json');
 
 const name: SlashCommand['name'] = 'proxy';
@@ -21,7 +22,7 @@ export const command: SlashCommand = {
 		/* If the user does not have a character selected, return. */
 		if (!hasName(interaction, userData)) { return; }
 
-		const characterData = userData.characters[userData.currentCharacter[interaction.guildId || 'DM']];
+		const characterData = getMapData(userData.characters, getMapData(userData.currentCharacter, interaction.guildId || 'DM'));
 
 		/* Send a response to the user. */
 		const botReply = await respond(interaction, {
@@ -61,6 +62,8 @@ export const command: SlashCommand = {
 
 export async function proxyInteractionCollector(interaction: ButtonInteraction | SelectMenuInteraction, userData: UserSchema | null, serverData: ServerSchema | null): Promise<void> {
 
+	if (!userData) { throw new Error('userData is null'); }
+
 	/* If the user pressed the button to learn more about the set subcommand, explain it with a button that opens a modal. */
 	if (interaction.isButton() && interaction.customId.startsWith('proxy_set_learnmore')) {
 
@@ -68,7 +71,7 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 
 		await interaction
 			.update({
-				embeds: [new EmbedBuilder(interaction.message.embeds[0].toJSON())
+				embeds: [new EmbedBuilder(interaction.message.embeds[0]?.toJSON())
 					.setTitle('Here is how to use the set subcommand:')
 					.setDescription('Proxying is a way to speak as if your character was saying it. The proxy is an indicator to the bot you want your message to be proxied. It consists of a prefix (indicator before the message) and a suffix (indicator after the message). You can either set both or one of them.\n\nExamples:\nprefix: `<`, suffix: `>`, example message: `<hello friends>`\nprefix: `P: `, no suffix, example message: `P: hello friends`\nno prefix, suffix: ` -p`, example message: `hello friends -p`\nThis is case-sensitive (meaning that upper and lowercase matters).')
 					.setFields()],
@@ -84,7 +87,8 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 	/* If the user pressed the button to set their proxy, open the modal. */
 	if (interaction.isButton() && interaction.customId.startsWith('proxy_set_modal')) {
 
-		const characterData = userData ? userData.characters[interaction.customId.split('_')[3]] : null;
+		const characterId = interaction.customId.split('_')[3] || '';
+		const characterData = getMapData(userData.characters, characterId);
 		if (!characterData) { throw new Error('characterData is null'); }
 
 		interaction.showModal(new ModalBuilder()
@@ -119,12 +123,13 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 	if (interaction.isButton() && interaction.customId.startsWith('proxy_always_learnmore')) {
 
 		if (!interaction.inGuild()) { throw new Error('Interaction is not in guild'); }
-		const characterData = userData ? userData.characters[interaction.customId.split('_')[3]] : null;
+		const characterId = interaction.customId.split('_')[3] || '';
+		const characterData = getMapData(userData.characters, characterId);
 		const alwaysSelectMenu = await getSelectMenus(allChannels, userData, characterData, serverData, 0);
 
 		await interaction
 			.update({
-				embeds: [new EmbedBuilder(interaction.message.embeds[0].toJSON())
+				embeds: [new EmbedBuilder(interaction.message.embeds[0]?.toJSON())
 					.setTitle('Here is how to use the always subcommand:')
 					.setDescription('When this feature is enabled, every message you send will be treated as if it was proxied, even if the proxy isn\'t included.\nYou can either toggle it for the entire server, or specific channels, using the drop-down menu below. Enabled channels will have a radio emoji next to it.')
 					.setFields()],
@@ -138,25 +143,26 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 	if (interaction.isSelectMenu() && interaction.inCachedGuild()) {
 
 		let page = 0;
-		let characterData: Character | null = null;
+		const selectOptionId = interaction.values[0];
 
 		/* If the user clicked the next page option, increment the page. */
-		if (interaction.values[0].includes('nextpage')) {
+		if (selectOptionId && selectOptionId.includes('nextpage')) {
 
-			page = Number(interaction.values[0].split('nextpage_')[1]) + 1;
+			page = Number(selectOptionId.split('nextpage_')[1]) + 1;
 			if (page >= Math.ceil((allChannels.size + 1) / 24)) { page = 0; }
 		}
 		/* If the user clicked an always subcommand option, add/remove the channel and send a success message. */
-		else if (interaction.customId.startsWith('proxy_always_options')) {
+		else if (selectOptionId && interaction.customId.startsWith('proxy_always_options')) {
 
-			const channelId = interaction.values[0].replace('proxy_', '');
-			const hasChannel = userData && userData.serverProxySettings[interaction.guildId] !== undefined && userData.serverProxySettings[interaction.guildId].autoproxy.channels.whitelist.includes(channelId);
+			const channelId = selectOptionId.replace('proxy_', '');
+			const hasChannel = userData.serverProxySettings[interaction.guildId]?.autoproxy.channels.whitelist.includes(channelId) || false;
 
 			userData = await userModel.findOneAndUpdate(
 				u => u.uuid === userData?.uuid,
 				(u) => {
-					if (u.serverProxySettings[interaction.guildId] === undefined) {
-						u.serverProxySettings[interaction.guildId] = {
+					let sps = u.serverProxySettings[interaction.guildId];
+					if (!sps) {
+						sps = {
 							autoproxy: {
 								setTo: ProxyConfigType.Enabled,
 								channels: {
@@ -168,11 +174,12 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 							stickymode: ProxyConfigType.FollowGlobal,
 						};
 					}
-					else if (!hasChannel) { u.serverProxySettings[interaction.guildId].autoproxy.channels.whitelist.push(channelId); }
-					else { u.serverProxySettings[interaction.guildId].autoproxy.channels.whitelist = u.serverProxySettings[interaction.guildId].autoproxy.channels.whitelist.filter(string => string !== channelId); }
+					else if (!hasChannel) { sps.autoproxy.channels.whitelist.push(channelId); }
+					else { sps.autoproxy.channels.whitelist = sps.autoproxy.channels.whitelist.filter(string => string !== channelId); }
 				},
 			);
-			characterData = userData.characters[interaction.customId.split('_')[3]];
+			const characterId = interaction.customId.split('_')[3] || '';
+			const characterData = getMapData(userData.characters, characterId);
 
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
@@ -192,7 +199,8 @@ export async function sendEditProxyModalResponse(interaction: ModalSubmitInterac
 
 	/* Check if user data exists, and get characterData, the chosen prefix and the chosen suffix */
 	if (!userData) { throw new Error('userData is null'); }
-	const characterData = userData.characters[interaction.customId.split('_')[2]];
+	const characterId = interaction.customId.split('_')[2] || '';
+	const characterData = getMapData(userData.characters, characterId);
 	const chosenPrefix = interaction.fields.getTextInputValue('proxy_textinput_startsWith');
 	const chosenSuffix = interaction.fields.getTextInputValue('proxy_textinput_endsWith');
 
@@ -220,8 +228,9 @@ export async function sendEditProxyModalResponse(interaction: ModalSubmitInterac
 	await userModel.findOneAndUpdate(
 		u => u.uuid === userData?.uuid,
 		(u) => {
-			u.characters[characterData._id].proxy.startsWith = chosenPrefix;
-			u.characters[characterData._id].proxy.endsWith = chosenSuffix;
+			const c = getMapData(u.characters, characterData._id);
+			c.proxy.startsWith = chosenPrefix;
+			c.proxy.endsWith = chosenSuffix;
 		},
 	);
 

@@ -12,6 +12,7 @@ import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
 import { Event } from '../typedef';
 import { disableCommandComponent } from '../utils/componentDisabling';
+import { getMapData } from '../utils/getInfo';
 import { pronoun, pronounAndPlural } from '../utils/getPronouns';
 import { createGuild } from '../utils/updateGuild';
 const { version } = require('../../package.json');
@@ -97,7 +98,7 @@ export const event: Event = {
 			if (interaction.inGuild()) {
 
 				userData = await userModel.findOne(u => u.userId.includes(interaction.user.id)).catch(() => { return null; });
-				const characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guildId]];
+				const characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guildId] || ''];
 				const profileData = characterData?.profiles?.[interaction.guildId];
 
 				/* If sapling exists, a gentle reminder has not been sent and the watering time is after the perfect time, send a gentle reminder */
@@ -106,7 +107,8 @@ export const event: Event = {
 					await userModel.findOneAndUpdate(
 						u => u.uuid === userData?.uuid,
 						(u) => {
-							u.characters[u.currentCharacter[interaction.guildId]].profiles[interaction.guildId].sapling.sentGentleReminder = true;
+							const p = getMapData(getMapData(u.characters, characterData._id).profiles, interaction.guildId);
+							p.sapling.sentGentleReminder = true;
 						},
 					);
 
@@ -313,7 +315,8 @@ setInterval(async function() {
 		const currentCharacters = user.currentCharacter;
 		for (const [serverId, characterId] of Object.entries(currentCharacters)) {
 
-			const activeProfile = user.characters[characterId].profiles[serverId];
+			const activeProfile = user.characters[characterId]?.profiles[serverId];
+			if (!activeProfile) { continue; }
 			const tenMinutesInMs = 600_000;
 
 			const lastInteractionIsTenMinutesAgo = (lastInteractionTimestampMap.get(user.uuid + serverId) || 0) < Date.now() - tenMinutesInMs;
