@@ -2,11 +2,11 @@ import { readdirSync } from 'fs';
 import { CustomClient, Event } from '../typedef';
 
 /** Starts up all the `listeners` based on their `eventName` and whether or not their are one-time. */
-export function execute(client: CustomClient) {
+export async function execute(client: CustomClient) {
 
 	for (const file of readdirSync('./dist/events/')) {
 
-		const { event } = require(`../events/${file}`) as {event: Event};
+		const { event } = require(`../events/${file}`) as { event: Event; };
 
 		if (event.once) {
 

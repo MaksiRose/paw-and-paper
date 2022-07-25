@@ -7,7 +7,7 @@ import { Routes } from 'discord-api-types/v9';
 const { token, test_guild_id } = require('../../config.json');
 
 /** Adds all commands to the client */
-export function execute(client: CustomClient) {
+export async function execute(client: CustomClient) {
 
 	const applicationCommands: Array<RESTPostAPIApplicationCommandsJSONBody> = [];
 
@@ -15,29 +15,49 @@ export function execute(client: CustomClient) {
 	the command.data is not undefined. */
 	for (const commandPath of getFiles('../commands')) {
 
-		const { command } = require(commandPath) as {command: SlashCommand};
+		const { command } = require(commandPath) as { command: SlashCommand; };
 		if (command.data !== undefined) { applicationCommands.push(command.data); }
 		client.slashCommands[command.name] = command;
 	}
 
 	for (const commandPath of getFiles('../contextmenu')) {
 
-		const { command } = require(commandPath) as {command: ContextMenuCommand};
+		const { command } = require(commandPath) as { command: ContextMenuCommand; };
 		if (command.data !== undefined) { applicationCommands.push(command.data); }
 		client.contextMenuCommands[command.name] = command;
 	}
 
 	/* Registers the applicationCommands array to Discord. */
-	if (client.token && client.user) {
+	if (!client.token || !client.user) { return; }
 
-		const rest = new REST({ version: '9' }).setToken(client.token);
+	const rest = new REST({ version: '9' }).setToken(client.token);
 
-		rest
+	await rest
+		.put(
+			client.token === token ? Routes.applicationCommands(client.user.id) : Routes.applicationGuildCommands(client.user.id, test_guild_id),
+			{ body: applicationCommands },
+		)
+		.catch(error => console.error(error));
+
+	for (const folderName of readdirSync(path.join(__dirname, '../commands_guild'))) {
+
+		if (!lstatSync(path.join(__dirname, `../commands_guild/${folderName}`)).isDirectory()) { continue; }
+
+		const applicationCommandsGuild: Array<RESTPostAPIApplicationCommandsJSONBody> = [];
+
+		for (const commandPath of readdirSync(path.join(__dirname, `../commands_guild/${folderName}`))) {
+
+			const { command } = require(commandPath) as { command: SlashCommand; };
+			if (command.data !== undefined) { applicationCommandsGuild.push(command.data); }
+			client.slashCommands[command.name] = command;
+		}
+
+		await rest
 			.put(
-				client.token === token ? Routes.applicationCommands(client.user.id) : Routes.applicationGuildCommands(client.user.id, test_guild_id),
-				{ body: applicationCommands },
+				Routes.applicationGuildCommands(client.user.id, folderName),
+				{ body: applicationCommandsGuild },
 			)
-			.catch(console.error);
+			.catch(error => console.error(error));
 	}
 }
 
