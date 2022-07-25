@@ -38,8 +38,9 @@ export const command: SlashCommand = {
 	},
 };
 
-export async function serversettingsInteractionCollector(interaction: ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>, serverData: ServerSchema) {
+export async function serversettingsInteractionCollector(interaction: ButtonInteraction | SelectMenuInteraction, serverData: ServerSchema) {
 
+	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
 	const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
 
 	/* It's checking if the interaction is a button that leads back to the main page, and it's updating the message with the main page content. */

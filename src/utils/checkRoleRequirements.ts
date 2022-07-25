@@ -77,7 +77,7 @@ export async function checkRankRequirements(serverData: ServerSchema, interactio
 /**
  * Checks if user has reached the requirement to get a role based on their level.
  */
-export async function checkLevelRequirements(serverData: ServerSchema, interaction: CommandInteraction | ButtonInteraction, member: GuildMember | undefined, userLevel: number, sendMessage = false) {
+export async function checkLevelRequirements(serverData: ServerSchema, interaction: CommandInteraction | ButtonInteraction | SelectMenuInteraction, member: GuildMember | undefined, userLevel: number, sendMessage = false) {
 
 	/* If interaction is not in guild or member undefined, return */
 	if (!interaction.inGuild() || !member) { return; }

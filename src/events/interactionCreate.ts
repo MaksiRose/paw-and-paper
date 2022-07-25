@@ -6,6 +6,8 @@ import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../
 import { proxyInteractionCollector, sendEditProxyModalResponse } from '../commands/character_customization/proxy';
 import { sendEditDisplayedSpeciesModalResponse, speciesInteractionCollector } from '../commands/character_customization/species';
 import { helpInteractionCollector } from '../commands/miscellaneous/help';
+import { serversettingsInteractionCollector } from '../commands/miscellaneous/server-settings';
+import { shopInteractionCollector } from '../commands/miscellaneous/shop';
 import { sendRespondToTicketModalResponse, ticketInteractionCollector } from '../commands/miscellaneous/ticket';
 import { sendEditMessageModalResponse } from '../contextmenu/edit';
 import serverModel from '../models/serverModel';
@@ -238,6 +240,13 @@ export const event: Event = {
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
+
+				if (interaction.customId.startsWith('shop_')) {
+
+					await shopInteractionCollector(interaction, userData, serverData)
+						.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					return;
+				}
 			}
 
 			if (interaction.isButton()) {
@@ -283,6 +292,14 @@ export const event: Event = {
 			if (interaction.customId.startsWith('delete_')) {
 
 				await deleteInteractionCollector(interaction, userData)
+					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+				return;
+			}
+
+			if (interaction.customId.startsWith('serversettings_')) {
+
+				if (!serverData) { return await sendErrorMessage(interaction, new Error('serverData is null')); }
+				await serversettingsInteractionCollector(interaction, serverData)
 					.catch(async (error) => { await sendErrorMessage(interaction, error); });
 				return;
 			}

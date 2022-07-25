@@ -1,4 +1,4 @@
-import { CommandInteraction, EmbedBuilder, Message } from 'discord.js';
+import { CommandInteraction, EmbedBuilder, Message, SelectMenuInteraction } from 'discord.js';
 import { respond } from '../events/interactionCreate';
 import userModel from '../models/userModel';
 import { Character, Profile, ServerSchema, UserSchema, WayOfEarningType } from '../typedef';
@@ -10,7 +10,7 @@ const { default_color } = require('../../config.json');
 /**
  * Checks if the user is eligable for a level up, and sends a message if so.
  */
-export async function checkLevelUp(interaction: CommandInteraction<'cached' | 'raw'>, userData: UserSchema, characterData: Character, profileData: Profile, serverData: ServerSchema, botReply?: Message): Promise<Message | undefined> {
+export async function checkLevelUp(interaction: CommandInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached' | 'raw'>, userData: UserSchema, characterData: Character, profileData: Profile, serverData: ServerSchema, botReply?: Message): Promise<Message | undefined> {
 
 	/* It's checking if the user has enough experience to level up. If they do, it will level them up and then check if they leveled up again. */
 	const requiredExperiencePoints = profileData.levels * 50;
