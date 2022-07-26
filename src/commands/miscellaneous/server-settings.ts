@@ -232,12 +232,12 @@ export async function serversettingsInteractionCollector(interaction: ButtonInte
 									}
 								}
 
-								if (wayOfEarning === WayOfEarningType.Rank) {
+								if (wayOfEarning === WayOfEarningType.Rank && typeof requirement === 'string') {
 
 									const member = await i.guild.members.fetch(u.userId[0] || '').catch(() => { return undefined; });
 									await checkRankRequirements(serverData, i, member, p.rank, false);
 
-									const rankList = { Youngling: 0, Apprentice: 1, Hunter: 2, Healer: 2, Eldery: 2 };
+									const rankList = { Youngling: 0, Apprentice: 1, Hunter: 2, Healer: 2, Elderly: 2 };
 									if (rankList[p.rank] < rankList[requirement] && member && member.roles.cache.has(role)) {
 
 										await member.roles

@@ -1,6 +1,6 @@
 import { Api } from '@top-gg/sdk';
 import { AutocompleteInteraction, Client, ClientOptions, MessageContextMenuCommandInteraction, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
-import bfd from 'bfd-api-redux/src/main';
+const bfd = require('bfd-api-redux/src/main');
 import { RESTPostAPIContextMenuApplicationCommandsJSONBody, RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v10';
 
 export interface SlashCommand {
@@ -22,7 +22,7 @@ export interface ContextMenuCommand {
 export interface Votes {
 	token: string;
 	authorization: string;
-	client: bfd | Api | null;
+	client: typeof bfd | Api | null;
 }
 
 export class CustomClient extends Client {
