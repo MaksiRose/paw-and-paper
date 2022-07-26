@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, User } from 'discord.js';
+import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 import { respond } from '../../events/interactionCreate';
 import serverModel from '../../models/serverModel';
@@ -26,6 +26,7 @@ export const command: SlashCommand = {
 				.setDescription('The ID of what you want to ban')
 				.setRequired(true))
 		.setDMPermission(false)
+		.setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 		.toJSON(),
 	disablePreviousCommand: false,
 	sendCommand: async (client, interaction) => {
