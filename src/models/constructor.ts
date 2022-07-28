@@ -31,14 +31,14 @@ export default class Model<T extends UUIDObject> {
 			/* Add / Update existing keys */
 			for (const [key, value] of Object.entries(schema)) {
 
-				dataObject = checkTypeMatching(dataObject, key, value);
+				dataObject = checkTypeMatching(dataObject, key as keyof typeof schema, value);
 			}
 
 			/* Get rid of keys that aren't in schema */
-			for (const key of Object.keys(dataObject)) {
+			for (const key of Object.keys(dataObject) as Array<keyof typeof dataObject>) {
 
 				const keys = Object.keys(schema);
-				if (!keys.includes(key)) { delete dataObject[key]; }
+				if (!keys.includes(String(key))) { delete dataObject[key]; }
 			}
 
 			if (JSON.stringify(updateObject) !== JSON.stringify(dataObject)) {
@@ -110,6 +110,7 @@ export default class Model<T extends UUIDObject> {
 			return newDataObject;
 
 
+			function isObject(val: any): val is Record<string | number | symbol, unknown> { return typeof val === 'object' && val !== null; }
 			type LogArray = Array<{ path: string, oldValue: string, newValue: string; }>;
 			/** It takes two objects, compares them, and logs the differences */
 			function createLogArray<Type>(oldObject: Type, newObject: Type, variablePath: string): LogArray {
@@ -118,15 +119,15 @@ export default class Model<T extends UUIDObject> {
 
 				for (const key of Object.keys(Object.keys(newObject).length === 0 && Object.keys(oldObject).length > 0 ? oldObject : newObject)) {
 
-					const isObject = (val: any) => typeof val === 'object' && val !== null;
 					const hasObjectsAsValues = (val: any) => Object.values(val).filter(v => isObject(v)).length > 0;
-					if (isObject(newObject?.[key]) && (hasObjectsAsValues(newObject?.[key]) || (isObject(oldObject?.[key]) && hasObjectsAsValues(oldObject?.[key])))) {
+					const objectKeyOrUndefined = (val: any, key: string) => isObject(val) ? val?.[key] : undefined;
+					if (isObject(newObject) && isObject(newObject?.[key]) && (hasObjectsAsValues(newObject?.[key]) || (isObject(oldObject) && isObject(oldObject?.[key]) && hasObjectsAsValues(oldObject?.[key])))) {
 
-						allPaths = allPaths.concat(createLogArray(oldObject?.[key], newObject?.[key], variablePath + `.${key}`));
+						allPaths = allPaths.concat(createLogArray(objectKeyOrUndefined(oldObject, key), newObject?.[key], variablePath + `.${key}`));
 					}
-					else if (formatLog(oldObject?.[key], newObject?.[key]) != formatLog(newObject?.[key], oldObject?.[key])) {
+					else if (formatLog(objectKeyOrUndefined(oldObject, key), objectKeyOrUndefined(newObject, key)) != formatLog(objectKeyOrUndefined(newObject, key), objectKeyOrUndefined(oldObject, key))) {
 
-						allPaths.push({ path: `${variablePath}.${key}`, oldValue: formatLog(oldObject?.[key], newObject?.[key]), newValue: formatLog(newObject?.[key], oldObject?.[key]) });
+						allPaths.push({ path: `${variablePath}.${key}`, oldValue: formatLog(objectKeyOrUndefined(oldObject, key), objectKeyOrUndefined(newObject, key)), newValue: formatLog(objectKeyOrUndefined(newObject, key), objectKeyOrUndefined(oldObject, key)) });
 					}
 				}
 				return allPaths;
@@ -153,26 +154,24 @@ export default class Model<T extends UUIDObject> {
 				result = result.replace(/\[ /g, '[').replace(/ \]/g, ']');
 				return result;
 
-				function isObjectOrArray(obj: any): boolean { return obj === Object(obj); }
+				function isObjectOrArray(obj: any): obj is Record<string | number | symbol, unknown> | Array<unknown> { return obj === Object(obj); }
 
-				function objectReducer<Type1>(mainObject: Type1, otherObject: Type1): Type1 {
+				function objectReducer<Type1 extends Record<string | number | symbol, unknown>>(mainObject: Type1, otherObject: unknown): Type1 {
 
 					let newObject = {} as Type1;
 
-					for (const key of Object.keys(mainObject)) {
+					for (const key of Object.keys(mainObject) as Array<keyof Type1>) {
 
-						if (!isObjectOrArray(mainObject[key])) {
+						const mainObjKey = mainObject[key];
+						if (!isObject(mainObjKey)) {
 
-							if (mainObject[key] != otherObject?.[key]) {
-
-								newObject[key] = mainObject[key];
-							}
+							if (!isObject(otherObject) || mainObjKey != otherObject?.[key]) { newObject[key] = mainObjKey; }
 
 							continue;
 						}
 						else {
 
-							newObject = { ...newObject, ...objectReducer(mainObject[key], otherObject?.[key]) };
+							newObject = { ...newObject, ...objectReducer(mainObjKey, isObject(otherObject) ? otherObject?.[key] : undefined) };
 						}
 					}
 
@@ -198,14 +197,14 @@ export default class Model<T extends UUIDObject> {
 			/* Add / Update existing keys */
 			for (const [key, value] of Object.entries(schema)) {
 
-				dataObject = checkTypeMatching(dataObject, key, value);
+				dataObject = checkTypeMatching(dataObject, key as keyof typeof schema, value);
 			}
 
 			/* Get rid of keys that aren't in schema */
-			for (const key of Object.keys(dataObject)) {
+			for (const key of Object.keys(dataObject) as Array<keyof typeof dataObject>) {
 
 				const keys = Object.keys(schema);
-				if (!keys.includes(key)) { delete dataObject[key]; }
+				if (!keys.includes(String(key))) { delete dataObject[key]; }
 			}
 
 			await this.save(dataObject);
@@ -230,36 +229,37 @@ function primitiveTypeDoesNotMatch(value: Schema<any>[any], valToCheck: any): va
 	return isNotString || isNotStringOrNull || isNotNumber || isNotNumberOrNull || isNotStringOrNumber || isNotBoolean;
 }
 
-function checkTypeMatching<T extends object | Array<any>>(obj: T, key: string | number, value: Schema<T>[any]): T {
+function checkTypeMatching<T extends Record<string | number | symbol, any> | Array<any>>(obj: T, key: keyof typeof obj, value: Schema<T>[any]): T {
 
 	// Add key if object doesn't have it
 	if (!Array.isArray(obj) && !Object.hasOwn(obj, key)) {
 
-		if (value.type === 'array') { obj[key] = []; }
-		else if (value.type === 'map' || value.type === 'object') { obj[key] = {}; }
-		else { obj[key] = value.default; }
+		if (value.type === 'array') { obj[key as string | number | symbol] = []; }
+		else if (value.type === 'map' || value.type === 'object') { obj[key as string | number | symbol] = {}; }
+		else { obj[key as string | number | symbol] = value.default; }
 	}
 
 	// Change value to default value if value type is primitive and doesn't match
-	if (primitiveTypeDoesNotMatch(value, obj[key])) { obj[key] = value.default; }
+	if (primitiveTypeDoesNotMatch(value, obj[key])) { obj[key] = value.default as any; }
 	// Change value if value type is array
 	else if (value.type === 'array') {
 
 		// Change value if value is array
-		if (Array.isArray(obj[key])) {
+		const arr = obj[key];
+		if (Array.isArray(arr)) {
 
-			for (let k = 0; k < obj[key].length; k++) {
+			for (let k = 0; k < arr.length; k++) {
 
 				obj[key] = checkTypeMatching(obj[key], k, value.of);
 			}
 		}
 		// Change value to array if value isn't
-		else { obj[key] = []; }
+		else { obj[key as number] = []; }
 	}
 	else if (value.type === 'map') {
 
 		// Change value to object if value isn't
-		if (obj[key] !== Object(obj[key]) && !Array.isArray(obj[key])) { obj[key] = {}; }
+		if (obj[key] !== Object(obj[key]) || Array.isArray(obj[key])) { (obj[key] as Record<string | number | symbol, any>) = {}; }
 		// Change value if value is object
 		else {
 
@@ -272,19 +272,19 @@ function checkTypeMatching<T extends object | Array<any>>(obj: T, key: string | 
 	else if (value.type === 'object') {
 
 		// Change value to object if value isn't
-		if (obj[key] !== Object(obj[key]) && !Array.isArray(obj[key])) { obj[key] = {}; }
+		if (obj[key] !== Object(obj[key]) && !Array.isArray(obj[key])) { (obj[key] as Record<string | number | symbol, any>) = {}; }
 
 		/* Add / Update existing keys */
 		for (const [k, v] of Object.entries(value.default)) {
 
-			obj[key] = checkTypeMatching(obj[key], k, v);
+			(obj[key] as Record<string | number | symbol, any>) = checkTypeMatching((obj[key] as Record<string | number | symbol, any>), k, v);
 		}
 
 		/* Get rid of keys that aren't in schema */
 		for (const k of Object.keys(obj[key])) {
 
 			const keys = Object.keys(value.default);
-			if (!keys.includes(k)) { delete obj[key][k]; }
+			if (!keys.includes(k)) { delete (obj[key] as Record<string | number | symbol, any>)[k]; }
 		}
 	}
 

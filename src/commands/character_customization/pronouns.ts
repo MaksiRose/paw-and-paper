@@ -188,12 +188,12 @@ export async function sendEditPronounsModalResponse(interaction: ModalSubmitInte
 	await userModel.findOneAndUpdate(
 		u => u.uuid === userData?.uuid,
 		(u) => {
-			const p = getMapData(u.characters, characterData._id);
+			const c = getMapData(u.characters, characterData._id);
 			if (willBeDeleted) {
-				p.pronounSets.splice(pronounNumber, 1);
+				c.pronounSets.splice(pronounNumber, 1);
 			}
 			else {
-				p.pronounSets[isNaN(pronounNumber) ? characterData.pronounSets.length : pronounNumber] = chosenPronouns;
+				c.pronounSets[isNaN(pronounNumber) ? characterData.pronounSets.length : pronounNumber] = chosenPronouns;
 			}
 		},
 	);

@@ -10,6 +10,7 @@ export const client = new CustomClient({
 		GatewayIntentBits.Guilds,
 		GatewayIntentBits.GuildMessages,
 		GatewayIntentBits.DirectMessages,
+		GatewayIntentBits.MessageContent,
 	],
 	partials: [
 		Partials.Channel,
@@ -98,7 +99,7 @@ export function start(botToken: string, bfdToken: string, bfdAuthorization: stri
 					};
 				}
 			}
-			const { birthtime } = statSync(`./database/servers/${documentName}`);
+			const { birthtime } = statSync(`./database/profiles/${documentName}`);
 			const newUUID = generateId(birthtime.getTime());
 			doc.uuid = newUUID;
 			writeFileSync(`./database/profiles/${documentName}`, JSON.stringify(doc, null, '\t'));

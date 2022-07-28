@@ -46,8 +46,8 @@ export const command: SlashCommand = {
 		userData = await userModel.findOneAndUpdate(
 			u => u.uuid === userData?.uuid,
 			(u) => {
-				const p = getMapData(u.characters, getMapData(u.currentCharacter, interaction.guildId || 'DM'));
-				p.color = `#${hexColor}`;
+				const c = getMapData(u.characters, getMapData(u.currentCharacter, interaction.guildId || 'DM'));
+				c.color = `#${hexColor}`;
 			},
 		);
 		const characterData = getMapData(userData.characters, getMapData(userData.currentCharacter, interaction.guildId || 'DM'));

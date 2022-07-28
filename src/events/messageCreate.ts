@@ -1,4 +1,5 @@
 import { Message } from 'discord.js';
+import { sendMessage } from '../commands/interaction/say';
 // import { sendVisitMessage } from '../commands/interaction/requestvisit';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
@@ -70,9 +71,18 @@ export const event: Event = {
 			}
 		}
 
-		if (replaceMessage) {
+		if (replaceMessage && (message.content.length > 0 || message.attachments.size > 0)) {
 
-			// send message to /say command
+			await sendMessage(message.channel, message.content, characterData, userData.uuid, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
+				.catch(error => { console.error(error); });
+
+			message
+				.delete()
+				.catch((error) => {
+					if (error.httpStatus !== 404) {
+						console.error(error);
+					}
+				});
 		}
 	},
 };

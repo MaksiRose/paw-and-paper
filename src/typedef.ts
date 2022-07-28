@@ -109,25 +109,25 @@ export type Schema<T> = {
 };
 
 
-export type commonPlantNames = 'raspberry' | 'garlic' | 'herb Robert' | 'field scabious' | 'henna' | 'elderberry' | 'comfrey' | 'marigold' | 'common hollyhock' | 'arnica' | 'clover' | 'passion fruit' | 'bergamot orange' | 'cicely' | 'acorn' | 'rhodiola';
+export type CommonPlantNames = 'raspberry' | 'garlic' | 'herb Robert' | 'field scabious' | 'henna' | 'elderberry' | 'comfrey' | 'marigold' | 'common hollyhock' | 'arnica' | 'clover' | 'passion fruit' | 'bergamot orange' | 'cicely' | 'acorn' | 'rhodiola';
 
-export type uncommonPlantNames = 'solomon\'s seal' | 'gotu kola' | 'great mullein' | 'purple coneflower' | 'field horsetail' | 'bay laurel' | 'chick weed' | 'yerba mate';
+export type UncommonPlantNames = 'solomon\'s seal' | 'gotu kola' | 'great mullein' | 'purple coneflower' | 'field horsetail' | 'bay laurel' | 'chick weed' | 'yerba mate';
 
-export type rarePlantNames = 'ribwort plantain' | 'charcoal-tree leaves' | 'marsh mallow';
+export type RarePlantNames = 'ribwort plantain' | 'charcoal-tree leaves' | 'marsh mallow';
 
-export type specialPlantNames = 'black-eyed Susan';
+export type SpecialPlantNames = 'black-eyed Susan';
 
-export type speciesNames = 'wolf' | 'cat' | 'fox' | 'leopard' | 'tiger' | 'shark' | 'caracal' | 'bear' | 'coyote' | 'rabbit' | 'squirrel' | 'lion' | 'seal' | 'salmon' | 'tuna' | 'squid' | 'crab' | 'orca' | 'maned wolf' | 'dog' | 'owl' | 'deer' | 'penguin' | 'gaboon viper' | 'hoatzin' | 'weasel' | 'hawk' | 'eagle' | 'raccoon' | 'horse' | 'elk' | 'cassowary' | 'humpback whale' | 'goat' | 'kinkajou' | 'praying mantis' | 'cricket' | 'beetle' | 'moth' | 'bee' | 'cougar' | 'frog' | 'crow' | 'king cobra' | 'rat' | 'hedgehog' | 'beaver' | 'turtle' | 'anole' | 'porcupine' | 'mongoose' | 'otter' | 'ferret' | 'tropical parrot';
+export type SpeciesNames = 'wolf' | 'cat' | 'fox' | 'leopard' | 'tiger' | 'shark' | 'caracal' | 'bear' | 'coyote' | 'rabbit' | 'squirrel' | 'lion' | 'seal' | 'salmon' | 'tuna' | 'squid' | 'crab' | 'orca' | 'maned wolf' | 'dog' | 'owl' | 'deer' | 'penguin' | 'gaboon viper' | 'hoatzin' | 'weasel' | 'hawk' | 'eagle' | 'raccoon' | 'horse' | 'elk' | 'cassowary' | 'humpback whale' | 'goat' | 'kinkajou' | 'praying mantis' | 'cricket' | 'beetle' | 'moth' | 'bee' | 'cougar' | 'frog' | 'crow' | 'king cobra' | 'rat' | 'hedgehog' | 'beaver' | 'turtle' | 'anole' | 'porcupine' | 'mongoose' | 'otter' | 'ferret' | 'tropical parrot';
 
-export type materialNames = 'stick' | 'pine cone' | 'root' | 'moss' | 'leaf' | 'algae' | 'clay' | 'vine' | 'soil' | 'rock' | 'seashell' | 'bone';
+export type MaterialNames = 'stick' | 'pine cone' | 'root' | 'moss' | 'leaf' | 'algae' | 'clay' | 'vine' | 'soil' | 'rock' | 'seashell' | 'bone';
 
 export interface Inventory {
-	commonPlants: { [key in commonPlantNames]: number },
-	uncommonPlants: { [key in uncommonPlantNames]: number },
-	rarePlants: { [key in rarePlantNames]: number },
-	specialPlants: { [key in specialPlantNames]: number },
-	meat: { [key in speciesNames]: number },
-	materials: { [key in materialNames]: number };
+	commonPlants: { [key in CommonPlantNames]: number },
+	uncommonPlants: { [key in UncommonPlantNames]: number },
+	rarePlants: { [key in RarePlantNames]: number },
+	specialPlants: { [key in SpecialPlantNames]: number },
+	meat: { [key in SpeciesNames]: number },
+	materials: { [key in MaterialNames]: number };
 }
 
 export enum WayOfEarningType {
@@ -246,7 +246,7 @@ export interface Character {
 	/** Name of the character */
 	name: string;
 	/** Species of the character */
-	species: speciesNames | '';
+	species: SpeciesNames | '';
 	/** Displayed species of the character */
 	displayedSpecies: string;
 	/** Description of the character */
@@ -426,7 +426,7 @@ interface PlantInfo {
 	increasesMaxCondition: boolean;
 }
 
-export const commonPlantsInfo: { [key in commonPlantNames]: PlantInfo; } = {
+export const commonPlantsInfo: { [key in CommonPlantNames]: PlantInfo; } = {
 	'raspberry': {
 		description: 'A tasty berry! Good for the quick hunger.',
 		edibility: PlantEdibilityType.Edible,
@@ -605,7 +605,7 @@ export const commonPlantsInfo: { [key in commonPlantNames]: PlantInfo; } = {
 	},
 };
 
-export const uncommonPlantsInfo: { [key in uncommonPlantNames]: PlantInfo } = {
+export const uncommonPlantsInfo: { [key in UncommonPlantNames]: PlantInfo } = {
 	'solomon\'s seal': {
 		description: 'This flowering plant is a great source of food, but also excellent for healing colds as well as wounds!',
 		edibility: PlantEdibilityType.Edible,
@@ -696,7 +696,7 @@ export const uncommonPlantsInfo: { [key in uncommonPlantNames]: PlantInfo } = {
 	},
 };
 
-export const rarePlantsInfo: { [key in rarePlantNames]: PlantInfo } = {
+export const rarePlantsInfo: { [key in RarePlantNames]: PlantInfo } = {
 	'ribwort plantain': {
 		description: 'A weed for treating wounds, colds and poison! Highly nutritious.',
 		edibility: PlantEdibilityType.Edible,
@@ -732,7 +732,7 @@ export const rarePlantsInfo: { [key in rarePlantNames]: PlantInfo } = {
 	},
 };
 
-export const specialPlantsInfo: { [key in specialPlantNames]: PlantInfo } = {
+export const specialPlantsInfo: { [key in SpecialPlantNames]: PlantInfo } = {
 	'black-eyed Susan': {
 		description: 'This flower from the sunflower family is thought to give a temporary boost to one\'s maximum health, energy, hunger or thirst.',
 		edibility: PlantEdibilityType.Edible,
@@ -760,7 +760,7 @@ export interface MaterialInfo {
 	removesOverhang: boolean;
 }
 
-export const materialsInfo: { [key in materialNames]: MaterialInfo } = {
+export const materialsInfo: { [key in MaterialNames]: MaterialInfo } = {
 	'stick': {
 		description: 'These are not the sturdiest material out there, but they can help holding together constructions.',
 		reinforcesStructure: true,
@@ -866,14 +866,14 @@ export interface SpeciesInfo {
 	/** Habitat that the species lives in */
 	habitat: SpeciesHabitatType;
 	/** Opponents that the species meets in biome 1 */
-	biome1OpponentArray: Array<speciesNames>;
+	biome1OpponentArray: Array<SpeciesNames>;
 	/** Opponents that the species meets in biome 2 */
-	biome2OpponentArray: Array<speciesNames>;
+	biome2OpponentArray: Array<SpeciesNames>;
 	/** Opponents that the species meets in biome 3 */
-	biome3OpponentArray: Array<speciesNames>;
+	biome3OpponentArray: Array<SpeciesNames>;
 }
 
-export const speciesInfo: { [key in speciesNames]: SpeciesInfo } = {
+export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 	// actual diet: moose, red deer, roe deer, wild boar, elk, caribou, white-tailed deer, mule deer, rodents*, hares, insectivores, smaller carnivores, waterfowl, lizards, snakes, frogs, large insecets
 	// actual predators: no real ones, but sometimes large cats (eg eurasian lynx, cougars, siberian tigers), coyotes, elks that try to protect themselves, bears, striped hyenas
 	'wolf': {

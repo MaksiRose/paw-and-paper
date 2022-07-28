@@ -763,7 +763,7 @@ async function getVisitsMessage(interaction: SelectMenuInteraction<'cached'>, se
 
 async function getProxyingMessage(interaction: SelectMenuInteraction<'cached'>, serverData: ServerSchema, page: number): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
 
-	let disableSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).map((channel, channelId) => ({ label: channel.name, value: `serversettings_proxying_all_${channelId}`, emoji: serverData?.proxySettings.channels.blacklist?.includes(channelId) ? '🔘' : undefined }));
+	let disableSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).map((channel, channelId) => ({ label: channel.name, value: `serversettings_proxying_${channelId}`, emoji: serverData?.proxySettings.channels.blacklist?.includes(channelId) ? '🔘' : undefined }));
 
 	if (disableSelectMenuOptions.length > 25) {
 
@@ -776,7 +776,7 @@ async function getProxyingMessage(interaction: SelectMenuInteraction<'cached'>, 
 			.setColor(default_color)
 			.setAuthor({ name: serverData.name, iconURL: interaction.guild?.iconURL() || undefined })
 			.setTitle('Settings ➜ Proxying')
-			.setDescription('This toggles whether `automatic` or `all` proxy should be disabled or enabled in specific channels, or in the entire server, using the drop-down menus below. Selected options will have a radio emoji next to them.')],
+			.setDescription('This toggles whether proxying should be disabled or enabled in specific channels, or in the entire server, using the drop-down menus below. Selected options will have a radio emoji next to them.')],
 		components: [new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
 				.setCustomId('serversettings_mainpage')

@@ -1,13 +1,13 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
-import { SlashCommand, speciesInfo, speciesNames, UserSchema } from '../../typedef';
+import { SlashCommand, speciesInfo, SpeciesNames, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/getInfo';
 import { pronoun, upperCasePronoun } from '../../utils/getPronouns';
 
-const speciesNameArray = (Object.keys(speciesInfo) as speciesNames[]).sort();
+const speciesNameArray = (Object.keys(speciesInfo) as SpeciesNames[]).sort();
 
 const name: SlashCommand['name'] = 'species';
 const description: SlashCommand['description'] = 'Change your character\'s species or displayed species.';
@@ -128,12 +128,12 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 		return;
 	}
 
-	if (interaction.isSelectMenu() && selectOptionId && speciesInfo[selectOptionId.split('_')[1] || '']) {
+	if (interaction.isSelectMenu() && selectOptionId && (selectOptionId.split('_')[1] || '') in speciesInfo) {
 
 		/* Getting the characterId from the customId */
 		const characterId = interaction.customId.split('_')[2] || '';
 		/* Getting the species from the value */
-		const chosenSpecies = selectOptionId.split('_')[1] as speciesNames;
+		const chosenSpecies = selectOptionId.split('_')[1] as SpeciesNames;
 
 		userData = await userModel.findOneAndUpdate(
 			u => u.uuid === userData?.uuid,

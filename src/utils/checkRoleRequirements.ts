@@ -21,7 +21,7 @@ export async function checkRankRequirements(serverData: ServerSchema, interactio
 	/* For each item in the shop, check if its requirement is equal to the userRank or higher in the rankList. If so, add that item to the users role database and the corresponding role to their roles. */
 	for (const item of shop) {
 
-		if (userRank === item.requirement || rankList[userRank] > rankList[item.requirement]) {
+		if (userRank === item.requirement || rankList[userRank] > rankList[item.requirement as RankType]) {
 
 			try {
 

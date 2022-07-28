@@ -64,16 +64,24 @@ export async function decreaseLevel(userData: UserSchema, characterData: Charact
 	if (newUserLevel !== profileData.levels) { footerText += `-${profileData.levels - newUserLevel} level${(profileData.levels - newUserLevel > 1) ? 's' : ''}\n`; }
 	if (profileData.experience > 0) { footerText += `-${profileData.experience} XP`; }
 
+
+	type KeyOfUnion<T> = T extends object ? T extends T ? keyof T : never : never; // `T extends object` to filter out primitives like `string`
+	/* What this does is for every key in the inventory (like commonPlants, uncommonPlants etc.), it takes every single sub-key of all the keys and adds it to it. KeyOfUnion is  used to combine all those sub-keys from all the keys. In the case that they are not part of the property, they will be of type never, meaning that they can't accidentally be assigned anything (which makes the type-checking still work) */
+	type WidenValues<T> = {
+		[K in keyof T]: {
+			[K2 in KeyOfUnion<T[keyof T]>]: K2 extends keyof T[K] ? T[K][K2] : never;
+		};
+	};
+	function widenValues<T>(obj: T): WidenValues<T> { return obj as any; }
+	function unsafeKeys<T>(obj: T): KeyOfUnion<T>[] { return Object.keys(obj) as KeyOfUnion<T>[]; }
+	const inventory_ = widenValues(profileData.inventory);
 	/* Updating the footerText and the database for any items the user had. */
-	for (const itemType of Object.keys(profileData.inventory)) {
+	for (const itemType of unsafeKeys(inventory_)) {
 
-		for (const item of Object.keys(profileData.inventory[itemType])) {
+		for (const item of unsafeKeys(inventory_[itemType])) {
 
-			if (profileData.inventory[itemType][item] > 0) {
-
-				footerText += `\n-${profileData.inventory[itemType][item]} ${item}`;
-				profileData.inventory[itemType][item] = 0;
-			}
+			footerText += `\n-${inventory_[itemType][item]} ${item}`;
+			inventory_[itemType][item] = 0;
 		}
 	}
 
@@ -83,7 +91,7 @@ export async function decreaseLevel(userData: UserSchema, characterData: Charact
 			const p = getMapData(getMapData(u.characters, characterData._id).profiles, interaction.guildId);
 			p.levels = newUserLevel;
 			p.experience = 0;
-			p.inventory = profileData.inventory;
+			p.inventory = inventory_;
 		},
 	);
 	characterData = getMapData(userData.characters, characterData._id);

@@ -4,7 +4,6 @@ import { ContextMenuCommand, CustomClient, SlashCommand } from '../typedef';
 import path from 'path';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
-const { token, test_guild_id } = require('../../config.json');
 
 /** Adds all commands to the client */
 export async function execute(client: CustomClient) {
@@ -34,7 +33,7 @@ export async function execute(client: CustomClient) {
 
 	await rest
 		.put(
-			client.token === token ? Routes.applicationCommands(client.user.id) : Routes.applicationGuildCommands(client.user.id, test_guild_id),
+			Routes.applicationCommands(client.user.id),
 			{ body: applicationCommands },
 		)
 		.catch(error => console.error(error));
@@ -47,7 +46,7 @@ export async function execute(client: CustomClient) {
 
 		for (const commandPath of readdirSync(path.join(__dirname, `../commands_guild/${folderName}`))) {
 
-			const { command } = require(commandPath) as { command: SlashCommand; };
+			const { command } = require(`../commands_guild/${folderName}/${commandPath}`) as { command: SlashCommand; };
 			if (command.data !== undefined) { applicationCommandsGuild.push(command.data); }
 			client.slashCommands[command.name] = command;
 		}

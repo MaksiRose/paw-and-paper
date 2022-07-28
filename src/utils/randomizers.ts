@@ -27,13 +27,13 @@ export function generateRandomNumberWithException(size: number, minimum = 0, exc
  * @param values Object of keys representing possible outcomes with values representing their weight. If the key is not a number, NaN might be returned in its place.
  * @returns One of the object keys
  */
-export function pullFromWeightedTable(values: { [n: number]: number; }): number {
+export function pullFromWeightedTable(values: { [n: string]: number; }): number {
 
 	const table: Array<number> = [];
 
-	for (const i of Object.keys(values)) {
+	for (const i of Object.keys(values) as Array<keyof typeof values>) {
 
-		for (let j = 0; j < values[i]; j++) {
+		for (let j = 0; j < (values[i] ?? 0); j++) {
 
 			table.push(Number(i));
 		}
