@@ -5,6 +5,7 @@ import { profileInteractionCollector } from '../commands/character_customization
 import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../commands/character_customization/pronouns';
 import { proxyInteractionCollector, sendEditProxyModalResponse } from '../commands/character_customization/proxy';
 import { sendEditDisplayedSpeciesModalResponse, speciesInteractionCollector } from '../commands/character_customization/species';
+import { hugInteractionCollector } from '../commands/interaction/hug';
 import { helpInteractionCollector } from '../commands/miscellaneous/help';
 import { serversettingsInteractionCollector } from '../commands/miscellaneous/server-settings';
 import { shopInteractionCollector } from '../commands/miscellaneous/shop';
@@ -256,6 +257,13 @@ export const event: Event = {
 				if (interaction.customId.startsWith('ticket_')) {
 
 					await ticketInteractionCollector(interaction)
+						.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					return;
+				}
+
+				if (interaction.customId.startsWith('hug_')) {
+
+					await hugInteractionCollector(interaction, userData)
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
