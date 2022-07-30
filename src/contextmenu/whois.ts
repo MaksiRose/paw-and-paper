@@ -63,7 +63,7 @@ export const command: ContextMenuCommand = {
 			return;
 		}
 
-		const member = await interaction.guild.members.fetch(userId);
+		const member = await interaction.guild.members.fetch(userId).catch(() => { return undefined; });
 
 		const embedArray = [new EmbedBuilder()
 			.setColor(member?.displayColor || interaction.targetMessage.author.accentColor || '#ffffff')
