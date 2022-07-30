@@ -14,8 +14,7 @@ export function hasName(interaction: ChatInputCommandInteraction, userData: User
 		respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(error_color)
-				.setTitle('Please type "/name" to create a new character!')
-				.setDescription(Object.keys(userData?.characters || {}).length > 0 ? 'I see that you already have a character. You can switch to it using `rp profile`! If you played the RPG on a different server, server-specific information like stats, levels, rank etc. will not transfer over to prevent cheating.' : null)],
+				.setTitle(Object.keys(userData?.characters || {}).length > 0 ? 'Please type "/profile" to switch to a character!' : 'Please type "/name" to create a new character!')],
 		}, true)
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }

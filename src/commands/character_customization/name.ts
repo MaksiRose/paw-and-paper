@@ -146,7 +146,7 @@ export const command: SlashCommand = {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
 				.setTitle(characterData === null ? `You successfully created the character ${name}!` : `You successfully renamed your character to ${name}!`)
-				.setFooter(characterData === null ? { text: 'To continue setting up your profile for the RPG, type "rp species". For other options, review "rp help".' } : null)],
+				.setFooter(characterData === null ? { text: 'To continue setting up your profile for the RPG, type "/species". For other options, review "/help".' } : null)],
 		}, true)
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
