@@ -199,7 +199,7 @@ export async function shopInteractionCollector(interaction: SelectMenuInteractio
 	}
 }
 
-async function getShopResponse(interaction: ChatInputCommandInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached' | 'raw'>, serverData: ServerSchema, characterData: Character, shopKindPage: number, nestedPage: number) {
+async function getShopResponse(interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>, serverData: ServerSchema, characterData: Character, shopKindPage: number, nestedPage: number) {
 
 	let descriptionArray: string[] = [];
 	let shopMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
