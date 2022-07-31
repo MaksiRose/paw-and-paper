@@ -6,6 +6,7 @@ import { hasName } from '../../utils/checkUserState';
 import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
 import { hasCooldown, isResting } from '../../utils/checkValidity';
 import { getMapData } from '../../utils/getInfo';
+import { disableCommandComponent } from '../../utils/componentDisabling';
 const { error_color } = require('../../../config.json');
 
 const name: SlashCommand['name'] = 'profile';
@@ -193,6 +194,9 @@ export async function profileInteractionCollector(client: CustomClient, interact
 				});
 			return;
 		}
+
+		/* It's disabling all components of the previous message. */
+		await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.();
 
 		/* Checking if the user is resting, and if they are, it will stop the resting. */
 		const oldCharacterData = userData.characters[userData.currentCharacter[interaction.guildId || 'DM'] || ''];
