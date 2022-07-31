@@ -15,7 +15,7 @@ export const event: Event = {
 		for (const shoprole of roles) {
 
 			const allServerUsers = await userModel.find(
-				(u) => Object.keys(u.currentCharacter).includes(role.guild.id),
+				(u) => Object.values(u.characters).filter(c => Object.keys(c.profiles).includes(role.guild.id)).length > 0,
 			);
 
 			for (const user of allServerUsers) {
