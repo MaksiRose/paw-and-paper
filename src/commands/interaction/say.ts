@@ -54,7 +54,26 @@ export const command: SlashCommand = {
 	},
 };
 
-export const sendMessage = async (channel: NewsChannel | TextChannel | PublicThreadChannel | PrivateThreadChannel | VoiceChannel | null, text: string, characterData: Character, uuid: string, authorId: string, attachments?: Array<Attachment>, reference?: MessageReference) => {
+/**
+ * It sends a message to a channel using a webhook
+ * @param channel - The channel to send the message to.
+ * @param text - The text to send.
+ * @param characterData - The character data of the character that is sending the message.
+ * @param uuid - The user's UUID
+ * @param authorId - The ID of the user who sent the message.
+ * @param [attachments] - An array of attachments to send with the message.
+ * @param [reference] - MessageReference
+ * @returns Nothing
+ */
+export const sendMessage = async (
+	channel: NewsChannel | TextChannel | PublicThreadChannel | PrivateThreadChannel | VoiceChannel | null,
+	text: string,
+	characterData: Character,
+	uuid: string,
+	authorId: string,
+	attachments?: Array<Attachment>,
+	reference?: MessageReference,
+): Promise<void> => {
 
 	const webhookChannel = (channel && channel.isThread()) ? channel.parent : channel;
 	if (!webhookChannel || !channel) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }

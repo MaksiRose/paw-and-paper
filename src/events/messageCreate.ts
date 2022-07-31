@@ -3,7 +3,7 @@ import { sendMessage } from '../commands/interaction/say';
 // import { sendVisitMessage } from '../commands/interaction/requestvisit';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
-import { CustomClient, Event, ProxyConfigType, ProxyListType } from '../typedef';
+import { CustomClient, Event, ProxyConfigType, ProxyListType, ServerSchema, UserSchema } from '../typedef';
 import { createGuild } from '../utils/updateGuild';
 
 export const event: Event = {
@@ -31,34 +31,9 @@ export const event: Event = {
 
 		if (!userData || !characterData || !serverData) { return; }
 
-		let replaceMessage = false;
-
-		const proxyIsDisabled = (serverData.proxySettings.channels.setTo === ProxyListType.Blacklist && serverData.proxySettings.channels.blacklist.includes(message.channelId)) || (serverData.proxySettings.channels.setTo === ProxyListType.Whitelist && !serverData.proxySettings.channels.whitelist.includes(message.channelId));
-
-		/* Checking if the message starts with the character's proxy start and ends with the character's
-		proxy end. If it does, it will set the current character to the character that the message is
-		being sent from. */
-		for (const character of Object.values(userData.characters)) {
-
-			/* Checking if the message includes the proxy. If it does, it will change the message content
-			to the prefix + 'say ' + the message content without the proxy. */
-			const hasProxy = character.proxy.startsWith !== '' || character.proxy.endsWith !== '';
-			const messageIncludesProxy = message.content.startsWith(character.proxy.startsWith) && message.content.endsWith(character.proxy.endsWith);
-			if (hasProxy && messageIncludesProxy && !proxyIsDisabled) {
-
-				if (userData.currentCharacter[message.guildId]) { userData.currentCharacter[message.guildId] = character._id; }
-				message.content = message.content.substring(character.proxy.startsWith.length, message.content.length - character.proxy.endsWith.length);
-				replaceMessage = true;
-			}
-		}
-
-		/* Checking if the user has autoproxy enabled in the current channel, and if so, it is adding the
-		prefix to the message. */
-		const autoproxyIsToggled = (userData.serverProxySettings[message.guildId]?.autoproxy.setTo === ProxyConfigType.Enabled && (userData.serverProxySettings[message.guildId]?.autoproxy.channels.setTo === ProxyListType.Blacklist && !userData.serverProxySettings[message.guildId]?.autoproxy.channels.blacklist.includes(message.channelId)) || (userData.serverProxySettings[message.guildId]?.autoproxy.channels.setTo === ProxyListType.Whitelist && userData.serverProxySettings[message.guildId]?.autoproxy.channels.whitelist.includes(message.channelId))) || (userData.serverProxySettings[message.guildId]?.autoproxy.setTo === ProxyConfigType.FollowGlobal && userData.globalProxySettings.autoproxy === true);
-		if (autoproxyIsToggled && !proxyIsDisabled) {
-
-			replaceMessage = true;
-		}
+		// eslint-disable-next-line prefer-const
+		let { replaceMessage, messageContent } = checkForProxy(serverData, message, userData);
+		message.content = messageContent;
 
 		if (serverData.currentlyVisiting !== null && message.channel.id === serverData.visitChannelId) {
 
@@ -85,4 +60,35 @@ export const event: Event = {
 				});
 		}
 	},
+};
+
+export const checkForProxy = (serverData: ServerSchema, message: Message<true> & Message<boolean>, userData: UserSchema): { replaceMessage: boolean, messageContent: string; } => {
+
+	let replaceMessage = false;
+
+	const proxyIsDisabled = (serverData.proxySettings.channels.setTo === ProxyListType.Blacklist && serverData.proxySettings.channels.blacklist.includes(message.channelId)) || (serverData.proxySettings.channels.setTo === ProxyListType.Whitelist && !serverData.proxySettings.channels.whitelist.includes(message.channelId));
+
+	/* Checking if the message starts with the character's proxy start and ends with the character's
+	proxy end. If it does, it will set the current character to the character that the message is
+	being sent from. */
+	for (const character of Object.values(userData.characters)) {
+
+		/* Checking if the message includes the proxy. If it does, it will change the message content
+		to the prefix + 'say ' + the message content without the proxy. */
+		const hasProxy = character.proxy.startsWith !== '' || character.proxy.endsWith !== '';
+		const messageIncludesProxy = message.content.startsWith(character.proxy.startsWith) && message.content.endsWith(character.proxy.endsWith);
+		if (hasProxy && messageIncludesProxy && !proxyIsDisabled) {
+
+			if (userData.currentCharacter[message.guildId]) { userData.currentCharacter[message.guildId] = character._id; }
+			message.content = message.content.substring(character.proxy.startsWith.length, message.content.length - character.proxy.endsWith.length);
+			replaceMessage = true;
+		}
+	}
+
+	/* Checking if the user has autoproxy enabled in the current channel, and if so, it is adding the
+	prefix to the message. */
+	const autoproxyIsToggled = (userData.serverProxySettings[message.guildId]?.autoproxy.setTo === ProxyConfigType.Enabled && (userData.serverProxySettings[message.guildId]?.autoproxy.channels.setTo === ProxyListType.Blacklist && !userData.serverProxySettings[message.guildId]?.autoproxy.channels.blacklist.includes(message.channelId)) || (userData.serverProxySettings[message.guildId]?.autoproxy.channels.setTo === ProxyListType.Whitelist && userData.serverProxySettings[message.guildId]?.autoproxy.channels.whitelist.includes(message.channelId))) || (userData.serverProxySettings[message.guildId]?.autoproxy.setTo === ProxyConfigType.FollowGlobal && userData.globalProxySettings.autoproxy === true);
+	if (autoproxyIsToggled && !proxyIsDisabled) { replaceMessage = true; }
+
+	return { replaceMessage, messageContent: message.content };
 };
