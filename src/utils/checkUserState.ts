@@ -67,9 +67,9 @@ export function hasCompletedAccount(interaction: ChatInputCommandInteraction, us
  * @param {import('discord.js').Message} message
  * @returns {message is import('discord.js').Message<true>}
  */
-export function isInGuild(interaction: ChatInputCommandInteraction): interaction is ChatInputCommandInteraction<'cached' | 'raw'> {
+export function isInGuild(interaction: ChatInputCommandInteraction): interaction is ChatInputCommandInteraction<'cached'> {
 
-	if (!interaction.inGuild()) {
+	if (!interaction.inCachedGuild()) {
 
 		respond(interaction, {
 			embeds: [new EmbedBuilder()
