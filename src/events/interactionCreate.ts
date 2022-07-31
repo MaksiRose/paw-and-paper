@@ -6,6 +6,7 @@ import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../
 import { proxyInteractionCollector, sendEditProxyModalResponse } from '../commands/character_customization/proxy';
 import { sendEditDisplayedSpeciesModalResponse, speciesInteractionCollector } from '../commands/character_customization/species';
 import { hugInteractionCollector } from '../commands/interaction/hug';
+import { sendEditSkillsModalResponse, skillsInteractionCollector } from '../commands/interaction/skills';
 import { helpInteractionCollector } from '../commands/miscellaneous/help';
 import { serversettingsInteractionCollector } from '../commands/miscellaneous/server-settings';
 import { shopInteractionCollector } from '../commands/miscellaneous/shop';
@@ -209,6 +210,13 @@ export const event: Event = {
 					.catch(async (error) => { await sendErrorMessage(interaction, error); });
 				return;
 			}
+
+			if (interaction.customId.includes('skills') && interaction.isFromMessage()) {
+
+				await sendEditSkillsModalResponse(interaction, serverData, userData)
+					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+				return;
+			}
 			return;
 		}
 
@@ -308,6 +316,13 @@ export const event: Event = {
 
 				if (!serverData) { return await sendErrorMessage(interaction, new Error('serverData is null')); }
 				await serversettingsInteractionCollector(interaction, serverData)
+					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+				return;
+			}
+
+			if (interaction.customId.startsWith('skills_')) {
+
+				await skillsInteractionCollector(interaction, serverData, userData)
 					.catch(async (error) => { await sendErrorMessage(interaction, error); });
 				return;
 			}
