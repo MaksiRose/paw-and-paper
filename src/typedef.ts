@@ -97,13 +97,13 @@ export type Schema<T> = {
 		type: 'array',
 		of: Schema<T[K]>[number],
 		locked: boolean;
+	} : Record<string, never> extends Required<T[K]> ? {
+		type: 'map',
+		of: Schema<T[K]> extends Record<string, infer U> ? U : never,
+		locked: boolean;
 	} : T[K] extends { [key in string]: any } ? {
 		type: 'object',
 		default: Schema<T[K]>;
-		locked: boolean;
-	} | {
-		type: 'map',
-		of: Schema<T[K]>[any],
 		locked: boolean;
 	} : never;
 };
