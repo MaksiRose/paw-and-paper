@@ -1,10 +1,81 @@
 import { readdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
-import { Schema } from '../typedef';
 import { generateId } from 'crystalid';
 
 interface UUIDObject {
 	uuid: string;
 }
+
+type Schema<T> = {
+	[K in keyof T]: SchemaType<T[K]>
+};
+
+type SchemaType<T> = [T] extends [string] ? StringSchema :
+	[T] extends [string | null] ? OptionalStringSchema :
+	[T] extends [number] ? NumberSchema :
+	[T] extends [number | null] ? OptionalNumberSchema :
+	[T] extends [string | number] ? StringNumberSchema :
+	[T] extends [boolean] ? BooleanSchema :
+	[T] extends [Array<infer U>] ? ArraySchema<SchemaType<U>> :
+	Record<string, never> extends Required<T> ? MapSchema<T extends Record<string, infer U> ? U : never> :
+	[T] extends [{ [key in string]: any }] ? ObjectSchema<Schema<T>> :
+	never;
+
+interface StringSchema {
+	type: 'string',
+	default: string,
+	locked: boolean;
+}
+
+interface OptionalStringSchema {
+	type: 'string?',
+	default: string | null,
+	locked: boolean;
+}
+
+interface NumberSchema {
+	type: 'number',
+	default: number,
+	locked: boolean;
+}
+
+interface OptionalNumberSchema {
+	type: 'number?',
+	default: number | null,
+	locked: boolean;
+}
+
+interface StringNumberSchema {
+	type: 'string|number',
+	default: string | number,
+	locked: boolean;
+}
+
+interface BooleanSchema {
+	type: 'boolean',
+	default: boolean,
+	locked: boolean;
+}
+
+interface ArraySchema<T> {
+	type: 'array',
+	of: T,
+	locked: boolean;
+}
+
+interface MapSchema<T> {
+	type: 'map',
+	of: T;
+	locked: boolean;
+}
+
+interface ObjectSchema<T> {
+	type: 'object',
+	default: T;
+	locked: boolean;
+}
+
+type PrimitiveSchema = StringSchema | OptionalStringSchema | NumberSchema | OptionalNumberSchema | StringNumberSchema | BooleanSchema;
+type SomeSchema = PrimitiveSchema | ArraySchema<any> | MapSchema<any> | ObjectSchema<any>;
 
 export default class Model<T extends UUIDObject> {
 
@@ -218,8 +289,18 @@ export default class Model<T extends UUIDObject> {
 	}
 }
 
-function primitiveTypeDoesNotMatch(value: Schema<any>[any], valToCheck: any): value is ({ type: 'string', default: string, locked: boolean; } | { type: 'string?', default: string | null, locked: boolean; } | { type: 'number', default: number, locked: boolean; } | { type: 'number?', default: string | null, locked: boolean; } | { type: 'string|number', default: string | number, locked: boolean; } | { type: 'boolean', default: boolean, locked: boolean; }) {
+function isPrimitiveSchema(schema: SomeSchema): schema is PrimitiveSchema {
+	return [
+		'string',
+		'string?',
+		'number',
+		'number?',
+		'string|number',
+		'boolean',
+	].includes(schema.type);
+}
 
+function primitiveTypeDoesNotMatch(value: PrimitiveSchema, valToCheck: any): boolean {
 	const isNotString = value.type === 'string' && typeof valToCheck !== 'string';
 	const isNotStringOrNull = value.type === 'string?' && valToCheck !== null && typeof valToCheck !== 'string';
 	const isNotNumber = value.type === 'number' && typeof valToCheck !== 'number';
@@ -229,18 +310,29 @@ function primitiveTypeDoesNotMatch(value: Schema<any>[any], valToCheck: any): va
 	return isNotString || isNotStringOrNull || isNotNumber || isNotNumberOrNull || isNotStringOrNumber || isNotBoolean;
 }
 
-function checkTypeMatching<T extends Record<string | number | symbol, any> | Array<any>>(obj: T, key: keyof typeof obj, value: Schema<T>[any]): T {
+function checkTypeMatching<
+	T extends Record<string | number | symbol, any> | Array<any>
+>(
+	obj: T,
+	key: keyof typeof obj,
+	value: Schema<T>[any]
+): T;
+function checkTypeMatching(
+	obj: Record<string | number | symbol, any> | Array<any>,
+	key: any,
+	value: SomeSchema,
+): Record<string | number | symbol, any> | Array<any> {
 
 	// Add key if object doesn't have it
 	if (!Array.isArray(obj) && !Object.hasOwn(obj, key)) {
 
-		if (value.type === 'array') { obj[key as string | number | symbol] = []; }
-		else if (value.type === 'map' || value.type === 'object') { obj[key as string | number | symbol] = {}; }
-		else { obj[key as string | number | symbol] = value.default; }
+		if (value.type === 'array') { obj[key] = []; }
+		else if (value.type === 'map' || value.type === 'object') { obj[key] = {}; }
+		else { obj[key] = value.default; }
 	}
 
 	// Change value to default value if value type is primitive and doesn't match
-	if (primitiveTypeDoesNotMatch(value, obj[key])) { obj[key] = value.default as any; }
+	if (isPrimitiveSchema(value) && primitiveTypeDoesNotMatch(value, obj[key])) { obj[key] = value.default; }
 	// Change value if value type is array
 	else if (value.type === 'array') {
 
@@ -254,12 +346,12 @@ function checkTypeMatching<T extends Record<string | number | symbol, any> | Arr
 			}
 		}
 		// Change value to array if value isn't
-		else { obj[key as number] = []; }
+		else { obj[key] = []; }
 	}
 	else if (value.type === 'map') {
 
 		// Change value to object if value isn't
-		if (obj[key] !== Object(obj[key]) || Array.isArray(obj[key])) { (obj[key] as Record<string | number | symbol, any>) = {}; }
+		if (obj[key] !== Object(obj[key]) || Array.isArray(obj[key])) { obj[key] = {}; }
 		// Change value if value is object
 		else {
 
@@ -272,19 +364,19 @@ function checkTypeMatching<T extends Record<string | number | symbol, any> | Arr
 	else if (value.type === 'object') {
 
 		// Change value to object if value isn't
-		if (obj[key] !== Object(obj[key]) && !Array.isArray(obj[key])) { (obj[key] as Record<string | number | symbol, any>) = {}; }
+		if (obj[key] !== Object(obj[key]) && !Array.isArray(obj[key])) { obj[key] = {}; }
 
 		/* Add / Update existing keys */
 		for (const [k, v] of Object.entries(value.default)) {
 
-			(obj[key] as Record<string | number | symbol, any>) = checkTypeMatching((obj[key] as Record<string | number | symbol, any>), k, v);
+			obj[key] = checkTypeMatching((obj[key]), k, v as any);
 		}
 
 		/* Get rid of keys that aren't in schema */
+		const keys = Object.keys(value.default);
 		for (const k of Object.keys(obj[key])) {
 
-			const keys = Object.keys(value.default);
-			if (!keys.includes(k)) { delete (obj[key] as Record<string | number | symbol, any>)[k]; }
+			if (!keys.includes(k)) { delete obj[key][k]; }
 		}
 	}
 
