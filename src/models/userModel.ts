@@ -39,7 +39,7 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 		},
 		locked: false,
 	},
-	characters: {
+	quids: {
 		type: 'map',
 		of: {
 			type: 'object',
@@ -202,7 +202,7 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 		},
 		locked: false,
 	},
-	currentCharacter: {
+	currentQuid: {
 		type: 'map',
 		of: { type: 'string', default: '', locked: false },
 		locked: false,

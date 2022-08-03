@@ -23,7 +23,7 @@ export const command: SlashCommand = {
 	disablePreviousCommand: false,
 	sendCommand: async (client, interaction, userData) => {
 
-		const characterData = userData ? userData.characters[userData.currentCharacter[interaction.guildId || 'DM'] || ''] : undefined;
+		const quidData = userData ? userData.quids[userData.currentQuid[interaction.guildId || 'DM'] || ''] : undefined;
 		const member = interaction.inCachedGuild() ? await interaction.guild.members.fetch(interaction.user.id).catch(() => { return undefined; }) : undefined;
 
 		const mentionedUser = interaction.options.getUser('user');
@@ -52,10 +52,10 @@ export const command: SlashCommand = {
 
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
-					.setColor(characterData?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
+					.setColor(quidData?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
 					.setAuthor({
-						name: characterData?.name || member?.displayName || interaction.user.tag,
-						iconURL: characterData?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
+						name: quidData?.name || member?.displayName || interaction.user.tag,
+						iconURL: quidData?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
 					})
 					.setImage(selfHugURLs[generateRandomNumber(selfHugURLs.length, 0)] || null)],
 			}, true)
@@ -68,10 +68,10 @@ export const command: SlashCommand = {
 		await respond(interaction, {
 			content: mentionedUser.toString(),
 			embeds: [new EmbedBuilder()
-				.setColor(characterData?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
+				.setColor(quidData?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
 				.setAuthor({
-					name: characterData?.name || member?.displayName || interaction.user.tag,
-					iconURL: characterData?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
+					name: quidData?.name || member?.displayName || interaction.user.tag,
+					iconURL: quidData?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
 				})
 				.setDescription(`${mentionedUser.username}, do you accept the hug?`)],
 			components: [new ActionRowBuilder<ButtonBuilder>()
@@ -110,7 +110,7 @@ export const hugInteractionCollector = async (interaction: ButtonInteraction, pa
 	}
 
 	const userData = await userModel.findOne(u => u.userId.includes(originalUserId)).catch(() => { return null; });
-	const characterData = userData ? userData.characters[userData.currentCharacter[interaction.guildId || 'DM'] || ''] : undefined;
+	const quidData = userData ? userData.quids[userData.currentQuid[interaction.guildId || 'DM'] || ''] : undefined;
 
 	if (interaction.customId.includes('accept')) {
 
@@ -136,10 +136,10 @@ export const hugInteractionCollector = async (interaction: ButtonInteraction, pa
 			.update({
 				content: null,
 				embeds: [new EmbedBuilder()
-					.setColor(characterData?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
+					.setColor(quidData?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
 					.setAuthor({
-						name: characterData?.name || originalMember?.displayName || originalUser.tag,
-						iconURL: characterData?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
+						name: quidData?.name || originalMember?.displayName || originalUser.tag,
+						iconURL: quidData?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
 					})
 					.setImage(hugURLs[generateRandomNumber(hugURLs.length, 0)] || null)],
 				components: [],
@@ -148,9 +148,9 @@ export const hugInteractionCollector = async (interaction: ButtonInteraction, pa
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 
-		const partnerCharacterData = partnerUserData ? partnerUserData.characters[partnerUserData.currentCharacter[interaction.guildId || 'DM'] || ''] : undefined;
+		const partnerQuidData = partnerUserData ? partnerUserData.quids[partnerUserData.currentQuid[interaction.guildId || 'DM'] || ''] : undefined;
 
-		if (userData && characterData && partnerUserData && partnerCharacterData) { await addFriendshipPoints(interaction.message, userData, characterData._id, partnerUserData, partnerCharacterData._id); }
+		if (userData && quidData && partnerUserData && partnerQuidData) { await addFriendshipPoints(interaction.message, userData, quidData._id, partnerUserData, partnerQuidData._id); }
 		return;
 	}
 
@@ -160,10 +160,10 @@ export const hugInteractionCollector = async (interaction: ButtonInteraction, pa
 			.update({
 				content: null,
 				embeds: [new EmbedBuilder()
-					.setColor(characterData?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
+					.setColor(quidData?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
 					.setAuthor({
-						name: characterData?.name || originalMember?.displayName || originalUser.tag,
-						iconURL: characterData?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
+						name: quidData?.name || originalMember?.displayName || originalUser.tag,
+						iconURL: quidData?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
 					})
 					.setDescription(`${interaction.user.toString()} did not accept the hug.`)],
 				components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),

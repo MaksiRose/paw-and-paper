@@ -26,7 +26,7 @@ export const command: SlashCommand = {
 					.setCustomId('help_options')
 					.setPlaceholder('Select a page')
 					.setOptions([
-						{ label: 'Page 1', value: 'help_page1', description: 'Character Customization', emoji: '📝' },
+						{ label: 'Page 1', value: 'help_page1', description: 'Quid Customization', emoji: '📝' },
 						{ label: 'Page 2', value: 'help_page2', description: 'Gameplay (Primary)', emoji: '🎲' },
 						{ label: 'Page 3', value: 'help_page3', description: 'Gameplay (Maintenance)', emoji: '🍗' },
 						{ label: 'Page 4', value: 'help_page4', description: 'Interaction', emoji: '👥' },
@@ -48,8 +48,8 @@ export async function helpInteractionCollector(client: CustomClient, interaction
 			.update({
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
-					.setTitle('Page 1: 📝 Character Customization')
-					.setDescription('**`/name`** - Start your adventure! (Re-)name a character.\n**`/species`** - Change your character\'s species or displayed species.\n**`/pronouns`** - Choose the pronouns you are using during roleplay.\n**`/avatar`** - Choose an avatar for your character.\n**`/color`** - Enter a valid hex code to give your messages and profile that color.\n**`/description`** - Give a more detailed description of your character.\n**`/proxy`** - Add a proxy or autoproxy for your character.\n**`/profile`** - Look up all the available info about a character or change the character you are using.\n**`/delete`** - Delete parts of or your entire account.')],
+					.setTitle('Page 1: 📝 Quid Customization')
+					.setDescription('**`/name`** - Start your adventure! (Re-)name a quid.\n**`/species`** - Change your quid\'s species or displayed species.\n**`/pronouns`** - Choose the pronouns you are using during roleplay.\n**`/avatar`** - Choose an avatar for your quid.\n**`/color`** - Enter a valid hex code to give your messages and profile that color.\n**`/description`** - Give a more detailed description of your quid.\n**`/proxy`** - Add a proxy or autoproxy for your quid.\n**`/profile`** - Look up all the available info about a quid or change the quid you are using.\n**`/delete`** - Delete parts of or your entire account.')],
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
@@ -79,7 +79,7 @@ export async function helpInteractionCollector(client: CustomClient, interaction
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
 					.setTitle('Page 3: 🍗 Gameplay (Maintenance)')
-					.setDescription('**`/stats`** - Quick view of your characters condition.\n**`/inventory`** - This is a collection of all the things your pack has gathered, listed up.\n**`/store`** - Take items you have gathered for your pack, and put them in the pack inventory.\n**`/eat`** - Take the appropriate food for your species out of the packs food pile and fill up your hunger meter.\n**`/drink`** - Drink some water and fill up your thirst meter.\n**`/rest`** - Get some sleep and fill up your energy meter. Takes some time to refill.\n**`/vote`** - Vote for this bot on one of three websites and get +30 energy each time.\n**`/heal`** - Heal your packmates. Costs energy, but gives XP.\n**`/repair`** - Repair dens. Costs energy, but gives XP.\n**`/water-tree`** - If you have a ginkgo sapling, you can water it using this command.')],
+					.setDescription('**`/stats`** - Quick view of your quids condition.\n**`/inventory`** - This is a collection of all the things your pack has gathered, listed up.\n**`/store`** - Take items you have gathered for your pack, and put them in the pack inventory.\n**`/eat`** - Take the appropriate food for your species out of the packs food pile and fill up your hunger meter.\n**`/drink`** - Drink some water and fill up your thirst meter.\n**`/rest`** - Get some sleep and fill up your energy meter. Takes some time to refill.\n**`/vote`** - Vote for this bot on one of three websites and get +30 energy each time.\n**`/heal`** - Heal your packmates. Costs energy, but gives XP.\n**`/repair`** - Repair dens. Costs energy, but gives XP.\n**`/water-tree`** - If you have a ginkgo sapling, you can water it using this command.')],
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
@@ -94,7 +94,7 @@ export async function helpInteractionCollector(client: CustomClient, interaction
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
 					.setTitle('Page 4: 👥 Interaction')
-					.setDescription('**`/adventure`** - Go adventuring with a friend. Requires 6 friendship hearts.\n**`/share`** - Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person.\n**`/playfight`** - You can play Connect Four or Tic Tac Toe.\n**`/say`** - Sends a message as if your character was saying it.\n**`/hug`** - Hug someone, if they consent.\n**`/profilelist`** - View a list of all the profiles that exist on this server.\n**`/friendships`** - View a list of all the friendships that you have with other players.\n**`/roll`** - Roll dices.\n**`/skills`** - Show a list of or edit custom skills/ability scores.')],
+					.setDescription('**`/adventure`** - Go adventuring with a friend. Requires 6 friendship hearts.\n**`/share`** - Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person.\n**`/playfight`** - You can play Connect Four or Tic Tac Toe.\n**`/say`** - Sends a message as if your quid was saying it.\n**`/hug`** - Hug someone, if they consent.\n**`/profilelist`** - View a list of all the profiles that exist on this server.\n**`/friendships`** - View a list of all the friendships that you have with other players.\n**`/roll`** - Roll dices.\n**`/skills`** - Show a list of or edit custom skills/ability scores.')],
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }

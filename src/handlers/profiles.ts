@@ -17,11 +17,11 @@ export async function execute(client: CustomClient) {
 		and where lastMessageChannelId is a string, if the user has enabled water reminders. */
 		if (userData.settings.reminders.water === true) {
 
-			for (const character of Object.values(userData.characters)) {
+			for (const quid of Object.values(userData.quids)) {
 
-				for (const profile of Object.values(character.profiles)) {
+				for (const profile of Object.values(quid.profiles)) {
 
-					if (profile.sapling.exists && typeof profile.sapling.lastMessageChannelId === 'string') { sendReminder(client, userData, character, profile); }
+					if (profile.sapling.exists && typeof profile.sapling.lastMessageChannelId === 'string') { sendReminder(client, userData, quid, profile); }
 				}
 			}
 		}
@@ -32,11 +32,11 @@ export async function execute(client: CustomClient) {
 			.findOneAndUpdate(
 				u => u.uuid === userData.uuid,
 				(u: UserSchema) => {
-					for (const character of Object.values(u.characters)) {
+					for (const quid of Object.values(u.quids)) {
 
-						for (const profile of Object.values(character.profiles)) {
+						for (const profile of Object.values(quid.profiles)) {
 
-							const p = getMapData(getMapData(u.characters, character._id).profiles, profile.serverId);
+							const p = getMapData(getMapData(u.quids, quid._id).profiles, profile.serverId);
 							p.isResting = false;
 							p.energy = p.energy === 0 ? 0 : p.maxEnergy;
 						}

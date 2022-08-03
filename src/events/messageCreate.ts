@@ -20,7 +20,7 @@ export const event: Event = {
 		}
 
 		const userData = await userModel.findOne(u => u.userId.includes(message.author.id)).catch(() => { return null; });
-		const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId || 'DM'] || ''];
+		const quidData = userData?.quids?.[userData?.currentQuid?.[message.guildId || 'DM'] || ''];
 		let serverData = await serverModel.findOne(s => s.serverId === message.guildId).catch(() => { return null; });
 
 		/* Checking if the serverData is null. If it is null, it will create a guild. */
@@ -29,7 +29,7 @@ export const event: Event = {
 			serverData = await createGuild(client, message.guild);
 		}
 
-		if (!userData || !characterData || !serverData) { return; }
+		if (!userData || !quidData || !serverData) { return; }
 
 		// eslint-disable-next-line prefer-const
 		let { replaceMessage, messageContent } = checkForProxy(serverData, message, userData);
@@ -48,7 +48,7 @@ export const event: Event = {
 
 		if (replaceMessage && (message.content.length > 0 || message.attachments.size > 0)) {
 
-			await sendMessage(message.channel, message.content, characterData, userData.uuid, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
+			await sendMessage(message.channel, message.content, quidData, userData.uuid, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
 				.catch(error => { console.error(error); });
 
 			message
@@ -68,19 +68,19 @@ export const checkForProxy = (serverData: ServerSchema, message: Message<true> &
 
 	const proxyIsDisabled = (serverData.proxySettings.channels.setTo === ProxyListType.Blacklist && serverData.proxySettings.channels.blacklist.includes(message.channelId)) || (serverData.proxySettings.channels.setTo === ProxyListType.Whitelist && !serverData.proxySettings.channels.whitelist.includes(message.channelId));
 
-	/* Checking if the message starts with the character's proxy start and ends with the character's
-	proxy end. If it does, it will set the current character to the character that the message is
+	/* Checking if the message starts with the quid's proxy start and ends with the quid's
+	proxy end. If it does, it will set the current quid to the quid that the message is
 	being sent from. */
-	for (const character of Object.values(userData.characters)) {
+	for (const quid of Object.values(userData.quids)) {
 
 		/* Checking if the message includes the proxy. If it does, it will change the message content
 		to the prefix + 'say ' + the message content without the proxy. */
-		const hasProxy = character.proxy.startsWith !== '' || character.proxy.endsWith !== '';
-		const messageIncludesProxy = message.content.startsWith(character.proxy.startsWith) && message.content.endsWith(character.proxy.endsWith);
+		const hasProxy = quid.proxy.startsWith !== '' || quid.proxy.endsWith !== '';
+		const messageIncludesProxy = message.content.startsWith(quid.proxy.startsWith) && message.content.endsWith(quid.proxy.endsWith);
 		if (hasProxy && messageIncludesProxy && !proxyIsDisabled) {
 
-			if (userData.currentCharacter[message.guildId]) { userData.currentCharacter[message.guildId] = character._id; }
-			message.content = message.content.substring(character.proxy.startsWith.length, message.content.length - character.proxy.endsWith.length);
+			if (userData.currentQuid[message.guildId]) { userData.currentQuid[message.guildId] = quid._id; }
+			message.content = message.content.substring(quid.proxy.startsWith.length, message.content.length - quid.proxy.endsWith.length);
 			replaceMessage = true;
 		}
 	}

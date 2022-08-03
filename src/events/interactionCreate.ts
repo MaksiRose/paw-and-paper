@@ -1,10 +1,10 @@
 import { APIMessage } from 'discord-api-types/v9';
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, CommandInteraction, EmbedBuilder, Interaction, InteractionReplyOptions, InteractionType, Message, MessageContextMenuCommandInteraction, ModalSubmitInteraction, SelectMenuInteraction, UserContextMenuCommandInteraction, WebhookEditMessageOptions } from 'discord.js';
-import { deleteInteractionCollector } from '../commands/character_customization/delete';
-import { profileInteractionCollector } from '../commands/character_customization/profile';
-import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../commands/character_customization/pronouns';
-import { proxyInteractionCollector, sendEditProxyModalResponse } from '../commands/character_customization/proxy';
-import { sendEditDisplayedSpeciesModalResponse, speciesInteractionCollector } from '../commands/character_customization/species';
+import { deleteInteractionCollector } from '../commands/quid_customization/delete';
+import { profileInteractionCollector } from '../commands/quid_customization/profile';
+import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../commands/quid_customization/pronouns';
+import { proxyInteractionCollector, sendEditProxyModalResponse } from '../commands/quid_customization/proxy';
+import { sendEditDisplayedSpeciesModalResponse, speciesInteractionCollector } from '../commands/quid_customization/species';
 import { friendshipsInteractionCollector } from '../commands/interaction/friendships';
 import { hugInteractionCollector } from '../commands/interaction/hug';
 import { sendEditSkillsModalResponse, skillsInteractionCollector } from '../commands/interaction/skills';
@@ -103,8 +103,8 @@ export const event: Event = {
 			if (interaction.inGuild()) {
 
 				userData = await userModel.findOne(u => u.userId.includes(interaction.user.id)).catch(() => { return null; });
-				const characterData = userData?.characters?.[userData?.currentCharacter?.[interaction.guildId] || ''];
-				const profileData = characterData?.profiles?.[interaction.guildId];
+				const quidData = userData?.quids?.[userData?.currentQuid?.[interaction.guildId] || ''];
+				const profileData = quidData?.profiles?.[interaction.guildId];
 
 				/* If sapling exists, a gentle reminder has not been sent and the watering time is after the perfect time, send a gentle reminder */
 				if (userData && profileData && profileData.sapling.exists && !profileData.sapling?.sentGentleReminder && Date.now() > (profileData.sapling.nextWaterTimestamp || 0)) {
@@ -112,7 +112,7 @@ export const event: Event = {
 					await userModel.findOneAndUpdate(
 						u => u.uuid === userData?.uuid,
 						(u) => {
-							const p = getMapData(getMapData(u.characters, characterData._id).profiles, interaction.guildId);
+							const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
 							p.sapling.sentGentleReminder = true;
 						},
 					);
@@ -120,9 +120,9 @@ export const event: Event = {
 					await interaction
 						.followUp({
 							embeds: [new EmbedBuilder()
-								.setColor(characterData.color)
-								.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
-								.setDescription(`*Engrossed in ${pronoun(characterData, 2)} work, ${characterData.name} suddenly remembers that ${pronounAndPlural(characterData, 0, 'has', 'have')} not yet watered ${pronoun(characterData, 2)} plant today. The ${characterData.displayedSpecies || characterData.species} should really do it soon!*`)
+								.setColor(quidData.color)
+								.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+								.setDescription(`*Engrossed in ${pronoun(quidData, 2)} work, ${quidData.name} suddenly remembers that ${pronounAndPlural(quidData, 0, 'has', 'have')} not yet watered ${pronoun(quidData, 2)} plant today. The ${quidData.displayedSpecies || quidData.species} should really do it soon!*`)
 								.setFooter({ text: 'Type "/water" to water your ginkgo sapling!' })],
 						})
 						.catch(async (error) => {
@@ -360,10 +360,10 @@ setInterval(async function() {
 	const userArray = await userModel.find();
 	for (const user of userArray) {
 
-		const currentCharacters = user.currentCharacter;
-		for (const [serverId, characterId] of Object.entries(currentCharacters)) {
+		const currentQuid = user.currentQuid;
+		for (const [serverId, quidId] of Object.entries(currentQuid)) {
 
-			const activeProfile = user.characters[characterId]?.profiles[serverId];
+			const activeProfile = user.quids[quidId]?.profiles[serverId];
 			if (!activeProfile) { continue; }
 			const tenMinutesInMs = 600_000;
 

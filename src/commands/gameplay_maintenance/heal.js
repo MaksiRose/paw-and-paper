@@ -72,7 +72,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	}
 
 	let
-		/** @type {Object<string, import('../../typedef').Character>} */
+		/** @type {Object<string, import('../../typedef').Quid>} */
 		allHurtCharactersList = {},
 		currentUserPage = 0,
 		userSelectMenu = await getUserSelectMenu(message),

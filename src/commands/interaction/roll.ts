@@ -31,7 +31,7 @@ export const command: SlashCommand = {
 
 		const focusedValue = interaction.options.getFocused();
 
-		const profileData = userData?.characters[userData?.currentCharacter[interaction.guildId || 'DM'] || '']?.profiles[interaction.guildId || 'DM'];
+		const profileData = userData?.quids[userData?.currentQuid[interaction.guildId || 'DM'] || '']?.profiles[interaction.guildId || 'DM'];
 
 		const choices: string[] = [];
 		if (focusedValue === '') {
@@ -63,8 +63,8 @@ export const command: SlashCommand = {
 
 		const args = getSubstringArray(interaction.options.getString('add-subtract') ?? '');
 		let addOrSubtract = 0;
-		const characterData = userData?.characters[userData?.currentCharacter[interaction.guildId || 'DM'] || ''];
-		const profileData = characterData?.profiles[interaction.guildId || 'DM'];
+		const quidData = userData?.quids[userData?.currentQuid[interaction.guildId || 'DM'] || ''];
+		const profileData = quidData?.profiles[interaction.guildId || 'DM'];
 		for (let i = 0; i < args.length; i++) {
 
 			for (const [skill, value] of [...Object.entries(profileData?.skills?.global || {}), ...Object.entries(profileData?.skills?.personal || {})]) {
@@ -86,10 +86,10 @@ export const command: SlashCommand = {
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(characterData?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
+				.setColor(quidData?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
 				.setAuthor({
-					name: characterData?.name || member?.displayName || interaction.user.tag,
-					iconURL: characterData?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
+					name: quidData?.name || member?.displayName || interaction.user.tag,
+					iconURL: quidData?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
 				})
 				.setDescription(`🎲 You rolled a \`${result}\`!`)
 				.setFooter({ text: resultFull.length > 2048 ? resultFull.substring(0, 2047) + '…' : resultFull })],

@@ -68,9 +68,9 @@ export const event: Event = {
 			const userList = await userModel.find();
 			for (const userData of userList) {
 
-				for (const characterData of Object.values(userData.characters)) {
+				for (const quidData of Object.values(userData.quids)) {
 
-					for (const profileData of Object.values(characterData.profiles)) {
+					for (const profileData of Object.values(quidData.profiles)) {
 
 						for (const [timestamp, statKind] of Object.entries(profileData.temporaryStatIncrease)) {
 
@@ -79,7 +79,7 @@ export const event: Event = {
 								userModel.findOneAndUpdate(
 									u => u.uuid === userData.uuid,
 									(u) => {
-										const p = getMapData(getMapData(u.characters, characterData._id).profiles, profileData.serverId);
+										const p = getMapData(getMapData(u.quids, quidData._id).profiles, profileData.serverId);
 										p[statKind] -= 10;
 										const stat = (statKind.replace('max', '').toLowerCase()) as 'health' | 'energy' | 'hunger' | 'thirst';
 										if (p[stat] > p[statKind]) { p[stat] = p[statKind]; }

@@ -28,9 +28,9 @@
 // 		return;
 // 	}
 
-// 	const characterDataV = userDataV?.characters?.[userDataV?.currentCharacter?.[message.guild.id]];
+// 	const quidDataV = userDataV?.quids?.[userDataV?.currentquid?.[message.guild.id]];
 
-// 	if (!hasName(message, characterDataV)) {
+// 	if (!hasName(message, quidDataV)) {
 
 // 		return;
 // 	}
@@ -78,7 +78,7 @@
 // 			.reply({
 // 				embeds: [{
 // 					color: /** @type {`#${string}`} */ (error_color),
-// 					description: `*${characterDataV.name} really wants to visit some packs in the area but no one there seems to have time. The ${characterDataV.displayedSpecies || characterDataV.species} gets back feeling a bit lonely but when ${pronounAndPlural(characterDataV, 0, 'see')} all ${pronoun(characterDataV, 2)} packmates having fun at home ${characterDataV.name} cheers up and joins them excitedly.*`,
+// 					description: `*${quidDataV.name} really wants to visit some packs in the area but no one there seems to have time. The ${quidDataV.displayedSpecies || quidDataV.species} gets back feeling a bit lonely but when ${pronounAndPlural(quidDataV, 0, 'see')} all ${pronoun(quidDataV, 2)} packmates having fun at home ${quidDataV.name} cheers up and joins them excitedly.*`,
 // 				}],
 // 				failIfNotExists: false,
 // 			})
@@ -96,7 +96,7 @@
 // 			embeds: [{
 // 				color: /** @type {`#${string}`} */ (default_color),
 // 				author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
-// 				description: `*${characterDataV.name} is looking to meet some new friends. There are other packs in the area. Who should ${pronoun(characterDataV, 0)} visit?*`,
+// 				description: `*${quidDataV.name} is looking to meet some new friends. There are other packs in the area. Who should ${pronoun(quidDataV, 0)} visit?*`,
 // 			}],
 // 			components: [ new MessageActionRow({
 // 				components: [ new MessageSelectMenu({
@@ -136,7 +136,7 @@
 
 // 		if (interaction.customId === 'visit_cancel') {
 
-// 			return await declinedInvitation(message, characterDataV, botReplyV, botReplyH);
+// 			return await declinedInvitation(message, quidDataV, botReplyV, botReplyH);
 // 		}
 
 // 		if (interaction.values[0] == 'visit_page') {
@@ -224,7 +224,7 @@
 // 					embeds: [{
 // 						color: /** @type {`#${string}`} */ (default_color),
 // 						author: { name: /** @type {import('discord.js').TextChannel} */ (visitChannelH).guild.name, icon_url: /** @type {import('discord.js').TextChannel} */ (visitChannelH).guild.iconURL() || undefined },
-// 						description: `*${characterDataV.name} strolls over to ${serverDataH.name}. ${upperCasePronounAndPlural(characterDataV, 0, 'is', 'are')} waiting patiently at the pack borders to be invited in as to not invade the pack's territory without permission.*`,
+// 						description: `*${quidDataV.name} strolls over to ${serverDataH.name}. ${upperCasePronounAndPlural(quidDataV, 0, 'is', 'are')} waiting patiently at the pack borders to be invited in as to not invade the pack's territory without permission.*`,
 // 						footer: { text: 'The invitation will expire in five minutes. Alternatively, you can cancel it using the button below.' },
 // 					}],
 // 					components: [ new MessageActionRow({
@@ -245,7 +245,7 @@
 // 						color: /** @type {`#${string}`} */ (default_color),
 // 						// @ts-ignore, since message must be in guild
 // 						author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
-// 						title: `Near the lake a ${characterDataV.displayedSpecies || characterDataV.species} is waiting. ${upperCasePronoun(characterDataV, 0)} came out of the direction where a pack named "${serverDataV.name}" is lying. ${upperCasePronoun(characterDataV, 0)} seems to be waiting for permission to cross the pack borders.`,
+// 						title: `Near the lake a ${quidDataV.displayedSpecies || quidDataV.species} is waiting. ${upperCasePronoun(quidDataV, 0)} came out of the direction where a pack named "${serverDataV.name}" is lying. ${upperCasePronoun(quidDataV, 0)} seems to be waiting for permission to cross the pack borders.`,
 // 						footer: { text: 'The invitation will expire in five minutes. Alternatively, you can decline it using the button below.' },
 // 					}],
 // 					components: [ new MessageActionRow({
@@ -276,15 +276,15 @@
 
 // 					const profileDataH = /** @type {import('../../typedef').ProfileSchema} */ (await profileModel.findOne({ userId: button.user.id }));
 // 					// @ts-ignore, since message must be in guild
-// 					const characterDataH = profileDataH.characters[profileDataH.currentCharacter[button.guildId]];
+// 					const quidDataH = profileDataH.quids[profileDataH.currentquid[button.guildId]];
 
 // 					if (button.customId === 'visit_accept') {
 
-// 						acceptedInvitation(client, message, botReplyV, botReplyH, serverDataV, serverDataH, characterDataV, characterDataH);
+// 						acceptedInvitation(client, message, botReplyV, botReplyH, serverDataV, serverDataH, quidDataV, quidDataH);
 // 						return;
 // 					}
 // 				})
-// 				.catch(async () => {return await declinedInvitation(message, characterDataV, botReplyV, botReplyH);});
+// 				.catch(async () => {return await declinedInvitation(message, quidDataV, botReplyV, botReplyH);});
 // 		}
 // 	}
 // };
@@ -315,11 +315,11 @@
 // /**
 //  *
 //  * @param {import('discord.js').Message} message
-//  * @param {import('../../typedef').Character} characterData
+//  * @param {import('../../typedef').quid} quidData
 //  * @param {import('discord.js').Message} botReplyV
 //  * @param {import('discord.js').Message} botReplyH
 //  */
-// async function declinedInvitation(message, characterData, botReplyV, botReplyH) {
+// async function declinedInvitation(message, quidData, botReplyV, botReplyH) {
 
 // 	await botReplyV
 // 		.edit({
@@ -336,7 +336,7 @@
 // 				// @ts-ignore, since message must be in guild
 // 				author: { name: botReplyH.guild.name, icon_url: botReplyH.guild.iconURL() || undefined },
 // 				// @ts-ignore, since message must be in guild
-// 				description: `*After ${characterData.name} waited for a while, ${pronoun(characterData, 0)} couldn't deal with the boredom and left the borders of ${botReplyV.guild.name}. The ${characterData.displayedSpecies || characterData.species} gets back feeling a bit lonely but when ${pronounAndPlural(characterData, 0, 'see')} all ${pronoun(characterData, 2)} packmates having fun at home, ${characterData.name} cheers up and joins them excitedly.*`,
+// 				description: `*After ${quidData.name} waited for a while, ${pronoun(quidData, 0)} couldn't deal with the boredom and left the borders of ${botReplyV.guild.name}. The ${quidData.displayedSpecies || quidData.species} gets back feeling a bit lonely but when ${pronounAndPlural(quidData, 0, 'see')} all ${pronoun(quidData, 2)} packmates having fun at home, ${quidData.name} cheers up and joins them excitedly.*`,
 // 			}],
 // 			failIfNotExists: false,
 // 		})
@@ -359,7 +359,7 @@
 // 				// @ts-ignore, since message must be in guild
 // 				author: { name: message.guild.name, icon_url: message.guild.iconURL() || undefined },
 // 				// @ts-ignore, since message must be in guild
-// 				description: `*After the ${characterData.displayedSpecies || characterData.species} waited for a while, the pack members of ${botReplyV.guild.name} can see them getting up and leaving, probably due to boredom. Everyone is too busy anyways, so it is probably for the best if ${pronoun(characterData, 0)} come back later.*`,
+// 				description: `*After the ${quidData.displayedSpecies || quidData.species} waited for a while, the pack members of ${botReplyV.guild.name} can see them getting up and leaving, probably due to boredom. Everyone is too busy anyways, so it is probably for the best if ${pronoun(quidData, 0)} come back later.*`,
 // 			}],
 // 			failIfNotExists: false,
 // 		})
@@ -386,10 +386,10 @@
 //  * @param {import('discord.js').Message} botReplyH
 //  * @param {import('../../typedef').ServerSchema} serverDataV
 //  * @param {import('../../typedef').ServerSchema} serverDataH
-//  * @param {import('../../typedef').Character} characterDataV
-//  * @param {import('../../typedef').Character} characterDataH
+//  * @param {import('../../typedef').quid} quidDataV
+//  * @param {import('../../typedef').quid} quidDataH
 //  */
-// async function acceptedInvitation(client, message, botReplyV, botReplyH, serverDataV, serverDataH, characterDataV, characterDataH) {
+// async function acceptedInvitation(client, message, botReplyV, botReplyH, serverDataV, serverDataH, quidDataV, quidDataH) {
 
 // 	await botReplyV
 // 		.edit({
@@ -405,7 +405,7 @@
 // 				color: /** @type {`#${string}`} */ (default_color),
 // 				// @ts-ignore, since message must be in guild
 // 				author: { name: botReplyH.guild.name, icon_url: botReplyH.guild.iconURL() || undefined },
-// 				description: `*After waiting for a bit, a ${characterDataH.displayedSpecies || characterDataH.species} comes closer, inviting ${characterDataV.name} and their packmates in and leading them inside where they can talk to all these new friends.*`,
+// 				description: `*After waiting for a bit, a ${quidDataH.displayedSpecies || quidDataH.species} comes closer, inviting ${quidDataV.name} and their packmates in and leading them inside where they can talk to all these new friends.*`,
 // 				footer: { text: 'Anyone with a completed profile can now send a message in this channel. It will be delivered to the other pack, and vice versa. Type "rp endvisit" to end the visit at any time.' },
 // 			}],
 // 			failIfNotExists: false,
@@ -428,7 +428,7 @@
 // 				color: /** @type {`#${string}`} */ (default_color),
 // 				// @ts-ignore, since message must be in guild
 // 				author: { name: botReplyV.guild.name, icon_url: botReplyV.guild.iconURL() || undefined },
-// 				description: `*${characterDataH.name} goes to pick up the ${characterDataV.displayedSpecies || characterDataV.species} and their packmates from the pack borders. The new friends seem excited to be here and to talk to everyone.*`,
+// 				description: `*${quidDataH.name} goes to pick up the ${quidDataV.displayedSpecies || quidDataV.species} and their packmates from the pack borders. The new friends seem excited to be here and to talk to everyone.*`,
 // 				footer: { text: 'Anyone with a completed profile can now send a message in this channel. It will be delivered to the other pack, and vice versa. Type "rp endvisit" to end the visit at any time.' },
 // 			}],
 // 			failIfNotExists: false,
@@ -566,8 +566,8 @@
 // 		});
 
 // 	// @ts-ignore, since message must be in guild
-// 	const characterData = userData?.characters?.[userData?.currentCharacter?.[message.guildId]];
-// 	if (characterData === undefined) { return; }
+// 	const quidData = userData?.quids?.[userData?.currentquid?.[message.guildId]];
+// 	if (quidData === undefined) { return; }
 // 	/** @type {import('../../typedef').WebhookMessages} */
 // 	const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8'));
 // 	let embeds = undefined;
@@ -594,8 +594,8 @@
 
 // 	const botMessage = await otherServerWebhook
 // 		.send({
-// 			username: characterData.name,
-// 			avatarURL: characterData.avatarURL,
+// 			username: quidData.name,
+// 			avatarURL: quidData.avatarURL,
 // 			content: message.content || undefined,
 // 			files: Array.from(message.attachments.values()) || undefined,
 // 			embeds: embeds,
@@ -603,7 +603,7 @@
 // 		})
 // 		.catch((error) => { throw new Error(error); });
 
-// 	webhookCache[botMessage.id] = message.author.id + (characterData?._id !== undefined ? `_${characterData?._id}` : '');
+// 	webhookCache[botMessage.id] = message.author.id + (quidData?._id !== undefined ? `_${quidData?._id}` : '');
 
 // 	writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
 // };

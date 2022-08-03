@@ -46,17 +46,17 @@ export const command: SlashCommand = {
 		userData = await userModel.findOneAndUpdate(
 			u => u.uuid === userData?.uuid,
 			(u) => {
-				const c = getMapData(u.characters, getMapData(u.currentCharacter, interaction.guildId || 'DM'));
-				c.color = `#${hexColor}`;
+				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DM'));
+				q.color = `#${hexColor}`;
 			},
 		);
-		const characterData = getMapData(userData.characters, getMapData(userData.currentCharacter, interaction.guildId || 'DM'));
+		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId || 'DM'));
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(characterData.color)
-				.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
-				.setTitle(`Profile color set to ${characterData.color}!`)],
+				.setColor(quidData.color)
+				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+				.setTitle(`Profile color set to ${quidData.color}!`)],
 		}, true)
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }

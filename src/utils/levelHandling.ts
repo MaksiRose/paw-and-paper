@@ -1,7 +1,7 @@
 import { CommandInteraction, EmbedBuilder, Message, SelectMenuInteraction } from 'discord.js';
 import { respond } from '../events/interactionCreate';
 import userModel from '../models/userModel';
-import { Character, Profile, ServerSchema, UserSchema, WayOfEarningType } from '../typedef';
+import { Quid, Profile, ServerSchema, UserSchema, WayOfEarningType } from '../typedef';
 import { checkLevelRequirements, checkRoleCatchBlock } from './checkRoleRequirements';
 import { getMapData } from './getInfo';
 import { upperCasePronounAndPlural } from './getPronouns';
@@ -10,7 +10,7 @@ const { default_color } = require('../../config.json');
 /**
  * Checks if the user is eligable for a level up, and sends a message if so.
  */
-export async function checkLevelUp(interaction: CommandInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached' | 'raw'>, userData: UserSchema, characterData: Character, profileData: Profile, serverData: ServerSchema, botReply?: Message): Promise<Message | undefined> {
+export async function checkLevelUp(interaction: CommandInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached' | 'raw'>, userData: UserSchema, quidData: Quid, profileData: Profile, serverData: ServerSchema, botReply?: Message): Promise<Message | undefined> {
 
 	/* It's checking if the user has enough experience to level up. If they do, it will level them up and then check if they leveled up again. */
 	const requiredExperiencePoints = profileData.levels * 50;
@@ -19,21 +19,21 @@ export async function checkLevelUp(interaction: CommandInteraction<'cached' | 'r
 		userData = await userModel.findOneAndUpdate(
 			u => u.uuid === userData.uuid,
 			(u) => {
-				const p = getMapData(getMapData(u.characters, characterData._id).profiles, interaction.guildId);
+				const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
 				p.experience -= requiredExperiencePoints;
 				p.levels += 1;
 			},
 		);
-		characterData = getMapData(userData.characters, characterData._id);
-		profileData = getMapData(characterData.profiles, interaction.guildId);
+		quidData = getMapData(userData.quids, quidData._id);
+		profileData = getMapData(quidData.profiles, interaction.guildId);
 
 		if (botReply) {
 
 			await botReply
 				.edit({
 					embeds: [...botReply.embeds, new EmbedBuilder()
-						.setColor(characterData.color)
-						.setTitle(`${characterData.name} just leveled up! ${upperCasePronounAndPlural(characterData, 0, 'is', 'are')} now level ${profileData.levels}.`)
+						.setColor(quidData.color)
+						.setTitle(`${quidData.name} just leveled up! ${upperCasePronounAndPlural(quidData, 0, 'is', 'are')} now level ${profileData.levels}.`)
 						.toJSON()],
 				})
 				.catch((error) => {
@@ -41,7 +41,7 @@ export async function checkLevelUp(interaction: CommandInteraction<'cached' | 'r
 				});
 		}
 
-		botReply = await checkLevelUp(interaction, userData, characterData, profileData, serverData, botReply);
+		botReply = await checkLevelUp(interaction, userData, quidData, profileData, serverData, botReply);
 
 		const guild = interaction.guild || await interaction.client.guilds.fetch(interaction.guildId);
 		const member = await guild.members.fetch(interaction.user.id);
@@ -54,7 +54,7 @@ export async function checkLevelUp(interaction: CommandInteraction<'cached' | 'r
 /**
  * Decreases the users level based on their current levels and removes their inventory, returns footerText for an updated bot reply.
  */
-export async function decreaseLevel(userData: UserSchema, characterData: Character, profileData: Profile, interaction: CommandInteraction<'cached' | 'raw'>): Promise<string> {
+export async function decreaseLevel(userData: UserSchema, quidData: Quid, profileData: Profile, interaction: CommandInteraction<'cached' | 'raw'>): Promise<string> {
 
 	/* newUserLevel is nine tenths of current profile level. */
 	const newUserLevel = Math.round(profileData.levels - (profileData.levels / 10));
@@ -88,14 +88,14 @@ export async function decreaseLevel(userData: UserSchema, characterData: Charact
 	userData = await userModel.findOneAndUpdate(
 		u => u.uuid === userData.uuid,
 		(u) => {
-			const p = getMapData(getMapData(u.characters, characterData._id).profiles, interaction.guildId);
+			const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
 			p.levels = newUserLevel;
 			p.experience = 0;
 			p.inventory = inventory_;
 		},
 	);
-	characterData = getMapData(userData.characters, characterData._id);
-	profileData = getMapData(characterData.profiles, interaction.guildId);
+	quidData = getMapData(userData.quids, quidData._id);
+	profileData = getMapData(quidData.profiles, interaction.guildId);
 
 
 	/* Get the guild, member, and the profileData roles where the wayOfEarning is levels and the role requirement bigger than the profile level. */
@@ -115,7 +115,7 @@ export async function decreaseLevel(userData: UserSchema, characterData: Charact
 			await userModel.findOneAndUpdate(
 				u => u.uuid === userData.uuid,
 				(u) => {
-					const p = getMapData(getMapData(u.characters, characterData._id).profiles, interaction.guildId);
+					const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
 					p.roles = profileData.roles;
 				},
 			);

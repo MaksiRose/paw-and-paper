@@ -1,7 +1,7 @@
 import Model from './constructor';
 import { commonPlantsInfo, Dens, materialsInfo, ProxyListType, rarePlantsInfo, Schema, ServerSchema, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../typedef';
 
-const denType: Schema<Dens>['foodDen' | 'sleepingDens' | 'medicineDen'] = {
+const denType: Schema<Dens>[keyof Dens] = {
 	type: 'object',
 	default: {
 		structure: { type: 'number', default: 100, locked: false },

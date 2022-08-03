@@ -172,39 +172,39 @@ interface ShopRole {
 export interface Profile {
 	/** ID of the server that this information is associated with */
 	readonly serverId: string;
-	/** Rank of the character */
+	/** Rank of the quid */
 	rank: RankType;
-	/** Levels of the character */
+	/** Levels of the quid */
 	levels: number;
-	/** Experience Points of the character */
+	/** Experience Points of the quid */
 	experience: number;
-	/** Health Points of the character */
+	/** Health Points of the quid */
 	health: number;
-	/** Energy Points of the character */
+	/** Energy Points of the quid */
 	energy: number;
-	/** Hunger Points of the character */
+	/** Hunger Points of the quid */
 	hunger: number;
-	/** Thirst Points of the character */
+	/** Thirst Points of the quid */
 	thirst: number;
-	/** Maximum Health Points of the characterMaximum Health Points of the character */
+	/** Maximum Health Points of the quid */
 	maxHealth: number;
-	/** Maximum Energy Points of the character */
+	/** Maximum Energy Points of the quid */
 	maxEnergy: number;
-	/** Maximum Hunger Points of the character */
+	/** Maximum Hunger Points of the quid */
 	maxHunger: number;
-	/** Maximum Thirst Points of the character */
+	/** Maximum Thirst Points of the quid */
 	maxThirst: number;
 	/** Object with a timestamp as the key and the kind of stat that is increased as the value */
 	temporaryStatIncrease: { [key in string]: StatIncreaseType };
-	/** Whether the character is resting */
+	/** Whether the quid is resting */
 	isResting: boolean;
-	/** Whether the character has an open quest */
+	/** Whether the quid has an open quest */
 	hasQuest: boolean;
-	/** The current region the character is in */
+	/** The current region the quid is in */
 	currentRegion: CurrentRegionType;
-	/** How many ranks the character has unlocked */
+	/** How many ranks the quid has unlocked */
 	unlockedRanks: number;
-	/** The sapling of the character */
+	/** The sapling of the quid */
 	sapling: {
 		/** Whether there is a sapling */
 		exists: boolean;
@@ -240,31 +240,31 @@ export interface Profile {
 	};
 }
 
-export interface Character {
-	/** Unique ID of the character */
+export interface Quid {
+	/** Unique ID of the quid */
 	readonly _id: string;
-	/** Name of the character */
+	/** Name of the quid */
 	name: string;
-	/** Species of the character */
+	/** Species of the quid */
 	species: SpeciesNames | '';
-	/** Displayed species of the character */
+	/** Displayed species of the quid */
 	displayedSpecies: string;
-	/** Description of the character */
+	/** Description of the quid */
 	description: string;
-	/** Avatar URL of the character */
+	/** Avatar URL of the quid */
 	avatarURL: string;
-	/** Array of Arrays of pronouns the character uses */
+	/** Array of Arrays of pronouns the quid uses */
 	pronounSets: string[][];
-	/** Proxy this character uses */
+	/** Proxy this quid uses */
 	proxy: {
 		startsWith: string,
 		endsWith: string;
 	};
 	/** Embed color used in messages */
 	color: `#${string}`;
-	/** Object of character_id as key and an array of timestamps of when the mention has been done as the value */
+	/** Object of quid_id as key and an array of timestamps of when the mention has been done as the value */
 	mentions: { [key in string]: number[]; };
-	/** Object of server IDs this character has been used on as the key and the information associated with it as the value */
+	/** Object of server IDs this quid has been used on as the key and the information associated with it as the value */
 	profiles: { [key in string]: Profile; };
 }
 
@@ -308,10 +308,10 @@ export interface UserSchema {
 			resting: boolean;
 		};
 	};
-	/** Object of names of characters as the key and the characters this user has created as value */
-	characters: { [key in string]: Character };
-	/** Object of the server IDs as the key and the id of the character that is currently active as the value */
-	currentCharacter: { [key in string]: string };
+	/** Object of names of quids as the key and the quids this user has created as value */
+	quids: { [key in string]: Quid };
+	/** Object of the server IDs as the key and the id of the quid that is currently active as the value */
+	currentQuid: { [key in string]: string };
 	/** Object of the server IDs as the key and object of proxy settings as the value */
 	serverProxySettings: {
 		[index: string]: {

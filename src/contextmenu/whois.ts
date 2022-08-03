@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
 import { readFileSync } from 'fs';
-import { getMessageContent } from '../commands/character_customization/profile';
+import { getMessageContent } from '../commands/quid_customization/profile';
 import { respond } from '../events/interactionCreate';
 import userModel from '../models/userModel';
 import { ContextMenuCommand, WebhookMessages } from '../typedef';
@@ -32,13 +32,13 @@ export const command: ContextMenuCommand = {
 		/* This gets the webhookCache */
 		const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8')) as WebhookMessages;
 
-		/* This sets the userId, userData and characterData to the default for the author of the selected message.
+		/* This sets the userId, userData and quidData to the default for the author of the selected message.
 		userId is its own variable here to ensure maintainability for when one account could be associated with several userIds. */
 		let userId = interaction.targetMessage.author.id;
 		let userData = await userModel.findOne(u => u.userId.includes(userId)).catch(() => { return null; });
-		let characterData = userData?.characters[userData.currentCharacter[interaction.guildId || 'DM'] || ''];
+		let quidData = userData?.quids[userData.currentQuid[interaction.guildId || 'DM'] || ''];
 
-		/* This checks whether there is an entry for this message in webhookCache, and sets the userId, userData and characterData to the entry data if it exist. */
+		/* This checks whether there is an entry for this message in webhookCache, and sets the userId, userData and quidData to the entry data if it exist. */
 		const webhookCacheEntry = webhookCache[interaction.targetId]?.split('_') || [];
 		const uid = webhookCacheEntry[0];
 		const charid = webhookCacheEntry[1];
@@ -46,7 +46,7 @@ export const command: ContextMenuCommand = {
 
 			userId = uid;
 			userData = await userModel.findOne(u => u.userId.includes(userId)).catch(() => { return null; });
-			characterData = userData?.characters[charid];
+			quidData = userData?.quids[charid];
 		}
 
 		/* This is checking whether the userData is null, and if it is, it will send a message to the user who clicked on the context menu. */
@@ -78,7 +78,7 @@ export const command: ContextMenuCommand = {
 			}])
 			.setTimestamp(new Date())];
 
-		const response = await getMessageContent(client, userId, characterData, userData.userId.includes(interaction.user.id), embedArray);
+		const response = await getMessageContent(client, userId, quidData, userData.userId.includes(interaction.user.id), embedArray);
 
 		await respond(interaction, {
 			...response,

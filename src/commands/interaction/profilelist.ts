@@ -87,7 +87,7 @@ export const profilelistInteractionCollector = async (
 };
 
 /**
- * It gets all the users that have a profile in the guild, and then for each user, it gets the cache of the user in the guild, and if the user is in the guild, it gets the profile of each character of the user and adds it to the rankTexts
+ * It gets all the users that have a profile in the guild, and then for each user, it gets the cache of the user in the guild, and if the user is in the guild, it gets the profile of each quid of the user and adds it to the rankTexts
  * @param guild - The guild that the command is being used in.
  * @param rankName1 - The name of the rank you want to get the profiles of.
  * @param [rankName2] - The name of the second rank you want to get the profiles of.
@@ -105,9 +105,9 @@ const getProfilesTexts = async (
 
 	const allRankUsersList = await userModel.find(
 		u => {
-			return Object.values(u.characters)
-				.filter(c => c.profiles[guild.id] !== undefined)
-				.map(c => getMapData(c.profiles, guild.id))
+			return Object.values(u.quids)
+				.filter(q => q.profiles[guild.id] !== undefined)
+				.map(q => getMapData(q.profiles, guild.id))
 				.filter(p => p.rank === rankName1 || p.rank === rankName2)
 				.length > 0;
 		});
@@ -130,11 +130,11 @@ const getProfilesTexts = async (
 			}
 			if (!guildMember || !guildMember.isInGuild) { continue; }
 
-			/* For each character, check if there is a profile, and if there is, add that profile to the rankTexts. */
-			for (const c of Object.values(u.characters)) {
+			/* For each quid, check if there is a profile, and if there is, add that profile to the rankTexts. */
+			for (const q of Object.values(u.quids)) {
 
-				const p = c.profiles[guild.id];
-				if (p !== undefined && (p.rank === rankName1 || p.rank === rankName2)) { rankTexts.push(`${c.name} (\`${p.health}/${p.maxHealth} HP\`) - <@${userId}>`); }
+				const p = q.profiles[guild.id];
+				if (p !== undefined && (p.rank === rankName1 || p.rank === rankName2)) { rankTexts.push(`${q.name} (\`${p.health}/${p.maxHealth} HP\`) - <@${userId}>`); }
 			}
 			break userIdLoop;
 		}

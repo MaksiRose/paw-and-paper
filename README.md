@@ -18,7 +18,7 @@ https://discord.gg/9DENgj8q5Q
 - Exploring (ft. custom minigames), quests, attacking, playing, ranking up
 - Sleeping, eating, drinking, healing, plant watering, personal and server inventory
 - Hugging others, sharing others, playfighting others (playing Tic Tac Toe or Connect Four)
-- Custom roleplaying with others using your character
+- Custom roleplaying with others using your quid
 - Visiting other servers
 - Shop to gain roles
 

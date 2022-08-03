@@ -1,23 +1,23 @@
 import { CommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
 import { hasCooldownMap, respond } from '../events/interactionCreate';
 import userModel from '../models/userModel';
-import { Character, Profile, UserSchema } from '../typedef';
+import { Quid, Profile, UserSchema } from '../typedef';
 import { stopResting } from './executeResting';
 import { getMapData } from './getInfo';
 import { pronoun, pronounAndPlural, upperCasePronoun } from './getPronouns';
 import { decreaseLevel } from './levelHandling';
 
-export async function isPassedOut(interaction: CommandInteraction<'cached' | 'raw'>, userData: UserSchema, characterData: Character, profileData: Profile, isNew: boolean): Promise<boolean> {
+export async function isPassedOut(interaction: CommandInteraction<'cached' | 'raw'>, userData: UserSchema, quidData: Quid, profileData: Profile, isNew: boolean): Promise<boolean> {
 
 	/* This is a function that checks if the user has passed out. If they have, it will send a message to the channel and return true. */
 	if (profileData.energy <= 0 || profileData.health <= 0 || profileData.hunger <= 0 || profileData.thirst <= 0) {
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(characterData.color)
-				.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
-				.setDescription(`*${characterData.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${pronounAndPlural(characterData, 0, 'screeches', 'screech')} with ${pronoun(characterData, 2)} last energy. Without help, ${pronoun(characterData, 0)} will not be able to continue.*`)
-				.setFooter(isNew ? { text: await decreaseLevel(userData, characterData, profileData, interaction) } : null)],
+				.setColor(quidData.color)
+				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+				.setDescription(`*${quidData.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${pronounAndPlural(quidData, 0, 'screeches', 'screech')} with ${pronoun(quidData, 2)} last energy. Without help, ${pronoun(quidData, 0)} will not be able to continue.*`)
+				.setFooter(isNew ? { text: await decreaseLevel(userData, quidData, profileData, interaction) } : null)],
 		}, false)
 			.catch((error) => { throw new Error(error); });
 
@@ -46,15 +46,15 @@ export async function isPassedOut(interaction: CommandInteraction<'cached' | 'ra
 /**
  * Checks if the user is on a cooldown. If yes, then send a message and return true, as well as decrease their level if it's new. Else, return false.
  */
-export async function hasCooldown(interaction: CommandInteraction<'cached' | 'raw'>, userData: UserSchema, characterData: Character, commandName: string): Promise<boolean> {
+export async function hasCooldown(interaction: CommandInteraction<'cached' | 'raw'>, userData: UserSchema, quidData: Quid, commandName: string): Promise<boolean> {
 
 	if (hasCooldownMap.get(userData?.uuid + interaction.guildId) === true && commandName === interaction.commandName) {
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(characterData.color)
-				.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
-				.setDescription(`*${characterData.name} is so eager to get things done today that ${pronounAndPlural(characterData, 0, 'is', 'are')} somersaulting. ${upperCasePronoun(characterData, 0)} should probably take a few seconds to calm down.*`)],
+				.setColor(quidData.color)
+				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+				.setDescription(`*${quidData.name} is so eager to get things done today that ${pronounAndPlural(quidData, 0, 'is', 'are')} somersaulting. ${upperCasePronoun(quidData, 0)} should probably take a few seconds to calm down.*`)],
 		}, false)
 			.then(reply => {
 				setTimeout(async function() {
@@ -79,7 +79,7 @@ export async function hasCooldown(interaction: CommandInteraction<'cached' | 'ra
 /**
  * Checks if the user is resting. If yes, then wake user up and attach an embed to the message. Returns the updated `userData`.
  */
-export async function isResting(interaction: CommandInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached' | 'raw'>, userData: UserSchema, characterData: Character, profileData: Profile, embedArray: Array<EmbedBuilder>): Promise<UserSchema> {
+export async function isResting(interaction: CommandInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached' | 'raw'>, userData: UserSchema, quidData: Quid, profileData: Profile, embedArray: Array<EmbedBuilder>): Promise<UserSchema> {
 
 	/* This is a function that checks if the user is resting. If they are, it will wake them up and attach an embed to the message. */
 	if (profileData.isResting == true) {
@@ -87,7 +87,7 @@ export async function isResting(interaction: CommandInteraction<'cached' | 'raw'
 		userData = await userModel.findOneAndUpdate(
 			u => u.uuid === userData.uuid,
 			(u) => {
-				const p = getMapData(getMapData(u.characters, characterData._id).profiles, interaction.guildId);
+				const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
 				p.isResting = false;
 			},
 		);
@@ -95,9 +95,9 @@ export async function isResting(interaction: CommandInteraction<'cached' | 'raw'
 		stopResting(interaction.user.id, interaction.guildId);
 
 		embedArray.unshift(new EmbedBuilder()
-			.setColor(characterData.color)
-			.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
-			.setDescription(`*${characterData.name} opens ${pronoun(characterData, 2)} eyes, blinking at the bright sun. After a long stretch, ${pronounAndPlural(characterData, 0, 'leave')} ${pronoun(characterData, 2)} den to continue ${pronoun(characterData, 2)} day.*`)
+			.setColor(quidData.color)
+			.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+			.setDescription(`*${quidData.name} opens ${pronoun(quidData, 2)} eyes, blinking at the bright sun. After a long stretch, ${pronounAndPlural(quidData, 0, 'leave')} ${pronoun(quidData, 2)} den to continue ${pronoun(quidData, 2)} day.*`)
 			.setFooter({ text: `Current energy: ${profileData.energy}` }));
 	}
 
@@ -107,19 +107,19 @@ export async function isResting(interaction: CommandInteraction<'cached' | 'raw'
 /**
  * Checks if the user is passed out, on a cooldown or resting, sends or attaches the appropriate message/embed, and returns a boolean of the result.
  */
-export async function isInvalid(interaction: CommandInteraction<'cached' | 'raw'>, userData: UserSchema, characterData: Character, profileData: Profile, embedArray: Array<EmbedBuilder>, commandName: string): Promise<boolean> {
+export async function isInvalid(interaction: CommandInteraction<'cached' | 'raw'>, userData: UserSchema, quidData: Quid, profileData: Profile, embedArray: Array<EmbedBuilder>, commandName: string): Promise<boolean> {
 
-	if (await isPassedOut(interaction, userData, characterData, profileData, false)) {
-
-		return true;
-	}
-
-	if (await hasCooldown(interaction, userData, characterData, commandName)) {
+	if (await isPassedOut(interaction, userData, quidData, profileData, false)) {
 
 		return true;
 	}
 
-	await isResting(interaction, userData, characterData, profileData, embedArray);
+	if (await hasCooldown(interaction, userData, quidData, commandName)) {
+
+		return true;
+	}
+
+	await isResting(interaction, userData, quidData, profileData, embedArray);
 
 	return false;
 }

@@ -22,7 +22,7 @@
 // 		return;
 // 	}
 
-// 	if (!hasName(message, userData?.characters?.[userData?.currentCharacter?.[message.guild.id]])) {
+// 	if (!hasName(message, userData?.quids?.[userData?.currentQuid?.[message.guild.id]])) {
 
 // 		return;
 // 	}

@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
-import { Character, ServerSchema, SlashCommand, UserSchema, WayOfEarningType } from '../../typedef';
+import { Quid, ServerSchema, SlashCommand, UserSchema, WayOfEarningType } from '../../typedef';
 import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
 import { hasName, isInGuild } from '../../utils/checkUserState';
 import { disableAllComponents } from '../../utils/componentDisabling';
@@ -43,8 +43,8 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		const characterData = getMapData(userData.characters, getMapData(userData.currentCharacter, interaction.guildId));
-		await getShopResponse(interaction, serverData, characterData, shopKindPage, nestedPage);
+		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
+		await getShopResponse(interaction, serverData, quidData, shopKindPage, nestedPage);
 	},
 };
 
@@ -61,8 +61,8 @@ export async function shopInteractionCollector(interaction: SelectMenuInteractio
 		const nestedPage = Number(selectOptionId.split('_')[3] || 0);
 		const { newShopKindPage, newNestedPage } = getShopInfo(serverData).nextPage(shopKindPage, nestedPage);
 
-		const characterData = getMapData(userData.characters, getMapData(userData.currentCharacter, interaction.guildId));
-		await getShopResponse(interaction, serverData, characterData, newShopKindPage, newNestedPage);
+		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
+		await getShopResponse(interaction, serverData, quidData, newShopKindPage, newNestedPage);
 	}
 
 	if (selectOptionId && selectOptionId.startsWith('shop_')) {
@@ -71,8 +71,8 @@ export async function shopInteractionCollector(interaction: SelectMenuInteractio
 		const buyItem = serverData.shop.find((shopRole) => shopRole.roleId === roleId);
 		if (!buyItem) { throw new Error('roleId could not be found in server shop'); }
 
-		const characterData = getMapData(userData.characters, getMapData(userData.currentCharacter, interaction.guildId));
-		const profileData = getMapData(characterData.profiles, interaction.guildId);
+		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
+		const profileData = getMapData(quidData.profiles, interaction.guildId);
 
 		if (profileData.roles.some(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience')) {
 
@@ -84,7 +84,7 @@ export async function shopInteractionCollector(interaction: SelectMenuInteractio
 				userData = await userModel.findOneAndUpdate(
 					(u => u.uuid === userData?.uuid),
 					(u) => {
-						const p = getMapData(getMapData(u.characters, getMapData(u.currentCharacter, interaction.guildId)).profiles, interaction.guildId);
+						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 						p.experience += userRole.requirement as number;
 						p.roles.filter(r => r.roleId !== userRole.roleId);
 					},
@@ -101,7 +101,7 @@ export async function shopInteractionCollector(interaction: SelectMenuInteractio
 				}, true)
 					.catch((error) => { throw new Error(error); });
 
-				await checkLevelUp(interaction, userData, characterData, profileData, serverData, botReply);
+				await checkLevelUp(interaction, userData, quidData, profileData, serverData, botReply);
 			}
 			catch (error) {
 
@@ -132,7 +132,7 @@ export async function shopInteractionCollector(interaction: SelectMenuInteractio
 				userData = await userModel.findOneAndUpdate(
 					(u => u.uuid === userData?.uuid),
 					(u) => {
-						const p = getMapData(getMapData(u.characters, getMapData(u.currentCharacter, interaction.guildId)).profiles, interaction.guildId);
+						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 						p.experience = profileData.experience;
 						p.levels = profileData.levels;
 						p.roles.push({
@@ -162,7 +162,7 @@ export async function shopInteractionCollector(interaction: SelectMenuInteractio
 					userData = await userModel.findOneAndUpdate(
 						(u => u.uuid === userData?.uuid),
 						(u) => {
-							const p = getMapData(getMapData(u.characters, getMapData(u.currentCharacter, interaction.guildId)).profiles, interaction.guildId);
+							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 							p.roles.filter(r => r.roleId !== role.roleId);
 						},
 					);
@@ -199,7 +199,7 @@ export async function shopInteractionCollector(interaction: SelectMenuInteractio
 	}
 }
 
-async function getShopResponse(interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>, serverData: ServerSchema, characterData: Character, shopKindPage: number, nestedPage: number) {
+async function getShopResponse(interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>, serverData: ServerSchema, quidData: Quid, shopKindPage: number, nestedPage: number) {
 
 	let descriptionArray: string[] = [];
 	let shopMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
@@ -253,7 +253,7 @@ async function getShopResponse(interaction: ChatInputCommandInteraction<'cached'
 			.setDescription(description)],
 		components: [new ActionRowBuilder<SelectMenuBuilder>()
 			.setComponents(new SelectMenuBuilder()
-				.setCustomId(`shop_${characterData._id}`)
+				.setCustomId(`shop_${quidData._id}`)
 				.setPlaceholder('Select a shop item')
 				.setOptions(shopMenuOptions))],
 	}, true)

@@ -10,7 +10,7 @@ const { version } = require('../../../package.json');
 const { default_color, error_color } = require('../../../config.json');
 
 const name: SlashCommand['name'] = 'name';
-const description: SlashCommand['description'] = 'Start your adventure! (Re-)name a character.';
+const description: SlashCommand['description'] = 'Start your adventure! (Re-)name a quid.';
 export const command: SlashCommand = {
 	name: name,
 	description: description,
@@ -19,7 +19,7 @@ export const command: SlashCommand = {
 		.setDescription(description)
 		.addStringOption(option =>
 			option.setName('name')
-				.setDescription('The name that you want your character to have.')
+				.setDescription('The name that you want your quid to have.')
 				.setMaxLength(24) // A normal name should only have 24 characters, but a displayname/nickname should still have 32 characters max length.
 				.setRequired(true))
 		.toJSON(),
@@ -47,8 +47,8 @@ export const command: SlashCommand = {
 				userId: [interaction.user.id],
 				advice: { resting: false, drinking: false, eating: false, passingout: false, coloredbuttons: false },
 				settings: { reminders: { water: true, resting: true } },
-				characters: {},
-				currentCharacter: {},
+				quids: {},
+				currentQuid: {},
 				serverProxySettings: {},
 				globalProxySettings: {
 					autoproxy: false,
@@ -61,13 +61,13 @@ export const command: SlashCommand = {
 
 		const name = interaction.options.getString('name');
 
-		/* This is checking if the user has inputted a name for their character. If they haven't, it will send them an error message. If they have, it will check if the name is too long. If it is, it will send them an error message. */
+		/* This is checking if the user has inputted a name for their quid. If they haven't, it will send them an error message. If they have, it will check if the name is too long. If it is, it will send them an error message. */
 		if (!name) {
 
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
-					.setTitle('Please input a name for your character.')],
+					.setTitle('Please input a name for your quid.')],
 				ephemeral: true,
 			}, true)
 				.catch((error) => {
@@ -76,17 +76,17 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		/* This is checking if the user has a character in the database. If they don't, it will create a new user. */
-		const _id = userData.currentCharacter[interaction.guildId || 'DM'] || await createId();
+		/* This is checking if the user has a quid in the database. If they don't, it will create a new user. */
+		const _id = userData.currentQuid[interaction.guildId || 'DM'] || await createId();
 
 
 		userData = await userModel.findOneAndUpdate(
 			u => u.uuid === userData?.uuid,
 			(u) => {
-				let c = u.characters[_id];
-				if (!c) {
+				let q = u.quids[_id];
+				if (!q) {
 
-					c = {
+					q = {
 						_id: _id,
 						name: name,
 						species: '',
@@ -135,18 +135,18 @@ export const command: SlashCommand = {
 						} : {},
 					};
 				}
-				else { c.name = name; }
+				else { q.name = name; }
 
-				u.currentCharacter[interaction.guildId || 'DM'] = _id;
+				u.currentQuid[interaction.guildId || 'DM'] = _id;
 			},
 		);
-		const characterData = getMapData(userData.characters, _id);
+		const quidData = getMapData(userData.quids, _id);
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
-				.setTitle(characterData === null ? `You successfully created the character ${name}!` : `You successfully renamed your character to ${name}!`)
-				.setFooter(characterData === null ? { text: 'To continue setting up your profile for the RPG, type "/species". For other options, review "/help".' } : null)],
+				.setTitle(quidData === null ? `You successfully created the quid ${name}!` : `You successfully renamed your quid to ${name}!`)
+				.setFooter(quidData === null ? { text: 'To continue setting up your profile for the RPG, type "/species". For other options, review "/help".' } : null)],
 		}, true)
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }

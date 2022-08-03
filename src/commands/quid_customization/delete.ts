@@ -54,46 +54,46 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 			.update({
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
-					.setTitle('Please select a character that you want to delete.')],
+					.setTitle('Please select a quid that you want to delete.')],
 				components: [
 					getOriginalComponents(),
 					new ActionRowBuilder<SelectMenuBuilder>()
-						.setComponents([getCharactersPage(0, userData)]),
+						.setComponents([getQuidsPage(0, userData)]),
 				],
 			})
 			.catch((error) => { throw new Error(error); });
 		return;
 	}
 
-	/* Checking if the interaction is a select menu and if the value starts with delete_individual_nextpage_. If it is, it increments the page number, and if the page number is greater than the number of pages, it sets the page number to 0. It will then edit the reply to have the new page of character. */
+	/* Checking if the interaction is a select menu and if the value starts with delete_individual_nextpage_. If it is, it increments the page number, and if the page number is greater than the number of pages, it sets the page number to 0. It will then edit the reply to have the new page of quids. */
 	if (interaction.isSelectMenu() && selectOptionId && selectOptionId.startsWith('delete_individual_nextpage_')) {
 
 		let deletePage = Number(selectOptionId.replace('delete_individual_nextpage_', '')) + 1;
-		if (deletePage >= Math.ceil(Object.keys(userData.characters).length / 24)) { deletePage = 0; }
+		if (deletePage >= Math.ceil(Object.keys(userData.quids).length / 24)) { deletePage = 0; }
 
 		await interaction
 			.update({
 				components: [
 					getOriginalComponents(),
 					new ActionRowBuilder<SelectMenuBuilder>()
-						.setComponents([getCharactersPage(deletePage, userData)]),
+						.setComponents([getQuidsPage(deletePage, userData)]),
 				],
 			})
 			.catch((error) => { throw new Error(error); });
 		return;
 	}
 
-	/* Checking if the interaction is a select menu and if the character ID of the value exists as a character. If it does, it will edit the message to ask the user if they are sure they want to delete the character. */
-	if (interaction.isSelectMenu() && selectOptionId && Object.keys(userData.characters).includes(selectOptionId.replace('delete_individual_', ''))) {
+	/* Checking if the interaction is a select menu and if the quid ID of the value exists as a quid. If it does, it will edit the message to ask the user if they are sure they want to delete the quid. */
+	if (interaction.isSelectMenu() && selectOptionId && Object.keys(userData.quids).includes(selectOptionId.replace('delete_individual_', ''))) {
 
 		const _id = selectOptionId.replace('delete_individual_', '');
-		const character = getMapData(userData.characters, _id);
+		const quid = getMapData(userData.quids, _id);
 
 		await interaction
 			.update({
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
-					.setTitle(`Are you sure you want to delete the character named "${character.name}"? This will be **permanent**!!!`)],
+					.setTitle(`Are you sure you want to delete the quid named "${quid.name}"? This will be **permanent**!!!`)],
 				components: [
 					...disableAllComponents([getOriginalComponents().toJSON(), new ActionRowBuilder<SelectMenuBuilder>().setComponents([SelectMenuBuilder.from(interaction.component)]).toJSON()]),
 					new ActionRowBuilder<ButtonBuilder>()
@@ -137,7 +137,7 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 	if (interaction.isSelectMenu() && selectOptionId && selectOptionId.startsWith('delete_server_nextpage_')) {
 
 		let deletePage = Number(selectOptionId.replace('delete_server_nextpage_', '')) + 1;
-		if (deletePage >= Math.ceil([...new Set(Object.values(userData.characters).map(c => Object.keys(c.profiles)).flat())].length / 24)) { deletePage = 0; }
+		if (deletePage >= Math.ceil([...new Set(Object.values(userData.quids).map(q => Object.keys(q.profiles)).flat())].length / 24)) { deletePage = 0; }
 
 		await interaction
 			.update({
@@ -152,16 +152,16 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 	}
 
 	/* Checking if the interaction is a select menu and if the server ID is in the array of all servers. If it is, it will edit the message to ask the user if they are sure they want to delete all their information on the server. */
-	if (interaction.isSelectMenu() && selectOptionId && [...new Set([...Object.values(userData.characters).map(c => Object.keys(c.profiles)), ...Object.keys(userData.currentCharacter)].flat())].includes(selectOptionId.replace('delete_server_', ''))) {
+	if (interaction.isSelectMenu() && selectOptionId && [...new Set([...Object.values(userData.quids).map(q => Object.keys(q.profiles)), ...Object.keys(userData.currentQuid)].flat())].includes(selectOptionId.replace('delete_server_', ''))) {
 
 		const server = await serverModel.findOne(s => s.serverId === selectOptionId.replace('delete_server_', ''));
-		const accountsOnServer = Object.values(userData.characters).map(c => c.profiles[server.serverId]).filter(p => p !== undefined);
+		const accountsOnServer = Object.values(userData.quids).map(q => q.profiles[server.serverId]).filter(p => p !== undefined);
 
 		await interaction
 			.update({
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
-					.setTitle(`Are you sure you want to delete all the information of ${accountsOnServer.length} characters on the server ${server.name}? This will be **permanent**!!!`)],
+					.setTitle(`Are you sure you want to delete all the information of ${accountsOnServer.length} quids on the server ${server.name}? This will be **permanent**!!!`)],
 				components: [
 					...disableAllComponents([getOriginalComponents().toJSON(), new ActionRowBuilder<SelectMenuBuilder>().setComponents([SelectMenuBuilder.from(interaction.component)]).toJSON()]),
 					new ActionRowBuilder<ButtonBuilder>()
@@ -222,14 +222,14 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 		if (type === 'individual') {
 
 			const _id = interaction.customId.replace('delete_confirm_individual_', '');
-			const character = getMapData(userData.characters, _id);
+			const quid = getMapData(userData.quids, _id);
 
 			await userModel.findOneAndUpdate(
 				u => u.uuid === userData?.uuid,
 				(u) => {
-					delete u.characters[_id];
-					for (const serverId of Object.keys(u.currentCharacter)) {
-						if (u.currentCharacter[serverId] === _id) { delete u.currentCharacter[serverId]; }
+					delete u.quids[_id];
+					for (const serverId of Object.keys(u.currentQuid)) {
+						if (u.currentQuid[serverId] === _id) { delete u.currentQuid[serverId]; }
 					}
 				},
 			);
@@ -237,7 +237,7 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
-					.setTitle(`The character \`${character.name}\` was deleted permanently!`)],
+					.setTitle(`The quid \`${quid.name}\` was deleted permanently!`)],
 			}, false)
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -248,15 +248,15 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 		if (type === 'server') {
 
 			const serverId = interaction.customId.replace('delete_confirm_server_', '');
-			const accountsOnServer = Object.values(userData.characters).map(c => c.profiles[serverId]).filter(p => p !== undefined);
+			const accountsOnServer = Object.values(userData.quids).map(q => q.profiles[serverId]).filter(p => p !== undefined);
 
 			await userModel.findOneAndUpdate(
 				u => u.uuid === userData?.uuid,
 				(u) => {
-					for (const c of Object.values(u.characters)) {
-						if (c.profiles[serverId] !== undefined) { delete c.profiles[serverId]; }
+					for (const q of Object.values(u.quids)) {
+						if (q.profiles[serverId] !== undefined) { delete q.profiles[serverId]; }
 					}
-					delete u.currentCharacter[serverId];
+					delete u.currentQuid[serverId];
 				},
 			);
 
@@ -265,7 +265,7 @@ export async function deleteInteractionCollector(interaction: ButtonInteraction 
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
-					.setTitle(`All the data of ${accountsOnServer.length} characters on the server \`${server.name}\` was deleted permanently!`)],
+					.setTitle(`All the data of ${accountsOnServer.length} quids on the server \`${server.name}\` was deleted permanently!`)],
 			}, false)
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -331,7 +331,7 @@ function getOriginalComponents(): ActionRowBuilder<ButtonBuilder> {
 	return new ActionRowBuilder<ButtonBuilder>()
 		.setComponents([new ButtonBuilder()
 			.setCustomId('delete_individual')
-			.setLabel('A character')
+			.setLabel('A quid')
 			.setStyle(ButtonStyle.Danger),
 		new ButtonBuilder()
 			.setCustomId('delete_server')
@@ -346,19 +346,19 @@ function getOriginalComponents(): ActionRowBuilder<ButtonBuilder> {
 /**
  * Creates a select menu with the users accounts
  */
-function getCharactersPage(deletePage: number, userData: UserSchema): SelectMenuBuilder {
+function getQuidsPage(deletePage: number, userData: UserSchema): SelectMenuBuilder {
 
-	let accountsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = Object.values(userData.characters).map(character => ({ label: character.name, value: `delete_individual_${character._id}` }));
+	let accountsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = Object.values(userData.quids).map(quid => ({ label: quid.name, value: `delete_individual_${quid._id}` }));
 
 	if (accountsMenuOptions.length > 25) {
 
 		accountsMenuOptions = accountsMenuOptions.splice(deletePage * 24, 24);
-		accountsMenuOptions.push({ label: 'Show more characters', value: `delete_individual_nextpage_${deletePage}`, description: `You are currently on page ${deletePage + 1}`, emoji: '📋' });
+		accountsMenuOptions.push({ label: 'Show more quids', value: `delete_individual_nextpage_${deletePage}`, description: `You are currently on page ${deletePage + 1}`, emoji: '📋' });
 	}
 
 	return new SelectMenuBuilder()
 		.setCustomId('delete_individual_options')
-		.setPlaceholder('Select a character')
+		.setPlaceholder('Select a quid')
 		.setOptions(accountsMenuOptions);
 }
 
@@ -369,7 +369,7 @@ async function getServersPage(deletePage: number, userData: UserSchema): Promise
 
 	let accountsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
 
-	const serverIdList = [...new Set([...Object.values(userData.characters).map(c => Object.keys(c.profiles)), ...Object.keys(userData.currentCharacter)].flat())];
+	const serverIdList = [...new Set([...Object.values(userData.quids).map(q => Object.keys(q.profiles)), ...Object.keys(userData.currentQuid)].flat())];
 	for (const serverId of serverIdList) {
 
 		const server = await serverModel.findOne(s => s.serverId === serverId).catch(() => { return null; });

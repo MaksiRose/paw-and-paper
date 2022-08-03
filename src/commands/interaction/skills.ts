@@ -35,24 +35,24 @@ export const command: SlashCommand = {
 			userData = await userModel.findOne(u => u.userId.includes(mentionedUser.id)).catch(() => { return null; });
 		}
 
-		/* Define the users character and profile based on their userData. */
-		let characterData = userData?.characters[userData?.currentCharacter[interaction.guildId] || ''];
-		let profileData = characterData?.profiles[interaction.guildId];
+		/* Define the users quid and profile based on their userData. */
+		let quidData = userData?.quids[userData?.currentQuid[interaction.guildId] || ''];
+		let profileData = quidData?.profiles[interaction.guildId];
 
 		/* Allign the users global skills with the ones defined in the serverData. */
-		if (userData && characterData && profileData) {
+		if (userData && quidData && profileData) {
 
 			const newGlobalSkills: { [x: string]: number; } = {};
 			for (const skill of serverData.skills) { newGlobalSkills[skill] = profileData?.skills.global[skill] ?? 0; }
 			userData = await userModel.findOneAndUpdate(
 				(u => u.uuid === userData?.uuid),
 				(u) => {
-					const p = getMapData(getMapData(u.characters, characterData!._id).profiles, profileData!.serverId);
+					const p = getMapData(getMapData(u.quids, quidData!._id).profiles, profileData!.serverId);
 					p.skills.global = newGlobalSkills;
 				},
 			);
-			characterData = getMapData(userData.characters, getMapData(userData.currentCharacter, interaction.guildId));
-			profileData = getMapData(characterData.profiles, interaction.guildId);
+			quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
+			profileData = getMapData(quidData.profiles, interaction.guildId);
 		}
 
 		/* Creating a message with 4 buttons and a skill list. */
@@ -76,9 +76,9 @@ export const skillsInteractionCollector = async (
 	/* Make interaction.values[0] its own variable so its existence can be checked in an if-statement */
 	const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
 
-	/* Define the users character and profile based on their userData. */
-	let characterData = userData?.characters[userData?.currentCharacter[interaction.guildId] || ''];
-	let profileData = characterData?.profiles[interaction.guildId];
+	/* Define the users quid and profile based on their userData. */
+	let quidData = userData?.quids[userData?.currentQuid[interaction.guildId] || ''];
+	let profileData = quidData?.profiles[interaction.guildId];
 
 	/* Refresh the skills list. */
 	if (interaction.isButton() && interaction.customId === 'skills_refresh') {
@@ -275,7 +275,7 @@ export const skillsInteractionCollector = async (
 			userData = await userModel.findOneAndUpdate(
 				(u => u.uuid === userData!.uuid),
 				(u) => {
-					const p = getMapData(getMapData(u.characters, getMapData(u.currentCharacter, interaction.guildId)).profiles, interaction.guildId);
+					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 					delete p.skills[category][skillName];
 				},
 			);
@@ -283,7 +283,7 @@ export const skillsInteractionCollector = async (
 		else {
 
 			const allServerUsers = await userModel.find(
-				(u) => Object.values(u.characters).filter(c => Object.keys(c.profiles).includes(interaction.guildId)).length > 0,
+				(u) => Object.values(u.quids).filter(q => Object.keys(q.profiles).includes(interaction.guildId)).length > 0,
 			);
 
 			for (const user of allServerUsers) {
@@ -291,9 +291,9 @@ export const skillsInteractionCollector = async (
 				await userModel.findOneAndUpdate(
 					u => u.uuid === user.uuid,
 					(u) => {
-						for (const c of Object.values(u.characters)) {
-							if (c.profiles[interaction.guildId] !== undefined) {
-								const p = getMapData(getMapData(u.characters, getMapData(u.currentCharacter, interaction.guildId)).profiles, interaction.guildId);
+						for (const q of Object.values(u.quids)) {
+							if (q.profiles[interaction.guildId] !== undefined) {
+								const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 								delete p.skills[category][skillName];
 							}
 						}
@@ -311,8 +311,8 @@ export const skillsInteractionCollector = async (
 			userData = await userModel.findOne(u => u.uuid === userData?.uuid).catch(() => { return null; });
 		}
 
-		characterData = userData?.characters[userData?.currentCharacter[interaction.guildId] || ''];
-		profileData = characterData?.profiles[interaction.guildId];
+		quidData = userData?.quids[userData?.currentQuid[interaction.guildId] || ''];
+		profileData = quidData?.profiles[interaction.guildId];
 		await interaction
 			.update({
 				content: getSkillList(profileData),
@@ -338,9 +338,9 @@ export const sendEditSkillsModalResponse = async (
 
 	if (!interaction.inCachedGuild() || !serverData) { throw new Error('Interaction is not in cached guild'); }
 
-	/* Define the users character and profile based on their userData. */
-	let characterData = userData?.characters[userData?.currentCharacter[interaction.guildId] || ''];
-	let profileData = characterData?.profiles[interaction.guildId];
+	/* Define the users quid and profile based on their userData. */
+	let quidData = userData?.quids[userData?.currentQuid[interaction.guildId] || ''];
+	let profileData = quidData?.profiles[interaction.guildId];
 
 	const type = interaction.customId.split('_')[1] as 'modify' | 'edit' | 'add' | undefined;
 	const category = interaction.customId.split('_')[2] as 'personal' | 'global' | undefined;
@@ -367,7 +367,7 @@ export const sendEditSkillsModalResponse = async (
 			userData = await userModel.findOneAndUpdate(
 				(u => u.uuid === userData!.uuid),
 				(u) => {
-					const p = getMapData(getMapData(u.characters, getMapData(u.currentCharacter, interaction.guildId)).profiles, interaction.guildId);
+					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 					p.skills[category][newName] = 0;
 				},
 			);
@@ -375,10 +375,10 @@ export const sendEditSkillsModalResponse = async (
 		else {
 
 			const allServerUsers = await userModel.find(
-				(u) => Object.values(u.characters).filter(c => Object.keys(c.profiles).includes(interaction.guildId)).length > 0,
+				(u) => Object.values(u.quids).filter(q => Object.keys(q.profiles).includes(interaction.guildId)).length > 0,
 			);
 
-			const allSkillNamesList = [...new Set(allServerUsers.map(u => Object.values(u.characters).map(c => Object.keys(c.profiles[interaction.guildId]?.skills.personal || {}))).map(array1 => array1.filter(array2 => array2.length > 0)).filter(array => array.length > 0).flat(2)), ...serverData.skills];
+			const allSkillNamesList = [...new Set(allServerUsers.map(u => Object.values(u.quids).map(q => Object.keys(q.profiles[interaction.guildId]?.skills.personal || {}))).map(array1 => array1.filter(array2 => array2.length > 0)).filter(array => array.length > 0).flat(2)), ...serverData.skills];
 
 			if (allSkillNamesList.includes(newName)) {
 
@@ -395,9 +395,9 @@ export const sendEditSkillsModalResponse = async (
 				await userModel.findOneAndUpdate(
 					u => u.uuid === user.uuid,
 					(u) => {
-						for (const c of Object.values(u.characters)) {
-							if (c.profiles[interaction.guildId] !== undefined) {
-								const p = getMapData(getMapData(u.characters, getMapData(u.currentCharacter, interaction.guildId)).profiles, interaction.guildId);
+						for (const q of Object.values(u.quids)) {
+							if (q.profiles[interaction.guildId] !== undefined) {
+								const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 								p.skills.global[newName] = 0;
 							}
 						}
@@ -415,8 +415,8 @@ export const sendEditSkillsModalResponse = async (
 			userData = await userModel.findOne(u => u.uuid === userData?.uuid).catch(() => { return null; });
 		}
 
-		characterData = userData?.characters[userData?.currentCharacter[interaction.guildId] || ''];
-		profileData = characterData?.profiles[interaction.guildId];
+		quidData = userData?.quids[userData?.currentQuid[interaction.guildId] || ''];
+		profileData = quidData?.profiles[interaction.guildId];
 		await interaction
 			.update({
 				content: getSkillList(profileData),
@@ -450,7 +450,7 @@ export const sendEditSkillsModalResponse = async (
 			userData = await userModel.findOneAndUpdate(
 				(u => u.uuid === userData!.uuid),
 				(u) => {
-					const p = getMapData(getMapData(u.characters, getMapData(u.currentCharacter, interaction.guildId)).profiles, interaction.guildId);
+					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 					p.skills.personal[newName] = p.skills.personal[name] ?? 0;
 					delete p.skills.personal[name];
 				},
@@ -459,10 +459,10 @@ export const sendEditSkillsModalResponse = async (
 		else {
 
 			const allServerUsers = await userModel.find(
-				(u) => Object.values(u.characters).filter(c => Object.keys(c.profiles).includes(interaction.guildId)).length > 0,
+				(u) => Object.values(u.quids).filter(q => Object.keys(q.profiles).includes(interaction.guildId)).length > 0,
 			);
 
-			const allSkillNamesList = [...new Set(allServerUsers.map(u => Object.values(u.characters).map(c => Object.keys(c.profiles[interaction.guildId]?.skills.personal || {}))).map(array1 => array1.filter(array2 => array2.length > 0)).filter(array => array.length > 0).flat(2)), ...serverData.skills];
+			const allSkillNamesList = [...new Set(allServerUsers.map(u => Object.values(u.quids).map(q => Object.keys(q.profiles[interaction.guildId]?.skills.personal || {}))).map(array1 => array1.filter(array2 => array2.length > 0)).filter(array => array.length > 0).flat(2)), ...serverData.skills];
 
 			if (allSkillNamesList.includes(newName)) {
 
@@ -479,9 +479,9 @@ export const sendEditSkillsModalResponse = async (
 				await userModel.findOneAndUpdate(
 					u => u.uuid === user.uuid,
 					(u) => {
-						for (const c of Object.values(u.characters)) {
-							if (c.profiles[interaction.guildId] !== undefined) {
-								const p = getMapData(getMapData(u.characters, getMapData(u.currentCharacter, interaction.guildId)).profiles, interaction.guildId);
+						for (const q of Object.values(u.quids)) {
+							if (q.profiles[interaction.guildId] !== undefined) {
+								const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 								p.skills.global[newName] = p.skills.global[name] ?? 0;
 								delete p.skills.global[name];
 							}
@@ -501,8 +501,8 @@ export const sendEditSkillsModalResponse = async (
 			userData = await userModel.findOne(u => u.uuid === userData?.uuid).catch(() => { return null; });
 		}
 
-		characterData = userData?.characters[userData?.currentCharacter[interaction.guildId] || ''];
-		profileData = characterData?.profiles[interaction.guildId];
+		quidData = userData?.quids[userData?.currentQuid[interaction.guildId] || ''];
+		profileData = quidData?.profiles[interaction.guildId];
 		await interaction
 			.update({
 				content: getSkillList(profileData),
@@ -518,7 +518,7 @@ export const sendEditSkillsModalResponse = async (
 			.catch((error) => { throw new Error(error); });
 		return;
 	}
-	else if (type === 'modify' && userData && characterData && profileData) {
+	else if (type === 'modify' && userData && quidData && profileData) {
 
 		const plusOrMinus = interaction.fields.getTextInputValue('skills_modify_textinput').startsWith('+') ? '+' : interaction.fields.getTextInputValue('skills_modify_textinput').startsWith('-') ? '-' : '';
 		const newValue = Number(interaction.fields.getTextInputValue('skills_modify_textinput').replace(plusOrMinus, '').replace(/\s/g, ''));
@@ -537,14 +537,14 @@ export const sendEditSkillsModalResponse = async (
 		userData = await userModel.findOneAndUpdate(
 			u => u.uuid === userData!.uuid,
 			(u) => {
-				const p = getMapData(getMapData(u.characters, getMapData(u.currentCharacter, interaction.guildId)).profiles, interaction.guildId);
+				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 				if (plusOrMinus === '+') { p.skills[category][name] += newValue; }
 				else if (plusOrMinus === '-') { p.skills[category][name] -= newValue; }
 				else { p.skills[category][name] = newValue; }
 			},
 		);
-		characterData = getMapData(userData.characters, getMapData(userData.currentCharacter, interaction.guildId));
-		profileData = getMapData(characterData.profiles, interaction.guildId);
+		quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
+		profileData = getMapData(quidData.profiles, interaction.guildId);
 		await interaction
 			.update({
 				content: getSkillList(profileData),

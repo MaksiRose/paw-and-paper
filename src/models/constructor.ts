@@ -64,7 +64,7 @@ interface ArraySchema<T> {
 
 interface MapSchema<T> {
 	type: 'map',
-	of: T;
+	of: SchemaType<T>;
 	locked: boolean;
 }
 
@@ -75,7 +75,7 @@ interface ObjectSchema<T> {
 }
 
 type PrimitiveSchema = StringSchema | OptionalStringSchema | NumberSchema | OptionalNumberSchema | StringNumberSchema | BooleanSchema;
-type SomeSchema = PrimitiveSchema | ArraySchema<any> | MapSchema<any> | ObjectSchema<any>;
+type AnySchema = PrimitiveSchema | ArraySchema<any> | MapSchema<any> | ObjectSchema<any>;
 
 export default class Model<T extends UUIDObject> {
 
@@ -289,7 +289,7 @@ export default class Model<T extends UUIDObject> {
 	}
 }
 
-function isPrimitiveSchema(schema: SomeSchema): schema is PrimitiveSchema {
+function isPrimitiveSchema(schema: AnySchema): schema is PrimitiveSchema {
 	return [
 		'string',
 		'string?',
@@ -320,7 +320,7 @@ function checkTypeMatching<
 function checkTypeMatching(
 	obj: Record<string | number | symbol, any> | Array<any>,
 	key: any,
-	value: SomeSchema,
+	value: AnySchema,
 ): Record<string | number | symbol, any> | Array<any> {
 
 	// Add key if object doesn't have it

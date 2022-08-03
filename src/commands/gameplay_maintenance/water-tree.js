@@ -202,7 +202,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
  *
  * @param {import('../../paw').client} client
  * @param {import('../../typedef').ProfileSchema} userData
- * @param {import('../../typedef').Character} characterData
+ * @param {import('../../typedef').Quid} characterData
  * @param {import('../../typedef').Profile} profileData
  */
 module.exports.sendReminder = (client, userData, characterData, profileData) => {

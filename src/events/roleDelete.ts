@@ -15,16 +15,16 @@ export const event: Event = {
 		for (const shoprole of roles) {
 
 			const allServerUsers = await userModel.find(
-				(u) => Object.values(u.characters).filter(c => Object.keys(c.profiles).includes(role.guild.id)).length > 0,
+				(u) => Object.values(u.quids).filter(q => Object.keys(q.profiles).includes(role.guild.id)).length > 0,
 			);
 
 			for (const user of allServerUsers) {
 
-				const characters = Object.values(user.characters).filter(c => Object.keys(c.profiles).includes(role.guild.id));
+				const quids = Object.values(user.quids).filter(q => Object.keys(q.profiles).includes(role.guild.id));
 
-				for (const character of characters) {
+				for (const quid of quids) {
 
-					const profile = character.profiles[role.guild.id];
+					const profile = quid.profiles[role.guild.id];
 					if (!profile) { continue; }
 					const userRoleIndex = profile.roles.findIndex(profilerole => profilerole.roleId === shoprole.roleId && profilerole.wayOfEarning === shoprole.wayOfEarning && profilerole.requirement === shoprole.requirement);
 
@@ -35,7 +35,7 @@ export const event: Event = {
 						userModel.findOneAndUpdate(
 							u => u.uuid === user.uuid,
 							(u) => {
-								const p = getMapData(getMapData(u.characters, character._id).profiles, profile.serverId);
+								const p = getMapData(getMapData(u.quids, quid._id).profiles, profile.serverId);
 								p.roles.splice(userRoleIndex, 1);
 								if (userRole.wayOfEarning === WayOfEarningType.Experience) { p.experience += (Number(userRole.requirement) || 0); }
 							},

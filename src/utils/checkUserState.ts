@@ -8,13 +8,13 @@ const { error_color } = require('../../config.json');
  */
 export function hasName(interaction: ChatInputCommandInteraction, userData: UserSchema | null): userData is UserSchema {
 
-	const characterData = userData?.characters[userData.currentCharacter[interaction.guildId || 'DM'] || ''];
-	if (!characterData || characterData.name === '') {
+	const quidData = userData?.quids[userData.currentQuid[interaction.guildId || 'DM'] || ''];
+	if (!quidData || quidData.name === '') {
 
 		respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(error_color)
-				.setTitle(Object.keys(userData?.characters || {}).length > 0 ? 'Please type "/profile" to switch to a character!' : 'Please type "/name" to create a new character!')],
+				.setTitle(Object.keys(userData?.quids || {}).length > 0 ? 'Please type "/profile" to switch to a quid!' : 'Please type "/name" to create a new quid!')],
 		}, true)
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
@@ -31,13 +31,13 @@ export function hasName(interaction: ChatInputCommandInteraction, userData: User
  */
 function hasSpecies(interaction: ChatInputCommandInteraction, userData: UserSchema | null): boolean {
 
-	const characterData = userData?.characters[userData.currentCharacter[interaction.guildId || 'DM'] || ''];
-	if (characterData?.species === '') {
+	const quidData = userData?.quids[userData.currentQuid[interaction.guildId || 'DM'] || ''];
+	if (quidData?.species === '') {
 
 		respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(error_color)
-				.setTitle(`To access this command, you need to choose ${characterData?.name}'s species!`)],
+				.setTitle(`To access this command, you need to choose ${quidData?.name}'s species!`)],
 		}, true)
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }

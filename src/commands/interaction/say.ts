@@ -1,6 +1,6 @@
 import { Attachment, EmbedBuilder, MessageReference, NewsChannel, PrivateThreadChannel, PublicThreadChannel, SlashCommandBuilder, TextChannel, VoiceChannel } from 'discord.js';
 import { respond } from '../../events/interactionCreate';
-import { Character, CurrentRegionType, SlashCommand, WebhookMessages } from '../../typedef';
+import { Quid, CurrentRegionType, SlashCommand, WebhookMessages } from '../../typedef';
 import { hasName, isInGuild } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/getInfo';
 const { error_color } = require('../../../config.json');
@@ -8,7 +8,7 @@ import userModel from '../../models/userModel';
 import { readFileSync, writeFileSync } from 'fs';
 
 const name: SlashCommand['name'] = 'say';
-const description: SlashCommand['description'] = 'Sends a message as if your character was saying it.';
+const description: SlashCommand['description'] = 'Sends a message as if your quid was saying it.';
 export const command: SlashCommand = {
 	name: name,
 	description: description,
@@ -17,7 +17,7 @@ export const command: SlashCommand = {
 		.setDescription(description)
 		.addStringOption(option =>
 			option.setName('text')
-				.setDescription('The text that you want your character to say.'))
+				.setDescription('The text that you want your quid to say.'))
 		.addAttachmentOption(option =>
 			option.setName('attachment')
 				.setDescription('An attachment that you want to attach to the message'))
@@ -29,7 +29,7 @@ export const command: SlashCommand = {
 		if (!isInGuild(interaction)) { return; }
 		if (!hasName(interaction, userData)) { return; }
 
-		const characterData = getMapData(userData.characters, getMapData(userData.currentCharacter, interaction.guildId));
+		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		const text = interaction.options.getString('text') || '';
 		const attachment = interaction.options.getAttachment('attachment');
 
@@ -47,7 +47,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		await sendMessage(interaction.channel, text, characterData, userData.uuid, interaction.user.id, attachment ? [attachment] : undefined);
+		await sendMessage(interaction.channel, text, quidData, userData.uuid, interaction.user.id, attachment ? [attachment] : undefined);
 
 		await interaction.deferReply();
 		await interaction.deleteReply();
@@ -58,7 +58,7 @@ export const command: SlashCommand = {
  * It sends a message to a channel using a webhook
  * @param channel - The channel to send the message to.
  * @param text - The text to send.
- * @param characterData - The character data of the character that is sending the message.
+ * @param quidData - The quid data of the quid that is sending the message.
  * @param uuid - The user's UUID
  * @param authorId - The ID of the user who sent the message.
  * @param [attachments] - An array of attachments to send with the message.
@@ -68,7 +68,7 @@ export const command: SlashCommand = {
 export const sendMessage = async (
 	channel: NewsChannel | TextChannel | PublicThreadChannel | PrivateThreadChannel | VoiceChannel | null,
 	text: string,
-	characterData: Character,
+	quidData: Quid,
 	uuid: string,
 	authorId: string,
 	attachments?: Array<Attachment>,
@@ -94,12 +94,12 @@ export const sendMessage = async (
 			throw new Error(error);
 		});
 
-	if (characterData.profiles[webhookChannel.guildId] !== undefined) {
+	if (quidData.profiles[webhookChannel.guildId] !== undefined) {
 
 		await userModel.findOneAndUpdate(
 			(u => u.uuid === uuid),
 			(u) => {
-				const p = getMapData(getMapData(u.characters, getMapData(u.currentCharacter, webhookChannel.guildId)).profiles, webhookChannel.guildId);
+				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, webhookChannel.guildId)).profiles, webhookChannel.guildId);
 				p.experience += 1;
 				p.currentRegion = CurrentRegionType.Ruins;
 			},
@@ -129,8 +129,8 @@ export const sendMessage = async (
 
 	const botMessage = await webhook
 		.send({
-			username: characterData.name,
-			avatarURL: characterData.avatarURL,
+			username: quidData.name,
+			avatarURL: quidData.avatarURL,
 			content: text || null,
 			files: attachments,
 			embeds: embeds,
@@ -138,7 +138,7 @@ export const sendMessage = async (
 		})
 		.catch((error) => { throw new Error(error); });
 
-	webhookCache[botMessage.id] = authorId + (characterData?._id !== undefined ? `_${characterData?._id}` : '');
+	webhookCache[botMessage.id] = authorId + (quidData?._id !== undefined ? `_${quidData?._id}` : '');
 	writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
 
 	return;

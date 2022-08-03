@@ -150,7 +150,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 
 	/** @type {import('../../typedef').ProfileSchema | null} */
 	let partnerUserData = null;
-	/** @type {import('../../typedef').Character | null} */
+	/** @type {import('../../typedef').Quid | null} */
 	let partnerCharacterData = null;
 	/** @type {import('../../typedef').Profile | null} */
 	let partnerProfileData = null;

@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, Message, ModalBuilder, ModalSubmitInteraction, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { respond } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
-import { Character, SlashCommand, UserSchema } from '../../typedef';
+import { Quid, SlashCommand, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/getInfo';
@@ -25,16 +25,16 @@ export const command: SlashCommand = {
 
 		if (!hasName(interaction, userData)) { return; }
 
-		/* Getting the character data and sending the initial response */
-		const characterData = getMapData(userData.characters, getMapData(userData.currentCharacter, interaction.guildId || 'DM'));
+		/* Getting the quid data and sending the initial response */
+		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId || 'DM'));
 
 		const botReply = await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
-				.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
-				.setTitle(`What pronouns does ${characterData.name} have?`)
-				.setDescription('To change your characters pronouns, select an existing one from the drop-down menu below to edit it, or select "Add another pronoun" to add another one. A pop-up with a text box will open.\n\nTo set the pronouns to they/them for example, type `they/them/their/theirs/themselves/plural`.\nThe 6th spot should be either `singular` ("he/she __is__") or `plural` ("they __are__").\nTo set the pronouns to your own name, you can type `none`.\nTo delete the pronouns, leave the text box empty.\n\nThis is how it would look during roleplay:\n> **They** and the friend that came with **them** laid in **their** den. It was **theirs** because they built it **themselves**. \nYou can use this as reference when thinking about how to add your own (neo-)pronouns.')],
-			components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData, characterData)])],
+				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+				.setTitle(`What pronouns does ${quidData.name} have?`)
+				.setDescription('To change your quids pronouns, select an existing one from the drop-down menu below to edit it, or select "Add another pronoun" to add another one. A pop-up with a text box will open.\n\nTo set the pronouns to they/them for example, type `they/them/their/theirs/themselves/plural`.\nThe 6th spot should be either `singular` ("he/she __is__") or `plural` ("they __are__").\nTo set the pronouns to your own name, you can type `none`.\nTo delete the pronouns, leave the text box empty.\n\nThis is how it would look during roleplay:\n> **They** and the friend that came with **them** laid in **their** den. It was **theirs** because they built it **themselves**. \nYou can use this as reference when thinking about how to add your own (neo-)pronouns.')],
+			components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData, quidData)])],
 		}, true)
 			.catch((error) => { throw new Error(error); });
 
@@ -43,16 +43,16 @@ export const command: SlashCommand = {
 	},
 };
 
-/** Creating a drop - down menu with all the pronouns the character has. */
-function getPronounsMenu(userData: UserSchema, characterData: Character) {
+/** Creating a drop - down menu with all the pronouns the quid has. */
+function getPronounsMenu(userData: UserSchema, quidData: Quid) {
 
 	/* Getting the remaining length for the pronoun field in the profile command. */
-	const profilePronounFieldLengthLeft = 1024 - characterData.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n').length;
+	const profilePronounFieldLengthLeft = 1024 - quidData.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n').length;
 
 	/* Creating the pronouns menu options */
 	const pronounsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
 
-	characterData.pronounSets.forEach((pronounSet, value) => {
+	quidData.pronounSets.forEach((pronounSet, value) => {
 
 		pronounsMenuOptions.push({ label: `${pronounSet[0]}/${pronounSet[1]}`, description: `(${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]}/${pronounSet[5]})`, value: `pronouns_${value}` });
 	});
@@ -63,7 +63,7 @@ function getPronounsMenu(userData: UserSchema, characterData: Character) {
 	}
 
 	return new SelectMenuBuilder()
-		.setCustomId(`pronouns_selectmodal_${userData.uuid}_${characterData._id}`)
+		.setCustomId(`pronouns_selectmodal_${userData.uuid}_${quidData._id}`)
 		.setPlaceholder('Select a pronoun to change')
 		.setOptions(pronounsMenuOptions);
 }
@@ -73,18 +73,18 @@ export async function pronounsInteractionCollector(interaction: ButtonInteractio
 	if (interaction.isSelectMenu() && interaction.customId.includes('selectmodal')) {
 
 		const userData = await userModel.findOne(u => u.uuid === interaction.customId.split('_')[2]);
-		const characterData = getMapData(userData.characters, interaction.customId.split('_')[3] || '');
+		const quidData = getMapData(userData.quids, interaction.customId.split('_')[3] || '');
 
 		/* Getting the position of the pronoun in the array, and the existing pronoun in that place */
 		const pronounNumber = interaction.values[0]?.split('_')[1] || 'add';
-		const pronounSet = pronounNumber === 'add' ? [] : characterData.pronounSets[Number(pronounNumber)] || [];
+		const pronounSet = pronounNumber === 'add' ? [] : quidData.pronounSets[Number(pronounNumber)] || [];
 
 		/* Getting the remaining length for the pronoun field in the profile command. */
-		const profilePronounFieldLengthLeft = 1024 - characterData.pronounSets.map(pSet => pronounCompromiser(pSet)).join('\n').length + pronounCompromiser(pronounSet).length;
+		const profilePronounFieldLengthLeft = 1024 - quidData.pronounSets.map(pSet => pronounCompromiser(pSet)).join('\n').length + pronounCompromiser(pronounSet).length;
 
 		await interaction
 			.showModal(new ModalBuilder()
-				.setCustomId(`pronouns_${userData.uuid}_${characterData._id}_${pronounNumber}`)
+				.setCustomId(`pronouns_${userData.uuid}_${quidData._id}_${pronounNumber}`)
 				.setTitle('Change pronouns')
 				.addComponents(
 					new ActionRowBuilder<TextInputBuilder>()
@@ -92,7 +92,7 @@ export async function pronounsInteractionCollector(interaction: ButtonInteractio
 							.setCustomId('pronouns_textinput')
 							.setLabel('Text')
 							.setStyle(TextInputStyle.Short)
-							.setMinLength(characterData.pronounSets.length > 1 ? 0 : 4)
+							.setMinLength(quidData.pronounSets.length > 1 ? 0 : 4)
 							// Max Length is either maxModalLength or, if that would exceed the max field value length, make it what is left for a field value length.
 							.setMaxLength((profilePronounFieldLengthLeft < maxModalLength) ? profilePronounFieldLengthLeft : maxModalLength)
 							.setValue(pronounSet.join('/')),
@@ -104,7 +104,7 @@ export async function pronounsInteractionCollector(interaction: ButtonInteractio
 
 			await interaction.message
 				.edit({
-					components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData, characterData)])],
+					components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData, quidData)])],
 				})
 				.catch((error) => { throw new Error(error); });
 		}
@@ -115,7 +115,7 @@ export async function pronounsInteractionCollector(interaction: ButtonInteractio
 export async function sendEditPronounsModalResponse(interaction: ModalSubmitInteraction): Promise<void> {
 
 	const userData = await userModel.findOne(u => u.uuid === interaction.customId.split('_')[1]);
-	const characterData = getMapData(userData.characters, interaction.customId.split('_')[2] || '');
+	const quidData = getMapData(userData.quids, interaction.customId.split('_')[2] || '');
 
 	/* Getting the array position of the pronoun that is being edited, the pronouns that are being set, whether
 	the pronouns are being deleted, and whether the pronouns are being set to none. */
@@ -154,19 +154,19 @@ export async function sendEditPronounsModalResponse(interaction: ModalSubmitInte
 		return;
 	}
 
-	/* It checks if the character already has the pronouns that are being set. */
-	if (!willBeDeleted && characterData.pronounSets.map(pronounSet => pronounSet.join('/')).includes(chosenPronouns.join('/'))) {
+	/* It checks if the quid already has the pronouns that are being set. */
+	if (!willBeDeleted && quidData.pronounSets.map(pronounSet => pronounSet.join('/')).includes(chosenPronouns.join('/'))) {
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(error_color)
-				.setDescription('The character already has this pronoun!')],
+				.setDescription('The quid already has this pronoun!')],
 			ephemeral: true,
 		}, false);
 		return;
 	}
 
-	/* Checking if the pronouns are not being deleted, and if the pronouns are not being set to none, and if so, it is checking if the length of each pronoun is between 1 character and the maximum pronoun length long. If it is not, it will send an error message. */
+	/* Checking if the pronouns are not being deleted, and if the pronouns are not being set to none, and if so, it is checking if the length of each pronoun is between 1 quid and the maximum pronoun length long. If it is not, it will send an error message. */
 	!willBeDeleted && !isNone && chosenPronouns.forEach(async (pronoun) => {
 		if (pronoun.length < 1 || pronoun.length > maxPronounLength) {
 
@@ -188,23 +188,23 @@ export async function sendEditPronounsModalResponse(interaction: ModalSubmitInte
 	await userModel.findOneAndUpdate(
 		u => u.uuid === userData?.uuid,
 		(u) => {
-			const c = getMapData(u.characters, characterData._id);
+			const q = getMapData(u.quids, quidData._id);
 			if (willBeDeleted) {
-				c.pronounSets.splice(pronounNumber, 1);
+				q.pronounSets.splice(pronounNumber, 1);
 			}
 			else {
-				c.pronounSets[isNaN(pronounNumber) ? characterData.pronounSets.length : pronounNumber] = chosenPronouns;
+				q.pronounSets[isNaN(pronounNumber) ? quidData.pronounSets.length : pronounNumber] = chosenPronouns;
 			}
 		},
 	);
 
-	const addedOrEditedTo = isNaN(pronounNumber) ? 'added pronoun' : `edited pronoun from ${characterData.pronounSets[pronounNumber]?.join('/')} to`;
+	const addedOrEditedTo = isNaN(pronounNumber) ? 'added pronoun' : `edited pronoun from ${quidData.pronounSets[pronounNumber]?.join('/')} to`;
 
 	await respond(interaction, {
 		embeds: [new EmbedBuilder()
-			.setColor(characterData.color)
-			.setAuthor({ name: characterData.name, iconURL: characterData.avatarURL })
-			.setTitle(`Successfully ${willBeDeleted ? `deleted pronoun ${characterData.pronounSets[pronounNumber]?.join('/')}` : `${addedOrEditedTo} ${chosenPronouns.join('/')}`}!`)],
+			.setColor(quidData.color)
+			.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+			.setTitle(`Successfully ${willBeDeleted ? `deleted pronoun ${quidData.pronounSets[pronounNumber]?.join('/')}` : `${addedOrEditedTo} ${chosenPronouns.join('/')}`}!`)],
 	}, false)
 		.catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }
@@ -213,7 +213,7 @@ export async function sendEditPronounsModalResponse(interaction: ModalSubmitInte
 	if (interaction.message) {
 
 		await interaction.message
-			.edit({ components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData, characterData)])] })
+			.edit({ components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData, quidData)])] })
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
