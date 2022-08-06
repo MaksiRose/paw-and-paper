@@ -68,7 +68,9 @@ function getPronounsMenu(userData: UserSchema, quidData: Quid) {
 		.setOptions(pronounsMenuOptions);
 }
 
-export async function pronounsInteractionCollector(interaction: ButtonInteraction | SelectMenuInteraction): Promise<void> {
+export const pronounsInteractionCollector = async (
+	interaction: ButtonInteraction | SelectMenuInteraction,
+): Promise<void> => {
 
 	if (interaction.isSelectMenu() && interaction.customId.includes('selectmodal')) {
 
@@ -110,9 +112,11 @@ export async function pronounsInteractionCollector(interaction: ButtonInteractio
 		}
 		return;
 	}
-}
+};
 
-export async function sendEditPronounsModalResponse(interaction: ModalSubmitInteraction): Promise<void> {
+export const sendEditPronounsModalResponse = async (
+	interaction: ModalSubmitInteraction,
+): Promise<void> => {
 
 	const userData = await userModel.findOne(u => u.uuid === interaction.customId.split('_')[1]);
 	const quidData = getMapData(userData.quids, interaction.customId.split('_')[2] || '');
@@ -219,4 +223,4 @@ export async function sendEditPronounsModalResponse(interaction: ModalSubmitInte
 			});
 	}
 	return;
-}
+};

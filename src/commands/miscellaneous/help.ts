@@ -40,7 +40,10 @@ export const command: SlashCommand = {
 	},
 };
 
-export async function helpInteractionCollector(client: CustomClient, interaction: SelectMenuInteraction) {
+export const helpInteractionCollector = async (
+	client: CustomClient,
+	interaction: SelectMenuInteraction,
+): Promise<void> => {
 
 	if (interaction.values[0] === 'help_page1') {
 
@@ -156,4 +159,4 @@ export async function helpInteractionCollector(client: CustomClient, interaction
 			});
 		return;
 	}
-}
+};

@@ -8,7 +8,13 @@ const { default_color, error_color } = require('../../config.json');
 /**
  * Checks if user has reached the requirement to get a role based on their rank.
  */
-export async function checkRankRequirements(serverData: ServerSchema, interaction: CommandInteraction | ButtonInteraction, member: GuildMember | undefined, userRank: RankType, sendMessage = false): Promise<void> {
+export const checkRankRequirements = async (
+	serverData: ServerSchema,
+	interaction: CommandInteraction | ButtonInteraction,
+	member: GuildMember | undefined,
+	userRank: RankType,
+	sendMessage = false,
+): Promise<void> => {
 
 	/* If interaction is not in guild or member undefined, return */
 	if (!interaction.inGuild() || !member) { return; }
@@ -72,12 +78,18 @@ export async function checkRankRequirements(serverData: ServerSchema, interactio
 	}
 
 	return;
-}
+};
 
 /**
  * Checks if user has reached the requirement to get a role based on their level.
  */
-export async function checkLevelRequirements(serverData: ServerSchema, interaction: CommandInteraction | ButtonInteraction | SelectMenuInteraction, member: GuildMember | undefined, userLevel: number, sendMessage = false) {
+export const checkLevelRequirements = async (
+	serverData: ServerSchema,
+	interaction: CommandInteraction | ButtonInteraction | SelectMenuInteraction,
+	member: GuildMember | undefined,
+	userLevel: number,
+	sendMessage = false,
+): Promise<void> => {
 
 	/* If interaction is not in guild or member undefined, return */
 	if (!interaction.inGuild() || !member) { return; }
@@ -137,12 +149,16 @@ export async function checkLevelRequirements(serverData: ServerSchema, interacti
 			}
 		}
 	}
-}
+};
 
 /**
  * Check if the bot has permission to add the role. If not, then send a message explaining the problem, else send a generic error message.
  */
-export async function checkRoleCatchBlock(error: any, interaction: CommandInteraction | SelectMenuInteraction | ButtonInteraction, member: GuildMember): Promise<void> {
+export const checkRoleCatchBlock = async (
+	error: any,
+	interaction: CommandInteraction | SelectMenuInteraction | ButtonInteraction,
+	member: GuildMember,
+): Promise<void> => {
 
 	/* If interaction is not in guild, return */
 	if (!interaction.inGuild()) { return; }
@@ -173,4 +189,4 @@ export async function checkRoleCatchBlock(error: any, interaction: CommandIntera
 				if (err.httpStatus !== 404) { throw new Error(err); }
 			});
 	}
-}
+};

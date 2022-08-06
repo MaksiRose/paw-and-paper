@@ -79,7 +79,10 @@ function getDisplayedSpeciesButton(quidId: string): ButtonBuilder {
 		.setStyle(ButtonStyle.Secondary);
 }
 
-export async function speciesInteractionCollector(interaction: ButtonInteraction | SelectMenuInteraction, userData: UserSchema | null): Promise<void> {
+export const speciesInteractionCollector = async (
+	interaction: ButtonInteraction | SelectMenuInteraction,
+	userData: UserSchema | null,
+): Promise<void> => {
 
 	const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
 
@@ -166,9 +169,12 @@ export async function speciesInteractionCollector(interaction: ButtonInteraction
 			});
 		return;
 	}
-}
+};
 
-export async function sendEditDisplayedSpeciesModalResponse(interaction: ModalSubmitInteraction, userData: UserSchema | null): Promise<void> {
+export const sendEditDisplayedSpeciesModalResponse = async (
+	interaction: ModalSubmitInteraction,
+	userData: UserSchema | null,
+): Promise<void> => {
 
 	const quidId = interaction.customId.split('_')[1] || '';
 	const displayedSpecies = interaction.fields.getTextInputValue('species_textinput');
@@ -189,4 +195,4 @@ export async function sendEditDisplayedSpeciesModalResponse(interaction: ModalSu
 			.setTitle(displayedSpecies === '' ? 'Successfully removed your displayed species!' : `Successfully changed displayed species to ${displayedSpecies}!`)],
 	}, false);
 	return;
-}
+};

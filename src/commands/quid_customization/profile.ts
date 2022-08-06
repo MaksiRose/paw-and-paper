@@ -49,7 +49,7 @@ export const command: SlashCommand = {
 			return;
 		}
 		/* Checking if the user has a cooldown. */
-		else if (quidData && interaction.inGuild() && await hasCooldown(interaction, userData, quidData, interaction.commandName)) { return; }
+		else if (quidData && interaction.inCachedGuild() && await hasCooldown(interaction, userData, quidData, interaction.commandName)) { return; }
 
 		const response = await getMessageContent(client, mentionedUser?.id || interaction.user.id, quidData, !mentionedUser, embedArray);
 		const selectMenu = getAccountsPage(userData, mentionedUser?.id || interaction.user.id, 0, !mentionedUser);
@@ -71,7 +71,13 @@ export const command: SlashCommand = {
  * @param embedArray
  * @returns The message object.
  */
-export async function getMessageContent(client: CustomClient, userId: string, quidData: Quid | undefined, isYourself: boolean, embedArray: Array<EmbedBuilder>): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
+export const getMessageContent = async (
+	client: CustomClient,
+	userId: string,
+	quidData: Quid | undefined,
+	isYourself: boolean,
+	embedArray: Array<EmbedBuilder>,
+): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> => {
 
 	const user = await client.users
 		.fetch(userId)
@@ -95,7 +101,7 @@ export async function getMessageContent(client: CustomClient, userId: string, qu
 			])
 			.setFooter({ text: `Quid ID: ${quidData._id}` })],
 	};
-}
+};
 
 /**
  * It takes in a profile, a list of inactive profiles, and a page number, and returns a menu with the
@@ -106,7 +112,12 @@ export async function getMessageContent(client: CustomClient, userId: string, qu
  * @param isYourself - Whether the quid is by the user who executed the command
  * @returns A MessageSelectMenu object
  */
-function getAccountsPage(userData: UserSchema, userId: string, quidsPage: number, isYourself: boolean): SelectMenuBuilder {
+const getAccountsPage = (
+	userData: UserSchema,
+	userId: string,
+	quidsPage: number,
+	isYourself: boolean,
+): SelectMenuBuilder => {
 
 	let accountMenuOptions: RestOrArray<SelectMenuComponentOptionData> = Object.values(userData.quids).map(quid => ({ label: quid.name, value: `profile_${isYourself ? 'switchto' : 'view'}_${quid._id}` }));
 
@@ -122,9 +133,12 @@ function getAccountsPage(userData: UserSchema, userId: string, quidsPage: number
 		.setCustomId(`profile_accountselect_${userId}`)
 		.setPlaceholder(`Select a quid to ${isYourself ? 'switch to' : 'view'}`)
 		.setOptions(accountMenuOptions);
-}
+};
 
-export async function profileInteractionCollector(client: CustomClient, interaction: ButtonInteraction | SelectMenuInteraction): Promise<void> {
+export const profileInteractionCollector = async (
+	client: CustomClient,
+	interaction: ButtonInteraction | SelectMenuInteraction,
+): Promise<void> => {
 
 	const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
 
@@ -200,7 +214,7 @@ export async function profileInteractionCollector(client: CustomClient, interact
 
 		/* Checking if the user is resting, and if they are, it will stop the resting. */
 		const oldQuidData = userData.quids[userData.currentQuid[interaction.guildId || 'DM'] || ''];
-		if (interaction.inGuild() && oldQuidData) {
+		if (interaction.inCachedGuild() && oldQuidData) {
 
 			const oldProfileData = oldQuidData?.profiles[interaction.guildId];
 			if (oldProfileData) { await isResting(interaction, userData, oldQuidData, oldProfileData, []); }
@@ -335,9 +349,11 @@ export async function profileInteractionCollector(client: CustomClient, interact
 			.catch((error) => { throw new Error(error); });
 		return;
 	}
-}
+};
 
-export function pronounCompromiser(pronounSet: Array<string>): string {
+export const pronounCompromiser = (
+	pronounSet: Array<string>,
+): string => {
 
 	return `${pronounSet[0] === 'none' ? pronounSet[0] : `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`}`;
-}
+};

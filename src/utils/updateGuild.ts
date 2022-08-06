@@ -6,7 +6,10 @@ import { BanList, commonPlantsInfo, CustomClient, DeleteList, materialsInfo, Pro
 /**
  * This creates a new guild if the guild isn't on the ban list, or restores it from the guilds that are to be deleted.
  */
-export async function createGuild(client: CustomClient, guild: Guild): Promise<ServerSchema> {
+export const createGuild = async (
+	client: CustomClient,
+	guild: Guild,
+): Promise<ServerSchema> => {
 
 	const bannedList = JSON.parse(readFileSync('./database/bannedList.json', 'utf-8')) as BanList;
 	let serverData: ServerSchema;
@@ -113,12 +116,14 @@ export async function createGuild(client: CustomClient, guild: Guild): Promise<S
 	});
 
 	return serverData;
-}
+};
 
 /**
  * This moves a guild and the user profiles from that guild into the toDelete folder and adds them to the toDeleteList.
  */
-export async function deleteGuild(guildId: string): Promise<void> {
+export const deleteGuild = async (
+	guildId: string,
+): Promise<void> => {
 
 	const toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8')) as DeleteList;
 
@@ -129,4 +134,4 @@ export async function deleteGuild(guildId: string): Promise<void> {
 	toDeleteList[serverData.uuid] = Date.now() + thirtyDaysInMs;
 
 	writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
-}
+};

@@ -48,7 +48,11 @@ export const command: SlashCommand = {
 	},
 };
 
-export async function shopInteractionCollector(interaction: SelectMenuInteraction, userData: UserSchema | null, serverData: ServerSchema | null) {
+export const shopInteractionCollector = async (
+	interaction: SelectMenuInteraction,
+	userData: UserSchema | null,
+	serverData: ServerSchema | null,
+): Promise<void> => {
 
 	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
 	if (!userData) { throw new Error('userData is null'); }
@@ -197,9 +201,15 @@ export async function shopInteractionCollector(interaction: SelectMenuInteractio
 
 		return;
 	}
-}
+};
 
-async function getShopResponse(interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>, serverData: ServerSchema, quidData: Quid, shopKindPage: number, nestedPage: number) {
+const getShopResponse = async (
+	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	serverData: ServerSchema,
+	quidData: Quid,
+	shopKindPage: number,
+	nestedPage: number,
+): Promise<void> => {
 
 	let descriptionArray: string[] = [];
 	let shopMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
@@ -258,7 +268,7 @@ async function getShopResponse(interaction: ChatInputCommandInteraction<'cached'
 				.setOptions(shopMenuOptions))],
 	}, true)
 		.catch(error => { throw new Error(error); });
-}
+};
 
 function getShopInfo(serverData: ServerSchema) {
 

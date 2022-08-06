@@ -10,7 +10,14 @@ const { default_color } = require('../../config.json');
 /**
  * Checks if the user is eligable for a level up, and sends a message if so.
  */
-export async function checkLevelUp(interaction: CommandInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached' | 'raw'>, userData: UserSchema, quidData: Quid, profileData: Profile, serverData: ServerSchema, botReply?: Message): Promise<Message | undefined> {
+export const checkLevelUp = async (
+	interaction: CommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	userData: UserSchema,
+	quidData: Quid,
+	profileData: Profile,
+	serverData: ServerSchema,
+	botReply?: Message,
+): Promise<Message | undefined> => {
 
 	/* It's checking if the user has enough experience to level up. If they do, it will level them up and then check if they leveled up again. */
 	const requiredExperiencePoints = profileData.levels * 50;
@@ -49,12 +56,17 @@ export async function checkLevelUp(interaction: CommandInteraction<'cached' | 'r
 	}
 
 	return botReply;
-}
+};
 
 /**
  * Decreases the users level based on their current levels and removes their inventory, returns footerText for an updated bot reply.
  */
-export async function decreaseLevel(userData: UserSchema, quidData: Quid, profileData: Profile, interaction: CommandInteraction<'cached' | 'raw'>): Promise<string> {
+export const decreaseLevel = async (
+	userData: UserSchema,
+	quidData: Quid,
+	profileData: Profile,
+	interaction: CommandInteraction<'cached'>,
+): Promise<string> => {
 
 	/* newUserLevel is nine tenths of current profile level. */
 	const newUserLevel = Math.round(profileData.levels - (profileData.levels / 10));
@@ -144,4 +156,4 @@ export async function decreaseLevel(userData: UserSchema, quidData: Quid, profil
 	}
 
 	return footerText;
-}
+};

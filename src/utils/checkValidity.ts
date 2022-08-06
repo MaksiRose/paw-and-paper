@@ -192,7 +192,7 @@ export const hasFullInventory = async (
 
 export const isInteractable = (
 	interaction: CommandInteraction<'cached'>,
-	userData: UserSchema | undefined,
+	userData: UserSchema | null,
 	messageContent: string | null,
 	embedArray: EmbedBuilder[],
 ): userData is UserSchema => {

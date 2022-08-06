@@ -2,7 +2,11 @@ import { Message, ComponentType, ButtonStyle, APIActionRowComponent, APIButtonCo
 
 export const disableCommandComponent: Record<string, (() => Promise<void>) | undefined> = {};
 
-export function createCommandComponentDisabler(uuid: string, guildId: string, botReply: Message): void {
+export const createCommandComponentDisabler = (
+	uuid: string,
+	guildId: string,
+	botReply: Message,
+): void => {
 
 	disableCommandComponent[uuid + guildId] = async () => {
 
@@ -16,12 +20,14 @@ export function createCommandComponentDisabler(uuid: string, guildId: string, bo
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 	};
-}
+};
 
 /**
  * Goes through all components in a message and disables them.
  */
-export function disableAllComponents(messageComponents: Array<APIActionRowComponent<APIButtonComponent | APISelectMenuComponent>>): Array<APIActionRowComponent<APIButtonComponent | APISelectMenuComponent>> {
+export const disableAllComponents = (
+	messageComponents: Array<APIActionRowComponent<APIButtonComponent | APISelectMenuComponent>>,
+): Array<APIActionRowComponent<APIButtonComponent | APISelectMenuComponent>> => {
 
 	for (const actionRow in messageComponents) {
 
@@ -36,4 +42,4 @@ export function disableAllComponents(messageComponents: Array<APIActionRowCompon
 	}
 
 	return messageComponents;
-}
+};

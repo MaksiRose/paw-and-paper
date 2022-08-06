@@ -60,7 +60,11 @@ export const command: SlashCommand = {
 	},
 };
 
-export async function proxyInteractionCollector(interaction: ButtonInteraction | SelectMenuInteraction, userData: UserSchema | null, serverData: ServerSchema | null): Promise<void> {
+export const proxyInteractionCollector = async (
+	interaction: ButtonInteraction | SelectMenuInteraction,
+	userData: UserSchema | null,
+	serverData: ServerSchema | null,
+): Promise<void> => {
 
 	if (!userData) { throw new Error('userData is null'); }
 
@@ -193,9 +197,12 @@ export async function proxyInteractionCollector(interaction: ButtonInteraction |
 				});
 		}
 	}
-}
+};
 
-export async function sendEditProxyModalResponse(interaction: ModalSubmitInteraction, userData: UserSchema | null): Promise<void> {
+export const sendEditProxyModalResponse = async (
+	interaction: ModalSubmitInteraction,
+	userData: UserSchema | null,
+): Promise<void> => {
 
 	/* Check if user data exists, and get quidData, the chosen prefix and the chosen suffix */
 	if (!userData) { throw new Error('userData is null'); }
@@ -244,9 +251,15 @@ export async function sendEditProxyModalResponse(interaction: ModalSubmitInterac
 	}, true)
 		.catch((error) => { throw new Error(error); });
 	return;
-}
+};
 
-async function getSelectMenus(allChannels: Collection<string, NonThreadGuildBasedChannel>, userData: UserSchema | null, quidData: Quid | null, serverData: ServerSchema | null, page: number): Promise<SelectMenuBuilder> {
+const getSelectMenus = async (
+	allChannels: Collection<string, NonThreadGuildBasedChannel>,
+	userData: UserSchema | null,
+	quidData: Quid | null,
+	serverData: ServerSchema | null,
+	page: number,
+): Promise<SelectMenuBuilder> => {
 
 	let alwaysSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = allChannels.map((channel, channelId) => ({ label: channel.name, value: `proxy_${channelId}`, emoji: userData && userData.serverProxySettings[serverData?.serverId || '']?.autoproxy.channels.whitelist.includes(channelId) ? '🔘' : undefined }));
 
@@ -260,4 +273,4 @@ async function getSelectMenus(allChannels: Collection<string, NonThreadGuildBase
 		.setCustomId(`proxy_always_options_${quidData?._id}`)
 		.setPlaceholder('Select channels to automatically be proxied in')
 		.setOptions(alwaysSelectMenuOptions);
-}
+};

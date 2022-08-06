@@ -7,7 +7,9 @@ import AutoPoster from 'topgg-autoposter';
 import { Api, Webhook } from '@top-gg/sdk';
 
 /** Updates server count on vote websites, starts event listeners to store successful votes, and adds structure to client to request individual votes */
-export async function execute(client: CustomClient) {
+export const execute = async (
+	client: CustomClient,
+): Promise<void> => {
 
 	const limiter = rateLimit({
 		windowMs: 60 * 1_000,
@@ -106,4 +108,4 @@ export async function execute(client: CustomClient) {
 
 		dblApp.listen(3001);
 	}
-}
+};
