@@ -6,8 +6,15 @@ import { stopResting } from './executeResting';
 import { getMapData } from './getInfo';
 import { pronoun, pronounAndPlural, upperCasePronoun } from './getPronouns';
 import { decreaseLevel } from './levelHandling';
+const { error_color } = require('../../config.json');
 
-export async function isPassedOut(interaction: CommandInteraction<'cached' | 'raw'>, userData: UserSchema, quidData: Quid, profileData: Profile, isNew: boolean): Promise<boolean> {
+export const isPassedOut = async (
+	interaction: CommandInteraction<'cached'>,
+	userData: UserSchema,
+	quidData: Quid,
+	profileData: Profile,
+	isNew: boolean,
+): Promise<boolean> => {
 
 	/* This is a function that checks if the user has passed out. If they have, it will send a message to the channel and return true. */
 	if (profileData.energy <= 0 || profileData.health <= 0 || profileData.hunger <= 0 || profileData.thirst <= 0) {
@@ -39,12 +46,17 @@ export async function isPassedOut(interaction: CommandInteraction<'cached' | 'ra
 	}
 
 	return false;
-}
+};
 
 /**
  * Checks if the user is on a cooldown. If yes, then send a message and return true, as well as decrease their level if it's new. Else, return false.
  */
-export async function hasCooldown(interaction: CommandInteraction<'cached' | 'raw'>, userData: UserSchema, quidData: Quid, commandName: string): Promise<boolean> {
+export const hasCooldown = async (
+	interaction: CommandInteraction<'cached'>,
+	userData: UserSchema,
+	quidData: Quid,
+	commandName: string,
+): Promise<boolean> => {
 
 	if (hasCooldownMap.get(userData?.uuid + interaction.guildId) === true && commandName === interaction.commandName) {
 
@@ -70,12 +82,18 @@ export async function hasCooldown(interaction: CommandInteraction<'cached' | 'ra
 	}
 
 	return false;
-}
+};
 
 /**
  * Checks if the user is resting. If yes, then wake user up and attach an embed to the message. Returns the updated `userData`.
  */
-export async function isResting(interaction: CommandInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached' | 'raw'>, userData: UserSchema, quidData: Quid, profileData: Profile, embedArray: Array<EmbedBuilder>): Promise<UserSchema> {
+export const isResting = async (
+	interaction: CommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	userData: UserSchema,
+	quidData: Quid,
+	profileData: Profile,
+	embedArray: Array<EmbedBuilder>,
+): Promise<UserSchema> => {
 
 	/* This is a function that checks if the user is resting. If they are, it will wake them up and attach an embed to the message. */
 	if (profileData.isResting == true) {
@@ -98,27 +116,41 @@ export async function isResting(interaction: CommandInteraction<'cached' | 'raw'
 	}
 
 	return userData;
-}
+};
 
 /**
  * Checks if the user is passed out, on a cooldown or resting, sends or attaches the appropriate message/embed, and returns a boolean of the result.
  */
-export async function isInvalid(interaction: CommandInteraction<'cached' | 'raw'>, userData: UserSchema, quidData: Quid, profileData: Profile, embedArray: Array<EmbedBuilder>, commandName: string): Promise<boolean> {
+export const isInvalid = async (
+	interaction: CommandInteraction<'cached'>,
+	userData: UserSchema,
+	quidData: Quid,
+	profileData: Profile,
+	embedArray: Array<EmbedBuilder>,
+	commandName: string,
+): Promise<boolean> => {
 
-	if (await isPassedOut(interaction, userData, quidData, profileData, false)) {
-
-		return true;
-	}
-
-	if (await hasCooldown(interaction, userData, quidData, commandName)) {
-
-		return true;
-	}
-
+	if (await isPassedOut(interaction, userData, quidData, profileData, false)) { return true; }
+	if (await hasCooldown(interaction, userData, quidData, commandName)) { return true; }
 	await isResting(interaction, userData, quidData, profileData, embedArray);
-
 	return false;
-}
+};
+
+const hasTooManyItems = (
+	profileData: Profile,
+): boolean => {
+
+	/** The amount of allowed items in a profiles inventory. */
+	const allowedItemAmount = 4;
+
+	/** This is an array of all the inventory objects. */
+	const inventoryObjectValues = Object.values(profileData.inventory) as Array<Inventory[keyof Inventory]>;
+	/** This is an array of numbers as the properties of the keys in the inventory objects, which are numbers representing the amount one has of the key which is an item type. */
+	const inventoryNumberValues = inventoryObjectValues.map(type => Object.values(type)).flat();
+
+	/* Checks whether the combined number of all the items is bigger than the allowed item count. */
+	return inventoryNumberValues.reduce((a, b) => a + b) > allowedItemAmount;
+};
 
 /**
  * It checks if the user has a full inventory, and if so, sends a message to the user
@@ -129,16 +161,15 @@ export async function isInvalid(interaction: CommandInteraction<'cached' | 'raw'
  * @param messageContent - The message content to send with the embeds.
  * @returns A boolean.
  */
-export async function hasFullInventory(
+export const hasFullInventory = async (
 	interaction: CommandInteraction<'cached'>,
 	quidData: Quid,
 	profileData: Profile,
 	embedArray: EmbedBuilder[],
 	messageContent: string | null,
-): Promise<boolean> {
+): Promise<boolean> => {
 
-	const stuff = Object.values(profileData.inventory) as Array<Inventory[keyof Inventory]>;
-	if (stuff.map(type => Object.values(type)).flat().reduce((a, b) => a + b) >= 5) {
+	if (hasTooManyItems(profileData)) {
 
 		await respond(interaction, {
 			content: messageContent,
@@ -157,4 +188,114 @@ export async function hasFullInventory(
 	}
 
 	return false;
-}
+};
+
+export const isInteractable = (
+	interaction: CommandInteraction<'cached'>,
+	userData: UserSchema | undefined,
+	messageContent: string | null,
+	embedArray: EmbedBuilder[],
+): userData is UserSchema => {
+
+	if (!userData) {
+
+		respond(interaction, {
+			content: messageContent,
+			embeds: [...embedArray, new EmbedBuilder()
+				.setColor(error_color)
+				.setTitle('The mentioned user has no account :('),
+			],
+			ephemeral: true,
+		}, false)
+			.catch(error => { throw new Error(error); });
+		return false;
+	}
+
+	const quidData = userData.quids[userData.currentQuid[interaction.guildId] || ''];
+	const profileData = quidData?.profiles[interaction.guildId];
+	if (!quidData || !profileData) {
+
+		respond(interaction, {
+			content: messageContent,
+			embeds: [...embedArray, new EmbedBuilder()
+				.setColor(error_color)
+				.setTitle('The mentioned user has no selected quid :('),
+			],
+			ephemeral: true,
+		}, false)
+			.catch(error => { throw new Error(error); });
+		return false;
+	}
+
+	if (quidData.name === '' || quidData.species === '') {
+
+		respond(interaction, {
+			content: messageContent,
+			embeds: [...embedArray, new EmbedBuilder()
+				.setColor(error_color)
+				.setTitle('The mentioned user\'s selected quid is not set up for the RPG :('),
+			],
+			ephemeral: true,
+		}, false)
+			.catch(error => { throw new Error(error); });
+		return false;
+	}
+
+	if (profileData.health <= 0 || profileData.energy <= 0 || profileData.hunger <= 0 || profileData.thirst <= 0) {
+
+		respond(interaction, {
+			content: messageContent,
+			embeds: [...embedArray, new EmbedBuilder()
+				.setColor(error_color)
+				.setTitle('The mentioned user\'s selected quid is passed out :('),
+			],
+			ephemeral: true,
+		}, false)
+			.catch(error => { throw new Error(error); });
+		return false;
+	}
+
+	if (profileData.isResting) {
+
+		respond(interaction, {
+			content: messageContent,
+			embeds: [...embedArray, new EmbedBuilder()
+				.setColor(error_color)
+				.setTitle('The mentioned user\'s selected quid is resting :('),
+			],
+			ephemeral: true,
+		}, false)
+			.catch(error => { throw new Error(error); });
+		return false;
+	}
+
+	if (hasCooldownMap.get(userData.uuid + interaction.guildId) !== false) { // The !== false ensures that both undefined and true trigger this response
+
+		respond(interaction, {
+			content: messageContent,
+			embeds: [...embedArray, new EmbedBuilder()
+				.setColor(error_color)
+				.setTitle('The mentioned user\'s selected quid is busy :('),
+			],
+			ephemeral: true,
+		}, false)
+			.catch(error => { throw new Error(error); });
+		return false;
+	}
+
+	if (hasTooManyItems(profileData)) {
+
+		respond(interaction, {
+			content: messageContent,
+			embeds: [...embedArray, new EmbedBuilder()
+				.setColor(error_color)
+				.setTitle('The mentioned user\'s selected quid has too many items in their inventory :('),
+			],
+			ephemeral: true,
+		}, false)
+			.catch(error => { throw new Error(error); });
+		return false;
+	}
+
+	return true;
+};
