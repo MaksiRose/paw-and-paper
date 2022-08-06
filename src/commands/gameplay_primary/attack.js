@@ -106,7 +106,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	async function fightCycle(totalCycles, cycleKind) {
 
 		const fightComponents = new MessageActionRow({
-			components: [ new MessageButton({
+			components: [new MessageButton({
 				customId: 'fight-attack',
 				label: 'Attack',
 				emoji: '⏫',
@@ -426,19 +426,19 @@ module.exports.startAttack = (message, humanCount) => {
 
 /**
  * Checks if there is an attack that is going to start soon or currently running, and returns the appropriate string.
- * @param {import('discord.js').Message} message
+ * @param {string} guildId
  * @returns  {string | null}
  */
-module.exports.remindOfAttack = (message) => {
+module.exports.remindOfAttack = (guildId) => {
 
 	// @ts-ignore, as message is safe to be in guild
-	if (serverMap.has('nr' + message.guild.id) && serverMap.get('nr' + message.guild.id).startsTimestamp != null) {
+	if (serverMap.has('nr' + guildId) && serverMap.get('nr' + guildId).startsTimestamp != null) {
 
 		// @ts-ignore, as message is safe to be in guild
-		return `Humans will attack in ${Math.floor((serverMap.get('nr' + message.guild.id).startsTimestamp - Date.now()) / 1000)} seconds!`;
+		return `Humans will attack in ${Math.floor((serverMap.get('nr' + guildId).startsTimestamp - Date.now()) / 1000)} seconds!`;
 	}
 	// @ts-ignore, as message is safe to be in guild
-	else if (serverMap.has('nr' + message.guild.id) && serverMap.get('nr' + message.guild.id).startsTimestamp == null) {
+	else if (serverMap.has('nr' + guildId) && serverMap.get('nr' + guildId).startsTimestamp == null) {
 
 		return 'Humans are attacking the pack! Type `rp attack` to attack.';
 	}
@@ -498,7 +498,7 @@ async function remainingHumans(message) {
 		{ serverId: message.guild.id },
 		(/** @type {import('../../typedef').ServerSchema} */ s) => {
 			s.inventory = inventoryObject,
-			s.nextPossibleAttack = Date.now() + 86400000;
+				s.nextPossibleAttack = Date.now() + 86400000;
 		},
 	);
 
