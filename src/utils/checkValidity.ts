@@ -1,7 +1,7 @@
 import { CommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
 import { hasCooldownMap, respond } from '../events/interactionCreate';
 import userModel from '../models/userModel';
-import { Quid, Profile, UserSchema } from '../typedef';
+import { Quid, Profile, UserSchema, Inventory } from '../typedef';
 import { stopResting } from './executeResting';
 import { getMapData } from './getInfo';
 import { pronoun, pronounAndPlural, upperCasePronoun } from './getPronouns';
@@ -32,9 +32,7 @@ export async function isPassedOut(interaction: CommandInteraction<'cached' | 'ra
 			await respond(interaction, {
 				content: `${interaction.user.toString()} ❓ **Tip:**\nIf your health, energy, hunger or thirst points hit zero, you pass out. Another player has to heal you so you can continue playing.\nMake sure to always watch your stats to prevent passing out!`,
 			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+				.catch((error) => { throw new Error(error); });
 		}
 
 		return true;
@@ -66,9 +64,7 @@ export async function hasCooldown(interaction: CommandInteraction<'cached' | 'ra
 						});
 				}, 10000);
 			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+			.catch((error) => { throw new Error(error); });
 
 		return true;
 	}
@@ -120,6 +116,45 @@ export async function isInvalid(interaction: CommandInteraction<'cached' | 'raw'
 	}
 
 	await isResting(interaction, userData, quidData, profileData, embedArray);
+
+	return false;
+}
+
+/**
+ * It checks if the user has a full inventory, and if so, sends a message to the user
+ * @param interaction - The CommandInteraction object.
+ * @param quidData - The quid's data.
+ * @param profileData - The profile data of the user.
+ * @param embedArray - An array of embeds to send before the inventory full embed.
+ * @param messageContent - The message content to send with the embeds.
+ * @returns A boolean.
+ */
+export async function hasFullInventory(
+	interaction: CommandInteraction<'cached'>,
+	quidData: Quid,
+	profileData: Profile,
+	embedArray: EmbedBuilder[],
+	messageContent: string | null,
+): Promise<boolean> {
+
+	const stuff = Object.values(profileData.inventory) as Array<Inventory[keyof Inventory]>;
+	if (stuff.map(type => Object.values(type)).flat().reduce((a, b) => a + b) >= 5) {
+
+		await respond(interaction, {
+			content: messageContent,
+			embeds: [...embedArray, new EmbedBuilder()
+				.setColor(quidData.color)
+				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+				.setDescription(`*${quidData.name} approaches the pack borders, ${pronoun(quidData, 2)} mouth filled with various things. As eager as ${pronounAndPlural(quidData, 0, 'is', 'are')} to go into the wild, ${pronounAndPlural(quidData, 0, 'decide')} to store some things away first.*`)
+				.setFooter({ text: 'You can only hold up to 5 items in your personal inventory. Type "rp store" to put things into the pack inventory!' }),
+			],
+		}, false)
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+
+		return true;
+	}
 
 	return false;
 }
