@@ -88,7 +88,7 @@ export const event: Event = {
 				return await sendErrorMessage(interaction, new Error('Unknown command'));
 			}
 
-			/* It's setting the cooldown to false for the user. */
+			/* If the user is not registered in the cooldown map, it's setting the cooldown to false for the user. */
 			if (userData && !hasCooldownMap.has(userData.uuid + interaction.guildId)) { hasCooldownMap.set(userData.uuid + interaction.guildId, false); }
 
 			/* It's disabling all components if userData exists, the interaction is in a guild and the command is set to disable a previous command. */
