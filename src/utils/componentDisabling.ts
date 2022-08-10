@@ -1,7 +1,13 @@
 import { Message, ComponentType, ButtonStyle, APIActionRowComponent, APIButtonComponent, APISelectMenuComponent } from 'discord.js';
 
+/**
+ * An object with player UUID + guild ID as keys and a property that is a promise function that deletes the entry and disables all components of a message that has been attached when the function was created.
+ */
 export const disableCommandComponent: Record<string, (() => Promise<void>) | undefined> = {};
 
+/**
+ * Creates an entry in the `disableCommandComponent` object that deletes itself and edits the botReply message object that has been attached to disable all components when being called.
+ */
 export const createCommandComponentDisabler = (
 	uuid: string,
 	guildId: string,
