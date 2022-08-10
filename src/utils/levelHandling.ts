@@ -8,7 +8,7 @@ import { upperCasePronounAndPlural } from './getPronouns';
 const { default_color } = require('../../config.json');
 
 /**
- * Checks if the user is eligable for a level up, and sends an embed if so.
+ * Checks if the user is eligable for a level up, and sends an embed and updated profileData if so.
  */
 export const checkLevelUp = async (
 	interaction: CommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
@@ -16,7 +16,7 @@ export const checkLevelUp = async (
 	quidData: Quid,
 	profileData: Profile,
 	serverData: ServerSchema,
-): Promise<EmbedBuilder | null> => {
+): Promise<{ levelUpEmbed: EmbedBuilder | null, profileData: Profile; }> => {
 
 	let embed: EmbedBuilder | null = null;
 
@@ -39,15 +39,19 @@ export const checkLevelUp = async (
 			.setColor(quidData.color)
 			.setTitle(`${quidData.name} just leveled up! ${upperCasePronounAndPlural(quidData, 0, 'is', 'are')} now level ${profileData.levels}.`);
 
-		const newEmbed = await checkLevelUp(interaction, userData, quidData, profileData, serverData);
-		if (newEmbed) { embed = newEmbed; }
+		const checkLevel = await checkLevelUp(interaction, userData, quidData, profileData, serverData);
+		if (checkLevel.levelUpEmbed) {
+
+			embed = checkLevel.levelUpEmbed;
+			profileData = checkLevel.profileData;
+		}
 
 		const guild = interaction.guild || await interaction.client.guilds.fetch(interaction.guildId);
 		const member = await guild.members.fetch(interaction.user.id);
 		await checkLevelRequirements(serverData, interaction, member, profileData.levels);
 	}
 
-	return embed;
+	return { levelUpEmbed: embed, profileData };
 };
 
 /**

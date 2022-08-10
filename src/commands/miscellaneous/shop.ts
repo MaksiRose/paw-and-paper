@@ -96,7 +96,7 @@ export const shopInteractionCollector = async (
 
 				if (interaction.member.roles.cache.has(buyItem.roleId)) { await interaction.member.roles.remove(buyItem.roleId); }
 
-				const levelUpEmbed = await checkLevelUp(interaction, userData, quidData, profileData, serverData);
+				const levelUpEmbed = (await checkLevelUp(interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
 				await respond(interaction, {
 					embeds: [
 						new EmbedBuilder()
