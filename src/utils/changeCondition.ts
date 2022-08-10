@@ -210,25 +210,21 @@ const decreaseHealth = async (
 };
 
 /**
- * It changes the user's experience, energy, hunger, thirst and returns a string based on these changes, decreases the health of a profile based on its injuries, and returns an embed containing those changes if so, checks if the user leveled up and returns an embed if so, and returns an updated profileData.
- * @param interaction - The interaction object that is passed to the command.
- * @param serverData - ServerSchema
+ * It changes the user's experience, energy, hunger, thirst and returns a string based on these changes, decreases the health of a profile based on its injuries, and returns an embed containing those changes if so, and returns an updated profileData.
  * @param userData - UserSchema - The user's data
  * @param quidData - Quid - The quid that the profile belongs to
  * @param profileData - The profile of the quid that is being changed
  * @param experienceIncrease - number - The amount of experience to add to the profile.
  * @returns An object with the following properties:
  *
- * `statsUpdateText`: string, `injuryUpdateEmbed`: EmbedBuilder | null, `levelUpEmbed`: EmbedBuilder | null, `profileData`: Profile
+ * `statsUpdateText`: string, `injuryUpdateEmbed`: EmbedBuilder | null, `profileData`: Profile
  */
 export const changeCondition = async (
-	interaction: CommandInteraction<'cached'>,
-	serverData: ServerSchema,
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
 	experienceIncrease: number,
-): Promise<{ statsUpdateText: string, injuryUpdateEmbed: EmbedBuilder | null, levelUpEmbed: EmbedBuilder | null, profileData: Profile; }> => {
+): Promise<{ statsUpdateText: string, injuryUpdateEmbed: EmbedBuilder | null, profileData: Profile; }> => {
 
 	const energyDecrease = getSmallerNumber(calculateEnergyDecrease(profileData), profileData.energy);
 	const hungerDecrease = calculateHungerDecrease(profileData);
@@ -253,8 +249,5 @@ export const changeCondition = async (
 	if (hungerDecrease > 0) { statsUpdateText += `\n-${hungerDecrease} hunger (${profileData.hunger}/${profileData.maxHunger}) for ${quidData.name}`; }
 	if (thirstDecrease > 0) { statsUpdateText += `\n-${thirstDecrease} thirst (${profileData.thirst}/${profileData.maxThirst}) for ${quidData.name}`; }
 
-	const levelUpCheckData = await checkLevelUp(interaction, userData, quidData, profileData, serverData);
-	profileData = levelUpCheckData.profileData;
-	const levelUpEmbed = levelUpCheckData.levelUpEmbed;
-	return { statsUpdateText, levelUpEmbed, ...await decreaseHealth(userData, quidData, profileData) };
+	return { statsUpdateText, ...await decreaseHealth(userData, quidData, profileData) };
 };
