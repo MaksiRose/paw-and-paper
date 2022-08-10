@@ -16,9 +16,9 @@ export const checkLevelUp = async (
 	quidData: Quid,
 	profileData: Profile,
 	serverData: ServerSchema,
-): Promise<EmbedBuilder | undefined> => {
+): Promise<EmbedBuilder | null> => {
 
-	let embed: EmbedBuilder | undefined;
+	let embed: EmbedBuilder | null = null;
 
 	/* It's checking if the user has enough experience to level up. If they do, it will level them up and then check if they leveled up again. */
 	const requiredExperiencePoints = profileData.levels * 50;
