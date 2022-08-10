@@ -96,16 +96,18 @@ export const shopInteractionCollector = async (
 
 				if (interaction.member.roles.cache.has(buyItem.roleId)) { await interaction.member.roles.remove(buyItem.roleId); }
 
-				const botReply = await respond(interaction, {
-					embeds: [new EmbedBuilder()
-						.setColor(default_color)
-						.setAuthor({ name: serverData.name, iconURL: interaction.guild.iconURL() || undefined })
-						.setDescription(`You refunded the <@&${buyItem.roleId}> role!`)],
+				const levelUpEmbed = await checkLevelUp(interaction, userData, quidData, profileData, serverData);
+				await respond(interaction, {
+					embeds: [
+						new EmbedBuilder()
+							.setColor(default_color)
+							.setAuthor({ name: serverData.name, iconURL: interaction.guild.iconURL() || undefined })
+							.setDescription(`You refunded the <@&${buyItem.roleId}> role!`),
+						...(levelUpEmbed ? [levelUpEmbed] : []),
+					],
 					components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
 				}, true)
 					.catch((error) => { throw new Error(error); });
-
-				await checkLevelUp(interaction, userData, quidData, profileData, serverData, botReply);
 			}
 			catch (error) {
 

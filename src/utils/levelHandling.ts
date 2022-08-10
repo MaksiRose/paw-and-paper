@@ -1,4 +1,4 @@
-import { CommandInteraction, EmbedBuilder, Message, SelectMenuInteraction } from 'discord.js';
+import { CommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
 import { respond } from '../events/interactionCreate';
 import userModel from '../models/userModel';
 import { Quid, Profile, ServerSchema, UserSchema, WayOfEarningType } from '../typedef';
@@ -8,7 +8,7 @@ import { upperCasePronounAndPlural } from './getPronouns';
 const { default_color } = require('../../config.json');
 
 /**
- * Checks if the user is eligable for a level up, and sends a message if so.
+ * Checks if the user is eligable for a level up, and sends an embed if so.
  */
 export const checkLevelUp = async (
 	interaction: CommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
@@ -16,8 +16,9 @@ export const checkLevelUp = async (
 	quidData: Quid,
 	profileData: Profile,
 	serverData: ServerSchema,
-	botReply?: Message,
-): Promise<Message | undefined> => {
+): Promise<EmbedBuilder | undefined> => {
+
+	let embed: EmbedBuilder | undefined;
 
 	/* It's checking if the user has enough experience to level up. If they do, it will level them up and then check if they leveled up again. */
 	const requiredExperiencePoints = profileData.levels * 50;
@@ -34,28 +35,19 @@ export const checkLevelUp = async (
 		quidData = getMapData(userData.quids, quidData._id);
 		profileData = getMapData(quidData.profiles, interaction.guildId);
 
-		if (botReply) {
+		embed = new EmbedBuilder()
+			.setColor(quidData.color)
+			.setTitle(`${quidData.name} just leveled up! ${upperCasePronounAndPlural(quidData, 0, 'is', 'are')} now level ${profileData.levels}.`);
 
-			await botReply
-				.edit({
-					embeds: [...botReply.embeds, new EmbedBuilder()
-						.setColor(quidData.color)
-						.setTitle(`${quidData.name} just leveled up! ${upperCasePronounAndPlural(quidData, 0, 'is', 'are')} now level ${profileData.levels}.`)
-						.toJSON()],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
-		}
-
-		botReply = await checkLevelUp(interaction, userData, quidData, profileData, serverData, botReply);
+		const newEmbed = await checkLevelUp(interaction, userData, quidData, profileData, serverData);
+		if (newEmbed) { embed = newEmbed; }
 
 		const guild = interaction.guild || await interaction.client.guilds.fetch(interaction.guildId);
 		const member = await guild.members.fetch(interaction.user.id);
 		await checkLevelRequirements(serverData, interaction, member, profileData.levels);
 	}
 
-	return botReply;
+	return embed;
 };
 
 /**
