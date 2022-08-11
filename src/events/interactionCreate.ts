@@ -383,7 +383,7 @@ setInterval(async function() {
  * @param interaction - The interaction that caused the error.
  * @param error - The error that was thrown.
  */
-const sendErrorMessage = async (
+export const sendErrorMessage = async (
 	interaction: CommandInteraction | MessageContextMenuCommandInteraction | ButtonInteraction | SelectMenuInteraction | ModalSubmitInteraction,
 	error: any,
 ): Promise<any> => {
