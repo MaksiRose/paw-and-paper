@@ -96,3 +96,50 @@ export const sendErrorMessage = async (
 			});
 	}
 };
+
+export const deepCopyObject = <T>(
+	object: T,
+): T => {
+
+	let returnValue: T;
+
+	switch (typeof object) {
+		case 'object':
+
+			if (object === null) {
+
+				returnValue = null as unknown as T;
+			}
+			else {
+
+				switch (Object.prototype.toString.call(object)) {
+					case '[object Array]':
+
+						returnValue = (object as unknown as any[]).map(deepCopyObject) as unknown as T;
+						break;
+					case '[object Date]':
+
+						returnValue = new Date(object as unknown as Date) as unknown as T;
+						break;
+					case '[object RegExp]':
+
+						returnValue = new RegExp(object as unknown as RegExp) as unknown as T;
+						break;
+					default:
+
+						returnValue = Object.keys(object).reduce(function(prev: Record<string, any>, key) {
+							prev[key] = deepCopyObject((object as unknown as Record<string, any>)[key]);
+							return prev;
+						}, {}) as unknown as T;
+						break;
+				}
+			}
+			break;
+		default:
+
+			returnValue = object;
+			break;
+	}
+
+	return returnValue;
+};
