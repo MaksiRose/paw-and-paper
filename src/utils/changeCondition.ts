@@ -1,9 +1,8 @@
-import { CommandInteraction, EmbedBuilder } from 'discord.js';
+import { EmbedBuilder } from 'discord.js';
 import userModel from '../models/userModel';
-import { Profile, Quid, ServerSchema, UserSchema } from '../typedef';
+import { Profile, Quid, UserSchema } from '../typedef';
 import { getMapData } from './getInfo';
 import { pronoun } from './getPronouns';
-import { checkLevelUp } from './levelHandling';
 import { generateRandomNumber, pullFromWeightedTable } from './randomizers';
 
 /**
