@@ -1,4 +1,4 @@
-import { CommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
+import { ButtonInteraction, CommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
 import { hasCooldownMap, respond } from '../events/interactionCreate';
 import userModel from '../models/userModel';
 import { Quid, Profile, UserSchema, Inventory } from '../typedef';
@@ -9,7 +9,7 @@ import { decreaseLevel } from './levelHandling';
 const { error_color } = require('../../config.json');
 
 export const isPassedOut = async (
-	interaction: CommandInteraction<'cached'>,
+	interaction: CommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
