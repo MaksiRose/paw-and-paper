@@ -1,11 +1,12 @@
 import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, GuildMember, InteractionReplyOptions, InteractionUpdateOptions, MessageEditOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
-import { hasCooldownMap, respond } from '../../events/interactionCreate';
+import { hasCooldownMap } from '../../events/interactionCreate';
+import { respond } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { Quid, commonPlantsInfo, CurrentRegionType, CustomClient, materialsInfo, RankType, rarePlantsInfo, SlashCommand, specialPlantsInfo, speciesInfo, uncommonPlantsInfo, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
 import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
 import { hasCooldown, isResting } from '../../utils/checkValidity';
-import { getMapData } from '../../utils/getInfo';
+import { getMapData } from '../../utils/helperFunctions';
 import { disableCommandComponent } from '../../utils/componentDisabling';
 const { error_color } = require('../../../config.json');
 

@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { respond } from '../../events/interactionCreate';
+import { respond } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { SlashCommand, UserSchema } from '../../typedef';
 import { disableAllComponents } from '../../utils/componentDisabling';

@@ -1,8 +1,8 @@
 import { Attachment, EmbedBuilder, MessageReference, NewsChannel, PrivateThreadChannel, PublicThreadChannel, SlashCommandBuilder, TextChannel, VoiceChannel } from 'discord.js';
-import { respond } from '../../events/interactionCreate';
+import { respond } from '../../utils/helperFunctions';
 import { Quid, CurrentRegionType, SlashCommand, WebhookMessages } from '../../typedef';
 import { hasName, isInGuild } from '../../utils/checkUserState';
-import { getMapData } from '../../utils/getInfo';
+import { getMapData } from '../../utils/helperFunctions';
 const { error_color } = require('../../../config.json');
 import userModel from '../../models/userModel';
 import { readFileSync, writeFileSync } from 'fs';

@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
 import { readFileSync } from 'fs';
 import { getMessageContent } from '../commands/quid_customization/profile';
-import { respond } from '../events/interactionCreate';
+import { respond } from '../utils/helperFunctions';
 import userModel from '../models/userModel';
 import { ContextMenuCommand, WebhookMessages } from '../typedef';
 

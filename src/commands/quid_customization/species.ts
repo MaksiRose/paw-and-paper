@@ -1,10 +1,10 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { respond } from '../../events/interactionCreate';
+import { respond } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { SlashCommand, speciesInfo, SpeciesNames, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
-import { getMapData } from '../../utils/getInfo';
+import { getMapData } from '../../utils/helperFunctions';
 import { pronoun, upperCasePronoun } from '../../utils/getPronouns';
 
 const speciesNameArray = (Object.keys(speciesInfo) as SpeciesNames[]).sort();

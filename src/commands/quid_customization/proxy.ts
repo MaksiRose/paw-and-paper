@@ -1,10 +1,10 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, Collection, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, NonThreadGuildBasedChannel, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { respond } from '../../events/interactionCreate';
+import { respond } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { Quid, ProxyConfigType, ProxyListType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
-import { getMapData } from '../../utils/getInfo';
+import { getMapData } from '../../utils/helperFunctions';
 const { default_color, error_color } = require('../../../config.json');
 
 const name: SlashCommand['name'] = 'proxy';

@@ -1,10 +1,10 @@
 import { EmbedBuilder, GuildMember, SlashCommandBuilder } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
-import { respond } from '../../events/interactionCreate';
+import { respond } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { BanList, commonPlantsInfo, CurrentRegionType, GivenIdList, materialsInfo, RankType, rarePlantsInfo, SlashCommand, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../../typedef';
 import { checkLevelRequirements, checkRankRequirements } from '../../utils/checkRoleRequirements';
-import { getMapData } from '../../utils/getInfo';
+import { getMapData } from '../../utils/helperFunctions';
 import { generateRandomNumber } from '../../utils/randomizers';
 const { version } = require('../../../package.json');
 const { default_color, error_color } = require('../../../config.json');

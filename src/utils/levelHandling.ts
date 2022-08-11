@@ -1,9 +1,9 @@
 import { ButtonInteraction, CommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
-import { respond } from '../events/interactionCreate';
+import { respond } from './helperFunctions';
 import userModel from '../models/userModel';
 import { Quid, Profile, ServerSchema, UserSchema, WayOfEarningType } from '../typedef';
 import { checkLevelRequirements, checkRoleCatchBlock } from './checkRoleRequirements';
-import { getMapData } from './getInfo';
+import { getMapData } from './helperFunctions';
 import { upperCasePronounAndPlural } from './getPronouns';
 const { default_color } = require('../../config.json');
 

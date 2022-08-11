@@ -1,9 +1,10 @@
 import { ButtonInteraction, CommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
-import { hasCooldownMap, respond } from '../events/interactionCreate';
+import { hasCooldownMap } from '../events/interactionCreate';
+import { respond } from './helperFunctions';
 import userModel from '../models/userModel';
 import { Quid, Profile, UserSchema, Inventory } from '../typedef';
 import { stopResting } from './executeResting';
-import { getMapData } from './getInfo';
+import { getMapData } from './helperFunctions';
 import { pronoun, pronounAndPlural, upperCasePronoun } from './getPronouns';
 import { decreaseLevel } from './levelHandling';
 const { error_color } = require('../../config.json');

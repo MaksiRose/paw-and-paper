@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
-import { respond } from '../events/interactionCreate';
+import { respond } from './helperFunctions';
 import { UserSchema } from '../typedef';
 const { error_color } = require('../../config.json');
 

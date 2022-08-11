@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ChannelType, Message, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { readFileSync } from 'fs';
-import { respond } from '../events/interactionCreate';
+import { respond } from '../utils/helperFunctions';
 import userModel from '../models/userModel';
 import { ContextMenuCommand, WebhookMessages } from '../typedef';
 

@@ -1,7 +1,7 @@
 import { EmbedBuilder } from 'discord.js';
 import userModel from '../models/userModel';
 import { Profile, Quid, UserSchema } from '../typedef';
-import { getMapData } from './getInfo';
+import { getMapData } from './helperFunctions';
 import { pronoun } from './getPronouns';
 import { generateRandomNumber, pullFromWeightedTable } from './randomizers';
 

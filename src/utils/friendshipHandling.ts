@@ -1,7 +1,7 @@
 import { EmbedBuilder, Message } from 'discord.js';
 import userModel from '../models/userModel';
 import { UserSchema } from '../typedef';
-import { getMapData } from './getInfo';
+import { getMapData } from './helperFunctions';
 
 /* This is the required points to get a certain amount of friendship hearts */
 const requiredPoints = [1, 3, 6, 9, 15, 24, 39, 63, 99, 162] as const;

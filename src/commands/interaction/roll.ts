@@ -1,7 +1,7 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { Profile, SlashCommand } from '../../typedef';
 import { generateRandomNumber } from '../../utils/randomizers';
-import { respond } from '../../events/interactionCreate';
+import { respond } from '../../utils/helperFunctions';
 
 const name: SlashCommand['name'] = 'roll';
 const description: SlashCommand['description'] = 'Roll dices.';

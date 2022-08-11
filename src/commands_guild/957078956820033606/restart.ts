@@ -1,5 +1,5 @@
 import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
-import { respond } from '../../events/interactionCreate';
+import { respond } from '../../utils/helperFunctions';
 import { SlashCommand } from '../../typedef';
 
 const name: SlashCommand['name'] = 'restart';

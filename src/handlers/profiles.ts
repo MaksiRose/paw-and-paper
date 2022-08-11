@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'fs';
 import { sendReminder } from '../commands/gameplay_maintenance/water-tree';
 import profileModel from '../models/userModel';
 import { CustomClient, UserSchema } from '../typedef';
-import { getMapData } from '../utils/getInfo';
+import { getMapData } from '../utils/helperFunctions';
 
 /** Updates all profiles */
 export const execute = async (

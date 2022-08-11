@@ -4,7 +4,7 @@ import serverModel from '../models/serverModel';
 import { CustomClient, DeleteList, Event } from '../typedef';
 import { createGuild } from '../utils/updateGuild';
 import { ActivityType } from 'discord.js';
-import { getMapData } from '../utils/getInfo';
+import { getMapData } from '../utils/helperFunctions';
 
 export const event: Event = {
 	name: 'ready',

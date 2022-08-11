@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { respond } from '../../events/interactionCreate';
+import { respond } from '../../utils/helperFunctions';
 import { SlashCommand } from '../../typedef';
 
 const name: SlashCommand['name'] = 'uptime';

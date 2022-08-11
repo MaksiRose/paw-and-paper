@@ -1,8 +1,8 @@
 import { ButtonInteraction, CommandInteraction, EmbedBuilder, GuildMember, SelectMenuInteraction } from 'discord.js';
-import { respond } from '../events/interactionCreate';
+import { respond } from './helperFunctions';
 import userModel from '../models/userModel';
 import { RankType, ServerSchema, WayOfEarningType } from '../typedef';
-import { getMapData } from './getInfo';
+import { getMapData } from './helperFunctions';
 const { default_color, error_color } = require('../../config.json');
 
 /**

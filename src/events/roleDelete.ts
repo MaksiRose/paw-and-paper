@@ -2,7 +2,7 @@ import { Role } from 'discord.js';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
 import { CustomClient, Event, WayOfEarningType } from '../typedef';
-import { getMapData } from '../utils/getInfo';
+import { getMapData } from '../utils/helperFunctions';
 
 export const event: Event = {
 	name: 'roleDelete',

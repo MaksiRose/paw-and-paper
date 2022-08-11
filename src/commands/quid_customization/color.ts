@@ -1,9 +1,9 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { respond } from '../../events/interactionCreate';
+import { respond } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { SlashCommand } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
-import { getMapData } from '../../utils/getInfo';
+import { getMapData } from '../../utils/helperFunctions';
 const { error_color } = require('../../../config.json');
 
 const name: SlashCommand['name'] = 'color';

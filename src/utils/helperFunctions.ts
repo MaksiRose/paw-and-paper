@@ -1,0 +1,98 @@
+import { APIMessage } from 'discord-api-types/v9';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, CommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, MessageContextMenuCommandInteraction, ModalSubmitInteraction, SelectMenuInteraction, WebhookEditMessageOptions } from 'discord.js';
+
+/**
+ * It takes a map and a key, and returns the value associated with the key. If the value is undefined, it throws a type error instead.
+ * @param map - An object with unknown keys and a property T
+ * @param key - The key of the object to get T from
+ * @returns T as the property from the key from the object
+ */
+export const getMapData = <T>(
+	map: Record<string, T>,
+	key: string,
+): T => {
+	const data = map[key];
+	if (!data) throw new TypeError(`${data} is undefined`);
+	return data;
+};
+
+export const getUserIds = (
+	message: Message,
+): Array<string> => {
+
+	const array1 = message.mentions.users.map(u => u.id);
+	const array2 = (message.content.match(/<@!?(\d{17,19})>/g) || [])?.map(mention => mention.replace('<@', '').replace('>', '').replace('!', ''));
+
+	return [...new Set([...array1, ...array2])];
+};
+
+/**
+ * It replies to an interaction, and if the interaction has already been replied to, it will edit the
+ * reply instead
+ * @param interaction - The interaction object that was passed to the command handler.
+ * @param options - WebhookEditMessageOptions | InteractionReplyOptions
+ * @param editMessage - boolean - If true, the bot will edit the original message instead of sending a follow-up message.
+ * @returns A promise that resolves to a Message<boolean>
+ */
+export const respond = async (
+	interaction: CommandInteraction | MessageContextMenuCommandInteraction | ModalSubmitInteraction | ButtonInteraction | SelectMenuInteraction,
+	options: WebhookEditMessageOptions | InteractionReplyOptions,
+	editMessage: boolean,
+): Promise<Message<boolean>> => {
+	let botReply: APIMessage | Message<boolean>;
+	if (!interaction.replied && !interaction.deferred) {
+		botReply = await interaction.reply({ ...options, ...{ fetchReply: true } });
+	}
+	else if (editMessage) {
+		botReply = await interaction.editReply(options);
+	}
+	else {
+		botReply = await interaction.followUp(options);
+	}
+
+	if (botReply instanceof Message) { return botReply; }
+	else { throw new Error('Message is APIMessage'); }
+};
+
+/**
+ * It sends an error message to the user who executed the command, and logs the error to the console
+ * @param interaction - The interaction that caused the error.
+ * @param error - The error that was thrown.
+ */
+
+export const sendErrorMessage = async (
+	interaction: CommandInteraction | MessageContextMenuCommandInteraction | ButtonInteraction | SelectMenuInteraction | ModalSubmitInteraction,
+	error: any,
+): Promise<any> => {
+
+	if (interaction instanceof ChatInputCommandInteraction || interaction instanceof MessageContextMenuCommandInteraction) {
+		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to execute \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+	}
+	else if (interaction.isSelectMenu()) {
+		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to select \x1b[31m${interaction.values[0]} \x1b[0mfrom the menu \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+	}
+	else if (interaction.isButton()) {
+		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to click the button \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+	}
+	else if (interaction.type === InteractionType.ModalSubmit) {
+		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to submit the modal \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+	}
+	console.error(error);
+
+	{
+		await respond(interaction, {
+			embeds: [new EmbedBuilder()
+				.setTitle('There was an unexpected error executing this command:')
+				.setDescription(`\`\`\`${error?.message || String(error).substring(0, 4090)}\`\`\``)
+				.setFooter({ text: 'If this is the first time you encountered the issue, please report it using the button below. After that, only report it again if the issue was supposed to be fixed after an update came out. To receive updates, ask a server administrator to do the "getupdates" command.' })],
+			components: [new ActionRowBuilder<ButtonBuilder>()
+				.setComponents([new ButtonBuilder()
+					.setCustomId('report')
+					.setLabel('Report')
+					.setStyle(ButtonStyle.Success)])],
+		}, false)
+			.catch((newError) => {
+				console.error(newError);
+			});
+	}
+};

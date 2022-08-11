@@ -1,5 +1,5 @@
 import { ActionRowBuilder, EmbedBuilder, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
-import { respond } from '../../events/interactionCreate';
+import { respond } from '../../utils/helperFunctions';
 import { CustomClient, SlashCommand } from '../../typedef';
 const { default_color, maksi, ezra, ren, jags, elliott, hazenith, johanna, sky, asriel } = require('../../../config.json');
 const { version } = require('../../../package.json');
