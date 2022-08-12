@@ -1,6 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
 import userModel from '../models/userModel';
-import { Profile, Quid, UserSchema } from '../typedef';
+import { CurrentRegionType, Profile, Quid, UserSchema } from '../typedef';
 import { getMapData } from './helperFunctions';
 import { pronoun } from './getPronouns';
 import { generateRandomNumber, pullFromWeightedTable } from './randomizers';
@@ -214,6 +214,7 @@ const decreaseHealth = async (
  * @param quidData - Quid - The quid that the profile belongs to
  * @param profileData - The profile of the quid that is being changed
  * @param experienceIncrease - number - The amount of experience to add to the profile.
+ * @param [currentRegion] - The region the user will be in
  * @returns An object with the following properties:
  *
  * `statsUpdateText`: string, `injuryUpdateEmbed`: EmbedBuilder | null, `profileData`: Profile
@@ -223,11 +224,13 @@ export const changeCondition = async (
 	quidData: Quid,
 	profileData: Profile,
 	experienceIncrease: number,
+	currentRegion?: CurrentRegionType,
 ): Promise<{ statsUpdateText: string, injuryUpdateEmbed: EmbedBuilder | null, profileData: Profile; }> => {
 
 	const energyDecrease = getSmallerNumber(calculateEnergyDecrease(profileData), profileData.energy);
 	const hungerDecrease = calculateHungerDecrease(profileData);
 	const thirstDecrease = calculateThirstDecrease(profileData);
+	const previousRegion = profileData.currentRegion;
 
 	userData = await userModel.findOneAndUpdate(
 		u => u.uuid === userData.uuid,
@@ -237,6 +240,7 @@ export const changeCondition = async (
 			p.hunger -= hungerDecrease;
 			p.thirst -= thirstDecrease;
 			p.experience += experienceIncrease;
+			if (currentRegion) { p.currentRegion = currentRegion; }
 		},
 	);
 	quidData = getMapData(userData.quids, getMapData(userData.currentQuid, profileData.serverId));
@@ -247,6 +251,7 @@ export const changeCondition = async (
 	if (energyDecrease > 0) { statsUpdateText += `\n-${energyDecrease} energy (${profileData.energy}/${profileData.maxEnergy}) for ${quidData.name}`; }
 	if (hungerDecrease > 0) { statsUpdateText += `\n-${hungerDecrease} hunger (${profileData.hunger}/${profileData.maxHunger}) for ${quidData.name}`; }
 	if (thirstDecrease > 0) { statsUpdateText += `\n-${thirstDecrease} thirst (${profileData.thirst}/${profileData.maxThirst}) for ${quidData.name}`; }
+	if (currentRegion && previousRegion !== currentRegion) { statsUpdateText += `\nYou are now at the ${currentRegion}`; }
 
 	return { statsUpdateText, ...await decreaseHealth(userData, quidData, profileData) };
 };
