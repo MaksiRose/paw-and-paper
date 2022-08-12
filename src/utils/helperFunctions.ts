@@ -79,24 +79,27 @@ export const sendErrorMessage = async (
 	}
 	console.error(error);
 
-	{
-		await respond(interaction, {
-			embeds: [new EmbedBuilder()
-				.setTitle('There was an unexpected error executing this command:')
-				.setDescription(`\`\`\`${error?.message || String(error).substring(0, 4090)}\`\`\``)
-				.setFooter({ text: 'If this is the first time you encountered the issue, please report it using the button below. After that, only report it again if the issue was supposed to be fixed after an update came out. To receive updates, ask a server administrator to do the "getupdates" command.' })],
-			components: [new ActionRowBuilder<ButtonBuilder>()
-				.setComponents([new ButtonBuilder()
-					.setCustomId('report')
-					.setLabel('Report')
-					.setStyle(ButtonStyle.Success)])],
-		}, false)
-			.catch((newError) => {
-				console.error(newError);
-			});
-	}
+	await respond(interaction, {
+		embeds: [new EmbedBuilder()
+			.setTitle('There was an unexpected error executing this command:')
+			.setDescription(`\`\`\`${error?.message || String(error).substring(0, 4090)}\`\`\``)
+			.setFooter({ text: 'If this is the first time you encountered the issue, please report it using the button below. After that, only report it again if the issue was supposed to be fixed after an update came out. To receive updates, ask a server administrator to do the "getupdates" command.' })],
+		components: [new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId('report')
+				.setLabel('Report')
+				.setStyle(ButtonStyle.Success)])],
+	}, false)
+		.catch((newError) => {
+			console.error(newError);
+		});
 };
 
+/**
+ * It recursively copies an object, array, date, or regular expression, and returns a copy of the original
+ * @param {T} object - The object to be copied.
+ * @returns A deep copy of the object.
+ */
 export const deepCopyObject = <T>(
 	object: T,
 ): T => {
@@ -143,3 +146,13 @@ export const deepCopyObject = <T>(
 
 	return returnValue;
 };
+
+export type KeyOfUnion<T> = T extends object ? T extends T ? keyof T : never : never; // `T extends object` to filter out primitives like `string`
+/* What this does is for every key in the inventory (like commonPlants, uncommonPlants etc.), it takes every single sub-key of all the keys and adds it to it. KeyOfUnion is  used to combine all those sub-keys from all the keys. In the case that they are not part of the property, they will be of type never, meaning that they can't accidentally be assigned anything (which makes the type-checking still work) */
+export type WidenValues<T> = {
+	[K in keyof T]: {
+		[K2 in KeyOfUnion<T[keyof T]>]: K2 extends keyof T[K] ? T[K][K2] : never;
+	};
+};
+export function widenValues<T>(obj: T): WidenValues<T> { return obj as any; }
+export function unsafeKeys<T>(obj: T): KeyOfUnion<T>[] { return Object.keys(obj) as KeyOfUnion<T>[]; }
