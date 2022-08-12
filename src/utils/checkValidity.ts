@@ -142,7 +142,7 @@ const hasTooManyItems = (
 ): boolean => {
 
 	/** The amount of allowed items in a profiles inventory. */
-	const allowedItemAmount = 4;
+	const allowedItemAmount = 5;
 
 	/** This is an array of all the inventory objects. */
 	const inventoryObjectValues = Object.values(profileData.inventory) as Array<Inventory[keyof Inventory]>;
@@ -150,7 +150,7 @@ const hasTooManyItems = (
 	const inventoryNumberValues = inventoryObjectValues.map(type => Object.values(type)).flat();
 
 	/* Checks whether the combined number of all the items is bigger than the allowed item count. */
-	return inventoryNumberValues.reduce((a, b) => a + b) > allowedItemAmount;
+	return inventoryNumberValues.reduce((a, b) => a + b) >= allowedItemAmount;
 };
 
 /**
