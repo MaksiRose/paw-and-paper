@@ -515,7 +515,7 @@ async function remainingHumans(message) {
 /**
  * Finds whichever item there is most of, and returns its type and name.
  * @param {{commonPlants: Object<string, number>, uncommonPlants: Object<string, number>, rarePlants: Object<string, number>, meat: Object<string, number>, materials: Object<string, number>}} inventoryObject
- * @returns {{itemType: 'commonPlants' | 'uncommonPlants' | 'rarePlants' | 'meat', itemName: string}}
+ * @returns {{itemType: 'commonPlants' | 'uncommonPlants' | 'rarePlants' | 'meat' | 'materials' | 'specialPlants', itemName: import('../../typedef').SpeciesNames | import('../../typedef').CommonPlantNames | import('../../typedef').UncommonPlantNames | import('../../typedef').RarePlantNames | "black-eyed Susan" | import('../../typedef').MaterialNames}}
  */
 module.exports.getHighestItem = (inventoryObject) => {
 
@@ -524,7 +524,7 @@ module.exports.getHighestItem = (inventoryObject) => {
 	Object.entries(inventoryObject).map(([itemType, items]) => inventoryReduced[itemType] = itemType != 'materials' ? Math.max(...Object.values(items)) : 0);
 	/** @type {'commonPlants' | 'uncommonPlants' | 'rarePlants' | 'meat'} */
 	const itemType = /** @type {'commonPlants' | 'uncommonPlants' | 'rarePlants' | 'meat'} */ (Object.keys(inventoryReduced).reduce((a, b) => inventoryReduced[a] > inventoryReduced[b] ? a : b));
-	const itemName = Object.keys(inventoryObject[itemType]).reduce((a, b) => inventoryObject[itemType][a] > inventoryObject[itemType][b] ? a : b);
+	const itemName = /** @type {import('../../typedef').SpeciesNames | import('../../typedef').CommonPlantNames | import('../../typedef').UncommonPlantNames | import('../../typedef').RarePlantNames | "black-eyed Susan" | import('../../typedef').MaterialNames} */ (Object.keys(inventoryObject[itemType]).reduce((a, b) => inventoryObject[itemType][a] > inventoryObject[itemType][b] ? a : b));
 
 	return { itemType, itemName };
 };

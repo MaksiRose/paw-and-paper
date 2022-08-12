@@ -1,5 +1,5 @@
 import { ButtonInteraction, CommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
-import { respond } from './helperFunctions';
+import { respond, unsafeKeys, widenValues } from './helperFunctions';
 import userModel from '../models/userModel';
 import { Quid, Profile, ServerSchema, UserSchema, WayOfEarningType } from '../typedef';
 import { checkLevelRequirements, checkRoleCatchBlock } from './checkRoleRequirements';
@@ -72,16 +72,6 @@ export const decreaseLevel = async (
 	if (newUserLevel !== profileData.levels) { footerText += `-${profileData.levels - newUserLevel} level${(profileData.levels - newUserLevel > 1) ? 's' : ''}\n`; }
 	if (profileData.experience > 0) { footerText += `-${profileData.experience} XP`; }
 
-
-	type KeyOfUnion<T> = T extends object ? T extends T ? keyof T : never : never; // `T extends object` to filter out primitives like `string`
-	/* What this does is for every key in the inventory (like commonPlants, uncommonPlants etc.), it takes every single sub-key of all the keys and adds it to it. KeyOfUnion is  used to combine all those sub-keys from all the keys. In the case that they are not part of the property, they will be of type never, meaning that they can't accidentally be assigned anything (which makes the type-checking still work) */
-	type WidenValues<T> = {
-		[K in keyof T]: {
-			[K2 in KeyOfUnion<T[keyof T]>]: K2 extends keyof T[K] ? T[K][K2] : never;
-		};
-	};
-	function widenValues<T>(obj: T): WidenValues<T> { return obj as any; }
-	function unsafeKeys<T>(obj: T): KeyOfUnion<T>[] { return Object.keys(obj) as KeyOfUnion<T>[]; }
 	const inventory_ = widenValues(profileData.inventory);
 	/* Updating the footerText and the database for any items the user had. */
 	for (const itemType of unsafeKeys(inventory_)) {
