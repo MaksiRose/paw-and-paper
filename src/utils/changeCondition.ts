@@ -1,6 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
 import userModel from '../models/userModel';
-import { CurrentRegionType, Profile, Quid, UserSchema } from '../typedef';
+import { commonPlantsInfo, CurrentRegionType, Profile, Quid, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo, UserSchema } from '../typedef';
 import { getMapData } from './helperFunctions';
 import { pronoun } from './getPronouns';
 import { generateRandomNumber, pullFromWeightedTable } from './randomizers';
@@ -254,4 +254,36 @@ export const changeCondition = async (
 	if (currentRegion && previousRegion !== currentRegion) { statsUpdateText += `\nYou are now at the ${currentRegion}`; }
 
 	return { statsUpdateText, ...await decreaseHealth(userData, quidData, profileData) };
+};
+
+export const pickRandomCommonPlant = () => {
+
+	const commonPlantsKeys = Object.keys(commonPlantsInfo) as Array<keyof typeof commonPlantsInfo>;
+	const randomCommonPlant = commonPlantsKeys[generateRandomNumber(commonPlantsKeys.length, 0)];
+	if (!randomCommonPlant) { throw new TypeError('randomCommonPlant is undefined'); }
+	return randomCommonPlant;
+};
+
+export const pickRandomUncommonPlant = () => {
+
+	const uncommonPlantsKeys = Object.keys(uncommonPlantsInfo) as Array<keyof typeof uncommonPlantsInfo>;
+	const randomUncommonPlant = uncommonPlantsKeys[generateRandomNumber(uncommonPlantsKeys.length, 0)];
+	if (!randomUncommonPlant) { throw new TypeError('randomUncommonPlant is undefined'); }
+	return randomUncommonPlant;
+};
+
+export const pickRandomRarePlant = () => {
+
+	const rarePlantsKeys = Object.keys(rarePlantsInfo) as Array<keyof typeof rarePlantsInfo>;
+	const randomRarePlant = rarePlantsKeys[generateRandomNumber(rarePlantsKeys.length, 0)];
+	if (!randomRarePlant) { throw new TypeError('randomRarePlant is undefined'); }
+	return randomRarePlant;
+};
+
+export const pickRandomSpecialPlant = () => {
+
+	const specialPlantsKeys = Object.keys(specialPlantsInfo) as Array<keyof typeof specialPlantsInfo>;
+	const randomSpecialPlant = specialPlantsKeys[generateRandomNumber(specialPlantsKeys.length, 0)];
+	if (!randomSpecialPlant) { throw new TypeError('randomSpecialPlant is undefined'); }
+	return randomSpecialPlant;
 };
