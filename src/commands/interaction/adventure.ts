@@ -117,12 +117,13 @@ export const command: SlashCommand = {
 
 export const adventureInteractionCollector = async (
 	interaction: ButtonInteraction,
-	serverData: ServerSchema,
+	serverData: ServerSchema | null,
 ): Promise<void> => {
 
 	if (!interaction.customId.includes('confirm')) { return; }
 	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild.'); }
 	if (!interaction.channel) { throw new Error('Interaction channel is missing.'); }
+	if (!serverData) { throw new TypeError('serverData is null'); }
 
 	/* Define the empty field emoji and the emoji options for the cards */
 	const coveredField = '⬛';

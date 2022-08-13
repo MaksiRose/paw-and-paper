@@ -21,6 +21,7 @@ import { pronoun, pronounAndPlural } from '../utils/getPronouns';
 import { createGuild } from '../utils/updateGuild';
 import { respond } from '../utils/helperFunctions';
 import { sendErrorMessage } from '../utils/helperFunctions';
+import { adventureInteractionCollector } from '../commands/interaction/adventure';
 const { version } = require('../../package.json');
 
 export const hasCooldownMap: Map<string, boolean> = new Map();
@@ -281,6 +282,13 @@ export const event: Event = {
 				if (interaction.customId.startsWith('friendships_')) {
 
 					await friendshipsInteractionCollector(interaction, userData)
+						.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					return;
+				}
+
+				if (interaction.customId.startsWith('adventure_')) {
+
+					await adventureInteractionCollector(interaction, serverData)
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
