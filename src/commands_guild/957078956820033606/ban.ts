@@ -31,14 +31,14 @@ export const command: SlashCommand = {
 	disablePreviousCommand: false,
 	sendCommand: async (client, interaction) => {
 
-		if (!client.isReady()) { return; }
+		if (!client.isReady()) { throw new Error('client isn\'t ready'); }
 
 		await client.application.fetch();
-		if ((client.application.owner instanceof User) ? interaction.user.id !== client.application.owner.id : client.application.owner ? !client.application.owner.members.has(interaction.user.id) : false) { return; }
+		if ((client.application.owner instanceof User) ? interaction.user.id !== client.application.owner.id : client.application.owner ? !client.application.owner.members.has(interaction.user.id) : false) { throw new Error('403: user is not bot owner'); }
 
 		const type = interaction.options.getString('type');
 		const id = interaction.options.getString('id');
-		if (!type || !id) { return; }
+		if (!type || !id) { throw new TypeError('type or id is undefined'); }
 
 		const bannedList = JSON.parse(readFileSync('./database/bannedList.json', 'utf-8')) as BanList;
 
