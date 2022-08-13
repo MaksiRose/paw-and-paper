@@ -112,7 +112,6 @@ export const command: SlashCommand = {
 		/* Register the command to be disabled when another command is executed, for both players */
 		createCommandComponentDisabler(userData1.uuid, interaction.guildId, botReply);
 		createCommandComponentDisabler(userData2.uuid, interaction.guildId, botReply);
-
 	},
 };
 
@@ -160,6 +159,7 @@ export const adventureInteractionCollector = async (
 		}
 	}
 
+
 	/* Gets the current active quid and the server profile from the account */
 	const userId1 = interaction.customId.split('_')[3];
 	if (!userId1) { throw new TypeError('userId1 is undefined'); }
@@ -174,7 +174,7 @@ export const adventureInteractionCollector = async (
 	const quidData2 = getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId));
 	let profileData2 = getMapData(quidData2.profiles, interaction.guildId);
 
-	/* For both users, set cooldowns to true, but unregister the command from being disabled, and get the condition chang */
+	/* For both users, set cooldowns to true, but unregister the command from being disabled, and get the condition change */
 	hasCooldownMap.set(userData1.uuid + interaction.guildId, true);
 	hasCooldownMap.set(userData2.uuid + interaction.guildId, true);
 	delete disableCommandComponent[userData1.uuid + interaction.guildId];
@@ -292,6 +292,10 @@ export const adventureInteractionCollector = async (
 	});
 
 	collector.on('end', async (collected, reason) => {
+
+		/* Set both user's cooldown to false */
+		hasCooldownMap.set(userData1.uuid + interaction.guildId, false);
+		hasCooldownMap.set(userData2.uuid + interaction.guildId, false);
 
 		if (reason.startsWith('error')) {
 
