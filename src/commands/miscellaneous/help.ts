@@ -40,10 +40,10 @@ export const command: SlashCommand = {
 	},
 };
 
-export const helpInteractionCollector = async (
+export async function helpInteractionCollector(
 	client: CustomClient,
 	interaction: SelectMenuInteraction,
-): Promise<void> => {
+): Promise<void> {
 
 	if (interaction.values[0] === 'help_page1') {
 
@@ -67,7 +67,7 @@ export const helpInteractionCollector = async (
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
 					.setTitle('Page 2: 🎲 Gameplay (Primary)')
-					.setDescription('**`/play`** - The main activity of Younglings. Costs energy, but gives XP.\n**`/practice`** - Practice fighting wild animals. You cannot get hurt here.\n**`/explore`** - The main activity of every rank above Younglings. Find meat and herbs. Costs energy, but gives XP.\n**`/scavenge`** - Scavenge for carcass and materials. Costs energy, but gives XP.\n**`/travel-regions`** - Go to a specific region in your pack.\n**`/attack`** - If humans are attacking the pack, you can fight back using this command.\n**`/recover`** - If the pack has no herbs to heal an injury, you can recover your injury using this command.\n**`/start-quest`** - Get quests by playing (as Youngling) or exploring. Start them with this command.\n**`/rank-up`** - Once you successfully finished a quest, you can move up a rank using this command.')],
+					.setDescription('**`/play`** - The main activity of Younglings. Costs energy, but gives XP.\n**`/practice`** - Practice fighting wild animals. You cannot get hurt here. __Not available to Younglings.__\n**`/explore`** - The main activity of every rank above Younglings. Find meat and herbs. Costs energy, but gives XP. __Not available to Younglings.__\n**`/scavenge`** - Scavenge for carcass and materials. Costs energy, but gives XP. __Not available to Younglings.__\n**`/travel-regions`** - Go to a specific region in your pack.\n**`/attack`** - If humans are attacking the pack, you can fight back using this command.\n**`/recover`** - If the pack has no herbs to heal an injury, you can recover your injury using this command.\n**`/start-quest`** - Get quests by playing (as Youngling) or exploring. Start them with this command.\n**`/rank-up`** - Once you successfully finished a quest, you can move up a rank using this command.')],
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
@@ -82,7 +82,7 @@ export const helpInteractionCollector = async (
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
 					.setTitle('Page 3: 🍗 Gameplay (Maintenance)')
-					.setDescription('**`/stats`** - Quick view of your quids condition.\n**`/inventory`** - This is a collection of all the things your pack has gathered, listed up.\n**`/store`** - Take items you have gathered for your pack, and put them in the pack inventory.\n**`/eat`** - Take the appropriate food for your species out of the packs food pile and fill up your hunger meter.\n**`/drink`** - Drink some water and fill up your thirst meter.\n**`/rest`** - Get some sleep and fill up your energy meter. Takes some time to refill.\n**`/vote`** - Vote for this bot on one of three websites and get +30 energy each time.\n**`/heal`** - Heal your packmates. Costs energy, but gives XP.\n**`/repair`** - Repair dens. Costs energy, but gives XP.\n**`/water-tree`** - If you have a ginkgo sapling, you can water it using this command.')],
+					.setDescription('**`/stats`** - Quick view of your quids condition.\n**`/inventory`** - This is a collection of all the things your pack has gathered, listed up.\n**`/store`** - Take items you have gathered for your pack, and put them in the pack inventory.\n**`/eat`** - Take the appropriate food for your species out of the packs food pile and fill up your hunger meter.\n**`/drink`** - Drink some water and fill up your thirst meter.\n**`/rest`** - Get some sleep and fill up your energy meter. Takes some time to refill.\n**`/vote`** - Vote for this bot on one of three websites and get +30 energy each time.\n**`/heal`** - Heal your packmates. Costs energy, but gives XP. __Not available to Younglings. More effective on others than on yourself. More effective for Healers and Elderlies.__\n**`/repair`** - Repair dens. Costs energy, but gives XP. __Not available to Younglings. More effective for Hunters and Elderlies.__\n**`/water-tree`** - If you have a ginkgo sapling, you can water it using this command.')],
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
@@ -159,4 +159,4 @@ export const helpInteractionCollector = async (
 			});
 		return;
 	}
-};
+}

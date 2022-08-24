@@ -10,48 +10,48 @@ import { generateRandomNumber, pullFromWeightedTable } from './randomizers';
  * @param {Profile} profileData - Profile - The profile data of the user.
  * @returns A number.
  */
-const calculateEnergyDecrease = (
+function calculateEnergyDecrease(
 	profileData: Profile,
-): number => {
+): number {
 
 	/* Calculate energy point decrease based on health, which is lowest (0) when health is highest, and highest (10) when health is lowest. */
 	const healthDependentEnergyDecrease = Math.round(10 - (profileData.health / (profileData.maxHealth / 10)));
 
 	/* If energyDependentHungerDecrease is 0, return 0. If it's not 0, randomize a number between half of healthDependentEnergyDecrease and 1 higher than that, compare it with the profiles energy and return the smaller number. */
 	return healthDependentEnergyDecrease > 0 ? getSmallerNumber(generateRandomNumber(2, Math.round(healthDependentEnergyDecrease / 2)), profileData.energy) : 0;
-};
+}
 
 /**
  * Calculate how much hunger should be decreased based on how low the profile's energy is.
  * @param {Profile} profileData - Profile - The profile data of the user.
  * @returns A number.
  */
-const calculateHungerDecrease = (
+function calculateHungerDecrease(
 	profileData: Profile,
-): number => {
+): number {
 
 	/* Calculate hunger point decrease based on energy, which is lowest (0) when energy is highest, and highest (10) when energy is lowest. */
 	const energyDependentHungerDecrease = Math.round(10 - (profileData.energy / (profileData.maxEnergy / 10)));
 
 	/* If energyDependentHungerDecrease is 0, return 0. If it's not 0, randomize a number between energyDependentHungerDecrease and 2 higher than that, compare it with the profiles hunger and return the smaller number. */
 	return energyDependentHungerDecrease > 0 ? getSmallerNumber(generateRandomNumber(3, energyDependentHungerDecrease), profileData.hunger) : 0;
-};
+}
 
 /**
  * Calculate how much thirst should be decreased based on how low the profile's energy is.
  * @param {Profile} profileData - Profile - The profile data of the user.
  * @returns A number.
  */
-const calculateThirstDecrease = (
+function calculateThirstDecrease(
 	profileData: Profile,
-): number => {
+): number {
 
 	/* Calculate thirst point decrease based on energy, which is lowest (0) when energy is highest, and highest (10) when energy is lowest. */
 	const energyDependentThirstDecrease = Math.ceil(10 - (profileData.energy / (profileData.maxEnergy / 10)));
 
 	/* If energyDependentThirstDecrease is 0, return 0. If it's not 0, randomize a number between energyDependentThirstDecrease and 2 higher than that, compare it with the profiles thirst and return the smaller number. */
 	return energyDependentThirstDecrease > 0 ? getSmallerNumber(generateRandomNumber(3, energyDependentThirstDecrease), profileData.thirst) : 0;
-};
+}
 
 /**
  * It decreases the health of a profile based on its injuries
@@ -60,11 +60,11 @@ const calculateThirstDecrease = (
  * @param {Profile} profileData - The profile data of the user
  * @returns An object with an embed and profileData
  */
-const decreaseHealth = async (
+async function decreaseHealth(
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
-): Promise<{ injuryUpdateEmbed: EmbedBuilder | null, profileData: Profile; }> => {
+): Promise<{ injuryUpdateEmbed: EmbedBuilder | null, profileData: Profile; }> {
 
 	/* If there are no injuries, return null as an embed and profileData as the profileData */
 	if (Object.values(profileData.injuries).every((value) => value == 0)) { return { injuryUpdateEmbed: null, profileData }; }
@@ -196,7 +196,7 @@ const decreaseHealth = async (
 	/* Add a footer to the embed if the total health decrease is more than 0, and return */
 	if (totalHealthDecrease > 0) { embed.footer = { text: `-${totalHealthDecrease} HP (${profileData.health}/${profileData.maxHealth})` }; }
 	return { injuryUpdateEmbed: new EmbedBuilder(embed), profileData };
-};
+}
 
 export type DecreasedStatsData = {
 	statsUpdateText: string,
@@ -213,13 +213,13 @@ export type DecreasedStatsData = {
  * @param [currentRegion] - The region the user will be in
  * @returns DecreasedStatsData
  */
-export const changeCondition = async (
+export async function changeCondition(
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
 	experienceIncrease: number,
 	currentRegion?: CurrentRegionType,
-): Promise<DecreasedStatsData> => {
+): Promise<DecreasedStatsData> {
 
 	const energyDecrease = getSmallerNumber(calculateEnergyDecrease(profileData), profileData.energy);
 	const hungerDecrease = calculateHungerDecrease(profileData);
@@ -248,36 +248,36 @@ export const changeCondition = async (
 	if (currentRegion && previousRegion !== currentRegion) { statsUpdateText += `\nYou are now at the ${currentRegion}`; }
 
 	return { statsUpdateText, ...await decreaseHealth(userData, quidData, profileData) };
-};
+}
 
-export const pickRandomCommonPlant = () => {
+export function pickRandomCommonPlant() {
 
 	const commonPlantsKeys = Object.keys(commonPlantsInfo) as Array<keyof typeof commonPlantsInfo>;
 	const randomCommonPlant = commonPlantsKeys[generateRandomNumber(commonPlantsKeys.length, 0)];
 	if (!randomCommonPlant) { throw new TypeError('randomCommonPlant is undefined'); }
 	return randomCommonPlant;
-};
+}
 
-export const pickRandomUncommonPlant = () => {
+export function pickRandomUncommonPlant() {
 
 	const uncommonPlantsKeys = Object.keys(uncommonPlantsInfo) as Array<keyof typeof uncommonPlantsInfo>;
 	const randomUncommonPlant = uncommonPlantsKeys[generateRandomNumber(uncommonPlantsKeys.length, 0)];
 	if (!randomUncommonPlant) { throw new TypeError('randomUncommonPlant is undefined'); }
 	return randomUncommonPlant;
-};
+}
 
-export const pickRandomRarePlant = () => {
+export function pickRandomRarePlant() {
 
 	const rarePlantsKeys = Object.keys(rarePlantsInfo) as Array<keyof typeof rarePlantsInfo>;
 	const randomRarePlant = rarePlantsKeys[generateRandomNumber(rarePlantsKeys.length, 0)];
 	if (!randomRarePlant) { throw new TypeError('randomRarePlant is undefined'); }
 	return randomRarePlant;
-};
+}
 
-export const pickRandomSpecialPlant = () => {
+export function pickRandomSpecialPlant() {
 
 	const specialPlantsKeys = Object.keys(specialPlantsInfo) as Array<keyof typeof specialPlantsInfo>;
 	const randomSpecialPlant = specialPlantsKeys[generateRandomNumber(specialPlantsKeys.length, 0)];
 	if (!randomSpecialPlant) { throw new TypeError('randomSpecialPlant is undefined'); }
 	return randomSpecialPlant;
-};
+}

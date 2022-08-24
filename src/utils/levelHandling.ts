@@ -10,13 +10,13 @@ const { default_color } = require('../../config.json');
 /**
  * Checks if the user is eligable for a level up, and sends an embed and updated profileData if so.
  */
-export const checkLevelUp = async (
+export async function checkLevelUp(
 	interaction: CommandInteraction<'cached'> | SelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>,
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
 	serverData: ServerSchema,
-): Promise<{ levelUpEmbed: EmbedBuilder | null, profileData: Profile; }> => {
+): Promise<{ levelUpEmbed: EmbedBuilder | null, profileData: Profile; }> {
 
 	let embed: EmbedBuilder | null = null;
 
@@ -52,17 +52,17 @@ export const checkLevelUp = async (
 	}
 
 	return { levelUpEmbed: embed, profileData };
-};
+}
 
 /**
  * Decreases the users level based on their current levels and removes their inventory, returns footerText for an updated bot reply.
  */
-export const decreaseLevel = async (
+export async function decreaseLevel(
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
 	interaction: CommandInteraction<'cached'> | ButtonInteraction<'cached'>,
-): Promise<string> => {
+): Promise<string> {
 
 	/* newUserLevel is nine tenths of current profile level. */
 	const newUserLevel = Math.round(profileData.levels - (profileData.levels / 10));
@@ -142,4 +142,4 @@ export const decreaseLevel = async (
 	}
 
 	return footerText;
-};
+}

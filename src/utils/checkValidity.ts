@@ -9,13 +9,13 @@ import { pronoun, pronounAndPlural, upperCasePronoun } from './getPronouns';
 import { decreaseLevel } from './levelHandling';
 const { error_color } = require('../../config.json');
 
-export const isPassedOut = async (
+export async function isPassedOut(
 	interaction: CommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
 	isNew: boolean,
-): Promise<boolean> => {
+): Promise<boolean> {
 
 	/* This is a function that checks if the user has passed out. If they have, it will send a message to the channel and return true. */
 	if (profileData.energy <= 0 || profileData.health <= 0 || profileData.hunger <= 0 || profileData.thirst <= 0) {
@@ -47,17 +47,17 @@ export const isPassedOut = async (
 	}
 
 	return false;
-};
+}
 
 /**
  * Checks if the user is on a cooldown. If yes, then send a message and return true, as well as decrease their level if it's new. Else, return false.
  */
-export const hasCooldown = async (
+export async function hasCooldown(
 	interaction: CommandInteraction<'cached'>,
 	userData: UserSchema,
 	quidData: Quid,
 	commandName: string,
-): Promise<boolean> => {
+): Promise<boolean> {
 
 	if (hasCooldownMap.get(userData?.uuid + interaction.guildId) === true && commandName === interaction.commandName) {
 
@@ -83,18 +83,18 @@ export const hasCooldown = async (
 	}
 
 	return false;
-};
+}
 
 /**
  * Checks if the user is resting. If yes, then wake user up and attach an embed to the message. Returns the updated `userData`.
  */
-export const isResting = async (
+export async function isResting(
 	interaction: CommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
 	embedArray: Array<EmbedBuilder>,
-): Promise<UserSchema> => {
+): Promise<UserSchema> {
 
 	/* This is a function that checks if the user is resting. If they are, it will wake them up and attach an embed to the message. */
 	if (profileData.isResting == true) {
@@ -117,29 +117,29 @@ export const isResting = async (
 	}
 
 	return userData;
-};
+}
 
 /**
  * Checks if the user is passed out, on a cooldown or resting, sends or attaches the appropriate message/embed, and returns a boolean of the result.
  */
-export const isInvalid = async (
+export async function isInvalid(
 	interaction: CommandInteraction<'cached'>,
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
 	embedArray: Array<EmbedBuilder>,
 	commandName: string,
-): Promise<boolean> => {
+): Promise<boolean> {
 
 	if (await isPassedOut(interaction, userData, quidData, profileData, false)) { return true; }
 	if (await hasCooldown(interaction, userData, quidData, commandName)) { return true; }
 	await isResting(interaction, userData, quidData, profileData, embedArray);
 	return false;
-};
+}
 
-const hasTooManyItems = (
+function hasTooManyItems(
 	profileData: Profile,
-): boolean => {
+): boolean {
 
 	/** The amount of allowed items in a profiles inventory. */
 	const allowedItemAmount = 5;
@@ -151,7 +151,7 @@ const hasTooManyItems = (
 
 	/* Checks whether the combined number of all the items is bigger than the allowed item count. */
 	return inventoryNumberValues.reduce((a, b) => a + b) >= allowedItemAmount;
-};
+}
 
 /**
  * It checks if the user has a full inventory, and if so, sends a message to the user
@@ -162,13 +162,13 @@ const hasTooManyItems = (
  * @param messageContent - The message content to send with the embeds.
  * @returns A boolean.
  */
-export const hasFullInventory = async (
+export async function hasFullInventory(
 	interaction: CommandInteraction<'cached'>,
 	quidData: Quid,
 	profileData: Profile,
 	embedArray: EmbedBuilder[],
 	messageContent: string | null,
-): Promise<boolean> => {
+): Promise<boolean> {
 
 	if (hasTooManyItems(profileData)) {
 
@@ -189,14 +189,14 @@ export const hasFullInventory = async (
 	}
 
 	return false;
-};
+}
 
-export const isInteractable = (
+export function isInteractable(
 	interaction: CommandInteraction<'cached'>,
 	userData: UserSchema | null,
 	messageContent: string | null,
 	embedArray: EmbedBuilder[],
-): userData is UserSchema => {
+): userData is UserSchema {
 
 	if (!userData) {
 
@@ -299,4 +299,4 @@ export const isInteractable = (
 	}
 
 	return true;
-};
+}

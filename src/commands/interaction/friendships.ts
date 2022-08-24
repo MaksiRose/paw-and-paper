@@ -29,10 +29,10 @@ export const command: SlashCommand = {
 	},
 };
 
-export const friendshipsInteractionCollector = async (
+export async function friendshipsInteractionCollector(
 	interaction: ButtonInteraction,
 	userData: UserSchema | null,
-): Promise<void> => {
+): Promise<void> {
 
 	if (!userData) { throw new TypeError('userData is null.'); }
 
@@ -59,7 +59,7 @@ export const friendshipsInteractionCollector = async (
 	await interaction
 		.update(await getFriendshipMessage(userData, quidData, page, friendshipTexts))
 		.catch((error) => { throw new Error(error); });
-};
+}
 
 /**
  * It gets an array of texts for all the friendships of the quid of the user who executed the command
@@ -67,10 +67,10 @@ export const friendshipsInteractionCollector = async (
  * @param quidData - The quid data of the user who executed the command.
  * @returns An array of strings.
  */
-const getFriendshipTexts = async (
+async function getFriendshipTexts(
 	userData: UserSchema,
 	quidData: Quid,
-): Promise<string[]> => {
+): Promise<string[]> {
 
 	/** An array of users with quids who are friends with the user who executed the command. */
 	const allFriendedUsersList = await userModel.find(
@@ -108,7 +108,7 @@ const getFriendshipTexts = async (
 	}
 
 	return friendshipTexts;
-};
+}
 
 /**
  * It returns an embed and a component for the friendship command
@@ -118,7 +118,7 @@ const getFriendshipTexts = async (
  * @param [friendshipTexts] - An array of strings that contain the friendship texts.
  * @returns An object with two properties: embeds and components.
  */
-const getFriendshipMessage = async (
+async function getFriendshipMessage(
 	userData: UserSchema,
 	quidData: Quid,
 	page: number,
@@ -126,7 +126,7 @@ const getFriendshipMessage = async (
 ): Promise<{
 	embeds: EmbedBuilder[];
 	components: ActionRowBuilder<ButtonBuilder>[];
-}> => {
+}> {
 
 	/* Getting an array of texts for all the friendships of the quid of the user who executed the command. */
 	if (!friendshipTexts) { friendshipTexts = await getFriendshipTexts(userData, quidData); }
@@ -153,4 +153,4 @@ const getFriendshipMessage = async (
 				])] :
 			[],
 	};
-};
+}

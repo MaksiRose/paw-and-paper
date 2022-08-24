@@ -94,7 +94,10 @@ export const command: SlashCommand = {
 /**
  * A function that is called when the user accepts or declines the hug. It edits the message to show a hug gif and adds friendship points, or that the user didn't accept the hug.
  */
-export const hugInteractionCollector = async (interaction: ButtonInteraction, partnerUserData: UserSchema | null) => {
+export async function hugInteractionCollector(
+	interaction: ButtonInteraction,
+	partnerUserData: UserSchema | null,
+): Promise<void> {
 
 	const originalUserId = interaction.customId.split('_')[3];
 	const originalUser = originalUserId ? await interaction.client.users.fetch(originalUserId).catch(() => { return undefined; }) : undefined;
@@ -173,4 +176,4 @@ export const hugInteractionCollector = async (interaction: ButtonInteraction, pa
 			});
 		return;
 	}
-};
+}

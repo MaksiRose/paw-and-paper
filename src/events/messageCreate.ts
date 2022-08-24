@@ -62,7 +62,11 @@ export const event: Event = {
 	},
 };
 
-export const checkForProxy = (serverData: ServerSchema, message: Message<true> & Message<boolean>, userData: UserSchema): { replaceMessage: boolean, messageContent: string; } => {
+export function checkForProxy(
+	serverData: ServerSchema,
+	message: Message<true> & Message<boolean>,
+	userData: UserSchema,
+): { replaceMessage: boolean, messageContent: string; } {
 
 	let replaceMessage = false;
 
@@ -91,4 +95,4 @@ export const checkForProxy = (serverData: ServerSchema, message: Message<true> &
 	if (autoproxyIsToggled && !proxyIsDisabled) { replaceMessage = true; }
 
 	return { replaceMessage, messageContent: message.content };
-};
+}

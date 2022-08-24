@@ -115,10 +115,10 @@ export const command: SlashCommand = {
 	},
 };
 
-export const adventureInteractionCollector = async (
+export async function adventureInteractionCollector(
 	interaction: ButtonInteraction,
 	serverData: ServerSchema | null,
-): Promise<void> => {
+): Promise<void> {
 
 	if (!interaction.customId.includes('confirm')) { return; }
 	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild.'); }
@@ -474,7 +474,7 @@ export const adventureInteractionCollector = async (
 			return;
 		}
 	});
-};
+}
 
 /**
  * It sends a message to the channel that the interaction was sent in
@@ -484,13 +484,13 @@ export const adventureInteractionCollector = async (
  * @param quidData2 - The other quid's data.
  * @param componentArray - This is an array of ActionRowBuilder<ButtonBuilder> objects.
  */
-const sendNextRoundMessage = async (
+async function sendNextRoundMessage(
 	interaction: ButtonInteraction,
 	userId: string,
 	quidData1: Quid,
 	quidData2: Quid,
 	componentArray: ActionRowBuilder<ButtonBuilder>[],
-): Promise<Message> => {
+): Promise<Message> {
 
 	const message = await respond(interaction, {
 		content: `<@${userId}>`,
@@ -504,12 +504,12 @@ const sendNextRoundMessage = async (
 	await interaction.message.delete();
 
 	return message;
-};
+}
 
 /**
  * Checks for both players whether to level them up, if they are passed out, whether to add friendship points, and if they need to be given any advice.
  */
-const checkAfterGameChanges = async (
+async function checkAfterGameChanges(
 	interaction: ButtonInteraction<'cached'>,
 	userData1: UserSchema,
 	quidData1: Quid,
@@ -527,7 +527,7 @@ const checkAfterGameChanges = async (
 		levelUpEmbed: EmbedBuilder | null;
 		profileData: Profile;
 	};
-}> => {
+}> {
 
 	const user1CheckLevelData = await checkLevelUp(interaction, userData1, quidData1, profileData1, serverData);
 	const user2CheckLevelData = await checkLevelUp(interaction, userData2, quidData2, profileData2, serverData);
@@ -547,4 +547,4 @@ const checkAfterGameChanges = async (
 	await eatAdvice(interaction.message, userData2);
 
 	return { user1CheckLevelData, user2CheckLevelData };
-};
+}

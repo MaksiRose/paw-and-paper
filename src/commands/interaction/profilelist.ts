@@ -33,9 +33,9 @@ export const command: SlashCommand = {
 	},
 };
 
-export const profilelistInteractionCollector = async (
+export async function profilelistInteractionCollector(
 	interaction: ButtonInteraction | SelectMenuInteraction,
-): Promise<void> => {
+): Promise<void> {
 
 	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild.'); }
 
@@ -84,7 +84,7 @@ export const profilelistInteractionCollector = async (
 	await respond(interaction, await getProfilesMessage(page, interaction.guild, rankName, profilesText), true)
 		.catch((error) => { throw new Error(error); });
 	return;
-};
+}
 
 /**
  * It gets all the users that have a profile in the guild, and then for each user, it gets the cache of the user in the guild, and if the user is in the guild, it gets the profile of each quid of the user and adds it to the rankTexts
@@ -93,11 +93,11 @@ export const profilelistInteractionCollector = async (
  * @param [rankName2] - The name of the second rank you want to get the profiles of.
  * @returns An array of strings for all the profiles with that rank.
  */
-const getProfilesTexts = async (
+async function getProfilesTexts(
 	guild: Guild,
 	rankName1: RankType,
 	rankName2?: RankType,
-): Promise<string[]> => {
+): Promise<string[]> {
 
 	if (!guildCache.has(guild.id)) { guildCache.set(guild.id, new Map()); }
 	const guildMemberCache = guildCache.get(guild.id);
@@ -140,7 +140,7 @@ const getProfilesTexts = async (
 		}
 	}
 	return rankTexts;
-};
+}
 
 /**
  * It returns an object with two properties, `embeds` and `components`. The `embeds` property is an array of embeds that will be sent to the user. The `components` property is an array of action rows, which are rows of buttons and select menus that will be displayed to the user.
@@ -150,7 +150,7 @@ const getProfilesTexts = async (
  * @param [profilesText] - An array of strings for all the profiles with that rank.
  * @returns An object with two properties: embeds and components.
  */
-const getProfilesMessage = async (
+async function getProfilesMessage(
 	page: number,
 	guild: Guild,
 	rank: RankType,
@@ -158,7 +158,7 @@ const getProfilesMessage = async (
 ): Promise<{
 	embeds: EmbedBuilder[];
 	components: ActionRowBuilder<ButtonBuilder | SelectMenuBuilder>[];
-}> => {
+}> {
 
 	/* Getting an array of strings for all the profiles with that rank. */
 	if (!profilesText) { profilesText = await getProfilesTexts(guild, rank); }
@@ -210,4 +210,4 @@ const getProfilesMessage = async (
 				])] : []),
 		],
 	};
-};
+}

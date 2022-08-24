@@ -5,9 +5,9 @@ import { CustomClient, UserSchema } from '../typedef';
 import { getMapData } from '../utils/helperFunctions';
 
 /** Updates all profiles */
-export const execute = async (
+export async function execute(
 	client: CustomClient,
-): Promise<void> => {
+): Promise<void> {
 
 	const userFiles = readdirSync('./database/profiles').filter(file => file.endsWith('.json')).map(file => ['./database/profiles', file]);
 
@@ -46,4 +46,4 @@ export const execute = async (
 				},
 			);
 	}
-};
+}

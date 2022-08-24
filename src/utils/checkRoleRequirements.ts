@@ -8,13 +8,13 @@ const { default_color, error_color } = require('../../config.json');
 /**
  * Checks if user has reached the requirement to get a role based on their rank.
  */
-export const checkRankRequirements = async (
+export async function checkRankRequirements(
 	serverData: ServerSchema,
 	interaction: CommandInteraction | ButtonInteraction,
 	member: GuildMember | undefined,
 	userRank: RankType,
 	sendMessage = false,
-): Promise<void> => {
+): Promise<void> {
 
 	/* If interaction is not in guild or member undefined, return */
 	if (!interaction.inGuild() || !member) { return; }
@@ -78,18 +78,18 @@ export const checkRankRequirements = async (
 	}
 
 	return;
-};
+}
 
 /**
  * Checks if user has reached the requirement to get a role based on their level.
  */
-export const checkLevelRequirements = async (
+export async function checkLevelRequirements(
 	serverData: ServerSchema,
 	interaction: CommandInteraction | ButtonInteraction | SelectMenuInteraction,
 	member: GuildMember | undefined,
 	userLevel: number,
 	sendMessage = false,
-): Promise<void> => {
+): Promise<void> {
 
 	/* If interaction is not in guild or member undefined, return */
 	if (!interaction.inGuild() || !member) { return; }
@@ -149,16 +149,16 @@ export const checkLevelRequirements = async (
 			}
 		}
 	}
-};
+}
 
 /**
  * Check if the bot has permission to add the role. If not, then send a message explaining the problem, else send a generic error message.
  */
-export const checkRoleCatchBlock = async (
+export async function checkRoleCatchBlock(
 	error: any,
 	interaction: CommandInteraction | SelectMenuInteraction | ButtonInteraction,
 	member: GuildMember,
-): Promise<void> => {
+): Promise<void> {
 
 	/* If interaction is not in guild, return */
 	if (!interaction.inGuild()) { return; }
@@ -189,4 +189,4 @@ export const checkRoleCatchBlock = async (
 				if (err.httpStatus !== 404) { throw new Error(err); }
 			});
 	}
-};
+}

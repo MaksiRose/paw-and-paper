@@ -21,7 +21,7 @@ export const client = new CustomClient({
 	},
 });
 
-export const start = (
+export function start(
 	botToken: string,
 	bfdToken: string,
 	bfdAuthorization: string,
@@ -29,7 +29,7 @@ export const start = (
 	topAuthorization: string,
 	dblToken: string,
 	dblAuthorization: string,
-): void => {
+): void {
 
 	client.votes.bfd = { token: bfdToken, authorization: bfdAuthorization, client: null };
 	client.votes.top = { token: topToken, authorization: topAuthorization, client: null };
@@ -119,4 +119,4 @@ export const start = (
 	execute(client);
 
 	client.login(botToken);
-};
+}

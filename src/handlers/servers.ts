@@ -2,7 +2,7 @@ import { readdirSync } from 'fs';
 import serverModel from '../models/serverModel';
 import { ServerSchema } from '../typedef';
 
-export const execute = async (): Promise<void> => {
+export async function execute(): Promise<void> {
 
 	const serverFiles = readdirSync('./database/servers').filter(file => file.endsWith('.json'));
 
@@ -16,4 +16,4 @@ export const execute = async (): Promise<void> => {
 			},
 		);
 	}
-};
+}

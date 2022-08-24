@@ -6,9 +6,9 @@ import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
 
 /** Adds all commands to the client */
-export const execute = async (
+export async function execute(
 	client: CustomClient,
-): Promise<void> => {
+): Promise<void> {
 
 	const applicationCommands: Array<RESTPostAPIApplicationCommandsJSONBody> = [];
 
@@ -60,7 +60,7 @@ export const execute = async (
 			)
 			.catch(error => console.error(error));
 	}
-};
+}
 
 /** Adds all file paths in a directory to an array and returns it */
 function getFiles(directory: string): Array<string> {

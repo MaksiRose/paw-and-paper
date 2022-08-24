@@ -2,9 +2,9 @@ import { readdirSync } from 'fs';
 import { CustomClient, Event } from '../typedef';
 
 /** Starts up all the `listeners` based on their `eventName` and whether or not their are one-time. */
-export const execute = async (
+export async function execute(
 	client: CustomClient,
-): Promise<void> => {
+): Promise<void> {
 
 	for (const file of readdirSync('./dist/events/')) {
 
@@ -19,4 +19,4 @@ export const execute = async (
 			client.on(event.name, (...args) => event.execute(client, ...args));
 		}
 	}
-};
+}

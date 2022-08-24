@@ -101,10 +101,10 @@ export const command: SlashCommand = {
 	},
 };
 
-export const playfightInteractionCollector = async (
+export async function playfightInteractionCollector(
 	interaction: ButtonInteraction,
 	serverData: ServerSchema | null,
-): Promise<void> => {
+): Promise<void> {
 
 	if (!interaction.customId.includes('confirm')) { return; }
 	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild.'); }
@@ -220,10 +220,10 @@ export const playfightInteractionCollector = async (
 	const profileDataCurrent = user1IsPlaying ? profileData1 : profileData2;
 	const profileDataOther = user1IsPlaying ? profileData2 : profileData1;
 
-	const sendNextRoundMessage = async (
+	async function sendNextRoundMessage(
 		userId: string,
 		extraDescription?: string,
-	) => {
+	) {
 
 		const newTurnEmbedTextArray = [
 			`*${quidDataCurrent.name} bites into ${quidDataOther.name}, not very deep, but deep enough to hang onto the ${quidDataOther.displayedSpecies || quidDataOther.species}. ${quidDataOther.name} needs to get the ${quidDataCurrent.displayedSpecies || quidDataCurrent.species} off of ${pronoun(quidDataOther, 1)}.*`,
@@ -245,7 +245,7 @@ export const playfightInteractionCollector = async (
 		await interaction.message.delete();
 
 		return message;
-	};
+	}
 
 	let botReply = await sendNextRoundMessage(
 		user1IsPlaying ? userId1 : userId2,
@@ -445,14 +445,14 @@ export const playfightInteractionCollector = async (
 			return;
 		}
 	});
-};
+}
 
 type PlayingFieldPosition = { row: number, column: number; };
-const getWinningRow = (
+function getWinningRow(
 	playingField: number[][],
 	lastPopulatedPosition: PlayingFieldPosition,
 	winCount: number,
-): PlayingFieldPosition[] | null => {
+): PlayingFieldPosition[] | null {
 
 	// To determine whether someone has won, the following is needed:
 	// First, we need an array of arrays (playing field) with numbers 0, 1, 2. 0 is unpopulated, 1 and 2 are the players.
@@ -515,9 +515,9 @@ const getWinningRow = (
 	After the loop, return the function with false, as the counter never reached winCount.
 	If one of the four arrays returns true, we can be sure that the game has been won.
 	Alternatively, the function can also return an array of the positions, so that those places can be modified. */
-	const checkArrayWin = (
+	function checkArrayWin(
 		array: PlayingFieldPosition[],
-	): PlayingFieldPosition[] | null => {
+	): PlayingFieldPosition[] | null {
 
 		const neededNumber = playingField[lastPopulatedPosition.row]?.[lastPopulatedPosition.column];
 		if (neededNumber === undefined) { throw new Error('last populated position does not exist in playing field'); }
@@ -532,15 +532,15 @@ const getWinningRow = (
 		}
 
 		return null;
-	};
+	}
 
 	return checkArrayWin(verticalPositions) || checkArrayWin(horizontalPositions) || checkArrayWin(diagonal135Positions) || checkArrayWin(diagonal45Positions);
-};
+}
 
 /**
  * Checks for both players whether to level them up, if they are passed out, whether to add friendship points, and if they need to be given any advice.
  */
-const checkAfterGameChanges = async (
+async function checkAfterGameChanges(
 	interaction: ButtonInteraction<'cached'>,
 	userData1: UserSchema,
 	quidData1: Quid,
@@ -558,7 +558,7 @@ const checkAfterGameChanges = async (
 		levelUpEmbed: EmbedBuilder | null;
 		profileData: Profile;
 	};
-}> => {
+}> {
 
 	const user1CheckLevelData = await checkLevelUp(interaction, userData1, quidData1, profileData1, serverData);
 	const user2CheckLevelData = await checkLevelUp(interaction, userData2, quidData2, profileData2, serverData);
@@ -578,4 +578,4 @@ const checkAfterGameChanges = async (
 	await eatAdvice(interaction.message, userData2);
 
 	return { user1CheckLevelData, user2CheckLevelData };
-};
+}

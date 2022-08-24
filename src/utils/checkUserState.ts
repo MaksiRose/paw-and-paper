@@ -6,10 +6,10 @@ const { error_color } = require('../../config.json');
 /**
  * Checks if there is an account and if the account has a name, returns false if they do, and if not, sends a message telling the user to create an account and return true.
  */
-export const hasName = (
+export function hasName(
 	interaction: ChatInputCommandInteraction,
 	userData: UserSchema | null,
-): userData is UserSchema => {
+): userData is UserSchema {
 
 	const quidData = userData?.quids[userData.currentQuid[interaction.guildId || 'DM'] || ''];
 	if (!quidData || quidData.name === '') {
@@ -27,7 +27,7 @@ export const hasName = (
 	}
 
 	return true;
-};
+}
 
 /**
  * Checks if the account has a species, returns false if they do, and if not, sends a message telling the user to create an account and returns true.
@@ -55,25 +55,22 @@ function hasSpecies(interaction: ChatInputCommandInteraction, userData: UserSche
 /**
  * Checks if the user has a name and a species, returns false if they do, and if they don't, sends the appropriate message and returns true.
  */
-export const hasCompletedAccount = (
+export function hasCompletedAccount(
 	interaction: ChatInputCommandInteraction,
 	userData: UserSchema | null,
-): userData is UserSchema => {
+): userData is UserSchema {
 
-	if (hasName(interaction, userData) && hasSpecies(interaction, userData)) {
-
-		return true;
-	}
+	if (hasName(interaction, userData) && hasSpecies(interaction, userData)) { return true; }
 
 	return false;
-};
+}
 
 /**
  * This is checking if the interaction is in a guild, if it is not, it will reply to the user with a message saying that the command cannot be executed in DMs.
  */
-export const isInGuild = (
+export function isInGuild(
 	interaction: ChatInputCommandInteraction,
-): interaction is ChatInputCommandInteraction<'cached'> => {
+): interaction is ChatInputCommandInteraction<'cached'> {
 
 	if (!interaction.inCachedGuild()) {
 
@@ -91,4 +88,4 @@ export const isInGuild = (
 	}
 
 	return true;
-};
+}

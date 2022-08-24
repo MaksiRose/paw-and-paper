@@ -48,11 +48,11 @@ export const command: SlashCommand = {
 	},
 };
 
-export const shopInteractionCollector = async (
+export async function shopInteractionCollector(
 	interaction: SelectMenuInteraction,
 	userData: UserSchema | null,
 	serverData: ServerSchema | null,
-): Promise<void> => {
+): Promise<void> {
 
 	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
 	if (!userData) { throw new Error('userData is null'); }
@@ -203,15 +203,15 @@ export const shopInteractionCollector = async (
 
 		return;
 	}
-};
+}
 
-const getShopResponse = async (
+async function getShopResponse(
 	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
 	serverData: ServerSchema,
 	quidData: Quid,
 	shopKindPage: number,
 	nestedPage: number,
-): Promise<void> => {
+): Promise<void> {
 
 	let descriptionArray: string[] = [];
 	let shopMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
@@ -270,7 +270,7 @@ const getShopResponse = async (
 				.setOptions(shopMenuOptions))],
 	}, true)
 		.catch(error => { throw new Error(error); });
-};
+}
 
 function getShopInfo(serverData: ServerSchema) {
 
@@ -282,15 +282,21 @@ function getShopInfo(serverData: ServerSchema) {
 	const rankRolesPages = Math.ceil(rankRoles.length / 24);
 	const levelRolesPages = Math.ceil(levelRoles.length / 24);
 
-	const currentPage = (shopKindPage: number, nestedPage: number) => {
+	function currentPage(
+		shopKindPage: number,
+		nestedPage: number,
+	) {
 
 		let pages = nestedPage;
 		if (shopKindPage > 0) { pages += xpRolesPages; }
 		if (shopKindPage > 1) { pages += rankRolesPages; }
 		return pages;
-	};
+	}
 
-	const nextPage = (shopKindPage: number, nestedPage: number) => {
+	function nextPage(
+		shopKindPage: number,
+		nestedPage: number,
+	) {
 
 		nestedPage += 1;
 		if (shopKindPage === 0 && nestedPage >= xpRolesPages) {
@@ -307,7 +313,7 @@ function getShopInfo(serverData: ServerSchema) {
 		}
 
 		return { newShopKindPage: shopKindPage, newNestedPage: nestedPage };
-	};
+	}
 
 	return {
 		xpRoles,

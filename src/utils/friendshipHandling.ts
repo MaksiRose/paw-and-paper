@@ -9,13 +9,13 @@ const requiredPoints = [1, 3, 6, 9, 15, 24, 39, 63, 99, 162] as const;
 /**
  * Creates a friendship or adds friendship points to an existing friendship. Sends a message if they have more hearts than before.
  */
-export const addFriendshipPoints = async (
+export async function addFriendshipPoints(
 	message: Message,
 	userData: UserSchema,
 	quidId: string,
 	partnerUserData: UserSchema,
 	partnerQuidId: string,
-): Promise<void> => {
+): Promise<void> {
 
 	let quidData = getMapData(userData.quids, quidId);
 	let partnerQuidData = getMapData(partnerUserData.quids, partnerQuidId);
@@ -54,15 +54,15 @@ export const addFriendshipPoints = async (
 			})
 			.catch((newError) => { throw new Error(newError); });
 	}
-};
+}
 
 /**
  * Calculates the amount of points a friendship has an returns it.
  */
-export const getFriendshipPoints = (
+export function getFriendshipPoints(
 	array1: number[],
 	array2: number[],
-): number => {
+): number {
 
 	if (!Array.isArray(array1)) { array1 = []; }
 	if (!Array.isArray(array2)) { array2 = []; }
@@ -71,17 +71,17 @@ export const getFriendshipPoints = (
 	const lowerPoints = array1?.length < array2?.length ? array1?.length : array2?.length;
 
 	return (lowerPoints * 3) + (higherPoints - lowerPoints) || 0;
-};
+}
 
 /**
  * Checks if any mentions stored in a friendship are older than a week, and if they are, remove them.
  */
-export const checkOldMentions = async (
+export async function checkOldMentions(
 	userData: UserSchema,
 	quidId: string,
 	partnerUserData: UserSchema,
 	partnerQuidId: string,
-): Promise<readonly [UserSchema, UserSchema]> => {
+): Promise<readonly [UserSchema, UserSchema]> {
 
 	const oneWeekInMs = 604_800_000;
 	userData = await userModel.findOneAndUpdate(
@@ -101,14 +101,14 @@ export const checkOldMentions = async (
 	);
 
 	return [userData, partnerUserData] as const;
-};
+}
 
 /**
  * Checks how many hearts a friendship has based on its points and returns the amount of hearts
  */
-export const getFriendshipHearts = (
+export function getFriendshipHearts(
 	points: number,
-): number => {
+): number {
 
 	let friendshipHearts = 0;
 	for (const index of requiredPoints) {
@@ -117,4 +117,4 @@ export const getFriendshipHearts = (
 		else { break; }
 	}
 	return friendshipHearts;
-};
+}

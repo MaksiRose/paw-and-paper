@@ -190,8 +190,15 @@ export default class Model<T extends UUIDObject> {
 
 				for (const key of Object.keys(Object.keys(newObject).length === 0 && Object.keys(oldObject).length > 0 ? oldObject : newObject)) {
 
-					const hasObjectsAsValues = (val: any) => Object.values(val).filter(v => isObject(v)).length > 0;
-					const objectKeyOrUndefined = (val: any, key: string) => isObject(val) ? val?.[key] : undefined;
+					const hasObjectsAsValues = (
+						val: any,
+					) => Object.values(val).filter(v => isObject(v)).length > 0;
+
+					const objectKeyOrUndefined = (
+						val: any,
+						key: string,
+					) => isObject(val) ? val?.[key] : undefined;
+
 					if (isObject(newObject) && isObject(newObject?.[key]) && (hasObjectsAsValues(newObject?.[key]) || (isObject(oldObject) && isObject(oldObject?.[key]) && hasObjectsAsValues(oldObject?.[key])))) {
 
 						allPaths = allPaths.concat(createLogArray(objectKeyOrUndefined(oldObject, key), newObject?.[key], variablePath + `.${key}`));

@@ -7,24 +7,24 @@ import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatIn
  * @param key - The key of the object to get T from
  * @returns T as the property from the key from the object
  */
-export const getMapData = <T>(
+export function getMapData<T>(
 	map: Record<string, T>,
 	key: string,
-): T => {
+): T {
 	const data = map[key];
 	if (!data) throw new TypeError(`${data} is undefined`);
 	return data;
-};
+}
 
-export const getUserIds = (
+export function getUserIds(
 	message: Message,
-): Array<string> => {
+): Array<string> {
 
 	const array1 = message.mentions.users.map(u => u.id);
 	const array2 = (message.content.match(/<@!?(\d{17,19})>/g) || [])?.map(mention => mention.replace('<@', '').replace('>', '').replace('!', ''));
 
 	return [...new Set([...array1, ...array2])];
-};
+}
 
 /**
  * It replies to an interaction, and if the interaction has already been replied to, it will edit the
@@ -34,11 +34,12 @@ export const getUserIds = (
  * @param editMessage - boolean - If true, the bot will edit the original message instead of sending a follow-up message.
  * @returns A promise that resolves to a Message<boolean>
  */
-export const respond = async (
+export async function respond(
 	interaction: CommandInteraction | MessageContextMenuCommandInteraction | ModalSubmitInteraction | ButtonInteraction | SelectMenuInteraction,
 	options: WebhookEditMessageOptions | InteractionReplyOptions,
 	editMessage: boolean,
-): Promise<Message<boolean>> => {
+): Promise<Message<boolean>> {
+
 	let botReply: APIMessage | Message<boolean>;
 	if (!interaction.replied && !interaction.deferred) {
 		botReply = await interaction.reply({ ...options, ...{ fetchReply: true } });
@@ -52,7 +53,7 @@ export const respond = async (
 
 	if (botReply instanceof Message) { return botReply; }
 	else { throw new Error('Message is APIMessage'); }
-};
+}
 
 /**
  * It sends an error message to the user who executed the command, and logs the error to the console
@@ -60,10 +61,10 @@ export const respond = async (
  * @param error - The error that was thrown.
  */
 
-export const sendErrorMessage = async (
+export async function sendErrorMessage(
 	interaction: CommandInteraction | MessageContextMenuCommandInteraction | ButtonInteraction | SelectMenuInteraction | ModalSubmitInteraction,
 	error: any,
-): Promise<any> => {
+): Promise<any> {
 
 	if (interaction instanceof ChatInputCommandInteraction || interaction instanceof MessageContextMenuCommandInteraction) {
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to execute \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
@@ -93,7 +94,7 @@ export const sendErrorMessage = async (
 		.catch((newError) => {
 			console.error(newError);
 		});
-};
+}
 
 /**
  * It recursively copies an object, array, date, or regular expression, and returns a copy of the original
@@ -162,17 +163,17 @@ export function unsafeKeys<T>(obj: T): KeyOfUnion<T>[] { return Object.keys(obj)
  * @param number1 - number
  * @param number2 - number - This is the second parameter, and it's a number.
  */
-export const getBiggerNumber = (
+export function getBiggerNumber(
 	number1: number,
 	number2: number,
-): number => number1 > number2 ? number1 : number2;
+): number { return number1 > number2 ? number1 : number2; }
 
 /**
  * Return the smaller of two numbers
  * @param number1 - number
  * @param number2 - number - This is the second parameter, and it's a number.
  */
-export const getSmallerNumber = (
+export function getSmallerNumber(
 	number1: number,
 	number2: number,
-): number => number1 > number2 ? number2 : number1;
+): number { return number1 > number2 ? number2 : number1; }

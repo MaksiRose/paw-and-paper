@@ -42,10 +42,10 @@ export const command: SlashCommand = {
 	},
 };
 
-export const deleteInteractionCollector = async (
+export async function deleteInteractionCollector(
 	interaction: ButtonInteraction | SelectMenuInteraction,
 	userData: UserSchema | null,
-): Promise<void> => {
+): Promise<void> {
 
 	if (!userData) { throw new Error('userData is null'); }
 	const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
@@ -317,7 +317,7 @@ export const deleteInteractionCollector = async (
 			});
 		return;
 	}
-};
+}
 
 function sendOriginalMessage(): WebhookEditMessageOptions {
 
@@ -368,10 +368,10 @@ function getQuidsPage(deletePage: number, userData: UserSchema): SelectMenuBuild
 /**
  * Creates a select menu with the servers that have accounts with this user
  */
-const getServersPage = async (
+async function getServersPage(
 	deletePage: number,
 	userData: UserSchema,
-): Promise<SelectMenuBuilder> => {
+): Promise<SelectMenuBuilder> {
 
 	let accountsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
 
@@ -393,4 +393,4 @@ const getServersPage = async (
 		.setCustomId('delete_server_options')
 		.setPlaceholder('Select a server')
 		.setOptions(accountsMenuOptions);
-};
+}

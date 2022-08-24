@@ -38,10 +38,10 @@ export const command: SlashCommand = {
 	},
 };
 
-export const serversettingsInteractionCollector = async (
+export async function serversettingsInteractionCollector(
 	interaction: ButtonInteraction | SelectMenuInteraction,
 	serverData: ServerSchema,
-): Promise<void> => {
+): Promise<void> {
 
 	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
 	const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
@@ -559,7 +559,7 @@ export const serversettingsInteractionCollector = async (
 			return;
 		}
 	}
-};
+}
 
 function getOriginalMessage(interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>, serverData: ServerSchema): InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions {
 
@@ -581,11 +581,11 @@ function getOriginalMessage(interaction: ChatInputCommandInteraction<'cached'> |
 	};
 }
 
-const getShopMessage = async (
+async function getShopMessage(
 	interaction: ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>,
 	serverData: ServerSchema,
 	page: number,
-): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> => {
+): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
 
 	let roleMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [{ label: 'Add another shop item', value: 'serversettings_shop_add' }];
 
@@ -619,13 +619,13 @@ const getShopMessage = async (
 				.setPlaceholder('Select to add/edit/delete a shop item')
 				.setOptions(roleMenuOptions)])],
 	};
-};
+}
 
-const getNewRoleMenu = async (
+async function getNewRoleMenu(
 	interaction: SelectMenuInteraction<'cached'>,
 	serverData: ServerSchema,
 	page: number,
-): Promise<SelectMenuBuilder> => {
+): Promise<SelectMenuBuilder> {
 
 	if (!interaction.guild) { throw new Error('Guild object is null'); }
 	let roles = await interaction.guild.roles.fetch();
@@ -643,7 +643,7 @@ const getNewRoleMenu = async (
 		.setCustomId('serversettings_shop_add_options')
 		.setPlaceholder('Select a role for users to earn/buy')
 		.setOptions(roleMenuOptions);
-};
+}
 
 function getShopRoleMessage(interaction: ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>, roleMenu: SelectMenuBuilder | null, roleIdOrAdd: string, serverData: ServerSchema, wayOfEarning: ServerSchema['shop'][number]['wayOfEarning'] | null, requirement: ServerSchema['shop'][number]['requirement'] | null, role: ServerSchema['shop'][number]['roleId'] | null): { embeds: Array<EmbedBuilder>, components: Array<ActionRowBuilder<SelectMenuBuilder | ButtonBuilder>>; } {
 
@@ -712,11 +712,11 @@ function getShopRoleMessage(interaction: ButtonInteraction<'cached'> | SelectMen
 	};
 }
 
-const getUpdateMessage = async (
+async function getUpdateMessage(
 	interaction: SelectMenuInteraction<'cached'>,
 	serverData: ServerSchema,
 	page: number,
-): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> => {
+): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
 
 	let updatesMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).map(channel => ({ label: channel.name, value: `serversettings_updates_${channel.id}` }));
 
@@ -744,13 +744,13 @@ const getUpdateMessage = async (
 				.setPlaceholder('Select a channel to send updates to')
 				.setOptions(updatesMenuOptions)])],
 	};
-};
+}
 
-const getVisitsMessage = async (
+async function getVisitsMessage(
 	interaction: SelectMenuInteraction<'cached'>,
 	serverData: ServerSchema,
 	page: number,
-): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> => {
+): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
 
 	let updatesMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [{ label: 'off', value: 'serversettings_visits_off', emoji: serverData.visitChannelId === null ? '🔘' : undefined }, ...(await interaction.guild.channels.fetch()).map(channel => ({ label: channel.name, value: `serversettings_visits_${channel.id}`, emoji: serverData.visitChannelId === channel.id ? '🔘' : undefined }))];
 
@@ -778,13 +778,13 @@ const getVisitsMessage = async (
 				.setPlaceholder('Select a channel to set visits to')
 				.setOptions(updatesMenuOptions)])],
 	};
-};
+}
 
-const getProxyingMessage = async (
+async function getProxyingMessage(
 	interaction: SelectMenuInteraction<'cached'>,
 	serverData: ServerSchema,
 	page: number,
-): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> => {
+): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
 
 	let disableSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).map((channel, channelId) => ({ label: channel.name, value: `serversettings_proxying_${channelId}`, emoji: serverData?.proxySettings.channels.blacklist?.includes(channelId) ? '🔘' : undefined }));
 
@@ -812,4 +812,4 @@ const getProxyingMessage = async (
 				.setPlaceholder('Select channels to disable proxying for')
 				.setOptions(disableSelectMenuOptions)])],
 	};
-};
+}

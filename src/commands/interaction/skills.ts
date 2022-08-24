@@ -65,11 +65,11 @@ export const command: SlashCommand = {
 	},
 };
 
-export const skillsInteractionCollector = async (
+export async function skillsInteractionCollector(
 	interaction: ButtonInteraction | SelectMenuInteraction,
 	serverData: ServerSchema | null,
 	userData: UserSchema | null,
-): Promise<void> => {
+): Promise<void> {
 
 	if (!interaction.inCachedGuild() || !serverData) { throw new Error('Interaction is not in cached guild'); }
 
@@ -328,13 +328,13 @@ export const skillsInteractionCollector = async (
 			.catch((error) => { throw new Error(error); });
 		return;
 	}
-};
+}
 
-export const sendEditSkillsModalResponse = async (
+export async function sendEditSkillsModalResponse(
 	interaction: ModalMessageModalSubmitInteraction,
 	serverData: ServerSchema | null,
 	userData: UserSchema | null,
-): Promise<void> => {
+): Promise<void> {
 
 	if (!interaction.inCachedGuild() || !serverData) { throw new Error('Interaction is not in cached guild'); }
 
@@ -559,7 +559,7 @@ export const sendEditSkillsModalResponse = async (
 		}, false)
 			.catch((error) => { throw new Error(error); });
 	}
-};
+}
 
 /**
  * It returns an Action Row with 5 Buttons
@@ -568,11 +568,11 @@ export const sendEditSkillsModalResponse = async (
  * @param member - The member that is currently using the menu.
  * @returns An Action Row with Buttons
  */
-const getOriginalComponents = (
+function getOriginalComponents(
 	profileData: Profile | undefined,
 	serverData: ServerSchema,
 	member: GuildMember,
-): ActionRowBuilder<ButtonBuilder> => {
+): ActionRowBuilder<ButtonBuilder> {
 
 	return new ActionRowBuilder<ButtonBuilder>()
 		.setComponents(
@@ -604,16 +604,16 @@ const getOriginalComponents = (
 				.setEmoji('🔁')
 				.setStyle(ButtonStyle.Secondary),
 			]);
-};
+}
 
 /**
  * It takes a profile data object and returns a string of all the skills in the profile data object
  * @param profileData - The profile data of the user.
  * @returns A string of all the skills and their amounts.
  */
-const getSkillList = (
+function getSkillList(
 	profileData: Profile | undefined,
-) => {
+) {
 
 	let skillList = '';
 	for (const skillCategory of Object.values(profileData?.skills || {})) {
@@ -622,7 +622,7 @@ const getSkillList = (
 	}
 	if (skillList === '') { skillList = 'There is nothing to show here :('; }
 	return skillList;
-};
+}
 
 /**
  * It takes a profile and a page number, and returns a menu that shows the skills on that page
@@ -630,10 +630,10 @@ const getSkillList = (
  * @param page - The page number of the modify menu.
  * @returns An Action Row with a select menu of skills
  */
-const getModifyMenu = (
+function getModifyMenu(
 	profileData: Profile | undefined,
 	page: number,
-): ActionRowBuilder<SelectMenuBuilder> => {
+): ActionRowBuilder<SelectMenuBuilder> {
 
 	let modifyMenuOptions: RestOrArray<SelectMenuComponentOptionData> = Object.entries(profileData?.skills || {}).map(([skillCategoryName, skillCategory]) => Object.keys(skillCategory).map(skillName => ({ label: skillName, value: `skills_modify_${skillCategoryName}_${skillName}` }))).flat();
 
@@ -648,7 +648,7 @@ const getModifyMenu = (
 			.setCustomId('skills_modify_options_modal')
 			.setPlaceholder('Select a skill to modify')
 			.setOptions(modifyMenuOptions));
-};
+}
 
 /**
  * It takes in a profile, server, category, and page number, and returns a menu that allows you to edit skills
@@ -658,12 +658,12 @@ const getModifyMenu = (
  * @param {number} page - The page number of the menu.
  * @returns An Action Row with a select menu of skills
  */
-const getEditMenu = (
+function getEditMenu(
 	profileData: Profile | undefined,
 	serverData: ServerSchema | undefined,
 	category: 'personal' | 'global',
 	page: number,
-): ActionRowBuilder<SelectMenuBuilder> => {
+): ActionRowBuilder<SelectMenuBuilder> {
 
 	let editMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (category === 'global' ? (serverData?.skills || []) : Object.keys(profileData?.skills.personal || {})).map(skillName => ({ label: skillName, value: `skills_edit_${category}_${skillName}` }));
 
@@ -678,7 +678,7 @@ const getEditMenu = (
 			.setCustomId('skills_edit_options_modal')
 			.setPlaceholder('Select a skill to edit')
 			.setOptions(editMenuOptions));
-};
+}
 
 /**
  * It takes in a profile, a server, a category, and a page number, and returns an action row with a select menu that has options for each skill in the category
@@ -688,12 +688,12 @@ const getEditMenu = (
  * @param {number} page - The page number of the menu.
  * @returns An Action Row with a select menu of skills
  */
-const getRemoveMenu = (
+function getRemoveMenu(
 	profileData: Profile | undefined,
 	serverData: ServerSchema | undefined,
 	category: 'personal' | 'global',
 	page: number,
-): ActionRowBuilder<SelectMenuBuilder> => {
+): ActionRowBuilder<SelectMenuBuilder> {
 
 	let removeMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (category === 'global' ? (serverData?.skills || []) : Object.keys(profileData?.skills.personal || {})).map(skillName => ({ label: skillName, value: `skills_remove_${category}_${skillName}` }));
 
@@ -708,4 +708,4 @@ const getRemoveMenu = (
 			.setCustomId('skills_remove_options')
 			.setPlaceholder('Select a skill to remove')
 			.setOptions(removeMenuOptions));
-};
+}

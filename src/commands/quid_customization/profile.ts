@@ -72,13 +72,13 @@ export const command: SlashCommand = {
  * @param embedArray
  * @returns The message object.
  */
-export const getMessageContent = async (
+export async function getMessageContent(
 	client: CustomClient,
 	userId: string,
 	quidData: Quid | undefined,
 	isYourself: boolean,
 	embedArray: Array<EmbedBuilder>,
-): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> => {
+): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
 
 	const user = await client.users
 		.fetch(userId)
@@ -102,7 +102,7 @@ export const getMessageContent = async (
 			])
 			.setFooter({ text: `Quid ID: ${quidData._id}` })],
 	};
-};
+}
 
 /**
  * It takes in a profile, a list of inactive profiles, and a page number, and returns a menu with the
@@ -113,12 +113,12 @@ export const getMessageContent = async (
  * @param isYourself - Whether the quid is by the user who executed the command
  * @returns A MessageSelectMenu object
  */
-const getAccountsPage = (
+function getAccountsPage(
 	userData: UserSchema,
 	userId: string,
 	quidsPage: number,
 	isYourself: boolean,
-): SelectMenuBuilder => {
+): SelectMenuBuilder {
 
 	let accountMenuOptions: RestOrArray<SelectMenuComponentOptionData> = Object.values(userData.quids).map(quid => ({ label: quid.name, value: `profile_${isYourself ? 'switchto' : 'view'}_${quid._id}` }));
 
@@ -134,12 +134,12 @@ const getAccountsPage = (
 		.setCustomId(`profile_accountselect_${userId}`)
 		.setPlaceholder(`Select a quid to ${isYourself ? 'switch to' : 'view'}`)
 		.setOptions(accountMenuOptions);
-};
+}
 
-export const profileInteractionCollector = async (
+export async function profileInteractionCollector(
 	client: CustomClient,
 	interaction: ButtonInteraction | SelectMenuInteraction,
-): Promise<void> => {
+): Promise<void> {
 
 	const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
 
@@ -350,11 +350,8 @@ export const profileInteractionCollector = async (
 			.catch((error) => { throw new Error(error); });
 		return;
 	}
-};
+}
 
-export const pronounCompromiser = (
+export function pronounCompromiser(
 	pronounSet: Array<string>,
-): string => {
-
-	return `${pronounSet[0] === 'none' ? pronounSet[0] : `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`}`;
-};
+): string { return `${pronounSet[0] === 'none' ? pronounSet[0] : `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`}`; }

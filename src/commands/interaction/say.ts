@@ -65,7 +65,7 @@ export const command: SlashCommand = {
  * @param [reference] - MessageReference
  * @returns Nothing
  */
-export const sendMessage = async (
+export async function sendMessage(
 	channel: NewsChannel | TextChannel | PublicThreadChannel | PrivateThreadChannel | VoiceChannel | null,
 	text: string,
 	quidData: Quid,
@@ -73,7 +73,7 @@ export const sendMessage = async (
 	authorId: string,
 	attachments?: Array<Attachment>,
 	reference?: MessageReference,
-): Promise<void> => {
+): Promise<void> {
 
 	const webhookChannel = (channel && channel.isThread()) ? channel.parent : channel;
 	if (!webhookChannel || !channel) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
@@ -142,4 +142,4 @@ export const sendMessage = async (
 	writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
 
 	return;
-};
+}

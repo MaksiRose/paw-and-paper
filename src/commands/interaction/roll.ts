@@ -101,7 +101,12 @@ export const command: SlashCommand = {
 	},
 };
 
-const findMatches = (prefix: string, stringToCheck: string, profileData: Profile | undefined, isComplete = false): string[] => {
+function findMatches(
+	prefix: string,
+	stringToCheck: string,
+	profileData: Profile | undefined,
+	isComplete = false,
+): string[] {
 
 	const choices: string[] = [];
 	stringToCheck = stringToCheck.trim();
@@ -138,24 +143,28 @@ const findMatches = (prefix: string, stringToCheck: string, profileData: Profile
 				const substring2 = substrings.slice(i).join('');
 				const choices2 = findMatches(substring2.charAt(0), substring2.slice(1), profileData);
 
-				const prepareCartesian = (arr1: string[] = [], arr2: string[] = []) => {
-					const res = [];
-					for (let i = 0; i < arr1.length; i++) {
-						for (let j = 0; j < arr2.length; j++) {
-							res.push(`${arr1[i] || ''} ${arr2[j] || ''}`);
-						}
-					}
-					return res;
-				};
 				choices.push(...prepareCartesian(choices1, choices2));
 			}
 		}
 	}
 
 	return [...new Set(choices)];
-};
+}
 
-const getSubstringArray = (stringToCheck: string): string[] => {
+function prepareCartesian(
+	arr1: string[] = [],
+	arr2: string[] = [],
+): string[] {
 
-	return stringToCheck.split(/(?=[+-])/g);
-};
+	const res = [];
+	for (let i = 0; i < arr1.length; i++) {
+		for (let j = 0; j < arr2.length; j++) {
+			res.push(`${arr1[i] || ''} ${arr2[j] || ''}`);
+		}
+	}
+	return res;
+}
+
+function getSubstringArray(
+	stringToCheck: string,
+): string[] { return stringToCheck.split(/(?=[+-])/g); }

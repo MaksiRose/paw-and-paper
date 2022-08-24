@@ -125,9 +125,9 @@ export const command: SlashCommand = {
 	},
 };
 
-export const ticketInteractionCollector = async (
+export async function ticketInteractionCollector(
 	interaction: ButtonInteraction,
-): Promise<void> => {
+): Promise<void> {
 
 	if (interaction.customId.includes('contact')) {
 
@@ -199,11 +199,11 @@ export const ticketInteractionCollector = async (
 		.catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
-};
+}
 
-export const sendRespondToTicketModalResponse = async (
+export async function sendRespondToTicketModalResponse(
 	interaction: ModalMessageModalSubmitInteraction,
-): Promise<void> => {
+): Promise<void> {
 
 	const messageText = interaction.fields.getTextInputValue('ticket_textinput');
 	await respond(interaction, {
@@ -246,15 +246,15 @@ export const sendRespondToTicketModalResponse = async (
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([getRespondButton(interaction.message.channel.isDMBased(), interaction.message.channel.isDMBased() ? interaction.user.id : interaction.message.channelId)])],
 		});
-};
+}
 
-export const getRespondButton = (
+export function getRespondButton(
 	isUser: boolean,
 	id: string,
-): ButtonBuilder => {
+): ButtonBuilder {
 
 	return new ButtonBuilder()
 		.setCustomId(`ticket_contact_ANYONECANCLICK_${isUser ? 'user' : 'channel'}${id}`)
 		.setLabel('Reply')
 		.setStyle(ButtonStyle.Secondary);
-};
+}

@@ -51,7 +51,9 @@ export const command: ContextMenuCommand = {
 	},
 };
 
-export const sendEditMessageModalResponse = async (interaction: ModalSubmitInteraction) => {
+export async function sendEditMessageModalResponse(
+	interaction: ModalSubmitInteraction,
+) {
 
 	/* Returns if interaction.channel is null. This should not happen as this is checked in interactionCreate. */
 	if (!interaction.channel) { return; }
@@ -99,4 +101,4 @@ export const sendEditMessageModalResponse = async (interaction: ModalSubmitInter
 			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
 	return;
-};
+}

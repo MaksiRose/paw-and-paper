@@ -8,11 +8,11 @@ export const disableCommandComponent: Record<string, (() => Promise<void>) | und
 /**
  * Creates an entry in the `disableCommandComponent` object that deletes itself and edits the botReply message object that has been attached to disable all components when being called.
  */
-export const createCommandComponentDisabler = (
+export function createCommandComponentDisabler(
 	uuid: string,
 	guildId: string,
 	botReply: Message,
-): void => {
+): void {
 
 	disableCommandComponent[uuid + guildId] = async () => {
 
@@ -26,14 +26,14 @@ export const createCommandComponentDisabler = (
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 	};
-};
+}
 
 /**
  * Goes through all components in a message and disables them.
  */
-export const disableAllComponents = (
+export function disableAllComponents(
 	messageComponents: Array<APIActionRowComponent<APIButtonComponent | APISelectMenuComponent>>,
-): Array<APIActionRowComponent<APIButtonComponent | APISelectMenuComponent>> => {
+): Array<APIActionRowComponent<APIButtonComponent | APISelectMenuComponent>> {
 
 	for (const actionRow in messageComponents) {
 
@@ -48,4 +48,4 @@ export const disableAllComponents = (
 	}
 
 	return messageComponents;
-};
+}

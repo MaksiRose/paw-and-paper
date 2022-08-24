@@ -60,11 +60,11 @@ export const command: SlashCommand = {
 	},
 };
 
-export const proxyInteractionCollector = async (
+export async function proxyInteractionCollector(
 	interaction: ButtonInteraction | SelectMenuInteraction,
 	userData: UserSchema | null,
 	serverData: ServerSchema | null,
-): Promise<void> => {
+): Promise<void> {
 
 	if (!userData) { throw new Error('userData is null'); }
 
@@ -197,12 +197,12 @@ export const proxyInteractionCollector = async (
 				});
 		}
 	}
-};
+}
 
-export const sendEditProxyModalResponse = async (
+export async function sendEditProxyModalResponse(
 	interaction: ModalSubmitInteraction,
 	userData: UserSchema | null,
-): Promise<void> => {
+): Promise<void> {
 
 	/* Check if user data exists, and get quidData, the chosen prefix and the chosen suffix */
 	if (!userData) { throw new Error('userData is null'); }
@@ -251,15 +251,15 @@ export const sendEditProxyModalResponse = async (
 	}, true)
 		.catch((error) => { throw new Error(error); });
 	return;
-};
+}
 
-const getSelectMenus = async (
+async function getSelectMenus(
 	allChannels: Collection<string, NonThreadGuildBasedChannel>,
 	userData: UserSchema | null,
 	quidData: Quid | null,
 	serverData: ServerSchema | null,
 	page: number,
-): Promise<SelectMenuBuilder> => {
+): Promise<SelectMenuBuilder> {
 
 	let alwaysSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = allChannels.map((channel, channelId) => ({ label: channel.name, value: `proxy_${channelId}`, emoji: userData && userData.serverProxySettings[serverData?.serverId || '']?.autoproxy.channels.whitelist.includes(channelId) ? '🔘' : undefined }));
 
@@ -273,4 +273,4 @@ const getSelectMenus = async (
 		.setCustomId(`proxy_always_options_${quidData?._id}`)
 		.setPlaceholder('Select channels to automatically be proxied in')
 		.setOptions(alwaysSelectMenuOptions);
-};
+}
