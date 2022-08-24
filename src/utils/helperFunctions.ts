@@ -156,3 +156,23 @@ export type WidenValues<T> = {
 };
 export function widenValues<T>(obj: T): WidenValues<T> { return obj as any; }
 export function unsafeKeys<T>(obj: T): KeyOfUnion<T>[] { return Object.keys(obj) as KeyOfUnion<T>[]; }
+
+/**
+ * Return the bigger of two numbers
+ * @param number1 - number
+ * @param number2 - number - This is the second parameter, and it's a number.
+ */
+export const getBiggerNumber = (
+	number1: number,
+	number2: number,
+): number => number1 > number2 ? number1 : number2;
+
+/**
+ * Return the smaller of two numbers
+ * @param number1 - number
+ * @param number2 - number - This is the second parameter, and it's a number.
+ */
+export const getSmallerNumber = (
+	number1: number,
+	number2: number,
+): number => number1 > number2 ? number2 : number1;

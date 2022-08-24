@@ -1,19 +1,9 @@
 import { EmbedBuilder } from 'discord.js';
 import userModel from '../models/userModel';
 import { commonPlantsInfo, CurrentRegionType, Profile, Quid, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo, UserSchema } from '../typedef';
-import { getMapData } from './helperFunctions';
+import { getMapData, getSmallerNumber } from './helperFunctions';
 import { pronoun } from './getPronouns';
 import { generateRandomNumber, pullFromWeightedTable } from './randomizers';
-
-/**
- * Return the smaller of two numbers
- * @param number1 - number
- * @param number2 - number - This is the second parameter, and it's a number.
- */
-export const getSmallerNumber = (
-	number1: number,
-	number2: number,
-): number => number1 > number2 ? number2 : number1;
 
 /**
  * Calculate how much energy should be decreased based on how low the profile's health is.
@@ -208,6 +198,12 @@ const decreaseHealth = async (
 	return { injuryUpdateEmbed: new EmbedBuilder(embed), profileData };
 };
 
+export type DecreasedStatsData = {
+	statsUpdateText: string,
+	injuryUpdateEmbed: EmbedBuilder | null,
+	profileData: Profile;
+};
+
 /**
  * It changes the user's experience, energy, hunger, thirst and returns a string based on these changes, decreases the health of a profile based on its injuries, and returns an embed containing those changes if so, and returns an updated profileData.
  * @param userData - UserSchema - The user's data
@@ -215,9 +211,7 @@ const decreaseHealth = async (
  * @param profileData - The profile of the quid that is being changed
  * @param experienceIncrease - number - The amount of experience to add to the profile.
  * @param [currentRegion] - The region the user will be in
- * @returns An object with the following properties:
- *
- * `statsUpdateText`: string, `injuryUpdateEmbed`: EmbedBuilder | null, `profileData`: Profile
+ * @returns DecreasedStatsData
  */
 export const changeCondition = async (
 	userData: UserSchema,
@@ -225,7 +219,7 @@ export const changeCondition = async (
 	profileData: Profile,
 	experienceIncrease: number,
 	currentRegion?: CurrentRegionType,
-): Promise<{ statsUpdateText: string, injuryUpdateEmbed: EmbedBuilder | null, profileData: Profile; }> => {
+): Promise<DecreasedStatsData> => {
 
 	const energyDecrease = getSmallerNumber(calculateEnergyDecrease(profileData), profileData.energy);
 	const hungerDecrease = calculateHungerDecrease(profileData);

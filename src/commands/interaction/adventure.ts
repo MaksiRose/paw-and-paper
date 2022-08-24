@@ -1,11 +1,11 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { hasCooldownMap } from '../../events/interactionCreate';
-import { KeyOfUnion, sendErrorMessage, widenValues } from '../../utils/helperFunctions';
+import { getSmallerNumber, KeyOfUnion, sendErrorMessage, widenValues } from '../../utils/helperFunctions';
 import { respond } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { CurrentRegionType, Inventory, Profile, Quid, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
-import { changeCondition, getSmallerNumber, pickRandomCommonPlant, pickRandomRarePlant, pickRandomSpecialPlant, pickRandomUncommonPlant } from '../../utils/changeCondition';
+import { changeCondition, pickRandomCommonPlant, pickRandomRarePlant, pickRandomSpecialPlant, pickRandomUncommonPlant } from '../../utils/changeCondition';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
@@ -148,7 +148,7 @@ export const adventureInteractionCollector = async (
 		for (let row = 0; row < 5; row++) {
 
 			componentArray[column]?.addComponents(new ButtonBuilder()
-				.setCustomId(`interaction_board_${column}_${row}`)
+				.setCustomId(`adventure_board_${column}_${row}`)
 				.setEmoji(coveredField)
 				.setDisabled(false)
 				.setStyle(ButtonStyle.Secondary),
@@ -278,16 +278,18 @@ export const adventureInteractionCollector = async (
 				userDataCurrent = user1IsPlaying ? userData1 : userData2;
 				quidDataCurrent = getMapData(userDataCurrent.quids, getMapData(userDataCurrent.currentQuid, interaction.guildId));
 
-				const newBotReply = await sendNextRoundMessage(i, user1IsPlaying ? userId1 : userId2, quidData1, quidData2, componentArray)
-					.catch((error) => {
-						collector.stop(`error_${error}`);
-						return undefined;
-					});
-				if (!newBotReply) { return; }
-				else { botReply = newBotReply; }
-
 				if (componentArray.every(actionRow => actionRow.components.every(button => button.toJSON().disabled === true))) { collector.stop('success'); }
 				else if (finishedRounds >= 20) { collector.stop('roundLimit'); }
+				else {
+
+					const newBotReply = await sendNextRoundMessage(i, user1IsPlaying ? userId1 : userId2, quidData1, quidData2, componentArray)
+						.catch((error) => {
+							collector.stop(`error_${error}`);
+							return undefined;
+						});
+					if (!newBotReply) { return; }
+					else { botReply = newBotReply; }
+				}
 			}, 3_000);
 		}
 	});
