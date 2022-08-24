@@ -25,6 +25,7 @@ import { adventureInteractionCollector } from '../commands/interaction/adventure
 import { playfightInteractionCollector } from '../commands/interaction/playfight';
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
+import { profilelistInteractionCollector } from '../commands/interaction/profilelist';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
@@ -382,6 +383,13 @@ export const event: Event = {
 			if (interaction.customId.startsWith('skills_')) {
 
 				await skillsInteractionCollector(interaction, serverData, userData)
+					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+				return;
+			}
+
+			if (interaction.customId.startsWith('profilelist_')) {
+
+				await profilelistInteractionCollector(interaction)
 					.catch(async (error) => { await sendErrorMessage(interaction, error); });
 				return;
 			}
