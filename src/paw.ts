@@ -40,6 +40,11 @@ export function start(
 		writeFileSync('./database/bannedList.json', JSON.stringify(({ users: [], servers: [] }) as BanList, null, '\t'));
 	}
 
+	if (existsSync('./database/errorStacks.json') == false) {
+
+		writeFileSync('./database/errorStacks.json', JSON.stringify(({}) as WebhookMessages, null, '\t'));
+	}
+
 	if (existsSync('./database/givenIds.json') == false) {
 
 		writeFileSync('./database/givenIds.json', JSON.stringify(([]) as GivenIdList, null, '\t'));

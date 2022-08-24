@@ -250,7 +250,7 @@ export async function playfightInteractionCollector(
 	let botReply = await sendNextRoundMessage(
 		user1IsPlaying ? userId1 : userId2,
 		gameType === 'connectfour' ? playingField.map(
-			row => row.join('').replace('0', emptyField).replace('1', player1Field).replace('2', player2Field),
+			row => row.join('').replaceAll('0', emptyField).replaceAll('1', player1Field).replaceAll('2', player2Field),
 		).join('\n') + '\n1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣' : undefined,
 	)
 		.catch((error) => { throw new Error(error); });
@@ -318,7 +318,7 @@ export async function playfightInteractionCollector(
 				const newBotReply = await sendNextRoundMessage(
 					user1IsPlaying ? userId1 : userId2,
 					gameType === 'connectfour' ? playingField.map(
-						row => row.join('').replace('0', emptyField).replace('1', player1Field).replace('2', player2Field),
+						row => row.join('').replaceAll('0', emptyField).replaceAll('1', player1Field).replaceAll('2', player2Field),
 					).join('\n') + '\n1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣' : undefined,
 				)
 					.catch((error) => {
@@ -427,7 +427,7 @@ export async function playfightInteractionCollector(
 						...(gameType === 'connectfour' ? [new EmbedBuilder()
 							.setColor(quidData1.color)
 							.setDescription(playingField.map(
-								row => row.join('').replace('0', emptyField).replace('1', player1Field).replace('2', player2Field).replace('3', '🟨').replace('4', '🟥'),
+								row => row.join('').replaceAll('0', emptyField).replaceAll('1', player1Field).replaceAll('2', player2Field).replaceAll('3', '🟨').replaceAll('4', '🟥'),
 							).join('\n'))] : []),
 						new EmbedBuilder()
 							.setColor(quidData1.color)

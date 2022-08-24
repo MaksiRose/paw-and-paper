@@ -10,19 +10,23 @@ import { sendEditSkillsModalResponse, skillsInteractionCollector } from '../comm
 import { helpInteractionCollector } from '../commands/miscellaneous/help';
 import { serversettingsInteractionCollector } from '../commands/miscellaneous/server-settings';
 import { shopInteractionCollector } from '../commands/miscellaneous/shop';
-import { sendRespondToTicketModalResponse, ticketInteractionCollector } from '../commands/miscellaneous/ticket';
+import { createNewTicket, sendRespondToTicketModalResponse, ticketInteractionCollector } from '../commands/miscellaneous/ticket';
 import { sendEditMessageModalResponse } from '../contextmenu/edit';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
-import { Event } from '../typedef';
-import { disableCommandComponent } from '../utils/componentDisabling';
+import { ErrorStacks, Event } from '../typedef';
+import { disableCommandComponent, disableAllComponents } from '../utils/componentDisabling';
 import { getMapData } from '../utils/helperFunctions';
 import { pronoun, pronounAndPlural } from '../utils/getPronouns';
 import { createGuild } from '../utils/updateGuild';
 import { respond } from '../utils/helperFunctions';
 import { sendErrorMessage } from '../utils/helperFunctions';
 import { adventureInteractionCollector } from '../commands/interaction/adventure';
+import { playfightInteractionCollector } from '../commands/interaction/playfight';
+import { generateId } from 'crystalid';
+import { readFileSync, writeFileSync } from 'fs';
 const { version } = require('../../package.json');
+const { error_color } = require('../../config.json');
 
 export const hasCooldownMap: Map<string, boolean> = new Map();
 export const lastInteractionTimestampMap: Map<string, number> = new Map();
@@ -265,6 +269,37 @@ export const event: Event = {
 
 				console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully clicked the button \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
+				if (interaction.customId.startsWith('report_')) {
+
+					await interaction
+						.update({
+							components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
+						})
+						.catch((error) => { console.error(error); });
+
+					const errorId = interaction.customId.split('_')[2] || generateId();
+					const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
+					const description = errorStacks[errorId] ?? interaction.message.embeds[0]?.description;
+
+					if (!description) {
+
+						await respond(interaction, {
+							embeds: [new EmbedBuilder()
+								.setColor(error_color)
+								.setDescription('There was an error trying to report the error... Ironic! Maybe you can try opening a ticket via `/ticket` instead?')],
+							ephemeral: true,
+						}, false)
+							.catch((error) => {
+								if (error.httpStatus !== 404) { throw new Error(error); }
+							});
+						return;
+					}
+
+					await createNewTicket(client, interaction, `Error ${errorId}`, description, 'bug', null, errorId);
+					delete errorStacks[errorId];
+					writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
+				}
+
 				if (interaction.customId.startsWith('ticket_')) {
 
 					await ticketInteractionCollector(interaction)
@@ -289,6 +324,13 @@ export const event: Event = {
 				if (interaction.customId.startsWith('adventure_')) {
 
 					await adventureInteractionCollector(interaction, serverData)
+						.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					return;
+				}
+
+				if (interaction.customId.startsWith('playfight_')) {
+
+					await playfightInteractionCollector(interaction, serverData)
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}

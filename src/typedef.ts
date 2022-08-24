@@ -52,6 +52,9 @@ export type GivenIdList = Array<string>;
 /** This object holds references to files that will be deleted, with either a guild ID or a user + guild ID as the key, and an object with the file name and deletion timestamp as variables. */
 export type DeleteList = { [key: string]: number; };
 
+/** This object holds errorIds as keys with their error stacks as variables. */
+export type ErrorStacks = { [key: string]: string; };
+
 /** This object holds references to users and when they voted on which websites, with their user ID as the key, and an object with the last recorded and next redeemable vote for the respective websites as variables. */
 export type VoteList = {
 	[key: string]: {

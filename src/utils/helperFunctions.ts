@@ -1,5 +1,9 @@
+import { generateId } from 'crystalid';
 import { APIMessage } from 'discord-api-types/v9';
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, CommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, MessageContextMenuCommandInteraction, ModalSubmitInteraction, SelectMenuInteraction, WebhookEditMessageOptions } from 'discord.js';
+import { readFileSync, writeFileSync } from 'fs';
+import { ErrorStacks } from '../typedef';
+const { error_color } = require('../../config.json');
 
 /**
  * It takes a map and a key, and returns the value associated with the key. If the value is undefined, it throws a type error instead.
@@ -80,14 +84,30 @@ export async function sendErrorMessage(
 	}
 	console.error(error);
 
+	let errorId: string | undefined = undefined;
+
+	try {
+
+		const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
+		errorId = generateId();
+		errorStacks[errorId] = error?.stack ?? String(error);
+		writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
+	}
+	catch (e) {
+
+		errorId = undefined;
+		console.error('Cannot edit file ', e);
+	}
+
 	await respond(interaction, {
 		embeds: [new EmbedBuilder()
+			.setColor(error_color)
 			.setTitle('There was an unexpected error executing this command:')
-			.setDescription(`\`\`\`${error?.message || String(error).substring(0, 4090)}\`\`\``)
+			.setDescription(`\`\`\`${String(error).substring(0, 4090)}\`\`\``)
 			.setFooter({ text: 'If this is the first time you encountered the issue, please report it using the button below. After that, only report it again if the issue was supposed to be fixed after an update came out. To receive updates, ask a server administrator to do the "getupdates" command.' })],
 		components: [new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
-				.setCustomId('report')
+				.setCustomId(`report_${interaction.user.id}${errorId ? `_${errorId}` : ''}`)
 				.setLabel('Report')
 				.setStyle(ButtonStyle.Success)])],
 	}, false)
