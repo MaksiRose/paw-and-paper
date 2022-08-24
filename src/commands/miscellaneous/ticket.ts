@@ -238,7 +238,7 @@ export async function sendRespondToTicketModalResponse(
 
 	await respond(interaction, {
 		content: `**You replied:**\n>>> ${messageText}`,
-		files: [new AttachmentBuilder(`../../../database/open_tickets/${ticketId}.txt`)
+		files: [new AttachmentBuilder(`./database/open_tickets/${ticketId}.txt`)
 			.setName('ticketConversation.txt')],
 	}, false)
 		.catch((error) => {
@@ -276,7 +276,7 @@ export async function sendRespondToTicketModalResponse(
 			embeds: interaction.message.embeds,
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([getRespondButton(interaction.message.channel.isDMBased(), interaction.message.channel.isDMBased() ? interaction.user.id : interaction.message.channelId, ticketId, !fromAdmin)])],
-			files: [new AttachmentBuilder(`../../../database/open_tickets/${ticketId}.txt`)
+			files: [new AttachmentBuilder(`./database/open_tickets/${ticketId}.txt`)
 				.setName('ticketConversation.txt')],
 		});
 }
