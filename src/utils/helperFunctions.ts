@@ -16,7 +16,7 @@ export function getMapData<T>(
 	key: string,
 ): T {
 	const data = map[key];
-	if (!data) throw new TypeError(`${data} is undefined`);
+	if (!data) throw new TypeError(`${key} is undefined`);
 	return data;
 }
 
