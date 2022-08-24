@@ -69,7 +69,7 @@ export function start(
 	const allServerNames = readdirSync('./database/servers').filter(f => f.endsWith('.json'));
 	for (const documentName of allServerNames) {
 		const doc = JSON.parse(readFileSync(`./database/servers/${documentName}`, 'utf-8'));
-		if (doc.uuid.length > 15) {
+		if (doc.uuid.length > 16) {
 			if (Object.hasOwn(doc, 'proxysetting')) {
 				doc.proxySetting = {
 					channels: {
@@ -88,7 +88,7 @@ export function start(
 	const allProfileNames = readdirSync('./database/profiles').filter(f => f.endsWith('.json'));
 	for (const documentName of allProfileNames) {
 		const doc = JSON.parse(readFileSync(`./database/profiles/${documentName}`, 'utf-8'));
-		if (doc.uuid.length > 15) {
+		if (doc.uuid.length > 16) {
 			if (typeof doc.userId === 'string') {
 				doc.userId = [doc.userId];
 			}
