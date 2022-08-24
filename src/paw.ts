@@ -112,6 +112,14 @@ export function start(
 					};
 				}
 			}
+			if (Object.hasOwn(doc, 'characters')) {
+
+				doc.quids = doc.characters;
+			}
+			if (Object.hasOwn(doc, 'currentCharacter')) {
+
+				doc.currentQuid = doc.currentCharacter;
+			}
 			const { birthtime } = statSync(`./database/profiles/${documentName}`);
 			const newUUID = generateId(birthtime.getTime());
 			doc.uuid = newUUID;
