@@ -83,10 +83,10 @@ export const command: SlashCommand = {
 		userData = await userModel.findOneAndUpdate(
 			u => u.uuid === userData?.uuid,
 			(u) => {
-				let q = u.quids[_id];
+				const q = u.quids[_id];
 				if (!q) {
 
-					q = {
+					u.quids[_id] = {
 						_id: _id,
 						name: name,
 						species: '',
