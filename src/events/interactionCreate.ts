@@ -81,7 +81,10 @@ export const event: Event = {
 			if (command === undefined || !Object.hasOwn(command, 'sendAutocomplete')) { return; }
 
 			/* It's sending the autocomplete message. */
-			await command.sendAutocomplete?.(client, interaction, userData, serverData);
+			await command.sendAutocomplete?.(client, interaction, userData, serverData)
+				.catch(async (error) => {
+					console.error(error);
+				});
 			return;
 		}
 

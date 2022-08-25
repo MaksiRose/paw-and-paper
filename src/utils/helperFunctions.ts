@@ -1,6 +1,6 @@
 import { generateId } from 'crystalid';
 import { APIMessage } from 'discord-api-types/v9';
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, CommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, MessageContextMenuCommandInteraction, ModalSubmitInteraction, SelectMenuInteraction, WebhookEditMessageOptions } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, MessageContextMenuCommandInteraction, MessageOptions, ModalSubmitInteraction, SelectMenuInteraction, UserContextMenuCommandInteraction, WebhookEditMessageOptions } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 import { ErrorStacks } from '../typedef';
 const { error_color } = require('../../config.json');
@@ -39,14 +39,14 @@ export function getUserIds(
  * @returns A promise that resolves to a Message<boolean>
  */
 export async function respond(
-	interaction: CommandInteraction | MessageContextMenuCommandInteraction | ModalSubmitInteraction | ButtonInteraction | SelectMenuInteraction,
+	interaction: UserContextMenuCommandInteraction | ChatInputCommandInteraction | MessageContextMenuCommandInteraction | ButtonInteraction | SelectMenuInteraction | ModalSubmitInteraction,
 	options: WebhookEditMessageOptions | InteractionReplyOptions,
 	editMessage: boolean,
 ): Promise<Message<boolean>> {
 
 	let botReply: APIMessage | Message<boolean>;
 	if (!interaction.replied && !interaction.deferred) {
-		botReply = await interaction.reply({ ...options, ...{ fetchReply: true } });
+		botReply = await interaction.reply({ ...options, fetchReply: true });
 	}
 	else if (editMessage) {
 		botReply = await interaction.editReply(options);
@@ -66,11 +66,11 @@ export async function respond(
  */
 
 export async function sendErrorMessage(
-	interaction: CommandInteraction | MessageContextMenuCommandInteraction | ButtonInteraction | SelectMenuInteraction | ModalSubmitInteraction,
+	interaction: UserContextMenuCommandInteraction | ChatInputCommandInteraction | MessageContextMenuCommandInteraction | ButtonInteraction | SelectMenuInteraction | ModalSubmitInteraction,
 	error: any,
 ): Promise<any> {
 
-	if (interaction instanceof ChatInputCommandInteraction || interaction instanceof MessageContextMenuCommandInteraction) {
+	if (interaction instanceof ChatInputCommandInteraction || interaction instanceof MessageContextMenuCommandInteraction || interaction instanceof UserContextMenuCommandInteraction) {
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to execute \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 	}
 	else if (interaction.isSelectMenu()) {
@@ -99,7 +99,7 @@ export async function sendErrorMessage(
 		console.error('Cannot edit file ', e);
 	}
 
-	await respond(interaction, {
+	const messagePayload: MessageOptions = {
 		embeds: [new EmbedBuilder()
 			.setColor(error_color)
 			.setTitle('There was an unexpected error executing this command:')
@@ -110,9 +110,20 @@ export async function sendErrorMessage(
 				.setCustomId(`report_${interaction.user.id}${errorId ? `_${errorId}` : ''}`)
 				.setLabel('Report')
 				.setStyle(ButtonStyle.Success)])],
-	}, false)
-		.catch((newError) => {
-			console.error(newError);
+	};
+
+	await respond(interaction, messagePayload, false)
+		.catch(async (error2) => {
+
+			console.error('Failed to send error message to user. ' + error2);
+			await (async () => {
+				if (interaction.isButton() || interaction.isSelectMenu()) { await interaction.message.reply({ ...messagePayload, failIfNotExists: false }); }
+				if (interaction.isMessageContextMenuCommand()) { await interaction.targetMessage.reply({ ...messagePayload, failIfNotExists: false }); }
+				if (interaction.isUserContextMenuCommand() || interaction.isChatInputCommand() || interaction.type === InteractionType.ModalSubmit) { await interaction.channel?.send(messagePayload); }
+			})()
+				.catch((error3) => {
+					console.error('Failed to send backup error message to user. ' + error3);
+				});
 		});
 }
 
