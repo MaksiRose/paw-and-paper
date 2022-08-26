@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, EmbedBuilder, Interaction, InteractionType, MessageContextMenuCommandInteraction, UserContextMenuCommandInteraction } from 'discord.js';
+import { ChatInputCommandInteraction, CommandInteraction, EmbedBuilder, Interaction, InteractionType, MessageComponentInteraction, MessageContextMenuCommandInteraction, ModalSubmitInteraction, UserContextMenuCommandInteraction } from 'discord.js';
 import { deleteInteractionCollector } from '../commands/quid_customization/delete';
 import { profileInteractionCollector } from '../commands/quid_customization/profile';
 import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../commands/quid_customization/pronouns';
@@ -26,11 +26,12 @@ import { playfightInteractionCollector } from '../commands/interaction/playfight
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
 import { profilelistInteractionCollector } from '../commands/interaction/profilelist';
+import { startResting } from '../commands/gameplay_maintenance/rest';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
 export const cooldownMap: Map<string, boolean> = new Map();
-export const lastInteractionTimestampMap: Map<string, number> = new Map();
+export const lastInteractionMap: Map<string, CommandInteraction<'cached'> | MessageComponentInteraction<'cached'> | ModalSubmitInteraction<'cached'>> = new Map();
 
 export const event: Event = {
 	name: 'interactionCreate',
@@ -48,7 +49,7 @@ export const event: Event = {
 		let serverData = await serverModel.findOne(s => s.serverId === interaction.guildId).catch(() => { return null; });
 
 		/* It's setting the last interaction timestamp for the user to now. */
-		if (userData) { lastInteractionTimestampMap.set(userData.uuid + interaction.guildId, Date.now()); }
+		if (userData && interaction.inCachedGuild() && (interaction.isRepliable() && !interaction.isAutocomplete())) { lastInteractionMap.set(userData.uuid + interaction.guildId, interaction); } // For some reason autocompleteInteraction is not excluded despite being
 
 		/* Checking if the serverData is null. If it is null, it will create a guild. */
 		if (!serverData && interaction.inCachedGuild()) {
@@ -406,19 +407,27 @@ setInterval(async function() {
 	const userArray = await userModel.find();
 	for (const user of userArray) {
 
-		const currentQuid = user.currentQuid;
-		for (const [serverId, quidId] of Object.entries(currentQuid)) {
+		for (const [guildId, quidId] of Object.entries(user.currentQuid)) {
 
-			const activeProfile = user.quids[quidId]?.profiles[serverId];
-			if (!activeProfile) { continue; }
+			const quid = user.quids[quidId];
+			const activeProfile = quid?.profiles[guildId];
+			if (!quid || !activeProfile) { continue; }
 			const tenMinutesInMs = 600_000;
 
-			const lastInteractionIsTenMinutesAgo = (lastInteractionTimestampMap.get(user.uuid + serverId) || 0) < Date.now() - tenMinutesInMs;
+			const lastInteraction = lastInteractionMap.get(user.uuid + guildId);
+			if (!lastInteraction) { continue; }
+
+			const serverData = await serverModel.findOne(s => s.serverId === lastInteraction.guildId).catch(() => { return null; });
+			if (!serverData) { continue; }
+
+			const lastInteractionIsTenMinutesAgo = lastInteraction.createdTimestamp < Date.now() - tenMinutesInMs;
 			const hasLessThanMaxEnergy = activeProfile.energy < activeProfile.maxEnergy;
 			const isConscious = activeProfile.energy > 0 || activeProfile.health > 0 || activeProfile.hunger > 0 || activeProfile.thirst > 0;
-			if (lastInteractionIsTenMinutesAgo && !activeProfile.isResting && hasLessThanMaxEnergy && isConscious) {
+			const hasNoCooldown = cooldownMap.get(user.uuid + guildId) === false;
+			if (lastInteractionIsTenMinutesAgo && !activeProfile.isResting && hasLessThanMaxEnergy && isConscious && hasNoCooldown) {
 
-				// trigger rest command here
+				await startResting(lastInteraction, user, quid, activeProfile, serverData)
+					.catch(async (error) => { await sendErrorMessage(lastInteraction, error); });
 			}
 		}
 	}

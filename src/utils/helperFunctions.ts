@@ -1,6 +1,6 @@
 import { generateId } from 'crystalid';
 import { APIMessage } from 'discord-api-types/v9';
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, CommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, MessageContextMenuCommandInteraction, MessageOptions, ModalSubmitInteraction, SelectMenuInteraction, UserContextMenuCommandInteraction, WebhookEditMessageOptions } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, MessageComponentInteraction, MessageOptions, ModalSubmitInteraction, WebhookEditMessageOptions } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 import { ErrorStacks } from '../typedef';
 const { error_color } = require('../../config.json');
@@ -39,7 +39,7 @@ export function getUserIds(
  * @returns A promise that resolves to a Message<boolean>
  */
 export async function respond(
-	interaction: CommandInteraction | UserContextMenuCommandInteraction | ChatInputCommandInteraction | MessageContextMenuCommandInteraction | ButtonInteraction | SelectMenuInteraction | ModalSubmitInteraction,
+	interaction: CommandInteraction | MessageComponentInteraction | ModalSubmitInteraction,
 	options: WebhookEditMessageOptions | InteractionReplyOptions,
 	editMessage: boolean,
 ): Promise<Message<boolean>> {
@@ -66,11 +66,11 @@ export async function respond(
  */
 
 export async function sendErrorMessage(
-	interaction: CommandInteraction | UserContextMenuCommandInteraction | ChatInputCommandInteraction | MessageContextMenuCommandInteraction | ButtonInteraction | SelectMenuInteraction | ModalSubmitInteraction,
+	interaction: CommandInteraction | MessageComponentInteraction | ModalSubmitInteraction,
 	error: any,
 ): Promise<any> {
 
-	if (interaction instanceof ChatInputCommandInteraction || interaction instanceof MessageContextMenuCommandInteraction || interaction instanceof UserContextMenuCommandInteraction) {
+	if (interaction.type === InteractionType.ApplicationCommand) {
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to execute \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 	}
 	else if (interaction.isSelectMenu()) {

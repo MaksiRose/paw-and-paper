@@ -3,10 +3,10 @@ import { cooldownMap } from '../events/interactionCreate';
 import { respond } from './helperFunctions';
 import userModel from '../models/userModel';
 import { Quid, Profile, UserSchema, Inventory } from '../typedef';
-import { stopResting } from './executeResting';
 import { getMapData } from './helperFunctions';
 import { pronoun, pronounAndPlural, upperCasePronoun } from './getPronouns';
 import { decreaseLevel } from './levelHandling';
+import { stopResting } from '../commands/gameplay_maintenance/rest';
 const { error_color } = require('../../config.json');
 
 export async function isPassedOut(
