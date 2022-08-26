@@ -14,7 +14,7 @@ const { MessageActionRow, MessageButton, MessageSelectMenu, MessageEmbed } = req
 const disableAllComponents = require('../../utils/disableAllComponents');
 const isInGuild = require('../../utils/isInGuild');
 const { materialsMap } = require('../../utils/itemsInfo');
-const { eatAdvice, drinkAdvice, restAdvice } = require('../../utils/adviceMessages');
+const { eatAdvice, drinkAdvice, restAdvice } = require('../../utils/adviceMessages').default;
 
 module.exports.name = 'repair';
 

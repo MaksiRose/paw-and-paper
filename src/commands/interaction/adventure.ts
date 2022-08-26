@@ -537,14 +537,14 @@ async function checkAfterGameChanges(
 
 	await addFriendshipPoints(interaction.message, userData1, quidData1._id, userData2, quidData2._id);
 
-	await restAdvice(interaction.message, userData1);
-	await restAdvice(interaction.message, userData2);
+	await restAdvice(interaction, userData1, profileData1);
+	await restAdvice(interaction, userData2, profileData2);
 
-	await drinkAdvice(interaction.message, userData1);
-	await drinkAdvice(interaction.message, userData2);
+	await drinkAdvice(interaction, userData1, profileData1);
+	await drinkAdvice(interaction, userData2, profileData2);
 
-	await eatAdvice(interaction.message, userData1);
-	await eatAdvice(interaction.message, userData2);
+	await eatAdvice(interaction, userData1, profileData1);
+	await eatAdvice(interaction, userData2, profileData2);
 
 	return { user1CheckLevelData, user2CheckLevelData };
 }

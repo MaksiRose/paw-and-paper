@@ -11,7 +11,7 @@ const { remindOfAttack } = require('../gameplay_primary/attack');
 const { pronounAndPlural, pronoun, upperCasePronounAndPlural, upperCasePronoun } = require('../../utils/getPronouns');
 const { addFriendshipPoints } = require('../../utils/friendshipHandling');
 const isInGuild = require('../../utils/isInGuild');
-const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
+const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages').default;
 const sharingCooldownAccountsMap = new Map();
 
 module.exports.name = 'share';

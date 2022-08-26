@@ -1,7 +1,7 @@
 // @ts-check
 const { MessageActionRow, MessageButton } = require('discord.js');
 const profileModel = require('../../models/profileModel');
-const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
+const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages').default;
 const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { decreaseHunger, decreaseThirst, decreaseEnergy, decreaseHealth } = require('../../utils/checkCondition');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
@@ -82,8 +82,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				description: `*${characterData.name} walks towards the entrance of the grotto, where an elderly is already waiting for ${pronoun(characterData, 1)}.*\n"Do you already know about this place? It has everything needed to heal any injury or illness. This makes it very precious, and so it should only be used in emergencies. So only go here if you can't find anything in the medicine den that can cure you!"\n*The ${characterData.displayedSpecies || characterData.species} must decide which of their injuries ${pronounAndPlural(characterData, 0, 'want')} to heal here.*`,
 				footer: { text: 'You can only select an injury when the pack has no herbs that can heal that injury.' },
 			}],
-			components: [ new MessageActionRow({
-				components: [ new MessageButton({
+			components: [new MessageActionRow({
+				components: [new MessageButton({
 					customId: 'recover-wounds',
 					label: 'Wound',
 					disabled: profileData.injuries.wounds <= 0 || serverInventory.filter(([key]) => allPlantMaps.get(key)?.healsWounds === true).length > 0,
@@ -358,7 +358,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 					embeds: [...embedArray, {
 						color: characterData.color,
 						author: { name: characterData.name, icon_url: characterData.avatarURL },
-						description:`*After careful consideration, ${characterData.name} decides that none of ${pronoun(characterData, 2)} injuries are urgent enough to use the grotto to regenerate. The ${characterData.displayedSpecies || characterData.species} might inspect the medicine den for useful plants instead.*`,
+						description: `*After careful consideration, ${characterData.name} decides that none of ${pronoun(characterData, 2)} injuries are urgent enough to use the grotto to regenerate. The ${characterData.displayedSpecies || characterData.species} might inspect the medicine den for useful plants instead.*`,
 					}],
 					components: disableAllComponents(botReply.components),
 				})

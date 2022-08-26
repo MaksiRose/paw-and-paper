@@ -10,7 +10,7 @@ const { pronoun, pronounAndPlural } = require('../../utils/getPronouns');
 const { checkLevelUp } = require('../../utils/levelHandling');
 const { MessageActionRow, MessageButton } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
-const { coloredButtonsAdvice, restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
+const { coloredButtonsAdvice, restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages').default;
 const isInGuild = require('../../utils/isInGuild');
 
 module.exports.name = 'practice';
@@ -75,8 +75,8 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 				description: `*A very experienced Elderly approaches ${characterData.name}.* "I've seen that you have not performed well in fights lately. Do you want to practice with me for a bit to strengthen your skills?"`,
 				footer: { text: 'You will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response. The footer will provide hints as to which button you should click. This is a memory game, so try to remember which button to click in which situation.' },
 			}],
-			components: [ new MessageActionRow({
-				components: [ new MessageButton({
+			components: [new MessageActionRow({
+				components: [new MessageButton({
 					customId: 'practice-accept',
 					label: 'Accept',
 					emoji: '⚔️',
@@ -177,7 +177,7 @@ module.exports.sendMessage = async (client, message, argumentsArray, userData, s
 	async function interactionCollector() {
 
 		const fightComponents = new MessageActionRow({
-			components: [ new MessageButton({
+			components: [new MessageButton({
 				customId: 'practice-attack',
 				label: 'Attack',
 				emoji: '⏫',

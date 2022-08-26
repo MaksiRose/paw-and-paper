@@ -16,7 +16,7 @@ const disableAllComponents = require('../../utils/disableAllComponents');
 const { addFriendshipPoints } = require('../../utils/friendshipHandling');
 const isInGuild = require('../../utils/isInGuild');
 const wearDownDen = require('../../utils/wearDownDen');
-const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
+const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages').default;
 
 module.exports.name = 'heal';
 

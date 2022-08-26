@@ -15,7 +15,7 @@ const { remindOfAttack, startAttack } = require('./attack');
 const { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural } = require('../../utils/getPronouns');
 const { MessageActionRow, MessageButton, MessageEmbed } = require('discord.js');
 const disableAllComponents = require('../../utils/disableAllComponents');
-const { coloredButtonsAdvice, restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
+const { coloredButtonsAdvice, restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages').default;
 const isInGuild = require('../../utils/isInGuild');
 
 module.exports.name = 'explore';

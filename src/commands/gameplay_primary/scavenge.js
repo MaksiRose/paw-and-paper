@@ -1,7 +1,7 @@
 // @ts-check
 const { MessageActionRow, MessageButton } = require('discord.js');
 const profileModel = require('../../models/profileModel');
-const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages');
+const { restAdvice, drinkAdvice, eatAdvice } = require('../../utils/adviceMessages').default;
 const { hasCompletedAccount } = require('../../utils/checkAccountCompletion');
 const { decreaseEnergy, decreaseHunger, decreaseThirst, decreaseHealth } = require('../../utils/checkCondition');
 const { isInvalid, isPassedOut } = require('../../utils/checkValidity');
