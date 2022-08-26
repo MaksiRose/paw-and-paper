@@ -97,7 +97,7 @@ export async function helpInteractionCollector(
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
 					.setTitle('Page 4: 👥 Interaction')
-					.setDescription('**`/adventure`** - Go adventuring with a friend. Requires 6 friendship hearts.\n**`/share`** - Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person.\n**`/playfight`** - You can play Connect Four or Tic Tac Toe.\n**`/say`** - Sends a message as if your quid was saying it.\n**`/hug`** - Hug someone, if they consent.\n**`/profilelist`** - View a list of all the profiles that exist on this server.\n**`/friendships`** - View a list of all the friendships that you have with other players.\n**`/roll`** - Roll dices.\n**`/skills`** - Show a list of or edit custom skills/ability scores.')],
+					.setDescription('**`/adventure`** - Go adventuring with a friend. Requires 6 friendship hearts.\n**`/share`** - Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person. __Only available to elderlies.__\n**`/playfight`** - You can play Connect Four or Tic Tac Toe.\n**`/say`** - Sends a message as if your quid was saying it.\n**`/hug`** - Hug someone, if they consent.\n**`/profilelist`** - View a list of all the profiles that exist on this server.\n**`/friendships`** - View a list of all the friendships that you have with other players.\n**`/roll`** - Roll dices.\n**`/skills`** - Show a list of or edit custom skills/ability scores.')],
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
