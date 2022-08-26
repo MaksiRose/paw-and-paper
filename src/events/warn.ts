@@ -5,6 +5,6 @@ export const event: Event = {
 	once: false,
 	async execute(client, info: string) {
 
-		console.log(info);
+		console.log('Discord\'s warn event was triggered with the following info:\n', info);
 	},
 };
