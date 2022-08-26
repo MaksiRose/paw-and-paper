@@ -1,6 +1,6 @@
 import { generateId } from 'crystalid';
 import { APIMessage } from 'discord-api-types/v9';
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, MessageContextMenuCommandInteraction, MessageOptions, ModalSubmitInteraction, SelectMenuInteraction, UserContextMenuCommandInteraction, WebhookEditMessageOptions } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, CommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, MessageContextMenuCommandInteraction, MessageOptions, ModalSubmitInteraction, SelectMenuInteraction, UserContextMenuCommandInteraction, WebhookEditMessageOptions } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 import { ErrorStacks } from '../typedef';
 const { error_color } = require('../../config.json');
@@ -39,7 +39,7 @@ export function getUserIds(
  * @returns A promise that resolves to a Message<boolean>
  */
 export async function respond(
-	interaction: UserContextMenuCommandInteraction | ChatInputCommandInteraction | MessageContextMenuCommandInteraction | ButtonInteraction | SelectMenuInteraction | ModalSubmitInteraction,
+	interaction: CommandInteraction | UserContextMenuCommandInteraction | ChatInputCommandInteraction | MessageContextMenuCommandInteraction | ButtonInteraction | SelectMenuInteraction | ModalSubmitInteraction,
 	options: WebhookEditMessageOptions | InteractionReplyOptions,
 	editMessage: boolean,
 ): Promise<Message<boolean>> {
@@ -66,7 +66,7 @@ export async function respond(
  */
 
 export async function sendErrorMessage(
-	interaction: UserContextMenuCommandInteraction | ChatInputCommandInteraction | MessageContextMenuCommandInteraction | ButtonInteraction | SelectMenuInteraction | ModalSubmitInteraction,
+	interaction: CommandInteraction | UserContextMenuCommandInteraction | ChatInputCommandInteraction | MessageContextMenuCommandInteraction | ButtonInteraction | SelectMenuInteraction | ModalSubmitInteraction,
 	error: any,
 ): Promise<any> {
 

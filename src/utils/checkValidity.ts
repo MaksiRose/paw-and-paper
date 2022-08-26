@@ -1,5 +1,5 @@
 import { ButtonInteraction, CommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
-import { hasCooldownMap } from '../events/interactionCreate';
+import { cooldownMap } from '../events/interactionCreate';
 import { respond } from './helperFunctions';
 import userModel from '../models/userModel';
 import { Quid, Profile, UserSchema, Inventory } from '../typedef';
@@ -59,7 +59,7 @@ export async function hasCooldown(
 	commandName: string,
 ): Promise<boolean> {
 
-	if (hasCooldownMap.get(userData?.uuid + interaction.guildId) === true && commandName === interaction.commandName) {
+	if (cooldownMap.get(userData.uuid + interaction.guildId) === true && commandName === interaction.commandName) {
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
@@ -270,7 +270,7 @@ export function isInteractable(
 		return false;
 	}
 
-	if (hasCooldownMap.get(userData.uuid + interaction.guildId) !== false) { // The !== false ensures that both undefined and true trigger this response
+	if (cooldownMap.get(userData.uuid + interaction.guildId) !== false) { // The !== false ensures that both undefined and true trigger this response
 
 		respond(interaction, {
 			content: messageContent,

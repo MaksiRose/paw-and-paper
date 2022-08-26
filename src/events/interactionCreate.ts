@@ -29,7 +29,7 @@ import { profilelistInteractionCollector } from '../commands/interaction/profile
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
-export const hasCooldownMap: Map<string, boolean> = new Map();
+export const cooldownMap: Map<string, boolean> = new Map();
 export const lastInteractionTimestampMap: Map<string, number> = new Map();
 
 export const event: Event = {
@@ -99,7 +99,7 @@ export const event: Event = {
 			}
 
 			/* If the user is not registered in the cooldown map, it's setting the cooldown to false for the user. */
-			if (userData && !hasCooldownMap.has(userData.uuid + interaction.guildId)) { hasCooldownMap.set(userData.uuid + interaction.guildId, false); }
+			if (userData && interaction.guildId && !cooldownMap.has(userData.uuid + interaction.guildId)) { cooldownMap.set(userData.uuid + interaction.guildId, false); }
 
 			/* It's disabling all components if userData exists, the interaction is in a guild and the command is set to disable a previous command. */
 			if (userData && command.disablePreviousCommand) { await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.(); }

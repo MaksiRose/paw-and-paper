@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
-import { hasCooldownMap } from '../../events/interactionCreate';
+import { cooldownMap } from '../../events/interactionCreate';
 import { getSmallerNumber, KeyOfUnion, sendErrorMessage, widenValues } from '../../utils/helperFunctions';
 import { respond } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
@@ -176,8 +176,8 @@ export async function adventureInteractionCollector(
 	let profileData2 = getMapData(quidData2.profiles, interaction.guildId);
 
 	/* For both users, set cooldowns to true, but unregister the command from being disabled, and get the condition change */
-	hasCooldownMap.set(userData1.uuid + interaction.guildId, true);
-	hasCooldownMap.set(userData2.uuid + interaction.guildId, true);
+	cooldownMap.set(userData1.uuid + interaction.guildId, true);
+	cooldownMap.set(userData2.uuid + interaction.guildId, true);
 	delete disableCommandComponent[userData1.uuid + interaction.guildId];
 	delete disableCommandComponent[userData2.uuid + interaction.guildId];
 	const experiencePoints = generateRandomNumber(11, 5);
@@ -297,8 +297,8 @@ export async function adventureInteractionCollector(
 	collector.on('end', async (collected, reason) => {
 
 		/* Set both user's cooldown to false */
-		hasCooldownMap.set(userData1.uuid + interaction.guildId, false);
-		hasCooldownMap.set(userData2.uuid + interaction.guildId, false);
+		cooldownMap.set(userData1.uuid + interaction.guildId, false);
+		cooldownMap.set(userData2.uuid + interaction.guildId, false);
 
 		if (reason.startsWith('error')) {
 

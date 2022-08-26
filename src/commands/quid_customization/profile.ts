@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, GuildMember, InteractionReplyOptions, InteractionUpdateOptions, MessageEditOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
-import { hasCooldownMap } from '../../events/interactionCreate';
+import { cooldownMap } from '../../events/interactionCreate';
 import { respond } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { Quid, commonPlantsInfo, CurrentRegionType, CustomClient, materialsInfo, RankType, rarePlantsInfo, SlashCommand, specialPlantsInfo, speciesInfo, uncommonPlantsInfo, UserSchema } from '../../typedef';
@@ -198,7 +198,7 @@ export async function profileInteractionCollector(
 		let userData = await userModel.findOne(u => u.userId.includes(userId));
 
 		/* Checking if the user is on a cooldown, and if they are, it will respond that they can't switch quids. */
-		if (hasCooldownMap.get(userData.uuid + interaction.guildId) === true) {
+		if (cooldownMap.get(userData.uuid + interaction.guildId) === true) {
 
 			await respond(interaction, {
 				content: 'You can\'t switch quids because your current quid is busy!',

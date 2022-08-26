@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { hasCooldownMap } from '../../events/interactionCreate';
+import { cooldownMap } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
 import { CurrentRegionType, Profile, Quid, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
@@ -126,8 +126,8 @@ export async function playfightInteractionCollector(
 	let profileData2 = getMapData(quidData2.profiles, interaction.guildId);
 
 	/* For both users, set cooldowns to true, but unregister the command from being disabled, and get the condition change */
-	hasCooldownMap.set(userData1.uuid + interaction.guildId, true);
-	hasCooldownMap.set(userData2.uuid + interaction.guildId, true);
+	cooldownMap.set(userData1.uuid + interaction.guildId, true);
+	cooldownMap.set(userData2.uuid + interaction.guildId, true);
 	delete disableCommandComponent[userData1.uuid + interaction.guildId];
 	delete disableCommandComponent[userData2.uuid + interaction.guildId];
 	const decreasedStatsData1 = await changeCondition(userData1, quidData1, profileData1, 0, CurrentRegionType.Prairie);
@@ -335,8 +335,8 @@ export async function playfightInteractionCollector(
 	collector.on('end', async (collected, reason) => {
 
 		/* Set both user's cooldown to false */
-		hasCooldownMap.set(userData1.uuid + interaction.guildId, false);
-		hasCooldownMap.set(userData2.uuid + interaction.guildId, false);
+		cooldownMap.set(userData1.uuid + interaction.guildId, false);
+		cooldownMap.set(userData2.uuid + interaction.guildId, false);
 
 		if (reason.startsWith('error')) {
 
