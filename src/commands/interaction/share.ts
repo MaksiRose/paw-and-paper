@@ -142,9 +142,7 @@ export const command: SlashCommand = {
 		/* Add the sharing cooldown to user */
 		sharingCooldownAccountsMap.set(quidData1._id + interaction.guildId, Date.now());
 
-		/* For both users, set cooldowns to true, and get the condition change for user 1 */
-		cooldownMap.set(userData1.uuid + interaction.guildId, true);
-		cooldownMap.set(userData2.uuid + interaction.guildId, true);
+		/* Change the condition for user 1 */
 		const decreasedStatsData1 = await changeCondition(userData1, quidData1, profileData1, 0, CurrentRegionType.Ruins);
 		profileData1 = decreasedStatsData1.profileData;
 
