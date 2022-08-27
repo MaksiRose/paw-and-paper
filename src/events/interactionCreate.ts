@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, CommandInteraction, EmbedBuilder, Interaction, InteractionType, MessageComponentInteraction, MessageContextMenuCommandInteraction, ModalSubmitInteraction, UserContextMenuCommandInteraction } from 'discord.js';
+import { CommandInteraction, EmbedBuilder, Interaction, InteractionType, MessageComponentInteraction, ModalSubmitInteraction } from 'discord.js';
 import { deleteInteractionCollector } from '../commands/quid_customization/delete';
 import { profileInteractionCollector } from '../commands/quid_customization/profile';
 import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../commands/quid_customization/pronouns';
@@ -27,6 +27,7 @@ import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
 import { profilelistInteractionCollector } from '../commands/interaction/profilelist';
 import { startResting } from '../commands/gameplay_maintenance/rest';
+import { statsInteractionCollector } from '../commands/gameplay_maintenance/stats';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
@@ -89,7 +90,7 @@ export const event: Event = {
 			return;
 		}
 
-		if (interaction instanceof ChatInputCommandInteraction) {
+		if (interaction.isChatInputCommand()) {
 
 			/* Getting the command from the client and checking if the command is undefined.
 			If it is, it will error. */
@@ -164,9 +165,9 @@ export const event: Event = {
 			return;
 		}
 
-		if (interaction instanceof UserContextMenuCommandInteraction) { return; }
+		if (interaction.isUserContextMenuCommand()) { return; }
 
-		if (interaction instanceof MessageContextMenuCommandInteraction) {
+		if (interaction.isMessageContextMenuCommand()) {
 
 			/* Getting the command from the client and checking if the command is undefined.
 			If it is, it will error. */
@@ -184,7 +185,7 @@ export const event: Event = {
 			return;
 		}
 
-		if (interaction.type === InteractionType.ModalSubmit) {
+		if (interaction.isModalSubmit()) {
 
 			console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully submitted the modal \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
@@ -232,7 +233,7 @@ export const event: Event = {
 			return;
 		}
 
-		if (interaction.type === InteractionType.MessageComponent) {
+		if (interaction.isMessageComponent()) {
 
 			/* It's checking if the user that created the command is the same as the user that is interacting with the command, or if the user that is interacting is mentioned in the interaction.customId. If neither is true, it will send an error message. */
 			const isNotCommandCreator = interaction.message.interaction && interaction.message.interaction.user.id !== interaction.user.id;
@@ -336,6 +337,13 @@ export const event: Event = {
 				if (interaction.customId.startsWith('playfight_')) {
 
 					await playfightInteractionCollector(interaction, serverData)
+						.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					return;
+				}
+
+				if (interaction.customId.startsWith('stats_')) {
+
+					await statsInteractionCollector(interaction)
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
