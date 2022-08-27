@@ -28,6 +28,7 @@ import { readFileSync, writeFileSync } from 'fs';
 import { profilelistInteractionCollector } from '../commands/interaction/profilelist';
 import { startResting } from '../commands/gameplay_maintenance/rest';
 import { statsInteractionCollector } from '../commands/gameplay_maintenance/stats';
+import settingsInteractionCollector from '../utils/settingsInteractionCollector';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
@@ -344,6 +345,13 @@ export const event: Event = {
 				if (interaction.customId.startsWith('stats_')) {
 
 					await statsInteractionCollector(interaction)
+						.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					return;
+				}
+
+				if (interaction.customId.includes('settings_')) {
+
+					await settingsInteractionCollector(client, interaction, userData)
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
