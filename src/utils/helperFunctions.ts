@@ -31,16 +31,15 @@ export function getUserIds(
 }
 
 /**
- * It replies to an interaction, and if the interaction has already been replied to, it will edit the
- * reply instead
+ * It replies to an interaction, and if the interaction has already been replied to, it will edit or followup the reply instead.
  * @param interaction - The interaction object that was passed to the command handler.
- * @param options - WebhookEditMessageOptions | InteractionReplyOptions
+ * @param options - WebhookEditMessageOptions & InteractionReplyOptions
  * @param editMessage - boolean - If true, the bot will edit the original message instead of sending a follow-up message.
  * @returns A promise that resolves to a Message<boolean>
  */
 export async function respond(
 	interaction: CommandInteraction | MessageComponentInteraction | ModalSubmitInteraction,
-	options: WebhookEditMessageOptions | InteractionReplyOptions,
+	options: Omit<InteractionReplyOptions & WebhookEditMessageOptions, 'flags'>,
 	editMessage: boolean,
 ): Promise<Message<boolean>> {
 
@@ -188,6 +187,7 @@ export type WidenValues<T> = {
 };
 export function widenValues<T>(obj: T): WidenValues<T> { return obj as any; }
 export function unsafeKeys<T>(obj: T): KeyOfUnion<T>[] { return Object.keys(obj) as KeyOfUnion<T>[]; }
+export function unsafeEntries<T>(obj: T): KeyOfUnion<T>[] { return Object.entries(obj) as [KeyOfUnion<T>[], any]; }
 
 /**
  * Return the bigger of two numbers

@@ -29,6 +29,7 @@ import { profilelistInteractionCollector } from '../commands/interaction/profile
 import { startResting } from '../commands/gameplay_maintenance/rest';
 import { statsInteractionCollector } from '../commands/gameplay_maintenance/stats';
 import settingsInteractionCollector from '../utils/settingsInteractionCollector';
+import { storeInteractionCollector } from '../commands/gameplay_maintenance/store';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
@@ -344,7 +345,7 @@ export const event: Event = {
 
 				if (interaction.customId.startsWith('stats_')) {
 
-					await statsInteractionCollector(interaction)
+					await statsInteractionCollector(interaction, userData, serverData)
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
@@ -413,6 +414,13 @@ export const event: Event = {
 					.catch(async (error) => { await sendErrorMessage(interaction, error); });
 				return;
 			}
+
+			if (interaction.customId.startsWith('store_')) {
+
+				await storeInteractionCollector(interaction, userData, serverData)
+					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+				return;
+			}
 			return;
 		}
 	},
@@ -448,4 +456,3 @@ setInterval(async function() {
 		}
 	}
 }, 60_000);
-

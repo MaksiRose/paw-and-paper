@@ -1,8 +1,9 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import userModel from '../../models/userModel';
-import { Inventory, RankType, SlashCommand, UserSchema } from '../../typedef';
+import { Inventory, RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { getMapData, respond } from '../../utils/helperFunctions';
+import { sendStoreMessage } from './store';
 const { error_color } = require('../../../config.json');
 
 const name: SlashCommand['name'] = 'stats';
@@ -128,23 +129,32 @@ async function sendStatsMessage(
 
 export async function statsInteractionCollector(
 	interaction: ButtonInteraction,
+	userData: UserSchema | null,
+	serverData: ServerSchema | null,
 ): Promise<void> {
+
+	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
 
 	if (interaction.customId.includes('refresh')) {
 
-		if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
 		const quidId = interaction.customId.split('_')[2];
 		if (!quidId) { throw new TypeError('quidId is undefined'); }
 		const creatorUUID = interaction.customId.split('_')[3];
 		if (!creatorUUID) { throw new TypeError('creatorUUID is undefined'); }
 
-		const userData = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
-		await sendStatsMessage(interaction, userData, quidId, creatorUUID);
+		const userData1 = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
+		await sendStatsMessage(interaction, userData1, quidId, creatorUUID);
 		return;
 	}
 
 	if (interaction.customId.includes('store')) {
 
-		// sendStoreMessage();
+		if (!userData) { throw new TypeError('userData is null'); }
+		if (!serverData) { throw new TypeError('serverData is null'); }
+
+		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
+		const profileData = getMapData(quidData.profiles, interaction.guildId);
+
+		await sendStoreMessage(interaction, userData, quidData, profileData, serverData, []);
 	}
 }
