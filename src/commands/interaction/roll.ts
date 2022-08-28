@@ -53,7 +53,7 @@ export const command: SlashCommand = {
 		}
 
 		await interaction.respond(
-			choices.map(choice => ({ name: choice, value: choice })),
+			choices.slice(0, 25).map(choice => ({ name: choice, value: choice })),
 		);
 	},
 	sendCommand: async (client, interaction, userData) => {
