@@ -30,6 +30,7 @@ import { startResting } from '../commands/gameplay_maintenance/rest';
 import { statsInteractionCollector } from '../commands/gameplay_maintenance/stats';
 import settingsInteractionCollector from '../utils/settingsInteractionCollector';
 import { storeInteractionCollector } from '../commands/gameplay_maintenance/store';
+import { inventoryInteractionCollector } from '../commands/gameplay_maintenance/inventory';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
@@ -268,6 +269,13 @@ export const event: Event = {
 				if (interaction.customId.startsWith('shop_')) {
 
 					await shopInteractionCollector(interaction, userData, serverData)
+						.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					return;
+				}
+
+				if (interaction.customId.startsWith('inventory_')) {
+
+					await inventoryInteractionCollector(interaction, userData, serverData)
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}

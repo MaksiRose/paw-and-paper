@@ -10,6 +10,7 @@ import { getBiggerNumber, getMapData, getSmallerNumber, respond, unsafeKeys, wid
 import { generateRandomNumber } from '../../utils/randomizers';
 import wearDownDen from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
+import { showInventoryMessage } from './inventory';
 
 const name: SlashCommand['name'] = 'eat';
 const description: SlashCommand['description'] = 'Take the appropriate food for your species out of the packs food pile and fill up your hunger meter.';
@@ -87,7 +88,7 @@ export const command: SlashCommand = {
 	},
 };
 
-async function sendEatMessage(
+export async function sendEatMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
 	chosenFood: string,
 	userData: UserSchema,
@@ -246,7 +247,7 @@ async function sendEatMessage(
 	}
 	else {
 
-		// call inventory command
+		await showInventoryMessage(interaction, userData, profileData, serverData, 1, false);
 		return;
 	}
 
