@@ -61,7 +61,7 @@ export async function decreaseLevel(
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
-	interaction: CommandInteraction<'cached'> | ButtonInteraction<'cached'>,
+	interaction: CommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached'>,
 ): Promise<string> {
 
 	/* newUserLevel is nine tenths of current profile level. */

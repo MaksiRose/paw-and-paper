@@ -22,14 +22,18 @@ export interface ContextMenuCommand {
 export interface Votes {
 	token: string;
 	authorization: string;
-	client: typeof bfd | Api | null;
+	client: unknown;
 }
 
 export class CustomClient extends Client {
 
 	slashCommands: { [key in string]: SlashCommand };
 	contextMenuCommands: { [key in string]: ContextMenuCommand };
-	votes: { [key in string]: Votes };
+	votes: {
+		bfd?: Votes & { client: typeof bfd; },
+		top?: Votes & { client: Api | null; },
+		dbl?: Votes & { client: null; };
+	};
 
 	constructor(options: ClientOptions) {
 

@@ -10,7 +10,7 @@ import { stopResting } from '../commands/gameplay_maintenance/rest';
 const { error_color } = require('../../config.json');
 
 export async function isPassedOut(
-	interaction: CommandInteraction<'cached'> | ButtonInteraction<'cached'>,
+	interaction: CommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached'>,
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
@@ -53,7 +53,7 @@ export async function isPassedOut(
  * Checks if the user is on a cooldown. If yes, then send a message and return true, as well as decrease their level if it's new. Else, return false.
  */
 export async function hasCooldown(
-	interaction: CommandInteraction<'cached'>,
+	interaction: CommandInteraction<'cached' | 'raw'>,
 	userData: UserSchema,
 	quidData: Quid,
 	commandName: string,
@@ -89,7 +89,7 @@ export async function hasCooldown(
  * Checks if the user is resting. If yes, then wake user up and attach an embed to the message. Returns the updated `userData`.
  */
 export async function isResting(
-	interaction: CommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	interaction: CommandInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached'>,
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
@@ -123,7 +123,7 @@ export async function isResting(
  * Checks if the user is passed out, on a cooldown or resting, sends or attaches the appropriate message/embed, and returns a boolean of the result.
  */
 export async function isInvalid(
-	interaction: CommandInteraction<'cached'>,
+	interaction: CommandInteraction<'cached' | 'raw'>,
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
