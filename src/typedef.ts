@@ -151,7 +151,7 @@ export enum StatIncreaseType {
 	MaxHealth = 'maxHealth',
 	MaxEnergy = 'maxEnergy',
 	MaxHunger = 'maxHunger',
-	maxThirst = 'maxThirst'
+	MaxThirst = 'maxThirst'
 }
 
 export enum CurrentRegionType {
