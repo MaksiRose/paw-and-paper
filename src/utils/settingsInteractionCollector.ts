@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle } from 
 import { sendReminder, stopReminder } from '../commands/gameplay_maintenance/water-tree';
 import userModel from '../models/userModel';
 import { CustomClient, UserSchema } from '../typedef';
-import { getMapData, respond } from './helperFunctions';
+import { respond } from './helperFunctions';
 
 export default async function settingsInteractionCollector(
 	client: CustomClient,
@@ -14,9 +14,6 @@ export default async function settingsInteractionCollector(
 
 		if (!userData) { throw new TypeError('userData is null'); }
 		if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
-		/* Gets the current active quid and the server profile from the account */
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-		const profileData = getMapData(quidData.profiles, interaction.guildId);
 
 		const isOn = interaction.customId.includes('on');
 
@@ -29,8 +26,21 @@ export default async function settingsInteractionCollector(
 				},
 			);
 
-			if (isOn) { sendReminder(client, userData, quidData, profileData); }
-			else { stopReminder(quidData._id, interaction.user.id, interaction.guildId); }
+			/* This executes the sendReminder function for each profile for which the sapling exists and where lastMessageChannelId is a string, if the user has enabled water reminders. */
+			if (userData.settings.reminders.water === true) {
+
+				for (const quid of Object.values(userData.quids)) {
+
+					for (const profile of Object.values(quid.profiles)) {
+
+						if (isOn) {
+
+							if (profile.sapling.exists && typeof profile.sapling.lastMessageChannelId === 'string' && !profile.sapling.sentReminder) { sendReminder(client, userData, quid, profile); }
+						}
+						else { stopReminder(quid._id, interaction.guildId); }
+					}
+				}
+			}
 
 			await interaction
 				.update({

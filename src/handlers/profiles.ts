@@ -15,15 +15,14 @@ export async function execute(
 
 		const userData = (JSON.parse(readFileSync(`${path}/${file}`, 'utf-8'))) as UserSchema;
 
-		/* This executes the sendReminder function for each profile for which the sapling exists
-		and where lastMessageChannelId is a string, if the user has enabled water reminders. */
+		/* This executes the sendReminder function for each profile for which the sapling exists and where lastMessageChannelId is a string, if the user has enabled water reminders. */
 		if (userData.settings.reminders.water === true) {
 
 			for (const quid of Object.values(userData.quids)) {
 
 				for (const profile of Object.values(quid.profiles)) {
 
-					if (profile.sapling.exists && typeof profile.sapling.lastMessageChannelId === 'string') { sendReminder(client, userData, quid, profile); }
+					if (profile.sapling.exists && typeof profile.sapling.lastMessageChannelId === 'string' && !profile.sapling.sentReminder) { sendReminder(client, userData, quid, profile); }
 				}
 			}
 		}
