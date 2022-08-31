@@ -1,4 +1,4 @@
-import { ButtonInteraction, CommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
+import { ButtonInteraction, CommandInteraction, EmbedBuilder, MessageComponentInteraction, SelectMenuInteraction } from 'discord.js';
 import { respond, unsafeKeys, widenValues } from './helperFunctions';
 import userModel from '../models/userModel';
 import { Quid, Profile, ServerSchema, UserSchema, WayOfEarningType } from '../typedef';
@@ -61,7 +61,7 @@ export async function decreaseLevel(
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
-	interaction: CommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached'>,
+	interaction: CommandInteraction<'cached' | 'raw'> | MessageComponentInteraction<'cached'>,
 ): Promise<string> {
 
 	/* newUserLevel is nine tenths of current profile level. */

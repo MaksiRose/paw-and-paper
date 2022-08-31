@@ -1,4 +1,4 @@
-import { ButtonInteraction, CommandInteraction, EmbedBuilder, GuildMember, SelectMenuInteraction } from 'discord.js';
+import { ButtonInteraction, CommandInteraction, EmbedBuilder, GuildMember, MessageComponentInteraction, SelectMenuInteraction } from 'discord.js';
 import { respond } from './helperFunctions';
 import userModel from '../models/userModel';
 import { RankType, ServerSchema, WayOfEarningType } from '../typedef';
@@ -156,7 +156,7 @@ export async function checkLevelRequirements(
  */
 export async function checkRoleCatchBlock(
 	error: any,
-	interaction: CommandInteraction | SelectMenuInteraction | ButtonInteraction,
+	interaction: CommandInteraction | MessageComponentInteraction,
 	member: GuildMember,
 ): Promise<void> {
 

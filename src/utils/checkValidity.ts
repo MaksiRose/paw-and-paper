@@ -1,4 +1,4 @@
-import { ButtonInteraction, CommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
+import { CommandInteraction, EmbedBuilder, MessageComponentInteraction, SelectMenuInteraction } from 'discord.js';
 import { cooldownMap } from '../events/interactionCreate';
 import { respond } from './helperFunctions';
 import userModel from '../models/userModel';
@@ -10,7 +10,7 @@ import { stopResting } from '../commands/gameplay_maintenance/rest';
 const { error_color } = require('../../config.json');
 
 export async function isPassedOut(
-	interaction: CommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached'>,
+	interaction: CommandInteraction<'cached' | 'raw'> | MessageComponentInteraction<'cached'>,
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,

@@ -32,6 +32,7 @@ import settingsInteractionCollector from '../utils/settingsInteractionCollector'
 import { storeInteractionCollector } from '../commands/gameplay_maintenance/store';
 import { inventoryInteractionCollector } from '../commands/gameplay_maintenance/inventory';
 import { voteInteractionCollector } from '../commands/gameplay_maintenance/vote';
+import { repairInteractionCollector } from '../commands/gameplay_maintenance/repair';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
@@ -434,6 +435,14 @@ export const event: Event = {
 			if (interaction.customId.startsWith('store_')) {
 
 				await storeInteractionCollector(interaction, userData, serverData)
+					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+				return;
+			}
+
+
+			if (interaction.customId.startsWith('repair_')) {
+
+				await repairInteractionCollector(interaction, userData, serverData)
 					.catch(async (error) => { await sendErrorMessage(interaction, error); });
 				return;
 			}
