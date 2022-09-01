@@ -1,11 +1,12 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, MessageComponentInteraction, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, WebhookEditMessageOptions } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, MessageComponentInteraction, SelectMenuBuilder, SlashCommandBuilder, WebhookEditMessageOptions } from 'discord.js';
 import serverModel from '../../models/serverModel';
-import { MaterialInfo, MaterialNames, materialsInfo, Quid, RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
+import { MaterialNames, materialsInfo, Quid, RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
+import getInventoryElements from '../../utils/getInventoryElements';
 import { pronoun } from '../../utils/getPronouns';
 import { getMapData, getSmallerNumber, respond } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
@@ -195,17 +196,7 @@ function getMaterials(
 	messageContent: string | null,
 ): Omit<InteractionReplyOptions & WebhookEditMessageOptions, 'flags'> {
 
-	let description = '';
-	const selectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
-
-	for (const [materialName, materialObject] of Object.entries(materialsInfo) as [keyof typeof materialsInfo, MaterialInfo][]) {
-
-		if (serverData.inventory.materials[materialName] > 0) {
-
-			description += `**${materialName}: ${serverData.inventory.materials[materialName]}**${materialObject.description}\n`;
-			selectMenuOptions.push({ label: materialName, value: materialName, description: `${serverData.inventory.materials[materialName]}` });
-		}
-	}
+	const { selectMenuOptions, embedDescription: description } = getInventoryElements(serverData.inventory, 4);
 
 	return {
 		content: messageContent,

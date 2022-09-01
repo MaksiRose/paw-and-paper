@@ -93,7 +93,12 @@
 			"error",
 			"always"
 		],
-		"prefer-const": "error",
+		"prefer-const": [
+			"error",
+			{
+				"destructuring": "all"
+			}
+		],
 		"quotes": [
 			"error",
 			"single"

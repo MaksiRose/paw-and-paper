@@ -1,9 +1,10 @@
-import { ActionRowBuilder, CommandInteraction, EmbedBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
-import { CommonPlantNames, commonPlantsInfo, MaterialNames, materialsInfo, Profile, RarePlantNames, rarePlantsInfo, ServerSchema, SlashCommand, SpecialPlantNames, specialPlantsInfo, SpeciesNames, UncommonPlantNames, uncommonPlantsInfo, UserSchema } from '../../typedef';
+import { ActionRowBuilder, CommandInteraction, EmbedBuilder, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { Profile, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { hasCooldown } from '../../utils/checkValidity';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
-import { getMapData, respond, unsafeKeys, widenValues } from '../../utils/helperFunctions';
+import getInventoryElements from '../../utils/getInventoryElements';
+import { getMapData, respond } from '../../utils/helperFunctions';
 import { remindOfAttack } from '../gameplay_primary/attack';
 import { sendEatMessage } from './eat';
 const { default_color } = require('../../../config.json');
@@ -60,26 +61,8 @@ export async function showInventoryMessage(
 				...showMaterialsPage ? [{ label: 'Page 4', value: '4', description: 'materials', emoji: '🪵' }] : [],
 			]));
 
-	let foodSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
-	let description = '';
-
-	const itemTypeToPage = { commonPlants: 1, uncommonPlants: 2, rarePlants: 2, specialPlants: 2, meat: 3, materials: 4 };
-	const itemInfo = { ...commonPlantsInfo, ...uncommonPlantsInfo, ...rarePlantsInfo, ...specialPlantsInfo, ...materialsInfo };
-	const inventory_ = widenValues(serverData.inventory);
-	for (const itemType of unsafeKeys(inventory_)) {
-
-		if (itemTypeToPage[itemType] !== page) { continue; }
-		for (const item of unsafeKeys(inventory_[itemType])) {
-
-			if (inventory_[itemType][item] > 0) {
-
-				const itemDescription = itemHasDescription(itemInfo, item) ? ` - ${itemInfo[item].description}` : '';
-				description += `**${item}: ${inventory_[itemType][item]}**${itemDescription}\n`;
-
-				if (itemType !== 'materials') { foodSelectMenuOptions.push({ label: item, value: item, description: `${inventory_[itemType][item]}` }); }
-			}
-		}
-	}
+	let { selectMenuOptions: foodSelectMenuOptions, embedDescription: description } = getInventoryElements(serverData.inventory, page);
+	if (page === 4) { foodSelectMenuOptions.length = 0; }
 
 	if (foodSelectMenuOptions.length > 25) {
 
@@ -111,14 +94,6 @@ export async function showInventoryMessage(
 		.catch((error) => { throw new Error(error); });
 
 	createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
-}
-
-function itemHasDescription(
-	itemInfo: typeof commonPlantsInfo & typeof uncommonPlantsInfo & typeof rarePlantsInfo & typeof specialPlantsInfo & typeof materialsInfo,
-	item: CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | MaterialNames | SpeciesNames,
-): item is CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | MaterialNames {
-
-	return Object.hasOwn(itemInfo, item);
 }
 
 export async function inventoryInteractionCollector(
