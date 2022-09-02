@@ -34,6 +34,7 @@ import { inventoryInteractionCollector } from '../commands/gameplay_maintenance/
 import { voteInteractionCollector } from '../commands/gameplay_maintenance/vote';
 import { repairInteractionCollector } from '../commands/gameplay_maintenance/repair';
 import { healInteractionCollector } from '../commands/gameplay_maintenance/heal';
+import { rankupInteractionCollector } from '../commands/gameplay_primary/rank-up';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
@@ -371,6 +372,13 @@ export const event: Event = {
 				if (interaction.customId.includes('settings_')) {
 
 					await settingsInteractionCollector(client, interaction, userData)
+						.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					return;
+				}
+
+				if (interaction.customId.includes('rank_')) {
+
+					await rankupInteractionCollector(interaction, userData, serverData)
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
