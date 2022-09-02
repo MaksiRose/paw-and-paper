@@ -1,6 +1,6 @@
 import { generateId } from 'crystalid';
 import { APIMessage } from 'discord-api-types/v9';
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, MessageComponentInteraction, MessageOptions, ModalSubmitInteraction, WebhookEditMessageOptions } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, MessageComponentInteraction, MessageOptions, ModalSubmitInteraction, ReplyMessageOptions, WebhookEditMessageOptions } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 import { ErrorStacks } from '../typedef';
 const { error_color } = require('../../config.json');
@@ -30,6 +30,7 @@ export function getUserIds(
 	return [...new Set([...array1, ...array2])];
 }
 
+export type ReplyOrEditOptions = Pick<InteractionReplyOptions | WebhookEditMessageOptions, keyof (InteractionReplyOptions | WebhookEditMessageOptions)>
 /**
  * It replies to an interaction, and if the interaction has already been replied to, it will edit or followup the reply instead.
  * @param interaction - The interaction object that was passed to the command handler.
@@ -39,7 +40,17 @@ export function getUserIds(
  */
 export async function respond(
 	interaction: CommandInteraction | MessageComponentInteraction | ModalSubmitInteraction,
-	options: Omit<InteractionReplyOptions & WebhookEditMessageOptions, 'flags'>,
+	options: InteractionReplyOptions,
+	editMessage: false,
+): Promise<Message<boolean>>;
+export async function respond(
+	interaction: CommandInteraction | MessageComponentInteraction | ModalSubmitInteraction,
+	options: ReplyOrEditOptions,
+	editMessage: true,
+): Promise<Message<boolean>>;
+export async function respond(
+	interaction: CommandInteraction | MessageComponentInteraction | ModalSubmitInteraction,
+	options: WebhookEditMessageOptions | InteractionReplyOptions,
 	editMessage: boolean,
 ): Promise<Message<boolean>> {
 
@@ -98,7 +109,7 @@ export async function sendErrorMessage(
 		console.error('Cannot edit file ', e);
 	}
 
-	const messagePayload: MessageOptions = {
+	const messageOptions: Pick<ReplyMessageOptions | WebhookEditMessageOptions | MessageOptions, keyof (ReplyMessageOptions | WebhookEditMessageOptions | MessageOptions)> = {
 		embeds: [new EmbedBuilder()
 			.setColor(error_color)
 			.setTitle('There was an unexpected error executing this command:')
@@ -111,14 +122,14 @@ export async function sendErrorMessage(
 				.setStyle(ButtonStyle.Success)])],
 	};
 
-	await respond(interaction, messagePayload, false)
+	await respond(interaction, { ...messageOptions, flags: undefined }, false)
 		.catch(async (error2) => {
 
 			console.error('Failed to send error message to user. ' + error2);
 			await (async () => {
-				if (interaction.isButton() || interaction.isSelectMenu()) { await interaction.message.reply({ ...messagePayload, failIfNotExists: false }); }
-				if (interaction.isMessageContextMenuCommand()) { await interaction.targetMessage.reply({ ...messagePayload, failIfNotExists: false }); }
-				if (interaction.isUserContextMenuCommand() || interaction.isChatInputCommand() || interaction.type === InteractionType.ModalSubmit) { await interaction.channel?.send(messagePayload); }
+				if (interaction.isButton() || interaction.isSelectMenu()) { await interaction.message.reply({ ...messageOptions, failIfNotExists: false }); }
+				if (interaction.isMessageContextMenuCommand()) { await interaction.targetMessage.reply({ ...messageOptions, failIfNotExists: false }); }
+				if (interaction.isUserContextMenuCommand() || interaction.isChatInputCommand() || interaction.type === InteractionType.ModalSubmit) { await interaction.channel?.send(messageOptions); }
 			})()
 				.catch((error3) => {
 					console.error('Failed to send backup error message to user. ' + error3);

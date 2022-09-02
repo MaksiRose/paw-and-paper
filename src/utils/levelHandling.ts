@@ -1,4 +1,4 @@
-import { ButtonInteraction, CommandInteraction, EmbedBuilder, MessageComponentInteraction, SelectMenuInteraction } from 'discord.js';
+import { CommandInteraction, EmbedBuilder, MessageComponentInteraction } from 'discord.js';
 import { respond, unsafeKeys, widenValues } from './helperFunctions';
 import userModel from '../models/userModel';
 import { Quid, Profile, ServerSchema, UserSchema, WayOfEarningType } from '../typedef';
@@ -11,7 +11,7 @@ const { default_color } = require('../../config.json');
  * Checks if the user is eligable for a level up, and sends an embed and updated profileData if so.
  */
 export async function checkLevelUp(
-	interaction: CommandInteraction<'cached'> | SelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>,
+	interaction: CommandInteraction<'cached'> | MessageComponentInteraction<'cached'>,
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,

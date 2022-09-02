@@ -33,7 +33,7 @@ export const command: SlashCommand = {
 					.setColor(error_color)
 					.setTitle('Please send an image to set as your quids avatar!')],
 				ephemeral: true,
-			}, true)
+			}, false)
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
@@ -49,7 +49,7 @@ export const command: SlashCommand = {
 					.setColor(error_color)
 					.setTitle('This image extension is not supported! Please send a .png, .jp(e)g, .raw or .webp image.')],
 				ephemeral: true,
-			}, true)
+			}, false)
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});

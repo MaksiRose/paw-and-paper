@@ -36,7 +36,7 @@ export const command: SlashCommand = {
 				await respond(interaction, {
 					content: 'I am sorry to inform you that you have been banned from using this bot.',
 					ephemeral: true,
-				}, true)
+				}, false)
 					.catch((error) => {
 						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
@@ -69,7 +69,7 @@ export const command: SlashCommand = {
 					.setColor(error_color)
 					.setTitle('Please input a name for your quid.')],
 				ephemeral: true,
-			}, true)
+			}, false)
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});

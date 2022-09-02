@@ -1,4 +1,4 @@
-import { ButtonInteraction, CommandInteraction, EmbedBuilder, GuildMember, MessageComponentInteraction, SelectMenuInteraction } from 'discord.js';
+import { ButtonInteraction, CommandInteraction, EmbedBuilder, GuildMember, MessageComponentInteraction } from 'discord.js';
 import { respond } from './helperFunctions';
 import userModel from '../models/userModel';
 import { RankType, ServerSchema, WayOfEarningType } from '../typedef';
@@ -85,7 +85,7 @@ export async function checkRankRequirements(
  */
 export async function checkLevelRequirements(
 	serverData: ServerSchema,
-	interaction: CommandInteraction | ButtonInteraction | SelectMenuInteraction,
+	interaction: CommandInteraction | MessageComponentInteraction,
 	member: GuildMember | undefined,
 	userLevel: number,
 	sendMessage = false,

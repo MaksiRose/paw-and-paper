@@ -35,7 +35,7 @@ export const command: SlashCommand = {
 					.setColor(error_color)
 					.setTitle('Please send a valid hex code! Valid hex codes consist of 6 characters and contain only letters from \'a\' to \'f\' and/or numbers.')],
 				ephemeral: true,
-			}, true)
+			}, false)
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
