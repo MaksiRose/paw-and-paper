@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteracti
 import Fuse from 'fuse.js';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
-import { CommonPlantNames, commonPlantsInfo, Inventory, PlantEdibilityType, Quid, RankType, RarePlantNames, rarePlantsInfo, ServerSchema, SlashCommand, SpecialPlantNames, specialPlantsInfo, SpeciesDietType, speciesInfo, SpeciesNames, UncommonPlantNames, uncommonPlantsInfo, UserSchema } from '../../typedef';
+import { CommonPlantNames, commonPlantsInfo, CurrentRegionType, Inventory, PlantEdibilityType, Quid, RankType, RarePlantNames, rarePlantsInfo, ServerSchema, SlashCommand, SpecialPlantNames, specialPlantsInfo, SpeciesDietType, speciesInfo, SpeciesNames, UncommonPlantNames, uncommonPlantsInfo, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
@@ -471,7 +471,7 @@ async function getHealResponse(
 
 	const experiencePoints = isSuccessful === false ? 0 : profileData.rank == RankType.Elderly ? generateRandomNumber(41, 20) : profileData.rank == RankType.Healer ? generateRandomNumber(21, 10) : generateRandomNumber(11, 5);
 	const changedCondition = await changeCondition(userData, quidData, profileData, experiencePoints);
-	const denCondition = await wearDownDen(serverData, 'medicine den');
+	const denCondition = await wearDownDen(serverData, CurrentRegionType.MedicineDen);
 	let embedFooter: string;
 
 	if (isSuccessful === true && (profileData.rank === RankType.Apprentice || profileData.rank === RankType.Hunter) && pullFromWeightedTable({ 0: profileData.rank === RankType.Hunter ? 90 : 40, 1: 60 + profileData.sapling.waterCycles - decreaseSuccessChance(serverData) }) === 0) {

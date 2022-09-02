@@ -280,7 +280,7 @@ export async function sendEatMessage(
 	if (finalHealthPoints !== 0) { footerText += `\n${finalHealthPoints} health (${profileData.health}/${profileData.maxHealth})`; }
 	if (increasedMaxStatType !== null && increasedStatType !== null) { footerText += `\n+10 maximum ${increasedStatType} (${profileData[increasedMaxStatType]}) for one week`; }
 	if (previousRegion !== CurrentRegionType.FoodDen) { footerText += '\nYou are now at the food den'; }
-	embed.setFooter({ text: `${footerText}\n\n${await wearDownDen(serverData, 'food den')}\n-1 ${chosenFood} for ${interaction.guild.name}` });
+	embed.setFooter({ text: `${footerText}\n\n${await wearDownDen(serverData, CurrentRegionType.FoodDen)}\n-1 ${chosenFood} for ${interaction.guild.name}` });
 
 	await respond(interaction, {
 		content: messageContent,
