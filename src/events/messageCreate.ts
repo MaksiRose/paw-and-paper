@@ -26,7 +26,11 @@ export const event: Event = {
 		/* Checking if the serverData is null. If it is null, it will create a guild. */
 		if (!serverData && message.inGuild()) {
 
-			serverData = await createGuild(client, message.guild);
+			serverData = await createGuild(client, message.guild)
+				.catch(async (error) => {
+					console.error(error);
+					return null;
+				});
 		}
 
 		if (!userData || !quidData || !serverData) { return; }

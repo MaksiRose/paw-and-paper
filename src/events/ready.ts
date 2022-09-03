@@ -40,7 +40,8 @@ export const event: Event = {
 				},
 			).catch(async () => {
 				const guild = await client.guilds.fetch(OAuth2Guild.id);
-				await createGuild(client, guild);
+				await createGuild(client, guild)
+					.catch(async (error) => { console.error(error); });
 			});
 		}
 

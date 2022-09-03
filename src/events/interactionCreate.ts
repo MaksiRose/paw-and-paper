@@ -62,7 +62,12 @@ export const event: Event = {
 		/* Checking if the serverData is null. If it is null, it will create a guild. */
 		if (!serverData && interaction.inCachedGuild()) {
 
-			serverData = await createGuild(client, interaction.guild);
+			serverData = await createGuild(client, interaction.guild)
+				.catch(async (error) => {
+					console.error(error);
+					if (interaction.isRepliable() && !interaction.isAutocomplete()) { await sendErrorMessage(interaction, new Error('Unknown command')); }
+					return null;
+				});
 		}
 
 		if (interaction.isRepliable() && interaction.inRawGuild()) {
@@ -73,7 +78,7 @@ export const event: Event = {
 					ephemeral: true,
 				})
 				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
+					if (error.httpStatus !== 404) { console.error(error); }
 				});
 			return;
 		}
@@ -91,9 +96,7 @@ export const event: Event = {
 
 			/* It's sending the autocomplete message. */
 			await command.sendAutocomplete?.(client, interaction, userData, serverData)
-				.catch(async (error) => {
-					console.error(error);
-				});
+				.catch(async (error) => { console.error(error); });
 			return;
 		}
 
