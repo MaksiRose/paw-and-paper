@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, GuildMember, InteractionReplyOptions, InteractionUpdateOptions, MessageEditOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
-import { respond } from '../../utils/helperFunctions';
+import { respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { Quid, commonPlantsInfo, CurrentRegionType, CustomClient, materialsInfo, RankType, rarePlantsInfo, SlashCommand, specialPlantsInfo, speciesInfo, uncommonPlantsInfo, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
@@ -50,7 +50,7 @@ export const command: SlashCommand = {
 			return;
 		}
 		/* Checking if the user has a cooldown. */
-		else if (quidData && interaction.inCachedGuild() && await hasCooldown(interaction, userData, quidData, interaction.commandName)) { return; }
+		else if (quidData && interaction.inCachedGuild() && await hasCooldown(interaction, userData, quidData)) { return; }
 
 		const response = await getMessageContent(client, mentionedUser?.id || interaction.user.id, quidData, !mentionedUser, embedArray);
 		const selectMenu = getAccountsPage(userData, mentionedUser?.id || interaction.user.id, 0, !mentionedUser);
@@ -180,10 +180,9 @@ export async function profileInteractionCollector(
 		let quidsPage = Number(selectOptionId.split('_')[2]) + 1;
 		if (quidsPage >= Math.ceil((Object.keys(userData.quids).length + 1) / 24)) { quidsPage = 0; }
 
-		await interaction
-			.update({
-				components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getAccountsPage(userData, userId, quidsPage, userData.userId.includes(interaction.user.id))])],
-			})
+		await update(interaction, {
+			components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getAccountsPage(userData, userId, quidsPage, userData.userId.includes(interaction.user.id))])],
+		})
 			.catch((error) => { throw new Error(error); });
 		return;
 	}
@@ -342,11 +341,10 @@ export async function profileInteractionCollector(
 		const _id = selectOptionId.split('_')[2] || '';
 		const quidData = userData.quids[_id];
 
-		await interaction
-			.update({
-				...await getMessageContent(client, userId, quidData, userData.userId.includes(interaction.user.id), []),
-				components: interaction.message.components,
-			})
+		await update(interaction, {
+			...await getMessageContent(client, userId, quidData, userData.userId.includes(interaction.user.id), []),
+			components: interaction.message.components,
+		})
 			.catch((error) => { throw new Error(error); });
 		return;
 	}

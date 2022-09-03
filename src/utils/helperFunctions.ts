@@ -1,6 +1,6 @@
 import { generateId } from 'crystalid';
 import { APIMessage } from 'discord-api-types/v9';
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, MessageComponentInteraction, MessageOptions, ModalSubmitInteraction, ReplyMessageOptions, WebhookEditMessageOptions } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, MessageComponentInteraction, MessageOptions, ModalMessageModalSubmitInteraction, ModalSubmitInteraction, ReplyMessageOptions, WebhookEditMessageOptions } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 import { ErrorStacks } from '../typedef';
 const { error_color } = require('../../config.json');
@@ -67,6 +67,22 @@ export async function respond(
 
 	if (botReply instanceof Message) { return botReply; }
 	else { throw new Error('Message is APIMessage'); }
+}
+
+export async function update(
+	interaction: MessageComponentInteraction | ModalMessageModalSubmitInteraction,
+	options: WebhookEditMessageOptions,
+): Promise<Message<boolean>> {
+
+	let botReply: Message<boolean>;
+	if (!interaction.replied && !interaction.deferred) {
+		botReply = await interaction.update({ ...options, fetchReply: true });
+	}
+	else {
+		botReply = await interaction.editReply(options);
+	}
+
+	return botReply;
 }
 
 /**

@@ -1,6 +1,6 @@
 import { Octokit } from '@octokit/rest';
 import { EmbedBuilder, SlashCommandBuilder, Team, User, ActionRowBuilder, ButtonBuilder, ButtonStyle, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ModalMessageModalSubmitInteraction, ChatInputCommandInteraction, AttachmentBuilder } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { respond, update } from '../../utils/helperFunctions';
 import { CustomClient, SlashCommand } from '../../typedef';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { generateId } from 'crystalid';
@@ -210,10 +210,9 @@ export async function ticketInteractionCollector(
 			.catch((error) => { throw new Error(error); });
 	}
 
-	await interaction
-		.update({
-			components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
-		})
+	await update(interaction, {
+		components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
+	})
 		.catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }
 		});

@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { SlashCommand, UserSchema } from '../../typedef';
 import { disableAllComponents } from '../../utils/componentDisabling';
@@ -135,18 +135,17 @@ export async function hugInteractionCollector(
 			'https://c.tenor.com/N4wxlSS6s6YAAAAd/wake-up-360baby-pandas.gif',
 		];
 
-		await interaction
-			.update({
-				content: null,
-				embeds: [new EmbedBuilder()
-					.setColor(quidData?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
-					.setAuthor({
-						name: quidData?.name || originalMember?.displayName || originalUser.tag,
-						iconURL: quidData?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
-					})
-					.setImage(hugURLs[generateRandomNumber(hugURLs.length, 0)] || null)],
-				components: [],
-			})
+		await update(interaction, {
+			content: null,
+			embeds: [new EmbedBuilder()
+				.setColor(quidData?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
+				.setAuthor({
+					name: quidData?.name || originalMember?.displayName || originalUser.tag,
+					iconURL: quidData?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
+				})
+				.setImage(hugURLs[generateRandomNumber(hugURLs.length, 0)] || null)],
+			components: [],
+		})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
@@ -159,18 +158,17 @@ export async function hugInteractionCollector(
 
 	if (interaction.customId.includes('decline')) {
 
-		await interaction
-			.update({
-				content: null,
-				embeds: [new EmbedBuilder()
-					.setColor(quidData?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
-					.setAuthor({
-						name: quidData?.name || originalMember?.displayName || originalUser.tag,
-						iconURL: quidData?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
-					})
-					.setDescription(`${interaction.user.toString()} did not accept the hug.`)],
-				components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
-			})
+		await update(interaction, {
+			content: null,
+			embeds: [new EmbedBuilder()
+				.setColor(quidData?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
+				.setAuthor({
+					name: quidData?.name || originalMember?.displayName || originalUser.tag,
+					iconURL: quidData?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
+				})
+				.setDescription(`${interaction.user.toString()} did not accept the hug.`)],
+			components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
+		})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});

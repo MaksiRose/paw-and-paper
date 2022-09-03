@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, Collection, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, NonThreadGuildBasedChannel, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { Quid, ProxyConfigType, ProxyListType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
@@ -73,18 +73,17 @@ export async function proxyInteractionCollector(
 
 		const quidDataId = interaction.customId.split('_')[3];
 
-		await interaction
-			.update({
-				embeds: [new EmbedBuilder(interaction.message.embeds[0]?.toJSON())
-					.setTitle('Here is how to use the set subcommand:')
-					.setDescription('Proxying is a way to speak as if your quid was saying it. The proxy is an indicator to the bot you want your message to be proxied. It consists of a prefix (indicator before the message) and a suffix (indicator after the message). You can either set both or one of them.\n\nExamples:\nprefix: `<`, suffix: `>`, example message: `<hello friends>`\nprefix: `P: `, no suffix, example message: `P: hello friends`\nno prefix, suffix: ` -p`, example message: `hello friends -p`\nThis is case-sensitive (meaning that upper and lowercase matters).')
-					.setFields()],
-				components: [new ActionRowBuilder<ButtonBuilder>()
-					.setComponents([new ButtonBuilder()
-						.setCustomId(`proxy_set_modal_${quidDataId}`)
-						.setLabel('Set proxy')
-						.setStyle(ButtonStyle.Success)])],
-			}).catch((error) => { throw new Error(error); });
+		await update(interaction, {
+			embeds: [new EmbedBuilder(interaction.message.embeds[0]?.toJSON())
+				.setTitle('Here is how to use the set subcommand:')
+				.setDescription('Proxying is a way to speak as if your quid was saying it. The proxy is an indicator to the bot you want your message to be proxied. It consists of a prefix (indicator before the message) and a suffix (indicator after the message). You can either set both or one of them.\n\nExamples:\nprefix: `<`, suffix: `>`, example message: `<hello friends>`\nprefix: `P: `, no suffix, example message: `P: hello friends`\nno prefix, suffix: ` -p`, example message: `hello friends -p`\nThis is case-sensitive (meaning that upper and lowercase matters).')
+				.setFields()],
+			components: [new ActionRowBuilder<ButtonBuilder>()
+				.setComponents([new ButtonBuilder()
+					.setCustomId(`proxy_set_modal_${quidDataId}`)
+					.setLabel('Set proxy')
+					.setStyle(ButtonStyle.Success)])],
+		}).catch((error) => { throw new Error(error); });
 		return;
 	}
 
@@ -131,15 +130,14 @@ export async function proxyInteractionCollector(
 		const quidData = getMapData(userData.quids, quidId);
 		const alwaysSelectMenu = await getSelectMenus(allChannels, userData, quidData, serverData, 0);
 
-		await interaction
-			.update({
-				embeds: [new EmbedBuilder(interaction.message.embeds[0]?.toJSON())
-					.setTitle('Here is how to use the always subcommand:')
-					.setDescription('When this feature is enabled, every message you send will be treated as if it was proxied, even if the proxy isn\'t included.\nYou can either toggle it for the entire server, or specific channels, using the drop-down menu below. Enabled channels will have a radio emoji next to it.')
-					.setFields()],
-				components: [new ActionRowBuilder<SelectMenuBuilder>()
-					.setComponents([alwaysSelectMenu])],
-			}).catch((error) => { throw new Error(error); });
+		await update(interaction, {
+			embeds: [new EmbedBuilder(interaction.message.embeds[0]?.toJSON())
+				.setTitle('Here is how to use the always subcommand:')
+				.setDescription('When this feature is enabled, every message you send will be treated as if it was proxied, even if the proxy isn\'t included.\nYou can either toggle it for the entire server, or specific channels, using the drop-down menu below. Enabled channels will have a radio emoji next to it.')
+				.setFields()],
+			components: [new ActionRowBuilder<SelectMenuBuilder>()
+				.setComponents([alwaysSelectMenu])],
+		}).catch((error) => { throw new Error(error); });
 		return;
 	}
 

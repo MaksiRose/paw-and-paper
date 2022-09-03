@@ -6,7 +6,7 @@ import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { pronoun } from '../../utils/getPronouns';
-import { getMapData, respond } from '../../utils/helperFunctions';
+import { getMapData, respond, update } from '../../utils/helperFunctions';
 import { remindOfAttack } from './attack';
 
 const name: SlashCommand['name'] = 'rank';
@@ -32,7 +32,7 @@ export const command: SlashCommand = {
 		const profileData = getMapData(quidData.profiles, interaction.guildId);
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
-		if (await isInvalid(interaction, userData, quidData, profileData, embedArray, name)) { return; }
+		if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
 
 		const messageContent = remindOfAttack(interaction.guildId);
 
@@ -145,13 +145,12 @@ export async function rankupInteractionCollector(
 		},
 	);
 
-	await interaction
-		.update({
-			embeds: [new EmbedBuilder()
-				.setColor(quidData.color)
-				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
-				.setDescription(`*${quidData.name} stands before one of the eldest, excited to hear their following words.* "Congratulations, ${quidData.name}, you are now a fully-fledged ${rank}. I am certain you will contribute greatly to the pack in this role."\n*The ${quidData.displayedSpecies || quidData.species} grins from ear to ear.*`)],
-		});
+	await update(interaction, {
+		embeds: [new EmbedBuilder()
+			.setColor(quidData.color)
+			.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+			.setDescription(`*${quidData.name} stands before one of the eldest, excited to hear their following words.* "Congratulations, ${quidData.name}, you are now a fully-fledged ${rank}. I am certain you will contribute greatly to the pack in this role."\n*The ${quidData.displayedSpecies || quidData.species} grins from ear to ear.*`)],
+	});
 
 	await checkRankRequirements(serverData, interaction, interaction.member, rank, true);
 

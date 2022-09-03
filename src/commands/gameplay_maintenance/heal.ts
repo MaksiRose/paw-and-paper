@@ -11,7 +11,7 @@ import { disableAllComponents } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import getInventoryElements from '../../utils/getInventoryElements';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, getSmallerNumber, respond, unsafeKeys, widenValues } from '../../utils/helperFunctions';
+import { getMapData, getSmallerNumber, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { generateRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import wearDownDen from '../../utils/wearDownDen';
@@ -72,7 +72,7 @@ export const command: SlashCommand = {
 		const profileData = getMapData(quidData.profiles, interaction.guildId);
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
-		if (await isInvalid(interaction, userData, quidData, profileData, embedArray, name)) { return; }
+		if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
 
 		const messageContent = remindOfAttack(interaction.guildId);
 
@@ -325,10 +325,9 @@ async function getHealResponse(
 
 	if (interaction instanceof MessageComponentInteraction) {
 
-		await interaction
-			.update({
-				components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
-			})
+		await update(interaction, {
+			components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
+		})
 			.catch((error) => { console.trace(error); });
 	}
 

@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle } from 
 import { sendReminder, stopReminder } from '../commands/gameplay_maintenance/water-tree';
 import userModel from '../models/userModel';
 import { CustomClient, UserSchema } from '../typedef';
-import { respond } from './helperFunctions';
+import { respond, update } from './helperFunctions';
 
 export default async function settingsInteractionCollector(
 	client: CustomClient,
@@ -42,14 +42,13 @@ export default async function settingsInteractionCollector(
 				}
 			}
 
-			await interaction
-				.update({
-					components: [new ActionRowBuilder<ButtonBuilder>()
-						.setComponents(new ButtonBuilder()
-							.setCustomId(`settings_reminders_water_${isOn ? 'off' : 'on'}`)
-							.setLabel(`Turn water reminders ${isOn ? 'off' : 'on'}`)
-							.setStyle(ButtonStyle.Secondary))],
-				})
+			await update(interaction, {
+				components: [new ActionRowBuilder<ButtonBuilder>()
+					.setComponents(new ButtonBuilder()
+						.setCustomId(`settings_reminders_water_${isOn ? 'off' : 'on'}`)
+						.setLabel(`Turn water reminders ${isOn ? 'off' : 'on'}`)
+						.setStyle(ButtonStyle.Secondary))],
+			})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
@@ -72,14 +71,13 @@ export default async function settingsInteractionCollector(
 				},
 			);
 
-			await interaction
-				.update({
-					components: [new ActionRowBuilder<ButtonBuilder>()
-						.setComponents(new ButtonBuilder()
-							.setCustomId(`settings_reminders_resting_${isOn ? 'off' : 'on'}`)
-							.setLabel(`Turn automatic resting pings ${isOn ? 'off' : 'on'}`)
-							.setStyle(ButtonStyle.Secondary))],
-				})
+			await update(interaction, {
+				components: [new ActionRowBuilder<ButtonBuilder>()
+					.setComponents(new ButtonBuilder()
+						.setCustomId(`settings_reminders_resting_${isOn ? 'off' : 'on'}`)
+						.setLabel(`Turn automatic resting pings ${isOn ? 'off' : 'on'}`)
+						.setStyle(ButtonStyle.Secondary))],
+			})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});

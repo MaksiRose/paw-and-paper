@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { respond, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
 import { RankType, ServerSchema, SlashCommand, WayOfEarningType } from '../../typedef';
@@ -49,8 +49,7 @@ export async function serversettingsInteractionCollector(
 	/* It's checking if the interaction is a button that leads back to the main page, and it's updating the message with the main page content. */
 	if (interaction.isButton() && interaction.customId === 'serversettings_mainpage') {
 
-		await interaction
-			.update(getOriginalMessage(interaction, serverData))
+		await update(interaction, getOriginalMessage(interaction, serverData))
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
@@ -60,8 +59,7 @@ export async function serversettingsInteractionCollector(
 	/* It's checking if the interaction value or customId includes shop, and sends a message if it does. */
 	if ((interaction.isButton() && interaction.customId === 'serversettings_shop') || (interaction.isSelectMenu() && interaction.values[0] === 'serversettings_shop')) {
 
-		await interaction
-			.update(await getShopMessage(interaction, serverData, 0))
+		await update(interaction, await getShopMessage(interaction, serverData, 0))
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
@@ -76,8 +74,7 @@ export async function serversettingsInteractionCollector(
 
 			const page = Number(selectOptionId.split('_')[3]);
 
-			await interaction
-				.update(await getShopMessage(interaction, serverData, page))
+			await update(interaction, await getShopMessage(interaction, serverData, page))
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
@@ -98,8 +95,7 @@ export async function serversettingsInteractionCollector(
 				return await getNewRoleMenu(interaction, serverData, rolePage);
 			}();
 
-			await interaction
-				.update(getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
+			await update(interaction, getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
@@ -123,8 +119,7 @@ export async function serversettingsInteractionCollector(
 					}
 					else { role = collectorSelectOptionId.replace('serversettings_shop_add_', ''); }
 
-					await i
-						.update(getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
+					await update(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
 						.catch(error => { console.error(error); });
 				}
 
@@ -132,16 +127,14 @@ export async function serversettingsInteractionCollector(
 
 					wayOfEarning = collectorSelectOptionId.replace('serversettings_shop_wayofearning_', '') as WayOfEarningType;
 					requirement = null;
-					await i
-						.update(getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
+					await update(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
 						.catch(error => { console.error(error); });
 				}
 
 				if (i.isSelectMenu() && collectorSelectOptionId && i.customId === 'serversettings_shop_requirements') {
 
 					requirement = collectorSelectOptionId.replace('serversettings_shop_requirements_', '') as RankType;
-					await i
-						.update(getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
+					await update(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
 						.catch(error => { console.error(error); });
 				}
 
@@ -352,8 +345,7 @@ export async function serversettingsInteractionCollector(
 					}
 
 					requirement = modalTextInput;
-					await i
-						.update(getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
+					await update(i, getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
 						.catch(error => { console.error(error); });
 					return;
 				}
@@ -379,8 +371,7 @@ export async function serversettingsInteractionCollector(
 	/* It's checking if the interaction value includes updates, and sends a message if it does. */
 	if (interaction.isSelectMenu() && interaction.values[0] === 'serversettings_updates') {
 
-		await interaction
-			.update(await getUpdateMessage(interaction, serverData, 0))
+		await update(interaction, await getUpdateMessage(interaction, serverData, 0))
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
@@ -395,8 +386,7 @@ export async function serversettingsInteractionCollector(
 
 			const page = Number(selectOptionId.split('_')[3]);
 
-			await interaction
-				.update(await getUpdateMessage(interaction, serverData, page))
+			await update(interaction, await getUpdateMessage(interaction, serverData, page))
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
@@ -432,8 +422,7 @@ export async function serversettingsInteractionCollector(
 	/* It's checking if the interaction value includes visits, and sends a message if it does. */
 	if (interaction.isSelectMenu() && interaction.values[0] === 'serversettings_visits') {
 
-		await interaction
-			.update(await getVisitsMessage(interaction, serverData, 0))
+		await update(interaction, await getVisitsMessage(interaction, serverData, 0))
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
@@ -448,8 +437,7 @@ export async function serversettingsInteractionCollector(
 
 			const page = Number(selectOptionId.split('_')[3]);
 
-			await interaction
-				.update(await getVisitsMessage(interaction, serverData, page))
+			await update(interaction, await getVisitsMessage(interaction, serverData, page))
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
@@ -507,8 +495,7 @@ export async function serversettingsInteractionCollector(
 	/* It's checking if the interaction value includes visits, and sends a message if it does. */
 	if (interaction.isSelectMenu() && interaction.values[0] === 'serversettings_proxying') {
 
-		await interaction
-			.update(await getProxyingMessage(interaction, serverData, 0))
+		await update(interaction, await getProxyingMessage(interaction, serverData, 0))
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
@@ -523,8 +510,7 @@ export async function serversettingsInteractionCollector(
 
 			const page = Number(selectOptionId.split('_')[3]);
 
-			await interaction
-				.update(await getProxyingMessage(interaction, serverData, page))
+			await update(interaction, await getProxyingMessage(interaction, serverData, page))
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});

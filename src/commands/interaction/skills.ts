@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, GuildMember, ModalBuilder, ModalMessageModalSubmitInteraction, PermissionFlagsBits, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { respond, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
 import { Profile, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
@@ -83,11 +83,10 @@ export async function skillsInteractionCollector(
 	/* Refresh the skills list. */
 	if (interaction.isButton() && interaction.customId === 'skills_refresh') {
 
-		await interaction
-			.update({
-				content: getSkillList(profileData),
-				components: interaction.message.components,
-			})
+		await update(interaction, {
+			content: getSkillList(profileData),
+			components: interaction.message.components,
+		})
 			.catch((error) => { throw new Error(error); });
 		return;
 	}
@@ -95,27 +94,26 @@ export async function skillsInteractionCollector(
 	/* Add two buttons "personal" and "global". */
 	if (interaction.isButton() && (interaction.customId === 'skills_add' || interaction.customId === 'skills_edit' || interaction.customId === 'skills_remove')) {
 
-		await interaction
-			.update({
-				components: [
-					getOriginalComponents(profileData, serverData, interaction.member),
-					new ActionRowBuilder<ButtonBuilder>()
-						.setComponents(
-							[new ButtonBuilder()
-								.setCustomId(`${interaction.customId}_personal${interaction.customId === 'skills_add' ? '_modal' : ''}`)
-								.setLabel('Personal')
-								.setEmoji('👤')
-								.setDisabled(!profileData)
-								.setStyle(ButtonStyle.Secondary),
-							new ButtonBuilder()
-								.setCustomId(`${interaction.customId}-global${interaction.customId === 'skills_add' ? '_modal' : ''}`)
-								.setLabel('Global')
-								.setEmoji('👥')
-								.setDisabled(!interaction.member.permissions?.has(PermissionFlagsBits.Administrator))
-								.setStyle(ButtonStyle.Secondary),
-							]),
-				],
-			})
+		await update(interaction, {
+			components: [
+				getOriginalComponents(profileData, serverData, interaction.member),
+				new ActionRowBuilder<ButtonBuilder>()
+					.setComponents(
+						[new ButtonBuilder()
+							.setCustomId(`${interaction.customId}_personal${interaction.customId === 'skills_add' ? '_modal' : ''}`)
+							.setLabel('Personal')
+							.setEmoji('👤')
+							.setDisabled(!profileData)
+							.setStyle(ButtonStyle.Secondary),
+						new ButtonBuilder()
+							.setCustomId(`${interaction.customId}-global${interaction.customId === 'skills_add' ? '_modal' : ''}`)
+							.setLabel('Global')
+							.setEmoji('👥')
+							.setDisabled(!interaction.member.permissions?.has(PermissionFlagsBits.Administrator))
+							.setStyle(ButtonStyle.Secondary),
+						]),
+			],
+		})
 			.catch((error) => { throw new Error(error); });
 		return;
 	}
@@ -123,13 +121,12 @@ export async function skillsInteractionCollector(
 	/* Add a new select menu to select a skill to modify. */
 	if (interaction.isButton() && interaction.customId === 'skills_modify') {
 
-		await interaction
-			.update({
-				components: [
-					getOriginalComponents(profileData, serverData, interaction.member),
-					getModifyMenu(profileData, 0),
-				],
-			})
+		await update(interaction, {
+			components: [
+				getOriginalComponents(profileData, serverData, interaction.member),
+				getModifyMenu(profileData, 0),
+			],
+		})
 			.catch((error) => { throw new Error(error); });
 		return;
 	}
@@ -164,13 +161,12 @@ export async function skillsInteractionCollector(
 		if (!type) { throw new TypeError('type is undefined'); }
 		if (!category) { throw new TypeError('category is undefined'); }
 
-		await interaction
-			.update({
-				components: [
-					getOriginalComponents(profileData, serverData, interaction.member),
-					type === 'edit' ? getEditMenu(profileData, serverData, category, 0) : getRemoveMenu(profileData, serverData, category, 0),
-				],
-			})
+		await update(interaction, {
+			components: [
+				getOriginalComponents(profileData, serverData, interaction.member),
+				type === 'edit' ? getEditMenu(profileData, serverData, category, 0) : getRemoveMenu(profileData, serverData, category, 0),
+			],
+		})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
@@ -185,13 +181,13 @@ export async function skillsInteractionCollector(
 			let page = Number(selectOptionId.split('_')[3] ?? 0) + 1;
 			const totalPages = Math.ceil((Object.keys(profileData?.skills.global || {}).length + Object.keys(profileData?.skills.personal || {}).length) / 24);
 			if (page >= totalPages) { page = 0; }
-			await interaction
-				.update({
-					components: [
-						getOriginalComponents(profileData, serverData, interaction.member),
-						getModifyMenu(profileData, page),
-					],
-				})
+
+			await update(interaction, {
+				components: [
+					getOriginalComponents(profileData, serverData, interaction.member),
+					getModifyMenu(profileData, page),
+				],
+			})
 				.catch((error) => { throw new Error(error); });
 			return;
 		}
@@ -203,13 +199,13 @@ export async function skillsInteractionCollector(
 			if (!category) { throw new TypeError('category is undefined'); }
 			const totalPages = Math.ceil(((category === 'global' ? (serverData?.skills || []) : Object.keys(profileData?.skills.personal || {})).length) / 24);
 			if (page >= totalPages) { page = 0; }
-			await interaction
-				.update({
-					components: [
-						getOriginalComponents(profileData, serverData, interaction.member),
-						getEditMenu(profileData, serverData, category, page),
-					],
-				})
+
+			await update(interaction, {
+				components: [
+					getOriginalComponents(profileData, serverData, interaction.member),
+					getEditMenu(profileData, serverData, category, page),
+				],
+			})
 				.catch((error) => { throw new Error(error); });
 			return;
 		}
@@ -221,13 +217,13 @@ export async function skillsInteractionCollector(
 			if (!category) { throw new TypeError('category is undefined'); }
 			const totalPages = Math.ceil(((category === 'global' ? (serverData?.skills || []) : Object.keys(profileData?.skills.personal || {})).length) / 24);
 			if (page >= totalPages) { page = 0; }
-			await interaction
-				.update({
-					components: [
-						getOriginalComponents(profileData, serverData, interaction.member),
-						getRemoveMenu(profileData, serverData, category, page),
-					],
-				})
+
+			await update(interaction, {
+				components: [
+					getOriginalComponents(profileData, serverData, interaction.member),
+					getRemoveMenu(profileData, serverData, category, page),
+				],
+			})
 				.catch((error) => { throw new Error(error); });
 			return;
 		}
@@ -313,11 +309,11 @@ export async function skillsInteractionCollector(
 
 		quidData = userData?.quids[userData?.currentQuid[interaction.guildId] || ''];
 		profileData = quidData?.profiles[interaction.guildId];
-		await interaction
-			.update({
-				content: getSkillList(profileData),
-				components: [getOriginalComponents(profileData, serverData, interaction.member)],
-			})
+
+		await update(interaction, {
+			content: getSkillList(profileData),
+			components: [getOriginalComponents(profileData, serverData, interaction.member)],
+		})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
@@ -417,11 +413,10 @@ export async function sendEditSkillsModalResponse(
 
 		quidData = userData?.quids[userData?.currentQuid[interaction.guildId] || ''];
 		profileData = quidData?.profiles[interaction.guildId];
-		await interaction
-			.update({
-				content: getSkillList(profileData),
-				components: [getOriginalComponents(profileData, serverData, interaction.member)],
-			})
+		await update(interaction, {
+			content: getSkillList(profileData),
+			components: [getOriginalComponents(profileData, serverData, interaction.member)],
+		})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
@@ -503,11 +498,10 @@ export async function sendEditSkillsModalResponse(
 
 		quidData = userData?.quids[userData?.currentQuid[interaction.guildId] || ''];
 		profileData = quidData?.profiles[interaction.guildId];
-		await interaction
-			.update({
-				content: getSkillList(profileData),
-				components: [getOriginalComponents(profileData, serverData, interaction.member)],
-			})
+		await update(interaction, {
+			content: getSkillList(profileData),
+			components: [getOriginalComponents(profileData, serverData, interaction.member)],
+		})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
@@ -545,11 +539,10 @@ export async function sendEditSkillsModalResponse(
 		);
 		quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		profileData = getMapData(quidData.profiles, interaction.guildId);
-		await interaction
-			.update({
-				content: getSkillList(profileData),
-				components: [getOriginalComponents(profileData, serverData, interaction.member)],
-			})
+		await update(interaction, {
+			content: getSkillList(profileData),
+			components: [getOriginalComponents(profileData, serverData, interaction.member)],
+		})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});

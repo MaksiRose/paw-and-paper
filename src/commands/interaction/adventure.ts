@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
-import { getSmallerNumber, KeyOfUnion, sendErrorMessage, widenValues } from '../../utils/helperFunctions';
+import { getSmallerNumber, KeyOfUnion, sendErrorMessage, update, widenValues } from '../../utils/helperFunctions';
 import { respond } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { CurrentRegionType, Inventory, Profile, Quid, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
@@ -43,7 +43,7 @@ export const command: SlashCommand = {
 		const profileData1 = getMapData(quidData1.profiles, interaction.guildId);
 
 		/* Checks if the profile is on a cooldown, passed out, or resting. */
-		if (await isInvalid(interaction, userData1, quidData1, profileData1, embedArray, name)) { return; }
+		if (await isInvalid(interaction, userData1, quidData1, profileData1, embedArray)) { return; }
 
 		/* Define messageContent as the return of remindOfAttack */
 		const messageContent = remindOfAttack(interaction.guildId);
@@ -225,8 +225,7 @@ export async function adventureInteractionCollector(
 		componentArray[column]?.components[row]?.setEmoji(uncoveredEmoji);
 		componentArray[column]?.components[row]?.setDisabled(true);
 
-		const updatedInteraction = await i
-			.update({ components: componentArray })
+		const updatedInteraction = await update(i, { components: componentArray })
 			.catch((error) => {
 				collector.stop(`error_${error}`);
 				return undefined;
@@ -314,21 +313,20 @@ export async function adventureInteractionCollector(
 			const afterGameChangesData = await checkAfterGameChanges(interaction, userData1, quidData1, profileData1, userData2, quidData2, profileData2, serverData)
 				.catch((error) => { sendErrorMessage(interaction, error); });
 
-			await interaction
-				.update({
-					embeds: [
-						new EmbedBuilder()
-							.setColor(quidData1.color)
-							.setAuthor({ name: quidData1.name, iconURL: quidData1.avatarURL })
-							.setDescription(`*${quidDataCurrent.name} decides that ${pronounAndPlural(quidDataCurrent, 0, 'has', 'have')} adventured enough and goes back to the pack.*`)
-							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n${decreasedStatsData2.statsUpdateText}` }),
-						...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
-						...(decreasedStatsData2.injuryUpdateEmbed ? [decreasedStatsData2.injuryUpdateEmbed] : []),
-						...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
-						...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
-					],
-					components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
-				})
+			await update(interaction, {
+				embeds: [
+					new EmbedBuilder()
+						.setColor(quidData1.color)
+						.setAuthor({ name: quidData1.name, iconURL: quidData1.avatarURL })
+						.setDescription(`*${quidDataCurrent.name} decides that ${pronounAndPlural(quidDataCurrent, 0, 'has', 'have')} adventured enough and goes back to the pack.*`)
+						.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n${decreasedStatsData2.statsUpdateText}` }),
+					...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
+					...(decreasedStatsData2.injuryUpdateEmbed ? [decreasedStatsData2.injuryUpdateEmbed] : []),
+					...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
+					...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
+				],
+				components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
+			})
 				.catch((error) => { sendErrorMessage(interaction, error); });
 			return;
 		}

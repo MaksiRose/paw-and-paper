@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, WebhookEditMessageOptions } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { respond, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
 import { SlashCommand, UserSchema } from '../../typedef';
@@ -53,17 +53,16 @@ export async function deleteInteractionCollector(
 	/* Creating a new page for the user to select an account to delete. */
 	if (interaction.isButton() && interaction.customId === 'delete_individual') {
 
-		await interaction
-			.update({
-				embeds: [new EmbedBuilder()
-					.setColor(error_color)
-					.setTitle('Please select a quid that you want to delete.')],
-				components: [
-					getOriginalComponents(),
-					new ActionRowBuilder<SelectMenuBuilder>()
-						.setComponents([getQuidsPage(0, userData)]),
-				],
-			})
+		await update(interaction, {
+			embeds: [new EmbedBuilder()
+				.setColor(error_color)
+				.setTitle('Please select a quid that you want to delete.')],
+			components: [
+				getOriginalComponents(),
+				new ActionRowBuilder<SelectMenuBuilder>()
+					.setComponents([getQuidsPage(0, userData)]),
+			],
+		})
 			.catch((error) => { throw new Error(error); });
 		return;
 	}
@@ -74,14 +73,13 @@ export async function deleteInteractionCollector(
 		let deletePage = Number(selectOptionId.replace('delete_individual_nextpage_', '')) + 1;
 		if (deletePage >= Math.ceil(Object.keys(userData.quids).length / 24)) { deletePage = 0; }
 
-		await interaction
-			.update({
-				components: [
-					getOriginalComponents(),
-					new ActionRowBuilder<SelectMenuBuilder>()
-						.setComponents([getQuidsPage(deletePage, userData)]),
-				],
-			})
+		await update(interaction, {
+			components: [
+				getOriginalComponents(),
+				new ActionRowBuilder<SelectMenuBuilder>()
+					.setComponents([getQuidsPage(deletePage, userData)]),
+			],
+		})
 			.catch((error) => { throw new Error(error); });
 		return;
 	}
@@ -92,28 +90,27 @@ export async function deleteInteractionCollector(
 		const _id = selectOptionId.replace('delete_individual_', '');
 		const quid = getMapData(userData.quids, _id);
 
-		await interaction
-			.update({
-				embeds: [new EmbedBuilder()
-					.setColor(error_color)
-					.setTitle(`Are you sure you want to delete the quid named "${quid.name}"? This will be **permanent**!!!`)],
-				components: [
-					...disableAllComponents([getOriginalComponents().toJSON(), new ActionRowBuilder<SelectMenuBuilder>().setComponents([SelectMenuBuilder.from(interaction.component)]).toJSON()]),
-					new ActionRowBuilder<ButtonBuilder>()
-						.setComponents([
-							new ButtonBuilder()
-								.setCustomId(`delete_confirm_individual_${_id}`)
-								.setLabel('Confirm')
-								.setEmoji('✔')
-								.setStyle(ButtonStyle.Danger),
-							new ButtonBuilder()
-								.setCustomId('delete_cancel')
-								.setLabel('Cancel')
-								.setEmoji('✖')
-								.setStyle(ButtonStyle.Secondary),
-						]),
-				],
-			})
+		await update(interaction, {
+			embeds: [new EmbedBuilder()
+				.setColor(error_color)
+				.setTitle(`Are you sure you want to delete the quid named "${quid.name}"? This will be **permanent**!!!`)],
+			components: [
+				...disableAllComponents([getOriginalComponents().toJSON(), new ActionRowBuilder<SelectMenuBuilder>().setComponents([SelectMenuBuilder.from(interaction.component)]).toJSON()]),
+				new ActionRowBuilder<ButtonBuilder>()
+					.setComponents([
+						new ButtonBuilder()
+							.setCustomId(`delete_confirm_individual_${_id}`)
+							.setLabel('Confirm')
+							.setEmoji('✔')
+							.setStyle(ButtonStyle.Danger),
+						new ButtonBuilder()
+							.setCustomId('delete_cancel')
+							.setLabel('Cancel')
+							.setEmoji('✖')
+							.setStyle(ButtonStyle.Secondary),
+					]),
+			],
+		})
 			.catch((error) => { throw new Error(error); });
 		return;
 	}
@@ -121,17 +118,16 @@ export async function deleteInteractionCollector(
 	/* Creating a new page for the user to select their accounts on a server to delete. */
 	if (interaction.isButton() && interaction.customId === 'delete_server') {
 
-		await interaction
-			.update({
-				embeds: [new EmbedBuilder()
-					.setColor(error_color)
-					.setTitle('Please select a server that you want to delete all information off of.')],
-				components: [
-					getOriginalComponents(),
-					new ActionRowBuilder<SelectMenuBuilder>()
-						.setComponents([await getServersPage(0, userData)]),
-				],
-			})
+		await update(interaction, {
+			embeds: [new EmbedBuilder()
+				.setColor(error_color)
+				.setTitle('Please select a server that you want to delete all information off of.')],
+			components: [
+				getOriginalComponents(),
+				new ActionRowBuilder<SelectMenuBuilder>()
+					.setComponents([await getServersPage(0, userData)]),
+			],
+		})
 			.catch((error) => { throw new Error(error); });
 		return;
 	}
@@ -142,14 +138,13 @@ export async function deleteInteractionCollector(
 		let deletePage = Number(selectOptionId.replace('delete_server_nextpage_', '')) + 1;
 		if (deletePage >= Math.ceil([...new Set(Object.values(userData.quids).map(q => Object.keys(q.profiles)).flat())].length / 24)) { deletePage = 0; }
 
-		await interaction
-			.update({
-				components: [
-					getOriginalComponents(),
-					new ActionRowBuilder<SelectMenuBuilder>()
-						.setComponents([await getServersPage(deletePage, userData)]),
-				],
-			})
+		await update(interaction, {
+			components: [
+				getOriginalComponents(),
+				new ActionRowBuilder<SelectMenuBuilder>()
+					.setComponents([await getServersPage(deletePage, userData)]),
+			],
+		})
 			.catch((error) => { throw new Error(error); });
 		return;
 	}
@@ -160,28 +155,27 @@ export async function deleteInteractionCollector(
 		const server = await serverModel.findOne(s => s.serverId === selectOptionId.replace('delete_server_', ''));
 		const accountsOnServer = Object.values(userData.quids).map(q => q.profiles[server.serverId]).filter(p => p !== undefined);
 
-		await interaction
-			.update({
-				embeds: [new EmbedBuilder()
-					.setColor(error_color)
-					.setTitle(`Are you sure you want to delete all the information of ${accountsOnServer.length} quids on the server ${server.name}? This will be **permanent**!!!`)],
-				components: [
-					...disableAllComponents([getOriginalComponents().toJSON(), new ActionRowBuilder<SelectMenuBuilder>().setComponents([SelectMenuBuilder.from(interaction.component)]).toJSON()]),
-					new ActionRowBuilder<ButtonBuilder>()
-						.setComponents([
-							new ButtonBuilder()
-								.setCustomId(`delete_confirm_server_${server.serverId}`)
-								.setLabel('Confirm')
-								.setEmoji('✔')
-								.setStyle(ButtonStyle.Danger),
-							new ButtonBuilder()
-								.setCustomId('delete_cancel')
-								.setLabel('Cancel')
-								.setEmoji('✖')
-								.setStyle(ButtonStyle.Secondary),
-						]),
-				],
-			})
+		await update(interaction, {
+			embeds: [new EmbedBuilder()
+				.setColor(error_color)
+				.setTitle(`Are you sure you want to delete all the information of ${accountsOnServer.length} quids on the server ${server.name}? This will be **permanent**!!!`)],
+			components: [
+				...disableAllComponents([getOriginalComponents().toJSON(), new ActionRowBuilder<SelectMenuBuilder>().setComponents([SelectMenuBuilder.from(interaction.component)]).toJSON()]),
+				new ActionRowBuilder<ButtonBuilder>()
+					.setComponents([
+						new ButtonBuilder()
+							.setCustomId(`delete_confirm_server_${server.serverId}`)
+							.setLabel('Confirm')
+							.setEmoji('✔')
+							.setStyle(ButtonStyle.Danger),
+						new ButtonBuilder()
+							.setCustomId('delete_cancel')
+							.setLabel('Cancel')
+							.setEmoji('✖')
+							.setStyle(ButtonStyle.Secondary),
+					]),
+			],
+		})
 			.catch((error) => { throw new Error(error); });
 		return;
 	}
@@ -189,29 +183,28 @@ export async function deleteInteractionCollector(
 	/* Creating a new message asking the user if they are sure that they want to delete all their data. */
 	if (interaction.isButton() && interaction.customId === 'delete_all') {
 
-		await interaction
-			.update({
-				embeds: [new EmbedBuilder()
-					.setColor(error_color)
-					.setTitle('Are you sure you want to delete all your data? This will be **permanent**!!!')
-					.setDescription('Are you unhappy with your experience, or have other concerns? Let us know using `/ticket` (an account is not needed).')],
-				components: [
-					...disableAllComponents([getOriginalComponents().toJSON()]),
-					new ActionRowBuilder<ButtonBuilder>()
-						.setComponents([
-							new ButtonBuilder()
-								.setCustomId('delete_confirm_all')
-								.setLabel('Confirm')
-								.setEmoji('✔')
-								.setStyle(ButtonStyle.Danger),
-							new ButtonBuilder()
-								.setCustomId('delete_cancel')
-								.setLabel('Cancel')
-								.setEmoji('✖')
-								.setStyle(ButtonStyle.Secondary),
-						]),
-				],
-			})
+		await update(interaction, {
+			embeds: [new EmbedBuilder()
+				.setColor(error_color)
+				.setTitle('Are you sure you want to delete all your data? This will be **permanent**!!!')
+				.setDescription('Are you unhappy with your experience, or have other concerns? Let us know using `/ticket` (an account is not needed).')],
+			components: [
+				...disableAllComponents([getOriginalComponents().toJSON()]),
+				new ActionRowBuilder<ButtonBuilder>()
+					.setComponents([
+						new ButtonBuilder()
+							.setCustomId('delete_confirm_all')
+							.setLabel('Confirm')
+							.setEmoji('✔')
+							.setStyle(ButtonStyle.Danger),
+						new ButtonBuilder()
+							.setCustomId('delete_cancel')
+							.setLabel('Cancel')
+							.setEmoji('✖')
+							.setStyle(ButtonStyle.Secondary),
+					]),
+			],
+		})
 			.catch((error) => { throw new Error(error); });
 		return;
 	}
@@ -310,8 +303,7 @@ export async function deleteInteractionCollector(
 	/* Editing the message to the original message. */
 	if (interaction.customId === 'delete_cancel') {
 
-		await interaction
-			.update(sendOriginalMessage())
+		await update(interaction, sendOriginalMessage())
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});

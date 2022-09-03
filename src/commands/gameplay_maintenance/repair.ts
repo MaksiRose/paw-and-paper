@@ -8,7 +8,7 @@ import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
 import getInventoryElements from '../../utils/getInventoryElements';
 import { pronoun } from '../../utils/getPronouns';
-import { getMapData, getSmallerNumber, respond } from '../../utils/helperFunctions';
+import { getMapData, getSmallerNumber, respond, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { generateRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -55,7 +55,7 @@ export const command: SlashCommand = {
 		const profileData = getMapData(quidData.profiles, interaction.guildId);
 
 		/* Checks if the profile is on a cooldown or passed out. */
-		if (await isInvalid(interaction, userData, quidData, profileData, embedArray, name)) { return; }
+		if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
 
 		const messageContent = remindOfAttack(interaction.guildId);
 
@@ -126,8 +126,7 @@ export async function repairInteractionCollector(
 		if (chosenDen !== 'sleepingDens' && chosenDen !== 'medicineDen' && chosenDen !== 'foodDen') { throw new Error('chosenDen is not a den'); }
 
 
-		await interaction
-			.update(getMaterials(quidData, serverData, chosenDen, [], null))
+		await update(interaction, getMaterials(quidData, serverData, chosenDen, [], null))
 			.catch((error) => { throw new Error(error); });
 		return;
 	}
@@ -162,19 +161,18 @@ export async function repairInteractionCollector(
 
 		const denName = chosenDen.split(/(?=[A-Z])/).join(' ').toLowerCase();
 
-		await interaction
-			.update({
-				embeds: [
-					new EmbedBuilder()
-						.setColor(quidData.color)
-						.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
-						.setDescription(`*${quidData.name} takes a ${chosenItem} and tries to ${repairKind === 'structure' ? 'tuck it into parts of the walls and ceiling that look less stable.' : repairKind === 'bedding' ? 'spread it over parts of the floor that look harsh and rocky.' : repairKind === 'thickness' ? 'cover parts of the walls that look a little thin with it.' : 'drag it over parts of the walls with bumps and material sticking out.'} ` + (isSuccessful ? `Immediately you can see the ${repairKind} of the den improving. What a success!*` : `After a few attempts, the material breaks into little pieces, rendering it useless. Looks like the ${quidData.displayedSpecies || quidData.species} has to try again...*`))
-						.setFooter({ text: `${changedCondition.statsUpdateText}\n\n-1 ${chosenItem} for ${interaction.guild.name}\n${isSuccessful ? `+${repairAmount}% ${repairKind} for ${denName} (${serverData.dens[chosenDen][repairKind]}%  total)` : ''}` }),
-					...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
-					...(levelUpEmbed ? [levelUpEmbed] : []),
-				],
-				components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
-			})
+		await update(interaction, {
+			embeds: [
+				new EmbedBuilder()
+					.setColor(quidData.color)
+					.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+					.setDescription(`*${quidData.name} takes a ${chosenItem} and tries to ${repairKind === 'structure' ? 'tuck it into parts of the walls and ceiling that look less stable.' : repairKind === 'bedding' ? 'spread it over parts of the floor that look harsh and rocky.' : repairKind === 'thickness' ? 'cover parts of the walls that look a little thin with it.' : 'drag it over parts of the walls with bumps and material sticking out.'} ` + (isSuccessful ? `Immediately you can see the ${repairKind} of the den improving. What a success!*` : `After a few attempts, the material breaks into little pieces, rendering it useless. Looks like the ${quidData.displayedSpecies || quidData.species} has to try again...*`))
+					.setFooter({ text: `${changedCondition.statsUpdateText}\n\n-1 ${chosenItem} for ${interaction.guild.name}\n${isSuccessful ? `+${repairAmount}% ${repairKind} for ${denName} (${serverData.dens[chosenDen][repairKind]}%  total)` : ''}` }),
+				...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
+				...(levelUpEmbed ? [levelUpEmbed] : []),
+			],
+			components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
+		})
 			.catch((error) => { throw new Error(error); });
 
 		await isPassedOut(interaction, userData, quidData, profileData, true);

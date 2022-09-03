@@ -1,4 +1,4 @@
-import { CommandInteraction, EmbedBuilder, MessageComponentInteraction, SelectMenuInteraction } from 'discord.js';
+import { ButtonInteraction, CommandInteraction, EmbedBuilder, MessageComponentInteraction } from 'discord.js';
 import { cooldownMap } from '../events/interactionCreate';
 import { respond } from './helperFunctions';
 import userModel from '../models/userModel';
@@ -10,7 +10,7 @@ import { stopResting } from '../commands/gameplay_maintenance/rest';
 const { error_color } = require('../../config.json');
 
 export async function isPassedOut(
-	interaction: CommandInteraction<'cached' | 'raw'> | MessageComponentInteraction<'cached'>,
+	interaction: CommandInteraction<'cached' | 'raw'> | MessageComponentInteraction<'cached' | 'raw'>,
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
@@ -53,13 +53,12 @@ export async function isPassedOut(
  * Checks if the user is on a cooldown. If yes, then send a message and return true, as well as decrease their level if it's new. Else, return false.
  */
 export async function hasCooldown(
-	interaction: CommandInteraction<'cached' | 'raw'>,
+	interaction: CommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'>,
 	userData: UserSchema,
 	quidData: Quid,
-	commandName: string,
 ): Promise<boolean> {
 
-	if (cooldownMap.get(userData.uuid + interaction.guildId) === true && commandName === interaction.commandName) {
+	if (cooldownMap.get(userData.uuid + interaction.guildId) === true) {
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
@@ -89,7 +88,7 @@ export async function hasCooldown(
  * Checks if the user is resting. If yes, then wake user up and attach an embed to the message. Returns the updated `userData`.
  */
 export async function isResting(
-	interaction: CommandInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached'>,
+	interaction: CommandInteraction<'cached' | 'raw'> | MessageComponentInteraction<'cached' | 'raw'>,
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
@@ -123,16 +122,15 @@ export async function isResting(
  * Checks if the user is passed out, on a cooldown or resting, sends or attaches the appropriate message/embed, and returns a boolean of the result.
  */
 export async function isInvalid(
-	interaction: CommandInteraction<'cached' | 'raw'>,
+	interaction: CommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached'>,
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
 	embedArray: Array<EmbedBuilder>,
-	commandName: string,
 ): Promise<boolean> {
 
 	if (await isPassedOut(interaction, userData, quidData, profileData, false)) { return true; }
-	if (await hasCooldown(interaction, userData, quidData, commandName)) { return true; }
+	if (await hasCooldown(interaction, userData, quidData)) { return true; }
 	await isResting(interaction, userData, quidData, profileData, embedArray);
 	return false;
 }
@@ -163,7 +161,7 @@ function hasTooManyItems(
  * @returns A boolean.
  */
 export async function hasFullInventory(
-	interaction: CommandInteraction<'cached'>,
+	interaction: CommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	quidData: Quid,
 	profileData: Profile,
 	embedArray: EmbedBuilder[],
@@ -178,7 +176,7 @@ export async function hasFullInventory(
 				.setColor(quidData.color)
 				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
 				.setDescription(`*${quidData.name} approaches the pack borders, ${pronoun(quidData, 2)} mouth filled with various things. As eager as ${pronounAndPlural(quidData, 0, 'is', 'are')} to go into the wild, ${pronounAndPlural(quidData, 0, 'decide')} to store some things away first.*`)
-				.setFooter({ text: 'You can only hold up to 5 items in your personal inventory. Type "rp store" to put things into the pack inventory!' }),
+				.setFooter({ text: 'You can only hold up to 5 items in your personal inventory. Type "/store" to put things into the pack inventory!' }),
 			],
 		}, false)
 			.catch((error) => {

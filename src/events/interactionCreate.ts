@@ -1,4 +1,4 @@
-import { CommandInteraction, EmbedBuilder, Interaction, InteractionType, MessageComponentInteraction, ModalSubmitInteraction } from 'discord.js';
+import { CommandInteraction, EmbedBuilder, Interaction, MessageComponentInteraction, ModalSubmitInteraction } from 'discord.js';
 import { deleteInteractionCollector } from '../commands/quid_customization/delete';
 import { profileInteractionCollector } from '../commands/quid_customization/profile';
 import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../commands/quid_customization/pronouns';
@@ -16,7 +16,7 @@ import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
 import { ErrorStacks, Event } from '../typedef';
 import { disableCommandComponent, disableAllComponents } from '../utils/componentDisabling';
-import { getMapData } from '../utils/helperFunctions';
+import { getMapData, update } from '../utils/helperFunctions';
 import { pronoun, pronounAndPlural } from '../utils/getPronouns';
 import { createGuild } from '../utils/updateGuild';
 import { respond } from '../utils/helperFunctions';
@@ -35,6 +35,7 @@ import { voteInteractionCollector } from '../commands/gameplay_maintenance/vote'
 import { repairInteractionCollector } from '../commands/gameplay_maintenance/repair';
 import { healInteractionCollector } from '../commands/gameplay_maintenance/heal';
 import { rankupInteractionCollector } from '../commands/gameplay_primary/rank-up';
+import { executeScavenging, command as scavengeCommand } from '../commands/gameplay_primary/scavenge';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
@@ -83,7 +84,7 @@ export const event: Event = {
 			return;
 		}
 
-		if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
+		if (interaction.isAutocomplete()) {
 
 			/**
 			 * https://discordjs.guide/interactions/autocomplete.html#responding-to-autocomplete-interactions
@@ -113,7 +114,7 @@ export const event: Event = {
 			/* If the user is not registered in the cooldown map, it's setting the cooldown to false for the user. */
 			if (userData && interaction.guildId && !cooldownMap.has(userData.uuid + interaction.guildId)) { cooldownMap.set(userData.uuid + interaction.guildId, false); }
 
-			/* It's disabling all components if userData exists, the interaction is in a guild and the command is set to disable a previous command. */
+			/* It's disabling all components if userData exists and the command is set to disable a previous command. */
 			if (userData && command.disablePreviousCommand) { await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.(); }
 
 			/* This sends the command and error message if an error occurs. */
@@ -301,10 +302,9 @@ export const event: Event = {
 
 				if (interaction.customId.startsWith('report_')) {
 
-					await interaction
-						.update({
-							components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
-						})
+					await update(interaction, {
+						components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
+					})
 						.catch((error) => { console.error(error); });
 
 					const errorId = interaction.customId.split('_')[2] || generateId();
@@ -382,6 +382,17 @@ export const event: Event = {
 				if (interaction.customId.includes('rank_')) {
 
 					await rankupInteractionCollector(interaction, userData, serverData)
+						.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					return;
+				}
+
+				if (interaction.customId === 'scavenge_new') {
+
+					/* It's disabling all components if userData exists and the command is set to disable a previous command. */
+
+					if (userData && scavengeCommand.disablePreviousCommand) { await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.(); }
+
+					await executeScavenging(interaction, userData, serverData, [])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}

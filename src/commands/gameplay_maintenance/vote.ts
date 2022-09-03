@@ -27,7 +27,7 @@ export const command: SlashCommand = {
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId || 'DM'));
 		const profileData = getMapData(quidData.profiles, interaction.guildId || 'DM');
 
-		if (interaction.inGuild() && await isInvalid(interaction, userData, quidData, profileData, embedArray, name)) { return; }
+		if (interaction.inGuild() && await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
 
 		const botReply = await respond(interaction, {
 			embeds: [...embedArray, new EmbedBuilder()

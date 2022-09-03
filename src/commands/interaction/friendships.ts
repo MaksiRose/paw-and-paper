@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { Quid, SlashCommand, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
@@ -56,8 +56,7 @@ export async function friendshipsInteractionCollector(
 	}
 
 	/* Updating the message with the correct friendship texts based on the new page. */
-	await interaction
-		.update(await getFriendshipMessage(userData, quidData, page, friendshipTexts))
+	await update(interaction, await getFriendshipMessage(userData, quidData, page, friendshipTexts))
 		.catch((error) => { throw new Error(error); });
 }
 

@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 import { respond } from './helperFunctions';
 import { UserSchema } from '../typedef';
 const { error_color } = require('../../config.json');
@@ -7,7 +7,7 @@ const { error_color } = require('../../config.json');
  * Checks if there is an account and if the account has a name, returns false if they do, and if not, sends a message telling the user to create an account and return true.
  */
 export function hasName(
-	interaction: ChatInputCommandInteraction,
+	interaction: ChatInputCommandInteraction | ButtonInteraction,
 	userData: UserSchema | null,
 ): userData is UserSchema {
 
@@ -32,7 +32,10 @@ export function hasName(
 /**
  * Checks if the account has a species, returns false if they do, and if not, sends a message telling the user to create an account and returns true.
  */
-function hasSpecies(interaction: ChatInputCommandInteraction, userData: UserSchema | null): boolean {
+function hasSpecies(
+	interaction: ChatInputCommandInteraction | ButtonInteraction,
+	userData: UserSchema | null,
+): boolean {
 
 	const quidData = userData?.quids[userData.currentQuid[interaction.guildId || 'DM'] || ''];
 	if (quidData?.species === '') {
@@ -56,7 +59,7 @@ function hasSpecies(interaction: ChatInputCommandInteraction, userData: UserSche
  * Checks if the user has a name and a species, returns false if they do, and if they don't, sends the appropriate message and returns true.
  */
 export function hasCompletedAccount(
-	interaction: ChatInputCommandInteraction,
+	interaction: ChatInputCommandInteraction | ButtonInteraction,
 	userData: UserSchema | null,
 ): userData is UserSchema {
 
@@ -69,8 +72,17 @@ export function hasCompletedAccount(
  * This is checking if the interaction is in a guild, if it is not, it will reply to the user with a message saying that the command cannot be executed in DMs.
  */
 export function isInGuild(
-	interaction: ChatInputCommandInteraction,
-): interaction is ChatInputCommandInteraction<'cached'> {
+	interaction: ChatInputCommandInteraction
+): interaction is ChatInputCommandInteraction<'cached'>
+export function isInGuild(
+	interaction: ButtonInteraction
+): interaction is ButtonInteraction<'cached'>
+export function isInGuild(
+	interaction: ChatInputCommandInteraction | ButtonInteraction
+): interaction is ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>
+export function isInGuild(
+	interaction: ChatInputCommandInteraction | ButtonInteraction,
+): interaction is ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> {
 
 	if (!interaction.inCachedGuild()) {
 

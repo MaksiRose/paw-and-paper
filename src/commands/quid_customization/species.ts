@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { SlashCommand, speciesInfo, SpeciesNames, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
@@ -120,13 +120,12 @@ export async function speciesInteractionCollector(
 		if (speciesPage >= Math.ceil(speciesNameArray.length / 24)) { speciesPage = 0; }
 
 		/* Editing the message if its a Message object, else throw an error. */
-		await interaction
-			.update({
-				components: [
-					new ActionRowBuilder<SelectMenuBuilder>().setComponents([getSpeciesSelectMenu(speciesPage, quidId)]),
-					new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(quidId)]),
-				],
-			})
+		await update(interaction, {
+			components: [
+				new ActionRowBuilder<SelectMenuBuilder>().setComponents([getSpeciesSelectMenu(speciesPage, quidId)]),
+				new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(quidId)]),
+			],
+		})
 			.catch((error) => { throw new Error(error); });
 		return;
 	}
@@ -147,17 +146,16 @@ export async function speciesInteractionCollector(
 		);
 		const quidData = getMapData(userData.quids, quidId);
 
-		await interaction
-			.update({
-				embeds: [new EmbedBuilder()
-					.setColor(quidData.color)
-					.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
-					.setDescription(`*A stranger carefully steps over the pack's borders. ${upperCasePronoun(quidData, 2)} face seems friendly. Curious eyes watch ${pronoun(quidData, 1)} as ${pronoun(quidData, 0)} come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n"${quidData.name}," *the ${chosenSpecies} responds. The Alpha takes a friendly step towards ${pronoun(quidData, 1)}.* "It's nice to have you here, ${quidData.name}," *they say. More and more packmates come closer to greet the newcomer.*`)
-					.setFooter({ text: 'You are now done setting up your quid for RPGing! Type "/profile" to look at it.\nWith "/help" you can see how else you can customize your profile, as well as your other options.\nYou can use the button below to change your displayed species.' })],
-				components: [
-					new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(quidId)]),
-				],
-			})
+		await update(interaction, {
+			embeds: [new EmbedBuilder()
+				.setColor(quidData.color)
+				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+				.setDescription(`*A stranger carefully steps over the pack's borders. ${upperCasePronoun(quidData, 2)} face seems friendly. Curious eyes watch ${pronoun(quidData, 1)} as ${pronoun(quidData, 0)} come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n"${quidData.name}," *the ${chosenSpecies} responds. The Alpha takes a friendly step towards ${pronoun(quidData, 1)}.* "It's nice to have you here, ${quidData.name}," *they say. More and more packmates come closer to greet the newcomer.*`)
+				.setFooter({ text: 'You are now done setting up your quid for RPGing! Type "/profile" to look at it.\nWith "/help" you can see how else you can customize your profile, as well as your other options.\nYou can use the button below to change your displayed species.' })],
+			components: [
+				new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(quidId)]),
+			],
+		})
 			.catch((error) => { throw new Error(error); });
 
 		await interaction.message.channel

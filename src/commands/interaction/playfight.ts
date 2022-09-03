@@ -47,7 +47,7 @@ export const command: SlashCommand = {
 		const profileData1 = getMapData(quidData1.profiles, interaction.guildId);
 
 		/* Checks if the profile is on a cooldown, passed out, or resting. */
-		if (await isInvalid(interaction, userData1, quidData1, profileData1, embedArray, name)) { return; }
+		if (await isInvalid(interaction, userData1, quidData1, profileData1, embedArray)) { return; }
 
 		/* Define messageContent as the return of remindOfAttack */
 		const messageContent = remindOfAttack(interaction.guildId);

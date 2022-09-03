@@ -1,12 +1,13 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { cooldownMap } from '../../events/interactionCreate';
 import { RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { disableAllComponents } from '../../utils/componentDisabling';
+import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, respond } from '../../utils/helperFunctions';
+import { getMapData, respond, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { generateRandomNumber, generateRandomNumberWithException } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
@@ -34,13 +35,14 @@ export const command: SlashCommand = {
 		let profileData = getMapData(quidData.profiles, interaction.guildId);
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
-		if (await isInvalid(interaction, userData, quidData, profileData, embedArray, name)) { return; }
+		if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
 
 		const messageContent = remindOfAttack(interaction.guildId);
 
 		if (profileData.rank === RankType.Youngling) {
 
 			await respond(interaction, {
+				content: messageContent,
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(quidData.color)
 					.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
@@ -76,6 +78,8 @@ export const command: SlashCommand = {
 		}, true)
 			.catch((error) => { throw new Error(error); });
 
+		createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
+
 		const int = await botReply
 			.awaitMessageComponent({
 				filter: i => i.user.id === interaction.user.id,
@@ -83,6 +87,7 @@ export const command: SlashCommand = {
 			})
 			.then(async i => {
 
+				await i.deferUpdate();
 				if (i.customId === 'practice-decline') { return undefined; }
 				return i;
 			})
@@ -90,16 +95,21 @@ export const command: SlashCommand = {
 
 		if (int === undefined) {
 
-			await respond(interaction, {
+			botReply = await respond(interaction, {
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(quidData.color)
 					.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
 					.setDescription(`*After a bit of thinking, ${quidData.name} decides that now is not a good time to practice ${pronoun(quidData, 2)} fighting skills. Politely, ${pronounAndPlural(quidData, 0, 'decline')} the Elderlies offer.*`)],
 				components: disableAllComponents(botReply.components.map(component => component.toJSON())),
 			}, true)
-				.catch((error) => { if (error.httpStatus !== 404) { throw new Error(error); } });
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+					return botReply;
+				});
 			return;
 		}
+
+		cooldownMap.set(userData.uuid + interaction.guildId, true);
 
 		const experiencePoints = generateRandomNumber(5, 1);
 		const changedCondition = await changeCondition(userData, quidData, profileData, experiencePoints);
@@ -144,12 +154,10 @@ export const command: SlashCommand = {
 
 			const fightComponents = getFightComponents(totalCycles);
 
-			botReply = await newInteraction
-				.update({
-					embeds: [...embedArray, embed],
-					components: [...previousFightComponents ? [previousFightComponents] : [], fightComponents],
-					fetchReply: true,
-				})
+			botReply = await update(newInteraction, {
+				embeds: [...embedArray, embed],
+				components: [...previousFightComponents ? [previousFightComponents] : [], fightComponents],
+			})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 					return botReply;
@@ -219,6 +227,8 @@ export const command: SlashCommand = {
 				return;
 			}
 
+			cooldownMap.set(userData!.uuid + interaction.guildId, false);
+
 			if (winLoseRatio > 0) {
 
 				embed.setDescription(`*The Elderly pants as they heave themselves to their feet.* "You're much stronger than I anticipated, ${quidData.name}. There's nothing I can teach you at this point!"`);
@@ -235,16 +245,15 @@ export const command: SlashCommand = {
 
 			const levelUpEmbed = (await checkLevelUp(interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
 
-			await newInteraction
-				.update({
-					embeds: [
-						...embedArray,
-						embed,
-						...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
-						...(levelUpEmbed ? [levelUpEmbed] : []),
-					],
-					components: [fightComponents],
-				})
+			botReply = await update(newInteraction, {
+				embeds: [
+					...embedArray,
+					embed,
+					...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
+					...(levelUpEmbed ? [levelUpEmbed] : []),
+				],
+				components: [fightComponents],
+			})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 					return botReply;
