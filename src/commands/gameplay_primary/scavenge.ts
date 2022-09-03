@@ -135,7 +135,7 @@ export async function executeScavenging(
 		/* Creating a collector that will collect the interactions of the user with the message. */
 		const collector = (botReply as Message<true>).createMessageComponentCollector({
 			filter: i => i.user.id === interaction.user.id,
-			time: isHumanTrap ? 10_000 : 120_000,
+			time: isHumanTrap ? 12_000 : 120_000,
 			max: isHumanTrap ? 10 : 4,
 		});
 
