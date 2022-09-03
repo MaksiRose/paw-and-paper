@@ -179,7 +179,9 @@ export async function executeScavenging(
 
 					/* Checking if the server has enough meat, if it doesn't, give the user meat. If it does, check
 					if the server has enough materials, if it doesn't, give the user material. If it does, do nothing. */
-					if (serverMeatCount < highRankProfilesCount * 2) {
+					const meatIsGettable = serverMeatCount < highRankProfilesCount * 2;
+					const materialIsGettable = serverMaterialsCount < 36;
+					if (meatIsGettable && pullFromWeightedTable({ 0: 1, 1: materialIsGettable ? 1 : 0 }) === 0) {
 
 						const carcassArray = [...speciesInfo[quidData.species as SpeciesNames]?.biome1OpponentArray || []];
 						const foundCarcass = carcassArray[generateRandomNumber(carcassArray.length, 0)];
@@ -200,7 +202,7 @@ export async function executeScavenging(
 							},
 						);
 					}
-					else if (serverMaterialsCount < 36) {
+					else if (materialIsGettable) {
 
 						const foundMaterial = (Object.keys(materialsInfo) as Array<MaterialNames>)[generateRandomNumber(Object.keys(materialsInfo).length, 0)];
 						if (!foundMaterial) {
