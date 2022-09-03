@@ -133,6 +133,9 @@ export async function hugInteractionCollector(
 			'https://c.tenor.com/8SjdZ9f64s8AAAAd/animals-kiss.gif',
 			'https://c.tenor.com/VOLRmvc9PawAAAAd/cute-animals.gif',
 			'https://c.tenor.com/N4wxlSS6s6YAAAAd/wake-up-360baby-pandas.gif',
+			'https://c.tenor.com/twkOV4hc7JUAAAAd/kitty-cat.gif',
+			'https://c.tenor.com/4tu5hJ3Rl2EAAAAC/snuggle-bunny.gif',
+			'https://c.tenor.com/cQN_bn443gMAAAAS/fast-quick.gif',
 		];
 
 		await update(interaction, {
