@@ -36,6 +36,7 @@ import { repairInteractionCollector } from '../commands/gameplay_maintenance/rep
 import { healInteractionCollector } from '../commands/gameplay_maintenance/heal';
 import { rankupInteractionCollector } from '../commands/gameplay_primary/rank-up';
 import { executeScavenging, command as scavengeCommand } from '../commands/gameplay_primary/scavenge';
+import { travelInteractionCollector } from '../commands/gameplay_primary/travel-regions';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
@@ -472,6 +473,13 @@ export const event: Event = {
 			if (interaction.customId.startsWith('heal_')) {
 
 				await healInteractionCollector(interaction, userData, serverData)
+					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+				return;
+			}
+
+			if (interaction.customId.startsWith('travel_')) {
+
+				await travelInteractionCollector(interaction, userData, serverData)
 					.catch(async (error) => { await sendErrorMessage(interaction, error); });
 				return;
 			}

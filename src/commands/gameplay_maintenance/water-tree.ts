@@ -235,7 +235,7 @@ export async function sendReminder(
 						.setColor(quidData.color)
 						.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
 						.setDescription('It is time to `/water` your tree!')
-						.setFooter(isInactive ? { text: '⚠️ CAUTION! The character associated with this reminder is currently inactive. Type "/profile" and select the character from the drop-down list before watering your tree.' } : null)],
+						.setFooter(isInactive ? { text: '⚠️ CAUTION! The quid associated with this reminder is currently inactive. Type "/profile" and select the quid from the drop-down list before watering your tree.' } : null)],
 				})
 				.catch(async (error) => {
 					if (error.httpStatus === '403' || error.httpStatus === '404') {

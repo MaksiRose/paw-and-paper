@@ -197,7 +197,7 @@ function keyInObject<T extends Record<PropertyKey, any>, K extends keyof T>(
 	key: PropertyKey,
 ): key is K { return Object.hasOwn(obj, key); }
 
-async function getHealResponse(
+export async function getHealResponse(
 	interaction: ChatInputCommandInteraction<'cached'> | MessageComponentInteraction<'cached'>,
 	userData: UserSchema,
 	serverData: ServerSchema,

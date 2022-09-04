@@ -9,7 +9,7 @@ import { pronoun } from '../../utils/getPronouns';
 import { getMapData, respond, update } from '../../utils/helperFunctions';
 import { remindOfAttack } from './attack';
 
-const name: SlashCommand['name'] = 'rank';
+const name: SlashCommand['name'] = 'rank-up';
 const description: SlashCommand['description'] = 'Once you successfully finished a quest, you can move up a rank using this command.';
 export const command: SlashCommand = {
 	name: name,
@@ -51,7 +51,7 @@ export const command: SlashCommand = {
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(quidData.color)
 					.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
-					.setDescription(`*An elderly smiles down at the young ${profileData.rank}.*\n"${quidData.name}, you have proven strength for the first time. I believe you are ready to explore the wild, and learn your strengths and weaknesses. Good luck in your rank as Apprentice" *they say. ${quidData.name}'s breast swells with pride.*`)],
+					.setDescription(`*An elderly smiles down at the young ${profileData.rank}.*\n"${quidData.name}, you have proven strength for the first time. I believe you are ready to explore the wild, and learn your strengths and weaknesses. Good luck in your rank as Apprentice" *they say. ${quidData.name}'s chest swells with pride.*`)],
 			}, true);
 
 			await checkRankRequirements(serverData, interaction, interaction.member, RankType.Apprentice, true);

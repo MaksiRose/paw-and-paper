@@ -35,7 +35,7 @@ export const command: SlashCommand = {
 
 		/* Checks if the profile is on a cooldown or passed out. */
 		if (await isPassedOut(interaction, userData, quidData, profileData, false)) { return; }
-		if (await hasCooldown(interaction, userData, quidData, name)) { return; }
+		if (await hasCooldown(interaction, userData, quidData)) { return; }
 
 		await startResting(interaction, userData, quidData, profileData, serverData);
 	},
@@ -104,7 +104,7 @@ export async function startResting(
 		.setColor(quidData.color)
 		.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
 		.setDescription(`*${quidData.name}'s chest rises and falls with the crickets. Snoring bounces off each wall, finally exiting the den and rising free to the clouds.*`)
-		.setFooter({ text: `+${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})${(previousRegion !== CurrentRegionType.SleepingDens) ? '\nYou are now at the sleeping dens' : ''}${isAutomatic ? '\nYour character started resting because you were inactive for 10 minutes' : ''}\n\n${weardownText}\n\nTip: You can also do "/vote" to get +30 energy per vote!` });
+		.setFooter({ text: `+${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})${(previousRegion !== CurrentRegionType.SleepingDens) ? '\nYou are now at the sleeping dens' : ''}${isAutomatic ? '\nYour quid started resting because you were inactive for 10 minutes' : ''}\n\n${weardownText}\n\nTip: You can also do "/vote" to get +30 energy per vote!` });
 	const component = new ActionRowBuilder<ButtonBuilder>()
 		.setComponents(new ButtonBuilder()
 			.setCustomId(`settings_reminders_resting_${userData.settings.reminders.resting === true ? 'off' : 'on'}`)

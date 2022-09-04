@@ -1,4 +1,4 @@
-import { ActionRowBuilder, CommandInteraction, EmbedBuilder, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, CommandInteraction, EmbedBuilder, MessageComponentInteraction, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { Profile, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { hasCooldown } from '../../utils/checkValidity';
@@ -39,7 +39,7 @@ export const command: SlashCommand = {
 };
 
 export async function showInventoryMessage(
-	interaction: CommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	interaction: CommandInteraction<'cached'> | MessageComponentInteraction<'cached'>,
 	userData: UserSchema,
 	profileData: Profile,
 	serverData: ServerSchema,
