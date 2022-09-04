@@ -5,7 +5,7 @@ import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
+import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
 import { getMapData, respond, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
@@ -110,6 +110,7 @@ export const command: SlashCommand = {
 		}
 
 		cooldownMap.set(userData.uuid + interaction.guildId, true);
+		delete disableCommandComponent[userData.uuid + interaction.guildId];
 
 		const experiencePoints = generateRandomNumber(5, 1);
 		const changedCondition = await changeCondition(userData, quidData, profileData, experiencePoints);

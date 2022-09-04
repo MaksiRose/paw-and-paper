@@ -344,11 +344,11 @@ export async function adventureInteractionCollector(
 			let extraFooter = '';
 
 			const flattenedInventory = (Object.values(losingProfileData.inventory) as Array<Inventory[keyof Inventory]>).map(type => Object.values(type)).flat().reduce((a, b) => a + b);
-			const _inventory = widenValues(losingProfileData.inventory);
+			const inventory_ = widenValues(losingProfileData.inventory);
 			if (flattenedInventory > 0 && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
 
 				const { itemType, itemName } = getHighestItem(losingProfileData.inventory);
-				_inventory[itemType][itemName] -= 1;
+				inventory_[itemType][itemName] -= 1;
 				extraDescription = `accidentally drops a ${itemName} that ${pronoun(losingQuidData, 0)} had with ${pronoun(losingQuidData, 1)}.`;
 				extraFooter = `-1 ${itemName} for ${losingQuidData.name}`;
 			}

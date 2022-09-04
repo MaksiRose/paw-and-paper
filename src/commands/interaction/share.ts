@@ -13,7 +13,7 @@ import { checkLevelUp } from '../../utils/levelHandling';
 import { generateRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
-const sharingCooldownAccountsMap = new Map();
+const sharingCooldownAccountsMap: Map<string, number> = new Map();
 const twoHoursInMs = 7_200_000;
 
 const name: SlashCommand['name'] = 'share';
@@ -49,7 +49,8 @@ export const command: SlashCommand = {
 		const messageContent = remindOfAttack(interaction.guildId);
 
 		/* Checks whether the user has shared within the last two hours. */
-		if (sharingCooldownAccountsMap.has(quidData1._id + interaction.guildId) && Date.now() - sharingCooldownAccountsMap.get(quidData1._id + interaction.guildId) < twoHoursInMs) {
+		const sharingCooldown = sharingCooldownAccountsMap.get(quidData1._id + interaction.guildId);
+		if (sharingCooldown && Date.now() - sharingCooldown < twoHoursInMs) {
 
 			await respond(interaction, {
 				content: messageContent,
@@ -57,7 +58,7 @@ export const command: SlashCommand = {
 					.setColor(quidData1.color)
 					.setAuthor({ name: quidData1.name, iconURL: quidData1.avatarURL })
 					.setTitle('You can only share every 2 hours!')
-					.setDescription(`You can share again <t:${Math.floor((sharingCooldownAccountsMap.get(quidData1._id + interaction.guildId) + twoHoursInMs) / 1_000)}:R>.`),
+					.setDescription(`You can share again <t:${Math.floor((sharingCooldown + twoHoursInMs) / 1_000)}:R>.`),
 				],
 			}, false)
 				.catch((error) => {

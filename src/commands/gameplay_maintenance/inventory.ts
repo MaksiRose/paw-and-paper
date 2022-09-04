@@ -32,7 +32,7 @@ export const command: SlashCommand = {
 		const profileData = getMapData(quidData.profiles, interaction.guildId);
 
 		/* Checks if the profile is on a cooldown. */
-		if (await hasCooldown(interaction, userData, quidData, name)) { return; }
+		if (await hasCooldown(interaction, userData, quidData)) { return; }
 
 		await showInventoryMessage(interaction, userData, profileData, serverData, 1);
 	},

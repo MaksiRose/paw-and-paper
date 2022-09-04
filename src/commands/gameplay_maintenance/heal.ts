@@ -7,7 +7,7 @@ import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { disableAllComponents } from '../../utils/componentDisabling';
+import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import getInventoryElements from '../../utils/getInventoryElements';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
@@ -233,7 +233,7 @@ async function getHealResponse(
 
 	if (!quidToHeal) {
 
-		await respond(interaction, {
+		const botReply = await respond(interaction, {
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData.color)
@@ -241,6 +241,8 @@ async function getHealResponse(
 				.setDescription(`*${quidData.name} sits in front of the medicine den, looking if anyone needs help with injuries or illnesses.*`)],
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 		}, true);
+
+		createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
 		return;
 	}
 
@@ -275,7 +277,7 @@ async function getHealResponse(
 
 		if (healUserConditionText === '') {
 
-			await respond(interaction, {
+			const botReply = await respond(interaction, {
 				content: messageContent,
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(quidData.color)
@@ -283,6 +285,8 @@ async function getHealResponse(
 					.setDescription(`*${quidData.name} approaches ${quidToHeal.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${quidData.displayedSpecies || quidData.species} asks.\n${quidToHeal.name} shakes ${pronoun(quidToHeal, 2)} head.* "Not that I know of, no."\n*Disappointed, ${quidData.name} goes back to the medicine den.*`)],
 				components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 			}, true);
+
+			createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
 			return;
 		}
 
@@ -313,11 +317,13 @@ async function getHealResponse(
 				.setPlaceholder('Select an item')
 				.setOptions(selectMenuOptions));
 
-		await respond(interaction, {
+		const botReply = await respond(interaction, {
 			content: messageContent,
 			embeds: [...embedArray, quidConditionEmbed, inventoryEmbed],
 			components: [quidsSelectMenu, pagesButtons, inventorySelectMenu],
 		}, true);
+
+		createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
 		return;
 	}
 
@@ -333,13 +339,15 @@ async function getHealResponse(
 
 	if (!hurtQuids.some(quid => quid._id === quidToHeal!._id)) {
 
-		await respond(interaction, {
+		const botReply = await respond(interaction, {
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData.color)
 				.setTitle(`${quidToHeal.name} doesn't need to be healed anymore. Please select another quid to heal if available.`)],
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 		}, true);
+
+		createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
 		return;
 	}
 
@@ -456,15 +464,15 @@ async function getHealResponse(
 	}
 	else if (isSuccessful === false && userHasChangedCondition === true) {
 
-		await respond(interaction, {
+		const botReply = await respond(interaction, {
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData.color)
 				.setTitle(`${quidToHeal.name}'s condition changed before you healed them. Please try again.`)],
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 		}, true)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+			.catch((error) => { throw new Error(error); });
+
+		createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
 		return;
 	}
 
@@ -574,6 +582,12 @@ async function getHealResponse(
 
 	const content = userToHeal.uuid !== userToHeal.uuid && isSuccessful === true ? `<@${userToHeal.userId[0]}>\n` : '' + (messageContent ?? '');
 	const levelUpEmbed = (await checkLevelUp(interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
+
+	if (interaction instanceof MessageComponentInteraction) {
+
+		await interaction.update({ components: disableAllComponents(interaction.message.components.map(component => component.toJSON())) })
+			.catch((error) => { console.error(error); });
+	}
 
 	const botReply = await respond(interaction, {
 		content: content === '' ? null : content,
