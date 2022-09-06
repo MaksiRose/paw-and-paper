@@ -11,7 +11,7 @@ import { createCommandComponentDisabler, disableAllComponents } from '../../util
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import getInventoryElements from '../../utils/getInventoryElements';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, getSmallerNumber, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
+import { getMapData, getSmallerNumber, keyInObject, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { generateRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import wearDownDen from '../../utils/wearDownDen';
@@ -191,11 +191,6 @@ function stringIsAvailableItem(
 		|| string === 'water'
 	);
 }
-
-function keyInObject<T extends Record<PropertyKey, any>, K extends keyof T>(
-	obj: T,
-	key: PropertyKey,
-): key is K { return Object.hasOwn(obj, key); }
 
 export async function getHealResponse(
 	interaction: ChatInputCommandInteraction<'cached'> | MessageComponentInteraction<'cached'>,

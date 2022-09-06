@@ -35,7 +35,7 @@ export const command: SlashCommand = {
 		let choices: string[] = [];
 
 		const inventory_ = widenValues(serverData.inventory);
-		for (const itemType of unsafeKeys(inventory_)) {
+		for (const itemType of unsafeKeys(serverData.inventory)) {
 
 			if (itemType === 'materials') { continue; }
 			for (const item of unsafeKeys(inventory_[itemType])) {

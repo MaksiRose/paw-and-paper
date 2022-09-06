@@ -42,6 +42,7 @@ const { error_color } = require('../../config.json');
 
 export const cooldownMap: Map<string, boolean> = new Map();
 export const lastInteractionMap: Map<string, CommandInteraction<'cached'> | MessageComponentInteraction<'cached'> | ModalSubmitInteraction<'cached'>> = new Map();
+export const serverActiveUsersMap: Map<string, string[]> = new Map();
 
 export const event: Event = {
 	name: 'interactionCreate',
@@ -59,7 +60,14 @@ export const event: Event = {
 		let serverData = await serverModel.findOne(s => s.serverId === interaction.guildId).catch(() => { return null; });
 
 		/* It's setting the last interaction timestamp for the user to now. */
-		if (userData && interaction.inCachedGuild() && (interaction.isRepliable() && !interaction.isAutocomplete())) { lastInteractionMap.set(userData.uuid + interaction.guildId, interaction); } // For some reason autocompleteInteraction is not excluded despite being
+		if (userData && interaction.inCachedGuild() && (interaction.isRepliable() && !interaction.isAutocomplete())) { // For some reason autocompleteInteraction is not excluded despite being
+
+			lastInteractionMap.set(userData.uuid + interaction.guildId, interaction);
+
+			const serverActiveUsers = serverActiveUsersMap.get(interaction.guildId);
+			if (!serverActiveUsers) { serverActiveUsersMap.set(interaction.guildId, [interaction.user.id]); }
+			else { serverActiveUsers.push(interaction.user.id); }
+		}
 
 		/* Checking if the serverData is null. If it is null, it will create a guild. */
 		if (!serverData && interaction.inCachedGuild()) {
@@ -516,5 +524,17 @@ setInterval(async function() {
 					.catch(async (error) => { await sendErrorMessage(lastInteraction, error); });
 			}
 		}
+	}
+
+	for (let [guildId, array] of serverActiveUsersMap.entries()) {
+
+		for (const userId of array) {
+
+			const userData = await userModel.findOne(u => u.userId.includes(userId)).catch(() => { return null; });
+			const lastInteraction = userData ? lastInteractionMap.get(userData.uuid + guildId) : undefined;
+			/* If there is no last interaction or if the last interaction was created more than 5 minutes ago, remove the user from the array */
+			if (!userData || !lastInteraction || lastInteraction.createdTimestamp <= Date.now() - 300_000) { array = array.filter(v => v !== userId); }
+		}
+		serverActiveUsersMap.set(guildId, array);
 	}
 }, 60_000);

@@ -206,7 +206,7 @@ export const deepCopyObject = <T>(
 };
 
 export type KeyOfUnion<T> = T extends object ? T extends T ? keyof T : never : never; // `T extends object` to filter out primitives like `string`
-/* What this does is for every key in the inventory (like commonPlants, uncommonPlants etc.), it takes every single sub-key of all the keys and adds it to it. KeyOfUnion is  used to combine all those sub-keys from all the keys. In the case that they are not part of the property, they will be of type never, meaning that they can't accidentally be assigned anything (which makes the type-checking still work) */
+/* What this does is for every key in the inventory (like commonPlants, uncommonPlants etc.), it takes every single sub-key of all the keys and adds it to it. KeyOfUnion is used to combine all those sub-keys from all the keys. In the case that they are not part of the property, they will be of type never, meaning that they can't accidentally be assigned anything (which makes the type-checking still work) */
 export type WidenValues<T> = {
 	[K in keyof T]: {
 		[K2 in KeyOfUnion<T[keyof T]>]: K2 extends keyof T[K] ? T[K][K2] : never;
@@ -214,7 +214,18 @@ export type WidenValues<T> = {
 };
 export function widenValues<T>(obj: T): WidenValues<T> { return obj as any; }
 export function unsafeKeys<T>(obj: T): KeyOfUnion<T>[] { return Object.keys(obj) as KeyOfUnion<T>[]; }
-export function unsafeEntries<T>(obj: T): KeyOfUnion<T>[] { return Object.entries(obj) as [KeyOfUnion<T>[], any]; }
+
+export type ValueOf<T> = T[keyof T];
+export function valueInObject<T extends Record<PropertyKey, any>, V extends ValueOf<T>>(
+	obj: T,
+	value: any,
+): value is V {
+	return Object.values(obj).includes(value);
+}
+export function keyInObject<T extends Record<PropertyKey, any>, K extends keyof T>(
+	obj: T,
+	key: PropertyKey,
+): key is K { return Object.hasOwn(obj, key); }
 
 /**
  * Return the bigger of two numbers

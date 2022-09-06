@@ -5,7 +5,7 @@ import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, respond, update } from '../../utils/helperFunctions';
+import { getMapData, respond, update, valueInObject } from '../../utils/helperFunctions';
 import { sendDrinkMessage } from '../gameplay_maintenance/drink';
 import { getHealResponse } from '../gameplay_maintenance/heal';
 import { showInventoryMessage } from '../gameplay_maintenance/inventory';
@@ -320,12 +320,4 @@ async function sendTravelMessage(
 		})
 			.catch((error) => { throw new Error(error); });
 	}
-}
-
-type ValueOf<T> = T[keyof T];
-function valueInObject<T extends Record<PropertyKey, any>, V extends ValueOf<T>>(
-	obj: T,
-	value: any,
-): value is V {
-	return Object.values(obj).includes(value);
 }

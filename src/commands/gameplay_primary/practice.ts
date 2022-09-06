@@ -12,6 +12,8 @@ import { checkLevelUp } from '../../utils/levelHandling';
 import { generateRandomNumber, generateRandomNumberWithException } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
 
+const newCycleArray = ['attack', 'dodge', 'defend'] as const;
+
 const name: SlashCommand['name'] = 'practice';
 const description: SlashCommand['description'] = 'Practice fighting wild animals. You cannot get hurt here.';
 export const command: SlashCommand = {
@@ -294,5 +296,3 @@ function getFightComponents(
 				.setStyle(ButtonStyle.Secondary),
 		].sort(() => Math.random() - 0.5));
 }
-
-const newCycleArray = ['attack', 'dodge', 'defend'] as const;

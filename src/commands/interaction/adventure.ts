@@ -343,11 +343,10 @@ export async function adventureInteractionCollector(
 			let extraDescription = '';
 			let extraFooter = '';
 
-			const flattenedInventory = (Object.values(losingProfileData.inventory) as Array<Inventory[keyof Inventory]>).map(type => Object.values(type)).flat().reduce((a, b) => a + b);
+			const { itemType, itemName } = getHighestItem(losingProfileData.inventory);
 			const inventory_ = widenValues(losingProfileData.inventory);
-			if (flattenedInventory > 0 && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
+			if (itemType && itemName && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
 
-				const { itemType, itemName } = getHighestItem(losingProfileData.inventory);
 				inventory_[itemType][itemName] -= 1;
 				extraDescription = `accidentally drops a ${itemName} that ${pronoun(losingQuidData, 0)} had with ${pronoun(losingQuidData, 1)}.`;
 				extraFooter = `-1 ${itemName} for ${losingQuidData.name}`;
@@ -370,7 +369,7 @@ export async function adventureInteractionCollector(
 					u => u.uuid === losingUserData.uuid,
 					(u => {
 						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-						p.inventory = losingProfileData.inventory;
+						p.inventory = inventory_;
 						p.health -= losingHealthPoints;
 						p.injuries = losingProfileData.injuries;
 					}),
