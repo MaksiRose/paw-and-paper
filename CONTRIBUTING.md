@@ -96,5 +96,5 @@ The **dev** branch is a permanent branch that reflects the latest finished featu
 
 ## Notes
 
-1. hotfix, fix and feature branches should follow the naming convention `hotfix-ticketnr`, `fix-ticketnr`, `feature-ticketnr.
-2. release branches should follow the naming convention `release-major.minor.patch`, with major, minor and patch being increasing numbers.
+1. hotfix, fix and feature branches should follow the naming convention `hotfix-ticketnr`, `fix-ticketnr`, `feature-ticketnr`.
+2. release branches should follow the naming convention `release-major.minor.patch`, with major, minor and patch being increasing numbers. Increment the patch number for bug fixes, the minor number for new releases, and the major when the user interface/workflow changes
