@@ -327,7 +327,7 @@ export async function getHealResponse(
 	if (interaction instanceof MessageComponentInteraction) {
 
 		await update(interaction, {
-			components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
+			components: disableAllComponents(interaction.message.components),
 		})
 			.catch((error) => { console.trace(error); });
 	}
@@ -580,7 +580,7 @@ export async function getHealResponse(
 
 	if (interaction instanceof MessageComponentInteraction) {
 
-		await interaction.update({ components: disableAllComponents(interaction.message.components.map(component => component.toJSON())) })
+		await interaction.update({ components: disableAllComponents(interaction.message.components) })
 			.catch((error) => { console.error(error); });
 	}
 

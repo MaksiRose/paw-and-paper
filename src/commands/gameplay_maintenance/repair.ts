@@ -171,7 +171,7 @@ export async function repairInteractionCollector(
 				...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
 				...(levelUpEmbed ? [levelUpEmbed] : []),
 			],
-			components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
+			components: disableAllComponents(interaction.message.components),
 		})
 			.catch((error) => { throw new Error(error); });
 

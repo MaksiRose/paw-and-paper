@@ -118,7 +118,7 @@ export const command: SlashCommand = {
 					.setColor(quidData.color)
 					.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
 					.setDescription(`*After careful consideration, ${quidData.name} decides that none of ${pronoun(quidData, 2)} injuries are urgent enough to use the grotto to regenerate. The ${quidData.displayedSpecies || quidData.species} might inspect the medicine den for useful plants instead.*`)],
-				components: disableAllComponents(botReply.components.map(component => component.toJSON())),
+				components: disableAllComponents(botReply.components),
 			}, true)
 				.catch((error) => {
 					throw new Error(error);
@@ -157,7 +157,7 @@ export const command: SlashCommand = {
 
 		botReply = await update(buttonInteraction, {
 			content: messageContent,
-			components: disableAllComponents(componentArray.map(component => component.toJSON())),
+			components: disableAllComponents(componentArray),
 		})
 			.catch((error) => {
 				throw new Error(error);
@@ -246,7 +246,7 @@ export const command: SlashCommand = {
 								.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
 								.setDescription('✅'.repeat(choosingEmoji - 1) + '✅')
 								.setFooter({ text: 'After a list of emojis is displayed to you one by one, choose the same emojis from the buttons below in the same order.' })],
-							components: choosingEmoji === emojisToClick.length ? disableAllComponents(componentArray.map(c => c.toJSON())) : undefined,
+							components: choosingEmoji === emojisToClick.length ? disableAllComponents(componentArray) : undefined,
 						})
 							.catch((error) => {
 								if (error.httpStatus !== 404) { throw new Error(error); }
@@ -338,7 +338,7 @@ export const command: SlashCommand = {
 								embed,
 								...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
 								...(levelUpEmbed ? [levelUpEmbed] : [])],
-							components: disableAllComponents(componentArray.map(c => c.toJSON())),
+							components: disableAllComponents(componentArray),
 						})
 						.catch((error) => {
 							if (error.httpStatus !== 404) { throw new Error(error); }

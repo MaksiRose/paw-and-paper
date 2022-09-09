@@ -366,7 +366,7 @@ export async function playfightInteractionCollector(
 						...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
 						...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
 					],
-					components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
+					components: disableAllComponents(interaction.message.components),
 				})
 				.catch((error) => { sendErrorMessage(interaction, error); });
 			return;
@@ -375,7 +375,7 @@ export async function playfightInteractionCollector(
 		// reason success: there's a tie or one person got 3 in a row
 		if (reason.includes('success')) {
 
-			componentArray = disableAllComponents(componentArray.map(component => component.toJSON())).map(component => new ActionRowBuilder<ButtonBuilder>(component));
+			componentArray = disableAllComponents(componentArray);
 
 			if (reason.includes('win')) {
 
@@ -439,7 +439,7 @@ export async function playfightInteractionCollector(
 						...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
 						...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
 					],
-					components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
+					components: disableAllComponents(interaction.message.components),
 				})
 				.catch((error) => { sendErrorMessage(interaction, error); });
 			return;

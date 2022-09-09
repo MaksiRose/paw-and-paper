@@ -325,7 +325,7 @@ export async function adventureInteractionCollector(
 					...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
 					...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
 				],
-				components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
+				components: disableAllComponents(interaction.message.components),
 			})
 				.catch((error) => { sendErrorMessage(interaction, error); });
 			return;
@@ -393,7 +393,7 @@ export async function adventureInteractionCollector(
 						...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
 						...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
 					],
-					components: disableAllComponents(botReply.components.map(component => component.toJSON())),
+					components: disableAllComponents(botReply.components),
 				})
 				.catch((error) => { sendErrorMessage(interaction, error); });
 			return;
@@ -465,7 +465,7 @@ export async function adventureInteractionCollector(
 						...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
 						...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
 					],
-					components: disableAllComponents(botReply.components.map(component => component.toJSON())),
+					components: disableAllComponents(botReply.components),
 				})
 				.catch((error) => { sendErrorMessage(interaction, error); });
 			return;

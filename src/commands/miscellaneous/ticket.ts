@@ -211,7 +211,7 @@ export async function ticketInteractionCollector(
 	}
 
 	await update(interaction, {
-		components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
+		components: disableAllComponents(interaction.message.components),
 	})
 		.catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }

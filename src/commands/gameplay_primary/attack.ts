@@ -165,7 +165,7 @@ export async function executeAttacking(
 
 					const data = component.toJSON();
 
-					if (data.style !== ButtonStyle.Link && data.custom_id) { component.setStyle(ButtonStyle.Danger); }
+					if (data.style !== ButtonStyle.Link && data.custom_id === i.customId) { component.setStyle(ButtonStyle.Danger); }
 					return component;
 				}));
 
@@ -184,7 +184,7 @@ export async function executeAttacking(
 
 						const data = component.toJSON();
 
-						if (data.style !== ButtonStyle.Link && data.custom_id) { component.setStyle(ButtonStyle.Success); }
+						if (data.style !== ButtonStyle.Link && data.custom_id === i.customId) { component.setStyle(ButtonStyle.Success); }
 						return component;
 					}));
 
@@ -372,9 +372,7 @@ export function startAttack(
 				.setDescription(`*The packmates get ready as ${serverAttackInfo.idleHumans} humans run over the borders. Now it is up to them to defend their land.*`)
 				.setFooter({ text: 'You have 5 minutes to defeat all the humans. Type \'rp attack\' to attack one.' })],
 		}, false)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+			.catch((error) => { throw new Error(error); });
 
 		serverAttackInfo.startsTimestamp = null;
 		serverAttackInfo.endingTimeout = setTimeout(async function() {

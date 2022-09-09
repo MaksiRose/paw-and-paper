@@ -170,7 +170,7 @@ export async function hugInteractionCollector(
 					iconURL: quidData?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
 				})
 				.setDescription(`${interaction.user.toString()} did not accept the hug.`)],
-			components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
+			components: disableAllComponents(interaction.message.components),
 		})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }

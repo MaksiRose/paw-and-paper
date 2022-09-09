@@ -323,13 +323,12 @@ export async function executeScavenging(
 		cooldownMap.set(userData.uuid + interaction.guildId, false);
 
 		const levelUpEmbed = (await checkLevelUp(int, userData, quidData, profileData, serverData)).levelUpEmbed;
-		const newComponents = disableAllComponents(componentArray.map(component => component.toJSON()));
+		const newComponents = disableAllComponents(componentArray);
 		newComponents.push(new ActionRowBuilder<ButtonBuilder>()
 			.setComponents(new ButtonBuilder()
 				.setCustomId('scavenge_new')
 				.setLabel('Scavenge again')
-				.setStyle(ButtonStyle.Primary))
-			.toJSON());
+				.setStyle(ButtonStyle.Primary)));
 
 		botReply = await (async (int, messageOptions) => int instanceof MessageComponentInteraction ? await update(int, messageOptions) : await respond(int, messageOptions, true))(int, {
 			embeds: [

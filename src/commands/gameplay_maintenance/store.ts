@@ -224,7 +224,7 @@ export async function storeInteractionCollector(
 
 			await respond(interaction, {
 				embeds: [...interaction.message.embeds, embed],
-				components: itemSelectMenu.toJSON().components[0]?.options.length === 0 ? disableAllComponents(interaction.message.components.map(component => component.toJSON())) : [itemSelectMenu, storeAllButton],
+				components: itemSelectMenu.toJSON().components[0]?.options.length === 0 ? disableAllComponents(interaction.message.components) : [itemSelectMenu, storeAllButton],
 			}, true)
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -287,7 +287,7 @@ async function storeAll(
 
 	await respond(interaction, {
 		embeds: [...(otherEmbeds ?? []), embed],
-		components: interaction.isButton() ? disableAllComponents(interaction.message.components.map(component => component.toJSON())) : [],
+		components: interaction.isButton() ? disableAllComponents(interaction.message.components) : [],
 	}, true)
 		.catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }

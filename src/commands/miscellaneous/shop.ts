@@ -105,7 +105,7 @@ export async function shopInteractionCollector(
 							.setDescription(`You refunded the <@&${buyItem.roleId}> role!`),
 						...(levelUpEmbed ? [levelUpEmbed] : []),
 					],
-					components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
+					components: disableAllComponents(interaction.message.components),
 				}, true)
 					.catch((error) => { throw new Error(error); });
 			}
@@ -156,7 +156,7 @@ export async function shopInteractionCollector(
 						.setColor(default_color)
 						.setAuthor({ name: serverData.name, iconURL: interaction.guild.iconURL() || undefined })
 						.setDescription(`You bought the <@&${buyItem.roleId}> role for ${buyItem.requirement} experience!`)],
-					components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
+					components: disableAllComponents(interaction.message.components),
 				}, true)
 					.catch((error) => { throw new Error(error); });
 

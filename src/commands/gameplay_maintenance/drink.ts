@@ -123,7 +123,7 @@ export async function sendDrinkMessage(
 					.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
 					.setDescription(`*${quidData.name} scurries over to the river and takes hasty gulps. The fresh water runs down ${pronoun(quidData, 2)} throat and fills ${pronoun(quidData, 2)} body with new energy.*`)
 					.setFooter({ text: `+${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})${(currentRegion !== CurrentRegionType.Lake) ? '\nYou are now at the lake' : ''}\n\nDon't forget to stay hydrated in real life too! :)` })],
-				components: disableAllComponents(botReply.components.map(component => component.toJSON())),
+				components: disableAllComponents(botReply.components),
 			}, true);
 		}
 		catch (error) {

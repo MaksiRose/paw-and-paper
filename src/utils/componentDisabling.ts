@@ -1,4 +1,4 @@
-import { Message, ComponentType, ButtonStyle, APIActionRowComponent, APIButtonComponent, APISelectMenuComponent } from 'discord.js';
+import { Message, ComponentType, ButtonStyle, APIActionRowComponent, ActionRowBuilder, ActionRow, MessageActionRowComponent, APIMessageActionRowComponent, MessageActionRowComponentBuilder, ButtonBuilder, ButtonComponent, APIButtonComponent, SelectMenuBuilder, SelectMenuComponent, APISelectMenuComponent } from 'discord.js';
 
 /**
  * An object with player UUID + guild ID as keys and a property that is a promise function that deletes the entry and disables all components of a message that has been attached when the function was created.
@@ -20,7 +20,7 @@ export function createCommandComponentDisabler(
 
 		await botReply
 			.edit({
-				components: disableAllComponents(botReply.components.map(component => component.toJSON())),
+				components: disableAllComponents(botReply.components),
 			})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
@@ -32,20 +32,27 @@ export function createCommandComponentDisabler(
  * Goes through all components in a message and disables them.
  */
 export function disableAllComponents(
-	messageComponents: Array<APIActionRowComponent<APIButtonComponent | APISelectMenuComponent>>,
-): Array<APIActionRowComponent<APIButtonComponent | APISelectMenuComponent>> {
+	messageComponents: ActionRowBuilder<ButtonBuilder>[] | ActionRow<ButtonComponent>[] | APIActionRowComponent<APIButtonComponent>[],
+): ActionRowBuilder<ButtonBuilder>[];
+export function disableAllComponents(
+	messageComponents: ActionRowBuilder<SelectMenuBuilder>[] | ActionRow<SelectMenuComponent>[] | APIActionRowComponent<APISelectMenuComponent>[],
+): ActionRowBuilder<SelectMenuBuilder>[];
+export function disableAllComponents(
+	messageComponents: ActionRowBuilder<MessageActionRowComponentBuilder>[] | ActionRow<MessageActionRowComponent>[] | APIActionRowComponent<APIMessageActionRowComponent>[],
+): ActionRowBuilder<MessageActionRowComponentBuilder>[];
+export function disableAllComponents(
+	messageComponents: ActionRowBuilder<MessageActionRowComponentBuilder>[] | ActionRow<MessageActionRowComponent>[] | APIActionRowComponent<APIMessageActionRowComponent>[],
+): ActionRowBuilder<MessageActionRowComponentBuilder>[] {
 
-	for (const actionRow in messageComponents) {
+	return messageComponents = messageComponents.map(actionRow => {
 
-		const messageComponent = messageComponents[actionRow];
-		if (!messageComponent) { return messageComponents; }
-		for (const component in messageComponent.components) {
+		actionRow = new ActionRowBuilder(actionRow);
+		return actionRow.setComponents(actionRow.components.map(component => {
 
-			const actionRowComponent = messageComponent.components[component];
-			if (!actionRowComponent || (actionRowComponent.type === ComponentType.Button && actionRowComponent.style === ButtonStyle.Link)) { continue; }
-			actionRowComponent.disabled = true;
-		}
-	}
+			const data = component.toJSON();
 
-	return messageComponents;
+			if (data.type !== ComponentType.Button || data.style !== ButtonStyle.Link) { component.setDisabled(true); }
+			return component;
+		}));
+	});
 }

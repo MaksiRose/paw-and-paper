@@ -95,7 +95,7 @@ export async function deleteInteractionCollector(
 				.setColor(error_color)
 				.setTitle(`Are you sure you want to delete the quid named "${quid.name}"? This will be **permanent**!!!`)],
 			components: [
-				...disableAllComponents([getOriginalComponents().toJSON(), new ActionRowBuilder<SelectMenuBuilder>().setComponents([SelectMenuBuilder.from(interaction.component)]).toJSON()]),
+				...disableAllComponents([getOriginalComponents(), new ActionRowBuilder<SelectMenuBuilder>().setComponents(SelectMenuBuilder.from(interaction.component))]),
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents([
 						new ButtonBuilder()
@@ -160,7 +160,7 @@ export async function deleteInteractionCollector(
 				.setColor(error_color)
 				.setTitle(`Are you sure you want to delete all the information of ${accountsOnServer.length} quids on the server ${server.name}? This will be **permanent**!!!`)],
 			components: [
-				...disableAllComponents([getOriginalComponents().toJSON(), new ActionRowBuilder<SelectMenuBuilder>().setComponents([SelectMenuBuilder.from(interaction.component)]).toJSON()]),
+				...disableAllComponents([getOriginalComponents(), new ActionRowBuilder<SelectMenuBuilder>().setComponents(SelectMenuBuilder.from(interaction.component))]),
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents([
 						new ButtonBuilder()
@@ -189,7 +189,7 @@ export async function deleteInteractionCollector(
 				.setTitle('Are you sure you want to delete all your data? This will be **permanent**!!!')
 				.setDescription('Are you unhappy with your experience, or have other concerns? Let us know using `/ticket` (an account is not needed).')],
 			components: [
-				...disableAllComponents([getOriginalComponents().toJSON()]),
+				...disableAllComponents([getOriginalComponents()]),
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents([
 						new ButtonBuilder()
@@ -284,7 +284,7 @@ export async function deleteInteractionCollector(
 
 			await interaction.message
 				.edit({
-					components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
+					components: disableAllComponents(interaction.message.components),
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }

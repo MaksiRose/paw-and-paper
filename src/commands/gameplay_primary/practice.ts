@@ -102,7 +102,7 @@ export const command: SlashCommand = {
 					.setColor(quidData.color)
 					.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
 					.setDescription(`*After a bit of thinking, ${quidData.name} decides that now is not a good time to practice ${pronoun(quidData, 2)} fighting skills. Politely, ${pronounAndPlural(quidData, 0, 'decline')} the Elderlies offer.*`)],
-				components: disableAllComponents(botReply.components.map(component => component.toJSON())),
+				components: disableAllComponents(botReply.components),
 			}, true)
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -187,7 +187,7 @@ export const command: SlashCommand = {
 
 						const data = component.toJSON();
 
-						if (data.style !== ButtonStyle.Link && data.custom_id) { component.setStyle(ButtonStyle.Danger); }
+						if (data.style !== ButtonStyle.Link && data.custom_id === i.customId) { component.setStyle(ButtonStyle.Danger); }
 						return component;
 					}));
 
@@ -206,7 +206,7 @@ export const command: SlashCommand = {
 
 							const data = component.toJSON();
 
-							if (data.style !== ButtonStyle.Link && data.custom_id) { component.setStyle(ButtonStyle.Success); }
+							if (data.style !== ButtonStyle.Link && data.custom_id === i.customId) { component.setStyle(ButtonStyle.Success); }
 							return component;
 						}));
 

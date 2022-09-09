@@ -312,7 +312,7 @@ export const event: Event = {
 				if (interaction.customId.startsWith('report_')) {
 
 					await update(interaction, {
-						components: disableAllComponents(interaction.message.components.map(component => component.toJSON())),
+						components: disableAllComponents(interaction.message.components),
 					})
 						.catch((error) => { console.error(error); });
 
