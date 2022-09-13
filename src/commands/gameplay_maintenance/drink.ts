@@ -7,7 +7,7 @@ import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
 import { getMapData, getSmallerNumber, respond, sendErrorMessage } from '../../utils/helperFunctions';
-import { generateRandomNumber } from '../../utils/randomizers';
+import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
 const { default_color } = require('../../../config.json');
 
@@ -99,7 +99,7 @@ export async function sendDrinkMessage(
 
 		cooldownMap.set(userData!.uuid + interaction.guildId, false);
 
-		const thirstPoints = getSmallerNumber(profileData.maxThirst - profileData.thirst, generateRandomNumber(3, collected.size));
+		const thirstPoints = getSmallerNumber(profileData.maxThirst - profileData.thirst, getRandomNumber(3, collected.size));
 		const currentRegion = profileData.currentRegion;
 
 		try {

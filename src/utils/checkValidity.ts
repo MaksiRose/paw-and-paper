@@ -190,7 +190,7 @@ export async function hasFullInventory(
 }
 
 export function isInteractable(
-	interaction: CommandInteraction<'cached'>,
+	interaction: CommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	userData: UserSchema | null,
 	messageContent: string | null,
 	embedArray: EmbedBuilder[],

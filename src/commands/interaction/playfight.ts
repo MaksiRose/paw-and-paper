@@ -11,7 +11,7 @@ import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
 import { deepCopyObject, getBiggerNumber, getMapData, getSmallerNumber, respond, sendErrorMessage } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
-import { generateRandomNumber, generateRandomNumberWithException } from '../../utils/randomizers';
+import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
 const name: SlashCommand['name'] = 'playfight';
@@ -212,7 +212,7 @@ export async function playfightInteractionCollector(
 
 	let newTurnEmbedTextArrayIndex = -1;
 
-	const user1IsPlaying = generateRandomNumber(2, 0) === 0 ? true : false;
+	const user1IsPlaying = getRandomNumber(2) === 0 ? true : false;
 	const userDataCurrent = user1IsPlaying ? userData1 : userData2;
 	const userDataOther = user1IsPlaying ? userData2 : userData1;
 	const quidDataCurrent = user1IsPlaying ? quidData1 : quidData2;
@@ -231,7 +231,7 @@ export async function playfightInteractionCollector(
 			`*${quidDataOther.name} has gotten hold of ${quidDataCurrent.name}, but the ${quidDataCurrent.displayedSpecies || quidDataCurrent.displayedSpecies} manages to get ${pronoun(quidDataOther, 1)} off, sending the ${quidDataOther.displayedSpecies || quidDataOther.species} slamming into the ground. ${quidDataOther.name} needs to get up and try a new strategy.*`,
 		] as const;
 
-		newTurnEmbedTextArrayIndex = generateRandomNumberWithException(newTurnEmbedTextArray.length, 0, newTurnEmbedTextArrayIndex);
+		newTurnEmbedTextArrayIndex = getRandomNumber(newTurnEmbedTextArray.length, 0, newTurnEmbedTextArrayIndex);
 
 		const message = await respond(interaction, {
 			content: `<@${userId}>`,
@@ -381,7 +381,7 @@ export async function playfightInteractionCollector(
 
 				const x = getBiggerNumber(profileDataOther.levels - profileDataCurrent.levels, 0);
 				const extraExperience = Math.round((80 / (1 + Math.pow(Math.E, -0.09375 * x))) - 40);
-				const experiencePoints = generateRandomNumber(11, 10) + extraExperience;
+				const experiencePoints = getRandomNumber(11, 10) + extraExperience;
 
 				(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText = `+${experiencePoints} XP (${profileDataCurrent.experience + experiencePoints}/${profileDataCurrent.levels * 50}) for ${quidDataCurrent.name}\n${(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText}`;
 
@@ -395,7 +395,7 @@ export async function playfightInteractionCollector(
 			}
 			else {
 
-				const experiencePoints = generateRandomNumber(11, 5);
+				const experiencePoints = getRandomNumber(11, 5);
 
 				decreasedStatsData1.statsUpdateText = `+${experiencePoints} XP (${profileDataCurrent.experience + experiencePoints}/${profileDataCurrent.levels * 50}) for ${quidDataCurrent.name}\n${decreasedStatsData1.statsUpdateText}`;
 				decreasedStatsData2.statsUpdateText = `+${experiencePoints} XP (${profileDataOther.experience + experiencePoints}/${profileDataOther.levels * 50}) for ${quidDataOther.name}\n${decreasedStatsData2.statsUpdateText}`;

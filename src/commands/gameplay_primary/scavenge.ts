@@ -10,7 +10,7 @@ import { createCommandComponentDisabler, disableAllComponents } from '../../util
 import { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural } from '../../utils/getPronouns';
 import { getMapData, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
-import { generateRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
+import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
 
 const name: SlashCommand['name'] = 'scavenge';
@@ -70,7 +70,7 @@ export async function executeScavenging(
 
 	cooldownMap.set(userData.uuid + interaction.guildId, true);
 
-	const experiencePoints = generateRandomNumber(11, 5);
+	const experiencePoints = getRandomNumber(11, 5);
 	const changedCondition = await changeCondition(userData, quidData, profileData, experiencePoints);
 	profileData = changedCondition.profileData;
 
@@ -82,7 +82,7 @@ export async function executeScavenging(
 	const unclickedField = '❔';
 	const humanTrapCorrectEmoji = '🕸️';
 	const filledFieldArray = ['⬜', '🟩', '🟨', '🟧', '🟥'] as const;
-	const correctCoordinates = [generateRandomNumber(5, 0), generateRandomNumber(5, 0)] as const;
+	const correctCoordinates = [getRandomNumber(5), getRandomNumber(5)] as const;
 	const gamePositionsArray: string[][] = [];
 	let componentArray: ActionRowBuilder<ButtonBuilder>[] = [];
 
@@ -184,7 +184,7 @@ export async function executeScavenging(
 					if (meatIsGettable && pullFromWeightedTable({ 0: 1, 1: materialIsGettable ? 1 : 0 }) === 0) {
 
 						const carcassArray = [...speciesInfo[quidData.species as SpeciesNames]?.biome1OpponentArray || []];
-						const foundCarcass = carcassArray[generateRandomNumber(carcassArray.length, 0)];
+						const foundCarcass = carcassArray[getRandomNumber(carcassArray.length)];
 						if (!foundCarcass) {
 							await sendErrorMessage(interaction, new Error('foundCarcass is undefined'))
 								.catch((error) => { console.error(error); });
@@ -204,7 +204,7 @@ export async function executeScavenging(
 					}
 					else if (materialIsGettable) {
 
-						const foundMaterial = (Object.keys(materialsInfo) as Array<MaterialNames>)[generateRandomNumber(Object.keys(materialsInfo).length, 0)];
+						const foundMaterial = (Object.keys(materialsInfo) as Array<MaterialNames>)[getRandomNumber(Object.keys(materialsInfo).length)];
 						if (!foundMaterial) {
 							await sendErrorMessage(interaction, new Error('foundMaterial is undefined'))
 								.catch((error) => { console.error(error); });
@@ -267,7 +267,7 @@ export async function executeScavenging(
 				}
 				else {
 
-					const healthPoints = function(health) { return (profileData.health - health < 0) ? profileData.health : health; }(generateRandomNumber(5, 3));
+					const healthPoints = function(health) { return (profileData.health - health < 0) ? profileData.health : health; }(getRandomNumber(5, 3));
 
 					switch (pullFromWeightedTable({ 0: 1, 1: 1 })) {
 
@@ -357,12 +357,12 @@ export async function executeScavenging(
 
 		const trapActionRow = new ActionRowBuilder<ButtonBuilder>();
 		componentArray = [];
-		const correctButton = generateRandomNumber(5, 0);
+		const correctButton = getRandomNumber(5);
 		const humanTrapIncorrectEmojis = ['🌱', '🌿', '☘️', '🍀', '🍃', '💐', '🌷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🍇', '🍊', '🫒', '🌰', '🏕️', '🌲', '🌳', '🍂', '🍁', '🍄', '🐝', '🪱', '🐛', '🦋', '🐌', '🐞', '🐁', '🦔', '🌵', '🦂', '🏜️', '🎍', '🪴', '🎋', '🪨', '🌾', '🐍', '🦎', '🐫', '🐙', '🦑', '🦀', '🐡', '🐠', '🐟', '🌊', '🐚', '🪵', '🌴'];
 
 		for (let i = 0; i < 5; i++) {
 
-			const chosenEmoji = i === correctButton ? humanTrapCorrectEmoji : humanTrapIncorrectEmojis.splice(generateRandomNumber(humanTrapIncorrectEmojis.length, 0), 1)[0];
+			const chosenEmoji = i === correctButton ? humanTrapCorrectEmoji : humanTrapIncorrectEmojis.splice(getRandomNumber(humanTrapIncorrectEmojis.length), 1)[0];
 			if (!chosenEmoji) {
 				await sendErrorMessage(interaction, new Error('emoji is undefined'))
 					.catch((error) => { console.error(error); });

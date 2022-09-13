@@ -7,7 +7,7 @@ import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural } from '../../utils/getPronouns';
 import { getMapData, respond, update } from '../../utils/helperFunctions';
-import { generateRandomNumber, generateWinChance } from '../../utils/randomizers';
+import { getRandomNumber, generateWinChance } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
 const { error_color } = require('../../../config.json');
 
@@ -56,53 +56,128 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		const embed = await sendStartQuestMessage(quidData, profileData);
-		const botReply = await respond(interaction, {
-			content: `<@${interaction.user.id}>` + (messageContent ?? ''),
-			embeds: [...embedArray, embed],
-			components: [new ActionRowBuilder<ButtonBuilder>()
-				.setComponents(new ButtonBuilder()
-					.setCustomId('quest_start')
-					.setLabel('Start quest')
-					.setEmoji('⭐')
-					.setStyle(ButtonStyle.Success))],
-		}, true)
-			.catch((error) => { throw new Error(error); });
-
-		createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
-
-		await (botReply as Message<true>)
-			.awaitMessageComponent({
-				filter: (i) => i.user.id === interaction.user.id,
-				componentType: ComponentType.Button,
-				time: 300_000 })
-			.then(async (int) => {
-
-				cooldownMap.set(userData.uuid + interaction.guildId, true);
-				delete disableCommandComponent[userData.uuid + interaction.guildId];
-				await startQuest(int, userData, quidData, profileData, serverData, messageContent, embedArray, botReply);
-			})
-			.catch(async () => {
-
-				await respond(interaction, { components: disableAllComponents(botReply.components) }, true)
-					.catch((error) => {
-						if (error.httpStatus !== 404) { throw new Error(error); }
-						return botReply;
-					});
-				return;
-			});
-		return;
+		await sendQuestMessage(interaction, userData, quidData, profileData, serverData, messageContent, embedArray);
 	},
 };
 
-export async function startQuest(
-	interaction: ButtonInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
+export async function sendQuestMessage(
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
 	serverData: ServerSchema,
 	messageContent: string | null,
 	embedArray: EmbedBuilder[],
+	afterEmbedArray: EmbedBuilder[] = [],
+	footerText = '',
+) {
+
+	const embed = new EmbedBuilder()
+		.setColor(quidData.color)
+		.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL });
+
+	if (profileData.rank === RankType.Youngling) {
+
+		embed.setDescription(`*${quidData.name} lifts ${pronoun(quidData, 2)} head to investigate the sound of a faint cry. Almost sure that it was someone in need of help, ${pronounAndPlural(quidData, 0, 'dash')} from where ${pronounAndPlural(quidData, 0, 'is standing and bolts', 'are standing and bolt')} for the sound. Soon ${quidData.name} comes along to the intimidating mouth of a dark cave covered by a boulder. The cries for help still ricocheting through ${pronoun(quidData, 2)} brain. ${upperCasePronoun(quidData, 0)} must help them...*`);
+	}
+	else if (profileData.rank === RankType.Apprentice) {
+
+		if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Warm) {
+
+			embed.setDescription(`*The ${quidData.displayedSpecies || quidData.species} wanders through the peaceful shrubbery, carefully surveying the undergrowth around ${pronoun(quidData, 1)}. To ${pronoun(quidData, 2)} left are thick bushes at the base of a lone tree. Suddenly, ${quidData.name} hears a pained yowl that seems to come from between the bushes. Could this be a pack member? Curious, ${pronounAndPlural(quidData, 0, 'trot')} over, and sure enough, another apprentice seems to be trapped. Now ${pronoun(quidData, 0)} must show all ${pronoun(quidData, 2)} strength and pull out ${pronoun(quidData, 2)} friend.*`);
+		}
+		else if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Cold) {
+
+			embed.setDescription(`*The ${quidData.displayedSpecies || quidData.species} wanders through the peaceful forest, carefully surveying the undergrowth around ${pronoun(quidData, 1)}. To ${pronoun(quidData, 2)} left is a long, thick tree trunk overgrown with sodden moss. Suddenly, ${quidData.name} hears a pained yowl that seems to come from between the bushes. Could this be a pack member? Curious, ${pronounAndPlural(quidData, 0, 'trot')} over, and sure enough, another apprentice seems to be trapped. Now ${pronoun(quidData, 0)} must show all ${pronoun(quidData, 2)} strength and pull out ${pronoun(quidData, 2)} friend.*`);
+		}
+		else if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Water) {
+
+			embed.setDescription(`*The ${quidData.displayedSpecies || quidData.species} swims through the peaceful river, carefully surveying the algae around ${pronoun(quidData, 1)}. In front of ${pronoun(quidData, 2)} is a thick strainer, which through the leaves is barely passable even underneath. Suddenly, ${quidData.name} hears a pained yowl that seems to come from between the bushes. Could this be a pack member? Curious, ${pronounAndPlural(quidData, 0, 'swim')} over, and sure enough, another apprentice seems to be trapped. Now ${pronoun(quidData, 0)} must show all ${pronoun(quidData, 2)} strength and pull out ${pronoun(quidData, 2)} friend.*`);
+		}
+		else { throw new Error('No habitat was found for this species'); }
+	}
+	else if (profileData.rank === RankType.Healer || profileData.rank === RankType.Hunter) {
+
+		if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Warm) {
+
+			embed.setDescription(`*It is a quiet morning in the savanna. Only the rustling of the scarce bushes and trees breaks the silence. ${quidData.name} meanders over the sand, looking for food for ${pronoun(quidData, 2)} pack. But suddenly the ${quidData.displayedSpecies || quidData.species} hears a motor. Frightened, ${pronounAndPlural(quidData, 0, 'look')} into the distance: indeed, a jeep is in front of ${pronoun(quidData, 1)}, and the humans inside have another ${profileData.rank} of ${pronoun(quidData, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(quidData, 0, 'get')} to the rescue, the better.*`);
+		}
+		else if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Cold) {
+
+			embed.setDescription(`*It is a quiet morning in the taiga. Only the chirping of birds in the trees breaks the silence. ${quidData.name} meanders between the trees, looking for food for ${pronoun(quidData, 2)} pack. But suddenly the ${quidData.displayedSpecies || quidData.species} hears a motor. Frightened, ${pronounAndPlural(quidData, 0, 'look')} into the distance: indeed, a jeep is in front of ${pronoun(quidData, 1)}, and the humans inside have another ${profileData.rank} of ${pronoun(quidData, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(quidData, 0, 'get')} to the rescue, the better.*`);
+		}
+		else if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Water) {
+
+			embed.setDescription(`*It is a quiet morning in the coral reef. Only once in a while a fish passes by. ${quidData.name} floats through the water, looking for food for ${pronoun(quidData, 2)} pack. But suddenly the ${quidData.displayedSpecies || quidData.species} hears a motor. Frightened, ${pronounAndPlural(quidData, 0, 'look')} to the surface: indeed, a motorboat is in front of ${pronoun(quidData, 1)}, and the humans inside have another ${profileData.rank} of ${pronoun(quidData, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(quidData, 0, 'get')} to the rescue, the better.*`);
+		}
+		else { throw new Error('No habitat was found for this species'); }
+	}
+	else if (profileData.rank === RankType.Elderly) {
+
+		if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Warm) {
+
+			embed.setDescription(`*Something is off, the ${quidData.displayedSpecies || quidData.species} senses it. In the desert, it was strangely quiet, not this peaceful silence, but as if ${pronoun(quidData, 0)} were all alone. ${quidData.name} looks around and can't see a soul far and wide. Then it dawns on ${pronoun(quidData, 1)}. A glance over ${pronoun(quidData, 2)} shoulder confirms ${pronoun(quidData, 2)} fear, a big sandstorm is approaching. ${quidData.name} is out of range, but other pack members might be in danger. If ${pronounAndPlural(quidData, 0, 'doesn\'t', 'don\'t')} hurry now, ${pronoun(quidData, 2)} friends may never find their way back.*`);
+		}
+		else if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Cold) {
+
+			embed.setDescription(`*Something is off, the ${quidData.displayedSpecies || quidData.species} senses it. In the tundra, it was strangely quiet, not this peaceful silence, but as if ${pronoun(quidData, 0)} were all alone. ${quidData.name} looks around and can't see a soul far and wide. Then it dawns on ${pronoun(quidData, 1)}. A glance over ${pronoun(quidData, 2)} shoulder confirms ${pronoun(quidData, 2)} fear, a big snowstorm is approaching. ${quidData.name} is out of range, but other pack members might be in danger. If ${pronounAndPlural(quidData, 0, 'doesn\'t', 'don\'t')} hurry now, ${pronoun(quidData, 2)} friends may never find their way back.*`);
+		}
+		else if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Water) {
+
+			embed.setDescription(`*Something is off, the ${quidData.displayedSpecies || quidData.species} senses it. In the ocean, it was strangely quiet, not this peaceful silence, but as if ${pronoun(quidData, 0)} were all alone. ${quidData.name} looks around and can't see a soul far and wide. Then it dawns on ${pronoun(quidData, 1)}. A glance over ${pronoun(quidData, 2)} shoulder confirms ${pronoun(quidData, 2)} fear, a big landslide is approaching. ${quidData.name} is out of range, but other pack members might be in danger. If ${pronounAndPlural(quidData, 0, 'doesn\'t', 'don\'t')} hurry now, ${pronoun(quidData, 2)} friends may never find their way back.*`);
+		}
+		else { throw new Error('No habitat was found for this species'); }
+	}
+	else { throw new Error('No rank was found for this profile'); }
+
+	embed.setFooter({ text: `${footerText}\n\nClick the button or type "/quest" to continue. *Level ${profileData.rank == 'Elderly' ? '35' : (profileData.rank == 'Hunter' || profileData.rank == 'Healer') ? '20' : profileData.rank == 'Apprentice' ? '10' : '2'} is recommended for this!*\n\nTip: Read the bottom text during the game carefully to find out which button to click. The button you chose will get a "radio button"-emoji, and the correct button will get a checkmark emoji. Sometimes you will lose a round even if you chose right, depending on how many levels you have, then there will be no checkmark emoji.` });
+
+	const botReply = await respond(interaction, {
+		content: `<@${interaction.user.id}>` + (messageContent ?? ''),
+		embeds: [...embedArray, embed, ...afterEmbedArray],
+		components: [new ActionRowBuilder<ButtonBuilder>()
+			.setComponents(new ButtonBuilder()
+				.setCustomId('quest_start')
+				.setLabel('Start quest')
+				.setEmoji('⭐')
+				.setStyle(ButtonStyle.Success))],
+	}, true)
+		.catch((error) => { throw new Error(error); });
+
+	createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
+
+	await (botReply as Message<true>)
+		.awaitMessageComponent({
+			filter: (i) => i.user.id === interaction.user.id,
+			componentType: ComponentType.Button,
+			time: 300_000 })
+		.then(async (int) => {
+
+			cooldownMap.set(userData.uuid + interaction.guildId, true);
+			delete disableCommandComponent[userData.uuid + interaction.guildId];
+			await startQuest(int, userData, quidData, profileData, serverData, messageContent, embedArray, afterEmbedArray, botReply);
+		})
+		.catch(async () => {
+
+			await respond(interaction, { components: disableAllComponents(botReply.components) }, true)
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+					return botReply;
+				});
+			return;
+		});
+	return;
+}
+
+async function startQuest(
+	interaction: ButtonInteraction<'cached'>,
+	userData: UserSchema,
+	quidData: Quid,
+	profileData: Profile,
+	serverData: ServerSchema,
+	messageContent: string | null,
+	embedArray: EmbedBuilder[],
+	afterEmbedArray: EmbedBuilder[],
 	botReply: Message,
 ) {
 	// this would be called from /quest, /explore and /play
@@ -154,15 +229,15 @@ export async function startQuest(
 	await interactionCollector(interaction, userData, serverData, 0);
 
 	async function interactionCollector(
-		interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
+		interaction: ButtonInteraction<'cached'>,
 		userData: UserSchema,
 		serverData: ServerSchema,
 		cycleIndex: number,
 		previousQuestComponents?: ActionRowBuilder<ButtonBuilder>,
 	): Promise<void> {
 
-		const buttonTextOrColor = generateRandomNumber(2, 0) === 0 ? 'color' : 'text';
-		const buttonColorKind = generateRandomNumber(3, 0) === 0 ? 'green' : generateRandomNumber(2, 0) === 0 ? 'blue' : 'red';
+		const buttonTextOrColor = getRandomNumber(2) === 0 ? 'color' : 'text';
+		const buttonColorKind = getRandomNumber(3) === 0 ? 'green' : getRandomNumber(2) === 0 ? 'blue' : 'red';
 
 		let questComponents = new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([
@@ -202,22 +277,20 @@ export async function startQuest(
 					.setLabel('Blue')
 					.setCustomId(`quest_bluetext_greencolor_${cycleIndex}`)
 					.setStyle(ButtonStyle.Success)],
-			][generateRandomNumber(3, 0)]!.sort(() => Math.random() - 0.5));
+			][getRandomNumber(3)]!.sort(() => Math.random() - 0.5));
 
 		embed.setDescription(`${drawProgressbar(hitValue, hitEmoji)}\n${drawProgressbar(missValue, missEmoji)}`);
 		embed.setFooter({ text: `Click the ${(buttonTextOrColor === 'color' ? `${buttonColorKind} button` : `button labeled as ${buttonColorKind}`)}.` });
 
-		botReply = await (async function(messageContent) { return interaction instanceof ChatInputCommandInteraction ? await respond(interaction, messageContent, true) : await update(interaction, messageContent); })({
+		botReply = await update(interaction, {
 			content: messageContent,
-			embeds: [
-				...embedArray,
-				embed,
-			],
+			embeds: [...embedArray, embed, ...afterEmbedArray],
 			components: [...previousQuestComponents ? [previousQuestComponents] : [], questComponents],
-		}).catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-			return botReply;
-		});
+		})
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+				return botReply;
+			});
 
 		const { customId } = await botReply
 			.awaitMessageComponent({
@@ -227,7 +300,7 @@ export async function startQuest(
 			.catch(() => { return { customId: '' }; });
 
 		const winChance = generateWinChance(profileData.levels, profileData.rank === RankType.Elderly ? 35 : (profileData.rank === RankType.Hunter || profileData.rank === RankType.Healer) ? 20 : profileData.rank === RankType.Apprentice ? 10 : 2);
-		const randomNumber = generateRandomNumber(100, 0);
+		const randomNumber = getRandomNumber(100);
 
 		if (customId !== '') {
 
@@ -369,17 +442,15 @@ export async function startQuest(
 
 			embed.setFooter({ text: (embed.data.footer?.text ?? '') + 'Type "/rank" to rank up.' });
 
-			botReply = await (async function(messageContent) { return interaction instanceof ChatInputCommandInteraction ? await respond(interaction, messageContent, true) : await update(interaction, messageContent); })({
+			botReply = await update(interaction, {
 				content: messageContent,
-				embeds: [
-					...embedArray,
-					embed,
-				],
+				embeds: [...embedArray, embed, ...afterEmbedArray],
 				components: [questComponents],
-			}).catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-				return botReply;
-			});
+			})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+					return botReply;
+				});
 
 			if (profileData.rank === RankType.Youngling) { await apprenticeAdvice(interaction); }
 			else if (profileData.rank === RankType.Apprentice) { await hunterhealerAdvice(interaction); }
@@ -435,17 +506,15 @@ export async function startQuest(
 			}
 			else { throw new Error('No rank type found'); }
 
-			botReply = await (async function(messageContent) { return interaction instanceof ChatInputCommandInteraction ? await respond(interaction, messageContent, true) : await update(interaction, messageContent); })({
+			botReply = await update(interaction, {
 				content: messageContent,
-				embeds: [
-					...embedArray,
-					embed,
-				],
+				embeds: [...embedArray, embed, ...afterEmbedArray],
 				components: [questComponents],
-			}).catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-				return botReply;
-			});
+			})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+					return botReply;
+				});
 
 			return;
 		}
@@ -455,75 +524,6 @@ export async function startQuest(
 		}
 		return;
 	}
-}
-
-export async function sendStartQuestMessage(
-	quidData: Quid,
-	profileData: Profile,
-	footerText = '',
-): Promise<EmbedBuilder> {
-
-	const embed = new EmbedBuilder()
-		.setColor(quidData.color)
-		.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL });
-
-	if (profileData.rank === RankType.Youngling) {
-
-		embed.setDescription(`*${quidData.name} lifts ${pronoun(quidData, 2)} head to investigate the sound of a faint cry. Almost sure that it was someone in need of help, ${pronounAndPlural(quidData, 0, 'dash')} from where ${pronounAndPlural(quidData, 0, 'is standing and bolts', 'are standing and bolt')} for the sound. Soon ${quidData.name} comes along to the intimidating mouth of a dark cave covered by a boulder. The cries for help still ricocheting through ${pronoun(quidData, 2)} brain. ${upperCasePronoun(quidData, 0)} must help them...*`);
-	}
-	else if (profileData.rank === RankType.Apprentice) {
-
-		if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Warm) {
-
-			embed.setDescription(`*The ${quidData.displayedSpecies || quidData.species} wanders through the peaceful shrubbery, carefully surveying the undergrowth around ${pronoun(quidData, 1)}. To ${pronoun(quidData, 2)} left are thick bushes at the base of a lone tree. Suddenly, ${quidData.name} hears a pained yowl that seems to come from between the bushes. Could this be a pack member? Curious, ${pronounAndPlural(quidData, 0, 'trot')} over, and sure enough, another apprentice seems to be trapped. Now ${pronoun(quidData, 0)} must show all ${pronoun(quidData, 2)} strength and pull out ${pronoun(quidData, 2)} friend.*`);
-		}
-		else if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Cold) {
-
-			embed.setDescription(`*The ${quidData.displayedSpecies || quidData.species} wanders through the peaceful forest, carefully surveying the undergrowth around ${pronoun(quidData, 1)}. To ${pronoun(quidData, 2)} left is a long, thick tree trunk overgrown with sodden moss. Suddenly, ${quidData.name} hears a pained yowl that seems to come from between the bushes. Could this be a pack member? Curious, ${pronounAndPlural(quidData, 0, 'trot')} over, and sure enough, another apprentice seems to be trapped. Now ${pronoun(quidData, 0)} must show all ${pronoun(quidData, 2)} strength and pull out ${pronoun(quidData, 2)} friend.*`);
-		}
-		else if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Water) {
-
-			embed.setDescription(`*The ${quidData.displayedSpecies || quidData.species} swims through the peaceful river, carefully surveying the algae around ${pronoun(quidData, 1)}. In front of ${pronoun(quidData, 2)} is a thick strainer, which through the leaves is barely passable even underneath. Suddenly, ${quidData.name} hears a pained yowl that seems to come from between the bushes. Could this be a pack member? Curious, ${pronounAndPlural(quidData, 0, 'swim')} over, and sure enough, another apprentice seems to be trapped. Now ${pronoun(quidData, 0)} must show all ${pronoun(quidData, 2)} strength and pull out ${pronoun(quidData, 2)} friend.*`);
-		}
-		else { throw new Error('No habitat was found for this species'); }
-	}
-	else if (profileData.rank === RankType.Healer || profileData.rank === RankType.Hunter) {
-
-		if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Warm) {
-
-			embed.setDescription(`*It is a quiet morning in the savanna. Only the rustling of the scarce bushes and trees breaks the silence. ${quidData.name} meanders over the sand, looking for food for ${pronoun(quidData, 2)} pack. But suddenly the ${quidData.displayedSpecies || quidData.species} hears a motor. Frightened, ${pronounAndPlural(quidData, 0, 'look')} into the distance: indeed, a jeep is in front of ${pronoun(quidData, 1)}, and the humans inside have another ${profileData.rank} of ${pronoun(quidData, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(quidData, 0, 'get')} to the rescue, the better.*`);
-		}
-		else if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Cold) {
-
-			embed.setDescription(`*It is a quiet morning in the taiga. Only the chirping of birds in the trees breaks the silence. ${quidData.name} meanders between the trees, looking for food for ${pronoun(quidData, 2)} pack. But suddenly the ${quidData.displayedSpecies || quidData.species} hears a motor. Frightened, ${pronounAndPlural(quidData, 0, 'look')} into the distance: indeed, a jeep is in front of ${pronoun(quidData, 1)}, and the humans inside have another ${profileData.rank} of ${pronoun(quidData, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(quidData, 0, 'get')} to the rescue, the better.*`);
-		}
-		else if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Water) {
-
-			embed.setDescription(`*It is a quiet morning in the coral reef. Only once in a while a fish passes by. ${quidData.name} floats through the water, looking for food for ${pronoun(quidData, 2)} pack. But suddenly the ${quidData.displayedSpecies || quidData.species} hears a motor. Frightened, ${pronounAndPlural(quidData, 0, 'look')} to the surface: indeed, a motorboat is in front of ${pronoun(quidData, 1)}, and the humans inside have another ${profileData.rank} of ${pronoun(quidData, 2)} pack in their crosshairs! The sooner ${pronounAndPlural(quidData, 0, 'get')} to the rescue, the better.*`);
-		}
-		else { throw new Error('No habitat was found for this species'); }
-	}
-	else if (profileData.rank === RankType.Elderly) {
-
-		if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Warm) {
-
-			embed.setDescription(`*Something is off, the ${quidData.displayedSpecies || quidData.species} senses it. In the desert, it was strangely quiet, not this peaceful silence, but as if ${pronoun(quidData, 0)} were all alone. ${quidData.name} looks around and can't see a soul far and wide. Then it dawns on ${pronoun(quidData, 1)}. A glance over ${pronoun(quidData, 2)} shoulder confirms ${pronoun(quidData, 2)} fear, a big sandstorm is approaching. ${quidData.name} is out of range, but other pack members might be in danger. If ${pronounAndPlural(quidData, 0, 'doesn\'t', 'don\'t')} hurry now, ${pronoun(quidData, 2)} friends may never find their way back.*`);
-		}
-		else if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Cold) {
-
-			embed.setDescription(`*Something is off, the ${quidData.displayedSpecies || quidData.species} senses it. In the tundra, it was strangely quiet, not this peaceful silence, but as if ${pronoun(quidData, 0)} were all alone. ${quidData.name} looks around and can't see a soul far and wide. Then it dawns on ${pronoun(quidData, 1)}. A glance over ${pronoun(quidData, 2)} shoulder confirms ${pronoun(quidData, 2)} fear, a big snowstorm is approaching. ${quidData.name} is out of range, but other pack members might be in danger. If ${pronounAndPlural(quidData, 0, 'doesn\'t', 'don\'t')} hurry now, ${pronoun(quidData, 2)} friends may never find their way back.*`);
-		}
-		else if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Water) {
-
-			embed.setDescription(`*Something is off, the ${quidData.displayedSpecies || quidData.species} senses it. In the ocean, it was strangely quiet, not this peaceful silence, but as if ${pronoun(quidData, 0)} were all alone. ${quidData.name} looks around and can't see a soul far and wide. Then it dawns on ${pronoun(quidData, 1)}. A glance over ${pronoun(quidData, 2)} shoulder confirms ${pronoun(quidData, 2)} fear, a big landslide is approaching. ${quidData.name} is out of range, but other pack members might be in danger. If ${pronounAndPlural(quidData, 0, 'doesn\'t', 'don\'t')} hurry now, ${pronoun(quidData, 2)} friends may never find their way back.*`);
-		}
-		else { throw new Error('No habitat was found for this species'); }
-	}
-	else { throw new Error('No rank was found for this profile'); }
-
-	embed.setFooter({ text: `${footerText}\n\nClick the button or type "/quest" to continue. *Level ${profileData.rank == 'Elderly' ? '35' : (profileData.rank == 'Hunter' || profileData.rank == 'Healer') ? '20' : profileData.rank == 'Apprentice' ? '10' : '2'} is recommended for this!*\n\nTip: Read the bottom text during the game carefully to find out which button to click. The button you chose will get a "radio button"-emoji, and the correct button will get a checkmark emoji. Sometimes you will lose a round even if you chose right, depending on how many levels you have, then there will be no checkmark emoji.` });
-
-	return embed;
 }
 
 /**

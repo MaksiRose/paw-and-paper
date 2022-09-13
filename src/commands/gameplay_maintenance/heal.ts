@@ -4,7 +4,7 @@ import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
 import { CommonPlantNames, commonPlantsInfo, CurrentRegionType, Inventory, PlantEdibilityType, Quid, RankType, RarePlantNames, rarePlantsInfo, ServerSchema, SlashCommand, SpecialPlantNames, specialPlantsInfo, SpeciesDietType, speciesInfo, SpeciesNames, UncommonPlantNames, uncommonPlantsInfo, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
-import { changeCondition } from '../../utils/changeCondition';
+import { changeCondition, infectWithChance } from '../../utils/changeCondition';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
@@ -13,7 +13,7 @@ import getInventoryElements from '../../utils/getInventoryElements';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
 import { getMapData, getSmallerNumber, keyInObject, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
-import { generateRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
+import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import wearDownDen from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
@@ -471,7 +471,7 @@ export async function getHealResponse(
 		return;
 	}
 
-	const experiencePoints = isSuccessful === false ? 0 : profileData.rank == RankType.Elderly ? generateRandomNumber(41, 20) : profileData.rank == RankType.Healer ? generateRandomNumber(21, 10) : generateRandomNumber(11, 5);
+	const experiencePoints = isSuccessful === false ? 0 : profileData.rank == RankType.Elderly ? getRandomNumber(41, 20) : profileData.rank == RankType.Healer ? getRandomNumber(21, 10) : getRandomNumber(11, 5);
 	const changedCondition = await changeCondition(userData, quidData, profileData, experiencePoints);
 	const denCondition = await wearDownDen(serverData, CurrentRegionType.MedicineDen);
 	let embedFooter: string;
@@ -483,8 +483,8 @@ export async function getHealResponse(
 
 	if (isSuccessful === true) {
 
-		const chosenUserThirstPoints = item === 'water' ? getSmallerNumber(generateRandomNumber(10, 6), profileToHeal.maxThirst - profileToHeal.thirst) : 0;
-		const chosenUserHealthPoints = item === 'water' ? 0 : getSmallerNumber(generateRandomNumber(10, 6), profileToHeal.maxHealth - profileToHeal.health);
+		const chosenUserThirstPoints = item === 'water' ? getSmallerNumber(getRandomNumber(10, 6), profileToHeal.maxThirst - profileToHeal.thirst) : 0;
+		const chosenUserHealthPoints = item === 'water' ? 0 : getSmallerNumber(getRandomNumber(10, 6), profileToHeal.maxHealth - profileToHeal.health);
 		/* We do this over here rather than at the top in the if statements for edibality and givesEnergy, because if chosenUserData === userData, then these might not be accurate. ie, the hunger/energy might have gone down enough in order not to decrease chosenUserHungerPoints/chosenUserEnergyPoints, as well as the stats not showing the correct amount based on what was lost from changeCondition() in changeCondition(), the chosenUserData, chosenCharacterData and chosenProfileData is updated to account for this */
 		chosenUserEnergyPoints = getSmallerNumber(chosenUserEnergyPoints, profileToHeal.maxEnergy - profileToHeal.energy);
 		chosenUserHungerPoints = getSmallerNumber(chosenUserHungerPoints, profileToHeal.maxHunger - profileToHeal.hunger);
@@ -554,26 +554,7 @@ export async function getHealResponse(
 
 	embed.setFooter({ text: `${embedFooter}\n\n${denCondition}${item !== 'water' ? `\n-1 ${item} for ${interaction.guild.name}` : ''}` });
 
-	let extraEmbed: EmbedBuilder | null = null;
-
-	if (profileToHeal.injuries.cold && userToHeal.uuid !== userData.uuid && !profileData.injuries.cold && pullFromWeightedTable({ 0: 3, 1: 7 }) === 0) {
-
-		const healthPoints = getSmallerNumber(generateRandomNumber(5, 3), profileData.thirst);
-
-		await userModel.findOneAndUpdate(
-			u => u.uuid === userData.uuid,
-			(u) => {
-				const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
-				p.health -= healthPoints;
-				p.injuries.cold = true;
-			},
-		);
-
-		extraEmbed = new EmbedBuilder()
-			.setColor(quidData.color)
-			.setDescription(`*Suddenly, ${quidData.name} starts coughing uncontrollably. Thinking back, ${pronoun(quidData, 0)} spent all day alongside ${quidToHeal.name}, who was coughing as well. That was probably not the best idea!*`)
-			.setFooter({ text: `-${healthPoints} HP (from cold)` });
-	}
+	const infectedEmbed = await infectWithChance(userData, quidData, profileData, quidToHeal, profileToHeal);
 
 	const content = userToHeal.uuid !== userToHeal.uuid && isSuccessful === true ? `<@${userToHeal.userId[0]}>\n` : '' + (messageContent ?? '');
 	const levelUpEmbed = (await checkLevelUp(interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
@@ -589,7 +570,7 @@ export async function getHealResponse(
 		embeds: [
 			...embedArray,
 			embed,
-			...(extraEmbed === null ? [] : [extraEmbed]),
+			...(infectedEmbed === null ? [] : [infectedEmbed]),
 			...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
 			...(levelUpEmbed ? [levelUpEmbed] : []),
 		],

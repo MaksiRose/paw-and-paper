@@ -7,7 +7,7 @@ import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
 import { getBiggerNumber, getMapData, getSmallerNumber, respond, unsafeKeys, widenValues } from '../../utils/helperFunctions';
-import { generateRandomNumber } from '../../utils/randomizers';
+import { getRandomNumber } from '../../utils/randomizers';
 import wearDownDen from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
 import { showInventoryMessage } from './inventory';
@@ -155,7 +155,7 @@ export async function sendEatMessage(
 
 			plantType = 'specialPlants';
 
-			const pickIncreasedStatType = (['health', 'energy', 'hunger', 'thirst'] as const)[generateRandomNumber(4, 0)];
+			const pickIncreasedStatType = (['health', 'energy', 'hunger', 'thirst'] as const)[getRandomNumber(4)];
 			if (!pickIncreasedStatType) { throw new TypeError('pickIncreasedStatType is undefined'); }
 			increasedStatType = pickIncreasedStatType;
 
@@ -182,15 +182,15 @@ export async function sendEatMessage(
 
 		if (allPlantsInfo[chosenFood].edibility === PlantEdibilityType.Toxic) {
 
-			finalHungerPoints = getBiggerNumber(-profileData.hunger, generateRandomNumber(3, -5) - removeHungerPoints(serverData));
-			finalHealthPoints = getBiggerNumber(-profileData.health, generateRandomNumber(3, -10));
+			finalHungerPoints = getBiggerNumber(-profileData.hunger, getRandomNumber(3, -5) - removeHungerPoints(serverData));
+			finalHealthPoints = getBiggerNumber(-profileData.health, getRandomNumber(3, -10));
 
 			embed.setDescription(`*A yucky feeling drifts down ${quidData.name}'s throat. ${upperCasePronounAndPlural(quidData, 0, 'shakes and spits', 'shake and spit')} it out, trying to rid ${pronoun(quidData, 2)} mouth of the taste. The plant is poisonous!*`);
 		}
 
 		if (allPlantsInfo[chosenFood].edibility === PlantEdibilityType.Inedible) {
 
-			finalHungerPoints = getBiggerNumber(-profileData.hunger, generateRandomNumber(3, -3) - removeHungerPoints(serverData));
+			finalHungerPoints = getBiggerNumber(-profileData.hunger, getRandomNumber(3, -3) - removeHungerPoints(serverData));
 
 			embed.setDescription(`*${quidData.name} slowly opens ${pronoun(quidData, 2)} mouth and chomps onto the ${chosenFood}. The ${quidData.displayedSpecies || quidData.species} swallows it, but ${pronoun(quidData, 2)} face has a look of disgust. That wasn't very tasty!*`);
 		}
@@ -199,13 +199,13 @@ export async function sendEatMessage(
 
 			if (speciesInfo[quidData.species as SpeciesNames].diet === SpeciesDietType.Carnivore) {
 
-				finalHungerPoints = getBiggerNumber(-profileData.hunger, getSmallerNumber(profileData.maxHunger - profileData.hunger, generateRandomNumber(5, 1) - removeHungerPoints(serverData)));
+				finalHungerPoints = getBiggerNumber(-profileData.hunger, getSmallerNumber(profileData.maxHunger - profileData.hunger, getRandomNumber(5, 1) - removeHungerPoints(serverData)));
 
 				embed.setDescription(`*${quidData.name} plucks a ${chosenFood} from the pack storage and nibbles away at it. It has a bitter, foreign taste, not the usual meaty meal the ${quidData.displayedSpecies || quidData.species} prefers.*`);
 			}
 			else {
 
-				finalHungerPoints = getSmallerNumber(profileData.maxHunger - profileData.hunger, generateRandomNumber(4, 15) - removeHungerPoints(serverData));
+				finalHungerPoints = getSmallerNumber(profileData.maxHunger - profileData.hunger, getRandomNumber(4, 15) - removeHungerPoints(serverData));
 
 				embed.setDescription(`*Leaves flutter into the storage den, landing near ${quidData.name}'s feet. The ${quidData.displayedSpecies || quidData.species} searches around the inventory determined to find the perfect meal, and that ${pronounAndPlural(quidData, 0, 'does', 'do')}. ${quidData.name} plucks a ${chosenFood} from the pile and eats until ${pronoun(quidData, 2)} stomach is pleased.*`);
 			}
@@ -234,13 +234,13 @@ export async function sendEatMessage(
 
 		if (speciesInfo[quidData.species as SpeciesNames].diet === SpeciesDietType.Herbivore) {
 
-			finalHungerPoints = getBiggerNumber(-profileData.hunger, getSmallerNumber(profileData.maxHunger - profileData.hunger, generateRandomNumber(5, 1) - removeHungerPoints(serverData)));
+			finalHungerPoints = getBiggerNumber(-profileData.hunger, getSmallerNumber(profileData.maxHunger - profileData.hunger, getRandomNumber(5, 1) - removeHungerPoints(serverData)));
 
 			embed.setDescription(`*${quidData.name} stands by the storage den, eyeing the varieties of food. A ${chosenFood} catches ${pronoun(quidData, 2)} attention. The ${quidData.displayedSpecies || quidData.species} walks over to it and begins to eat.* "This isn't very good!" *${quidData.name} whispers to ${pronoun(quidData, 4)} and leaves the den, stomach still growling, and craving for plants to grow.*`);
 		}
 		else {
 
-			finalHungerPoints = getSmallerNumber(profileData.maxHunger - profileData.hunger, generateRandomNumber(4, 15) - removeHungerPoints(serverData));
+			finalHungerPoints = getSmallerNumber(profileData.maxHunger - profileData.hunger, getRandomNumber(4, 15) - removeHungerPoints(serverData));
 
 			embed.setDescription(`*${quidData.name} sits chewing maliciously on a ${chosenFood}. A dribble of blood escapes out of ${pronoun(quidData, 2)} jaw as the ${quidData.displayedSpecies || quidData.species} finishes off the meal. It was a delicious feast, but very messy!*`);
 		}

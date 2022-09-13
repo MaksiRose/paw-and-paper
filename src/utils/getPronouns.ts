@@ -1,5 +1,5 @@
 import { Quid } from '../typedef';
-import { generateRandomNumber } from './randomizers';
+import { getRandomNumber } from './randomizers';
 
 /**
  * Randomly selects the wanted pronoun from one of the users pronoun sets and returns it.
@@ -17,7 +17,7 @@ export function pronoun(
 		if (pronoun) { possiblePronouns.push(pronoun); }
 	}
 
-	const returnString = possiblePronouns[generateRandomNumber(possiblePronouns.length, 0)];
+	const returnString = possiblePronouns[getRandomNumber(possiblePronouns.length)];
 	if (!returnString) { throw new TypeError('returnString is not a string'); }
 	return returnString;
 }

@@ -10,7 +10,7 @@ import { createCommandComponentDisabler, disableAllComponents, disableCommandCom
 import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
 import { getMapData, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
-import { generateRandomNumber } from '../../utils/randomizers';
+import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
 
 const recoverCooldownProfilesMap: Map<string, number> = new Map();
@@ -143,7 +143,7 @@ export const command: SlashCommand = {
 			componentArray.push(new ActionRowBuilder());
 			for (let j = 0; j < 3; j++) {
 
-				const chosenEmoji = recoverFieldOptions.splice(generateRandomNumber(recoverFieldOptions.length, 0), 1)[0];
+				const chosenEmoji = recoverFieldOptions.splice(getRandomNumber(recoverFieldOptions.length), 1)[0];
 				if (!chosenEmoji) { throw new TypeError('chosenEmoji is undefined'); }
 
 				componentArray[i]?.addComponents(new ButtonBuilder()
@@ -177,7 +177,7 @@ export const command: SlashCommand = {
 			emojisToClick: string[],
 		): Promise<void> {
 
-			const randomEmoji = possibleEmojis[generateRandomNumber(possibleEmojis.length, 0)];
+			const randomEmoji = possibleEmojis[getRandomNumber(possibleEmojis.length)];
 			if (!randomEmoji) { throw new TypeError('randomEmoji is undefined'); }
 
 			for (let index = 0; index < 3; index++) { emojisToClick.push(randomEmoji); }

@@ -1,6 +1,6 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { Profile, SlashCommand } from '../../typedef';
-import { generateRandomNumber } from '../../utils/randomizers';
+import { getRandomNumber } from '../../utils/randomizers';
 import { respond } from '../../utils/helperFunctions';
 
 const name: SlashCommand['name'] = 'roll';
@@ -78,7 +78,7 @@ export const command: SlashCommand = {
 		}
 
 		const rolledDice: number[] = [];
-		for (let i = 0; i < multiplier; i++) { rolledDice.push(generateRandomNumber(sides, 1)); }
+		for (let i = 0; i < multiplier; i++) { rolledDice.push(getRandomNumber(sides, 1)); }
 
 		const result = rolledDice.reduce((a, b) => a + b, 0) + addOrSubtract;
 		const resultFull = rolledDice.join(', ') + (addOrSubtract > 0 ? ` + ${addOrSubtract}` : addOrSubtract < 0 ? ` ${addOrSubtract}` : '');

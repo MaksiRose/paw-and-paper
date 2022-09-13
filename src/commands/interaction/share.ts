@@ -3,14 +3,14 @@ import { cooldownMap } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
 import { CurrentRegionType, Quid, SlashCommand } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
-import { changeCondition } from '../../utils/changeCondition';
+import { changeCondition, infectWithChance } from '../../utils/changeCondition';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { pronoun, pronounAndPlural, upperCasePronoun } from '../../utils/getPronouns';
-import { getMapData, getSmallerNumber, respond } from '../../utils/helperFunctions';
+import { getMapData, respond } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
-import { generateRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
+import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
 const sharingCooldownAccountsMap: Map<string, number> = new Map();
@@ -127,7 +127,7 @@ export const command: SlashCommand = {
 				return;
 			}
 
-			userData2 = usersEligibleForSharing[generateRandomNumber(usersEligibleForSharing.length, 0)] || null;
+			userData2 = usersEligibleForSharing[getRandomNumber(usersEligibleForSharing.length)] || null;
 			if (userData2) {
 
 				const newCurrentQuid = Object.values(userData2.quids).find(q => isEligableForSharing(userData2!.uuid, q, interaction.guildId));
@@ -148,38 +148,20 @@ export const command: SlashCommand = {
 		profileData1 = decreasedStatsData1.profileData;
 
 		/* Give user 2 experience */
-		const experienceIncrease = generateRandomNumber(Math.round((profileData2.levels * 50) * 0.15), Math.round((profileData2.levels * 50) * 0.05));
+		const experienceIncrease = getRandomNumber(Math.round((profileData2.levels * 50) * 0.15), Math.round((profileData2.levels * 50) * 0.05));
 		userData2 = await userModel.findOneAndUpdate(
 			u => u.uuid === userData2!.uuid,
 			(u) => {
-				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+				const p = getMapData(getMapData(u.quids, quidData2._id).profiles, interaction.guildId);
 				p.experience += experienceIncrease;
 			},
 		);
-		quidData2 = getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId));
+		quidData2 = getMapData(userData2.quids, quidData2._id);
 		profileData2 = getMapData(quidData2.profiles, interaction.guildId);
 		const statsUpdateText = `\n+${experienceIncrease} XP (${profileData2.experience}/${profileData2.levels * 50}) for ${quidData2.name}`;
 
 		/* If user 2 had a cold, infect user 1 with a 30% chance. */
-		let getHurtEmbed: EmbedBuilder | null = null;
-		if (profileData2.injuries.cold === true && profileData1.injuries.cold === false && pullFromWeightedTable({ 0: 3, 1: 7 }) === 0) {
-
-			const healthPoints = getSmallerNumber(generateRandomNumber(5, 3), profileData1.health);
-
-			await userModel.findOneAndUpdate(
-				u => u.uuid === userData1.uuid,
-				(u) => {
-					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, profileData1.serverId)).profiles, profileData1.serverId);
-					p.health -= healthPoints;
-					p.injuries.cold = true;
-				},
-			);
-
-			getHurtEmbed = new EmbedBuilder()
-				.setColor(quidData1.color)
-				.setDescription(`*Suddenly, ${quidData1.name} starts coughing uncontrollably. Thinking back, they spent all day alongside ${quidData2.name}, who was coughing as well. That was probably not the best idea!*`)
-				.setFooter({ text: `-${healthPoints} HP (from cold)` });
-		}
+		const infectedEmbed = await infectWithChance(userData1, quidData1, profileData1, quidData2, profileData2);
 
 		const user2CheckLevelData = await checkLevelUp(interaction, userData2, quidData2, profileData2, serverData);
 
@@ -191,7 +173,7 @@ export const command: SlashCommand = {
 					.setDescription(`*${quidData2.name} comes running to the old wooden trunk at the ruins where ${quidData1.name} sits, ready to tell an exciting story from long ago. ${upperCasePronoun(quidData2, 2)} eyes are sparkling as the ${quidData1.displayedSpecies || quidData1.species} recounts great adventures and the lessons to be learned from them.*`)
 					.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n${statsUpdateText}` }),
 				...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
-				...(getHurtEmbed ? [getHurtEmbed] : []),
+				...(infectedEmbed ? [infectedEmbed] : []),
 				...(user2CheckLevelData.levelUpEmbed ? [user2CheckLevelData.levelUpEmbed] : []),
 			],
 		}, true)

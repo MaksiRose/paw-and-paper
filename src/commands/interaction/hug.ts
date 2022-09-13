@@ -4,7 +4,7 @@ import userModel from '../../models/userModel';
 import { SlashCommand, UserSchema } from '../../typedef';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
-import { generateRandomNumber } from '../../utils/randomizers';
+import { getRandomNumber } from '../../utils/randomizers';
 const { error_color } = require('../../../config.json');
 
 const name: SlashCommand['name'] = 'hug';
@@ -57,7 +57,7 @@ export const command: SlashCommand = {
 						name: quidData?.name || member?.displayName || interaction.user.tag,
 						iconURL: quidData?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
 					})
-					.setImage(selfHugURLs[generateRandomNumber(selfHugURLs.length, 0)] || null)],
+					.setImage(selfHugURLs[getRandomNumber(selfHugURLs.length)] || null)],
 			}, true)
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
@@ -146,7 +146,7 @@ export async function hugInteractionCollector(
 					name: quidData?.name || originalMember?.displayName || originalUser.tag,
 					iconURL: quidData?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
 				})
-				.setImage(hugURLs[generateRandomNumber(hugURLs.length, 0)] || null)],
+				.setImage(hugURLs[getRandomNumber(hugURLs.length)] || null)],
 			components: [],
 		})
 			.catch((error) => {

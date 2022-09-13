@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, Message, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, Message, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap, serverActiveUsersMap } from '../../events/interactionCreate';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
@@ -7,10 +7,11 @@ import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
+import { createFightGame } from '../../utils/gameBuilder';
 import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
 import { getMapData, getSmallerNumber, keyInObject, KeyOfUnion, respond, unsafeKeys, update, ValueOf, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
-import { generateRandomNumber, generateRandomNumberWithException, pullFromWeightedTable } from '../../utils/randomizers';
+import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 const { default_color } = require('../../../config.json');
 
 type serverMapInfo = { startsTimestamp: number | null, idleHumans: number, endingTimeout: NodeJS.Timeout | null, ongoingFights: number; }
@@ -93,7 +94,7 @@ export async function executeAttacking(
 	serverAttackInfo.idleHumans -= 1;
 	serverAttackInfo.ongoingFights += 1;
 
-	const experiencePoints = generateRandomNumber(10, 11);
+	const experiencePoints = getRandomNumber(10, 11);
 	const changedCondition = await changeCondition(userData, quidData, profileData, experiencePoints);
 	profileData = changedCondition.profileData;
 
@@ -114,44 +115,36 @@ export async function executeAttacking(
 		serverAttackInfo: serverMapInfo,
 		newInteraction?: ButtonInteraction | SelectMenuInteraction,
 		previousFightComponents?: ActionRowBuilder<ButtonBuilder>,
-		previousCycleIndex?: number,
+		lastRoundCycleIndex?: number,
 	): Promise<Message> {
 
-		const cycleKind = newCycleArray[generateRandomNumberWithException(newCycleArray.length, 0, previousCycleIndex)];
+		const fightGame = createFightGame(totalCycles, lastRoundCycleIndex);
 
-		if (cycleKind === 'attack') {
+		if (fightGame.cycleKind === 'attack') {
 
 			embed.setDescription(`⏫ *The human gets ready to attack. ${quidData.name} must think quickly about how ${pronounAndPlural(quidData, 0, 'want')} to react.*`);
 		}
-		else if (cycleKind === 'dodge') {
+		else if (fightGame.cycleKind === 'dodge') {
 
 			embed.setDescription(`↪️ *Looks like the human is preparing a maneuver for ${quidData.name}'s next move. The ${quidData.displayedSpecies || quidData.species} must think quickly about how ${pronounAndPlural(quidData, 0, 'want')} to react.*`);
 		}
-		else if (cycleKind === 'defend') {
+		else if (fightGame.cycleKind === 'defend') {
 
 			embed.setDescription(`⏺️ *The human gets into position to oppose an attack. ${quidData.name} must think quickly about how ${pronounAndPlural(quidData, 0, 'want')} to react.*`);
 		}
 		else { throw new Error('cycleKind is not attack, dodge or defend'); }
 		embed.setFooter({ text: 'You will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response.' });
 
-		const fightComponents = getFightComponents(totalCycles);
-
 		botReply = await (async function(messageContent) { return newInteraction ? await update(newInteraction, messageContent) : await respond(interaction, messageContent, true); })({
 			embeds: [...embedArray, embed],
-			components: [...previousFightComponents ? [previousFightComponents] : [], fightComponents],
+			components: [...previousFightComponents ? [previousFightComponents] : [], fightGame.fightComponent],
 		}).catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }
 			return botReply;
 		});
 
 		/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
-		fightComponents.setComponents(fightComponents.components.map(component => {
-
-			const data = component.toJSON();
-
-			if (data.style !== ButtonStyle.Link && data.custom_id.includes(cycleKind)) { component.setStyle(ButtonStyle.Primary); }
-			return component;
-		}));
+		fightGame.fightComponent = fightGame.correctButtonOverwrite();
 
 		newInteraction = await botReply
 			.awaitMessageComponent({
@@ -161,32 +154,20 @@ export async function executeAttacking(
 			.then(async i => {
 
 				/* Here we make the button the player choses red, this will apply always except if the player choses the correct button, then this will be overwritten. */
-				fightComponents.setComponents(fightComponents.components.map(component => {
+				fightGame.fightComponent = fightGame.chosenWrongButtonOverwrite(i.customId);
 
-					const data = component.toJSON();
-
-					if (data.style !== ButtonStyle.Link && data.custom_id === i.customId) { component.setStyle(ButtonStyle.Danger); }
-					return component;
-				}));
-
-				if ((i.customId.includes('attack') && cycleKind === 'dodge')
-						|| (i.customId.includes('defend') && cycleKind === 'attack')
-						|| (i.customId.includes('dodge') && cycleKind === 'defend')) {
+				if ((i.customId.includes('attack') && fightGame.cycleKind === 'dodge')
+						|| (i.customId.includes('defend') && fightGame.cycleKind === 'attack')
+						|| (i.customId.includes('dodge') && fightGame.cycleKind === 'defend')) {
 
 					winLoseRatio -= 1;
 				}
-				else if ((i.customId.includes('attack') && cycleKind === 'defend')
-						|| (i.customId.includes('defend') && cycleKind === 'dodge')
-						|| (i.customId.includes('dodge') && cycleKind === 'attack')) {
+				else if ((i.customId.includes('attack') && fightGame.cycleKind === 'defend')
+						|| (i.customId.includes('defend') && fightGame.cycleKind === 'dodge')
+						|| (i.customId.includes('dodge') && fightGame.cycleKind === 'attack')) {
 
 					/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
-					fightComponents.setComponents(fightComponents.components.map(component => {
-
-						const data = component.toJSON();
-
-						if (data.style !== ButtonStyle.Link && data.custom_id === i.customId) { component.setStyle(ButtonStyle.Success); }
-						return component;
-					}));
+					fightGame.fightComponent = fightGame.chosenRightButtonOverwrite(i.customId);
 
 					winLoseRatio += 1;
 				}
@@ -198,13 +179,13 @@ export async function executeAttacking(
 				return newInteraction;
 			});
 
-		fightComponents.setComponents(fightComponents.components.map(component => component.setDisabled(true)));
+		fightGame.fightComponent.setComponents(fightGame.fightComponent.components.map(c => c.setDisabled(true)));
 
 		totalCycles += 1;
 
 		if (totalCycles < 5) {
 
-			botReply = await interactionCollector(interaction, userData, serverData, serverAttackInfo, newInteraction, fightComponents, newCycleArray.findIndex(el => el === cycleKind));
+			botReply = await interactionCollector(interaction, userData, serverData, serverAttackInfo, newInteraction, fightGame.fightComponent, newCycleArray.findIndex(el => el === fightGame.cycleKind));
 			return botReply;
 		}
 
@@ -239,7 +220,7 @@ export async function executeAttacking(
 
 			if (winLoseRatio == 0) {
 
-				const healthPoints = getSmallerNumber(profileData.health, generateRandomNumber(5, 3));
+				const healthPoints = getSmallerNumber(profileData.health, getRandomNumber(5, 3));
 
 				if (pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
 
@@ -279,7 +260,7 @@ export async function executeAttacking(
 				...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
 				...(levelUpEmbed ? [levelUpEmbed] : []),
 			],
-			components: [fightComponents],
+			components: [fightGame.fightComponent],
 		}).catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }
 			return botReply;
@@ -321,30 +302,6 @@ export async function executeAttacking(
 
 		remainingHumans(interaction, botReply, serverAttackInfo);
 	}
-}
-
-function getFightComponents(
-	roundNumber: 0 | 1 | 2,
-): ActionRowBuilder<ButtonBuilder> {
-
-	return new ActionRowBuilder<ButtonBuilder>()
-		.setComponents([
-			new ButtonBuilder()
-				.setCustomId(`attack_attack_${roundNumber}`)
-				.setLabel('Attack')
-				.setEmoji('⏫')
-				.setStyle(ButtonStyle.Secondary),
-			new ButtonBuilder()
-				.setCustomId(`attack_defend_${roundNumber}`)
-				.setLabel('Defend')
-				.setEmoji('⏺️')
-				.setStyle(ButtonStyle.Secondary),
-			new ButtonBuilder()
-				.setCustomId(`attack_dodge_${roundNumber}`)
-				.setLabel('Dodge')
-				.setEmoji('↪️')
-				.setStyle(ButtonStyle.Secondary),
-		].sort(() => Math.random() - 0.5));
 }
 
 /**

@@ -37,6 +37,7 @@ import { healInteractionCollector } from '../commands/gameplay_maintenance/heal'
 import { rankupInteractionCollector } from '../commands/gameplay_primary/rank-up';
 import { executeScavenging, command as scavengeCommand } from '../commands/gameplay_primary/scavenge';
 import { travelInteractionCollector } from '../commands/gameplay_primary/travel-regions';
+import { executePlaying, command as playCommand } from '../commands/gameplay_primary/play';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
@@ -398,10 +399,19 @@ export const event: Event = {
 				if (interaction.customId === 'scavenge_new') {
 
 					/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-
 					if (userData && scavengeCommand.disablePreviousCommand) { await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.(); }
 
 					await executeScavenging(interaction, userData, serverData, [])
+						.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					return;
+				}
+
+				if (interaction.customId === 'play_new') {
+
+					/* It's disabling all components if userData exists and the command is set to disable a previous command. */
+					if (userData && playCommand.disablePreviousCommand) { await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.(); }
+
+					await executePlaying(interaction, userData, serverData, [])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}

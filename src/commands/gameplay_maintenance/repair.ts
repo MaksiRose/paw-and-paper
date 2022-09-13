@@ -10,7 +10,7 @@ import getInventoryElements from '../../utils/getInventoryElements';
 import { pronoun } from '../../utils/getPronouns';
 import { getMapData, getSmallerNumber, respond, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
-import { generateRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
+import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
 const denSelectMenu = new ActionRowBuilder<ButtonBuilder>()
@@ -142,7 +142,7 @@ export async function repairInteractionCollector(
 		const repairKind = materialsInfo[chosenItem].reinforcesStructure ? 'structure' : materialsInfo[chosenItem].improvesBedding ? 'bedding' : materialsInfo[chosenItem].thickensWalls ? 'thickness' : materialsInfo[chosenItem].removesOverhang ? 'evenness' : undefined;
 		if (!repairKind) { throw new TypeError('repairKind is undefined'); }
 
-		const repairAmount = getSmallerNumber(generateRandomNumber(5, 6), 100 - serverData.dens[chosenDen][repairKind]);
+		const repairAmount = getSmallerNumber(getRandomNumber(5, 6), 100 - serverData.dens[chosenDen][repairKind]);
 
 		/** True when the repairAmount is bigger than zero. If the user isn't of  rank Hunter or Elderly, a weighted table decided whether they are successful. */
 		const isSuccessful = repairAmount > 0 && (profileData.rank === RankType.Hunter || profileData.rank === RankType.Elderly || pullFromWeightedTable({ 0: profileData.rank === RankType.Healer ? 90 : 40, 1: 60 + profileData.sapling.waterCycles }) === 1);
@@ -155,7 +155,7 @@ export async function repairInteractionCollector(
 			},
 		);
 
-		const experiencePoints = isSuccessful === false ? 0 : profileData.rank == RankType.Elderly ? generateRandomNumber(41, 20) : profileData.rank == RankType.Healer ? generateRandomNumber(21, 10) : generateRandomNumber(11, 5);
+		const experiencePoints = isSuccessful === false ? 0 : profileData.rank == RankType.Elderly ? getRandomNumber(41, 20) : profileData.rank == RankType.Healer ? getRandomNumber(21, 10) : getRandomNumber(11, 5);
 		const changedCondition = await changeCondition(userData, quidData, profileData, experiencePoints);
 		const levelUpEmbed = (await checkLevelUp(interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
 

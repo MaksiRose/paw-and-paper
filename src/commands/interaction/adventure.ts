@@ -13,7 +13,7 @@ import { addFriendshipPoints, checkOldMentions, getFriendshipHearts, getFriendsh
 import { getMapData } from '../../utils/helperFunctions';
 import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
 import { checkLevelUp } from '../../utils/levelHandling';
-import { generateRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
+import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { getHighestItem, remindOfAttack } from '../gameplay_primary/attack';
 const { error_color } = require('../../../config.json');
 
@@ -133,7 +133,7 @@ export async function adventureInteractionCollector(
 	const chosenMemoryCardOptions: string[] = [];
 	for (let i = 0; i < 10; i++) {
 
-		const randomMemoryCardOption = allMemoryCardOptions.splice(generateRandomNumber(allMemoryCardOptions.length, 0), 1)[0];
+		const randomMemoryCardOption = allMemoryCardOptions.splice(getRandomNumber(allMemoryCardOptions.length), 1)[0];
 		if (!randomMemoryCardOption) { throw new TypeError('randomMemoryCardOption is undefined'); }
 		chosenMemoryCardOptions.push(randomMemoryCardOption, randomMemoryCardOption);
 	}
@@ -154,7 +154,7 @@ export async function adventureInteractionCollector(
 				.setStyle(ButtonStyle.Secondary),
 			);
 
-			const randomMemoryCardOption = chosenMemoryCardOptions.splice(generateRandomNumber(chosenMemoryCardOptions.length), 1)[0];
+			const randomMemoryCardOption = chosenMemoryCardOptions.splice(getRandomNumber(chosenMemoryCardOptions.length), 1)[0];
 			if (!randomMemoryCardOption) { throw new TypeError('randomMemoryCardOption is undefined'); }
 			emojisInComponentArray[column]?.push(randomMemoryCardOption);
 		}
@@ -180,7 +180,7 @@ export async function adventureInteractionCollector(
 	cooldownMap.set(userData2.uuid + interaction.guildId, true);
 	delete disableCommandComponent[userData1.uuid + interaction.guildId];
 	delete disableCommandComponent[userData2.uuid + interaction.guildId];
-	const experiencePoints = generateRandomNumber(11, 5);
+	const experiencePoints = getRandomNumber(11, 5);
 	const decreasedStatsData1 = await changeCondition(userData1, quidData1, profileData1, experiencePoints, CurrentRegionType.Prairie);
 	profileData1 = decreasedStatsData1.profileData;
 	const decreasedStatsData2 = await changeCondition(userData2, quidData2, profileData2, experiencePoints, CurrentRegionType.Prairie);
@@ -193,7 +193,7 @@ export async function adventureInteractionCollector(
 	let uncoveredCardsUser1 = 0;
 	let uncoveredCardsUser2 = 0;
 
-	let user1IsPlaying = generateRandomNumber(2, 0) === 0 ? true : false;
+	let user1IsPlaying = getRandomNumber(2) === 0 ? true : false;
 	let userDataCurrent = user1IsPlaying ? userData1 : userData2;
 	let quidDataCurrent = getMapData(userDataCurrent.quids, getMapData(userDataCurrent.currentQuid, interaction.guildId));
 
@@ -334,11 +334,11 @@ export async function adventureInteractionCollector(
 		// reason roundLimit: too many rounds went past
 		if (reason.includes('roundLimit')) {
 
-			const losingUserData = uncoveredCardsUser1 < uncoveredCardsUser2 ? userData1 : uncoveredCardsUser2 < uncoveredCardsUser1 ? userData2 : generateRandomNumber(2, 0) === 0 ? userData1 : userData2;
+			const losingUserData = uncoveredCardsUser1 < uncoveredCardsUser2 ? userData1 : uncoveredCardsUser2 < uncoveredCardsUser1 ? userData2 : getRandomNumber(2) === 0 ? userData1 : userData2;
 			const losingQuidData = getMapData(losingUserData.quids, getMapData(losingUserData.currentQuid, interaction.guildId));
 			const losingProfileData = getMapData(losingQuidData.profiles, interaction.guildId);
 
-			const losingHealthPoints = getSmallerNumber(generateRandomNumber(5, 3), losingProfileData.health);
+			const losingHealthPoints = getSmallerNumber(getRandomNumber(5, 3), losingProfileData.health);
 
 			let extraDescription = '';
 			let extraFooter = '';
@@ -402,7 +402,7 @@ export async function adventureInteractionCollector(
 		// reason success: every card has been uncovered
 		if (reason.includes('success')) {
 
-			const winningUserData = uncoveredCardsUser1 > uncoveredCardsUser2 ? userData1 : uncoveredCardsUser2 > uncoveredCardsUser1 ? userData2 : generateRandomNumber(2, 0) === 0 ? userData1 : userData2;
+			const winningUserData = uncoveredCardsUser1 > uncoveredCardsUser2 ? userData1 : uncoveredCardsUser2 > uncoveredCardsUser1 ? userData2 : getRandomNumber(2) === 0 ? userData1 : userData2;
 			const winningQuidData = getMapData(winningUserData.quids, getMapData(winningUserData.currentQuid, interaction.guildId));
 			const winningProfileData = getMapData(winningQuidData.profiles, interaction.guildId);
 
@@ -411,7 +411,7 @@ export async function adventureInteractionCollector(
 
 			if (winningProfileData.health < winningProfileData.maxHealth) {
 
-				extraHealthPoints = getSmallerNumber(generateRandomNumber(5, 8), winningProfileData.health);
+				extraHealthPoints = getSmallerNumber(getRandomNumber(5, 8), winningProfileData.health);
 			}
 			else if (Object.keys(winningProfileData.temporaryStatIncrease).length <= 1 && pullFromWeightedTable({ 0: finishedRounds * 3, 1: 45 - finishedRounds }) === 1) {
 

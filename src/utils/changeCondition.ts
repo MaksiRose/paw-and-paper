@@ -1,9 +1,9 @@
 import { EmbedBuilder } from 'discord.js';
 import userModel from '../models/userModel';
 import { commonPlantsInfo, CurrentRegionType, Profile, Quid, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo, UserSchema } from '../typedef';
-import { getMapData, getSmallerNumber } from './helperFunctions';
+import { getBiggerNumber, getMapData, getSmallerNumber } from './helperFunctions';
 import { pronoun } from './getPronouns';
-import { generateRandomNumber, pullFromWeightedTable } from './randomizers';
+import { getRandomNumber, pullFromWeightedTable } from './randomizers';
 
 /**
  * Calculate how much energy should be decreased based on how low the profile's health is.
@@ -18,7 +18,7 @@ function calculateEnergyDecrease(
 	const healthDependentEnergyDecrease = Math.round(10 - (profileData.health / (profileData.maxHealth / 10)));
 
 	/* If energyDependentHungerDecrease is 0, return 0. If it's not 0, randomize a number between half of healthDependentEnergyDecrease and 1 higher than that, compare it with the profiles energy and return the smaller number. */
-	return healthDependentEnergyDecrease > 0 ? getSmallerNumber(generateRandomNumber(2, Math.round(healthDependentEnergyDecrease / 2)), profileData.energy) : 0;
+	return healthDependentEnergyDecrease > 0 ? getSmallerNumber(getRandomNumber(2, Math.round(healthDependentEnergyDecrease / 2)), profileData.energy) : 0;
 }
 
 /**
@@ -34,7 +34,7 @@ function calculateHungerDecrease(
 	const energyDependentHungerDecrease = Math.round(10 - (profileData.energy / (profileData.maxEnergy / 10)));
 
 	/* If energyDependentHungerDecrease is 0, return 0. If it's not 0, randomize a number between energyDependentHungerDecrease and 2 higher than that, compare it with the profiles hunger and return the smaller number. */
-	return energyDependentHungerDecrease > 0 ? getSmallerNumber(generateRandomNumber(3, energyDependentHungerDecrease), profileData.hunger) : 0;
+	return energyDependentHungerDecrease > 0 ? getSmallerNumber(getRandomNumber(3, energyDependentHungerDecrease), profileData.hunger) : 0;
 }
 
 /**
@@ -50,7 +50,7 @@ function calculateThirstDecrease(
 	const energyDependentThirstDecrease = Math.ceil(10 - (profileData.energy / (profileData.maxEnergy / 10)));
 
 	/* If energyDependentThirstDecrease is 0, return 0. If it's not 0, randomize a number between energyDependentThirstDecrease and 2 higher than that, compare it with the profiles thirst and return the smaller number. */
-	return energyDependentThirstDecrease > 0 ? getSmallerNumber(generateRandomNumber(3, energyDependentThirstDecrease), profileData.thirst) : 0;
+	return energyDependentThirstDecrease > 0 ? getSmallerNumber(getRandomNumber(3, energyDependentThirstDecrease), profileData.thirst) : 0;
 }
 
 /**
@@ -88,7 +88,7 @@ async function decreaseHealth(
 			continue;
 		}
 
-		totalHealthDecrease += generateRandomNumber(3, 3);
+		totalHealthDecrease += getRandomNumber(3, 3);
 
 		if (becomesInfection == 0) {
 
@@ -116,7 +116,7 @@ async function decreaseHealth(
 		}
 
 		const minimumInfectionHealthDecrease = Math.round((10 - (profileData.health / (profileData.maxHealth / 10))) / 3);
-		totalHealthDecrease += generateRandomNumber(3, minimumInfectionHealthDecrease + 3);
+		totalHealthDecrease += getRandomNumber(3, minimumInfectionHealthDecrease + 3);
 
 		embed.description += `\n*One of ${quidData.name}'s infections is getting worse!*`;
 	}
@@ -135,7 +135,7 @@ async function decreaseHealth(
 		else {
 
 			const minimumColdHealthDecrease = Math.round((10 - (profileData.health / (profileData.maxHealth / 10))) / 1.5);
-			totalHealthDecrease += generateRandomNumber(3, minimumColdHealthDecrease > 0 ? minimumColdHealthDecrease : 1);
+			totalHealthDecrease += getRandomNumber(3, getBiggerNumber(minimumColdHealthDecrease, 1));
 
 			embed.description += `\n*${quidData.name}'s cold is getting worse!*`;
 		}
@@ -155,7 +155,7 @@ async function decreaseHealth(
 		}
 
 		const minimumSprainHealthDecrease = Math.round(profileData.levels / 2);
-		totalHealthDecrease += generateRandomNumber(5, minimumSprainHealthDecrease < 11 ? minimumSprainHealthDecrease : 11);
+		totalHealthDecrease += getRandomNumber(5, getSmallerNumber(minimumSprainHealthDecrease, 11));
 
 		embed.description += `\n*One of ${quidData.name}'s sprains is getting worse!*`;
 	}
@@ -174,7 +174,7 @@ async function decreaseHealth(
 		else {
 
 			const minimumPoisonHealthDecrease = Math.round((10 - (profileData.health / 10)) * 1.5);
-			totalHealthDecrease += generateRandomNumber(5, (minimumPoisonHealthDecrease > 0) ? minimumPoisonHealthDecrease : 1);
+			totalHealthDecrease += getRandomNumber(5, getBiggerNumber(minimumPoisonHealthDecrease, 1));
 
 			embed.description += `\n*The poison in ${quidData.name}'s body is spreading!*`;
 		}
@@ -250,10 +250,48 @@ export async function changeCondition(
 	return { statsUpdateText, ...await decreaseHealth(userData, quidData, profileData) };
 }
 
+/**
+ * If user 1 does not have a cold, but user 2 does, there's a chance that user 1 will get infected. Updates user 1's account with a lower health and the added cold, and returns an embed if true
+ * @param {UserSchema} userData1 - The user data of the user who is being infected.
+ * @param {Quid} quidData1 - The quid that is being infected.
+ * @param {Profile} profileData1 - The profile of the user who is being infected.
+ * @param {Quid} quidData2 - Quid - The quid that is coughing
+ * @param {Profile} profileData2 - The profile of the quid that is coughing.
+ * @returns EmbedBuilder | null
+ */
+export async function infectWithChance(
+	userData1: UserSchema,
+	quidData1: Quid,
+	profileData1: Profile,
+	quidData2: Quid,
+	profileData2: Profile,
+): Promise<EmbedBuilder | null> {
+
+	if (profileData2.injuries.cold === true && profileData1.injuries.cold === false && pullFromWeightedTable({ 0: 3, 1: 7 }) === 0) {
+
+		const healthPoints = getSmallerNumber(getRandomNumber(5, 3), profileData1.health);
+
+		await userModel.findOneAndUpdate(
+			u => u.uuid === userData1.uuid,
+			(u) => {
+				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, profileData1.serverId)).profiles, profileData1.serverId);
+				p.health -= healthPoints;
+				p.injuries.cold = true;
+			},
+		);
+
+		return new EmbedBuilder()
+			.setColor(quidData1.color)
+			.setDescription(`*Suddenly, ${quidData1.name} starts coughing uncontrollably. Thinking back, they spent all day alongside ${quidData2.name}, who was coughing as well. That was probably not the best idea!*`)
+			.setFooter({ text: `-${healthPoints} HP (from cold)` });
+	}
+	return null;
+}
+
 export function pickRandomCommonPlant() {
 
 	const commonPlantsKeys = Object.keys(commonPlantsInfo) as Array<keyof typeof commonPlantsInfo>;
-	const randomCommonPlant = commonPlantsKeys[generateRandomNumber(commonPlantsKeys.length, 0)];
+	const randomCommonPlant = commonPlantsKeys[getRandomNumber(commonPlantsKeys.length)];
 	if (!randomCommonPlant) { throw new TypeError('randomCommonPlant is undefined'); }
 	return randomCommonPlant;
 }
@@ -261,7 +299,7 @@ export function pickRandomCommonPlant() {
 export function pickRandomUncommonPlant() {
 
 	const uncommonPlantsKeys = Object.keys(uncommonPlantsInfo) as Array<keyof typeof uncommonPlantsInfo>;
-	const randomUncommonPlant = uncommonPlantsKeys[generateRandomNumber(uncommonPlantsKeys.length, 0)];
+	const randomUncommonPlant = uncommonPlantsKeys[getRandomNumber(uncommonPlantsKeys.length)];
 	if (!randomUncommonPlant) { throw new TypeError('randomUncommonPlant is undefined'); }
 	return randomUncommonPlant;
 }
@@ -269,7 +307,7 @@ export function pickRandomUncommonPlant() {
 export function pickRandomRarePlant() {
 
 	const rarePlantsKeys = Object.keys(rarePlantsInfo) as Array<keyof typeof rarePlantsInfo>;
-	const randomRarePlant = rarePlantsKeys[generateRandomNumber(rarePlantsKeys.length, 0)];
+	const randomRarePlant = rarePlantsKeys[getRandomNumber(rarePlantsKeys.length)];
 	if (!randomRarePlant) { throw new TypeError('randomRarePlant is undefined'); }
 	return randomRarePlant;
 }
@@ -277,7 +315,7 @@ export function pickRandomRarePlant() {
 export function pickRandomSpecialPlant() {
 
 	const specialPlantsKeys = Object.keys(specialPlantsInfo) as Array<keyof typeof specialPlantsInfo>;
-	const randomSpecialPlant = specialPlantsKeys[generateRandomNumber(specialPlantsKeys.length, 0)];
+	const randomSpecialPlant = specialPlantsKeys[getRandomNumber(specialPlantsKeys.length)];
 	if (!randomSpecialPlant) { throw new TypeError('randomSpecialPlant is undefined'); }
 	return randomSpecialPlant;
 }

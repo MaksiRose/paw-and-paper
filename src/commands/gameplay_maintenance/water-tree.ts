@@ -6,7 +6,7 @@ import { isInvalid } from '../../utils/checkValidity';
 import { pronounAndPlural } from '../../utils/getPronouns';
 import { getMapData, respond } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
-import { generateRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
+import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
 const oneMinute = 60_000;
@@ -79,7 +79,7 @@ export const command: SlashCommand = {
 			profileData.sapling.waterCycles += 1;
 
 			experiencePoints = profileData.sapling.waterCycles;
-			healthPoints = pullFromWeightedTable({ 1: 5, 2: 4, 3: 3, 4: 2, 5: 1 }) + generateRandomNumber(Math.round(profileData.sapling.waterCycles / 4), 0);
+			healthPoints = pullFromWeightedTable({ 1: 5, 2: 4, 3: 3, 4: 2, 5: 1 }) + getRandomNumber(Math.round(profileData.sapling.waterCycles / 4));
 			if (profileData.health + healthPoints > profileData.maxHealth) { healthPoints = profileData.maxHealth - profileData.health; }
 
 			embed.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Perfect.png');
