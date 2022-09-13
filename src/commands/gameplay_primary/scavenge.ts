@@ -211,7 +211,7 @@ export async function executeScavenging(
 							return;
 						}
 
-						embed.setDescription(`*${quidData.name} searches in vain for edible remains of deceased animals. But the expedition is not without success: the ${quidData.displayedSpecies || quidData.species} sees a stick, which can serve as a great material for repairs and work in the pack. ${upperCasePronoun(quidData, 0)} happily takes it home with ${pronoun(quidData, 1)}.*`);
+						embed.setDescription(`*${quidData.name} searches in vain for edible remains of deceased animals. But the expedition is not without success: the ${quidData.displayedSpecies || quidData.species} sees a ${foundMaterial}, which can serve as a great material for repairs and work in the pack. ${upperCasePronoun(quidData, 0)} happily takes it home with ${pronoun(quidData, 1)}.*`);
 						embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundMaterial}` });
 
 						userData = await userModel.findOneAndUpdate(
