@@ -268,7 +268,7 @@ export function isInteractable(
 		return false;
 	}
 
-	if (cooldownMap.get(userData.uuid + interaction.guildId) !== false) { // The !== false ensures that both undefined and true trigger this response
+	if (cooldownMap.get(userData.uuid + interaction.guildId)) {
 
 		respond(interaction, {
 			content: messageContent,
