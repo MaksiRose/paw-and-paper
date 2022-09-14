@@ -246,3 +246,12 @@ export function getSmallerNumber(
 	number1: number,
 	number2: number,
 ): number { return number1 > number2 ? number2 : number1; }
+
+/**
+ * Given a string, return a new string with the first letter capitalized.
+ * @param {string} string - The string to capitalize.
+ * @returns The first character of the string is being capitalized and then the rest of the string is being added to it.
+ */
+export function capitalizeString(
+	string: string,
+): string { return string.charAt(0).toUpperCase() + string.slice(1); }

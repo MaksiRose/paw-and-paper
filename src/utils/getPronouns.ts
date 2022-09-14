@@ -1,4 +1,5 @@
 import { Quid } from '../typedef';
+import { capitalizeString } from './helperFunctions';
 import { getRandomNumber } from './randomizers';
 
 /**
@@ -32,7 +33,7 @@ export function upperCasePronoun(
 
 	const pronounString = pronoun(quidData, pronounNumber);
 
-	return pronounString.charAt(0).toUpperCase() + pronounString.slice(1);
+	return capitalizeString(pronounString);
 }
 
 /**
@@ -78,7 +79,7 @@ export function upperCasePronounAndPlural(
 ): string {
 
 	const normalPronoun = pronoun(charaterData, pronounNumber);
-	const pronounString = normalPronoun.charAt(0).toUpperCase() + normalPronoun.slice(1);
+	const pronounString = capitalizeString(normalPronoun);
 
 	if (string2 === undefined) { return `${pronounString} ${string1}${isPlural(charaterData, normalPronoun) === false ? 's' : ''}`; }
 	return `${pronounString} ${isPlural(charaterData, normalPronoun) === false ? string1 : string2}`;

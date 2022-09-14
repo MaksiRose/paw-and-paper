@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, GuildMember, ModalBuilder, ModalMessageModalSubmitInteraction, PermissionFlagsBits, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { respond, update } from '../../utils/helperFunctions';
+import { capitalizeString, respond, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
 import { Profile, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
@@ -242,7 +242,7 @@ export async function skillsInteractionCollector(
 
 		await interaction.showModal(new ModalBuilder()
 			.setCustomId(`skills_${type}_${category}_${skillName}`)
-			.setTitle(`${type.charAt(0).toUpperCase() + type.slice(1)} ${category} skill "${skillName}"`)
+			.setTitle(`${capitalizeString(type)} ${category} skill "${skillName}"`)
 			.addComponents(
 				new ActionRowBuilder<TextInputBuilder>()
 					.setComponents(new TextInputBuilder()

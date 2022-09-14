@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, GuildMember, InteractionReplyOptions, InteractionUpdateOptions, MessageEditOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
-import { respond, update } from '../../utils/helperFunctions';
+import { capitalizeString, respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { Quid, commonPlantsInfo, CurrentRegionType, CustomClient, materialsInfo, RankType, rarePlantsInfo, SlashCommand, specialPlantsInfo, speciesInfo, uncommonPlantsInfo, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
@@ -95,7 +95,7 @@ export async function getMessageContent(
 			.setDescription(quidData.description || null)
 			.setThumbnail(quidData.avatarURL)
 			.setFields([
-				{ name: '**🦑 Species**', value: quidData.displayedSpecies ? (quidData.displayedSpecies.charAt(0).toUpperCase() + quidData.displayedSpecies.slice(1)) : quidData.species ? (quidData.species.charAt(0).toUpperCase() + quidData.species.slice(1)) : '/', inline: true },
+				{ name: '**🦑 Species**', value: capitalizeString(quidData.displayedSpecies) || capitalizeString(quidData.species) || '/', inline: true },
 				{ name: '**🔑 Proxy**', value: !quidData.proxy.startsWith && !quidData.proxy.endsWith ? 'No proxy set' : `${quidData.proxy.startsWith}text${quidData.proxy.endsWith}`, inline: true },
 				{ name: '**🍂 Pronouns**', value: quidData.pronounSets.map(pronounSet => pronounCompromiser(pronounSet)).join('\n') || '/' },
 
