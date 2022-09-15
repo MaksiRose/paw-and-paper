@@ -117,7 +117,7 @@ export async function createNewTicket(
 			embeds: [ticketEmbed],
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([new ButtonBuilder()
-					.setCustomId('ticket_approve_ANYONECANCLICK')
+					.setCustomId(`ticket_approve_ANYONECANCLICK_${ticketId}`)
 					.setLabel('Approve')
 					.setStyle(ButtonStyle.Success),
 				getRespondButton(true, interaction.user.id, ticketId, true),
@@ -193,6 +193,8 @@ export async function ticketInteractionCollector(
 	if (interaction.customId.includes('approve')) {
 
 		const embed = interaction.message.embeds[0];
+		const ticketId = interaction.customId.split('_')[3];
+		const ticketConversation = readFileSync(`./database/open_tickets/${ticketId}.txt`, 'utf-8');
 
 		const octokit = new Octokit({
 			auth: github_token,
@@ -204,7 +206,7 @@ export async function ticketInteractionCollector(
 				owner: 'MaksiRose',
 				repo: 'paw-and-paper',
 				title: embed?.title || 'New issue',
-				body: `Created by: ${interaction.user.tag} (${interaction.user.id})\n\n${embed?.description}\n\n${embed?.image ? `![](${embed.image?.url})` : ''}`,
+				body: `Created by: ${interaction.user.tag} (${interaction.user.id})\n\n${embed?.description}\n\n${embed?.image ? `![](${embed.image?.url})` : ''}\n\n${ticketConversation ? `Additional conversation:\n\`\`\`${ticketConversation}\`\`\`` : ''}`,
 				labels: embed?.footer ? [embed.footer.text] : [],
 			})
 			.catch((error) => { throw new Error(error); });
