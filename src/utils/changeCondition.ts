@@ -221,7 +221,7 @@ export async function changeCondition(
 	currentRegion?: CurrentRegionType,
 ): Promise<DecreasedStatsData> {
 
-	const energyDecrease = getSmallerNumber(calculateEnergyDecrease(profileData), profileData.energy);
+	const energyDecrease = getSmallerNumber(calculateEnergyDecrease(profileData) + getRandomNumber(5, 1), profileData.energy);
 	const hungerDecrease = calculateHungerDecrease(profileData);
 	const thirstDecrease = calculateThirstDecrease(profileData);
 	const previousRegion = profileData.currentRegion;
