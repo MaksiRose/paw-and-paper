@@ -7,7 +7,8 @@
 		"start": "git pull origin stable && npm update && tsc -p tsconfig.json && pm2 start dist/index.js --name paw --time",
 		"reload": "git pull origin stable && npm update && tsc -p tsconfig.json && pm2 reload paw",
 		"stop": "pm2 stop paw",
-		"logs": "pm2 logs --timestamp --lines 0 paw"
+		"logs": "pm2 logs --timestamp --lines 0 paw",
+		"test": "tsc -p tsconfig.json && node dist/index.js"
 	},
 	"author": "Maksi",
 	"license": "ISC",
