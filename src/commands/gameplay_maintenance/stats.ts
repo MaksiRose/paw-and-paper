@@ -42,7 +42,7 @@ export const command: SlashCommand = {
 		const quidData = userData?.quids[userData?.currentQuid[interaction.guildId] || ''];
 		const profileData = quidData?.profiles[interaction.guildId];
 
-		if (!userData || !quidData || profileData) {
+		if (!userData || !quidData || !profileData) {
 
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
