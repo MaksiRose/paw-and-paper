@@ -165,12 +165,12 @@ export async function executeScavenging(
 					/* Counting the number of profiles that have a rank higher than Youngling, the amount of meat and the amount of materials in the server's inventory. */
 					const highRankProfilesCount = (await userModel
 						.find(
-							(u) => Object.values(u.quids).filter(c => {
-								const p = c.profiles[interaction.guildId];
+							(u) => Object.values(u.quids).filter(q => {
+								const p = q.profiles[interaction.guildId];
 								return p && p.rank !== RankType.Youngling;
 							}).length > 0))
-						.map(u => Object.values(u.quids).filter(c => {
-							const p = c.profiles[interaction.guildId];
+						.map(u => Object.values(u.quids).filter(q => {
+							const p = q.profiles[interaction.guildId];
 							return p && p.rank !== RankType.Youngling;
 						}).length)
 						.reduce((a, b) => a + b, 0);

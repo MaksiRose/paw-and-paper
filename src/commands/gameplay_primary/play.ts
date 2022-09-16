@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatIn
 import { cooldownMap } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
 import { CurrentRegionType, Quid, RankType, ServerSchema, SlashCommand, SpeciesHabitatType, speciesInfo, SpeciesNames, UserSchema } from '../../typedef';
-import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
+import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition, infectWithChance, pickRandomCommonPlant } from '../../utils/changeCondition';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
@@ -115,6 +115,7 @@ export async function executePlaying(
 	let botReply: Message;
 
 	let foundQuest = false;
+	// If the user is a Youngling with a level over 2 that doesn't have a quest and has not unlocked any ranks and they haven't mentioned anyone, with a 1 in 3 chance get a quest
 	if (profileData1.rank === RankType.Youngling
 		&& profileData1.levels > 1
 		&& profileData1.hasQuest === false
@@ -354,6 +355,7 @@ export async function executePlaying(
 
 	await isPassedOut(interaction, userData1, quidData1, profileData1, true);
 
+	await coloredButtonsAdvice(interaction, userData1);
 	await restAdvice(interaction, userData1, profileData1);
 	await drinkAdvice(interaction, userData1, profileData1);
 	await eatAdvice(interaction, userData1, profileData1);

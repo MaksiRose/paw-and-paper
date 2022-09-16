@@ -3,7 +3,7 @@ import { cooldownMap, serverActiveUsersMap } from '../../events/interactionCreat
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
 import { Inventory, RankType, ServerSchema, SlashCommand, SpecialPlantNames, UserSchema } from '../../typedef';
-import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
+import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
@@ -268,6 +268,7 @@ export async function executeAttacking(
 
 		await isPassedOut(interaction, userData, quidData, profileData, true);
 
+		await coloredButtonsAdvice(interaction, userData);
 		await restAdvice(interaction, userData, profileData);
 		await drinkAdvice(interaction, userData, profileData);
 		await eatAdvice(interaction, userData, profileData);

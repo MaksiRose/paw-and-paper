@@ -1,6 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
 import userModel from '../models/userModel';
-import { commonPlantsInfo, CurrentRegionType, Profile, Quid, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo, UserSchema } from '../typedef';
+import { commonPlantsInfo, CurrentRegionType, materialsInfo, Profile, Quid, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo, UserSchema } from '../typedef';
 import { getBiggerNumber, getMapData, getSmallerNumber } from './helperFunctions';
 import { pronoun } from './getPronouns';
 import { getRandomNumber, pullFromWeightedTable } from './randomizers';
@@ -318,4 +318,12 @@ export function pickRandomSpecialPlant() {
 	const randomSpecialPlant = specialPlantsKeys[getRandomNumber(specialPlantsKeys.length)];
 	if (!randomSpecialPlant) { throw new TypeError('randomSpecialPlant is undefined'); }
 	return randomSpecialPlant;
+}
+
+export function pickRandomMaterial() {
+
+	const materialsKeys = Object.keys(materialsInfo) as Array<keyof typeof materialsInfo>;
+	const randomMaterial = materialsKeys[getRandomNumber(materialsKeys.length)];
+	if (!randomMaterial) { throw new TypeError('randomMaterial is undefined'); }
+	return randomMaterial;
 }

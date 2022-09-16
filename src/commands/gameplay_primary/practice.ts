@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
 import { RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
-import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
+import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
@@ -245,6 +245,7 @@ export const command: SlashCommand = {
 
 			await isPassedOut(interaction, userData, quidData, profileData, true);
 
+			await coloredButtonsAdvice(interaction, userData);
 			await restAdvice(interaction, userData, profileData);
 			await drinkAdvice(interaction, userData, profileData);
 			await eatAdvice(interaction, userData, profileData);

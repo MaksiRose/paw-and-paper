@@ -169,8 +169,8 @@ async function sendTravelMessage(
 		embed.setDescription(`*${quidData.name} runs to the food den. Maybe ${pronoun(quidData, 0)} will eat something, or put ${pronoun(quidData, 2)} food onto the pile.*`);
 		const allFoodDenUsersList = (await userModel.find(
 			(u) => {
-				return Object.values(u.quids).filter(c => {
-					const p = c.profiles[interaction.guildId];
+				return Object.values(u.quids).filter(q => {
+					const p = q.profiles[interaction.guildId];
 					return p && p.currentRegion === CurrentRegionType.FoodDen;
 				}).length > 0;
 			},
@@ -201,8 +201,8 @@ async function sendTravelMessage(
 		embed.setDescription(`*${quidData.name} rushes over to the medicine den. Nearby are a mix of packmates, some with illnesses and injuries, others trying to heal them.*`);
 		const allMedicineDenUsersList = (await userModel.find(
 			(u) => {
-				return Object.values(u.quids).filter(c => {
-					const p = c.profiles[interaction.guildId];
+				return Object.values(u.quids).filter(q => {
+					const p = q.profiles[interaction.guildId];
 					return p && p.currentRegion === CurrentRegionType.MedicineDen;
 				}).length > 0;
 			},
@@ -210,8 +210,8 @@ async function sendTravelMessage(
 		if (allMedicineDenUsersList.length > 0) { embed.addFields({ name: 'Packmates at the medicine den:', value: allMedicineDenUsersList.join('\n') }); }
 		const allHealerUsersList = (await userModel.find(
 			(u) => {
-				return Object.values(u.quids).filter(c => {
-					const p = c.profiles[interaction.guildId];
+				return Object.values(u.quids).filter(q => {
+					const p = q.profiles[interaction.guildId];
 					return p && p.rank !== RankType.Youngling;
 				}).length > 0;
 			},
@@ -239,8 +239,8 @@ async function sendTravelMessage(
 		embed.setDescription(`*${quidData.name} walks up to the ruins, carefully stepping over broken bricks. Hopefully, ${pronoun(quidData, 0)} will find someone to talk with.*`);
 		const allRuinsUsersList = (await userModel.find(
 			(u) => {
-				return Object.values(u.quids).filter(c => {
-					const p = c.profiles[interaction.guildId];
+				return Object.values(u.quids).filter(q => {
+					const p = q.profiles[interaction.guildId];
 					return p && p.currentRegion === CurrentRegionType.Ruins;
 				}).length > 0;
 			},
@@ -278,8 +278,8 @@ async function sendTravelMessage(
 		embed.setDescription(`*${quidData.name} approaches the prairie, watching younger packmates testing their strength in playful fights. Maybe the ${quidData.displayedSpecies || quidData.species} could play with them!*`);
 		const allPrairieUsersList = (await userModel.find(
 			(u) => {
-				return Object.values(u.quids).filter(c => {
-					const p = c.profiles[interaction.guildId];
+				return Object.values(u.quids).filter(q => {
+					const p = q.profiles[interaction.guildId];
 					return p && p.currentRegion === CurrentRegionType.Prairie;
 				}).length > 0;
 			},
