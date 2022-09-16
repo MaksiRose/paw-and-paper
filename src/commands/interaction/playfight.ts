@@ -130,9 +130,9 @@ export async function playfightInteractionCollector(
 	cooldownMap.set(userData2.uuid + interaction.guildId, true);
 	delete disableCommandComponent[userData1.uuid + interaction.guildId];
 	delete disableCommandComponent[userData2.uuid + interaction.guildId];
-	const decreasedStatsData1 = await changeCondition(userData1, quidData1, profileData1, 0, CurrentRegionType.Prairie);
+	const decreasedStatsData1 = await changeCondition(userData1, quidData1, profileData1, 0, CurrentRegionType.Prairie, true);
 	profileData1 = decreasedStatsData1.profileData;
-	const decreasedStatsData2 = await changeCondition(userData2, quidData2, profileData2, 0, CurrentRegionType.Prairie);
+	const decreasedStatsData2 = await changeCondition(userData2, quidData2, profileData2, 0, CurrentRegionType.Prairie, true);
 	profileData2 = decreasedStatsData2.profileData;
 
 	/* Gets the chosen game type errors if it doesn't exist */

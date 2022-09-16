@@ -181,9 +181,9 @@ export async function adventureInteractionCollector(
 	delete disableCommandComponent[userData1.uuid + interaction.guildId];
 	delete disableCommandComponent[userData2.uuid + interaction.guildId];
 	const experiencePoints = getRandomNumber(11, 5);
-	const decreasedStatsData1 = await changeCondition(userData1, quidData1, profileData1, experiencePoints, CurrentRegionType.Prairie);
+	const decreasedStatsData1 = await changeCondition(userData1, quidData1, profileData1, experiencePoints, CurrentRegionType.Prairie, true);
 	profileData1 = decreasedStatsData1.profileData;
-	const decreasedStatsData2 = await changeCondition(userData2, quidData2, profileData2, experiencePoints, CurrentRegionType.Prairie);
+	const decreasedStatsData2 = await changeCondition(userData2, quidData2, profileData2, experiencePoints, CurrentRegionType.Prairie, true);
 	profileData2 = decreasedStatsData2.profileData;
 
 	/* Define number of rounds, and the uncovered card amount for both users. */

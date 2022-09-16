@@ -211,6 +211,7 @@ export type DecreasedStatsData = {
  * @param profileData - The profile of the quid that is being changed
  * @param experienceIncrease - number - The amount of experience to add to the profile.
  * @param [currentRegion] - The region the user will be in
+ * @param [secondPlayer] - Whether there is a second player. If true, stats will include who the stat is for
  * @returns DecreasedStatsData
  */
 export async function changeCondition(
@@ -219,6 +220,7 @@ export async function changeCondition(
 	profileData: Profile,
 	experienceIncrease: number,
 	currentRegion?: CurrentRegionType,
+	secondPlayer = false,
 ): Promise<DecreasedStatsData> {
 
 	const energyDecrease = getSmallerNumber(calculateEnergyDecrease(profileData) + getRandomNumber(5, 1), profileData.energy);
@@ -241,11 +243,11 @@ export async function changeCondition(
 	profileData = getMapData(quidData.profiles, profileData.serverId);
 
 	let statsUpdateText = '';
-	if (experienceIncrease > 0) { statsUpdateText += `\n+${experienceIncrease} XP (${profileData.experience}/${profileData.levels * 50}) for ${quidData.name}`; }
-	if (energyDecrease > 0) { statsUpdateText += `\n-${energyDecrease} energy (${profileData.energy}/${profileData.maxEnergy}) for ${quidData.name}`; }
-	if (hungerDecrease > 0) { statsUpdateText += `\n-${hungerDecrease} hunger (${profileData.hunger}/${profileData.maxHunger}) for ${quidData.name}`; }
-	if (thirstDecrease > 0) { statsUpdateText += `\n-${thirstDecrease} thirst (${profileData.thirst}/${profileData.maxThirst}) for ${quidData.name}`; }
-	if (currentRegion && previousRegion !== currentRegion) { statsUpdateText += `\nYou are now at the ${currentRegion}`; }
+	if (experienceIncrease > 0) { statsUpdateText += `\n+${experienceIncrease} XP (${profileData.experience}/${profileData.levels * 50})${secondPlayer ? `for ${quidData.name}` : ''}`; }
+	if (energyDecrease > 0) { statsUpdateText += `\n-${energyDecrease} energy (${profileData.energy}/${profileData.maxEnergy})${secondPlayer ? `for ${quidData.name}` : ''}`; }
+	if (hungerDecrease > 0) { statsUpdateText += `\n-${hungerDecrease} hunger (${profileData.hunger}/${profileData.maxHunger})${secondPlayer ? `for ${quidData.name}` : ''}`; }
+	if (thirstDecrease > 0) { statsUpdateText += `\n-${thirstDecrease} thirst (${profileData.thirst}/${profileData.maxThirst})${secondPlayer ? `for ${quidData.name}` : ''}`; }
+	if (currentRegion && previousRegion !== currentRegion) { statsUpdateText += `\n${secondPlayer ? `${quidData.name} is` : 'You are'} now at the ${currentRegion}`; }
 
 	return { statsUpdateText, ...await decreaseHealth(userData, quidData, profileData) };
 }
