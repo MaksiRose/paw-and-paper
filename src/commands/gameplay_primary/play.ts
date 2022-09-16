@@ -218,7 +218,7 @@ export async function executePlaying(
 			embed.setDescription(`*${quidData1.name} trails behind ${quidData2?.name ?? 'an Elderly'}'s rear end, preparing for a play attack. Right when the ${quidData1.displayedSpecies || quidData1.species} launches forward, ${quidData2?.name ?? 'the Elderly'} dashes sideways, followed by a precise jump right on top of ${quidData1.name}.* "I got you, ${quidData1.name}!" *${!quidData2 ? 'they say' : pronounAndPlural(quidData2, 0, 'say')}. Both creatures bounce away from each other, laughing.*`);
 			embed.setImage('https://i.pinimg.com/originals/7e/e4/01/7ee4017f0152c7b7c573a3dfe2c6673f.gif');
 		}
-		embed.setFooter({ text: changedCondition.statsUpdateText });
+		if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 
 		/* If user 2 had a cold, infect user 1 with a 30% chance. */
 		if (quidData2 && profileData2) { infectedEmbed = await infectWithChance(userData1, quidData1, profileData1, quidData2, profileData2); }
@@ -228,7 +228,7 @@ export async function executePlaying(
 		&& pullFromWeightedTable({ 0: 90, 1: 10 + profileData1.sapling.waterCycles }) === 0) {
 
 		embed.setDescription(`*${quidData1.name} bounces around camp, watching the busy hustle and blurs of hunters and healers at work. ${upperCasePronounAndPlural(quidData1, 0, 'splashes', 'splash')} into the stream that splits the pack in half, chasing the minnows with ${pronoun(quidData1, 2)} eyes.*`);
-		embed.setFooter({ text: changedCondition.statsUpdateText });
+		if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 	}
 	// if the user is not a youngling, and either the user is also not an apprentice or with a 90% chance, get hurt
 	else if (profileData1.rank !== RankType.Youngling
@@ -288,7 +288,7 @@ export async function executePlaying(
 
 		/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 		playComponent = plantGame.correctButtonOverwrite();
-		embed.setFooter({ text: changedCondition.statsUpdateText });
+		if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 
 		await botReply
 			.awaitMessageComponent({

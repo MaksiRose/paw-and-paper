@@ -225,7 +225,7 @@ export const command: SlashCommand = {
 
 				embed.setDescription(`*The two packmates fight for a while, before ${quidData.name} finally gives up.* "The training was good, but there is room for improvement. Please continue practicing," *the Elderly says.*`);
 			}
-			embed.setFooter({ text: changedCondition.statsUpdateText });
+			if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 
 			const levelUpEmbed = (await checkLevelUp(interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
 

@@ -225,7 +225,7 @@ export async function executeScavenging(
 					else {
 
 						embed.setDescription(`*Although ${quidData.name} searches everything very thoroughly, there doesn't seem to be anything in the area that can be used at the moment. Probably everything has already been found. The ${quidData.displayedSpecies || quidData.species} decides to look again later.*`);
-						embed.setFooter({ text: changedCondition.statsUpdateText });
+						if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 					}
 
 					await sendFinalMessage(int, userData, serverData);
@@ -263,7 +263,7 @@ export async function executeScavenging(
 				if (isHurt == 0) {
 
 					embed.setDescription(`*After ${quidData.name} gets over the initial shock, the ${quidData.displayedSpecies || quidData.species} quickly manages to free ${pronoun(quidData, 4)} from the net. That was close!*`);
-					embed.setFooter({ text: changedCondition.statsUpdateText });
+					if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 				}
 				else {
 

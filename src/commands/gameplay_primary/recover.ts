@@ -268,8 +268,8 @@ export const command: SlashCommand = {
 						embed = new EmbedBuilder()
 							.setColor(quidData.color)
 							.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
-							.setDescription('✅'.repeat(choosingEmoji - 1) + '❌\n\n' + `*${quidData.name} makes every effort to take full advantage of the grotto to heal ${pronoun(quidData, 2)} own injuries. But ${pronounAndPlural(quidData, 0, 'just doesn\'t', 'just don\'t')} seem to get better. The ${quidData.displayedSpecies || quidData.species} may have to try again...*`)
-							.setFooter({ text: changedCondition.statsUpdateText });
+							.setDescription('✅'.repeat(choosingEmoji - 1) + '❌\n\n' + `*${quidData.name} makes every effort to take full advantage of the grotto to heal ${pronoun(quidData, 2)} own injuries. But ${pronounAndPlural(quidData, 0, 'just doesn\'t', 'just don\'t')} seem to get better. The ${quidData.displayedSpecies || quidData.species} may have to try again...*`);
+						if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 					}
 					else if (emojisToClick.length < 12) {
 

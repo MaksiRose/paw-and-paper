@@ -351,7 +351,7 @@ export async function executeExploring(
 		else {
 
 			embed.setDescription(`*${quidData.name} trots back into camp, mouth empty, and luck run out. Maybe ${pronoun(quidData, 0)} will go exploring again later, bring something that time!*`);
-			embed.setFooter({ text: changedCondition.statsUpdateText });
+			if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 		}
 	}
 	// If the user gets the right chance, find a plant
@@ -407,7 +407,7 @@ export async function executeExploring(
 		if (int === undefined) {
 
 			embed.setDescription(`*After thinking about it for a moment, ${quidData.name} decides ${pronounAndPlural(quidData, 0, 'is', 'are')} too tired to focus on picking up the plant. It's better to leave it there in case another pack member comes along.*`);
-			embed.setFooter({ text: changedCondition.statsUpdateText });
+			if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 		}
 		else {
 
@@ -516,7 +516,7 @@ export async function executeExploring(
 						embed.setDescription(`*${quidData.name} tries really hard to pick up the ${foundItem} that ${pronoun(quidData, 0)} discovered among large algae. But as the ${quidData.displayedSpecies || quidData.species} tries to pick it up, it just breaks into little pieces.*`);
 					}
 					else { throw new Error('quidData species habitat not found'); }
-					embed.setFooter({ text: changedCondition.statsUpdateText });
+					if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 				}
 				else {
 
@@ -675,7 +675,7 @@ export async function executeExploring(
 				embed.setDescription(`*${quidData.name} looks at the ${opponentSpecies}, which is still unaware of ${pronoun(quidData, 1)} watching through the kelp. Subconsciously, the ${quidData.displayedSpecies || quidData.species} starts swimming back and fourth, still unsure whether to attack. The ${opponentSpecies}'s head turns in a flash to eye the suddenly moving kelp before it frantically swims away. Looks like this hunt was unsuccessful.*`);
 			}
 			else { throw new Error('quidData species habitat not found'); }
-			embed.setFooter({ text: changedCondition.statsUpdateText });
+			if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 		}
 		else {
 
@@ -788,7 +788,7 @@ export async function executeExploring(
 						embed.setDescription(`*${quidData.name} and the ${opponentSpecies} glance at one another as they swim in opposite directions from the kelp, now cloudy from the stirred up dirt. The ${quidData.displayedSpecies || quidData.species} swims back to camp, ${pronoun(quidData, 2)} mouth empty as before.*`);
 					}
 					else { throw new Error('quidData species habitat not found'); }
-					embed.setFooter({ text: changedCondition.statsUpdateText });
+					if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 				}
 				else if (playerLevel > opponentLevel) {
 
