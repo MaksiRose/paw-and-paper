@@ -345,7 +345,7 @@ export async function executeExploring(
 				},
 			);
 
-			embed.setDescription(`*${quidData.name} is looking around for things around ${pronoun(quidData, 1)} but there doesn't appear to be anything useful. The ${quidData.displayedSpecies || quidData.species} decides to grab a ${foundMaterial} as to not go back with nothing to showy.*`);
+			embed.setDescription(`*${quidData.name} is looking around for things around ${pronoun(quidData, 1)} but there doesn't appear to be anything useful. The ${quidData.displayedSpecies || quidData.species} decides to grab a ${foundMaterial} as to not go back with nothing to show.*`);
 			embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundMaterial}` });
 		}
 		else {
