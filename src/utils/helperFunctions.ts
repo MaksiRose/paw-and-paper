@@ -213,7 +213,7 @@ export type WidenValues<T> = {
 	};
 };
 export function widenValues<T>(obj: T): WidenValues<T> { return obj as any; }
-export function unsafeKeys<T extends Record<string, unknown>>(obj: T): KeyOfUnion<T>[] { return Object.keys(obj) as KeyOfUnion<T>[]; }
+export function unsafeKeys<T extends Record<PropertyKey, any>>(obj: T): KeyOfUnion<T>[] { return Object.keys(obj) as KeyOfUnion<T>[]; }
 
 export type ValueOf<T> = T[keyof T];
 export function valueInObject<T extends Record<PropertyKey, any>, V extends ValueOf<T>>(
