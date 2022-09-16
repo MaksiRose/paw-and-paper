@@ -2,6 +2,8 @@ import { generateId } from 'crystalid';
 import { APIMessage } from 'discord-api-types/v9';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, MessageComponentInteraction, MessageOptions, ModalMessageModalSubmitInteraction, ModalSubmitInteraction, ReplyMessageOptions, WebhookEditMessageOptions } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
+import { cooldownMap } from '../events/interactionCreate';
+import userModel from '../models/userModel';
 import { ErrorStacks } from '../typedef';
 const { error_color } = require('../../config.json');
 
@@ -95,6 +97,13 @@ export async function sendErrorMessage(
 	interaction: CommandInteraction | MessageComponentInteraction | ModalSubmitInteraction,
 	error: any,
 ): Promise<any> {
+
+	try {
+
+		const userData = await userModel.findOne(u => u.userId.includes(interaction.user.id));
+		cooldownMap.set(userData.uuid + interaction.guildId, false);
+	}
+	catch (newError) { console.error(newError); }
 
 	if (interaction.type === InteractionType.ApplicationCommand) {
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to execute \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
