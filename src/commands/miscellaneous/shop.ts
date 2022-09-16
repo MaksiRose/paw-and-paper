@@ -24,7 +24,7 @@ export const command: SlashCommand = {
 
 		if (!isInGuild(interaction)) { return; }
 		if (!hasName(interaction, userData)) { return; }
-		if (!serverData) { throw new Error('serverData is null'); }
+		if (serverData === null) { throw new Error('serverData is null'); }
 
 		const shopKindPage = getShopInfo(serverData).xpRolesPages > 0 ? 0 : getShopInfo(serverData).rankRolesPages > 0 ? 1 : getShopInfo(serverData).levelRolesPages > 0 ? 2 : null;
 		const nestedPage = 0;
@@ -55,8 +55,8 @@ export async function shopInteractionCollector(
 ): Promise<void> {
 
 	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
-	if (!userData) { throw new Error('userData is null'); }
-	if (!serverData) { throw new Error('serverData is null'); }
+	if (userData === null) { throw new Error('userData is null'); }
+	if (serverData === null) { throw new Error('serverData is null'); }
 	const selectOptionId = interaction.values[0];
 
 	if (selectOptionId && selectOptionId.startsWith('shop_nextpage_')) {
@@ -73,7 +73,7 @@ export async function shopInteractionCollector(
 
 		const roleId = selectOptionId.split('-')[1];
 		const buyItem = serverData.shop.find((shopRole) => shopRole.roleId === roleId);
-		if (!buyItem) { throw new Error('roleId could not be found in server shop'); }
+		if (buyItem === undefined) { throw new Error('roleId is undefined or could not be found in server shop'); }
 
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		const profileData = getMapData(quidData.profiles, interaction.guildId);
@@ -83,7 +83,7 @@ export async function shopInteractionCollector(
 			try {
 
 				const userRole = profileData.roles.find(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience');
-				if (!userRole) { throw new Error('userRole not found'); }
+				if (userRole === undefined) { throw new Error('userRole is undefined'); }
 
 				userData = await userModel.findOneAndUpdate(
 					(u => u.uuid === userData?.uuid),

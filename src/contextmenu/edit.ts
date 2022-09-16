@@ -65,7 +65,7 @@ export async function sendEditMessageModalResponse(
 	channel is a DM, it will throw an error. If the channel is a guild channel, it will get the
 	webhook. If the webhook doesn't exist, it will create one. */
 	const webhookChannel = (interaction.channel.isThread() || false) ? interaction.channel.parent : interaction.channel;
-	if (!webhookChannel) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
+	if (webhookChannel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
 	if (webhookChannel.type === ChannelType.DM) { throw new Error('Webhook can\'t be edited, channel is DMChannel.'); }
 	const webhook = (await webhookChannel
 		.fetchWebhooks()

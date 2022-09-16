@@ -12,7 +12,7 @@ export default async function settingsInteractionCollector(
 
 	if (interaction.customId.includes('reminders')) {
 
-		if (!userData) { throw new TypeError('userData is null'); }
+		if (userData === null) { throw new TypeError('userData is null'); }
 		if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
 
 		const isOn = interaction.customId.includes('on');

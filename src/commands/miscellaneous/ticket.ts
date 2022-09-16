@@ -228,8 +228,8 @@ export async function sendRespondToTicketModalResponse(
 	const userOrChannelId = args[0];
 	const ticketId = args[1];
 	const fromAdmin = args[2] === 'true';
-	if (!userOrChannelId) { throw new TypeError('userOrChannelId is undefined'); }
-	if (!ticketId) { throw new TypeError('ticketId is undefined'); }
+	if (userOrChannelId === undefined) { throw new TypeError('userOrChannelId is undefined'); }
+	if (ticketId === undefined) { throw new TypeError('ticketId is undefined'); }
 
 	const messageText = interaction.fields.getTextInputValue('ticket_textinput');
 

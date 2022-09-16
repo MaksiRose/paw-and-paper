@@ -88,7 +88,7 @@ export async function speciesInteractionCollector(
 
 	if (interaction.isButton() && interaction.customId.includes('displayedspeciesmodal')) {
 
-		if (!userData) { throw new Error('userData is null'); }
+		if (userData === null) { throw new Error('userData is null'); }
 		const quidId = interaction.customId.split('_')[2] || '';
 		const quidData = getMapData(userData.quids, quidId);
 

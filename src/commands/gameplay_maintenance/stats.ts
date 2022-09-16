@@ -36,7 +36,7 @@ export const command: SlashCommand = {
 		}
 		else if (!hasCompletedAccount(interaction, userData)) { return; }
 
-		if (!creatorUUID) { throw new TypeError('creatorUUID is undefined'); }
+		if (creatorUUID === undefined) { throw new TypeError('creatorUUID is undefined'); }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData = userData?.quids[userData?.currentQuid[interaction.guildId] || ''];
@@ -138,9 +138,9 @@ export async function statsInteractionCollector(
 	if (interaction.customId.includes('refresh')) {
 
 		const quidId = interaction.customId.split('_')[2];
-		if (!quidId) { throw new TypeError('quidId is undefined'); }
+		if (quidId === undefined) { throw new TypeError('quidId is undefined'); }
 		const creatorUUID = interaction.customId.split('_')[3];
-		if (!creatorUUID) { throw new TypeError('creatorUUID is undefined'); }
+		if (creatorUUID === undefined) { throw new TypeError('creatorUUID is undefined'); }
 
 		const userData1 = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
 		await sendStatsMessage(interaction, userData1, quidId, creatorUUID);
@@ -149,8 +149,8 @@ export async function statsInteractionCollector(
 
 	if (interaction.customId.includes('store')) {
 
-		if (!userData) { throw new TypeError('userData is null'); }
-		if (!serverData) { throw new TypeError('serverData is null'); }
+		if (userData === null) { throw new TypeError('userData is null'); }
+		if (serverData === null) { throw new TypeError('serverData is null'); }
 
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		const profileData = getMapData(quidData.profiles, interaction.guildId);

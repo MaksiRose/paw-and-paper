@@ -30,7 +30,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
-		if (!serverData) { throw new Error('serverData is null'); }
+		if (serverData === null) { throw new Error('serverData is null'); }
 		if (!hasCompletedAccount(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
@@ -133,9 +133,9 @@ export async function storeInteractionCollector(
 	serverData: ServerSchema | null,
 ): Promise<void> {
 
-	if (!userData) { throw new TypeError('userData is null.'); }
-	if (!serverData) { throw new TypeError('serverData is null.'); }
 	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
+	if (userData === null) { throw new TypeError('userData is null.'); }
+	if (serverData === null) { throw new TypeError('serverData is null.'); }
 
 	/* Gets the current active quid and the server profile from the account */
 	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
@@ -146,7 +146,7 @@ export async function storeInteractionCollector(
 		if (interaction.customId === 'store_options') {
 
 			const chosenFood = interaction.values[0] as CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | SpeciesNames | MaterialNames | undefined;
-			if (!chosenFood) { throw new TypeError('chosenFood is undefined'); }
+			if (chosenFood === undefined) { throw new TypeError('chosenFood is undefined'); }
 			let maximumAmount = 0;
 
 			const inventory_ = widenValues(profileData.inventory);
@@ -185,7 +185,7 @@ export async function storeInteractionCollector(
 		if (interaction.customId === 'store_amount') {
 
 			const chosenFood = interaction.values[0]?.split('_')[0] as CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | SpeciesNames | MaterialNames | undefined;
-			if (!chosenFood) { throw new TypeError('chosenFood is undefined'); }
+			if (chosenFood === undefined) { throw new TypeError('chosenFood is undefined'); }
 			const chosenAmount = Number(interaction.values[0]?.split('_')[1]);
 			if (isNaN(chosenAmount)) { throw new TypeError('chosenAmount is NaN'); }
 

@@ -38,7 +38,7 @@ export const command: SlashCommand = {
 
 		const type = interaction.options.getString('type');
 		const id = interaction.options.getString('id');
-		if (!type || !id) { throw new TypeError('type or id is undefined'); }
+		if (type === null || id === null) { throw new TypeError('type or id is null'); }
 
 		const bannedList = JSON.parse(readFileSync('./database/bannedList.json', 'utf-8')) as BanList;
 

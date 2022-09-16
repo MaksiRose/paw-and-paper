@@ -47,7 +47,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
-		if (!serverData) { throw new Error('serverData is null'); }
+		if (serverData === null) { throw new Error('serverData is null'); }
 		if (!hasCompletedAccount(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
@@ -113,8 +113,8 @@ export async function repairInteractionCollector(
 ): Promise<void> {
 
 	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
-	if (!serverData) { throw new TypeError('serverData is null'); }
-	if (!userData) { throw new TypeError('userData is null'); }
+	if (serverData === null) { throw new TypeError('serverData is null'); }
+	if (userData === null) { throw new TypeError('userData is null'); }
 
 	/* Gets the current active quid and the server profile from the account */
 	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
@@ -137,10 +137,10 @@ export async function repairInteractionCollector(
 		if (chosenDen !== 'sleepingDens' && chosenDen !== 'medicineDen' && chosenDen !== 'foodDen') { throw new Error('chosenDen is not a den'); }
 
 		const chosenItem = interaction.values[0] as MaterialNames | undefined;
-		if (!chosenItem) { throw new TypeError('chosenItem is undefined'); }
+		if (chosenItem === undefined) { throw new TypeError('chosenItem is undefined'); }
 
 		const repairKind = materialsInfo[chosenItem].reinforcesStructure ? 'structure' : materialsInfo[chosenItem].improvesBedding ? 'bedding' : materialsInfo[chosenItem].thickensWalls ? 'thickness' : materialsInfo[chosenItem].removesOverhang ? 'evenness' : undefined;
-		if (!repairKind) { throw new TypeError('repairKind is undefined'); }
+		if (repairKind === undefined) { throw new TypeError('repairKind is undefined'); }
 
 		const repairAmount = getSmallerNumber(getRandomNumber(5, 6), 100 - serverData.dens[chosenDen][repairKind]);
 

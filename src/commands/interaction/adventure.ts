@@ -53,7 +53,7 @@ export const command: SlashCommand = {
 
 		/* Gets the mentioned user. */
 		const mentionedUser = interaction.options.getUser('user');
-		if (!mentionedUser) { throw new TypeError('mentionedUser is undefined'); }
+		if (mentionedUser === null) { throw new TypeError('mentionedUser is null1'); }
 
 		/* Checks whether the mentioned user is associated with the account. */
 		if (userData1.userId.includes(mentionedUser.id)) {
@@ -121,9 +121,9 @@ export async function adventureInteractionCollector(
 ): Promise<void> {
 
 	if (!interaction.customId.includes('confirm')) { return; }
-	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild.'); }
-	if (!interaction.channel) { throw new Error('Interaction channel is missing.'); }
-	if (!serverData) { throw new TypeError('serverData is null'); }
+	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
+	if (interaction.channel === null) { throw new Error('Interaction channel is null'); }
+	if (serverData === null) { throw new TypeError('serverData is null'); }
 
 	/* Define the empty field emoji and the emoji options for the cards */
 	const coveredField = '⬛';
@@ -134,7 +134,7 @@ export async function adventureInteractionCollector(
 	for (let i = 0; i < 10; i++) {
 
 		const randomMemoryCardOption = allMemoryCardOptions.splice(getRandomNumber(allMemoryCardOptions.length), 1)[0];
-		if (!randomMemoryCardOption) { throw new TypeError('randomMemoryCardOption is undefined'); }
+		if (randomMemoryCardOption === undefined) { throw new TypeError('randomMemoryCardOption is undefined'); }
 		chosenMemoryCardOptions.push(randomMemoryCardOption, randomMemoryCardOption);
 	}
 
@@ -155,7 +155,7 @@ export async function adventureInteractionCollector(
 			);
 
 			const randomMemoryCardOption = chosenMemoryCardOptions.splice(getRandomNumber(chosenMemoryCardOptions.length), 1)[0];
-			if (!randomMemoryCardOption) { throw new TypeError('randomMemoryCardOption is undefined'); }
+			if (randomMemoryCardOption === undefined) { throw new TypeError('randomMemoryCardOption is undefined'); }
 			emojisInComponentArray[column]?.push(randomMemoryCardOption);
 		}
 	}
@@ -163,14 +163,14 @@ export async function adventureInteractionCollector(
 
 	/* Gets the current active quid and the server profile from the account */
 	const userId1 = interaction.customId.split('_')[3];
-	if (!userId1) { throw new TypeError('userId1 is undefined'); }
+	if (userId1 === undefined) { throw new TypeError('userId1 is undefined'); }
 	const userData1 = await userModel.findOne(u => u.userId.includes(userId1));
 	const quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
 	let profileData1 = getMapData(quidData1.profiles, interaction.guildId);
 
 	/* Gets the current active quid and the server profile from the partners account */
 	const userId2 = interaction.customId.split('_')[2];
-	if (!userId2) { throw new TypeError('userId2 is undefined'); }
+	if (userId2 === undefined) { throw new TypeError('userId2 is undefined'); }
 	const userData2 = await userModel.findOne(u => u.userId.includes(userId2));
 	const quidData2 = getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId));
 	let profileData2 = getMapData(quidData2.profiles, interaction.guildId);

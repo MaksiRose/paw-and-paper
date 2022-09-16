@@ -35,9 +35,9 @@ export const command: ContextMenuCommand = {
 		/* This is checking if the channel is a thread, if it is, it will get the parent channel. If the
 		channel is a DM, it will throw an error. If the channel is a guild channel, it will get the
 		webhook. If the webhook doesn't exist, it will create one. */
-		if (!interaction.channel) { throw new Error('Interaction channel cannot be found.'); }
+		if (interaction.channel === null) { throw new Error('Interaction channel is null.'); }
 		const webhookChannel = interaction.channel.isThread() ? interaction.channel.parent : interaction.channel;
-		if (!webhookChannel) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
+		if (webhookChannel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
 		if (webhookChannel.type === ChannelType.DM) { throw new Error('Webhook can\'t be edited, channel is DMChannel.'); }
 		const webhook = (await webhookChannel
 			.fetchWebhooks()

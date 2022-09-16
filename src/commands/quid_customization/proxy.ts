@@ -66,7 +66,7 @@ export async function proxyInteractionCollector(
 	serverData: ServerSchema | null,
 ): Promise<void> {
 
-	if (!userData) { throw new Error('userData is null'); }
+	if (userData === null) { throw new Error('userData is null'); }
 
 	/* If the user pressed the button to learn more about the set subcommand, explain it with a button that opens a modal. */
 	if (interaction.isButton() && interaction.customId.startsWith('proxy_set_learnmore')) {
@@ -92,7 +92,6 @@ export async function proxyInteractionCollector(
 
 		const quidId = interaction.customId.split('_')[3] || '';
 		const quidData = getMapData(userData.quids, quidId);
-		if (!quidData) { throw new Error('quidData is null'); }
 
 		interaction.showModal(new ModalBuilder()
 			.setCustomId(`proxy_set_${quidData._id}`)
@@ -203,7 +202,7 @@ export async function sendEditProxyModalResponse(
 ): Promise<void> {
 
 	/* Check if user data exists, and get quidData, the chosen prefix and the chosen suffix */
-	if (!userData) { throw new Error('userData is null'); }
+	if (userData === null) { throw new Error('userData is null'); }
 	const quidId = interaction.customId.split('_')[2] || '';
 	const quidData = getMapData(userData.quids, quidId);
 	const chosenPrefix = interaction.fields.getTextInputValue('proxy_textinput_startsWith');

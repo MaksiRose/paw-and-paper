@@ -76,7 +76,7 @@ export async function sendMessage(
 ): Promise<void> {
 
 	const webhookChannel = (channel && channel.isThread()) ? channel.parent : channel;
-	if (!webhookChannel || !channel) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
+	if (webhookChannel === null || channel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
 	const webhook = (await webhookChannel
 		.fetchWebhooks()
 		.catch(async (error) => {

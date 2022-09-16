@@ -31,7 +31,7 @@ export function createPlantGame(
 
 	const thisRoundEmojiIndex = getRandomNumber(plantEmojis.findable.length, 0, lastRoundEmojiIndex);
 	const emojiToFind = plantEmojis.findable[thisRoundEmojiIndex]; // emojiToFind can be undefined, which is unintended
-	if (!emojiToFind) { throw new TypeError('emojiToFind is undefined'); }
+	if (emojiToFind === undefined) { throw new TypeError('emojiToFind is undefined'); }
 
 	const neutralEmojis = [
 		...plantEmojis.findable,
@@ -65,7 +65,7 @@ export function createPlantGame(
 			else {
 
 				const neutralEmoji = neutralEmojis.splice(getRandomNumber(neutralEmojis.length))[0];
-				if (!neutralEmoji) { throw new TypeError('neutralEmoji is undefined'); }
+				if (neutralEmoji === undefined) { throw new TypeError('neutralEmoji is undefined'); }
 				emojisInButton.push(neutralEmoji);
 			}
 		}
@@ -123,7 +123,7 @@ export function createFightGame(
 ): FightGame {
 
 	const cycleKind = cycleKinds[getRandomNumber(cycleKinds.length, 0, lastRoundCycleIndex)]; // cycleKind can be undefined, which is unintended
-	if (!cycleKind) { throw new TypeError('cycleKind is undefined'); }
+	if (cycleKind === undefined) { throw new TypeError('cycleKind is undefined'); }
 
 	const fightComponent = new ActionRowBuilder<ButtonBuilder>()
 		.setComponents([

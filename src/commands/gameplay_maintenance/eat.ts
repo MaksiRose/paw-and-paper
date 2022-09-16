@@ -55,7 +55,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
-		if (!serverData) { throw new Error('serverData is null'); }
+		if (serverData === null) { throw new Error('serverData is null'); }
 		if (!hasCompletedAccount(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
@@ -156,11 +156,11 @@ export async function sendEatMessage(
 			plantType = 'specialPlants';
 
 			const pickIncreasedStatType = (['health', 'energy', 'hunger', 'thirst'] as const)[getRandomNumber(4)];
-			if (!pickIncreasedStatType) { throw new TypeError('pickIncreasedStatType is undefined'); }
+			if (pickIncreasedStatType === undefined) { throw new TypeError('pickIncreasedStatType is undefined'); }
 			increasedStatType = pickIncreasedStatType;
 
 			const pickIncreasedMaxStatType = ([StatIncreaseType.MaxHealth, StatIncreaseType.MaxEnergy, StatIncreaseType.MaxHunger, StatIncreaseType.MaxThirst] as const)[(['health', 'energy', 'hunger', 'thirst'] as const).findIndex(v => v === increasedStatType)];
-			if (!pickIncreasedMaxStatType) { throw new TypeError('pickIncreasedMaxStatType is undefined'); }
+			if (pickIncreasedMaxStatType === undefined) { throw new TypeError('pickIncreasedMaxStatType is undefined'); }
 			increasedMaxStatType = pickIncreasedMaxStatType;
 
 			await userModel.findOneAndUpdate(

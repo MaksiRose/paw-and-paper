@@ -64,7 +64,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
-		if (!serverData) { throw new Error('serverData is null'); }
+		if (serverData === null) { throw new Error('serverData is null'); }
 		if (!hasCompletedAccount(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
@@ -115,13 +115,13 @@ export async function healInteractionCollector(
 ): Promise<void> {
 
 	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
-	if (!serverData) { throw new TypeError('serverData is null'); }
-	if (!userData) { throw new TypeError('userData is null'); }
+	if (serverData === null) { throw new TypeError('serverData is null'); }
+	if (userData === null) { throw new TypeError('userData is null'); }
 
 	if (interaction.isSelectMenu() && interaction.customId === 'heal_quids_options') {
 
 		const value = interaction.values[0];
-		if (!value) { throw new TypeError('value is undefined'); }
+		if (value === undefined) { throw new TypeError('value is undefined'); }
 
 		if (value.startsWith('newpage_')) {
 
@@ -142,7 +142,7 @@ export async function healInteractionCollector(
 		if (isNaN(inventoryPage)) { throw new TypeError('inventoryPage is NaN'); }
 		if (inventoryPage !== 1 && inventoryPage !== 2) { throw new TypeError('inventoryPage is not 1 or 2'); }
 		const quidId = interaction.customId.split('_')[2];
-		if (!quidId) { throw new TypeError('quidId is undefined'); }
+		if (quidId === undefined) { throw new TypeError('quidId is undefined'); }
 
 		const quidToHeal = getMapData((await userModel.findOne(u => Object.keys(u.quids).includes(quidId))).quids, quidId);
 		await getHealResponse(interaction, userData, serverData, null, [], 0, quidToHeal, inventoryPage);
@@ -150,7 +150,7 @@ export async function healInteractionCollector(
 	else if (interaction.isSelectMenu() && interaction.customId.startsWith('heal_inventory_options_')) {
 
 		const quidId = interaction.customId.replace('heal_inventory_options_', '');
-		if (!quidId) { throw new TypeError('quidId is undefined'); }
+		if (quidId === undefined) { throw new TypeError('quidId is undefined'); }
 
 		const quidToHeal = getMapData((await userModel.findOne(u => Object.keys(u.quids).includes(quidId))).quids, quidId);
 

@@ -34,7 +34,7 @@ export async function friendshipsInteractionCollector(
 	userData: UserSchema | null,
 ): Promise<void> {
 
-	if (!userData) { throw new TypeError('userData is null.'); }
+	if (userData === null) { throw new TypeError('userData is null.'); }
 
 	/* Get the page number of the friendship list.  */
 	let page = Number(interaction.customId.split('_')[2] ?? 0);

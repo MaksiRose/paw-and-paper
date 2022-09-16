@@ -101,7 +101,7 @@ async function getProfilesTexts(
 
 	if (!guildCache.has(guild.id)) { guildCache.set(guild.id, new Map()); }
 	const guildMemberCache = guildCache.get(guild.id);
-	if (!guildMemberCache) { throw new TypeError('guildMemberCache is undefined'); }
+	if (guildMemberCache === undefined) { throw new TypeError('guildMemberCache is undefined'); }
 
 	const allRankUsersList = await userModel.find(
 		u => {

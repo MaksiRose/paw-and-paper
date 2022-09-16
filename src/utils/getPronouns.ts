@@ -19,7 +19,7 @@ export function pronoun(
 	}
 
 	const returnString = possiblePronouns[getRandomNumber(possiblePronouns.length)];
-	if (!returnString) { throw new TypeError('returnString is not a string'); }
+	if (returnString === undefined) { throw new TypeError('returnString is undefined'); }
 	return returnString;
 }
 

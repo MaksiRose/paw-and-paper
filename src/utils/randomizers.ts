@@ -59,7 +59,7 @@ export function pullFromWeightedTable(
 	}
 
 	const returnNumber = table[getRandomNumber(table.length)];
-	if (!returnNumber) { throw new TypeError('returnNumber is not a number'); }
+	if (returnNumber === undefined) { throw new TypeError('returnNumber is undefined'); }
 	return returnNumber;
 }
 

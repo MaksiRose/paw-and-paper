@@ -54,7 +54,7 @@ export const command: SlashCommand = {
 
 		/* Gets the mentioned user. */
 		const mentionedUser = interaction.options.getUser('user');
-		if (!mentionedUser) { throw new TypeError('mentionedUser is null'); }
+		if (mentionedUser === null) { throw new TypeError('mentionedUser is null'); }
 
 		/* Checks whether the mentioned user is associated with the account. */
 		if (userData1.userId.includes(mentionedUser.id)) {
@@ -77,7 +77,7 @@ export const command: SlashCommand = {
 
 		/* Gets the selected game type. */
 		const gameType = interaction.options.getString('gametype');
-		if (!gameType) { throw new TypeError('gameType is null'); }
+		if (gameType === null) { throw new TypeError('gameType is null'); }
 
 		/* Sending a message asking the other player if they want to play, with a button to start the adventure. */
 		const botReply = await respond(interaction, {
@@ -108,19 +108,19 @@ export async function playfightInteractionCollector(
 
 	if (!interaction.customId.includes('confirm')) { return; }
 	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild.'); }
-	if (!interaction.channel) { throw new Error('Interaction channel is missing.'); }
-	if (!serverData) { throw new TypeError('serverData is null'); }
+	if (interaction.channel === null) { throw new Error('Interaction channel is null'); }
+	if (serverData === null) { throw new TypeError('serverData is null'); }
 
 	/* Gets the current active quid and the server profile from the account */
 	const userId1 = interaction.customId.split('_')[4];
-	if (!userId1) { throw new TypeError('userId1 is undefined'); }
+	if (userId1 === undefined) { throw new TypeError('userId1 is undefined'); }
 	const userData1 = await userModel.findOne(u => u.userId.includes(userId1));
 	const quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
 	let profileData1 = getMapData(quidData1.profiles, interaction.guildId);
 
 	/* Gets the current active quid and the server profile from the partners account */
 	const userId2 = interaction.customId.split('_')[3];
-	if (!userId2) { throw new TypeError('userId2 is undefined'); }
+	if (userId2 === undefined) { throw new TypeError('userId2 is undefined'); }
 	const userData2 = await userModel.findOne(u => u.userId.includes(userId2));
 	const quidData2 = getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId));
 	let profileData2 = getMapData(quidData2.profiles, interaction.guildId);
@@ -137,7 +137,7 @@ export async function playfightInteractionCollector(
 
 	/* Gets the chosen game type errors if it doesn't exist */
 	const gameType = interaction.customId.split('_')[2]; // connectfour or tictactoe
-	if (!gameType) { throw new TypeError('gameType is undefined'); }
+	if (gameType === undefined) { throw new TypeError('gameType is undefined'); }
 
 	const emptyField = gameType === 'tictactoe' ? '◻️' : '⚫';
 	const player1Field = gameType === 'tictactoe' ? '⭕' : '🟡';

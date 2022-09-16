@@ -39,7 +39,7 @@ export async function executeScavenging(
 
 	/* This ensures that the user is in a guild and has a completed account. */
 	if (!isInGuild(interaction)) { return; }
-	if (!serverData) { throw new Error('serverData is null'); }
+	if (serverData === null) { throw new Error('serverData is null'); }
 	if (!hasCompletedAccount(interaction, userData)) { return; }
 
 	/* Gets the current active quid and the server profile from the account */

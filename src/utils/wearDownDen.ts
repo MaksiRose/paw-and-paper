@@ -15,9 +15,9 @@ export default async function wearDownDen(
 	const denName = (['sleepingDens', 'foodDen', 'medicineDen'] as const)[
 		[CurrentRegionType.SleepingDens, CurrentRegionType.FoodDen, CurrentRegionType.MedicineDen].indexOf(denKind)
 	];
-	if (!denName) { throw new TypeError('denName is undefined'); }
+	if (denName === undefined) { throw new TypeError('denName is undefined'); }
 	const denStatkind = (['structure', 'bedding', 'thickness', 'evenness'] as const)[getRandomNumber(4)];
-	if (!denStatkind) { throw new TypeError('denStatkind is undefined'); }
+	if (denStatkind === undefined) { throw new TypeError('denStatkind is undefined'); }
 
 	const denWeardownPoints = getSmallerNumber(serverData.dens[denName][denStatkind], getRandomNumber(5, 1));
 

@@ -35,7 +35,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
-		if (!serverData) { throw new TypeError('serverData is null'); }
+		if (serverData === null) { throw new TypeError('serverData is null'); }
 		if (!hasCompletedAccount(interaction, userData1)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */

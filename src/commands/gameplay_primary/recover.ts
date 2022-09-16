@@ -31,7 +31,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
-		if (!serverData) { throw new Error('serverData is null'); }
+		if (serverData === null) { throw new Error('serverData is null'); }
 		if (!hasCompletedAccount(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
@@ -144,7 +144,7 @@ export const command: SlashCommand = {
 			for (let j = 0; j < 3; j++) {
 
 				const chosenEmoji = recoverFieldOptions.splice(getRandomNumber(recoverFieldOptions.length), 1)[0];
-				if (!chosenEmoji) { throw new TypeError('chosenEmoji is undefined'); }
+				if (chosenEmoji === undefined) { throw new TypeError('chosenEmoji is undefined'); }
 
 				componentArray[i]?.addComponents(new ButtonBuilder()
 					.setCustomId(`recover_${chosenEmoji}`)
@@ -178,7 +178,7 @@ export const command: SlashCommand = {
 		): Promise<void> {
 
 			const randomEmoji = possibleEmojis[getRandomNumber(possibleEmojis.length)];
-			if (!randomEmoji) { throw new TypeError('randomEmoji is undefined'); }
+			if (randomEmoji === undefined) { throw new TypeError('randomEmoji is undefined'); }
 
 			for (let index = 0; index < 3; index++) { emojisToClick.push(randomEmoji); }
 			let displayingEmoji = 0;

@@ -71,7 +71,8 @@ export async function skillsInteractionCollector(
 	userData: UserSchema | null,
 ): Promise<void> {
 
-	if (!interaction.inCachedGuild() || !serverData) { throw new Error('Interaction is not in cached guild'); }
+	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
+	if (serverData === null) { throw new TypeError('serverData is null'); }
 
 	/* Make interaction.values[0] its own variable so its existence can be checked in an if-statement */
 	const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
@@ -135,7 +136,7 @@ export async function skillsInteractionCollector(
 	if (interaction.isButton() && (interaction.customId === 'skills_add_personal_modal' || interaction.customId === 'skills_add_global_modal')) {
 
 		const category = interaction.customId.split('_')[2];
-		if (!category) { throw new TypeError('category is undefined'); }
+		if (category === undefined) { throw new TypeError('category is undefined'); }
 
 		await interaction.showModal(new ModalBuilder()
 			.setCustomId(`skills_add_${category}`)
@@ -158,8 +159,8 @@ export async function skillsInteractionCollector(
 
 		const type = interaction.customId.split('_')[1] as 'edit' | 'remove' | undefined;
 		const category = interaction.customId.split('_')[2] as 'global' | 'personal' | undefined;
-		if (!type) { throw new TypeError('type is undefined'); }
-		if (!category) { throw new TypeError('category is undefined'); }
+		if (type === undefined) { throw new TypeError('type is undefined'); }
+		if (category === undefined) { throw new TypeError('category is undefined'); }
 
 		await update(interaction, {
 			components: [
@@ -196,7 +197,7 @@ export async function skillsInteractionCollector(
 
 			let page = Number(selectOptionId.split('_')[4] ?? 0) + 1;
 			const category = selectOptionId.split('_')[2] as 'global' | 'personal' | undefined;
-			if (!category) { throw new TypeError('category is undefined'); }
+			if (category === undefined) { throw new TypeError('category is undefined'); }
 			const totalPages = Math.ceil(((category === 'global' ? (serverData?.skills || []) : Object.keys(profileData?.skills.personal || {})).length) / 24);
 			if (page >= totalPages) { page = 0; }
 
@@ -214,7 +215,7 @@ export async function skillsInteractionCollector(
 
 			let page = Number(selectOptionId.split('_')[4] ?? 0) + 1;
 			const category = selectOptionId.split('_')[2] as 'global' | 'personal' | undefined;
-			if (!category) { throw new TypeError('category is undefined'); }
+			if (category === undefined) { throw new TypeError('category is undefined'); }
 			const totalPages = Math.ceil(((category === 'global' ? (serverData?.skills || []) : Object.keys(profileData?.skills.personal || {})).length) / 24);
 			if (page >= totalPages) { page = 0; }
 
@@ -236,9 +237,9 @@ export async function skillsInteractionCollector(
 		const type = selectOptionId.split('_')[1] as 'modify' | 'edit' | undefined;
 		const category = selectOptionId.split('_')[2] as 'personal' | 'global' | undefined;
 		const skillName = selectOptionId.split('_')[3];
-		if (!type) { throw new TypeError('type is undefined'); }
-		if (!category) { throw new TypeError('category is undefined'); }
-		if (!skillName) { throw new TypeError('skillName is undefined'); }
+		if (type === undefined) { throw new TypeError('type is undefined'); }
+		if (category === undefined) { throw new TypeError('category is undefined'); }
+		if (skillName === undefined) { throw new TypeError('skillName is undefined'); }
 
 		await interaction.showModal(new ModalBuilder()
 			.setCustomId(`skills_${type}_${category}_${skillName}`)
@@ -263,8 +264,8 @@ export async function skillsInteractionCollector(
 
 		const category = selectOptionId.split('_')[2] as 'global' | 'personal' | undefined;
 		const skillName = selectOptionId.split('_')[3];
-		if (!category) { throw new TypeError('category is undefined'); }
-		if (!skillName) { throw new TypeError('skillName is undefined'); }
+		if (category === undefined) { throw new TypeError('category is undefined'); }
+		if (skillName === undefined) { throw new TypeError('skillName is undefined'); }
 
 		if (category === 'personal' && userData) {
 
@@ -332,7 +333,8 @@ export async function sendEditSkillsModalResponse(
 	userData: UserSchema | null,
 ): Promise<void> {
 
-	if (!interaction.inCachedGuild() || !serverData) { throw new Error('Interaction is not in cached guild'); }
+	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
+	if (serverData === null) { throw new TypeError('serverData is null'); }
 
 	/* Define the users quid and profile based on their userData. */
 	let quidData = userData?.quids[userData?.currentQuid[interaction.guildId] || ''];
@@ -341,9 +343,9 @@ export async function sendEditSkillsModalResponse(
 	const type = interaction.customId.split('_')[1] as 'modify' | 'edit' | 'add' | undefined;
 	const category = interaction.customId.split('_')[2] as 'personal' | 'global' | undefined;
 	const skillName = interaction.customId.split('_')[3];
-	if (!type) { throw new TypeError('type is undefined'); }
-	if (!category) { throw new TypeError('category is undefined'); }
-	if (type !== 'add' && !skillName) { throw new TypeError('skillName is undefined'); }
+	if (type === undefined) { throw new TypeError('type is undefined'); }
+	if (category === undefined) { throw new TypeError('category is undefined'); }
+	if (type !== 'add' && skillName === undefined) { throw new TypeError('skillName is undefined'); }
 
 	if (type === 'add') {
 

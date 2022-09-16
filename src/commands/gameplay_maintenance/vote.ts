@@ -75,7 +75,7 @@ export async function voteInteractionCollector(
 ): Promise<void> {
 
 	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
-	if (!userData) { throw new Error('userData is null'); }
+	if (userData === null) { throw new Error('userData is null'); }
 
 	const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8')) as VoteList;
 	const twelveHoursInMs = 43_200_000;

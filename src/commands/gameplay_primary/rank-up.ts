@@ -24,7 +24,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
-		if (!serverData) { throw new Error('serverData is null'); }
+		if (serverData === null) { throw new Error('serverData is null'); }
 		if (!hasCompletedAccount(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
@@ -129,8 +129,8 @@ export async function rankupInteractionCollector(
 ): Promise<void> {
 
 	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
-	if (!serverData) { throw new TypeError('serverData is null'); }
-	if (!userData) { throw new TypeError('userData is null'); }
+	if (serverData === null) { throw new TypeError('serverData is null'); }
+	if (userData === null) { throw new TypeError('userData is null'); }
 
 	const rank = interaction.customId.replace('rank_', '');
 	if (rank !== RankType.Hunter && rank !== RankType.Healer) { throw new Error('rank is not of RankType Hunter or Healer'); }

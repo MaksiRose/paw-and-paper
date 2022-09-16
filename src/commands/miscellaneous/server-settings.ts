@@ -28,7 +28,7 @@ export const command: SlashCommand = {
 		// That way you can basically go through the command as if it was a folder
 
 		/* It's checking if the message is in a guild, and if it is, it's checking if the guild is in the database. If it's not, it throws an error. Else, it's responding with the original message */
-		if (!serverData || !interaction.inCachedGuild()) { throw new Error('Message is not in configured guild'); }
+		if (serverData === null || !interaction.inCachedGuild()) { throw new Error('Message is not in configured guild'); }
 
 		await respond(interaction, getOriginalMessage(interaction, serverData), true)
 			.catch((error) => {
@@ -395,10 +395,10 @@ export async function serversettingsInteractionCollector(
 		else {
 
 			const channelId = selectOptionId.split('_')[2];
-			if (!channelId) { throw new Error('Missing channelId'); }
+			if (channelId === undefined) { throw new Error('channelId is undefined'); }
 
 			const newsChannel = await interaction.client.channels.fetch(update_channel_id);
-			if (!newsChannel || newsChannel.type !== ChannelType.GuildNews) { throw new Error('News Channel is missing or not of type GuildNews.'); }
+			if (newsChannel === null || newsChannel.type !== ChannelType.GuildNews) { throw new Error('News Channel is missing or not of type GuildNews.'); }
 
 			await newsChannel.addFollower(channelId);
 
@@ -446,7 +446,7 @@ export async function serversettingsInteractionCollector(
 		else {
 
 			const channelIdOrOff = selectOptionId.split('_')[2];
-			if (!channelIdOrOff) { throw new Error('Missing channelId'); }
+			if (channelIdOrOff === undefined) { throw new Error('channelId is undefined'); }
 
 			if (channelIdOrOff === 'off') {
 
@@ -613,7 +613,6 @@ async function getNewRoleMenu(
 	page: number,
 ): Promise<SelectMenuBuilder> {
 
-	if (!interaction.guild) { throw new Error('Guild object is null'); }
 	let roles = await interaction.guild.roles.fetch();
 	roles = roles.filter(role => role.id !== role.guild.id && !serverData.shop.some(shopItem => shopItem.roleId === role.id));
 

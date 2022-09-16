@@ -47,7 +47,7 @@ export async function deleteInteractionCollector(
 	userData: UserSchema | null,
 ): Promise<void> {
 
-	if (!userData) { throw new Error('userData is null'); }
+	if (userData === null) { throw new Error('userData is null'); }
 	const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
 
 	/* Creating a new page for the user to select an account to delete. */

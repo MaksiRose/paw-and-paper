@@ -67,7 +67,7 @@ export async function executeExploring(
 
 	/* This ensures that the user is in a guild and has a completed account. */
 	if (!isInGuild(interaction)) { return; }
-	if (!serverData) { throw new Error('serverData is null'); }
+	if (serverData === null) { throw new Error('serverData is null'); }
 	if (!hasCompletedAccount(interaction, userData)) { return; }
 
 	/* Gets the current active quid and the server profile from the account */
@@ -613,7 +613,7 @@ export async function executeExploring(
 
 		const opponentSpecies = opponentsArray[getRandomNumber(opponentsArray.length, 0)];
 		let playerLevel = profileData.levels;
-		if (!opponentSpecies) { throw new TypeError('opponentSpecies is undefined'); }
+		if (opponentSpecies === undefined) { throw new TypeError('opponentSpecies is undefined'); }
 
 		if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Warm) {
 
