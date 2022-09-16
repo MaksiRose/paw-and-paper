@@ -328,7 +328,7 @@ export function startAttack(
 				.setColor(/** @type {`#${string}`} */(default_color))
 				.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined })
 				.setDescription(`*The packmates get ready as ${serverAttackInfo.idleHumans} humans run over the borders. Now it is up to them to defend their land.*`)
-				.setFooter({ text: 'You have 5 minutes to defeat all the humans. Type \'rp attack\' to attack one.' })],
+				.setFooter({ text: 'You have 5 minutes to defeat all the humans. Type \'/attack\' to attack one.' })],
 		}, false)
 			.catch((error) => { throw new Error(error); });
 

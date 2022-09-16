@@ -331,7 +331,7 @@ export async function executeExploring(
 
 			embed.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Discovery.png');
 			embed.setDescription(`*${quidData.name} is looking around for useful things around ${pronoun(quidData, 1)} when ${pronounAndPlural(quidData, 0, 'discover')} the sapling of a ginkgo tree. The ${quidData.displayedSpecies || quidData.species} remembers that they bring good luck and health. Surely it can't hurt to bring it back to the pack!*`);
-			embed.setFooter({ text: changedCondition.statsUpdateText + '\nWater the ginkgo sapling with \'rp water\'.' });
+			embed.setFooter({ text: changedCondition.statsUpdateText + '\nWater the ginkgo sapling with \'/water\'.' });
 		}
 		else if (serverMaterialsCount < 36) {
 
