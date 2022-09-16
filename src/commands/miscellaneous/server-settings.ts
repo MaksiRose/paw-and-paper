@@ -357,8 +357,7 @@ export async function serversettingsInteractionCollector(
 
 				if (reason !== 'back') {
 
-					await interaction.message
-						.edit(await getShopMessage(interaction, serverData, 0))
+					await update(interaction, await getShopMessage(interaction, serverData, 0))
 						.catch((error) => {
 							if (error.httpStatus !== 404) { console.error(error); }
 						});
@@ -410,8 +409,7 @@ export async function serversettingsInteractionCollector(
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 
-			await interaction.message
-				.edit(getOriginalMessage(interaction, serverData))
+			await update(interaction, getOriginalMessage(interaction, serverData))
 				.catch((error) => {
 					if (error.httpStatus !== 404) { console.error(error); }
 				});
@@ -483,8 +481,7 @@ export async function serversettingsInteractionCollector(
 					});
 			}
 
-			await interaction.message
-				.edit(getOriginalMessage(interaction, serverData))
+			await update(interaction, getOriginalMessage(interaction, serverData))
 				.catch((error) => {
 					if (error.httpStatus !== 404) { console.error(error); }
 				});
@@ -537,8 +534,7 @@ export async function serversettingsInteractionCollector(
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 
-			await interaction.message
-				.edit(await getProxyingMessage(interaction, serverData, 0))
+			await update(interaction, await getProxyingMessage(interaction, serverData, 0))
 				.catch((error) => {
 					if (error.httpStatus !== 404) { console.error(error); }
 				});

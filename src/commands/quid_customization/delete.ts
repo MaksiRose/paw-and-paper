@@ -282,18 +282,16 @@ export async function deleteInteractionCollector(
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 
-			await interaction.message
-				.edit({
-					components: disableAllComponents(interaction.message.components),
-				})
+			await update(interaction, {
+				components: disableAllComponents(interaction.message.components),
+			})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 			return;
 		}
 
-		await interaction.message
-			.edit(sendOriginalMessage())
+		await update(interaction, sendOriginalMessage())
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});

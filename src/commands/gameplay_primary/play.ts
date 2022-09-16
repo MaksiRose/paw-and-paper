@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
 import { CurrentRegionType, Quid, RankType, ServerSchema, SlashCommand, SpeciesHabitatType, speciesInfo, SpeciesNames, UserSchema } from '../../typedef';
@@ -8,7 +8,7 @@ import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, getSmallerNumber, respond } from '../../utils/helperFunctions';
+import { getMapData, getSmallerNumber, respond, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
@@ -113,6 +113,8 @@ export async function executePlaying(
 	let infectedEmbed: EmbedBuilder | null = null;
 	let playComponent: ActionRowBuilder<ButtonBuilder> | null = null;
 	let botReply: Message;
+	/** This is used in case the user is fighting or finding a plant, in order to respond to the interaction */
+	let buttonInteraction: ButtonInteraction<'cached'> | null = null;
 
 	let foundQuest = false;
 	// If the user is a Youngling with a level over 2 that doesn't have a quest and has not unlocked any ranks and they haven't mentioned anyone, with a 1 in 3 chance get a quest
@@ -183,9 +185,10 @@ export async function executePlaying(
 			/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 			playComponent = fightGame.correctButtonOverwrite();
 
-			await botReply
+			await (botReply as Message<true>)
 				.awaitMessageComponent({
 					filter: i => i.user.id === interaction.user.id,
+					componentType: ComponentType.Button,
 					time: responseTime,
 				})
 				.then(async i => {
@@ -202,7 +205,7 @@ export async function executePlaying(
 
 						whoWinsChance = 0;
 					}
-					return i;
+					buttonInteraction = i;
 				});
 
 			playComponent.setComponents(playComponent.components.map(component => component.setDisabled(true)));
@@ -290,9 +293,10 @@ export async function executePlaying(
 		playComponent = plantGame.correctButtonOverwrite();
 		if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 
-		await botReply
+		await (botReply as Message<true>)
 			.awaitMessageComponent({
 				filter: i => i.user.id === interaction.user.id,
+				componentType: ComponentType.Button,
 				time: responseTime,
 			})
 			.then(async i => {
@@ -318,6 +322,7 @@ export async function executePlaying(
 
 					embed.setDescription(descriptionText.substring(0, descriptionText.length - 1) + ` But as the ${quidData1.displayedSpecies || quidData1.species} tries to pick it up, it just breaks into little pieces.*`);
 				}
+				buttonInteraction = i;
 			});
 
 		playComponent.setComponents(playComponent.components.map(c => c.setDisabled(true)));
@@ -328,12 +333,20 @@ export async function executePlaying(
 
 	if (foundQuest) {
 
+		await userModel.findOneAndUpdate(
+			u => u.uuid === userData1!.uuid,
+			(u) => {
+				const p = getMapData(getMapData(u.quids, quidData1._id).profiles, interaction.guildId);
+				p.hasQuest = true;
+			},
+		);
+
 		await sendQuestMessage(interaction, userData1, quidData1, profileData1, serverData, messageContent, embedArray, [...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
 			...(levelUpEmbed ? [levelUpEmbed] : [])], changedCondition.statsUpdateText);
 	}
 	else {
 
-		await respond(interaction, {
+		await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })({
 			content: messageContent,
 			embeds: [
 				...embedArray,
@@ -350,7 +363,8 @@ export async function executePlaying(
 						.setLabel('Play again')
 						.setStyle(ButtonStyle.Primary)),
 			],
-		}, true);
+		})
+			.catch((error) => { throw new Error(error); });
 	}
 
 	await isPassedOut(interaction, userData1, quidData1, profileData1, true);

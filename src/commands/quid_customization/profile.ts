@@ -247,9 +247,10 @@ export async function profileInteractionCollector(
 				userData = await userModel.findOneAndUpdate(
 					u => u.userId.includes(userId),
 					(u) => {
-						let p = u.quids[_id]?.profiles[interaction.guildId];
+						const q = getMapData(u.quids, _id);
+						const p = q.profiles[interaction.guildId];
 						if (!p) {
-							p = {
+							q.profiles[interaction.guildId] = {
 								serverId: interaction.guildId,
 								rank: RankType.Youngling,
 								levels: 1,

@@ -5,8 +5,9 @@ import userModel from '../../models/userModel';
 import { CommonPlantNames, commonPlantsInfo, CurrentRegionType, PlantEdibilityType, Profile, Quid, RarePlantNames, rarePlantsInfo, ServerSchema, SlashCommand, SpecialPlantNames, specialPlantsInfo, SpeciesDietType, speciesInfo, SpeciesNames, StatIncreaseType, UncommonPlantNames, uncommonPlantsInfo, UserSchema } from '../../typedef';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
+import { disableAllComponents } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getBiggerNumber, getMapData, getSmallerNumber, respond, unsafeKeys, widenValues } from '../../utils/helperFunctions';
+import { getBiggerNumber, getMapData, getSmallerNumber, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
 import wearDownDen from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -112,10 +113,11 @@ export async function sendEatMessage(
 		if (taggedQuidData) {
 
 			embed.setDescription(`*${quidData.name} looks down at ${taggedQuidData.name} as ${pronounAndPlural(taggedQuidData, 0, 'nom')} on the ${taggedQuidData.displayedSpecies || taggedQuidData.species}'s leg.* "No eating packmates here!" *${taggedQuidData.name} chuckled, shaking off ${quidData.name}.*`);
-			await respond(interaction, {
+			await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 				content: messageContent,
 				embeds: [...embedArray, embed],
-			}, true)
+				components: interaction.isSelectMenu() ? disableAllComponents(interaction.message.components) : [],
+			})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
@@ -282,10 +284,11 @@ export async function sendEatMessage(
 	if (previousRegion !== CurrentRegionType.FoodDen) { footerText += '\nYou are now at the food den'; }
 	embed.setFooter({ text: `${footerText}\n\n${await wearDownDen(serverData, CurrentRegionType.FoodDen)}\n-1 ${chosenFood} for ${interaction.guild.name}` });
 
-	await respond(interaction, {
+	await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 		content: messageContent,
 		embeds: [...embedArray, embed],
-	}, true)
+		components: interaction.isSelectMenu() ? disableAllComponents(interaction.message.components) : [],
+	})
 		.catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
@@ -317,10 +320,11 @@ async function sendNoItemMessage(
 ): Promise<void> {
 
 	embed.setDescription(`*${quidData.name} searches for a ${chosenFood} all over the pack, but couldn't find one...*`);
-	await respond(interaction, {
+	await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 		content: messageContent,
 		embeds: [...embedArray, embed],
-	}, true)
+		components: interaction.isSelectMenu() ? disableAllComponents(interaction.message.components) : [],
+	})
 		.catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }
 		});

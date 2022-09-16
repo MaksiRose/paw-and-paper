@@ -145,8 +145,8 @@ export async function executeScavenging(
 			if (int.customId.includes('board_')) {
 
 				/* Getting the position of the button that the user clicked. */
-				const verticalBoardPosition = Number(int.customId.split('-')[2]);
-				const horizontalBoardPosition = Number(int.customId.split('-')[3]);
+				const verticalBoardPosition = Number(int.customId.split('_')[2]);
+				const horizontalBoardPosition = Number(int.customId.split('_')[3]);
 				const buttonInBoardPosition = componentArray[verticalBoardPosition]?.components[horizontalBoardPosition];
 
 				/* Set the emoji of the button to the emoji in the gamePositionsArray. It will then disable the button. */
@@ -161,6 +161,9 @@ export async function executeScavenging(
 
 				/* Checking if the user has clicked on the correct field. If they have, it will stop the collector and if they haven't, it will edit the message with the new components. */
 				if (emoji === filledFieldArray[0]) {
+
+					const playingField = componentArray.map(c => c.components.map(b => b.data.emoji?.name ?? unclickedField).join('')).join('\n');
+					componentArray = [];
 
 					/* Counting the number of profiles that have a rank higher than Youngling, the amount of meat and the amount of materials in the server's inventory. */
 					const highRankProfilesCount = (await userModel
@@ -191,7 +194,7 @@ export async function executeScavenging(
 							return;
 						}
 
-						embed.setDescription(`*After a while, ${quidData.name} can indeed find something useful: On the floor is a ${foundCarcass} that seems to have recently lost a fight fatally. Although the animal has a few injuries, it can still serve as great nourishment. What a success!*`);
+						embed.setDescription(`*After a while, ${quidData.name} can indeed find something useful: On the floor is a ${foundCarcass} that seems to have recently lost a fight fatally. Although the animal has a few injuries, it can still serve as great nourishment. What a success!*\n${playingField}`);
 						embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundCarcass}` });
 
 						userData = await userModel.findOneAndUpdate(
@@ -211,7 +214,7 @@ export async function executeScavenging(
 							return;
 						}
 
-						embed.setDescription(`*${quidData.name} searches in vain for edible remains of deceased animals. But the expedition is not without success: the ${quidData.displayedSpecies || quidData.species} sees a ${foundMaterial}, which can serve as a great material for repairs and work in the pack. ${upperCasePronoun(quidData, 0)} happily takes it home with ${pronoun(quidData, 1)}.*`);
+						embed.setDescription(`*${quidData.name} searches in vain for edible remains of deceased animals. But the expedition is not without success: the ${quidData.displayedSpecies || quidData.species} sees a ${foundMaterial}, which can serve as a great material for repairs and work in the pack. ${upperCasePronoun(quidData, 0)} happily takes it home with ${pronoun(quidData, 1)}.*\n${playingField}`);
 						embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundMaterial}` });
 
 						userData = await userModel.findOneAndUpdate(
@@ -224,7 +227,7 @@ export async function executeScavenging(
 					}
 					else {
 
-						embed.setDescription(`*Although ${quidData.name} searches everything very thoroughly, there doesn't seem to be anything in the area that can be used at the moment. Probably everything has already been found. The ${quidData.displayedSpecies || quidData.species} decides to look again later.*`);
+						embed.setDescription(`*Although ${quidData.name} searches everything very thoroughly, there doesn't seem to be anything in the area that can be used at the moment. Probably everything has already been found. The ${quidData.displayedSpecies || quidData.species} decides to look again later.*\n${playingField}`);
 						if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 					}
 
@@ -356,7 +359,6 @@ export async function executeScavenging(
 	) {
 
 		const trapActionRow = new ActionRowBuilder<ButtonBuilder>();
-		componentArray = [];
 		const correctButton = getRandomNumber(5);
 		const humanTrapIncorrectEmojis = ['🌱', '🌿', '☘️', '🍀', '🍃', '💐', '🌷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🍇', '🍊', '🫒', '🌰', '🏕️', '🌲', '🌳', '🍂', '🍁', '🍄', '🐝', '🪱', '🐛', '🦋', '🐌', '🐞', '🐁', '🦔', '🌵', '🦂', '🏜️', '🎍', '🪴', '🎋', '🪨', '🌾', '🐍', '🦎', '🐫', '🐙', '🦑', '🦀', '🐡', '🐠', '🐟', '🌊', '🐚', '🪵', '🌴'];
 
@@ -375,6 +377,7 @@ export async function executeScavenging(
 				.setStyle(ButtonStyle.Secondary));
 		}
 
+		componentArray = [trapActionRow];
 		botReply = await (async (messageOptions) => int instanceof MessageComponentInteraction ? await update(int, messageOptions) : await respond(int, messageOptions, true))({
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData.color)

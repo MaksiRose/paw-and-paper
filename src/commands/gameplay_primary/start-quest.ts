@@ -234,6 +234,7 @@ async function startQuest(
 		serverData: ServerSchema,
 		cycleIndex: number,
 		previousQuestComponents?: ActionRowBuilder<ButtonBuilder>,
+		newInteraction?: ButtonInteraction<'cached'>,
 	): Promise<void> {
 
 		const buttonTextOrColor = getRandomNumber(2) === 0 ? 'color' : 'text';
@@ -282,7 +283,7 @@ async function startQuest(
 		embed.setDescription(`${drawProgressbar(hitValue, hitEmoji)}\n${drawProgressbar(missValue, missEmoji)}`);
 		embed.setFooter({ text: `Click the ${(buttonTextOrColor === 'color' ? `${buttonColorKind} button` : `button labeled as ${buttonColorKind}`)}.` });
 
-		botReply = await update(interaction, {
+		botReply = await update(newInteraction ?? interaction, {
 			content: messageContent,
 			embeds: [...embedArray, embed, ...afterEmbedArray],
 			components: [...previousQuestComponents ? [previousQuestComponents] : [], questComponents],
@@ -292,24 +293,25 @@ async function startQuest(
 				return botReply;
 			});
 
-		const { customId } = await botReply
+		newInteraction = await (botReply as Message<true>)
 			.awaitMessageComponent({
 				filter: i => i.user.id === interaction.user.id,
+				componentType: ComponentType.Button,
 				time: 5_000,
 			})
-			.catch(() => { return { customId: '' }; });
+			.catch(() => { return undefined; });
 
 		const winChance = generateWinChance(profileData.levels, profileData.rank === RankType.Elderly ? 35 : (profileData.rank === RankType.Hunter || profileData.rank === RankType.Healer) ? 20 : profileData.rank === RankType.Apprentice ? 10 : 2);
 		const randomNumber = getRandomNumber(100);
 
-		if (customId !== '') {
+		if (newInteraction !== undefined) {
 
 			/* The button the user chose will get the "radio button"-emoji. */
 			questComponents.setComponents(questComponents.components.map(component => {
 
 				const data = component.toJSON();
 
-				if (data.style !== ButtonStyle.Link && data.custom_id === customId) { component.setEmoji('🔘'); }
+				if (data.style !== ButtonStyle.Link && data.custom_id === newInteraction!.customId) { component.setEmoji('🔘'); }
 				return component;
 			}));
 
@@ -326,7 +328,7 @@ async function startQuest(
 			}
 		}
 
-		if (customId === '' || !customId.includes(`${buttonColorKind}${buttonTextOrColor}`) || randomNumber > winChance) { missValue += 1; }
+		if (newInteraction === undefined || !newInteraction.customId.includes(`${buttonColorKind}${buttonTextOrColor}`) || randomNumber > winChance) { missValue += 1; }
 		else { hitValue += 1; }
 
 		questComponents = questComponents.setComponents(questComponents.components.map(component => {
@@ -440,7 +442,7 @@ async function startQuest(
 			}
 			else { throw new Error('No rank type found'); }
 
-			embed.setFooter({ text: (embed.data.footer?.text ?? '') + 'Type "/rank" to rank up.' });
+			embed.setFooter({ text: (embed.data.footer?.text ?? '') + 'Type "/rank-up" to rank up.' });
 
 			botReply = await update(interaction, {
 				content: messageContent,
@@ -520,7 +522,7 @@ async function startQuest(
 		}
 		else {
 
-			await interactionCollector(interaction, userData, serverData, cycleIndex += 1, questComponents);
+			await interactionCollector(interaction, userData, serverData, cycleIndex += 1, questComponents, newInteraction);
 		}
 		return;
 	}

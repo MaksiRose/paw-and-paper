@@ -64,7 +64,7 @@ export function createPlantGame(
 			}
 			else {
 
-				const neutralEmoji = neutralEmojis.splice(getRandomNumber(neutralEmojis.length))[0];
+				const neutralEmoji = neutralEmojis.splice(getRandomNumber(neutralEmojis.length), 1)[0];
 				if (neutralEmoji === undefined) { throw new TypeError('neutralEmoji is undefined'); }
 				emojisInButton.push(neutralEmoji);
 			}
@@ -152,7 +152,9 @@ export function createFightGame(
 
 			const data = component.toJSON();
 
-			if (data.style !== ButtonStyle.Link && data.custom_id.includes(cycleKind) && !data.custom_id.includes(plantEmojis.toAvoid)) { component.setStyle(ButtonStyle.Primary); }
+			if (data.style !== ButtonStyle.Link && data.custom_id.includes(
+				cycleKind === 'defend' ? 'attack' : cycleKind === 'dodge' ? 'defend' : 'dodge',
+			)) { component.setStyle(ButtonStyle.Primary); }
 			return component;
 		})),
 		chosenRightButtonOverwrite: (customId) => fightComponent.setComponents(fightComponent.components.map(component => {

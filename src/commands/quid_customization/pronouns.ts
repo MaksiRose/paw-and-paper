@@ -1,5 +1,5 @@
-import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, Message, ModalBuilder, ModalSubmitInteraction, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, ModalBuilder, ModalMessageModalSubmitInteraction, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { Quid, SlashCommand, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
@@ -97,29 +97,26 @@ export async function pronounsInteractionCollector(
 							.setMinLength(quidData.pronounSets.length > 1 ? 0 : 4)
 							// Max Length is either maxModalLength or, if that would exceed the max field value length, make it what is left for a field value length.
 							.setMaxLength((profilePronounFieldLengthLeft < maxModalLength) ? profilePronounFieldLengthLeft : maxModalLength)
+							.setRequired(quidData.pronounSets.length <= 0)
 							.setValue(pronounSet.join('/')),
 						]),
 				),
 			);
 
-		if (interaction.message instanceof Message) {
-
-			await interaction.message
-				.edit({
-					components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData, quidData)])],
-				})
-				.catch((error) => { throw new Error(error); });
-		}
+		await update(interaction, {
+			components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData, quidData)])],
+		})
+			.catch((error) => { throw new Error(error); });
 		return;
 	}
 }
 
 export async function sendEditPronounsModalResponse(
-	interaction: ModalSubmitInteraction,
+	interaction: ModalMessageModalSubmitInteraction,
 ): Promise<void> {
 
-	const userData = await userModel.findOne(u => u.uuid === interaction.customId.split('_')[1]);
-	const quidData = getMapData(userData.quids, interaction.customId.split('_')[2] || '');
+	let userData = await userModel.findOne(u => u.uuid === interaction.customId.split('_')[1]);
+	let quidData = getMapData(userData.quids, interaction.customId.split('_')[2] || '');
 
 	/* Getting the array position of the pronoun that is being edited, the pronouns that are being set, whether
 	the pronouns are being deleted, and whether the pronouns are being set to none. */
@@ -171,25 +168,30 @@ export async function sendEditPronounsModalResponse(
 	}
 
 	/* Checking if the pronouns are not being deleted, and if the pronouns are not being set to none, and if so, it is checking if the length of each pronoun is between 1 quid and the maximum pronoun length long. If it is not, it will send an error message. */
-	!willBeDeleted && !isNone && chosenPronouns.forEach(async (pronoun) => {
-		if (pronoun.length < 1 || pronoun.length > maxPronounLength) {
+	if (!willBeDeleted && !isNone) {
 
-			await respond(interaction, {
-				embeds: [new EmbedBuilder()
-					.setColor(error_color)
-					.setDescription(`Each pronoun must be between 1 and ${maxPronounLength} characters long.`)],
-				ephemeral: true,
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
-			return;
+
+		for (const pronoun of chosenPronouns) {
+
+			if (pronoun.length < 1 || pronoun.length > maxPronounLength) {
+
+				await respond(interaction, {
+					embeds: [new EmbedBuilder()
+						.setColor(error_color)
+						.setDescription(`Each pronoun must be between 1 and ${maxPronounLength} characters long.`)],
+					ephemeral: true,
+				}, false)
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
+					});
+				return;
+			}
 		}
-	});
+	}
 
-
+	const oldPronounSet = quidData.pronounSets[pronounNumber];
 	/* Add the pronouns, send a success message and update the original one. */
-	await userModel.findOneAndUpdate(
+	userData = await userModel.findOneAndUpdate(
 		u => u.uuid === userData?.uuid,
 		(u) => {
 			const q = getMapData(u.quids, quidData._id);
@@ -201,26 +203,22 @@ export async function sendEditPronounsModalResponse(
 			}
 		},
 	);
+	quidData = getMapData(userData.quids, quidData._id);
 
-	const addedOrEditedTo = isNaN(pronounNumber) ? 'added pronoun' : `edited pronoun from ${quidData.pronounSets[pronounNumber]?.join('/')} to`;
+	await update(interaction, {
+		components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData, quidData)])],
+	})
+		.catch((error) => { throw new Error(error); });
 
+	const addedOrEditedTo = isNaN(pronounNumber) ? 'added pronoun' : `edited pronoun from ${oldPronounSet?.join('/')} to`;
 	await respond(interaction, {
 		embeds: [new EmbedBuilder()
 			.setColor(quidData.color)
 			.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
-			.setTitle(`Successfully ${willBeDeleted ? `deleted pronoun ${quidData.pronounSets[pronounNumber]?.join('/')}` : `${addedOrEditedTo} ${chosenPronouns.join('/')}`}!`)],
+			.setTitle(`Successfully ${willBeDeleted ? `deleted pronoun ${oldPronounSet?.join('/')}` : `${addedOrEditedTo} ${chosenPronouns.join('/')}`}!`)],
 	}, false)
 		.catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
-
-	if (interaction.message) {
-
-		await interaction.message
-			.edit({ components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData, quidData)])] })
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
-	}
 	return;
 }

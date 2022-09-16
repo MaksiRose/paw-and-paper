@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatIn
 import userModel from '../../models/userModel';
 import { Inventory, RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
-import { getMapData, respond } from '../../utils/helperFunctions';
+import { getMapData, respond, update } from '../../utils/helperFunctions';
 import { sendStoreMessage } from './store';
 const { error_color } = require('../../../config.json');
 
@@ -112,19 +112,17 @@ async function sendStatsMessage(
 
 	const canRankUp = profileData.unlockedRanks > { [RankType.Youngling]: 0, [RankType.Apprentice]: 1, [RankType.Hunter]: 2, [RankType.Healer]: 2, [RankType.Elderly]: 3 }[profileData.rank];
 
-	await respond(interaction, {
+	await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 		content: `🚩 Levels: \`${profileData.levels}\` - 🏷️ Rank: ${profileData.rank}\n` +
 			`✨ XP: \`${profileData.experience}/${profileData.levels * 50}\` - 🗺️ Region: ${profileData.currentRegion}\n` +
 			`❤️ HP: \`${profileData.health}/${profileData.maxHealth}\` - ⚡ Energy: \`${profileData.energy}/${profileData.maxEnergy}\`\n` +
 			`🍗 Hunger: \`${profileData.hunger}/${profileData.maxHunger}\` - 🥤 Thirst: \`${profileData.thirst}/${profileData.maxThirst}\`` +
-			(injuryText || `\n🩹 Injuries/Illnesses: ${injuryText.slice(2)}`) +
+			(injuryText ? `\n🩹 Injuries/Illnesses: ${injuryText.slice(2)}` : injuryText) +
 			(profileData.sapling.exists === false ? '' : `\n🌱 Ginkgo Sapling: ${profileData.sapling.waterCycles} days alive - ${profileData.sapling.health} health - Next watering <t:${Math.floor((profileData.sapling.nextWaterTimestamp || 0) / 1000)}:R>`) +
-			(profileData.hasQuest === false ? '' : `\n${name} has one open quest!`) + (canRankUp ? '' : `\n${name} can rank up!`),
+			(profileData.hasQuest ? `\n${quidData.name} has one open quest!` : '') + (canRankUp ? `\n${quidData.name} can rank up!` : ''),
 		components: [components],
-	}, true)
-		.catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-		});
+	})
+		.catch((error) => { throw new Error(error); });
 }
 
 export async function statsInteractionCollector(

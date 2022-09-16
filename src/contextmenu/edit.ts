@@ -33,7 +33,7 @@ export const command: ContextMenuCommand = {
 		}
 
 		await interaction.showModal(new ModalBuilder()
-			.setCustomId(`edit-${interaction.targetId}`)
+			.setCustomId(`edit_${interaction.targetId}`)
 			.setTitle('Edit a message')
 			.addComponents(
 				new ActionRowBuilder<TextInputBuilder>({
@@ -59,7 +59,7 @@ export async function sendEditMessageModalResponse(
 	if (!interaction.channel) { return; }
 
 	/* This gets the messageId of the message that will be edited. */
-	const messageId = interaction.customId.split('-')[1] || '';
+	const messageId = interaction.customId.split('_')[1] || '';
 
 	/* This is checking if the channel is a thread, if it is, it will get the parent channel. If the
 	channel is a DM, it will throw an error. If the channel is a guild channel, it will get the

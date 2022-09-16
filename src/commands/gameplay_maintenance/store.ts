@@ -6,7 +6,7 @@ import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
 import { pronoun, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, widenValues, unsafeKeys, respond } from '../../utils/helperFunctions';
+import { getMapData, widenValues, unsafeKeys, respond, update } from '../../utils/helperFunctions';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
 const name: SlashCommand['name'] = 'store';
@@ -58,6 +58,7 @@ export async function sendStoreMessage(
 	if (interaction.isChatInputCommand() && interaction.options.getSubcommand(false) === 'all') {
 
 		await storeAll(interaction, userData, quidData, profileData, serverData);
+		return;
 	}
 
 	/** This is an array of all the inventory objects. */
@@ -100,7 +101,10 @@ function getOriginalEmbed(quidData: Quid) {
 		.setDescription(`*${quidData.name} wanders to the food den, ready to store away ${pronoun(quidData, 2)} findings. ${upperCasePronounAndPlural(quidData, 0, 'circle')} the food pile…*`);
 }
 
-function getOriginalComponents(profileData: Profile) {
+function getOriginalComponents(
+	profileData: Profile,
+	defaultItem?: CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | SpeciesNames | MaterialNames,
+) {
 
 	const itemSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
 
@@ -109,7 +113,7 @@ function getOriginalComponents(profileData: Profile) {
 
 		for (const item of unsafeKeys(inventory_[itemType])) {
 
-			itemSelectMenuOptions.push({ label: item, value: item, description: `${inventory_[itemType][item]}` });
+			if (inventory_[itemType][item] > 0) { itemSelectMenuOptions.push({ label: item, value: item, description: `${inventory_[itemType][item]}`, default: item === defaultItem }); }
 		}
 	}
 
@@ -165,7 +169,7 @@ export async function storeInteractionCollector(
 				amountSelectMenuOptions.push({ label: `${i}`, value: `${chosenFood}_${i}` });
 			}
 
-			const itemSelectMenu = interaction.message.components[0];
+			const itemSelectMenu = getOriginalComponents(profileData, chosenFood).itemSelectMenu;
 
 			const amountSelectMenu = new ActionRowBuilder<SelectMenuBuilder>()
 				.setComponents(new SelectMenuBuilder()
@@ -173,9 +177,9 @@ export async function storeInteractionCollector(
 					.setPlaceholder('Select the amount to store away')
 					.setOptions(amountSelectMenuOptions));
 
-			await respond(interaction, {
-				components: [...itemSelectMenu ? [itemSelectMenu] : [], amountSelectMenu],
-			}, true)
+			await update(interaction, {
+				components: [itemSelectMenu, amountSelectMenu],
+			})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
@@ -222,10 +226,10 @@ export async function storeInteractionCollector(
 			footerText += `\n+${chosenAmount} ${chosenFood} for ${interaction.guild.name}`;
 			embed.setFooter({ text: footerText });
 
-			await respond(interaction, {
+			await update(interaction, {
 				embeds: [...interaction.message.embeds, embed],
 				components: itemSelectMenu.toJSON().components[0]?.options.length === 0 ? disableAllComponents(interaction.message.components) : [itemSelectMenu, storeAllButton],
-			}, true)
+			})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});

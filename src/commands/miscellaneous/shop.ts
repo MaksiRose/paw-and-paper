@@ -71,7 +71,7 @@ export async function shopInteractionCollector(
 
 	if (selectOptionId && selectOptionId.startsWith('shop_')) {
 
-		const roleId = selectOptionId.split('-')[1];
+		const roleId = selectOptionId.split('_')[1];
 		const buyItem = serverData.shop.find((shopRole) => shopRole.roleId === roleId);
 		if (buyItem === undefined) { throw new Error('roleId is undefined or could not be found in server shop'); }
 

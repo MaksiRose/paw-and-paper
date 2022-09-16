@@ -36,10 +36,15 @@ export function getRandomNumber(
 	if (exception && exception < minimum) { throw new Error('exception is below range'); }
 
 	if (!exception) { return random(size, minimum); }
-	const random1 = random(exception - minimum, minimum);
-	const random2 = random(size - (exception - minimum) - 1, exception + 1);
+	const newSize1 = exception - minimum;
+	const random1 = newSize1 > 0 ? random(newSize1, minimum) : undefined;
+	const newSize2 = size - (exception - minimum) - 1;
+	const random2 = newSize2 > 0 ? random(newSize2, exception + 1) : undefined;
 
-	return random(2) === 0 ? random1 : random2;
+	if (random1 !== undefined && random2 !== undefined) { return random(2) === 0 ? random1 : random2; }
+	else if (random1 !== undefined) { return random1; }
+	else if (random2 !== undefined) { return random2; }
+	else { throw new Error('no number is available'); }
 }
 
 /**

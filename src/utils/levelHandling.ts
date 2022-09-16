@@ -78,7 +78,7 @@ export async function decreaseLevel(
 
 		for (const item of unsafeKeys(inventory_[itemType])) {
 
-			footerText += `\n-${inventory_[itemType][item]} ${item}`;
+			if (inventory_[itemType][item] > 0) { footerText += `\n-${inventory_[itemType][item]} ${item}`; }
 			inventory_[itemType][item] = 0;
 		}
 	}

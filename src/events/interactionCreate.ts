@@ -157,7 +157,7 @@ export const event: Event = {
 								.setColor(quidData.color)
 								.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
 								.setDescription(`*Engrossed in ${pronoun(quidData, 2)} work, ${quidData.name} suddenly remembers that ${pronounAndPlural(quidData, 0, 'has', 'have')} not yet watered ${pronoun(quidData, 2)} plant today. The ${quidData.displayedSpecies || quidData.species} should really do it soon!*`)
-								.setFooter({ text: 'Type "/water" to water your ginkgo sapling!' })],
+								.setFooter({ text: 'Type "/water-tree" to water your ginkgo sapling!' })],
 						})
 						.catch(async (error) => {
 							return await sendErrorMessage(interaction, error);
@@ -225,7 +225,7 @@ export const event: Event = {
 				return;
 			}
 
-			if (interaction.customId.includes('pronouns')) {
+			if (interaction.customId.includes('pronouns') && interaction.isFromMessage()) {
 
 				await sendEditPronounsModalResponse(interaction)
 					.catch(async (error) => { await sendErrorMessage(interaction, error); });
@@ -397,7 +397,7 @@ export const event: Event = {
 					return;
 				}
 
-				if (interaction.customId === 'scavenge_new') {
+				if (interaction.customId.startsWith('scavenge_new')) {
 
 					/* It's disabling all components if userData exists and the command is set to disable a previous command. */
 					if (userData && scavengeCommand.disablePreviousCommand) { await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.(); }
@@ -407,7 +407,7 @@ export const event: Event = {
 					return;
 				}
 
-				if (interaction.customId === 'play_new') {
+				if (interaction.customId.startsWith('play_new')) {
 
 					/* It's disabling all components if userData exists and the command is set to disable a previous command. */
 					if (userData && playCommand.disablePreviousCommand) { await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.(); }
@@ -417,7 +417,7 @@ export const event: Event = {
 					return;
 				}
 
-				if (interaction.customId === 'explore_new') {
+				if (interaction.customId.startsWith('explore_new')) {
 
 					/* It's disabling all components if userData exists and the command is set to disable a previous command. */
 					if (userData && exploreCommand.disablePreviousCommand) { await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.(); }

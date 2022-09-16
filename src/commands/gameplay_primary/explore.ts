@@ -191,15 +191,16 @@ export async function executeExploring(
 	_row = waitingGameField.findIndex(v => v.some(e => e === goal));
 	let oldGoalPos: Position = { row: _row, column: waitingGameField[_row]?.findIndex(e => e === goal) ?? -1 };
 
-	let waitingComponent = getWaitingComponent(waitingGameField, playerPos, empty);
+	let waitingComponent = getWaitingComponent(waitingGameField, playerPos, empty, goal);
 
 	let botReply = await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })(getWaitingMessageObject(messageContent, embedArray, quidData, waitingString, waitingGameField, waitingComponent))
 		.catch((error) => { throw new Error(error); });
 	buttonInteraction = null;
 
 
-	const collector = botReply.createMessageComponentCollector({
+	const collector = (botReply as Message<true>).createMessageComponentCollector({
 		filter: (i) => i.user.id === interaction.user.id,
+		componentType: ComponentType.Button,
 		time: 15_000,
 	});
 
@@ -240,9 +241,14 @@ export async function executeExploring(
 				(playerPos.row === oldGoalPos.row && playerPos.column === oldGoalPos.column)
 				&& (goalPos.row === oldPlayerPos.row && goalPos.column === oldPlayerPos.column)
 			)
-		) { collector.stop(); }
+		) {
 
-		waitingComponent = getWaitingComponent(waitingGameField, playerPos, empty);
+			buttonInteraction = int;
+			collector.stop();
+			return;
+		}
+
+		waitingComponent = getWaitingComponent(waitingGameField, playerPos, empty, goal);
 
 		botReply = await update(int, getWaitingMessageObject(messageContent, embedArray, quidData, waitingString, waitingGameField, waitingComponent))
 			.catch((error) => {
@@ -331,7 +337,7 @@ export async function executeExploring(
 
 			embed.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Discovery.png');
 			embed.setDescription(`*${quidData.name} is looking around for useful things around ${pronoun(quidData, 1)} when ${pronounAndPlural(quidData, 0, 'discover')} the sapling of a ginkgo tree. The ${quidData.displayedSpecies || quidData.species} remembers that they bring good luck and health. Surely it can't hurt to bring it back to the pack!*`);
-			embed.setFooter({ text: changedCondition.statsUpdateText + '\nWater the ginkgo sapling with \'/water\'.' });
+			embed.setFooter({ text: changedCondition.statsUpdateText + '\nWater the ginkgo sapling with \'/water-tree\'.' });
 		}
 		else if (serverMaterialsCount < 36) {
 
@@ -374,7 +380,7 @@ export async function executeExploring(
 		else { throw new Error('quidData species habitat not found'); }
 		embed.setFooter({ text: `You will be presented five buttons with five emojis each. The footer will show you an emoji, and you have to find the button with that emoji, but without the campsite (${plantEmojis.toAvoid}).` });
 
-		botReply = await respond(interaction, {
+		await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })({
 			content: messageContent,
 			embeds: [...embedArray, embed],
 			components: [new ActionRowBuilder<ButtonBuilder>()
@@ -385,10 +391,11 @@ export async function executeExploring(
 					.setStyle(ButtonStyle.Primary),
 				new ButtonBuilder()
 					.setCustomId('leave')
-					.setLabel('leave')
+					.setLabel('Leave')
 					.setEmoji('💨')
 					.setStyle(ButtonStyle.Primary))],
-		}, true);
+		})
+			.catch((error) => { throw new Error(error); });
 
 		const int = await (botReply as Message<true>)
 			.awaitMessageComponent({
@@ -418,7 +425,7 @@ export async function executeExploring(
 				interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 				userData: UserSchema,
 				serverData: ServerSchema,
-				newInteraction: ButtonInteraction,
+				newInteraction: ButtonInteraction<'cached'>,
 				previousExploreComponents?: ActionRowBuilder<ButtonBuilder>,
 			): Promise<void> {
 
@@ -480,6 +487,7 @@ export async function executeExploring(
 					await interactionCollector(interaction, userData, serverData, newInteraction, exploreComponent);
 					return;
 				}
+				buttonInteraction = newInteraction;
 
 				if (winLoseRatio < 0) { winLoseRatio = 0; }
 
@@ -630,7 +638,7 @@ export async function executeExploring(
 		else { throw new Error('quidData species habitat not found'); }
 		embed.setFooter({ text: `The ${opponentSpecies} is level ${opponentLevel}.\nYou will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response.` });
 
-		botReply = await respond(interaction, {
+		await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })({
 			content: messageContent,
 			embeds: [...embedArray, embed],
 			components: [new ActionRowBuilder<ButtonBuilder>()
@@ -641,10 +649,11 @@ export async function executeExploring(
 					.setStyle(ButtonStyle.Primary),
 				new ButtonBuilder()
 					.setCustomId('flee')
-					.setLabel('flee')
+					.setLabel('Flee')
 					.setEmoji('💨')
 					.setStyle(ButtonStyle.Primary))],
-		}, true);
+		})
+			.catch((error) => { throw new Error(error); });
 
 		const int = await (botReply as Message<true>)
 			.awaitMessageComponent({
@@ -685,7 +694,7 @@ export async function executeExploring(
 				interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 				userData: UserSchema,
 				serverData: ServerSchema,
-				newInteraction: ButtonInteraction,
+				newInteraction: ButtonInteraction<'cached'>,
 				previousExploreComponents?: ActionRowBuilder<ButtonBuilder>,
 				lastRoundCycleIndex?: number,
 			): Promise<void> {
@@ -765,9 +774,10 @@ export async function executeExploring(
 
 				if (totalCycles < 3) {
 
-					await interactionCollector(interaction, userData, serverData, newInteraction, exploreComponent);
+					await interactionCollector(interaction, userData, serverData, newInteraction, exploreComponent, fightGame.thisRoundCycleIndex);
 					return;
 				}
+				buttonInteraction = newInteraction;
 
 				playerLevel += (highestCombo === 3 ? 2 : highestCombo === 2 ? 1 : 0) * Math.ceil(profileData.levels / 10);
 				playerLevel = getRandomNumber(playerLevel, 0);
@@ -877,6 +887,14 @@ export async function executeExploring(
 
 	if (foundQuest) {
 
+		await userModel.findOneAndUpdate(
+			u => u.uuid === userData!.uuid,
+			(u) => {
+				const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
+				p.hasQuest = true;
+			},
+		);
+
 		await sendQuestMessage(interaction, userData, quidData, profileData, serverData, messageContent, embedArray, [...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
 			...(levelUpEmbed ? [levelUpEmbed] : [])], changedCondition.statsUpdateText);
 	}
@@ -895,7 +913,7 @@ export async function executeExploring(
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
 						.setCustomId(`explore_new${stringInput ? `_${stringInput}` : ''}`)
-						.setLabel('Play again')
+						.setLabel('Explore again')
 						.setStyle(ButtonStyle.Primary)),
 			],
 		})
@@ -934,6 +952,7 @@ function getWaitingComponent(
 	waitingGameField: string[][],
 	playerPos: Position,
 	empty: string,
+	goal: string,
 ): ActionRowBuilder<ButtonBuilder> {
 
 	return new ActionRowBuilder<ButtonBuilder>()
@@ -941,23 +960,22 @@ function getWaitingComponent(
 			new ButtonBuilder()
 				.setCustomId('left')
 				.setEmoji('⬅️')
-				.setDisabled(waitingGameField[playerPos.row]?.[playerPos.column - 1] !== empty)
+				.setDisabled(waitingGameField[playerPos.row]?.[playerPos.column - 1] !== empty && waitingGameField[playerPos.row]?.[playerPos.column - 1] !== goal)
 				.setStyle(ButtonStyle.Secondary),
 			new ButtonBuilder()
 				.setCustomId('up')
 				.setEmoji('⬆️')
-				.setDisabled(waitingGameField[playerPos.row - 1]?.[playerPos.column] !== empty)
+				.setDisabled(waitingGameField[playerPos.row - 1]?.[playerPos.column] !== empty && waitingGameField[playerPos.row - 1]?.[playerPos.column] !== goal)
 				.setStyle(ButtonStyle.Secondary),
 			new ButtonBuilder()
 				.setCustomId('down')
 				.setEmoji('⬇️')
-				.setDisabled(waitingGameField[playerPos.row + 1]?.[playerPos.column] !== empty)
-				.setDisabled(true)
+				.setDisabled(waitingGameField[playerPos.row + 1]?.[playerPos.column] !== empty && waitingGameField[playerPos.row + 1]?.[playerPos.column] !== goal)
 				.setStyle(ButtonStyle.Secondary),
 			new ButtonBuilder()
 				.setCustomId('right')
 				.setEmoji('➡️')
-				.setDisabled(waitingGameField[playerPos.row]?.[playerPos.column + 1] !== empty)
+				.setDisabled(waitingGameField[playerPos.row]?.[playerPos.column + 1] !== empty && waitingGameField[playerPos.row]?.[playerPos.column + 1] !== goal)
 				.setStyle(ButtonStyle.Secondary),
 		]);
 }

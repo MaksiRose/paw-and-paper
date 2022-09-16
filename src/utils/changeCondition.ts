@@ -72,7 +72,9 @@ async function decreaseHealth(
 	/* Define the decreased health points, a modifiedInjuryObject and an embed with a color */
 	let totalHealthDecrease = 0;
 	const modifiedInjuryObject = { ...profileData.injuries };
-	const embed = new EmbedBuilder().setColor(quidData.color).setDescription('').toJSON();
+	const embed = new EmbedBuilder()
+		.setColor(quidData.color);
+	let description = '';
 
 	/* Cycle through the profile's wounds and for each one, let it heal (25% chance), become an infection (50% chance) or bleed */
 	for (let i = 0; i < profileData.injuries.wounds; i++) {
@@ -84,7 +86,7 @@ async function decreaseHealth(
 
 			modifiedInjuryObject.wounds -= 1;
 
-			embed.description += `\n*One of ${quidData.name}'s wounds healed! What luck!*`;
+			description += `\n*One of ${quidData.name}'s wounds healed! What luck!*`;
 			continue;
 		}
 
@@ -95,11 +97,11 @@ async function decreaseHealth(
 			modifiedInjuryObject.wounds -= 1;
 			modifiedInjuryObject.infections += 1;
 
-			embed.description += `\n*One of ${quidData.name}'s wounds turned into an infection!*`;
+			description += `\n*One of ${quidData.name}'s wounds turned into an infection!*`;
 			continue;
 		}
 
-		embed.description += `\n*One of ${quidData.name}'s wounds is bleeding!*`;
+		description += `\n*One of ${quidData.name}'s wounds is bleeding!*`;
 	}
 
 	/* Cycle through the profile's infections and for each one, let it heal (33% chance) or get worse */
@@ -111,14 +113,14 @@ async function decreaseHealth(
 
 			modifiedInjuryObject.infections -= 1;
 
-			embed.description += `\n*One of ${quidData.name}'s infections healed! What luck!*`;
+			description += `\n*One of ${quidData.name}'s infections healed! What luck!*`;
 			continue;
 		}
 
 		const minimumInfectionHealthDecrease = Math.round((10 - (profileData.health / (profileData.maxHealth / 10))) / 3);
 		totalHealthDecrease += getRandomNumber(3, minimumInfectionHealthDecrease + 3);
 
-		embed.description += `\n*One of ${quidData.name}'s infections is getting worse!*`;
+		description += `\n*One of ${quidData.name}'s infections is getting worse!*`;
 	}
 
 	/* Check if the user has a cold and let it heal (25% chance) or get worse */
@@ -130,14 +132,14 @@ async function decreaseHealth(
 
 			modifiedInjuryObject.cold = false;
 
-			embed.description += `\n*${quidData.name} recovered from ${pronoun(quidData, 2)} cold! What luck!*`;
+			description += `\n*${quidData.name} recovered from ${pronoun(quidData, 2)} cold! What luck!*`;
 		}
 		else {
 
 			const minimumColdHealthDecrease = Math.round((10 - (profileData.health / (profileData.maxHealth / 10))) / 1.5);
 			totalHealthDecrease += getRandomNumber(3, getBiggerNumber(minimumColdHealthDecrease, 1));
 
-			embed.description += `\n*${quidData.name}'s cold is getting worse!*`;
+			description += `\n*${quidData.name}'s cold is getting worse!*`;
 		}
 	}
 
@@ -150,14 +152,14 @@ async function decreaseHealth(
 
 			modifiedInjuryObject.sprains -= 1;
 
-			embed.description += `\n*One of ${quidData.name}'s sprains healed! What luck!*`;
+			description += `\n*One of ${quidData.name}'s sprains healed! What luck!*`;
 			continue;
 		}
 
 		const minimumSprainHealthDecrease = Math.round(profileData.levels / 2);
 		totalHealthDecrease += getRandomNumber(5, getSmallerNumber(minimumSprainHealthDecrease, 11));
 
-		embed.description += `\n*One of ${quidData.name}'s sprains is getting worse!*`;
+		description += `\n*One of ${quidData.name}'s sprains is getting worse!*`;
 	}
 
 	/* Check if the user has poison and let it heal (20% chance) or get worse */
@@ -169,16 +171,18 @@ async function decreaseHealth(
 
 			modifiedInjuryObject.poison = false;
 
-			embed.description += `\n*${quidData.name} recovered from ${pronoun(quidData, 2)} poisoning! What luck!*`;
+			description += `\n*${quidData.name} recovered from ${pronoun(quidData, 2)} poisoning! What luck!*`;
 		}
 		else {
 
 			const minimumPoisonHealthDecrease = Math.round((10 - (profileData.health / 10)) * 1.5);
 			totalHealthDecrease += getRandomNumber(5, getBiggerNumber(minimumPoisonHealthDecrease, 1));
 
-			embed.description += `\n*The poison in ${quidData.name}'s body is spreading!*`;
+			description += `\n*The poison in ${quidData.name}'s body is spreading!*`;
 		}
 	}
+
+	if (description.length > 0) { embed.setDescription(description); }
 
 	/* Change total health decrease if it would get the health below zero, and update the user information */
 	totalHealthDecrease = getSmallerNumber(totalHealthDecrease, profileData.health);
@@ -194,8 +198,8 @@ async function decreaseHealth(
 	profileData = getMapData(quidData.profiles, profileData.serverId);
 
 	/* Add a footer to the embed if the total health decrease is more than 0, and return */
-	if (totalHealthDecrease > 0) { embed.footer = { text: `-${totalHealthDecrease} HP (${profileData.health}/${profileData.maxHealth})` }; }
-	return { injuryUpdateEmbed: new EmbedBuilder(embed), profileData };
+	if (totalHealthDecrease > 0) { embed.setFooter({ text: `-${totalHealthDecrease} HP (${profileData.health}/${profileData.maxHealth})` }); }
+	return { injuryUpdateEmbed: embed, profileData };
 }
 
 export type DecreasedStatsData = {

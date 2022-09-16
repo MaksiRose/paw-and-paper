@@ -1,4 +1,4 @@
-import { Message, ComponentType, ButtonStyle, APIActionRowComponent, ActionRowBuilder, ActionRow, MessageActionRowComponent, APIMessageActionRowComponent, MessageActionRowComponentBuilder, ButtonBuilder, ButtonComponent, APIButtonComponent, SelectMenuBuilder, SelectMenuComponent, APISelectMenuComponent } from 'discord.js';
+import { Message, ComponentType, ButtonStyle, APIActionRowComponent, ActionRowBuilder, ActionRow, MessageActionRowComponent, APIMessageActionRowComponent, MessageActionRowComponentBuilder, ButtonBuilder, ButtonComponent, APIButtonComponent, SelectMenuBuilder, SelectMenuComponent, APISelectMenuComponent, isJSONEncodable } from 'discord.js';
 
 /**
  * An object with player UUID + guild ID as keys and a property that is a promise function that deletes the entry and disables all components of a message that has been attached when the function was created.
@@ -46,13 +46,13 @@ export function disableAllComponents(
 
 	return messageComponents = messageComponents.map(actionRow => {
 
-		actionRow = new ActionRowBuilder(actionRow);
-		return actionRow.setComponents(actionRow.components.map(component => {
+		const newActionRow = new ActionRowBuilder<MessageActionRowComponentBuilder>(isJSONEncodable(actionRow) ? actionRow.toJSON() : actionRow);
+		return newActionRow.setComponents(actionRow.components.map(component => {
 
-			const data = component.toJSON();
+			const data = isJSONEncodable(component) ? component.toJSON() : component;
 
-			if (data.type !== ComponentType.Button || data.style !== ButtonStyle.Link) { component.setDisabled(true); }
-			return component;
+			if (data.type !== ComponentType.Button || data.style !== ButtonStyle.Link) { data.disabled = true; }
+			return data.type === ComponentType.Button ? new ButtonBuilder(data) : new SelectMenuBuilder(data);
 		}));
 	});
 }
