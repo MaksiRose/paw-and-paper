@@ -184,7 +184,7 @@ export default class Model<T extends UUIDObject> {
 			function isObject(val: any): val is Record<string | number | symbol, unknown> { return typeof val === 'object' && val !== null; }
 			type LogArray = Array<{ path: string, oldValue: string, newValue: string; }>;
 			/** It takes two objects, compares them, and logs the differences */
-			function createLogArray<Type>(oldObject: Type, newObject: Type, variablePath: string): LogArray {
+			function createLogArray<Type extends Record<PropertyKey, any>>(oldObject: Type, newObject: Type, variablePath: string): LogArray {
 
 				let allPaths: LogArray = [];
 
