@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, GuildMember, InteractionReplyOptions, InteractionUpdateOptions, MessageEditOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, GuildMember, InteractionReplyOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
 import { capitalizeString, respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
@@ -78,7 +78,7 @@ export async function getMessageContent(
 	quidData: Quid | undefined,
 	isYourself: boolean,
 	embedArray: Array<EmbedBuilder>,
-): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
+): Promise<InteractionReplyOptions> {
 
 	const user = await client.users
 		.fetch(userId)

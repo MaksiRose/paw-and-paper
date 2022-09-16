@@ -89,7 +89,7 @@ export const command: ContextMenuCommand = {
 					.setStyle(ButtonStyle.Success)])],
 			ephemeral: true,
 			fetchReply: true,
-		}, true)
+		}, false)
 			.catch((error) => { throw new Error(error); });
 	},
 };
