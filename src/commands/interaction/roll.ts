@@ -67,14 +67,14 @@ export const command: SlashCommand = {
 		const profileData = quidData?.profiles[interaction.guildId || 'DM'];
 		for (let i = 0; i < args.length; i++) {
 
+			let argstr = args[i];
+			if (argstr === undefined) { continue; }
 			for (const [skill, value] of [...Object.entries(profileData?.skills?.global || {}), ...Object.entries(profileData?.skills?.personal || {})]) {
 
-				let argstr = args[i];
-				if (!argstr) { continue; }
 				if (argstr.includes(skill)) { argstr = argstr.replace(skill, String(value)); }
-				argstr = argstr.replace(/\s/g, '');
-				if (!isNaN(Number(argstr))) { addOrSubtract += Number(argstr); }
 			}
+			argstr = argstr.replace(/\s/g, '');
+			if (!isNaN(Number(argstr))) { addOrSubtract += Number(argstr); }
 		}
 
 		const rolledDice: number[] = [];
@@ -165,6 +165,11 @@ function prepareCartesian(
 	return res;
 }
 
+/**
+ * Split the string into an array of substrings, where each substring is delimited by a plus or minus sign.
+ * @param {string} stringToCheck - The string to check for substrings.
+ * @returns An array of strings.
+ */
 function getSubstringArray(
 	stringToCheck: string,
 ): string[] { return stringToCheck.split(/(?=[+-])/g); }
