@@ -70,7 +70,7 @@ export async function sendQuestMessage(
 	embedArray: EmbedBuilder[],
 	afterEmbedArray: EmbedBuilder[] = [],
 	footerText = '',
-) {
+): Promise<Message> {
 
 	const embed = new EmbedBuilder()
 		.setColor(quidData.color)
@@ -146,7 +146,7 @@ export async function sendQuestMessage(
 
 	createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
 
-	await (botReply as Message<true>)
+	return await (botReply as Message<true>)
 		.awaitMessageComponent({
 			filter: (i) => i.user.id === interaction.user.id,
 			componentType: ComponentType.Button,
@@ -155,18 +155,16 @@ export async function sendQuestMessage(
 
 			cooldownMap.set(userData.uuid + interaction.guildId, true);
 			delete disableCommandComponent[userData.uuid + interaction.guildId];
-			await startQuest(int, userData, quidData, profileData, serverData, messageContent, embedArray, afterEmbedArray, botReply);
+			return await startQuest(int, userData, quidData, profileData, serverData, messageContent, embedArray, afterEmbedArray, botReply);
 		})
 		.catch(async () => {
 
-			await respond(interaction, { components: disableAllComponents(botReply.components) }, true)
+			return await respond(interaction, { components: disableAllComponents(botReply.components) }, true)
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 					return botReply;
 				});
-			return;
 		});
-	return;
 }
 
 async function startQuest(
@@ -179,7 +177,7 @@ async function startQuest(
 	embedArray: EmbedBuilder[],
 	afterEmbedArray: EmbedBuilder[],
 	botReply: Message,
-) {
+): Promise<Message> {
 	// this would be called from /quest, /explore and /play
 	// Quest would send in the main interaction so that it would edit it, while for explore and play it would send in the button interaction so it would respond to the button click, which also has the side effect that the stats you lost etc would already be displayed under the original "you found a quest" message.
 
@@ -226,7 +224,7 @@ async function startQuest(
 	}
 	else { throw new Error('No rank type found'); }
 
-	await interactionCollector(interaction, userData, serverData, 0);
+	return await interactionCollector(interaction, userData, serverData, 0);
 
 	async function interactionCollector(
 		interaction: ButtonInteraction<'cached'>,
@@ -235,7 +233,7 @@ async function startQuest(
 		cycleIndex: number,
 		previousQuestComponents?: ActionRowBuilder<ButtonBuilder>,
 		newInteraction?: ButtonInteraction<'cached'>,
-	): Promise<void> {
+	): Promise<Message> {
 
 		const buttonTextOrColor = getRandomNumber(2) === 0 ? 'color' : 'text';
 		const buttonColorKind = getRandomNumber(3) === 0 ? 'green' : getRandomNumber(2) === 0 ? 'blue' : 'red';
@@ -518,13 +516,13 @@ async function startQuest(
 					return botReply;
 				});
 
-			return;
+			return botReply;
 		}
 		else {
 
-			await interactionCollector(interaction, userData, serverData, cycleIndex += 1, questComponents, newInteraction);
+			botReply = await interactionCollector(interaction, userData, serverData, cycleIndex += 1, questComponents, newInteraction);
 		}
-		return;
+		return botReply;
 	}
 }
 

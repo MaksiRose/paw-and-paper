@@ -6,6 +6,7 @@ import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../
 import { changeCondition, infectWithChance, pickRandomCommonPlant } from '../../utils/changeCondition';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
+import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
 import { getMapData, getSmallerNumber, respond, update } from '../../utils/helperFunctions';
@@ -83,7 +84,6 @@ export async function executePlaying(
 				u => Object.values(u.quids).filter(q => isEligableForPlaying(u.uuid, q, interaction.guildId)).length > 0,
 			))
 			.filter(u => u.uuid !== userData1?.uuid);
-		console.log(usersEligibleForPlaying);
 
 		if (usersEligibleForPlaying.length > 0) {
 
@@ -342,12 +342,12 @@ export async function executePlaying(
 			},
 		);
 
-		await sendQuestMessage(interaction, userData1, quidData1, profileData1, serverData, messageContent, embedArray, [...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
+		botReply = await sendQuestMessage(interaction, userData1, quidData1, profileData1, serverData, messageContent, embedArray, [...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
 			...(levelUpEmbed ? [levelUpEmbed] : [])], changedCondition.statsUpdateText);
 	}
 	else {
 
-		await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })({
+		botReply = await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })({
 			content: messageContent,
 			embeds: [
 				...embedArray,
@@ -374,6 +374,8 @@ export async function executePlaying(
 	await restAdvice(interaction, userData1, profileData1);
 	await drinkAdvice(interaction, userData1, profileData1);
 	await eatAdvice(interaction, userData1, profileData1);
+
+	if (userData2 && quidData2) { await addFriendshipPoints(botReply, userData1, quidData1._id, userData2, quidData2._id); }
 }
 
 function isEligableForPlaying(

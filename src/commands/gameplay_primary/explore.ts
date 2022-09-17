@@ -902,12 +902,12 @@ export async function executeExploring(
 			},
 		);
 
-		await sendQuestMessage(interaction, userData, quidData, profileData, serverData, messageContent, embedArray, [...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
+		botReply = await sendQuestMessage(interaction, userData, quidData, profileData, serverData, messageContent, embedArray, [...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
 			...(levelUpEmbed ? [levelUpEmbed] : [])], changedCondition.statsUpdateText);
 	}
 	else {
 
-		await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })({
+		botReply = await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })({
 			content: messageContent,
 			embeds: [
 				...embedArray,
