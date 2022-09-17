@@ -471,10 +471,8 @@ export async function getHealResponse(
 		return;
 	}
 
-	const experiencePoints = isSuccessful === false ? 0 : profileData.rank == RankType.Elderly ? getRandomNumber(41, 20) : profileData.rank == RankType.Healer ? getRandomNumber(21, 10) : getRandomNumber(11, 5);
-	const changedCondition = await changeCondition(userData, quidData, profileData, experiencePoints);
 	const denCondition = await wearDownDen(serverData, CurrentRegionType.MedicineDen);
-	let embedFooter: string;
+	let embedFooter = '';
 
 	if (isSuccessful === true && (profileData.rank === RankType.Apprentice || profileData.rank === RankType.Hunter) && pullFromWeightedTable({ 0: profileData.rank === RankType.Hunter ? 90 : 40, 1: 60 + profileData.sapling.waterCycles - decreaseSuccessChance(serverData) }) === 0) {
 
@@ -521,38 +519,35 @@ export async function getHealResponse(
 			embed.setDescription(`*${quidData.name} takes a ${item}. After a bit of preparation, ${pronounAndPlural(quidData, 0, 'give')} it to ${quidToHeal.name}. Immediately you can see the effect. ${upperCasePronounAndPlural(quidToHeal, 0, 'feel')} much better!*`);
 		}
 
-		embedFooter = `${changedCondition.statsUpdateText}\n${statsUpdateText}`;
+		embedFooter = `\n${statsUpdateText}`;
 	}
-	else {
+	else if (item === 'water') {
 
-		if (item === 'water') {
+		if (userData.uuid === userToHeal.uuid) {
 
-			if (userData.uuid === userToHeal.uuid) {
-
-				embed.setDescription(`*${quidData.name} thinks about just drinking some water, but that won't help with ${pronoun(quidData, 2)} issues...*"`);
-			}
-			else if (profileToHeal.thirst > 0) {
-
-				embed.setDescription(`*${quidToHeal.name} looks at ${quidData.name} with indignation.* "Being hydrated is really not my biggest problem right now!"`);
-			}
-			else {
-
-				embed.setDescription(`*${quidData.name} takes ${quidToHeal.name}'s body and tries to drag it over to the river. The ${quidData.displayedSpecies || quidData.species} attempts to position the ${quidToHeal.displayedSpecies || quidToHeal.species}'s head right over the water, but every attempt fails miserably. ${upperCasePronounAndPlural(quidData, 0, 'need')} to concentrate and try again.*`);
-			}
+			embed.setDescription(`*${quidData.name} thinks about just drinking some water, but that won't help with ${pronoun(quidData, 2)} issues...*"`);
 		}
-		else if (userData.uuid === userToHeal.uuid) {
+		else if (profileToHeal.thirst > 0) {
 
-			embed.setDescription(`*${quidData.name} holds the ${item} in ${pronoun(quidData, 2)} mouth, trying to find a way to apply it. After a few attempts, the herb breaks into little pieces, rendering it useless. Guess ${pronounAndPlural(quidData, 0, 'has', 'have')} to try again...*`);
+			embed.setDescription(`*${quidToHeal.name} looks at ${quidData.name} with indignation.* "Being hydrated is really not my biggest problem right now!"`);
 		}
 		else {
 
-			embed.setDescription(`*${quidData.name} takes a ${item}. After a bit of preparation, ${pronounAndPlural(quidData, 0, 'give')} it to ${quidToHeal.name}. But no matter how long ${pronoun(quidData, 0)} wait, it does not seem to help. Looks like ${quidData.name} has to try again...*`);
+			embed.setDescription(`*${quidData.name} takes ${quidToHeal.name}'s body and tries to drag it over to the river. The ${quidData.displayedSpecies || quidData.species} attempts to position the ${quidToHeal.displayedSpecies || quidToHeal.species}'s head right over the water, but every attempt fails miserably. ${upperCasePronounAndPlural(quidData, 0, 'need')} to concentrate and try again.*`);
 		}
+	}
+	else if (userData.uuid === userToHeal.uuid) {
 
-		embedFooter = changedCondition.statsUpdateText;
+		embed.setDescription(`*${quidData.name} holds the ${item} in ${pronoun(quidData, 2)} mouth, trying to find a way to apply it. After a few attempts, the herb breaks into little pieces, rendering it useless. Guess ${pronounAndPlural(quidData, 0, 'has', 'have')} to try again...*`);
+	}
+	else {
+
+		embed.setDescription(`*${quidData.name} takes a ${item}. After a bit of preparation, ${pronounAndPlural(quidData, 0, 'give')} it to ${quidToHeal.name}. But no matter how long ${pronoun(quidData, 0)} wait, it does not seem to help. Looks like ${quidData.name} has to try again...*`);
 	}
 
-	embed.setFooter({ text: `${embedFooter}\n\n${denCondition}${item !== 'water' ? `\n-1 ${item} for ${interaction.guild.name}` : ''}` });
+	const experiencePoints = isSuccessful === false ? 0 : profileData.rank == RankType.Elderly ? getRandomNumber(41, 20) : profileData.rank == RankType.Healer ? getRandomNumber(21, 10) : getRandomNumber(11, 5);
+	const changedCondition = await changeCondition(userData, quidData, profileData, experiencePoints);
+	embed.setFooter({ text: `${changedCondition.statsUpdateText}${embedFooter}\n\n${denCondition}${item !== 'water' ? `\n-1 ${item} for ${interaction.guild.name}` : ''}` });
 
 	const infectedEmbed = await infectWithChance(userData, quidData, profileData, quidToHeal, profileToHeal);
 
