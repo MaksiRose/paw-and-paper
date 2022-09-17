@@ -212,6 +212,11 @@ export async function deleteInteractionCollector(
 	/* Deleting the data of the user. */
 	if (interaction.customId.startsWith('delete_confirm')) {
 
+		await update(interaction, sendOriginalMessage())
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+
 		const type = (interaction.customId.split('_')[2]) as 'individual' | 'server' | 'all';
 
 		/* Deleting a user from the database. */
@@ -290,11 +295,6 @@ export async function deleteInteractionCollector(
 				});
 			return;
 		}
-
-		await update(interaction, sendOriginalMessage())
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
 		return;
 	}
 
