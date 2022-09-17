@@ -158,7 +158,6 @@ export const command: SlashCommand = {
 		);
 		quidData2 = getMapData(userData2.quids, quidData2._id);
 		profileData2 = getMapData(quidData2.profiles, interaction.guildId);
-		const statsUpdateText = `\n+${experienceIncrease} XP (${profileData2.experience}/${profileData2.levels * 50}) for ${quidData2.name}`;
 
 		/* If user 2 had a cold, infect user 1 with a 30% chance. */
 		const infectedEmbed = await infectWithChance(userData1, quidData1, profileData1, quidData2, profileData2);
@@ -171,7 +170,7 @@ export const command: SlashCommand = {
 					.setColor(quidData1.color)
 					.setAuthor({ name: quidData1.name, iconURL: quidData1.avatarURL })
 					.setDescription(`*${quidData2.name} comes running to the old wooden trunk at the ruins where ${quidData1.name} sits, ready to tell an exciting story from long ago. ${upperCasePronoun(quidData2, 2)} eyes are sparkling as the ${quidData1.displayedSpecies || quidData1.species} recounts great adventures and the lessons to be learned from them.*`)
-					.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n${statsUpdateText}` }),
+					.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n+${experienceIncrease} XP (${profileData2.experience}/${profileData2.levels * 50}) for ${quidData2.name}` }),
 				...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
 				...(infectedEmbed ? [infectedEmbed] : []),
 				...(user2CheckLevelData.levelUpEmbed ? [user2CheckLevelData.levelUpEmbed] : []),
