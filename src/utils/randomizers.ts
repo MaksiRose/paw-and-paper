@@ -30,12 +30,12 @@ export function getRandomNumber(
 	if (!isFinite(minimum)) { throw new Error('minimum is infinite'); }
 	if (!Number.isSafeInteger(minimum)) { throw new Error('minimum is not a safe integer'); }
 
-	if (exception && isNaN(exception)) { throw new Error('exception is not a number'); }
-	if (exception && !isFinite(exception)) { throw new Error('exception is infinite'); }
-	if (exception && exception > (size + minimum - 1)) { throw new Error('exception is above range'); }
-	if (exception && exception < minimum) { throw new Error('exception is below range'); }
+	if (exception !== undefined && isNaN(exception)) { throw new Error('exception is not a number'); }
+	if (exception !== undefined && !isFinite(exception)) { throw new Error('exception is infinite'); }
+	if (exception !== undefined && exception > (size + minimum - 1)) { throw new Error('exception is above range'); }
+	if (exception !== undefined && exception < minimum) { throw new Error('exception is below range'); }
 
-	if (!exception) { return random(size, minimum); }
+	if (exception === undefined) { return random(size, minimum); }
 	const newSize1 = exception - minimum;
 	const random1 = newSize1 > 0 ? random(newSize1, minimum) : undefined;
 	const newSize2 = size - (exception - minimum) - 1;
