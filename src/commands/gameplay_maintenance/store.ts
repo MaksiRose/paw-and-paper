@@ -67,14 +67,14 @@ export async function sendStoreMessage(
 	const inventoryNumberValues = inventoryObjectValues.map(type => Object.values(type)).flat();
 	if (inventoryNumberValues.reduce((a, b) => a + b) === 0) {
 
-		await respond(interaction, {
+		await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData.color)
 				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
 				.setDescription(`*${quidData.name} goes to the food den to store food away, but ${pronoun(quidData, 2)} mouth is empty...*`),
 			],
-		}, true)
+		})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
@@ -83,11 +83,11 @@ export async function sendStoreMessage(
 
 	const { itemSelectMenu, storeAllButton } = getOriginalComponents(profileData);
 
-	const botReply = await respond(interaction, {
+	const botReply = await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 		content: messageContent,
 		embeds: [...embedArray, getOriginalEmbed(quidData)],
 		components: [itemSelectMenu, storeAllButton],
-	}, true)
+	})
 		.catch((error) => { throw new Error(error); });
 
 	createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
@@ -289,10 +289,10 @@ async function storeAll(
 		},
 	);
 
-	await respond(interaction, {
+	await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 		embeds: [...(otherEmbeds ?? []), embed],
 		components: interaction.isButton() ? disableAllComponents(interaction.message.components) : [],
-	}, true)
+	})
 		.catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }
 		});
