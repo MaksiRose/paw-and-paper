@@ -67,7 +67,7 @@ export async function sendStoreMessage(
 	const inventoryNumberValues = inventoryObjectValues.map(type => Object.values(type)).flat();
 	if (inventoryNumberValues.reduce((a, b) => a + b) === 0) {
 
-		await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+		await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData.color)
@@ -83,7 +83,7 @@ export async function sendStoreMessage(
 
 	const { itemSelectMenu, storeAllButton } = getOriginalComponents(profileData);
 
-	const botReply = await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+	const botReply = await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 		content: messageContent,
 		embeds: [...embedArray, getOriginalEmbed(quidData)],
 		components: [itemSelectMenu, storeAllButton],
@@ -289,7 +289,7 @@ async function storeAll(
 		},
 	);
 
-	await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+	await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 		embeds: [...(otherEmbeds ?? []), embed],
 		components: interaction.isButton() ? disableAllComponents(interaction.message.components) : [],
 	})
