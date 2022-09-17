@@ -209,7 +209,8 @@ export async function executePlaying(
 						whoWinsChance = 0;
 					}
 					buttonInteraction = i;
-				});
+				})
+				.catch(() => { /* do nothing */ });
 
 			playComponent.setComponents(playComponent.components.map(component => component.setDisabled(true)));
 		}
@@ -326,7 +327,8 @@ export async function executePlaying(
 					embed.setDescription(descriptionText.substring(0, descriptionText.length - 1) + ` But as the ${quidData1.displayedSpecies || quidData1.species} tries to pick it up, it just breaks into little pieces.*`);
 				}
 				buttonInteraction = i;
-			});
+			})
+			.catch(() => { /* do nothing */ });
 
 		playComponent.setComponents(playComponent.components.map(c => c.setDisabled(true)));
 	}
