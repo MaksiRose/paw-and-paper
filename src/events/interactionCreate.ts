@@ -367,7 +367,7 @@ export const event: Event = {
 
 					const errorId = interaction.customId.split('_')[2] || generateId();
 					const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
-					const description = errorStacks[errorId] ? `\`\`\`${errorStacks[errorId]!.substring(0, 4090)}\`\`\`` : interaction.message.embeds[0]?.description;
+					const description = errorStacks[errorId] ? `\`\`\`\n${errorStacks[errorId]!.substring(0, 4090)}\n\`\`\`` : interaction.message.embeds[0]?.description;
 
 					if (!description) {
 

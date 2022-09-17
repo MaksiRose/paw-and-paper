@@ -138,7 +138,7 @@ export async function sendErrorMessage(
 		embeds: [new EmbedBuilder()
 			.setColor(error_color)
 			.setTitle('There was an unexpected error executing this command:')
-			.setDescription(`\`\`\`${String(error).substring(0, 4090)}\`\`\``)
+			.setDescription(`\`\`\`\n${String(error).substring(0, 4090)}\n\`\`\``)
 			.setFooter({ text: 'If this is the first time you encountered the issue, please report it using the button below. After that, only report it again if the issue was supposed to be fixed after an update came out. To receive updates, ask a server administrator to do the "getupdates" command.' })],
 		components: [new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()

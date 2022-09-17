@@ -206,7 +206,7 @@ export async function ticketInteractionCollector(
 				owner: 'MaksiRose',
 				repo: 'paw-and-paper',
 				title: embed?.title || 'New issue',
-				body: `Created by: ${interaction.user.tag} (${interaction.user.id})\n\n${embed?.description}\n\n${embed?.image ? `![](${embed.image?.url})` : ''}\n\n${ticketConversation ? `Additional conversation:\n\`\`\`${ticketConversation}\`\`\`` : ''}`,
+				body: `Created by: ${interaction.user.tag} (${interaction.user.id})\n\n${embed?.description}\n\n${embed?.image ? `![](${embed.image?.url})` : ''}\n\n${ticketConversation ? `Additional conversation:\n\`\`\`\n${ticketConversation}\n\`\`\`` : ''}`,
 				labels: embed?.footer ? [embed.footer.text] : [],
 			})
 			.catch((error) => { throw new Error(error); });
