@@ -4,7 +4,7 @@ import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { hasCooldown } from '../../utils/checkValidity';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import getInventoryElements from '../../utils/getInventoryElements';
-import { getMapData, respond } from '../../utils/helperFunctions';
+import { getMapData, respond, update } from '../../utils/helperFunctions';
 import { remindOfAttack } from '../gameplay_primary/attack';
 import { sendEatMessage } from './eat';
 const { default_color } = require('../../../config.json');
@@ -73,7 +73,7 @@ export async function showInventoryMessage(
 		foodSelectMenuOptions.push({ label: 'Show more meat options', value: `newpage_${newSubPage}_${showMaterialsPage}`, description: `You are currently on page ${(subPage ?? 0) + 1}`, emoji: '📋' });
 	}
 
-	const botReply = await respond(interaction, {
+	const botReply = await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 		content: messageContent,
 		embeds: [new EmbedBuilder()
 			.setColor(default_color)
@@ -90,7 +90,7 @@ export async function showInventoryMessage(
 						.setOptions(foodSelectMenuOptions))]
 				: [],
 		],
-	}, true)
+	})
 		.catch((error) => { throw new Error(error); });
 
 	createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
