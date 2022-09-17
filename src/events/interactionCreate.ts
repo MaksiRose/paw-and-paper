@@ -259,7 +259,7 @@ export const event: Event = {
 
 			/* It's checking if the user that created the command is the same as the user that is interacting with the command, or if the user that is interacting is mentioned in the interaction.customId. If neither is true, it will send an error message. */
 			const isNotCommandCreator = interaction.message.interaction && interaction.message.interaction.user.id !== interaction.user.id;
-			const isMentioned = interaction.customId.includes(userData?.uuid || interaction.user.id || 'ANYONECANCLICK');
+			const isMentioned = interaction.customId.includes(interaction.user.id) || interaction.customId.includes('ANYONECANCLICK') || (userData && interaction.customId.includes(userData.uuid));
 			if (isNotCommandCreator && !isMentioned) {
 
 				await respond(interaction, {
@@ -538,7 +538,7 @@ setInterval(async function() {
 			const lastInteractionIsTenMinutesAgo = lastInteraction.createdTimestamp < Date.now() - tenMinutesInMs;
 			const hasLessThanMaxEnergy = activeProfile.energy < activeProfile.maxEnergy;
 			const isConscious = activeProfile.energy > 0 || activeProfile.health > 0 || activeProfile.hunger > 0 || activeProfile.thirst > 0;
-			const hasNoCooldown = cooldownMap.get(user.uuid + guildId) === false;
+			const hasNoCooldown = cooldownMap.get(user.uuid + guildId) !== true;
 			if (lastInteractionIsTenMinutesAgo && !activeProfile.isResting && hasLessThanMaxEnergy && isConscious && hasNoCooldown) {
 
 				await startResting(lastInteraction, user, quid, activeProfile, serverData)

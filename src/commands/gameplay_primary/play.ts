@@ -83,6 +83,7 @@ export async function executePlaying(
 				u => Object.values(u.quids).filter(q => isEligableForPlaying(u.uuid, q, interaction.guildId)).length > 0,
 			))
 			.filter(u => u.uuid !== userData1?.uuid);
+		console.log(usersEligibleForPlaying);
 
 		if (usersEligibleForPlaying.length > 0) {
 
@@ -382,5 +383,5 @@ function isEligableForPlaying(
 ): boolean {
 
 	const p = quid.profiles[guildId];
-	return quid.name !== '' && quid.species !== '' && p !== undefined && p.currentRegion === CurrentRegionType.Prairie && p.energy > 0 && p.health > 0 && p.hunger > 0 && p.thirst > 0 && p.injuries.cold === false && cooldownMap.get(uuid + guildId) === false && !p.isResting;
+	return quid.name !== '' && quid.species !== '' && p !== undefined && p.currentRegion === CurrentRegionType.Prairie && p.energy > 0 && p.health > 0 && p.hunger > 0 && p.thirst > 0 && p.injuries.cold === false && cooldownMap.get(uuid + guildId) !== true && !p.isResting;
 }
