@@ -449,11 +449,7 @@ export async function getHealResponse(
 		}
 	}
 
-	if (isSuccessful && userToHeal.uuid === userData.uuid && pullFromWeightedTable({ 0: 75, 1: 25 + profileData.sapling.waterCycles - decreaseSuccessChance(serverData) }) === 0) {
-
-		isSuccessful = false;
-	}
-	else if (isSuccessful === false && userHasChangedCondition === true) {
+	if (isSuccessful === false && userHasChangedCondition === true) {
 
 		const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 			embeds: [...embedArray, new EmbedBuilder()
@@ -467,13 +463,19 @@ export async function getHealResponse(
 		return;
 	}
 
-	const denCondition = await wearDownDen(serverData, CurrentRegionType.MedicineDen);
-	let embedFooter = '';
+	if (isSuccessful && userToHeal.uuid === userData.uuid && pullFromWeightedTable({ 0: 75, 1: 25 + profileData.sapling.waterCycles - decreaseSuccessChance(serverData) }) === 0) {
 
-	if (isSuccessful === true && (profileData.rank === RankType.Apprentice || profileData.rank === RankType.Hunter) && pullFromWeightedTable({ 0: profileData.rank === RankType.Hunter ? 90 : 40, 1: 60 + profileData.sapling.waterCycles - decreaseSuccessChance(serverData) }) === 0) {
-
+		console.log('1');
 		isSuccessful = false;
 	}
+	else if (isSuccessful && userToHeal.uuid !== userData.uuid && (profileData.rank === RankType.Apprentice || profileData.rank === RankType.Hunter) && pullFromWeightedTable({ 0: profileData.rank === RankType.Hunter ? 90 : 40, 1: 60 + profileData.sapling.waterCycles - decreaseSuccessChance(serverData) }) === 0) {
+
+		console.log('2');
+		isSuccessful = false;
+	}
+
+	const denCondition = await wearDownDen(serverData, CurrentRegionType.MedicineDen);
+	let embedFooter = '';
 
 	if (isSuccessful === true) {
 
