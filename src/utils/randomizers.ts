@@ -24,7 +24,7 @@ export function getRandomNumber(
 
 	if (isNaN(size)) { throw new Error('size is not a number'); }
 	if (!isFinite(size)) { throw new Error('size is infinite'); }
-	if (size < 0) { throw new Error('size is below zero'); }
+	if (size < 0) { throw new RangeError('size is below zero'); }
 
 	if (isNaN(minimum)) { throw new Error('minimum is not a number'); }
 	if (!isFinite(minimum)) { throw new Error('minimum is infinite'); }
@@ -32,8 +32,8 @@ export function getRandomNumber(
 
 	if (exception !== undefined && isNaN(exception)) { throw new Error('exception is not a number'); }
 	if (exception !== undefined && !isFinite(exception)) { throw new Error('exception is infinite'); }
-	if (exception !== undefined && exception > (size + minimum - 1)) { throw new Error('exception is above range'); }
-	if (exception !== undefined && exception < minimum) { throw new Error('exception is below range'); }
+	if (exception !== undefined && exception > (size + minimum - 1)) { throw new RangeError('exception is above range'); }
+	if (exception !== undefined && exception < minimum) { throw new RangeError('exception is below range'); }
 
 	if (exception === undefined) { return random(size, minimum); }
 	const newSize1 = exception - minimum;

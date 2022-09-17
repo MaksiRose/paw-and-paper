@@ -247,10 +247,10 @@ export async function changeCondition(
 	profileData = getMapData(quidData.profiles, profileData.serverId);
 
 	let statsUpdateText = '';
-	if (experienceIncrease > 0) { statsUpdateText += `\n+${experienceIncrease} XP (${profileData.experience}/${profileData.levels * 50})${secondPlayer ? `for ${quidData.name}` : ''}`; }
-	if (energyDecrease > 0) { statsUpdateText += `\n-${energyDecrease} energy (${profileData.energy}/${profileData.maxEnergy})${secondPlayer ? `for ${quidData.name}` : ''}`; }
-	if (hungerDecrease > 0) { statsUpdateText += `\n-${hungerDecrease} hunger (${profileData.hunger}/${profileData.maxHunger})${secondPlayer ? `for ${quidData.name}` : ''}`; }
-	if (thirstDecrease > 0) { statsUpdateText += `\n-${thirstDecrease} thirst (${profileData.thirst}/${profileData.maxThirst})${secondPlayer ? `for ${quidData.name}` : ''}`; }
+	if (experienceIncrease > 0) { statsUpdateText += `\n+${experienceIncrease} XP (${profileData.experience}/${profileData.levels * 50})${secondPlayer ? ` for ${quidData.name}` : ''}`; }
+	if (energyDecrease > 0) { statsUpdateText += `\n-${energyDecrease} energy (${profileData.energy}/${profileData.maxEnergy})${secondPlayer ? ` for ${quidData.name}` : ''}`; }
+	if (hungerDecrease > 0) { statsUpdateText += `\n-${hungerDecrease} hunger (${profileData.hunger}/${profileData.maxHunger})${secondPlayer ? ` for ${quidData.name}` : ''}`; }
+	if (thirstDecrease > 0) { statsUpdateText += `\n-${thirstDecrease} thirst (${profileData.thirst}/${profileData.maxThirst})${secondPlayer ? ` for ${quidData.name}` : ''}`; }
 	if (currentRegion && previousRegion !== currentRegion) { statsUpdateText += `\n${secondPlayer ? `${quidData.name} is` : 'You are'} now at the ${currentRegion}`; }
 
 	return { statsUpdateText, ...await decreaseHealth(userData, quidData, profileData) };
