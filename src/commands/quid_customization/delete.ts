@@ -34,7 +34,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		const botReply = await respond(interaction, sendOriginalMessage(), true)
+		const botReply = await respond(interaction, await sendOriginalMessage(userData), true)
 			.catch((error) => { throw new Error(error); });
 
 		createCommandComponentDisabler(userData.uuid, interaction.guildId || 'DM', botReply);
@@ -58,7 +58,7 @@ export async function deleteInteractionCollector(
 				.setColor(error_color)
 				.setTitle('Please select a quid that you want to delete.')],
 			components: [
-				getOriginalComponents(),
+				await getOriginalComponents(userData),
 				new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents([getQuidsPage(0, userData)]),
 			],
@@ -75,7 +75,7 @@ export async function deleteInteractionCollector(
 
 		await update(interaction, {
 			components: [
-				getOriginalComponents(),
+				await getOriginalComponents(userData),
 				new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents([getQuidsPage(deletePage, userData)]),
 			],
@@ -95,7 +95,7 @@ export async function deleteInteractionCollector(
 				.setColor(error_color)
 				.setTitle(`Are you sure you want to delete the quid named "${quid.name}"? This will be **permanent**!!!`)],
 			components: [
-				...disableAllComponents([getOriginalComponents(), new ActionRowBuilder<SelectMenuBuilder>().setComponents(SelectMenuBuilder.from(interaction.component))]),
+				...disableAllComponents([await getOriginalComponents(userData), new ActionRowBuilder<SelectMenuBuilder>().setComponents(SelectMenuBuilder.from(interaction.component))]),
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents([
 						new ButtonBuilder()
@@ -123,7 +123,7 @@ export async function deleteInteractionCollector(
 				.setColor(error_color)
 				.setTitle('Please select a server that you want to delete all information off of.')],
 			components: [
-				getOriginalComponents(),
+				await getOriginalComponents(userData),
 				new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents([await getServersPage(0, userData)]),
 			],
@@ -140,7 +140,7 @@ export async function deleteInteractionCollector(
 
 		await update(interaction, {
 			components: [
-				getOriginalComponents(),
+				await getOriginalComponents(userData),
 				new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents([await getServersPage(deletePage, userData)]),
 			],
@@ -160,7 +160,7 @@ export async function deleteInteractionCollector(
 				.setColor(error_color)
 				.setTitle(`Are you sure you want to delete all the information of ${accountsOnServer.length} quids on the server ${server.name}? This will be **permanent**!!!`)],
 			components: [
-				...disableAllComponents([getOriginalComponents(), new ActionRowBuilder<SelectMenuBuilder>().setComponents(SelectMenuBuilder.from(interaction.component))]),
+				...disableAllComponents([await getOriginalComponents(userData), new ActionRowBuilder<SelectMenuBuilder>().setComponents(SelectMenuBuilder.from(interaction.component))]),
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents([
 						new ButtonBuilder()
@@ -189,7 +189,7 @@ export async function deleteInteractionCollector(
 				.setTitle('Are you sure you want to delete all your data? This will be **permanent**!!!')
 				.setDescription('Are you unhappy with your experience, or have other concerns? Let us know using `/ticket` (an account is not needed).')],
 			components: [
-				...disableAllComponents([getOriginalComponents()]),
+				...disableAllComponents([await getOriginalComponents(userData)]),
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents([
 						new ButtonBuilder()
@@ -212,11 +212,6 @@ export async function deleteInteractionCollector(
 	/* Deleting the data of the user. */
 	if (interaction.customId.startsWith('delete_confirm')) {
 
-		await update(interaction, sendOriginalMessage())
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
-
 		const type = (interaction.customId.split('_')[2]) as 'individual' | 'server' | 'all';
 
 		/* Deleting a user from the database. */
@@ -234,6 +229,11 @@ export async function deleteInteractionCollector(
 					}
 				},
 			);
+
+			await update(interaction, await sendOriginalMessage(userData))
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
 
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
@@ -263,6 +263,11 @@ export async function deleteInteractionCollector(
 
 			const server = await serverModel.findOne(s => s.serverId === serverId);
 
+			await update(interaction, await sendOriginalMessage(userData))
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
+
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
@@ -278,18 +283,18 @@ export async function deleteInteractionCollector(
 
 			await userModel.findOneAndDelete(u => u.uuid === userData?.uuid);
 
+			await update(interaction, {
+				components: disableAllComponents(interaction.message.components),
+			})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
+
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('All your data was deleted permanently!')],
 			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
-
-			await update(interaction, {
-				components: disableAllComponents(interaction.message.components),
-			})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
@@ -301,7 +306,7 @@ export async function deleteInteractionCollector(
 	/* Editing the message to the original message. */
 	if (interaction.customId === 'delete_cancel') {
 
-		await update(interaction, sendOriginalMessage())
+		await update(interaction, await sendOriginalMessage(userData))
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
@@ -309,26 +314,33 @@ export async function deleteInteractionCollector(
 	}
 }
 
-function sendOriginalMessage(): WebhookEditMessageOptions {
+async function sendOriginalMessage(
+	userData: UserSchema,
+): Promise<WebhookEditMessageOptions> {
 
 	return {
 		embeds: [new EmbedBuilder()
 			.setColor(error_color)
 			.setTitle('Please select what you want to delete.')],
-		components: [getOriginalComponents()],
+		components: [await getOriginalComponents(userData)],
 	};
 }
 
-function getOriginalComponents(): ActionRowBuilder<ButtonBuilder> {
+async function getOriginalComponents(
+	userData: UserSchema,
+): Promise<ActionRowBuilder<ButtonBuilder>> {
 
+	const allServers = await getServersPage(0, userData);
 	return new ActionRowBuilder<ButtonBuilder>()
 		.setComponents([new ButtonBuilder()
 			.setCustomId('delete_individual')
 			.setLabel('A quid')
+			.setDisabled(getQuidsPage(0, userData).options.length <= 0)
 			.setStyle(ButtonStyle.Danger),
 		new ButtonBuilder()
 			.setCustomId('delete_server')
 			.setLabel('All information on one server')
+			.setDisabled(allServers.options.length <= 0)
 			.setStyle(ButtonStyle.Danger),
 		new ButtonBuilder()
 			.setCustomId('delete_all')
