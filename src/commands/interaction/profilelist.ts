@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, Guild, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { RankType, SlashCommand } from '../../typedef';
 import { isInGuild } from '../../utils/checkUserState';
@@ -51,7 +51,7 @@ export async function profilelistInteractionCollector(
 
 		const profilesText = await getProfilesTexts(interaction.guild, rankName, rankName === RankType.Hunter ? RankType.Healer : undefined);
 
-		await respond(interaction, await getProfilesMessage(0, interaction.guild, rankName, profilesText), true)
+		await update(interaction, await getProfilesMessage(0, interaction.guild, rankName, profilesText))
 			.catch((error) => { throw new Error(error); });
 		return;
 	}
