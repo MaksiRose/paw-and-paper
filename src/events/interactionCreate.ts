@@ -77,7 +77,10 @@ export const event: Event = {
 			serverData = await createGuild(client, interaction.guild)
 				.catch(async (error) => {
 					console.error(error);
-					if (interaction.isRepliable() && !interaction.isAutocomplete()) { await sendErrorMessage(interaction, new Error('Unknown command')); }
+					if (interaction.isRepliable() && !interaction.isAutocomplete()) {
+						await sendErrorMessage(interaction, new Error('Unknown command'))
+							.catch(e => { console.error(e); });
+					}
 					return null;
 				});
 		}
@@ -119,20 +122,31 @@ export const event: Event = {
 			const command = client.slashCommands[interaction.commandName];
 			if (command === undefined || !Object.hasOwn(command, 'sendCommand')) {
 
-				return await sendErrorMessage(interaction, new Error('Unknown command'));
+				return await sendErrorMessage(interaction, new Error('Unknown command'))
+					.catch(e => { console.error(e); });
 			}
 
 			/* If the user is not registered in the cooldown map, it's setting the cooldown to false for the user. */
 			if (userData && interaction.guildId && !cooldownMap.has(userData.uuid + interaction.guildId)) { cooldownMap.set(userData.uuid + interaction.guildId, false); }
 
 			/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-			if (userData && command.disablePreviousCommand) { await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.(); }
+			if (userData && command.disablePreviousCommand) {
+
+				await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.()
+					.catch(async (error) => {
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+					});
+			}
 
 			/* This sends the command and error message if an error occurs. */
 			console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully executed \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			await command
 				.sendCommand(client, interaction, userData, serverData, [])
-				.catch(async (error) => { await sendErrorMessage(interaction, error); });
+				.catch(async (error) => {
+					await sendErrorMessage(interaction, error)
+						.catch(e => { console.error(e); });
+				});
 
 			if (interaction.inGuild()) {
 
@@ -149,7 +163,11 @@ export const event: Event = {
 							const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
 							p.sapling.sentGentleReminder = true;
 						},
-					);
+					)
+						.catch(async (error) => {
+							await sendErrorMessage(interaction, error)
+								.catch(e => { console.error(e); });
+						});
 
 					await interaction
 						.followUp({
@@ -160,7 +178,8 @@ export const event: Event = {
 								.setFooter({ text: 'Type "/water-tree" to water your ginkgo sapling!' })],
 						})
 						.catch(async (error) => {
-							return await sendErrorMessage(interaction, error);
+							await sendErrorMessage(interaction, error)
+								.catch(e => { console.error(e); });
 						});
 				}
 			}
@@ -174,7 +193,8 @@ export const event: Event = {
 						content: `A new update has come out since you last used the bot! You can view the changelog here: <https://github.com/MaksiRose/paw-and-paper/releases/tag/v${version.split('.').slice(0, -1).join('.')}.0>`,
 					})
 					.catch(async (error) => {
-						return await sendErrorMessage(interaction, error);
+						return await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
 					});
 
 				await userModel.findOneAndUpdate(
@@ -182,7 +202,11 @@ export const event: Event = {
 					(u) => {
 						u.lastPlayedVersion = version.split('.').slice(0, -1).join('.');
 					},
-				);
+				)
+					.catch(async (error) => {
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+					});
 			}
 			return;
 		}
@@ -196,14 +220,18 @@ export const event: Event = {
 			const command = client.contextMenuCommands[interaction.commandName];
 			if (command === undefined || !Object.hasOwn(command, 'sendCommand')) {
 
-				return await sendErrorMessage(interaction, new Error('Unknown command'));
+				return await sendErrorMessage(interaction, new Error('Unknown command'))
+					.catch(e => { console.error(e); });
 			}
 
 			/* This sends the command and error message if an error occurs. */
 			console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully executed \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			await command
 				.sendCommand(client, interaction)
-				.catch(async (error) => { await sendErrorMessage(interaction, error); });
+				.catch(async (error) => {
+					await sendErrorMessage(interaction, error)
+						.catch(e => { console.error(e); });
+				});
 			return;
 		}
 
@@ -214,42 +242,60 @@ export const event: Event = {
 			if (interaction.customId.includes('edit')) {
 
 				await sendEditMessageModalResponse(interaction)
-					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					.catch(async (error) => {
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+					});
 				return;
 			}
 
 			if (interaction.customId.includes('species')) {
 
 				await sendEditDisplayedSpeciesModalResponse(interaction, userData)
-					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					.catch(async (error) => {
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+					});
 				return;
 			}
 
 			if (interaction.customId.includes('pronouns') && interaction.isFromMessage()) {
 
 				await sendEditPronounsModalResponse(interaction)
-					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					.catch(async (error) => {
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+					});
 				return;
 			}
 
 			if (interaction.customId.includes('proxy')) {
 
 				await sendEditProxyModalResponse(interaction, userData)
-					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					.catch(async (error) => {
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+					});
 				return;
 			}
 
 			if (interaction.customId.includes('ticket') && interaction.isFromMessage()) {
 
 				await sendRespondToTicketModalResponse(interaction)
-					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					.catch(async (error) => {
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+					});
 				return;
 			}
 
 			if (interaction.customId.includes('skills') && interaction.isFromMessage()) {
 
 				await sendEditSkillsModalResponse(interaction, serverData, userData)
-					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					.catch(async (error) => {
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+					});
 				return;
 			}
 			return;
@@ -268,7 +314,8 @@ export const event: Event = {
 				}, false)
 					.catch(async (error) => {
 						if (error.httpStatus !== 404) {
-							return await sendErrorMessage(interaction, error);
+							return await sendErrorMessage(interaction, error)
+								.catch(e => { console.error(e); });
 						}
 					});
 				return;
@@ -431,85 +478,126 @@ export const event: Event = {
 			if (interaction.customId.startsWith('profile_')) {
 
 				await profileInteractionCollector(client, interaction)
-					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					.catch(async (error) => {
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+					});
 				return;
 			}
 
 			if (interaction.customId.startsWith('species_')) {
 
 				await speciesInteractionCollector(interaction, userData)
-					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					.catch(async (error) => {
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+					});
 				return;
 			}
 
 			if (interaction.customId.startsWith('pronouns_')) {
 
 				await pronounsInteractionCollector(interaction)
-					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					.catch(async (error) => {
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+					});
 				return;
 			}
 
 			if (interaction.customId.startsWith('proxy_')) {
 
 				await proxyInteractionCollector(interaction, userData, serverData)
-					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					.catch(async (error) => {
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+					});
 				return;
 			}
 
 			if (interaction.customId.startsWith('delete_')) {
 
 				await deleteInteractionCollector(interaction, userData)
-					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					.catch(async (error) => {
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+					});
 				return;
 			}
 
 			if (interaction.customId.startsWith('serversettings_')) {
 
-				if (!serverData) { return await sendErrorMessage(interaction, new Error('serverData is null')); }
+				if (!serverData) {
+
+					return await sendErrorMessage(interaction, new Error('serverData is null'))
+						.catch(e => { console.error(e); });
+				}
+
 				await serversettingsInteractionCollector(interaction, serverData)
-					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					.catch(async (error) => {
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+					});
 				return;
 			}
 
 			if (interaction.customId.startsWith('skills_')) {
 
 				await skillsInteractionCollector(interaction, serverData, userData)
-					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					.catch(async (error) => {
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+					});
 				return;
 			}
 
 			if (interaction.customId.startsWith('profilelist_')) {
 
 				await profilelistInteractionCollector(interaction)
-					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					.catch(async (error) => {
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+					});
 				return;
 			}
 
 			if (interaction.customId.startsWith('store_')) {
 
 				await storeInteractionCollector(interaction, userData, serverData)
-					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					.catch(async (error) => {
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+					});
 				return;
 			}
 
 			if (interaction.customId.startsWith('repair_')) {
 
 				await repairInteractionCollector(interaction, userData, serverData)
-					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					.catch(async (error) => {
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+					});
 				return;
 			}
 
 			if (interaction.customId.startsWith('heal_')) {
 
 				await healInteractionCollector(interaction, userData, serverData)
-					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					.catch(async (error) => {
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+					});
 				return;
 			}
 
 			if (interaction.customId.startsWith('travel_')) {
 
 				await travelInteractionCollector(interaction, userData, serverData)
-					.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					.catch(async (error) => {
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+					});
 				return;
 			}
 			return;
@@ -542,7 +630,10 @@ setInterval(async function() {
 			if (lastInteractionIsTenMinutesAgo && !activeProfile.isResting && hasLessThanMaxEnergy && isConscious && hasNoCooldown) {
 
 				await startResting(lastInteraction, user, quid, activeProfile, serverData)
-					.catch(async (error) => { await sendErrorMessage(lastInteraction, error); });
+					.catch(async (error) => {
+						await sendErrorMessage(lastInteraction, error)
+							.catch(e => { console.error(e); });
+					});
 			}
 		}
 	}
