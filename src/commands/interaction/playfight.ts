@@ -33,7 +33,8 @@ export const command: SlashCommand = {
 				.setChoices(
 					{ name: 'Connect four', value: 'Connect four' },
 					{ name: 'Tic Tac Toe', value: 'Tic Tac Toe' },
-				))
+				)
+				.setRequired(true))
 		.toJSON(),
 	disablePreviousCommand: true,
 	sendCommand: async (client, interaction, userData1, serverData, embedArray) => {
