@@ -327,14 +327,6 @@ export async function getHealResponse(
 
 	// This part of the code is only executed if a herb has been given
 
-	if (interaction instanceof MessageComponentInteraction) {
-
-		await update(interaction, {
-			components: disableAllComponents(interaction.message.components),
-		})
-			.catch((error) => { console.trace(error); });
-	}
-
 	if (!hurtQuids.some(quid => quid._id === quidToHeal!._id)) {
 
 		const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
@@ -558,12 +550,6 @@ export async function getHealResponse(
 	const content = userToHeal.uuid !== userToHeal.uuid && isSuccessful === true ? `<@${userToHeal.userId[0]}>\n` : '' + (messageContent ?? '');
 	const levelUpEmbed = (await checkLevelUp(interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
 
-	if (interaction instanceof MessageComponentInteraction) {
-
-		await interaction.update({ components: disableAllComponents(interaction.message.components) })
-			.catch((error) => { console.error(error); });
-	}
-
 	const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 		content: content === '' ? null : content,
 		embeds: [
@@ -573,6 +559,7 @@ export async function getHealResponse(
 			...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
 			...(levelUpEmbed ? [levelUpEmbed] : []),
 		],
+		components: interaction.isMessageComponent() ? disableAllComponents(interaction.message.components) : [],
 	})
 		.catch((error) => { throw new Error(error); });
 
