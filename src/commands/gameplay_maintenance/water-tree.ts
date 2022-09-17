@@ -188,70 +188,76 @@ export async function sendReminder(
 	}
 
 	userMap.set(quidData._id + profileData.serverId, setTimeout(async () => {
+		try {
 
-		userData = await userModel.findOne(u => u.uuid === userData.uuid);
-		quidData = getMapData(userData.quids, quidData._id);
-		profileData = getMapData(quidData.profiles, profileData.serverId);
+			userData = await userModel.findOne(u => u.uuid === userData.uuid);
+			quidData = getMapData(userData.quids, quidData._id);
+			profileData = getMapData(quidData.profiles, profileData.serverId);
 
-		if (typeof profileData.sapling.lastMessageChannelId !== 'string') {
-
-			await removeChannel(userData.uuid, quidData._id, profileData.serverId);
-			return;
-		}
-
-		if (profileData.sapling.exists && userData.settings.reminders.water && !profileData.sapling.sentReminder) {
-
-			const channel = await client.channels
-				.fetch(profileData.sapling.lastMessageChannelId)
-				.catch(async (error) => {
-					if (error.httpStatus === '403' || error.httpStatus === '404') {
-						await removeChannel(userData.uuid, quidData._id, profileData.serverId);
-						throw new Error('Missing Access: Cannot fetch this channel');
-					}
-					else { throw new Error(error); }
-				});
-
-			if (!channel || !channel.isTextBased() || channel.isDMBased()) {
+			if (typeof profileData.sapling.lastMessageChannelId !== 'string') {
 
 				await removeChannel(userData.uuid, quidData._id, profileData.serverId);
-				throw new Error('lastMessageChannelId is undefined, not a text based channel or a DM channel');
+				return;
 			}
 
-			/* This has to be changed when multiple users are introduced. First idea is to also store, as part of the sapling object, which user last watered. Then, if that user fails, try again for all the other users. */
-			await channel.guild.members
-				.fetch(userData.userId[0] || '')
-				.catch(async (error) => {
-					if (error.httpStatus === '403' || error.httpStatus === '404') {
-						await removeChannel(userData.uuid, quidData._id, profileData.serverId);
-						throw new Error('Missing Access: User is not in guild');
-					}
-				});
-			const isInactive = userData.currentQuid[profileData.serverId] !== quidData._id;
+			if (profileData.sapling.exists && userData.settings.reminders.water && !profileData.sapling.sentReminder) {
 
-			await channel
-				.send({
-					content: `<@${userData.userId[0]}>`,
-					embeds: [new EmbedBuilder()
-						.setColor(quidData.color)
-						.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
-						.setDescription('It is time to `/water-tree` your tree!')
-						.setFooter(isInactive ? { text: '⚠️ CAUTION! The quid associated with this reminder is currently inactive. Type "/profile" and select the quid from the drop-down list before watering your tree.' } : null)],
-				})
-				.catch(async (error) => {
-					if (error.httpStatus === '403' || error.httpStatus === '404') {
-						await removeChannel(userData.uuid, quidData._id, profileData.serverId);
-						throw new Error('Missing Access: Cannot send to this channel');
-					}
-					else { throw new Error(error); }
-				});
+				const channel = await client.channels
+					.fetch(profileData.sapling.lastMessageChannelId)
+					.catch(async (error) => {
+						if (error.httpStatus === '403' || error.httpStatus === '404') {
+							await removeChannel(userData.uuid, quidData._id, profileData.serverId);
+							throw new Error('Missing Access: Cannot fetch this channel');
+						}
+						else { throw new Error(error); }
+					});
 
-			await userModel.findOneAndUpdate(
-				u => u.uuid === userData.uuid,
-				(u) => {
-					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, profileData.serverId)).profiles, profileData.serverId);
-					p.sapling.sentReminder = true;
-				},
-			);
+				if (!channel || !channel.isTextBased() || channel.isDMBased()) {
+
+					await removeChannel(userData.uuid, quidData._id, profileData.serverId);
+					throw new Error('lastMessageChannelId is undefined, not a text based channel or a DM channel');
+				}
+
+				/* This has to be changed when multiple users are introduced. First idea is to also store, as part of the sapling object, which user last watered. Then, if that user fails, try again for all the other users. */
+				await channel.guild.members
+					.fetch(userData.userId[0] || '')
+					.catch(async (error) => {
+						if (error.httpStatus === '403' || error.httpStatus === '404') {
+							await removeChannel(userData.uuid, quidData._id, profileData.serverId);
+							throw new Error('Missing Access: User is not in guild');
+						}
+					});
+				const isInactive = userData.currentQuid[profileData.serverId] !== quidData._id;
+
+				await channel
+					.send({
+						content: `<@${userData.userId[0]}>`,
+						embeds: [new EmbedBuilder()
+							.setColor(quidData.color)
+							.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+							.setDescription('It is time to `/water-tree` your tree!')
+							.setFooter(isInactive ? { text: '⚠️ CAUTION! The quid associated with this reminder is currently inactive. Type "/profile" and select the quid from the drop-down list before watering your tree.' } : null)],
+					})
+					.catch(async (error) => {
+						if (error.httpStatus === '403' || error.httpStatus === '404') {
+							await removeChannel(userData.uuid, quidData._id, profileData.serverId);
+							throw new Error('Missing Access: Cannot send to this channel');
+						}
+						else { throw new Error(error); }
+					});
+
+				await userModel.findOneAndUpdate(
+					u => u.uuid === userData.uuid,
+					(u) => {
+						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, profileData.serverId)).profiles, profileData.serverId);
+						p.sapling.sentReminder = true;
+					},
+				);
+			}
+		}
+		catch (error) {
+
+			console.error(error);
 		}
 	}, (profileData.sapling.nextWaterTimestamp ?? Date.now()) - Date.now()));
 }

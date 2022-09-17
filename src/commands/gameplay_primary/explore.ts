@@ -3,7 +3,7 @@ import { Inventory, Profile, Quid, RankType, ServerSchema, SlashCommand, Species
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { capitalizeString, getMapData, getSmallerNumber, keyInObject, respond, update } from '../../utils/helperFunctions';
+import { capitalizeString, getMapData, getSmallerNumber, keyInObject, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import { remindOfAttack, startAttack } from './attack';
 import Fuse from 'fuse.js';
 import { disableAllComponents } from '../../utils/componentDisabling';
@@ -205,29 +205,30 @@ export async function executeExploring(
 	});
 
 	collector.on('collect', async int => {
+		try {
 
-		const oldPlayerPos = { ...playerPos };
+			const oldPlayerPos = { ...playerPos };
 
-		if (int.customId.includes('left')) { playerPos.column -= 1; }
-		if (int.customId.includes('up')) { playerPos.row -= 1; }
-		if (int.customId.includes('down')) { playerPos.row += 1; }
-		if (int.customId.includes('right')) { playerPos.column += 1; }
+			if (int.customId.includes('left')) { playerPos.column -= 1; }
+			if (int.customId.includes('up')) { playerPos.row -= 1; }
+			if (int.customId.includes('down')) { playerPos.row += 1; }
+			if (int.customId.includes('right')) { playerPos.column += 1; }
 
-		_row = waitingGameField.findIndex(v => v.some(e => e === goal));
-		let goalPos: Position = { row: _row, column: waitingGameField[_row]?.findIndex(e => e === goal) ?? -1 };
+			_row = waitingGameField.findIndex(v => v.some(e => e === goal));
+			let goalPos: Position = { row: _row, column: waitingGameField[_row]?.findIndex(e => e === goal) ?? -1 };
 
-		let options: Position[] = [
-			{ row: goalPos.row, column: goalPos.column - 1 },
-			{ row: goalPos.row - 1, column: goalPos.column },
-			{ row: goalPos.row + 1, column: goalPos.column },
-			{ row: goalPos.row, column: goalPos.column + 1 },
-		].filter(pos => waitingGameField[pos.row]?.[pos.column] === player || waitingGameField[pos.row]?.[pos.column] === empty);
+			let options: Position[] = [
+				{ row: goalPos.row, column: goalPos.column - 1 },
+				{ row: goalPos.row - 1, column: goalPos.column },
+				{ row: goalPos.row + 1, column: goalPos.column },
+				{ row: goalPos.row, column: goalPos.column + 1 },
+			].filter(pos => waitingGameField[pos.row]?.[pos.column] === player || waitingGameField[pos.row]?.[pos.column] === empty);
 
-		/* If we have enough options to chose from, remove the option where we go back where we were in the previous round */
-		if (options.length > 1) { options = options.filter(pos => pos.row !== oldGoalPos.row || pos.column !== oldGoalPos.column); }
+			/* If we have enough options to chose from, remove the option where we go back where we were in the previous round */
+			if (options.length > 1) { options = options.filter(pos => pos.row !== oldGoalPos.row || pos.column !== oldGoalPos.column); }
 
-		oldGoalPos = { ...goalPos };
-		goalPos = options[getRandomNumber(options.length)] ?? goalPos;
+			oldGoalPos = { ...goalPos };
+			goalPos = options[getRandomNumber(options.length)] ?? goalPos;
 
 		waitingGameField[oldGoalPos.row]![oldGoalPos.column] = empty;
 		waitingGameField[goalPos.row]![goalPos.column] = goal;
@@ -255,6 +256,12 @@ export async function executeExploring(
 				if (error.httpStatus !== 404) { throw new Error(error); }
 				return botReply;
 			});
+		}
+		catch (error) {
+
+			await sendErrorMessage(interaction, error)
+				.catch(e => { console.error(e); });
+		}
 	});
 
 	await new Promise<void>(resolve => {

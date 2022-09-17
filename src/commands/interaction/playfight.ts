@@ -263,186 +263,200 @@ export async function playfightInteractionCollector(
 	});
 
 	collector.on('collect', async (i) => {
-
-		let column: number | undefined = undefined;
-		let row: number | undefined = undefined;
-		if (gameType === 'tictactoe') {
-
-			/* The column and row of the current card are updated with their position */
-			row = Number(i.customId.split('_')[2]);
-			if (isNaN(row)) { return collector.stop('error_Error: row is Not a Number'); }
-			column = Number(i.customId.split('_')[3]);
-			if (isNaN(column)) { return collector.stop('error_Error: column is Not a Number'); }
-
-			componentArray[row]?.components[column]?.setEmoji(user1IsPlaying ? player1Field : player2Field);
-			componentArray[row]?.components[column]?.setDisabled(true);
-			playingField[row]![column] = user1IsPlaying ? 1 : 2;
-		}
-		else if (gameType === 'connectfour') {
-
-			/* The column and row of the current card are updated with their position */
-			column = Number(i.customId.split('_')[2]);
-
-			for (let r = 5; r >= 0; r--) {
-
-				let pos = playingField[r]?.[column];
-				if (pos === 0) {
-
-					row = r;
-					pos = (user1IsPlaying === true) ? 1 : 2;
-
-					if (r === 0) { componentArray[column <= 3 ? 0 : 1]?.components[column <= 3 ? column : column - 4]?.setDisabled(true); }
-
-					break;
-				}
-			}
-			if (!row) { return collector.stop('error_Error: row is Not a Number'); }
-		}
-		else { return collector.stop(`error_Error: gameType "${gameType}" is invalid`); }
-
-		// getWinningRow can crash, therefore we need to catch this way
 		try {
 
-			const winningRow = getWinningRow(playingField, { row, column }, gameType === 'tictactoe' ? 3 : 4);
-			if (winningRow) {
+			let column: number | undefined = undefined;
+			let row: number | undefined = undefined;
+			if (gameType === 'tictactoe') {
 
-				if (gameType === 'connectfour') { winningRow.forEach(position => playingField[position.row]![position.column] = user1IsPlaying ? 3 : 4); }
-				return collector.stop('success_win');
+				/* The column and row of the current card are updated with their position */
+				row = Number(i.customId.split('_')[2]);
+				if (isNaN(row)) { return collector.stop('error_Error: row is Not a Number'); }
+				column = Number(i.customId.split('_')[3]);
+				if (isNaN(column)) { return collector.stop('error_Error: column is Not a Number'); }
+
+				componentArray[row]?.components[column]?.setEmoji(user1IsPlaying ? player1Field : player2Field);
+				componentArray[row]?.components[column]?.setDisabled(true);
+			playingField[row]![column] = user1IsPlaying ? 1 : 2;
 			}
-			else if (
-				(gameType === 'tictactoe' && componentArray.every(columnArray => columnArray.components.every(rowArray => rowArray.data.disabled === true))) ||
+			else if (gameType === 'connectfour') {
+
+				/* The column and row of the current card are updated with their position */
+				column = Number(i.customId.split('_')[2]);
+
+				for (let r = 5; r >= 0; r--) {
+
+					let pos = playingField[r]?.[column];
+					if (pos === 0) {
+
+						row = r;
+						pos = (user1IsPlaying === true) ? 1 : 2;
+
+						if (r === 0) { componentArray[column <= 3 ? 0 : 1]?.components[column <= 3 ? column : column - 4]?.setDisabled(true); }
+
+						break;
+					}
+				}
+				if (!row) { return collector.stop('error_Error: row is Not a Number'); }
+			}
+			else { return collector.stop(`error_Error: gameType "${gameType}" is invalid`); }
+
+			// getWinningRow can crash, therefore we need to catch this way
+			try {
+
+				const winningRow = getWinningRow(playingField, { row, column }, gameType === 'tictactoe' ? 3 : 4);
+				if (winningRow) {
+
+					if (gameType === 'connectfour') { winningRow.forEach(position => playingField[position.row]![position.column] = user1IsPlaying ? 3 : 4); }
+					return collector.stop('success_win');
+				}
+				else if (
+					(gameType === 'tictactoe' && componentArray.every(columnArray => columnArray.components.every(rowArray => rowArray.data.disabled === true))) ||
 				(gameType === 'connectfour' && !getWinningRow(deepCopyObject(playingField).map(row => row.map(column => column === 0 ? user1IsPlaying ? 1 : 2 : column)), { row, column }, 4))
-			) { return collector.stop('success_tie'); }
-			else {
+				) { return collector.stop('success_tie'); }
+				else {
 
-				const newBotReply = await sendNextRoundMessage(
-					user1IsPlaying ? userId1 : userId2,
-					gameType === 'connectfour' ? playingField.map(
-						row => row.join('').replaceAll('0', emptyField).replaceAll('1', player1Field).replaceAll('2', player2Field),
-					).join('\n') + '\n1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣' : undefined,
-				)
-					.catch((error) => {
-						collector.stop(`error_${error}`);
-						return undefined;
-					});
-				if (!newBotReply) { return; }
-				else { botReply = newBotReply; }
+					const newBotReply = await sendNextRoundMessage(
+						user1IsPlaying ? userId1 : userId2,
+						gameType === 'connectfour' ? playingField.map(
+							row => row.join('').replaceAll('0', emptyField).replaceAll('1', player1Field).replaceAll('2', player2Field),
+						).join('\n') + '\n1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣' : undefined,
+					)
+						.catch((error) => {
+							collector.stop(`error_${error}`);
+							return undefined;
+						});
+					if (!newBotReply) { return; }
+					else { botReply = newBotReply; }
+				}
 			}
+			catch (error) { collector.stop(`error_${error}`); }
 		}
-		catch (error) { collector.stop(`error_${error}`); }
+		catch (error) {
+
+			await sendErrorMessage(interaction, error)
+				.catch(e => { console.error(e); });
+		}
 	});
 
 	collector.on('end', async (collected, reason) => {
+		try {
 
-		/* Set both user's cooldown to false */
-		cooldownMap.set(userData1.uuid + interaction.guildId, false);
-		cooldownMap.set(userData2.uuid + interaction.guildId, false);
+			/* Set both user's cooldown to false */
+			cooldownMap.set(userData1.uuid + interaction.guildId, false);
+			cooldownMap.set(userData2.uuid + interaction.guildId, false);
 
-		if (reason.startsWith('error')) {
+			if (reason.startsWith('error')) {
 
-			const errorReason = reason.split('_').slice(1).join('_') || 'An unexpected error occurred.';
-			await sendErrorMessage(interaction, errorReason)
-				.catch((error) => { console.error(error); });
-			return;
-		}
-
-		// reason idle: someone waited too long
-		if (reason.includes('idle') || reason.includes('time')) {
-
-			const afterGameChangesData = await checkAfterGameChanges(interaction, userData1, quidData1, profileData1, userData2, quidData2, profileData2, serverData)
-				.catch((error) => { sendErrorMessage(interaction, error); });
-
-			await botReply
-				.edit({
-					content: null,
-					embeds: [
-						new EmbedBuilder()
-							.setColor(quidData1.color)
-							.setAuthor({ name: quidData1.name, iconURL: quidData1.avatarURL })
-							.setDescription(`*${quidDataCurrent.name} takes so long with ${pronoun(quidDataCurrent, 2)} decision on how to attack that ${quidDataOther.name} gets impatient and leaves.*`)
-							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n${decreasedStatsData2.statsUpdateText}` }),
-						...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
-						...(decreasedStatsData2.injuryUpdateEmbed ? [decreasedStatsData2.injuryUpdateEmbed] : []),
-						...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
-						...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
-					],
-					components: disableAllComponents(interaction.message.components),
-				})
-				.catch((error) => { sendErrorMessage(interaction, error); });
-			return;
-		}
-
-		// reason success: there's a tie or one person got 3 in a row
-		if (reason.includes('success')) {
-
-			componentArray = disableAllComponents(componentArray);
-
-			if (reason.includes('win')) {
-
-				const x = getBiggerNumber(profileDataOther.levels - profileDataCurrent.levels, 0);
-				const extraExperience = Math.round((80 / (1 + Math.pow(Math.E, -0.09375 * x))) - 40);
-				const experiencePoints = getRandomNumber(11, 10) + extraExperience;
-
-				(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText = `+${experiencePoints} XP (${profileDataCurrent.experience + experiencePoints}/${profileDataCurrent.levels * 50}) for ${quidDataCurrent.name}\n${(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText}`;
-
-				await userModel.findOneAndUpdate(
-					u => u.uuid === userDataCurrent.uuid,
-					(u) => {
-						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-						p.experience += experiencePoints;
-					},
-				);
-			}
-			else {
-
-				const experiencePoints = getRandomNumber(11, 5);
-
-				decreasedStatsData1.statsUpdateText = `+${experiencePoints} XP (${profileDataCurrent.experience + experiencePoints}/${profileDataCurrent.levels * 50}) for ${quidDataCurrent.name}\n${decreasedStatsData1.statsUpdateText}`;
-				decreasedStatsData2.statsUpdateText = `+${experiencePoints} XP (${profileDataOther.experience + experiencePoints}/${profileDataOther.levels * 50}) for ${quidDataOther.name}\n${decreasedStatsData2.statsUpdateText}`;
-
-				await userModel.findOneAndUpdate(
-					u => u.uuid === userDataCurrent.uuid,
-					(u) => {
-						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-						p.experience += experiencePoints;
-					},
-				);
-
-				await userModel.findOneAndUpdate(
-					u => u.uuid === userDataOther.uuid,
-					(u) => {
-						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-						p.experience += experiencePoints;
-					},
-				);
+				const errorReason = reason.split('_').slice(1).join('_') || 'An unexpected error occurred.';
+				await sendErrorMessage(interaction, errorReason)
+					.catch((error) => { console.error(error); });
+				return;
 			}
 
-			const afterGameChangesData = await checkAfterGameChanges(interaction, userData1, quidData1, profileData1, userData2, quidData2, profileData2, serverData)
-				.catch((error) => { sendErrorMessage(interaction, error); });
+			// reason idle: someone waited too long
+			if (reason.includes('idle') || reason.includes('time')) {
 
-			await botReply
-				.edit({
-					content: null,
-					embeds: [
-						...(gameType === 'connectfour' ? [new EmbedBuilder()
-							.setColor(quidData1.color)
-							.setDescription(playingField.map(
-								row => row.join('').replaceAll('0', emptyField).replaceAll('1', player1Field).replaceAll('2', player2Field).replaceAll('3', '🟨').replaceAll('4', '🟥'),
-							).join('\n'))] : []),
-						new EmbedBuilder()
-							.setColor(quidData1.color)
-							.setAuthor({ name: quidData1.name, iconURL: quidData1.avatarURL })
-							.setDescription(reason.includes('win') ? `*The two animals are pressing against each other with all their might. It seems like the fight will never end this way, but ${quidDataCurrent.name} has one more trick up ${pronoun(quidDataCurrent, 2)} sleeve: ${pronoun(quidDataCurrent, 0)} simply moves out of the way, letting ${quidDataOther.name} crash into the ground. ${upperCasePronounAndPlural(quidDataOther, 0, 'has', 'have')} a wry grin on ${pronoun(quidDataOther, 2)} face as ${pronounAndPlural(quidDataOther, 0, 'look')} up at the ${quidDataCurrent.displayedSpecies || quidDataCurrent.species}. ${quidDataCurrent.name} wins this fight, but who knows about the next one?*` : `*The two animals wrestle with each other until ${quidDataCurrent.name} falls over the ${quidDataOther.displayedSpecies || quidDataOther.species} and both of them land on the ground. They pant and glare at each other, but ${quidDataOther.name} can't contain ${pronoun(quidDataOther, 2)} laughter. The ${quidDataCurrent.displayedSpecies || quidDataCurrent.species} starts to giggle as well. The fight has been fun, even though no one won.*`)
-							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n${decreasedStatsData2.statsUpdateText}` }),
-						...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
-						...(decreasedStatsData2.injuryUpdateEmbed ? [decreasedStatsData2.injuryUpdateEmbed] : []),
-						...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
-						...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
-					],
-					components: disableAllComponents(interaction.message.components),
-				})
-				.catch((error) => { sendErrorMessage(interaction, error); });
-			return;
+				const afterGameChangesData = await checkAfterGameChanges(interaction, userData1, quidData1, profileData1, userData2, quidData2, profileData2, serverData)
+					.catch((error) => { sendErrorMessage(interaction, error); });
+
+				await botReply
+					.edit({
+						content: null,
+						embeds: [
+							new EmbedBuilder()
+								.setColor(quidData1.color)
+								.setAuthor({ name: quidData1.name, iconURL: quidData1.avatarURL })
+								.setDescription(`*${quidDataCurrent.name} takes so long with ${pronoun(quidDataCurrent, 2)} decision on how to attack that ${quidDataOther.name} gets impatient and leaves.*`)
+								.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n${decreasedStatsData2.statsUpdateText}` }),
+							...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
+							...(decreasedStatsData2.injuryUpdateEmbed ? [decreasedStatsData2.injuryUpdateEmbed] : []),
+							...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
+							...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
+						],
+						components: disableAllComponents(interaction.message.components),
+					})
+					.catch((error) => { sendErrorMessage(interaction, error); });
+				return;
+			}
+
+			// reason success: there's a tie or one person got 3 in a row
+			if (reason.includes('success')) {
+
+				componentArray = disableAllComponents(componentArray);
+
+				if (reason.includes('win')) {
+
+					const x = getBiggerNumber(profileDataOther.levels - profileDataCurrent.levels, 0);
+					const extraExperience = Math.round((80 / (1 + Math.pow(Math.E, -0.09375 * x))) - 40);
+					const experiencePoints = getRandomNumber(11, 10) + extraExperience;
+
+					(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText = `+${experiencePoints} XP (${profileDataCurrent.experience + experiencePoints}/${profileDataCurrent.levels * 50}) for ${quidDataCurrent.name}\n${(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText}`;
+
+					await userModel.findOneAndUpdate(
+						u => u.uuid === userDataCurrent.uuid,
+						(u) => {
+							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+							p.experience += experiencePoints;
+						},
+					);
+				}
+				else {
+
+					const experiencePoints = getRandomNumber(11, 5);
+
+					decreasedStatsData1.statsUpdateText = `+${experiencePoints} XP (${profileDataCurrent.experience + experiencePoints}/${profileDataCurrent.levels * 50}) for ${quidDataCurrent.name}\n${decreasedStatsData1.statsUpdateText}`;
+					decreasedStatsData2.statsUpdateText = `+${experiencePoints} XP (${profileDataOther.experience + experiencePoints}/${profileDataOther.levels * 50}) for ${quidDataOther.name}\n${decreasedStatsData2.statsUpdateText}`;
+
+					await userModel.findOneAndUpdate(
+						u => u.uuid === userDataCurrent.uuid,
+						(u) => {
+							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+							p.experience += experiencePoints;
+						},
+					);
+
+					await userModel.findOneAndUpdate(
+						u => u.uuid === userDataOther.uuid,
+						(u) => {
+							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+							p.experience += experiencePoints;
+						},
+					);
+				}
+
+				const afterGameChangesData = await checkAfterGameChanges(interaction, userData1, quidData1, profileData1, userData2, quidData2, profileData2, serverData)
+					.catch((error) => { sendErrorMessage(interaction, error); });
+
+				await botReply
+					.edit({
+						content: null,
+						embeds: [
+							...(gameType === 'connectfour' ? [new EmbedBuilder()
+								.setColor(quidData1.color)
+								.setDescription(playingField.map(
+									row => row.join('').replaceAll('0', emptyField).replaceAll('1', player1Field).replaceAll('2', player2Field).replaceAll('3', '🟨').replaceAll('4', '🟥'),
+								).join('\n'))] : []),
+							new EmbedBuilder()
+								.setColor(quidData1.color)
+								.setAuthor({ name: quidData1.name, iconURL: quidData1.avatarURL })
+								.setDescription(reason.includes('win') ? `*The two animals are pressing against each other with all their might. It seems like the fight will never end this way, but ${quidDataCurrent.name} has one more trick up ${pronoun(quidDataCurrent, 2)} sleeve: ${pronoun(quidDataCurrent, 0)} simply moves out of the way, letting ${quidDataOther.name} crash into the ground. ${upperCasePronounAndPlural(quidDataOther, 0, 'has', 'have')} a wry grin on ${pronoun(quidDataOther, 2)} face as ${pronounAndPlural(quidDataOther, 0, 'look')} up at the ${quidDataCurrent.displayedSpecies || quidDataCurrent.species}. ${quidDataCurrent.name} wins this fight, but who knows about the next one?*` : `*The two animals wrestle with each other until ${quidDataCurrent.name} falls over the ${quidDataOther.displayedSpecies || quidDataOther.species} and both of them land on the ground. They pant and glare at each other, but ${quidDataOther.name} can't contain ${pronoun(quidDataOther, 2)} laughter. The ${quidDataCurrent.displayedSpecies || quidDataCurrent.species} starts to giggle as well. The fight has been fun, even though no one won.*`)
+								.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n${decreasedStatsData2.statsUpdateText}` }),
+							...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
+							...(decreasedStatsData2.injuryUpdateEmbed ? [decreasedStatsData2.injuryUpdateEmbed] : []),
+							...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
+							...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
+						],
+						components: disableAllComponents(interaction.message.components),
+					})
+					.catch((error) => { sendErrorMessage(interaction, error); });
+				return;
+			}
+		}
+		catch (error) {
+
+			await sendErrorMessage(interaction, error)
+				.catch(e => { console.error(e); });
 		}
 	});
 }

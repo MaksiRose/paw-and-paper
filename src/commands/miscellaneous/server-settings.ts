@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { respond, update } from '../../utils/helperFunctions';
+import { respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
 import { RankType, ServerSchema, SlashCommand, WayOfEarningType } from '../../typedef';
@@ -105,146 +105,217 @@ export async function serversettingsInteractionCollector(
 			const interactionCollector = interaction.message.createMessageComponentCollector({ filter: (i) => i.user.id === interaction.user.id, idle: 1_800_000 }); // idle for 30 minutes
 
 			interactionCollector.on('collect', async i => {
+				try {
 
-				const collectorSelectOptionId = i.isSelectMenu() ? i.values[0] : undefined;
+					const collectorSelectOptionId = i.isSelectMenu() ? i.values[0] : undefined;
 
-				if (i.isButton() && i.customId === 'serversettings_shop') { interactionCollector.stop('back'); }
+					if (i.isButton() && i.customId === 'serversettings_shop') { interactionCollector.stop('back'); }
 
-				if (i.isSelectMenu() && collectorSelectOptionId && i.customId === 'serversettings_shop_add_options') {
+					if (i.isSelectMenu() && collectorSelectOptionId && i.customId === 'serversettings_shop_add_options') {
 
-					if (collectorSelectOptionId.startsWith('serversettings_shop_add_nextpage_')) {
+						if (collectorSelectOptionId.startsWith('serversettings_shop_add_nextpage_')) {
 
-						rolePage = Number(collectorSelectOptionId.replace('serversettings_shop_add_nextpage_', ''));
-						roleMenu = await getNewRoleMenu(i, serverData, rolePage).catch(() => { return null; });
+							rolePage = Number(collectorSelectOptionId.replace('serversettings_shop_add_nextpage_', ''));
+							roleMenu = await getNewRoleMenu(i, serverData, rolePage).catch(() => { return null; });
+						}
+						else { role = collectorSelectOptionId.replace('serversettings_shop_add_', ''); }
+
+						await update(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
+							.catch(error => { console.error(error); });
 					}
-					else { role = collectorSelectOptionId.replace('serversettings_shop_add_', ''); }
 
-					await update(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
-						.catch(error => { console.error(error); });
-				}
+					if (i.isSelectMenu() && collectorSelectOptionId && i.customId === 'serversettings_shop_wayofearning') {
 
-				if (i.isSelectMenu() && collectorSelectOptionId && i.customId === 'serversettings_shop_wayofearning') {
+						wayOfEarning = collectorSelectOptionId.replace('serversettings_shop_wayofearning_', '') as WayOfEarningType;
+						requirement = null;
+						await update(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
+							.catch(error => { console.error(error); });
+					}
 
-					wayOfEarning = collectorSelectOptionId.replace('serversettings_shop_wayofearning_', '') as WayOfEarningType;
-					requirement = null;
-					await update(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
-						.catch(error => { console.error(error); });
-				}
+					if (i.isSelectMenu() && collectorSelectOptionId && i.customId === 'serversettings_shop_requirements') {
 
-				if (i.isSelectMenu() && collectorSelectOptionId && i.customId === 'serversettings_shop_requirements') {
+						requirement = collectorSelectOptionId.replace('serversettings_shop_requirements_', '') as RankType;
+						await update(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
+							.catch(error => { console.error(error); });
+					}
 
-					requirement = collectorSelectOptionId.replace('serversettings_shop_requirements_', '') as RankType;
-					await update(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
-						.catch(error => { console.error(error); });
-				}
-
-				if (i.isButton() && i.customId === 'serversettings_shop_requirementsmodal') {
-
-					await i
-						.showModal(new ModalBuilder()
-							.setCustomId('serversettings_shop_requirements')
-							.setTitle('Change requirement')
-							.addComponents(
-								new ActionRowBuilder<TextInputBuilder>()
-									.setComponents([new TextInputBuilder()
-										.setCustomId('serversettings_shop_requirements_textinput')
-										.setLabel('A positive number')
-										.setStyle(TextInputStyle.Short)
-										.setRequired(true)
-										.setMaxLength(9)
-										.setPlaceholder(`The amount of ${wayOfEarning} the user needs, i.e. ${wayOfEarning === WayOfEarningType.Experience ? '10000' : '10'}`),
-									]),
-							),
-						)
-						.catch(error => { console.error(error); });
-				}
-
-				if (i.isButton() && i.customId === 'serversettings_shop_save') {
-
-					/* Check if role, wayOfEarning or requirement is null */
-					if (role === null || wayOfEarning === null || requirement === null) {
+					if (i.isButton() && i.customId === 'serversettings_shop_requirementsmodal') {
 
 						await i
-							.reply({ content: 'Something went wrong. You shouldn\'t be able to save yet, either the role, way of earning or requirement is missing.', ephemeral: true })
+							.showModal(new ModalBuilder()
+								.setCustomId('serversettings_shop_requirements')
+								.setTitle('Change requirement')
+								.addComponents(
+									new ActionRowBuilder<TextInputBuilder>()
+										.setComponents([new TextInputBuilder()
+											.setCustomId('serversettings_shop_requirements_textinput')
+											.setLabel('A positive number')
+											.setStyle(TextInputStyle.Short)
+											.setRequired(true)
+											.setMaxLength(9)
+											.setPlaceholder(`The amount of ${wayOfEarning} the user needs, i.e. ${wayOfEarning === WayOfEarningType.Experience ? '10000' : '10'}`),
+										]),
+								),
+							)
 							.catch(error => { console.error(error); });
-						return;
 					}
 
-					/* Update the serverData, by removing a potential existing entry and making a new entry. */
-					serverData = await serverModel.findOneAndUpdate(
-						s => s.serverId === i.guildId,
-						(s) => {
-							if (role === null || wayOfEarning === null || requirement === null) { return; }
-							s.shop = s.shop.filter(r => r.roleId !== role);
-							s.shop.push({
-								roleId: role,
-								wayOfEarning: wayOfEarning,
-								requirement: requirement,
+					if (i.isButton() && i.customId === 'serversettings_shop_save') {
+
+						/* Check if role, wayOfEarning or requirement is null */
+						if (role === null || wayOfEarning === null || requirement === null) {
+
+							await i
+								.reply({ content: 'Something went wrong. You shouldn\'t be able to save yet, either the role, way of earning or requirement is missing.', ephemeral: true })
+								.catch(error => { console.error(error); });
+							return;
+						}
+
+						/* Update the serverData, by removing a potential existing entry and making a new entry. */
+						serverData = await serverModel.findOneAndUpdate(
+							s => s.serverId === i.guildId,
+							(s) => {
+								if (role === null || wayOfEarning === null || requirement === null) { return; }
+								s.shop = s.shop.filter(r => r.roleId !== role);
+								s.shop.push({
+									roleId: role,
+									wayOfEarning: wayOfEarning,
+									requirement: requirement,
+								});
+							},
+						);
+
+						/* Reply to the user that the role is configured */
+						await i
+							.reply({
+								content: `<@&${role}> ${roleIdOrAdd === 'add' ? 'added to the shop' : 'edited'}! The requirement is ${requirement} ${wayOfEarning}.`,
+								ephemeral: true,
+							})
+							.catch(error => { console.error(error); });
+
+						/* Get all the users that have at least one quid with a profile on this server */
+						const allServerUsers = await userModel.find(
+							(u) => {
+								return Object.values(u.quids).filter(q => q.profiles[i.guildId] !== undefined).length > 0;
 							});
-						},
-					);
 
-					/* Reply to the user that the role is configured */
-					await i
-						.reply({
-							content: `<@&${role}> ${roleIdOrAdd === 'add' ? 'added to the shop' : 'edited'}! The requirement is ${requirement} ${wayOfEarning}.`,
-							ephemeral: true,
-						})
-						.catch(error => { console.error(error); });
+						for (const u of Object.values(allServerUsers)) {
 
-					/* Get all the users that have at least one quid with a profile on this server */
-					const allServerUsers = await userModel.find(
-						(u) => {
-							return Object.values(u.quids).filter(q => q.profiles[i.guildId] !== undefined).length > 0;
-						});
+							for (const q of Object.values(u.quids)) {
 
-					for (const u of Object.values(allServerUsers)) {
+								const p = q.profiles[i.guildId];
+								if (p !== undefined) {
 
-						for (const q of Object.values(u.quids)) {
+									/* Update the user by checking if there is a role with the roleId, and if there is, deleting it */
+									await userModel.findOneAndUpdate(
+										user => user.uuid === u.uuid,
+										(user) => {
+											const prof = getMapData(getMapData(user.quids, q._id).profiles, p.serverId);
+											prof.roles = prof.roles.filter(r => r.roleId !== role);
+										},
+									);
 
-							const p = q.profiles[i.guildId];
-							if (p !== undefined) {
+									/* Giving users the role if they meet the requirements or removing it if they don't. */
+									if (wayOfEarning === WayOfEarningType.Levels) {
 
-								/* Update the user by checking if there is a role with the roleId, and if there is, deleting it */
-								await userModel.findOneAndUpdate(
-									user => user.uuid === u.uuid,
-									(user) => {
-										const prof = getMapData(getMapData(user.quids, q._id).profiles, p.serverId);
-										prof.roles = prof.roles.filter(r => r.roleId !== role);
-									},
-								);
+										const member = await i.guild.members.fetch(u.userId[0] || '').catch(() => { return undefined; });
+										await checkLevelRequirements(serverData, i, member, p.levels, false);
 
-								/* Giving users the role if they meet the requirements or removing it if they don't. */
-								if (wayOfEarning === WayOfEarningType.Levels) {
+										if (p.levels < requirement && member && member.roles.cache.has(role)) {
 
-									const member = await i.guild.members.fetch(u.userId[0] || '').catch(() => { return undefined; });
-									await checkLevelRequirements(serverData, i, member, p.levels, false);
+											await member.roles
+												.remove(role)
+												.catch(error => { console.error(error); });
+										}
+									}
 
-									if (p.levels < requirement && member && member.roles.cache.has(role)) {
+									if (wayOfEarning === WayOfEarningType.Rank && typeof requirement === 'string') {
 
-										await member.roles
-											.remove(role)
-											.catch(error => { console.error(error); });
+										const member = await i.guild.members.fetch(u.userId[0] || '').catch(() => { return undefined; });
+										await checkRankRequirements(serverData, i, member, p.rank, false);
+
+										const rankList = { Youngling: 0, Apprentice: 1, Hunter: 2, Healer: 2, Elderly: 2 };
+										if (rankList[p.rank] < rankList[requirement] && member && member.roles.cache.has(role)) {
+
+											await member.roles
+												.remove(role)
+												.catch(error => { console.error(error); });
+										}
+									}
+
+									if (wayOfEarning === WayOfEarningType.Experience) {
+
+										const member = await i.guild.members.fetch(u.userId[0] || '').catch(() => { return undefined; });
+										if (member && member.roles.cache.has(role)) {
+
+											await member.roles
+												.remove(role)
+												.catch(error => { console.error(error); });
+										}
 									}
 								}
+							}
+						}
 
-								if (wayOfEarning === WayOfEarningType.Rank && typeof requirement === 'string') {
+						interactionCollector.stop('save');
+					}
 
+					if (i.isButton() && i.customId === 'serversettings_shop_delete') {
+
+						// deleted shop items must be checked to be deleted/removed for all users
+						// send a success ephemeral message to the user
+						// after this, stop the collector with reason 'delete'
+
+						/* Check if role, wayOfEarning or requirement is null */
+						if (role === null || wayOfEarning === null || requirement === null) {
+
+							await i
+								.reply({ content: 'Something went wrong. You shouldn\'t be able to save yet, either the role, way of earning or requirement is missing.', ephemeral: true })
+								.catch(error => { console.error(error); });
+							return;
+						}
+
+						/* Update the serverData, by removing a potential existing entry and making a new entry. */
+						serverData = await serverModel.findOneAndUpdate(
+							s => s.serverId === i.guildId,
+							(s) => {
+								s.shop = s.shop.filter(r => r.roleId !== role);
+							},
+						);
+
+						/* Reply to the user that the role is configured */
+						await i
+							.reply({
+								content: `<@&${role}> with the requirement of ${requirement} ${wayOfEarning} was deleted from the shop.`,
+								ephemeral: true,
+							})
+							.catch(error => { console.error(error); });
+
+						/* Get all the users that have at least one quid with a profile on this server */
+						const allServerUsers = await userModel.find(
+							(u) => {
+								return Object.values(u.quids).filter(q => q.profiles[i.guildId] !== undefined).length > 0;
+							});
+
+						for (const u of Object.values(allServerUsers)) {
+
+							for (const q of Object.values(u.quids)) {
+
+								const p = q.profiles[i.guildId];
+								if (p !== undefined) {
+
+									/* Update the user by checking if there is a role with the roleId, and if there is, deleting it */
+									await userModel.findOneAndUpdate(
+										user => user.uuid === u.uuid,
+										(user) => {
+											const prof = getMapData(getMapData(user.quids, q._id).profiles, p.serverId);
+											prof.roles = prof.roles.filter(r => r.roleId !== role);
+										},
+									);
+
+									/* Remove the role from users that have it. */
 									const member = await i.guild.members.fetch(u.userId[0] || '').catch(() => { return undefined; });
-									await checkRankRequirements(serverData, i, member, p.rank, false);
 
-									const rankList = { Youngling: 0, Apprentice: 1, Hunter: 2, Healer: 2, Elderly: 2 };
-									if (rankList[p.rank] < rankList[requirement] && member && member.roles.cache.has(role)) {
-
-										await member.roles
-											.remove(role)
-											.catch(error => { console.error(error); });
-									}
-								}
-
-								if (wayOfEarning === WayOfEarningType.Experience) {
-
-									const member = await i.guild.members.fetch(u.userId[0] || '').catch(() => { return undefined; });
 									if (member && member.roles.cache.has(role)) {
 
 										await member.roles
@@ -254,114 +325,64 @@ export async function serversettingsInteractionCollector(
 								}
 							}
 						}
-					}
 
-					interactionCollector.stop('save');
+						interactionCollector.stop('delete');
+					}
 				}
+				catch (error) {
 
-				if (i.isButton() && i.customId === 'serversettings_shop_delete') {
-
-					// deleted shop items must be checked to be deleted/removed for all users
-					// send a success ephemeral message to the user
-					// after this, stop the collector with reason 'delete'
-
-					/* Check if role, wayOfEarning or requirement is null */
-					if (role === null || wayOfEarning === null || requirement === null) {
-
-						await i
-							.reply({ content: 'Something went wrong. You shouldn\'t be able to save yet, either the role, way of earning or requirement is missing.', ephemeral: true })
-							.catch(error => { console.error(error); });
-						return;
-					}
-
-					/* Update the serverData, by removing a potential existing entry and making a new entry. */
-					serverData = await serverModel.findOneAndUpdate(
-						s => s.serverId === i.guildId,
-						(s) => {
-							s.shop = s.shop.filter(r => r.roleId !== role);
-						},
-					);
-
-					/* Reply to the user that the role is configured */
-					await i
-						.reply({
-							content: `<@&${role}> with the requirement of ${requirement} ${wayOfEarning} was deleted from the shop.`,
-							ephemeral: true,
-						})
-						.catch(error => { console.error(error); });
-
-					/* Get all the users that have at least one quid with a profile on this server */
-					const allServerUsers = await userModel.find(
-						(u) => {
-							return Object.values(u.quids).filter(q => q.profiles[i.guildId] !== undefined).length > 0;
-						});
-
-					for (const u of Object.values(allServerUsers)) {
-
-						for (const q of Object.values(u.quids)) {
-
-							const p = q.profiles[i.guildId];
-							if (p !== undefined) {
-
-								/* Update the user by checking if there is a role with the roleId, and if there is, deleting it */
-								await userModel.findOneAndUpdate(
-									user => user.uuid === u.uuid,
-									(user) => {
-										const prof = getMapData(getMapData(user.quids, q._id).profiles, p.serverId);
-										prof.roles = prof.roles.filter(r => r.roleId !== role);
-									},
-								);
-
-								/* Remove the role from users that have it. */
-								const member = await i.guild.members.fetch(u.userId[0] || '').catch(() => { return undefined; });
-
-								if (member && member.roles.cache.has(role)) {
-
-									await member.roles
-										.remove(role)
-										.catch(error => { console.error(error); });
-								}
-							}
-						}
-					}
-
-					interactionCollector.stop('delete');
+					await sendErrorMessage(interaction, error)
+						.catch(e => { console.error(e); });
 				}
 			});
 
 			modalCollector.on('collect', async i => {
+				try {
 
-				if (i.type === InteractionType.ModalSubmit && i.isFromMessage()) {
+					if (i.type === InteractionType.ModalSubmit && i.isFromMessage()) {
 
-					const modalTextInput = Number(i.fields.getTextInputValue('serversettings_shop_requirements_textinput'))
+						const modalTextInput = Number(i.fields.getTextInputValue('serversettings_shop_requirements_textinput'))
 						;
 
-					if (Number.isInteger(Number(modalTextInput)) === false || Number(modalTextInput) <= 0) {
+						if (Number.isInteger(Number(modalTextInput)) === false || Number(modalTextInput) <= 0) {
 
-						await i
-							.reply({ content: 'Please only input positive numbers without any commas or dots!', ephemeral: true })
+							await i
+								.reply({ content: 'Please only input positive numbers without any commas or dots!', ephemeral: true })
+								.catch(error => { console.error(error); });
+							return;
+						}
+
+						requirement = modalTextInput;
+						await update(i, getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
 							.catch(error => { console.error(error); });
 						return;
 					}
+				}
+				catch (error) {
 
-					requirement = modalTextInput;
-					await update(i, getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
-						.catch(error => { console.error(error); });
-					return;
+					await sendErrorMessage(interaction, error)
+						.catch(e => { console.error(e); });
 				}
 			});
 
 			interactionCollector.on('end', async (collected, reason) => {
+				try {
 
-				modalCollector.stop(reason);
+					modalCollector.stop(reason);
 
-				if (reason !== 'back') {
+					if (reason !== 'back') {
 
-					await update(interaction, await getShopMessage(interaction, serverData, 0))
-						.catch((error) => {
-							if (error.httpStatus !== 404) { console.error(error); }
-						});
-					return;
+						await update(interaction, await getShopMessage(interaction, serverData, 0))
+							.catch((error) => {
+								if (error.httpStatus !== 404) { console.error(error); }
+							});
+						return;
+					}
+				}
+				catch (error) {
+
+					await sendErrorMessage(interaction, error)
+						.catch(e => { console.error(e); });
 				}
 			});
 		}

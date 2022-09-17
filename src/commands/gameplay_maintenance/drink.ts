@@ -88,21 +88,24 @@ export async function sendDrinkMessage(
 	});
 
 	collector.on('collect', async (i) => {
+		try {
 
-		await i.deferUpdate()
-			.catch((error) => {
-				if (error.httpStatus !== 404) { sendErrorMessage(interaction, error); }
-			});
+			await i.deferUpdate();
+		}
+		catch (error) {
+
+			await sendErrorMessage(interaction, error)
+				.catch(e => { console.error(e); });
+		}
 	});
 
 	collector.on('end', async (collected) => {
-
-		cooldownMap.set(userData!.uuid + interaction.guildId, false);
-
-		const thirstPoints = getSmallerNumber(profileData.maxThirst - profileData.thirst, getRandomNumber(3, collected.size));
-		const currentRegion = profileData.currentRegion;
-
 		try {
+
+			cooldownMap.set(userData!.uuid + interaction.guildId, false);
+
+			const thirstPoints = getSmallerNumber(profileData.maxThirst - profileData.thirst, getRandomNumber(3, collected.size));
+			const currentRegion = profileData.currentRegion;
 
 			userData = await userModel
 				.findOneAndUpdate(
@@ -128,7 +131,8 @@ export async function sendDrinkMessage(
 		}
 		catch (error) {
 
-			await sendErrorMessage(interaction, error);
+			await sendErrorMessage(interaction, error)
+				.catch(e => { console.error(e); });
 		}
 	});
 }

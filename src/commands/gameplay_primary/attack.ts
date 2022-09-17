@@ -9,7 +9,7 @@ import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createFightGame } from '../../utils/gameBuilder';
 import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, getSmallerNumber, keyInObject, KeyOfUnion, respond, unsafeKeys, update, ValueOf, widenValues } from '../../utils/helperFunctions';
+import { getMapData, getSmallerNumber, keyInObject, KeyOfUnion, respond, sendErrorMessage, unsafeKeys, update, ValueOf, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 const { default_color } = require('../../../config.json');
@@ -318,31 +318,42 @@ export function startAttack(
 
 	serverMap.set(interaction.guildId, { startsTimestamp: Date.now() + 120_000, idleHumans: humanCount, endingTimeout: null, ongoingFights: 0 });
 	setTimeout(async function() {
-
-		const serverAttackInfo = serverMap.get(interaction.guildId);
-		if (!serverAttackInfo) { return; }
-
-		const botReply = await respond(interaction, {
-			content: serverActiveUsersMap.get(interaction.guildId)?.map(user => `<@!${user}>`).join(' '),
-			embeds: [new EmbedBuilder()
-				.setColor(/** @type {`#${string}`} */(default_color))
-				.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined })
-				.setDescription(`*The packmates get ready as ${serverAttackInfo.idleHumans} humans run over the borders. Now it is up to them to defend their land.*`)
-				.setFooter({ text: 'You have 5 minutes to defeat all the humans. Type \'/attack\' to attack one.' })],
-		}, false)
-			.catch((error) => { throw new Error(error); });
-
-		serverAttackInfo.startsTimestamp = null;
-		serverAttackInfo.endingTimeout = setTimeout(async function() {
+		try {
 
 			const serverAttackInfo = serverMap.get(interaction.guildId);
 			if (!serverAttackInfo) { return; }
-			serverAttackInfo.endingTimeout = null;
-			if (serverAttackInfo.ongoingFights <= 0) {
 
-				remainingHumans(interaction, botReply, serverAttackInfo);
-			}
-		}, 300_000);
+			const botReply = await respond(interaction, {
+				content: serverActiveUsersMap.get(interaction.guildId)?.map(user => `<@!${user}>`).join(' '),
+				embeds: [new EmbedBuilder()
+					.setColor(/** @type {`#${string}`} */(default_color))
+					.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined })
+					.setDescription(`*The packmates get ready as ${serverAttackInfo.idleHumans} humans run over the borders. Now it is up to them to defend their land.*`)
+					.setFooter({ text: 'You have 5 minutes to defeat all the humans. Type \'/attack\' to attack one.' })],
+			}, false)
+				.catch((error) => { throw new Error(error); });
+
+			serverAttackInfo.startsTimestamp = null;
+			serverAttackInfo.endingTimeout = setTimeout(async function() {
+				try {
+
+					const serverAttackInfo = serverMap.get(interaction.guildId);
+					if (!serverAttackInfo) { return; }
+					serverAttackInfo.endingTimeout = null;
+					if (serverAttackInfo.ongoingFights <= 0) { await remainingHumans(interaction, botReply, serverAttackInfo); }
+				}
+				catch (error) {
+
+					await sendErrorMessage(interaction, error)
+						.catch(e => { console.error(e); });
+				}
+			}, 300_000);
+		}
+		catch (error) {
+
+			await sendErrorMessage(interaction, error)
+				.catch(e => { console.error(e); });
+		}
 	}, 120_000);
 }
 

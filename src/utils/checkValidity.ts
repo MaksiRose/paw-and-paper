@@ -1,6 +1,6 @@
 import { ButtonInteraction, CommandInteraction, EmbedBuilder, MessageComponentInteraction } from 'discord.js';
 import { cooldownMap } from '../events/interactionCreate';
-import { respond } from './helperFunctions';
+import { respond, sendErrorMessage } from './helperFunctions';
 import userModel from '../models/userModel';
 import { Quid, Profile, UserSchema, Inventory } from '../typedef';
 import { getMapData } from './helperFunctions';
@@ -71,10 +71,12 @@ export async function hasCooldown(
 
 					await reply
 						.delete()
-						.catch((error) => {
-							if (error.httpStatus !== 404) { throw new Error(error); }
+						.catch (async error => {
+
+							await sendErrorMessage(interaction, error)
+								.catch(e => { console.error(e); });
 						});
-				}, 10000);
+				}, 10_000);
 			})
 			.catch((error) => { throw new Error(error); });
 

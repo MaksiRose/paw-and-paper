@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, Message, MessageComponentInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
 import { MaterialNames, materialsInfo, RankType, ServerSchema, SlashCommand, speciesInfo, SpeciesNames, UserSchema } from '../../typedef';
@@ -6,7 +6,7 @@ import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
+import { disableAllComponents } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural } from '../../utils/getPronouns';
 import { getMapData, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
@@ -119,8 +119,6 @@ export async function executeScavenging(
 	}, true)
 		.catch((error) => { throw new Error(error); });
 
-	createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
-
 	await interactionCollector(interaction, userData, serverData, false);
 
 	async function interactionCollector(
@@ -135,181 +133,198 @@ export async function executeScavenging(
 		/* Creating a collector that will collect the interactions of the user with the message. */
 		const collector = (botReply as Message<true>).createMessageComponentCollector({
 			filter: i => i.user.id === interaction.user.id,
+			componentType: ComponentType.Button,
 			time: isHumanTrap ? 12_000 : 120_000,
-			max: isHumanTrap ? 10 : 4,
 		});
 
 		collector.on('collect', async int => {
+			try {
 
-			/* It's checking if the customId of the button includes the word `board-`, which means that it is part of the scavenge game, or if the customId of the button includes the  word `humantrap-`, which means that it is part of the humantrap game. */
-			if (int.customId.includes('board_')) {
+				/* It's checking if the customId of the button includes the word `board-`, which means that it is part of the scavenge game, or if the customId of the button includes the  word `humantrap-`, which means that it is part of the humantrap game. */
+				if (int.customId.includes('board_')) {
 
-				/* Getting the position of the button that the user clicked. */
-				const verticalBoardPosition = Number(int.customId.split('_')[2]);
-				const horizontalBoardPosition = Number(int.customId.split('_')[3]);
-				const buttonInBoardPosition = componentArray[verticalBoardPosition]?.components[horizontalBoardPosition];
+					correctButtonPresses += 1;
+					/* Getting the position of the button that the user clicked. */
+					const verticalBoardPosition = Number(int.customId.split('_')[2]);
+					const horizontalBoardPosition = Number(int.customId.split('_')[3]);
+					const buttonInBoardPosition = componentArray[verticalBoardPosition]?.components[horizontalBoardPosition];
 
-				/* Set the emoji of the button to the emoji in the gamePositionsArray. It will then disable the button. */
-				const emoji = gamePositionsArray[verticalBoardPosition]?.[horizontalBoardPosition];
-				if (!emoji) {
-					await sendErrorMessage(int, new Error('emoji is undefined'))
-						.catch((error) => { console.error(error); });
-					return;
-				}
-				buttonInBoardPosition?.setEmoji(emoji);
-				buttonInBoardPosition?.setDisabled(true);
+					/* Set the emoji of the button to the emoji in the gamePositionsArray. It will then disable the button. */
+					const emoji = gamePositionsArray[verticalBoardPosition]?.[horizontalBoardPosition];
+					if (!emoji) {
+						await sendErrorMessage(int, new Error('emoji is undefined'))
+							.catch((error) => { console.error(error); });
+						return;
+					}
+					buttonInBoardPosition?.setEmoji(emoji);
+					buttonInBoardPosition?.setDisabled(true);
 
-				/* Checking if the user has clicked on the correct field. If they have, it will stop the collector and if they haven't, it will edit the message with the new components. */
-				if (emoji === filledFieldArray[0]) {
+					/* Checking if the user has clicked on the correct field. If they have, it will stop the collector and if they haven't, it will edit the message with the new components. */
+					if (emoji === filledFieldArray[0]) {
 
-					const playingField = componentArray.map(c => c.components.map(b => b.data.emoji?.name ?? unclickedField).join('')).join('\n');
-					componentArray = [];
+						const playingField = componentArray.map(c => c.components.map(b => b.data.emoji?.name ?? unclickedField).join('')).join('\n');
+						componentArray = [];
 
-					/* Counting the number of profiles that have a rank higher than Youngling, the amount of meat and the amount of materials in the server's inventory. */
-					const highRankProfilesCount = (await userModel
-						.find(
-							(u) => Object.values(u.quids).filter(q => {
+						/* Counting the number of profiles that have a rank higher than Youngling, the amount of meat and the amount of materials in the server's inventory. */
+						const highRankProfilesCount = (await userModel
+							.find(
+								(u) => Object.values(u.quids).filter(q => {
+									const p = q.profiles[interaction.guildId];
+									return p && p.rank !== RankType.Youngling;
+								}).length > 0))
+							.map(u => Object.values(u.quids).filter(q => {
 								const p = q.profiles[interaction.guildId];
 								return p && p.rank !== RankType.Youngling;
-							}).length > 0))
-						.map(u => Object.values(u.quids).filter(q => {
-							const p = q.profiles[interaction.guildId];
-							return p && p.rank !== RankType.Youngling;
-						}).length)
-						.reduce((a, b) => a + b, 0);
-					const serverMeatCount = Object.values(serverData.inventory.meat).flat().reduce((a, b) => a + b, 0);
-					const serverMaterialsCount = Object.values(serverData.inventory.materials).flat().reduce((a, b) => a + b, 0);
+							}).length)
+							.reduce((a, b) => a + b, 0);
+						const serverMeatCount = Object.values(serverData.inventory.meat).flat().reduce((a, b) => a + b, 0);
+						const serverMaterialsCount = Object.values(serverData.inventory.materials).flat().reduce((a, b) => a + b, 0);
 
-					/* Checking if the server has enough meat, if it doesn't, give the user meat. If it does, check
-					if the server has enough materials, if it doesn't, give the user material. If it does, do nothing. */
-					const meatIsGettable = serverMeatCount < highRankProfilesCount * 2;
-					const materialIsGettable = serverMaterialsCount < 36;
-					if (meatIsGettable && pullFromWeightedTable({ 0: 1, 1: materialIsGettable ? 1 : 0 }) === 0) {
+						/* Checking if the server has enough meat, if it doesn't, give the user meat. If it does, check if the server has enough materials, if it doesn't, give the user material. If it does, do nothing. */
+						const meatIsGettable = serverMeatCount < highRankProfilesCount * 2;
+						const materialIsGettable = serverMaterialsCount < 36;
+						if (meatIsGettable && pullFromWeightedTable({ 0: 1, 1: materialIsGettable ? 1 : 0 }) === 0) {
 
-						const carcassArray = [...speciesInfo[quidData.species as SpeciesNames]?.biome1OpponentArray || []];
-						const foundCarcass = carcassArray[getRandomNumber(carcassArray.length)];
-						if (!foundCarcass) {
-							await sendErrorMessage(interaction, new Error('foundCarcass is undefined'))
-								.catch((error) => { console.error(error); });
-							return;
+							const carcassArray = [...speciesInfo[quidData.species as SpeciesNames]?.biome1OpponentArray || []];
+							const foundCarcass = carcassArray[getRandomNumber(carcassArray.length)];
+							if (!foundCarcass) {
+								await sendErrorMessage(interaction, new Error('foundCarcass is undefined'))
+									.catch((error) => { console.error(error); });
+								return;
+							}
+
+							embed.setDescription(`*After a while, ${quidData.name} can indeed find something useful: On the floor is a ${foundCarcass} that seems to have recently lost a fight fatally. Although the animal has a few injuries, it can still serve as great nourishment. What a success!*\n${playingField}`);
+							embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundCarcass}` });
+
+							userData = await userModel.findOneAndUpdate(
+								u => u.uuid === userData?.uuid,
+								(u) => {
+									const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+									p.inventory.meat[foundCarcass] += 1;
+								},
+							);
+						}
+						else if (materialIsGettable) {
+
+							const foundMaterial = (Object.keys(materialsInfo) as Array<MaterialNames>)[getRandomNumber(Object.keys(materialsInfo).length)];
+							if (!foundMaterial) {
+								await sendErrorMessage(interaction, new Error('foundMaterial is undefined'))
+									.catch((error) => { console.error(error); });
+								return;
+							}
+
+							embed.setDescription(`*${quidData.name} searches in vain for edible remains of deceased animals. But the expedition is not without success: the ${quidData.displayedSpecies || quidData.species} sees a ${foundMaterial}, which can serve as a great material for repairs and work in the pack. ${upperCasePronoun(quidData, 0)} happily takes it home with ${pronoun(quidData, 1)}.*\n${playingField}`);
+							embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundMaterial}` });
+
+							userData = await userModel.findOneAndUpdate(
+								u => u.uuid === userData?.uuid,
+								(u) => {
+									const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+									p.inventory.materials[foundMaterial] += 1;
+								},
+							);
+						}
+						else {
+
+							embed.setDescription(`*Although ${quidData.name} searches everything very thoroughly, there doesn't seem to be anything in the area that can be used at the moment. Probably everything has already been found. The ${quidData.displayedSpecies || quidData.species} decides to look again later.*\n${playingField}`);
+							if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 						}
 
-						embed.setDescription(`*After a while, ${quidData.name} can indeed find something useful: On the floor is a ${foundCarcass} that seems to have recently lost a fight fatally. Although the animal has a few injuries, it can still serve as great nourishment. What a success!*\n${playingField}`);
-						embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundCarcass}` });
-
-						userData = await userModel.findOneAndUpdate(
-							u => u.uuid === userData?.uuid,
-							(u) => {
-								const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-								p.inventory.meat[foundCarcass] += 1;
-							},
-						);
-					}
-					else if (materialIsGettable) {
-
-						const foundMaterial = (Object.keys(materialsInfo) as Array<MaterialNames>)[getRandomNumber(Object.keys(materialsInfo).length)];
-						if (!foundMaterial) {
-							await sendErrorMessage(interaction, new Error('foundMaterial is undefined'))
-								.catch((error) => { console.error(error); });
-							return;
-						}
-
-						embed.setDescription(`*${quidData.name} searches in vain for edible remains of deceased animals. But the expedition is not without success: the ${quidData.displayedSpecies || quidData.species} sees a ${foundMaterial}, which can serve as a great material for repairs and work in the pack. ${upperCasePronoun(quidData, 0)} happily takes it home with ${pronoun(quidData, 1)}.*\n${playingField}`);
-						embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundMaterial}` });
-
-						userData = await userModel.findOneAndUpdate(
-							u => u.uuid === userData?.uuid,
-							(u) => {
-								const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-								p.inventory.materials[foundMaterial] += 1;
-							},
-						);
+						await sendFinalMessage(int, userData, serverData);
+						collector.stop('win');
 					}
 					else {
 
-						embed.setDescription(`*Although ${quidData.name} searches everything very thoroughly, there doesn't seem to be anything in the area that can be used at the moment. Probably everything has already been found. The ${quidData.displayedSpecies || quidData.species} decides to look again later.*\n${playingField}`);
-						if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
+						botReply = await update(int, { components: componentArray })
+							.catch((error) => { throw new Error(error); });
+						if (correctButtonPresses >= 4) { collector.stop(); }
 					}
-
-					await sendFinalMessage(int, userData, serverData);
-					collector.stop('win');
 				}
-				else {
+				else if (int.customId.includes('humantrap_')) {
 
-					botReply = await update(int, { components: componentArray })
-						.catch((error) => { throw new Error(error); });
+					/* It's checking if the customId of the button includes the correct emoji. If it does, it will add 1 to the `correctButtonPresses` variable. It will then call the `changeComponents` function. */
+					if (int.customId.includes(humanTrapCorrectEmoji)) { correctButtonPresses += 1; }
+					if (correctButtonPresses >= 10) { collector.stop(); }
+					else { await changeComponents(int); }
 				}
 			}
-			else if (int.customId.includes('humantrap_')) {
+			catch (error) {
 
-				/* It's checking if the customId of the button includes the correct emoji. If it does, it will add 1 to the `correctButtonPresses` variable. It will then call the `changeComponents` function. */
-				if (int.customId.includes(humanTrapCorrectEmoji)) { correctButtonPresses += 1; }
-				await changeComponents(int);
+				await sendErrorMessage(interaction, error)
+					.catch(e => { console.error(e); });
 			}
 		});
 
 		collector.on('end', async (interactions, reason) => {
+			try {
 
-			/* The below code is checking if the user has finished the game or not. If the user has finished the
-				game, it will check if the server has enough meat and materials. If it doesn't, it will give the user
-				meat or  materials. If it does, it will do nothing. If the user has lost the game, it will check if
-				the user has lost the human trap game as well. If they did, it will add an injury to the user.
-				If the game is not finished, start the human trap game. */
-			if (isHumanTrap) {
+				/* The below code is checking if the user has finished the game or not. If the user has finished the game, it will check if the server has enough meat and materials. If it doesn't, it will give the user meat or  materials. If it does, it will do nothing. If the user has lost the game, it will check if the user has lost the human trap game as well. If they did, it will add an injury to the user. If the game is not finished, start the human trap game. */
+				if (isHumanTrap) {
 
-				/* Creating a weighted table with the probability of the player not being hurt being equal to
-					the number of correct button presses. */
-				const isHurt = pullFromWeightedTable({ 0: correctButtonPresses, 1: 10 - correctButtonPresses });
+					/* Creating a weighted table with the probability of the player not being hurt being equal to the number of correct button presses. */
+					const isHurt = pullFromWeightedTable({ 0: correctButtonPresses, 1: 10 - correctButtonPresses });
 
-				/* Checking if the user is hurt or not. If the user is hurt, it will subtract health points from
-					the user and give them an injury. */
-				if (isHurt == 0) {
+					/* Checking if the user is hurt or not. If the user is hurt, it will subtract health points from the user and give them an injury. */
+					if (isHurt == 0) {
 
-					embed.setDescription(`*After ${quidData.name} gets over the initial shock, the ${quidData.displayedSpecies || quidData.species} quickly manages to free ${pronoun(quidData, 4)} from the net. That was close!*`);
-					if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
-				}
-				else {
+						embed.setDescription(`*After ${quidData.name} gets over the initial shock, the ${quidData.displayedSpecies || quidData.species} quickly manages to free ${pronoun(quidData, 4)} from the net. That was close!*`);
+						if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
+					}
+					else {
 
-					const healthPoints = function(health) { return (profileData.health - health < 0) ? profileData.health : health; }(getRandomNumber(5, 3));
+						const healthPoints = function(health) { return (profileData.health - health < 0) ? profileData.health : health; }(getRandomNumber(5, 3));
 
-					switch (pullFromWeightedTable({ 0: 1, 1: 1 })) {
+						switch (pullFromWeightedTable({ 0: 1, 1: 1 })) {
 
-						case 0:
+							case 0:
 
-							profileData.injuries.infections += 1;
+								profileData.injuries.infections += 1;
 
-							embed.setDescription(`*${quidData.name} is still shocked for a while, but finally manages to free ${pronoun(quidData, 4)}. Not long after, however, ${pronounAndPlural(quidData, 0, 'feel')} a shock wave run through ${pronoun(quidData, 2)} body. Something sharp must have pressed into the ${quidData.displayedSpecies || quidData.species}. It looks infected.*`);
-							embed.setFooter({ text: `-${healthPoints} HP (from infection)\n${changedCondition.statsUpdateText}` });
+								embed.setDescription(`*${quidData.name} is still shocked for a while, but finally manages to free ${pronoun(quidData, 4)}. Not long after, however, ${pronounAndPlural(quidData, 0, 'feel')} a shock wave run through ${pronoun(quidData, 2)} body. Something sharp must have pressed into the ${quidData.displayedSpecies || quidData.species}. It looks infected.*`);
+								embed.setFooter({ text: `-${healthPoints} HP (from infection)\n${changedCondition.statsUpdateText}` });
 
-							break;
+								break;
 
-						default:
+							default:
 
-							profileData.injuries.sprains += 1;
+								profileData.injuries.sprains += 1;
 
-							embed.setDescription(`*${quidData.name} is still shocked for a while, but finally manages to free ${pronoun(quidData, 4)}. But the escape was not perfect: while the ${quidData.displayedSpecies || quidData.species} was untangling ${pronoun(quidData, 4)} from the net, ${pronoun(quidData, 0)} got entangled and stuck. It looks sprained.*`);
-							embed.setFooter({ text: `-${healthPoints} HP (from sprain)\n${changedCondition.statsUpdateText}` });
+								embed.setDescription(`*${quidData.name} is still shocked for a while, but finally manages to free ${pronoun(quidData, 4)}. But the escape was not perfect: while the ${quidData.displayedSpecies || quidData.species} was untangling ${pronoun(quidData, 4)} from the net, ${pronoun(quidData, 0)} got entangled and stuck. It looks sprained.*`);
+								embed.setFooter({ text: `-${healthPoints} HP (from sprain)\n${changedCondition.statsUpdateText}` });
+						}
+
+						userData = await userModel.findOneAndUpdate(
+							u => u.uuid === userData?.uuid,
+							(u) => {
+								const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+								p.health -= healthPoints;
+								p.injuries = profileData.injuries;
+							},
+						);
 					}
 
-					userData = await userModel.findOneAndUpdate(
-						u => u.uuid === userData?.uuid,
-						(u) => {
-							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-							p.health -= healthPoints;
-							p.injuries = profileData.injuries;
-						},
-					);
+					await sendFinalMessage(interactions.last() || interaction, userData, serverData);
 				}
+				else if (reason !== 'win') {
 
-				await sendFinalMessage(interactions.last() || interaction, userData, serverData);
+					setTimeout(async () => {
+						try {
+
+							await changeComponents(interactions.last() || interaction);
+							await interactionCollector(interaction, userData, serverData, true);
+						}
+						catch (error) {
+
+							await sendErrorMessage(interaction, error)
+								.catch(e => { console.error(e); });
+						}
+					}, 1_000);
+				}
 			}
-			else if (reason !== 'win') {
+			catch (error) {
 
-				setTimeout(async () => {
-
-					await changeComponents(interactions.last() || interaction);
-					await interactionCollector(interaction, userData, serverData, true);
-				}, 1_000);
+				await sendErrorMessage(interaction, error)
+					.catch(e => { console.error(e); });
 			}
 		});
 	}
@@ -318,7 +333,7 @@ export async function executeScavenging(
 	 * This function sends the final message
 	 */
 	async function sendFinalMessage(
-		int: MessageComponentInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
+		int: ButtonInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
 		userData: UserSchema,
 		serverData: ServerSchema,
 	) {
@@ -333,7 +348,7 @@ export async function executeScavenging(
 				.setLabel('Scavenge again')
 				.setStyle(ButtonStyle.Primary)));
 
-		botReply = await (async (int, messageOptions) => int instanceof MessageComponentInteraction ? await update(int, messageOptions) : await respond(int, messageOptions, true))(int, {
+		botReply = await (async (int, messageOptions) => int.isButton() ? await update(int, messageOptions) : await respond(int, messageOptions, true))(int, {
 			embeds: [
 				...embedArray,
 				embed,
@@ -355,7 +370,7 @@ export async function executeScavenging(
 	 * This function updates the components for the human trap game
 	 */
 	async function changeComponents(
-		int: MessageComponentInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
+		int: ButtonInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
 	) {
 
 		const trapActionRow = new ActionRowBuilder<ButtonBuilder>();
@@ -378,7 +393,7 @@ export async function executeScavenging(
 		}
 
 		componentArray = [trapActionRow];
-		botReply = await (async (messageOptions) => int instanceof MessageComponentInteraction ? await update(int, messageOptions) : await respond(int, messageOptions, true))({
+		botReply = await (async (messageOptions) => int.isButton() ? await update(int, messageOptions) : await respond(int, messageOptions, true))({
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData.color)
 				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })

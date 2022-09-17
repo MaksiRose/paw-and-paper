@@ -5,7 +5,7 @@ import { CurrentRegionType, Profile, Quid, ServerSchema, SlashCommand, UserSchem
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { hasCooldown, isPassedOut } from '../../utils/checkValidity';
 import { pronoun, pronounAndPlural, upperCasePronoun } from '../../utils/getPronouns';
-import { getMapData, respond } from '../../utils/helperFunctions';
+import { getMapData, respond, sendErrorMessage } from '../../utils/helperFunctions';
 import wearDownDen from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
@@ -124,62 +124,68 @@ export async function startResting(
 	 * Gives the user an energy point, checks if they reached the maximum, and create a new Timeout if they didn't.
 	 */
 	async function addEnergy(): Promise<void> {
+		try {
 
-		energyPoints += 1;
-
-		userData = await userModel.findOneAndUpdate(
-			u => u.uuid === userData.uuid,
-			(u) => {
-				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-				p.energy += 1;
-			},
-		);
-		quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-		profileData = getMapData(quidData.profiles, interaction.guildId);
-
-		await botReply
-			.edit({
-				embeds: [embed],
-			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
-
-		/* It checks if the user has reached their maximum energy, and if they have, it stops the resting
-		process. */
-		if (profileData.energy >= profileData.maxEnergy) {
+			energyPoints += 1;
 
 			userData = await userModel.findOneAndUpdate(
 				u => u.uuid === userData.uuid,
 				(u) => {
 					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-					p.isResting = false;
-					p.currentRegion = previousRegion;
+					p.energy += 1;
 				},
 			);
+			quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
+			profileData = getMapData(quidData.profiles, interaction.guildId);
 
 			await botReply
-				.delete()
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						throw new Error(error);
-					}
-				});
-
-			await botReply.channel
-				.send({
-					content: userData.settings.reminders.resting ? interaction.user.toString() : null,
-					embeds: [embed.setDescription(`*${quidData.name}'s eyes blink open, ${pronounAndPlural(quidData, 0, 'sit')} up to stretch and then walk out into the light and buzz of late morning camp. Younglings are spilling out of the nursery, ambitious to start the day, Hunters and Healers are traveling in and out of the camp border. It is the start of the next good day!*`)],
-					components: isAutomatic ? [component] : [],
+				.edit({
+					embeds: [embed],
 				})
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
+
+			/* It checks if the user has reached their maximum energy, and if they have, it stops the resting process. */
+			if (profileData.energy >= profileData.maxEnergy) {
+
+				userData = await userModel.findOneAndUpdate(
+					u => u.uuid === userData.uuid,
+					(u) => {
+						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+						p.isResting = false;
+						p.currentRegion = previousRegion;
+					},
+				);
+
+				await botReply
+					.delete()
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
+				await botReply.channel
+					.send({
+						content: userData.settings.reminders.resting ? interaction.user.toString() : null,
+						embeds: [embed.setDescription(`*${quidData.name}'s eyes blink open, ${pronounAndPlural(quidData, 0, 'sit')} up to stretch and then walk out into the light and buzz of late morning camp. Younglings are spilling out of the nursery, ambitious to start the day, Hunters and Healers are traveling in and out of the camp border. It is the start of the next good day!*`)],
+						components: isAutomatic ? [component] : [],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
+					});
+				return;
+			}
+
+			restingTimeoutMap.set(userData.uuid + interaction.guildId, setTimeout(addEnergy, 30_000 + await getExtraRestingTime(interaction.guildId)));
 			return;
 		}
+		catch (error) {
 
-		restingTimeoutMap.set(userData.uuid + interaction.guildId, setTimeout(addEnergy, 30_000 + await getExtraRestingTime(interaction.guildId)));
-		return;
+			await sendErrorMessage(interaction, error)
+				.catch(e => { console.error(e); });
+		}
 	}
 }
 

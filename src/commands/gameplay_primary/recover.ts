@@ -8,7 +8,7 @@ import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
+import { getMapData, respond, sendErrorMessage, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
@@ -234,124 +234,138 @@ export const command: SlashCommand = {
 				});
 
 				collector.on('collect', async (int) => {
+					try {
 
-					choosingEmoji += 1;
+						choosingEmoji += 1;
 
-					if (int.customId.replace('recover_', '') === emojisToClick[choosingEmoji - 1]) {
+						if (int.customId.replace('recover_', '') === emojisToClick[choosingEmoji - 1]) {
 
-						botReply = await update(int, {
-							content: messageContent,
-							embeds: [new EmbedBuilder()
-								.setColor(quidData.color)
-								.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
-								.setDescription('✅'.repeat(choosingEmoji - 1) + '✅')
-								.setFooter({ text: 'After a list of emojis is displayed to you one by one, choose the same emojis from the buttons below in the same order.' })],
-							components: choosingEmoji === emojisToClick.length ? disableAllComponents(componentArray) : undefined,
-						})
-							.catch((error) => {
-								if (error.httpStatus !== 404) { throw new Error(error); }
-								return botReply;
-							});
+							botReply = await update(int, {
+								content: messageContent,
+								embeds: [new EmbedBuilder()
+									.setColor(quidData.color)
+									.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+									.setDescription('✅'.repeat(choosingEmoji - 1) + '✅')
+									.setFooter({ text: 'After a list of emojis is displayed to you one by one, choose the same emojis from the buttons below in the same order.' })],
+								components: choosingEmoji === emojisToClick.length ? disableAllComponents(componentArray) : undefined,
+							})
+								.catch((error) => {
+									if (error.httpStatus !== 404) { throw new Error(error); }
+									return botReply;
+								});
+						}
+						else {
+
+							collector.stop('failed');
+							return;
+						}
 					}
-					else {
+					catch (error) {
 
-						collector.stop('failed');
-						return;
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
 					}
 				});
 
 				collector.on('end', async (interactions, reason) => {
+					try {
 
-					let embed: EmbedBuilder;
-					if (reason === 'failed') {
+						let embed: EmbedBuilder;
+						if (reason === 'failed') {
 
-						embed = new EmbedBuilder()
-							.setColor(quidData.color)
-							.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
-							.setDescription('✅'.repeat(choosingEmoji - 1) + '❌\n\n' + `*${quidData.name} makes every effort to take full advantage of the grotto to heal ${pronoun(quidData, 2)} own injuries. But ${pronounAndPlural(quidData, 0, 'just doesn\'t', 'just don\'t')} seem to get better. The ${quidData.displayedSpecies || quidData.species} may have to try again...*`);
-						if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
+							embed = new EmbedBuilder()
+								.setColor(quidData.color)
+								.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+								.setDescription('✅'.repeat(choosingEmoji - 1) + '❌\n\n' + `*${quidData.name} makes every effort to take full advantage of the grotto to heal ${pronoun(quidData, 2)} own injuries. But ${pronounAndPlural(quidData, 0, 'just doesn\'t', 'just don\'t')} seem to get better. The ${quidData.displayedSpecies || quidData.species} may have to try again...*`);
+							if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
+						}
+						else if (emojisToClick.length < 12) {
+
+							await startNewRound(interaction, userData, serverData, emojisToClick);
+							return;
+						}
+						else {
+
+							recoverCooldownProfilesMap.set(quidData._id + interaction.guildId, Date.now());
+
+							let injuryText = '';
+
+							if (healKind === 'wounds') {
+
+								injuryText += `\n-1 wound for ${quidData.name}`;
+								profileData.injuries.wounds -= 1;
+							}
+
+							if (healKind === 'infections') {
+
+								injuryText += `\n-1 infection for ${quidData.name}`;
+								profileData.injuries.infections -= 1;
+							}
+
+							if (healKind === 'cold') {
+
+								injuryText += `\ncold healed for ${quidData.name}`;
+								profileData.injuries.cold = false;
+							}
+
+							if (healKind === 'sprains') {
+
+								injuryText += `\n-1 sprain for ${quidData.name}`;
+								profileData.injuries.sprains -= 1;
+							}
+
+							if (healKind === 'poison') {
+
+								injuryText += `\npoison healed for ${quidData.name}`;
+								profileData.injuries.poison = false;
+							}
+
+							embed = new EmbedBuilder()
+								.setColor(quidData.color)
+								.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+								.setDescription(`*The cave is a pleasant place, with a small pond of crystal clear water, stalagmites, stalactites and stalagnates, and cool, damp air. Some stones glisten slightly, giving the room a magical atmosphere. ${quidData.name} does not have to stay here for long before ${pronounAndPlural(quidData, 0, 'feel')} much better.*`)
+								.setFooter({ text: `${changedCondition.statsUpdateText}\n${injuryText}` });
+
+							userData = await userModel.findOneAndUpdate(
+								u => u.uuid === userData.uuid,
+								(u) => {
+									const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+									p.injuries = profileData.injuries;
+								},
+							);
+							quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
+							profileData = getMapData(quidData.profiles, interaction.guildId);
+						}
+
+						const levelUpEmbed = (await checkLevelUp(interactions.last() || interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
+
+						botReply = await botReply
+							.edit({
+								content: messageContent,
+								embeds: [
+									embed,
+									...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
+									...(levelUpEmbed ? [levelUpEmbed] : [])],
+								components: disableAllComponents(componentArray),
+							})
+							.catch((error) => {
+								if (error.httpStatus !== 404) { throw new Error(error); }
+								return botReply;
+							});
+
+						await isPassedOut(interactions.last() || interaction, userData, quidData, profileData, true);
+
+						await restAdvice(interactions.last() || interaction, userData, profileData);
+						await drinkAdvice(interactions.last() || interaction, userData, profileData);
+						await eatAdvice(interactions.last() || interaction, userData, profileData);
+
+						cooldownMap.set(userData.uuid + interaction.guildId, false);
 					}
-					else if (emojisToClick.length < 12) {
+					catch (error) {
 
-						await startNewRound(interaction, userData, serverData, emojisToClick);
-						return;
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
 					}
-					else {
-
-						recoverCooldownProfilesMap.set(quidData._id + interaction.guildId, Date.now());
-
-						let injuryText = '';
-
-						if (healKind === 'wounds') {
-
-							injuryText += `\n-1 wound for ${quidData.name}`;
-							profileData.injuries.wounds -= 1;
-						}
-
-						if (healKind === 'infections') {
-
-							injuryText += `\n-1 infection for ${quidData.name}`;
-							profileData.injuries.infections -= 1;
-						}
-
-						if (healKind === 'cold') {
-
-							injuryText += `\ncold healed for ${quidData.name}`;
-							profileData.injuries.cold = false;
-						}
-
-						if (healKind === 'sprains') {
-
-							injuryText += `\n-1 sprain for ${quidData.name}`;
-							profileData.injuries.sprains -= 1;
-						}
-
-						if (healKind === 'poison') {
-
-							injuryText += `\npoison healed for ${quidData.name}`;
-							profileData.injuries.poison = false;
-						}
-
-						embed = new EmbedBuilder()
-							.setColor(quidData.color)
-							.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
-							.setDescription(`*The cave is a pleasant place, with a small pond of crystal clear water, stalagmites, stalactites and stalagnates, and cool, damp air. Some stones glisten slightly, giving the room a magical atmosphere. ${quidData.name} does not have to stay here for long before ${pronounAndPlural(quidData, 0, 'feel')} much better.*`)
-							.setFooter({ text: `${changedCondition.statsUpdateText}\n${injuryText}` });
-
-						userData = await userModel.findOneAndUpdate(
-							u => u.uuid === userData.uuid,
-							(u) => {
-								const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-								p.injuries = profileData.injuries;
-							},
-						);
-						quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-						profileData = getMapData(quidData.profiles, interaction.guildId);
-					}
-
-					const levelUpEmbed = (await checkLevelUp(interactions.last() || interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
-
-					botReply = await botReply
-						.edit({
-							content: messageContent,
-							embeds: [
-								embed,
-								...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
-								...(levelUpEmbed ? [levelUpEmbed] : [])],
-							components: disableAllComponents(componentArray),
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) { throw new Error(error); }
-							return botReply;
-						});
-
-					await isPassedOut(interactions.last() || interaction, userData, quidData, profileData, true);
-
-					await restAdvice(interactions.last() || interaction, userData, profileData);
-					await drinkAdvice(interactions.last() || interaction, userData, profileData);
-					await eatAdvice(interactions.last() || interaction, userData, profileData);
-
-					cooldownMap.set(userData.uuid + interaction.guildId, false);
 				});
 			});
 		}
