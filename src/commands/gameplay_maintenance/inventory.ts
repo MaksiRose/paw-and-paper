@@ -79,7 +79,7 @@ export async function showInventoryMessage(
 			.setColor(default_color)
 			.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined })
 			.setTitle(`Inventory of ${interaction.guild.name} - Page ${page}${subPage ? `.${subPage + 1}` : ''}`)
-			.setDescription(description)],
+			.setDescription(description || null)],
 		components: [
 			inventorySelectMenu,
 			...profileData.hunger < profileData.maxHunger && foodSelectMenuOptions.length > 0
