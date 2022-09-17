@@ -118,6 +118,7 @@ export async function executePlaying(
 	let buttonInteraction: ButtonInteraction<'cached'> | null = null;
 
 	let foundQuest = false;
+	let playedTogether = false;
 	// If the user is a Youngling with a level over 2 that doesn't have a quest and has not unlocked any ranks and they haven't mentioned anyone, with a 1 in 3 chance get a quest
 	if (profileData1.rank === RankType.Youngling
 		&& profileData1.levels > 1
@@ -131,6 +132,7 @@ export async function executePlaying(
 			&& pullFromWeightedTable({ 0: 3, 1: 7 }) === 1)
 	) {
 
+		playedTogether = true;
 		if (userData2 && quidData2 && profileData2 && (profileData1.rank === RankType.Youngling || profileData1.rank === RankType.Apprentice)) {
 
 			const partnerHealthPoints = getSmallerNumber(profileData2.maxHealth - profileData2.health, getRandomNumber(5, 1));
@@ -375,7 +377,7 @@ export async function executePlaying(
 	await drinkAdvice(interaction, userData1, profileData1);
 	await eatAdvice(interaction, userData1, profileData1);
 
-	if (userData2 && quidData2) { await addFriendshipPoints(botReply, userData1, quidData1._id, userData2, quidData2._id); }
+	if (playedTogether && userData2 !== null && quidData2 !== null) { await addFriendshipPoints(botReply, userData1, quidData1._id, userData2, quidData2._id); }
 }
 
 function isEligableForPlaying(

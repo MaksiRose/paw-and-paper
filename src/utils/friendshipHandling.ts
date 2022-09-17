@@ -27,10 +27,9 @@ export async function addFriendshipPoints(
 	userData = await userModel.findOneAndUpdate(
 		(u => u.uuid === userData.uuid),
 		(u) => {
-			let cmentions = getMapData(u.quids, quidId).mentions[partnerQuidId];
-			if (!cmentions) {
-				cmentions = [message.createdTimestamp];
-			}
+			const q = getMapData(u.quids, quidId);
+			const cmentions = q.mentions[partnerQuidId];
+			if (!cmentions) { q.mentions[partnerQuidId] = [message.createdTimestamp]; }
 			else { cmentions.push(message.createdTimestamp); }
 		},
 	);
