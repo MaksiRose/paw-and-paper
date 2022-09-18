@@ -107,7 +107,7 @@ export async function skillsInteractionCollector(
 							.setDisabled(!profileData)
 							.setStyle(ButtonStyle.Secondary),
 						new ButtonBuilder()
-							.setCustomId(`${interaction.customId}-global${interaction.customId === 'skills_add' ? '_modal' : ''}`)
+							.setCustomId(`${interaction.customId}_global${interaction.customId === 'skills_add' ? '_modal' : ''}`)
 							.setLabel('Global')
 							.setEmoji('👥')
 							.setDisabled(!interaction.member.permissions?.has(PermissionFlagsBits.Administrator))
@@ -345,7 +345,6 @@ export async function sendEditSkillsModalResponse(
 	const skillName = interaction.customId.split('_')[3];
 	if (type === undefined) { throw new TypeError('type is undefined'); }
 	if (category === undefined) { throw new TypeError('category is undefined'); }
-	if (type !== 'add' && skillName === undefined) { throw new TypeError('skillName is undefined'); }
 
 	if (type === 'add') {
 
@@ -431,13 +430,14 @@ export async function sendEditSkillsModalResponse(
 	}
 	else if (type === 'edit') {
 
+		if (skillName === undefined) { throw new TypeError('skillName is undefined'); }
 		const newName = interaction.fields.getTextInputValue('skills_edit_textinput');
 		if (category === 'personal' && userData) {
 
 			if ([...Object.keys(profileData?.skills?.personal || {}), ...serverData.skills].includes(newName)) {
 
 				await respond(interaction, {
-					content: `I can't edit the personal skill \`${name}\` to be called \`${newName}\` since the name interferes with another skills name!`,
+					content: `I can't edit the personal skill \`${skillName}\` to be called \`${newName}\` since the name interferes with another skills name!`,
 					ephemeral: true,
 				}, false)
 					.catch((error) => { throw new Error(error); });
@@ -448,8 +448,8 @@ export async function sendEditSkillsModalResponse(
 				(u => u.uuid === userData!.uuid),
 				(u) => {
 					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-					p.skills.personal[newName] = p.skills.personal[name] ?? 0;
-					delete p.skills.personal[name];
+					p.skills.personal[newName] = p.skills.personal[skillName] ?? 0;
+					delete p.skills.personal[skillName];
 				},
 			);
 		}
@@ -464,7 +464,7 @@ export async function sendEditSkillsModalResponse(
 			if (allSkillNamesList.includes(newName)) {
 
 				await respond(interaction, {
-					content: `I can't edit the global skill \`${name}\` to be called \`${newName}\` since the new name interferes with another skills name!`,
+					content: `I can't edit the global skill \`${skillName}\` to be called \`${newName}\` since the new name interferes with another skills name!`,
 					ephemeral: true,
 				}, false)
 					.catch((error) => { throw new Error(error); });
@@ -479,8 +479,8 @@ export async function sendEditSkillsModalResponse(
 						for (const q of Object.values(u.quids)) {
 							if (q.profiles[interaction.guildId] !== undefined) {
 								const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-								p.skills.global[newName] = p.skills.global[name] ?? 0;
-								delete p.skills.global[name];
+								p.skills.global[newName] = p.skills.global[skillName] ?? 0;
+								delete p.skills.global[skillName];
 							}
 						}
 					},
@@ -491,7 +491,7 @@ export async function sendEditSkillsModalResponse(
 				s => s.serverId === interaction.guildId,
 				(s) => {
 					s.skills.push(newName);
-					s.skills = s.skills.filter(n => n !== name);
+					s.skills = s.skills.filter(n => n !== skillName);
 				},
 			);
 
@@ -509,16 +509,17 @@ export async function sendEditSkillsModalResponse(
 			});
 
 		await respond(interaction, {
-			content: `You changed the name of the ${category} skill \`${name}\` to \`${newName}\`!`,
+			content: `You changed the name of the ${category} skill \`${skillName}\` to \`${newName}\`!`,
 		}, false)
 			.catch((error) => { throw new Error(error); });
 		return;
 	}
 	else if (type === 'modify' && userData && quidData && profileData) {
 
+		if (skillName === undefined) { throw new TypeError('skillName is undefined'); }
 		const plusOrMinus = interaction.fields.getTextInputValue('skills_modify_textinput').startsWith('+') ? '+' : interaction.fields.getTextInputValue('skills_modify_textinput').startsWith('-') ? '-' : '';
 		const newValue = Number(interaction.fields.getTextInputValue('skills_modify_textinput').replace(plusOrMinus, '').replace(/\s/g, ''));
-		const oldValue = profileData.skills[category][name] ?? 0;
+		const oldValue = profileData.skills[category][skillName] ?? 0;
 
 		if (isNaN(newValue)) {
 
@@ -534,9 +535,9 @@ export async function sendEditSkillsModalResponse(
 			u => u.uuid === userData!.uuid,
 			(u) => {
 				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-				if (plusOrMinus === '+') { p.skills[category][name] += newValue; }
-				else if (plusOrMinus === '-') { p.skills[category][name] -= newValue; }
-				else { p.skills[category][name] = newValue; }
+				if (plusOrMinus === '+') { p.skills[category][skillName] += newValue; }
+				else if (plusOrMinus === '-') { p.skills[category][skillName] -= newValue; }
+				else { p.skills[category][skillName] = newValue; }
 			},
 		);
 		quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
@@ -550,7 +551,7 @@ export async function sendEditSkillsModalResponse(
 			});
 
 		await respond(interaction, {
-			content: `You changed the value of the ${category} skill \`${name}\` from \`${oldValue}\` to \`${profileData.skills[category][name]}\`!`,
+			content: `You changed the value of the ${category} skill \`${skillName}\` from \`${oldValue}\` to \`${profileData.skills[category][skillName]}\`!`,
 		}, false)
 			.catch((error) => { throw new Error(error); });
 	}

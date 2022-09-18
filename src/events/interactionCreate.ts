@@ -239,7 +239,7 @@ export const event: Event = {
 
 			console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully submitted the modal \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
-			if (interaction.customId.includes('edit')) {
+			if (interaction.customId.startsWith('edit')) {
 
 				await sendEditMessageModalResponse(interaction)
 					.catch(async (error) => {
@@ -249,7 +249,7 @@ export const event: Event = {
 				return;
 			}
 
-			if (interaction.customId.includes('species')) {
+			if (interaction.customId.startsWith('species')) {
 
 				await sendEditDisplayedSpeciesModalResponse(interaction, userData)
 					.catch(async (error) => {
@@ -259,7 +259,7 @@ export const event: Event = {
 				return;
 			}
 
-			if (interaction.customId.includes('pronouns') && interaction.isFromMessage()) {
+			if (interaction.customId.startsWith('pronouns') && interaction.isFromMessage()) {
 
 				await sendEditPronounsModalResponse(interaction)
 					.catch(async (error) => {
@@ -269,7 +269,7 @@ export const event: Event = {
 				return;
 			}
 
-			if (interaction.customId.includes('proxy')) {
+			if (interaction.customId.startsWith('proxy')) {
 
 				await sendEditProxyModalResponse(interaction, userData)
 					.catch(async (error) => {
@@ -279,7 +279,7 @@ export const event: Event = {
 				return;
 			}
 
-			if (interaction.customId.includes('ticket') && interaction.isFromMessage()) {
+			if (interaction.customId.startsWith('ticket') && interaction.isFromMessage()) {
 
 				await sendRespondToTicketModalResponse(interaction)
 					.catch(async (error) => {
@@ -289,7 +289,7 @@ export const event: Event = {
 				return;
 			}
 
-			if (interaction.customId.includes('skills') && interaction.isFromMessage()) {
+			if (interaction.customId.startsWith('skills') && interaction.isFromMessage()) {
 
 				await sendEditSkillsModalResponse(interaction, serverData, userData)
 					.catch(async (error) => {
