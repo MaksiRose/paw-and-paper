@@ -22,6 +22,7 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 			eating: { type: 'boolean', default: false, locked: false },
 			passingout: { type: 'boolean', default: false, locked: false },
 			coloredbuttons: { type: 'boolean', default: false, locked: false },
+			ginkgosapling: { type: 'boolean', default: false, locked: false },
 		},
 		locked: false,
 	},

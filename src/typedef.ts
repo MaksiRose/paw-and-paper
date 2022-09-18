@@ -305,7 +305,8 @@ export interface UserSchema {
 		drinking: boolean,
 		eating: boolean,
 		passingout: boolean,
-		coloredbuttons: boolean;
+		coloredbuttons: boolean,
+		ginkgosapling: boolean,
 	};
 	/** Object of settings the user has configured */
 	settings: {

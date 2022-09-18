@@ -45,7 +45,7 @@ export const command: SlashCommand = {
 
 			userData = await userModel.create({
 				userId: [interaction.user.id],
-				advice: { resting: false, drinking: false, eating: false, passingout: false, coloredbuttons: false },
+				advice: { resting: false, drinking: false, eating: false, passingout: false, coloredbuttons: false, ginkgosapling: false },
 				settings: { reminders: { water: true, resting: true } },
 				quids: {},
 				currentQuid: {},
