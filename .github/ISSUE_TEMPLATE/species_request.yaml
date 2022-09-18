@@ -1,6 +1,5 @@
 name: Species request
 description: Add information about a species you would like to see added to the bot
-title: ""
 labels: ["improvement", "non-code"]
 body:
   - type: markdown
