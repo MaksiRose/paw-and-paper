@@ -96,6 +96,18 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 			default: {
 				_id: { type: 'string', default: '', locked: true },
 				name: { type: 'string', default: '', locked: false },
+				nickname: {
+					type: 'object',
+					default: {
+						global: { type: 'string', default: '', locked: true },
+						servers: {
+							type: 'map',
+							of: { type: 'string', default: '', locked: false },
+							locked: false,
+						},
+					},
+					locked: false,
+				},
 				species: { type: 'string', default: '', locked: false },
 				displayedSpecies: { type: 'string', default: '', locked: false },
 				description: { type: 'string', default: '', locked: false },

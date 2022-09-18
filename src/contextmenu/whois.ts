@@ -78,7 +78,7 @@ export const command: ContextMenuCommand = {
 			}])
 			.setTimestamp(new Date())];
 
-		const response = await getMessageContent(client, userId, quidData, userData.userId.includes(interaction.user.id), embedArray);
+		const response = await getMessageContent(client, userId, quidData, userData.userId.includes(interaction.user.id), embedArray, interaction.guildId);
 
 		await respond(interaction, {
 			...response,

@@ -91,6 +91,10 @@ export const command: SlashCommand = {
 					u.quids[_id] = {
 						_id: _id,
 						name: name,
+						nickname: {
+							global: '',
+							servers: {},
+						},
 						species: '',
 						displayedSpecies: '',
 						description: '',

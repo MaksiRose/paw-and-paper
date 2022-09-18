@@ -8,7 +8,7 @@ import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { createFightGame } from '../../utils/gameBuilder';
 import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, respond, update } from '../../utils/helperFunctions';
+import { getMapData, getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
@@ -48,7 +48,7 @@ export const command: SlashCommand = {
 				content: messageContent,
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(quidData.color)
-					.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*The Elderly shakes their head as they see ${quidData.name} approaching.*\n"At your age, you shouldn't prepare for fights. Go play with your friends instead!"`)],
 			}, true)
 				.catch((error) => {
@@ -61,7 +61,7 @@ export const command: SlashCommand = {
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData.color)
-				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+				.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
 				.setDescription(`*A very experienced Elderly approaches ${quidData.name}.* "I've seen that you have not performed well in fights lately. Do you want to practice with me for a bit to strengthen your skills?"`)
 				.setFooter({ text: 'You will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response. The footer will provide hints as to which button you should click. This is a memory game, so try to remember which button to click in which situation.' })],
 			components: [new ActionRowBuilder<ButtonBuilder>()
@@ -101,7 +101,7 @@ export const command: SlashCommand = {
 			botReply = await respond(interaction, {
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(quidData.color)
-					.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*After a bit of thinking, ${quidData.name} decides that now is not a good time to practice ${pronoun(quidData, 2)} fighting skills. Politely, ${pronounAndPlural(quidData, 0, 'decline')} the Elderlies offer.*`)],
 				components: disableAllComponents(botReply.components),
 			}, true)
@@ -121,7 +121,7 @@ export const command: SlashCommand = {
 
 		const embed = new EmbedBuilder()
 			.setColor(quidData.color)
-			.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL });
+			.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL });
 
 		let totalCycles: 0 | 1 | 2 = 0;
 		let winLoseRatio = 0;

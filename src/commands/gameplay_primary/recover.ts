@@ -8,7 +8,7 @@ import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, respond, sendErrorMessage, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
+import { getMapData, getQuidDisplayname, respond, sendErrorMessage, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
@@ -51,7 +51,7 @@ export const command: SlashCommand = {
 				content: messageContent,
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(quidData.color)
-					.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*${quidData.name} walks towards the entrance of the grotto, when an elderly is stopping ${pronoun(quidData, 1)}.*\n"Didn't I see you in here in the past 12 hours? You shouldn't use the grotto this often, it's a very precious place that needs to be preserved as much as possible!"\n\nYou can recover again <t:${Math.floor((recoverCooldown + twelveHoursInMs) / 1_000)}:R>.`),
 				],
 			}, false)
@@ -65,7 +65,7 @@ export const command: SlashCommand = {
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData.color)
-				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+				.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
 				.setDescription(`*${quidData.name} walks towards the entrance of the grotto, where an elderly is already waiting for ${pronoun(quidData, 1)}.*\n"Do you already know about this place? It has everything needed to heal any injury or illness. This makes it very precious, and so it should only be used in emergencies. So only go here if you can't find anything in the medicine den that can cure you!"\n*The ${quidData.displayedSpecies || quidData.species} must decide which of their injuries ${pronounAndPlural(quidData, 0, 'want')} to heal here.*`)
 				.setFooter({ text: 'You can only select an injury when the pack has no herbs that can heal that injury.' })],
 			components: [new ActionRowBuilder<ButtonBuilder>()
@@ -116,7 +116,7 @@ export const command: SlashCommand = {
 				content: messageContent,
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(quidData.color)
-					.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*After careful consideration, ${quidData.name} decides that none of ${pronoun(quidData, 2)} injuries are urgent enough to use the grotto to regenerate. The ${quidData.displayedSpecies || quidData.species} might inspect the medicine den for useful plants instead.*`)],
 				components: disableAllComponents(botReply.components),
 			}, true)
@@ -201,7 +201,7 @@ export const command: SlashCommand = {
 							content: messageContent,
 							embeds: [new EmbedBuilder()
 								.setColor(quidData.color)
-								.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+								.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
 								.setDescription(drawEmojibar(displayingEmoji, emojisToClick))
 								.setFooter({ text: 'After a list of emojis is displayed to you one by one, choose the same emojis from the buttons below in the same order.' })],
 							components: displayingEmoji === emojisToClick.length ? enableAllComponents(componentArray.map(c => c.toJSON())) : botReply.components,
@@ -243,7 +243,7 @@ export const command: SlashCommand = {
 								content: messageContent,
 								embeds: [new EmbedBuilder()
 									.setColor(quidData.color)
-									.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+									.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
 									.setDescription('✅'.repeat(choosingEmoji - 1) + '✅')
 									.setFooter({ text: 'After a list of emojis is displayed to you one by one, choose the same emojis from the buttons below in the same order.' })],
 								components: choosingEmoji === emojisToClick.length ? disableAllComponents(componentArray) : undefined,
@@ -279,7 +279,7 @@ export const command: SlashCommand = {
 
 							embed = new EmbedBuilder()
 								.setColor(quidData.color)
-								.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+								.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
 								.setDescription('✅'.repeat((choosingEmoji || 1) - 1) + '❌\n\n' + `*${quidData.name} makes every effort to take full advantage of the grotto to heal ${pronoun(quidData, 2)} own injuries. But ${pronounAndPlural(quidData, 0, 'just doesn\'t', 'just don\'t')} seem to get better. The ${quidData.displayedSpecies || quidData.species} may have to try again...*`);
 							if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 						}
@@ -339,7 +339,7 @@ export const command: SlashCommand = {
 
 							embed = new EmbedBuilder()
 								.setColor(quidData.color)
-								.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+								.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
 								.setDescription(`*The cave is a pleasant place, with a small pond of crystal clear water, stalagmites, stalactites and stalagnates, and cool, damp air. Some stones glisten slightly, giving the room a magical atmosphere. ${quidData.name} does not have to stay here for long before ${pronounAndPlural(quidData, 0, 'feel')} much better.*`)
 								.setFooter({ text: `${changedCondition.statsUpdateText}\n${injuryText}` });
 						}

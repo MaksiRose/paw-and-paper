@@ -1,5 +1,5 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { getQuidDisplayname, respond } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { SlashCommand } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
@@ -24,13 +24,13 @@ export const command: SlashCommand = {
 
 		if (!hasName(interaction, userData)) { return; }
 
-		const description = interaction.options.getString('description') || '';
+		const desc = interaction.options.getString('description') || '';
 
 		userData = await userModel.findOneAndUpdate(
 			u => u.uuid === userData?.uuid,
 			(u) => {
 				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DM'));
-				q.description = description;
+				q.description = desc;
 			},
 		);
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId || 'DM'));
@@ -38,7 +38,7 @@ export const command: SlashCommand = {
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(quidData.color)
-				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+				.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
 				.setTitle(quidData.description === '' ? 'Your description has been reset!' : `Description for ${quidData.name} set:`)
 				.setDescription(quidData.description || null)],
 		}, true)

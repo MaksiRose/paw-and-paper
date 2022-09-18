@@ -1,5 +1,5 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { getQuidDisplayname, respond } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { SlashCommand } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
@@ -68,7 +68,7 @@ export const command: SlashCommand = {
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(quidData.color)
-				.setAuthor({ name: quidData.name, iconURL: imageURL })
+				.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId ?? ''), iconURL: imageURL })
 				.setTitle(`Profile picture for ${quidData.name} set!`)
 				.setImage(imageURL)],
 		}, true)

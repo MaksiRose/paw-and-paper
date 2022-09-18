@@ -1,5 +1,5 @@
 import { Attachment, EmbedBuilder, MessageReference, NewsChannel, PrivateThreadChannel, PublicThreadChannel, SlashCommandBuilder, TextChannel, VoiceChannel } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { getQuidDisplayname, respond } from '../../utils/helperFunctions';
 import { Quid, CurrentRegionType, SlashCommand, WebhookMessages } from '../../typedef';
 import { hasName, isInGuild } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
@@ -129,7 +129,7 @@ export async function sendMessage(
 
 	const botMessage = await webhook
 		.send({
-			username: quidData.name,
+			username: getQuidDisplayname(quidData, channel.guildId),
 			avatarURL: quidData.avatarURL,
 			content: text || null,
 			files: attachments,

@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
-import { getSmallerNumber, KeyOfUnion, sendErrorMessage, update, widenValues } from '../../utils/helperFunctions';
+import { getQuidDisplayname, getSmallerNumber, KeyOfUnion, sendErrorMessage, update, widenValues } from '../../utils/helperFunctions';
 import { respond } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { CurrentRegionType, Inventory, Profile, Quid, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
@@ -62,7 +62,7 @@ export const command: SlashCommand = {
 				content: messageContent,
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(quidData1.color)
-					.setAuthor({ name: quidData1.name, iconURL: quidData1.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 					.setDescription(`*${quidData1.name} is looking to go on an adventure, but going alone is very dangerous. The ${quidData1.displayedSpecies || quidData1.species} should find someone to take with ${pronoun(quidData1, 1)}.*`)],
 			}, false)
 				.catch(error => { throw new Error(error); });
@@ -98,7 +98,7 @@ export const command: SlashCommand = {
 			content: `${(messageContent ?? '')}\n\n${mentionedUser.toString()}`,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData1.color)
-				.setAuthor({ name: quidData1.name, iconURL: quidData1.avatarURL })
+				.setAuthor({ name: getQuidDisplayname(quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 				.setDescription(`*${quidData1.name} impatiently paces at the pack borders, hoping for ${quidData2.name} to come and adventure with ${pronoun(quidData1, 1)}.*`)
 				.setFooter({ text: 'The game that is being played is memory, meaning that a player has to uncover two cards, If the emojis match, the cards are left uncovered.' })],
 			components: [new ActionRowBuilder<ButtonBuilder>()
@@ -334,7 +334,7 @@ export async function adventureInteractionCollector(
 					embeds: [
 						new EmbedBuilder()
 							.setColor(quidData1.color)
-							.setAuthor({ name: quidData1.name, iconURL: quidData1.avatarURL })
+							.setAuthor({ name: getQuidDisplayname(quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 							.setDescription(`*${quidDataCurrent.name} decides that ${pronounAndPlural(quidDataCurrent, 0, 'has', 'have')} adventured enough and goes back to the pack.*`)
 							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}` }),
 						...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
@@ -401,7 +401,7 @@ export async function adventureInteractionCollector(
 					embeds: [
 						new EmbedBuilder()
 							.setColor(quidData1.color)
-							.setAuthor({ name: quidData1.name, iconURL: quidData1.avatarURL })
+							.setAuthor({ name: getQuidDisplayname(quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 							.setDescription(`*The adventure didn't go as planned. Not only did the two animals get lost, they also had to run from humans. While running, ${losingQuidData.name} ${extraDescription} What a shame!*`)
 							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraFooter}` }),
 						...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
@@ -472,7 +472,7 @@ export async function adventureInteractionCollector(
 					embeds: [
 						new EmbedBuilder()
 							.setColor(quidData1.color)
-							.setAuthor({ name: quidData1.name, iconURL: quidData1.avatarURL })
+							.setAuthor({ name: getQuidDisplayname(quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 							.setDescription(`*The two animals laugh as they return from a successful adventure. ${winningQuidData.name} ${foundItem === null ? 'feels especially refreshed from this trip' : `even found a ${foundItem} on the way`}. What a success!*`)
 							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraHealthPoints > 0 ? `+${extraHealthPoints} HP for ${winningQuidData.name} (${winningProfileData.health}/${winningProfileData.maxHealth})` : `+1 ${foundItem} for ${winningQuidData.name}`}` }),
 						...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
@@ -503,7 +503,7 @@ export async function adventureInteractionCollector(
  * @param componentArray - This is an array of ActionRowBuilder<ButtonBuilder> objects.
  */
 async function sendNextRoundMessage(
-	interaction: ButtonInteraction,
+	interaction: ButtonInteraction<'cached'>,
 	userId: string,
 	quidData1: Quid,
 	quidData2: Quid,
@@ -514,7 +514,7 @@ async function sendNextRoundMessage(
 		content: `<@${userId}>`,
 		embeds: [new EmbedBuilder()
 			.setColor(quidData1.color)
-			.setAuthor({ name: quidData1.name, iconURL: quidData1.avatarURL })
+			.setAuthor({ name: getQuidDisplayname(quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 			.setDescription(`*The two animals are strolling around. ${quidData2.name} notices something behind a plant and goes to take a closer look.*`)],
 		components: componentArray,
 	}, false);

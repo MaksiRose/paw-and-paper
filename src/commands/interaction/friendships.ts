@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { respond, update } from '../../utils/helperFunctions';
+import { getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { Quid, SlashCommand, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
@@ -24,7 +24,7 @@ export const command: SlashCommand = {
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId || 'DM'));
 
 		/* Creating a message with up to 25 friendships and buttons to go back and fourth a page if the quid has more than 25 friends. */
-		await respond(interaction, await getFriendshipMessage(userData, quidData, 0), true)
+		await respond(interaction, await getFriendshipMessage(userData, quidData, interaction.guildId ?? '', 0), true)
 			.catch((error) => { throw new Error(error); });
 	},
 };
@@ -56,7 +56,7 @@ export async function friendshipsInteractionCollector(
 	}
 
 	/* Updating the message with the correct friendship texts based on the new page. */
-	await update(interaction, await getFriendshipMessage(userData, quidData, page, friendshipTexts))
+	await update(interaction, await getFriendshipMessage(userData, quidData, interaction.guildId ?? '', page, friendshipTexts))
 		.catch((error) => { throw new Error(error); });
 }
 
@@ -120,6 +120,7 @@ async function getFriendshipTexts(
 async function getFriendshipMessage(
 	userData: UserSchema,
 	quidData: Quid,
+	guildId: string,
 	page: number,
 	friendshipTexts?: string[],
 ): Promise<{
@@ -133,7 +134,7 @@ async function getFriendshipMessage(
 	return {
 		embeds: [new EmbedBuilder()
 			.setColor(quidData.color)
-			.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+			.setAuthor({ name: getQuidDisplayname(quidData, guildId), iconURL: quidData.avatarURL })
 			.setTitle(`${quidData.name}'s friendships - Page ${page + 1}`)
 			.setDescription(friendshipTexts.length > 0 ?
 				friendshipTexts.slice(page * 25, (page + 1) * 25).join('\n') :

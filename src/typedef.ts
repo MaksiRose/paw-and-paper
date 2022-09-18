@@ -252,6 +252,11 @@ export interface Quid {
 	readonly _id: string;
 	/** Name of the quid */
 	name: string;
+	/** Nickname of the quid */
+	nickname: {
+		global: string,
+		servers: { [index: string]: string; };
+	};
 	/** Species of the quid */
 	species: SpeciesNames | '';
 	/** Displayed species of the quid */

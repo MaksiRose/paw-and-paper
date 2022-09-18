@@ -4,7 +4,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CommandInteraction, Embed
 import { readFileSync, writeFileSync } from 'fs';
 import { cooldownMap } from '../events/interactionCreate';
 import userModel from '../models/userModel';
-import { ErrorStacks } from '../typedef';
+import { ErrorStacks, Quid } from '../typedef';
 const { error_color } = require('../../config.json');
 
 /**
@@ -264,3 +264,8 @@ export function getSmallerNumber(
 export function capitalizeString(
 	string: string,
 ): string { return string.charAt(0).toUpperCase() + string.slice(1); }
+
+export function getQuidDisplayname(
+	quid: Quid,
+	serverId = '',
+): string { return quid.nickname.servers[serverId] || quid.nickname.global || quid.name; }

@@ -9,7 +9,7 @@ import { hasFullInventory, isInteractable, isInvalid, isPassedOut } from '../../
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, getSmallerNumber, respond, update } from '../../utils/helperFunctions';
+import { getMapData, getQuidDisplayname, getSmallerNumber, respond, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
@@ -66,7 +66,7 @@ export async function executePlaying(
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData1.color)
-				.setAuthor({ name: quidData1.name, iconURL: quidData1.avatarURL })
+				.setAuthor({ name: getQuidDisplayname(quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 				.setDescription(`*${quidData1.name} plays with ${pronoun(quidData1, 4)}. The rest of the pack looks away in embarrassment.*`)],
 		}, true)
 			.catch((error) => {
@@ -110,7 +110,7 @@ export async function executePlaying(
 	const responseTime = profileData1.rank === RankType.Youngling ? 10_000 : 5_000;
 	const embed = new EmbedBuilder()
 		.setColor(quidData1.color)
-		.setAuthor({ name: quidData1.name, iconURL: quidData1.avatarURL });
+		.setAuthor({ name: getQuidDisplayname(quidData1, interaction.guildId), iconURL: quidData1.avatarURL });
 	let infectedEmbed: EmbedBuilder | null = null;
 	let playComponent: ActionRowBuilder<ButtonBuilder> | null = null;
 	let botReply: Message;

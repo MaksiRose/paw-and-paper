@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CommandInteraction, EmbedBuilder, MessageComponentInteraction } from 'discord.js';
 import { cooldownMap } from '../events/interactionCreate';
-import { respond, sendErrorMessage } from './helperFunctions';
+import { getQuidDisplayname, respond, sendErrorMessage } from './helperFunctions';
 import userModel from '../models/userModel';
 import { Quid, Profile, UserSchema, Inventory } from '../typedef';
 import { getMapData } from './helperFunctions';
@@ -23,7 +23,7 @@ export async function isPassedOut(
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(quidData.color)
-				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+				.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
 				.setDescription(`*${quidData.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${pronounAndPlural(quidData, 0, 'screeches', 'screech')} with ${pronoun(quidData, 2)} last energy. Without help, ${pronoun(quidData, 0)} will not be able to continue.*`)
 				.setFooter(isNew ? { text: await decreaseLevel(userData, quidData, profileData, interaction) } : null)],
 		}, false)
@@ -63,7 +63,7 @@ export async function hasCooldown(
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(quidData.color)
-				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+				.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
 				.setDescription(`*${quidData.name} is so eager to get things done today that ${pronounAndPlural(quidData, 0, 'is', 'are')} somersaulting. ${upperCasePronoun(quidData, 0)} should probably take a few seconds to calm down.*`)],
 		}, false)
 			.then(reply => {
@@ -112,7 +112,7 @@ export async function isResting(
 
 		embedArray.unshift(new EmbedBuilder()
 			.setColor(quidData.color)
-			.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+			.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
 			.setDescription(`*${quidData.name} opens ${pronoun(quidData, 2)} eyes, blinking at the bright sun. After a long stretch, ${pronounAndPlural(quidData, 0, 'leave')} ${pronoun(quidData, 2)} den to continue ${pronoun(quidData, 2)} day.*`)
 			.setFooter({ text: `Current energy: ${profileData.energy}` }));
 	}
@@ -176,7 +176,7 @@ export async function hasFullInventory(
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData.color)
-				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+				.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
 				.setDescription(`*${quidData.name} approaches the pack borders, ${pronoun(quidData, 2)} mouth filled with various things. As eager as ${pronounAndPlural(quidData, 0, 'is', 'are')} to go into the wild, ${pronounAndPlural(quidData, 0, 'decide')} to store some things away first.*`)
 				.setFooter({ text: 'You can only hold up to 5 items in your personal inventory. Type "/store" or click the button below to put things into the pack inventory!' }),
 			],

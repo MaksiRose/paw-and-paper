@@ -5,7 +5,7 @@ import { CurrentRegionType, Profile, Quid, ServerSchema, SlashCommand, UserSchem
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { hasCooldown, isPassedOut } from '../../utils/checkValidity';
 import { pronoun, pronounAndPlural, upperCasePronoun } from '../../utils/getPronouns';
-import { getMapData, respond, sendErrorMessage } from '../../utils/helperFunctions';
+import { getMapData, getQuidDisplayname, respond, sendErrorMessage } from '../../utils/helperFunctions';
 import wearDownDen from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
@@ -57,7 +57,7 @@ export async function startResting(
 			content: messageContent,
 			embeds: [new EmbedBuilder()
 				.setColor(quidData.color)
-				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+				.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
 				.setDescription(`*${quidData.name} dreams of resting on a beach, out in the sun. The imaginary wind rocked the also imaginative hammock. ${upperCasePronoun(quidData, 0)} must be really tired to dream of sleeping!*`),
 			],
 		}, false)
@@ -73,7 +73,7 @@ export async function startResting(
 			content: messageContent,
 			embeds: [new EmbedBuilder()
 				.setColor(quidData.color)
-				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+				.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
 				.setDescription(`*${quidData.name} trots around the dens eyeing ${pronoun(quidData, 2)} comfortable moss-covered bed. A nap looks nice, but ${pronounAndPlural(quidData, 0, 'has', 'have')} far too much energy to rest!*`),
 			],
 		}, false)
@@ -206,7 +206,7 @@ function getRestingEmbed(
 
 	return new EmbedBuilder()
 		.setColor(quidData.color)
-		.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+		.setAuthor({ name: getQuidDisplayname(quidData, profileData.serverId), iconURL: quidData.avatarURL })
 		.setDescription(`*${quidData.name}'s chest rises and falls with the crickets. Snoring bounces off each wall, finally exiting the den and rising free to the clouds.*`)
 		.setFooter({ text: `+${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})${(previousRegion !== CurrentRegionType.SleepingDens) ? '\nYou are now at the sleeping dens' : ''}${isAutomatic ? '\nYour quid started resting because you were inactive for 10 minutes' : ''}\n\n${weardownText}\n\nTip: You can also do "/vote" to get +30 energy per vote!` });
 }
