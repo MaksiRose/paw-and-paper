@@ -4,7 +4,6 @@ import { respond } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { BanList, commonPlantsInfo, CurrentRegionType, GivenIdList, materialsInfo, RankType, rarePlantsInfo, SlashCommand, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../../typedef';
 import { checkLevelRequirements, checkRankRequirements } from '../../utils/checkRoleRequirements';
-import { getMapData } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
 const { version } = require('../../../package.json');
 const { default_color, error_color } = require('../../../config.json');
@@ -26,9 +25,11 @@ export const command: SlashCommand = {
 	disablePreviousCommand: false,
 	sendCommand: async (client, interaction, userData, serverData) => {
 
+		let newAccount = false;
 		/* This is checking if the user has any data saved in the database. If they don't, it will create a new user. */
 		if (!userData) {
 
+			newAccount = true;
 			/* Checking if the user is banned from using the bot. */
 			const bannedList = JSON.parse(readFileSync('./database/bannedList.json', 'utf-8')) as BanList;
 			if (bannedList.users.includes(interaction.user.id)) {
@@ -46,14 +47,15 @@ export const command: SlashCommand = {
 			userData = await userModel.create({
 				userId: [interaction.user.id],
 				advice: { resting: false, drinking: false, eating: false, passingout: false, coloredbuttons: false, ginkgosapling: false },
-				settings: { reminders: { water: true, resting: true } },
+				settings: {
+					reminders: { water: true, resting: true },
+					proxy: {
+						global: { autoproxy: false, stickymode: false },
+						servers: {},
+					},
+				},
 				quids: {},
 				currentQuid: {},
-				serverProxySettings: {},
-				globalProxySettings: {
-					autoproxy: false,
-					stickymode: false,
-				},
 				lastPlayedVersion: `${version.split('.').slice(0, -1).join('.')}`,
 				uuid: '',
 			});
@@ -80,7 +82,7 @@ export const command: SlashCommand = {
 		const _id = userData.currentQuid[interaction.guildId || 'DM'] || await createId();
 
 
-		userData = await userModel.findOneAndUpdate(
+		await userModel.findOneAndUpdate(
 			u => u.uuid === userData?.uuid,
 			(u) => {
 				const q = u.quids[_id];
@@ -140,13 +142,14 @@ export const command: SlashCommand = {
 				u.currentQuid[interaction.guildId || 'DM'] = _id;
 			},
 		);
-		const quidData = getMapData(userData.quids, _id);
+		const quidData = userData.quids[_id];
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
-				.setTitle(quidData === null ? `You successfully created the quid ${name}!` : `You successfully renamed your quid to ${name}!`)
-				.setFooter(quidData === null ? { text: 'To continue setting up your profile for the RPG, type "/species". For other options, review "/help".' } : null)],
+				.setTitle(quidData === undefined ? `You successfully created the quid ${name}!` : `You successfully renamed your quid to ${name}!`)
+				.setDescription(newAccount === false ? null : '__What is a quid?__\nTo avoid using limiting words like "character" or "person", Paw and Paper uses the made-up word quid. It is based off of the word [Quiddity](https://en.wikipedia.org/wiki/Quiddity), which means "what makes something what it is". Quid then means "someone who is what they are", which is vague on purpose because it changes based on what they are.')
+				.setFooter(quidData === undefined ? { text: 'To continue setting up your profile for the RPG, type "/species". For other options, review "/help".' } : null)],
 		}, true)
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }

@@ -37,6 +37,55 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 				},
 				locked: false,
 			},
+			proxy: {
+				type: 'object',
+				default: {
+					global: {
+						type: 'object',
+						default: {
+							autoproxy: { type: 'boolean', default: false, locked: false },
+							stickymode: { type: 'boolean', default: false, locked: false },
+						},
+						locked: false,
+					},
+					servers: {
+						type: 'map',
+						of: {
+							type: 'object',
+							default: {
+								autoproxy: {
+									type: 'object',
+									default: {
+										setTo: { type: 'number', default: ProxyConfigType.FollowGlobal, locked: false },
+										channels: {
+											type: 'object',
+											default: {
+												setTo: { type: 'number', default: ProxyListType.Whitelist, locked: false },
+												whitelist: {
+													type: 'array',
+													of: { type: 'string', default: '', locked: false },
+													locked: false,
+												},
+												blacklist: {
+													type: 'array',
+													of: { type: 'string', default: '', locked: false },
+													locked: false,
+												},
+											},
+											locked: false,
+										},
+									},
+									locked: false,
+								},
+								stickymode: { type: 'number', default: ProxyConfigType.FollowGlobal, locked: false },
+							},
+							locked: false,
+						},
+						locked: false,
+					},
+				},
+				locked: false,
+			},
 		},
 		locked: false,
 	},
@@ -206,49 +255,6 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 	currentQuid: {
 		type: 'map',
 		of: { type: 'string', default: '', locked: false },
-		locked: false,
-	},
-	serverProxySettings: {
-		type: 'map',
-		of: {
-			type: 'object',
-			default: {
-				autoproxy: {
-					type: 'object',
-					default: {
-						setTo: { type: 'number', default: ProxyConfigType.FollowGlobal, locked: false },
-						channels: {
-							type: 'object',
-							default: {
-								setTo: { type: 'number', default: ProxyListType.Whitelist, locked: false },
-								whitelist: {
-									type: 'array',
-									of: { type: 'string', default: '', locked: false },
-									locked: false,
-								},
-								blacklist: {
-									type: 'array',
-									of: { type: 'string', default: '', locked: false },
-									locked: false,
-								},
-							},
-							locked: false,
-						},
-					},
-					locked: false,
-				},
-				stickymode: { type: 'number', default: ProxyConfigType.FollowGlobal, locked: false },
-			},
-			locked: false,
-		},
-		locked: false,
-	},
-	globalProxySettings: {
-		type: 'object',
-		default: {
-			autoproxy: { type: 'boolean', default: false, locked: false },
-			stickymode: { type: 'boolean', default: false, locked: false },
-		},
 		locked: false,
 	},
 	lastPlayedVersion: { type: 'string', default: pkg.version, locked: false },

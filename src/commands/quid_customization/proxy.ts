@@ -165,14 +165,14 @@ export async function proxyInteractionCollector(
 		else if (selectOptionId && interaction.customId.startsWith('proxy_always_options')) {
 
 			const channelId = selectOptionId.replace('proxy_', '');
-			const hasChannel = userData.serverProxySettings[interaction.guildId]?.autoproxy.channels.whitelist.includes(channelId) || false;
+			const hasChannel = userData.settings.proxy.servers[interaction.guildId]?.autoproxy.channels.whitelist.includes(channelId) || false;
 
 			userData = await userModel.findOneAndUpdate(
 				u => u.uuid === userData?.uuid,
 				(u) => {
-					const sps = u.serverProxySettings[interaction.guildId];
+					const sps = u.settings.proxy.servers[interaction.guildId];
 					if (!sps) {
-						u.serverProxySettings[interaction.guildId] = {
+						u.settings.proxy.servers[interaction.guildId] = {
 							autoproxy: {
 								setTo: ProxyConfigType.Enabled,
 								channels: {
@@ -272,7 +272,7 @@ async function getSelectMenus(
 	page: number,
 ): Promise<SelectMenuBuilder> {
 
-	let alwaysSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = allChannels.map((channel, channelId) => ({ label: channel.name, value: `proxy_${channelId}`, emoji: userData && userData.serverProxySettings[serverData?.serverId || '']?.autoproxy.channels.whitelist.includes(channelId) ? '🔘' : undefined }));
+	let alwaysSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = allChannels.map((channel, channelId) => ({ label: channel.name, value: `proxy_${channelId}`, emoji: userData && userData.settings.proxy.servers[serverData?.serverId || '']?.autoproxy.channels.whitelist.includes(channelId) ? '🔘' : undefined }));
 
 	if (alwaysSelectMenuOptions.length > 25) {
 
