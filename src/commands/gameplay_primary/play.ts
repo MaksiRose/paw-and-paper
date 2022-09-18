@@ -55,7 +55,7 @@ export async function executePlaying(
 	/* Checks if the profile is resting, on a cooldown or passed out. */
 	if (await isInvalid(interaction, userData1, quidData1, profileData1, embedArray)) { return; }
 
-	const messageContent = remindOfAttack(interaction.guildId);
+	let messageContent = remindOfAttack(interaction.guildId);
 
 	if (await hasFullInventory(interaction, quidData1, profileData1, embedArray, messageContent)) { return; }
 
@@ -213,6 +213,10 @@ export async function executePlaying(
 				.catch(() => { /* do nothing */ });
 
 			playComponent.setComponents(playComponent.components.map(component => component.setDisabled(true)));
+		}
+		else {
+
+			messageContent = `${(messageContent ?? '')}\n\n<@${mentionedUserId}>`;
 		}
 
 		if (whoWinsChance === 0) {

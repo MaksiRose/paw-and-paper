@@ -165,6 +165,7 @@ export const command: SlashCommand = {
 		const user2CheckLevelData = await checkLevelUp(interaction, userData2, quidData2, profileData2, serverData);
 
 		const botReply = await respond(interaction, {
+			content: `${(messageContent ?? '')}\n\n<@${userData2.userId[0]}>`,
 			embeds: [
 				new EmbedBuilder()
 					.setColor(quidData1.color)
