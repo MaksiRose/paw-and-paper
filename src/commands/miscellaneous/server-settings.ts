@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, Channe
 import { respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
-import { RankType, ServerSchema, SlashCommand, WayOfEarningType } from '../../typedef';
+import { ProxyListType, RankType, ServerSchema, SlashCommand, WayOfEarningType } from '../../typedef';
 import { checkLevelRequirements, checkRankRequirements } from '../../utils/checkRoleRequirements';
 import { getMapData } from '../../utils/helperFunctions';
 const { default_color, update_channel_id } = require('../../../config.json');
@@ -422,17 +422,17 @@ export async function serversettingsInteractionCollector(
 
 			await newsChannel.addFollower(channelId);
 
+			await update(interaction, getOriginalMessage(interaction, serverData))
+				.catch((error) => {
+					if (error.httpStatus !== 404) { console.error(error); }
+				});
+
 			await respond(interaction, {
 				content: `Updates are now posted to <#${channelId}>!`,
 				ephemeral: true,
 			}, false)
 				.catch((error) => {
 					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
-
-			await update(interaction, getOriginalMessage(interaction, serverData))
-				.catch((error) => {
-					if (error.httpStatus !== 404) { console.error(error); }
 				});
 			return;
 		}
@@ -463,6 +463,11 @@ export async function serversettingsInteractionCollector(
 			return;
 		}
 		else {
+
+			await update(interaction, getOriginalMessage(interaction, serverData))
+				.catch((error) => {
+					if (error.httpStatus !== 404) { console.error(error); }
+				});
 
 			const channelIdOrOff = selectOptionId.split('_')[2];
 			if (channelIdOrOff === undefined) { throw new Error('channelId is undefined'); }
@@ -501,11 +506,6 @@ export async function serversettingsInteractionCollector(
 						if (error.httpStatus !== 404) { throw new Error(error); }
 					});
 			}
-
-			await update(interaction, getOriginalMessage(interaction, serverData))
-				.catch((error) => {
-					if (error.httpStatus !== 404) { console.error(error); }
-				});
 			return;
 		}
 	}
@@ -514,6 +514,32 @@ export async function serversettingsInteractionCollector(
 	if (interaction.isSelectMenu() && interaction.values[0] === 'serversettings_proxying') {
 
 		await update(interaction, await getProxyingMessage(interaction, serverData, 0))
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+		return;
+	}
+
+	if (interaction.isButton() && interaction.customId === 'serversettings_proxying_setTo') {
+
+		serverData = await serverModel.findOneAndUpdate(
+			s => s.serverId === interaction.guildId,
+			(s) => {
+				s.proxySettings.channels.setTo = s.proxySettings.channels.setTo === ProxyListType.Blacklist ? ProxyListType.Whitelist : ProxyListType.Blacklist;
+			},
+		);
+
+		await update(interaction, await getProxyingMessage(interaction, serverData, 0))
+			.catch((error) => {
+				if (error.httpStatus !== 404) { console.error(error); }
+			});
+
+		const setTo = serverData.proxySettings.channels.setTo;
+
+		await respond(interaction, {
+			content: `Proxying is now only ${setTo === ProxyListType.Blacklist ? 'disabled' : 'enabled'} in the ${setTo === ProxyListType.Blacklist ? 'blacklisted' : 'whitelisted'} channels!`,
+			ephemeral: true,
+		}, false)
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
@@ -536,28 +562,29 @@ export async function serversettingsInteractionCollector(
 		}
 		else {
 
+			const setTo = serverData.proxySettings.channels.setTo === ProxyListType.Blacklist ? 'blacklist' : 'whitelist';
 			const channelId = selectOptionId.replace('serversettings_proxying_', '');
-			const hasChannel = serverData && serverData.proxySettings.channels.blacklist.includes(channelId);
+			const hasChannel = serverData.proxySettings.channels[setTo].includes(channelId);
 
 			serverData = await serverModel.findOneAndUpdate(
 				s => s.serverId === interaction.guildId,
 				(s) => {
-					if (!hasChannel) { s.proxySettings.channels.blacklist.push(channelId); }
-					else { s.proxySettings.channels.blacklist = s.proxySettings.channels.blacklist.filter(string => string !== channelId); }
+					if (!hasChannel) { s.proxySettings.channels[setTo].push(channelId); }
+					else { s.proxySettings.channels[setTo] = s.proxySettings.channels[setTo].filter(string => string !== channelId); }
 				},
 			);
-
-			await respond(interaction, {
-				content: `${hasChannel ? 'Enabled' : 'Disabled'} proxying in <#${channelId}>!`,
-				ephemeral: true,
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
 
 			await update(interaction, await getProxyingMessage(interaction, serverData, 0))
 				.catch((error) => {
 					if (error.httpStatus !== 404) { console.error(error); }
+				});
+
+			await respond(interaction, {
+				content: `${hasChannel ? 'Removed' : 'Added'} <#${channelId}> ${hasChannel ? 'from' : 'to'} the proxying ${setTo}!`,
+				ephemeral: true,
+			}, false)
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 			return;
 		}
@@ -579,7 +606,7 @@ function getOriginalMessage(interaction: ChatInputCommandInteraction<'cached'> |
 					{ value: 'serversettings_shop', label: 'Shop', description: 'Add, delete or edit earnable roles' },
 					{ value: 'serversettings_updates', label: 'Updates', description: 'Get updates for new releases sent to a channel' },
 					{ value: 'serversettings_visits', label: 'Visits', description: 'Configure a channel to connect with other servers' },
-					{ value: 'serversettings_proxying', label: 'Proxying', description: 'Disable auto- or all proxying in specific channels or everywhere' },
+					{ value: 'serversettings_proxying', label: 'Proxying', description: 'Manage proxying' },
 				)])],
 	};
 }
@@ -720,7 +747,7 @@ async function getUpdateMessage(
 	page: number,
 ): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
 
-	let updatesMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).map(channel => ({ label: channel.name, value: `serversettings_updates_${channel.id}` }));
+	let updatesMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).filter(c => c && c.type === ChannelType.GuildText).map(channel => ({ label: channel.name, value: `serversettings_updates_${channel.id}` }));
 
 	if (updatesMenuOptions.length > 25) {
 
@@ -754,7 +781,7 @@ async function getVisitsMessage(
 	page: number,
 ): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
 
-	let updatesMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [{ label: 'off', value: 'serversettings_visits_off', emoji: serverData.visitChannelId === null ? '🔘' : undefined }, ...(await interaction.guild.channels.fetch()).map(channel => ({ label: channel.name, value: `serversettings_visits_${channel.id}`, emoji: serverData.visitChannelId === channel.id ? '🔘' : undefined }))];
+	let updatesMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [{ label: 'off', value: 'serversettings_visits_off', emoji: serverData.visitChannelId === null ? '🔘' : undefined }, ...(await interaction.guild.channels.fetch()).filter(c => c && c.type === ChannelType.GuildText).map(channel => ({ label: channel.name, value: `serversettings_visits_${channel.id}`, emoji: serverData.visitChannelId === channel.id ? '🔘' : undefined }))];
 
 	if (updatesMenuOptions.length > 25) {
 
@@ -783,12 +810,13 @@ async function getVisitsMessage(
 }
 
 async function getProxyingMessage(
-	interaction: SelectMenuInteraction<'cached'>,
+	interaction: SelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>,
 	serverData: ServerSchema,
 	page: number,
 ): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
 
-	let disableSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).map((channel, channelId) => ({ label: channel.name, value: `serversettings_proxying_${channelId}`, emoji: serverData?.proxySettings.channels.blacklist?.includes(channelId) ? '🔘' : undefined }));
+	const setTo = serverData.proxySettings.channels.setTo === ProxyListType.Blacklist ? 'blacklist' : 'whitelist';
+	let disableSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).filter(c => c && c.type === ChannelType.GuildText).map((channel, channelId) => ({ label: channel.name, value: `serversettings_proxying_${channelId}`, emoji: serverData.proxySettings.channels[setTo].includes(channelId) ? '🔘' : undefined }));
 
 	if (disableSelectMenuOptions.length > 25) {
 
@@ -801,17 +829,22 @@ async function getProxyingMessage(
 			.setColor(default_color)
 			.setAuthor({ name: serverData.name, iconURL: interaction.guild?.iconURL() || undefined })
 			.setTitle('Settings ➜ Proxying')
-			.setDescription('This toggles whether proxying should be disabled or enabled in specific channels, or in the entire server, using the drop-down menus below. Selected options will have a radio emoji next to them.')],
+			.setDescription('This toggles in which channels proxying should be disabled or enabled, using the drop-down menu below. Selected channels will have a radio emoji next to them. When it is set to blacklist, proxying is *only disabled* in the selected channels. When it is set to whitelist, proxying is *only enabled* in the selected channels.')],
 		components: [new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
 				.setCustomId('serversettings_mainpage')
 				.setLabel('Back')
 				.setEmoji('⬅️')
 				.setStyle(ButtonStyle.Secondary)]),
+		new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId('serversettings_proxying_setTo')
+				.setLabel(`Currently set to ${serverData.proxySettings.channels.setTo === ProxyListType.Blacklist ? 'blacklist' : 'whitelist'}`)
+				.setStyle(ButtonStyle.Secondary)]),
 		new ActionRowBuilder<SelectMenuBuilder>()
 			.setComponents([new SelectMenuBuilder()
 				.setCustomId('serversettings_proxying_options')
-				.setPlaceholder('Select channels to disable proxying for')
+				.setPlaceholder(`Select channels to ${serverData.proxySettings.channels.setTo === ProxyListType.Blacklist ? 'disable' : 'enable'} proxying for`)
 				.setOptions(disableSelectMenuOptions)])],
 	};
 }

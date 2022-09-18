@@ -385,6 +385,8 @@ export interface ServerSchema {
 		channels: ProxyLimitedList,
 		/** Object with limits for which roles are allowed */
 		roles: ProxyLimitedList,
+		/** Whether the quid needs a tag to be able to proxy */
+		tagRequired: boolean,
 		/** Array of strings of which one has to be included in the tag */
 		requiredInTag: Array<string>,
 		/** Whether the tag also has to be in a members display name */

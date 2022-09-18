@@ -107,6 +107,7 @@ export async function createGuild(
 				blacklist: [],
 				whitelist: [],
 			},
+			tagRequired: false,
 			requiredInTag: [],
 			tagInDisplayname: false,
 			logChannelId: null,

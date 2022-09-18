@@ -113,6 +113,7 @@ const serverModel = new Model<ServerSchema>('./database/servers', {
 				},
 				locked: false,
 			},
+			tagRequired: { type: 'boolean', default: false, locked: false },
 			requiredInTag: {
 				type: 'array',
 				of: { type: 'string', default: '', locked: false },

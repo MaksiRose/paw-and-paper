@@ -430,14 +430,14 @@ export const event: Event = {
 					return;
 				}
 
-				if (interaction.customId.includes('settings_')) {
+				if (interaction.customId.startsWith('settings_')) {
 
 					await settingsInteractionCollector(client, interaction, userData)
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
 
-				if (interaction.customId.includes('rank_')) {
+				if (interaction.customId.startsWith('rank_')) {
 
 					await rankupInteractionCollector(interaction, userData, serverData)
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
