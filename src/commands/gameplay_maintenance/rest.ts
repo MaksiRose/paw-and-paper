@@ -1,0 +1,218 @@
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CommandInteraction, EmbedBuilder, MessageComponentInteraction, ModalSubmitInteraction, SlashCommandBuilder } from 'discord.js';
+import serverModel from '../../models/serverModel';
+import userModel from '../../models/userModel';
+import { CurrentRegionType, Profile, Quid, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
+import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasCooldown, isPassedOut } from '../../utils/checkValidity';
+import { pronoun, pronounAndPlural, upperCasePronoun } from '../../utils/getPronouns';
+import { getMapData, respond, sendErrorMessage } from '../../utils/helperFunctions';
+import wearDownDen from '../../utils/wearDownDen';
+import { remindOfAttack } from '../gameplay_primary/attack';
+
+const restingTimeoutMap: Map<string, NodeJS.Timeout> = new Map();
+
+const name: SlashCommand['name'] = 'rest';
+const description: SlashCommand['description'] = 'Get some sleep and fill up your energy meter. Takes some time to refill.';
+export const command: SlashCommand = {
+	name: name,
+	description: description,
+	data: new SlashCommandBuilder()
+		.setName(name)
+		.setDescription(description)
+		.setDMPermission(false)
+		.toJSON(),
+	disablePreviousCommand: true,
+	sendCommand: async (client, interaction, userData, serverData) => {
+
+		/* This ensures that the user is in a guild and has a completed account. */
+		if (!isInGuild(interaction)) { return; }
+		if (serverData === null) { throw new Error('serverData is null'); }
+		if (!hasCompletedAccount(interaction, userData)) { return; }
+
+		/* Gets the current active quid and the server profile from the account */
+		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
+		const profileData = getMapData(quidData.profiles, interaction.guildId);
+
+		/* Checks if the profile is on a cooldown or passed out. */
+		if (await isPassedOut(interaction, userData, quidData, profileData, false)) { return; }
+		if (await hasCooldown(interaction, userData, quidData)) { return; }
+
+		await startResting(interaction, userData, quidData, profileData, serverData);
+	},
+};
+
+export async function startResting(
+	interaction: CommandInteraction<'cached'> | MessageComponentInteraction<'cached'> | ModalSubmitInteraction<'cached'>,
+	userData: UserSchema,
+	quidData: Quid,
+	profileData: Profile,
+	serverData: ServerSchema,
+) {
+
+	const messageContent = remindOfAttack(interaction.guildId);
+
+	if (profileData.isResting === true) {
+
+		await respond(interaction, {
+			content: messageContent,
+			embeds: [new EmbedBuilder()
+				.setColor(quidData.color)
+				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+				.setDescription(`*${quidData.name} dreams of resting on a beach, out in the sun. The imaginary wind rocked the also imaginative hammock. ${upperCasePronoun(quidData, 0)} must be really tired to dream of sleeping!*`),
+			],
+		}, false)
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+		return;
+	}
+
+	if (profileData.energy >= profileData.maxEnergy) {
+
+		await respond(interaction, {
+			content: messageContent,
+			embeds: [new EmbedBuilder()
+				.setColor(quidData.color)
+				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+				.setDescription(`*${quidData.name} trots around the dens eyeing ${pronoun(quidData, 2)} comfortable moss-covered bed. A nap looks nice, but ${pronounAndPlural(quidData, 0, 'has', 'have')} far too much energy to rest!*`),
+			],
+		}, false)
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+		return;
+	}
+
+	const previousRegion = profileData.currentRegion;
+
+	await userModel.findOneAndUpdate(
+		u => u.uuid === userData.uuid,
+		(u) => {
+			const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+			p.isResting = true;
+			p.currentRegion = CurrentRegionType.SleepingDens;
+			u.advice.resting = true;
+		},
+	);
+
+	const isAutomatic = !interaction.isCommand() || interaction.commandName !== name;
+
+	const weardownText = await wearDownDen(serverData, CurrentRegionType.SleepingDens);
+	let energyPoints = 0;
+
+	const embed = new EmbedBuilder()
+		.setColor(quidData.color)
+		.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+		.setDescription(`*${quidData.name}'s chest rises and falls with the crickets. Snoring bounces off each wall, finally exiting the den and rising free to the clouds.*`)
+		.setFooter({ text: `+${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})${(previousRegion !== CurrentRegionType.SleepingDens) ? '\nYou are now at the sleeping dens' : ''}${isAutomatic ? '\nYour quid started resting because you were inactive for 10 minutes' : ''}\n\n${weardownText}\n\nTip: You can also do "/vote" to get +30 energy per vote!` });
+	const component = new ActionRowBuilder<ButtonBuilder>()
+		.setComponents(new ButtonBuilder()
+			.setCustomId(`settings_reminders_resting_${userData.settings.reminders.resting === true ? 'off' : 'on'}`)
+			.setLabel(`Turn automatic resting pings ${userData.settings.reminders.resting === true ? 'off' : 'on'}`)
+			.setStyle(ButtonStyle.Secondary));
+
+	const botReply = await respond(interaction, {
+		content: messageContent,
+		embeds: [embed],
+		components: isAutomatic ? [component] : [],
+	}, false)
+		.catch((error) => { throw new Error(error); });
+
+	restingTimeoutMap.set(userData.uuid + interaction.guildId, setTimeout(addEnergy, 30_000 + await getExtraRestingTime(interaction.guildId)));
+
+	/**
+	 * Gives the user an energy point, checks if they reached the maximum, and create a new Timeout if they didn't.
+	 */
+	async function addEnergy(): Promise<void> {
+		try {
+
+			energyPoints += 1;
+
+			userData = await userModel.findOneAndUpdate(
+				u => u.uuid === userData.uuid,
+				(u) => {
+					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+					p.energy += 1;
+				},
+			);
+			quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
+			profileData = getMapData(quidData.profiles, interaction.guildId);
+
+			await botReply
+				.edit({
+					embeds: [embed],
+				})
+				.catch((error) => {
+					if (error.httpStatus !== 404) { throw new Error(error); }
+				});
+
+			/* It checks if the user has reached their maximum energy, and if they have, it stops the resting process. */
+			if (profileData.energy >= profileData.maxEnergy) {
+
+				userData = await userModel.findOneAndUpdate(
+					u => u.uuid === userData.uuid,
+					(u) => {
+						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+						p.isResting = false;
+						p.currentRegion = previousRegion;
+					},
+				);
+
+				await botReply
+					.delete()
+					.catch((error) => {
+						if (error.httpStatus !== 404) {
+							throw new Error(error);
+						}
+					});
+
+				await botReply.channel
+					.send({
+						content: userData.settings.reminders.resting ? interaction.user.toString() : null,
+						embeds: [embed.setDescription(`*${quidData.name}'s eyes blink open, ${pronounAndPlural(quidData, 0, 'sit')} up to stretch and then walk out into the light and buzz of late morning camp. Younglings are spilling out of the nursery, ambitious to start the day, Hunters and Healers are traveling in and out of the camp border. It is the start of the next good day!*`)],
+						components: isAutomatic ? [component] : [],
+					})
+					.catch((error) => {
+						if (error.httpStatus !== 404) { throw new Error(error); }
+					});
+				return;
+			}
+
+			restingTimeoutMap.set(userData.uuid + interaction.guildId, setTimeout(addEnergy, 30_000 + await getExtraRestingTime(interaction.guildId)));
+			return;
+		}
+		catch (error) {
+
+			await sendErrorMessage(interaction, error)
+				.catch(e => { console.error(e); });
+		}
+	}
+}
+
+/**
+ * Clears the timeout of the specific user that is resting.
+ */
+export function stopResting(
+	uuid: string,
+	guildId: string,
+): void {
+
+	clearTimeout(restingTimeoutMap.get(uuid + guildId));
+}
+
+/**
+ * It gets the server's den stats, calculates a multiplier based on those stats, and returns the
+ * difference between 30,000 and 30,000 times the multiplier
+ * @param guildId - The ID of the guild that the command was executed in.
+ * @returns {Promise<number>} the amount of time in milliseconds that the user will be resting for.
+ */
+async function getExtraRestingTime(
+	guildId: string,
+): Promise<number> {
+
+	const serverData = await serverModel.findOne(s => s.serverId === guildId);
+
+	const denStats = serverData.dens.sleepingDens.structure + serverData.dens.sleepingDens.bedding + serverData.dens.sleepingDens.thickness + serverData.dens.sleepingDens.evenness;
+	const multiplier = denStats / 400;
+	return 30_000 - Math.round(30_000 * multiplier);
+}

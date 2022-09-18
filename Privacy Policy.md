@@ -24,25 +24,25 @@ The Service collects and stores the following data in its database:
   - If given, the channel ID provided by Discord of the channel that will be used for in-game visits<sup>2</sup>
   - If given, the server ID provided by Discord of another server that is currently in-game visiting this server<sup>3</sup> <sup>4</sup>
   - A list of in-game shop roles, with their role ID provided by Discord, their in-game way of earning and their in-game requirement<sup>3</sup>
-  - A list of channel IDs where all proxying, and a list of channel IDs where autoproxying is disabled, if set by server administrators. A proxy is a set of characters indicating to the bot whether a message should be replaced to look like it is coming from an in-game character<sup>4</sup>
-  - A list of "skills" or server administrators have created. Skills are attributes given to characters to measure their abilities, often used in roleplay to learn more about a character or to enhance gameplay<sup>2</sup>
+  - A list of channel IDs where all proxying, and a list of channel IDs where autoproxying is disabled, if set by server administrators. A proxy is a set of characters indicating to the bot whether a message should be replaced to look like it is coming from an in-game quid<sup>4</sup>
+  - A list of "skills" or server administrators have created. Skills are attributes given to quids to measure their abilities, often used in roleplay to learn more about a quid or to enhance gameplay<sup>2</sup>
   - A universally unique identifier<sup>1</sup>
 - Information about User Accounts:
   - The user ID provided by Discord of the user that created the account<sup>1</sup>
   - A list of kinds of advice messages and if the user has received them<sup>2</sup>
   - A list of reminder settings and if the user has enabled them<sup>4</sup>
-  - For each character:
-    - A unique identifier given to that character<sup>1</sup>
+  - For each quid:
+    - A unique identifier given to that quid<sup>1</sup>
     - The in-game name of the account chosen by the user<sup>2</sup>
     - The in-game species chosen by the user<sup>2</sup>
 	- The in-game displayed species chosen by the user<sup>2</sup>
     - The in-game description of the account chosen by the user<sup>2</sup>
     - The in-game avatar URL chosen by the user, by default this is the following link: https://cdn.discordapp.com/embed/avatars/1.png<sup>2</sup>
     - The in-game pronoun sets chosen by the user<sup>2</sup>
-	- The ingame "proxy" prefix and/or suffix chosen by a user. A proxy is a set of characters indicating to the bot whether a message should be replaced to look like it is coming from an in-game character<sup>2</sup>
+	- The ingame "proxy" prefix and/or suffix chosen by a user. A proxy is a set of characters indicating to the bot whether a message should be replaced to look like it is coming from an in-game quid<sup>2</sup>
     - The in-game color, a hex-code chosen by the user<sup>2</sup>
-	- A list of character IDs, each linking to a list of timestamps that describe when that character has been mentioned by this user<sup>2</sup>
-	- For each profile (character information unique to each server):
+	- A list of quid IDs, each linking to a list of timestamps that describe when that quid has been mentioned by this user<sup>2</sup>
+	- For each profile (quid information unique to each server):
 	  - The server ID provided by Discord of the server this account was created on<sup>1</sup>
       - The in-game rank the user has achieved<sup>2</sup>
       - The in-game levels<sup>2</sup>
@@ -72,7 +72,7 @@ The Service collects and stores the following data in its database:
 - A list of webhook messages sent by the Bot via their message ID provided by Discord with the user ID provided by Discord of the user that caused this webhook message to be sent. Other information like the messages content, the channel or server ID's provided by Discord etc. is not stored.<sup>5</sup>
 
 This is why we need and how we use the data:
-1. This information is stored to uniquely identify a party, such as you, your characters, or server. It is used to relate the information stored with it to that party.
+1. This information is stored to uniquely identify a party, such as you, your quids, or server. It is used to relate the information stored with it to that party.
 2. This information is stored to save progress users have made when using the in-game features. It is displayed when using in-game features.
 3. This information is stored to enable the in-game visiting feature. It is used to connect servers/channels with each other.
 4. This information is stored as a setting that you made. It is used to enable or disable features related to that setting.
