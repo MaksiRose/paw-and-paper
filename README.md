@@ -18,7 +18,7 @@ https://discord.gg/9DENgj8q5Q
 - Exploring (ft. custom minigames), quests, attacking, playing, ranking up
 - Sleeping, eating, drinking, healing, plant watering, personal and server inventory
 - Hugging others, sharing others, playfighting others (playing Tic Tac Toe or Connect Four)
-- Custom roleplaying with others using your character
+- Custom roleplaying with others using your quid
 - Visiting other servers
 - Shop to gain roles
 
@@ -28,18 +28,17 @@ https://discord.gg/9DENgj8q5Q
 
 If you just want to suggest a species, [fill out this form](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement%2Cnon-code&template=species_request.yaml&title=New+species%3A+).
 
-If you want to add a species, [click here to open the appropriate file.](https://github.com/MaksiRose/paw-and-paper/blob/main/utils/itemsInfo.js)
+If you want to add a species, [click here to open the appropriate file.](https://github.com/MaksiRose/paw-and-paper/blob/main/src/typedef.ts)
 
 First click the edit button (in form of a pencil) at the top right of the screen. Then go to the bottom of the file, and paste this "species block" behind the last one of those species blocks:
 ```
-speciesMap.set('NAME', {
-	name: 'NAME',
-	diet: 'herbivore/omnivore/carnivore',
-	habitat: 'cold/warm/water',
+'NAME': {
+	diet: 'SpeciesDietType.Herbivore/SpeciesDietType.Omnivore/SpeciesDietType.Carnivore',
+	habitat: 'SpeciesHabitatType.Cold/SpeciesHabitatType.Warm/SpeciesHabitatType.Water',
 	biome1OpponentArray: ['ABC', 'DEF', 'GHI'],
 	biome2OpponentArray: ['JKL', 'MNO'],
 	biome3OpponentArray: ['PQR', 'STU'],
-});
+},
 ```
 Replace NAME with the name of your species. Make sure to always use lowercase.
 
@@ -86,21 +85,15 @@ This needs to include the following information:
 	"dbl_token": "your discordbotlist.com token",
 	"dbl_authorization": "authorization chosen on discordbotlist.com",
 	"github_token": "your github token",
-	"prefix": "rp ",
 	"default_color": "#b4a257",
 	"error_color": "#d0342c",
-	"maksi": "268402976844939266",
-	"ezra": "669725936840736840",
-	"ren": "794320272723410955",
-	"jags": "840108230176145410",
-	"elliott": "422145578676256779"
 }
 ```
-> Anything that you don't have or need from this list can be left as an empty string. The people listed at the end are for credits.
+> Anything that you don't have or need from this list can be left as an empty string.
 
 To get a Discord Token, [create a Discord Application](https://discordjs.guide/preparations/setting-up-a-bot-application.html).
 Generate a GitHub Token [here](https://github.com/settings/tokens).
-The prefix and the colors can be modified by will.
+The colors can be modified by will.
 
 After you saved the config.json file, go back to the terminal, and type either `npm run localstart` or `npm run localtest`.
 Alternatively, you can also [install pm2](https://pm2.keymetrics.io/docs/usage/quick-start/) and run `npm run start`, then `npm run logs`. Other command are `npm run reload` and `npm run stop`.
