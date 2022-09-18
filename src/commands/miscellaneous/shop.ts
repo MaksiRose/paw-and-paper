@@ -1,10 +1,9 @@
 import { ActionRowBuilder, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { Quid, ServerSchema, SlashCommand, UserSchema, WayOfEarningType } from '../../typedef';
 import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
 import { hasName, isInGuild } from '../../utils/checkUserState';
-import { disableAllComponents } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 const { error_color, default_color } = require('../../../config.json');
@@ -26,10 +25,11 @@ export const command: SlashCommand = {
 		if (!hasName(interaction, userData)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
 
-		const shopKindPage = getShopInfo(serverData).xpRolesPages > 0 ? 0 : getShopInfo(serverData).rankRolesPages > 0 ? 1 : getShopInfo(serverData).levelRolesPages > 0 ? 2 : null;
+		const shopInfo = getShopInfo(serverData);
+		const shopKindPage = shopInfo.xpRolesPages > 0 ? 0 : shopInfo.rankRolesPages > 0 ? 1 : shopInfo.levelRolesPages > 0 ? 2 : null;
 		const nestedPage = 0;
 
-		if (serverData.shop.length === 0 || !shopKindPage) {
+		if (serverData.shop.length === 0 || shopKindPage === null) {
 
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
@@ -67,9 +67,9 @@ export async function shopInteractionCollector(
 
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		await getShopResponse(interaction, serverData, quidData, newShopKindPage, newNestedPage);
+		return;
 	}
-
-	if (selectOptionId && selectOptionId.startsWith('shop_')) {
+	else if (selectOptionId && selectOptionId.startsWith('shop_')) {
 
 		const roleId = selectOptionId.split('_')[1];
 		const buyItem = serverData.shop.find((shopRole) => shopRole.roleId === roleId);
@@ -90,7 +90,7 @@ export async function shopInteractionCollector(
 					(u) => {
 						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 						p.experience += userRole.requirement as number;
-						p.roles.filter(r => r.roleId !== userRole.roleId);
+						p.roles = p.roles.filter(r => r.roleId !== userRole.roleId);
 					},
 				);
 
@@ -105,8 +105,7 @@ export async function shopInteractionCollector(
 							.setDescription(`You refunded the <@&${buyItem.roleId}> role!`),
 						...(levelUpEmbed ? [levelUpEmbed] : []),
 					],
-					components: disableAllComponents(interaction.message.components),
-				}, true)
+				}, false)
 					.catch((error) => { throw new Error(error); });
 			}
 			catch (error) {
@@ -156,8 +155,7 @@ export async function shopInteractionCollector(
 						.setColor(default_color)
 						.setAuthor({ name: serverData.name, iconURL: interaction.guild.iconURL() || undefined })
 						.setDescription(`You bought the <@&${buyItem.roleId}> role for ${buyItem.requirement} experience!`)],
-					components: disableAllComponents(interaction.message.components),
-				}, true)
+				}, false)
 					.catch((error) => { throw new Error(error); });
 
 
@@ -215,11 +213,12 @@ async function getShopResponse(
 
 	let descriptionArray: string[] = [];
 	let shopMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
+	const shopInfo = getShopInfo(serverData);
 
 	if (shopKindPage === 0) {
 
 		let position = 0;
-		for (const item of getShopInfo(serverData).xpRoles) {
+		for (const item of shopInfo.xpRoles) {
 
 			descriptionArray.push(`**${position + 1}.:** <@&${item.roleId}> for ${item.requirement} ${item.wayOfEarning}`);
 			shopMenuOptions.push({ label: `${position + 1}`, value: `shop_${item.roleId}` });
@@ -228,14 +227,14 @@ async function getShopResponse(
 	}
 	else if (shopKindPage === 1) {
 
-		for (const item of getShopInfo(serverData).rankRoles) {
+		for (const item of shopInfo.rankRoles) {
 
 			descriptionArray.push(`<@&${item.roleId}> for ${item.requirement} ${item.wayOfEarning}`);
 		}
 	}
 	else if (shopKindPage === 2) {
 
-		for (const item of getShopInfo(serverData).levelRoles) {
+		for (const item of shopInfo.levelRoles) {
 
 			descriptionArray.push(`<@&${item.roleId}> for ${item.requirement} ${item.wayOfEarning}`);
 		}
@@ -250,25 +249,28 @@ async function getShopResponse(
 
 		descriptionArray = descriptionArray.splice(nestedPage * 24, 24);
 		shopMenuOptions = shopMenuOptions.splice(nestedPage * 24, 24);
+	}
 
-		const currentPage = getShopInfo(serverData).currentPage(shopKindPage, nestedPage);
+	if (shopInfo.levelRolesPages + shopInfo.rankRolesPages + shopInfo.xpRolesPages > 1) {
+
+		const currentPage = shopInfo.currentPage(shopKindPage, nestedPage);
 		shopMenuOptions.push({
 			label: 'Show more shop items', value: `shop_nextpage_${shopKindPage}_${nestedPage}`, description: `You are currently on page ${currentPage + 1}
 		`, emoji: '📋',
 		});
 	}
 
-	await respond(interaction, {
+	await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 		embeds: [new EmbedBuilder()
 			.setColor(default_color)
 			.setAuthor({ name: serverData.name, iconURL: interaction.guild?.iconURL() || undefined })
-			.setDescription(description)],
+			.setDescription(descriptionArray.join('\n'))],
 		components: [new ActionRowBuilder<SelectMenuBuilder>()
 			.setComponents(new SelectMenuBuilder()
 				.setCustomId(`shop_${quidData._id}`)
 				.setPlaceholder('Select a shop item')
 				.setOptions(shopMenuOptions))],
-	}, true)
+	})
 		.catch(error => { throw new Error(error); });
 }
 
@@ -300,16 +302,16 @@ function getShopInfo(serverData: ServerSchema) {
 
 		nestedPage += 1;
 		if (shopKindPage === 0 && nestedPage >= xpRolesPages) {
-			shopKindPage = 1;
 			nestedPage = 0;
+			shopKindPage = nestedPage >= rankRolesPages ? 2 : 1;
 		}
 		else if (shopKindPage === 1 && nestedPage >= rankRolesPages) {
-			shopKindPage = 2;
 			nestedPage = 0;
+			shopKindPage = nestedPage >= levelRolesPages ? 0 : 2;
 		}
 		else if (shopKindPage === 2 && nestedPage >= levelRolesPages) {
-			shopKindPage = 0;
 			nestedPage = 0;
+			shopKindPage = nestedPage >= xpRolesPages ? 1 : 0;
 		}
 
 		return { newShopKindPage: shopKindPage, newNestedPage: nestedPage };
