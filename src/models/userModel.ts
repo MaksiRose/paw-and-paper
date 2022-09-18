@@ -14,6 +14,18 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 		},
 		locked: false,
 	},
+	tag: {
+		type: 'object',
+		default: {
+			global: { type: 'string', default: '', locked: true },
+			servers: {
+				type: 'map',
+				of: { type: 'string', default: '', locked: false },
+				locked: false,
+			},
+		},
+		locked: false,
+	},
 	advice: {
 		type: 'object',
 		default: {

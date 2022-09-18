@@ -28,7 +28,7 @@ export const command: SlashCommand = {
 		const botReply = await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
+				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
 				.setTitle('What is a proxy and how do I use this command?')
 				.setDescription('Proxying is a way to speak as if your quid was saying it. This means that your message will be replaced by one that has your quids name and avatar.')
 				.setFields([
@@ -197,7 +197,7 @@ export async function proxyInteractionCollector(
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(quidData.color)
-					.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
 					.setTitle(`${hasChannel ? 'Removed' : 'Added'} ${channelId === 'everywhere' ? channelId : interaction.guild.channels.cache.get(channelId)?.name} ${hasChannel ? 'from' : 'to'} the list of automatic proxy channels!`)],
 				ephemeral: true,
 			}, false)
@@ -255,7 +255,7 @@ export async function sendEditProxyModalResponse(
 	await respond(interaction, {
 		embeds: [new EmbedBuilder()
 			.setColor(quidData.color)
-			.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
+			.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
 			.setTitle(`Proxy set to ${prefixResponse} and ${suffixResponse}!`)],
 	}, true)
 		.catch((error) => { throw new Error(error); });

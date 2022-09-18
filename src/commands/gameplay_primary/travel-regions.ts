@@ -121,7 +121,7 @@ async function sendTravelMessage(
 
 	const embed = new EmbedBuilder()
 		.setColor(quidData.color)
-		.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL });
+		.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL });
 	const travelComponent = new ActionRowBuilder<SelectMenuBuilder>()
 		.setComponents(new SelectMenuBuilder()
 			.setCustomId('travel_options')

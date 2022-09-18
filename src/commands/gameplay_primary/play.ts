@@ -57,7 +57,7 @@ export async function executePlaying(
 
 	let messageContent = remindOfAttack(interaction.guildId);
 
-	if (await hasFullInventory(interaction, quidData1, profileData1, embedArray, messageContent)) { return; }
+	if (await hasFullInventory(interaction, userData1, quidData1, profileData1, embedArray, messageContent)) { return; }
 
 	const mentionedUserId = interaction.isChatInputCommand() ? interaction.options.getUser('user')?.id : interaction.customId.split('_')[2];
 	if (mentionedUserId && userData1.userId.includes(mentionedUserId)) {
@@ -66,7 +66,7 @@ export async function executePlaying(
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData1.color)
-				.setAuthor({ name: getQuidDisplayname(quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
+				.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 				.setDescription(`*${quidData1.name} plays with ${pronoun(quidData1, 4)}. The rest of the pack looks away in embarrassment.*`)],
 		}, true)
 			.catch((error) => {
@@ -110,7 +110,7 @@ export async function executePlaying(
 	const responseTime = profileData1.rank === RankType.Youngling ? 10_000 : 5_000;
 	const embed = new EmbedBuilder()
 		.setColor(quidData1.color)
-		.setAuthor({ name: getQuidDisplayname(quidData1, interaction.guildId), iconURL: quidData1.avatarURL });
+		.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL });
 	let infectedEmbed: EmbedBuilder | null = null;
 	let playComponent: ActionRowBuilder<ButtonBuilder> | null = null;
 	let botReply: Message;

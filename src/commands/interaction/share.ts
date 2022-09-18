@@ -56,7 +56,7 @@ export const command: SlashCommand = {
 				content: messageContent,
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(quidData1.color)
-					.setAuthor({ name: getQuidDisplayname(quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 					.setTitle('You can only share every 2 hours!')
 					.setDescription(`You can share again <t:${Math.floor((sharingCooldown + twoHoursInMs) / 1_000)}:R>.`),
 				],
@@ -74,7 +74,7 @@ export const command: SlashCommand = {
 				content: messageContent,
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(quidData1.color)
-					.setAuthor({ name: getQuidDisplayname(quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 					.setDescription(`*${quidData1.name} is about to begin sharing a story when an elderly interrupts them.* "Oh, young ${quidData1.displayedSpecies || quidData1.species}, you need to have a lot more adventures before you can start advising others!"`),
 				],
 			}, false)
@@ -94,7 +94,7 @@ export const command: SlashCommand = {
 				content: messageContent,
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(quidData1.color)
-					.setAuthor({ name: getQuidDisplayname(quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 					.setDescription(`*${quidData1.name} is very wise from all the adventures ${pronoun(quidData1, 0)} had, but also a little... quaint. Sometimes ${pronounAndPlural(quidData1, 0, 'sit')} down at the fireplace, mumbling to ${pronoun(quidData1, 4)} a story from back in the day. Busy packmates look at ${pronoun(quidData1, 1)} in confusion as they pass by.*`),
 				],
 			}, false)
@@ -119,7 +119,7 @@ export const command: SlashCommand = {
 					content: messageContent,
 					embeds: [...embedArray, new EmbedBuilder()
 						.setColor(quidData1.color)
-						.setAuthor({ name: getQuidDisplayname(quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
+						.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 						.setDescription(`*${quidData1.name} sits on an old wooden trunk at the ruins, ready to tell a story to any willing listener. But to ${pronoun(quidData1, 2)} disappointment, no one seems to be around.*`),
 					],
 				}, false)
@@ -169,7 +169,7 @@ export const command: SlashCommand = {
 			embeds: [
 				new EmbedBuilder()
 					.setColor(quidData1.color)
-					.setAuthor({ name: getQuidDisplayname(quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 					.setDescription(`*${quidData2.name} comes running to the old wooden trunk at the ruins where ${quidData1.name} sits, ready to tell an exciting story from long ago. ${upperCasePronoun(quidData2, 2)} eyes are sparkling as the ${quidData1.displayedSpecies || quidData1.species} recounts great adventures and the lessons to be learned from them.*`)
 					.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n+${experienceIncrease} XP (${profileData2.experience}/${profileData2.levels * 50}) for ${quidData2.name}` }),
 				...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),

@@ -5,7 +5,7 @@ import { hasName } from '../../utils/checkUserState';
 import { getMapData, getQuidDisplayname, respond } from '../../utils/helperFunctions';
 
 const name: SlashCommand['name'] = 'nickname';
-const description: SlashCommand['description'] = 'A global or server-specific displayname.';
+const description: SlashCommand['description'] = 'A global or server-specific replacement for your regular name.';
 export const command: SlashCommand = {
 	name: name,
 	description: description,
@@ -37,7 +37,7 @@ export const command: SlashCommand = {
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
+				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
 				.setTitle(serverData ? `Nickname for ${quidData.name} ${quidData.nickname.servers[serverData.serverId] ? `set to ${quidData.nickname.servers[serverData.serverId]}` : 'removed'} in ${serverData.name}!` : `Nickname for ${quidData.name} ${quidData.nickname.global ? `set to ${quidData.nickname.global}` : 'removed'} globally!`)
 				.setDescription(serverData ? 'Tip: Nicknames can be set globally too by executing the command in DMs. The global nickname will be displayed when no server-specific nickname has been chosen.' : 'Tip: Nicknames can be set server-specific too by executing the command in the server. The server-specific nickname will overwrite the global nickname for that server.')],
 		}, true)

@@ -57,7 +57,7 @@ export async function sendDrinkMessage(
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
+				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 				.setDescription(`*Water sounds churned in ${quidData.name}'s ear, ${pronoun(quidData, 2)} mouth longing for just one more drink. It seems like ${pronoun(quidData, 0)} can never be as hydrated as ${pronounAndPlural(quidData, 0, 'want')}, but  ${pronoun(quidData, 0)} had plenty of water today.*`)],
 		}, true)
 			.catch((error) => {
@@ -123,7 +123,7 @@ export async function sendDrinkMessage(
 			await respond(interaction, {
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(quidData.color)
-					.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*${quidData.name} scurries over to the river and takes hasty gulps. The fresh water runs down ${pronoun(quidData, 2)} throat and fills ${pronoun(quidData, 2)} body with new energy.*`)
 					.setFooter({ text: `+${thirstPoints} thirst (${profileData.thirst}/${profileData.maxThirst})${(currentRegion !== CurrentRegionType.Lake) ? '\nYou are now at the lake' : ''}\n\nDon't forget to stay hydrated in real life too! :)` })],
 				components: disableAllComponents(botReply.components),

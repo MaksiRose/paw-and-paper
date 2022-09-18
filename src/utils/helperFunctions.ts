@@ -4,7 +4,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CommandInteraction, Embed
 import { readFileSync, writeFileSync } from 'fs';
 import { cooldownMap } from '../events/interactionCreate';
 import userModel from '../models/userModel';
-import { ErrorStacks, Quid } from '../typedef';
+import { ErrorStacks, Quid, UserSchema } from '../typedef';
 const { error_color } = require('../../config.json');
 
 /**
@@ -266,6 +266,11 @@ export function capitalizeString(
 ): string { return string.charAt(0).toUpperCase() + string.slice(1); }
 
 export function getQuidDisplayname(
+	user: UserSchema,
 	quid: Quid,
 	serverId = '',
-): string { return quid.nickname.servers[serverId] || quid.nickname.global || quid.name; }
+): string {
+
+	const tag = user.tag.servers[serverId] || user.tag.global || '';
+	return (quid.nickname.servers[serverId] || quid.nickname.global || quid.name) + (tag ? ` ${tag}` : '');
+}

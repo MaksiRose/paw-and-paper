@@ -64,7 +64,7 @@ export const command: SlashCommand = {
 				content: messageContent,
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(quidData1.color)
-					.setAuthor({ name: getQuidDisplayname(quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 					.setDescription(`*${quidData1.name} believes that ${pronounAndPlural(quidData1, 0, 'is', 'are')} so unmatched that only ${pronoun(quidData1, 0)} could defeat ${pronoun(quidData1, 4)}. But it doesn't take ${pronoun(quidData1, 1)} long to realize that it is more fun to fight a partner after all.*`)],
 			}, false)
 				.catch(error => { throw new Error(error); });
@@ -85,7 +85,7 @@ export const command: SlashCommand = {
 			content: `${(messageContent ?? '')}\n\n${mentionedUser.toString()}`,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData1.color)
-				.setAuthor({ name: getQuidDisplayname(quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
+				.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 				.setDescription(`*${quidData1.name} hangs around the prairie when ${quidData2.name} comes by. The ${quidData2.displayedSpecies || quidData2.species} has things to do but ${quidData1.name}'s smug expression implies ${pronoun(quidData2, 0)} wouldn't be able to beat the ${quidData1.displayedSpecies || quidData1.species}.*`)
 				.setFooter({ text: `The game that is being played is ${gameType}.` })],
 			components: [new ActionRowBuilder<ButtonBuilder>()
@@ -252,7 +252,7 @@ export async function playfightInteractionCollector(
 				content: `<@${userId}>`,
 				embeds: [new EmbedBuilder()
 					.setColor(quidData1.color)
-					.setAuthor({ name: getQuidDisplayname(quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 					.setDescription(newTurnEmbedTextArray[newTurnEmbedTextArrayIndex as 0 | 1 | 2] + (extraDescription ? `\n${extraDescription}` : ''))],
 				components: componentArray,
 			}, false);
@@ -358,7 +358,7 @@ export async function playfightInteractionCollector(
 						embeds: [
 							new EmbedBuilder()
 								.setColor(quidData1.color)
-								.setAuthor({ name: getQuidDisplayname(quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
+								.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 								.setDescription(`*${quidDataCurrent.name} takes so long with ${pronoun(quidDataCurrent, 2)} decision on how to attack that ${quidDataOther.name} gets impatient and leaves.*`)
 								.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n${decreasedStatsData2.statsUpdateText}` }),
 							...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
@@ -446,7 +446,7 @@ export async function playfightInteractionCollector(
 						).join('\n'))] : []),
 					new EmbedBuilder()
 						.setColor(quidData1.color)
-						.setAuthor({ name: getQuidDisplayname(quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
+						.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 						.setDescription(reason.includes('win') ? `*The two animals are pressing against each other with all their might. It seems like the fight will never end this way, but ${quidDataCurrent.name} has one more trick up ${pronoun(quidDataCurrent, 2)} sleeve: ${pronoun(quidDataCurrent, 0)} simply moves out of the way, letting ${quidDataOther.name} crash into the ground. ${upperCasePronounAndPlural(quidDataOther, 0, 'has', 'have')} a wry grin on ${pronoun(quidDataOther, 2)} face as ${pronounAndPlural(quidDataOther, 0, 'look')} up at the ${quidDataCurrent.displayedSpecies || quidDataCurrent.species}. ${quidDataCurrent.name} wins this fight, but who knows about the next one?*` : `*The two animals wrestle with each other until ${quidDataCurrent.name} falls over the ${quidDataOther.displayedSpecies || quidDataOther.species} and both of them land on the ground. They pant and glare at each other, but ${quidDataOther.name} can't contain ${pronoun(quidDataOther, 2)} laughter. The ${quidDataCurrent.displayedSpecies || quidDataCurrent.species} starts to giggle as well. The fight has been fun, even though no one won.*`)
 						.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}` }),
 					...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),

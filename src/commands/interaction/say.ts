@@ -1,6 +1,6 @@
 import { Attachment, EmbedBuilder, MessageReference, NewsChannel, PrivateThreadChannel, PublicThreadChannel, SlashCommandBuilder, TextChannel, VoiceChannel } from 'discord.js';
 import { getQuidDisplayname, respond } from '../../utils/helperFunctions';
-import { Quid, CurrentRegionType, SlashCommand, WebhookMessages } from '../../typedef';
+import { Quid, CurrentRegionType, SlashCommand, WebhookMessages, UserSchema } from '../../typedef';
 import { hasName, isInGuild } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
 const { error_color } = require('../../../config.json');
@@ -47,7 +47,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		await sendMessage(interaction.channel, text, quidData, userData.uuid, interaction.user.id, attachment ? [attachment] : undefined);
+		await sendMessage(interaction.channel, text, userData, quidData, userData.uuid, interaction.user.id, attachment ? [attachment] : undefined);
 
 		await interaction.deferReply();
 		await interaction.deleteReply();
@@ -68,6 +68,7 @@ export const command: SlashCommand = {
 export async function sendMessage(
 	channel: NewsChannel | TextChannel | PublicThreadChannel | PrivateThreadChannel | VoiceChannel | null,
 	text: string,
+	userData: UserSchema,
 	quidData: Quid,
 	uuid: string,
 	authorId: string,
@@ -129,7 +130,7 @@ export async function sendMessage(
 
 	const botMessage = await webhook
 		.send({
-			username: getQuidDisplayname(quidData, channel.guildId),
+			username: getQuidDisplayname(userData, quidData, channel.guildId),
 			avatarURL: quidData.avatarURL,
 			content: text || null,
 			files: attachments,

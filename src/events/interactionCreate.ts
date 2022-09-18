@@ -175,7 +175,7 @@ export const event: Event = {
 						.followUp({
 							embeds: [new EmbedBuilder()
 								.setColor(quidData.color)
-								.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
+								.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 								.setDescription(`*Engrossed in ${pronoun(quidData, 2)} work, ${quidData.name} suddenly remembers that ${pronounAndPlural(quidData, 0, 'has', 'have')} not yet watered ${pronoun(quidData, 2)} plant today. The ${quidData.displayedSpecies || quidData.species} should really do it soon!*`)
 								.setFooter({ text: 'Type "/water-tree" to water your ginkgo sapling!' })],
 						})

@@ -74,7 +74,7 @@ export const command: SlashCommand = {
 				content: messageContent,
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(quidData.color)
-					.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*${quidData.name}'s stomach bloats as ${pronounAndPlural(quidData, 0, 'roll')} around camp, stuffing food into ${pronoun(quidData, 2)} mouth. The ${quidData.displayedSpecies || quidData.species} might need to take a break from food before ${pronounAndPlural(quidData, 0, 'goes', 'go')} into a food coma.*`)],
 			}, true)
 				.catch((error) => {
@@ -102,7 +102,7 @@ export async function sendEatMessage(
 
 	const embed = new EmbedBuilder()
 		.setColor(quidData.color)
-		.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL });
+		.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL });
 
 	const mentionedUserMatch = chosenFood.match(FormattingPatterns.User);
 	if (mentionedUserMatch) {

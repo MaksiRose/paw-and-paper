@@ -57,7 +57,7 @@ export async function executeScavenging(
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
+				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 				.setDescription(`*A hunter cuts ${quidData.name} as they see ${pronoun(quidData, 1)} running towards the pack borders.* "You don't have enough experience to go into the wilderness, ${profileData.rank}," *they say.*`)],
 		}, true)
 			.catch((error) => {
@@ -66,7 +66,7 @@ export async function executeScavenging(
 		return;
 	}
 
-	if (await hasFullInventory(interaction, quidData, profileData, embedArray, messageContent)) { return; }
+	if (await hasFullInventory(interaction, userData, quidData, profileData, embedArray, messageContent)) { return; }
 
 	cooldownMap.set(userData.uuid + interaction.guildId, true);
 
@@ -76,7 +76,7 @@ export async function executeScavenging(
 
 	const embed = new EmbedBuilder()
 		.setColor(quidData.color)
-		.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL });
+		.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL });
 
 	/* Defining emojis and grids for the scavenge and the humantrap game. */
 	const unclickedField = '❔';
@@ -112,7 +112,7 @@ export async function executeScavenging(
 		content: messageContent,
 		embeds: [...embedArray, new EmbedBuilder()
 			.setColor(quidData.color)
-			.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
+			.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 			.setDescription(`*${quidData.name} carefully examines the terrain around the pack, hoping to find useful materials or carcasses. The ${quidData.displayedSpecies || quidData.species} must now prove prudence and a keen eye...*`)
 			.setFooter({ text: 'Click the fields to reveal what\'s underneath. Based on how close you are to the correct field, a color on a scale from green (closest) to red (farthest) is going to appear. You can click 4 times and have 2 minutes to win.' })],
 		components: componentArray,
@@ -396,7 +396,7 @@ export async function executeScavenging(
 		botReply = await (async (messageOptions) => int.isButton() ? await update(int, messageOptions) : await respond(int, messageOptions, true))({
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(quidData, int.guildId), iconURL: quidData.avatarURL })
+				.setAuthor({ name: getQuidDisplayname(userData!, quidData, int.guildId), iconURL: quidData.avatarURL })
 				.setDescription(`*${quidData.name} has been searching for quite some time now, when a mishap happens to ${pronoun(quidData, 1)}. ${upperCasePronounAndPlural(quidData, 0, '\'s', '\'re')} not paying attention for only a moment, and suddenly everything happens very quickly. The ${quidData.displayedSpecies || quidData.species} has fallen into a trap that a human must have set here! Now ${pronoun(quidData, 0)} must quickly catch ${pronoun(quidData, 4)} again and try to free ${pronoun(quidData, 4)} before it comes to an accident.*`)
 				.setFooter({ text: `Click the "${humanTrapCorrectEmoji}" as many times as you can!` })],
 			components: componentArray,

@@ -68,7 +68,7 @@ export const command: SlashCommand = {
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId ?? ''), iconURL: imageURL })
+				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: imageURL })
 				.setTitle(`Profile picture for ${quidData.name} set!`)
 				.setImage(imageURL)],
 		}, true)

@@ -71,7 +71,7 @@ export async function sendStoreMessage(
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
+				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 				.setDescription(`*${quidData.name} goes to the food den to store ${pronoun(quidData, 2)} findings away, but ${pronoun(quidData, 2)} mouth is empty...*`),
 			],
 		})
@@ -85,7 +85,7 @@ export async function sendStoreMessage(
 
 	const botReply = await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 		content: messageContent,
-		embeds: [...embedArray, getOriginalEmbed(quidData, interaction.guildId)],
+		embeds: [...embedArray, getOriginalEmbed(userData, quidData, interaction.guildId)],
 		components: [itemSelectMenu, storeAllButton],
 	})
 		.catch((error) => { throw new Error(error); });
@@ -94,13 +94,14 @@ export async function sendStoreMessage(
 }
 
 function getOriginalEmbed(
+	userData: UserSchema,
 	quidData: Quid,
 	serverId: string,
 ): EmbedBuilder {
 
 	return new EmbedBuilder()
 		.setColor(quidData.color)
-		.setAuthor({ name: getQuidDisplayname(quidData, serverId), iconURL: quidData.avatarURL })
+		.setAuthor({ name: getQuidDisplayname(userData, quidData, serverId), iconURL: quidData.avatarURL })
 		.setDescription(`*${quidData.name} wanders to the food den, ready to store away ${pronoun(quidData, 2)} findings. ${upperCasePronounAndPlural(quidData, 0, 'circle')} the food pile…*`);
 }
 
@@ -224,7 +225,7 @@ export async function storeInteractionCollector(
 
 			const { itemSelectMenu, storeAllButton } = getOriginalComponents(profileData);
 
-			const embed = new EmbedBuilder(interaction.message.embeds.splice(-1, 1)[0]?.toJSON() || getOriginalEmbed(quidData, interaction.guildId).toJSON());
+			const embed = new EmbedBuilder(interaction.message.embeds.splice(-1, 1)[0]?.toJSON() || getOriginalEmbed(userData, quidData, interaction.guildId).toJSON());
 			let footerText = embed.toJSON().footer?.text ?? '';
 			footerText += `\n+${chosenAmount} ${chosenFood} for ${interaction.guild.name}`;
 			embed.setFooter({ text: footerText });
@@ -256,7 +257,7 @@ async function storeAll(
 	otherEmbeds?: EmbedBuilder[] | Embed[],
 ): Promise<void> {
 
-	const embed = new EmbedBuilder(mainEmbed?.toJSON() || getOriginalEmbed(quidData, interaction.guildId).toJSON());
+	const embed = new EmbedBuilder(mainEmbed?.toJSON() || getOriginalEmbed(userData, quidData, interaction.guildId).toJSON());
 	let footerText = embed.toJSON().footer?.text ?? '';
 
 	const userInventory = widenValues(profileData.inventory);

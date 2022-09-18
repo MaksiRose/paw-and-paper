@@ -63,7 +63,7 @@ export async function executeAttacking(
 				...embedArray,
 				new EmbedBuilder()
 					.setColor(quidData.color)
-					.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*${quidData.name} is ready to attack any intruder. But no matter how far ${pronounAndPlural(quidData, 0, 'look')}, ${pronoun(quidData, 0)} can't see anyone. It seems that the pack is not under attack at the moment.*`),
 			],
 		}, true)
@@ -80,7 +80,7 @@ export async function executeAttacking(
 				...embedArray,
 				new EmbedBuilder()
 					.setColor(quidData.color)
-					.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*${quidData.name} looks around, searching for a human to attack. It looks like everyone is already being attacked by other pack members. The ${quidData.displayedSpecies || quidData.species} better not interfere before ${pronounAndPlural(quidData, 0, 'hurt')} ${pronoun(quidData, 2)} friends.*`),
 			],
 		}, true)
@@ -100,7 +100,7 @@ export async function executeAttacking(
 
 	const embed = new EmbedBuilder()
 		.setColor(quidData.color)
-		.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL });
+		.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL });
 
 	let totalCycles: 0 | 1 | 2 = 0;
 	let winLoseRatio = 0;

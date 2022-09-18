@@ -74,7 +74,7 @@ export async function sendQuestMessage(
 
 	const embed = new EmbedBuilder()
 		.setColor(quidData.color)
-		.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL });
+		.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL });
 
 	if (profileData.rank === RankType.Youngling) {
 
@@ -191,7 +191,7 @@ async function startQuest(
 
 	const embed = new EmbedBuilder()
 		.setColor(quidData.color)
-		.setAuthor({ name: getQuidDisplayname(quidData, interaction.guildId), iconURL: quidData.avatarURL });
+		.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL });
 
 	let hitEmoji = '';
 	let missEmoji = '';

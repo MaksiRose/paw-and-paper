@@ -134,7 +134,7 @@ async function getFriendshipMessage(
 	return {
 		embeds: [new EmbedBuilder()
 			.setColor(quidData.color)
-			.setAuthor({ name: getQuidDisplayname(quidData, guildId), iconURL: quidData.avatarURL })
+			.setAuthor({ name: getQuidDisplayname(userData, quidData, guildId), iconURL: quidData.avatarURL })
 			.setTitle(`${quidData.name}'s friendships - Page ${page + 1}`)
 			.setDescription(friendshipTexts.length > 0 ?
 				friendshipTexts.slice(page * 25, (page + 1) * 25).join('\n') :

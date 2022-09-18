@@ -88,7 +88,7 @@ export const command: SlashCommand = {
 			embeds: [new EmbedBuilder()
 				.setColor(quidData?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
 				.setAuthor({
-					name: quidData ? getQuidDisplayname(quidData, interaction.guildId ?? '') : member?.displayName || interaction.user.tag,
+					name: quidData ? getQuidDisplayname(userData, quidData, interaction.guildId ?? '') : member?.displayName || interaction.user.tag,
 					iconURL: quidData?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
 				})
 				.setDescription(`🎲 You rolled a \`${result}\`!`)

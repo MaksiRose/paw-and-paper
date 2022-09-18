@@ -54,7 +54,7 @@ export const command: SlashCommand = {
 				embeds: [new EmbedBuilder()
 					.setColor(quidData?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
 					.setAuthor({
-						name: quidData ? getQuidDisplayname(quidData, interaction.guildId ?? '') : member?.displayName || interaction.user.tag,
+						name: (userData && quidData) ? getQuidDisplayname(userData, quidData, interaction.guildId ?? '') : (member?.displayName || interaction.user.tag),
 						iconURL: quidData?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
 					})
 					.setImage(selfHugURLs[getRandomNumber(selfHugURLs.length)] || null)],
@@ -70,7 +70,7 @@ export const command: SlashCommand = {
 			embeds: [new EmbedBuilder()
 				.setColor(quidData?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
 				.setAuthor({
-					name: quidData ? getQuidDisplayname(quidData, interaction.guildId ?? '') : member?.displayName || interaction.user.tag,
+					name: (userData && quidData) ? getQuidDisplayname(userData, quidData, interaction.guildId ?? '') : (member?.displayName || interaction.user.tag),
 					iconURL: quidData?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
 				})
 				.setDescription(`${mentionedUser.username}, do you accept the hug?`)],
@@ -143,7 +143,7 @@ export async function hugInteractionCollector(
 			embeds: [new EmbedBuilder()
 				.setColor(quidData?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
 				.setAuthor({
-					name: quidData ? getQuidDisplayname(quidData, interaction.guildId ?? '') : originalMember?.displayName || originalUser.tag,
+					name: (userData && quidData) ? getQuidDisplayname(userData, quidData, interaction.guildId ?? '') : (originalMember?.displayName || originalUser.tag),
 					iconURL: quidData?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
 				})
 				.setImage(hugURLs[getRandomNumber(hugURLs.length)] || null)],
@@ -166,7 +166,7 @@ export async function hugInteractionCollector(
 			embeds: [new EmbedBuilder()
 				.setColor(quidData?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
 				.setAuthor({
-					name: quidData ? getQuidDisplayname(quidData, interaction.guildId ?? '') : originalMember?.displayName || originalUser.tag,
+					name: (userData && quidData) ? getQuidDisplayname(userData, quidData, interaction.guildId ?? '') : (originalMember?.displayName || originalUser.tag),
 					iconURL: quidData?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
 				})
 				.setDescription(`${interaction.user.toString()} did not accept the hug.`)],

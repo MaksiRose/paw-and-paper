@@ -304,6 +304,11 @@ export enum ProxyConfigType {
 export interface UserSchema {
 	/** Array of IDs of the users associated with this account */
 	userId: Array<string>;
+	/** Tag of the account */
+	tag: {
+		global: string,
+		servers: { [index: string]: string; };
+	};
 	/** Object of advice kinds as the key and whether the advice has been given as the value */
 	advice: {
 		resting: boolean,

@@ -46,7 +46,7 @@ export async function addFriendshipPoints(
 			.send({
 				embeds: [new EmbedBuilder()
 					.setColor(quidData.color)
-					.setAuthor({ name: getQuidDisplayname(quidData, message.guildId ?? ''), iconURL: quidData.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(userData, quidData, message.guildId ?? ''), iconURL: quidData.avatarURL })
 					.setTitle(`The friendship between ${quidData.name} and ${partnerQuidData.name} grew 💗`)
 					.setDescription('❤️'.repeat(getFriendshipHearts(newFriendshipPoints)) + '🖤'.repeat(10 - getFriendshipHearts(newFriendshipPoints)))
 					.setFooter(getFriendshipHearts(newFriendshipPoints) === 6 ? { text: 'You can now adventure together using the "adventure" command!' } : null)],
