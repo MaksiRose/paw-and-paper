@@ -3,7 +3,7 @@ import { Inventory, Profile, Quid, RankType, ServerSchema, SlashCommand, Species
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { capitalizeString, getMapData, getSmallerNumber, keyInObject, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
+import { capitalizeString, getMapData, getQuidDisplayname, getSmallerNumber, keyInObject, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import { remindOfAttack, startAttack } from './attack';
 import Fuse from 'fuse.js';
 import { disableAllComponents } from '../../utils/componentDisabling';
@@ -79,7 +79,7 @@ export async function executeExploring(
 
 	let messageContent = remindOfAttack(interaction.guildId);
 
-	if (await hasFullInventory(interaction, quidData, profileData, embedArray, messageContent)) { return; }
+	if (await hasFullInventory(interaction, userData, quidData, profileData, embedArray, messageContent)) { return; }
 
 	/* Checks  if the user is a Youngling and sends a message that they are too young if they are. */
 	if (profileData.rank === RankType.Youngling) {
@@ -88,7 +88,7 @@ export async function executeExploring(
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData.color)
-				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 				.setDescription(`*A hunter cuts ${quidData.name} as they see ${pronoun(quidData, 1)} running towards the pack borders.* "You don't have enough experience to go into the wilderness, ${profileData.rank}," *they say.*`)],
 		}, true)
 			.catch((error) => {
@@ -120,7 +120,7 @@ export async function executeExploring(
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData.color)
-				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 				.setDescription(`*${quidData.name} is longing for adventure as ${pronounAndPlural(quidData, 0, 'look')} into the wild outside of camp. All there is to decide is where the journey will lead ${pronoun(quidData, 1)}.*`)],
 			components: [biomeComponent],
 		}, true)
@@ -193,7 +193,7 @@ export async function executeExploring(
 
 	let waitingComponent = getWaitingComponent(waitingGameField, playerPos, empty, goal);
 
-	let botReply = await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })(getWaitingMessageObject(messageContent, embedArray, quidData, waitingString, waitingGameField, waitingComponent))
+	let botReply = await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })(getWaitingMessageObject(messageContent, embedArray, userData, quidData, interaction.guildId, waitingString, waitingGameField, waitingComponent))
 		.catch((error) => { throw new Error(error); });
 	buttonInteraction = null;
 
@@ -251,7 +251,7 @@ export async function executeExploring(
 
 		waitingComponent = getWaitingComponent(waitingGameField, playerPos, empty, goal);
 
-		botReply = await update(int, getWaitingMessageObject(messageContent, embedArray, quidData, waitingString, waitingGameField, waitingComponent))
+		botReply = await update(int, getWaitingMessageObject(messageContent, embedArray, userData!, quidData, interaction.guildId, waitingString, waitingGameField, waitingComponent))
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
 				return botReply;
@@ -278,7 +278,7 @@ export async function executeExploring(
 	const responseTime = chosenBiomeNumber === 2 ? 3_000 : chosenBiomeNumber === 1 ? 4_000 : 5_000;
 	const embed = new EmbedBuilder()
 		.setColor(quidData.color)
-		.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL });
+		.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL });
 	let exploreComponent: ActionRowBuilder<ButtonBuilder> | null = null;
 
 	messageContent = remindOfAttack(interaction.guildId);
@@ -957,7 +957,9 @@ export async function executeExploring(
 function getWaitingMessageObject(
 	messageContent: string | null,
 	embedArray: EmbedBuilder[],
+	userData: UserSchema,
 	quidData: Quid,
+	guildId: string,
 	waitingString: string,
 	waitingGameField: string[][],
 	waitingComponent: ActionRowBuilder<ButtonBuilder>,
@@ -967,7 +969,7 @@ function getWaitingMessageObject(
 		content: messageContent,
 		embeds: [...embedArray, new EmbedBuilder()
 			.setColor(quidData.color)
-			.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+			.setAuthor({ name: getQuidDisplayname(userData, quidData, guildId), iconURL: quidData.avatarURL })
 			.setDescription(waitingString + waitingGameField.map(v => v.join('')).join('\n'))
 			.setFooter({ text: 'This game is voluntary to skip waiting time. If you don\'t mind waiting, you can ignore this game.' })],
 		components: [waitingComponent],

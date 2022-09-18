@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, ModalBuilder, ModalMessageModalSubmitInteraction, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { respond, update } from '../../utils/helperFunctions';
+import { getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { Quid, SlashCommand, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
@@ -31,7 +31,7 @@ export const command: SlashCommand = {
 		const botReply = await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
-				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
 				.setTitle(`What pronouns does ${quidData.name} have?`)
 				.setDescription('To change your quids pronouns, select an existing one from the drop-down menu below to edit it, or select "Add another pronoun" to add another one. A pop-up with a text box will open.\n\nTo set the pronouns to they/them for example, type `they/them/their/theirs/themselves/plural`.\nThe 6th spot should be either `singular` ("he/she __is__") or `plural` ("they __are__").\nTo set the pronouns to your own name, you can type `none`.\nTo delete the pronouns, leave the text box empty.\n\nThis is how it would look during roleplay:\n> **They** and the friend that came with **them** laid in **their** den. It was **theirs** because they built it **themselves**. \nYou can use this as reference when thinking about how to add your own (neo-)pronouns.')],
 			components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData, quidData)])],
@@ -214,7 +214,7 @@ export async function sendEditPronounsModalResponse(
 	await respond(interaction, {
 		embeds: [new EmbedBuilder()
 			.setColor(quidData.color)
-			.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+			.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
 			.setTitle(`Successfully ${willBeDeleted ? `deleted pronoun ${oldPronounSet?.join('/')}` : `${addedOrEditedTo} ${chosenPronouns.join('/')}`}!`)],
 	}, false)
 		.catch((error) => {

@@ -1,11 +1,11 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, Collection, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, NonThreadGuildBasedChannel, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { respond, update } from '../../utils/helperFunctions';
+import { getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { ProxyConfigType, ProxyListType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
-const { default_color, error_color } = require('../../../config.json');
+const { error_color } = require('../../../config.json');
 
 const name: SlashCommand['name'] = 'proxy';
 const description: SlashCommand['description'] = 'Add a proxy or autoproxy for your quid.';
@@ -27,8 +27,8 @@ export const command: SlashCommand = {
 		/* Send a response to the user. */
 		const botReply = await respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(quidData?.color || default_color)
-				.setAuthor(quidData ? { name: quidData.name, iconURL: quidData.avatarURL } : null)
+				.setColor(quidData.color)
+				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
 				.setTitle('What is a proxy and how do I use this command?')
 				.setDescription('Proxying is a way to speak as if your quid was saying it. This means that your message will be replaced by one that has your quids name and avatar.')
 				.setFields([
@@ -42,16 +42,14 @@ export const command: SlashCommand = {
 				])],
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([
-					...(userData && quidData && quidData?.name !== '' ? [
-						new ButtonBuilder()
-							.setCustomId(`proxy_set_learnmore_${quidData._id}`)
-							.setLabel('Set?')
-							.setStyle(ButtonStyle.Success),
-						...(interaction.inGuild() ? [new ButtonBuilder()
-							.setCustomId(`proxy_always_learnmore_${quidData._id}`)
-							.setLabel('Always?')
-							.setStyle(ButtonStyle.Success)] : []),
-					] : []),
+					new ButtonBuilder()
+						.setCustomId(`proxy_set_learnmore_${quidData._id}`)
+						.setLabel('Set?')
+						.setStyle(ButtonStyle.Success),
+					...(interaction.inGuild() ? [new ButtonBuilder()
+						.setCustomId(`proxy_always_learnmore_${quidData._id}`)
+						.setLabel('Always?')
+						.setStyle(ButtonStyle.Success)] : []),
 				])],
 		}, true)
 			.catch((error) => { throw new Error(error); });
@@ -199,7 +197,7 @@ export async function proxyInteractionCollector(
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(quidData.color)
-					.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
 					.setTitle(`${hasChannel ? 'Removed' : 'Added'} ${channelId === 'everywhere' ? channelId : interaction.guild.channels.cache.get(channelId)?.name} ${hasChannel ? 'from' : 'to'} the list of automatic proxy channels!`)],
 				ephemeral: true,
 			}, false)
@@ -257,7 +255,7 @@ export async function sendEditProxyModalResponse(
 	await respond(interaction, {
 		embeds: [new EmbedBuilder()
 			.setColor(quidData.color)
-			.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+			.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
 			.setTitle(`Proxy set to ${prefixResponse} and ${suffixResponse}!`)],
 	}, true)
 		.catch((error) => { throw new Error(error); });

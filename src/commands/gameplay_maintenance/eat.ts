@@ -7,7 +7,7 @@ import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getBiggerNumber, getMapData, getSmallerNumber, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
+import { getBiggerNumber, getMapData, getQuidDisplayname, getSmallerNumber, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
 import wearDownDen from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -74,7 +74,7 @@ export const command: SlashCommand = {
 				content: messageContent,
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(quidData.color)
-					.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*${quidData.name}'s stomach bloats as ${pronounAndPlural(quidData, 0, 'roll')} around camp, stuffing food into ${pronoun(quidData, 2)} mouth. The ${quidData.displayedSpecies || quidData.species} might need to take a break from food before ${pronounAndPlural(quidData, 0, 'goes', 'go')} into a food coma.*`)],
 			}, true)
 				.catch((error) => {
@@ -102,7 +102,7 @@ export async function sendEatMessage(
 
 	const embed = new EmbedBuilder()
 		.setColor(quidData.color)
-		.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL });
+		.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL });
 
 	const mentionedUserMatch = chosenFood.match(FormattingPatterns.User);
 	if (mentionedUserMatch) {

@@ -16,7 +16,7 @@ import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
 import { ErrorStacks, Event } from '../typedef';
 import { disableCommandComponent, disableAllComponents } from '../utils/componentDisabling';
-import { getMapData, update } from '../utils/helperFunctions';
+import { getMapData, getQuidDisplayname, update } from '../utils/helperFunctions';
 import { pronoun, pronounAndPlural } from '../utils/getPronouns';
 import { createGuild } from '../utils/updateGuild';
 import { respond } from '../utils/helperFunctions';
@@ -175,7 +175,7 @@ export const event: Event = {
 						.followUp({
 							embeds: [new EmbedBuilder()
 								.setColor(quidData.color)
-								.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+								.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 								.setDescription(`*Engrossed in ${pronoun(quidData, 2)} work, ${quidData.name} suddenly remembers that ${pronounAndPlural(quidData, 0, 'has', 'have')} not yet watered ${pronoun(quidData, 2)} plant today. The ${quidData.displayedSpecies || quidData.species} should really do it soon!*`)
 								.setFooter({ text: 'Type "/water-tree" to water your ginkgo sapling!' })],
 						})

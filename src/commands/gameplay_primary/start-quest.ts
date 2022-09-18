@@ -6,7 +6,7 @@ import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, respond, update } from '../../utils/helperFunctions';
+import { getMapData, getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
 import { getRandomNumber, generateWinChance } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
 const { error_color } = require('../../../config.json');
@@ -74,7 +74,7 @@ export async function sendQuestMessage(
 
 	const embed = new EmbedBuilder()
 		.setColor(quidData.color)
-		.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL });
+		.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL });
 
 	if (profileData.rank === RankType.Youngling) {
 
@@ -191,7 +191,7 @@ async function startQuest(
 
 	const embed = new EmbedBuilder()
 		.setColor(quidData.color)
-		.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL });
+		.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL });
 
 	let hitEmoji = '';
 	let missEmoji = '';

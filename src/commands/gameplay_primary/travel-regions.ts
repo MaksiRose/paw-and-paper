@@ -5,7 +5,7 @@ import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, respond, update, valueInObject } from '../../utils/helperFunctions';
+import { getMapData, getQuidDisplayname, respond, update, valueInObject } from '../../utils/helperFunctions';
 import { sendDrinkMessage } from '../gameplay_maintenance/drink';
 import { getHealResponse } from '../gameplay_maintenance/heal';
 import { showInventoryMessage } from '../gameplay_maintenance/inventory';
@@ -121,7 +121,7 @@ async function sendTravelMessage(
 
 	const embed = new EmbedBuilder()
 		.setColor(quidData.color)
-		.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL });
+		.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL });
 	const travelComponent = new ActionRowBuilder<SelectMenuBuilder>()
 		.setComponents(new SelectMenuBuilder()
 			.setCustomId('travel_options')

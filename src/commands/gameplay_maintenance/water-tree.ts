@@ -4,7 +4,7 @@ import { CustomClient, Profile, Quid, SlashCommand, UserSchema } from '../../typ
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { pronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, respond } from '../../utils/helperFunctions';
+import { getMapData, getQuidDisplayname, respond } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -49,7 +49,7 @@ export const command: SlashCommand = {
 				content: messageContent,
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(quidData.color)
-					.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*${quidData.name} has already fetched water when ${pronounAndPlural(quidData, 0, 'remember')} that ${pronounAndPlural(quidData, 0, 'has', 'have')} nothing to water.*`)
 					.setFooter({ text: 'Go exploring to find a ginkgo tree to water!' })],
 				ephemeral: true,
@@ -69,7 +69,7 @@ export const command: SlashCommand = {
 
 		const embed = new EmbedBuilder()
 			.setColor(quidData.color)
-			.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL });
+			.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL });
 
 		/* This is the first of three `if` statements that check the time difference between the current timestamp and the timestamp of the perfect watering time. If the time difference is less than or equal to 30 minutes, the sapling's health is increased by a number between 1 and 4, the number of watering cycles is increased by 1, the experience points are set to the number of watering cycles, the health points are set to a number between 1 and 6, and the embed's description and footer are set. */
 		if (timeDifference <= thirtyMinutes) {
@@ -152,7 +152,7 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(quidData.color)
-					.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*No matter what ${quidData.name} does, all the leaves on the ginkgo tree have either fallen off, or are dark brown and hang limply. It's time to say goodbye to the tree.*`)
 					.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Dead.png')],
 			}, false)
@@ -234,7 +234,7 @@ export async function sendReminder(
 						content: `<@${userData.userId[0]}>`,
 						embeds: [new EmbedBuilder()
 							.setColor(quidData.color)
-							.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+							.setAuthor({ name: getQuidDisplayname(userData, quidData, profileData.serverId), iconURL: quidData.avatarURL })
 							.setDescription('It is time to `/water-tree` your tree!')
 							.setFooter(isInactive ? { text: '⚠️ CAUTION! The quid associated with this reminder is currently inactive. Type "/profile" and select the quid from the drop-down list before watering your tree.' } : null)],
 					})

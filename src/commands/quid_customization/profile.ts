@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, GuildMember, InteractionReplyOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
-import { capitalizeString, respond, update } from '../../utils/helperFunctions';
+import { capitalizeString, getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { Quid, commonPlantsInfo, CurrentRegionType, CustomClient, materialsInfo, RankType, rarePlantsInfo, SlashCommand, specialPlantsInfo, speciesInfo, uncommonPlantsInfo, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
@@ -52,7 +52,7 @@ export const command: SlashCommand = {
 		/* Checking if the user has a cooldown. */
 		else if (quidData && interaction.inCachedGuild() && await hasCooldown(interaction, userData, quidData)) { return; }
 
-		const response = await getMessageContent(client, mentionedUser?.id || interaction.user.id, quidData, !mentionedUser, embedArray);
+		const response = await getMessageContent(client, mentionedUser?.id || interaction.user.id, userData, quidData, !mentionedUser, embedArray, interaction.guildId ?? '');
 		const selectMenu = getAccountsPage(userData, mentionedUser?.id || interaction.user.id, 0, !mentionedUser);
 
 		await respond(interaction, {
@@ -75,9 +75,11 @@ export const command: SlashCommand = {
 export async function getMessageContent(
 	client: CustomClient,
 	userId: string,
+	userData: UserSchema,
 	quidData: Quid | undefined,
 	isYourself: boolean,
 	embedArray: Array<EmbedBuilder>,
+	guildId: string,
 ): Promise<InteractionReplyOptions> {
 
 	const user = await client.users
@@ -95,10 +97,10 @@ export async function getMessageContent(
 			.setDescription(quidData.description || null)
 			.setThumbnail(quidData.avatarURL)
 			.setFields([
+				{ name: '**🏷️ Displayname**', value: getQuidDisplayname(userData, quidData, guildId ?? '') },
 				{ name: '**🦑 Species**', value: capitalizeString(quidData.displayedSpecies) || capitalizeString(quidData.species) || '/', inline: true },
 				{ name: '**🔑 Proxy**', value: !quidData.proxy.startsWith && !quidData.proxy.endsWith ? 'No proxy set' : `${quidData.proxy.startsWith}text${quidData.proxy.endsWith}`, inline: true },
 				{ name: '**🍂 Pronouns**', value: quidData.pronounSets.map(pronounSet => pronounCompromiser(pronounSet)).join('\n') || '/' },
-
 			])
 			.setFooter({ text: `Quid ID: ${quidData._id}` })],
 	};
@@ -316,7 +318,7 @@ export async function profileInteractionCollector(
 		await interaction
 			.editReply({
 				// we can interaction.user.id because the "switchto" option is only available to yourself
-				...await getMessageContent(client, interaction.user.id, newQuidData, userData.userId.includes(interaction.user.id), []),
+				...await getMessageContent(client, interaction.user.id, userData, newQuidData, userData.userId.includes(interaction.user.id), [], interaction.guildId ?? ''),
 				components: interaction.message.components,
 			})
 			.catch((error) => { throw new Error(error); });
@@ -343,7 +345,7 @@ export async function profileInteractionCollector(
 		const quidData = userData.quids[_id];
 
 		await update(interaction, {
-			...await getMessageContent(client, userId, quidData, userData.userId.includes(interaction.user.id), []),
+			...await getMessageContent(client, userId, userData, quidData, userData.userId.includes(interaction.user.id), [], interaction.guildId ?? ''),
 			components: interaction.message.components,
 		})
 			.catch((error) => { throw new Error(error); });

@@ -52,7 +52,7 @@ export const event: Event = {
 
 		if (replaceMessage && (message.content.length > 0 || message.attachments.size > 0)) {
 
-			await sendMessage(message.channel, message.content, quidData, userData.uuid, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
+			await sendMessage(message.channel, message.content, userData, quidData, userData.uuid, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
 				.catch(error => { console.error(error); });
 
 			message

@@ -1,7 +1,7 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { Profile, SlashCommand } from '../../typedef';
 import { getRandomNumber } from '../../utils/randomizers';
-import { respond } from '../../utils/helperFunctions';
+import { getQuidDisplayname, respond } from '../../utils/helperFunctions';
 
 const name: SlashCommand['name'] = 'roll';
 const description: SlashCommand['description'] = 'Roll dices.';
@@ -88,7 +88,7 @@ export const command: SlashCommand = {
 			embeds: [new EmbedBuilder()
 				.setColor(quidData?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
 				.setAuthor({
-					name: quidData?.name || member?.displayName || interaction.user.tag,
+					name: quidData ? getQuidDisplayname(userData, quidData, interaction.guildId ?? '') : member?.displayName || interaction.user.tag,
 					iconURL: quidData?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
 				})
 				.setDescription(`🎲 You rolled a \`${result}\`!`)

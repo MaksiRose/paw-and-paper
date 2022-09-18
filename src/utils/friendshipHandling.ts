@@ -1,7 +1,7 @@
 import { EmbedBuilder, Message } from 'discord.js';
 import userModel from '../models/userModel';
 import { UserSchema } from '../typedef';
-import { getMapData } from './helperFunctions';
+import { getMapData, getQuidDisplayname } from './helperFunctions';
 
 /* This is the required points to get a certain amount of friendship hearts */
 const requiredPoints = [1, 3, 6, 9, 15, 24, 39, 63, 99, 162] as const;
@@ -46,7 +46,7 @@ export async function addFriendshipPoints(
 			.send({
 				embeds: [new EmbedBuilder()
 					.setColor(quidData.color)
-					.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+					.setAuthor({ name: getQuidDisplayname(userData, quidData, message.guildId ?? ''), iconURL: quidData.avatarURL })
 					.setTitle(`The friendship between ${quidData.name} and ${partnerQuidData.name} grew 💗`)
 					.setDescription('❤️'.repeat(getFriendshipHearts(newFriendshipPoints)) + '🖤'.repeat(10 - getFriendshipHearts(newFriendshipPoints)))
 					.setFooter(getFriendshipHearts(newFriendshipPoints) === 6 ? { text: 'You can now adventure together using the "adventure" command!' } : null)],
