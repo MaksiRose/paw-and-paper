@@ -3,7 +3,7 @@ import { cooldownMap } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
 import { commonPlantsInfo, Inventory, rarePlantsInfo, ServerSchema, SlashCommand, specialPlantsInfo, uncommonPlantsInfo, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
-import { changeCondition } from '../../utils/changeCondition';
+import { changeCondition, DecreasedStatsData } from '../../utils/changeCondition';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
@@ -91,7 +91,7 @@ export const command: SlashCommand = {
 					.setStyle(ButtonStyle.Secondary),
 				new ButtonBuilder()
 					.setCustomId('recover_poison')
-					.setLabel('Cold')
+					.setLabel('Poison')
 					.setDisabled(profileData.injuries.poison === false || inventoryHasHealingItem(serverData.inventory, 'healsPoison'))
 					.setStyle(ButtonStyle.Secondary),
 				]),
@@ -128,9 +128,6 @@ export const command: SlashCommand = {
 
 		cooldownMap.set(userData.uuid + interaction.guildId, true);
 		delete disableCommandComponent[userData.uuid + interaction.guildId];
-
-		const changedCondition = await changeCondition(userData, quidData, profileData, 0);
-		profileData = changedCondition.profileData;
 
 		const healKind = buttonInteraction.customId.replace('recover_', '');
 		const recoverFieldOptions = ['🌱', '🌿', '☘️', '🍀', '🍃', '💐', '🌷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🍇', '🍊', '🫒', '🌰', '🏕️', '🌲', '🌳', '🍂', '🍁', '🍄', '🐝', '🪱', '🐛', '🦋', '🐌', '🐞', '🐁', '🦔', '🌵', '🦂', '🏜️', '🎍', '🪴', '🎋', '🪨', '🌾', '🐍', '🦎', '🐫', '🐙', '🦑', '🦀', '🐡', '🐠', '🐟', '🌊', '🐚', '🪵', '🌴'];
@@ -177,10 +174,12 @@ export const command: SlashCommand = {
 			emojisToClick: string[],
 		): Promise<void> {
 
-			const randomEmoji = possibleEmojis[getRandomNumber(possibleEmojis.length)];
-			if (randomEmoji === undefined) { throw new TypeError('randomEmoji is undefined'); }
+			for (let index = 0; index < 3; index++) {
 
-			for (let index = 0; index < 3; index++) { emojisToClick.push(randomEmoji); }
+				const randomEmoji = possibleEmojis[getRandomNumber(possibleEmojis.length)];
+				if (randomEmoji === undefined) { throw new TypeError('randomEmoji is undefined'); }
+				emojisToClick.push(randomEmoji);
+			}
 			let displayingEmoji = 0;
 			let choosingEmoji = 0;
 
@@ -229,7 +228,7 @@ export const command: SlashCommand = {
 
 				const collector = (botReply as Message<true>).createMessageComponentCollector({
 					filter: i => i.user.id === interaction.user.id,
-					time: 10_000,
+					idle: 10_000,
 					max: emojisToClick.length,
 				});
 
@@ -270,13 +269,18 @@ export const command: SlashCommand = {
 				collector.on('end', async (interactions, reason) => {
 					try {
 
+						let changedCondition: DecreasedStatsData;
+
 						let embed: EmbedBuilder;
-						if (reason === 'failed') {
+						if (reason === 'failed' || reason === 'idle') {
+
+							changedCondition = await changeCondition(userData, quidData, profileData, 0);
+							profileData = changedCondition.profileData;
 
 							embed = new EmbedBuilder()
 								.setColor(quidData.color)
 								.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
-								.setDescription('✅'.repeat(choosingEmoji - 1) + '❌\n\n' + `*${quidData.name} makes every effort to take full advantage of the grotto to heal ${pronoun(quidData, 2)} own injuries. But ${pronounAndPlural(quidData, 0, 'just doesn\'t', 'just don\'t')} seem to get better. The ${quidData.displayedSpecies || quidData.species} may have to try again...*`);
+								.setDescription('✅'.repeat((choosingEmoji || 1) - 1) + '❌\n\n' + `*${quidData.name} makes every effort to take full advantage of the grotto to heal ${pronoun(quidData, 2)} own injuries. But ${pronounAndPlural(quidData, 0, 'just doesn\'t', 'just don\'t')} seem to get better. The ${quidData.displayedSpecies || quidData.species} may have to try again...*`);
 							if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 						}
 						else if (emojisToClick.length < 12) {
@@ -320,12 +324,6 @@ export const command: SlashCommand = {
 								profileData.injuries.poison = false;
 							}
 
-							embed = new EmbedBuilder()
-								.setColor(quidData.color)
-								.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
-								.setDescription(`*The cave is a pleasant place, with a small pond of crystal clear water, stalagmites, stalactites and stalagnates, and cool, damp air. Some stones glisten slightly, giving the room a magical atmosphere. ${quidData.name} does not have to stay here for long before ${pronounAndPlural(quidData, 0, 'feel')} much better.*`)
-								.setFooter({ text: `${changedCondition.statsUpdateText}\n${injuryText}` });
-
 							userData = await userModel.findOneAndUpdate(
 								u => u.uuid === userData.uuid,
 								(u) => {
@@ -333,31 +331,40 @@ export const command: SlashCommand = {
 									p.injuries = profileData.injuries;
 								},
 							);
-							quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
+							quidData = getMapData(userData.quids, quidData._id);
 							profileData = getMapData(quidData.profiles, interaction.guildId);
+
+							changedCondition = await changeCondition(userData, quidData, profileData, 0);
+							profileData = changedCondition.profileData;
+
+							embed = new EmbedBuilder()
+								.setColor(quidData.color)
+								.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
+								.setDescription(`*The cave is a pleasant place, with a small pond of crystal clear water, stalagmites, stalactites and stalagnates, and cool, damp air. Some stones glisten slightly, giving the room a magical atmosphere. ${quidData.name} does not have to stay here for long before ${pronounAndPlural(quidData, 0, 'feel')} much better.*`)
+								.setFooter({ text: `${changedCondition.statsUpdateText}\n${injuryText}` });
 						}
 
-						const levelUpEmbed = (await checkLevelUp(interactions.last() || interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
+						const lastInteraction = interactions.last() || interaction;
+						const levelUpEmbed = (await checkLevelUp(lastInteraction, userData, quidData, profileData, serverData)).levelUpEmbed;
 
-						botReply = await botReply
-							.edit({
-								content: messageContent,
-								embeds: [
-									embed,
-									...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
-									...(levelUpEmbed ? [levelUpEmbed] : [])],
-								components: disableAllComponents(componentArray),
-							})
+						botReply = await (async function(messageObject) { return lastInteraction.isMessageComponent() ? await update(lastInteraction, messageObject) : await respond(lastInteraction, messageObject, true); })({
+							content: messageContent,
+							embeds: [
+								embed,
+								...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
+								...(levelUpEmbed ? [levelUpEmbed] : [])],
+							components: disableAllComponents(componentArray),
+						})
 							.catch((error) => {
 								if (error.httpStatus !== 404) { throw new Error(error); }
 								return botReply;
 							});
 
-						await isPassedOut(interactions.last() || interaction, userData, quidData, profileData, true);
+						await isPassedOut(lastInteraction, userData, quidData, profileData, true);
 
-						await restAdvice(interactions.last() || interaction, userData, profileData);
-						await drinkAdvice(interactions.last() || interaction, userData, profileData);
-						await eatAdvice(interactions.last() || interaction, userData, profileData);
+						await restAdvice(lastInteraction, userData, profileData);
+						await drinkAdvice(lastInteraction, userData, profileData);
+						await eatAdvice(lastInteraction, userData, profileData);
 
 						cooldownMap.set(userData.uuid + interaction.guildId, false);
 					}
