@@ -933,6 +933,23 @@ export async function executeExploring(
 	await restAdvice(interaction, userData, profileData);
 	await drinkAdvice(interaction, userData, profileData);
 	await eatAdvice(interaction, userData, profileData);
+
+	if (userData.advice.ginkgosapling === false) {
+
+		await userModel.findOneAndUpdate(
+			u => u.uuid === userData!.uuid,
+			(u) => {
+				u.advice.ginkgosapling = true;
+			},
+		);
+
+		await respond(interaction, {
+			content: `${interaction.user.toString()} ❓ **Tip:**\nA Ginkgo sapling gives you more luck the older it gets. For example, you might find better items or be more often successful with healing or repairing.`,
+		}, false)
+			.catch((error) => {
+				if (error.httpStatus !== 404) { throw new Error(error); }
+			});
+	}
 }
 
 function getWaitingMessageObject(
