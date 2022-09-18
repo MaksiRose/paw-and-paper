@@ -51,7 +51,7 @@ export async function helpInteractionCollector(
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
 				.setTitle('Page 1: 📝 Quid Customization')
-				.setDescription('**`/name`** - Start your adventure! (Re-)name a quid.\n**`/species`** - Change your quid\'s species or displayed species.\n**`/pronouns`** - Choose the pronouns you are using during roleplay.\n**`/avatar`** - Choose an avatar for your quid.\n**`/color`** - Enter a valid hex code to give your messages and profile that color.\n**`/description`** - Give a more detailed description of your quid.\n**`/proxy`** - Add a proxy or autoproxy for your quid.\n**`/profile`** - Look up all the available info about a quid or change the quid you are using.\n**`/delete`** - Delete parts of or your entire account.')],
+				.setDescription('**`/name`** - Start your adventure! (Re-)name a quid.\n**`/species`** - Change your quid\'s species or displayed species.\n**`/pronouns`** - Choose the pronouns you are using during roleplay.\n**`/avatar`** - Choose an avatar for your quid.\n**`/color`** - Enter a valid hex code to give your messages and profile that color.\n**`/description`** - Give a more detailed description of your quid.\n**`/proxy`** - Add a proxy or autoproxy for your quid.\n**`/nickname`** - A global or server-specific displayname.\n**`/tag`** - A global or server-specific tag.\n**`/profile`** - Look up all the available info about a quid or change the quid you are using.\n**`/delete`** - Delete parts of or your entire account.')],
 		})
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
