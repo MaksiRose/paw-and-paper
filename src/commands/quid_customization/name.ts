@@ -148,7 +148,7 @@ export const command: SlashCommand = {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
 				.setTitle(quidData === undefined ? `You successfully created the quid ${name}!` : `You successfully renamed your quid to ${name}!`)
-				.setDescription(newAccount === false ? null : '**What is a quid?**\n\nTo avoid using limiting words like "character" or "person", Paw and Paper uses the made-up word quid. It is based off of the word [Quiddity](https://en.wikipedia.org/wiki/Quiddity), which means "what makes something what it is". Quid then means "someone who is what they are", which is vague on purpose because it changes based on what they are.')
+				.setDescription(newAccount === false ? null : '__What is a quid?__\nTo avoid using limiting words like "character" or "person", Paw and Paper uses the made-up word quid. It is based off of the word [Quiddity](https://en.wikipedia.org/wiki/Quiddity), which means "what makes something what it is". Quid then means "someone who is what they are", which is vague on purpose because it changes based on what they are.')
 				.setFooter(quidData === undefined ? { text: 'To continue setting up your profile for the RPG, type "/species". For other options, review "/help".' } : null)],
 		}, true)
 			.catch((error) => {
