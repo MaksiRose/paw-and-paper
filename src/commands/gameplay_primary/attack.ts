@@ -1,15 +1,15 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, Message, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, Message, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap, serverActiveUsersMap } from '../../events/interactionCreate';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
-import { Inventory, RankType, ServerSchema, SlashCommand, SpecialPlantNames, UserSchema } from '../../typedef';
+import { Inventory, RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createFightGame } from '../../utils/gameBuilder';
 import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, getSmallerNumber, keyInObject, KeyOfUnion, respond, sendErrorMessage, unsafeKeys, update, ValueOf, widenValues } from '../../utils/helperFunctions';
+import { getMapData, getSmallerNumber, KeyOfUnion, respond, sendErrorMessage, unsafeKeys, update, ValueOf, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 const { default_color } = require('../../../config.json');
@@ -260,7 +260,12 @@ export async function executeAttacking(
 				...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
 				...(levelUpEmbed ? [levelUpEmbed] : []),
 			],
-			components: [fightGame.fightComponent],
+			components: [fightGame.fightComponent,
+				new ActionRowBuilder<ButtonBuilder>()
+					.setComponents(new ButtonBuilder()
+						.setCustomId('attack_new')
+						.setLabel('Attack again')
+						.setStyle(ButtonStyle.Primary))],
 		}).catch((error) => {
 			if (error.httpStatus !== 404) { throw new Error(error); }
 			return botReply;
@@ -436,18 +441,17 @@ export function getHighestItem(
 	inventoryObject: Inventory,
 ) {
 
-	let itemType: Exclude<keyof Inventory, 'specialPlants'> | null = null;
-	let itemName: Exclude<KeyOfUnion<ValueOf<Inventory>>, SpecialPlantNames> | null = null;
-	const itemAmount = 0;
+	let itemType: keyof Inventory| null = null;
+	let itemName: KeyOfUnion<ValueOf<Inventory>> | null = null;
+	let itemAmount = 0;
 
 	const inventory_ = widenValues(inventoryObject);
 	for (const itype of unsafeKeys(inventory_)) {
 
-		if (itype === 'specialPlants') { continue; }
 		for (const item of unsafeKeys(inventory_[itype])) {
 
-			if (keyInObject(inventoryObject['specialPlants'], item)) { continue; }
 			if (inventory_[itype][item] > itemAmount) {
+				itemAmount = inventory_[itype][item];
 				itemType = itype;
 				itemName = item;
 			}

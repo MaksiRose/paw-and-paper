@@ -1,4 +1,4 @@
-import { ButtonInteraction, CommandInteraction, EmbedBuilder, MessageComponentInteraction } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CommandInteraction, EmbedBuilder, MessageComponentInteraction } from 'discord.js';
 import { cooldownMap } from '../events/interactionCreate';
 import { respond, sendErrorMessage } from './helperFunctions';
 import userModel from '../models/userModel';
@@ -180,6 +180,12 @@ export async function hasFullInventory(
 				.setDescription(`*${quidData.name} approaches the pack borders, ${pronoun(quidData, 2)} mouth filled with various things. As eager as ${pronounAndPlural(quidData, 0, 'is', 'are')} to go into the wild, ${pronounAndPlural(quidData, 0, 'decide')} to store some things away first.*`)
 				.setFooter({ text: 'You can only hold up to 5 items in your personal inventory. Type "/store" to put things into the pack inventory!' }),
 			],
+			components: [new ActionRowBuilder<ButtonBuilder>()
+				.setComponents(new ButtonBuilder()
+					.setCustomId('stats_store')
+					.setLabel('Store food away')
+					.setStyle(ButtonStyle.Secondary),
+				)],
 		}, false)
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }

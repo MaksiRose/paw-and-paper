@@ -295,7 +295,7 @@ export async function executeExploring(
 			return p && p.rank !== RankType.Youngling;
 		}).length)
 		.reduce((a, b) => a + b, 0);
-	const serverInventoryCount = (Object.entries(profileData.inventory) as [keyof Inventory, Inventory[keyof Inventory]][]).map(([key, type]) => key === 'materials' ? [] : Object.values(type)).flat().reduce((a, b) => a + b);
+	const serverInventoryCount = (Object.entries(serverData.inventory) as [keyof Inventory, Inventory[keyof Inventory]][]).map(([key, type]) => key === 'materials' ? [] : Object.values(type)).flat().reduce((a, b) => a + b);
 
 	let foundQuest = false;
 	// If the server has more items than 8 per profile (It's 2 more than counted when the humans spawn, to give users a bit of leeway), there is no attack, and the next possible attack is possible, start an attack
