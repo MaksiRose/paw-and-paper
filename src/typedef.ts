@@ -315,31 +315,34 @@ export interface UserSchema {
 			water: boolean,
 			resting: boolean;
 		};
+		/** Object of proxy settings */
+		proxy: {
+			/** Object of proxy settings that are configured globally */
+			global: {
+				/** Whether autoproxy is enabled globally */
+				autoproxy: boolean,
+				/** Whether stickymode is enabled globally */
+				stickymode: boolean;
+			};
+			/** Object of the server IDs as the key and object of proxy settings as the value */
+			servers: {
+				[index: string]: {
+					/** Object of autoproxy settings to follow */
+					autoproxy: {
+						/** The config for this setting */
+						setTo: ProxyConfigType;
+						channels: ProxyLimitedList;
+					};
+					/** The config for this setting */
+					stickymode: ProxyConfigType;
+				};
+			};
+		};
 	};
 	/** Object of names of quids as the key and the quids this user has created as value */
 	quids: { [key in string]: Quid };
 	/** Object of the server IDs as the key and the id of the quid that is currently active as the value */
 	currentQuid: { [key in string]: string };
-	/** Object of the server IDs as the key and object of proxy settings as the value */
-	serverProxySettings: {
-		[index: string]: {
-			/** Object of autoproxy settings to follow */
-			autoproxy: {
-				/** The config for this setting */
-				setTo: ProxyConfigType;
-				channels: ProxyLimitedList;
-			};
-			/** The config for this setting */
-			stickymode: ProxyConfigType;
-		};
-	};
-	/** Object of proxy settings that are configured globally */
-	globalProxySettings: {
-		/** Whether autoproxy is enabled globally */
-		autoproxy: boolean,
-		/** Whether stickymode is enabled globally */
-		stickymode: boolean;
-	};
 	/** Last major version that the user played on */
 	lastPlayedVersion: string;
 	readonly uuid: string;

@@ -95,15 +95,20 @@ export function start(
 			if (Object.hasOwn(doc, 'reminders')) {
 				doc.settings = {
 					reminders: doc.reminders,
+					proxy: {
+						servers: {},
+						global: {
+							autoproxy: false,
+							stickymode: false,
+						},
+					},
 				};
 			}
 			if (Object.hasOwn(doc, 'autoproxy')) {
 
-				doc.serverProxySettings = {};
-
 				for (const [serverId, entry] of Object.entries(doc.autoproxy)) {
 
-					doc.serverProxySettings[serverId] = {
+					doc.settings.proxy.servers[serverId] = {
 						autoproxy: {
 							channels: {
 								whitelist: entry,

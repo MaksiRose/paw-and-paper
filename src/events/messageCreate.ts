@@ -95,7 +95,7 @@ export function checkForProxy(
 
 	/* Checking if the user has autoproxy enabled in the current channel, and if so, it is adding the
 	prefix to the message. */
-	const autoproxyIsToggled = (userData.serverProxySettings[message.guildId]?.autoproxy.setTo === ProxyConfigType.Enabled && (userData.serverProxySettings[message.guildId]?.autoproxy.channels.setTo === ProxyListType.Blacklist && !userData.serverProxySettings[message.guildId]?.autoproxy.channels.blacklist.includes(message.channelId)) || (userData.serverProxySettings[message.guildId]?.autoproxy.channels.setTo === ProxyListType.Whitelist && userData.serverProxySettings[message.guildId]?.autoproxy.channels.whitelist.includes(message.channelId))) || (userData.serverProxySettings[message.guildId]?.autoproxy.setTo === ProxyConfigType.FollowGlobal && userData.globalProxySettings.autoproxy === true);
+	const autoproxyIsToggled = (userData.settings.proxy.servers[message.guildId]?.autoproxy.setTo === ProxyConfigType.Enabled && (userData.settings.proxy.servers[message.guildId]?.autoproxy.channels.setTo === ProxyListType.Blacklist && !userData.settings.proxy.servers[message.guildId]?.autoproxy.channels.blacklist.includes(message.channelId)) || (userData.settings.proxy.servers[message.guildId]?.autoproxy.channels.setTo === ProxyListType.Whitelist && userData.settings.proxy.servers[message.guildId]?.autoproxy.channels.whitelist.includes(message.channelId))) || (userData.settings.proxy.servers[message.guildId]?.autoproxy.setTo === ProxyConfigType.FollowGlobal && userData.settings.proxy.global.autoproxy === true);
 	if (autoproxyIsToggled && !proxyIsDisabled) { replaceMessage = true; }
 
 	return { replaceMessage, messageContent: message.content };

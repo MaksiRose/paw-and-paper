@@ -46,14 +46,15 @@ export const command: SlashCommand = {
 			userData = await userModel.create({
 				userId: [interaction.user.id],
 				advice: { resting: false, drinking: false, eating: false, passingout: false, coloredbuttons: false, ginkgosapling: false },
-				settings: { reminders: { water: true, resting: true } },
+				settings: {
+					reminders: { water: true, resting: true },
+					proxy: {
+						global: { autoproxy: false, stickymode: false },
+						servers: {},
+					},
+				},
 				quids: {},
 				currentQuid: {},
-				serverProxySettings: {},
-				globalProxySettings: {
-					autoproxy: false,
-					stickymode: false,
-				},
 				lastPlayedVersion: `${version.split('.').slice(0, -1).join('.')}`,
 				uuid: '',
 			});

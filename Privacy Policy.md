@@ -24,13 +24,13 @@ The Service collects and stores the following data in its database:
   - If given, the channel ID provided by Discord of the channel that will be used for in-game visits<sup>2</sup>
   - If given, the server ID provided by Discord of another server that is currently in-game visiting this server<sup>3</sup> <sup>4</sup>
   - A list of in-game shop roles, with their role ID provided by Discord, their in-game way of earning and their in-game requirement<sup>3</sup>
-  - A list of channel IDs where all proxying, and a list of channel IDs where autoproxying is disabled, if set by server administrators. A proxy is a set of characters indicating to the bot whether a message should be replaced to look like it is coming from an in-game quid<sup>4</sup>
+  - A list of channel IDs where proxying is blacklisted, a list of channel IDs where proxying is whitelisted, whether the blacklist or whitelist is in use, a list of role IDs where proxying is blacklisted, a list of role IDs where proxying is whitelisted, whether the blacklist or whitelist is in use, whether a tag is required, a list of words that are required in the tag, whether the tag must be in the members displayed name, a channel ID where logging messages are sent, if set by server administrators. A proxy is a set of characters indicating to the bot whether a message should be replaced to look like it is coming from an in-game quid<sup>4</sup>
   - A list of "skills" or server administrators have created. Skills are attributes given to quids to measure their abilities, often used in roleplay to learn more about a quid or to enhance gameplay<sup>2</sup>
   - A universally unique identifier<sup>1</sup>
 - Information about User Accounts:
-  - The user ID provided by Discord of the user that created the account<sup>1</sup>
+  - A list of user IDs provided by Discord of the user that created / users that were added to the account<sup>1</sup>
   - A list of kinds of advice messages and if the user has received them<sup>2</sup>
-  - A list of reminder settings and if the user has enabled them<sup>4</sup>
+  - A list of settings and if the user has enabled them<sup>4</sup>
   - For each quid:
     - A unique identifier given to that quid<sup>1</sup>
     - The in-game name of the account chosen by the user<sup>2</sup>
@@ -60,6 +60,8 @@ The Service collects and stores the following data in its database:
         - Whether it exists<sup>2</sup>
         - Its health<sup>2</sup>
         - How often it has been watered<sup>2</sup>
+		- Whether a reminder has been sent<sup>2</sup>
+		- Whether a gentle reminder has been sent<sup>2</sup>
         - A timestamp of the next optimal watering time<sup>2</sup>
         - A channel ID provided by Discord of the channel it has last been watered in<sup>4</sup>
       - A list of potential in-game injuries/illnesses the user may have<sup>2</sup>
