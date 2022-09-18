@@ -298,6 +298,7 @@ export async function executeExploring(
 	const serverInventoryCount = (Object.entries(serverData.inventory) as [keyof Inventory, Inventory[keyof Inventory]][]).map(([key, type]) => key === 'materials' ? [] : Object.values(type)).flat().reduce((a, b) => a + b);
 
 	let foundQuest = false;
+	let foundSapling = false;
 	// If the server has more items than 8 per profile (It's 2 more than counted when the humans spawn, to give users a bit of leeway), there is no attack, and the next possible attack is possible, start an attack
 	if (serverInventoryCount > highRankProfilesCount * 8
 		&& remindOfAttack(interaction.guildId) === null
@@ -326,6 +327,7 @@ export async function executeExploring(
 
 		if (!profileData.sapling.exists) {
 
+			foundSapling = true;
 			userData = await userModel.findOneAndUpdate(
 				u => u.uuid === userData!.uuid,
 				(u) => {
@@ -934,7 +936,7 @@ export async function executeExploring(
 	await drinkAdvice(interaction, userData, profileData);
 	await eatAdvice(interaction, userData, profileData);
 
-	if (userData.advice.ginkgosapling === false) {
+	if (userData.advice.ginkgosapling === false && foundSapling) {
 
 		await userModel.findOneAndUpdate(
 			u => u.uuid === userData!.uuid,
