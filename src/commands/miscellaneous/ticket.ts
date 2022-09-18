@@ -91,7 +91,7 @@ export async function createNewTicket(
 			.fetch(ticket_channel_id)
 			.catch(() => { return null; });
 
-		if (serverChannel !== null && serverChannel.isTextBased() && interaction.guild?.members.me?.permissionsIn(serverChannel.id).has('ViewChannel') && interaction.guild?.members.me?.permissionsIn(serverChannel.id).has('SendMessages')) { return serverChannel; }
+		if (serverChannel !== null && serverChannel.isTextBased() && !serverChannel.isDMBased() && serverChannel.guild.members.me?.permissionsIn(serverChannel.id).has('ViewChannel') && serverChannel.guild.members.me?.permissionsIn(serverChannel.id).has('SendMessages')) { return serverChannel; }
 
 		let ownerId = '';
 		if (client.isReady()) {
