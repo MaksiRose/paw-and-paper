@@ -4,7 +4,6 @@ import { respond } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { BanList, commonPlantsInfo, CurrentRegionType, GivenIdList, materialsInfo, RankType, rarePlantsInfo, SlashCommand, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../../typedef';
 import { checkLevelRequirements, checkRankRequirements } from '../../utils/checkRoleRequirements';
-import { getMapData } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
 const { version } = require('../../../package.json');
 const { default_color, error_color } = require('../../../config.json');
@@ -81,7 +80,7 @@ export const command: SlashCommand = {
 		const _id = userData.currentQuid[interaction.guildId || 'DM'] || await createId();
 
 
-		userData = await userModel.findOneAndUpdate(
+		await userModel.findOneAndUpdate(
 			u => u.uuid === userData?.uuid,
 			(u) => {
 				const q = u.quids[_id];
@@ -141,13 +140,13 @@ export const command: SlashCommand = {
 				u.currentQuid[interaction.guildId || 'DM'] = _id;
 			},
 		);
-		const quidData = getMapData(userData.quids, _id);
+		const quidData = userData.quids[_id];
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
-				.setTitle(quidData === null ? `You successfully created the quid ${name}!` : `You successfully renamed your quid to ${name}!`)
-				.setFooter(quidData === null ? { text: 'To continue setting up your profile for the RPG, type "/species". For other options, review "/help".' } : null)],
+				.setTitle(quidData === undefined ? `You successfully created the quid ${name}!` : `You successfully renamed your quid to ${name}!`)
+				.setFooter(quidData === undefined ? { text: 'To continue setting up your profile for the RPG, type "/species". For other options, review "/help".' } : null)],
 		}, true)
 			.catch((error) => {
 				if (error.httpStatus !== 404) { throw new Error(error); }
