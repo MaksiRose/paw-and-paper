@@ -96,9 +96,9 @@ export async function getMessageContent(
 			.setDescription(quidData.description || null)
 			.setThumbnail(quidData.avatarURL)
 			.setFields([
+				{ name: '**🏷️ Displayname**', value: getQuidDisplayname(quidData, guildId ?? '') },
 				{ name: '**🦑 Species**', value: capitalizeString(quidData.displayedSpecies) || capitalizeString(quidData.species) || '/', inline: true },
 				{ name: '**🔑 Proxy**', value: !quidData.proxy.startsWith && !quidData.proxy.endsWith ? 'No proxy set' : `${quidData.proxy.startsWith}text${quidData.proxy.endsWith}`, inline: true },
-				{ name: '**🏷️ Displayname**', value: getQuidDisplayname(quidData, guildId ?? '') },
 				{ name: '**🍂 Pronouns**', value: quidData.pronounSets.map(pronounSet => pronounCompromiser(pronounSet)).join('\n') || '/' },
 			])
 			.setFooter({ text: `Quid ID: ${quidData._id}` })],
