@@ -124,7 +124,7 @@ export type RarePlantNames = 'ribwort plantain' | 'charcoal-tree leaves' | 'mars
 
 export type SpecialPlantNames = 'black-eyed Susan';
 
-export type SpeciesNames = 'wolf' | 'cat' | 'fox' | 'leopard' | 'tiger' | 'shark' | 'caracal' | 'bear' | 'coyote' | 'rabbit' | 'squirrel' | 'lion' | 'seal' | 'salmon' | 'tuna' | 'squid' | 'crab' | 'orca' | 'maned wolf' | 'dog' | 'owl' | 'deer' | 'penguin' | 'gaboon viper' | 'hoatzin' | 'weasel' | 'hawk' | 'eagle' | 'raccoon' | 'horse' | 'elk' | 'cassowary' | 'humpback whale' | 'goat' | 'kinkajou' | 'praying mantis' | 'cricket' | 'beetle' | 'moth' | 'bee' | 'cougar' | 'frog' | 'crow' | 'king cobra' | 'rat' | 'hedgehog' | 'beaver' | 'turtle' | 'anole' | 'porcupine' | 'mongoose' | 'otter' | 'ferret' | 'tropical parrot';
+export type SpeciesNames = 'wolf' | 'cat' | 'fox' | 'leopard' | 'tiger' | 'shark' | 'caracal' | 'bear' | 'coyote' | 'rabbit' | 'squirrel' | 'lion' | 'seal' | 'salmon' | 'tuna' | 'squid' | 'crab' | 'orca' | 'maned wolf' | 'dog' | 'owl' | 'deer' | 'penguin' | 'gaboon viper' | 'hoatzin' | 'weasel' | 'hawk' | 'eagle' | 'raccoon' | 'horse' | 'elk' | 'cassowary' | 'humpback whale' | 'goat' | 'kinkajou' | 'praying mantis' | 'cricket' | 'beetle' | 'moth' | 'bee' | 'cougar' | 'frog' | 'crow' | 'king cobra' | 'rat' | 'hedgehog' | 'beaver' | 'turtle' | 'anole' | 'porcupine' | 'mongoose' | 'otter' | 'ferret' | 'tropical parrot' | 'warthog';
 
 export type MaterialNames = 'stick' | 'pine cone' | 'root' | 'moss' | 'leaf' | 'algae' | 'clay' | 'vine' | 'soil' | 'rock' | 'seashell' | 'bone';
 
@@ -930,7 +930,7 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 		diet: SpeciesDietType.Carnivore,
 		habitat: SpeciesHabitatType.Warm,
 		biome1OpponentArray: ['coyote', 'maned wolf', 'mongoose'],
-		biome2OpponentArray: ['caracal'],
+		biome2OpponentArray: ['caracal', 'warthog'],
 		biome3OpponentArray: ['tiger', 'lion'],
 	},
 	// actual diet: large and medium-sizes mammals such as ungulates, deer, wapiti and wild boars, guar, buffalo, smaller prey such as monkeys, peafowl and other ground-based birds, hares, porcupines and fish, other predators such as dogs, leopards, pythons, bears and crocodiles, lifestock such as cattle, horses and donkeys
@@ -987,7 +987,7 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 	'lion': {
 		diet: SpeciesDietType.Carnivore,
 		habitat: SpeciesHabitatType.Warm,
-		biome1OpponentArray: ['coyote', 'maned wolf'],
+		biome1OpponentArray: ['coyote', 'maned wolf', 'warthog'],
 		biome2OpponentArray: ['leopard', 'caracal'],
 		biome3OpponentArray: ['tiger'],
 	},
@@ -1044,7 +1044,7 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 		diet: SpeciesDietType.Omnivore,
 		habitat: SpeciesHabitatType.Cold,
 		biome1OpponentArray: ['rabbit', 'squirrel', 'deer'],
-		biome2OpponentArray: ['wolf', 'fox'],
+		biome2OpponentArray: ['wolf', 'fox', 'warthog'],
 		biome3OpponentArray: ['cat', 'bear'],
 	},
 	'owl': {
@@ -1058,7 +1058,7 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 		diet: SpeciesDietType.Herbivore,
 		habitat: SpeciesHabitatType.Cold,
 		biome1OpponentArray: ['rabbit', 'squirrel'],
-		biome2OpponentArray: ['fox', 'owl'],
+		biome2OpponentArray: ['fox', 'owl', 'warthog'],
 		biome3OpponentArray: ['wolf', 'bear', 'dog'],
 	},
 	'penguin': {
@@ -1300,5 +1300,14 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 		biome1OpponentArray: ['beetle', 'bee', 'cricket'],
 		biome2OpponentArray: ['owl', 'mongoose', 'hoatzin'],
 		biome3OpponentArray: ['hawk', 'eagle', 'gaboon viper'],
+	},
+	// actual diet: grasses, tubers, roots, bulbs, rhizomes, bark, insects, fruit, leaves, berries, carrion (rarely), dung
+	// actual predators: humans, lions, leopards, cheetahs, crocodiles, wild dogs, hyenas, birds of prey
+	'warthog': {
+		diet: SpeciesDietType.Omnivore,
+		habitat: SpeciesHabitatType.Warm,
+		biome1OpponentArray: ['frog', 'rat', 'hedgehog'],
+		biome2OpponentArray: ['owl', 'deer', 'dog'],
+		biome3OpponentArray: ['leopard', 'hawk', 'lion'],
 	},
 };
