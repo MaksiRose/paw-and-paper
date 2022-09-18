@@ -40,6 +40,7 @@ import { travelInteractionCollector } from '../commands/gameplay_primary/travel-
 import { executePlaying, command as playCommand } from '../commands/gameplay_primary/play';
 import { executeExploring, command as exploreCommand } from '../commands/gameplay_primary/explore';
 import { executeAttacking, command as attackCommand } from '../commands/gameplay_primary/attack';
+import { wrongproxyInteractionCollector } from '../contextmenu/wrong-proxy';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
@@ -350,6 +351,13 @@ export const event: Event = {
 				if (interaction.customId.startsWith('vote_')) {
 
 					await voteInteractionCollector(client, interaction, userData)
+						.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					return;
+				}
+
+				if (interaction.customId.startsWith('wrongproxy_')) {
+
+					await wrongproxyInteractionCollector(interaction, userData)
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
