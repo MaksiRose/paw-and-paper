@@ -178,12 +178,12 @@ export async function hasFullInventory(
 				.setColor(quidData.color)
 				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
 				.setDescription(`*${quidData.name} approaches the pack borders, ${pronoun(quidData, 2)} mouth filled with various things. As eager as ${pronounAndPlural(quidData, 0, 'is', 'are')} to go into the wild, ${pronounAndPlural(quidData, 0, 'decide')} to store some things away first.*`)
-				.setFooter({ text: 'You can only hold up to 5 items in your personal inventory. Type "/store" to put things into the pack inventory!' }),
+				.setFooter({ text: 'You can only hold up to 5 items in your personal inventory. Type "/store" or click the button below to put things into the pack inventory!' }),
 			],
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
 					.setCustomId('stats_store')
-					.setLabel('Store food away')
+					.setLabel('Store items away')
 					.setStyle(ButtonStyle.Secondary),
 				)],
 		}, false)

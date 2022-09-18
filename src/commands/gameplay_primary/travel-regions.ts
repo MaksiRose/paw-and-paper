@@ -190,7 +190,7 @@ async function sendTravelMessage(
 						.setStyle(ButtonStyle.Primary),
 					new ButtonBuilder()
 						.setCustomId('travel_store')
-						.setLabel('Store food away')
+						.setLabel('Store items away')
 						.setStyle(ButtonStyle.Primary),
 				])],
 		})

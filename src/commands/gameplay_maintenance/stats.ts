@@ -79,7 +79,7 @@ async function sendStatsMessage(
 			.setStyle(ButtonStyle.Secondary),
 		new ButtonBuilder()
 			.setCustomId(`stats_store_${creatorUUID}`)
-			.setLabel('Store food away')
+			.setLabel('Store items away')
 			.setStyle(ButtonStyle.Secondary),
 		]);
 

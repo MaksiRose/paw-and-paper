@@ -72,7 +72,7 @@ export async function sendStoreMessage(
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData.color)
 				.setAuthor({ name: quidData.name, iconURL: quidData.avatarURL })
-				.setDescription(`*${quidData.name} goes to the food den to store food away, but ${pronoun(quidData, 2)} mouth is empty...*`),
+				.setDescription(`*${quidData.name} goes to the food den to store their findings away, but ${pronoun(quidData, 2)} mouth is empty...*`),
 			],
 		})
 			.catch((error) => {
