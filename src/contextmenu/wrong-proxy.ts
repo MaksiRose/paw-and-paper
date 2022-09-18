@@ -35,7 +35,7 @@ export const command: ContextMenuCommand = {
 
 		const quidMenu = getQuidsPage(userData, 0, interaction.targetId);
 		await respond(interaction, {
-			content: 'Select a quid that you want the proxied message to be from instead.\n⚠️ CAUTION! This does *not edit* the message, but deletes it and sends a new one with the new avatar and username, but same content.',
+			content: 'Select a quid that you want the proxied message to be from instead.\n⚠️ CAUTION! This does *not edit* the message, but deletes it and sends a new one with the new avatar and username, but same content. It is therefore not adviced to use this feature on older messages.',
 			components: quidMenu.options.length > 0 ? [new ActionRowBuilder<SelectMenuBuilder>().setComponents(quidMenu)] : [],
 			ephemeral: true,
 		}, false)
