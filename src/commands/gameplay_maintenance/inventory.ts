@@ -90,8 +90,7 @@ export async function showInventoryMessage(
 						.setOptions(foodSelectMenuOptions))]
 				: [],
 		],
-	})
-		.catch((error) => { throw new Error(error); });
+	});
 
 	createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
 }

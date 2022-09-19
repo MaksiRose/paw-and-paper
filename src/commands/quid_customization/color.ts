@@ -35,10 +35,7 @@ export const command: SlashCommand = {
 					.setColor(error_color)
 					.setTitle('Please send a valid hex code! Valid hex codes consist of 6 characters and contain only letters from \'a\' to \'f\' and/or numbers.')],
 				ephemeral: true,
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 			return;
 		}
 
@@ -57,10 +54,7 @@ export const command: SlashCommand = {
 				.setColor(quidData.color)
 				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
 				.setTitle(`Profile color set to ${quidData.color}!`)],
-		}, true)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, true);
 		return;
 	},
 };

@@ -161,8 +161,7 @@ async function sendTravelMessage(
 					.setCustomId('travel_rest')
 					.setLabel('Rest')
 					.setStyle(ButtonStyle.Primary))],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 	}
 	else if (chosenRegion === CurrentRegionType.FoodDen) {
 
@@ -193,8 +192,7 @@ async function sendTravelMessage(
 						.setLabel('Store items away')
 						.setStyle(ButtonStyle.Primary),
 				])],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 	}
 	else if (chosenRegion === CurrentRegionType.MedicineDen) {
 
@@ -231,8 +229,7 @@ async function sendTravelMessage(
 						.setLabel('Heal')
 						.setStyle(ButtonStyle.Primary))]),
 			],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 	}
 	else if (chosenRegion === CurrentRegionType.Ruins) {
 
@@ -253,8 +250,7 @@ async function sendTravelMessage(
 			content: messageContent,
 			embeds: [...embedArray, embed],
 			components: [travelComponent],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 	}
 	else if (chosenRegion === CurrentRegionType.Lake) {
 
@@ -270,8 +266,7 @@ async function sendTravelMessage(
 					.setCustomId('travel_drink')
 					.setLabel('Drink')
 					.setStyle(ButtonStyle.Primary))],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 	}
 	else if (chosenRegion === CurrentRegionType.Prairie) {
 
@@ -296,8 +291,7 @@ async function sendTravelMessage(
 					.setCustomId('travel_play')
 					.setLabel('Play')
 					.setStyle(ButtonStyle.Primary))],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 	}
 	else {
 
@@ -317,7 +311,6 @@ async function sendTravelMessage(
 			content: messageContent,
 			embeds: [...embedArray, embed],
 			components: [travelComponent],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 	}
 }

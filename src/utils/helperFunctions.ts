@@ -98,6 +98,12 @@ export async function sendErrorMessage(
 	error: any,
 ): Promise<any> {
 
+	if (error.status === 404 || error.httpStatus === 404) {
+
+		console.error('Error 404 - An error is not being sent to the user. ', error);
+		return;
+	}
+
 	try {
 
 		const userData = await userModel.findOne(u => u.userId.includes(interaction.user.id));
@@ -150,14 +156,14 @@ export async function sendErrorMessage(
 	await respond(interaction, { ...messageOptions, flags: undefined }, false)
 		.catch(async (error2) => {
 
-			console.error('Failed to send error message to user. ' + error2);
+			console.error('Failed to send error message to user. ', error2);
 			await (async () => {
 				if (interaction.isButton() || interaction.isSelectMenu()) { await interaction.message.reply({ ...messageOptions, failIfNotExists: false }); }
 				if (interaction.isMessageContextMenuCommand()) { await interaction.targetMessage.reply({ ...messageOptions, failIfNotExists: false }); }
 				if (interaction.isUserContextMenuCommand() || interaction.isChatInputCommand() || interaction.type === InteractionType.ModalSubmit) { await interaction.channel?.send(messageOptions); }
 			})()
 				.catch((error3) => {
-					console.error('Failed to send backup error message to user. ' + error3);
+					console.error('Failed to send backup error message to user. ', error3);
 				});
 		});
 }

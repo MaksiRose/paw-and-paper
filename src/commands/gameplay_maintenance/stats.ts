@@ -50,10 +50,7 @@ export const command: SlashCommand = {
 					.setTitle('There is nothing to show here :('),
 				],
 				ephemeral: true,
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 			return;
 		}
 
@@ -121,8 +118,7 @@ async function sendStatsMessage(
 			(profileData.sapling.exists === false ? '' : `\n🌱 Ginkgo Sapling: ${profileData.sapling.waterCycles} days alive - ${profileData.sapling.health} health - Next watering <t:${Math.floor((profileData.sapling.nextWaterTimestamp || 0) / 1000)}:R>`) +
 			(profileData.hasQuest ? `\n${quidData.name} has one open quest!` : '') + (canRankUp ? `\n${quidData.name} can rank up!` : ''),
 		components: [components],
-	})
-		.catch((error) => { throw new Error(error); });
+	});
 }
 
 export async function statsInteractionCollector(

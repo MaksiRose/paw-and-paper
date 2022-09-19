@@ -81,8 +81,7 @@ export const command: SlashCommand = {
 							.setStyle(ButtonStyle.Success),
 					]),
 				],
-			}, true)
-				.catch((error) => { throw new Error(error); });
+			}, true);
 
 			createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
 

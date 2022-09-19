@@ -14,9 +14,7 @@ export async function createGuild(
 	const bannedList = JSON.parse(readFileSync('./database/bannedList.json', 'utf-8')) as BanList;
 	let serverData: ServerSchema;
 
-	const owner = await client.users
-		.fetch(guild.ownerId)
-		.catch((error) => { throw new Error(error); });
+	const owner = await client.users.fetch(guild.ownerId);
 
 	await owner
 		.createDM()
@@ -30,11 +28,7 @@ export async function createGuild(
 			.send({ content: `I am sorry to inform you that your guild \`${guild.name}\` has been banned from using this bot.` })
 			.catch((error) => { console.error(error); });
 
-		await guild
-			.leave()
-			.catch((error) => {
-				throw new Error(error);
-			});
+		await guild.leave();
 
 		throw new Error('Forbidden: Request forbidden by administrative rules');
 	}

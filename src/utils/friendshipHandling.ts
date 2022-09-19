@@ -50,8 +50,7 @@ export async function addFriendshipPoints(
 					.setTitle(`The friendship between ${quidData.name} and ${partnerQuidData.name} grew 💗`)
 					.setDescription('❤️'.repeat(getFriendshipHearts(newFriendshipPoints)) + '🖤'.repeat(10 - getFriendshipHearts(newFriendshipPoints)))
 					.setFooter(getFriendshipHearts(newFriendshipPoints) === 6 ? { text: 'You can now adventure together using the "adventure" command!' } : null)],
-			})
-			.catch((newError) => { throw new Error(newError); });
+			});
 	}
 }
 

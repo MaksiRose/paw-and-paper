@@ -54,10 +54,7 @@ export const command: SlashCommand = {
 					.setTitle('Your ticket doesn\'t have a title, description and label!')
 					.setDescription('Note: To suggest a species [use this form](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement%2Cnon-code&template=species_request.yaml&title=New+species%3A+).')],
 				ephemeral: true,
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 			return;
 		}
 
@@ -101,13 +98,8 @@ export async function createNewTicket(
 			else if (application.owner instanceof Team) { ownerId = application.owner.ownerId || ''; }
 		}
 
-		const owner = await client.users
-			.fetch(ownerId)
-			.catch(error => { throw new Error(error); });
-
-		const dmChannel = await owner
-			.createDM()
-			.catch(error => { throw new Error(error); });
+		const owner = await client.users.fetch(ownerId);
+		const dmChannel = await owner.createDM();
 		return dmChannel;
 	}();
 
@@ -137,10 +129,7 @@ export async function createNewTicket(
 			.setTitle('Thank you for your contribution!')
 			.setDescription('You help improve the bot.\nNote: To suggest a species [use this form](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement%2Cnon-code&template=species_request.yaml&title=New+species%3A+).')
 			.setFooter({ text: 'We might need to get in contact with you for clarification regarding your ticket. If we have no way of contacting you (i.e. DMs being closed, not allowing friend requests and not being in the support server), your ticket might not be considered.' }), ticketEmbed],
-	}, true)
-		.catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-		});
+	}, true);
 }
 
 export async function ticketInteractionCollector(
@@ -153,15 +142,12 @@ export async function ticketInteractionCollector(
 
 			const userId = interaction.customId.split('_')[3]?.replace('user', '') || '';
 
-			const user = await interaction.client.users
-				.fetch(userId)
-				.catch(error => { throw new Error(error); });
-
+			const user = await interaction.client.users.fetch(userId);
 			const dmChannel = await user
 				.createDM()
 				.catch(error => {
-					if (error.httpStatus !== 403) { throw new Error(error); }
-					return null;
+					if (error.status !== 403) { return null; }
+					throw error;
 				});
 
 			if (!dmChannel) {
@@ -208,16 +194,12 @@ export async function ticketInteractionCollector(
 				title: embed?.title || 'New issue',
 				body: `Created by: ${interaction.user.tag} (${interaction.user.id})\n\n${embed?.description}\n\n${embed?.image ? `![](${embed.image?.url})` : ''}\n\n${ticketConversation ? `Additional conversation:\n\`\`\`\n${ticketConversation}\n\`\`\`` : ''}`,
 				labels: embed?.footer ? [embed.footer.text] : [],
-			})
-			.catch((error) => { throw new Error(error); });
+			});
 	}
 
 	await update(interaction, {
 		components: disableAllComponents(interaction.message.components),
-	})
-		.catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-		});
+	});
 }
 
 export async function sendRespondToTicketModalResponse(
@@ -241,31 +223,20 @@ export async function sendRespondToTicketModalResponse(
 		content: `**You replied:**\n>>> ${messageText}`,
 		files: [new AttachmentBuilder(`./database/open_tickets/${ticketId}.txt`)
 			.setName('ticketConversation.txt')],
-	}, false)
-		.catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-		});
+	}, false);
 
 	const respondChannel = await async function() {
 
 		if (userOrChannelId.startsWith('user')) {
 
 			const userId = userOrChannelId.replace('user', '');
-			const user = await interaction.client.users
-				.fetch(userId)
-				.catch(error => { throw new Error(error); });
-
-			const dmChannel = await user
-				.createDM()
-				.catch(error => { throw new Error(error); });
-			return dmChannel;
+			const user = await interaction.client.users.fetch(userId);
+			return await user.createDM();
 		}
 		else if (userOrChannelId.startsWith('channel')) {
 
 			const channelId = userOrChannelId.replace('channel', '');
-			const serverChannel = await interaction.client.channels
-				.fetch(channelId)
-				.catch(() => { return null; });
+			const serverChannel = await interaction.client.channels.fetch(channelId);
 			if (serverChannel !== null && serverChannel.isTextBased()) { return serverChannel; }
 		}
 		throw new Error('Couldn\'t get a channel');

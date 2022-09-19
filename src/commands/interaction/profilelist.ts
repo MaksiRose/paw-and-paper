@@ -28,8 +28,7 @@ export const command: SlashCommand = {
 		if (!isInGuild(interaction)) { return; }
 
 		/* Creating a message with up to 25 profiles of a certain rank, a select menu to select another rank and buttons to go back and fourth a page if the rank as more than 25 profiles. */
-		await respond(interaction, await getProfilesMessage(0, interaction.guild, RankType.Youngling), true)
-			.catch((error) => { throw new Error(error); });
+		await respond(interaction, await getProfilesMessage(0, interaction.guild, RankType.Youngling), true);
 	},
 };
 
@@ -51,8 +50,7 @@ export async function profilelistInteractionCollector(
 
 		const profilesText = await getProfilesTexts(interaction.guild, rankName, rankName === RankType.Hunter ? RankType.Healer : undefined);
 
-		await update(interaction, await getProfilesMessage(0, interaction.guild, rankName, profilesText))
-			.catch((error) => { throw new Error(error); });
+		await update(interaction, await getProfilesMessage(0, interaction.guild, rankName, profilesText));
 		return;
 	}
 
@@ -81,8 +79,7 @@ export async function profilelistInteractionCollector(
 		if (page >= Math.ceil(profilesText.length / 25)) { page = 0; }
 	}
 
-	await respond(interaction, await getProfilesMessage(page, interaction.guild, rankName, profilesText), true)
-		.catch((error) => { throw new Error(error); });
+	await respond(interaction, await getProfilesMessage(page, interaction.guild, rankName, profilesText), true);
 	return;
 }
 

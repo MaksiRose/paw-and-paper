@@ -49,10 +49,7 @@ export const command: SlashCommand = {
 						.setTitle('You have no open quests at the moment :(')
 						.setFooter({ text: `Go ${profileData.rank === RankType.Youngling ? 'playing' : 'exploring'} to get a quest!` }),
 				],
-			}, true)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, true);
 			return;
 		}
 
@@ -141,8 +138,7 @@ export async function sendQuestMessage(
 				.setLabel('Start quest')
 				.setEmoji('⭐')
 				.setStyle(ButtonStyle.Success))],
-	}, true)
-		.catch((error) => { throw new Error(error); });
+	}, true);
 
 	createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
 
@@ -159,11 +155,7 @@ export async function sendQuestMessage(
 		})
 		.catch(async () => {
 
-			return await respond(interaction, { components: disableAllComponents(botReply.components) }, true)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-					return botReply;
-				});
+			return await respond(interaction, { components: disableAllComponents(botReply.components) }, true);
 		});
 }
 
@@ -285,11 +277,7 @@ async function startQuest(
 			content: messageContent,
 			embeds: [...embedArray, embed, ...afterEmbedArray],
 			components: [...previousQuestComponents ? [previousQuestComponents] : [], questComponents],
-		})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-				return botReply;
-			});
+		});
 
 		newInteraction = await (botReply as Message<true>)
 			.awaitMessageComponent({
@@ -446,11 +434,7 @@ async function startQuest(
 				content: messageContent,
 				embeds: [...embedArray, embed, ...afterEmbedArray],
 				components: [questComponents],
-			})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-					return botReply;
-				});
+			});
 
 			if (profileData.rank === RankType.Youngling) { await apprenticeAdvice(interaction); }
 			else if (profileData.rank === RankType.Apprentice) { await hunterhealerAdvice(interaction); }
@@ -510,11 +494,7 @@ async function startQuest(
 				content: messageContent,
 				embeds: [...embedArray, embed, ...afterEmbedArray],
 				components: [questComponents],
-			})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-					return botReply;
-				});
+			});
 
 			return botReply;
 		}
@@ -550,10 +530,7 @@ async function apprenticeAdvice(
 
 	await respond(interaction, {
 		content: `${interaction.user.toString()} ❓ **Tip:**\nAs apprentice, you unlock new commands: \`explore\`, \`heal\`, \`practice\`, and \`repair\`.\nCheck \`/help\` to see what they do!\nGo exploring via \`/explore\` to find more quests and rank up higher!`,
-	}, false)
-		.catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-		});
+	}, false);
 }
 
 /**
@@ -565,10 +542,7 @@ async function hunterhealerAdvice(
 
 	await respond(interaction, {
 		content: `${interaction.user.toString()} ❓ **Tip:**\nHunters and Healers have different strengths and weaknesses!\nHealers can \`heal\` perfectly and find more plants when \`exploring\`, but they are not so good at \`repairing\`.\nHunters can \`repair\` perfectly and find more enemies when \`exploring\`, but they are not so good at \`healing\`.\nHunters and Healers don't get advantages from the \`play\` command.`,
-	}, false)
-		.catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-		});
+	}, false);
 }
 
 /**
@@ -580,8 +554,5 @@ async function elderlyAdvice(
 
 	await respond(interaction, {
 		content: `${interaction.user.toString()} ❓ **Tip:**\nElderlies have the abilities of both Hunters and Healers!\nAdditionally, they can use the \`share\` command.`,
-	}, false)
-		.catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-		});
+	}, false);
 }

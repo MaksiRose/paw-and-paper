@@ -42,10 +42,7 @@ export const command: SlashCommand = {
 						color: error_color,
 						title: 'This user has no account!',
 					}],
-				}, true)
-					.catch((error) => {
-						if (error.httpStatus !== 404) { throw new Error(error); }
-					});
+				}, true);
 			}
 			return;
 		}
@@ -58,8 +55,7 @@ export const command: SlashCommand = {
 		await respond(interaction, {
 			...response,
 			components: (selectMenu.options.length > 0) ? [new ActionRowBuilder<SelectMenuBuilder>().setComponents([selectMenu])] : [],
-		}, true)
-			.catch((error) => { throw new Error(error); });
+		}, true);
 	},
 };
 
@@ -82,11 +78,7 @@ export async function getMessageContent(
 	guildId: string,
 ): Promise<InteractionReplyOptions> {
 
-	const user = await client.users
-		.fetch(userId)
-		.catch((error) => {
-			throw new Error(error);
-		});
+	const user = await client.users.fetch(userId);
 
 	return {
 		content: !quidData ? (isYourself ? 'You are on an Empty Slot. Select a quid to switch to below.' : 'Select a quid to view below.') : null,
@@ -153,19 +145,15 @@ export async function profileInteractionCollector(
 		const userData = await userModel.findOne(u => u.userId.includes(userId));
 
 		/* Getting the DM channel, the select menu, and sending the message to the DM channel. */
-		const dmChannel = await interaction.user
-			.createDM()
-			.catch((error) => { throw new Error(error); });
+		const dmChannel = await interaction.user.createDM();
 
 		const selectMenu = getAccountsPage(userData, userId, 0, userData.userId.includes(interaction.user.id));
 
-		dmChannel
-			.send({
-				content: interaction.message.content || null,
-				embeds: interaction.message.embeds,
-				components: (selectMenu.options.length > 0) ? [new ActionRowBuilder<SelectMenuBuilder>().setComponents([selectMenu])] : [],
-			})
-			.catch((error) => { throw new Error(error); });
+		dmChannel.send({
+			content: interaction.message.content || null,
+			embeds: interaction.message.embeds,
+			components: (selectMenu.options.length > 0) ? [new ActionRowBuilder<SelectMenuBuilder>().setComponents([selectMenu])] : [],
+		});
 
 		await interaction.deferUpdate();
 		return;
@@ -184,8 +172,7 @@ export async function profileInteractionCollector(
 
 		await update(interaction, {
 			components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getAccountsPage(userData, userId, quidsPage, userData.userId.includes(interaction.user.id))])],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 		return;
 	}
 
@@ -204,10 +191,7 @@ export async function profileInteractionCollector(
 			await respond(interaction, {
 				content: 'You can\'t switch quids because your current quid is busy!',
 				ephemeral: true,
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 			return;
 		}
 
@@ -320,16 +304,12 @@ export async function profileInteractionCollector(
 				// we can interaction.user.id because the "switchto" option is only available to yourself
 				...await getMessageContent(client, interaction.user.id, userData, newQuidData, userData.userId.includes(interaction.user.id), [], interaction.guildId ?? ''),
 				components: interaction.message.components,
-			})
-			.catch((error) => { throw new Error(error); });
+			});
 
 		respond(interaction, {
 			content: `You successfully switched to \`${newQuidData?.name || 'Empty Slot'}\`!`,
 			ephemeral: true,
-		}, false)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, false);
 		return;
 	}
 
@@ -347,8 +327,7 @@ export async function profileInteractionCollector(
 		await update(interaction, {
 			...await getMessageContent(client, userId, userData, quidData, userData.userId.includes(interaction.user.id), [], interaction.guildId ?? ''),
 			components: interaction.message.components,
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 		return;
 	}
 }

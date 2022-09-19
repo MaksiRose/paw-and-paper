@@ -47,8 +47,7 @@ export const command: SlashCommand = {
 				...(quidData.species === '' ? [new ActionRowBuilder<SelectMenuBuilder>().setComponents([speciesMenu])] : []),
 				new ActionRowBuilder<ButtonBuilder>().setComponents([displayedSpeciesButton]),
 			],
-		}, true)
-			.catch((error) => { throw new Error(error); });
+		}, true);
 
 		createCommandComponentDisabler(userData.uuid, interaction.guildId || 'DM', botReply);
 	},
@@ -119,14 +118,12 @@ export async function speciesInteractionCollector(
 		let speciesPage = Number(selectOptionId.split('_')[2]) + 1;
 		if (speciesPage >= Math.ceil(speciesNameArray.length / 24)) { speciesPage = 0; }
 
-		/* Editing the message if its a Message object, else throw an error. */
 		await update(interaction, {
 			components: [
 				new ActionRowBuilder<SelectMenuBuilder>().setComponents([getSpeciesSelectMenu(speciesPage, quidId)]),
 				new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(quidId)]),
 			],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 		return;
 	}
 
@@ -155,15 +152,11 @@ export async function speciesInteractionCollector(
 			components: [
 				new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(quidId)]),
 			],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 
 		await interaction.message.channel
 			.send({
 				content: `${interaction.user.toString()} ❓ **Tip:**\nGo playing via \`/play\` to find quests and rank up!`,
-			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
 			});
 		return;
 	}

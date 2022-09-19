@@ -74,10 +74,7 @@ export async function sendStoreMessage(
 				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 				.setDescription(`*${quidData.name} goes to the food den to store ${pronoun(quidData, 2)} findings away, but ${pronoun(quidData, 2)} mouth is empty...*`),
 			],
-		})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		});
 		return;
 	}
 
@@ -87,8 +84,7 @@ export async function sendStoreMessage(
 		content: messageContent,
 		embeds: [...embedArray, getOriginalEmbed(userData, quidData, interaction.guildId)],
 		components: [itemSelectMenu, storeAllButton],
-	})
-		.catch((error) => { throw new Error(error); });
+	});
 
 	createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
 }
@@ -183,10 +179,7 @@ export async function storeInteractionCollector(
 
 			await update(interaction, {
 				components: [itemSelectMenu, amountSelectMenu],
-			})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			});
 			return;
 		}
 
@@ -233,10 +226,7 @@ export async function storeInteractionCollector(
 			await update(interaction, {
 				embeds: [...interaction.message.embeds, embed],
 				components: itemSelectMenu.toJSON().components[0]?.options.length === 0 ? disableAllComponents(interaction.message.components) : [itemSelectMenu, storeAllButton],
-			})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			});
 			return;
 		}
 	}
@@ -296,9 +286,6 @@ async function storeAll(
 	await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 		embeds: [...(otherEmbeds ?? []), embed],
 		components: interaction.isButton() ? disableAllComponents(interaction.message.components) : [],
-	})
-		.catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-		});
+	});
 	return;
 }

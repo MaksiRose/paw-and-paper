@@ -84,10 +84,7 @@ export const command: SlashCommand = {
 					.setColor(quidData.color)
 					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*A healer rushes into the medicine den in fury.*\n"${quidData.name}, you are not trained to heal yourself, and especially not to heal others! I don't ever wanna see you again in here without supervision!"\n*${quidData.name} lowers ${pronoun(quidData, 2)} head and leaves in shame.*`)],
-			}, true)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, true);
 			return;
 		}
 
@@ -235,8 +232,7 @@ export async function getHealResponse(
 				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 				.setDescription(`*${quidData.name} sits in front of the medicine den, looking if anyone needs help with injuries or illnesses.*`)],
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 
 		createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
 		return;
@@ -280,8 +276,7 @@ export async function getHealResponse(
 					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*${quidData.name} approaches ${quidToHeal.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${quidData.displayedSpecies || quidData.species} asks.\n${quidToHeal.name} shakes ${pronoun(quidToHeal, 2)} head.* "Not that I know of, no."\n*Disappointed, ${quidData.name} goes back to the medicine den.*`)],
 				components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
-			})
-				.catch((error) => { throw new Error(error); });
+			});
 
 			createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
 			return;
@@ -318,8 +313,7 @@ export async function getHealResponse(
 			content: messageContent,
 			embeds: [...embedArray, quidConditionEmbed, inventoryEmbed],
 			components: [quidsSelectMenu, pagesButtons, inventorySelectMenu],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 
 		createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
 		return;
@@ -335,8 +329,7 @@ export async function getHealResponse(
 				.setColor(quidData.color)
 				.setTitle(`${quidToHeal.name} doesn't need to be healed anymore. Please select another quid to heal if available.`)],
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 
 		createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
 		return;
@@ -456,8 +449,7 @@ export async function getHealResponse(
 				.setColor(quidData.color)
 				.setTitle(`${quidToHeal.name}'s condition changed before you healed them. Please try again.`)],
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 
 		createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
 		return;
@@ -560,8 +552,7 @@ export async function getHealResponse(
 			...(levelUpEmbed ? [levelUpEmbed] : []),
 		],
 		components: interaction.isMessageComponent() ? disableAllComponents(interaction.message.components) : [],
-	})
-		.catch((error) => { throw new Error(error); });
+	});
 
 	await isPassedOut(interaction, userData, quidData, profileData, true);
 

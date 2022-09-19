@@ -64,8 +64,7 @@ export const command: SlashCommand = {
 					.setColor(quidData1.color)
 					.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 					.setDescription(`*${quidData1.name} is looking to go on an adventure, but going alone is very dangerous. The ${quidData1.displayedSpecies || quidData1.species} should find someone to take with ${pronoun(quidData1, 1)}.*`)],
-			}, false)
-				.catch(error => { throw new Error(error); });
+			}, false);
 			return;
 		}
 
@@ -88,8 +87,7 @@ export const command: SlashCommand = {
 					.setTitle(`You and ${quidData2.name} need at least ${requiredFriendshipHearts} ❤️ to be able to adventure together!`)
 					.setDescription('You gain ❤️ by mentioning and interacting with each other. To check your friendships, type `/friendships`.'),
 				],
-			}, false)
-				.catch((error) => { throw new Error(error); });
+			}, false);
 			return;
 		}
 
@@ -197,8 +195,7 @@ export async function adventureInteractionCollector(
 	let userDataCurrent = user1IsPlaying ? userData1 : userData2;
 	let quidDataCurrent = getMapData(userDataCurrent.quids, getMapData(userDataCurrent.currentQuid, interaction.guildId));
 
-	await sendNextRoundMessage(interaction, user1IsPlaying ? userId1 : userId2, userData1, quidData1, quidData2, componentArray)
-		.catch((error) => { throw new Error(error); });
+	await sendNextRoundMessage(interaction, user1IsPlaying ? userId1 : userId2, userData1, quidData1, quidData2, componentArray);
 	let lastInteraction = interaction;
 
 	const collector = interaction.channel.createMessageComponentCollector({

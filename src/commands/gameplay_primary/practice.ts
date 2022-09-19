@@ -50,10 +50,7 @@ export const command: SlashCommand = {
 					.setColor(quidData.color)
 					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*The Elderly shakes their head as they see ${quidData.name} approaching.*\n"At your age, you shouldn't prepare for fights. Go play with your friends instead!"`)],
-			}, true)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, true);
 			return;
 		}
 
@@ -78,8 +75,7 @@ export const command: SlashCommand = {
 						.setStyle(ButtonStyle.Secondary),
 				]),
 			],
-		}, true)
-			.catch((error) => { throw new Error(error); });
+		}, true);
 
 		createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
 
@@ -104,11 +100,7 @@ export const command: SlashCommand = {
 					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*After a bit of thinking, ${quidData.name} decides that now is not a good time to practice ${pronoun(quidData, 2)} fighting skills. Politely, ${pronounAndPlural(quidData, 0, 'decline')} the Elderlies offer.*`)],
 				components: disableAllComponents(botReply.components),
-			}, true)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-					return botReply;
-				});
+			}, true);
 			return;
 		}
 
@@ -159,11 +151,7 @@ export const command: SlashCommand = {
 			botReply = await update(newInteraction, {
 				embeds: [...embedArray, embed],
 				components: [...previousFightComponents ? [previousFightComponents] : [], fightGame.fightComponent],
-			})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-					return botReply;
-				});
+			});
 
 			/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 			fightGame.fightComponent = fightGame.correctButtonOverwrite();
@@ -237,11 +225,7 @@ export const command: SlashCommand = {
 					...(levelUpEmbed ? [levelUpEmbed] : []),
 				],
 				components: [fightGame.fightComponent],
-			})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-					return botReply;
-				});
+			});
 
 			await isPassedOut(interaction, userData, quidData, profileData, true);
 

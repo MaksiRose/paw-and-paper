@@ -93,10 +93,7 @@ export const command: SlashCommand = {
 				})
 				.setDescription(`🎲 You rolled a \`${result}\`!`)
 				.setFooter({ text: resultFull.length > 2048 ? resultFull.substring(0, 2047) + '…' : resultFull })],
-		}, true)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, true);
 		return;
 	},
 };

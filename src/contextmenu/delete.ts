@@ -25,9 +25,6 @@ export const command: ContextMenuCommand = {
 				.reply({
 					content: 'With this command, you can delete a proxied message you sent. The message you selected is not a proxied message sent by you!',
 					ephemeral: true,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 			return;
 		}
@@ -43,32 +40,27 @@ export const command: ContextMenuCommand = {
 			.fetchWebhooks()
 			.catch(async (error) => {
 				if (error.httpStatus === 403) {
-					await interaction.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
+					await interaction.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw err; });
 				}
-				throw new Error(error);
+				throw error;
 			})
 		).find(webhook => webhook.name === 'PnP Profile Webhook') || await webhookChannel
 			.createWebhook({ name: 'PnP Profile Webhook' })
 			.catch(async (error) => {
 				if (error.httpStatus === 403) {
-					await interaction.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
+					await interaction.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw err; });
 				}
-				throw new Error(error);
+				throw error;
 			});
 
 		/* Deleting the message. */
-		await webhook
-			.deleteMessage(interaction.targetId, interaction.channel.isThread() ? interaction.channel.id : undefined)
-			.catch((error) => { throw new Error(error); });
+		await webhook.deleteMessage(interaction.targetId, interaction.channel.isThread() ? interaction.channel.id : undefined);
 
 		/* Sending a message to the user who deleted the message. */
 		await respond(interaction, {
 			content: 'Deleted! ✅',
 			ephemeral: true,
-		}, false)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, false);
 		return;
 	},
 };

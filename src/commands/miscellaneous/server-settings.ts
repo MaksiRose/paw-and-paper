@@ -30,10 +30,7 @@ export const command: SlashCommand = {
 		/* It's checking if the message is in a guild, and if it is, it's checking if the guild is in the database. If it's not, it throws an error. Else, it's responding with the original message */
 		if (serverData === null || !interaction.inCachedGuild()) { throw new Error('Message is not in configured guild'); }
 
-		await respond(interaction, getOriginalMessage(interaction, serverData), true)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		await respond(interaction, getOriginalMessage(interaction, serverData), true);
 		return;
 	},
 };
@@ -49,20 +46,14 @@ export async function serversettingsInteractionCollector(
 	/* It's checking if the interaction is a button that leads back to the main page, and it's updating the message with the main page content. */
 	if (interaction.isButton() && interaction.customId === 'serversettings_mainpage') {
 
-		await update(interaction, getOriginalMessage(interaction, serverData))
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		await update(interaction, getOriginalMessage(interaction, serverData));
 		return;
 	}
 
 	/* It's checking if the interaction value or customId includes shop, and sends a message if it does. */
 	if ((interaction.isButton() && interaction.customId === 'serversettings_shop') || (interaction.isSelectMenu() && interaction.values[0] === 'serversettings_shop')) {
 
-		await update(interaction, await getShopMessage(interaction, serverData, 0))
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		await update(interaction, await getShopMessage(interaction, serverData, 0));
 		return;
 	}
 
@@ -74,10 +65,7 @@ export async function serversettingsInteractionCollector(
 
 			const page = Number(selectOptionId.split('_')[3]);
 
-			await update(interaction, await getShopMessage(interaction, serverData, page))
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			await update(interaction, await getShopMessage(interaction, serverData, page));
 			return;
 		}
 		else {
@@ -95,10 +83,7 @@ export async function serversettingsInteractionCollector(
 				return await getNewRoleMenu(interaction, serverData, rolePage);
 			}();
 
-			await update(interaction, getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			await update(interaction, getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role));
 
 			const modalCollector = new InteractionCollector(interaction.client, { channel: interaction.channel || undefined, interactionType: 5, message: interaction.message });
 
@@ -391,10 +376,7 @@ export async function serversettingsInteractionCollector(
 	/* It's checking if the interaction value includes updates, and sends a message if it does. */
 	if (interaction.isSelectMenu() && interaction.values[0] === 'serversettings_updates') {
 
-		await update(interaction, await getUpdateMessage(interaction, serverData, 0))
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		await update(interaction, await getUpdateMessage(interaction, serverData, 0));
 		return;
 	}
 
@@ -406,10 +388,7 @@ export async function serversettingsInteractionCollector(
 
 			const page = Number(selectOptionId.split('_')[3]);
 
-			await update(interaction, await getUpdateMessage(interaction, serverData, page))
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			await update(interaction, await getUpdateMessage(interaction, serverData, page));
 			return;
 		}
 		else {
@@ -430,10 +409,7 @@ export async function serversettingsInteractionCollector(
 			await respond(interaction, {
 				content: `Updates are now posted to <#${channelId}>!`,
 				ephemeral: true,
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 			return;
 		}
 	}
@@ -441,10 +417,7 @@ export async function serversettingsInteractionCollector(
 	/* It's checking if the interaction value includes visits, and sends a message if it does. */
 	if (interaction.isSelectMenu() && interaction.values[0] === 'serversettings_visits') {
 
-		await update(interaction, await getVisitsMessage(interaction, serverData, 0))
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		await update(interaction, await getVisitsMessage(interaction, serverData, 0));
 		return;
 	}
 
@@ -456,10 +429,7 @@ export async function serversettingsInteractionCollector(
 
 			const page = Number(selectOptionId.split('_')[3]);
 
-			await update(interaction, await getVisitsMessage(interaction, serverData, page))
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			await update(interaction, await getVisitsMessage(interaction, serverData, page));
 			return;
 		}
 		else {
@@ -484,10 +454,7 @@ export async function serversettingsInteractionCollector(
 				await respond(interaction, {
 					content: 'Visits have successfully been turned off!',
 					ephemeral: true,
-				}, false)
-					.catch((error) => {
-						if (error.httpStatus !== 404) { throw new Error(error); }
-					});
+				}, false);
 			}
 			else {
 
@@ -501,10 +468,7 @@ export async function serversettingsInteractionCollector(
 				await respond(interaction, {
 					content: `Visits are now possible in <#${channelIdOrOff}>!`,
 					ephemeral: true,
-				}, false)
-					.catch((error) => {
-						if (error.httpStatus !== 404) { throw new Error(error); }
-					});
+				}, false);
 			}
 			return;
 		}
@@ -513,10 +477,7 @@ export async function serversettingsInteractionCollector(
 	/* It's checking if the interaction value includes visits, and sends a message if it does. */
 	if (interaction.isSelectMenu() && interaction.values[0] === 'serversettings_proxying') {
 
-		await update(interaction, await getProxyingMessage(interaction, serverData, 0))
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		await update(interaction, await getProxyingMessage(interaction, serverData, 0));
 		return;
 	}
 
@@ -539,10 +500,7 @@ export async function serversettingsInteractionCollector(
 		await respond(interaction, {
 			content: `Proxying is now only ${setTo === ProxyListType.Blacklist ? 'disabled' : 'enabled'} in the ${setTo === ProxyListType.Blacklist ? 'blacklisted' : 'whitelisted'} channels!`,
 			ephemeral: true,
-		}, false)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, false);
 		return;
 	}
 
@@ -554,10 +512,7 @@ export async function serversettingsInteractionCollector(
 
 			const page = Number(selectOptionId.split('_')[3]);
 
-			await update(interaction, await getProxyingMessage(interaction, serverData, page))
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			await update(interaction, await getProxyingMessage(interaction, serverData, page));
 			return;
 		}
 		else {
@@ -582,10 +537,7 @@ export async function serversettingsInteractionCollector(
 			await respond(interaction, {
 				content: `${hasChannel ? 'Removed' : 'Added'} <#${channelId}> ${hasChannel ? 'from' : 'to'} the proxying ${setTo}!`,
 				ephemeral: true,
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 			return;
 		}
 	}
