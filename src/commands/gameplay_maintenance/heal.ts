@@ -7,7 +7,7 @@ import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition, infectWithChance } from '../../utils/changeCondition';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
+import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import getInventoryElements from '../../utils/getInventoryElements';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
@@ -537,13 +537,18 @@ export async function getHealResponse(
 	const changedCondition = await changeCondition(userData, quidData, profileData, experiencePoints);
 	embed.setFooter({ text: `${changedCondition.statsUpdateText}${embedFooter}\n\n${denCondition}${item !== 'water' ? `\n-1 ${item} for ${interaction.guild.name}` : ''}` });
 
+	const content = userData.uuid !== userToHeal.uuid && isSuccessful === true ? `<@${userToHeal.userId[0]}>\n` : '' + (messageContent ?? '');
 	const infectedEmbed = await infectWithChance(userData, quidData, profileData, quidToHeal, profileToHeal);
-
-	const content = userToHeal.uuid !== userToHeal.uuid && isSuccessful === true ? `<@${userToHeal.userId[0]}>\n` : '' + (messageContent ?? '');
 	const levelUpEmbed = (await checkLevelUp(interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
 
-	const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
-		content: content === '' ? null : content,
+	if (interaction.isMessageComponent()) {
+
+		delete disableCommandComponent[userData.uuid + interaction.guildId];
+		await interaction.message.delete();
+	}
+
+	const botReply = await respond(interaction, {
+		content: content.length > 0 ? content : null,
 		embeds: [
 			...embedArray,
 			embed,
@@ -552,7 +557,7 @@ export async function getHealResponse(
 			...(levelUpEmbed ? [levelUpEmbed] : []),
 		],
 		components: interaction.isMessageComponent() ? disableAllComponents(interaction.message.components) : [],
-	});
+	}, true);
 
 	await isPassedOut(interaction, userData, quidData, profileData, true);
 
