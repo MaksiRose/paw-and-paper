@@ -7,7 +7,7 @@ import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition, infectWithChance } from '../../utils/changeCondition';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
+import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import getInventoryElements from '../../utils/getInventoryElements';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
@@ -138,7 +138,7 @@ export async function healInteractionCollector(
 		const inventoryPage = Number(interaction.customId.split('_')[2]);
 		if (isNaN(inventoryPage)) { throw new TypeError('inventoryPage is NaN'); }
 		if (inventoryPage !== 1 && inventoryPage !== 2) { throw new TypeError('inventoryPage is not 1 or 2'); }
-		const quidId = interaction.customId.split('_')[2];
+		const quidId = interaction.customId.split('_')[3];
 		if (quidId === undefined) { throw new TypeError('quidId is undefined'); }
 
 		const quidToHeal = getMapData((await userModel.findOne(u => Object.keys(u.quids).includes(quidId))).quids, quidId);
@@ -162,16 +162,17 @@ async function getHurtQuids(
 	guildId: string,
 ): Promise<Quid[]> {
 
-	return (await userModel
-		.find(
-			(u) => {
-				const thisServerProfiles = Object.values(u.quids).filter(q => q.profiles[guildId] !== undefined).map(q => getMapData(q.profiles, guildId));
-				return thisServerProfiles.filter(p => {
-					return p.energy === 0 || p.health === 0 || p.hunger === 0 || p.thirst === 0 || Object.values(p.injuries).filter(i => i > 0).length > 0;
-				}).length > 0;
-			}))
-		.map(user => Object.values(user.quids))
-		.flat();
+	function getHurtQuids(
+		u: UserSchema,
+	): Quid[] {
+
+		return Object.values(u.quids).filter(q => {
+			const p = q.profiles[guildId];
+			return p !== undefined && (p.energy === 0 || p.health === 0 || p.hunger === 0 || p.thirst === 0 || Object.values(p.injuries).filter(i => i > 0).length > 0);
+		});
+	}
+
+	return (await userModel.find(u => getHurtQuids(u).length > 0)).map(user => getHurtQuids(user)).flat();
 }
 
 /** This function is used to make item-string equal to undefined in getHealResponse if the string isn't a herb/water that is also available */
@@ -537,13 +538,18 @@ export async function getHealResponse(
 	const changedCondition = await changeCondition(userData, quidData, profileData, experiencePoints);
 	embed.setFooter({ text: `${changedCondition.statsUpdateText}${embedFooter}\n\n${denCondition}${item !== 'water' ? `\n-1 ${item} for ${interaction.guild.name}` : ''}` });
 
+	const content = userData.uuid !== userToHeal.uuid && isSuccessful === true ? `<@${userToHeal.userId[0]}>\n` : '' + (messageContent ?? '');
 	const infectedEmbed = await infectWithChance(userData, quidData, profileData, quidToHeal, profileToHeal);
-
-	const content = userToHeal.uuid !== userToHeal.uuid && isSuccessful === true ? `<@${userToHeal.userId[0]}>\n` : '' + (messageContent ?? '');
 	const levelUpEmbed = (await checkLevelUp(interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
 
-	const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
-		content: content === '' ? null : content,
+	if (interaction.isMessageComponent()) {
+
+		delete disableCommandComponent[userData.uuid + interaction.guildId];
+		await interaction.message.delete();
+	}
+
+	const botReply = await respond(interaction, {
+		content: content.length > 0 ? content : null,
 		embeds: [
 			...embedArray,
 			embed,
@@ -552,7 +558,7 @@ export async function getHealResponse(
 			...(levelUpEmbed ? [levelUpEmbed] : []),
 		],
 		components: interaction.isMessageComponent() ? disableAllComponents(interaction.message.components) : [],
-	});
+	}, true);
 
 	await isPassedOut(interaction, userData, quidData, profileData, true);
 
