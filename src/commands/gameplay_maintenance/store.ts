@@ -55,12 +55,6 @@ export async function sendStoreMessage(
 
 	const messageContent = remindOfAttack(interaction.guildId);
 
-	if (interaction.isChatInputCommand() && interaction.options.getSubcommand(false) === 'all') {
-
-		await storeAll(interaction, userData, quidData, profileData, serverData);
-		return;
-	}
-
 	/** This is an array of all the inventory objects. */
 	const inventoryObjectValues = Object.values(profileData.inventory) as Array<Inventory[keyof Inventory]>;
 	/** This is an array of numbers as the properties of the keys in the inventory objects, which are numbers representing the amount one has of the key which is an item type. */
@@ -75,6 +69,12 @@ export async function sendStoreMessage(
 				.setDescription(`*${quidData.name} goes to the food den to store ${pronoun(quidData, 2)} findings away, but ${pronoun(quidData, 2)} mouth is empty...*`),
 			],
 		});
+		return;
+	}
+
+	if (interaction.isChatInputCommand() && interaction.options.getSubcommand(false) === 'all') {
+
+		await storeAll(interaction, userData, quidData, profileData, serverData);
 		return;
 	}
 
@@ -266,7 +266,7 @@ async function storeAll(
 			}
 		}
 	}
-	embed.setFooter({ text: footerText });
+	embed.setFooter(footerText ? { text: footerText } : null);
 
 	await userModel.findOneAndUpdate(
 		u => u.uuid === userData!.uuid,
