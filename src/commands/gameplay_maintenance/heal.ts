@@ -138,7 +138,7 @@ export async function healInteractionCollector(
 		const inventoryPage = Number(interaction.customId.split('_')[2]);
 		if (isNaN(inventoryPage)) { throw new TypeError('inventoryPage is NaN'); }
 		if (inventoryPage !== 1 && inventoryPage !== 2) { throw new TypeError('inventoryPage is not 1 or 2'); }
-		const quidId = interaction.customId.split('_')[2];
+		const quidId = interaction.customId.split('_')[3];
 		if (quidId === undefined) { throw new TypeError('quidId is undefined'); }
 
 		const quidToHeal = getMapData((await userModel.findOne(u => Object.keys(u.quids).includes(quidId))).quids, quidId);
