@@ -138,8 +138,8 @@ export async function repairInteractionCollector(
 		/** True when the repairAmount is bigger than zero. If the user isn't of  rank Hunter or Elderly, a weighted table decided whether they are successful. */
 		const isSuccessful = repairAmount > 0 && (profileData.rank === RankType.Hunter || profileData.rank === RankType.Elderly || pullFromWeightedTable({ 0: profileData.rank === RankType.Healer ? 90 : 40, 1: 60 + profileData.sapling.waterCycles }) === 1);
 
-		await serverModel.findOneAndUpdate(
-			s => s.serverId === serverData.serverId,
+		serverData = await serverModel.findOneAndUpdate(
+			s => s.serverId === serverData!.serverId,
 			(s) => {
 				s.inventory.materials[chosenItem] -= 1;
 				if (isSuccessful) { s.dens[chosenDen][repairKind] += repairAmount; }
