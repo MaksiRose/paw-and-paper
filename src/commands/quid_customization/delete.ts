@@ -27,15 +27,11 @@ export const command: SlashCommand = {
 					.setColor(error_color)
 					.setTitle('You have no account!')],
 				ephemeral: true,
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 			return;
 		}
 
-		const botReply = await respond(interaction, await sendOriginalMessage(userData), true)
-			.catch((error) => { throw new Error(error); });
+		const botReply = await respond(interaction, await sendOriginalMessage(userData), true);
 
 		createCommandComponentDisabler(userData.uuid, interaction.guildId || 'DM', botReply);
 		return;
@@ -62,8 +58,7 @@ export async function deleteInteractionCollector(
 				new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents([getQuidsPage(0, userData)]),
 			],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 		return;
 	}
 
@@ -79,8 +74,7 @@ export async function deleteInteractionCollector(
 				new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents([getQuidsPage(deletePage, userData)]),
 			],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 		return;
 	}
 
@@ -110,8 +104,7 @@ export async function deleteInteractionCollector(
 							.setStyle(ButtonStyle.Secondary),
 					]),
 			],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 		return;
 	}
 
@@ -127,8 +120,7 @@ export async function deleteInteractionCollector(
 				new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents([await getServersPage(0, userData)]),
 			],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 		return;
 	}
 
@@ -144,8 +136,7 @@ export async function deleteInteractionCollector(
 				new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents([await getServersPage(deletePage, userData)]),
 			],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 		return;
 	}
 
@@ -175,8 +166,7 @@ export async function deleteInteractionCollector(
 							.setStyle(ButtonStyle.Secondary),
 					]),
 			],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 		return;
 	}
 
@@ -204,8 +194,7 @@ export async function deleteInteractionCollector(
 							.setStyle(ButtonStyle.Secondary),
 					]),
 			],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 		return;
 	}
 
@@ -230,19 +219,13 @@ export async function deleteInteractionCollector(
 				},
 			);
 
-			await update(interaction, await sendOriginalMessage(userData))
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			await update(interaction, await sendOriginalMessage(userData));
 
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle(`The quid \`${quid.name}\` was deleted permanently!`)],
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 		}
 
 		/* Deleting all accounts by a user on a server. */
@@ -263,19 +246,13 @@ export async function deleteInteractionCollector(
 
 			const server = await serverModel.findOne(s => s.serverId === serverId);
 
-			await update(interaction, await sendOriginalMessage(userData))
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			await update(interaction, await sendOriginalMessage(userData));
 
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle(`All the data of ${accountsOnServer.length} quids on the server \`${server.name}\` was deleted permanently!`)],
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 		}
 
 		/* Deleting all the data of the user. */
@@ -285,19 +262,13 @@ export async function deleteInteractionCollector(
 
 			await update(interaction, {
 				components: disableAllComponents(interaction.message.components),
-			})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			});
 
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('All your data was deleted permanently!')],
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 			return;
 		}
 		return;
@@ -306,10 +277,7 @@ export async function deleteInteractionCollector(
 	/* Editing the message to the original message. */
 	if (interaction.customId === 'delete_cancel') {
 
-		await update(interaction, await sendOriginalMessage(userData))
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		await update(interaction, await sendOriginalMessage(userData));
 		return;
 	}
 }

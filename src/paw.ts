@@ -1,8 +1,6 @@
 import { GatewayIntentBits, Partials } from 'discord.js';
-import { existsSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'fs';
+import { existsSync, writeFileSync } from 'fs';
 import { BanList, CustomClient, DeleteList, GivenIdList, VoteList, WebhookMessages } from './typedef';
-import { execute } from './handlers/events';
-import { generateId } from 'crystalid';
 
 /* Note: Once slash commands replace message commands, DIRECT_MESSAGES intent and CHANNEL partial can be removed */
 export const client = new CustomClient({
@@ -21,7 +19,7 @@ export const client = new CustomClient({
 	},
 });
 
-export function start(
+export async function start(
 	botToken: string,
 	bfdToken: string,
 	bfdAuthorization: string,
@@ -29,7 +27,9 @@ export function start(
 	topAuthorization: string,
 	dblToken: string,
 	dblAuthorization: string,
-): void {
+): Promise<void> {
+
+	process.on('uncaughtException', (error) => console.log(error));
 
 	client.votes.bfd = { token: bfdToken, authorization: bfdAuthorization, client: null };
 	client.votes.top = { token: topToken, authorization: topAuthorization, client: null };
@@ -65,76 +65,12 @@ export function start(
 		writeFileSync('./database/webhookCache.json', JSON.stringify(({}) as WebhookMessages, null, '\t'));
 	}
 
+	/* It's loading all the files in the handlers folder. */
+	for (const file of ['commands', 'events', 'votes']) {
 
-	const allServerNames = readdirSync('./database/servers').filter(f => f.endsWith('.json'));
-	for (const documentName of allServerNames) {
-		const doc = JSON.parse(readFileSync(`./database/servers/${documentName}`, 'utf-8'));
-		if (doc.uuid.length > 16) {
-			if (Object.hasOwn(doc, 'proxysetting')) {
-				doc.proxySetting = {
-					channels: {
-						blacklist: doc.proxysetting.all,
-					},
-				};
-			}
-			const { birthtime } = statSync(`./database/servers/${documentName}`);
-			const newUUID = generateId(birthtime.getTime());
-			doc.uuid = newUUID;
-			writeFileSync(`./database/servers/${documentName}`, JSON.stringify(doc, null, '\t'));
-			renameSync(`./database/servers/${documentName}`, `./database/servers/${newUUID}.json`);
-		}
+		try { await require(`./handlers/${file}`).execute(client); }
+		catch (error) { console.error(error); }
 	}
 
-	const allProfileNames = readdirSync('./database/profiles').filter(f => f.endsWith('.json'));
-	for (const documentName of allProfileNames) {
-		const doc = JSON.parse(readFileSync(`./database/profiles/${documentName}`, 'utf-8'));
-		if (doc.uuid.length > 16) {
-			if (typeof doc.userId === 'string') {
-				doc.userId = [doc.userId];
-			}
-			if (Object.hasOwn(doc, 'reminders')) {
-				doc.settings = {
-					reminders: doc.reminders,
-					proxy: {
-						servers: {},
-						global: {
-							autoproxy: false,
-							stickymode: false,
-						},
-					},
-				};
-			}
-			if (Object.hasOwn(doc, 'autoproxy')) {
-
-				for (const [serverId, entry] of Object.entries(doc.autoproxy)) {
-
-					doc.settings.proxy.servers[serverId] = {
-						autoproxy: {
-							channels: {
-								whitelist: entry,
-							},
-						},
-					};
-				}
-			}
-			if (Object.hasOwn(doc, 'characters')) {
-
-				doc.quids = doc.characters;
-			}
-			if (Object.hasOwn(doc, 'currentCharacter')) {
-
-				doc.currentQuid = doc.currentCharacter;
-			}
-			const { birthtime } = statSync(`./database/profiles/${documentName}`);
-			const newUUID = generateId(birthtime.getTime());
-			doc.uuid = newUUID;
-			writeFileSync(`./database/profiles/${documentName}`, JSON.stringify(doc, null, '\t'));
-			renameSync(`./database/profiles/${documentName}`, `./database/profiles/${newUUID}.json`);
-		}
-	}
-
-
-	execute(client);
-
-	client.login(botToken);
+	await client.login(botToken);
 }

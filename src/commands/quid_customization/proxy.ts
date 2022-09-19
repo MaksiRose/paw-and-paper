@@ -51,8 +51,7 @@ export const command: SlashCommand = {
 						.setLabel('Always?')
 						.setStyle(ButtonStyle.Success)] : []),
 				])],
-		}, true)
-			.catch((error) => { throw new Error(error); });
+		}, true);
 
 		if (userData) { createCommandComponentDisabler(userData.uuid, interaction.guildId || 'DM', botReply); }
 	},
@@ -81,7 +80,7 @@ export async function proxyInteractionCollector(
 					.setCustomId(`proxy_set_modal_${quidDataId}`)
 					.setLabel('Set proxy')
 					.setStyle(ButtonStyle.Success)])],
-		}).catch((error) => { throw new Error(error); });
+		});
 		return;
 	}
 
@@ -136,7 +135,7 @@ export async function proxyInteractionCollector(
 				.setFields()],
 			components: [new ActionRowBuilder<SelectMenuBuilder>()
 				.setComponents([alwaysSelectMenu])],
-		}).catch((error) => { throw new Error(error); });
+		});
 		return;
 	}
 
@@ -157,7 +156,7 @@ export async function proxyInteractionCollector(
 			await update(interaction, {
 				components: [new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents([alwaysSelectMenu])],
-			}).catch((error) => { throw new Error(error); });
+			});
 		}
 		/* If the user clicked an always subcommand option, add/remove the channel and send a success message. */
 		else if (selectOptionId && interaction.customId.startsWith('proxy_always_options')) {
@@ -192,7 +191,7 @@ export async function proxyInteractionCollector(
 			await update(interaction, {
 				components: [new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents([alwaysSelectMenu])],
-			}).catch((error) => { throw new Error(error); });
+			});
 
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
@@ -200,10 +199,7 @@ export async function proxyInteractionCollector(
 					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
 					.setTitle(`${hasChannel ? 'Removed' : 'Added'} ${channelId === 'everywhere' ? channelId : interaction.guild.channels.cache.get(channelId)?.name} ${hasChannel ? 'from' : 'to'} the list of automatic proxy channels!`)],
 				ephemeral: true,
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 		}
 	}
 }
@@ -234,8 +230,7 @@ export async function sendEditProxyModalResponse(
 					.setColor(error_color)
 					.setDescription(`The prefix \`${chosenPrefix}\` and the suffix \`${chosenSuffix}\` are already used for ${quid.name} and can't be used for ${quidData.name} as well.`)],
 				ephemeral: true,
-			}, false)
-				.catch((error) => { throw new Error(error); });
+			}, false);
 			return;
 		}
 	}
@@ -257,8 +252,7 @@ export async function sendEditProxyModalResponse(
 			.setColor(quidData.color)
 			.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
 			.setTitle(`Proxy set to ${prefixResponse} and ${suffixResponse}!`)],
-	}, true)
-		.catch((error) => { throw new Error(error); });
+	}, true);
 	return;
 }
 

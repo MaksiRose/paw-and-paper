@@ -53,10 +53,7 @@ export const command: SlashCommand = {
 					.setDescription(`*${quidData.name} has already fetched water when ${pronounAndPlural(quidData, 0, 'remember')} that ${pronounAndPlural(quidData, 0, 'has', 'have')} nothing to water.*`)
 					.setFooter({ text: 'Go exploring to find a ginkgo tree to water!' })],
 				ephemeral: true,
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 			return;
 		}
 
@@ -140,10 +137,7 @@ export const command: SlashCommand = {
 					.setCustomId(`settings_reminders_water_${userData.settings.reminders.water === true ? 'off' : 'on'}`)
 					.setLabel(`Turn water reminders ${userData.settings.reminders.water === true ? 'off' : 'on'}`)
 					.setStyle(ButtonStyle.Secondary))],
-		}, true)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, true);
 
 		if (userData.settings.reminders.water) { await sendReminder(client, userData, quidData, profileData); }
 
@@ -155,10 +149,7 @@ export const command: SlashCommand = {
 					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*No matter what ${quidData.name} does, all the leaves on the ginkgo tree have either fallen off, or are dark brown and hang limply. It's time to say goodbye to the tree.*`)
 					.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Dead.png')],
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 
 			await userModel.findOneAndUpdate(
 				u => u.uuid === userData.uuid,
@@ -202,61 +193,34 @@ export async function sendReminder(
 
 			if (profileData.sapling.exists && userData.settings.reminders.water && !profileData.sapling.sentReminder) {
 
-				const channel = await client.channels
-					.fetch(profileData.sapling.lastMessageChannelId)
-					.catch(async (error) => {
-						if (error.httpStatus === '403' || error.httpStatus === '404') {
-							await removeChannel(userData.uuid, quidData._id, profileData.serverId);
-							throw new Error('Missing Access: Cannot fetch this channel');
-						}
-						else { throw new Error(error); }
-					});
-
-				if (!channel || !channel.isTextBased() || channel.isDMBased()) {
-
-					await removeChannel(userData.uuid, quidData._id, profileData.serverId);
-					throw new Error('lastMessageChannelId is undefined, not a text based channel or a DM channel');
-				}
-
-				/* This has to be changed when multiple users are introduced. First idea is to also store, as part of the sapling object, which user last watered. Then, if that user fails, try again for all the other users. */
-				await channel.guild.members
-					.fetch(userData.userId[0] || '')
-					.catch(async (error) => {
-						if (error.httpStatus === '403' || error.httpStatus === '404') {
-							await removeChannel(userData.uuid, quidData._id, profileData.serverId);
-							throw new Error('Missing Access: User is not in guild');
-						}
-					});
-				const isInactive = userData.currentQuid[profileData.serverId] !== quidData._id;
-
-				await channel
-					.send({
-						content: `<@${userData.userId[0]}>`,
-						embeds: [new EmbedBuilder()
-							.setColor(quidData.color)
-							.setAuthor({ name: getQuidDisplayname(userData, quidData, profileData.serverId), iconURL: quidData.avatarURL })
-							.setDescription('It is time to `/water-tree` your tree!')
-							.setFooter(isInactive ? { text: '⚠️ CAUTION! The quid associated with this reminder is currently inactive. Type "/profile" and select the quid from the drop-down list before watering your tree.' } : null)],
-					})
-					.catch(async (error) => {
-						if (error.httpStatus === '403' || error.httpStatus === '404') {
-							await removeChannel(userData.uuid, quidData._id, profileData.serverId);
-							throw new Error('Missing Access: Cannot send to this channel');
-						}
-						else { throw new Error(error); }
-					});
-
 				await userModel.findOneAndUpdate(
 					u => u.uuid === userData.uuid,
 					(u) => {
-						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, profileData.serverId)).profiles, profileData.serverId);
+						const p = getMapData(getMapData(u.quids, quidData._id).profiles, profileData.serverId);
 						p.sapling.sentReminder = true;
 					},
 				);
+
+				const channel = await client.channels.fetch(profileData.sapling.lastMessageChannelId);
+				if (!channel || !channel.isTextBased() || channel.isDMBased()) { throw new Error('lastMessageChannelId is undefined, not a text based channel or a DM channel'); }
+
+				/* This has to be changed when multiple users are introduced. First idea is to also store, as part of the sapling object, which user last watered. Then, if that user fails, try again for all the other users. */
+				await channel.guild.members.fetch(userData.userId[0] || '');
+				const isInactive = userData.currentQuid[profileData.serverId] !== quidData._id;
+
+				await channel.send({
+					content: `<@${userData.userId[0]}>`,
+					embeds: [new EmbedBuilder()
+						.setColor(quidData.color)
+						.setAuthor({ name: getQuidDisplayname(userData, quidData, profileData.serverId), iconURL: quidData.avatarURL })
+						.setDescription('It is time to `/water-tree` your tree!')
+						.setFooter(isInactive ? { text: '⚠️ CAUTION! The quid associated with this reminder is currently inactive. Type "/profile" and select the quid from the drop-down list before watering your tree.' } : null)],
+				});
 			}
 		}
 		catch (error) {
 
+			await removeChannel(userData.uuid, quidData._id, profileData.serverId);
 			console.error(error);
 		}
 	}, (profileData.sapling.nextWaterTimestamp ?? Date.now()) - Date.now()));
@@ -282,5 +246,5 @@ async function removeChannel(
 			const p = getMapData(getMapData(u.quids, quidId).profiles, serverId);
 			p.sapling.lastMessageChannelId = null;
 		},
-	);
+	).catch((error) => { console.log(error); });
 }

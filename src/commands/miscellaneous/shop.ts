@@ -36,10 +36,7 @@ export const command: SlashCommand = {
 					.setColor(error_color)
 					.setTitle('There are currently no roles in the shop!')],
 				ephemeral: true,
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 			return;
 		}
 
@@ -105,8 +102,7 @@ export async function shopInteractionCollector(
 							.setDescription(`You refunded the <@&${buyItem.roleId}> role!`),
 						...(levelUpEmbed ? [levelUpEmbed] : []),
 					],
-				}, false)
-					.catch((error) => { throw new Error(error); });
+				}, false);
 			}
 			catch (error) {
 
@@ -155,8 +151,7 @@ export async function shopInteractionCollector(
 						.setColor(default_color)
 						.setAuthor({ name: serverData.name, iconURL: interaction.guild.iconURL() || undefined })
 						.setDescription(`You bought the <@&${buyItem.roleId}> role for ${buyItem.requirement} experience!`)],
-				}, false)
-					.catch((error) => { throw new Error(error); });
+				}, false);
 
 
 				const roles = profileData.roles.filter(role => role.wayOfEarning === WayOfEarningType.Levels && role.requirement > profileData.levels);
@@ -180,8 +175,7 @@ export async function shopInteractionCollector(
 								.setColor(default_color)
 								.setAuthor({ name: serverData.name, iconURL: interaction.guild.iconURL() || undefined })
 								.setDescription(`You lost the <@&${role.roleId}> role because of a lack of levels!`)],
-						}, false)
-							.catch((error) => { throw new Error(error); });
+						}, false);
 					}
 				}
 			}
@@ -195,8 +189,7 @@ export async function shopInteractionCollector(
 			await respond(interaction, {
 				content: `You don't have the experience to buy the <@&${buyItem.roleId}> role!`,
 				ephemeral: true,
-			}, false)
-				.catch((error) => { throw new Error(error); });
+			}, false);
 		}
 
 		return;
@@ -270,8 +263,7 @@ async function getShopResponse(
 				.setCustomId(`shop_${quidData._id}`)
 				.setPlaceholder('Select a shop item')
 				.setOptions(shopMenuOptions))],
-	})
-		.catch(error => { throw new Error(error); });
+	});
 }
 
 function getShopInfo(serverData: ServerSchema) {

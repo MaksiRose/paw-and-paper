@@ -117,6 +117,12 @@ export async function sendErrorMessage(
 	else if (interaction.type === InteractionType.ModalSubmit) {
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to submit the modal \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 	}
+
+	if (error.status === 404 || error.httpStatus === 404) {
+
+		console.error('Error 404 - An error is not being sent to the user. ', error);
+		return;
+	}
 	console.error(error);
 
 	let errorId: string | undefined = undefined;
@@ -150,14 +156,14 @@ export async function sendErrorMessage(
 	await respond(interaction, { ...messageOptions, flags: undefined }, false)
 		.catch(async (error2) => {
 
-			console.error('Failed to send error message to user. ' + error2);
+			console.error('Failed to send error message to user. ', error2);
 			await (async () => {
 				if (interaction.isButton() || interaction.isSelectMenu()) { await interaction.message.reply({ ...messageOptions, failIfNotExists: false }); }
 				if (interaction.isMessageContextMenuCommand()) { await interaction.targetMessage.reply({ ...messageOptions, failIfNotExists: false }); }
 				if (interaction.isUserContextMenuCommand() || interaction.isChatInputCommand() || interaction.type === InteractionType.ModalSubmit) { await interaction.channel?.send(messageOptions); }
 			})()
 				.catch((error3) => {
-					console.error('Failed to send backup error message to user. ' + error3);
+					console.error('Failed to send backup error message to user. ', error3);
 				});
 		});
 }

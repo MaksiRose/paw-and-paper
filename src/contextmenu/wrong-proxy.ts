@@ -26,9 +26,6 @@ export const command: ContextMenuCommand = {
 				.reply({
 					content: 'With this command, you can change which quid a proxied message you sent is from. The message you selected is not a proxied message sent by you!',
 					ephemeral: true,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 			return;
 		}
@@ -38,10 +35,7 @@ export const command: ContextMenuCommand = {
 			content: 'Select a quid that you want the proxied message to be from instead.\n⚠️ CAUTION! This does *not edit* the message, but deletes it and sends a new one with the new avatar and username, but same content. It is therefore not adviced to use this feature on older messages.',
 			components: quidMenu.options.length > 0 ? [new ActionRowBuilder<SelectMenuBuilder>().setComponents(quidMenu)] : [],
 			ephemeral: true,
-		}, false)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, false);
 	},
 };
 
@@ -94,10 +88,7 @@ export async function wrongproxyInteractionCollector(
 		const quidMenu = getQuidsPage(userData, quidsPage, targetMessageId);
 		await update(interaction, {
 			components: quidMenu.options.length > 0 ? [new ActionRowBuilder<SelectMenuBuilder>().setComponents(quidMenu)] : [],
-		})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		});
 		return;
 	}
 
@@ -116,17 +107,17 @@ export async function wrongproxyInteractionCollector(
 			.fetchWebhooks()
 			.catch(async (error) => {
 				if (error.httpStatus === 403) {
-					await channel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
+					await channel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw err; });
 				}
-				throw new Error(error);
+				throw error;
 			})
 		).find(webhook => webhook.name === 'PnP Profile Webhook') || await webhookChannel
 			.createWebhook({ name: 'PnP Profile Webhook' })
 			.catch(async (error) => {
 				if (error.httpStatus === 403) {
-					await channel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
+					await channel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw err; });
 				}
-				throw new Error(error);
+				throw error;
 			});
 
 		const previousMessage = await channel.messages.fetch(targetMessageId);
@@ -143,22 +134,16 @@ export async function wrongproxyInteractionCollector(
 				files: previousMessage.attachments.toJSON(),
 				embeds: previousMessage.embeds,
 				threadId: channel.isThread() ? channel.id : undefined,
-			})
-			.catch((error) => { throw new Error(error); });
+			});
 
 		webhookCache[botMessage.id] = interaction.user.id + (quidData?._id !== undefined ? `_${quidData?._id}` : '');
 		writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
 
 		/* Deleting the message. */
-		await webhook
-			.deleteMessage(targetMessageId, channel.isThread() ? channel.id : undefined)
-			.catch((error) => { throw new Error(error); });
+		await webhook.deleteMessage(targetMessageId, channel.isThread() ? channel.id : undefined);
 
 		await update(interaction, {
 			components: disableAllComponents(interaction.message.components),
-		})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		});
 	}
 }

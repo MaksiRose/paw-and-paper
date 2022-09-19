@@ -59,8 +59,7 @@ export const command: SlashCommand = {
 		const botReply = await respond(interaction, {
 			content: getSkillList(profileData),
 			components: isYourself ? [getOriginalComponents(profileData, serverData, interaction.member)] : [],
-		}, true)
-			.catch((error) => { throw new Error(error); });
+		}, true);
 		if (userData) { createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply); }
 	},
 };
@@ -87,8 +86,7 @@ export async function skillsInteractionCollector(
 		await update(interaction, {
 			content: getSkillList(profileData),
 			components: interaction.message.components,
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 		return;
 	}
 
@@ -114,8 +112,7 @@ export async function skillsInteractionCollector(
 							.setStyle(ButtonStyle.Secondary),
 						]),
 			],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 		return;
 	}
 
@@ -127,8 +124,7 @@ export async function skillsInteractionCollector(
 				getOriginalComponents(profileData, serverData, interaction.member),
 				getModifyMenu(profileData, 0),
 			],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 		return;
 	}
 
@@ -167,10 +163,7 @@ export async function skillsInteractionCollector(
 				getOriginalComponents(profileData, serverData, interaction.member),
 				type === 'edit' ? getEditMenu(profileData, serverData, category, 0) : getRemoveMenu(profileData, serverData, category, 0),
 			],
-		})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		});
 		return;
 	}
 
@@ -188,8 +181,7 @@ export async function skillsInteractionCollector(
 					getOriginalComponents(profileData, serverData, interaction.member),
 					getModifyMenu(profileData, page),
 				],
-			})
-				.catch((error) => { throw new Error(error); });
+			});
 			return;
 		}
 
@@ -206,8 +198,7 @@ export async function skillsInteractionCollector(
 					getOriginalComponents(profileData, serverData, interaction.member),
 					getEditMenu(profileData, serverData, category, page),
 				],
-			})
-				.catch((error) => { throw new Error(error); });
+			});
 			return;
 		}
 
@@ -224,8 +215,7 @@ export async function skillsInteractionCollector(
 					getOriginalComponents(profileData, serverData, interaction.member),
 					getRemoveMenu(profileData, serverData, category, page),
 				],
-			})
-				.catch((error) => { throw new Error(error); });
+			});
 			return;
 		}
 		return;
@@ -314,15 +304,11 @@ export async function skillsInteractionCollector(
 		await update(interaction, {
 			content: getSkillList(profileData),
 			components: [getOriginalComponents(profileData, serverData, interaction.member)],
-		})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		});
 
 		await respond(interaction, {
 			content: `You removed the ${category} skill \`${skillName}\`!`,
-		}, false)
-			.catch((error) => { throw new Error(error); });
+		}, false);
 		return;
 	}
 }
@@ -356,8 +342,7 @@ export async function sendEditSkillsModalResponse(
 				await respond(interaction, {
 					content: `I can't add the personal skill \`${newName}\` since the name interferes with another skills name!`,
 					ephemeral: true,
-				}, false)
-					.catch((error) => { throw new Error(error); });
+				}, false);
 				return;
 			}
 
@@ -382,8 +367,7 @@ export async function sendEditSkillsModalResponse(
 				await respond(interaction, {
 					content: `I can't add the global skill \`${newName}\` since the name interferes with another skills name!`,
 					ephemeral: true,
-				}, false)
-					.catch((error) => { throw new Error(error); });
+				}, false);
 				return;
 			}
 
@@ -417,15 +401,11 @@ export async function sendEditSkillsModalResponse(
 		await update(interaction, {
 			content: getSkillList(profileData),
 			components: [getOriginalComponents(profileData, serverData, interaction.member)],
-		})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		});
 
 		await respond(interaction, {
 			content: `You added the ${category} skill \`${newName}\`!`,
-		}, false)
-			.catch((error) => { throw new Error(error); });
+		}, false);
 		return;
 	}
 	else if (type === 'edit') {
@@ -439,8 +419,7 @@ export async function sendEditSkillsModalResponse(
 				await respond(interaction, {
 					content: `I can't edit the personal skill \`${skillName}\` to be called \`${newName}\` since the name interferes with another skills name!`,
 					ephemeral: true,
-				}, false)
-					.catch((error) => { throw new Error(error); });
+				}, false);
 				return;
 			}
 
@@ -466,8 +445,7 @@ export async function sendEditSkillsModalResponse(
 				await respond(interaction, {
 					content: `I can't edit the global skill \`${skillName}\` to be called \`${newName}\` since the new name interferes with another skills name!`,
 					ephemeral: true,
-				}, false)
-					.catch((error) => { throw new Error(error); });
+				}, false);
 				return;
 			}
 
@@ -503,15 +481,11 @@ export async function sendEditSkillsModalResponse(
 		await update(interaction, {
 			content: getSkillList(profileData),
 			components: [getOriginalComponents(profileData, serverData, interaction.member)],
-		})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		});
 
 		await respond(interaction, {
 			content: `You changed the name of the ${category} skill \`${skillName}\` to \`${newName}\`!`,
-		}, false)
-			.catch((error) => { throw new Error(error); });
+		}, false);
 		return;
 	}
 	else if (type === 'modify' && userData && quidData && profileData) {
@@ -526,8 +500,7 @@ export async function sendEditSkillsModalResponse(
 			await respond(interaction, {
 				content: 'Please enter a valid number!',
 				ephemeral: true,
-			}, false)
-				.catch((error) => { throw new Error(error); });
+			}, false);
 			return;
 		}
 
@@ -545,15 +518,11 @@ export async function sendEditSkillsModalResponse(
 		await update(interaction, {
 			content: getSkillList(profileData),
 			components: [getOriginalComponents(profileData, serverData, interaction.member)],
-		})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		});
 
 		await respond(interaction, {
 			content: `You changed the value of the ${category} skill \`${skillName}\` from \`${oldValue}\` to \`${profileData.skills[category][skillName]}\`!`,
-		}, false)
-			.catch((error) => { throw new Error(error); });
+		}, false);
 	}
 }
 

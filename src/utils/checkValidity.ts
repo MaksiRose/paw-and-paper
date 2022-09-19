@@ -26,8 +26,7 @@ export async function isPassedOut(
 				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 				.setDescription(`*${quidData.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${pronounAndPlural(quidData, 0, 'screeches', 'screech')} with ${pronoun(quidData, 2)} last energy. Without help, ${pronoun(quidData, 0)} will not be able to continue.*`)
 				.setFooter(isNew ? { text: await decreaseLevel(userData, quidData, profileData, interaction) } : null)],
-		}, false)
-			.catch((error) => { throw new Error(error); });
+		}, false);
 
 		/* This is a tip that is sent to the user when they pass out for the first time. */
 		if (userData.advice.passingout === false) {
@@ -39,8 +38,7 @@ export async function isPassedOut(
 
 			await respond(interaction, {
 				content: `${interaction.user.toString()} ❓ **Tip:**\nIf your health, energy, hunger or thirst points hit zero, you pass out. Another player has to heal you so you can continue playing.\nMake sure to always watch your stats to prevent passing out!`,
-			}, false)
-				.catch((error) => { throw new Error(error); });
+			}, false);
 		}
 
 		return true;
@@ -77,8 +75,7 @@ export async function hasCooldown(
 								.catch(e => { console.error(e); });
 						});
 				}, 10_000);
-			})
-			.catch((error) => { throw new Error(error); });
+			});
 
 		return true;
 	}
@@ -187,10 +184,7 @@ export async function hasFullInventory(
 					.setLabel('Store items away')
 					.setStyle(ButtonStyle.Secondary),
 				)],
-		}, false)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, false);
 
 		return true;
 	}
@@ -214,8 +208,7 @@ export function isInteractable(
 				.setTitle('The mentioned user has no account :('),
 			],
 			ephemeral: true,
-		}, false)
-			.catch(error => { throw new Error(error); });
+		}, false);
 		return false;
 	}
 
@@ -230,8 +223,7 @@ export function isInteractable(
 				.setTitle('The mentioned user has no selected quid :('),
 			],
 			ephemeral: true,
-		}, false)
-			.catch(error => { throw new Error(error); });
+		}, false);
 		return false;
 	}
 
@@ -244,8 +236,7 @@ export function isInteractable(
 				.setTitle('The mentioned user\'s selected quid is not set up for the RPG :('),
 			],
 			ephemeral: true,
-		}, false)
-			.catch(error => { throw new Error(error); });
+		}, false);
 		return false;
 	}
 
@@ -258,8 +249,7 @@ export function isInteractable(
 				.setTitle('The mentioned user\'s selected quid is passed out :('),
 			],
 			ephemeral: true,
-		}, false)
-			.catch(error => { throw new Error(error); });
+		}, false);
 		return false;
 	}
 
@@ -272,8 +262,7 @@ export function isInteractable(
 				.setTitle('The mentioned user\'s selected quid is resting :('),
 			],
 			ephemeral: true,
-		}, false)
-			.catch(error => { throw new Error(error); });
+		}, false);
 		return false;
 	}
 
@@ -286,8 +275,7 @@ export function isInteractable(
 				.setTitle('The mentioned user\'s selected quid is busy :('),
 			],
 			ephemeral: true,
-		}, false)
-			.catch(error => { throw new Error(error); });
+		}, false);
 		return false;
 	}
 
@@ -300,8 +288,7 @@ export function isInteractable(
 				.setTitle('The mentioned user\'s selected quid has too many items in their inventory :('),
 			],
 			ephemeral: true,
-		}, false)
-			.catch(error => { throw new Error(error); });
+		}, false);
 		return false;
 	}
 

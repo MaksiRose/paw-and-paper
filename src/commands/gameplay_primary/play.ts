@@ -68,10 +68,7 @@ export async function executePlaying(
 				.setColor(quidData1.color)
 				.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 				.setDescription(`*${quidData1.name} plays with ${pronoun(quidData1, 4)}. The rest of the pack looks away in embarrassment.*`)],
-		}, true)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, true);
 		return;
 	}
 
@@ -372,8 +369,7 @@ export async function executePlaying(
 						.setLabel('Play again')
 						.setStyle(ButtonStyle.Primary)),
 			],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 	}
 
 	await isPassedOut(interaction, userData1, quidData1, profileData1, true);

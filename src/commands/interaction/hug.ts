@@ -34,10 +34,7 @@ export const command: SlashCommand = {
 					.setColor(error_color)
 					.setTitle('Please mention a user that you want to hug!')],
 				ephemeral: true,
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 			return;
 		}
 
@@ -58,10 +55,7 @@ export const command: SlashCommand = {
 						iconURL: quidData?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
 					})
 					.setImage(selfHugURLs[getRandomNumber(selfHugURLs.length)] || null)],
-			}, true)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, true);
 			return;
 		}
 
@@ -86,8 +80,7 @@ export const command: SlashCommand = {
 						.setLabel('Decline')
 						.setStyle(ButtonStyle.Danger),
 				])],
-		}, true)
-			.catch((error) => { throw new Error(error); });
+		}, true);
 	},
 };
 
@@ -107,8 +100,7 @@ export async function hugInteractionCollector(
 		await respond(interaction, {
 			content: 'You can\'t accept or decline this hug!',
 			ephemeral: true,
-		}, false)
-			.catch((error) => { throw new Error(error); });
+		}, false);
 		return;
 	}
 
@@ -148,10 +140,7 @@ export async function hugInteractionCollector(
 				})
 				.setImage(hugURLs[getRandomNumber(hugURLs.length)] || null)],
 			components: [],
-		})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		});
 
 		const partnerQuidData = partnerUserData ? partnerUserData.quids[partnerUserData.currentQuid[interaction.guildId || 'DM'] || ''] : undefined;
 
@@ -171,10 +160,7 @@ export async function hugInteractionCollector(
 				})
 				.setDescription(`${interaction.user.toString()} did not accept the hug.`)],
 			components: disableAllComponents(interaction.message.components),
-		})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		});
 		return;
 	}
 }

@@ -24,8 +24,7 @@ export const command: SlashCommand = {
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId || 'DM'));
 
 		/* Creating a message with up to 25 friendships and buttons to go back and fourth a page if the quid has more than 25 friends. */
-		await respond(interaction, await getFriendshipMessage(userData, quidData, interaction.guildId ?? '', 0), true)
-			.catch((error) => { throw new Error(error); });
+		await respond(interaction, await getFriendshipMessage(userData, quidData, interaction.guildId ?? '', 0), true);
 	},
 };
 
@@ -56,8 +55,7 @@ export async function friendshipsInteractionCollector(
 	}
 
 	/* Updating the message with the correct friendship texts based on the new page. */
-	await update(interaction, await getFriendshipMessage(userData, quidData, interaction.guildId ?? '', page, friendshipTexts))
-		.catch((error) => { throw new Error(error); });
+	await update(interaction, await getFriendshipMessage(userData, quidData, interaction.guildId ?? '', page, friendshipTexts));
 }
 
 /**

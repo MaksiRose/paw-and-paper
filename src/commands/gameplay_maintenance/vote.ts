@@ -61,8 +61,7 @@ export const command: SlashCommand = {
 						.setDisabled(!interaction.inGuild()),
 					),
 			],
-		}, true)
-			.catch((error) => { throw new Error(error); });
+		}, true);
 
 		if (interaction.inGuild()) { createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply); }
 	},
@@ -109,10 +108,7 @@ export async function voteInteractionCollector(
 			await respond(interaction, {
 				content: 'You already collected your reward for this vote!',
 				ephemeral: true,
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 			return;
 		}
 
@@ -146,19 +142,13 @@ export async function voteInteractionCollector(
 				.setColor(default_color)
 				.setTitle('Thank you for voting ☺️')
 				.setFooter({ text: `+${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})` })],
-		}, false)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, false);
 		return;
 	}
 
 	await respond(interaction, {
 		content: 'You haven\'t voted on this website in the last 12 hours! (If this is not right, please open a ticket with /ticket)',
 		ephemeral: true,
-	}, false)
-		.catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-		});
+	}, false);
 	return;
 }

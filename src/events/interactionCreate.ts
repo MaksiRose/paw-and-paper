@@ -54,11 +54,7 @@ export const event: Event = {
 	async execute(client, interaction: Interaction) {
 
 		/* This is only null when in DM without CHANNEL partial, or when channel cache is sweeped. Therefore, this is technically unsafe since this value could become null after this check. This scenario is unlikely though. */
-		if (!interaction.channel) {
-
-			await client.channels.fetch(interaction.channelId || '')
-				.catch(() => { throw new Error('Interaction channel cannot be found.'); });
-		}
+		if (!interaction.channel) { await client.channels.fetch(interaction.channelId || ''); }
 
 		let userData = await userModel.findOne(u => u.userId.includes(interaction.user.id)).catch(() => { return null; });
 		let serverData = await serverModel.findOne(s => s.serverId === interaction.guildId).catch(() => { return null; });
@@ -385,10 +381,7 @@ export const event: Event = {
 								.setColor(error_color)
 								.setDescription('There was an error trying to report the error... Ironic! Maybe you can try opening a ticket via `/ticket` instead?')],
 							ephemeral: true,
-						}, false)
-							.catch((error) => {
-								if (error.httpStatus !== 404) { throw new Error(error); }
-							});
+						}, false);
 						return;
 					}
 

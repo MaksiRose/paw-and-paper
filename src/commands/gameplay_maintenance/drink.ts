@@ -59,10 +59,7 @@ export async function sendDrinkMessage(
 				.setColor(quidData.color)
 				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 				.setDescription(`*Water sounds churned in ${quidData.name}'s ear, ${pronoun(quidData, 2)} mouth longing for just one more drink. It seems like ${pronoun(quidData, 0)} can never be as hydrated as ${pronounAndPlural(quidData, 0, 'want')}, but  ${pronoun(quidData, 0)} had plenty of water today.*`)],
-		}, true)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, true);
 		return;
 	}
 
@@ -78,8 +75,7 @@ export async function sendDrinkMessage(
 				.setCustomId('water')
 				.setEmoji('💧')
 				.setStyle(ButtonStyle.Primary))],
-	}, true)
-		.catch((error) => { throw new Error(error); });
+	}, true);
 
 	const collector = botReply.createMessageComponentCollector({
 		componentType: ComponentType.Button,

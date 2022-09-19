@@ -39,10 +39,7 @@ export const command: SlashCommand = {
 				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
 				.setTitle(serverData ? `Tag ${userData.tag.servers[serverData.serverId] ? `set to ${userData.tag.servers[serverData.serverId]}` : 'removed'} in ${serverData.name}!` : `Tag ${userData.tag.global ? `set to ${userData.tag.global}` : 'removed'} globally!`)
 				.setDescription(serverData ? 'Tip: Tags can be set globally too by executing the command in DMs. The global tag will be displayed when no server-specific tag has been chosen.' : 'Tip: Tags can be set server-specific too by executing the command in the server. The server-specific tag will overwrite the global tag for that server.')],
-		}, true)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, true);
 		return;
 	},
 };

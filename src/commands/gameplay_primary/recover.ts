@@ -54,10 +54,7 @@ export const command: SlashCommand = {
 					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*${quidData.name} walks towards the entrance of the grotto, when an elderly is stopping ${pronoun(quidData, 1)}.*\n"Didn't I see you in here in the past 12 hours? You shouldn't use the grotto this often, it's a very precious place that needs to be preserved as much as possible!"\n\nYou can recover again <t:${Math.floor((recoverCooldown + twelveHoursInMs) / 1_000)}:R>.`),
 				],
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 			return;
 		}
 
@@ -96,10 +93,7 @@ export const command: SlashCommand = {
 					.setStyle(ButtonStyle.Secondary),
 				]),
 			],
-		}, true)
-			.catch((error) => {
-				throw new Error(error);
-			});
+		}, true);
 
 		createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
 
@@ -119,10 +113,7 @@ export const command: SlashCommand = {
 					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*After careful consideration, ${quidData.name} decides that none of ${pronoun(quidData, 2)} injuries are urgent enough to use the grotto to regenerate. The ${quidData.displayedSpecies || quidData.species} might inspect the medicine den for useful plants instead.*`)],
 				components: disableAllComponents(botReply.components),
-			}, true)
-				.catch((error) => {
-					throw new Error(error);
-				});
+			}, true);
 			return;
 		}
 
@@ -155,10 +146,7 @@ export const command: SlashCommand = {
 		botReply = await update(buttonInteraction, {
 			content: messageContent,
 			components: disableAllComponents(componentArray),
-		})
-			.catch((error) => {
-				throw new Error(error);
-			});
+		});
 
 		startNewRound(interaction, userData, serverData, []);
 
@@ -205,10 +193,6 @@ export const command: SlashCommand = {
 								.setDescription(drawEmojibar(displayingEmoji, emojisToClick))
 								.setFooter({ text: 'After a list of emojis is displayed to you one by one, choose the same emojis from the buttons below in the same order.' })],
 							components: displayingEmoji === emojisToClick.length ? enableAllComponents(componentArray.map(c => c.toJSON())) : botReply.components,
-						})
-						.catch((error) => {
-							if (error.httpStatus !== 404) { throw new Error(error); }
-							return botReply;
 						});
 
 					if (displayingEmoji === emojisToClick.length) {
@@ -247,11 +231,7 @@ export const command: SlashCommand = {
 									.setDescription('✅'.repeat(choosingEmoji - 1) + '✅')
 									.setFooter({ text: 'After a list of emojis is displayed to you one by one, choose the same emojis from the buttons below in the same order.' })],
 								components: choosingEmoji === emojisToClick.length ? disableAllComponents(componentArray) : undefined,
-							})
-								.catch((error) => {
-									if (error.httpStatus !== 404) { throw new Error(error); }
-									return botReply;
-								});
+							});
 						}
 						else {
 
@@ -354,11 +334,7 @@ export const command: SlashCommand = {
 								...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
 								...(levelUpEmbed ? [levelUpEmbed] : [])],
 							components: disableAllComponents(componentArray),
-						})
-							.catch((error) => {
-								if (error.httpStatus !== 404) { throw new Error(error); }
-								return botReply;
-							});
+						});
 
 						await isPassedOut(lastInteraction, userData, quidData, profileData, true);
 

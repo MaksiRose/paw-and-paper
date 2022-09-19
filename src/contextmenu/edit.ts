@@ -25,9 +25,6 @@ export const command: ContextMenuCommand = {
 				.reply({
 					content: 'With this command, you can edit a proxied message you sent. The message you selected is not a proxied message sent by you!',
 					ephemeral: true,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 			return;
 		}
@@ -71,17 +68,17 @@ export async function sendEditMessageModalResponse(
 		.fetchWebhooks()
 		.catch(async (error) => {
 			if (error.httpStatus === 403) {
-				await interaction.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
+				await interaction.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw err; });
 			}
-			throw new Error(error);
+			throw error;
 		})
 	).find(webhook => webhook.name === 'PnP Profile Webhook') || await webhookChannel
 		.createWebhook({ name: 'PnP Profile Webhook' })
 		.catch(async (error) => {
 			if (error.httpStatus === 403) {
-				await interaction.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
+				await interaction.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw err; });
 			}
-			throw new Error(error);
+			throw error;
 		});
 
 	/* This is editing the message with the messageId that was passed in the customId. */
@@ -89,16 +86,12 @@ export async function sendEditMessageModalResponse(
 		.editMessage(messageId, {
 			content: interaction.fields.getTextInputValue('edit-textinput'),
 			threadId: interaction.channel.isThread() ? interaction.channel.id : undefined,
-		})
-		.catch((error) => { throw new Error(error); });
+		});
 
 	/* This is sending a message to the user that sent the command. */
 	await respond(interaction, {
 		content: `[Edited!](<${webhookMessage.url}>) ✅`,
 		ephemeral: true,
-	}, false)
-		.catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-		});
+	}, false);
 	return;
 }

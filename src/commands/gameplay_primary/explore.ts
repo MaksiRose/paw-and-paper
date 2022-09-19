@@ -90,10 +90,7 @@ export async function executeExploring(
 				.setColor(quidData.color)
 				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 				.setDescription(`*A hunter cuts ${quidData.name} as they see ${pronoun(quidData, 1)} running towards the pack borders.* "You don't have enough experience to go into the wilderness, ${profileData.rank}," *they say.*`)],
-		}, true)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, true);
 		return;
 	}
 
@@ -123,8 +120,7 @@ export async function executeExploring(
 				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 				.setDescription(`*${quidData.name} is longing for adventure as ${pronounAndPlural(quidData, 0, 'look')} into the wild outside of camp. All there is to decide is where the journey will lead ${pronoun(quidData, 1)}.*`)],
 			components: [biomeComponent],
-		}, true)
-			.catch((error) => { throw new Error(error); });
+		}, true);
 
 		chosenBiome = await (getBiomeMessage as Message<true>)
 			.awaitMessageComponent({
@@ -140,10 +136,7 @@ export async function executeExploring(
 			.catch(async () => {
 
 				cooldownMap.set(userData!.uuid + interaction.guildId, false);
-				await respond(interaction, { components: disableAllComponents(getBiomeMessage.components) }, true)
-					.catch((error) => {
-						if (error.httpStatus !== 404) { throw new Error(error); }
-					});
+				await respond(interaction, { components: disableAllComponents(getBiomeMessage.components) }, true);
 
 				return null;
 			});
@@ -193,8 +186,7 @@ export async function executeExploring(
 
 	let waitingComponent = getWaitingComponent(waitingGameField, playerPos, empty, goal);
 
-	let botReply = await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })(getWaitingMessageObject(messageContent, embedArray, userData, quidData, interaction.guildId, waitingString, waitingGameField, waitingComponent))
-		.catch((error) => { throw new Error(error); });
+	let botReply = await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })(getWaitingMessageObject(messageContent, embedArray, userData, quidData, interaction.guildId, waitingString, waitingGameField, waitingComponent));
 	buttonInteraction = null;
 
 
@@ -251,11 +243,7 @@ export async function executeExploring(
 
 		waitingComponent = getWaitingComponent(waitingGameField, playerPos, empty, goal);
 
-		botReply = await update(int, getWaitingMessageObject(messageContent, embedArray, userData!, quidData, interaction.guildId, waitingString, waitingGameField, waitingComponent))
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-				return botReply;
-			});
+		botReply = await update(int, getWaitingMessageObject(messageContent, embedArray, userData!, quidData, interaction.guildId, waitingString, waitingGameField, waitingComponent));
 		}
 		catch (error) {
 
@@ -403,8 +391,7 @@ export async function executeExploring(
 					.setLabel('Leave')
 					.setEmoji('💨')
 					.setStyle(ButtonStyle.Primary))],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 
 		const int = await (botReply as Message<true>)
 			.awaitMessageComponent({
@@ -448,11 +435,7 @@ export async function executeExploring(
 					content: messageContent,
 					embeds: [...embedArray, embed],
 					components: [...previousExploreComponents ? [previousExploreComponents] : [], exploreComponent],
-				})
-					.catch((error) => {
-						if (error.httpStatus !== 404) { throw new Error(error); }
-						return botReply;
-					});
+				});
 
 				/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 				exploreComponent = plantGame.correctButtonOverwrite();
@@ -661,8 +644,7 @@ export async function executeExploring(
 					.setLabel('Flee')
 					.setEmoji('💨')
 					.setStyle(ButtonStyle.Primary))],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 
 		const int = await (botReply as Message<true>)
 			.awaitMessageComponent({
@@ -730,11 +712,7 @@ export async function executeExploring(
 					content: messageContent,
 					embeds: [...embedArray, embed],
 					components: [...previousExploreComponents ? [previousExploreComponents] : [], exploreComponent],
-				})
-					.catch((error) => {
-						if (error.httpStatus !== 404) { throw new Error(error); }
-						return botReply;
-					});
+				});
 
 				/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 				exploreComponent = fightGame.correctButtonOverwrite();
@@ -925,8 +903,7 @@ export async function executeExploring(
 						.setLabel('Explore again')
 						.setStyle(ButtonStyle.Primary)),
 			],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 	}
 
 	await isPassedOut(interaction, userData, quidData, profileData, true);
@@ -947,10 +924,7 @@ export async function executeExploring(
 
 		await respond(interaction, {
 			content: `${interaction.user.toString()} ❓ **Tip:**\nA Ginkgo sapling gives you more luck the older it gets. For example, you might find better items or be more often successful with healing or repairing.`,
-		}, false)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, false);
 	}
 }
 
