@@ -162,16 +162,17 @@ async function getHurtQuids(
 	guildId: string,
 ): Promise<Quid[]> {
 
-	return (await userModel
-		.find(
-			(u) => {
-				const thisServerProfiles = Object.values(u.quids).filter(q => q.profiles[guildId] !== undefined).map(q => getMapData(q.profiles, guildId));
-				return thisServerProfiles.filter(p => {
-					return p.energy === 0 || p.health === 0 || p.hunger === 0 || p.thirst === 0 || Object.values(p.injuries).filter(i => i > 0).length > 0;
-				}).length > 0;
-			}))
-		.map(user => Object.values(user.quids))
-		.flat();
+	function getHurtQuids(
+		u: UserSchema,
+	): Quid[] {
+
+		return Object.values(u.quids).filter(q => {
+			const p = q.profiles[guildId];
+			return p !== undefined && (p.energy === 0 || p.health === 0 || p.hunger === 0 || p.thirst === 0 || Object.values(p.injuries).filter(i => i > 0).length > 0);
+		});
+	}
+
+	return (await userModel.find(u => getHurtQuids(u).length > 0)).map(user => getHurtQuids(user)).flat();
 }
 
 /** This function is used to make item-string equal to undefined in getHealResponse if the string isn't a herb/water that is also available */
