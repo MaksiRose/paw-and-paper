@@ -98,12 +98,6 @@ export async function sendErrorMessage(
 	error: any,
 ): Promise<any> {
 
-	if (error.status === 404 || error.httpStatus === 404) {
-
-		console.error('Error 404 - An error is not being sent to the user. ', error);
-		return;
-	}
-
 	try {
 
 		const userData = await userModel.findOne(u => u.userId.includes(interaction.user.id));
@@ -122,6 +116,12 @@ export async function sendErrorMessage(
 	}
 	else if (interaction.type === InteractionType.ModalSubmit) {
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to submit the modal \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+	}
+
+	if (error.status === 404 || error.httpStatus === 404) {
+
+		console.error('Error 404 - An error is not being sent to the user. ', error);
+		return;
 	}
 	console.error(error);
 
