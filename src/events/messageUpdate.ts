@@ -13,17 +13,16 @@ export const event: Event = {
 		if (newMessage.author.bot || !newMessage.inGuild()) { return; }
 
 		const userData = await userModel.findOne(u => u.userId.includes(newMessage.author.id)).catch(() => { return null; });
-		const quidData = userData?.quids?.[userData?.currentQuid?.[newMessage.guildId || 'DM'] || ''];
+		let quidData = userData?.quids?.[userData?.currentQuid?.[newMessage.guildId || 'DM'] || ''];
 		const serverData = await serverModel.findOne(s => s.serverId === newMessage.guildId).catch(() => { return null; });
 
 		if (!userData || !quidData || !serverData) { return; }
 
-		// eslint-disable-next-line prefer-const
-		let replaceOldMessage = checkForProxy(serverData, newMessage, userData).replaceMessage;
-		const { replaceMessage, messageContent } = checkForProxy(serverData, newMessage, userData);
+		const { replaceMessage, messageContent, quidData: newQuid } = checkForProxy(serverData, newMessage, userData);
 		newMessage.content = messageContent;
+		if (newQuid !== null) { quidData = newQuid; }
 
-		if (!replaceOldMessage && replaceMessage && (newMessage.content.length > 0 || newMessage.attachments.size > 0)) {
+		if (replaceMessage && (newMessage.content.length > 0 || newMessage.attachments.size > 0)) {
 
 			await sendMessage(newMessage.channel, newMessage.content, userData, quidData, userData.uuid, newMessage.author.id, newMessage.attachments.size > 0 ? Array.from(newMessage.attachments.values()) : undefined, newMessage.reference ?? undefined)
 				.catch(error => { console.error(error); });

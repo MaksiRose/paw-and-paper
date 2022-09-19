@@ -3,7 +3,8 @@ import { sendMessage } from '../commands/interaction/say';
 // import { sendVisitMessage } from '../commands/interaction/requestvisit';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
-import { CustomClient, Event, ProxyConfigType, ProxyListType, ServerSchema, UserSchema } from '../typedef';
+import { CustomClient, Event, ProxyConfigType, ProxyListType, Quid, ServerSchema, UserSchema } from '../typedef';
+import { getMapData } from '../utils/helperFunctions';
 import { createGuild } from '../utils/updateGuild';
 
 export const event: Event = {
@@ -20,7 +21,7 @@ export const event: Event = {
 		}
 
 		const userData = await userModel.findOne(u => u.userId.includes(message.author.id)).catch(() => { return null; });
-		const quidData = userData?.quids?.[userData?.currentQuid?.[message.guildId || 'DM'] || ''];
+		let quidData = userData?.quids?.[userData?.currentQuid?.[message.guildId || 'DM'] || ''];
 		let serverData = await serverModel.findOne(s => s.serverId === message.guildId).catch(() => { return null; });
 
 		/* Checking if the serverData is null. If it is null, it will create a guild. */
@@ -36,8 +37,9 @@ export const event: Event = {
 		if (!userData || !quidData || !serverData) { return; }
 
 		// eslint-disable-next-line prefer-const
-		let { replaceMessage, messageContent } = checkForProxy(serverData, message, userData);
+		let { replaceMessage, messageContent, quidData: newQuid } = checkForProxy(serverData, message, userData);
 		message.content = messageContent;
+		if (newQuid !== null) { quidData = newQuid; }
 
 		if (serverData.currentlyVisiting !== null && message.channel.id === serverData.visitChannelId) {
 
@@ -70,7 +72,7 @@ export function checkForProxy(
 	serverData: ServerSchema,
 	message: Message<true> & Message<boolean>,
 	userData: UserSchema,
-): { replaceMessage: boolean, messageContent: string; } {
+): { replaceMessage: boolean, messageContent: string, quidData: Quid | null; } {
 
 	let replaceMessage = false;
 
@@ -79,6 +81,7 @@ export function checkForProxy(
 	/* Checking if the message starts with the quid's proxy start and ends with the quid's
 	proxy end. If it does, it will set the current quid to the quid that the message is
 	being sent from. */
+	let quidData: Quid | null = null;
 	for (const quid of Object.values(userData.quids)) {
 
 		/* Checking if the message includes the proxy. If it does, it will change the message content
@@ -90,13 +93,18 @@ export function checkForProxy(
 			if (userData.currentQuid[message.guildId]) { userData.currentQuid[message.guildId] = quid._id; }
 			message.content = message.content.substring(quid.proxy.startsWith.length, message.content.length - quid.proxy.endsWith.length);
 			replaceMessage = true;
+			quidData = quid;
 		}
 	}
 
 	/* Checking if the user has autoproxy enabled in the current channel, and if so, it is adding the
 	prefix to the message. */
 	const autoproxyIsToggled = (userData.settings.proxy.servers[message.guildId]?.autoproxy.setTo === ProxyConfigType.Enabled && (userData.settings.proxy.servers[message.guildId]?.autoproxy.channels.setTo === ProxyListType.Blacklist && !userData.settings.proxy.servers[message.guildId]?.autoproxy.channels.blacklist.includes(message.channelId)) || (userData.settings.proxy.servers[message.guildId]?.autoproxy.channels.setTo === ProxyListType.Whitelist && userData.settings.proxy.servers[message.guildId]?.autoproxy.channels.whitelist.includes(message.channelId))) || (userData.settings.proxy.servers[message.guildId]?.autoproxy.setTo === ProxyConfigType.FollowGlobal && userData.settings.proxy.global.autoproxy === true);
-	if (autoproxyIsToggled && !proxyIsDisabled) { replaceMessage = true; }
+	if (autoproxyIsToggled && !proxyIsDisabled) {
 
-	return { replaceMessage, messageContent: message.content };
+		replaceMessage = true;
+		quidData = getMapData(userData.quids, getMapData(userData.currentQuid, serverData.serverId));
+	}
+
+	return { replaceMessage, messageContent: message.content, quidData };
 }
