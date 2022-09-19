@@ -40,10 +40,7 @@ export const command: SlashCommand = {
 				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
 				.setTitle(serverData ? `Nickname for ${quidData.name} ${quidData.nickname.servers[serverData.serverId] ? `set to ${quidData.nickname.servers[serverData.serverId]}` : 'removed'} in ${serverData.name}!` : `Nickname for ${quidData.name} ${quidData.nickname.global ? `set to ${quidData.nickname.global}` : 'removed'} globally!`)
 				.setDescription(serverData ? 'Tip: Nicknames can be set globally too by executing the command in DMs. The global nickname will be displayed when no server-specific nickname has been chosen.' : 'Tip: Nicknames can be set server-specific too by executing the command in the server. The server-specific nickname will overwrite the global nickname for that server.')],
-		}, true)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, true);
 		return;
 	},
 };

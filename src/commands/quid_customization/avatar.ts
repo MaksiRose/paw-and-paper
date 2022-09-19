@@ -33,10 +33,7 @@ export const command: SlashCommand = {
 					.setColor(error_color)
 					.setTitle('Please send an image to set as your quids avatar!')],
 				ephemeral: true,
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 			return;
 		}
 
@@ -49,10 +46,7 @@ export const command: SlashCommand = {
 					.setColor(error_color)
 					.setTitle('This image extension is not supported! Please send a .png, .jp(e)g, .raw or .webp image.')],
 				ephemeral: true,
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 			return;
 		}
 
@@ -71,10 +65,7 @@ export const command: SlashCommand = {
 				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: imageURL })
 				.setTitle(`Profile picture for ${quidData.name} set!`)
 				.setImage(imageURL)],
-		}, true)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, true);
 		return;
 	},
 };

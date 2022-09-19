@@ -66,10 +66,7 @@ export async function executeAttacking(
 					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*${quidData.name} is ready to attack any intruder. But no matter how far ${pronounAndPlural(quidData, 0, 'look')}, ${pronoun(quidData, 0)} can't see anyone. It seems that the pack is not under attack at the moment.*`),
 			],
-		}, true)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, true);
 		return;
 	}
 
@@ -83,10 +80,7 @@ export async function executeAttacking(
 					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*${quidData.name} looks around, searching for a human to attack. It looks like everyone is already being attacked by other pack members. The ${quidData.displayedSpecies || quidData.species} better not interfere before ${pronounAndPlural(quidData, 0, 'hurt')} ${pronoun(quidData, 2)} friends.*`),
 			],
-		}, true)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, true);
 		return;
 	}
 
@@ -138,9 +132,6 @@ export async function executeAttacking(
 		botReply = await (async function(messageContent) { return newInteraction ? await update(newInteraction, messageContent) : await respond(interaction, messageContent, true); })({
 			embeds: [...embedArray, embed],
 			components: [...previousFightComponents ? [previousFightComponents] : [], fightGame.fightComponent],
-		}).catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-			return botReply;
 		});
 
 		/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
@@ -266,9 +257,6 @@ export async function executeAttacking(
 						.setCustomId('attack_new')
 						.setLabel('Attack again')
 						.setStyle(ButtonStyle.Primary))],
-		}).catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-			return botReply;
 		});
 
 		await isPassedOut(interaction, userData, quidData, profileData, true);
@@ -291,10 +279,7 @@ export async function executeAttacking(
 				.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined })
 				.setTitle('The attack is over!')
 				.setDescription('*The packmates howl, dance and cheer as the humans run back into the woods. The battle wasn\'t easy, but they were victorious nonetheless.*')],
-		}, false)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, false);
 
 		if (serverAttackInfo.endingTimeout) { clearTimeout(serverAttackInfo.endingTimeout); }
 		serverMap.delete(interaction.guild.id);
@@ -335,8 +320,7 @@ export function startAttack(
 					.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined })
 					.setDescription(`*The packmates get ready as ${serverAttackInfo.idleHumans} humans run over the borders. Now it is up to them to defend their land.*`)
 					.setFooter({ text: 'You have 5 minutes to defeat all the humans. Type \'/attack\' to attack one.' })],
-			}, false)
-				.catch((error) => { throw new Error(error); });
+			}, false);
 
 			serverAttackInfo.startsTimestamp = null;
 			serverAttackInfo.endingTimeout = setTimeout(async function() {
@@ -424,11 +408,7 @@ async function remainingHumans(
 		},
 	);
 
-	await botReply.channel
-		.send({ embeds: [embed] })
-		.catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-		});
+	await botReply.channel.send({ embeds: [embed] });
 
 	serverMap.delete(interaction.guild.id);
 }

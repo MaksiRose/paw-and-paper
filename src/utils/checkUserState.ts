@@ -18,10 +18,7 @@ export function hasName(
 			embeds: [new EmbedBuilder()
 				.setColor(error_color)
 				.setTitle(Object.keys(userData?.quids || {}).length > 0 ? 'Please type "/profile" to switch to a quid!' : 'Please type "/name" to create a new quid!')],
-		}, true)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, true);
 
 		return false;
 	}
@@ -44,10 +41,7 @@ function hasSpecies(
 			embeds: [new EmbedBuilder()
 				.setColor(error_color)
 				.setTitle(`To access this command, you need to choose ${quidData?.name}'s species!`)],
-		}, true)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, true);
 
 		return false;
 	}
@@ -91,10 +85,7 @@ export function isInGuild(
 				.setColor(error_color)
 				.setTitle('This command cannot be executed in DMs!')],
 			ephemeral: true,
-		}, false)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, false);
 
 		return false;
 	}

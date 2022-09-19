@@ -48,18 +48,12 @@ export default async function settingsInteractionCollector(
 						.setCustomId(`settings_reminders_water_${isOn ? 'off' : 'on'}`)
 						.setLabel(`Turn water reminders ${isOn ? 'off' : 'on'}`)
 						.setStyle(ButtonStyle.Secondary))],
-			})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			});
 
 			await respond(interaction, {
 				content: `You turned reminders for watering ${isOn ? 'on' : 'off'}!`,
 				ephemeral: true,
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 		}
 
 		if (interaction.customId.includes('resting')) {
@@ -77,18 +71,12 @@ export default async function settingsInteractionCollector(
 						.setCustomId(`settings_reminders_resting_${isOn ? 'off' : 'on'}`)
 						.setLabel(`Turn automatic resting pings ${isOn ? 'off' : 'on'}`)
 						.setStyle(ButtonStyle.Secondary))],
-			})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			});
 
 			await respond(interaction, {
 				content: `You turned pings for automatic resting ${isOn ? 'on' : 'off'}!`,
 				ephemeral: true,
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 		}
 	}
 }

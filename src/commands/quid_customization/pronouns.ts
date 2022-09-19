@@ -35,8 +35,7 @@ export const command: SlashCommand = {
 				.setTitle(`What pronouns does ${quidData.name} have?`)
 				.setDescription('To change your quids pronouns, select an existing one from the drop-down menu below to edit it, or select "Add another pronoun" to add another one. A pop-up with a text box will open.\n\nTo set the pronouns to they/them for example, type `they/them/their/theirs/themselves/plural`.\nThe 6th spot should be either `singular` ("he/she __is__") or `plural` ("they __are__").\nTo set the pronouns to your own name, you can type `none`.\nTo delete the pronouns, leave the text box empty.\n\nThis is how it would look during roleplay:\n> **They** and the friend that came with **them** laid in **their** den. It was **theirs** because they built it **themselves**. \nYou can use this as reference when thinking about how to add your own (neo-)pronouns.')],
 			components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData, quidData)])],
-		}, true)
-			.catch((error) => { throw new Error(error); });
+		}, true);
 
 		createCommandComponentDisabler(userData.uuid, interaction.guildId || 'DM', botReply);
 		return;
@@ -105,8 +104,7 @@ export async function pronounsInteractionCollector(
 
 		await update(interaction, {
 			components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData, quidData)])],
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 		return;
 	}
 }
@@ -180,10 +178,7 @@ export async function sendEditPronounsModalResponse(
 						.setColor(error_color)
 						.setDescription(`Each pronoun must be between 1 and ${maxPronounLength} characters long.`)],
 					ephemeral: true,
-				}, false)
-					.catch((error) => {
-						if (error.httpStatus !== 404) { throw new Error(error); }
-					});
+				}, false);
 				return;
 			}
 		}
@@ -207,8 +202,7 @@ export async function sendEditPronounsModalResponse(
 
 	await update(interaction, {
 		components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData, quidData)])],
-	})
-		.catch((error) => { throw new Error(error); });
+	});
 
 	const addedOrEditedTo = isNaN(pronounNumber) ? 'added pronoun' : `edited pronoun from ${oldPronounSet?.join('/')} to`;
 	await respond(interaction, {
@@ -216,9 +210,6 @@ export async function sendEditPronounsModalResponse(
 			.setColor(quidData.color)
 			.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
 			.setTitle(`Successfully ${willBeDeleted ? `deleted pronoun ${oldPronounSet?.join('/')}` : `${addedOrEditedTo} ${chosenPronouns.join('/')}`}!`)],
-	}, false)
-		.catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-		});
+	}, false);
 	return;
 }

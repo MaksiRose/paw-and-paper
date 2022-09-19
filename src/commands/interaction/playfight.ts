@@ -66,8 +66,7 @@ export const command: SlashCommand = {
 					.setColor(quidData1.color)
 					.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 					.setDescription(`*${quidData1.name} believes that ${pronounAndPlural(quidData1, 0, 'is', 'are')} so unmatched that only ${pronoun(quidData1, 0)} could defeat ${pronoun(quidData1, 4)}. But it doesn't take ${pronoun(quidData1, 1)} long to realize that it is more fun to fight a partner after all.*`)],
-			}, false)
-				.catch(error => { throw new Error(error); });
+			}, false);
 			return;
 		}
 
@@ -267,8 +266,7 @@ export async function playfightInteractionCollector(
 			gameType === 'connectfour' ? playingField.map(
 				row => row.join('').replaceAll('0', emptyField).replaceAll('1', player1Field).replaceAll('2', player2Field),
 			).join('\n') + '\n1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣' : undefined,
-		)
-			.catch((error) => { throw new Error(error); });
+		);
 
 		await botReply
 			.awaitMessageComponent({

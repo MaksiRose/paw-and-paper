@@ -60,10 +60,7 @@ export const command: SlashCommand = {
 					.setTitle('You can only share every 2 hours!')
 					.setDescription(`You can share again <t:${Math.floor((sharingCooldown + twoHoursInMs) / 1_000)}:R>.`),
 				],
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 			return;
 		}
 
@@ -77,10 +74,7 @@ export const command: SlashCommand = {
 					.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 					.setDescription(`*${quidData1.name} is about to begin sharing a story when an elderly interrupts them.* "Oh, young ${quidData1.displayedSpecies || quidData1.species}, you need to have a lot more adventures before you can start advising others!"`),
 				],
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 			return;
 		}
 
@@ -97,8 +91,7 @@ export const command: SlashCommand = {
 					.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 					.setDescription(`*${quidData1.name} is very wise from all the adventures ${pronoun(quidData1, 0)} had, but also a little... quaint. Sometimes ${pronounAndPlural(quidData1, 0, 'sit')} down at the fireplace, mumbling to ${pronoun(quidData1, 4)} a story from back in the day. Busy packmates look at ${pronoun(quidData1, 1)} in confusion as they pass by.*`),
 				],
-			}, false)
-				.catch(error => { throw new Error(error); });
+			}, false);
 			return;
 		}
 
@@ -122,8 +115,7 @@ export const command: SlashCommand = {
 						.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 						.setDescription(`*${quidData1.name} sits on an old wooden trunk at the ruins, ready to tell a story to any willing listener. But to ${pronoun(quidData1, 2)} disappointment, no one seems to be around.*`),
 					],
-				}, false)
-					.catch(error => { throw new Error(error); });
+				}, false);
 				return;
 			}
 
@@ -176,8 +168,7 @@ export const command: SlashCommand = {
 				...(infectedEmbed ? [infectedEmbed] : []),
 				...(user2CheckLevelData.levelUpEmbed ? [user2CheckLevelData.levelUpEmbed] : []),
 			],
-		}, true)
-			.catch((error) => { throw new Error(error); });
+		}, true);
 
 		await addFriendshipPoints(botReply, userData1, quidData1._id, userData2, quidData2._id);
 

@@ -22,9 +22,6 @@ export const command: ContextMenuCommand = {
 				.reply({
 					content: 'This interaction is guild-only!',
 					ephemeral: true,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 			return;
 		}
@@ -56,9 +53,6 @@ export const command: ContextMenuCommand = {
 				.reply({
 					content: 'The user of the message that you clicked on has no account!',
 					ephemeral: true,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
 				});
 			return;
 		}
@@ -89,7 +83,6 @@ export const command: ContextMenuCommand = {
 					.setStyle(ButtonStyle.Success)])],
 			ephemeral: true,
 			fetchReply: true,
-		}, false)
-			.catch((error) => { throw new Error(error); });
+		}, false);
 	},
 };

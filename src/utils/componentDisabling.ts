@@ -19,13 +19,9 @@ export function createCommandComponentDisabler(
 		delete disableCommandComponent[uuid + guildId];
 
 		botReply = botReply.channel.messages.cache.get(botReply.id) ?? botReply;
-		await botReply
-			.edit({
-				components: disableAllComponents(botReply.components),
-			})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		await botReply.edit({
+			components: disableAllComponents(botReply.components),
+		});
 	};
 }
 

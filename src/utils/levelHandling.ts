@@ -129,10 +129,7 @@ export async function decreaseLevel(
 						.setColor(default_color)
 						.setAuthor({ name: guild.name, iconURL: guild.iconURL() || undefined })
 						.setDescription(`You lost the <@&${role.roleId}> role because of a lack of levels!`)],
-				}, false)
-					.catch((error) => {
-						if (error.httpStatus !== 404) { throw new Error(error); }
-					});
+				}, false);
 			}
 		}
 		catch (error) {

@@ -40,10 +40,7 @@ export const command: SlashCommand = {
 					.setColor(error_color)
 					.setTitle('I cannot send an empty message!')],
 				ephemeral: true,
-			}, false)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, false);
 			return;
 		}
 
@@ -81,18 +78,18 @@ export async function sendMessage(
 	const webhook = (await webhookChannel
 		.fetchWebhooks()
 		.catch(async (error) => {
-			if (error.httpStatus === 403) {
-				await channel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
+			if (error.status === 403) {
+				await channel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw err; });
 			}
-			throw new Error(error);
+			throw error;
 		})
 	).find(webhook => webhook.name === 'PnP Profile Webhook') || await webhookChannel
 		.createWebhook({ name: 'PnP Profile Webhook' })
 		.catch(async (error) => {
-			if (error.httpStatus === 403) {
-				await channel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw new Error(err); });
+			if (error.status === 403) {
+				await channel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw err; });
 			}
-			throw new Error(error);
+			throw error;
 		});
 
 	if (quidData.profiles[webhookChannel.guildId] !== undefined) {
@@ -136,8 +133,7 @@ export async function sendMessage(
 			files: attachments,
 			embeds: embeds,
 			threadId: channel.isThread() ? channel.id : undefined,
-		})
-		.catch((error) => { throw new Error(error); });
+		});
 
 	webhookCache[botMessage.id] = authorId + (quidData?._id !== undefined ? `_${quidData?._id}` : '');
 	writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));

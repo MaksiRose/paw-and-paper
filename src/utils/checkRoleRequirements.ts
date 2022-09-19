@@ -63,10 +63,7 @@ export async function checkRankRequirements(
 								.setColor(default_color)
 								.setAuthor(interaction.guild ? { name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined } : null)
 								.setDescription(`You got the <@&${item.roleId}> role for being ${item.requirement}!`)],
-						}, false)
-							.catch((error) => {
-								if (error.httpStatus !== 404) { throw new Error(error); }
-							});
+						}, false);
 					}
 				}
 			}
@@ -136,10 +133,7 @@ export async function checkLevelRequirements(
 								.setColor(default_color)
 								.setAuthor(interaction.guild ? { name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined } : null)
 								.setDescription(`You got the <@&${item.roleId}> role for being level ${item.requirement}!`)],
-						}, false)
-							.catch((error) => {
-								if (error.httpStatus !== 404) { throw new Error(error); }
-							});
+						}, false);
 					}
 				}
 			}
@@ -171,10 +165,7 @@ export async function checkRoleCatchBlock(
 			embeds: [new EmbedBuilder()
 				.setColor(error_color)
 				.setTitle('I don\'t have permission to manage roles, or the role is above my highest role. Please ask an admin to edit my permissions or move the wanted role below mine.')],
-		}, false)
-			.catch((err) => {
-				if (err.httpStatus !== 404) { throw new Error(err); }
-			});
+		}, false);
 	}
 	else {
 
@@ -184,9 +175,6 @@ export async function checkRoleCatchBlock(
 			embeds: [new EmbedBuilder()
 				.setColor(error_color)
 				.setTitle('There was an error trying to add/remove the role :(')],
-		}, false)
-			.catch((err) => {
-				if (err.httpStatus !== 404) { throw new Error(err); }
-			});
+		}, false);
 	}
 }

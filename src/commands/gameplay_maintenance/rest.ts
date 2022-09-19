@@ -60,10 +60,7 @@ export async function startResting(
 				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 				.setDescription(`*${quidData.name} dreams of resting on a beach, out in the sun. The imaginary wind rocked the also imaginative hammock. ${upperCasePronoun(quidData, 0)} must be really tired to dream of sleeping!*`),
 			],
-		}, false)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, false);
 		return;
 	}
 
@@ -76,10 +73,7 @@ export async function startResting(
 				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 				.setDescription(`*${quidData.name} trots around the dens eyeing ${pronoun(quidData, 2)} comfortable moss-covered bed. A nap looks nice, but ${pronounAndPlural(quidData, 0, 'has', 'have')} far too much energy to rest!*`),
 			],
-		}, false)
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		}, false);
 		return;
 	}
 
@@ -110,8 +104,7 @@ export async function startResting(
 		content: messageContent,
 		embeds: [getRestingEmbed(userData, quidData, energyPoints, profileData, previousRegion, isAutomatic, weardownText)],
 		components: isAutomatic ? [component] : [],
-	}, false)
-		.catch((error) => { throw new Error(error); });
+	}, false);
 
 	restingTimeoutMap.set(userData.uuid + interaction.guildId, setTimeout(addEnergy, 30_000 + await getExtraRestingTime(interaction.guildId)));
 
@@ -134,13 +127,9 @@ export async function startResting(
 			profileData = getMapData(quidData.profiles, interaction.guildId);
 
 			const embed = getRestingEmbed(userData, quidData, energyPoints, profileData, previousRegion, isAutomatic, weardownText);
-			await botReply
-				.edit({
-					embeds: [embed],
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			await botReply.edit({
+				embeds: [embed],
+			});
 
 			/* It checks if the user has reached their maximum energy, and if they have, it stops the resting process. */
 			if (profileData.energy >= profileData.maxEnergy) {
@@ -154,23 +143,13 @@ export async function startResting(
 					},
 				);
 
-				await botReply
-					.delete()
-					.catch((error) => {
-						if (error.httpStatus !== 404) {
-							throw new Error(error);
-						}
-					});
+				await botReply.delete();
 
-				await botReply.channel
-					.send({
-						content: userData.settings.reminders.resting ? interaction.user.toString() : null,
-						embeds: [embed.setDescription(`*${quidData.name}'s eyes blink open, ${pronounAndPlural(quidData, 0, 'sit')} up to stretch and then walk out into the light and buzz of late morning camp. Younglings are spilling out of the nursery, ambitious to start the day, Hunters and Healers are traveling in and out of the camp border. It is the start of the next good day!*`)],
-						components: isAutomatic ? [component] : [],
-					})
-					.catch((error) => {
-						if (error.httpStatus !== 404) { throw new Error(error); }
-					});
+				await botReply.channel.send({
+					content: userData.settings.reminders.resting ? interaction.user.toString() : null,
+					embeds: [embed.setDescription(`*${quidData.name}'s eyes blink open, ${pronounAndPlural(quidData, 0, 'sit')} up to stretch and then walk out into the light and buzz of late morning camp. Younglings are spilling out of the nursery, ambitious to start the day, Hunters and Healers are traveling in and out of the camp border. It is the start of the next good day!*`)],
+					components: isAutomatic ? [component] : [],
+				});
 				return;
 			}
 

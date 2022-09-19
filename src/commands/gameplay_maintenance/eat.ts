@@ -76,10 +76,7 @@ export const command: SlashCommand = {
 					.setColor(quidData.color)
 					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*${quidData.name}'s stomach bloats as ${pronounAndPlural(quidData, 0, 'roll')} around camp, stuffing food into ${pronoun(quidData, 2)} mouth. The ${quidData.displayedSpecies || quidData.species} might need to take a break from food before ${pronounAndPlural(quidData, 0, 'goes', 'go')} into a food coma.*`)],
-			}, true)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, true);
 			return;
 		}
 
@@ -117,10 +114,7 @@ export async function sendEatMessage(
 				content: messageContent,
 				embeds: [...embedArray, embed],
 				components: interaction.isSelectMenu() ? disableAllComponents(interaction.message.components) : [],
-			})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			});
 			return;
 		}
 	}
@@ -288,10 +282,7 @@ export async function sendEatMessage(
 		content: messageContent,
 		embeds: [...embedArray, embed],
 		components: interaction.isSelectMenu() ? disableAllComponents(interaction.message.components) : [],
-	})
-		.catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-		});
+	});
 	return;
 }
 
@@ -324,10 +315,7 @@ async function sendNoItemMessage(
 		content: messageContent,
 		embeds: [...embedArray, embed],
 		components: interaction.isSelectMenu() ? disableAllComponents(interaction.message.components) : [],
-	})
-		.catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-		});
+	});
 }
 
 /**

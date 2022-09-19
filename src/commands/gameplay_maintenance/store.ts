@@ -55,12 +55,6 @@ export async function sendStoreMessage(
 
 	const messageContent = remindOfAttack(interaction.guildId);
 
-	if (interaction.isChatInputCommand() && interaction.options.getSubcommand(false) === 'all') {
-
-		await storeAll(interaction, userData, quidData, profileData, serverData);
-		return;
-	}
-
 	/** This is an array of all the inventory objects. */
 	const inventoryObjectValues = Object.values(profileData.inventory) as Array<Inventory[keyof Inventory]>;
 	/** This is an array of numbers as the properties of the keys in the inventory objects, which are numbers representing the amount one has of the key which is an item type. */
@@ -74,10 +68,13 @@ export async function sendStoreMessage(
 				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 				.setDescription(`*${quidData.name} goes to the food den to store ${pronoun(quidData, 2)} findings away, but ${pronoun(quidData, 2)} mouth is empty...*`),
 			],
-		})
-			.catch((error) => {
-				if (error.httpStatus !== 404) { throw new Error(error); }
-			});
+		});
+		return;
+	}
+
+	if (interaction.isChatInputCommand() && interaction.options.getSubcommand(false) === 'all') {
+
+		await storeAll(interaction, userData, quidData, profileData, serverData);
 		return;
 	}
 
@@ -87,8 +84,7 @@ export async function sendStoreMessage(
 		content: messageContent,
 		embeds: [...embedArray, getOriginalEmbed(userData, quidData, interaction.guildId)],
 		components: [itemSelectMenu, storeAllButton],
-	})
-		.catch((error) => { throw new Error(error); });
+	});
 
 	createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
 }
@@ -183,10 +179,7 @@ export async function storeInteractionCollector(
 
 			await update(interaction, {
 				components: [itemSelectMenu, amountSelectMenu],
-			})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			});
 			return;
 		}
 
@@ -233,10 +226,7 @@ export async function storeInteractionCollector(
 			await update(interaction, {
 				embeds: [...interaction.message.embeds, embed],
 				components: itemSelectMenu.toJSON().components[0]?.options.length === 0 ? disableAllComponents(interaction.message.components) : [itemSelectMenu, storeAllButton],
-			})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			});
 			return;
 		}
 	}
@@ -276,7 +266,7 @@ async function storeAll(
 			}
 		}
 	}
-	embed.setFooter({ text: footerText });
+	embed.setFooter(footerText ? { text: footerText } : null);
 
 	await userModel.findOneAndUpdate(
 		u => u.uuid === userData!.uuid,
@@ -296,9 +286,6 @@ async function storeAll(
 	await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 		embeds: [...(otherEmbeds ?? []), embed],
 		components: interaction.isButton() ? disableAllComponents(interaction.message.components) : [],
-	})
-		.catch((error) => {
-			if (error.httpStatus !== 404) { throw new Error(error); }
-		});
+	});
 	return;
 }

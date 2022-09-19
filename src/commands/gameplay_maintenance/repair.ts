@@ -67,10 +67,7 @@ export const command: SlashCommand = {
 					.setColor(quidData.color)
 					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*A hunter rushes to stop the ${profileData.rank}.*\n"${quidData.name}, you are not trained to repair dens, it is very dangerous! You should be playing on the prairie instead."\n*${quidData.name} lowers ${pronoun(quidData, 2)} head and leaves in shame.*`)],
-			}, true)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, true);
 			return;
 		}
 
@@ -83,10 +80,7 @@ export const command: SlashCommand = {
 					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 					.setDescription(`*${quidData.name} goes to look if any dens need to be repaired. But it looks like the pack has nothing that can be used to repair dens in the first place. Looks like the ${quidData.displayedSpecies || quidData.species} needs to go out and find materials first!*`)
 					.setFooter({ text: 'Materials can be found through scavenging and adventuring.' })],
-			}, true)
-				.catch((error) => {
-					if (error.httpStatus !== 404) { throw new Error(error); }
-				});
+			}, true);
 			return;
 		}
 
@@ -99,8 +93,7 @@ export const command: SlashCommand = {
 				.setColor(quidData.color)
 				.setDescription(`*${quidData.name} roams around the pack, looking if any dens need to be repaired.*`)],
 			components: [denSelectMenu],
-		} : getMaterials(userData, quidData, serverData, chosenDen, embedArray, messageContent), true)
-			.catch((error) => { throw new Error(error); });
+		} : getMaterials(userData, quidData, serverData, chosenDen, embedArray, messageContent), true);
 
 		createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
 	},
@@ -125,9 +118,7 @@ export async function repairInteractionCollector(
 		const chosenDen = interaction.customId.replace('repair_', '');
 		if (chosenDen !== 'sleepingDens' && chosenDen !== 'medicineDen' && chosenDen !== 'foodDen') { throw new Error('chosenDen is not a den'); }
 
-
-		await update(interaction, getMaterials(userData, quidData, serverData, chosenDen, [], null))
-			.catch((error) => { throw new Error(error); });
+		await update(interaction, getMaterials(userData, quidData, serverData, chosenDen, [], null));
 		return;
 	}
 
@@ -147,8 +138,8 @@ export async function repairInteractionCollector(
 		/** True when the repairAmount is bigger than zero. If the user isn't of  rank Hunter or Elderly, a weighted table decided whether they are successful. */
 		const isSuccessful = repairAmount > 0 && (profileData.rank === RankType.Hunter || profileData.rank === RankType.Elderly || pullFromWeightedTable({ 0: profileData.rank === RankType.Healer ? 90 : 40, 1: 60 + profileData.sapling.waterCycles }) === 1);
 
-		await serverModel.findOneAndUpdate(
-			s => s.serverId === serverData.serverId,
+		serverData = await serverModel.findOneAndUpdate(
+			s => s.serverId === serverData!.serverId,
 			(s) => {
 				s.inventory.materials[chosenItem] -= 1;
 				if (isSuccessful) { s.dens[chosenDen][repairKind] += repairAmount; }
@@ -172,8 +163,7 @@ export async function repairInteractionCollector(
 				...(levelUpEmbed ? [levelUpEmbed] : []),
 			],
 			components: disableAllComponents(interaction.message.components),
-		})
-			.catch((error) => { throw new Error(error); });
+		});
 
 		await isPassedOut(interaction, userData, quidData, profileData, true);
 

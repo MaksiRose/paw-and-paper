@@ -55,13 +55,8 @@ export const command: SlashCommand = {
 
 				if (user) {
 
-					await user
-						.createDM()
-						.catch(error => { throw new Error(error); });
-
-					await user
-						.send({ content: 'I am sorry to inform you that you have been banned from using this bot.' })
-						.catch((error) => { throw new Error(error); });
+					await user.createDM();
+					await user.send({ content: 'I am sorry to inform you that you have been banned from using this bot.' });
 
 					await respond(interaction, {
 						content: `Banned user ${user.tag}, deleted their account and was able to notify them about it.`,
@@ -95,13 +90,8 @@ export const command: SlashCommand = {
 
 				if (guild && user) {
 
-					await user
-						.createDM()
-						.catch(error => { throw new Error(error); });
-
-					await user
-						.send({ content: `I am sorry to inform you that your guild \`${guild.name}\` has been banned from using this bot.` })
-						.catch((error) => { throw new Error(error); });
+					await user.createDM();
+					await user.send({ content: `I am sorry to inform you that your guild \`${guild.name}\` has been banned from using this bot.` });
 
 					await respond(interaction, {
 						content: `Banned server ${guild.name}, deleted their account and was able to notify the guild owner about it.`,
