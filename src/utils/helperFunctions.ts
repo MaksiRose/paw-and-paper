@@ -118,12 +118,39 @@ export async function sendErrorMessage(
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to submit the modal \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 	}
 
+	const jsonInteraction = {
+		id: interaction.id,
+		application_id: interaction.applicationId,
+		type: interaction.type,
+		data: interaction.isCommand() ? {
+			id: interaction.commandId,
+			name: interaction.commandName,
+			type: interaction.commandType,
+			options: interaction.options.data,
+			target_id: interaction.isContextMenuCommand() ? interaction.targetId : undefined,
+		} : undefined,
+		guild_id: interaction.guildId ?? undefined,
+		channel_id: interaction.channelId ?? undefined,
+		user_id: interaction.user.id,
+		message: interaction.isMessageComponent() ? {
+			id: interaction.message.id,
+			timestamp: interaction.message.createdTimestamp,
+			edited_timestamp: interaction.message.editedTimestamp,
+			type: interaction.message.type,
+			application_id: interaction.message.applicationId ?? undefined,
+		} : undefined,
+		timestamp: interaction.createdTimestamp,
+		app_permission: interaction.appPermissions?.bitfield.toString(),
+		locale: interaction.locale,
+		guild_locale: interaction.guildLocale,
+	};
+
 	if (error.status === 404 || error.httpStatus === 404) {
 
 		console.error('Error 404 - An error is not being sent to the user. ', error);
 		return;
 	}
-	console.error(error);
+	console.error(error, jsonInteraction);
 
 	let errorId: string | undefined = undefined;
 
@@ -131,7 +158,7 @@ export async function sendErrorMessage(
 
 		const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
 		errorId = generateId();
-		errorStacks[errorId] = error?.stack ?? String(error);
+		errorStacks[errorId] = `${(error?.stack ?? JSON.stringify(error, null, '\t'))}\n${JSON.stringify(jsonInteraction, null, '\t')}`;
 		writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
 	}
 	catch (e) {

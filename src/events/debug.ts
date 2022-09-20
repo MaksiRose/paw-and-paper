@@ -5,6 +5,6 @@ export const event: Event = {
 	once: false,
 	async execute(client, info: string) {
 
-		console.trace(info);
+		console.log(info);
 	},
 };
