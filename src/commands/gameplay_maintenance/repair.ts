@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, MessageComponentInteraction, SelectMenuBuilder, SlashCommandBuilder, WebhookEditMessageOptions } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, InteractionReplyOptions, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder, WebhookEditMessageOptions } from 'discord.js';
 import serverModel from '../../models/serverModel';
 import { MaterialNames, materialsInfo, Quid, RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
@@ -100,7 +100,7 @@ export const command: SlashCommand = {
 };
 
 export async function repairInteractionCollector(
-	interaction: MessageComponentInteraction,
+	interaction: ButtonInteraction | SelectMenuInteraction,
 	userData: UserSchema | null,
 	serverData: ServerSchema | null,
 ): Promise<void> {
@@ -118,7 +118,7 @@ export async function repairInteractionCollector(
 		const chosenDen = interaction.customId.replace('repair_', '');
 		if (chosenDen !== 'sleepingDens' && chosenDen !== 'medicineDen' && chosenDen !== 'foodDen') { throw new Error('chosenDen is not a den'); }
 
-		await update(interaction, getMaterials(userData, quidData, serverData, chosenDen, [], null));
+		await update(interaction, getMaterials(userData, quidData, serverData, chosenDen, [], undefined));
 		return;
 	}
 
@@ -182,7 +182,7 @@ function getMaterials(
 	serverData: ServerSchema,
 	chosenDen: 'sleepingDens' | 'foodDen' | 'medicineDen',
 	embedArray: EmbedBuilder[],
-	messageContent: string | null,
+	messageContent: string | undefined,
 ): Omit<InteractionReplyOptions & WebhookEditMessageOptions, 'flags'> {
 
 	const { selectMenuOptions, embedDescription: description } = getInventoryElements(serverData.inventory, 4);

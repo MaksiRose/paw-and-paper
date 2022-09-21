@@ -130,7 +130,7 @@ export async function wrongproxyInteractionCollector(
 			.send({
 				username: quidData.name,
 				avatarURL: quidData.avatarURL,
-				content: previousMessage.content || null,
+				content: previousMessage.content || undefined,
 				files: previousMessage.attachments.toJSON(),
 				embeds: previousMessage.embeds,
 				threadId: channel.isThread() ? channel.id : undefined,

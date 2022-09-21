@@ -351,7 +351,7 @@ export function startAttack(
  */
 export function remindOfAttack(
 	guildId: string,
-): string | null {
+): string | undefined {
 
 	const serverAttackInfo = serverMap.get(guildId);
 	if (serverAttackInfo && serverAttackInfo.startsTimestamp !== null) {
@@ -363,7 +363,7 @@ export function remindOfAttack(
 		return 'Humans are attacking the pack! Type `/attack` to attack.';
 	}
 
-	return null;
+	return undefined;
 }
 
 /**

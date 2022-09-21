@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, MessageComponentInteraction, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import Fuse from 'fuse.js';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
@@ -106,7 +106,7 @@ export const command: SlashCommand = {
 };
 
 export async function healInteractionCollector(
-	interaction: MessageComponentInteraction,
+	interaction: SelectMenuInteraction | ButtonInteraction,
 	userData: UserSchema | null,
 	serverData: ServerSchema | null,
 ): Promise<void> {
@@ -125,12 +125,12 @@ export async function healInteractionCollector(
 			const page = Number(value.replace('newpage_', ''));
 			if (isNaN(page)) { throw new TypeError('page is NaN'); }
 
-			await getHealResponse(interaction, userData, serverData, null, [], page);
+			await getHealResponse(interaction, userData, serverData, undefined, [], page);
 		}
 		else {
 
 			const quidToHeal = getMapData((await userModel.findOne(u => Object.keys(u.quids).includes(value))).quids, value);
-			await getHealResponse(interaction, userData, serverData, null, [], 0, quidToHeal);
+			await getHealResponse(interaction, userData, serverData, undefined, [], 0, quidToHeal);
 		}
 	}
 	else if (interaction.customId.startsWith('heal_page_')) {
@@ -142,7 +142,7 @@ export async function healInteractionCollector(
 		if (quidId === undefined) { throw new TypeError('quidId is undefined'); }
 
 		const quidToHeal = getMapData((await userModel.findOne(u => Object.keys(u.quids).includes(quidId))).quids, quidId);
-		await getHealResponse(interaction, userData, serverData, null, [], 0, quidToHeal, inventoryPage);
+		await getHealResponse(interaction, userData, serverData, undefined, [], 0, quidToHeal, inventoryPage);
 	}
 	else if (interaction.isSelectMenu() && interaction.customId.startsWith('heal_inventory_options_')) {
 
@@ -154,7 +154,7 @@ export async function healInteractionCollector(
 		let chosenItem = interaction.values[0];
 		if (!chosenItem || !stringIsAvailableItem(chosenItem, serverData.inventory)) { chosenItem = undefined; }
 
-		await getHealResponse(interaction, userData, serverData, null, [], 0, quidToHeal, 1, chosenItem);
+		await getHealResponse(interaction, userData, serverData, undefined, [], 0, quidToHeal, 1, chosenItem);
 	}
 }
 
@@ -191,10 +191,10 @@ function stringIsAvailableItem(
 }
 
 export async function getHealResponse(
-	interaction: ChatInputCommandInteraction<'cached'> | MessageComponentInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>,
 	userData: UserSchema,
 	serverData: ServerSchema,
-	messageContent: string | null,
+	messageContent: string | undefined,
 	embedArray: EmbedBuilder[],
 	quidPage = 0,
 	quidToHeal?: Quid,
@@ -336,7 +336,7 @@ export async function getHealResponse(
 		return;
 	}
 
-	const userCondition = interaction instanceof MessageComponentInteraction ? interaction.message.embeds[interaction.message.embeds.length - 2]?.footer?.text.toLowerCase() : undefined;
+	const userCondition = interaction.isMessageComponent() ? interaction.message.embeds[interaction.message.embeds.length - 2]?.footer?.text.toLowerCase() : undefined;
 	let userHasChangedCondition = false;
 
 	let chosenUserEnergyPoints = 0;
@@ -549,7 +549,7 @@ export async function getHealResponse(
 	}
 
 	const botReply = await respond(interaction, {
-		content: content.length > 0 ? content : null,
+		content: content.length > 0 ? content : undefined,
 		embeds: [
 			...embedArray,
 			embed,

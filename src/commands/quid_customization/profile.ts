@@ -81,7 +81,7 @@ export async function getMessageContent(
 	const user = await client.users.fetch(userId);
 
 	return {
-		content: !quidData ? (isYourself ? 'You are on an Empty Slot. Select a quid to switch to below.' : 'Select a quid to view below.') : null,
+		content: !quidData ? (isYourself ? 'You are on an Empty Slot. Select a quid to switch to below.' : 'Select a quid to view below.') : undefined,
 		embeds: !quidData ? embedArray : [...embedArray, new EmbedBuilder()
 			.setColor(quidData.color)
 			.setTitle(quidData.name)
@@ -150,7 +150,7 @@ export async function profileInteractionCollector(
 		const selectMenu = getAccountsPage(userData, userId, 0, userData.userId.includes(interaction.user.id));
 
 		dmChannel.send({
-			content: interaction.message.content || null,
+			content: interaction.message.content || undefined,
 			embeds: interaction.message.embeds,
 			components: (selectMenu.options.length > 0) ? [new ActionRowBuilder<SelectMenuBuilder>().setComponents([selectMenu])] : [],
 		});

@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, Message, MessageComponentInteraction, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, Message, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import userModel from '../../models/userModel';
 import { CurrentRegionType, Profile, Quid, RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
@@ -60,7 +60,7 @@ export const command: SlashCommand = {
 };
 
 export async function travelInteractionCollector(
-	interaction: MessageComponentInteraction,
+	interaction: ButtonInteraction | SelectMenuInteraction,
 	userData: UserSchema | null,
 	serverData: ServerSchema | null,
 ): Promise<void> {
@@ -73,7 +73,7 @@ export async function travelInteractionCollector(
 	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 	const profileData = getMapData(quidData.profiles, interaction.guildId);
 
-	const messageContent = interaction.message.content || null;
+	const messageContent = interaction.message.content || undefined;
 	const embedArray = interaction.message.embeds.slice(0, -1).map(c => new EmbedBuilder(c.toJSON()));
 
 	if (interaction.isButton()) {
@@ -114,7 +114,7 @@ async function sendTravelMessage(
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
-	messageContent: string | null | undefined,
+	messageContent: string | undefined,
 	embedArray: EmbedBuilder[],
 	chosenRegion: string | null,
 ): Promise<Message> {

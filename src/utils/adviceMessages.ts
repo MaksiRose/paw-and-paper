@@ -1,5 +1,5 @@
 // @ts-check
-import { ButtonInteraction, ChatInputCommandInteraction, MessageComponentInteraction } from 'discord.js';
+import { ButtonInteraction, ChatInputCommandInteraction, SelectMenuInteraction } from 'discord.js';
 import userModel from '../models/userModel';
 import { Profile, UserSchema } from '../typedef';
 import { respond } from './helperFunctions';
@@ -12,7 +12,8 @@ import { respond } from './helperFunctions';
  * @param profileData - The user's profile on the server they are using the command on
  */
 export async function restAdvice(
-	interaction: MessageComponentInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>
+	,
 	userData: UserSchema,
 	profileData: Profile,
 ): Promise<void> {
@@ -39,7 +40,8 @@ export async function restAdvice(
  * @param profileData - The user's profile on the server they are using the command on
  */
 export async function drinkAdvice(
-	interaction: MessageComponentInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>
+	,
 	userData: UserSchema,
 	profileData: Profile,
 ): Promise<void> {
@@ -66,7 +68,8 @@ export async function drinkAdvice(
  * @param profileData - The user's profile on the server they are using the command on
  */
 export async function eatAdvice(
-	interaction: MessageComponentInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>
+	,
 	userData: UserSchema,
 	profileData: Profile,
 ): Promise<void> {
@@ -92,7 +95,7 @@ export async function eatAdvice(
  * @param {UserSchema} userData - The user's data from the database.
  */
 export async function coloredButtonsAdvice(
-	interaction: ButtonInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	userData: UserSchema,
 ): Promise<void> {
 

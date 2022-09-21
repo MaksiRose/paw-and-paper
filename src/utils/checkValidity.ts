@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CommandInteraction, EmbedBuilder, MessageComponentInteraction } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
 import { cooldownMap } from '../events/interactionCreate';
 import { getQuidDisplayname, respond, sendErrorMessage } from './helperFunctions';
 import userModel from '../models/userModel';
@@ -10,7 +10,7 @@ import { stopResting } from '../commands/gameplay_maintenance/rest';
 const { error_color } = require('../../config.json');
 
 export async function isPassedOut(
-	interaction: CommandInteraction<'cached' | 'raw'> | MessageComponentInteraction<'cached' | 'raw'>,
+	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached' | 'raw'>,
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
@@ -51,7 +51,7 @@ export async function isPassedOut(
  * Checks if the user is on a cooldown. If yes, then send a message and return true, as well as decrease their level if it's new. Else, return false.
  */
 export async function hasCooldown(
-	interaction: CommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'>,
+	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'>,
 	userData: UserSchema,
 	quidData: Quid,
 ): Promise<boolean> {
@@ -87,7 +87,7 @@ export async function hasCooldown(
  * Checks if the user is resting. If yes, then wake user up and attach an embed to the message. Returns the updated `userData`.
  */
 export async function isResting(
-	interaction: CommandInteraction<'cached' | 'raw'> | MessageComponentInteraction<'cached' | 'raw'>,
+	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached'>,
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
@@ -121,7 +121,7 @@ export async function isResting(
  * Checks if the user is passed out, on a cooldown or resting, sends or attaches the appropriate message/embed, and returns a boolean of the result.
  */
 export async function isInvalid(
-	interaction: CommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached'>,
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
@@ -152,7 +152,7 @@ function hasTooManyItems(
 
 /**
  * It checks if the user has a full inventory, and if so, sends a message to the user
- * @param interaction - The CommandInteraction object.
+ * @param interaction - The ChatInputCommandInteraction object.
  * @param quidData - The quid's data.
  * @param profileData - The profile data of the user.
  * @param embedArray - An array of embeds to send before the inventory full embed.
@@ -160,12 +160,12 @@ function hasTooManyItems(
  * @returns A boolean.
  */
 export async function hasFullInventory(
-	interaction: CommandInteraction<'cached'> | ButtonInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
 	embedArray: EmbedBuilder[],
-	messageContent: string | null,
+	messageContent: string | undefined,
 ): Promise<boolean> {
 
 	if (hasTooManyItems(profileData)) {
@@ -193,9 +193,9 @@ export async function hasFullInventory(
 }
 
 export function isInteractable(
-	interaction: CommandInteraction<'cached'> | ButtonInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	userData: UserSchema | null,
-	messageContent: string | null,
+	messageContent: string | undefined,
 	embedArray: EmbedBuilder[],
 ): userData is UserSchema {
 

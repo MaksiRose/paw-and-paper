@@ -119,7 +119,7 @@ export async function proxyInteractionCollector(
 		return;
 	}
 
-	const allChannels = (await interaction.guild?.channels?.fetch() ?? new Collection()).filter(g => g && g.type === ChannelType.GuildText && g.viewable && g.permissionsFor(interaction.client.user?.id || '')?.has('SendMessages') == true && g.permissionsFor(interaction.user.id)?.has('ViewChannel') == true && g.permissionsFor(interaction.user.id)?.has('SendMessages') == true);
+	const allChannels = (await interaction.guild?.channels?.fetch() ?? new Collection()).filter(c => c !== null && c.type === ChannelType.GuildText && c.viewable && c.permissionsFor(interaction.client.user?.id || '')?.has('SendMessages') == true && c.permissionsFor(interaction.user.id)?.has('ViewChannel') == true && c.permissionsFor(interaction.user.id)?.has('SendMessages') == true) as Collection<string, NonThreadGuildBasedChannel>; // This type forcing is due to a bug with djs bug with the  collection.filter and can be removed when the bug is fixed
 
 	/* If the user pressed the button to learn more about the always subcommand, explain it with a select menu to select channels. */
 	if (interaction.isButton() && interaction.customId.startsWith('proxy_always_learnmore')) {

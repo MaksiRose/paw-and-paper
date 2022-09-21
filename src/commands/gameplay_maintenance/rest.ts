@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CommandInteraction, EmbedBuilder, MessageComponentInteraction, ModalSubmitInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, MessageContextMenuCommandInteraction, ModalSubmitInteraction, SelectMenuInteraction, SlashCommandBuilder, UserContextMenuCommandInteraction } from 'discord.js';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
 import { CurrentRegionType, Profile, Quid, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
@@ -42,7 +42,7 @@ export const command: SlashCommand = {
 };
 
 export async function startResting(
-	interaction: CommandInteraction<'cached'> | MessageComponentInteraction<'cached'> | ModalSubmitInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | MessageContextMenuCommandInteraction<'cached'> | UserContextMenuCommandInteraction<'cached'> | SelectMenuInteraction<'cached'> | ButtonInteraction<'cached'> | ModalSubmitInteraction<'cached'>, // This should be replaced by RepliableInteraction<'cached'> once the Cached generic of RepliableInteraction is respected
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
@@ -146,7 +146,7 @@ export async function startResting(
 				await botReply.delete();
 
 				await botReply.channel.send({
-					content: userData.settings.reminders.resting ? interaction.user.toString() : null,
+					content: userData.settings.reminders.resting ? interaction.user.toString() : undefined,
 					embeds: [embed.setDescription(`*${quidData.name}'s eyes blink open, ${pronounAndPlural(quidData, 0, 'sit')} up to stretch and then walk out into the light and buzz of late morning camp. Younglings are spilling out of the nursery, ambitious to start the day, Hunters and Healers are traveling in and out of the camp border. It is the start of the next good day!*`)],
 					components: isAutomatic ? [component] : [],
 				});

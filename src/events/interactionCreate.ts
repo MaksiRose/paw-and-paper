@@ -1,4 +1,4 @@
-import { CommandInteraction, EmbedBuilder, Interaction, MessageComponentInteraction, ModalSubmitInteraction } from 'discord.js';
+import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, Interaction, MessageContextMenuCommandInteraction, ModalSubmitInteraction, SelectMenuInteraction, UserContextMenuCommandInteraction } from 'discord.js';
 import { deleteInteractionCollector } from '../commands/quid_customization/delete';
 import { profileInteractionCollector } from '../commands/quid_customization/profile';
 import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../commands/quid_customization/pronouns';
@@ -45,7 +45,7 @@ const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
 export const cooldownMap: Map<string, boolean> = new Map();
-export const lastInteractionMap: Map<string, CommandInteraction<'cached'> | MessageComponentInteraction<'cached'> | ModalSubmitInteraction<'cached'>> = new Map();
+export const lastInteractionMap: Map<string, ChatInputCommandInteraction<'cached'> | MessageContextMenuCommandInteraction<'cached'> | UserContextMenuCommandInteraction<'cached'> | SelectMenuInteraction<'cached'> | ButtonInteraction<'cached'> | ModalSubmitInteraction<'cached'>> = new Map(); // This should be replaced by RepliableInteraction<'cached'> once the Cached generic of RepliableInteraction is respected
 export const serverActiveUsersMap: Map<string, string[]> = new Map();
 
 export const event: Event = {
@@ -60,7 +60,7 @@ export const event: Event = {
 		let serverData = await serverModel.findOne(s => s.serverId === interaction.guildId).catch(() => { return null; });
 
 		/* It's setting the last interaction timestamp for the user to now. */
-		if (userData && interaction.inCachedGuild() && (interaction.isRepliable() && !interaction.isAutocomplete())) { // For some reason autocompleteInteraction is not excluded despite being
+		if (userData && interaction.inCachedGuild() && interaction.isRepliable()) {
 
 			lastInteractionMap.set(userData.uuid + interaction.guildId, interaction);
 
@@ -75,7 +75,7 @@ export const event: Event = {
 			serverData = await createGuild(client, interaction.guild)
 				.catch(async (error) => {
 					console.error(error);
-					if (interaction.isRepliable() && !interaction.isAutocomplete()) {
+					if (interaction.isRepliable()) {
 						await sendErrorMessage(interaction, new Error('Unknown command'))
 							.catch(e => { console.error(e); });
 					}

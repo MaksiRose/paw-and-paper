@@ -699,7 +699,7 @@ async function getUpdateMessage(
 	page: number,
 ): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
 
-	let updatesMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).filter(c => c && c.type === ChannelType.GuildText).map(channel => ({ label: channel.name, value: `serversettings_updates_${channel.id}` }));
+	let updatesMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).filter(c => c !== null && c.type === ChannelType.GuildText).map(channel => ({ label: channel!.name, value: `serversettings_updates_${channel!.id}` })); // The !-forcing behind the channel type is due to a bug with discord.js and can be removed once the bug is gone
 
 	if (updatesMenuOptions.length > 25) {
 
@@ -733,7 +733,7 @@ async function getVisitsMessage(
 	page: number,
 ): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
 
-	let updatesMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [{ label: 'off', value: 'serversettings_visits_off', emoji: serverData.visitChannelId === null ? '🔘' : undefined }, ...(await interaction.guild.channels.fetch()).filter(c => c && c.type === ChannelType.GuildText).map(channel => ({ label: channel.name, value: `serversettings_visits_${channel.id}`, emoji: serverData.visitChannelId === channel.id ? '🔘' : undefined }))];
+	let updatesMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [{ label: 'off', value: 'serversettings_visits_off', emoji: serverData.visitChannelId === null ? '🔘' : undefined }, ...(await interaction.guild.channels.fetch()).filter(c => c !== null && c.type === ChannelType.GuildText).map(channel => ({ label: channel!.name, value: `serversettings_visits_${channel!.id}`, emoji: serverData.visitChannelId === channel!.id ? '🔘' : undefined }))]; // The !-forcing behind the channel type is due to a bug with discord.js and can be removed once the bug is gone
 
 	if (updatesMenuOptions.length > 25) {
 
@@ -768,7 +768,7 @@ async function getProxyingMessage(
 ): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
 
 	const setTo = serverData.proxySettings.channels.setTo === ProxyListType.Blacklist ? 'blacklist' : 'whitelist';
-	let disableSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).filter(c => c && c.type === ChannelType.GuildText).map((channel, channelId) => ({ label: channel.name, value: `serversettings_proxying_${channelId}`, emoji: serverData.proxySettings.channels[setTo].includes(channelId) ? '🔘' : undefined }));
+	let disableSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).filter(c => c !== null && c.type === ChannelType.GuildText).map((channel, channelId) => ({ label: channel!.name, value: `serversettings_proxying_${channelId}`, emoji: serverData.proxySettings.channels[setTo].includes(channelId) ? '🔘' : undefined })); // The !-forcing behind the channel type is due to a bug with discord.js and can be removed once the bug is gone
 
 	if (disableSelectMenuOptions.length > 25) {
 

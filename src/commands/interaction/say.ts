@@ -129,7 +129,7 @@ export async function sendMessage(
 		.send({
 			username: getQuidDisplayname(userData, quidData, channel.guildId),
 			avatarURL: quidData.avatarURL,
-			content: text || null,
+			content: text || undefined,
 			files: attachments,
 			embeds: embeds,
 			threadId: channel.isThread() ? channel.id : undefined,

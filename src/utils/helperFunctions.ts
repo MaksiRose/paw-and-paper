@@ -1,6 +1,6 @@
 import { generateId } from 'crystalid';
 import { APIMessage } from 'discord-api-types/v9';
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, MessageComponentInteraction, MessageOptions, ModalMessageModalSubmitInteraction, ModalSubmitInteraction, ReplyMessageOptions, WebhookEditMessageOptions } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, MessageContextMenuCommandInteraction, ModalMessageModalSubmitInteraction, ModalSubmitInteraction, RepliableInteraction, SelectMenuInteraction, UserContextMenuCommandInteraction, WebhookEditMessageOptions } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 import { cooldownMap } from '../events/interactionCreate';
 import userModel from '../models/userModel';
@@ -32,7 +32,6 @@ export function getUserIds(
 	return [...new Set([...array1, ...array2])];
 }
 
-export type ReplyOrEditOptions = Pick<InteractionReplyOptions | WebhookEditMessageOptions, keyof (InteractionReplyOptions | WebhookEditMessageOptions)>
 /**
  * It replies to an interaction, and if the interaction has already been replied to, it will edit or followup the reply instead.
  * @param interaction - The interaction object that was passed to the command handler.
@@ -41,18 +40,18 @@ export type ReplyOrEditOptions = Pick<InteractionReplyOptions | WebhookEditMessa
  * @returns A promise that resolves to a Message<boolean>
  */
 export async function respond(
-	interaction: CommandInteraction | MessageComponentInteraction | ModalSubmitInteraction,
+	interaction: RepliableInteraction,
 	options: InteractionReplyOptions,
 	editMessage: false,
 ): Promise<Message<boolean>>;
 export async function respond(
-	interaction: CommandInteraction | MessageComponentInteraction | ModalSubmitInteraction,
-	options: ReplyOrEditOptions,
+	interaction: RepliableInteraction,
+	options: InteractionReplyOptions,
 	editMessage: true,
 ): Promise<Message<boolean>>;
 export async function respond(
-	interaction: CommandInteraction | MessageComponentInteraction | ModalSubmitInteraction,
-	options: WebhookEditMessageOptions | InteractionReplyOptions,
+	interaction: RepliableInteraction,
+	options: InteractionReplyOptions,
 	editMessage: boolean,
 ): Promise<Message<boolean>> {
 
@@ -72,7 +71,7 @@ export async function respond(
 }
 
 export async function update(
-	interaction: MessageComponentInteraction | ModalMessageModalSubmitInteraction,
+	interaction: ButtonInteraction | SelectMenuInteraction | ModalMessageModalSubmitInteraction,
 	options: WebhookEditMessageOptions,
 ): Promise<Message<boolean>> {
 
@@ -94,7 +93,7 @@ export async function update(
  */
 
 export async function sendErrorMessage(
-	interaction: CommandInteraction | MessageComponentInteraction | ModalSubmitInteraction,
+	interaction: ChatInputCommandInteraction | MessageContextMenuCommandInteraction | UserContextMenuCommandInteraction | SelectMenuInteraction | ButtonInteraction | ModalSubmitInteraction,
 	error: any,
 ): Promise<any> {
 
@@ -167,7 +166,7 @@ export async function sendErrorMessage(
 		console.error('Cannot edit file ', e);
 	}
 
-	const messageOptions: Pick<ReplyMessageOptions | WebhookEditMessageOptions | MessageOptions, keyof (ReplyMessageOptions | WebhookEditMessageOptions | MessageOptions)> = {
+	const messageOptions = {
 		embeds: [new EmbedBuilder()
 			.setColor(error_color)
 			.setTitle('There was an unexpected error executing this command:')
