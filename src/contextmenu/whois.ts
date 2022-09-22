@@ -58,17 +58,18 @@ export const command: ContextMenuCommand = {
 		}
 
 		const member = await interaction.guild.members.fetch(userId).catch(() => { return undefined; });
+		const user = member ? member.user : await interaction.client.users.fetch(userId).catch(() => { return undefined; });
 
 		const embedArray = [new EmbedBuilder()
-			.setColor(member?.displayColor || interaction.targetMessage.author.accentColor || '#ffffff')
+			.setColor(member?.displayColor || user?.accentColor || '#ffffff')
 			.setAuthor({
-				name: member?.displayName || interaction.targetMessage.author?.tag,
-				iconURL: member?.displayAvatarURL() || interaction.targetMessage.author?.avatarURL() || undefined,
+				name: member?.displayName || user?.username || userId,
+				iconURL: member?.displayAvatarURL() || user?.avatarURL() || undefined,
 			})
 			.setDescription(`${interaction.targetMessage.content}\n[jump](${interaction.targetMessage.url})`)
 			.setFields([{
 				name: 'Sent by:',
-				value: `${interaction.targetMessage.author.toString()} ${member?.nickname ? `/ ${member?.nickname}` : ''}`,
+				value: `<@${userId}> ${user?.tag ? `/ ${user.tag}` : ''}`,
 			}])
 			.setTimestamp(new Date())];
 
