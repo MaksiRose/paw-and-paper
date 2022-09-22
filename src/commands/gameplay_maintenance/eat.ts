@@ -29,6 +29,7 @@ export const command: SlashCommand = {
 				.setRequired(false))
 		.toJSON(),
 	disablePreviousCommand: true,
+	modifiesServerProfile: true,
 	sendAutocomplete: async (client, interaction, userData, serverData) => {
 
 		if (!serverData) { return; }
@@ -93,7 +94,7 @@ export async function sendEatMessage(
 	quidData: Quid,
 	profileData: Profile,
 	serverData: ServerSchema,
-	messageContent: string | null,
+	messageContent: string | undefined,
 	embedArray: EmbedBuilder[],
 ): Promise<void> {
 
@@ -306,7 +307,7 @@ async function sendNoItemMessage(
 	quidData: Quid,
 	chosenFood: string,
 	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
-	messageContent: string | null,
+	messageContent: string | undefined,
 	embedArray: EmbedBuilder[],
 ): Promise<void> {
 

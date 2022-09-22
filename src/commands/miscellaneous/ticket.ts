@@ -37,6 +37,7 @@ export const command: SlashCommand = {
 				.setDescription('Optional picture or video to add context'))
 		.toJSON(),
 	disablePreviousCommand: false,
+	modifiesServerProfile: false,
 	sendCommand: async (client, interaction) => {
 
 		/* Checking if the ticket is empty. If it is, it will send an error message. */

@@ -266,6 +266,7 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 								},
 								locked: false,
 							},
+							lastActiveTimestamp: { type: 'number', default: 0, locked: false },
 						},
 						locked: false,
 					},

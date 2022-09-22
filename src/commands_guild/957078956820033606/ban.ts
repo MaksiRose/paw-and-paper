@@ -29,6 +29,7 @@ export const command: SlashCommand = {
 		.setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 		.toJSON(),
 	disablePreviousCommand: false,
+	modifiesServerProfile: false,
 	sendCommand: async (client, interaction) => {
 
 		if (!client.isReady()) { throw new Error('client isn\'t ready'); }

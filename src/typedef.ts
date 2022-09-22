@@ -9,6 +9,7 @@ export interface SlashCommand {
 	data: RESTPostAPIApplicationCommandsJSONBody;
 	/** Best practice is that only commands that immediately return without any form of interaction (Button, Select Menu, Modal) that changes something in the database are set to false. */
 	disablePreviousCommand: boolean;
+	modifiesServerProfile: boolean;
 	sendCommand: (client: CustomClient, interaction: ChatInputCommandInteraction, userData: UserSchema | null, serverData: ServerSchema | null, embedArray: Array<EmbedBuilder>) => Promise<void>;
 	sendAutocomplete?: (client: CustomClient, interaction: AutocompleteInteraction, userData: UserSchema | null, serverData: ServerSchema | null) => Promise<void>;
 }
@@ -245,6 +246,8 @@ export interface Profile {
 		global: { [key in string]: number };
 		personal: { [key in string]: number };
 	};
+	/** A timestamp for when the profile was last used */
+	lastActiveTimestamp: number
 }
 
 export interface Quid {

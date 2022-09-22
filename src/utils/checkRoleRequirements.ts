@@ -1,4 +1,4 @@
-import { ButtonInteraction, CommandInteraction, EmbedBuilder, GuildMember, MessageComponentInteraction } from 'discord.js';
+import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, GuildMember, SelectMenuInteraction } from 'discord.js';
 import { respond } from './helperFunctions';
 import userModel from '../models/userModel';
 import { RankType, ServerSchema, WayOfEarningType } from '../typedef';
@@ -10,7 +10,7 @@ const { default_color, error_color } = require('../../config.json');
  */
 export async function checkRankRequirements(
 	serverData: ServerSchema,
-	interaction: CommandInteraction | ButtonInteraction,
+	interaction: ChatInputCommandInteraction | ButtonInteraction,
 	member: GuildMember | undefined,
 	userRank: RankType,
 	sendMessage = false,
@@ -82,7 +82,7 @@ export async function checkRankRequirements(
  */
 export async function checkLevelRequirements(
 	serverData: ServerSchema,
-	interaction: CommandInteraction | MessageComponentInteraction,
+	interaction: ChatInputCommandInteraction | ButtonInteraction | SelectMenuInteraction,
 	member: GuildMember | undefined,
 	userLevel: number,
 	sendMessage = false,
@@ -150,7 +150,7 @@ export async function checkLevelRequirements(
  */
 export async function checkRoleCatchBlock(
 	error: any,
-	interaction: CommandInteraction | MessageComponentInteraction,
+	interaction: ChatInputCommandInteraction | ButtonInteraction | SelectMenuInteraction,
 	member: GuildMember,
 ): Promise<void> {
 

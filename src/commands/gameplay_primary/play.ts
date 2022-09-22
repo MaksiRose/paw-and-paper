@@ -12,6 +12,7 @@ import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../util
 import { getMapData, getQuidDisplayname, getSmallerNumber, respond, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
+import { isResting } from '../gameplay_maintenance/rest';
 import { remindOfAttack } from './attack';
 import { sendQuestMessage } from './start-quest';
 
@@ -30,6 +31,7 @@ export const command: SlashCommand = {
 		.setDMPermission(false)
 		.toJSON(),
 	disablePreviousCommand: true,
+	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
 
 		await executePlaying(interaction, userData, serverData, embedArray);
@@ -389,5 +391,5 @@ function isEligableForPlaying(
 ): boolean {
 
 	const p = quid.profiles[guildId];
-	return quid.name !== '' && quid.species !== '' && p !== undefined && p.currentRegion === CurrentRegionType.Prairie && p.energy > 0 && p.health > 0 && p.hunger > 0 && p.thirst > 0 && p.injuries.cold === false && cooldownMap.get(uuid + guildId) !== true && !p.isResting;
+	return quid.name !== '' && quid.species !== '' && p !== undefined && p.currentRegion === CurrentRegionType.Prairie && p.energy > 0 && p.health > 0 && p.hunger > 0 && p.thirst > 0 && p.injuries.cold === false && cooldownMap.get(uuid + guildId) !== true && p.isResting === false && isResting(uuid, p.serverId) === false;
 }

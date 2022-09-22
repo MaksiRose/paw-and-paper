@@ -22,6 +22,7 @@ export const command: SlashCommand = {
 		.setDMPermission(false)
 		.toJSON(),
 	disablePreviousCommand: true,
+	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */
@@ -63,7 +64,7 @@ export async function sendQuestMessage(
 	quidData: Quid,
 	profileData: Profile,
 	serverData: ServerSchema,
-	messageContent: string | null,
+	messageContent: string | undefined,
 	embedArray: EmbedBuilder[],
 	afterEmbedArray: EmbedBuilder[] = [],
 	footerText = '',
@@ -165,7 +166,7 @@ async function startQuest(
 	quidData: Quid,
 	profileData: Profile,
 	serverData: ServerSchema,
-	messageContent: string | null,
+	messageContent: string | undefined,
 	embedArray: EmbedBuilder[],
 	afterEmbedArray: EmbedBuilder[],
 	botReply: Message,

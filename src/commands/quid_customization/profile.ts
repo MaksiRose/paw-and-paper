@@ -24,6 +24,7 @@ export const command: SlashCommand = {
 				.setRequired(false))
 		.toJSON(),
 	disablePreviousCommand: false, // This command has checks in place that only change something if no other command is active
+	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
 
 		/* Getting userData and quidData either for mentionedUser if there is one or for interaction user otherwise */
@@ -38,10 +39,9 @@ export const command: SlashCommand = {
 			else {
 
 				await respond(interaction, {
-					embeds: [{
-						color: error_color,
-						title: 'This user has no account!',
-					}],
+					embeds: [new EmbedBuilder()
+						.setColor(error_color)
+						.setTitle('This user has no account!')],
 				}, true);
 			}
 			return;
@@ -81,7 +81,7 @@ export async function getMessageContent(
 	const user = await client.users.fetch(userId);
 
 	return {
-		content: !quidData ? (isYourself ? 'You are on an Empty Slot. Select a quid to switch to below.' : 'Select a quid to view below.') : null,
+		content: !quidData ? (isYourself ? 'You are on an Empty Slot. Select a quid to switch to below.' : 'Select a quid to view below.') : undefined,
 		embeds: !quidData ? embedArray : [...embedArray, new EmbedBuilder()
 			.setColor(quidData.color)
 			.setTitle(quidData.name)
@@ -150,7 +150,7 @@ export async function profileInteractionCollector(
 		const selectMenu = getAccountsPage(userData, userId, 0, userData.userId.includes(interaction.user.id));
 
 		dmChannel.send({
-			content: interaction.message.content || null,
+			content: interaction.message.content || undefined,
 			embeds: interaction.message.embeds,
 			components: (selectMenu.options.length > 0) ? [new ActionRowBuilder<SelectMenuBuilder>().setComponents([selectMenu])] : [],
 		});
@@ -266,6 +266,7 @@ export async function profileInteractionCollector(
 								},
 								roles: [],
 								skills: { global: {}, personal: {} },
+								lastActiveTimestamp: 0,
 							};
 						}
 					},

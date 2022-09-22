@@ -21,6 +21,7 @@ export const command: SlashCommand = {
 				.setRequired(true))
 		.toJSON(),
 	disablePreviousCommand: false,
+	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {
 
 		const quidData = userData ? userData.quids[userData.currentQuid[interaction.guildId || 'DM'] || ''] : undefined;

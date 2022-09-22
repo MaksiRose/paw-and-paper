@@ -26,6 +26,7 @@ export const command: SlashCommand = {
 				.setDescription('Select this if you want to individually store your items away.'))
 		.toJSON(),
 	disablePreviousCommand: true,
+	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */

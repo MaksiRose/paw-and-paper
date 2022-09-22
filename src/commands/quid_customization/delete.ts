@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, WebhookEditMessageOptions } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, InteractionReplyOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { respond, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
@@ -17,6 +17,7 @@ export const command: SlashCommand = {
 		.setDescription(description)
 		.toJSON(),
 	disablePreviousCommand: true,
+	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {
 
 		/* Checking if the user has an account. If they do not, it will send a message saying they haave no account. */
@@ -284,7 +285,7 @@ export async function deleteInteractionCollector(
 
 async function sendOriginalMessage(
 	userData: UserSchema,
-): Promise<WebhookEditMessageOptions> {
+): Promise<InteractionReplyOptions> {
 
 	return {
 		embeds: [new EmbedBuilder()

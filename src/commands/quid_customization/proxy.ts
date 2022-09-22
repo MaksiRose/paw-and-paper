@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, Collection, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, NonThreadGuildBasedChannel, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, Collection, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { ProxyConfigType, ProxyListType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
@@ -17,6 +17,7 @@ export const command: SlashCommand = {
 		.setDescription(description)
 		.toJSON(),
 	disablePreviousCommand: true,
+	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {
 
 		/* If the user does not have a quid selected, return. */
@@ -119,7 +120,7 @@ export async function proxyInteractionCollector(
 		return;
 	}
 
-	const allChannels = (await interaction.guild?.channels?.fetch() ?? new Collection()).filter(g => g && g.type === ChannelType.GuildText && g.viewable && g.permissionsFor(interaction.client.user?.id || '')?.has('SendMessages') == true && g.permissionsFor(interaction.user.id)?.has('ViewChannel') == true && g.permissionsFor(interaction.user.id)?.has('SendMessages') == true);
+	const allChannels = (await interaction.guild?.channels?.fetch() ?? new Collection()).filter((c): c is TextChannel => c !== null && c.type === ChannelType.GuildText && c.viewable && c.permissionsFor(interaction.client.user?.id || '')?.has('SendMessages') == true && c.permissionsFor(interaction.user.id)?.has('ViewChannel') == true && c.permissionsFor(interaction.user.id)?.has('SendMessages') == true);
 
 	/* If the user pressed the button to learn more about the always subcommand, explain it with a select menu to select channels. */
 	if (interaction.isButton() && interaction.customId.startsWith('proxy_always_learnmore')) {
@@ -257,7 +258,7 @@ export async function sendEditProxyModalResponse(
 }
 
 async function getSelectMenus(
-	allChannels: Collection<string, NonThreadGuildBasedChannel>,
+	allChannels: Collection<string, TextChannel>,
 	userData: UserSchema | null,
 	quidId: string,
 	serverData: ServerSchema | null,

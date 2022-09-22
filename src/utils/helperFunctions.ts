@@ -1,6 +1,6 @@
 import { generateId } from 'crystalid';
 import { APIMessage } from 'discord-api-types/v9';
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, MessageComponentInteraction, MessageOptions, ModalMessageModalSubmitInteraction, ModalSubmitInteraction, ReplyMessageOptions, WebhookEditMessageOptions } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, MessageContextMenuCommandInteraction, ModalMessageModalSubmitInteraction, ModalSubmitInteraction, RepliableInteraction, SelectMenuInteraction, UserContextMenuCommandInteraction, WebhookEditMessageOptions } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 import { cooldownMap } from '../events/interactionCreate';
 import userModel from '../models/userModel';
@@ -32,7 +32,6 @@ export function getUserIds(
 	return [...new Set([...array1, ...array2])];
 }
 
-export type ReplyOrEditOptions = Pick<InteractionReplyOptions | WebhookEditMessageOptions, keyof (InteractionReplyOptions | WebhookEditMessageOptions)>
 /**
  * It replies to an interaction, and if the interaction has already been replied to, it will edit or followup the reply instead.
  * @param interaction - The interaction object that was passed to the command handler.
@@ -41,18 +40,18 @@ export type ReplyOrEditOptions = Pick<InteractionReplyOptions | WebhookEditMessa
  * @returns A promise that resolves to a Message<boolean>
  */
 export async function respond(
-	interaction: CommandInteraction | MessageComponentInteraction | ModalSubmitInteraction,
+	interaction: RepliableInteraction,
 	options: InteractionReplyOptions,
 	editMessage: false,
 ): Promise<Message<boolean>>;
 export async function respond(
-	interaction: CommandInteraction | MessageComponentInteraction | ModalSubmitInteraction,
-	options: ReplyOrEditOptions,
+	interaction: RepliableInteraction,
+	options: InteractionReplyOptions,
 	editMessage: true,
 ): Promise<Message<boolean>>;
 export async function respond(
-	interaction: CommandInteraction | MessageComponentInteraction | ModalSubmitInteraction,
-	options: WebhookEditMessageOptions | InteractionReplyOptions,
+	interaction: RepliableInteraction,
+	options: InteractionReplyOptions,
 	editMessage: boolean,
 ): Promise<Message<boolean>> {
 
@@ -72,7 +71,7 @@ export async function respond(
 }
 
 export async function update(
-	interaction: MessageComponentInteraction | ModalMessageModalSubmitInteraction,
+	interaction: ButtonInteraction | SelectMenuInteraction | ModalMessageModalSubmitInteraction,
 	options: WebhookEditMessageOptions,
 ): Promise<Message<boolean>> {
 
@@ -94,7 +93,7 @@ export async function update(
  */
 
 export async function sendErrorMessage(
-	interaction: CommandInteraction | MessageComponentInteraction | ModalSubmitInteraction,
+	interaction: ChatInputCommandInteraction | MessageContextMenuCommandInteraction | UserContextMenuCommandInteraction | SelectMenuInteraction | ButtonInteraction | ModalSubmitInteraction,
 	error: any,
 ): Promise<any> {
 
@@ -118,12 +117,39 @@ export async function sendErrorMessage(
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to submit the modal \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 	}
 
+	const jsonInteraction = {
+		id: interaction.id,
+		application_id: interaction.applicationId,
+		type: interaction.type,
+		data: interaction.isCommand() ? {
+			id: interaction.commandId,
+			name: interaction.commandName,
+			type: interaction.commandType,
+			options: interaction.options.data,
+			target_id: interaction.isContextMenuCommand() ? interaction.targetId : undefined,
+		} : undefined,
+		guild_id: interaction.guildId ?? undefined,
+		channel_id: interaction.channelId ?? undefined,
+		user_id: interaction.user.id,
+		message: interaction.isMessageComponent() ? {
+			id: interaction.message.id,
+			timestamp: interaction.message.createdTimestamp,
+			edited_timestamp: interaction.message.editedTimestamp,
+			type: interaction.message.type,
+			application_id: interaction.message.applicationId ?? undefined,
+		} : undefined,
+		timestamp: interaction.createdTimestamp,
+		app_permission: interaction.appPermissions?.bitfield.toString(),
+		locale: interaction.locale,
+		guild_locale: interaction.guildLocale,
+	};
+
 	if (error.status === 404 || error.httpStatus === 404) {
 
 		console.error('Error 404 - An error is not being sent to the user. ', error);
 		return;
 	}
-	console.error(error);
+	console.error(error, jsonInteraction);
 
 	let errorId: string | undefined = undefined;
 
@@ -131,7 +157,7 @@ export async function sendErrorMessage(
 
 		const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
 		errorId = generateId();
-		errorStacks[errorId] = error?.stack ?? String(error);
+		errorStacks[errorId] = `${(error?.stack ?? JSON.stringify(error, null, '\t'))}\n${JSON.stringify(jsonInteraction, null, '\t')}`;
 		writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
 	}
 	catch (e) {
@@ -140,7 +166,7 @@ export async function sendErrorMessage(
 		console.error('Cannot edit file ', e);
 	}
 
-	const messageOptions: Pick<ReplyMessageOptions | WebhookEditMessageOptions | MessageOptions, keyof (ReplyMessageOptions | WebhookEditMessageOptions | MessageOptions)> = {
+	const messageOptions = {
 		embeds: [new EmbedBuilder()
 			.setColor(error_color)
 			.setTitle('There was an unexpected error executing this command:')

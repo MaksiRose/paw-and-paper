@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
@@ -19,6 +19,7 @@ export const command: SlashCommand = {
 		.setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels + PermissionFlagsBits.ManageRoles)
 		.toJSON(),
 	disablePreviousCommand: false,
+	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData, serverData) => {
 
 		// It should give you a message with the a drop-down of menus:
@@ -699,7 +700,7 @@ async function getUpdateMessage(
 	page: number,
 ): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
 
-	let updatesMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).filter(c => c && c.type === ChannelType.GuildText).map(channel => ({ label: channel.name, value: `serversettings_updates_${channel.id}` }));
+	let updatesMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).filter((c): c is TextChannel => c !== null && c.type === ChannelType.GuildText).map(channel => ({ label: channel.name, value: `serversettings_updates_${channel.id}` }));
 
 	if (updatesMenuOptions.length > 25) {
 
@@ -733,7 +734,7 @@ async function getVisitsMessage(
 	page: number,
 ): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
 
-	let updatesMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [{ label: 'off', value: 'serversettings_visits_off', emoji: serverData.visitChannelId === null ? '🔘' : undefined }, ...(await interaction.guild.channels.fetch()).filter(c => c && c.type === ChannelType.GuildText).map(channel => ({ label: channel.name, value: `serversettings_visits_${channel.id}`, emoji: serverData.visitChannelId === channel.id ? '🔘' : undefined }))];
+	let updatesMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [{ label: 'off', value: 'serversettings_visits_off', emoji: serverData.visitChannelId === null ? '🔘' : undefined }, ...(await interaction.guild.channels.fetch()).filter((c): c is TextChannel => c !== null && c.type === ChannelType.GuildText).map(channel => ({ label: channel!.name, value: `serversettings_visits_${channel.id}`, emoji: serverData.visitChannelId === channel.id ? '🔘' : undefined }))];
 
 	if (updatesMenuOptions.length > 25) {
 
@@ -768,7 +769,7 @@ async function getProxyingMessage(
 ): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
 
 	const setTo = serverData.proxySettings.channels.setTo === ProxyListType.Blacklist ? 'blacklist' : 'whitelist';
-	let disableSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).filter(c => c && c.type === ChannelType.GuildText).map((channel, channelId) => ({ label: channel.name, value: `serversettings_proxying_${channelId}`, emoji: serverData.proxySettings.channels[setTo].includes(channelId) ? '🔘' : undefined }));
+	let disableSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).filter((c): c is TextChannel => c !== null && c.type === ChannelType.GuildText).map((channel, channelId) => ({ label: channel.name, value: `serversettings_proxying_${channelId}`, emoji: serverData.proxySettings.channels[setTo].includes(channelId) ? '🔘' : undefined }));
 
 	if (disableSelectMenuOptions.length > 25) {
 

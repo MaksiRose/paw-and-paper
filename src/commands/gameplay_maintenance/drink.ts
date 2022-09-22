@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, MessageComponentInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
 import { CurrentRegionType, Profile, Quid, SlashCommand, UserSchema } from '../../typedef';
@@ -22,6 +22,7 @@ export const command: SlashCommand = {
 		.setDMPermission(false)
 		.toJSON(),
 	disablePreviousCommand: true,
+	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */
@@ -43,11 +44,11 @@ export const command: SlashCommand = {
 };
 
 export async function sendDrinkMessage(
-	interaction: ChatInputCommandInteraction<'cached'> | MessageComponentInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
-	messageContent: string | null,
+	messageContent: string | undefined,
 	embedArray: EmbedBuilder[],
 ): Promise<void> {
 

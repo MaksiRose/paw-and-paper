@@ -23,6 +23,7 @@ export const command: SlashCommand = {
 		.setDMPermission(false)
 		.toJSON(),
 	disablePreviousCommand: false,
+	modifiesServerProfile: false,
 	sendCommand: async (client, interaction) => {
 
 		if (!isInGuild(interaction)) { return; }

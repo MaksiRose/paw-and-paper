@@ -27,6 +27,7 @@ export const command: SlashCommand = {
 				.setAutocomplete(true))
 		.toJSON(),
 	disablePreviousCommand: false,
+	modifiesServerProfile: false,
 	sendAutocomplete: async (client, interaction, userData) => {
 
 		const focusedValue = interaction.options.getFocused();

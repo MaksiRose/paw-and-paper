@@ -21,22 +21,18 @@ export const command: SlashCommand = {
 		.setDMPermission(false)
 		.toJSON(),
 	disablePreviousCommand: false,
+	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
 
-		let creatorUUID = userData?.uuid;
-
 		const mentionedUser = interaction.options.getUser('user');
 		if (mentionedUser) {
 
 			userData = await userModel.findOne(u => u.userId.includes(mentionedUser.id)).catch(() => { return null; });
-			creatorUUID = userData?.uuid;
 		}
 		else if (!hasCompletedAccount(interaction, userData)) { return; }
-
-		if (creatorUUID === undefined) { throw new TypeError('creatorUUID is undefined'); }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData = userData?.quids[userData?.currentQuid[interaction.guildId] || ''];
@@ -54,7 +50,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		await sendStatsMessage(interaction, userData, quidData._id, creatorUUID);
+		await sendStatsMessage(interaction, userData, quidData._id, interaction.user.id);
 	},
 };
 
@@ -62,7 +58,7 @@ async function sendStatsMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	userData: UserSchema,
 	quidId: string,
-	creatorUUID: string,
+	creatorUserId: string,
 ): Promise<void> {
 
 	/* Gets the current active quid and the server profile from the account */
@@ -71,11 +67,11 @@ async function sendStatsMessage(
 
 	const components = new ActionRowBuilder<ButtonBuilder>()
 		.setComponents([new ButtonBuilder()
-			.setCustomId(`stats_refresh_${quidId}_${creatorUUID}`)
+			.setCustomId(`stats_refresh_${quidId}_${creatorUserId}`)
 			.setEmoji('🔁')
 			.setStyle(ButtonStyle.Secondary),
 		new ButtonBuilder()
-			.setCustomId(`stats_store_${creatorUUID}`)
+			.setCustomId(`stats_store_${creatorUserId}`)
 			.setLabel('Store items away')
 			.setStyle(ButtonStyle.Secondary),
 		]);
@@ -84,7 +80,7 @@ async function sendStatsMessage(
 	const inventoryObjectValues = Object.values(profileData.inventory) as Array<Inventory[keyof Inventory]>;
 	/** This is an array of numbers as the properties of the keys in the inventory objects, which are numbers representing the amount one has of the key which is an item type. */
 	const inventoryNumberValues = inventoryObjectValues.map(type => Object.values(type)).flat();
-	if (inventoryNumberValues.reduce((a, b) => a + b) === 0 || creatorUUID !== userData.uuid) {
+	if (inventoryNumberValues.reduce((a, b) => a + b) === 0 || !userData.userId.includes(creatorUserId)) {
 
 		components.components.pop();
 	}
@@ -133,11 +129,11 @@ export async function statsInteractionCollector(
 
 		const quidId = interaction.customId.split('_')[2];
 		if (quidId === undefined) { throw new TypeError('quidId is undefined'); }
-		const creatorUUID = interaction.customId.split('_')[3];
-		if (creatorUUID === undefined) { throw new TypeError('creatorUUID is undefined'); }
+		const creatorUserId = interaction.customId.split('_')[3];
+		if (creatorUserId === undefined) { throw new TypeError('creatorUserId is undefined'); }
 
 		const userData1 = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
-		await sendStatsMessage(interaction, userData1, quidId, creatorUUID);
+		await sendStatsMessage(interaction, userData1, quidId, creatorUserId);
 		return;
 	}
 

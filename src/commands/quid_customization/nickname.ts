@@ -18,6 +18,7 @@ export const command: SlashCommand = {
 				.setMaxLength(48))
 		.toJSON(),
 	disablePreviousCommand: false,
+	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData, serverData) => {
 
 		if (!hasName(interaction, userData)) { return; }

@@ -1,4 +1,4 @@
-import { CommandInteraction, EmbedBuilder, Interaction, MessageComponentInteraction, ModalSubmitInteraction } from 'discord.js';
+import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, Interaction, MessageContextMenuCommandInteraction, ModalSubmitInteraction, SelectMenuInteraction, UserContextMenuCommandInteraction } from 'discord.js';
 import { deleteInteractionCollector } from '../commands/quid_customization/delete';
 import { profileInteractionCollector } from '../commands/quid_customization/profile';
 import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../commands/quid_customization/pronouns';
@@ -26,7 +26,7 @@ import { playfightInteractionCollector } from '../commands/interaction/playfight
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
 import { profilelistInteractionCollector } from '../commands/interaction/profilelist';
-import { startResting } from '../commands/gameplay_maintenance/rest';
+import { isResting, startResting } from '../commands/gameplay_maintenance/rest';
 import { statsInteractionCollector } from '../commands/gameplay_maintenance/stats';
 import settingsInteractionCollector from '../utils/settingsInteractionCollector';
 import { storeInteractionCollector } from '../commands/gameplay_maintenance/store';
@@ -45,7 +45,7 @@ const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
 export const cooldownMap: Map<string, boolean> = new Map();
-export const lastInteractionMap: Map<string, CommandInteraction<'cached'> | MessageComponentInteraction<'cached'> | ModalSubmitInteraction<'cached'>> = new Map();
+export const lastInteractionMap: Map<string, ChatInputCommandInteraction<'cached'> | MessageContextMenuCommandInteraction<'cached'> | UserContextMenuCommandInteraction<'cached'> | SelectMenuInteraction<'cached'> | ButtonInteraction<'cached'> | ModalSubmitInteraction<'cached'>> = new Map(); // This should be replaced by RepliableInteraction<'cached'> once the Cached generic of RepliableInteraction is respected
 export const serverActiveUsersMap: Map<string, string[]> = new Map();
 
 export const event: Event = {
@@ -60,7 +60,7 @@ export const event: Event = {
 		let serverData = await serverModel.findOne(s => s.serverId === interaction.guildId).catch(() => { return null; });
 
 		/* It's setting the last interaction timestamp for the user to now. */
-		if (userData && interaction.inCachedGuild() && (interaction.isRepliable() && !interaction.isAutocomplete())) { // For some reason autocompleteInteraction is not excluded despite being
+		if (userData && interaction.inCachedGuild() && interaction.isRepliable()) {
 
 			lastInteractionMap.set(userData.uuid + interaction.guildId, interaction);
 
@@ -75,7 +75,7 @@ export const event: Event = {
 			serverData = await createGuild(client, interaction.guild)
 				.catch(async (error) => {
 					console.error(error);
-					if (interaction.isRepliable() && !interaction.isAutocomplete()) {
+					if (interaction.isRepliable()) {
 						await sendErrorMessage(interaction, new Error('Unknown command'))
 							.catch(e => { console.error(e); });
 					}
@@ -135,6 +135,19 @@ export const event: Event = {
 						await sendErrorMessage(interaction, error)
 							.catch(e => { console.error(e); });
 					});
+			}
+
+			/* It's disabling all components if userData exists and the command is set to disable a previous command. */
+			if (userData && interaction.inGuild() && command.modifiesServerProfile) {
+
+				await userModel
+					.findOneAndUpdate(
+						u => u.uuid === userData!.uuid,
+						(u) => {
+							const p = getMapData(getMapData(u.quids, getMapData(userData!.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+							p.lastActiveTimestamp = Date.now();
+						},
+					);
 			}
 
 			/* This sends the command and error message if an error occurs. */
@@ -639,7 +652,7 @@ setInterval(async function() {
 			const hasLessThanMaxEnergy = activeProfile.energy < activeProfile.maxEnergy;
 			const isConscious = activeProfile.energy > 0 || activeProfile.health > 0 || activeProfile.hunger > 0 || activeProfile.thirst > 0;
 			const hasNoCooldown = cooldownMap.get(user.uuid + guildId) !== true;
-			if (lastInteractionIsTenMinutesAgo && !activeProfile.isResting && hasLessThanMaxEnergy && isConscious && hasNoCooldown) {
+			if (lastInteractionIsTenMinutesAgo && activeProfile.isResting === false && isResting(user.uuid, guildId) === false && hasLessThanMaxEnergy && isConscious && hasNoCooldown) {
 
 				await startResting(lastInteraction, user, quid, activeProfile, serverData)
 					.catch(async (error) => {
