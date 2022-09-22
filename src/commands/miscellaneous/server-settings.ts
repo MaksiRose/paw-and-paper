@@ -19,6 +19,7 @@ export const command: SlashCommand = {
 		.setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels + PermissionFlagsBits.ManageRoles)
 		.toJSON(),
 	disablePreviousCommand: false,
+	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData, serverData) => {
 
 		// It should give you a message with the a drop-down of menus:

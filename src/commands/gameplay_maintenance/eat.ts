@@ -29,6 +29,7 @@ export const command: SlashCommand = {
 				.setRequired(false))
 		.toJSON(),
 	disablePreviousCommand: true,
+	modifiesServerProfile: true,
 	sendAutocomplete: async (client, interaction, userData, serverData) => {
 
 		if (!serverData) { return; }

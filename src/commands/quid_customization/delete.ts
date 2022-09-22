@@ -17,6 +17,7 @@ export const command: SlashCommand = {
 		.setDescription(description)
 		.toJSON(),
 	disablePreviousCommand: true,
+	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {
 
 		/* Checking if the user has an account. If they do not, it will send a message saying they haave no account. */

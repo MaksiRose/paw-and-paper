@@ -137,6 +137,19 @@ export const event: Event = {
 					});
 			}
 
+			/* It's disabling all components if userData exists and the command is set to disable a previous command. */
+			if (userData && interaction.inGuild() && command.modifiesServerProfile) {
+
+				await userModel
+					.findOneAndUpdate(
+						u => u.uuid === userData!.uuid,
+						(u) => {
+							const p = getMapData(getMapData(u.quids, getMapData(userData!.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+							p.lastActiveTimestamp = Date.now();
+						},
+					);
+			}
+
 			/* This sends the command and error message if an error occurs. */
 			console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully executed \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 			await command

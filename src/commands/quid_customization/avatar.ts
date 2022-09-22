@@ -20,6 +20,7 @@ export const command: SlashCommand = {
 				.setRequired(true))
 		.toJSON(),
 	disablePreviousCommand: false,
+	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {
 
 		if (!hasName(interaction, userData)) { return; }

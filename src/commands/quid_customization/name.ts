@@ -23,6 +23,7 @@ export const command: SlashCommand = {
 				.setRequired(true))
 		.toJSON(),
 	disablePreviousCommand: false,
+	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData, serverData) => {
 
 		let newAccount = false;
@@ -135,6 +136,7 @@ export const command: SlashCommand = {
 								},
 								roles: [],
 								skills: { global: {}, personal: {} },
+								lastActiveTimestamp: 0,
 							},
 						} : {},
 					};
