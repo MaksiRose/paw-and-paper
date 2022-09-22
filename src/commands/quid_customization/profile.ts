@@ -39,10 +39,9 @@ export const command: SlashCommand = {
 			else {
 
 				await respond(interaction, {
-					embeds: [{
-						color: error_color,
-						title: 'This user has no account!',
-					}],
+					embeds: [new EmbedBuilder()
+						.setColor(error_color)
+						.setTitle('This user has no account!')],
 				}, true);
 			}
 			return;
