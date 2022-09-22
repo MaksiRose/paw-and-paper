@@ -67,6 +67,7 @@ The Service collects and stores the following data in its database:
       - A list of potential in-game injuries/illnesses the user may have<sup>2</sup>
       - A list of in-game items with the amount the user has of them<sup>2</sup>
       - A list of in-game shop roles, with their role ID provided by Discord, their in-game way of earning and their in-game requirement, that the user earned<sup>2</sup>
+	  - A timestamp of when this profile was last active<sup>6</sup>
   - A universally unique identifier<sup>1</sup>
 - A list of users (via their user ID provided by Discord) and servers (via their server ID provided by Discord) that are prohibited from using this Service.<sup>1</sup>
 - A list of user accounts (via their universally unique identifier) and server accounts (via their universally unique identifier) that are going to be deleted, with a timestamp of their deletion date<sup>1</sup>
@@ -79,6 +80,7 @@ This is why we need and how we use the data:
 3. This information is stored to enable the in-game visiting feature. It is used to connect servers/channels with each other.
 4. This information is stored as a setting that you made. It is used to enable or disable features related to that setting.
 5. This information is stored for moderation purposes. It is displayed when other users want to know which user triggered the webhook message to be sent.
+6. This information is stored to enhance user experience.
 
 We may update this Privacy Policy.
 
