@@ -26,7 +26,7 @@ import { playfightInteractionCollector } from '../commands/interaction/playfight
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
 import { profilelistInteractionCollector } from '../commands/interaction/profilelist';
-import { startResting } from '../commands/gameplay_maintenance/rest';
+import { isResting, startResting } from '../commands/gameplay_maintenance/rest';
 import { statsInteractionCollector } from '../commands/gameplay_maintenance/stats';
 import settingsInteractionCollector from '../utils/settingsInteractionCollector';
 import { storeInteractionCollector } from '../commands/gameplay_maintenance/store';
@@ -652,7 +652,7 @@ setInterval(async function() {
 			const hasLessThanMaxEnergy = activeProfile.energy < activeProfile.maxEnergy;
 			const isConscious = activeProfile.energy > 0 || activeProfile.health > 0 || activeProfile.hunger > 0 || activeProfile.thirst > 0;
 			const hasNoCooldown = cooldownMap.get(user.uuid + guildId) !== true;
-			if (lastInteractionIsTenMinutesAgo && !activeProfile.isResting && hasLessThanMaxEnergy && isConscious && hasNoCooldown) {
+			if (lastInteractionIsTenMinutesAgo && activeProfile.isResting === false && isResting(user.uuid, guildId) === false && hasLessThanMaxEnergy && isConscious && hasNoCooldown) {
 
 				await startResting(lastInteraction, user, quid, activeProfile, serverData)
 					.catch(async (error) => {

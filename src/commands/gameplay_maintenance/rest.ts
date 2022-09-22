@@ -9,7 +9,7 @@ import { getMapData, getQuidDisplayname, respond, sendErrorMessage } from '../..
 import wearDownDen from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
-const restingTimeoutMap: Map<string, NodeJS.Timeout> = new Map();
+const restingIntervalMap: Map<string, NodeJS.Timeout> = new Map();
 
 const name: SlashCommand['name'] = 'rest';
 const description: SlashCommand['description'] = 'Get some sleep and fill up your energy meter. Takes some time to refill.';
@@ -52,7 +52,7 @@ export async function startResting(
 
 	const messageContent = remindOfAttack(interaction.guildId);
 
-	if (profileData.isResting === true) {
+	if (profileData.isResting === true || isResting(userData.uuid, profileData.serverId)) {
 
 		await respond(interaction, {
 			content: messageContent,
@@ -107,12 +107,7 @@ export async function startResting(
 		components: isAutomatic ? [component] : [],
 	}, false);
 
-	restingTimeoutMap.set(userData.uuid + interaction.guildId, setTimeout(addEnergy, 30_000 + await getExtraRestingTime(interaction.guildId)));
-
-	/**
-	 * Gives the user an energy point, checks if they reached the maximum, and create a new Timeout if they didn't.
-	 */
-	async function addEnergy(): Promise<void> {
+	restingIntervalMap.set(userData.uuid + interaction.guildId, setInterval(async function(): Promise<void> {
 		try {
 
 			energyPoints += 1;
@@ -151,10 +146,10 @@ export async function startResting(
 					embeds: [embed.setDescription(`*${quidData.name}'s eyes blink open, ${pronounAndPlural(quidData, 0, 'sit')} up to stretch and then walk out into the light and buzz of late morning camp. Younglings are spilling out of the nursery, ambitious to start the day, Hunters and Healers are traveling in and out of the camp border. It is the start of the next good day!*`)],
 					components: isAutomatic ? [component] : [],
 				});
+
+				stopResting(userData.uuid, interaction.guildId);
 				return;
 			}
-
-			restingTimeoutMap.set(userData.uuid + interaction.guildId, setTimeout(addEnergy, 30_000 + await getExtraRestingTime(interaction.guildId)));
 			return;
 		}
 		catch (error) {
@@ -162,7 +157,7 @@ export async function startResting(
 			await sendErrorMessage(interaction, error)
 				.catch(e => { console.error(e); });
 		}
-	}
+	}, 30_000 + await getExtraRestingTime(interaction.guildId)));
 }
 
 /**
@@ -198,10 +193,18 @@ function getRestingEmbed(
 export function stopResting(
 	uuid: string,
 	guildId: string,
-): void {
+): void { clearInterval(restingIntervalMap.get(uuid + guildId)); }
 
-	clearTimeout(restingTimeoutMap.get(uuid + guildId));
-}
+/**
+ * Returns true if the user is resting, false otherwise
+ * @param {string} uuid - The UUID of the player.
+ * @param {string} guildId - The ID of the guild the user is in.
+ * @returns A boolean value.
+ */
+export function isResting(
+	uuid: string,
+	guildId: string,
+): boolean { return restingIntervalMap.has(uuid + guildId); }
 
 /**
  * It gets the server's den stats, calculates a multiplier based on those stats, and returns the
