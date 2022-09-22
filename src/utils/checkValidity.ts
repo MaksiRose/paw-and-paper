@@ -6,7 +6,7 @@ import { Quid, Profile, UserSchema, Inventory } from '../typedef';
 import { getMapData } from './helperFunctions';
 import { pronoun, pronounAndPlural, upperCasePronoun } from './getPronouns';
 import { decreaseLevel } from './levelHandling';
-import { stopResting } from '../commands/gameplay_maintenance/rest';
+import { stopResting, isResting as checkResting } from '../commands/gameplay_maintenance/rest';
 const { error_color } = require('../../config.json');
 
 export async function isPassedOut(
@@ -95,7 +95,7 @@ export async function isResting(
 ): Promise<UserSchema> {
 
 	/* This is a function that checks if the user is resting. If they are, it will wake them up and attach an embed to the message. */
-	if (profileData.isResting == true) {
+	if (profileData.isResting === true || checkResting(userData.uuid, interaction.guildId) === true) {
 
 		userData = await userModel.findOneAndUpdate(
 			u => u.uuid === userData.uuid,
@@ -105,7 +105,7 @@ export async function isResting(
 			},
 		);
 
-		stopResting(interaction.user.id, interaction.guildId);
+		stopResting(userData.uuid, interaction.guildId);
 
 		embedArray.unshift(new EmbedBuilder()
 			.setColor(quidData.color)
@@ -253,7 +253,7 @@ export function isInteractable(
 		return false;
 	}
 
-	if (profileData.isResting) {
+	if (profileData.isResting || checkResting(userData.uuid, profileData.serverId)) {
 
 		respond(interaction, {
 			content: messageContent,
