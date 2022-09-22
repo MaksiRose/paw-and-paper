@@ -24,6 +24,7 @@ export const command: SlashCommand = {
 				.setRequired(false))
 		.toJSON(),
 	disablePreviousCommand: false, // This command has checks in place that only change something if no other command is active
+	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
 
 		/* Getting userData and quidData either for mentionedUser if there is one or for interaction user otherwise */
@@ -266,6 +267,7 @@ export async function profileInteractionCollector(
 								},
 								roles: [],
 								skills: { global: {}, personal: {} },
+								lastActiveTimestamp: 0,
 							};
 						}
 					},

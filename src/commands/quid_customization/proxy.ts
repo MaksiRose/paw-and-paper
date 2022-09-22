@@ -17,6 +17,7 @@ export const command: SlashCommand = {
 		.setDescription(description)
 		.toJSON(),
 	disablePreviousCommand: true,
+	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {
 
 		/* If the user does not have a quid selected, return. */

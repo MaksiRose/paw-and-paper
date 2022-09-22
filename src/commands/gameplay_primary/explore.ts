@@ -33,6 +33,7 @@ export const command: SlashCommand = {
 		.setDMPermission(false)
 		.toJSON(),
 	disablePreviousCommand: true,
+	modifiesServerProfile: true,
 	sendAutocomplete: async (client, interaction, userData, serverData) => {
 
 		if (!serverData || !interaction.inGuild()) { return; }

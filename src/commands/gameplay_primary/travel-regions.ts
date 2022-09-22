@@ -37,6 +37,7 @@ export const command: SlashCommand = {
 		.setDMPermission(false)
 		.toJSON(),
 	disablePreviousCommand: true,
+	modifiesServerProfile: false, // This is technically true, but it's set to false because it does not necessarily reflect your actual activity
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */

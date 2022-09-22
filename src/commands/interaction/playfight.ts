@@ -37,6 +37,7 @@ export const command: SlashCommand = {
 				.setRequired(true))
 		.toJSON(),
 	disablePreviousCommand: true,
+	modifiesServerProfile: false, // This is technically true, but set to false because it does not reflect activity
 	sendCommand: async (client, interaction, userData1, serverData, embedArray) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */

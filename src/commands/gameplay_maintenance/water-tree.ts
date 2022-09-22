@@ -27,6 +27,7 @@ export const command: SlashCommand = {
 		.setDMPermission(false)
 		.toJSON(),
 	disablePreviousCommand: true,
+	modifiesServerProfile: false, // This is technically true, but it's set to false because it's a task that you get reminded to do daily and does not reflect your actual activity
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */

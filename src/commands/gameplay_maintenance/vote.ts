@@ -19,6 +19,7 @@ export const command: SlashCommand = {
 		.setDMPermission(true)
 		.toJSON(),
 	disablePreviousCommand: true,
+	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
 
 		if (!hasCompletedAccount(interaction, userData)) { return; }

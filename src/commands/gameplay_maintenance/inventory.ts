@@ -20,6 +20,7 @@ export const command: SlashCommand = {
 		.setDMPermission(false)
 		.toJSON(),
 	disablePreviousCommand: true,
+	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData, serverData) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */
