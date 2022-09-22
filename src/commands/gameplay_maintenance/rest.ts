@@ -193,7 +193,11 @@ function getRestingEmbed(
 export function stopResting(
 	uuid: string,
 	guildId: string,
-): void { clearInterval(restingIntervalMap.get(uuid + guildId)); }
+): void {
+
+	clearInterval(restingIntervalMap.get(uuid + guildId));
+	restingIntervalMap.delete(uuid + guildId);
+}
 
 /**
  * Returns true if the user is resting, false otherwise
