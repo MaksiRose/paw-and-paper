@@ -61,6 +61,24 @@ export async function executePlaying(
 
 	if (await hasFullInventory(interaction, userData1, quidData1, profileData1, embedArray, messageContent)) { return; }
 
+	if (profileData1.tutorials.play === false) {
+
+		await respond(interaction, {
+			content: '*About the structure of RPG messages:*\n\n- Most messages have `Roleplay text`, which is written in cursive, and only for fun!\n- More important is the `Info text`, which is at the bottom of each message, and has the most important info like how to play a game or stat changes. **Read this part first** to avoid confusion!\n\n> Here is an example of what this might look like:',
+			embeds: [new EmbedBuilder()
+				.setColor(quidData1.color)
+				.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/feat-536-492/pictures/tutorials/Play.png')],
+			components: [
+				new ActionRowBuilder<ButtonBuilder>()
+					.setComponents(new ButtonBuilder()
+						.setCustomId('play_new')
+						.setLabel('I understand, let\'s try it out!')
+						.setStyle(ButtonStyle.Success)),
+			],
+		}, true);
+		return;
+	}
+
 	const mentionedUserId = interaction.isChatInputCommand() ? interaction.options.getUser('user')?.id : interaction.customId.split('_')[2];
 	if (mentionedUserId && userData1.userId.includes(mentionedUserId)) {
 
