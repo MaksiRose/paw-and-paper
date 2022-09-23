@@ -177,6 +177,14 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 							hasQuest: { type: 'boolean', default: false, locked: false },
 							currentRegion: { type: 'string', default: 'sleeping dens', locked: false },
 							unlockedRanks: { type: 'number', default: 0, locked: false },
+							tutorials: {
+								type: 'object',
+								default: {
+									play: { type: 'boolean', default: false, locked: false },
+									explore: { type: 'boolean', default: false, locked: false },
+								},
+								locked: false,
+							},
 							sapling: {
 								type: 'object',
 								default: {
