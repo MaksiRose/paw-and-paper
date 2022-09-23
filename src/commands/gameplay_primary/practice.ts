@@ -135,17 +135,17 @@ export const command: SlashCommand = {
 			if (fightGame.cycleKind === 'attack') {
 
 				embed.setDescription(`⏫ *The Elderly gets ready to attack. ${quidData.name} must think quickly about how ${pronounAndPlural(quidData, 0, 'want')} to react.*`);
-				embed.setFooter({ text: 'Tip: Dodging an attack surprises the opponent and puts you in the perfect position for a counterattack.' });
+				embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (⏫ Attack).\nTip: Dodging an attack surprises the opponent and puts you in the perfect position for a counterattack.' });
 			}
 			else if (fightGame.cycleKind === 'dodge') {
 
 				embed.setDescription(`↪️ *Looks like the Elderly is preparing a maneuver for ${quidData.name}'s next move. The ${quidData.displayedSpecies || quidData.species} must think quickly about how ${pronounAndPlural(quidData, 0, 'want')} to react.*`);
-				embed.setFooter({ text: 'Tip: Defending a maneuver blocks it effectively, which prevents your opponent from hurting you.' });
+				embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (↪️ Dodge).\nTip: Defending a maneuver blocks it effectively, which prevents your opponent from hurting you.' });
 			}
 			else if (fightGame.cycleKind === 'defend') {
 
 				embed.setDescription(`⏺️ *The Elderly gets into position to oppose an attack. ${quidData.name} must think quickly about how ${pronounAndPlural(quidData, 0, 'want')} to react.*`);
-				embed.setFooter({ text: 'Tip: Attacks come with a lot of force, making them difficult to defend against.' });
+				embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (⏺️ Defend).\nTip: Attacks come with a lot of force, making them difficult to defend against.' });
 			}
 			else { throw new Error('cycleKind is not attack, dodge or defend'); }
 
