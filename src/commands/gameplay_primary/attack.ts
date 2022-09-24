@@ -118,14 +118,17 @@ export async function executeAttacking(
 		if (fightGame.cycleKind === 'attack') {
 
 			embed.setDescription(`⏫ *The human gets ready to attack. ${quidData.name} must think quickly about how ${pronounAndPlural(quidData, 0, 'want')} to react.*`);
+			embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (⏫ Attack).' });
 		}
 		else if (fightGame.cycleKind === 'dodge') {
 
 			embed.setDescription(`↪️ *Looks like the human is preparing a maneuver for ${quidData.name}'s next move. The ${quidData.displayedSpecies || quidData.species} must think quickly about how ${pronounAndPlural(quidData, 0, 'want')} to react.*`);
+			embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (↪️ Dodge).' });
 		}
 		else if (fightGame.cycleKind === 'defend') {
 
 			embed.setDescription(`⏺️ *The human gets into position to oppose an attack. ${quidData.name} must think quickly about how ${pronounAndPlural(quidData, 0, 'want')} to react.*`);
+			embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (⏺️ Defend).' });
 		}
 		else { throw new Error('cycleKind is not attack, dodge or defend'); }
 		embed.setFooter({ text: 'You will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response.' });

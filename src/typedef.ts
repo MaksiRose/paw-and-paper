@@ -212,6 +212,13 @@ export interface Profile {
 	currentRegion: CurrentRegionType;
 	/** How many ranks the quid has unlocked */
 	unlockedRanks: number;
+	/** The tutorials this profile has completed */
+	tutorials: {
+		/** Whether this profile has completed the play tutorial */
+		play: boolean;
+		/** Whether this profile has completed the explore tutorial */
+		explore: boolean;
+	}
 	/** The sapling of the quid */
 	sapling: {
 		/** Whether there is a sapling */

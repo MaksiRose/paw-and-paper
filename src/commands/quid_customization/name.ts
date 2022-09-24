@@ -124,6 +124,7 @@ export const command: SlashCommand = {
 								hasQuest: false,
 								currentRegion: CurrentRegionType.Ruins,
 								unlockedRanks: 0,
+								tutorials: { play: false, explore: false },
 								sapling: { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, lastMessageChannelId: null, sentReminder: false, sentGentleReminder: false },
 								injuries: { wounds: 0, infections: 0, cold: false, sprains: 0, poison: false },
 								inventory: {

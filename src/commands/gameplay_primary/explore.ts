@@ -95,6 +95,29 @@ export async function executeExploring(
 		return;
 	}
 
+	if (profileData.tutorials.explore === false) {
+
+		await respond(interaction, {
+			content: 'Tip: When exploring, you encounter animals that have levels and plants in different leveled environments. These levels are in relation to your own level and determine whether you have a higher chance of beating them or getting hurt. Tactically use the Leave/Flee button if you think that the level is too high for you to beat.',
+			components: [
+				new ActionRowBuilder<ButtonBuilder>()
+					.setComponents(new ButtonBuilder()
+						.setCustomId('explore_new')
+						.setLabel('I understand, let\'s explore!')
+						.setStyle(ButtonStyle.Success)),
+			],
+		}, true);
+
+		await userModel.findOneAndUpdate(
+			u => u.uuid === userData!.uuid,
+			(u) => {
+				const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
+				p.tutorials.explore = true;
+			},
+		);
+		return;
+	}
+
 	cooldownMap.set(userData.uuid + interaction.guildId, true);
 
 	/* Here we are getting the biomes available to the quid, getting a user input if there is one, and defining chosenBiome as the user input if it matches an available biome, else it is null. */
@@ -698,14 +721,17 @@ export async function executeExploring(
 				if (fightGame.cycleKind === 'attack') {
 
 					embed.setDescription(`⏫ *The ${opponentSpecies} gets ready to attack. ${quidData.name} must think quickly about how ${pronounAndPlural(quidData, 0, 'want')} to react.*`);
+					embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (⏫ Attack).' });
 				}
 				else if (fightGame.cycleKind === 'dodge') {
 
 					embed.setDescription(`↪️ *Looks like the ${opponentSpecies} is preparing a maneuver for ${quidData.name}'s next move. The ${quidData.displayedSpecies || quidData.species} must think quickly about how ${pronounAndPlural(quidData, 0, 'want')} to react.*`);
+					embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (↪️ Dodge).' });
 				}
 				else if (fightGame.cycleKind === 'defend') {
 
 					embed.setDescription(`⏺️ *The ${opponentSpecies} gets into position to oppose an attack. ${quidData.name} must think quickly about how ${pronounAndPlural(quidData, 0, 'want')} to react.*`);
+					embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (⏺️ Defend).' });
 				}
 				else { throw new Error('cycleKind is not attack, dodge or defend'); }
 
