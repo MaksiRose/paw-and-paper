@@ -402,7 +402,7 @@ export async function executeExploring(
 			embed.setDescription(`*For a while, ${quidData.name} has been swimming through the water, searching in vain for something useful. ${upperCasePronounAndPlural(quidData, 0, 'was', 'were')} about to give up when ${pronounAndPlural(quidData, 0, 'discover')} a ${foundItem} among large algae. Now ${pronounAndPlural(quidData, 0, 'just need')} to pick it up gently...*`);
 		}
 		else { throw new Error('quidData species habitat not found'); }
-		embed.setFooter({ text: `You will be presented five buttons with five emojis each. The footer will show you an emoji, and you have to find the button with that emoji, but without the campsite (${plantEmojis.toAvoid}).` });
+		embed.setFooter({ text: `The ${foundItem} is in an environment of difficulty level ${environmentLevel}.\nYou will be presented five buttons with five emojis each. The footer will show you an emoji, and you have to find the button with that emoji, but without the campsite (${plantEmojis.toAvoid}).` });
 
 		await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })({
 			content: messageContent,
