@@ -384,6 +384,9 @@ export async function executeExploring(
 	// If the user gets the right chance, find a plant
 	else if (pullFromWeightedTable({ 0: profileData.rank === RankType.Healer ? 2 : 1, 1: profileData.rank === RankType.Hunter ? 2 : 1 }) === 0) {
 
+
+		const environmentLevel = getRandomNumber(1 + Math.ceil(profileData.levels / 10) * 5, (profileData.levels > 2 ? profileData.levels : 3) - Math.ceil(profileData.levels / 10) * 2);
+
 		const foundItem = (pullFromWeightedTable({ 0: 70, 1: 30 + profileData.sapling.waterCycles }) == 1 && chosenBiomeNumber > 0) ? (pullFromWeightedTable({ 0: 70, 1: 30 + profileData.sapling.waterCycles }) == 1 && chosenBiomeNumber === 2) ? pickRandomRarePlant() : pickRandomUncommonPlant() : pickRandomCommonPlant();
 
 		if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Warm) {
@@ -439,7 +442,7 @@ export async function executeExploring(
 		else {
 
 			let totalCycles: 0 | 1 | 2 = 0;
-			let winLoseRatio = 0;
+			let points = 0;
 
 			await (async function interactionCollector(
 				interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
@@ -481,16 +484,16 @@ export async function executeExploring(
 								/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
 								exploreComponent = plantGame.chosenRightButtonOverwrite(i.customId);
 
-								winLoseRatio += 1;
+								points += 4;
 							}
-							else { winLoseRatio -= 1; }
+							else { points -= 4; }
 						}
 
 						return i;
 					})
 					.catch(() => {
 
-						winLoseRatio -= 1;
+						points -= 4;
 						return newInteraction;
 					});
 
@@ -505,11 +508,12 @@ export async function executeExploring(
 				}
 				buttonInteraction = newInteraction;
 
-				if (winLoseRatio < 0) { winLoseRatio = 0; }
+				const levelDifference = profileData.levels - environmentLevel;
+				points += levelDifference; // It doesn't matter if this is higher than 12 or lower than -12, it will not affect the weighted table
+				const outcome = pullFromWeightedTable({ 0: -1 * points, 1: 12 - Math.abs(points), 2: points });
+				console.log({ points, outcome });
 
-				winLoseRatio = pullFromWeightedTable({ 0: 3 - winLoseRatio, 1: winLoseRatio % 3, 2: winLoseRatio });
-
-				if (winLoseRatio === 2) {
+				if (outcome === 2) {
 
 					userData = await userModel.findOneAndUpdate(
 						u => u._id === userData!._id,
@@ -525,7 +529,7 @@ export async function executeExploring(
 
 					embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundItem}` });
 				}
-				else if (winLoseRatio === 1) {
+				else if (outcome === 1) {
 
 					if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Warm) {
 
@@ -628,15 +632,12 @@ export async function executeExploring(
 	// Find an enemy
 	else {
 
-		let currentCombo = 0;
-		let highestCombo = 0;
-		let opponentLevel = getRandomNumber(1 + Math.ceil(profileData.levels / 10) * 5, (profileData.levels > 2 ? profileData.levels : 3) - Math.ceil(profileData.levels / 10) * 2);
+		const opponentLevel = getRandomNumber(1 + Math.ceil(profileData.levels / 10) * 5, (profileData.levels > 2 ? profileData.levels : 3) - Math.ceil(profileData.levels / 10) * 2);
+
 		const opponentsArray = speciesInfo[quidData.species as SpeciesNames].biome1OpponentArray;
 		if (chosenBiomeNumber > 0) { opponentsArray.push(...speciesInfo[quidData.species as SpeciesNames].biome2OpponentArray); }
 		if (chosenBiomeNumber === 2) { opponentsArray.push(...speciesInfo[quidData.species as SpeciesNames].biome3OpponentArray); }
-
 		const opponentSpecies = opponentsArray[getRandomNumber(opponentsArray.length, 0)];
-		let playerLevel = profileData.levels;
 		if (opponentSpecies === undefined) { throw new TypeError('opponentSpecies is undefined'); }
 
 		if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Warm) {
@@ -704,6 +705,7 @@ export async function executeExploring(
 		else {
 
 			let totalCycles: 0 | 1 | 2 = 0;
+			let points = 0;
 
 			await (async function interactionCollector(
 				interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
@@ -759,7 +761,7 @@ export async function executeExploring(
 						|| (i.customId.includes('defend') && fightGame.cycleKind === 'attack')
 						|| (i.customId.includes('dodge') && fightGame.cycleKind === 'defend')) {
 
-							opponentLevel += Math.ceil(profileData.levels / 10) * 2;
+							points -= 4;
 						}
 						else if ((i.customId.includes('attack') && fightGame.cycleKind === 'defend')
 						|| (i.customId.includes('defend') && fightGame.cycleKind === 'dodge')
@@ -768,17 +770,14 @@ export async function executeExploring(
 							/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
 							exploreComponent = fightGame.chosenRightButtonOverwrite(i.customId);
 
-							playerLevel += Math.ceil(profileData.levels / 10);
-							currentCombo += 1;
-							if (currentCombo > highestCombo) { highestCombo = currentCombo; }
+							points += 4;
 						}
-						else { currentCombo = 0; }
 
 						return i;
 					})
 					.catch(() => {
 
-						currentCombo = 0;
+						points += 4;
 						return newInteraction;
 					});
 
@@ -793,28 +792,12 @@ export async function executeExploring(
 				}
 				buttonInteraction = newInteraction;
 
-				playerLevel += (highestCombo === 3 ? 2 : highestCombo === 2 ? 1 : 0) * Math.ceil(profileData.levels / 10);
-				playerLevel = getRandomNumber(playerLevel, 0);
-				opponentLevel = getRandomNumber(opponentLevel, 0);
+				const levelDifference = profileData.levels - opponentLevel;
+				points += levelDifference; // It doesn't matter if this is higher than 12 or lower than -12, it will not affect the weighted table
+				const outcome = pullFromWeightedTable({ 0: -1 * points, 1: 12 - Math.abs(points), 2: points });
+				console.log({ points, outcome });
 
-				if (playerLevel === opponentLevel || playerLevel === opponentLevel + 1 || playerLevel === opponentLevel + 2) {
-
-					if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Warm) {
-
-						embed.setDescription(`*${quidData.name} and the ${opponentSpecies} are snarling at one another as they retreat to the opposite sides of the hill, now stirred up and filled with sticks from the surrounding bushes. The ${quidData.displayedSpecies || quidData.species} runs back to camp, ${pronoun(quidData, 2)} mouth empty as before.*`);
-					}
-					else if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Cold) {
-
-						embed.setDescription(`*${quidData.name} and the ${opponentSpecies} are snarling at one another as they retreat into the bushes surrounding the clearing, now covered in trampled grass and loose clumps of dirt. The ${quidData.displayedSpecies || quidData.species} runs back to camp, ${pronoun(quidData, 2)} mouth empty as before.*`);
-					}
-					else if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Water) {
-
-						embed.setDescription(`*${quidData.name} and the ${opponentSpecies} glance at one another as they swim in opposite directions from the kelp, now cloudy from the stirred up dirt. The ${quidData.displayedSpecies || quidData.species} swims back to camp, ${pronoun(quidData, 2)} mouth empty as before.*`);
-					}
-					else { throw new Error('quidData species habitat not found'); }
-					if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
-				}
-				else if (playerLevel > opponentLevel) {
+				if (outcome === 2) {
 
 					userData = await userModel.findOneAndUpdate(
 						u => u._id === userData!._id,
@@ -838,6 +821,23 @@ export async function executeExploring(
 					}
 					else { throw new Error('quidData species habitat not found'); }
 					embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${opponentSpecies}` });
+				}
+				else if (outcome === 1) {
+
+					if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Warm) {
+
+						embed.setDescription(`*${quidData.name} and the ${opponentSpecies} are snarling at one another as they retreat to the opposite sides of the hill, now stirred up and filled with sticks from the surrounding bushes. The ${quidData.displayedSpecies || quidData.species} runs back to camp, ${pronoun(quidData, 2)} mouth empty as before.*`);
+					}
+					else if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Cold) {
+
+						embed.setDescription(`*${quidData.name} and the ${opponentSpecies} are snarling at one another as they retreat into the bushes surrounding the clearing, now covered in trampled grass and loose clumps of dirt. The ${quidData.displayedSpecies || quidData.species} runs back to camp, ${pronoun(quidData, 2)} mouth empty as before.*`);
+					}
+					else if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Water) {
+
+						embed.setDescription(`*${quidData.name} and the ${opponentSpecies} glance at one another as they swim in opposite directions from the kelp, now cloudy from the stirred up dirt. The ${quidData.displayedSpecies || quidData.species} swims back to camp, ${pronoun(quidData, 2)} mouth empty as before.*`);
+					}
+					else { throw new Error('quidData species habitat not found'); }
+					if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 				}
 				else {
 
