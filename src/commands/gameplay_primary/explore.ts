@@ -777,7 +777,7 @@ export async function executeExploring(
 					})
 					.catch(() => {
 
-						points += 4;
+						points -= 4;
 						return newInteraction;
 					});
 
