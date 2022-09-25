@@ -70,7 +70,7 @@ export async function executePlaying(
 			content: '*About the structure of RPG messages:*\n\n- Most messages have `Roleplay text`, which is written in cursive, and only for fun!\n- More important is the `Info text`, which is at the bottom of each message, and has the most important info like how to play a game or stat changes. **Read this part first** to avoid confusion!\n\n> Here is an example of what this might look like:',
 			embeds: [new EmbedBuilder()
 				.setColor(quidData1.color)
-				.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/feat-536-492/pictures/tutorials/Play.png')],
+				.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/dev/pictures/tutorials/Play.png')],
 			components: [
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
@@ -102,16 +102,16 @@ export async function executePlaying(
 
 		const usersEligibleForPlaying = (await userModel
 			.find(
-				u => Object.values(u.quids).filter(q => isEligableForPlaying(u.uuid, q, interaction.guildId)).length > 0,
+				u => Object.values(u.quids).filter(q => isEligableForPlaying(u._id, q, interaction.guildId)).length > 0,
 			))
-			.filter(u => u.uuid !== userData1?.uuid);
+			.filter(u => u._id !== userData1?._id);
 
 		if (usersEligibleForPlaying.length > 0) {
 
 			userData2 = usersEligibleForPlaying[getRandomNumber(usersEligibleForPlaying.length)] || null;
 			if (userData2) {
 
-				const newCurrentQuid = Object.values(userData2.quids).find(q => isEligableForPlaying(userData2!.uuid, q, interaction.guildId));
+				const newCurrentQuid = Object.values(userData2.quids).find(q => isEligableForPlaying(userData2!._id, q, interaction.guildId));
 				if (newCurrentQuid) { userData2.currentQuid[interaction.guildId] = newCurrentQuid._id; }
 			}
 		}
@@ -122,7 +122,7 @@ export async function executePlaying(
 	let quidData2 = userData2 ? getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId)) : null;
 	let profileData2 = quidData2 ? getMapData(quidData2.profiles, interaction.guildId) : null;
 
-	cooldownMap.set(userData1.uuid + interaction.guildId, true);
+	cooldownMap.set(userData1._id + interaction.guildId, true);
 
 	const experiencePoints = profileData1.rank === RankType.Youngling ? getRandomNumber(9, 1) : profileData1.rank === RankType.Apprentice ? getRandomNumber(11, 5) : 0;
 	const changedCondition = await changeCondition(userData1, quidData1, profileData1, experiencePoints, CurrentRegionType.Prairie);
@@ -163,7 +163,7 @@ export async function executePlaying(
 			const partnerHealthPoints = getSmallerNumber(profileData2.maxHealth - profileData2.health, getRandomNumber(5, 1));
 
 			userData2 = await userModel.findOneAndUpdate(
-				u => u.uuid === userData2!.uuid,
+				u => u._id === userData2!._id,
 				(u) => {
 					const p = getMapData(getMapData(u.quids, quidData2!._id).profiles, interaction.guildId);
 					p.health += partnerHealthPoints;
@@ -234,7 +234,7 @@ export async function executePlaying(
 					playComponent = fightGame.chosenRightButtonOverwrite(i.customId);
 
 					await userModel.findOneAndUpdate(
-						u => u.uuid === userData1!.uuid,
+						u => u._id === userData1!._id,
 						(u) => {
 							const p = getMapData(getMapData(u.quids, quidData1._id).profiles, interaction.guildId);
 							p.tutorials.play = true;
@@ -300,7 +300,7 @@ export async function executePlaying(
 		}
 
 		await userModel.findOneAndUpdate(
-			u => u.uuid === userData1?.uuid,
+			u => u._id === userData1?._id,
 			(u) => {
 				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, profileData1.serverId)).profiles, profileData1.serverId);
 				p.health -= healthPoints;
@@ -354,10 +354,10 @@ export async function executePlaying(
 				/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
 				playComponent = plantGame.chosenRightButtonOverwrite(i.customId);
 
-				tutorialMap.set(quidData1._id + profileData1.serverId, 2);
+				if (tutorialMapEntry === 1) { tutorialMap.set(quidData1._id + profileData1.serverId, 2); }
 
 				userData1 = await userModel.findOneAndUpdate(
-					u => u.uuid === userData1?.uuid,
+					u => u._id === userData1?._id,
 					(u) => {
 						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 						p.inventory.commonPlants[foundItem] += 1;
@@ -375,13 +375,13 @@ export async function executePlaying(
 		playComponent.setComponents(playComponent.components.map(c => c.setDisabled(true)));
 	}
 
-	cooldownMap.set(userData1.uuid + interaction.guildId, false);
+	cooldownMap.set(userData1._id + interaction.guildId, false);
 	const levelUpEmbed = (await checkLevelUp(interaction, userData1, quidData1, profileData1, serverData)).levelUpEmbed;
 
 	if (foundQuest) {
 
 		await userModel.findOneAndUpdate(
-			u => u.uuid === userData1!.uuid,
+			u => u._id === userData1!._id,
 			(u) => {
 				const p = getMapData(getMapData(u.quids, quidData1._id).profiles, interaction.guildId);
 				p.hasQuest = true;
@@ -432,11 +432,11 @@ export async function executePlaying(
 }
 
 function isEligableForPlaying(
-	uuid: string,
+	_id: string,
 	quid: Quid,
 	guildId: string,
 ): boolean {
 
 	const p = quid.profiles[guildId];
-	return quid.name !== '' && quid.species !== '' && p !== undefined && p.currentRegion === CurrentRegionType.Prairie && p.energy > 0 && p.health > 0 && p.hunger > 0 && p.thirst > 0 && p.injuries.cold === false && cooldownMap.get(uuid + guildId) !== true && p.isResting === false && isResting(uuid, p.serverId) === false;
+	return quid.name !== '' && quid.species !== '' && p !== undefined && p.currentRegion === CurrentRegionType.Prairie && p.energy > 0 && p.health > 0 && p.hunger > 0 && p.thirst > 0 && p.injuries.cold === false && cooldownMap.get(_id + guildId) !== true && p.isResting === false && isResting(_id, p.serverId) === false;
 }

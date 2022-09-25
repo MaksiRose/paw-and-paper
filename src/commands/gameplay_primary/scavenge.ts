@@ -66,7 +66,7 @@ export async function executeScavenging(
 
 	if (await hasFullInventory(interaction, userData, quidData, profileData, embedArray, messageContent)) { return; }
 
-	cooldownMap.set(userData.uuid + interaction.guildId, true);
+	cooldownMap.set(userData._id + interaction.guildId, true);
 
 	const experiencePoints = getRandomNumber(11, 5);
 	const changedCondition = await changeCondition(userData, quidData, profileData, experiencePoints);
@@ -194,7 +194,7 @@ export async function executeScavenging(
 							embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundCarcass}` });
 
 							userData = await userModel.findOneAndUpdate(
-								u => u.uuid === userData?.uuid,
+								u => u._id === userData?._id,
 								(u) => {
 									const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 									p.inventory.meat[foundCarcass] += 1;
@@ -214,7 +214,7 @@ export async function executeScavenging(
 							embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundMaterial}` });
 
 							userData = await userModel.findOneAndUpdate(
-								u => u.uuid === userData?.uuid,
+								u => u._id === userData?._id,
 								(u) => {
 									const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 									p.inventory.materials[foundMaterial] += 1;
@@ -290,7 +290,7 @@ export async function executeScavenging(
 						}
 
 						userData = await userModel.findOneAndUpdate(
-							u => u.uuid === userData?.uuid,
+							u => u._id === userData?._id,
 							(u) => {
 								const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 								p.health -= healthPoints;
@@ -334,7 +334,7 @@ export async function executeScavenging(
 		serverData: ServerSchema,
 	) {
 
-		cooldownMap.set(userData.uuid + interaction.guildId, false);
+		cooldownMap.set(userData._id + interaction.guildId, false);
 
 		const levelUpEmbed = (await checkLevelUp(int, userData, quidData, profileData, serverData)).levelUpEmbed;
 		const newComponents = disableAllComponents(componentArray);

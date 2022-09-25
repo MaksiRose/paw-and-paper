@@ -38,7 +38,7 @@ export const command: SlashCommand = {
 			components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData, quidData)])],
 		}, true);
 
-		createCommandComponentDisabler(userData.uuid, interaction.guildId || 'DM', botReply);
+		createCommandComponentDisabler(userData._id, interaction.guildId || 'DM', botReply);
 		return;
 	},
 };
@@ -63,7 +63,7 @@ function getPronounsMenu(userData: UserSchema, quidData: Quid) {
 	}
 
 	return new SelectMenuBuilder()
-		.setCustomId(`pronouns_selectmodal_${userData.uuid}_${quidData._id}`)
+		.setCustomId(`pronouns_selectmodal_${userData._id}_${quidData._id}`)
 		.setPlaceholder('Select a pronoun to change')
 		.setOptions(pronounsMenuOptions);
 }
@@ -74,7 +74,7 @@ export async function pronounsInteractionCollector(
 
 	if (interaction.isSelectMenu() && interaction.customId.includes('selectmodal')) {
 
-		const userData = await userModel.findOne(u => u.uuid === interaction.customId.split('_')[2]);
+		const userData = await userModel.findOne(u => u._id === interaction.customId.split('_')[2]);
 		const quidData = getMapData(userData.quids, interaction.customId.split('_')[3] || '');
 
 		/* Getting the position of the pronoun in the array, and the existing pronoun in that place */
@@ -86,7 +86,7 @@ export async function pronounsInteractionCollector(
 
 		await interaction
 			.showModal(new ModalBuilder()
-				.setCustomId(`pronouns_${userData.uuid}_${quidData._id}_${pronounNumber}`)
+				.setCustomId(`pronouns_${userData._id}_${quidData._id}_${pronounNumber}`)
 				.setTitle('Change pronouns')
 				.addComponents(
 					new ActionRowBuilder<TextInputBuilder>()
@@ -114,7 +114,7 @@ export async function sendEditPronounsModalResponse(
 	interaction: ModalMessageModalSubmitInteraction,
 ): Promise<void> {
 
-	let userData = await userModel.findOne(u => u.uuid === interaction.customId.split('_')[1]);
+	let userData = await userModel.findOne(u => u._id === interaction.customId.split('_')[1]);
 	let quidData = getMapData(userData.quids, interaction.customId.split('_')[2] || '');
 
 	/* Getting the array position of the pronoun that is being edited, the pronouns that are being set, whether
@@ -188,7 +188,7 @@ export async function sendEditPronounsModalResponse(
 	const oldPronounSet = quidData.pronounSets[pronounNumber];
 	/* Add the pronouns, send a success message and update the original one. */
 	userData = await userModel.findOneAndUpdate(
-		u => u.uuid === userData?.uuid,
+		u => u._id === userData?._id,
 		(u) => {
 			const q = getMapData(u.quids, quidData._id);
 			if (willBeDeleted) {

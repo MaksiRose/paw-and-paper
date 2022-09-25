@@ -28,7 +28,7 @@ export const command: SlashCommand = {
 		const desc = interaction.options.getString('description') || '';
 
 		userData = await userModel.findOneAndUpdate(
-			u => u.uuid === userData?.uuid,
+			u => u._id === userData?._id,
 			(u) => {
 				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DM'));
 				q.description = desc;

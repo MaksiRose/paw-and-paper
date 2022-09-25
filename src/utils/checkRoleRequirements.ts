@@ -39,7 +39,7 @@ export async function checkRankRequirements(
 				if (roles && !roles.some(r => r.roleId === item.roleId && r.wayOfEarning === item.wayOfEarning && r.requirement === item.requirement)) {
 
 					await userModel.findOneAndUpdate(
-						u => u.uuid === userData.uuid,
+						u => u._id === userData._id,
 						(u) => {
 							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 							p.roles.push({
@@ -109,7 +109,7 @@ export async function checkLevelRequirements(
 				if (roles && roles.some(r => r.roleId === item.roleId && r.wayOfEarning === item.wayOfEarning && r.requirement === item.requirement) === false) {
 
 					await userModel.findOneAndUpdate(
-						u => u.uuid === userData.uuid,
+						u => u._id === userData._id,
 						(u) => {
 							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 							p.roles.push({

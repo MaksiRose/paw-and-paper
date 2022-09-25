@@ -20,7 +20,7 @@ export default async function settingsInteractionCollector(
 		if (interaction.customId.includes('water')) {
 
 			userData = await userModel.findOneAndUpdate(
-				u => u.uuid === userData?.uuid,
+				u => u._id === userData?._id,
 				(u) => {
 					u.settings.reminders.water = isOn;
 				},
@@ -59,7 +59,7 @@ export default async function settingsInteractionCollector(
 		if (interaction.customId.includes('resting')) {
 
 			userData = await userModel.findOneAndUpdate(
-				u => u.uuid === userData?.uuid,
+				u => u._id === userData?._id,
 				(u) => {
 					u.settings.reminders.resting = isOn;
 				},

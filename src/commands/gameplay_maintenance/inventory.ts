@@ -93,7 +93,7 @@ export async function showInventoryMessage(
 		],
 	});
 
-	createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
+	createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
 }
 
 export async function inventoryInteractionCollector(

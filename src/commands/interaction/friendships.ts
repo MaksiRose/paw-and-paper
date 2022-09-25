@@ -94,11 +94,11 @@ async function getFriendshipTexts(
 
 		/* Updating the mentions and extracting them from the new userData. */
 		[userData, otherUserData] = await checkOldMentions(userData, quidData._id, otherUserData, _id);
-		const userDataMentions = getMapData(getMapData(userData.quids, quidData._id).mentions, _id);
-		const otheUserDataMentions = getMapData(getMapData(otherUserData.quids, _id).mentions, quidData._id);
+		const userDataMentions = getMapData(userData.quids, quidData._id).mentions[_id] ?? [];
+		const otherUserDataMentions = getMapData(otherUserData.quids, _id).mentions[quidData._id] ?? [];
 
 		/* Getting the current friendship points and hearts. Skips to the next iteration if there is no friendship hearts. */
-		const friendshipPoints = getFriendshipPoints(userDataMentions, otheUserDataMentions);
+		const friendshipPoints = getFriendshipPoints(userDataMentions, otherUserDataMentions);
 		const friendshipHearts = getFriendshipHearts(friendshipPoints);
 		if (friendshipHearts <= 0) { continue; }
 

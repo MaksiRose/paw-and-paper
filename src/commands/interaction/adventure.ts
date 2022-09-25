@@ -109,8 +109,8 @@ export const command: SlashCommand = {
 		}, true);
 
 		/* Register the command to be disabled when another command is executed, for both players */
-		createCommandComponentDisabler(userData1.uuid, interaction.guildId, botReply);
-		createCommandComponentDisabler(userData2.uuid, interaction.guildId, botReply);
+		createCommandComponentDisabler(userData1._id, interaction.guildId, botReply);
+		createCommandComponentDisabler(userData2._id, interaction.guildId, botReply);
 	},
 };
 
@@ -175,10 +175,10 @@ export async function adventureInteractionCollector(
 	let profileData2 = getMapData(quidData2.profiles, interaction.guildId);
 
 	/* For both users, set cooldowns to true, but unregister the command from being disabled, and get the condition change */
-	cooldownMap.set(userData1.uuid + interaction.guildId, true);
-	cooldownMap.set(userData2.uuid + interaction.guildId, true);
-	delete disableCommandComponent[userData1.uuid + interaction.guildId];
-	delete disableCommandComponent[userData2.uuid + interaction.guildId];
+	cooldownMap.set(userData1._id + interaction.guildId, true);
+	cooldownMap.set(userData2._id + interaction.guildId, true);
+	delete disableCommandComponent[userData1._id + interaction.guildId];
+	delete disableCommandComponent[userData2._id + interaction.guildId];
 	const experiencePoints = getRandomNumber(11, 5);
 	const decreasedStatsData1 = await changeCondition(userData1, quidData1, profileData1, experiencePoints, CurrentRegionType.Prairie, true);
 	profileData1 = decreasedStatsData1.profileData;
@@ -311,8 +311,8 @@ export async function adventureInteractionCollector(
 		try {
 
 			/* Set both user's cooldown to false */
-			cooldownMap.set(userData1.uuid + lastInteraction.guildId, false);
-			cooldownMap.set(userData2.uuid + lastInteraction.guildId, false);
+			cooldownMap.set(userData1._id + lastInteraction.guildId, false);
+			cooldownMap.set(userData2._id + lastInteraction.guildId, false);
 
 			if (reason.startsWith('error')) {
 
@@ -381,7 +381,7 @@ export async function adventureInteractionCollector(
 
 				await userModel
 					.findOneAndUpdate(
-						u => u.uuid === losingUserData.uuid,
+						u => u._id === losingUserData._id,
 						(u => {
 							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, lastInteraction.guildId)).profiles, lastInteraction.guildId);
 							p.inventory = inventory_;
@@ -453,7 +453,7 @@ export async function adventureInteractionCollector(
 
 				await userModel
 					.findOneAndUpdate(
-						u => u.uuid === winningUserData.uuid,
+						u => u._id === winningUserData._id,
 						(u => {
 							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, lastInteraction.guildId)).profiles, lastInteraction.guildId);
 							p.inventory = winningProfileData.inventory;

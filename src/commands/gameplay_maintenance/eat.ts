@@ -161,7 +161,7 @@ export async function sendEatMessage(
 			increasedMaxStatType = pickIncreasedMaxStatType;
 
 			await userModel.findOneAndUpdate(
-				u => u.uuid === userData.uuid,
+				u => u._id === userData._id,
 				(u) => {
 					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 					p.temporaryStatIncrease[Date.now()] = increasedMaxStatType!;
@@ -250,7 +250,7 @@ export async function sendEatMessage(
 
 	const previousRegion = profileData.currentRegion;
 	userData = await userModel.findOneAndUpdate(
-		u => u.uuid === userData.uuid,
+		u => u._id === userData._id,
 		(u) => {
 			u.advice.eating = true;
 			const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);

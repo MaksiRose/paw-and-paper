@@ -1,3 +1,4 @@
+import { generateId } from 'crystalid';
 import { Guild } from 'discord.js';
 import { readdirSync, readFileSync, renameSync, writeFileSync } from 'fs';
 import serverModel from '../models/serverModel';
@@ -47,10 +48,10 @@ export async function createGuild(
 
 		if (serverData.serverId === guild.id) {
 
-			delete toDeleteList[serverData.uuid];
+			delete toDeleteList[serverData._id];
 			renameSync(`./database/toDelete/${fileName}`, `./database/servers/${fileName}`);
 			writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
-			serverData = await serverModel.update(serverData.uuid);
+			serverData = await serverModel.update(serverData._id);
 			return serverData;
 		}
 	}
@@ -107,7 +108,7 @@ export async function createGuild(
 			logChannelId: null,
 		},
 		skills: ['strength', 'dexterity', 'constitution', 'charisma', 'wisdom', 'intelligence'],
-		uuid: '',
+		_id: generateId(),
 	});
 
 	return serverData;
@@ -123,10 +124,10 @@ export async function deleteGuild(
 	const toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8')) as DeleteList;
 
 	const serverData = await serverModel.findOne(s => s.serverId === guildId);
-	renameSync(`./database/servers/${serverData.uuid}.json`, `./database/toDelete/${serverData.uuid}.json`);
+	renameSync(`./database/servers/${serverData._id}.json`, `./database/toDelete/${serverData._id}.json`);
 
 	const thirtyDaysInMs = 2_592_000_000;
-	toDeleteList[serverData.uuid] = Date.now() + thirtyDaysInMs;
+	toDeleteList[serverData._id] = Date.now() + thirtyDaysInMs;
 
 	writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
 }

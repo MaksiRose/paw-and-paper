@@ -54,7 +54,7 @@ export const command: SlashCommand = {
 				])],
 		}, true);
 
-		if (userData) { createCommandComponentDisabler(userData.uuid, interaction.guildId || 'DM', botReply); }
+		if (userData) { createCommandComponentDisabler(userData._id, interaction.guildId || 'DM', botReply); }
 	},
 };
 
@@ -166,7 +166,7 @@ export async function proxyInteractionCollector(
 			const hasChannel = userData.settings.proxy.servers[interaction.guildId]?.autoproxy.channels.whitelist.includes(channelId) || false;
 
 			userData = await userModel.findOneAndUpdate(
-				u => u.uuid === userData?.uuid,
+				u => u._id === userData?._id,
 				(u) => {
 					const sps = u.settings.proxy.servers[interaction.guildId];
 					if (!sps) {
@@ -238,7 +238,7 @@ export async function sendEditProxyModalResponse(
 
 	/* Update the database and send a success messsage. */
 	await userModel.findOneAndUpdate(
-		u => u.uuid === userData?.uuid,
+		u => u._id === userData?._id,
 		(u) => {
 			const q = getMapData(u.quids, quidData._id);
 			q.proxy.startsWith = chosenPrefix;

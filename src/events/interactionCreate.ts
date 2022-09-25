@@ -14,7 +14,7 @@ import { createNewTicket, sendRespondToTicketModalResponse, ticketInteractionCol
 import { sendEditMessageModalResponse } from '../contextmenu/edit';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
-import { ErrorStacks, Event } from '../typedef';
+import { ErrorStacks, DiscordEvent } from '../typedef';
 import { disableCommandComponent, disableAllComponents } from '../utils/componentDisabling';
 import { getMapData, getQuidDisplayname, update } from '../utils/helperFunctions';
 import { pronoun, pronounAndPlural } from '../utils/getPronouns';
@@ -48,10 +48,12 @@ export const cooldownMap: Map<string, boolean> = new Map();
 export const lastInteractionMap: Map<string, ChatInputCommandInteraction<'cached'> | MessageContextMenuCommandInteraction<'cached'> | UserContextMenuCommandInteraction<'cached'> | SelectMenuInteraction<'cached'> | ButtonInteraction<'cached'> | ModalSubmitInteraction<'cached'>> = new Map(); // This should be replaced by RepliableInteraction<'cached'> once the Cached generic of RepliableInteraction is respected
 export const serverActiveUsersMap: Map<string, string[]> = new Map();
 
-export const event: Event = {
+export const event: DiscordEvent = {
 	name: 'interactionCreate',
 	once: false,
 	async execute(client, interaction: Interaction) {
+
+		console.log('test');
 
 		/* This is only null when in DM without CHANNEL partial, or when channel cache is sweeped. Therefore, this is technically unsafe since this value could become null after this check. This scenario is unlikely though. */
 		if (!interaction.channel) { await client.channels.fetch(interaction.channelId || ''); }
@@ -62,7 +64,7 @@ export const event: Event = {
 		/* It's setting the last interaction timestamp for the user to now. */
 		if (userData && interaction.inCachedGuild() && interaction.isRepliable()) {
 
-			lastInteractionMap.set(userData.uuid + interaction.guildId, interaction);
+			lastInteractionMap.set(userData._id + interaction.guildId, interaction);
 
 			const serverActiveUsers = serverActiveUsersMap.get(interaction.guildId);
 			if (!serverActiveUsers) { serverActiveUsersMap.set(interaction.guildId, [interaction.user.id]); }
@@ -125,12 +127,12 @@ export const event: Event = {
 			}
 
 			/* If the user is not registered in the cooldown map, it's setting the cooldown to false for the user. */
-			if (userData && interaction.guildId && !cooldownMap.has(userData.uuid + interaction.guildId)) { cooldownMap.set(userData.uuid + interaction.guildId, false); }
+			if (userData && interaction.guildId && !cooldownMap.has(userData._id + interaction.guildId)) { cooldownMap.set(userData._id + interaction.guildId, false); }
 
 			/* It's disabling all components if userData exists and the command is set to disable a previous command. */
 			if (userData && command.disablePreviousCommand) {
 
-				await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.()
+				await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.()
 					.catch(async (error) => {
 						await sendErrorMessage(interaction, error)
 							.catch(e => { console.error(e); });
@@ -142,7 +144,7 @@ export const event: Event = {
 
 				await userModel
 					.findOneAndUpdate(
-						u => u.uuid === userData!.uuid,
+						u => u._id === userData!._id,
 						(u) => {
 							const p = getMapData(getMapData(u.quids, getMapData(userData!.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 							p.lastActiveTimestamp = Date.now();
@@ -169,7 +171,7 @@ export const event: Event = {
 				if (userData && profileData && profileData.sapling.exists && !profileData.sapling?.sentGentleReminder && Date.now() > (profileData.sapling.nextWaterTimestamp || 0)) {
 
 					await userModel.findOneAndUpdate(
-						u => u.uuid === userData?.uuid,
+						u => u._id === userData?._id,
 						(u) => {
 							const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
 							p.sapling.sentGentleReminder = true;
@@ -316,7 +318,7 @@ export const event: Event = {
 
 			/* It's checking if the user that created the command is the same as the user that is interacting with the command, or if the user that is interacting is mentioned in the interaction.customId. If neither is true, it will send an error message. */
 			const isNotCommandCreator = interaction.message.interaction && interaction.message.interaction.user.id !== interaction.user.id;
-			const isMentioned = interaction.customId.includes(interaction.user.id) || interaction.customId.includes('ANYONECANCLICK') || (userData && interaction.customId.includes(userData.uuid));
+			const isMentioned = interaction.customId.includes(interaction.user.id) || interaction.customId.includes('ANYONECANCLICK') || (userData && interaction.customId.includes(userData._id));
 			if (isNotCommandCreator && !isMentioned) {
 
 				await respond(interaction, {
@@ -462,7 +464,7 @@ export const event: Event = {
 				if (interaction.customId.startsWith('scavenge_new')) {
 
 					/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-					if (userData && scavengeCommand.disablePreviousCommand) { await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.(); }
+					if (userData && scavengeCommand.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
 
 					await executeScavenging(interaction, userData, serverData, [])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
@@ -472,7 +474,7 @@ export const event: Event = {
 				if (interaction.customId.startsWith('play_new')) {
 
 					/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-					if (userData && playCommand.disablePreviousCommand) { await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.(); }
+					if (userData && playCommand.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
 
 					await executePlaying(interaction, userData, serverData, [])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
@@ -482,7 +484,7 @@ export const event: Event = {
 				if (interaction.customId.startsWith('explore_new')) {
 
 					/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-					if (userData && exploreCommand.disablePreviousCommand) { await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.(); }
+					if (userData && exploreCommand.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
 
 					await executeExploring(interaction, userData, serverData, [])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
@@ -492,7 +494,7 @@ export const event: Event = {
 				if (interaction.customId.startsWith('attack_new')) {
 
 					/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-					if (userData && attackCommand.disablePreviousCommand) { await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.(); }
+					if (userData && attackCommand.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
 
 					await executeAttacking(interaction, userData, serverData, [])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
@@ -642,7 +644,7 @@ setInterval(async function() {
 			if (!quid || !activeProfile) { continue; }
 			const tenMinutesInMs = 600_000;
 
-			const lastInteraction = lastInteractionMap.get(user.uuid + guildId);
+			const lastInteraction = lastInteractionMap.get(user._id + guildId);
 			if (!lastInteraction) { continue; }
 
 			const serverData = await serverModel.findOne(s => s.serverId === lastInteraction.guildId).catch(() => { return null; });
@@ -651,8 +653,8 @@ setInterval(async function() {
 			const lastInteractionIsTenMinutesAgo = lastInteraction.createdTimestamp < Date.now() - tenMinutesInMs;
 			const hasLessThanMaxEnergy = activeProfile.energy < activeProfile.maxEnergy;
 			const isConscious = activeProfile.energy > 0 || activeProfile.health > 0 || activeProfile.hunger > 0 || activeProfile.thirst > 0;
-			const hasNoCooldown = cooldownMap.get(user.uuid + guildId) !== true;
-			if (lastInteractionIsTenMinutesAgo && activeProfile.isResting === false && isResting(user.uuid, guildId) === false && hasLessThanMaxEnergy && isConscious && hasNoCooldown) {
+			const hasNoCooldown = cooldownMap.get(user._id + guildId) !== true;
+			if (lastInteractionIsTenMinutesAgo && activeProfile.isResting === false && isResting(user._id, guildId) === false && hasLessThanMaxEnergy && isConscious && hasNoCooldown) {
 
 				await startResting(lastInteraction, user, quid, activeProfile, serverData)
 					.catch(async (error) => {
@@ -668,7 +670,7 @@ setInterval(async function() {
 		for (const userId of array) {
 
 			const userData = await userModel.findOne(u => u.userId.includes(userId)).catch(() => { return null; });
-			const lastInteraction = userData ? lastInteractionMap.get(userData.uuid + guildId) : undefined;
+			const lastInteraction = userData ? lastInteractionMap.get(userData._id + guildId) : undefined;
 			/* If there is no last interaction or if the last interaction was created more than 5 minutes ago, remove the user from the array */
 			if (!userData || !lastInteraction || lastInteraction.createdTimestamp <= Date.now() - 300_000) { array = array.filter(v => v !== userId); }
 		}

@@ -2,10 +2,10 @@ import { Message } from 'discord.js';
 import { sendMessage } from '../commands/interaction/say';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
-import { CustomClient, Event } from '../typedef';
+import { CustomClient, DiscordEvent } from '../typedef';
 import { checkForProxy } from './messageCreate';
 
-export const event: Event = {
+export const event: DiscordEvent = {
 	name: 'messageUpdate',
 	once: false,
 	async execute(client: CustomClient, oldMessage: Message, newMessage: Message) {
@@ -24,7 +24,7 @@ export const event: Event = {
 
 		if (replaceMessage && (newMessage.content.length > 0 || newMessage.attachments.size > 0)) {
 
-			await sendMessage(newMessage.channel, newMessage.content, userData, quidData, userData.uuid, newMessage.author.id, newMessage.attachments.size > 0 ? Array.from(newMessage.attachments.values()) : undefined, newMessage.reference ?? undefined)
+			await sendMessage(newMessage.channel, newMessage.content, userData, quidData, userData._id, newMessage.author.id, newMessage.attachments.size > 0 ? Array.from(newMessage.attachments.values()) : undefined, newMessage.reference ?? undefined)
 				.catch(error => { console.error(error); });
 
 			newMessage

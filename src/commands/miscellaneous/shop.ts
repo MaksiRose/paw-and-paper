@@ -84,7 +84,7 @@ export async function shopInteractionCollector(
 				if (userRole === undefined) { throw new Error('userRole is undefined'); }
 
 				userData = await userModel.findOneAndUpdate(
-					(u => u.uuid === userData?.uuid),
+					(u => u._id === userData?._id),
 					(u) => {
 						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 						p.experience += userRole.requirement as number;
@@ -132,7 +132,7 @@ export async function shopInteractionCollector(
 				if (profileData.experience < 0 || profileData.levels < 1) { throw new Error('Could not calculate item cost correctly'); }
 
 				userData = await userModel.findOneAndUpdate(
-					(u => u.uuid === userData?.uuid),
+					(u => u._id === userData?._id),
 					(u) => {
 						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 						p.experience = profileData.experience;
@@ -160,7 +160,7 @@ export async function shopInteractionCollector(
 				for (const role of roles) {
 
 					userData = await userModel.findOneAndUpdate(
-						(u => u.uuid === userData?.uuid),
+						(u => u._id === userData?._id),
 						(u) => {
 							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 							p.roles.filter(r => r.roleId !== role.roleId);

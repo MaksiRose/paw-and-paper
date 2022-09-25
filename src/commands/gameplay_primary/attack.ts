@@ -85,7 +85,7 @@ export async function executeAttacking(
 		return;
 	}
 
-	cooldownMap.set(userData.uuid + interaction.guildId, true);
+	cooldownMap.set(userData._id + interaction.guildId, true);
 	serverAttackInfo.idleHumans -= 1;
 	serverAttackInfo.ongoingFights += 1;
 
@@ -184,7 +184,7 @@ export async function executeAttacking(
 			return botReply;
 		}
 
-		cooldownMap.set(userData!.uuid + interaction.guildId, false);
+		cooldownMap.set(userData!._id + interaction.guildId, false);
 
 		let minusItemText = '';
 		let injuryText = '';
@@ -233,7 +233,7 @@ export async function executeAttacking(
 				}
 
 				await userModel.findOneAndUpdate(
-					u => u.uuid === userData.uuid,
+					u => u._id === userData._id,
 					(u) => {
 						const p = getMapData(getMapData(u.quids, getMapData(userData!.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 						p.health -= healthPoints;

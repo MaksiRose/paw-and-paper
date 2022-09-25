@@ -32,7 +32,7 @@ export async function isPassedOut(
 		if (userData.advice.passingout === false) {
 
 			await userModel.findOneAndUpdate(
-				u => u.uuid === userData.uuid,
+				u => u._id === userData._id,
 				(u) => { u.advice.passingout = true; },
 			);
 
@@ -56,7 +56,7 @@ export async function hasCooldown(
 	quidData: Quid,
 ): Promise<boolean> {
 
-	if (cooldownMap.get(userData.uuid + interaction.guildId) === true) {
+	if (cooldownMap.get(userData._id + interaction.guildId) === true) {
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
@@ -95,17 +95,17 @@ export async function isResting(
 ): Promise<UserSchema> {
 
 	/* This is a function that checks if the user is resting. If they are, it will wake them up and attach an embed to the message. */
-	if (profileData.isResting === true || checkResting(userData.uuid, interaction.guildId) === true) {
+	if (profileData.isResting === true || checkResting(userData._id, interaction.guildId) === true) {
 
 		userData = await userModel.findOneAndUpdate(
-			u => u.uuid === userData.uuid,
+			u => u._id === userData._id,
 			(u) => {
 				const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
 				p.isResting = false;
 			},
 		);
 
-		stopResting(userData.uuid, interaction.guildId);
+		stopResting(userData._id, interaction.guildId);
 
 		embedArray.unshift(new EmbedBuilder()
 			.setColor(quidData.color)
@@ -253,7 +253,7 @@ export function isInteractable(
 		return false;
 	}
 
-	if (profileData.isResting || checkResting(userData.uuid, profileData.serverId)) {
+	if (profileData.isResting || checkResting(userData._id, profileData.serverId)) {
 
 		respond(interaction, {
 			content: messageContent,
@@ -266,7 +266,7 @@ export function isInteractable(
 		return false;
 	}
 
-	if (cooldownMap.get(userData.uuid + interaction.guildId)) {
+	if (cooldownMap.get(userData._id + interaction.guildId)) {
 
 		respond(interaction, {
 			content: messageContent,

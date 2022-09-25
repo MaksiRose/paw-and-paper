@@ -64,7 +64,7 @@ export const command: SlashCommand = {
 			],
 		}, true);
 
-		if (interaction.inGuild()) { createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply); }
+		if (interaction.inGuild()) { createCommandComponentDisabler(userData._id, interaction.guildId, botReply); }
 	},
 };
 
@@ -129,7 +129,7 @@ export async function voteInteractionCollector(
 		const energyPoints = getSmallerNumber(profileData.maxEnergy - profileData.energy, 30);
 
 		await userModel.findOneAndUpdate(
-			u => u.uuid === userData.uuid,
+			u => u._id === userData._id,
 			(u) => {
 				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 				p.energy += energyPoints;

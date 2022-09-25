@@ -50,7 +50,7 @@ export const command: SlashCommand = {
 			],
 		}, true);
 
-		createCommandComponentDisabler(userData.uuid, interaction.guildId || 'DM', botReply);
+		createCommandComponentDisabler(userData._id, interaction.guildId || 'DM', botReply);
 	},
 };
 
@@ -136,7 +136,7 @@ export async function speciesInteractionCollector(
 		const chosenSpecies = selectOptionId.split('_')[1] as SpeciesNames;
 
 		userData = await userModel.findOneAndUpdate(
-			u => u.uuid === userData?.uuid,
+			u => u._id === userData?._id,
 			(u) => {
 				const q = getMapData(u.quids, quidId);
 				q.species = chosenSpecies;
@@ -172,7 +172,7 @@ export async function sendEditDisplayedSpeciesModalResponse(
 	const displayedSpecies = interaction.fields.getTextInputValue('species_textinput');
 
 	userData = await userModel.findOneAndUpdate(
-		u => u.uuid === userData?.uuid,
+		u => u._id === userData?._id,
 		(u) => {
 			const q = getMapData(u.quids, quidId);
 			q.displayedSpecies = displayedSpecies;

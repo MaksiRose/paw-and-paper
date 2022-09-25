@@ -1,6 +1,6 @@
-import { Event } from '../typedef';
+import { DiscordEvent } from '../typedef';
 
-export const event: Event = {
+export const event: DiscordEvent = {
 	name: 'warn',
 	once: false,
 	async execute(client, info: string) {

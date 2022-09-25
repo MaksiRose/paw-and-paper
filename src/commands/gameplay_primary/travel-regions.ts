@@ -56,7 +56,7 @@ export const command: SlashCommand = {
 		const chosenRegion = interaction.options.getString('region');
 
 		const botReply = await sendTravelMessage(interaction, userData, quidData, profileData, messageContent, embedArray, chosenRegion);
-		createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
+		createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
 	},
 };
 
@@ -140,7 +140,7 @@ async function sendTravelMessage(
 	if (chosenRegion && valueInObject(CurrentRegionType, chosenRegion)) {
 
 		await userModel.findOneAndUpdate(
-			u => u.uuid === userData.uuid,
+			u => u._id === userData._id,
 			(u) => {
 				const p = getMapData(getMapData(u.quids, getMapData(userData!.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 				p.currentRegion = chosenRegion;

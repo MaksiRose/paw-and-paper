@@ -194,7 +194,7 @@ export async function serversettingsInteractionCollector(
 
 									/* Update the user by checking if there is a role with the roleId, and if there is, deleting it */
 									await userModel.findOneAndUpdate(
-										user => user.uuid === u.uuid,
+										user => user._id === u._id,
 										(user) => {
 											const prof = getMapData(getMapData(user.quids, q._id).profiles, p.serverId);
 											prof.roles = prof.roles.filter(r => r.roleId !== role);
@@ -292,7 +292,7 @@ export async function serversettingsInteractionCollector(
 
 									/* Update the user by checking if there is a role with the roleId, and if there is, deleting it */
 									await userModel.findOneAndUpdate(
-										user => user.uuid === u.uuid,
+										user => user._id === u._id,
 										(user) => {
 											const prof = getMapData(getMapData(user.quids, q._id).profiles, p.serverId);
 											prof.roles = prof.roles.filter(r => r.roleId !== role);

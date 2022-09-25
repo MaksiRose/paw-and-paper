@@ -1,10 +1,10 @@
 import { Role } from 'discord.js';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
-import { CustomClient, Event, WayOfEarningType } from '../typedef';
+import { CustomClient, DiscordEvent, WayOfEarningType } from '../typedef';
 import { getMapData } from '../utils/helperFunctions';
 
-export const event: Event = {
+export const event: DiscordEvent = {
 	name: 'roleDelete',
 	once: false,
 	async execute(client: CustomClient, role: Role) {
@@ -33,7 +33,7 @@ export const event: Event = {
 						const userRole = profile.roles[userRoleIndex];
 						if (!userRole) { continue; }
 						userModel.findOneAndUpdate(
-							u => u.uuid === user.uuid,
+							u => u._id === user._id,
 							(u) => {
 								const p = getMapData(getMapData(u.quids, quid._id).profiles, profile.serverId);
 								p.roles.splice(userRoleIndex, 1);

@@ -26,7 +26,7 @@ export const command: SlashCommand = {
 		const nickname = interaction.options.getString('nickname') || '';
 
 		userData = await userModel.findOneAndUpdate(
-			u => u.uuid === userData?.uuid,
+			u => u._id === userData?._id,
 			(u) => {
 				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DM'));
 				if (serverData) { q.nickname.servers[serverData.serverId] = nickname; }

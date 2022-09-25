@@ -187,7 +187,7 @@ async function decreaseHealth(
 	/* Change total health decrease if it would get the health below zero, and update the user information */
 	totalHealthDecrease = getSmallerNumber(totalHealthDecrease, profileData.health);
 	userData = await userModel.findOneAndUpdate(
-		u => u.uuid === userData.uuid,
+		u => u._id === userData._id,
 		(u) => {
 			const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, profileData.serverId)).profiles, profileData.serverId);
 			p.health -= totalHealthDecrease;
@@ -233,7 +233,7 @@ export async function changeCondition(
 	const previousRegion = profileData.currentRegion;
 
 	userData = await userModel.findOneAndUpdate(
-		u => u.uuid === userData.uuid,
+		u => u._id === userData._id,
 		(u) => {
 			const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, profileData.serverId)).profiles, profileData.serverId);
 			p.energy -= energyDecrease;
@@ -278,7 +278,7 @@ export async function infectWithChance(
 		const healthPoints = getSmallerNumber(getRandomNumber(5, 3), profileData1.health);
 
 		await userModel.findOneAndUpdate(
-			u => u.uuid === userData1.uuid,
+			u => u._id === userData1._id,
 			(u) => {
 				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, profileData1.serverId)).profiles, profileData1.serverId);
 				p.health -= healthPoints;

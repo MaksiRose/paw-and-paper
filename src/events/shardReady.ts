@@ -1,7 +1,7 @@
 import { ActivityType } from 'discord.js';
-import { CustomClient, Event } from '../typedef';
+import { CustomClient, DiscordEvent } from '../typedef';
 
-export const event: Event = {
+export const event: DiscordEvent = {
 	name: 'shardReady',
 	once: false,
 	async execute(client: CustomClient) {

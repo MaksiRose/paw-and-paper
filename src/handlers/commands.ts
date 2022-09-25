@@ -2,16 +2,15 @@ import { RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v9';
 import { lstatSync, readdirSync } from 'fs';
 import { ContextMenuCommand, CustomClient, SlashCommand } from '../typedef';
 import path from 'path';
-import { REST } from '@discordjs/rest';
-import { Routes } from 'discord-api-types/v9';
 
 /** Adds all commands to the client */
 export async function execute(
 	client: CustomClient,
 ): Promise<void> {
 
-	const applicationCommands: Array<RESTPostAPIApplicationCommandsJSONBody> = [];
+	if (!client.application) { return; }
 
+	const applicationCommands: Array<RESTPostAPIApplicationCommandsJSONBody> = [];
 	/* Adds all commands to client.commands property, and to the applicationCommands array if
 	the command.data is not undefined. */
 	for (const commandPath of getFiles('../commands')) {
@@ -29,16 +28,8 @@ export async function execute(
 	}
 
 	/* Registers the applicationCommands array to Discord. */
-	if (!client.token || !client.user) { return; }
+	await client.application.commands.set(applicationCommands);
 
-	const rest = new REST({ version: '9' }).setToken(client.token);
-
-	await rest
-		.put(
-			Routes.applicationCommands(client.user.id),
-			{ body: applicationCommands },
-		)
-		.catch(error => console.error(error));
 
 	for (const folderName of readdirSync(path.join(__dirname, '../commands_guild'))) {
 
@@ -53,12 +44,7 @@ export async function execute(
 			client.slashCommands[command.name] = command;
 		}
 
-		await rest
-			.put(
-				Routes.applicationGuildCommands(client.user.id, folderName),
-				{ body: applicationCommandsGuild },
-			)
-			.catch(error => console.error(error));
+		await client.application.commands.set(applicationCommandsGuild, folderName);
 	}
 }
 

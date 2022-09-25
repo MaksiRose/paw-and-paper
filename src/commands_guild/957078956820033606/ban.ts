@@ -51,7 +51,7 @@ export const command: SlashCommand = {
 			const profile = await userModel.findOne(u => u.userId.includes(id)).catch(() => { return null; });
 			if (profile) {
 
-				await userModel.findOneAndDelete(u => u.uuid === profile.uuid);
+				await userModel.findOneAndDelete(u => u._id === profile._id);
 				const user = await client.users.fetch(id).catch(() => { return null; });
 
 				if (user) {
@@ -85,7 +85,7 @@ export const command: SlashCommand = {
 			const server = await serverModel.findOne(s => s.serverId === id).catch(() => { return null; });
 			if (server) {
 
-				await serverModel.findOneAndDelete(u => u.uuid === server.uuid);
+				await serverModel.findOneAndDelete(u => u._id === server._id);
 				const guild = await interaction.client.guilds.fetch(id).catch(() => { return null; });
 				const user = await client.users.fetch(guild?.ownerId || '').catch(() => { return null; });
 

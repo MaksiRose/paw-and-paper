@@ -26,7 +26,7 @@ export const command: SlashCommand = {
 		const tag = interaction.options.getString('tag') || '';
 
 		userData = await userModel.findOneAndUpdate(
-			u => u.uuid === userData?.uuid,
+			u => u._id === userData?._id,
 			(u) => {
 				if (serverData) { u.tag.servers[serverData.serverId] = tag; }
 				else { u.tag.global = tag; }

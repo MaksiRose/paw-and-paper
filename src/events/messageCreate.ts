@@ -3,11 +3,11 @@ import { sendMessage } from '../commands/interaction/say';
 // import { sendVisitMessage } from '../commands/interaction/requestvisit';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
-import { CustomClient, Event, ProxyConfigType, ProxyListType, Quid, ServerSchema, UserSchema } from '../typedef';
+import { CustomClient, DiscordEvent, ProxyConfigType, ProxyListType, Quid, ServerSchema, UserSchema } from '../typedef';
 import { getMapData } from '../utils/helperFunctions';
 import { createGuild } from '../utils/updateGuild';
 
-export const event: Event = {
+export const event: DiscordEvent = {
 	name: 'messageCreate',
 	once: false,
 	async execute(client: CustomClient, message: Message) {
@@ -54,7 +54,7 @@ export const event: Event = {
 
 		if (replaceMessage && (message.content.length > 0 || message.attachments.size > 0)) {
 
-			await sendMessage(message.channel, message.content, userData, quidData, userData.uuid, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
+			await sendMessage(message.channel, message.content, userData, quidData, userData._id, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
 				.catch(error => { console.error(error); });
 
 			message

@@ -109,7 +109,7 @@ export async function executeExploring(
 		}, true);
 
 		await userModel.findOneAndUpdate(
-			u => u.uuid === userData!.uuid,
+			u => u._id === userData!._id,
 			(u) => {
 				const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
 				p.tutorials.explore = true;
@@ -118,7 +118,7 @@ export async function executeExploring(
 		return;
 	}
 
-	cooldownMap.set(userData.uuid + interaction.guildId, true);
+	cooldownMap.set(userData._id + interaction.guildId, true);
 
 	/* Here we are getting the biomes available to the quid, getting a user input if there is one, and defining chosenBiome as the user input if it matches an available biome, else it is null. */
 	const availableBiomes = getAvailableBiomes(quidData, profileData);
@@ -159,7 +159,7 @@ export async function executeExploring(
 			})
 			.catch(async () => {
 
-				cooldownMap.set(userData!.uuid + interaction.guildId, false);
+				cooldownMap.set(userData!._id + interaction.guildId, false);
 				await respond(interaction, { components: disableAllComponents(getBiomeMessage.components) }, true);
 
 				return null;
@@ -341,7 +341,7 @@ export async function executeExploring(
 
 			foundSapling = true;
 			userData = await userModel.findOneAndUpdate(
-				u => u.uuid === userData!.uuid,
+				u => u._id === userData!._id,
 				(u) => {
 					const p = getMapData(getMapData(u.quids, getMapData(userData!.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 					p.sapling = {
@@ -365,7 +365,7 @@ export async function executeExploring(
 			const foundMaterial = pickRandomMaterial();
 
 			userData = await userModel.findOneAndUpdate(
-				u => u.uuid === userData!.uuid,
+				u => u._id === userData!._id,
 				(u) => {
 					const p = getMapData(getMapData(u.quids, getMapData(userData!.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 					p.inventory.materials[foundMaterial] += 1;
@@ -512,7 +512,7 @@ export async function executeExploring(
 				if (winLoseRatio === 2) {
 
 					userData = await userModel.findOneAndUpdate(
-						u => u.uuid === userData!.uuid,
+						u => u._id === userData!._id,
 						(u) => {
 							const p = getMapData(getMapData(u.quids, getMapData(userData!.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 							if (keyInObject(p.inventory.commonPlants, foundItem)) { p.inventory.commonPlants[foundItem] += 1; }
@@ -614,7 +614,7 @@ export async function executeExploring(
 					}
 
 					userData = await userModel.findOneAndUpdate(
-						u => u.uuid === userData!.uuid,
+						u => u._id === userData!._id,
 						(u) => {
 							const p = getMapData(getMapData(u.quids, getMapData(userData!.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 							p.health -= healthPoints;
@@ -817,7 +817,7 @@ export async function executeExploring(
 				else if (playerLevel > opponentLevel) {
 
 					userData = await userModel.findOneAndUpdate(
-						u => u.uuid === userData!.uuid,
+						u => u._id === userData!._id,
 						(u) => {
 							const p = getMapData(getMapData(u.quids, getMapData(userData!.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 							p.inventory.meat[opponentSpecies] += 1;
@@ -884,7 +884,7 @@ export async function executeExploring(
 					}
 
 					userData = await userModel.findOneAndUpdate(
-						u => u.uuid === userData!.uuid,
+						u => u._id === userData!._id,
 						(u) => {
 							const p = getMapData(getMapData(u.quids, getMapData(userData!.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 							p.health -= healthPoints;
@@ -896,13 +896,13 @@ export async function executeExploring(
 		}
 	}
 
-	cooldownMap.set(userData.uuid + interaction.guildId, false);
+	cooldownMap.set(userData._id + interaction.guildId, false);
 	const levelUpEmbed = (await checkLevelUp(interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
 
 	if (foundQuest) {
 
 		await userModel.findOneAndUpdate(
-			u => u.uuid === userData!.uuid,
+			u => u._id === userData!._id,
 			(u) => {
 				const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
 				p.hasQuest = true;
@@ -943,7 +943,7 @@ export async function executeExploring(
 	if (userData.advice.ginkgosapling === false && foundSapling) {
 
 		await userModel.findOneAndUpdate(
-			u => u.uuid === userData!.uuid,
+			u => u._id === userData!._id,
 			(u) => {
 				u.advice.ginkgosapling = true;
 			},

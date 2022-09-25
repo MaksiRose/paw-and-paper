@@ -1,8 +1,8 @@
 import { Guild } from 'discord.js';
-import { Event } from '../typedef';
+import { DiscordEvent } from '../typedef';
 import { createGuild } from '../utils/updateGuild';
 
-export const event: Event = {
+export const event: DiscordEvent = {
 	name: 'guildCreate',
 	once: false,
 	async execute(client, guild: Guild) {

@@ -1,4 +1,4 @@
-import Model from './constructor';
+import { Model } from 'hoatzin';
 import { commonPlantsInfo, Dens, materialsInfo, ProxyListType, rarePlantsInfo, Schema, ServerSchema, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../typedef';
 
 const denType: Schema<Dens>[keyof Dens] = {
@@ -129,6 +129,6 @@ const serverModel = new Model<ServerSchema>('./database/servers', {
 		of: { type: 'string', default: '', locked: false },
 		locked: false,
 	},
-	uuid: { type: 'string', default: '', locked: true },
+	_id: { type: 'string', default: '', locked: true },
 });
 export default serverModel;
