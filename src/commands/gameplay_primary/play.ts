@@ -70,7 +70,7 @@ export async function executePlaying(
 			content: '*About the structure of RPG messages:*\n\n- Most messages have `Roleplay text`, which is written in cursive, and only for fun!\n- More important is the `Info text`, which is at the bottom of each message, and has the most important info like how to play a game or stat changes. **Read this part first** to avoid confusion!\n\n> Here is an example of what this might look like:',
 			embeds: [new EmbedBuilder()
 				.setColor(quidData1.color)
-				.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/feat-536-492/pictures/tutorials/Play.png')],
+				.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/dev/pictures/tutorials/Play.png')],
 			components: [
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
@@ -354,7 +354,7 @@ export async function executePlaying(
 				/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
 				playComponent = plantGame.chosenRightButtonOverwrite(i.customId);
 
-				tutorialMap.set(quidData1._id + profileData1.serverId, 2);
+				if (tutorialMapEntry === 1) { tutorialMap.set(quidData1._id + profileData1.serverId, 2); }
 
 				userData1 = await userModel.findOneAndUpdate(
 					u => u.uuid === userData1?.uuid,

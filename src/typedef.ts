@@ -1,7 +1,7 @@
 import { Api } from '@top-gg/sdk';
 import { AutocompleteInteraction, Client, ClientOptions, MessageContextMenuCommandInteraction, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 const bfd = require('bfd-api-redux/src/main');
-import { RESTPostAPIContextMenuApplicationCommandsJSONBody, RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v10';
+import { RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v10';
 
 export interface SlashCommand {
 	name: string;
@@ -16,7 +16,7 @@ export interface SlashCommand {
 
 export interface ContextMenuCommand {
 	name: string;
-	data: RESTPostAPIContextMenuApplicationCommandsJSONBody;
+	data: RESTPostAPIApplicationCommandsJSONBody;
 	sendCommand: (client: CustomClient, interaction: MessageContextMenuCommandInteraction) => Promise<void>;
 }
 
@@ -423,7 +423,7 @@ export interface ServerSchema {
 	readonly uuid: string;
 }
 
-export interface Event {
+export interface DiscordEvent {
 	/** Name of the event */
 	name: string;
 	/** Whether the event should be executed once */

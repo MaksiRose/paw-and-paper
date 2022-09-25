@@ -14,7 +14,7 @@ import { createNewTicket, sendRespondToTicketModalResponse, ticketInteractionCol
 import { sendEditMessageModalResponse } from '../contextmenu/edit';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
-import { ErrorStacks, Event } from '../typedef';
+import { ErrorStacks, DiscordEvent } from '../typedef';
 import { disableCommandComponent, disableAllComponents } from '../utils/componentDisabling';
 import { getMapData, getQuidDisplayname, update } from '../utils/helperFunctions';
 import { pronoun, pronounAndPlural } from '../utils/getPronouns';
@@ -48,10 +48,12 @@ export const cooldownMap: Map<string, boolean> = new Map();
 export const lastInteractionMap: Map<string, ChatInputCommandInteraction<'cached'> | MessageContextMenuCommandInteraction<'cached'> | UserContextMenuCommandInteraction<'cached'> | SelectMenuInteraction<'cached'> | ButtonInteraction<'cached'> | ModalSubmitInteraction<'cached'>> = new Map(); // This should be replaced by RepliableInteraction<'cached'> once the Cached generic of RepliableInteraction is respected
 export const serverActiveUsersMap: Map<string, string[]> = new Map();
 
-export const event: Event = {
+export const event: DiscordEvent = {
 	name: 'interactionCreate',
 	once: false,
 	async execute(client, interaction: Interaction) {
+
+		console.log('test');
 
 		/* This is only null when in DM without CHANNEL partial, or when channel cache is sweeped. Therefore, this is technically unsafe since this value could become null after this check. This scenario is unlikely though. */
 		if (!interaction.channel) { await client.channels.fetch(interaction.channelId || ''); }

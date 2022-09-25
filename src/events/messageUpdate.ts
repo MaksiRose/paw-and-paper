@@ -2,10 +2,10 @@ import { Message } from 'discord.js';
 import { sendMessage } from '../commands/interaction/say';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
-import { CustomClient, Event } from '../typedef';
+import { CustomClient, DiscordEvent } from '../typedef';
 import { checkForProxy } from './messageCreate';
 
-export const event: Event = {
+export const event: DiscordEvent = {
 	name: 'messageUpdate',
 	once: false,
 	async execute(client: CustomClient, oldMessage: Message, newMessage: Message) {

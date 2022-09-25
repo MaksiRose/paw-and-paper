@@ -1,10 +1,10 @@
 import { Role } from 'discord.js';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
-import { CustomClient, Event, WayOfEarningType } from '../typedef';
+import { CustomClient, DiscordEvent, WayOfEarningType } from '../typedef';
 import { getMapData } from '../utils/helperFunctions';
 
-export const event: Event = {
+export const event: DiscordEvent = {
 	name: 'roleDelete',
 	once: false,
 	async execute(client: CustomClient, role: Role) {

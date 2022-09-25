@@ -1,8 +1,8 @@
 import { Guild } from 'discord.js';
 import serverModel from '../models/serverModel';
-import { Event } from '../typedef';
+import { DiscordEvent } from '../typedef';
 
-export const event: Event = {
+export const event: DiscordEvent = {
 	name: 'guildUpdate',
 	once: false,
 	async execute(client, oldGuild: Guild, newGuild: Guild) {
