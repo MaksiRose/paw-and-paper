@@ -166,7 +166,7 @@ export const event: DiscordEvent = {
 				const profileData = quidData?.profiles?.[interaction.guildId];
 
 				/* If sapling exists, a gentle reminder has not been sent and the watering time is after the perfect time, send a gentle reminder */
-				if (userData && profileData && profileData.sapling.exists && !profileData.sapling?.sentGentleReminder && Date.now() > (profileData.sapling.nextWaterTimestamp || 0)) {
+				if (userData && profileData && profileData.sapling.exists && !profileData.sapling?.sentGentleReminder && Date.now() > (profileData.sapling.nextWaterTimestamp || 0) + 60_000) { // The 60 seconds is so this doesn't trigger when you just found your sapling while exploring
 
 					await userModel.findOneAndUpdate(
 						u => u._id === userData?._id,
