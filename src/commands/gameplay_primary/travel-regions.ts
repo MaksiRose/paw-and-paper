@@ -74,7 +74,7 @@ export async function travelInteractionCollector(
 	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 	const profileData = getMapData(quidData.profiles, interaction.guildId);
 
-	const messageContent = interaction.message.content || undefined;
+	const messageContent = interaction.message.content;
 	const embedArray = interaction.message.embeds.slice(0, -1).map(c => new EmbedBuilder(c.toJSON()));
 
 	if (interaction.isButton()) {
@@ -106,7 +106,7 @@ export async function travelInteractionCollector(
 	}
 	else if (interaction.isSelectMenu()) {
 
-		await sendTravelMessage(interaction, userData, quidData, profileData, undefined, embedArray, interaction.values[0] ?? null);
+		await sendTravelMessage(interaction, userData, quidData, profileData, '', embedArray, interaction.values[0] ?? null);
 	}
 }
 
@@ -115,7 +115,7 @@ async function sendTravelMessage(
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
-	messageContent: string | undefined,
+	messageContent: string,
 	embedArray: EmbedBuilder[],
 	chosenRegion: string | null,
 ): Promise<Message> {

@@ -94,7 +94,7 @@ export async function sendEatMessage(
 	quidData: Quid,
 	profileData: Profile,
 	serverData: ServerSchema,
-	messageContent: string | undefined,
+	messageContent: string,
 	embedArray: EmbedBuilder[],
 ): Promise<void> {
 
@@ -307,7 +307,7 @@ async function sendNoItemMessage(
 	quidData: Quid,
 	chosenFood: string,
 	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
-	messageContent: string | undefined,
+	messageContent: string,
 	embedArray: EmbedBuilder[],
 ): Promise<void> {
 

@@ -320,7 +320,7 @@ export async function executeExploring(
 		const humanCount = Math.round((serverInventoryCount - (highRankProfilesCount * 7)) / highRankProfilesCount);
 		startAttack(interaction, humanCount);
 
-		messageContent = serverActiveUsersMap.get(interaction.guildId)?.map(user => `<@${user}>`).join(' ') ?? undefined;
+		messageContent = serverActiveUsersMap.get(interaction.guildId)?.map(user => `<@${user}>`).join(' ') ?? '';
 		embed.setDescription(`*${quidData.name} has just been looking around for food when ${pronounAndPlural(quidData, 0, 'suddenly hear')} voices to ${pronoun(quidData, 2)} right. Cautiously ${pronounAndPlural(quidData, 0, 'creep')} up, and sure enough: a group of humans! It looks like it's around ${humanCount}. They seem to be discussing something, and keep pointing over towards where the pack is lying. Alarmed, the ${quidData.displayedSpecies || quidData.species} runs away. **${upperCasePronoun(quidData, 0)} must gather as many packmates as possible to protect the pack!***`);
 		embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\nYou have two minutes to prepare before the humans will attack!` });
 	}
@@ -956,7 +956,7 @@ export async function executeExploring(
 }
 
 function getWaitingMessageObject(
-	messageContent: string | undefined,
+	messageContent: string,
 	embedArray: EmbedBuilder[],
 	userData: UserSchema,
 	quidData: Quid,
@@ -964,7 +964,7 @@ function getWaitingMessageObject(
 	waitingString: string,
 	waitingGameField: string[][],
 	waitingComponent: ActionRowBuilder<ButtonBuilder>,
-): { content: string | undefined; embeds: EmbedBuilder[]; components: ActionRowBuilder<ButtonBuilder>[]; } {
+): { content: string; embeds: EmbedBuilder[]; components: ActionRowBuilder<ButtonBuilder>[]; } {
 
 	return {
 		content: messageContent,

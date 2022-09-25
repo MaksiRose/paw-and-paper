@@ -53,8 +53,6 @@ export const event: DiscordEvent = {
 	once: false,
 	async execute(client, interaction: Interaction) {
 
-		console.log('test');
-
 		/* This is only null when in DM without CHANNEL partial, or when channel cache is sweeped. Therefore, this is technically unsafe since this value could become null after this check. This scenario is unlikely though. */
 		if (!interaction.channel) { await client.channels.fetch(interaction.channelId || ''); }
 

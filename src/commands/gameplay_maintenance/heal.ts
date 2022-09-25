@@ -126,12 +126,12 @@ export async function healInteractionCollector(
 			const page = Number(value.replace('newpage_', ''));
 			if (isNaN(page)) { throw new TypeError('page is NaN'); }
 
-			await getHealResponse(interaction, userData, serverData, undefined, [], page);
+			await getHealResponse(interaction, userData, serverData, '', [], page);
 		}
 		else {
 
 			const quidToHeal = getMapData((await userModel.findOne(u => Object.keys(u.quids).includes(value))).quids, value);
-			await getHealResponse(interaction, userData, serverData, undefined, [], 0, quidToHeal);
+			await getHealResponse(interaction, userData, serverData, '', [], 0, quidToHeal);
 		}
 	}
 	else if (interaction.customId.startsWith('heal_page_')) {
@@ -143,7 +143,7 @@ export async function healInteractionCollector(
 		if (quidId === undefined) { throw new TypeError('quidId is undefined'); }
 
 		const quidToHeal = getMapData((await userModel.findOne(u => Object.keys(u.quids).includes(quidId))).quids, quidId);
-		await getHealResponse(interaction, userData, serverData, undefined, [], 0, quidToHeal, inventoryPage);
+		await getHealResponse(interaction, userData, serverData, '', [], 0, quidToHeal, inventoryPage);
 	}
 	else if (interaction.isSelectMenu() && interaction.customId.startsWith('heal_inventory_options_')) {
 
@@ -155,7 +155,7 @@ export async function healInteractionCollector(
 		let chosenItem = interaction.values[0];
 		if (!chosenItem || !stringIsAvailableItem(chosenItem, serverData.inventory)) { chosenItem = undefined; }
 
-		await getHealResponse(interaction, userData, serverData, undefined, [], 0, quidToHeal, 1, chosenItem);
+		await getHealResponse(interaction, userData, serverData, '', [], 0, quidToHeal, 1, chosenItem);
 	}
 }
 
@@ -195,7 +195,7 @@ export async function getHealResponse(
 	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>,
 	userData: UserSchema,
 	serverData: ServerSchema,
-	messageContent: string | undefined,
+	messageContent: string,
 	embedArray: EmbedBuilder[],
 	quidPage = 0,
 	quidToHeal?: Quid,
@@ -539,7 +539,7 @@ export async function getHealResponse(
 	const changedCondition = await changeCondition(userData, quidData, profileData, experiencePoints);
 	embed.setFooter({ text: `${changedCondition.statsUpdateText}${embedFooter}\n\n${denCondition}${item !== 'water' ? `\n-1 ${item} for ${interaction.guild.name}` : ''}` });
 
-	const content = userData._id !== userToHeal._id && isSuccessful === true ? `<@${userToHeal.userId[0]}>\n` : '' + (messageContent ?? '');
+	const content = (userData._id !== userToHeal._id && isSuccessful === true ? `<@${userToHeal.userId[0]}>\n` : '') + messageContent;
 	const infectedEmbed = await infectWithChance(userData, quidData, profileData, quidToHeal, profileToHeal);
 	const levelUpEmbed = (await checkLevelUp(interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
 
@@ -550,7 +550,7 @@ export async function getHealResponse(
 	}
 
 	const botReply = await respond(interaction, {
-		content: content.length > 0 ? content : undefined,
+		content: content,
 		embeds: [
 			...embedArray,
 			embed,

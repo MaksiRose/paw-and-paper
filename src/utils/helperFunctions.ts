@@ -57,13 +57,13 @@ export async function respond(
 
 	let botReply: APIMessage | Message<boolean>;
 	if (!interaction.replied && !interaction.deferred) {
-		botReply = await interaction.reply({ ...options, fetchReply: true });
+		botReply = await interaction.reply({ ...options, content: options.content === '' ? undefined : options.content, fetchReply: true });
 	}
 	else if (editMessage) {
-		botReply = await interaction.editReply(options);
+		botReply = await interaction.editReply({ ...options, content: options.content === '' ? null : options.content });
 	}
 	else {
-		botReply = await interaction.followUp(options);
+		botReply = await interaction.followUp({ ...options, content: options.content === '' ? undefined : options.content });
 	}
 
 	if (botReply instanceof Message) { return botReply; }
@@ -77,10 +77,10 @@ export async function update(
 
 	let botReply: Message<boolean>;
 	if (!interaction.replied && !interaction.deferred) {
-		botReply = await interaction.update({ ...options, fetchReply: true });
+		botReply = await interaction.update({ ...options, content: options.content === '' ? null : options.content, fetchReply: true });
 	}
 	else {
-		botReply = await interaction.editReply(options);
+		botReply = await interaction.editReply({ ...options, content: options.content === '' ? null : options.content });
 	}
 
 	return botReply;
