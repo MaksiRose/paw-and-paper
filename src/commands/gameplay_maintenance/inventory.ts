@@ -136,7 +136,7 @@ export async function inventoryInteractionCollector(
 			const chosenFood = interaction.values[0];
 			if (chosenFood === undefined) { throw new TypeError('chosenFood is undefined'); }
 
-			await sendEatMessage(interaction, chosenFood, userData, quidData, profileData, serverData, undefined, []);
+			await sendEatMessage(interaction, chosenFood, userData, quidData, profileData, serverData, '', []);
 			return;
 		}
 	}

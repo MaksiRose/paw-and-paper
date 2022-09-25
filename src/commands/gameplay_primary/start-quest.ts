@@ -64,7 +64,7 @@ export async function sendQuestMessage(
 	quidData: Quid,
 	profileData: Profile,
 	serverData: ServerSchema,
-	messageContent: string | undefined,
+	messageContent: string,
 	embedArray: EmbedBuilder[],
 	afterEmbedArray: EmbedBuilder[] = [],
 	footerText = '',
@@ -131,7 +131,7 @@ export async function sendQuestMessage(
 	embed.setFooter({ text: `${footerText}\n\nClick the button or type "/quest" to continue. *Level ${profileData.rank == 'Elderly' ? '35' : (profileData.rank == 'Hunter' || profileData.rank == 'Healer') ? '20' : profileData.rank == 'Apprentice' ? '10' : '2'} is recommended for this!*\n\nTip: Read the bottom text during the game carefully to find out which button to click. The button you chose will get a "radio button"-emoji, and the correct button will get a checkmark emoji. Sometimes you will lose a round even if you chose right, depending on how many levels you have, then there will be no checkmark emoji.` });
 
 	const botReply = await respond(interaction, {
-		content: `<@${interaction.user.id}>` + (messageContent ?? ''),
+		content: `<@${interaction.user.id}>\n${messageContent}`,
 		embeds: [...embedArray, embed, ...afterEmbedArray],
 		components: [new ActionRowBuilder<ButtonBuilder>()
 			.setComponents(new ButtonBuilder()
@@ -166,7 +166,7 @@ async function startQuest(
 	quidData: Quid,
 	profileData: Profile,
 	serverData: ServerSchema,
-	messageContent: string | undefined,
+	messageContent: string,
 	embedArray: EmbedBuilder[],
 	afterEmbedArray: EmbedBuilder[],
 	botReply: Message,

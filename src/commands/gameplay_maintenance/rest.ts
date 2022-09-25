@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, MessageContextMenuCommandInteraction, ModalSubmitInteraction, SelectMenuInteraction, SlashCommandBuilder, UserContextMenuCommandInteraction } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, RepliableInteraction, SlashCommandBuilder } from 'discord.js';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
 import { CurrentRegionType, Profile, Quid, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
@@ -43,7 +43,7 @@ export const command: SlashCommand = {
 };
 
 export async function startResting(
-	interaction: ChatInputCommandInteraction<'cached'> | MessageContextMenuCommandInteraction<'cached'> | UserContextMenuCommandInteraction<'cached'> | SelectMenuInteraction<'cached'> | ButtonInteraction<'cached'> | ModalSubmitInteraction<'cached'>, // This should be replaced by RepliableInteraction<'cached'> once the Cached generic of RepliableInteraction is respected
+	interaction: RepliableInteraction<'cached'>,
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,

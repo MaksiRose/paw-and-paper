@@ -1,4 +1,4 @@
-import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, Interaction, MessageContextMenuCommandInteraction, ModalSubmitInteraction, SelectMenuInteraction, UserContextMenuCommandInteraction } from 'discord.js';
+import { EmbedBuilder, Interaction, RepliableInteraction } from 'discord.js';
 import { deleteInteractionCollector } from '../commands/quid_customization/delete';
 import { profileInteractionCollector } from '../commands/quid_customization/profile';
 import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../commands/quid_customization/pronouns';
@@ -45,15 +45,13 @@ const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
 export const cooldownMap: Map<string, boolean> = new Map();
-export const lastInteractionMap: Map<string, ChatInputCommandInteraction<'cached'> | MessageContextMenuCommandInteraction<'cached'> | UserContextMenuCommandInteraction<'cached'> | SelectMenuInteraction<'cached'> | ButtonInteraction<'cached'> | ModalSubmitInteraction<'cached'>> = new Map(); // This should be replaced by RepliableInteraction<'cached'> once the Cached generic of RepliableInteraction is respected
+export const lastInteractionMap: Map<string, RepliableInteraction<'cached'>> = new Map();
 export const serverActiveUsersMap: Map<string, string[]> = new Map();
 
 export const event: DiscordEvent = {
 	name: 'interactionCreate',
 	once: false,
 	async execute(client, interaction: Interaction) {
-
-		console.log('test');
 
 		/* This is only null when in DM without CHANNEL partial, or when channel cache is sweeped. Therefore, this is technically unsafe since this value could become null after this check. This scenario is unlikely though. */
 		if (!interaction.channel) { await client.channels.fetch(interaction.channelId || ''); }
@@ -168,7 +166,7 @@ export const event: DiscordEvent = {
 				const profileData = quidData?.profiles?.[interaction.guildId];
 
 				/* If sapling exists, a gentle reminder has not been sent and the watering time is after the perfect time, send a gentle reminder */
-				if (userData && profileData && profileData.sapling.exists && !profileData.sapling?.sentGentleReminder && Date.now() > (profileData.sapling.nextWaterTimestamp || 0)) {
+				if (userData && profileData && profileData.sapling.exists && !profileData.sapling?.sentGentleReminder && Date.now() > (profileData.sapling.nextWaterTimestamp || 0) + 60_000) { // The 60 seconds is so this doesn't trigger when you just found your sapling while exploring
 
 					await userModel.findOneAndUpdate(
 						u => u._id === userData?._id,

@@ -165,7 +165,7 @@ export async function hasFullInventory(
 	quidData: Quid,
 	profileData: Profile,
 	embedArray: EmbedBuilder[],
-	messageContent: string | undefined,
+	messageContent: string,
 ): Promise<boolean> {
 
 	if (hasTooManyItems(profileData)) {
@@ -195,7 +195,7 @@ export async function hasFullInventory(
 export function isInteractable(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	userData: UserSchema | null,
-	messageContent: string | undefined,
+	messageContent: string,
 	embedArray: EmbedBuilder[],
 ): userData is UserSchema {
 

@@ -119,7 +119,7 @@ export async function repairInteractionCollector(
 		const chosenDen = interaction.customId.replace('repair_', '');
 		if (chosenDen !== 'sleepingDens' && chosenDen !== 'medicineDen' && chosenDen !== 'foodDen') { throw new Error('chosenDen is not a den'); }
 
-		await update(interaction, getMaterials(userData, quidData, serverData, chosenDen, [], undefined));
+		await update(interaction, getMaterials(userData, quidData, serverData, chosenDen, [], ''));
 		return;
 	}
 
@@ -183,7 +183,7 @@ function getMaterials(
 	serverData: ServerSchema,
 	chosenDen: 'sleepingDens' | 'foodDen' | 'medicineDen',
 	embedArray: EmbedBuilder[],
-	messageContent: string | undefined,
+	messageContent: string,
 ): Omit<InteractionReplyOptions & WebhookEditMessageOptions, 'flags'> {
 
 	const { selectMenuOptions, embedDescription: description } = getInventoryElements(serverData.inventory, 4);

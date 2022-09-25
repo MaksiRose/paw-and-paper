@@ -251,7 +251,7 @@ export async function executePlaying(
 		}
 		else {
 
-			messageContent = `${(messageContent ?? '')}\n\n<@${mentionedUserId}>`;
+			messageContent = `${messageContent}\n\n<@${mentionedUserId}>`;
 		}
 
 		if (whoWinsChance === 0) {

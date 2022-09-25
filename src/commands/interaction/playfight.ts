@@ -82,7 +82,7 @@ export const command: SlashCommand = {
 
 		/* Sending a message asking the other player if they want to play, with a button to start the adventure. */
 		const botReply = await respond(interaction, {
-			content: `${(messageContent ?? '')}\n\n${mentionedUser.toString()}`,
+			content: `${mentionedUser.toString()}\n${messageContent}`,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData1.color)
 				.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })

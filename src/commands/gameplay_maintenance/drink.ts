@@ -48,7 +48,7 @@ export async function sendDrinkMessage(
 	userData: UserSchema,
 	quidData: Quid,
 	profileData: Profile,
-	messageContent: string | undefined,
+	messageContent: string,
 	embedArray: EmbedBuilder[],
 ): Promise<void> {
 
