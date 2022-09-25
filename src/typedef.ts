@@ -365,7 +365,7 @@ export interface UserSchema {
 	currentQuid: { [key in string]: string };
 	/** Last major version that the user played on */
 	lastPlayedVersion: string;
-	readonly uuid: string;
+	readonly _id: string;
 }
 
 
@@ -420,7 +420,7 @@ export interface ServerSchema {
 	};
 	/** Array of global skills for this server */
 	skills: Array<string>;
-	readonly uuid: string;
+	readonly _id: string;
 }
 
 export interface DiscordEvent {

@@ -64,7 +64,7 @@ export async function sendDrinkMessage(
 		return;
 	}
 
-	cooldownMap.set(userData.uuid + interaction.guildId, true);
+	cooldownMap.set(userData._id + interaction.guildId, true);
 
 	const botReply = await respond(interaction, {
 		content: messageContent,
@@ -99,22 +99,22 @@ export async function sendDrinkMessage(
 	collector.on('end', async (collected) => {
 		try {
 
-			cooldownMap.set(userData!.uuid + interaction.guildId, false);
+			cooldownMap.set(userData._id + interaction.guildId, false);
 
 			const thirstPoints = getSmallerNumber(profileData.maxThirst - profileData.thirst, getRandomNumber(3, collected.size));
 			const currentRegion = profileData.currentRegion;
 
 			userData = await userModel
 				.findOneAndUpdate(
-					u => u.uuid === userData!.uuid,
+					u => u._id === userData._id,
 					(u) => {
-						const p = getMapData(getMapData(u.quids, getMapData(userData!.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+						const p = getMapData(getMapData(u.quids, getMapData(userData.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 						p.currentRegion = CurrentRegionType.Lake;
 						p.thirst += thirstPoints;
 						u.advice.drinking = true;
 					},
 				);
-			quidData = getMapData(userData.quids, getMapData(userData?.currentQuid, interaction.guildId));
+			quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 			profileData = getMapData(quidData.profiles, interaction.guildId);
 
 			await respond(interaction, {

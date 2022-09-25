@@ -25,7 +25,7 @@ export async function checkLevelUp(
 	if (profileData.experience >= requiredExperiencePoints) {
 
 		userData = await userModel.findOneAndUpdate(
-			u => u.uuid === userData.uuid,
+			u => u._id === userData._id,
 			(u) => {
 				const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
 				p.experience -= requiredExperiencePoints;
@@ -84,7 +84,7 @@ export async function decreaseLevel(
 	}
 
 	userData = await userModel.findOneAndUpdate(
-		u => u.uuid === userData.uuid,
+		u => u._id === userData._id,
 		(u) => {
 			const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
 			p.levels = newUserLevel;
@@ -111,7 +111,7 @@ export async function decreaseLevel(
 			if (userRoleIndex >= 0) { profileData.roles.splice(userRoleIndex, 1); }
 
 			await userModel.findOneAndUpdate(
-				u => u.uuid === userData.uuid,
+				u => u._id === userData._id,
 				(u) => {
 					const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
 					p.roles = profileData.roles;

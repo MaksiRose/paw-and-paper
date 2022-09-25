@@ -62,7 +62,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		if (!cooldownMap.has(userData.uuid + guildId)) {
+		if (!cooldownMap.has(userData._id + guildId)) {
 
 			await respond(interaction, {
 				content: `There is no cooldown entry for ${user.tag} in ${guild.name}`,
@@ -71,7 +71,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		if (cooldownMap.get(userData.uuid + guildId) === false) {
+		if (cooldownMap.get(userData._id + guildId) === false) {
 
 			await respond(interaction, {
 				content: `The cooldown for ${user.tag} in ${guild.name} is already set to false`,
@@ -80,7 +80,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		cooldownMap.set(userData.uuid + guildId, false);
+		cooldownMap.set(userData._id + guildId, false);
 		await respond(interaction, {
 			content: `Sucessfully set the cooldown for ${user.tag} in ${guild.name} to false`,
 		}, false);

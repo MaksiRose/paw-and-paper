@@ -96,7 +96,7 @@ export const command: SlashCommand = {
 			components: [denSelectMenu],
 		} : getMaterials(userData, quidData, serverData, chosenDen, embedArray, messageContent), true);
 
-		createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
+		createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
 	},
 };
 

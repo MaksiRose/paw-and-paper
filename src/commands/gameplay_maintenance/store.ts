@@ -87,7 +87,7 @@ export async function sendStoreMessage(
 		components: [itemSelectMenu, storeAllButton],
 	});
 
-	createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
+	createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
 }
 
 function getOriginalEmbed(
@@ -203,7 +203,7 @@ export async function storeInteractionCollector(
 			}
 
 			await userModel.findOneAndUpdate(
-				u => u.uuid === userData!.uuid,
+				u => u._id === userData!._id,
 				(u) => {
 					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 					p.inventory = userInventory;
@@ -211,7 +211,7 @@ export async function storeInteractionCollector(
 			);
 
 			await serverModel.findOneAndUpdate(
-				s => s.uuid === serverData.uuid,
+				s => s._id === serverData._id,
 				(s) => {
 					s.inventory = serverInventory;
 				},
@@ -270,7 +270,7 @@ async function storeAll(
 	embed.setFooter(footerText ? { text: footerText } : null);
 
 	await userModel.findOneAndUpdate(
-		u => u.uuid === userData!.uuid,
+		u => u._id === userData!._id,
 		(u) => {
 			const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 			p.inventory = userInventory;
@@ -278,7 +278,7 @@ async function storeAll(
 	);
 
 	await serverModel.findOneAndUpdate(
-		s => s.uuid === serverData.uuid,
+		s => s._id === serverData._id,
 		(s) => {
 			s.inventory = serverInventory;
 		},

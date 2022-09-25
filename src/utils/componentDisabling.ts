@@ -1,7 +1,7 @@
 import { Message, ComponentType, ButtonStyle, APIActionRowComponent, ActionRowBuilder, ActionRow, MessageActionRowComponent, APIMessageActionRowComponent, MessageActionRowComponentBuilder, ButtonBuilder, ButtonComponent, APIButtonComponent, SelectMenuBuilder, SelectMenuComponent, APISelectMenuComponent, isJSONEncodable } from 'discord.js';
 
 /**
- * An object with player UUID + guild ID as keys and a property that is a promise function that deletes the entry and disables all components of a message that has been attached when the function was created.
+ * An object with player _id + guild ID as keys and a property that is a promise function that deletes the entry and disables all components of a message that has been attached when the function was created.
  */
 export const disableCommandComponent: Record<string, (() => Promise<void>) | undefined> = {};
 
@@ -9,14 +9,14 @@ export const disableCommandComponent: Record<string, (() => Promise<void>) | und
  * Creates an entry in the `disableCommandComponent` object that deletes itself and edits the botReply message object that has been attached to disable all components when being called.
  */
 export function createCommandComponentDisabler(
-	uuid: string,
+	_id: string,
 	guildId: string,
 	botReply: Message,
 ): void {
 
-	disableCommandComponent[uuid + guildId] = async () => {
+	disableCommandComponent[_id + guildId] = async () => {
 
-		delete disableCommandComponent[uuid + guildId];
+		delete disableCommandComponent[_id + guildId];
 
 		botReply = botReply.channel.messages.cache.get(botReply.id) ?? botReply;
 		await botReply.edit({

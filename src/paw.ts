@@ -94,6 +94,26 @@ export async function start(
 		writeFileSync('./database/webhookCache.json', JSON.stringify(({}) as WebhookMessages, null, '\t'));
 	}
 
+	const allProfileNames = readdirSync('./database/profiles').filter(f => f.endsWith('.json'));
+	for (const documentName of allProfileNames) {
+		const doc = JSON.parse(readFileSync(`./database/profiles/${documentName}`, 'utf-8'));
+		if (Object.hasOwn(doc, 'uuid')) {
+			doc._id = doc.uuid;
+			delete doc.uuid;
+			writeFileSync(`./database/profiles/${documentName}`, JSON.stringify(doc, null, '\t'));
+		}
+	}
+
+	const allServerNames = readdirSync('./database/servers').filter(f => f.endsWith('.json'));
+	for (const documentName of allServerNames) {
+		const doc = JSON.parse(readFileSync(`./database/servers/${documentName}`, 'utf-8'));
+		if (Object.hasOwn(doc, 'uuid')) {
+			doc._id = doc.uuid;
+			delete doc.uuid;
+			writeFileSync(`./database/servers/${documentName}`, JSON.stringify(doc, null, '\t'));
+		}
+	}
+
 	for (const file of readdirSync(path.join(__dirname, './events'))) {
 
 		console.log(file);

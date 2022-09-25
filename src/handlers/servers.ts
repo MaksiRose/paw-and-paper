@@ -12,7 +12,7 @@ export async function execute(
 	for (const server of servers) {
 
 		await serverModel.findOneAndUpdate(
-			s => s.uuid === server.uuid,
+			s => s._id === server._id,
 			(s) => { s.currentlyVisiting = null; },
 		);
 	}

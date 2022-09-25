@@ -104,9 +104,9 @@ export const command: SlashCommand = {
 
 			const usersEligibleForSharing = (await userModel
 				.find(
-					u => Object.values(u.quids).filter(q => isEligableForSharing(u.uuid, q, interaction.guildId)).length > 0,
+					u => Object.values(u.quids).filter(q => isEligableForSharing(u._id, q, interaction.guildId)).length > 0,
 				))
-				.filter(u => u.uuid !== userData1.uuid);
+				.filter(u => u._id !== userData1._id);
 
 			if (usersEligibleForSharing.length <= 0) {
 
@@ -124,7 +124,7 @@ export const command: SlashCommand = {
 			userData2 = usersEligibleForSharing[getRandomNumber(usersEligibleForSharing.length)] || null;
 			if (userData2) {
 
-				const newCurrentQuid = Object.values(userData2.quids).find(q => isEligableForSharing(userData2!.uuid, q, interaction.guildId));
+				const newCurrentQuid = Object.values(userData2.quids).find(q => isEligableForSharing(userData2!._id, q, interaction.guildId));
 				if (newCurrentQuid) { userData2.currentQuid[interaction.guildId] = newCurrentQuid._id; }
 			}
 		}
@@ -144,7 +144,7 @@ export const command: SlashCommand = {
 		/* Give user 2 experience */
 		const experienceIncrease = getRandomNumber(Math.round((profileData2.levels * 50) * 0.15), Math.round((profileData2.levels * 50) * 0.05));
 		userData2 = await userModel.findOneAndUpdate(
-			u => u.uuid === userData2!.uuid,
+			u => u._id === userData2!._id,
 			(u) => {
 				const p = getMapData(getMapData(u.quids, quidData2._id).profiles, interaction.guildId);
 				p.experience += experienceIncrease;
@@ -184,11 +184,11 @@ export const command: SlashCommand = {
 };
 
 function isEligableForSharing(
-	uuid: string,
+	_id: string,
 	quid: Quid,
 	guildId: string,
 ): boolean {
 
 	const p = quid.profiles[guildId];
-	return quid.name !== '' && quid.species !== '' && p !== undefined && p.currentRegion === CurrentRegionType.Ruins && p.energy > 0 && p.health > 0 && p.hunger > 0 && p.thirst > 0 && p.injuries.cold === false && cooldownMap.get(uuid + guildId) !== true && p.isResting === false && isResting(uuid, p.serverId) === false;
+	return quid.name !== '' && quid.species !== '' && p !== undefined && p.currentRegion === CurrentRegionType.Ruins && p.energy > 0 && p.health > 0 && p.hunger > 0 && p.thirst > 0 && p.injuries.cold === false && cooldownMap.get(_id + guildId) !== true && p.isResting === false && isResting(_id, p.serverId) === false;
 }

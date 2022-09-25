@@ -52,7 +52,7 @@ export async function startResting(
 
 	const messageContent = remindOfAttack(interaction.guildId);
 
-	if (profileData.isResting === true || isResting(userData.uuid, profileData.serverId)) {
+	if (profileData.isResting === true || isResting(userData._id, profileData.serverId)) {
 
 		await respond(interaction, {
 			content: messageContent,
@@ -81,7 +81,7 @@ export async function startResting(
 	const previousRegion = profileData.currentRegion;
 
 	await userModel.findOneAndUpdate(
-		u => u.uuid === userData.uuid,
+		u => u._id === userData._id,
 		(u) => {
 			const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 			p.isResting = true;
@@ -107,13 +107,13 @@ export async function startResting(
 		components: isAutomatic ? [component] : [],
 	}, false);
 
-	restingIntervalMap.set(userData.uuid + interaction.guildId, setInterval(async function(): Promise<void> {
+	restingIntervalMap.set(userData._id + interaction.guildId, setInterval(async function(): Promise<void> {
 		try {
 
 			energyPoints += 1;
 
 			userData = await userModel.findOneAndUpdate(
-				u => u.uuid === userData.uuid,
+				u => u._id === userData._id,
 				(u) => {
 					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 					p.energy += 1;
@@ -131,7 +131,7 @@ export async function startResting(
 			if (profileData.energy >= profileData.maxEnergy) {
 
 				userData = await userModel.findOneAndUpdate(
-					u => u.uuid === userData.uuid,
+					u => u._id === userData._id,
 					(u) => {
 						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 						p.isResting = false;
@@ -147,7 +147,7 @@ export async function startResting(
 					components: isAutomatic ? [component] : [],
 				});
 
-				stopResting(userData.uuid, interaction.guildId);
+				stopResting(userData._id, interaction.guildId);
 				return;
 			}
 			return;
@@ -191,24 +191,24 @@ function getRestingEmbed(
  * Clears the timeout of the specific user that is resting.
  */
 export function stopResting(
-	uuid: string,
+	_id: string,
 	guildId: string,
 ): void {
 
-	clearInterval(restingIntervalMap.get(uuid + guildId));
-	restingIntervalMap.delete(uuid + guildId);
+	clearInterval(restingIntervalMap.get(_id + guildId));
+	restingIntervalMap.delete(_id + guildId);
 }
 
 /**
  * Returns true if the user is resting, false otherwise
- * @param {string} uuid - The UUID of the player.
+ * @param {string} _id - The _id of the player.
  * @param {string} guildId - The ID of the guild the user is in.
  * @returns A boolean value.
  */
 export function isResting(
-	uuid: string,
+	_id: string,
 	guildId: string,
-): boolean { return restingIntervalMap.has(uuid + guildId); }
+): boolean { return restingIntervalMap.has(_id + guildId); }
 
 /**
  * It gets the server's den stats, calculates a multiplier based on those stats, and returns the

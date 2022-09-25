@@ -14,7 +14,7 @@ export async function execute(
 		/* This updates each profile to have no cooldown, not rest, and maximum energy. */
 		await userModel
 			.findOneAndUpdate(
-				u => u.uuid === userData.uuid,
+				u => u._id === userData._id,
 				(u) => {
 					for (const quid of Object.values(u.quids)) {
 						for (const profile of Object.values(quid.profiles)) {

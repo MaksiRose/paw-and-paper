@@ -25,7 +25,7 @@ export async function addFriendshipPoints(
 
 	/* It's updating the database with the new mention, and then grabbing the updated data from the database. */
 	userData = await userModel.findOneAndUpdate(
-		(u => u.uuid === userData.uuid),
+		(u => u._id === userData._id),
 		(u) => {
 			const q = getMapData(u.quids, quidId);
 			const cmentions = q.mentions[partnerQuidId];
@@ -83,7 +83,7 @@ export async function checkOldMentions(
 
 	const oneWeekInMs = 604_800_000;
 	userData = await userModel.findOneAndUpdate(
-		(u => u.uuid === userData.uuid),
+		(u => u._id === userData._id),
 		(u) => {
 			let cmentions = getMapData(u.quids, quidId).mentions[partnerQuidId];
 			if (cmentions) { cmentions = cmentions.filter(ts => ts > Date.now() - oneWeekInMs); }
@@ -91,7 +91,7 @@ export async function checkOldMentions(
 	);
 
 	partnerUserData = await userModel.findOneAndUpdate(
-		(u => u.uuid === partnerUserData.uuid),
+		(u => u._id === partnerUserData._id),
 		(u) => {
 			let cmentions = getMapData(u.quids, partnerQuidId).mentions[quidId];
 			if (cmentions) { cmentions = cmentions.filter(ts => ts > Date.now() - oneWeekInMs); }

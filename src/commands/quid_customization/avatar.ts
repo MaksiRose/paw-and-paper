@@ -52,7 +52,7 @@ export const command: SlashCommand = {
 		}
 
 		userData = await userModel.findOneAndUpdate(
-			u => u.uuid === userData?.uuid,
+			u => u._id === userData?._id,
 			(u) => {
 				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DM'));
 				q.avatarURL = imageURL;

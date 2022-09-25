@@ -23,6 +23,7 @@
 		"express-rate-limit": "^6.6.0",
 		"fs": "^0.0.1-security",
 		"fuse.js": "^6.6.2",
+		"hoatzin": "^1.0.0",
 		"topgg-autoposter": "^2.0.1"
 	},
 	"devDependencies": {

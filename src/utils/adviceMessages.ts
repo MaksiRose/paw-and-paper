@@ -21,7 +21,7 @@ export async function restAdvice(
 	if (profileData.energy <= 80 && userData.advice.resting === false) {
 
 		await userModel.findOneAndUpdate(
-			u => u.uuid === userData.uuid,
+			u => u._id === userData._id,
 			(u) => {
 				u.advice.resting = true;
 			},
@@ -49,7 +49,7 @@ export async function drinkAdvice(
 	if (profileData.thirst <= 80 && userData.advice.drinking === false) {
 
 		await userModel.findOneAndUpdate(
-			u => u.uuid === userData.uuid,
+			u => u._id === userData._id,
 			(u) => {
 				u.advice.drinking = true;
 			},
@@ -77,7 +77,7 @@ export async function eatAdvice(
 	if (profileData.hunger <= 80 && userData.advice.eating === false) {
 
 		await userModel.findOneAndUpdate(
-			u => u.uuid === userData.uuid,
+			u => u._id === userData._id,
 			(u) => {
 				u.advice.eating = true;
 			},
@@ -102,7 +102,7 @@ export async function coloredButtonsAdvice(
 	if (userData.advice.coloredbuttons === false) {
 
 		await userModel.findOneAndUpdate(
-			u => u.uuid === userData.uuid,
+			u => u._id === userData._id,
 			(u) => {
 				u.advice.coloredbuttons = true;
 			},

@@ -40,7 +40,7 @@ export const command: SlashCommand = {
 		if (profileData.unlockedRanks === 1 && profileData.rank === RankType.Youngling) {
 
 			await userModel.findOneAndUpdate(
-				u => u.uuid === userData.uuid,
+				u => u._id === userData._id,
 				(u) => {
 					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 					p.rank = RankType.Apprentice;
@@ -84,14 +84,14 @@ export const command: SlashCommand = {
 				],
 			}, true);
 
-			createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
+			createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
 
 			return;
 		}
 		else if (profileData.unlockedRanks === 3 && (profileData.rank === RankType.Healer || profileData.rank === RankType.Hunter)) {
 
 			await userModel.findOneAndUpdate(
-				u => u.uuid === userData.uuid,
+				u => u._id === userData._id,
 				(u) => {
 					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 					p.rank = RankType.Elderly;
@@ -138,7 +138,7 @@ export async function rankupInteractionCollector(
 	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 
 	await userModel.findOneAndUpdate(
-		u => u.uuid === userData.uuid,
+		u => u._id === userData._id,
 		(u) => {
 			const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 			p.rank = rank;

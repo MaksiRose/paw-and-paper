@@ -186,7 +186,7 @@ export async function profileInteractionCollector(
 		let userData = await userModel.findOne(u => u.userId.includes(userId));
 
 		/* Checking if the user is on a cooldown, and if they are, it will respond that they can't switch quids. */
-		if (cooldownMap.get(userData.uuid + interaction.guildId) === true) {
+		if (cooldownMap.get(userData._id + interaction.guildId) === true) {
 
 			await respond(interaction, {
 				content: 'You can\'t switch quids because your current quid is busy!',
@@ -196,7 +196,7 @@ export async function profileInteractionCollector(
 		}
 
 		/* It's disabling all components of the previous message. */
-		await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.();
+		await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.();
 
 		/* Checking if the user is resting, and if they are, it will stop the resting. */
 		const oldQuidData = userData.quids[userData.currentQuid[interaction.guildId || 'DM'] || ''];

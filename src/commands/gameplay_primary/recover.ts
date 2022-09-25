@@ -96,7 +96,7 @@ export const command: SlashCommand = {
 			],
 		}, true);
 
-		createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
+		createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
 
 		const buttonInteraction = await botReply
 			.awaitMessageComponent({
@@ -118,8 +118,8 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		cooldownMap.set(userData.uuid + interaction.guildId, true);
-		delete disableCommandComponent[userData.uuid + interaction.guildId];
+		cooldownMap.set(userData._id + interaction.guildId, true);
+		delete disableCommandComponent[userData._id + interaction.guildId];
 
 		const healKind = buttonInteraction.customId.replace('recover_', '');
 		const recoverFieldOptions = ['🌱', '🌿', '☘️', '🍀', '🍃', '💐', '🌷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🍇', '🍊', '🫒', '🌰', '🏕️', '🌲', '🌳', '🍂', '🍁', '🍄', '🐝', '🪱', '🐛', '🦋', '🐌', '🐞', '🐁', '🦔', '🌵', '🦂', '🏜️', '🎍', '🪴', '🎋', '🪨', '🌾', '🐍', '🦎', '🐫', '🐙', '🦑', '🦀', '🐡', '🐠', '🐟', '🌊', '🐚', '🪵', '🌴'];
@@ -306,7 +306,7 @@ export const command: SlashCommand = {
 							}
 
 							userData = await userModel.findOneAndUpdate(
-								u => u.uuid === userData.uuid,
+								u => u._id === userData._id,
 								(u) => {
 									const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 									p.injuries = profileData.injuries;
@@ -343,7 +343,7 @@ export const command: SlashCommand = {
 						await drinkAdvice(lastInteraction, userData, profileData);
 						await eatAdvice(lastInteraction, userData, profileData);
 
-						cooldownMap.set(userData.uuid + interaction.guildId, false);
+						cooldownMap.set(userData._id + interaction.guildId, false);
 					}
 					catch (error) {
 

@@ -34,7 +34,7 @@ export const command: SlashCommand = {
 
 		const botReply = await respond(interaction, await sendOriginalMessage(userData), true);
 
-		createCommandComponentDisabler(userData.uuid, interaction.guildId || 'DM', botReply);
+		createCommandComponentDisabler(userData._id, interaction.guildId || 'DM', botReply);
 		return;
 	},
 };
@@ -211,7 +211,7 @@ export async function deleteInteractionCollector(
 			const quid = getMapData(userData.quids, _id);
 
 			await userModel.findOneAndUpdate(
-				u => u.uuid === userData?.uuid,
+				u => u._id === userData?._id,
 				(u) => {
 					delete u.quids[_id];
 					for (const serverId of Object.keys(u.currentQuid)) {
@@ -236,7 +236,7 @@ export async function deleteInteractionCollector(
 			const accountsOnServer = Object.values(userData.quids).map(q => q.profiles[serverId]).filter(p => p !== undefined);
 
 			await userModel.findOneAndUpdate(
-				u => u.uuid === userData?.uuid,
+				u => u._id === userData?._id,
 				(u) => {
 					for (const q of Object.values(u.quids)) {
 						if (q.profiles[serverId] !== undefined) { delete q.profiles[serverId]; }
@@ -259,7 +259,7 @@ export async function deleteInteractionCollector(
 		/* Deleting all the data of the user. */
 		if (type === 'all') {
 
-			await userModel.findOneAndDelete(u => u.uuid === userData?.uuid);
+			await userModel.findOneAndDelete(u => u._id === userData?._id);
 
 			await update(interaction, {
 				components: disableAllComponents(interaction.message.components),

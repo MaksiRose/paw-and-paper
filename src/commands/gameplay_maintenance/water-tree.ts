@@ -120,7 +120,7 @@ export const command: SlashCommand = {
 		profileData.sapling.sentReminder = false;
 
 		await userModel.findOneAndUpdate(
-			u => u.uuid === userData.uuid,
+			u => u._id === userData._id,
 			(u) => {
 				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 				p.sapling = profileData.sapling;
@@ -153,7 +153,7 @@ export const command: SlashCommand = {
 			}, false);
 
 			await userModel.findOneAndUpdate(
-				u => u.uuid === userData.uuid,
+				u => u._id === userData._id,
 				(u) => {
 					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 					p.sapling = { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, lastMessageChannelId: null, sentReminder: false, sentGentleReminder: false };
@@ -175,27 +175,27 @@ export async function sendReminder(
 
 	if (typeof profileData.sapling.lastMessageChannelId !== 'string') {
 
-		await removeChannel(userData.uuid, quidData._id, profileData.serverId);
+		await removeChannel(userData._id, quidData._id, profileData.serverId);
 		return;
 	}
 
 	userMap.set(quidData._id + profileData.serverId, setTimeout(async () => {
 		try {
 
-			userData = await userModel.findOne(u => u.uuid === userData.uuid);
+			userData = await userModel.findOne(u => u._id === userData._id);
 			quidData = getMapData(userData.quids, quidData._id);
 			profileData = getMapData(quidData.profiles, profileData.serverId);
 
 			if (typeof profileData.sapling.lastMessageChannelId !== 'string') {
 
-				await removeChannel(userData.uuid, quidData._id, profileData.serverId);
+				await removeChannel(userData._id, quidData._id, profileData.serverId);
 				return;
 			}
 
 			if (profileData.sapling.exists && userData.settings.reminders.water && !profileData.sapling.sentReminder) {
 
 				await userModel.findOneAndUpdate(
-					u => u.uuid === userData.uuid,
+					u => u._id === userData._id,
 					(u) => {
 						const p = getMapData(getMapData(u.quids, quidData._id).profiles, profileData.serverId);
 						p.sapling.sentReminder = true;
@@ -221,7 +221,7 @@ export async function sendReminder(
 		}
 		catch (error) {
 
-			await removeChannel(userData.uuid, quidData._id, profileData.serverId);
+			await removeChannel(userData._id, quidData._id, profileData.serverId);
 			console.error(error);
 		}
 	}, (profileData.sapling.nextWaterTimestamp ?? Date.now()) - Date.now()));
@@ -242,7 +242,7 @@ async function removeChannel(
 ): Promise<void> {
 
 	await userModel.findOneAndUpdate(
-		u => u.uuid === userUuid,
+		u => u._id === userUuid,
 		(u) => {
 			const p = getMapData(getMapData(u.quids, quidId).profiles, serverId);
 			p.sapling.lastMessageChannelId = null;

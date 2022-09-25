@@ -100,7 +100,7 @@ export async function sendErrorMessage(
 	try {
 
 		const userData = await userModel.findOne(u => u.userId.includes(interaction.user.id));
-		cooldownMap.set(userData.uuid + interaction.guildId, false);
+		cooldownMap.set(userData._id + interaction.guildId, false);
 	}
 	catch (newError) { console.error(newError); }
 

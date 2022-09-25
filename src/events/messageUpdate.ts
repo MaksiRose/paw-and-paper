@@ -24,7 +24,7 @@ export const event: DiscordEvent = {
 
 		if (replaceMessage && (newMessage.content.length > 0 || newMessage.attachments.size > 0)) {
 
-			await sendMessage(newMessage.channel, newMessage.content, userData, quidData, userData.uuid, newMessage.author.id, newMessage.attachments.size > 0 ? Array.from(newMessage.attachments.values()) : undefined, newMessage.reference ?? undefined)
+			await sendMessage(newMessage.channel, newMessage.content, userData, quidData, userData._id, newMessage.author.id, newMessage.attachments.size > 0 ? Array.from(newMessage.attachments.values()) : undefined, newMessage.reference ?? undefined)
 				.catch(error => { console.error(error); });
 
 			newMessage

@@ -36,7 +36,7 @@ export async function execute(): Promise<void> {
 						if (Number(timestamp) < Date.now() - 604_800_000) {
 
 							userModel.findOneAndUpdate(
-								u => u.uuid === userData.uuid,
+								u => u._id === userData._id,
 								(u) => {
 									const p = getMapData(getMapData(u.quids, quidData._id).profiles, profileData.serverId);
 									p[statKind] -= 10;

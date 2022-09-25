@@ -78,7 +78,7 @@ export const command: SlashCommand = {
 			],
 		}, true);
 
-		createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
+		createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
 
 		const int = await botReply
 			.awaitMessageComponent({
@@ -105,8 +105,8 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		cooldownMap.set(userData.uuid + interaction.guildId, true);
-		delete disableCommandComponent[userData.uuid + interaction.guildId];
+		cooldownMap.set(userData._id + interaction.guildId, true);
+		delete disableCommandComponent[userData._id + interaction.guildId];
 
 		const experiencePoints = getRandomNumber(5, 1);
 		const changedCondition = await changeCondition(userData, quidData, profileData, experiencePoints);
@@ -200,7 +200,7 @@ export const command: SlashCommand = {
 				return;
 			}
 
-			cooldownMap.set(userData!.uuid + interaction.guildId, false);
+			cooldownMap.set(userData!._id + interaction.guildId, false);
 
 			if (winLoseRatio > 0) {
 

@@ -97,8 +97,8 @@ export const command: SlashCommand = {
 		}, true);
 
 		/* Register the command to be disabled when another command is executed, for both players */
-		createCommandComponentDisabler(userData1.uuid, interaction.guildId, botReply);
-		createCommandComponentDisabler(userData2.uuid, interaction.guildId, botReply);
+		createCommandComponentDisabler(userData1._id, interaction.guildId, botReply);
+		createCommandComponentDisabler(userData2._id, interaction.guildId, botReply);
 	},
 };
 
@@ -127,10 +127,10 @@ export async function playfightInteractionCollector(
 	let profileData2 = getMapData(quidData2.profiles, interaction.guildId);
 
 	/* For both users, set cooldowns to true, but unregister the command from being disabled, and get the condition change */
-	cooldownMap.set(userData1.uuid + interaction.guildId, true);
-	cooldownMap.set(userData2.uuid + interaction.guildId, true);
-	delete disableCommandComponent[userData1.uuid + interaction.guildId];
-	delete disableCommandComponent[userData2.uuid + interaction.guildId];
+	cooldownMap.set(userData1._id + interaction.guildId, true);
+	cooldownMap.set(userData2._id + interaction.guildId, true);
+	delete disableCommandComponent[userData1._id + interaction.guildId];
+	delete disableCommandComponent[userData2._id + interaction.guildId];
 	const decreasedStatsData1 = await changeCondition(userData1, quidData1, profileData1, 0, CurrentRegionType.Prairie, true);
 	profileData1 = decreasedStatsData1.profileData;
 	const decreasedStatsData2 = await changeCondition(userData2, quidData2, profileData2, 0, CurrentRegionType.Prairie, true);
@@ -391,7 +391,7 @@ export async function playfightInteractionCollector(
 				(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText = `\n+${experiencePoints} XP (${profileDataCurrent.experience + experiencePoints}/${profileDataCurrent.levels * 50}) for ${quidDataCurrent.name}${(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText}`;
 
 				userDataCurrent = await userModel.findOneAndUpdate(
-					u => u.uuid === userDataCurrent.uuid,
+					u => u._id === userDataCurrent._id,
 					(u) => {
 						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, i.guildId)).profiles, i.guildId);
 						p.experience += experiencePoints;
@@ -408,7 +408,7 @@ export async function playfightInteractionCollector(
 				decreasedStatsData2.statsUpdateText = `\n+${experiencePoints} XP (${profileDataOther.experience + experiencePoints}/${profileDataOther.levels * 50}) for ${quidDataOther.name}${decreasedStatsData2.statsUpdateText}`;
 
 				userDataCurrent = await userModel.findOneAndUpdate(
-					u => u.uuid === userDataCurrent.uuid,
+					u => u._id === userDataCurrent._id,
 					(u) => {
 						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, i.guildId)).profiles, i.guildId);
 						p.experience += experiencePoints;
@@ -416,7 +416,7 @@ export async function playfightInteractionCollector(
 				);
 
 				userDataOther = await userModel.findOneAndUpdate(
-					u => u.uuid === userDataOther.uuid,
+					u => u._id === userDataOther._id,
 					(u) => {
 						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, i.guildId)).profiles, i.guildId);
 						p.experience += experiencePoints;
@@ -460,8 +460,8 @@ export async function playfightInteractionCollector(
 		}
 
 		/* Set both user's cooldown to false */
-		cooldownMap.set(userData1.uuid + interaction.guildId, false);
-		cooldownMap.set(userData2.uuid + interaction.guildId, false);
+		cooldownMap.set(userData1._id + interaction.guildId, false);
+		cooldownMap.set(userData2._id + interaction.guildId, false);
 	}
 }
 

@@ -45,7 +45,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		await sendMessage(interaction.channel, text, userData, quidData, userData.uuid, interaction.user.id, attachment ? [attachment] : undefined);
+		await sendMessage(interaction.channel, text, userData, quidData, userData._id, interaction.user.id, attachment ? [attachment] : undefined);
 
 		await interaction.deferReply();
 		await interaction.deleteReply();
@@ -57,7 +57,7 @@ export const command: SlashCommand = {
  * @param channel - The channel to send the message to.
  * @param text - The text to send.
  * @param quidData - The quid data of the quid that is sending the message.
- * @param uuid - The user's UUID
+ * @param _id - The user's _id
  * @param authorId - The ID of the user who sent the message.
  * @param [attachments] - An array of attachments to send with the message.
  * @param [reference] - MessageReference
@@ -68,7 +68,7 @@ export async function sendMessage(
 	text: string,
 	userData: UserSchema,
 	quidData: Quid,
-	uuid: string,
+	_id: string,
 	authorId: string,
 	attachments?: Array<Attachment>,
 	reference?: MessageReference,
@@ -96,7 +96,7 @@ export async function sendMessage(
 	if (quidData.profiles[webhookChannel.guildId] !== undefined) {
 
 		await userModel.findOneAndUpdate(
-			(u => u.uuid === uuid),
+			(u => u._id === _id),
 			(u) => {
 				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, webhookChannel.guildId)).profiles, webhookChannel.guildId);
 				p.experience += 1;

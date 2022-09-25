@@ -141,7 +141,7 @@ export async function sendQuestMessage(
 				.setStyle(ButtonStyle.Success))],
 	}, true);
 
-	createCommandComponentDisabler(userData.uuid, interaction.guildId, botReply);
+	createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
 
 	return await (botReply as Message<true>)
 		.awaitMessageComponent({
@@ -150,8 +150,8 @@ export async function sendQuestMessage(
 			time: 300_000 })
 		.then(async (int) => {
 
-			cooldownMap.set(userData.uuid + interaction.guildId, true);
-			delete disableCommandComponent[userData.uuid + interaction.guildId];
+			cooldownMap.set(userData._id + interaction.guildId, true);
+			delete disableCommandComponent[userData._id + interaction.guildId];
 			return await startQuest(int, userData, quidData, profileData, serverData, messageContent, embedArray, afterEmbedArray, botReply);
 		})
 		.catch(async () => {
@@ -175,7 +175,7 @@ async function startQuest(
 	// Quest would send in the main interaction so that it would edit it, while for explore and play it would send in the button interaction so it would respond to the button click, which also has the side effect that the stats you lost etc would already be displayed under the original "you found a quest" message.
 
 	userData = await userModel.findOneAndUpdate(
-		u => u.uuid === userData.uuid,
+		u => u._id === userData._id,
 		(u) => {
 			const p = getMapData(getMapData(u.quids, getMapData(userData!.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 			p.hasQuest = false;
@@ -329,12 +329,12 @@ async function startQuest(
 		embed.setFooter(null);
 		if (hitValue >= 10) {
 
-			cooldownMap.set(userData!.uuid + interaction.guildId, false);
+			cooldownMap.set(userData!._id + interaction.guildId, false);
 
 			if (profileData.unlockedRanks < 3) {
 
 				userData = await userModel.findOneAndUpdate(
-					u => u.uuid === userData.uuid,
+					u => u._id === userData._id,
 					(u) => {
 						const p = getMapData(getMapData(u.quids, getMapData(userData!.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 						p.unlockedRanks += 1;
@@ -417,7 +417,7 @@ async function startQuest(
 				}
 
 				userData = await userModel.findOneAndUpdate(
-					u => u.uuid === userData.uuid,
+					u => u._id === userData._id,
 					(u) => {
 						const p = getMapData(getMapData(u.quids, getMapData(userData!.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 						p.maxHealth += maxHealthPoints;
@@ -443,7 +443,7 @@ async function startQuest(
 		}
 		else if (missValue >= 10) {
 
-			cooldownMap.set(userData!.uuid + interaction.guildId, false);
+			cooldownMap.set(userData!._id + interaction.guildId, false);
 
 			if (profileData.rank === RankType.Youngling) {
 
