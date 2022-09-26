@@ -2,7 +2,7 @@ import { addCorrectDietHungerPoints, removeHungerPoints } from '../commands/game
 import userModel from '../models/userModel';
 import { Inventory, Quid, ServerSchema, SpeciesDietType, speciesInfo, SpeciesNames, UserSchema } from '../typedef';
 import { deepCopyObject, getMapData } from './helperFunctions';
-import { getRandomNumber } from './randomizers';
+import { getRandomNumber, pullFromWeightedTable } from './randomizers';
 import { wearDownAmount } from './wearDownDen';
 
 type InventoryEntry = [keyof Inventory, Inventory[keyof Inventory]]
@@ -49,10 +49,10 @@ async function getUsersInServer(
 }
 
 /**
- * It simulates the use of meat in a server, and returns the difference between the amount of meat needed and the amount of meat in the server's inventory
+ * It simulates the use of meat in a server, and returns the difference between the amount of meat in the server's inventory and the amount of meat needed
  * @param {ServerSchema} serverData - The server data to use.
  * @param {boolean} activeUsersOnly - If true, only users who have been active in the past week will be simulated.
- * @returns The difference between the number of meat items needed and the number of meat items in the inventory.
+ * @returns The difference between the amount of meat in the server's inventory and the amount of meat needed
  */
 export async function simulateMeatUse(
 	serverData: ServerSchema,
@@ -66,7 +66,6 @@ export async function simulateMeatUse(
 	for (const quid of quids) {
 
 		if (speciesInfo[quid.species as SpeciesNames].diet === SpeciesDietType.Herbivore) { continue; }
-		console.log({ name: quid.name });
 
 		const profile = getMapData(quid.profiles, serverData.serverId);
 		while (profile.hunger < profile.maxHunger) {
@@ -81,8 +80,50 @@ export async function simulateMeatUse(
 	}
 
 	const existingItems = calculateInventorySize(serverData_.inventory, ([key]) => key === 'meat');
-	console.log({ existingItems, neededItems });
-	const itemDifference = neededItems - existingItems;
+	const itemDifference = existingItems - neededItems;
 
 	return itemDifference;
+}
+
+export function pickMeat(
+	options: SpeciesNames[],
+	inventory: Inventory,
+): SpeciesNames {
+
+	// First, get how many times each of these meat types exist in the inventory. these are the denominators. We add 1 to each to avoid having null as a possible value, which would break the code
+	let object = options.reduce((prev, cur, index) => ({ ...prev, [index]: inventory.meat[cur] + 1 }), {} as Record<number, number>);
+	const numerator = Math.min(...Object.values(object));
+	const smallestCommon = smallestCommons(Object.values(object));
+
+	// We make a new array, from the values of the object, where each item is the common denominotor divided by the property of the object multiplied by the numerator.
+	const sumArr = Object.values(object).reduce((prev, cur) => [...prev, (smallestCommon / cur) * numerator], [] as number[]);
+	const sum = sumArr.reduce((a, b) => a + b);
+	const x = 100 * (smallestCommon / sum);
+
+	// For the old object, we do Math.round(x * (numerator / property))
+	object = Object.values(object).reduce((prev, cur, index) => ({ ...prev, [index]: Math.round(x * (numerator / cur)) }), {} as Record<number, number>);
+	const random = pullFromWeightedTable(object);
+	const result = options[random];
+	if (result === undefined) { throw new TypeError('result is undefined'); }
+	return result;
+}
+
+function smallestCommons(
+	array: number[],
+): number {
+
+	array = array.sort((a, b) => a - b);
+
+	const max = Math.max(...array);
+	let n = max;
+	// Creating the function that .every will operate on
+	const lowestCommon = (currentValue: number) => n % currentValue === 0;
+	// Checking whether the first value for n is the lowestCommon Multiple
+	let common = array.every(lowestCommon);
+	// Checking for a true result from the array
+	while (common === false) {
+		n++;
+		common = array.every(lowestCommon);
+	}
+	return n;
 }

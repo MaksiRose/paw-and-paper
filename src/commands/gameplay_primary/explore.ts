@@ -15,7 +15,7 @@ import userModel from '../../models/userModel';
 import { sendQuestMessage } from './start-quest';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
-import { calculateInventorySize, simulateMeatUse } from '../../utils/simulateItemUse';
+import { calculateInventorySize, pickMeat, simulateMeatUse } from '../../utils/simulateItemUse';
 
 type Position = { row: number, column: number; };
 const name: SlashCommand['name'] = 'explore';
@@ -512,7 +512,6 @@ export async function executeExploring(
 				const levelDifference = profileData.levels - environmentLevel;
 				points += levelDifference; // It doesn't matter if this is higher than 12 or lower than -12, it will not affect the weighted table
 				const outcome = pullFromWeightedTable({ 0: -1 * points, 1: 12 - Math.abs(points), 2: points });
-				console.log({ points, outcome });
 
 				if (outcome === 2) {
 
@@ -634,25 +633,14 @@ export async function executeExploring(
 	else {
 
 		/* First we are calculating needed meat - existing meat through simulateMeatUse three times, of which two it is calculated for active users only. The results of these are added together and divided by 3 tog get their average. This is then used to get a random number that can be between 1 higher and 1 lower than that. This is then limited to be between -12 and 12. the user's level is added with this, and it is limited to not be below 1. */
-		const opponentLevel = getBiggerNumber(
-			1,
-			profileData.levels + getBiggerNumber(
-				-12,
-				getSmallerNumber(
-					12,
-					getRandomNumber(
-						3,
-						Math.round((await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, false)) / 3) - 1,
-					),
-				),
-			),
-		);
+		const simAverage = Math.round((await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, false)) / 3);
+		const opponentLevel = getBiggerNumber(1, profileData.levels + getBiggerNumber(-12, getSmallerNumber(12, getRandomNumber(3, simAverage - 1))));
 
-		const opponentsArray = speciesInfo[quidData.species as SpeciesNames].biome1OpponentArray;
-		if (chosenBiomeNumber > 0) { opponentsArray.push(...speciesInfo[quidData.species as SpeciesNames].biome2OpponentArray); }
-		if (chosenBiomeNumber === 2) { opponentsArray.push(...speciesInfo[quidData.species as SpeciesNames].biome3OpponentArray); }
-		const opponentSpecies = opponentsArray[getRandomNumber(opponentsArray.length, 0)];
-		if (opponentSpecies === undefined) { throw new TypeError('opponentSpecies is undefined'); }
+		const opponentsArray = speciesInfo[quidData.species as SpeciesNames].biome1OpponentArray.concat([
+			...(chosenBiomeNumber > 0 ? speciesInfo[quidData.species as SpeciesNames].biome2OpponentArray : []),
+			...(chosenBiomeNumber === 2 ? speciesInfo[quidData.species as SpeciesNames].biome3OpponentArray : []),
+		]);
+		const opponentSpecies = pickMeat(opponentsArray, serverData.inventory);
 
 		if (speciesInfo[quidData.species as SpeciesNames].habitat === SpeciesHabitatType.Warm) {
 
@@ -809,7 +797,6 @@ export async function executeExploring(
 				const levelDifference = profileData.levels - opponentLevel;
 				points += levelDifference; // It doesn't matter if this is higher than 12 or lower than -12, it will not affect the weighted table
 				const outcome = pullFromWeightedTable({ 0: -1 * points, 1: 12 - Math.abs(points), 2: points });
-				console.log({ points, outcome });
 
 				if (outcome === 2) {
 
