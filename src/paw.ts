@@ -34,7 +34,7 @@ export const client = new CustomClient({
 			|| manager.name === 'GuildInviteManager'
 			|| manager.name === 'GuildScheduledEventManager'
 			|| manager.name === 'GuildStickerManager'
-			|| manager.name === 'MessageManager'
+			|| manager.name === 'MessageManager' // This needs to be changed to allow keepOverLimit for messages by the bot
 			|| manager.name === 'PresenceManager'
 			|| manager.name === 'ReactionManager'
 			|| manager.name === 'ReactionUserManager'
@@ -116,7 +116,6 @@ export async function start(
 
 	for (const file of readdirSync(path.join(__dirname, './events'))) {
 
-		console.log(file);
 		const { event } = require(`./events/${file}`) as { event: DiscordEvent; };
 
 		if (event.once) {

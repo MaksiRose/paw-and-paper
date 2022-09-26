@@ -19,7 +19,7 @@ export async function execute(
 	if (client.votes.bfd && client.votes.bfd.token !== '' && client.votes.bfd.authorization !== '') {
 
 		client.votes.bfd.client = new bfd(client.votes.bfd.token, client.user?.id);
-		client.votes.bfd.client.setServers(client.guilds.cache.size);
+		client.votes.bfd.client.setServers((await client.guilds.fetch()).size);
 
 		const bfdApp = express();
 

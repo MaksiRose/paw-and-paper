@@ -1,8 +1,9 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import userModel from '../../models/userModel';
-import { Inventory, RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
+import { RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { getMapData, respond, update } from '../../utils/helperFunctions';
+import { calculateInventorySize } from '../../utils/simulateItemUse';
 import { sendStoreMessage } from './store';
 const { error_color } = require('../../../config.json');
 
@@ -76,11 +77,7 @@ async function sendStatsMessage(
 			.setStyle(ButtonStyle.Secondary),
 		]);
 
-	/** This is an array of all the inventory objects. */
-	const inventoryObjectValues = Object.values(profileData.inventory) as Array<Inventory[keyof Inventory]>;
-	/** This is an array of numbers as the properties of the keys in the inventory objects, which are numbers representing the amount one has of the key which is an item type. */
-	const inventoryNumberValues = inventoryObjectValues.map(type => Object.values(type)).flat();
-	if (inventoryNumberValues.reduce((a, b) => a + b) === 0 || !userData.userId.includes(creatorUserId)) {
+	if (calculateInventorySize(profileData.inventory) === 0 || !userData.userId.includes(creatorUserId)) {
 
 		components.components.pop();
 	}

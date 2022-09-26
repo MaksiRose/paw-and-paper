@@ -6,7 +6,7 @@ import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { hasCooldown, isPassedOut } from '../../utils/checkValidity';
 import { pronoun, pronounAndPlural, upperCasePronoun } from '../../utils/getPronouns';
 import { getMapData, getQuidDisplayname, respond, sendErrorMessage } from '../../utils/helperFunctions';
-import wearDownDen from '../../utils/wearDownDen';
+import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
 const restingIntervalMap: Map<string, NodeJS.Timeout> = new Map();

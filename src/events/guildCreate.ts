@@ -7,7 +7,7 @@ export const event: DiscordEvent = {
 	once: false,
 	async execute(client, guild: Guild) {
 
-		console.log(`\x1b[44m${guild.name} (${guild.id})\x1b[0m successfully added the bot - It is now in ${client.guilds.cache.size} servers`);
+		console.log(`\x1b[44m${guild.name} (${guild.id})\x1b[0m successfully added the bot - It is now in ${(await client.guilds.fetch()).size} servers`);
 		await createGuild(client, guild)
 			.catch((error) => { console.error(error); });
 	},

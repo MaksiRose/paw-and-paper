@@ -2,11 +2,12 @@ import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatIn
 import { cooldownMap } from '../events/interactionCreate';
 import { getQuidDisplayname, respond, sendErrorMessage } from './helperFunctions';
 import userModel from '../models/userModel';
-import { Quid, Profile, UserSchema, Inventory } from '../typedef';
+import { Quid, Profile, UserSchema } from '../typedef';
 import { getMapData } from './helperFunctions';
 import { pronoun, pronounAndPlural, upperCasePronoun } from './getPronouns';
 import { decreaseLevel } from './levelHandling';
 import { stopResting, isResting as checkResting } from '../commands/gameplay_maintenance/rest';
+import { calculateInventorySize } from './simulateItemUse';
 const { error_color } = require('../../config.json');
 
 export async function isPassedOut(
@@ -141,13 +142,8 @@ function hasTooManyItems(
 	/** The amount of allowed items in a profiles inventory. */
 	const allowedItemAmount = 5;
 
-	/** This is an array of all the inventory objects. */
-	const inventoryObjectValues = Object.values(profileData.inventory) as Array<Inventory[keyof Inventory]>;
-	/** This is an array of numbers as the properties of the keys in the inventory objects, which are numbers representing the amount one has of the key which is an item type. */
-	const inventoryNumberValues = inventoryObjectValues.map(type => Object.values(type)).flat();
-
 	/* Checks whether the combined number of all the items is bigger than the allowed item count. */
-	return inventoryNumberValues.reduce((a, b) => a + b) >= allowedItemAmount;
+	return calculateInventorySize(profileData.inventory) >= allowedItemAmount;
 }
 
 /**

@@ -1,9 +1,9 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
-import { Inventory, Profile, Quid, RankType, ServerSchema, SlashCommand, SpeciesHabitatType, speciesInfo, SpeciesNames, UserSchema } from '../../typedef';
+import { Profile, Quid, RankType, ServerSchema, SlashCommand, SpeciesHabitatType, speciesInfo, SpeciesNames, UserSchema } from '../../typedef';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { capitalizeString, getMapData, getQuidDisplayname, getSmallerNumber, keyInObject, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
+import { capitalizeString, getBiggerNumber, getMapData, getQuidDisplayname, getSmallerNumber, keyInObject, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import { remindOfAttack, startAttack } from './attack';
 import Fuse from 'fuse.js';
 import { disableAllComponents } from '../../utils/componentDisabling';
@@ -15,6 +15,7 @@ import userModel from '../../models/userModel';
 import { sendQuestMessage } from './start-quest';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
+import { calculateInventorySize, simulateMeatUse } from '../../utils/simulateItemUse';
 
 type Position = { row: number, column: number; };
 const name: SlashCommand['name'] = 'explore';
@@ -307,7 +308,7 @@ export async function executeExploring(
 			return p && p.rank !== RankType.Youngling;
 		}).length)
 		.reduce((a, b) => a + b, 0);
-	const serverInventoryCount = (Object.entries(serverData.inventory) as [keyof Inventory, Inventory[keyof Inventory]][]).map(([key, type]) => key === 'materials' ? [] : Object.values(type)).flat().reduce((a, b) => a + b);
+	const serverInventoryCount = calculateInventorySize(serverData.inventory, ([key]) => key !== 'materials');
 
 	let foundQuest = false;
 	let foundSapling = false;
@@ -632,7 +633,20 @@ export async function executeExploring(
 	// Find an enemy
 	else {
 
-		const opponentLevel = getRandomNumber(1 + Math.ceil(profileData.levels / 10) * 5, (profileData.levels > 2 ? profileData.levels : 3) - Math.ceil(profileData.levels / 10) * 2);
+		/* First we are calculating needed meat - existing meat through simulateMeatUse three times, of which two it is calculated for active users only. The results of these are added together and divided by 3 tog get their average. This is then used to get a random number that can be between 1 higher and 1 lower than that. This is then limited to be between -12 and 12. the user's level is added with this, and it is limited to not be below 1. */
+		const opponentLevel = getBiggerNumber(
+			1,
+			profileData.levels + getBiggerNumber(
+				-12,
+				getSmallerNumber(
+					12,
+					getRandomNumber(
+						3,
+						Math.round((await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, false)) / 3) - 1,
+					),
+				),
+			),
+		);
 
 		const opponentsArray = speciesInfo[quidData.species as SpeciesNames].biome1OpponentArray;
 		if (chosenBiomeNumber > 0) { opponentsArray.push(...speciesInfo[quidData.species as SpeciesNames].biome2OpponentArray); }
