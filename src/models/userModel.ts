@@ -292,6 +292,6 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 	},
 	lastPlayedVersion: { type: 'string', default: pkg.version, locked: false },
 	_id: { type: 'string', default: '', locked: true },
-});
+}, true);
 export default userModel;
 

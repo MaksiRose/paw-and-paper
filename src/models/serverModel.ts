@@ -130,5 +130,5 @@ const serverModel = new Model<ServerSchema>('./database/servers', {
 		locked: false,
 	},
 	_id: { type: 'string', default: '', locked: true },
-});
+}, true);
 export default serverModel;
