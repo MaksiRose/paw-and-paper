@@ -14,12 +14,27 @@ const { error_color } = require('../../config.json');
  * @returns T as the property from the key from the object
  */
 export function getMapData<T>(
-	map: Record<string, T>,
-	key: string,
+	map: Record<PropertyKey, T>,
+	key: PropertyKey,
 ): T {
-	const data = map[key];
-	if (data === undefined) throw new TypeError('data is undefined');
-	return data;
+	const element = map[key];
+	if (element === undefined) throw new TypeError('element is undefined');
+	return element;
+}
+
+/**
+ * It takes an array and an index, and returns the element at that index. If the element is undefined, it throws a type error instead.
+ * @param array - The array to get the element from.
+ * @param {number} index - The index of the element you want to get.
+ * @returns The element at the given index of the array.
+ */
+export function getArrayElement<T>(
+	array: Array<T>,
+	index: number,
+): T {
+	const element = array[index];
+	if (element === undefined) throw new TypeError('element is undefined');
+	return element;
 }
 
 export function getUserIds(
