@@ -94,10 +94,7 @@ export const command: SlashCommand = {
 		const chosenUserData = !chosenUser ? undefined : await userModel.findOne(u => u.userId.includes(chosenUser.id)).catch(() => { return undefined; });
 		const quidToHeal = !chosenUserData ? undefined : Object
 			.values(chosenUserData.quids)
-			.filter(q => {
-				const p = q.profiles[interaction.guildId];
-				return p && (p.energy === 0 || p.health === 0 || p.hunger === 0 || p.thirst === 0 || Object.values(p.injuries).filter(i => i > 0).length > 0);
-			})[0];
+			.filter(q => quidNeedsHealing(q, interaction.guildId))[0];
 
 		let chosenItem = interaction.options.getString('item') ?? undefined;
 		if (!chosenItem || !stringIsAvailableItem(chosenItem, serverData.inventory)) { chosenItem = undefined; }
@@ -105,6 +102,21 @@ export const command: SlashCommand = {
 		await getHealResponse(interaction, userData, serverData, messageContent, embedArray, 0, quidToHeal, 1, chosenItem);
 	},
 };
+
+/**
+ * If the quid has a profile for the given guild, and any of its energy, health, hunger, or thirst are zero, or it has an injury, then it needs healing.
+ * @param {Quid} q - Quid - The quid object
+ * @param {string} guildId - The ID of the guild the quid is in.
+ * @returns A boolean value.
+ */
+export function quidNeedsHealing(
+	q: Quid,
+	guildId: string,
+): boolean {
+
+	const p = q.profiles[guildId];
+	return p !== undefined && (p.energy === 0 || p.health === 0 || p.hunger === 0 || p.thirst === 0 || Object.values(p.injuries).filter(i => i > 0).length > 0);
+}
 
 export async function healInteractionCollector(
 	interaction: SelectMenuInteraction | ButtonInteraction,
@@ -159,23 +171,6 @@ export async function healInteractionCollector(
 	}
 }
 
-async function getHurtQuids(
-	guildId: string,
-): Promise<Quid[]> {
-
-	function getHurtQuids(
-		u: UserSchema,
-	): Quid[] {
-
-		return Object.values(u.quids).filter(q => {
-			const p = q.profiles[guildId];
-			return p !== undefined && (p.energy === 0 || p.health === 0 || p.hunger === 0 || p.thirst === 0 || Object.values(p.injuries).filter(i => i > 0).length > 0);
-		});
-	}
-
-	return (await userModel.find(u => getHurtQuids(u).length > 0)).map(user => getHurtQuids(user)).flat();
-}
-
 /** This function is used to make item-string equal to undefined in getHealResponse if the string isn't a herb/water that is also available */
 function stringIsAvailableItem(
 	string: string,
@@ -207,7 +202,16 @@ export async function getHealResponse(
 	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 	const profileData = getMapData(quidData.profiles, interaction.guildId);
 
-	const hurtQuids = await getHurtQuids(interaction.guildId);
+	const hurtQuids = await (async function(
+		guildId: string,
+	): Promise<Quid[]> {
+
+		function getHurtQuids(
+			u: UserSchema,
+		): Quid[] { return Object.values(u.quids).filter(q => quidNeedsHealing(q, guildId)); }
+
+		return (await userModel.find(u => getHurtQuids(u).length > 0)).map(user => getHurtQuids(user)).flat();
+	})(interaction.guildId);
 
 	let quidsSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = hurtQuids.map(quid => ({ label: quid.name, value: quid._id }));
 	if (quidsSelectMenuOptions.length > 25) {
