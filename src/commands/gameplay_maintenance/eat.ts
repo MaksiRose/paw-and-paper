@@ -13,6 +13,8 @@ import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
 import { showInventoryMessage } from './inventory';
 
+const allPlantsInfo = { ...commonPlantsInfo, ...uncommonPlantsInfo, ...rarePlantsInfo, ...specialPlantsInfo };
+
 const name: SlashCommand['name'] = 'eat';
 const description: SlashCommand['description'] = 'Take the appropriate food for your species out of the packs food pile and fill up your hunger meter.';
 export const command: SlashCommand = {
@@ -130,9 +132,7 @@ export async function sendEatMessage(
 	let footerText = '';
 	const inventory_ = widenValues(serverData.inventory);
 
-	const allPlantsInfo = { ...commonPlantsInfo, ...uncommonPlantsInfo, ...rarePlantsInfo, ...specialPlantsInfo };
-
-	if (chosenFoodIsPlant(allPlantsInfo, chosenFood)) {
+	if (chosenFoodIsPlant(chosenFood)) {
 
 		let plantType: 'commonPlants' | 'uncommonPlants' | 'rarePlants' | 'specialPlants';
 
@@ -288,7 +288,6 @@ export async function sendEatMessage(
 }
 
 function chosenFoodIsPlant(
-	allPlantsInfo: typeof commonPlantsInfo & typeof uncommonPlantsInfo & typeof rarePlantsInfo & typeof specialPlantsInfo,
 	chosenFood: string,
 ): chosenFood is CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames {
 

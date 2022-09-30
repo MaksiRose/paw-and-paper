@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatIn
 import Fuse from 'fuse.js';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
-import { CommonPlantNames, commonPlantsInfo, CurrentRegionType, Inventory, PlantEdibilityType, Quid, RankType, RarePlantNames, rarePlantsInfo, ServerSchema, SlashCommand, SpecialPlantNames, specialPlantsInfo, SpeciesDietType, speciesInfo, SpeciesNames, UncommonPlantNames, uncommonPlantsInfo, UserSchema } from '../../typedef';
+import { CommonPlantNames, commonPlantsInfo, CurrentRegionType, Inventory, PlantEdibilityType, Profile, Quid, RankType, RarePlantNames, rarePlantsInfo, ServerSchema, SlashCommand, SpecialPlantNames, specialPlantsInfo, UncommonPlantNames, uncommonPlantsInfo, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition, infectWithChance } from '../../utils/changeCondition';
 import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
@@ -16,6 +16,8 @@ import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
+
+const itemInfo = { ...commonPlantsInfo, ...uncommonPlantsInfo, ...rarePlantsInfo, ...specialPlantsInfo };
 
 const name: SlashCommand['name'] = 'heal';
 const description: SlashCommand['description'] = 'Heal your packmates. Costs energy, but gives XP.';
@@ -343,19 +345,9 @@ export async function getHealResponse(
 
 	const userCondition = interaction.isMessageComponent() ? interaction.message.embeds[interaction.message.embeds.length - 2]?.footer?.text.toLowerCase() : undefined;
 	let userHasChangedCondition = false;
-
-	let chosenUserEnergyPoints = 0;
-	let chosenUserHungerPoints = 0;
-	let statsUpdateText = '';
-	let injuryUpdateText = '';
-
-	const embed = new EmbedBuilder()
-		.setColor(quidData.color)
-		.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL });
-
 	let isSuccessful = false;
 
-	const itemInfo = { ...commonPlantsInfo, ...uncommonPlantsInfo, ...rarePlantsInfo, ...specialPlantsInfo };
+	let injuryUpdateText = '';
 
 	if (item === 'water') {
 
@@ -378,9 +370,6 @@ export async function getHealResponse(
 
 			if (profileToHeal.hunger <= 0) { isSuccessful = true; }
 			else if (userCondition?.includes('hunger')) { userHasChangedCondition = true; }
-
-			if (speciesInfo[quidToHeal.species as SpeciesNames].diet === SpeciesDietType.Carnivore) { chosenUserHungerPoints = 1; }
-			else { chosenUserHungerPoints = 5; }
 		}
 
 		if (profileToHeal.health <= 0) { isSuccessful = true; }
@@ -444,7 +433,6 @@ export async function getHealResponse(
 		if (itemInfo[item].givesEnergy) {
 
 			if (profileToHeal.energy <= 0) { isSuccessful = true; }
-			chosenUserEnergyPoints = 30;
 		}
 	}
 
@@ -471,77 +459,71 @@ export async function getHealResponse(
 	}
 
 	const denCondition = await wearDownDen(serverData, CurrentRegionType.MedicineDen);
-	let embedFooter = '';
+	let embedDescription: string;
+	let statsUpdateText = '';
 
 	if (isSuccessful === true) {
 
-		const chosenUserThirstPoints = item === 'water' ? getSmallerNumber(getRandomNumber(10, 6), profileToHeal.maxThirst - profileToHeal.thirst) : 0;
-		const chosenUserHealthPoints = item === 'water' ? 0 : getSmallerNumber(getRandomNumber(10, 6), profileToHeal.maxHealth - profileToHeal.health);
-		/* We do this over here rather than at the top in the if statements for edibality and givesEnergy, because if chosenUserData === userData, then these might not be accurate. ie, the hunger/energy might have gone down enough in order not to decrease chosenUserHungerPoints/chosenUserEnergyPoints, as well as the stats not showing the correct amount based on what was lost from changeCondition() in changeCondition(), the chosenUserData, chosenCharacterData and chosenProfileData is updated to account for this */
-		chosenUserEnergyPoints = getSmallerNumber(chosenUserEnergyPoints, profileToHeal.maxEnergy - profileToHeal.energy);
-		chosenUserHungerPoints = getSmallerNumber(chosenUserHungerPoints, profileToHeal.maxHunger - profileToHeal.hunger);
+		const chosenUserPlus = getStatsPoints(item, profileToHeal);
 
 		userToHeal = await userModel.findOneAndUpdate(
 			u => u._id === userToHeal._id,
 			(u) => {
 				const p = getMapData(getMapData(u.quids, quidToHeal!._id).profiles, interaction.guildId);
-				p.thirst += chosenUserThirstPoints;
-				p.hunger += chosenUserHungerPoints;
-				p.energy += chosenUserEnergyPoints;
-				p.health += chosenUserHealthPoints;
+				p.thirst += chosenUserPlus.thirst;
+				p.hunger += chosenUserPlus.hunger;
+				p.energy += chosenUserPlus.energy;
+				p.health += chosenUserPlus.health;
 				p.injuries = profileToHeal.injuries;
 			},
 		);
 		quidToHeal = getMapData(userToHeal.quids, quidToHeal._id);
 		profileToHeal = getMapData(quidToHeal.profiles, interaction.guildId);
 
-		if (chosenUserHealthPoints >= 1) { statsUpdateText += `\n+${chosenUserHealthPoints} HP for ${quidToHeal.name} (${profileToHeal.health}/${profileToHeal.maxHealth})${injuryUpdateText}`; }
-		if (chosenUserEnergyPoints >= 1) { statsUpdateText += `\n+${chosenUserEnergyPoints} energy for ${quidToHeal.name} (${profileToHeal.energy}/${profileToHeal.maxEnergy})`; }
-		if (chosenUserHungerPoints > 0) { statsUpdateText += `\n+${chosenUserHungerPoints} hunger for ${quidToHeal.name} (${profileToHeal.hunger}/${profileToHeal.maxHunger})`; }
-		if (chosenUserThirstPoints > 0) { statsUpdateText += `\n+${chosenUserThirstPoints} thirst for ${quidToHeal.name} (${profileToHeal.thirst}/${profileToHeal.maxThirst})`; }
+		if (chosenUserPlus.health > 0) { statsUpdateText += `\n+${chosenUserPlus.health} HP for ${quidToHeal.name} (${profileToHeal.health}/${profileToHeal.maxHealth})${injuryUpdateText}`; }
+		if (chosenUserPlus.energy > 0) { statsUpdateText += `\n+${chosenUserPlus.energy} energy for ${quidToHeal.name} (${profileToHeal.energy}/${profileToHeal.maxEnergy})`; }
+		if (chosenUserPlus.hunger > 0) { statsUpdateText += `\n+${chosenUserPlus.hunger} hunger for ${quidToHeal.name} (${profileToHeal.hunger}/${profileToHeal.maxHunger})`; }
+		if (chosenUserPlus.thirst > 0) { statsUpdateText += `\n+${chosenUserPlus.thirst} thirst for ${quidToHeal.name} (${profileToHeal.thirst}/${profileToHeal.maxThirst})`; }
 
 		if (item === 'water') {
 
-			embed.setDescription(`*${quidData.name} takes ${quidToHeal.name}'s body, drags it over to the river, and positions ${pronoun(quidToHeal, 2)} head right over the water. The ${quidToHeal.displayedSpecies || quidToHeal.species} sticks ${pronoun(quidToHeal, 2)} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${pronoun(quidToHeal, 2)} body.*`);
+			embedDescription = `*${quidData.name} takes ${quidToHeal.name}'s body, drags it over to the river, and positions ${pronoun(quidToHeal, 2)} head right over the water. The ${quidToHeal.displayedSpecies || quidToHeal.species} sticks ${pronoun(quidToHeal, 2)} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${pronoun(quidToHeal, 2)} body.*`;
 		}
 		else if (userToHeal._id === userData._id) {
 
-			embed.setDescription(`*${quidData.name} takes a ${item}. After a bit of preparation, the ${quidData.displayedSpecies || quidData.species} can apply it correctly. Immediately you can see the effect. ${upperCasePronounAndPlural(quidData, 0, 'feel')} much better!*`);
+			embedDescription = `*${quidData.name} takes a ${item}. After a bit of preparation, the ${quidData.displayedSpecies || quidData.species} can apply it correctly. Immediately you can see the effect. ${upperCasePronounAndPlural(quidData, 0, 'feel')} much better!*`;
 		}
 		else {
 
-			embed.setDescription(`*${quidData.name} takes a ${item}. After a bit of preparation, ${pronounAndPlural(quidData, 0, 'give')} it to ${quidToHeal.name}. Immediately you can see the effect. ${upperCasePronounAndPlural(quidToHeal, 0, 'feel')} much better!*`);
+			embedDescription = `*${quidData.name} takes a ${item}. After a bit of preparation, ${pronounAndPlural(quidData, 0, 'give')} it to ${quidToHeal.name}. Immediately you can see the effect. ${upperCasePronounAndPlural(quidToHeal, 0, 'feel')} much better!*`;
 		}
-
-		embedFooter = `\n${statsUpdateText}`;
 	}
 	else if (item === 'water') {
 
 		if (userData._id === userToHeal._id) {
 
-			embed.setDescription(`*${quidData.name} thinks about just drinking some water, but that won't help with ${pronoun(quidData, 2)} issues...*"`);
+			embedDescription = `*${quidData.name} thinks about just drinking some water, but that won't help with ${pronoun(quidData, 2)} issues...*"`;
 		}
 		else if (profileToHeal.thirst > 0) {
 
-			embed.setDescription(`*${quidToHeal.name} looks at ${quidData.name} with indignation.* "Being hydrated is really not my biggest problem right now!"`);
+			embedDescription = `*${quidToHeal.name} looks at ${quidData.name} with indignation.* "Being hydrated is really not my biggest problem right now!"`;
 		}
 		else {
 
-			embed.setDescription(`*${quidData.name} takes ${quidToHeal.name}'s body and tries to drag it over to the river. The ${quidData.displayedSpecies || quidData.species} attempts to position the ${quidToHeal.displayedSpecies || quidToHeal.species}'s head right over the water, but every attempt fails miserably. ${upperCasePronounAndPlural(quidData, 0, 'need')} to concentrate and try again.*`);
+			embedDescription = `*${quidData.name} takes ${quidToHeal.name}'s body and tries to drag it over to the river. The ${quidData.displayedSpecies || quidData.species} attempts to position the ${quidToHeal.displayedSpecies || quidToHeal.species}'s head right over the water, but every attempt fails miserably. ${upperCasePronounAndPlural(quidData, 0, 'need')} to concentrate and try again.*`;
 		}
 	}
 	else if (userData._id === userToHeal._id) {
 
-		embed.setDescription(`*${quidData.name} holds the ${item} in ${pronoun(quidData, 2)} mouth, trying to find a way to apply it. After a few attempts, the herb breaks into little pieces, rendering it useless. Guess ${pronounAndPlural(quidData, 0, 'has', 'have')} to try again...*`);
+		embedDescription = `*${quidData.name} holds the ${item} in ${pronoun(quidData, 2)} mouth, trying to find a way to apply it. After a few attempts, the herb breaks into little pieces, rendering it useless. Guess ${pronounAndPlural(quidData, 0, 'has', 'have')} to try again...*`;
 	}
 	else {
 
-		embed.setDescription(`*${quidData.name} takes a ${item}. After a bit of preparation, ${pronounAndPlural(quidData, 0, 'give')} it to ${quidToHeal.name}. But no matter how long ${pronoun(quidData, 0)} wait, it does not seem to help. Looks like ${quidData.name} has to try again...*`);
+		embedDescription = `*${quidData.name} takes a ${item}. After a bit of preparation, ${pronounAndPlural(quidData, 0, 'give')} it to ${quidToHeal.name}. But no matter how long ${pronoun(quidData, 0)} wait, it does not seem to help. Looks like ${quidData.name} has to try again...*`;
 	}
 
 	const experiencePoints = isSuccessful === false ? 0 : profileData.rank == RankType.Elderly ? getRandomNumber(41, 20) : profileData.rank == RankType.Healer ? getRandomNumber(21, 10) : getRandomNumber(11, 5);
 	const changedCondition = await changeCondition(userData, quidData, profileData, experiencePoints);
-	embed.setFooter({ text: `${changedCondition.statsUpdateText}${embedFooter}\n\n${denCondition}${item !== 'water' ? `\n-1 ${item} for ${interaction.guild.name}` : ''}` });
 
 	const content = (userData._id !== userToHeal._id && isSuccessful === true ? `<@${userToHeal.userId[0]}>\n` : '') + messageContent;
 	const infectedEmbed = await infectWithChance(userData, quidData, profileData, quidToHeal, profileToHeal);
@@ -557,7 +539,11 @@ export async function getHealResponse(
 		content: content,
 		embeds: [
 			...embedArray,
-			embed,
+			new EmbedBuilder()
+				.setColor(quidData.color)
+				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
+				.setDescription(embedDescription)
+				.setFooter({ text: `${changedCondition.statsUpdateText}${statsUpdateText === '' ? '' : `\n${statsUpdateText}`}\n\n${denCondition}${item !== 'water' ? `\n-1 ${item} for ${interaction.guild.name}` : ''}` }),
 			...(infectedEmbed === null ? [] : [infectedEmbed]),
 			...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
 			...(levelUpEmbed ? [levelUpEmbed] : []),
@@ -574,6 +560,24 @@ export async function getHealResponse(
 	if (userToHeal._id !== userData._id) { await addFriendshipPoints(botReply, userData, quidData._id, userToHeal, quidToHeal._id); }
 
 	return;
+}
+
+/**
+ * It returns an object with the stats that will be added to the profile when the item is consumed
+ * @param {CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | 'water'} item - The item that is being used.
+ * @param {Profile} profileToHeal - The profile that will be healed.
+ * @returns An object with the keys: thirst, hunger, energy, health.
+ */
+export function getStatsPoints(
+	item: CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | 'water',
+	profileToHeal: Profile,
+): { health: number, energy: number, hunger: number, thirst: number } {
+
+	const thirst = item === 'water' ? getSmallerNumber(getRandomNumber(10, 6), profileToHeal.maxThirst - profileToHeal.thirst) : 0;
+	const health = item === 'water' ? 0 : getSmallerNumber(getRandomNumber(10, 6), profileToHeal.maxHealth - profileToHeal.health);
+	const energy = (item !== 'water' && itemInfo[item].givesEnergy) ? getSmallerNumber(30, profileToHeal.maxEnergy - profileToHeal.energy) : 0;
+	const hunger = (item !== 'water' && itemInfo[item].givesEnergy) ? getSmallerNumber(5, profileToHeal.maxHunger - profileToHeal.hunger) : 0;
+	return { thirst, hunger, energy, health };
 }
 
 /**
