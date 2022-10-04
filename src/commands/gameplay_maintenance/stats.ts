@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import userModel from '../../models/userModel';
 import { RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { getMapData, respond, update } from '../../utils/helperFunctions';
 import { calculateInventorySize } from '../../utils/simulateItemUse';
 import { sendStoreMessage } from './store';
@@ -33,7 +33,7 @@ export const command: SlashCommand = {
 
 			userData = await userModel.findOne(u => u.userId.includes(mentionedUser.id)).catch(() => { return null; });
 		}
-		else if (!hasCompletedAccount(interaction, userData)) { return; }
+		else if (!hasName(interaction, userData) || !hasSpecies(interaction, getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId)))) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData = userData?.quids[userData?.currentQuid[interaction.guildId] || ''];

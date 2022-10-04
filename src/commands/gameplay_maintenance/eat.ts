@@ -3,7 +3,7 @@ import Fuse from 'fuse.js';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
 import { CommonPlantNames, commonPlantsInfo, CurrentRegionType, PlantEdibilityType, Profile, Quid, RarePlantNames, rarePlantsInfo, ServerSchema, SlashCommand, SpecialPlantNames, specialPlantsInfo, SpeciesDietType, speciesInfo, SpeciesNames, StatIncreaseType, UncommonPlantNames, uncommonPlantsInfo, UserSchema } from '../../typedef';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
@@ -60,11 +60,12 @@ export const command: SlashCommand = {
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!hasCompletedAccount(interaction, userData)) { return; }
+		if (!hasName(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		const profileData = getMapData(quidData.profiles, interaction.guildId);
+		if (!hasSpecies(interaction, quidData)) { return; }
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
@@ -93,7 +94,7 @@ export async function sendEatMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
 	chosenFood: string,
 	userData: UserSchema,
-	quidData: Quid,
+	quidData: Quid<true>,
 	profileData: Profile,
 	serverData: ServerSchema,
 	messageContent: string,
@@ -194,7 +195,7 @@ export async function sendEatMessage(
 
 		if (allPlantsInfo[chosenFood].edibility === PlantEdibilityType.Edible) {
 
-			if (speciesInfo[quidData.species as SpeciesNames].diet === SpeciesDietType.Carnivore) {
+			if (speciesInfo[quidData.species].diet === SpeciesDietType.Carnivore) {
 
 				finalHungerPoints = getBiggerNumber(-profileData.hunger, getSmallerNumber(profileData.maxHunger - profileData.hunger, addIncorrectDietHungerPoints() - removeHungerPoints(serverData)));
 
@@ -229,7 +230,7 @@ export async function sendEatMessage(
 		}
 		inventory_.meat[chosenFood] -= 1;
 
-		if (speciesInfo[quidData.species as SpeciesNames].diet === SpeciesDietType.Herbivore) {
+		if (speciesInfo[quidData.species].diet === SpeciesDietType.Herbivore) {
 
 			finalHungerPoints = getBiggerNumber(-profileData.hunger, getSmallerNumber(profileData.maxHunger - profileData.hunger, addIncorrectDietHungerPoints() - removeHungerPoints(serverData)));
 
@@ -303,7 +304,7 @@ function chosenFoodIsMeat(
 
 async function sendNoItemMessage(
 	embed: EmbedBuilder,
-	quidData: Quid,
+	quidData: Quid<true>,
 	chosenFood: string,
 	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
 	messageContent: string,

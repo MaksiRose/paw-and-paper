@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { Profile, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasCooldown } from '../../utils/checkValidity';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import getInventoryElements from '../../utils/getInventoryElements';
@@ -26,11 +26,12 @@ export const command: SlashCommand = {
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!hasCompletedAccount(interaction, userData)) { return; }
+		if (!hasName(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		const profileData = getMapData(quidData.profiles, interaction.guildId);
+		if (!hasSpecies(interaction, quidData)) { return; }
 
 		/* Checks if the profile is on a cooldown. */
 		if (await hasCooldown(interaction, userData, quidData)) { return; }

@@ -1,7 +1,7 @@
 import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 import { respond } from './helperFunctions';
-import { UserSchema } from '../typedef';
-const { error_color } = require('../../config.json');
+import { Quid, UserSchema } from '../typedef';
+const { default_color } = require('../../config.json');
 
 /**
  * Checks if there is an account and if the account has a name, returns false if they do, and if not, sends a message telling the user to create an account and return true.
@@ -16,8 +16,8 @@ export function hasName(
 
 		respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(error_color)
-				.setTitle(Object.keys(userData?.quids || {}).length > 0 ? 'Please type "/profile" to switch to a quid!' : 'Please type "/name" to create a new quid!')],
+				.setColor(default_color)
+				.setDescription(Object.keys(userData?.quids || {}).length > 0 ? 'Please type "/profile" to switch to a quid!' : 'Please type "/name" to create a new quid!')],
 		}, true);
 
 		return false;
@@ -29,37 +29,23 @@ export function hasName(
 /**
  * Checks if the account has a species, returns false if they do, and if not, sends a message telling the user to create an account and returns true.
  */
-function hasSpecies(
+export function hasSpecies(
 	interaction: ChatInputCommandInteraction | ButtonInteraction,
-	userData: UserSchema | null,
-): boolean {
+	quidData: Quid,
+): quidData is Quid<true> {
 
-	const quidData = userData?.quids[userData.currentQuid[interaction.guildId || 'DM'] || ''];
-	if (quidData?.species === '') {
+	if (quidData.species === '') {
 
 		respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(error_color)
-				.setTitle(`To access this command, you need to choose ${quidData?.name}'s species!`)],
+				.setColor(default_color)
+				.setDescription(`To access this command, you need to choose ${quidData?.name}'s species (with "/species")!`)],
 		}, true);
 
 		return false;
 	}
 
 	return true;
-}
-
-/**
- * Checks if the user has a name and a species, returns false if they do, and if they don't, sends the appropriate message and returns true.
- */
-export function hasCompletedAccount(
-	interaction: ChatInputCommandInteraction | ButtonInteraction,
-	userData: UserSchema | null,
-): userData is UserSchema {
-
-	if (hasName(interaction, userData) && hasSpecies(interaction, userData)) { return true; }
-
-	return false;
 }
 
 /**
@@ -82,8 +68,8 @@ export function isInGuild(
 
 		respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(error_color)
-				.setTitle('This command cannot be executed in DMs!')],
+				.setColor(default_color)
+				.setDescription('This command cannot be executed in DMs!')],
 			ephemeral: true,
 		}, false);
 

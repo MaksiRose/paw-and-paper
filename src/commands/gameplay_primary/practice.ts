@@ -3,7 +3,7 @@ import { cooldownMap } from '../../events/interactionCreate';
 import { RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { createFightGame } from '../../utils/gameBuilder';
@@ -32,11 +32,12 @@ export const command: SlashCommand = {
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!hasCompletedAccount(interaction, userData)) { return; }
+		if (!hasName(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		let profileData = getMapData(quidData.profiles, interaction.guildId);
+		if (!hasSpecies(interaction, quidData)) { return; }
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }

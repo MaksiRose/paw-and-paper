@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatIn
 import { cooldownMap } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
 import { CurrentRegionType, Profile, Quid, SlashCommand, UserSchema } from '../../typedef';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
@@ -28,11 +28,12 @@ export const command: SlashCommand = {
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!hasCompletedAccount(interaction, userData)) { return; }
+		if (!hasName(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		const profileData = getMapData(quidData.profiles, interaction.guildId);
+		if (!hasSpecies(interaction, quidData)) { return; }
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
@@ -46,7 +47,7 @@ export const command: SlashCommand = {
 export async function sendDrinkMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	userData: UserSchema,
-	quidData: Quid,
+	quidData: Quid<true>,
 	profileData: Profile,
 	messageContent: string,
 	embedArray: EmbedBuilder[],

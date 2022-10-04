@@ -3,7 +3,7 @@ import serverModel from '../../models/serverModel';
 import { MaterialNames, materialsInfo, Quid, RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
 import getInventoryElements from '../../utils/getInventoryElements';
@@ -49,11 +49,12 @@ export const command: SlashCommand = {
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!hasCompletedAccount(interaction, userData)) { return; }
+		if (!hasName(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		const profileData = getMapData(quidData.profiles, interaction.guildId);
+		if (!hasSpecies(interaction, quidData)) { return; }
 
 		/* Checks if the profile is on a cooldown or passed out. */
 		if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
@@ -179,7 +180,7 @@ export async function repairInteractionCollector(
  */
 function getMaterials(
 	userData: UserSchema,
-	quidData: Quid,
+	quidData: Quid<true>,
 	serverData: ServerSchema,
 	chosenDen: 'sleepingDens' | 'foodDen' | 'medicineDen',
 	embedArray: EmbedBuilder[],

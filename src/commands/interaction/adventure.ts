@@ -6,7 +6,7 @@ import userModel from '../../models/userModel';
 import { CurrentRegionType, Inventory, Profile, Quid, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition, pickRandomCommonPlant, pickRandomRarePlant, pickRandomSpecialPlant, pickRandomUncommonPlant } from '../../utils/changeCondition';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { addFriendshipPoints, checkOldMentions, getFriendshipHearts, getFriendshipPoints } from '../../utils/friendshipHandling';
@@ -37,11 +37,12 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
-		if (!hasCompletedAccount(interaction, userData1)) { return; }
+		if (!hasName(interaction, userData1)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
 		const profileData1 = getMapData(quidData1.profiles, interaction.guildId);
+		if (!hasSpecies(interaction, quidData1)) { return; }
 
 		/* Checks if the profile is on a cooldown, passed out, or resting. */
 		if (await isInvalid(interaction, userData1, quidData1, profileData1, embedArray)) { return; }
@@ -504,8 +505,8 @@ async function sendNextRoundMessage(
 	interaction: ButtonInteraction<'cached'>,
 	userId: string,
 	userData1: UserSchema,
-	quidData1: Quid,
-	quidData2: Quid,
+	quidData1: Quid<true>,
+	quidData2: Quid<true>,
 	componentArray: ActionRowBuilder<ButtonBuilder>[],
 ): Promise<Message> {
 
@@ -529,10 +530,10 @@ async function sendNextRoundMessage(
 async function checkAfterGameChanges(
 	interaction: ButtonInteraction<'cached'>,
 	userData1: UserSchema,
-	quidData1: Quid,
+	quidData1: Quid<true>,
 	profileData1: Profile,
 	userData2: UserSchema,
-	quidData2: Quid,
+	quidData2: Quid<true>,
 	profileData2: Profile,
 	serverData: ServerSchema,
 ): Promise<{

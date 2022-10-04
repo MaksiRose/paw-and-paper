@@ -5,7 +5,7 @@ import userModel from '../../models/userModel';
 import { CommonPlantNames, commonPlantsInfo, CurrentRegionType, Inventory, PlantEdibilityType, Profile, Quid, RankType, RarePlantNames, rarePlantsInfo, ServerSchema, SlashCommand, SpecialPlantNames, specialPlantsInfo, UncommonPlantNames, uncommonPlantsInfo, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition, infectWithChance } from '../../utils/changeCondition';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
@@ -68,11 +68,12 @@ export const command: SlashCommand = {
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!hasCompletedAccount(interaction, userData)) { return; }
+		if (!hasName(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		const profileData = getMapData(quidData.profiles, interaction.guildId);
+		if (!hasSpecies(interaction, quidData)) { return; }
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
@@ -114,10 +115,10 @@ export const command: SlashCommand = {
 export function quidNeedsHealing(
 	q: Quid,
 	guildId: string,
-): boolean {
+): q is Quid<true> {
 
 	const p = q.profiles[guildId];
-	return p !== undefined && (p.energy === 0 || p.health === 0 || p.hunger === 0 || p.thirst === 0 || Object.values(p.injuries).filter(i => i > 0).length > 0);
+	return q.species !== '' && p !== undefined && (p.energy === 0 || p.health === 0 || p.hunger === 0 || p.thirst === 0 || Object.values(p.injuries).filter(i => i > 0).length > 0);
 }
 
 export async function healInteractionCollector(
@@ -195,7 +196,7 @@ export async function getHealResponse(
 	messageContent: string,
 	embedArray: EmbedBuilder[],
 	quidPage = 0,
-	quidToHeal?: Quid,
+	quidToHeal?: Quid<true>,
 	inventoryPage: 1 | 2 = 1,
 	item?: CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | 'water',
 ): Promise<void> {
@@ -206,11 +207,11 @@ export async function getHealResponse(
 
 	const hurtQuids = await (async function(
 		guildId: string,
-	): Promise<Quid[]> {
+	): Promise<Quid<true>[]> {
 
 		function getHurtQuids(
 			u: UserSchema,
-		): Quid[] { return Object.values(u.quids).filter(q => quidNeedsHealing(q, guildId)); }
+		): Quid<true>[] { return Object.values(u.quids).filter(q => quidNeedsHealing(q, guildId)); }
 
 		return (await userModel.find(u => getHurtQuids(u).length > 0)).map(user => getHurtQuids(user)).flat();
 	})(interaction.guildId);

@@ -67,7 +67,7 @@ export async function friendshipsInteractionCollector(
  */
 async function getFriendshipTexts(
 	userData: UserSchema,
-	quidData: Quid,
+	quidData: Quid<true>,
 ): Promise<string[]> {
 
 	/** An array of users with quids who are friends with the user who executed the command. */
@@ -118,7 +118,7 @@ async function getFriendshipTexts(
  */
 async function getFriendshipMessage(
 	userData: UserSchema,
-	quidData: Quid,
+	quidData: Quid<true>,
 	guildId: string,
 	page: number,
 	friendshipTexts?: string[],

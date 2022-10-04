@@ -37,17 +37,17 @@ export function calculateInventorySize(
 async function getUsersInServer(
 	guildId: string,
 	activeUsersOnly: boolean,
-): Promise<(Quid & {user_id: string})[]> {
+): Promise<(Quid<true> & {user_id: string})[]> {
 
 	const twoWeeksInMs = 1_209_600_000;
 
-	const userToProfileArray = (u: UserSchema) => Object.values(u.quids).map(q => ({ ...q, user_id: u._id })).filter(q => {
-		const p = q.profiles[guildId];
-		return p !== undefined && (activeUsersOnly ? p.lastActiveTimestamp > Date.now() - twoWeeksInMs : true);
+	const userToQuidArray = (u: UserSchema) => Object.values(u.quids).map(q => ({ ...q, user_id: u._id })).filter((q: Quid & {user_id: string}): q is Quid<true> & {user_id: string} => {
+		const p = q?.profiles[guildId];
+		return q.species !== '' && p !== undefined && (activeUsersOnly ? p.lastActiveTimestamp > Date.now() - twoWeeksInMs : true);
 	});
 
-	return (await userModel.find((u) => userToProfileArray(u).length > 0))
-		.map(userToProfileArray).flat();
+	return (await userModel.find((u) => userToQuidArray(u).length > 0))
+		.map(userToQuidArray).flat();
 }
 
 /**
@@ -65,7 +65,7 @@ export async function simulateMeatUse(
 	const serverData_ = deepCopyObject(serverData);
 	let neededItems = 0;
 
-	for (const quid of quids.filter(q => speciesInfo[q.species as SpeciesNames].diet !== SpeciesDietType.Herbivore)) {
+	for (const quid of quids.filter(q => speciesInfo[q.species].diet !== SpeciesDietType.Herbivore)) {
 
 		const profile = getMapData(quid.profiles, serverData.serverId);
 		while (profile.hunger < profile.maxHunger) {
@@ -182,7 +182,7 @@ export async function simulatePlantUse(
 		}
 	}
 
-	for (const quid of quids.filter(q => speciesInfo[q.species as SpeciesNames].diet !== SpeciesDietType.Carnivore)) {
+	for (const quid of quids.filter(q => speciesInfo[q.species].diet !== SpeciesDietType.Carnivore)) {
 
 		const profile = getMapData(quid.profiles, serverData.serverId);
 		while (profile.hunger < profile.maxHunger) {

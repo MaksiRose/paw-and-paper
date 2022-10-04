@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatIn
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
 import { CommonPlantNames, MaterialNames, Profile, Quid, RarePlantNames, ServerSchema, SlashCommand, SpecialPlantNames, SpeciesNames, UncommonPlantNames, UserSchema } from '../../typedef';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
 import { pronoun, upperCasePronounAndPlural } from '../../utils/getPronouns';
@@ -33,11 +33,12 @@ export const command: SlashCommand = {
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!hasCompletedAccount(interaction, userData)) { return; }
+		if (!hasName(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		const profileData = getMapData(quidData.profiles, interaction.guildId);
+		if (!hasSpecies(interaction, quidData)) { return; }
 
 		/* Checks if the profile is on a cooldown or passed out. */
 		if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
@@ -49,7 +50,7 @@ export const command: SlashCommand = {
 export async function sendStoreMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	userData: UserSchema,
-	quidData: Quid,
+	quidData: Quid<true>,
 	profileData: Profile,
 	serverData: ServerSchema,
 	embedArray: EmbedBuilder[],
@@ -89,7 +90,7 @@ export async function sendStoreMessage(
 
 function getOriginalEmbed(
 	userData: UserSchema,
-	quidData: Quid,
+	quidData: Quid<true>,
 	serverId: string,
 ): EmbedBuilder {
 
@@ -238,7 +239,7 @@ export async function storeInteractionCollector(
 async function storeAll(
 	interaction: ButtonInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
 	userData: UserSchema,
-	quidData: Quid,
+	quidData: Quid<true>,
 	profileData: Profile,
 	serverData: ServerSchema,
 	mainEmbed?: EmbedBuilder | Embed,

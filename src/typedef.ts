@@ -257,7 +257,7 @@ export interface Profile {
 	lastActiveTimestamp: number
 }
 
-export interface Quid {
+export interface Quid<isCompleted extends boolean = boolean> {
 	/** Unique ID of the quid */
 	readonly _id: string;
 	/** Name of the quid */
@@ -268,7 +268,7 @@ export interface Quid {
 		servers: { [index: string]: string; };
 	};
 	/** Species of the quid */
-	species: SpeciesNames | '';
+	species: isCompleted extends true ? SpeciesNames : SpeciesNames | '';
 	/** Displayed species of the quid */
 	displayedSpecies: string;
 	/** Description of the quid */

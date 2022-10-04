@@ -4,7 +4,7 @@ import userModel from '../../models/userModel';
 import { CurrentRegionType, Quid, SlashCommand } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition, infectWithChance } from '../../utils/changeCondition';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { pronoun, pronounAndPlural, upperCasePronoun } from '../../utils/getPronouns';
@@ -38,11 +38,12 @@ export const command: SlashCommand = {
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new TypeError('serverData is null'); }
-		if (!hasCompletedAccount(interaction, userData1)) { return; }
+		if (!hasName(interaction, userData1)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
 		let profileData1 = getMapData(quidData1.profiles, interaction.guildId);
+		if (!hasSpecies(interaction, quidData1)) { return; }
 
 		/* Checks if the profile is on a cooldown, passed out, or resting. */
 		if (await isInvalid(interaction, userData1, quidData1, profileData1, embedArray)) { return; }
@@ -187,7 +188,7 @@ function isEligableForSharing(
 	_id: string,
 	quid: Quid,
 	guildId: string,
-): boolean {
+): quid is Quid<true> {
 
 	const p = quid.profiles[guildId];
 	return quid.name !== '' && quid.species !== '' && p !== undefined && p.currentRegion === CurrentRegionType.Ruins && p.energy > 0 && p.health > 0 && p.hunger > 0 && p.thirst > 0 && p.injuries.cold === false && cooldownMap.get(_id + guildId) !== true && p.isResting === false && isResting(_id, p.serverId) === false;

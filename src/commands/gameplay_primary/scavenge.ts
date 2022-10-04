@@ -1,10 +1,10 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
-import { MaterialNames, materialsInfo, RankType, ServerSchema, SlashCommand, speciesInfo, SpeciesNames, UserSchema } from '../../typedef';
+import { MaterialNames, materialsInfo, Quid, RankType, ServerSchema, SlashCommand, speciesInfo, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural } from '../../utils/getPronouns';
@@ -41,11 +41,12 @@ export async function executeScavenging(
 	/* This ensures that the user is in a guild and has a completed account. */
 	if (!isInGuild(interaction)) { return; }
 	if (serverData === null) { throw new Error('serverData is null'); }
-	if (!hasCompletedAccount(interaction, userData)) { return; }
+	if (!hasName(interaction, userData)) { return; }
 
 	/* Gets the current active quid and the server profile from the account */
 	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 	let profileData = getMapData(quidData.profiles, interaction.guildId);
+	if (!hasSpecies(interaction, quidData)) { return; }
 
 	/* Checks if the profile is resting, on a cooldown or passed out. */
 	if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
@@ -182,7 +183,7 @@ export async function executeScavenging(
 						const materialIsGettable = serverMaterialsCount < 36;
 						if (meatIsGettable && pullFromWeightedTable({ 0: 1, 1: materialIsGettable ? 1 : 0 }) === 0) {
 
-							const carcassArray = [...speciesInfo[quidData.species as SpeciesNames]?.biome1OpponentArray || []];
+							const carcassArray = [...speciesInfo[(quidData as Quid<true>).species]?.biome1OpponentArray || []];
 							const foundCarcass = carcassArray[getRandomNumber(carcassArray.length)];
 							if (!foundCarcass) {
 								await sendErrorMessage(interaction, new Error('foundCarcass is undefined'))
