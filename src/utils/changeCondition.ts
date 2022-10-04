@@ -1,7 +1,7 @@
 import { EmbedBuilder } from 'discord.js';
 import userModel from '../models/userModel';
 import { commonPlantsInfo, CurrentRegionType, materialsInfo, Profile, Quid, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo, UserSchema } from '../typedef';
-import { getBiggerNumber, getMapData, getSmallerNumber } from './helperFunctions';
+import { deepCopyObject, getBiggerNumber, getMapData, getSmallerNumber } from './helperFunctions';
 import { pronoun } from './getPronouns';
 import { getRandomNumber, pullFromWeightedTable } from './randomizers';
 
@@ -60,18 +60,23 @@ function calculateThirstDecrease(
  * @param {Profile} profileData - The profile data of the user
  * @returns An object with an embed and profileData
  */
-async function decreaseHealth(
-	userData: UserSchema,
+function decreaseHealth(
 	quidData: Quid,
 	profileData: Profile,
-): Promise<{ injuryUpdateEmbed: EmbedBuilder | null, profileData: Profile; }> {
+): {
+	injuryUpdateEmbed: EmbedBuilder | null,
+	totalHealthDecrease: number,
+	modifiedInjuryObject: Profile['injuries'];
+	} {
+
+	/* Define the decreased health points, a modifiedInjuryObject */
+	let totalHealthDecrease = 0;
+	const modifiedInjuryObject = deepCopyObject(profileData.injuries);
 
 	/* If there are no injuries, return null as an embed and profileData as the profileData */
-	if (Object.values(profileData.injuries).every((value) => value == 0)) { return { injuryUpdateEmbed: null, profileData }; }
+	if (Object.values(profileData.injuries).every((value) => value == 0)) { return { injuryUpdateEmbed: null, totalHealthDecrease, modifiedInjuryObject }; }
 
-	/* Define the decreased health points, a modifiedInjuryObject and an embed with a color */
-	let totalHealthDecrease = 0;
-	const modifiedInjuryObject = { ...profileData.injuries };
+	/* Define an embed with a color */
 	const embed = new EmbedBuilder()
 		.setColor(quidData.color);
 	let description = '';
@@ -184,22 +189,9 @@ async function decreaseHealth(
 
 	if (description.length > 0) { embed.setDescription(description); }
 
-	/* Change total health decrease if it would get the health below zero, and update the user information */
-	totalHealthDecrease = getSmallerNumber(totalHealthDecrease, profileData.health);
-	userData = await userModel.findOneAndUpdate(
-		u => u._id === userData._id,
-		(u) => {
-			const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, profileData.serverId)).profiles, profileData.serverId);
-			p.health -= totalHealthDecrease;
-			p.injuries = modifiedInjuryObject;
-		},
-	);
-	quidData = getMapData(userData.quids, getMapData(userData.currentQuid, profileData.serverId));
-	profileData = getMapData(quidData.profiles, profileData.serverId);
-
 	/* Add a footer to the embed if the total health decrease is more than 0, and return */
 	if (totalHealthDecrease > 0) { embed.setFooter({ text: `-${totalHealthDecrease} HP (${profileData.health}/${profileData.maxHealth})` }); }
-	return { injuryUpdateEmbed: embed, profileData };
+	return { injuryUpdateEmbed: embed, totalHealthDecrease, modifiedInjuryObject };
 }
 
 export type DecreasedStatsData = {
@@ -219,7 +211,7 @@ export type DecreasedStatsData = {
  * @returns DecreasedStatsData
  */
 export async function changeCondition(
-	userData: UserSchema,
+	userData: UserSchema | undefined,
 	quidData: Quid,
 	profileData: Profile,
 	experienceIncrease: number,
@@ -227,24 +219,40 @@ export async function changeCondition(
 	secondPlayer = false,
 ): Promise<DecreasedStatsData> {
 
+	const { injuryUpdateEmbed, totalHealthDecrease, modifiedInjuryObject } = decreaseHealth(quidData, profileData);
 	const energyDecrease = getSmallerNumber(calculateEnergyDecrease(profileData) + getRandomNumber(5, 1), profileData.energy);
 	const hungerDecrease = calculateHungerDecrease(profileData);
 	const thirstDecrease = calculateThirstDecrease(profileData);
 	const previousRegion = profileData.currentRegion;
 
-	userData = await userModel.findOneAndUpdate(
-		u => u._id === userData._id,
-		(u) => {
-			const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, profileData.serverId)).profiles, profileData.serverId);
-			p.energy -= energyDecrease;
-			p.hunger -= hungerDecrease;
-			p.thirst -= thirstDecrease;
-			p.experience += experienceIncrease;
-			if (currentRegion) { p.currentRegion = currentRegion; }
-		},
-	);
-	quidData = getMapData(userData.quids, getMapData(userData.currentQuid, profileData.serverId));
-	profileData = getMapData(quidData.profiles, profileData.serverId);
+	if (userData === undefined) {
+
+		profileData.health -= totalHealthDecrease;
+		profileData.injuries = modifiedInjuryObject;
+		profileData.energy -= energyDecrease;
+		profileData.hunger -= hungerDecrease;
+		profileData.thirst -= thirstDecrease;
+		profileData.experience += experienceIncrease;
+		if (currentRegion) { profileData.currentRegion = currentRegion; }
+	}
+	else {
+
+		userData = await userModel.findOneAndUpdate(
+			u => u._id === userData!._id,
+			(u) => {
+				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, profileData.serverId)).profiles, profileData.serverId);
+				p.health -= totalHealthDecrease;
+				p.injuries = modifiedInjuryObject;
+				p.energy -= energyDecrease;
+				p.hunger -= hungerDecrease;
+				p.thirst -= thirstDecrease;
+				p.experience += experienceIncrease;
+				if (currentRegion) { p.currentRegion = currentRegion; }
+			},
+		);
+		quidData = getMapData(userData.quids, getMapData(userData.currentQuid, profileData.serverId));
+		profileData = getMapData(quidData.profiles, profileData.serverId);
+	}
 
 	let statsUpdateText = '';
 	if (experienceIncrease > 0) { statsUpdateText += `\n+${experienceIncrease} XP (${profileData.experience}/${profileData.levels * 50})${secondPlayer ? ` for ${quidData.name}` : ''}`; }
@@ -253,7 +261,7 @@ export async function changeCondition(
 	if (thirstDecrease > 0) { statsUpdateText += `\n-${thirstDecrease} thirst (${profileData.thirst}/${profileData.maxThirst})${secondPlayer ? ` for ${quidData.name}` : ''}`; }
 	if (currentRegion && previousRegion !== currentRegion) { statsUpdateText += `\n${secondPlayer ? `${quidData.name} is` : 'You are'} now at the ${currentRegion}`; }
 
-	return { statsUpdateText, ...await decreaseHealth(userData, quidData, profileData) };
+	return { statsUpdateText, injuryUpdateEmbed, profileData };
 }
 
 /**

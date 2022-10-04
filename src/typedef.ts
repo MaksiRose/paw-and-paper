@@ -438,7 +438,7 @@ export enum PlantEdibilityType {
 	Toxic = 3
 }
 
-interface PlantInfo {
+export interface PlantInfo {
 	/** Description of the plant */
 	description: string;
 	/** Edibabilty of the plant */

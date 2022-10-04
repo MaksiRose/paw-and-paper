@@ -449,14 +449,7 @@ export async function getHealResponse(
 		return;
 	}
 
-	if (isSuccessful && userToHeal._id === userData._id && pullFromWeightedTable({ 0: 75, 1: 25 + profileData.sapling.waterCycles - decreaseSuccessChance(serverData) }) === 0) {
-
-		isSuccessful = false;
-	}
-	else if (isSuccessful && userToHeal._id !== userData._id && (profileData.rank === RankType.Apprentice || profileData.rank === RankType.Hunter) && pullFromWeightedTable({ 0: profileData.rank === RankType.Hunter ? 90 : 40, 1: 60 + profileData.sapling.waterCycles - decreaseSuccessChance(serverData) }) === 0) {
-
-		isSuccessful = false;
-	}
+	if (isSuccessful === true && isUnlucky(userToHeal._id, userData._id, profileData, serverData)) { isSuccessful = false; }
 
 	const denCondition = await wearDownDen(serverData, CurrentRegionType.MedicineDen);
 	let embedDescription: string;
@@ -591,3 +584,10 @@ function decreaseSuccessChance(
 	const multiplier = denStats / 400;
 	return 20 - Math.round(20 * multiplier);
 }
+
+export function isUnlucky(
+	id1: string,
+	id2: string,
+	profileData: Profile,
+	serverData: ServerSchema,
+): boolean { return (id1 === id2 && pullFromWeightedTable({ 0: 75, 1: 25 + profileData.sapling.waterCycles - decreaseSuccessChance(serverData) }) === 0) || (id1 !== id2 && (profileData.rank === RankType.Apprentice || profileData.rank === RankType.Hunter) && pullFromWeightedTable({ 0: profileData.rank === RankType.Hunter ? 90 : 40, 1: 60 + profileData.sapling.waterCycles - decreaseSuccessChance(serverData) }) === 0); }

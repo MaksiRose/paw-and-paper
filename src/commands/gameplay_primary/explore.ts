@@ -15,7 +15,7 @@ import userModel from '../../models/userModel';
 import { sendQuestMessage } from './start-quest';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
-import { calculateInventorySize, pickMeat, simulateMeatUse } from '../../utils/simulateItemUse';
+import { calculateInventorySize, pickMeat, simulateMeatUse, simulatePlantUse } from '../../utils/simulateItemUse';
 
 type Position = { row: number, column: number; };
 const name: SlashCommand['name'] = 'explore';
@@ -385,8 +385,9 @@ export async function executeExploring(
 	// If the user gets the right chance, find a plant
 	else if (pullFromWeightedTable({ 0: profileData.rank === RankType.Healer ? 2 : 1, 1: profileData.rank === RankType.Hunter ? 2 : 1 }) === 0) {
 
-
-		const environmentLevel = getRandomNumber(1 + Math.ceil(profileData.levels / 10) * 5, (profileData.levels > 2 ? profileData.levels : 3) - Math.ceil(profileData.levels / 10) * 2);
+		/* First we are calculating needed meat - existing meat through simulatePlantUse three times, of which two it is calculated for active users only. The results of these are added together and divided by 3 to get their average. This is then used to get a random number that can be between 1 higher and 1 lower than that. This is then limited to be between -12 and 12. the user's level is added with this, and it is limited to not be below 1. */
+		const simAverage = Math.round((await simulatePlantUse(serverData, true) + await simulatePlantUse(serverData, true) + await simulatePlantUse(serverData, false)) / 3);
+		const environmentLevel = getBiggerNumber(1, profileData.levels + getBiggerNumber(-12, getSmallerNumber(12, getRandomNumber(3, simAverage - 1))));
 
 		const foundItem = (pullFromWeightedTable({ 0: 70, 1: 30 + profileData.sapling.waterCycles }) == 1 && chosenBiomeNumber > 0) ? (pullFromWeightedTable({ 0: 70, 1: 30 + profileData.sapling.waterCycles }) == 1 && chosenBiomeNumber === 2) ? pickRandomRarePlant() : pickRandomUncommonPlant() : pickRandomCommonPlant();
 
@@ -632,7 +633,7 @@ export async function executeExploring(
 	// Find an enemy
 	else {
 
-		/* First we are calculating needed meat - existing meat through simulateMeatUse three times, of which two it is calculated for active users only. The results of these are added together and divided by 3 tog get their average. This is then used to get a random number that can be between 1 higher and 1 lower than that. This is then limited to be between -12 and 12. the user's level is added with this, and it is limited to not be below 1. */
+		/* First we are calculating needed meat - existing meat through simulateMeatUse three times, of which two it is calculated for active users only. The results of these are added together and divided by 3 to get their average. This is then used to get a random number that can be between 1 higher and 1 lower than that. This is then limited to be between -12 and 12. the user's level is added with this, and it is limited to not be below 1. */
 		const simAverage = Math.round((await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, false)) / 3);
 		const opponentLevel = getBiggerNumber(1, profileData.levels + getBiggerNumber(-12, getSmallerNumber(12, getRandomNumber(3, simAverage - 1))));
 
