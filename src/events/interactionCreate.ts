@@ -16,7 +16,7 @@ import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
 import { ErrorStacks, DiscordEvent } from '../typedef';
 import { disableCommandComponent, disableAllComponents } from '../utils/componentDisabling';
-import { getMapData, getQuidDisplayname, update } from '../utils/helperFunctions';
+import { getMapData, getQuidDisplayname, keyInObject, update } from '../utils/helperFunctions';
 import { pronoun, pronounAndPlural } from '../utils/getPronouns';
 import { createGuild } from '../utils/updateGuild';
 import { respond } from '../utils/helperFunctions';
@@ -105,7 +105,7 @@ export const event: DiscordEvent = {
 			/* Getting the command from the client and checking if the command is undefined.
 			If it is, it will error. */
 			const command = client.slashCommands[interaction.commandName];
-			if (command === undefined || !Object.hasOwn(command, 'sendAutocomplete')) { return; }
+			if (command === undefined || !keyInObject(command, 'sendAutocomplete')) { return; }
 
 			/* It's sending the autocomplete message. */
 			await command.sendAutocomplete?.(client, interaction, userData, serverData)
@@ -118,7 +118,7 @@ export const event: DiscordEvent = {
 			/* Getting the command from the client and checking if the command is undefined.
 			If it is, it will error. */
 			const command = client.slashCommands[interaction.commandName];
-			if (command === undefined || !Object.hasOwn(command, 'sendCommand')) {
+			if (command === undefined || !keyInObject(command, 'sendCommand')) {
 
 				return await sendErrorMessage(interaction, new Error('Unknown command'))
 					.catch(e => { console.error(e); });
@@ -229,7 +229,7 @@ export const event: DiscordEvent = {
 			/* Getting the command from the client and checking if the command is undefined.
 			If it is, it will error. */
 			const command = client.contextMenuCommands[interaction.commandName];
-			if (command === undefined || !Object.hasOwn(command, 'sendCommand')) {
+			if (command === undefined || !keyInObject(command, 'sendCommand')) {
 
 				return await sendErrorMessage(interaction, new Error('Unknown command'))
 					.catch(e => { console.error(e); });

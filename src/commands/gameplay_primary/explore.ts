@@ -10,12 +10,12 @@ import { disableAllComponents } from '../../utils/componentDisabling';
 import { cooldownMap, serverActiveUsersMap } from '../../events/interactionCreate';
 import { createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
-import { changeCondition, pickRandomCommonPlant, pickRandomMaterial, pickRandomRarePlant, pickRandomUncommonPlant } from '../../utils/changeCondition';
+import { changeCondition, pickRandomMaterial } from '../../utils/changeCondition';
 import userModel from '../../models/userModel';
 import { sendQuestMessage } from './start-quest';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
-import { calculateInventorySize, pickMeat, simulateMeatUse, simulatePlantUse } from '../../utils/simulateItemUse';
+import { calculateInventorySize, pickMeat, pickPlant, simulateMeatUse, simulatePlantUse } from '../../utils/simulateItemUse';
 
 type Position = { row: number, column: number; };
 const name: SlashCommand['name'] = 'explore';
@@ -45,10 +45,9 @@ export const command: SlashCommand = {
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		const profileData = getMapData(quidData.profiles, interaction.guildId);
 
-		let choices = getAvailableBiomes(quidData, profileData);
-
-		const fuse = new Fuse(choices);
-		if (focusedValue.length > 0) { choices = fuse.search(focusedValue).map(value => value.item); }
+		const availableBiomes = getAvailableBiomes(quidData, profileData);
+		const fuse = new Fuse(availableBiomes);
+		const choices = focusedValue.length > 0 ? fuse.search(focusedValue).map(value => value.item) : availableBiomes;
 
 		await interaction.respond(
 			choices.slice(0, 25).map(choice => ({ name: choice, value: choice })),
@@ -169,7 +168,7 @@ export async function executeExploring(
 	}
 
 	/* chosenBiomeNumber is defined based on the index position of the chosenBiome in availableBiomes. chosenBiome should now either be found in availableBiomes, or it should be null, in which case chosenBiomeNumber is -1 and the explore command ends. */
-	const chosenBiomeNumber = availableBiomes.findIndex(index => index === chosenBiome);
+	const chosenBiomeNumber = availableBiomes.findIndex(index => index === chosenBiome) as -1 | 0 | 1 | 2;
 	if (chosenBiomeNumber === -1) { return; }
 
 	/* Prepare everything for the waiting game, like the field for the waiting game and the emojis that could appear on the field. Then, place 3-5 random emojis randomly on the waitingArray */
@@ -390,7 +389,7 @@ export async function executeExploring(
 		const simAverage = Math.round((await simulatePlantUse(serverData, true) + await simulatePlantUse(serverData, true) + await simulatePlantUse(serverData, false)) / 3);
 		const environmentLevel = getBiggerNumber(1, profileData.levels + getRandomNumber(3, simAverage - 1));
 
-		const foundItem = (pullFromWeightedTable({ 0: 70, 1: 30 + profileData.sapling.waterCycles }) == 1 && chosenBiomeNumber > 0) ? (pullFromWeightedTable({ 0: 70, 1: 30 + profileData.sapling.waterCycles }) == 1 && chosenBiomeNumber === 2) ? pickRandomRarePlant() : pickRandomUncommonPlant() : pickRandomCommonPlant();
+		const foundItem = await pickPlant(chosenBiomeNumber, serverData);
 
 		if (speciesInfo[quidData.species].habitat === SpeciesHabitatType.Warm) {
 
@@ -1015,12 +1014,13 @@ function getWaitingComponent(
 function getAvailableBiomes(
 	quidData: Quid<true>,
 	profileData: Profile,
-): string[] {
+): readonly [string, string, string] | readonly [string, string] | readonly [string] {
 
-	return {
-		[SpeciesHabitatType.Cold]: ['forest', 'taiga', 'tundra'],
-		[SpeciesHabitatType.Warm]: ['shrubland', 'savanna', 'desert'],
-		[SpeciesHabitatType.Water]: ['river', 'coral reef', 'ocean'],
-	}[speciesInfo[quidData.species].habitat]
-		.slice(0, (profileData.rank === RankType.Elderly) ? 3 : (profileData.rank === RankType.Healer || profileData.rank === RankType.Hunter) ? 2 : 1);
+	const array = {
+		[SpeciesHabitatType.Cold]: ['forest', 'taiga', 'tundra'] as const,
+		[SpeciesHabitatType.Warm]: ['shrubland', 'savanna', 'desert'] as const,
+		[SpeciesHabitatType.Water]: ['river', 'coral reef', 'ocean'] as const,
+	}[speciesInfo[quidData.species].habitat];
+
+	return profileData.rank === RankType.Elderly ? array : profileData.rank === RankType.Healer || profileData.rank === RankType.Hunter ? [array[0], array[1]] as const : [array[0]] as const;
 }

@@ -115,10 +115,23 @@ export const command: SlashCommand = {
 export function quidNeedsHealing(
 	q: Quid,
 	guildId: string,
+	checkOnlyFor?: 'energy' | 'hunger' | 'wounds' | 'infections' | 'cold' | 'sprains' | 'poison',
 ): q is Quid<true> {
 
 	const p = q.profiles[guildId];
-	return q.species !== '' && p !== undefined && (p.energy === 0 || p.health === 0 || p.hunger === 0 || p.thirst === 0 || Object.values(p.injuries).filter(i => i > 0).length > 0);
+	return q.species !== ''
+		&& p !== undefined
+		&& (
+			((checkOnlyFor === undefined || checkOnlyFor === 'energy') && p.energy === 0)
+			|| (checkOnlyFor === undefined && p.health === 0)
+			|| ((checkOnlyFor === undefined || checkOnlyFor === 'hunger') && p.hunger === 0)
+			|| (checkOnlyFor === undefined && p.thirst === 0)
+			|| ((checkOnlyFor === undefined || checkOnlyFor === 'wounds') && p.injuries.wounds > 0)
+			|| ((checkOnlyFor === undefined || checkOnlyFor === 'infections') && p.injuries.infections > 0)
+			|| ((checkOnlyFor === undefined || checkOnlyFor === 'cold') && p.injuries.cold === true)
+			|| ((checkOnlyFor === undefined || checkOnlyFor === 'sprains') && p.injuries.sprains > 0)
+			|| ((checkOnlyFor === undefined || checkOnlyFor === 'poison') && p.injuries.poison === true)
+		);
 }
 
 export async function healInteractionCollector(
@@ -247,7 +260,7 @@ export async function getHealResponse(
 		return;
 	}
 
-	let userToHeal = await userModel.findOne(u => Object.hasOwn(u.quids, quidToHeal!._id));
+	let userToHeal = await userModel.findOne(u => keyInObject(u.quids, quidToHeal!._id));
 	let profileToHeal = getMapData(quidToHeal.profiles, interaction.guildId);
 
 	if (!item) {
@@ -565,7 +578,7 @@ export async function getHealResponse(
 export function getStatsPoints(
 	item: CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | 'water',
 	profileToHeal: Profile,
-): { health: number, energy: number, hunger: number, thirst: number } {
+): { health: number, energy: number, hunger: number, thirst: number; } {
 
 	const thirst = item === 'water' ? getSmallerNumber(getRandomNumber(10, 6), profileToHeal.maxThirst - profileToHeal.thirst) : 0;
 	const health = item === 'water' ? 0 : getSmallerNumber(getRandomNumber(10, 6), profileToHeal.maxHealth - profileToHeal.health);

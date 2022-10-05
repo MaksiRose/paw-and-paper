@@ -3,11 +3,12 @@ import { getStatsPoints, isUnlucky, quidNeedsHealing } from '../commands/gamepla
 import userModel from '../models/userModel';
 import { CommonPlantNames, commonPlantsInfo, Inventory, PlantEdibilityType, PlantInfo, Quid, RankType, RarePlantNames, rarePlantsInfo, ServerSchema, SpecialPlantNames, specialPlantsInfo, SpeciesDietType, speciesInfo, SpeciesNames, UncommonPlantNames, uncommonPlantsInfo, UserSchema } from '../typedef';
 import { changeCondition } from './changeCondition';
-import { deepCopyObject, getArrayElement, getMapData } from './helperFunctions';
+import { deepCopyObject, getArrayElement, getMapData, getSmallerNumber, keyInObject, unsafeKeys, widenValues } from './helperFunctions';
 import { getRandomNumber, pullFromWeightedTable } from './randomizers';
 import { wearDownAmount } from './wearDownDen';
 
 type InventoryEntry = [keyof Inventory, Inventory[keyof Inventory]]
+type InventoryFilter = (value: InventoryEntry, index: number, array: InventoryEntry[]) => boolean
 /**
  * It takes an inventory object and returns the amount of items in the inventory
  * @param {Inventory} inventory - This is the inventory object.
@@ -16,7 +17,7 @@ type InventoryEntry = [keyof Inventory, Inventory[keyof Inventory]]
  */
 export function calculateInventorySize(
 	inventory: Inventory,
-	filter?: (value: InventoryEntry, index: number, array: InventoryEntry[]) => boolean,
+	filter?: InventoryFilter,
 ): number {
 
 	/** This is an array of all the inventory objects. */
@@ -99,67 +100,68 @@ export function pickMeat(
 ): SpeciesNames {
 
 	// First, get how many times each of these meat types exist in the inventory. these are the denominators. We add 1 to each to avoid having null as a possible value, which would break the code
-	let object = options.reduce((prev, cur, index) => ({ ...prev, [index]: inventory.meat[cur] + 1 }), {} as Record<number, number>);
-	const numerator = Math.min(...Object.values(object));
-	const smallestCommon = smallestCommons(Object.values(object));
-
-	// We make a new array, from the values of the object, where each item is the common denominotor divided by the property of the object multiplied by the numerator.
-	const sumArr = Object.values(object).reduce((prev, cur) => [...prev, (smallestCommon / cur) * numerator], [] as number[]);
-	const sum = sumArr.reduce((a, b) => a + b);
-	const x = 100 * (smallestCommon / sum);
-
-	// For the old object, we do Math.round(x * (numerator / property))
-	object = Object.values(object).reduce((prev, cur, index) => ({ ...prev, [index]: Math.round(x * (numerator / cur)) }), {} as Record<number, number>);
-	const random = pullFromWeightedTable(object);
-	const result = options[random];
-	if (result === undefined) { throw new TypeError('result is undefined'); }
-	return result;
+	const object = options.reduce((prev, cur, index) => ({ ...prev, [index]: inventory.meat[cur] + 1 }), {} as Record<number, number>);
+	return pickItem(object, options);
 }
 
 
-/**
- * It simulates the use of plants in the medicine den, and returns the difference between the amount of plants that are available and the amount of plants that are needed
- * @param {ServerSchema} serverData - The serverData object
- * @param {boolean} activeUsersOnly - boolean - If true, only quids that have been active in the past week will be included in the simulation.
- * @returns The difference between the amount of plants in the inventory and the amount of plants needed.
- */
-export async function simulatePlantUse(
-	serverData: ServerSchema,
-	activeUsersOnly: boolean,
+function getNeededHungerItems(
+	quids: (Quid<true> & {user_id: string;})[],
+	serverData_: ServerSchema,
+): number {
+
+	let neededItems = 0;
+	for (const quid of quids.filter(q => speciesInfo[q.species].diet !== SpeciesDietType.Carnivore)) {
+
+		const profile = getMapData(quid.profiles, serverData_.serverId);
+		while (profile.hunger < profile.maxHunger) {
+
+			neededItems += 1;
+			profile.hunger += addCorrectDietHungerPoints() - removeHungerPoints(serverData_);
+
+			const denStatkind = (['structure', 'bedding', 'thickness', 'evenness'] as const)[getRandomNumber(4)];
+			if (denStatkind === undefined) { throw new TypeError('denStatkind is undefined'); }
+			serverData_.dens.medicineDen[denStatkind] -= wearDownAmount(serverData_.dens.medicineDen[denStatkind]);
+		}
+	}
+	return neededItems;
+}
+
+async function getNeededMedicineItems(
+	quids: (Quid<true> & { user_id: string; })[],
+	serverData_: ServerSchema,
+	checkOnlyFor?: 'energy' | 'hunger' | 'wounds' | 'infections' | 'cold' | 'sprains' | 'poison',
 ): Promise<number> {
 
-	const quids = await getUsersInServer(serverData.serverId, activeUsersOnly);
-	const serverData_ = deepCopyObject(serverData);
 	let neededItems = 0;
-
 	/* For each quid, we are getting a random quid that is able to heal, preferably not the current quid unless that is the only available one, and preferably one that doesn't need healing unless that is not possible. Healing takes hunger away, which is why this is done before the other loop and separately from it. */
-	for (const quid of quids.filter(q => quidNeedsHealing(q, serverData.serverId))) {
+	for (const quid of quids.filter(q => quidNeedsHealing(q, serverData_.serverId, checkOnlyFor))) {
 
 		let healerArray1 = quids.filter(q => {
-			const p = q.profiles[serverData.serverId];
+			const p = q.profiles[serverData_.serverId];
 			return p && p.rank !== RankType.Youngling && p.health > 0 && p.energy > 0 && p.hunger > 0 && p.thirst > 0;
 		});
 		if (healerArray1.length > 1) { healerArray1 = healerArray1.filter(q => q._id !== quid._id); }
-		const healerArray2 = healerArray1.filter(q => !quidNeedsHealing(q, serverData.serverId));
+		const healerArray2 = healerArray1.filter(q => !quidNeedsHealing(q, serverData_.serverId));
 		const healer = healerArray2.length > 0 ? getArrayElement(healerArray2, getRandomNumber(healerArray2.length)) : healerArray1.length > 0 ? getArrayElement(healerArray1, getRandomNumber(healerArray1.length)) : undefined;
 		if (healer === undefined) { break; }
 
-		let profile = getMapData(quid.profiles, serverData.serverId);
-		while (quidNeedsHealing(quid, serverData.serverId)) {
+		let profile = getMapData(quid.profiles, serverData_.serverId);
+		while (quidNeedsHealing(quid, serverData_.serverId, checkOnlyFor)) {
 
 			// First, get the quid with the highest rank. Based on that, define itemInfo with or without uncommonPlants and/or rarePlants
-			const highestRank = quids.some(q => q.profiles[serverData.serverId]?.rank === RankType.Elderly) ? 2 : quids.some(q => q.profiles[serverData.serverId]?.rank === RankType.Hunter || q.profiles[serverData.serverId]?.rank === RankType.Healer) ? 1 : 0;
+			const highestRank = quids.some(q => q.profiles[serverData_.serverId]?.rank === RankType.Elderly) ? 2 : quids.some(q => q.profiles[serverData_.serverId]?.rank === RankType.Hunter || q.profiles[serverData_.serverId]?.rank === RankType.Healer) ? 1 : 0;
 			const itemInfo = { ...specialPlantsInfo, ...commonPlantsInfo, ...highestRank > 0 ? uncommonPlantsInfo : {}, ...highestRank > 1 ? rarePlantsInfo : {} };
 
 			// Based on the quids condition, choose item to pick. 0 thirst: water, 0 energy: itemInfo.filter(givesEnergy), 0 hunger: itemInfo.filter(edibility === PlantEdibilityType.Edible), wound: itemInfo.filter(healsWounds), infection: itemInfo.filter(healsInfection), cold: itemInfo.filter(healsColds), sprains: itemInfo.filter(healsSprains), poison: itemInfo.filter(healsPoison). If this returns undefined (which it can, ie when theres nothing that can heal poison), break the while loop.
-			const specifcItems = (Object.entries(itemInfo) as [CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames, PlantInfo][]).filter(([, info]) => profile.energy <= 0 ? info.givesEnergy : profile.hunger <= 0 ? info.edibility === PlantEdibilityType.Edible : profile.injuries.wounds > 0 ? info.healsWounds : profile.injuries.infections > 0 ? info.healsInfections : profile.injuries.cold ? info.healsColds : profile.injuries.sprains > 0 ? info.healsSprains : info.healsPoison);
-			const item = profile.thirst <= 0 ? 'water' : specifcItems[getRandomNumber(specifcItems.length)]?.[0];
+			const specificItems = (Object.entries(itemInfo) as [CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames, PlantInfo][]).filter(([, info]) => profile.energy <= 0 ? info.givesEnergy : profile.hunger <= 0 ? info.edibility === PlantEdibilityType.Edible : profile.injuries.wounds > 0 ? info.healsWounds : profile.injuries.infections > 0 ? info.healsInfections : profile.injuries.cold ? info.healsColds : profile.injuries.sprains > 0 ? info.healsSprains : info.healsPoison);
+			const item = profile.thirst <= 0 ? 'water' : specificItems[getRandomNumber(specificItems.length)]?.[0];
 			if (item === undefined) { break; }
 			if (item !== 'water') { neededItems += 1; }
 
 			// Copy the isSuccessful checks that have a chance that isSucessful goes from true to false. A function needs to be created in the heal file
 			// If it's successful, make the problems go away that this specific item can make go away, using getStatsPoints and the individual things for the injuries.
-			if (!isUnlucky(quid.user_id, healer.user_id, profile, serverData)) {
+			if (!isUnlucky(quid.user_id, healer.user_id, profile, serverData_)) {
 
 				const stats = getStatsPoints(item, profile);
 				profile.health += stats.health;
@@ -181,20 +183,23 @@ export async function simulatePlantUse(
 			serverData_.dens.medicineDen[denStatkind] -= wearDownAmount(serverData_.dens.medicineDen[denStatkind]);
 		}
 	}
+	return neededItems;
+}
 
-	for (const quid of quids.filter(q => speciesInfo[q.species].diet !== SpeciesDietType.Carnivore)) {
+/**
+ * It simulates the use of plants in the medicine den, and returns the difference between the amount of plants that are available and the amount of plants that are needed
+ * @param {ServerSchema} serverData - The serverData object
+ * @param {boolean} activeUsersOnly - boolean - If true, only quids that have been active in the past week will be included in the simulation.
+ * @returns The difference between the amount of plants in the inventory and the amount of plants needed.
+ */
+export async function simulatePlantUse(
+	serverData: ServerSchema,
+	activeUsersOnly: boolean,
+): Promise<number> {
 
-		const profile = getMapData(quid.profiles, serverData.serverId);
-		while (profile.hunger < profile.maxHunger) {
-
-			neededItems += 1;
-			profile.hunger += addCorrectDietHungerPoints() - removeHungerPoints(serverData_);
-
-			const denStatkind = (['structure', 'bedding', 'thickness', 'evenness'] as const)[getRandomNumber(4)];
-			if (denStatkind === undefined) { throw new TypeError('denStatkind is undefined'); }
-			serverData_.dens.medicineDen[denStatkind] -= wearDownAmount(serverData_.dens.medicineDen[denStatkind]);
-		}
-	}
+	const quids = await getUsersInServer(serverData.serverId, activeUsersOnly);
+	const serverData_ = deepCopyObject(serverData);
+	const neededItems = getNeededHungerItems(quids, serverData_) + await getNeededMedicineItems(quids, serverData_);
 
 	const existingItems = calculateInventorySize(serverData_.inventory, ([key]) => key === 'commonPlants' || key === 'uncommonPlants' || key === 'rarePlants' || key === 'specialPlants');
 	const itemDifference = existingItems - neededItems;
@@ -202,6 +207,114 @@ export async function simulatePlantUse(
 	return itemDifference;
 }
 
+/**
+ * It picks out a random plant randomly but weighted based on what purpose the plant has and which purposes are needed the most, and which plant with that purpose the server has least of
+ * @param {0 | 1 | 2} include - 0 = only common, 1 = common and uncommon, 2 = common, uncommon and rare
+ * @param {ServerSchema} serverData - The server data.
+ * @returns A plant name.
+ */
+export async function pickPlant(
+	include: 0 | 1 | 2,
+	serverData: ServerSchema,
+): Promise<CommonPlantNames | UncommonPlantNames | RarePlantNames> {
+
+	function changeInventory(
+		inventory: Inventory,
+		checkOnlyFor: 'energy' | 'hunger' | 'wounds' | 'infections' | 'cold' | 'sprains' | 'poison',
+	): Inventory {
+
+		inventory = deepCopyObject(inventory);
+		const inventory_ = widenValues(inventory);
+		for (const itemType of unsafeKeys(inventory_)) {
+
+			for (const item of unsafeKeys(inventory_[itemType])) {
+
+				if (!keyInObject(itemInfo, item) || (
+					(checkOnlyFor === 'hunger' && itemInfo[item].edibility !== PlantEdibilityType.Edible)
+				|| (checkOnlyFor === 'energy' && !itemInfo[item].givesEnergy)
+				|| (checkOnlyFor === 'wounds' && !itemInfo[item].healsWounds)
+				|| (checkOnlyFor === 'infections' && !itemInfo[item].healsInfections)
+				|| (checkOnlyFor === 'cold' && !itemInfo[item].healsColds)
+				|| (checkOnlyFor === 'sprains' && !itemInfo[item].healsSprains)
+				|| (checkOnlyFor === 'poison' && !itemInfo[item].healsPoison)
+				)) { inventory_[itemType][item] = 0; }
+			}
+		}
+		return inventory_;
+	}
+
+	const itemInfo = { ...commonPlantsInfo, ...uncommonPlantsInfo, ...rarePlantsInfo, ...specialPlantsInfo };
+	const quids = await getUsersInServer(serverData.serverId, false);
+	const serverData_ = deepCopyObject(serverData);
+
+	let diffEating = getNeededHungerItems(quids, serverData_) - calculateInventorySize(changeInventory(serverData.inventory, 'hunger'));
+	let diffEnergy = await getNeededMedicineItems(quids, serverData_, 'energy') - calculateInventorySize(changeInventory(serverData.inventory, 'energy'));
+	let diffHunger = await getNeededMedicineItems(quids, serverData_, 'hunger') - calculateInventorySize(changeInventory(serverData.inventory, 'hunger'));
+	let diffWounds = await getNeededMedicineItems(quids, serverData_, 'wounds') - calculateInventorySize(changeInventory(serverData.inventory, 'wounds'));
+	let diffInfections = await getNeededMedicineItems(quids, serverData_, 'infections') - calculateInventorySize(changeInventory(serverData.inventory, 'infections'));
+	let diffCold = await getNeededMedicineItems(quids, serverData_, 'cold') - calculateInventorySize(changeInventory(serverData.inventory, 'cold'));
+	let diffSprains = await getNeededMedicineItems(quids, serverData_, 'sprains') - calculateInventorySize(changeInventory(serverData.inventory, 'sprains'));
+	let diffPoison = await getNeededMedicineItems(quids, serverData_, 'poison') - calculateInventorySize(changeInventory(serverData.inventory, 'poison'));
+
+	const smallest = getSmallerNumber(getSmallerNumber(getSmallerNumber(getSmallerNumber(getSmallerNumber(getSmallerNumber(getSmallerNumber(diffEating, diffEnergy), diffHunger), diffWounds), diffInfections), diffCold), diffSprains), diffPoison);
+
+	diffEating = diffEating - smallest + 1;
+	diffEnergy = diffEnergy - smallest + 1;
+	diffHunger = diffHunger - smallest + 1;
+	diffWounds = diffWounds - smallest + 1;
+	diffInfections = diffInfections - smallest + 1;
+	diffCold = diffCold - smallest + 1;
+	diffSprains = diffSprains - smallest + 1;
+	diffPoison = diffPoison - smallest + 1;
+
+	const pick = pullFromWeightedTable({ 0: diffEating + diffHunger, 1: diffEnergy, 2: diffWounds, 3: diffInfections, 4: diffCold, 5: diffSprains, 6: diffPoison });
+	const options: Array<['commonPlants' | 'uncommonPlants' | 'rarePlants', CommonPlantNames | UncommonPlantNames | RarePlantNames]> = [];
+
+	const inventory_ = widenValues({ commonPlants: serverData.inventory.commonPlants, uncommonPlants: serverData.inventory.uncommonPlants, rarePlants: serverData.inventory.rarePlants });
+	for (const itemType of unsafeKeys(inventory_)) {
+
+		if (itemType !== 'commonPlants' && (include === 0 || itemType !== 'uncommonPlants') && (include < 2 || itemType !== 'rarePlants')) { continue; }
+		for (const item of unsafeKeys(inventory_[itemType])) {
+
+			if (
+				(pick === 0 && itemInfo[item].edibility === PlantEdibilityType.Edible)
+				|| (pick === 1 && itemInfo[item].givesEnergy)
+				|| (pick === 2 && itemInfo[item].healsWounds)
+				|| (pick === 3 && itemInfo[item].healsInfections)
+				|| (pick === 4 && itemInfo[item].healsColds)
+				|| (pick === 5 && itemInfo[item].healsSprains)
+				|| (pick === 6 && itemInfo[item].healsPoison)
+			) {
+
+				options.push([itemType, item]);
+				if (itemType === 'commonPlants' && include === 1) { options.push([itemType, item]); }
+				if (itemType === 'commonPlants' && include === 2) { options.push([itemType, item]); }
+				if (itemType === 'uncommonPlants' && include === 2) { options.push([itemType, item]); }
+			}
+		}
+	}
+	const object = options.reduce((prev, [curItemType, curItem], index) => ({ ...prev, [index]: inventory_[curItemType][curItem] + 1 }), {} as Record<number, number>);
+	return pickItem(object, options.map(([, item]) => item));
+}
+
+
+function pickItem<T extends string>(object: Record<number, number>, options: T[]): T {
+
+	const numerator = Math.min(...Object.values(object));
+	const smallestCommon = smallestCommons(Object.values(object));
+
+	// We make a new array, from the values of the object, where each item is the common denominotor divided by the property of the object multiplied by the numerator.
+	const sumArr = Object.values(object).reduce((prev, cur) => [...prev, (smallestCommon / cur) * numerator], [] as number[]);
+	const sum = sumArr.reduce((a, b) => a + b);
+	const x = 100 * (smallestCommon / sum);
+
+	// For the old object, we do Math.round(x * (numerator / property))
+	object = Object.values(object).reduce((prev, cur, index) => ({ ...prev, [index]: Math.round(x * (numerator / cur)) }), {} as Record<number, number>);
+	const random = pullFromWeightedTable(object);
+	const result = options[random];
+	if (result === undefined) { throw new TypeError('result is undefined'); }
+	return result;
+}
 
 function smallestCommons(
 	array: number[],

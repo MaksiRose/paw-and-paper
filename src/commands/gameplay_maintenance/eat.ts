@@ -2,12 +2,12 @@ import { ChatInputCommandInteraction, EmbedBuilder, FormattingPatterns, SelectMe
 import Fuse from 'fuse.js';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
-import { CommonPlantNames, commonPlantsInfo, CurrentRegionType, PlantEdibilityType, Profile, Quid, RarePlantNames, rarePlantsInfo, ServerSchema, SlashCommand, SpecialPlantNames, specialPlantsInfo, SpeciesDietType, speciesInfo, SpeciesNames, StatIncreaseType, UncommonPlantNames, uncommonPlantsInfo, UserSchema } from '../../typedef';
+import { commonPlantsInfo, CurrentRegionType, PlantEdibilityType, Profile, Quid, rarePlantsInfo, ServerSchema, SlashCommand, specialPlantsInfo, SpeciesDietType, speciesInfo, StatIncreaseType, uncommonPlantsInfo, UserSchema } from '../../typedef';
 import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getBiggerNumber, getMapData, getQuidDisplayname, getSmallerNumber, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
+import { getBiggerNumber, getMapData, getQuidDisplayname, getSmallerNumber, keyInObject, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
 import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -133,23 +133,23 @@ export async function sendEatMessage(
 	let footerText = '';
 	const inventory_ = widenValues(serverData.inventory);
 
-	if (chosenFoodIsPlant(chosenFood)) {
+	if (keyInObject(allPlantsInfo, chosenFood)) {
 
 		let plantType: 'commonPlants' | 'uncommonPlants' | 'rarePlants' | 'specialPlants';
 
-		if (Object.hasOwn(commonPlantsInfo, chosenFood)) {
+		if (keyInObject(commonPlantsInfo, chosenFood)) {
 
 			plantType = 'commonPlants';
 		}
-		else if (Object.hasOwn(uncommonPlantsInfo, chosenFood)) {
+		else if (keyInObject(uncommonPlantsInfo, chosenFood)) {
 
 			plantType = 'uncommonPlants';
 		}
-		else if (Object.hasOwn(rarePlantsInfo, chosenFood)) {
+		else if (keyInObject(rarePlantsInfo, chosenFood)) {
 
 			plantType = 'rarePlants';
 		}
-		else if (Object.hasOwn(specialPlantsInfo, chosenFood)) {
+		else if (keyInObject(specialPlantsInfo, chosenFood)) {
 
 			plantType = 'specialPlants';
 
@@ -221,7 +221,7 @@ export async function sendEatMessage(
 			embed.setDescription(`*${quidData.name} decides to have a special treat today. Slowly, ${pronounAndPlural(quidData, 0, 'chew')} on the ${chosenFood}, enjoying the fresh taste. It doesn't take long for the ${quidData.displayedSpecies || quidData.species} to feel a special effect kick in: It's as if ${pronoun(quidData, 0)} can have much more ${increasedStatType} than before. What an enchanting sensation!*`);
 		}
 	}
-	else if (chosenFoodIsMeat(chosenFood)) {
+	else if (keyInObject(speciesInfo, chosenFood)) {
 
 		if (inventory_.meat[chosenFood] <= 0) {
 
@@ -286,20 +286,6 @@ export async function sendEatMessage(
 		components: interaction.isSelectMenu() ? disableAllComponents(interaction.message.components) : [],
 	});
 	return;
-}
-
-function chosenFoodIsPlant(
-	chosenFood: string,
-): chosenFood is CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames {
-
-	return Object.hasOwn(allPlantsInfo, chosenFood);
-}
-
-function chosenFoodIsMeat(
-	chosenFood: string,
-): chosenFood is SpeciesNames {
-
-	return Object.hasOwn(speciesInfo, chosenFood);
 }
 
 async function sendNoItemMessage(

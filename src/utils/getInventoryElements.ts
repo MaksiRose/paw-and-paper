@@ -1,6 +1,6 @@
 import { RestOrArray, SelectMenuComponentOptionData } from 'discord.js';
-import { CommonPlantNames, commonPlantsInfo, Inventory, MaterialNames, materialsInfo, RarePlantNames, rarePlantsInfo, SpecialPlantNames, specialPlantsInfo, SpeciesNames, UncommonPlantNames, uncommonPlantsInfo } from '../typedef';
-import { unsafeKeys, widenValues } from './helperFunctions';
+import { commonPlantsInfo, Inventory, materialsInfo, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo } from '../typedef';
+import { keyInObject, unsafeKeys, widenValues } from './helperFunctions';
 
 export default function getInventoryElements(
 	inventory: Inventory,
@@ -23,7 +23,7 @@ export default function getInventoryElements(
 
 			if (inventory_[itemType][item] > 0) {
 
-				const itemDescription = itemHasDescription(itemInfo, item) ? ` - ${itemInfo[item].description}` : '';
+				const itemDescription = keyInObject(itemInfo, item) ? ` - ${itemInfo[item].description}` : '';
 				embedDescription += `**${item}: ${inventory_[itemType][item]}**${itemDescription}\n`;
 
 				selectMenuOptions.push({ label: item, value: item, description: `${inventory_[itemType][item]}` });
@@ -32,12 +32,4 @@ export default function getInventoryElements(
 	}
 
 	return { embedDescription, selectMenuOptions };
-}
-
-function itemHasDescription(
-	itemInfo: typeof commonPlantsInfo & typeof uncommonPlantsInfo & typeof rarePlantsInfo & typeof specialPlantsInfo & typeof materialsInfo,
-	item: CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | MaterialNames | SpeciesNames,
-): item is CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | MaterialNames {
-
-	return Object.hasOwn(itemInfo, item);
 }
