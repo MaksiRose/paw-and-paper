@@ -386,9 +386,9 @@ export async function executeExploring(
 	// If the user gets the right chance, find a plant
 	else if (pullFromWeightedTable({ 0: profileData.rank === RankType.Healer ? 2 : 1, 1: profileData.rank === RankType.Hunter ? 2 : 1 }) === 0) {
 
-		/* First we are calculating needed meat - existing meat through simulatePlantUse three times, of which two it is calculated for active users only. The results of these are added together and divided by 3 to get their average. This is then used to get a random number that can be between 1 higher and 1 lower than that. This is then limited to be between -12 and 12. the user's level is added with this, and it is limited to not be below 1. */
+		/* First we are calculating needed meat - existing meat through simulatePlantUse three times, of which two it is calculated for active users only. The results of these are added together and divided by 3 to get their average. This is then used to get a random number that can be between 1 higher and 1 lower than that. The user's level is added with this, and it is limited to not be below 1. */
 		const simAverage = Math.round((await simulatePlantUse(serverData, true) + await simulatePlantUse(serverData, true) + await simulatePlantUse(serverData, false)) / 3);
-		const environmentLevel = getBiggerNumber(1, profileData.levels + getBiggerNumber(-12, getSmallerNumber(12, getRandomNumber(3, simAverage - 1))));
+		const environmentLevel = getBiggerNumber(1, profileData.levels + getRandomNumber(3, simAverage - 1));
 
 		const foundItem = (pullFromWeightedTable({ 0: 70, 1: 30 + profileData.sapling.waterCycles }) == 1 && chosenBiomeNumber > 0) ? (pullFromWeightedTable({ 0: 70, 1: 30 + profileData.sapling.waterCycles }) == 1 && chosenBiomeNumber === 2) ? pickRandomRarePlant() : pickRandomUncommonPlant() : pickRandomCommonPlant();
 
@@ -487,16 +487,16 @@ export async function executeExploring(
 								/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
 								exploreComponent = plantGame.chosenRightButtonOverwrite(i.customId);
 
-								points += 4;
+								points += 2;
 							}
-							else { points -= 4; }
+							else { points -= 2; }
 						}
 
 						return i;
 					})
 					.catch(() => {
 
-						points -= 4;
+						points -= 2;
 						return newInteraction;
 					});
 
@@ -512,8 +512,8 @@ export async function executeExploring(
 				buttonInteraction = newInteraction;
 
 				const levelDifference = profileData.levels - environmentLevel;
-				points += levelDifference; // It doesn't matter if this is higher than 12 or lower than -12, it will not affect the weighted table
-				const outcome = pullFromWeightedTable({ 0: -1 * points, 1: 12 - Math.abs(points), 2: points });
+				points += levelDifference; // It doesn't matter if this is higher than 6 or lower than -6, it will not affect the weighted table
+				const outcome = pullFromWeightedTable({ 0: -1 * points, 1: 6 - Math.abs(points), 2: points });
 
 				if (outcome === 2) {
 
@@ -634,9 +634,9 @@ export async function executeExploring(
 	// Find an enemy
 	else {
 
-		/* First we are calculating needed meat - existing meat through simulateMeatUse three times, of which two it is calculated for active users only. The results of these are added together and divided by 3 to get their average. This is then used to get a random number that can be between 1 higher and 1 lower than that. This is then limited to be between -12 and 12. the user's level is added with this, and it is limited to not be below 1. */
+		/* First we are calculating needed meat - existing meat through simulateMeatUse three times, of which two it is calculated for active users only. The results of these are added together and divided by 3 to get their average. This is then used to get a random number that can be between 1 higher and 1 lower than that. The user's level is added with this, and it is limited to not be below 1. */
 		const simAverage = Math.round((await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, false)) / 3);
-		const opponentLevel = getBiggerNumber(1, profileData.levels + getBiggerNumber(-12, getSmallerNumber(12, getRandomNumber(3, simAverage - 1))));
+		const opponentLevel = getBiggerNumber(1, profileData.levels + getRandomNumber(3, simAverage - 1));
 
 		const opponentsArray = speciesInfo[quidData.species].biome1OpponentArray.concat([
 			...(chosenBiomeNumber > 0 ? speciesInfo[quidData.species].biome2OpponentArray : []),
@@ -765,7 +765,7 @@ export async function executeExploring(
 							|| (i.customId.includes('defend') && fightGame.cycleKind === 'attack')
 							|| (i.customId.includes('dodge') && fightGame.cycleKind === 'defend')) {
 
-							points -= 4;
+							points -= 2;
 						}
 						else if ((i.customId.includes('attack') && fightGame.cycleKind === 'defend')
 							|| (i.customId.includes('defend') && fightGame.cycleKind === 'dodge')
@@ -774,14 +774,14 @@ export async function executeExploring(
 							/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
 							exploreComponent = fightGame.chosenRightButtonOverwrite(i.customId);
 
-							points += 4;
+							points += 2;
 						}
 
 						return i;
 					})
 					.catch(() => {
 
-						points -= 4;
+						points -= 2;
 						return newInteraction;
 					});
 
@@ -797,8 +797,8 @@ export async function executeExploring(
 				buttonInteraction = newInteraction;
 
 				const levelDifference = profileData.levels - opponentLevel;
-				points += levelDifference; // It doesn't matter if this is higher than 12 or lower than -12, it will not affect the weighted table
-				const outcome = pullFromWeightedTable({ 0: -1 * points, 1: 12 - Math.abs(points), 2: points });
+				points += levelDifference; // It doesn't matter if this is higher than 6 or lower than -6, it will not affect the weighted table
+				const outcome = pullFromWeightedTable({ 0: -1 * points, 1: 6 - Math.abs(points), 2: points });
 
 				if (outcome === 2) {
 
