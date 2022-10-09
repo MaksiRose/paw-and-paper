@@ -265,7 +265,7 @@ export async function pickPlant(
 	diffInfections = diffInfections - smallest + 1;
 	diffCold = diffCold - smallest + 1;
 	diffSprains = diffSprains - smallest + 1;
-	diffPoison = diffPoison - smallest + 1;
+	diffPoison = include === 0 ? 0 : diffPoison - smallest + 1; // Because there is no common plant against poison, if only common plants are included, the chance that poison is picked must be null
 
 	const pick = pullFromWeightedTable({ 0: diffEating + diffHunger, 1: diffEnergy, 2: diffWounds, 3: diffInfections, 4: diffCold, 5: diffSprains, 6: diffPoison });
 	const options: Array<['commonPlants' | 'uncommonPlants' | 'rarePlants', CommonPlantNames | UncommonPlantNames | RarePlantNames]> = [];
