@@ -190,7 +190,7 @@ function decreaseHealth(
 	if (description.length > 0) { embed.setDescription(description); }
 
 	/* Add a footer to the embed if the total health decrease is more than 0, and return */
-	if (totalHealthDecrease > 0) { embed.setFooter({ text: `-${totalHealthDecrease} HP (${profileData.health}/${profileData.maxHealth})` }); }
+	if (totalHealthDecrease > 0) { embed.setFooter({ text: `-${totalHealthDecrease} HP (${profileData.health - totalHealthDecrease}/${profileData.maxHealth})` }); }
 	return { injuryUpdateEmbed: embed, totalHealthDecrease, modifiedInjuryObject };
 }
 
