@@ -220,7 +220,7 @@ export async function changeCondition(
 ): Promise<DecreasedStatsData> {
 
 	const { injuryUpdateEmbed, totalHealthDecrease, modifiedInjuryObject } = decreaseHealth(quidData, profileData);
-	const energyDecrease = getSmallerNumber(calculateEnergyDecrease(profileData) + getRandomNumber(5, 1), profileData.energy);
+	const energyDecrease = getSmallerNumber(calculateEnergyDecrease(profileData) + getRandomNumber(3, 1), profileData.energy);
 	const hungerDecrease = calculateHungerDecrease(profileData);
 	const thirstDecrease = calculateThirstDecrease(profileData);
 	const previousRegion = profileData.currentRegion;
