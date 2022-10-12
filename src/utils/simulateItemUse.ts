@@ -63,13 +63,13 @@ export async function simulateMeatUse(
 	activeUsersOnly: boolean,
 ): Promise<number> {
 
-	const quids = await getUsersInServer(serverData.serverId, activeUsersOnly);
 	const serverData_ = deepCopyObject(serverData);
+	const quids = await getUsersInServer(serverData_.serverId, activeUsersOnly);
 	let neededItems = 0;
 
 	for (const quid of quids.filter(q => speciesInfo[q.species].diet !== SpeciesDietType.Herbivore)) {
 
-		const profile = getMapData(quid.profiles, serverData.serverId);
+		const profile = getMapData(quid.profiles, serverData_.serverId);
 		while (profile.hunger < profile.maxHunger) {
 
 			neededItems += 1;
@@ -81,7 +81,7 @@ export async function simulateMeatUse(
 		}
 	}
 
-	const existingItems = calculateInventorySize(serverData_.inventory, ([key]) => key === 'meat');
+	const existingItems = calculateInventorySize(serverData.inventory, ([key]) => key === 'meat');
 	const itemDifference = existingItems - neededItems;
 
 	return itemDifference;
@@ -107,9 +107,10 @@ export function pickMeat(
 
 function getNeededHungerItems(
 	quids: (Quid<true> & {user_id: string;})[],
-	serverData_: ServerSchema,
+	serverData: ServerSchema,
 ): number {
 
+	const serverData_ = deepCopyObject(serverData);
 	let neededItems = 0;
 	for (const quid of quids.filter(q => speciesInfo[q.species].diet !== SpeciesDietType.Carnivore)) {
 
@@ -129,10 +130,11 @@ function getNeededHungerItems(
 
 async function getNeededMedicineItems(
 	quids: (Quid<true> & { user_id: string; })[],
-	serverData_: ServerSchema,
+	serverData: ServerSchema,
 	checkOnlyFor?: 'energy' | 'hunger' | 'wounds' | 'infections' | 'cold' | 'sprains' | 'poison',
 ): Promise<number> {
 
+	const serverData_ = deepCopyObject(serverData);
 	let neededItems = 0;
 	/* For each quid, we are getting a random quid that is able to heal, preferably not the current quid unless that is the only available one, and preferably one that doesn't need healing unless that is not possible. Healing takes hunger away, which is why this is done before the other loop and separately from it. */
 	for (const quid of quids.filter(q => quidNeedsHealing(q, serverData_.serverId, checkOnlyFor))) {
@@ -199,10 +201,9 @@ export async function simulatePlantUse(
 ): Promise<number> {
 
 	const quids = await getUsersInServer(serverData.serverId, activeUsersOnly);
-	const serverData_ = deepCopyObject(serverData);
-	const neededItems = getNeededHungerItems(quids, serverData_) + await getNeededMedicineItems(quids, serverData_);
+	const neededItems = getNeededHungerItems(quids, serverData) + await getNeededMedicineItems(quids, serverData);
 
-	const existingItems = calculateInventorySize(serverData_.inventory, ([key]) => key === 'commonPlants' || key === 'uncommonPlants' || key === 'rarePlants' || key === 'specialPlants');
+	const existingItems = calculateInventorySize(serverData.inventory, ([key]) => key === 'commonPlants' || key === 'uncommonPlants' || key === 'rarePlants' || key === 'specialPlants');
 	const itemDifference = existingItems - neededItems;
 
 	return itemDifference;
@@ -245,8 +246,8 @@ export async function pickPlant(
 	}
 
 	const itemInfo = { ...commonPlantsInfo, ...uncommonPlantsInfo, ...rarePlantsInfo, ...specialPlantsInfo };
-	const quids = await getUsersInServer(serverData.serverId, false);
 	const serverData_ = deepCopyObject(serverData);
+	const quids = await getUsersInServer(serverData_.serverId, false);
 
 	let diffEating = getNeededHungerItems(quids, serverData_) - calculateInventorySize(changeInventory(serverData.inventory, 'hunger'));
 	let diffEnergy = await getNeededMedicineItems(quids, serverData_, 'energy') - calculateInventorySize(changeInventory(serverData.inventory, 'energy'));
@@ -313,24 +314,26 @@ export async function simulateMaterialUse(
 	activeUsersOnly: boolean,
 ): Promise<number> {
 
-	const quids = await getUsersInServer(serverData.serverId, activeUsersOnly);
+	const serverData_ = deepCopyObject(serverData);
+	const quids = await getUsersInServer(serverData_.serverId, activeUsersOnly);
 	let neededItems = 0;
 
-	for (const den of Object.values(serverData.dens) as DenSchema[]) {
+	for (const den of Object.values(serverData_.dens) as DenSchema[]) {
 
-		while (den.bedding < 100 && den.evenness < 100 && den.structure < 100 && den.thickness < 100) {
+		while ((Object.values(den) as number[]).every(stat => stat >= 100) === false) {
 
 			const repairerArray1 = quids.filter(q => {
-				const p = q.profiles[serverData.serverId];
+				const p = q.profiles[serverData_.serverId];
 				return p && p.rank !== RankType.Youngling && p.health > 0 && p.energy > 0 && p.hunger > 0 && p.thirst > 0;
 			});
-			const repairerArray2 = repairerArray1.filter(q => !quidNeedsHealing(q, serverData.serverId));
+			const repairerArray2 = repairerArray1.filter(q => !quidNeedsHealing(q, serverData_.serverId));
 			const repairer = repairerArray2.length > 0 ? getArrayElement(repairerArray2, getRandomNumber(repairerArray2.length)) : repairerArray1.length > 0 ? getArrayElement(repairerArray1, getRandomNumber(repairerArray1.length)) : undefined;
 			if (repairer === undefined) { break; }
-			let repairerProfile = getMapData(repairer.profiles, serverData.serverId);
+			let repairerProfile = getMapData(repairer.profiles, serverData_.serverId);
 
 			neededItems += 1;
-			if (!repairingIsUnlucky(repairerProfile)) {
+			const isUnlucky = repairingIsUnlucky(repairerProfile);
+			if (!isUnlucky) {
 
 				const repairAmount = addMaterialPoints();
 				if (den.bedding < 100) { den.bedding += repairAmount; }
