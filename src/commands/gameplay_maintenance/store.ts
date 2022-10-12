@@ -1,22 +1,19 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, Embed, EmbedBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
-import { CommonPlantNames, Inventory, MaterialNames, Profile, Quid, RarePlantNames, ServerSchema, SlashCommand, SpecialPlantNames, SpeciesNames, UncommonPlantNames, UserSchema } from '../../typedef';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { CommonPlantNames, MaterialNames, Profile, Quid, RarePlantNames, ServerSchema, SlashCommand, SpecialPlantNames, SpeciesNames, UncommonPlantNames, UserSchema } from '../../typedef';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
 import { pronoun, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, widenValues, unsafeKeys, respond, update, getQuidDisplayname } from '../../utils/helperFunctions';
+import { getMapData, widenValues, unsafeKeys, respond, update, getQuidDisplayname, getArrayElement } from '../../utils/helperFunctions';
+import { calculateInventorySize } from '../../utils/simulateItemUse';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
-const name: SlashCommand['name'] = 'store';
-const description: SlashCommand['description'] = 'Take items you have gathered for your pack, and put them in the pack inventory.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('store')
+		.setDescription('Take items you have gathered for your pack, and put them in the pack inventory.')
 		.setDMPermission(false)
 		.addSubcommand(option =>
 			option.setName('all')
@@ -25,6 +22,8 @@ export const command: SlashCommand = {
 			option.setName('custom')
 				.setDescription('Select this if you want to individually store your items away.'))
 		.toJSON(),
+	category: 'page3',
+	position: 2,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
@@ -32,11 +31,12 @@ export const command: SlashCommand = {
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!hasCompletedAccount(interaction, userData)) { return; }
+		if (!hasName(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		const profileData = getMapData(quidData.profiles, interaction.guildId);
+		if (!hasSpecies(interaction, quidData)) { return; }
 
 		/* Checks if the profile is on a cooldown or passed out. */
 		if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
@@ -48,7 +48,7 @@ export const command: SlashCommand = {
 export async function sendStoreMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	userData: UserSchema,
-	quidData: Quid,
+	quidData: Quid<true>,
 	profileData: Profile,
 	serverData: ServerSchema,
 	embedArray: EmbedBuilder[],
@@ -56,11 +56,7 @@ export async function sendStoreMessage(
 
 	const messageContent = remindOfAttack(interaction.guildId);
 
-	/** This is an array of all the inventory objects. */
-	const inventoryObjectValues = Object.values(profileData.inventory) as Array<Inventory[keyof Inventory]>;
-	/** This is an array of numbers as the properties of the keys in the inventory objects, which are numbers representing the amount one has of the key which is an item type. */
-	const inventoryNumberValues = inventoryObjectValues.map(type => Object.values(type)).flat();
-	if (inventoryNumberValues.reduce((a, b) => a + b) === 0) {
+	if (calculateInventorySize(profileData.inventory) === 0) {
 
 		await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 			content: messageContent,
@@ -92,7 +88,7 @@ export async function sendStoreMessage(
 
 function getOriginalEmbed(
 	userData: UserSchema,
-	quidData: Quid,
+	quidData: Quid<true>,
 	serverId: string,
 ): EmbedBuilder {
 
@@ -150,8 +146,7 @@ export async function storeInteractionCollector(
 
 		if (interaction.customId === 'store_options') {
 
-			const chosenFood = interaction.values[0] as CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | SpeciesNames | MaterialNames | undefined;
-			if (chosenFood === undefined) { throw new TypeError('chosenFood is undefined'); }
+			const chosenFood = getArrayElement(interaction.values, 0) as CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | SpeciesNames | MaterialNames;
 			let maximumAmount = 0;
 
 			const inventory_ = widenValues(profileData.inventory);
@@ -186,9 +181,8 @@ export async function storeInteractionCollector(
 
 		if (interaction.customId === 'store_amount') {
 
-			const chosenFood = interaction.values[0]?.split('_')[0] as CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | SpeciesNames | MaterialNames | undefined;
-			if (chosenFood === undefined) { throw new TypeError('chosenFood is undefined'); }
-			const chosenAmount = Number(interaction.values[0]?.split('_')[1]);
+			const chosenFood = getArrayElement(getArrayElement(interaction.values, 0).split('_'), 0) as CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | SpeciesNames | MaterialNames;
+			const chosenAmount = Number(getArrayElement(getArrayElement(interaction.values, 0).split('_'), 1));
 			if (isNaN(chosenAmount)) { throw new TypeError('chosenAmount is NaN'); }
 
 			const userInventory = widenValues(profileData.inventory);
@@ -241,7 +235,7 @@ export async function storeInteractionCollector(
 async function storeAll(
 	interaction: ButtonInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
 	userData: UserSchema,
-	quidData: Quid,
+	quidData: Quid<true>,
 	profileData: Profile,
 	serverData: ServerSchema,
 	mainEmbed?: EmbedBuilder | Embed,

@@ -12,16 +12,14 @@ const guildCache: Map<string, Map<string, {
 }>> = new Map();
 const oneWeekInMs = 604_800_000;
 
-const name: SlashCommand['name'] = 'profilelist';
-const description: SlashCommand['description'] = 'View a list of all the profiles that exist on this server.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('profilelist')
+		.setDescription('View a list of all the profiles that exist on this server.')
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page4',
+	position: 5,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction) => {

@@ -7,19 +7,17 @@ import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { getRandomNumber } from '../../utils/randomizers';
 const { error_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'hug';
-const description: SlashCommand['description'] = 'Hug someone, if they consent.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('hug')
+		.setDescription('Hug someone, if they consent.')
 		.addUserOption(option =>
 			option.setName('user')
 				.setDescription('The user you want to hug.')
 				.setRequired(true))
 		.toJSON(),
+	category: 'page4',
+	position: 4,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {

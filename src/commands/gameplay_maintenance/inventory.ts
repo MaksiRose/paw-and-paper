@@ -1,24 +1,22 @@
 import { ActionRowBuilder, ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { Profile, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasCooldown } from '../../utils/checkValidity';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import getInventoryElements from '../../utils/getInventoryElements';
-import { getMapData, respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, getMapData, respond, update } from '../../utils/helperFunctions';
 import { remindOfAttack } from '../gameplay_primary/attack';
 import { sendEatMessage } from './eat';
 const { default_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'inventory';
-const description: SlashCommand['description'] = 'This is a collection of all the things your pack has gathered, listed up.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('inventory')
+		.setDescription('This is a collection of all the things your pack has gathered, listed up.')
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page3',
+	position: 1,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData, serverData) => {
@@ -26,11 +24,12 @@ export const command: SlashCommand = {
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!hasCompletedAccount(interaction, userData)) { return; }
+		if (!hasName(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		const profileData = getMapData(quidData.profiles, interaction.guildId);
+		if (!hasSpecies(interaction, quidData)) { return; }
 
 		/* Checks if the profile is on a cooldown. */
 		if (await hasCooldown(interaction, userData, quidData)) { return; }
@@ -133,9 +132,7 @@ export async function inventoryInteractionCollector(
 		}
 		else {
 
-			const chosenFood = interaction.values[0];
-			if (chosenFood === undefined) { throw new TypeError('chosenFood is undefined'); }
-
+			const chosenFood = getArrayElement(interaction.values, 0);
 			await sendEatMessage(interaction, chosenFood, userData, quidData, profileData, serverData, '', []);
 			return;
 		}

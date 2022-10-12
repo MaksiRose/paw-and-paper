@@ -2,31 +2,30 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SelectMenuB
 import { readFileSync, writeFileSync } from 'fs';
 import userModel from '../../models/userModel';
 import { CustomClient, SlashCommand, UserSchema, VoteList } from '../../typedef';
-import { hasCompletedAccount } from '../../utils/checkUserState';
+import { hasName, hasSpecies } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { getMapData, getSmallerNumber, respond } from '../../utils/helperFunctions';
 const { default_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'vote';
-const description: SlashCommand['description'] = 'Vote for this bot on one of three websites and get +30 energy each time.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('vote')
+		.setDescription('Vote for this bot on one of three websites and get +30 energy each time.')
 		.setDMPermission(true)
 		.toJSON(),
+	category: 'page3',
+	position: 6,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
 
-		if (!hasCompletedAccount(interaction, userData)) { return; }
+		if (!hasName(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId || 'DM'));
 		const profileData = getMapData(quidData.profiles, interaction.guildId || 'DM');
+		if (!hasSpecies(interaction, quidData)) { return; }
 
 		if (interaction.inGuild() && await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
 

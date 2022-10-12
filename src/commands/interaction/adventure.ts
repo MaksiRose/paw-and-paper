@@ -1,12 +1,12 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
-import { getQuidDisplayname, getSmallerNumber, KeyOfUnion, sendErrorMessage, update, widenValues } from '../../utils/helperFunctions';
+import { getArrayElement, getQuidDisplayname, getSmallerNumber, keyInObject, KeyOfUnion, sendErrorMessage, update, widenValues } from '../../utils/helperFunctions';
 import { respond } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
-import { CurrentRegionType, Inventory, Profile, Quid, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
+import { CurrentRegionType, Inventory, Profile, Quid, ServerSchema, SlashCommand, SpecialPlantNames, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
-import { changeCondition, pickRandomCommonPlant, pickRandomRarePlant, pickRandomSpecialPlant, pickRandomUncommonPlant } from '../../utils/changeCondition';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { changeCondition } from '../../utils/changeCondition';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { addFriendshipPoints, checkOldMentions, getFriendshipHearts, getFriendshipPoints } from '../../utils/friendshipHandling';
@@ -15,33 +15,33 @@ import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { getHighestItem, remindOfAttack } from '../gameplay_primary/attack';
+import { pickPlant } from '../../utils/simulateItemUse';
 const { error_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'adventure';
-const description: SlashCommand['description'] = 'Go adventuring with a friend. Requires 6 friendship hearts.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('adventure')
+		.setDescription('Go adventuring with a friend. Requires 6 friendship hearts.')
 		.setDMPermission(false)
 		.addUserOption(option =>
 			option.setName('user')
 				.setDescription('The user that you want to adventure with.')
 				.setRequired(true))
 		.toJSON(),
+	category: 'page4',
+	position: 0,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData1, serverData, embedArray) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
-		if (!hasCompletedAccount(interaction, userData1)) { return; }
+		if (!hasName(interaction, userData1)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
 		const profileData1 = getMapData(quidData1.profiles, interaction.guildId);
+		if (!hasSpecies(interaction, quidData1)) { return; }
 
 		/* Checks if the profile is on a cooldown, passed out, or resting. */
 		if (await isInvalid(interaction, userData1, quidData1, profileData1, embedArray)) { return; }
@@ -132,8 +132,7 @@ export async function adventureInteractionCollector(
 	const chosenMemoryCardOptions: string[] = [];
 	for (let i = 0; i < 10; i++) {
 
-		const randomMemoryCardOption = allMemoryCardOptions.splice(getRandomNumber(allMemoryCardOptions.length), 1)[0];
-		if (randomMemoryCardOption === undefined) { throw new TypeError('randomMemoryCardOption is undefined'); }
+		const randomMemoryCardOption = getArrayElement(allMemoryCardOptions.splice(getRandomNumber(allMemoryCardOptions.length), 1), 0);
 		chosenMemoryCardOptions.push(randomMemoryCardOption, randomMemoryCardOption);
 	}
 
@@ -153,23 +152,20 @@ export async function adventureInteractionCollector(
 				.setStyle(ButtonStyle.Secondary),
 			);
 
-			const randomMemoryCardOption = chosenMemoryCardOptions.splice(getRandomNumber(chosenMemoryCardOptions.length), 1)[0];
-			if (randomMemoryCardOption === undefined) { throw new TypeError('randomMemoryCardOption is undefined'); }
+			const randomMemoryCardOption = getArrayElement(chosenMemoryCardOptions.splice(getRandomNumber(chosenMemoryCardOptions.length), 1), 0);
 			emojisInComponentArray[column]?.push(randomMemoryCardOption);
 		}
 	}
 
 
 	/* Gets the current active quid and the server profile from the account */
-	const userId1 = interaction.customId.split('_')[3];
-	if (userId1 === undefined) { throw new TypeError('userId1 is undefined'); }
+	const userId1 = getArrayElement(interaction.customId.split('_'), 3);
 	const userData1 = await userModel.findOne(u => u.userId.includes(userId1));
 	const quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
 	let profileData1 = getMapData(quidData1.profiles, interaction.guildId);
 
 	/* Gets the current active quid and the server profile from the partners account */
-	const userId2 = interaction.customId.split('_')[2];
-	if (userId2 === undefined) { throw new TypeError('userId2 is undefined'); }
+	const userId2 = getArrayElement(interaction.customId.split('_'), 2);
 	const userData2 = await userModel.findOne(u => u.userId.includes(userId2));
 	const quidData2 = getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId));
 	let profileData2 = getMapData(quidData2.profiles, interaction.guildId);
@@ -221,8 +217,7 @@ export async function adventureInteractionCollector(
 			chosenCardPositions[chosenCardPositions.current].row = row;
 
 			/* Getting the uncovered emoji from the current position, and erroring if there is no emoji */
-			const uncoveredEmoji = emojisInComponentArray[column]?.[row];
-			if (uncoveredEmoji === undefined) { return collector.stop('error_TypeError: uncoveredEmoji is undefined'); }
+			const uncoveredEmoji = getArrayElement(getArrayElement(emojisInComponentArray, column), row);
 
 			/* Changing the button's emoji to be the uncovered card and disabling it */
 			componentArray[column]?.components[row]?.setEmoji(uncoveredEmoji);
@@ -337,8 +332,8 @@ export async function adventureInteractionCollector(
 							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}` }),
 						...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
 						...(decreasedStatsData2.injuryUpdateEmbed ? [decreasedStatsData2.injuryUpdateEmbed] : []),
-						...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
-						...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
+						...(afterGameChangesData?.levelUpCheck1.levelUpEmbed ? [afterGameChangesData.levelUpCheck1.levelUpEmbed] : []),
+						...(afterGameChangesData?.levelUpCheck2.levelUpEmbed ? [afterGameChangesData.levelUpCheck2.levelUpEmbed] : []),
 					],
 					components: disableAllComponents(componentArray),
 				})
@@ -404,8 +399,8 @@ export async function adventureInteractionCollector(
 							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraFooter}` }),
 						...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
 						...(decreasedStatsData2.injuryUpdateEmbed ? [decreasedStatsData2.injuryUpdateEmbed] : []),
-						...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
-						...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
+						...(afterGameChangesData?.levelUpCheck1.levelUpEmbed ? [afterGameChangesData.levelUpCheck1.levelUpEmbed] : []),
+						...(afterGameChangesData?.levelUpCheck2.levelUpEmbed ? [afterGameChangesData.levelUpCheck2.levelUpEmbed] : []),
 					],
 					components: disableAllComponents(componentArray),
 				})
@@ -427,28 +422,18 @@ export async function adventureInteractionCollector(
 
 					extraHealthPoints = getSmallerNumber(getRandomNumber(5, 8), winningProfileData.maxHealth - winningProfileData.health);
 				}
-				else if (Object.keys(winningProfileData.temporaryStatIncrease).length <= 1 && pullFromWeightedTable({ 0: finishedRounds * 3, 1: 45 - finishedRounds }) === 1) {
+				else if (Object.keys(winningProfileData.temporaryStatIncrease).length <= 1 && pullFromWeightedTable({ 0: 20 - finishedRounds, 1: finishedRounds - 10 }) === 0) {
 
-					foundItem = pickRandomSpecialPlant();
+					const specialPlants = Object.keys(serverData.inventory.specialPlants) as SpecialPlantNames[];
+					foundItem = specialPlants[getRandomNumber(specialPlants.length)]!;
 					winningProfileData.inventory.specialPlants[foundItem] += 1;
-				}
-				else if (pullFromWeightedTable({ 0: finishedRounds * 8, 1: 30 - finishedRounds }) === 1) {
-
-					if (pullFromWeightedTable({ 0: finishedRounds * 8, 1: 30 - finishedRounds }) === 1) {
-
-						foundItem = pickRandomRarePlant();
-						winningProfileData.inventory.rarePlants[foundItem] += 1;
-					}
-					else {
-
-						foundItem = pickRandomUncommonPlant();
-						winningProfileData.inventory.uncommonPlants[foundItem] += 1;
-					}
 				}
 				else {
 
-					foundItem = pickRandomCommonPlant();
-					winningProfileData.inventory.commonPlants[foundItem] += 1;
+					foundItem = await pickPlant(pullFromWeightedTable({ 0: finishedRounds + 10, 1: (2 * finishedRounds) - 10, 2: (20 - finishedRounds) * 3 }) as 0 | 1 | 2, serverData);
+					if (keyInObject(winningProfileData.inventory.commonPlants, foundItem)) { winningProfileData.inventory.commonPlants[foundItem] += 1; }
+					else if (keyInObject(winningProfileData.inventory.uncommonPlants, foundItem)) { winningProfileData.inventory.uncommonPlants[foundItem] += 1; }
+					else { winningProfileData.inventory.rarePlants[foundItem] += 1; }
 				}
 
 				await userModel
@@ -475,8 +460,8 @@ export async function adventureInteractionCollector(
 							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraHealthPoints > 0 ? `+${extraHealthPoints} HP for ${winningQuidData.name} (${winningProfileData.health}/${winningProfileData.maxHealth})` : `+1 ${foundItem} for ${winningQuidData.name}`}` }),
 						...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
 						...(decreasedStatsData2.injuryUpdateEmbed ? [decreasedStatsData2.injuryUpdateEmbed] : []),
-						...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
-						...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
+						...(afterGameChangesData?.levelUpCheck1.levelUpEmbed ? [afterGameChangesData.levelUpCheck1.levelUpEmbed] : []),
+						...(afterGameChangesData?.levelUpCheck2.levelUpEmbed ? [afterGameChangesData.levelUpCheck2.levelUpEmbed] : []),
 					],
 					components: disableAllComponents(componentArray),
 				})
@@ -504,8 +489,8 @@ async function sendNextRoundMessage(
 	interaction: ButtonInteraction<'cached'>,
 	userId: string,
 	userData1: UserSchema,
-	quidData1: Quid,
-	quidData2: Quid,
+	quidData1: Quid<true>,
+	quidData2: Quid<true>,
 	componentArray: ActionRowBuilder<ButtonBuilder>[],
 ): Promise<Message> {
 
@@ -529,25 +514,27 @@ async function sendNextRoundMessage(
 async function checkAfterGameChanges(
 	interaction: ButtonInteraction<'cached'>,
 	userData1: UserSchema,
-	quidData1: Quid,
+	quidData1: Quid<true>,
 	profileData1: Profile,
 	userData2: UserSchema,
-	quidData2: Quid,
+	quidData2: Quid<true>,
 	profileData2: Profile,
 	serverData: ServerSchema,
 ): Promise<{
-	user1CheckLevelData: {
+	levelUpCheck1: {
 		levelUpEmbed: EmbedBuilder | null;
 		profileData: Profile;
 	};
-	user2CheckLevelData: {
+	levelUpCheck2: {
 		levelUpEmbed: EmbedBuilder | null;
 		profileData: Profile;
 	};
 }> {
 
-	const user1CheckLevelData = await checkLevelUp(interaction, userData1, quidData1, profileData1, serverData);
-	const user2CheckLevelData = await checkLevelUp(interaction, userData2, quidData2, profileData2, serverData);
+	const levelUpCheck1 = await checkLevelUp(interaction, userData1, quidData1, profileData1, serverData);
+	profileData1 = levelUpCheck1.profileData;
+	const levelUpCheck2 = await checkLevelUp(interaction, userData2, quidData2, profileData2, serverData);
+	profileData2 = levelUpCheck2.profileData;
 
 	await isPassedOut(interaction, userData1, quidData1, profileData1, true);
 	await isPassedOut(interaction, userData2, quidData2, profileData2, true);
@@ -563,5 +550,5 @@ async function checkAfterGameChanges(
 	await eatAdvice(interaction, userData1, profileData1);
 	await eatAdvice(interaction, userData2, profileData2);
 
-	return { user1CheckLevelData, user2CheckLevelData };
+	return { levelUpCheck1, levelUpCheck2 };
 }

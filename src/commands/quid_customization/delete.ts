@@ -7,15 +7,13 @@ import { createCommandComponentDisabler, disableAllComponents } from '../../util
 import { getMapData } from '../../utils/helperFunctions';
 const { error_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'delete';
-const description: SlashCommand['description'] = 'Delete parts of or your entire account.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('delete')
+		.setDescription('Delete parts of or your entire account.')
 		.toJSON(),
+	category: 'page1',
+	position: 10,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {

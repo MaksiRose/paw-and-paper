@@ -2,25 +2,23 @@ import { ChatInputCommandInteraction, EmbedBuilder, FormattingPatterns, SelectMe
 import Fuse from 'fuse.js';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
-import { CommonPlantNames, commonPlantsInfo, CurrentRegionType, PlantEdibilityType, Profile, Quid, RarePlantNames, rarePlantsInfo, ServerSchema, SlashCommand, SpecialPlantNames, specialPlantsInfo, SpeciesDietType, speciesInfo, SpeciesNames, StatIncreaseType, UncommonPlantNames, uncommonPlantsInfo, UserSchema } from '../../typedef';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { commonPlantsInfo, CurrentRegionType, PlantEdibilityType, Profile, Quid, rarePlantsInfo, ServerSchema, SlashCommand, specialPlantsInfo, SpeciesDietType, speciesInfo, StatIncreaseType, uncommonPlantsInfo, UserSchema } from '../../typedef';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getBiggerNumber, getMapData, getQuidDisplayname, getSmallerNumber, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
+import { getBiggerNumber, getMapData, getQuidDisplayname, getSmallerNumber, keyInObject, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
-import wearDownDen from '../../utils/wearDownDen';
+import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
 import { showInventoryMessage } from './inventory';
 
-const name: SlashCommand['name'] = 'eat';
-const description: SlashCommand['description'] = 'Take the appropriate food for your species out of the packs food pile and fill up your hunger meter.';
+const allPlantsInfo = { ...commonPlantsInfo, ...uncommonPlantsInfo, ...rarePlantsInfo, ...specialPlantsInfo };
+
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('eat')
+		.setDescription('Take the appropriate food for your species out of the packs food pile and fill up your hunger meter.')
 		.setDMPermission(false)
 		.addStringOption(option =>
 			option.setName('food')
@@ -28,6 +26,8 @@ export const command: SlashCommand = {
 				.setAutocomplete(true)
 				.setRequired(false))
 		.toJSON(),
+	category: 'page3',
+	position: 3,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendAutocomplete: async (client, interaction, userData, serverData) => {
@@ -58,11 +58,12 @@ export const command: SlashCommand = {
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!hasCompletedAccount(interaction, userData)) { return; }
+		if (!hasName(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		const profileData = getMapData(quidData.profiles, interaction.guildId);
+		if (!hasSpecies(interaction, quidData)) { return; }
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
@@ -91,7 +92,7 @@ export async function sendEatMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
 	chosenFood: string,
 	userData: UserSchema,
-	quidData: Quid,
+	quidData: Quid<true>,
 	profileData: Profile,
 	serverData: ServerSchema,
 	messageContent: string,
@@ -130,33 +131,33 @@ export async function sendEatMessage(
 	let footerText = '';
 	const inventory_ = widenValues(serverData.inventory);
 
-	const allPlantsInfo = { ...commonPlantsInfo, ...uncommonPlantsInfo, ...rarePlantsInfo, ...specialPlantsInfo };
-
-	if (chosenFoodIsPlant(allPlantsInfo, chosenFood)) {
+	if (keyInObject(allPlantsInfo, chosenFood)) {
 
 		let plantType: 'commonPlants' | 'uncommonPlants' | 'rarePlants' | 'specialPlants';
 
-		if (Object.hasOwn(commonPlantsInfo, chosenFood)) {
+		if (keyInObject(commonPlantsInfo, chosenFood)) {
 
 			plantType = 'commonPlants';
 		}
-		else if (Object.hasOwn(uncommonPlantsInfo, chosenFood)) {
+		else if (keyInObject(uncommonPlantsInfo, chosenFood)) {
 
 			plantType = 'uncommonPlants';
 		}
-		else if (Object.hasOwn(rarePlantsInfo, chosenFood)) {
+		else if (keyInObject(rarePlantsInfo, chosenFood)) {
 
 			plantType = 'rarePlants';
 		}
-		else if (Object.hasOwn(specialPlantsInfo, chosenFood)) {
+		else if (keyInObject(specialPlantsInfo, chosenFood)) {
 
 			plantType = 'specialPlants';
 
-			const pickIncreasedStatType = (['health', 'energy', 'hunger', 'thirst'] as const)[getRandomNumber(4)];
+			const statArray = ['health', 'energy', 'hunger', 'thirst'] as const;
+
+			const pickIncreasedStatType = statArray[getRandomNumber(4)];
 			if (pickIncreasedStatType === undefined) { throw new TypeError('pickIncreasedStatType is undefined'); }
 			increasedStatType = pickIncreasedStatType;
 
-			const pickIncreasedMaxStatType = ([StatIncreaseType.MaxHealth, StatIncreaseType.MaxEnergy, StatIncreaseType.MaxHunger, StatIncreaseType.MaxThirst] as const)[(['health', 'energy', 'hunger', 'thirst'] as const).findIndex(v => v === increasedStatType)];
+			const pickIncreasedMaxStatType = ([StatIncreaseType.MaxHealth, StatIncreaseType.MaxEnergy, StatIncreaseType.MaxHunger, StatIncreaseType.MaxThirst] as const)[statArray.findIndex(v => v === increasedStatType)];
 			if (pickIncreasedMaxStatType === undefined) { throw new TypeError('pickIncreasedMaxStatType is undefined'); }
 			increasedMaxStatType = pickIncreasedMaxStatType;
 
@@ -194,15 +195,15 @@ export async function sendEatMessage(
 
 		if (allPlantsInfo[chosenFood].edibility === PlantEdibilityType.Edible) {
 
-			if (speciesInfo[quidData.species as SpeciesNames].diet === SpeciesDietType.Carnivore) {
+			if (speciesInfo[quidData.species].diet === SpeciesDietType.Carnivore) {
 
-				finalHungerPoints = getBiggerNumber(-profileData.hunger, getSmallerNumber(profileData.maxHunger - profileData.hunger, getRandomNumber(5, 1) - removeHungerPoints(serverData)));
+				finalHungerPoints = getBiggerNumber(-profileData.hunger, getSmallerNumber(profileData.maxHunger - profileData.hunger, addIncorrectDietHungerPoints() - removeHungerPoints(serverData)));
 
 				embed.setDescription(`*${quidData.name} plucks a ${chosenFood} from the pack storage and nibbles away at it. It has a bitter, foreign taste, not the usual meaty meal the ${quidData.displayedSpecies || quidData.species} prefers.*`);
 			}
 			else {
 
-				finalHungerPoints = getSmallerNumber(profileData.maxHunger - profileData.hunger, getRandomNumber(4, 15) - removeHungerPoints(serverData));
+				finalHungerPoints = getSmallerNumber(profileData.maxHunger - profileData.hunger, addCorrectDietHungerPoints() - removeHungerPoints(serverData));
 
 				embed.setDescription(`*Leaves flutter into the storage den, landing near ${quidData.name}'s feet. The ${quidData.displayedSpecies || quidData.species} searches around the inventory determined to find the perfect meal, and that ${pronounAndPlural(quidData, 0, 'does', 'do')}. ${quidData.name} plucks a ${chosenFood} from the pile and eats until ${pronoun(quidData, 2)} stomach is pleased.*`);
 			}
@@ -220,7 +221,7 @@ export async function sendEatMessage(
 			embed.setDescription(`*${quidData.name} decides to have a special treat today. Slowly, ${pronounAndPlural(quidData, 0, 'chew')} on the ${chosenFood}, enjoying the fresh taste. It doesn't take long for the ${quidData.displayedSpecies || quidData.species} to feel a special effect kick in: It's as if ${pronoun(quidData, 0)} can have much more ${increasedStatType} than before. What an enchanting sensation!*`);
 		}
 	}
-	else if (chosenFoodIsMeat(chosenFood)) {
+	else if (keyInObject(speciesInfo, chosenFood)) {
 
 		if (inventory_.meat[chosenFood] <= 0) {
 
@@ -229,15 +230,15 @@ export async function sendEatMessage(
 		}
 		inventory_.meat[chosenFood] -= 1;
 
-		if (speciesInfo[quidData.species as SpeciesNames].diet === SpeciesDietType.Herbivore) {
+		if (speciesInfo[quidData.species].diet === SpeciesDietType.Herbivore) {
 
-			finalHungerPoints = getBiggerNumber(-profileData.hunger, getSmallerNumber(profileData.maxHunger - profileData.hunger, getRandomNumber(5, 1) - removeHungerPoints(serverData)));
+			finalHungerPoints = getBiggerNumber(-profileData.hunger, getSmallerNumber(profileData.maxHunger - profileData.hunger, addIncorrectDietHungerPoints() - removeHungerPoints(serverData)));
 
 			embed.setDescription(`*${quidData.name} stands by the storage den, eyeing the varieties of food. A ${chosenFood} catches ${pronoun(quidData, 2)} attention. The ${quidData.displayedSpecies || quidData.species} walks over to it and begins to eat.* "This isn't very good!" *${quidData.name} whispers to ${pronoun(quidData, 4)} and leaves the den, stomach still growling, and craving for plants to grow.*`);
 		}
 		else {
 
-			finalHungerPoints = getSmallerNumber(profileData.maxHunger - profileData.hunger, getRandomNumber(4, 15) - removeHungerPoints(serverData));
+			finalHungerPoints = getSmallerNumber(profileData.maxHunger - profileData.hunger, addCorrectDietHungerPoints() - removeHungerPoints(serverData));
 
 			embed.setDescription(`*${quidData.name} sits chewing maliciously on a ${chosenFood}. A dribble of blood escapes out of ${pronoun(quidData, 2)} jaw as the ${quidData.displayedSpecies || quidData.species} finishes off the meal. It was a delicious feast, but very messy!*`);
 		}
@@ -287,24 +288,9 @@ export async function sendEatMessage(
 	return;
 }
 
-function chosenFoodIsPlant(
-	allPlantsInfo: typeof commonPlantsInfo & typeof uncommonPlantsInfo & typeof rarePlantsInfo & typeof specialPlantsInfo,
-	chosenFood: string,
-): chosenFood is CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames {
-
-	return Object.hasOwn(allPlantsInfo, chosenFood);
-}
-
-function chosenFoodIsMeat(
-	chosenFood: string,
-): chosenFood is SpeciesNames {
-
-	return Object.hasOwn(speciesInfo, chosenFood);
-}
-
 async function sendNoItemMessage(
 	embed: EmbedBuilder,
-	quidData: Quid,
+	quidData: Quid<true>,
 	chosenFood: string,
 	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
 	messageContent: string,
@@ -319,13 +305,16 @@ async function sendNoItemMessage(
 	});
 }
 
+function addIncorrectDietHungerPoints() { return getRandomNumber(5, 1); }
+export function addCorrectDietHungerPoints() { return getRandomNumber(4, 15); }
+
 /**
  * It takes a message, finds the server data, calculates the den stats, calculates the multiplier, and
  * returns the amount of hunger points to remove
  * @param serverData - The server data.
  * @returns the number of hunger points that will be removed from the user's character.
  */
-function removeHungerPoints(
+export function removeHungerPoints(
 	serverData: ServerSchema,
 ): number {
 

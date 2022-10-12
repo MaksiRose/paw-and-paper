@@ -1,25 +1,24 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import userModel from '../../models/userModel';
-import { Inventory, RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
-import { getMapData, respond, update } from '../../utils/helperFunctions';
+import { RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
+import { getArrayElement, getMapData, respond, update } from '../../utils/helperFunctions';
+import { calculateInventorySize } from '../../utils/simulateItemUse';
 import { sendStoreMessage } from './store';
 const { error_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'stats';
-const description: SlashCommand['description'] = 'Quick view of your quids condition.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('stats')
+		.setDescription('Quick view of your quids condition.')
 		.addUserOption(option =>
 			option.setName('user')
 				.setDescription('A user that you want to look up the stats of.')
 				.setRequired(false))
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page3',
+	position: 0,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {
@@ -32,7 +31,7 @@ export const command: SlashCommand = {
 
 			userData = await userModel.findOne(u => u.userId.includes(mentionedUser.id)).catch(() => { return null; });
 		}
-		else if (!hasCompletedAccount(interaction, userData)) { return; }
+		else if (!hasName(interaction, userData) || !hasSpecies(interaction, getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId)))) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData = userData?.quids[userData?.currentQuid[interaction.guildId] || ''];
@@ -76,11 +75,7 @@ async function sendStatsMessage(
 			.setStyle(ButtonStyle.Secondary),
 		]);
 
-	/** This is an array of all the inventory objects. */
-	const inventoryObjectValues = Object.values(profileData.inventory) as Array<Inventory[keyof Inventory]>;
-	/** This is an array of numbers as the properties of the keys in the inventory objects, which are numbers representing the amount one has of the key which is an item type. */
-	const inventoryNumberValues = inventoryObjectValues.map(type => Object.values(type)).flat();
-	if (inventoryNumberValues.reduce((a, b) => a + b) === 0 || !userData.userId.includes(creatorUserId)) {
+	if (calculateInventorySize(profileData.inventory) === 0 || !userData.userId.includes(creatorUserId)) {
 
 		components.components.pop();
 	}
@@ -127,10 +122,8 @@ export async function statsInteractionCollector(
 
 	if (interaction.customId.includes('refresh')) {
 
-		const quidId = interaction.customId.split('_')[2];
-		if (quidId === undefined) { throw new TypeError('quidId is undefined'); }
-		const creatorUserId = interaction.customId.split('_')[3];
-		if (creatorUserId === undefined) { throw new TypeError('creatorUserId is undefined'); }
+		const quidId = getArrayElement(interaction.customId.split('_'), 2);
+		const creatorUserId = getArrayElement(interaction.customId.split('_'), 3);
 
 		const userData1 = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
 		await sendStatsMessage(interaction, userData1, quidId, creatorUserId);

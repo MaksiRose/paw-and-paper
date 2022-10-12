@@ -9,20 +9,18 @@ import { generateId } from 'crystalid';
 const { version } = require('../../../package.json');
 const { default_color, error_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'name';
-const description: SlashCommand['description'] = 'Start your adventure! (Re-)name a quid.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('name')
+		.setDescription('Start your adventure! (Re-)name a quid.')
 		.addStringOption(option =>
 			option.setName('name')
 				.setDescription('The name that you want your quid to have.')
 				.setMaxLength(24) // A normal name should only have 24 characters, but a displayname/nickname should still have 32 characters max length.
 				.setRequired(true))
 		.toJSON(),
+	category: 'page1',
+	position: 0,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData, serverData) => {

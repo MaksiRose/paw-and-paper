@@ -4,19 +4,17 @@ import { SlashCommand } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
 import { getMapData, getQuidDisplayname, respond } from '../../utils/helperFunctions';
 
-const name: SlashCommand['name'] = 'tag';
-const description: SlashCommand['description'] = 'A global or server-specific snippet of text appended to your displayed name.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('tag')
+		.setDescription('A global or server-specific snippet of text appended to your displayed name.')
 		.addStringOption(option =>
 			option.setName('tag')
 				.setDescription('The tag that you want your account to have.')
 				.setMaxLength(16))
 		.toJSON(),
+	category: 'page1',
+	position: 8,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData, serverData) => {

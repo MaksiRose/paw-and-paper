@@ -3,13 +3,11 @@ import { readFileSync, writeFileSync } from 'fs';
 import userModel from '../models/userModel';
 import { ContextMenuCommand, UserSchema, WebhookMessages } from '../typedef';
 import { disableAllComponents } from '../utils/componentDisabling';
-import { getMapData, respond, update } from '../utils/helperFunctions';
+import { getArrayElement, getMapData, respond, update } from '../utils/helperFunctions';
 
-const name: ContextMenuCommand['name'] = 'Wrong Proxy 🔀';
 export const command: ContextMenuCommand = {
-	name: name,
 	data: {
-		name: name,
+		name: 'Wrong Proxy 🔀',
 		type: 3,
 		dm_permission: false,
 	},
@@ -73,10 +71,8 @@ export async function wrongproxyInteractionCollector(
 
 	if (!interaction.inCachedGuild()) { throw new Error('interaction is not in cached guild'); }
 	if (userData === null) { throw new TypeError('userData is null'); }
-	const selectOptionId = interaction.values[0];
-	if (selectOptionId === undefined) { throw new TypeError('selectOptionId is undefined'); }
-	const targetMessageId = interaction.customId.split('_')[2];
-	if (targetMessageId === undefined) { throw new TypeError('targetMessageId is undefined'); }
+	const selectOptionId = getArrayElement(interaction.values, 0);
+	const targetMessageId = getArrayElement(interaction.customId.split('_'), 2);
 
 	/* Checking if the user has clicked on the "Show more accounts" button, and if they have, it will increase the page number by 1, and if the page number is greater than the total number of pages, it will set the page number to 0. Then, it will edit the bot reply to show the next page of accounts. */
 	if (selectOptionId.includes('nextpage')) {
@@ -95,8 +91,7 @@ export async function wrongproxyInteractionCollector(
 	if (selectOptionId.includes('replace')) {
 
 		/* Getting the quid form the value Id */
-		const quidId = selectOptionId.split('_')[2];
-		if (quidId === undefined) { throw new TypeError('quidId is undefined'); }
+		const quidId = getArrayElement(selectOptionId.split('_'), 2);
 		const quidData = getMapData(userData.quids, quidId);
 
 		const channel = interaction.channel;

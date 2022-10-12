@@ -1,37 +1,36 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
-import { CurrentRegionType, Quid, RankType, ServerSchema, SlashCommand, SpeciesHabitatType, speciesInfo, SpeciesNames, UserSchema } from '../../typedef';
+import { CurrentRegionType, Quid, RankType, ServerSchema, SlashCommand, SpeciesHabitatType, speciesInfo, UserSchema } from '../../typedef';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
-import { changeCondition, infectWithChance, pickRandomCommonPlant } from '../../utils/changeCondition';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { changeCondition, infectWithChance } from '../../utils/changeCondition';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, getQuidDisplayname, getSmallerNumber, respond, update } from '../../utils/helperFunctions';
+import { getMapData, getQuidDisplayname, getSmallerNumber, keyInObject, respond, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
+import { pickPlant } from '../../utils/simulateItemUse';
 import { isResting } from '../gameplay_maintenance/rest';
 import { remindOfAttack } from './attack';
 import { sendQuestMessage } from './start-quest';
 
 const tutorialMap: Map<string, number> = new Map();
 
-const name: SlashCommand['name'] = 'play';
-const description: SlashCommand['description'] = 'The main activity of Younglings. Costs energy, but gives XP.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('play')
+		.setDescription('Gain experience in a safe environment, or play with others to give them health.')
 		.addUserOption(option =>
 			option.setName('user')
 				.setDescription('The user you want to play with')
 				.setRequired(false))
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page2',
+	position: 0,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
@@ -50,11 +49,12 @@ export async function executePlaying(
 	/* This ensures that the user is in a guild and has a completed account. */
 	if (!isInGuild(interaction)) { return; }
 	if (serverData === null) { throw new Error('serverData is null'); }
-	if (!hasCompletedAccount(interaction, userData1)) { return; }
+	if (!hasName(interaction, userData1)) { return; }
 
 	/* Gets the current active quid and the server profile from the account */
 	const quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
 	let profileData1 = getMapData(quidData1.profiles, interaction.guildId);
+	if (!hasSpecies(interaction, quidData1)) { return; }
 
 	/* Checks if the profile is resting, on a cooldown or passed out. */
 	if (await isInvalid(interaction, userData1, quidData1, profileData1, embedArray)) { return; }
@@ -267,7 +267,12 @@ export async function executePlaying(
 		if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 
 		/* If user 2 had a cold, infect user 1 with a 30% chance. */
-		if (quidData2 && profileData2) { infectedEmbed = await infectWithChance(userData1, quidData1, profileData1, quidData2, profileData2); }
+		if (quidData2 && profileData2) {
+
+			const infectedCheck = await infectWithChance(userData1, quidData1, profileData1, quidData2, profileData2);
+			profileData1 = infectedCheck.profileData;
+			infectedEmbed = infectedCheck.infectedEmbed;
+		}
 	}
 	// with a 90% chance if the user is not a youngling, find nothing
 	else if (profileData1.rank !== RankType.Youngling
@@ -311,8 +316,8 @@ export async function executePlaying(
 	// find a plant
 	else {
 
-		const plantGame = createPlantGame(speciesInfo[quidData1.species as SpeciesNames].habitat);
-		const foundItem = pickRandomCommonPlant();
+		const plantGame = createPlantGame(speciesInfo[quidData1.species].habitat);
+		const foundItem = await pickPlant(0, serverData);
 
 		playComponent = plantGame.plantComponent;
 
@@ -320,7 +325,7 @@ export async function executePlaying(
 			[SpeciesHabitatType.Cold]: 'forest',
 			[SpeciesHabitatType.Warm]: 'shrubland',
 			[SpeciesHabitatType.Water]: 'river',
-		}[speciesInfo[quidData1.species as SpeciesNames].habitat];
+		}[speciesInfo[quidData1.species].habitat];
 		const descriptionText = `*${quidData1.name} bounds across the den territory, chasing a bee that is just out of reach. Without looking, the ${quidData1.displayedSpecies || quidData1.species} crashes into a Healer, loses sight of the bee, and scurries away into the ${biome}. On ${pronoun(quidData1, 2)} way back to the pack border, ${quidData1.name} sees something special on the ground. It's a ${foundItem}!*`;
 
 		embed.setDescription(descriptionText);
@@ -360,7 +365,9 @@ export async function executePlaying(
 					u => u._id === userData1?._id,
 					(u) => {
 						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-						p.inventory.commonPlants[foundItem] += 1;
+						if (keyInObject(p.inventory.commonPlants, foundItem)) { p.inventory.commonPlants[foundItem] += 1; }
+						else if (keyInObject(p.inventory.uncommonPlants, foundItem)) { p.inventory.uncommonPlants[foundItem] += 1; }
+						else { p.inventory.rarePlants[foundItem] += 1; }
 					},
 				);
 				embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundItem}` });
@@ -435,7 +442,7 @@ function isEligableForPlaying(
 	_id: string,
 	quid: Quid,
 	guildId: string,
-): boolean {
+): quid is Quid<true> {
 
 	const p = quid.profiles[guildId];
 	return quid.name !== '' && quid.species !== '' && p !== undefined && p.currentRegion === CurrentRegionType.Prairie && p.energy > 0 && p.health > 0 && p.hunger > 0 && p.thirst > 0 && p.injuries.cold === false && cooldownMap.get(_id + guildId) !== true && p.isResting === false && isResting(_id, p.serverId) === false;

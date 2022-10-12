@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { respond, sendErrorMessage, update } from '../../utils/helperFunctions';
+import { getArrayElement, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
 import { ProxyListType, RankType, ServerSchema, SlashCommand, WayOfEarningType } from '../../typedef';
@@ -7,17 +7,15 @@ import { checkLevelRequirements, checkRankRequirements } from '../../utils/check
 import { getMapData } from '../../utils/helperFunctions';
 const { default_color, update_channel_id } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'server-settings';
-const description: SlashCommand['description'] = 'List of server-specific settings like shop roles, update notifications and more.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('server-settings')
+		.setDescription('List of server-specific settings like shop roles, update notifications and more.')
 		.setDMPermission(false)
 		.setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels + PermissionFlagsBits.ManageRoles)
 		.toJSON(),
+	category: 'page5',
+	position: 1,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData, serverData) => {
@@ -394,8 +392,7 @@ export async function serversettingsInteractionCollector(
 		}
 		else {
 
-			const channelId = selectOptionId.split('_')[2];
-			if (channelId === undefined) { throw new Error('channelId is undefined'); }
+			const channelId = getArrayElement(selectOptionId.split('_'), 2);
 
 			const newsChannel = await interaction.client.channels.fetch(update_channel_id);
 			if (newsChannel === null || newsChannel.type !== ChannelType.GuildNews) { throw new Error('News Channel is missing or not of type GuildNews.'); }
@@ -440,8 +437,7 @@ export async function serversettingsInteractionCollector(
 					if (error.httpStatus !== 404) { console.error(error); }
 				});
 
-			const channelIdOrOff = selectOptionId.split('_')[2];
-			if (channelIdOrOff === undefined) { throw new Error('channelId is undefined'); }
+			const channelIdOrOff = getArrayElement(selectOptionId.split('_'), 2);
 
 			if (channelIdOrOff === 'off') {
 

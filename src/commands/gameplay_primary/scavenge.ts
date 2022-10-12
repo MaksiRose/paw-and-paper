@@ -1,28 +1,27 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
-import { MaterialNames, materialsInfo, RankType, ServerSchema, SlashCommand, speciesInfo, SpeciesNames, UserSchema } from '../../typedef';
+import { Quid, RankType, ServerSchema, SlashCommand, speciesInfo, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, getQuidDisplayname, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
+import { getArrayElement, getMapData, getQuidDisplayname, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
+import { pickMaterial, pickMeat, simulateMaterialUse, simulateMeatUse } from '../../utils/simulateItemUse';
 import { remindOfAttack } from './attack';
 
-const name: SlashCommand['name'] = 'scavenge';
-const description: SlashCommand['description'] = 'Scavenge for carcass and materials. Costs energy, but gives XP.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('scavenge')
+		.setDescription('Roam around near the pack for a chance to find carcass and materials. Not available to Younglings.')
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page2',
+	position: 3,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
@@ -41,11 +40,12 @@ export async function executeScavenging(
 	/* This ensures that the user is in a guild and has a completed account. */
 	if (!isInGuild(interaction)) { return; }
 	if (serverData === null) { throw new Error('serverData is null'); }
-	if (!hasCompletedAccount(interaction, userData)) { return; }
+	if (!hasName(interaction, userData)) { return; }
 
 	/* Gets the current active quid and the server profile from the account */
 	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 	let profileData = getMapData(quidData.profiles, interaction.guildId);
+	if (!hasSpecies(interaction, quidData)) { return; }
 
 	/* Checks if the profile is resting, on a cooldown or passed out. */
 	if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
@@ -144,17 +144,12 @@ export async function executeScavenging(
 					/* Getting the position of the button that the user clicked. */
 					const verticalBoardPosition = Number(int.customId.split('_')[2]);
 					const horizontalBoardPosition = Number(int.customId.split('_')[3]);
-					const buttonInBoardPosition = componentArray[verticalBoardPosition]?.components[horizontalBoardPosition];
+					const buttonInBoardPosition = getArrayElement(getArrayElement(componentArray, verticalBoardPosition).components, horizontalBoardPosition);
 
 					/* Set the emoji of the button to the emoji in the gamePositionsArray. It will then disable the button. */
-					const emoji = gamePositionsArray[verticalBoardPosition]?.[horizontalBoardPosition];
-					if (!emoji) {
-						await sendErrorMessage(int, new Error('emoji is undefined'))
-							.catch((error) => { console.error(error); });
-						return;
-					}
-					buttonInBoardPosition?.setEmoji(emoji);
-					buttonInBoardPosition?.setDisabled(true);
+					const emoji = getArrayElement(getArrayElement(gamePositionsArray, verticalBoardPosition), horizontalBoardPosition);
+					buttonInBoardPosition.setEmoji(emoji);
+					buttonInBoardPosition.setDisabled(true);
 
 					/* Checking if the user has clicked on the correct field. If they have, it will stop the collector and if they haven't, it will edit the message with the new components. */
 					if (emoji === filledFieldArray[0]) {
@@ -162,28 +157,14 @@ export async function executeScavenging(
 						const playingField = componentArray.map(c => c.components.map(b => b.data.emoji?.name ?? unclickedField).join('')).join('\n');
 						componentArray = [];
 
-						/* Counting the number of profiles that have a rank higher than Youngling, the amount of meat and the amount of materials in the server's inventory. */
-						const highRankProfilesCount = (await userModel
-							.find(
-								(u) => Object.values(u.quids).filter(q => {
-									const p = q.profiles[interaction.guildId];
-									return p && p.rank !== RankType.Youngling;
-								}).length > 0))
-							.map(u => Object.values(u.quids).filter(q => {
-								const p = q.profiles[interaction.guildId];
-								return p && p.rank !== RankType.Youngling;
-							}).length)
-							.reduce((a, b) => a + b, 0);
-						const serverMeatCount = Object.values(serverData.inventory.meat).flat().reduce((a, b) => a + b, 0);
-						const serverMaterialsCount = Object.values(serverData.inventory.materials).flat().reduce((a, b) => a + b, 0);
+						const meatCount = Math.round((await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, false)) / 3);
+						const materialCount = Math.round((await simulateMaterialUse(serverData, true) + await simulateMaterialUse(serverData, true) + await simulateMaterialUse(serverData, false)) / 3);
 
 						/* Checking if the server has enough meat, if it doesn't, give the user meat. If it does, check if the server has enough materials, if it doesn't, give the user material. If it does, do nothing. */
-						const meatIsGettable = serverMeatCount < highRankProfilesCount * 2;
-						const materialIsGettable = serverMaterialsCount < 36;
-						if (meatIsGettable && pullFromWeightedTable({ 0: 1, 1: materialIsGettable ? 1 : 0 }) === 0) {
+						if (meatCount < 0 && pullFromWeightedTable({ 0: -meatCount, 1: -materialCount }) === 0) {
 
-							const carcassArray = [...speciesInfo[quidData.species as SpeciesNames]?.biome1OpponentArray || []];
-							const foundCarcass = carcassArray[getRandomNumber(carcassArray.length)];
+							const carcassArray = [...speciesInfo[(quidData as Quid<true>).species].biome1OpponentArray];
+							const foundCarcass = pickMeat(carcassArray, serverData.inventory);
 							if (!foundCarcass) {
 								await sendErrorMessage(interaction, new Error('foundCarcass is undefined'))
 									.catch((error) => { console.error(error); });
@@ -201,9 +182,9 @@ export async function executeScavenging(
 								},
 							);
 						}
-						else if (materialIsGettable) {
+						else if (materialCount < 0) {
 
-							const foundMaterial = (Object.keys(materialsInfo) as Array<MaterialNames>)[getRandomNumber(Object.keys(materialsInfo).length)];
+							const foundMaterial = pickMaterial(serverData.inventory);
 							if (!foundMaterial) {
 								await sendErrorMessage(interaction, new Error('foundMaterial is undefined'))
 									.catch((error) => { console.error(error); });
@@ -336,7 +317,9 @@ export async function executeScavenging(
 
 		cooldownMap.set(userData._id + interaction.guildId, false);
 
-		const levelUpEmbed = (await checkLevelUp(int, userData, quidData, profileData, serverData)).levelUpEmbed;
+		const levelUpCheck = await checkLevelUp(int, userData, quidData, profileData, serverData);
+		profileData = levelUpCheck.profileData;
+
 		const newComponents = disableAllComponents(componentArray);
 		newComponents.push(new ActionRowBuilder<ButtonBuilder>()
 			.setComponents(new ButtonBuilder()
@@ -349,7 +332,7 @@ export async function executeScavenging(
 				...embedArray,
 				embed,
 				...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
-				...(levelUpEmbed ? [levelUpEmbed] : []),
+				...(levelUpCheck.levelUpEmbed ? [levelUpCheck.levelUpEmbed] : []),
 			],
 			components: newComponents,
 		});

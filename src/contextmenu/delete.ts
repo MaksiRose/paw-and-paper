@@ -4,11 +4,9 @@ import { respond } from '../utils/helperFunctions';
 import userModel from '../models/userModel';
 import { ContextMenuCommand, WebhookMessages } from '../typedef';
 
-const name: ContextMenuCommand['name'] = 'Delete ❌';
 export const command: ContextMenuCommand = {
-	name: name,
 	data: {
-		name: name,
+		name: 'Delete ❌',
 		type: 3,
 		dm_permission: false,
 	},

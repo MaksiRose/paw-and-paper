@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import userModel from '../../models/userModel';
 import { CustomClient, Profile, Quid, SlashCommand, UserSchema } from '../../typedef';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { pronounAndPlural } from '../../utils/getPronouns';
 import { getMapData, getQuidDisplayname, respond } from '../../utils/helperFunctions';
@@ -16,16 +16,14 @@ const threeHours = oneHour * 3;
 const twentyFourHours = threeHours * 8;
 const userMap: Map<string, NodeJS.Timeout> = new Map();
 
-const name: SlashCommand['name'] = 'water-tree';
-const description: SlashCommand['description'] = 'If you have a ginkgo sapling, you can water it using this command.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('water-tree')
+		.setDescription('If you have a ginkgo sapling, you can water it using this command.')
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page3',
+	position: 9,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false, // This is technically true, but it's set to false because it's a task that you get reminded to do daily and does not reflect your actual activity
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
@@ -33,11 +31,12 @@ export const command: SlashCommand = {
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!hasCompletedAccount(interaction, userData)) { return; }
+		if (!hasName(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-		const profileData = getMapData(quidData.profiles, interaction.guildId);
+		let profileData = getMapData(quidData.profiles, interaction.guildId);
+		if (!hasSpecies(interaction, quidData)) { return; }
 
 		/* Checks if the profile is on a cooldown or passed out. */
 		if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
@@ -130,6 +129,7 @@ export const command: SlashCommand = {
 		);
 
 		const levelUpCheck = await checkLevelUp(interaction, userData, quidData, profileData, serverData);
+		profileData = levelUpCheck.profileData;
 		await respond(interaction, {
 			content: messageContent,
 			embeds: [...embedArray, embed, ...levelUpCheck.levelUpEmbed ? [levelUpCheck.levelUpEmbed] : []],
@@ -166,7 +166,7 @@ export const command: SlashCommand = {
 export async function sendReminder(
 	client: CustomClient,
 	userData: UserSchema,
-	quidData: Quid,
+	quidData: Quid<true>,
 	profileData: Profile,
 ): Promise<void> {
 

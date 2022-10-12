@@ -3,7 +3,7 @@ import { cooldownMap } from '../../events/interactionCreate';
 import { RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { createFightGame } from '../../utils/gameBuilder';
@@ -15,16 +15,14 @@ import { remindOfAttack } from './attack';
 
 const newCycleArray = ['attack', 'dodge', 'defend'] as const;
 
-const name: SlashCommand['name'] = 'practice';
-const description: SlashCommand['description'] = 'Practice fighting wild animals. You cannot get hurt here.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('practice')
+		.setDescription('Practice fighting in a safe environment. Not available to Younglings.')
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page2',
+	position: 1,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
@@ -32,11 +30,12 @@ export const command: SlashCommand = {
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!hasCompletedAccount(interaction, userData)) { return; }
+		if (!hasName(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		let profileData = getMapData(quidData.profiles, interaction.guildId);
+		if (!hasSpecies(interaction, quidData)) { return; }
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
@@ -216,14 +215,15 @@ export const command: SlashCommand = {
 			}
 			if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 
-			const levelUpEmbed = (await checkLevelUp(interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
+			const levelUpCheck = await checkLevelUp(interaction, userData, quidData, profileData, serverData);
+			profileData = levelUpCheck.profileData;
 
 			botReply = await update(newInteraction, {
 				embeds: [
 					...embedArray,
 					embed,
 					...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
-					...(levelUpEmbed ? [levelUpEmbed] : []),
+					...(levelUpCheck.levelUpEmbed ? [levelUpCheck.levelUpEmbed] : []),
 				],
 				components: [fightGame.fightComponent],
 			});

@@ -5,20 +5,18 @@ import { SlashCommand } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
 
-const name: SlashCommand['name'] = 'description';
-const description: SlashCommand['description'] = 'Give a more detailed description of your quid.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('description')
+		.setDescription('Give a more detailed description of your quid.')
 		.addStringOption(option =>
 			option.setName('description')
 				.setDescription('The description of your quid.')
 				.setMaxLength(512),
 		)
 		.toJSON(),
+	category: 'page1',
+	position: 5,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {

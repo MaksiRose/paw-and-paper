@@ -6,15 +6,13 @@ import { hasName } from '../../utils/checkUserState';
 import { checkOldMentions, getFriendshipHearts, getFriendshipPoints } from '../../utils/friendshipHandling';
 import { getMapData } from '../../utils/helperFunctions';
 
-const name: SlashCommand['name'] = 'friendships';
-const description: SlashCommand['description'] = 'View a list of all the friendships that you have with other players.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('friendships')
+		.setDescription('View a list of all the friendships that you have with other players.')
 		.toJSON(),
+	category: 'page4',
+	position: 6,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {
@@ -67,7 +65,7 @@ export async function friendshipsInteractionCollector(
  */
 async function getFriendshipTexts(
 	userData: UserSchema,
-	quidData: Quid,
+	quidData: Quid<true>,
 ): Promise<string[]> {
 
 	/** An array of users with quids who are friends with the user who executed the command. */
@@ -118,7 +116,7 @@ async function getFriendshipTexts(
  */
 async function getFriendshipMessage(
 	userData: UserSchema,
-	quidData: Quid,
+	quidData: Quid<true>,
 	guildId: string,
 	page: number,
 	friendshipTexts?: string[],

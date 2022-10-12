@@ -4,11 +4,11 @@ import userModel from '../../models/userModel';
 import { commonPlantsInfo, Inventory, rarePlantsInfo, ServerSchema, SlashCommand, specialPlantsInfo, uncommonPlantsInfo, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition, DecreasedStatsData } from '../../utils/changeCondition';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, getQuidDisplayname, respond, sendErrorMessage, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
+import { getArrayElement, getMapData, getQuidDisplayname, respond, sendErrorMessage, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
@@ -16,16 +16,14 @@ import { remindOfAttack } from './attack';
 const recoverCooldownProfilesMap: Map<string, number> = new Map();
 const twelveHoursInMs = 43_200_000;
 
-const name: SlashCommand['name'] = 'recover';
-const description: SlashCommand['description'] = 'If the pack has no herbs to heal an injury, you can recover your injury using this command.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('recover')
+		.setDescription('If the pack has no herbs to heal an injury, you can recover your injury using this command.')
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page2',
+	position: 6,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
@@ -33,11 +31,12 @@ export const command: SlashCommand = {
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!hasCompletedAccount(interaction, userData)) { return; }
+		if (!hasName(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		let quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		let profileData = getMapData(quidData.profiles, interaction.guildId);
+		if (!hasSpecies(interaction, quidData)) { return; }
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
@@ -132,8 +131,7 @@ export const command: SlashCommand = {
 			componentArray.push(new ActionRowBuilder());
 			for (let j = 0; j < 3; j++) {
 
-				const chosenEmoji = recoverFieldOptions.splice(getRandomNumber(recoverFieldOptions.length), 1)[0];
-				if (chosenEmoji === undefined) { throw new TypeError('chosenEmoji is undefined'); }
+				const chosenEmoji = getArrayElement(recoverFieldOptions.splice(getRandomNumber(recoverFieldOptions.length), 1), 0);
 
 				componentArray[i]?.addComponents(new ButtonBuilder()
 					.setCustomId(`recover_${chosenEmoji}`)
@@ -165,8 +163,7 @@ export const command: SlashCommand = {
 
 			for (let index = 0; index < 3; index++) {
 
-				const randomEmoji = possibleEmojis[getRandomNumber(possibleEmojis.length)];
-				if (randomEmoji === undefined) { throw new TypeError('randomEmoji is undefined'); }
+				const randomEmoji = getArrayElement(possibleEmojis, getRandomNumber(possibleEmojis.length));
 				emojisToClick.push(randomEmoji);
 			}
 			let displayingEmoji = 0;
@@ -326,14 +323,15 @@ export const command: SlashCommand = {
 						}
 
 						const lastInteraction = interactions.last() || interaction;
-						const levelUpEmbed = (await checkLevelUp(lastInteraction, userData, quidData, profileData, serverData)).levelUpEmbed;
+						const levelUpCheck = await checkLevelUp(lastInteraction, userData, quidData, profileData, serverData);
+						profileData = levelUpCheck.profileData;
 
 						botReply = await (async function(messageObject) { return lastInteraction.isMessageComponent() ? await update(lastInteraction, messageObject) : await respond(lastInteraction, messageObject, true); })({
 							content: messageContent,
 							embeds: [
 								embed,
 								...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
-								...(levelUpEmbed ? [levelUpEmbed] : [])],
+								...(levelUpCheck.levelUpEmbed ? [levelUpCheck.levelUpEmbed] : [])],
 							components: disableAllComponents(componentArray),
 						});
 

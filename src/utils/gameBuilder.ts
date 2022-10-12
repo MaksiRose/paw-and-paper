@@ -1,5 +1,6 @@
 import { ActionRowBuilder, ButtonStyle, ButtonBuilder } from 'discord.js';
 import { SpeciesHabitatType } from '../typedef';
+import { getArrayElement } from './helperFunctions';
 import { getRandomNumber } from './randomizers';
 
 export const plantEmojis = {
@@ -64,8 +65,7 @@ export function createPlantGame(
 			}
 			else {
 
-				const neutralEmoji = neutralEmojis.splice(getRandomNumber(neutralEmojis.length), 1)[0];
-				if (neutralEmoji === undefined) { throw new TypeError('neutralEmoji is undefined'); }
+				const neutralEmoji = getArrayElement(neutralEmojis.splice(getRandomNumber(neutralEmojis.length), 1), 0);
 				emojisInButton.push(neutralEmoji);
 			}
 		}

@@ -7,7 +7,7 @@ import { getRandomNumber } from './randomizers';
 /**
  * It randomly selects one of the four den stats, and then randomly selects a number between 1 and 5, and then subtracts that number from the selected stat
  */
-export default async function wearDownDen(
+export async function wearDownDen(
 	serverData: ServerSchema,
 	denKind: CurrentRegionType.SleepingDens | CurrentRegionType.FoodDen | CurrentRegionType.MedicineDen,
 ): Promise<string> {
@@ -19,7 +19,7 @@ export default async function wearDownDen(
 	const denStatkind = (['structure', 'bedding', 'thickness', 'evenness'] as const)[getRandomNumber(4)];
 	if (denStatkind === undefined) { throw new TypeError('denStatkind is undefined'); }
 
-	const denWeardownPoints = getSmallerNumber(serverData.dens[denName][denStatkind], getRandomNumber(5, 1));
+	const denWeardownPoints = wearDownAmount(serverData.dens[denName][denStatkind]);
 
 	serverData = await serverModel.findOneAndUpdate(
 		s => s.serverId === serverData.serverId,
@@ -28,3 +28,7 @@ export default async function wearDownDen(
 
 	return `-${denWeardownPoints}% ${denStatkind} for ${denKind} (${serverData.dens[denName][denStatkind]}% total)`;
 }
+
+export function wearDownAmount(
+	denAmount: number,
+): number { return getSmallerNumber(denAmount, getRandomNumber(5, 1)); }

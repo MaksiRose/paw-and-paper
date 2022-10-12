@@ -1,14 +1,14 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, InteractionReplyOptions, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder, WebhookEditMessageOptions } from 'discord.js';
 import serverModel from '../../models/serverModel';
-import { MaterialNames, materialsInfo, Quid, RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
+import { MaterialNames, materialsInfo, Profile, Quid, RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
 import getInventoryElements from '../../utils/getInventoryElements';
 import { pronoun } from '../../utils/getPronouns';
-import { getMapData, getQuidDisplayname, getSmallerNumber, respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, getMapData, getQuidDisplayname, getSmallerNumber, respond, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -27,14 +27,10 @@ const denSelectMenu = new ActionRowBuilder<ButtonBuilder>()
 		.setLabel('Medicine Den')
 		.setStyle(ButtonStyle.Secondary)]);
 
-const name: SlashCommand['name'] = 'repair';
-const description: SlashCommand['description'] = 'Repair dens. Costs energy, but gives XP.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('repair')
+		.setDescription('Improve a den\'s functionality. Not available to Younglings. Less effective as Apprentice or Healer.')
 		.addStringOption(option =>
 			option.setName('den')
 				.setDescription('The den that you want to repair')
@@ -42,6 +38,8 @@ export const command: SlashCommand = {
 				.setRequired(false))
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page3',
+	position: 8,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
@@ -49,11 +47,12 @@ export const command: SlashCommand = {
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!hasCompletedAccount(interaction, userData)) { return; }
+		if (!hasName(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		const profileData = getMapData(quidData.profiles, interaction.guildId);
+		if (!hasSpecies(interaction, quidData)) { return; }
 
 		/* Checks if the profile is on a cooldown or passed out. */
 		if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
@@ -112,7 +111,7 @@ export async function repairInteractionCollector(
 
 	/* Gets the current active quid and the server profile from the account */
 	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-	const profileData = getMapData(quidData.profiles, interaction.guildId);
+	let profileData = getMapData(quidData.profiles, interaction.guildId);
 
 	if (interaction.isButton()) {
 
@@ -128,16 +127,15 @@ export async function repairInteractionCollector(
 		const chosenDen = interaction.customId.replace('repair_options_', '');
 		if (chosenDen !== 'sleepingDens' && chosenDen !== 'medicineDen' && chosenDen !== 'foodDen') { throw new Error('chosenDen is not a den'); }
 
-		const chosenItem = interaction.values[0] as MaterialNames | undefined;
-		if (chosenItem === undefined) { throw new TypeError('chosenItem is undefined'); }
+		const chosenItem = getArrayElement(interaction.values, 0) as MaterialNames;
 
 		const repairKind = materialsInfo[chosenItem].reinforcesStructure ? 'structure' : materialsInfo[chosenItem].improvesBedding ? 'bedding' : materialsInfo[chosenItem].thickensWalls ? 'thickness' : materialsInfo[chosenItem].removesOverhang ? 'evenness' : undefined;
 		if (repairKind === undefined) { throw new TypeError('repairKind is undefined'); }
 
-		const repairAmount = getSmallerNumber(getRandomNumber(5, 6), 100 - serverData.dens[chosenDen][repairKind]);
+		const repairAmount = getSmallerNumber(addMaterialPoints(), 100 - serverData.dens[chosenDen][repairKind]);
 
 		/** True when the repairAmount is bigger than zero. If the user isn't of  rank Hunter or Elderly, a weighted table decided whether they are successful. */
-		const isSuccessful = repairAmount > 0 && (profileData.rank === RankType.Hunter || profileData.rank === RankType.Elderly || pullFromWeightedTable({ 0: profileData.rank === RankType.Healer ? 90 : 40, 1: 60 + profileData.sapling.waterCycles }) === 1);
+		const isSuccessful = repairAmount > 0 && !isUnlucky(profileData);
 
 		serverData = await serverModel.findOneAndUpdate(
 			s => s.serverId === serverData!.serverId,
@@ -149,7 +147,10 @@ export async function repairInteractionCollector(
 
 		const experiencePoints = isSuccessful === false ? 0 : profileData.rank == RankType.Elderly ? getRandomNumber(41, 20) : profileData.rank == RankType.Healer ? getRandomNumber(21, 10) : getRandomNumber(11, 5);
 		const changedCondition = await changeCondition(userData, quidData, profileData, experiencePoints);
-		const levelUpEmbed = (await checkLevelUp(interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
+		profileData = changedCondition.profileData;
+
+		const levelUpCheck = await checkLevelUp(interaction, userData, quidData, profileData, serverData);
+		profileData = levelUpCheck.profileData;
 
 		const denName = chosenDen.split(/(?=[A-Z])/).join(' ').toLowerCase();
 
@@ -161,7 +162,7 @@ export async function repairInteractionCollector(
 					.setDescription(`*${quidData.name} takes a ${chosenItem} and tries to ${repairKind === 'structure' ? 'tuck it into parts of the walls and ceiling that look less stable.' : repairKind === 'bedding' ? 'spread it over parts of the floor that look harsh and rocky.' : repairKind === 'thickness' ? 'cover parts of the walls that look a little thin with it.' : 'drag it over parts of the walls with bumps and material sticking out.'} ` + (isSuccessful ? `Immediately you can see the ${repairKind} of the den improving. What a success!*` : `After a few attempts, the material breaks into little pieces, rendering it useless. Looks like the ${quidData.displayedSpecies || quidData.species} has to try again...*`))
 					.setFooter({ text: `${changedCondition.statsUpdateText}\n\n-1 ${chosenItem} for ${interaction.guild.name}\n${isSuccessful ? `+${repairAmount}% ${repairKind} for ${denName} (${serverData.dens[chosenDen][repairKind]}%  total)` : ''}` }),
 				...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
-				...(levelUpEmbed ? [levelUpEmbed] : []),
+				...(levelUpCheck.levelUpEmbed ? [levelUpCheck.levelUpEmbed] : []),
 			],
 			components: disableAllComponents(interaction.message.components),
 		});
@@ -179,7 +180,7 @@ export async function repairInteractionCollector(
  */
 function getMaterials(
 	userData: UserSchema,
-	quidData: Quid,
+	quidData: Quid<true>,
 	serverData: ServerSchema,
 	chosenDen: 'sleepingDens' | 'foodDen' | 'medicineDen',
 	embedArray: EmbedBuilder[],
@@ -215,3 +216,9 @@ function getMaterials(
 		],
 	};
 }
+
+export function addMaterialPoints() { return getRandomNumber(5, 6); }
+
+export function isUnlucky(
+	profileData: Profile,
+): boolean { return profileData.rank !== RankType.Hunter && profileData.rank !== RankType.Elderly && pullFromWeightedTable({ 0: profileData.rank === RankType.Healer ? 90 : 40, 1: 60 + profileData.sapling.waterCycles }) === 0; }

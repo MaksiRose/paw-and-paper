@@ -2,15 +2,13 @@ import { SlashCommandBuilder } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
 import { SlashCommand } from '../../typedef';
 
-const name: SlashCommand['name'] = 'uptime';
-const description: SlashCommand['description'] = 'How long the bot has been online for and its ping.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('uptime')
+		.setDescription('How long the bot has been online for and its ping.')
 		.toJSON(),
+	category: 'other',
+	position: 0,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction) => {

@@ -40,11 +40,8 @@ export async function checkLevelUp(
 			.setTitle(`${quidData.name} just leveled up! ${upperCasePronounAndPlural(quidData, 0, 'is', 'are')} now level ${profileData.levels}.`);
 
 		const checkLevel = await checkLevelUp(interaction, userData, quidData, profileData, serverData);
-		if (checkLevel.levelUpEmbed) {
-
-			embed = checkLevel.levelUpEmbed;
-			profileData = checkLevel.profileData;
-		}
+		profileData = checkLevel.profileData;
+		if (checkLevel.levelUpEmbed) { embed = checkLevel.levelUpEmbed; }
 
 		const guild = interaction.guild || await interaction.client.guilds.fetch(interaction.guildId);
 		const member = await guild.members.fetch(interaction.user.id);

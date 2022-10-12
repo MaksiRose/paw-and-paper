@@ -5,11 +5,9 @@ import { respond } from '../utils/helperFunctions';
 import userModel from '../models/userModel';
 import { ContextMenuCommand, WebhookMessages } from '../typedef';
 
-const name: ContextMenuCommand['name'] = 'Who is ❓';
 export const command: ContextMenuCommand = {
-	name: name,
 	data: {
-		name: name,
+		name: 'Who is ❓',
 		type: 3,
 		dm_permission: false,
 	},

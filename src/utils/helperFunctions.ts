@@ -14,12 +14,27 @@ const { error_color } = require('../../config.json');
  * @returns T as the property from the key from the object
  */
 export function getMapData<T>(
-	map: Record<string, T>,
-	key: string,
+	map: Record<PropertyKey, T>,
+	key: PropertyKey,
 ): T {
-	const data = map[key];
-	if (data === undefined) throw new TypeError('data is undefined');
-	return data;
+	const element = map[key];
+	if (element === undefined) throw new TypeError('element is undefined');
+	return element;
+}
+
+/**
+ * It takes an array and an index, and returns the element at that index. If the element is undefined, it throws a type error instead.
+ * @param array - The array to get the element from.
+ * @param {number} index - The index of the element you want to get.
+ * @returns The element at the given index of the array.
+ */
+export function getArrayElement<T>(
+	array: Array<T>,
+	index: number,
+): T {
+	const element = array[index];
+	if (element === undefined) throw new TypeError('element is undefined');
+	return element;
 }
 
 export function getUserIds(
@@ -199,9 +214,9 @@ export async function sendErrorMessage(
  * @param {T} object - The object to be copied.
  * @returns A deep copy of the object.
  */
-export const deepCopyObject = <T>(
+export function deepCopyObject<T>(
 	object: T,
-): T => {
+): T {
 
 	let returnValue: T;
 
@@ -244,7 +259,7 @@ export const deepCopyObject = <T>(
 	}
 
 	return returnValue;
-};
+}
 
 export type KeyOfUnion<T> = T extends object ? T extends T ? keyof T : never : never; // `T extends object` to filter out primitives like `string`
 /* What this does is for every key in the inventory (like commonPlants, uncommonPlants etc.), it takes every single sub-key of all the keys and adds it to it. KeyOfUnion is used to combine all those sub-keys from all the keys. In the case that they are not part of the property, they will be of type never, meaning that they can't accidentally be assigned anything (which makes the type-checking still work) */

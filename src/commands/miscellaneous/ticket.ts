@@ -1,20 +1,16 @@
 import { Octokit } from '@octokit/rest';
 import { EmbedBuilder, SlashCommandBuilder, Team, User, ActionRowBuilder, ButtonBuilder, ButtonStyle, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ModalMessageModalSubmitInteraction, ChatInputCommandInteraction, AttachmentBuilder } from 'discord.js';
-import { respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, respond, update } from '../../utils/helperFunctions';
 import { CustomClient, SlashCommand } from '../../typedef';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
 const { error_color, default_color, github_token, ticket_channel_id } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'ticket';
-const description: SlashCommand['description'] = 'Report a bug, give feedback, suggest a feature!';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('ticket')
+		.setDescription('Report a bug, give feedback, suggest a feature!')
 		.addStringOption(option =>
 			option.setName('title')
 				.setDescription('Give a short summary of what the ticket is about')
@@ -36,6 +32,8 @@ export const command: SlashCommand = {
 			option.setName('attachment')
 				.setDescription('Optional picture or video to add context'))
 		.toJSON(),
+	category: 'page5',
+	position: 2,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction) => {
@@ -208,11 +206,9 @@ export async function sendRespondToTicketModalResponse(
 ): Promise<void> {
 
 	const args = interaction.customId.replace('ticket_respond_', '').split('_');
-	const userOrChannelId = args[0];
-	const ticketId = args[1];
+	const userOrChannelId = getArrayElement(args, 0);
+	const ticketId = getArrayElement(args, 1);
 	const fromAdmin = args[2] === 'true';
-	if (userOrChannelId === undefined) { throw new TypeError('userOrChannelId is undefined'); }
-	if (ticketId === undefined) { throw new TypeError('ticketId is undefined'); }
 
 	const messageText = interaction.fields.getTextInputValue('ticket_textinput');
 

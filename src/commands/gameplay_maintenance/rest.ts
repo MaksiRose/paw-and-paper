@@ -2,25 +2,23 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, RepliableIn
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
 import { CurrentRegionType, Profile, Quid, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasCooldown, isPassedOut } from '../../utils/checkValidity';
 import { pronoun, pronounAndPlural, upperCasePronoun } from '../../utils/getPronouns';
 import { getMapData, getQuidDisplayname, respond, sendErrorMessage } from '../../utils/helperFunctions';
-import wearDownDen from '../../utils/wearDownDen';
+import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
 const restingIntervalMap: Map<string, NodeJS.Timeout> = new Map();
 
-const name: SlashCommand['name'] = 'rest';
-const description: SlashCommand['description'] = 'Get some sleep and fill up your energy meter. Takes some time to refill.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('rest')
+		.setDescription('Get some sleep and fill up your energy meter. Takes some time to refill.')
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page3',
+	position: 5,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData) => {
@@ -28,11 +26,12 @@ export const command: SlashCommand = {
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!hasCompletedAccount(interaction, userData)) { return; }
+		if (!hasName(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		const profileData = getMapData(quidData.profiles, interaction.guildId);
+		if (!hasSpecies(interaction, quidData)) { return; }
 
 		/* Checks if the profile is on a cooldown or passed out. */
 		if (await isPassedOut(interaction, userData, quidData, profileData, false)) { return; }
@@ -45,7 +44,7 @@ export const command: SlashCommand = {
 export async function startResting(
 	interaction: RepliableInteraction<'cached'>,
 	userData: UserSchema,
-	quidData: Quid,
+	quidData: Quid<true>,
 	profileData: Profile,
 	serverData: ServerSchema,
 ) {
@@ -90,7 +89,7 @@ export async function startResting(
 		},
 	);
 
-	const isAutomatic = !interaction.isCommand() || interaction.commandName !== name;
+	const isAutomatic = !interaction.isCommand() || interaction.commandName !== command.data.name;
 
 	const weardownText = await wearDownDen(serverData, CurrentRegionType.SleepingDens);
 	let energyPoints = 0;
@@ -172,7 +171,7 @@ export async function startResting(
  */
 function getRestingEmbed(
 	userData: UserSchema,
-	quidData: Quid,
+	quidData: Quid<true>,
 	energyPoints: number,
 	profileData: Profile,
 	previousRegion: CurrentRegionType,

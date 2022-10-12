@@ -8,16 +8,14 @@ import { getMapData } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 const { error_color, default_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'shop';
-const description: SlashCommand['description'] = 'Buy roles with experience points.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('shop')
+		.setDescription('Buy roles with experience points.')
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page5',
+	position: 0,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData, serverData) => {
@@ -74,7 +72,7 @@ export async function shopInteractionCollector(
 		if (buyItem === undefined) { throw new Error('roleId is undefined or could not be found in server shop'); }
 
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-		const profileData = getMapData(quidData.profiles, interaction.guildId);
+		let profileData = getMapData(quidData.profiles, interaction.guildId);
 
 		if (profileData.roles.some(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience')) {
 
@@ -94,14 +92,16 @@ export async function shopInteractionCollector(
 
 				if (interaction.member.roles.cache.has(buyItem.roleId)) { await interaction.member.roles.remove(buyItem.roleId); }
 
-				const levelUpEmbed = (await checkLevelUp(interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
+				const levelUpCheck = await checkLevelUp(interaction, userData, quidData, profileData, serverData);
+				profileData = levelUpCheck.profileData;
+
 				await respond(interaction, {
 					embeds: [
 						new EmbedBuilder()
 							.setColor(default_color)
 							.setAuthor({ name: serverData.name, iconURL: interaction.guild.iconURL() || undefined })
 							.setDescription(`You refunded the <@&${buyItem.roleId}> role!`),
-						...(levelUpEmbed ? [levelUpEmbed] : []),
+						...(levelUpCheck.levelUpEmbed ? [levelUpCheck.levelUpEmbed] : []),
 					],
 				}, false);
 			}

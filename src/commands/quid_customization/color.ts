@@ -6,21 +6,19 @@ import { hasName } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
 const { error_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'color';
-const description: SlashCommand['description'] = 'Enter a valid hex code to give your messages and profile that color.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('color')
+		.setDescription('Enter a valid hex code to give your messages and profile that color.')
 		.addStringOption(option =>
-			option.setName('color')
-				.setDescription('A hex code. Valid hex codes contain only letters from \'a\' to \'f\' and/or numbers.')
+			option.setName('hex')
+				.setDescription('Valid hex codes consist of 6 characters containing letters from \'a\' to \'f\' and/or numbers.')
 				.setMinLength(6)
 				.setMaxLength(6)
 				.setRequired(true))
 		.toJSON(),
+	category: 'page1',
+	position: 4,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {
@@ -28,7 +26,7 @@ export const command: SlashCommand = {
 		if (!hasName(interaction, userData)) { return; }
 
 		/* Checking if the user has sent a valid hex code. If they have not, it will send an error message. */
-		const hexColor = interaction.options.getString('color');
+		const hexColor = interaction.options.getString('hex');
 		if (!hexColor || !isValidHex(hexColor)) {
 
 			await respond(interaction, {

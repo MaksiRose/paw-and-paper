@@ -4,7 +4,7 @@ import userModel from '../../models/userModel';
 import { CurrentRegionType, Quid, SlashCommand } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition, infectWithChance } from '../../utils/changeCondition';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { pronoun, pronounAndPlural, upperCasePronoun } from '../../utils/getPronouns';
@@ -17,20 +17,18 @@ import { remindOfAttack } from '../gameplay_primary/attack';
 const sharingCooldownAccountsMap: Map<string, number> = new Map();
 const twoHoursInMs = 7_200_000;
 
-const name: SlashCommand['name'] = 'share';
-const description: SlashCommand['description'] = 'Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('share')
+		.setDescription('Share an anecdote with someone and give them experience. Only available to Elderlies.')
 		.setDMPermission(false)
 		.addUserOption(option =>
 			option.setName('user')
 				.setDescription('The user that you want to share a story with.')
 				.setRequired(true))
 		.toJSON(),
+	category: 'page4',
+	position: 1,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData1, serverData, embedArray) => {
@@ -38,11 +36,12 @@ export const command: SlashCommand = {
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new TypeError('serverData is null'); }
-		if (!hasCompletedAccount(interaction, userData1)) { return; }
+		if (!hasName(interaction, userData1)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
 		let profileData1 = getMapData(quidData1.profiles, interaction.guildId);
+		if (!hasSpecies(interaction, quidData1)) { return; }
 
 		/* Checks if the profile is on a cooldown, passed out, or resting. */
 		if (await isInvalid(interaction, userData1, quidData1, profileData1, embedArray)) { return; }
@@ -131,6 +130,7 @@ export const command: SlashCommand = {
 
 		/* Check if the user is interactable, and if they are, define quid data and profile data. */
 		if (!isInteractable(interaction, userData2, messageContent, embedArray)) { return; }
+
 		let quidData2 = getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId));
 		let profileData2 = getMapData(quidData2.profiles, interaction.guildId);
 
@@ -138,8 +138,8 @@ export const command: SlashCommand = {
 		sharingCooldownAccountsMap.set(quidData1._id + interaction.guildId, Date.now());
 
 		/* Change the condition for user 1 */
-		const decreasedStatsData1 = await changeCondition(userData1, quidData1, profileData1, 0, CurrentRegionType.Ruins);
-		profileData1 = decreasedStatsData1.profileData;
+		const decreasedStatsData = await changeCondition(userData1, quidData1, profileData1, 0, CurrentRegionType.Ruins);
+		profileData1 = decreasedStatsData.profileData;
 
 		/* Give user 2 experience */
 		const experienceIncrease = getRandomNumber(Math.round((profileData2.levels * 50) * 0.15), Math.round((profileData2.levels * 50) * 0.05));
@@ -154,9 +154,11 @@ export const command: SlashCommand = {
 		profileData2 = getMapData(quidData2.profiles, interaction.guildId);
 
 		/* If user 2 had a cold, infect user 1 with a 30% chance. */
-		const infectedEmbed = await infectWithChance(userData1, quidData1, profileData1, quidData2, profileData2);
+		const infectedCheck = await infectWithChance(userData1, quidData1, profileData1, quidData2, profileData2);
+		profileData1 = infectedCheck.profileData;
 
-		const user2CheckLevelData = await checkLevelUp(interaction, userData2, quidData2, profileData2, serverData);
+		const levelUpCheck = await checkLevelUp(interaction, userData2, quidData2, profileData2, serverData);
+		profileData2 = levelUpCheck.profileData;
 
 		const botReply = await respond(interaction, {
 			content: `<@${userData2.userId[0]}>\n${messageContent}`,
@@ -165,10 +167,10 @@ export const command: SlashCommand = {
 					.setColor(quidData1.color)
 					.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 					.setDescription(`*${quidData2.name} comes running to the old wooden trunk at the ruins where ${quidData1.name} sits, ready to tell an exciting story from long ago. ${upperCasePronoun(quidData2, 2)} eyes are sparkling as the ${quidData1.displayedSpecies || quidData1.species} recounts great adventures and the lessons to be learned from them.*`)
-					.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n+${experienceIncrease} XP (${profileData2.experience}/${profileData2.levels * 50}) for ${quidData2.name}` }),
-				...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
-				...(infectedEmbed ? [infectedEmbed] : []),
-				...(user2CheckLevelData.levelUpEmbed ? [user2CheckLevelData.levelUpEmbed] : []),
+					.setFooter({ text: `${decreasedStatsData.statsUpdateText}\n\n+${experienceIncrease} XP (${profileData2.experience}/${profileData2.levels * 50}) for ${quidData2.name}` }),
+				...(decreasedStatsData.injuryUpdateEmbed ? [decreasedStatsData.injuryUpdateEmbed] : []),
+				...(infectedCheck.infectedEmbed ? [infectedCheck.infectedEmbed] : []),
+				...(levelUpCheck.levelUpEmbed ? [levelUpCheck.levelUpEmbed] : []),
 			],
 		}, true);
 
@@ -187,7 +189,7 @@ function isEligableForSharing(
 	_id: string,
 	quid: Quid,
 	guildId: string,
-): boolean {
+): quid is Quid<true> {
 
 	const p = quid.profiles[guildId];
 	return quid.name !== '' && quid.species !== '' && p !== undefined && p.currentRegion === CurrentRegionType.Ruins && p.energy > 0 && p.health > 0 && p.hunger > 0 && p.thirst > 0 && p.injuries.cold === false && cooldownMap.get(_id + guildId) !== true && p.isResting === false && isResting(_id, p.serverId) === false;

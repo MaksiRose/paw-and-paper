@@ -4,24 +4,20 @@ import userModel from '../../models/userModel';
 import { CurrentRegionType, Profile, Quid, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getBiggerNumber, getMapData, getQuidDisplayname, getSmallerNumber, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
+import { getArrayElement, getBiggerNumber, getMapData, getQuidDisplayname, getSmallerNumber, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
-const name: SlashCommand['name'] = 'playfight';
-const description: SlashCommand['description'] = 'You can play Connect Four or Tic Tac Toe.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('playfight')
+		.setDescription('Play Connect Four or Tic Tac Toe with someone.')
 		.setDMPermission(false)
 		.addUserOption(option =>
 			option.setName('user')
@@ -36,17 +32,20 @@ export const command: SlashCommand = {
 				)
 				.setRequired(true))
 		.toJSON(),
+	category: 'page4',
+	position: 2,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false, // This is technically true, but set to false because it does not reflect activity
 	sendCommand: async (client, interaction, userData1, serverData, embedArray) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
-		if (!hasCompletedAccount(interaction, userData1)) { return; }
+		if (!hasName(interaction, userData1)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
 		const profileData1 = getMapData(quidData1.profiles, interaction.guildId);
+		if (!hasSpecies(interaction, quidData1)) { return; }
 
 		/* Checks if the profile is on a cooldown, passed out, or resting. */
 		if (await isInvalid(interaction, userData1, quidData1, profileData1, embedArray)) { return; }
@@ -113,15 +112,13 @@ export async function playfightInteractionCollector(
 	if (serverData === null) { throw new TypeError('serverData is null'); }
 
 	/* Gets the current active quid and the server profile from the account */
-	const userId1 = interaction.customId.split('_')[4];
-	if (userId1 === undefined) { throw new TypeError('userId1 is undefined'); }
+	const userId1 = getArrayElement(interaction.customId.split('_'), 4);
 	let userData1 = await userModel.findOne(u => u.userId.includes(userId1));
 	let quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
 	let profileData1 = getMapData(quidData1.profiles, interaction.guildId);
 
 	/* Gets the current active quid and the server profile from the partners account */
-	const userId2 = interaction.customId.split('_')[3];
-	if (userId2 === undefined) { throw new TypeError('userId2 is undefined'); }
+	const userId2 = getArrayElement(interaction.customId.split('_'), 3);
 	let userData2 = await userModel.findOne(u => u.userId.includes(userId2));
 	let quidData2 = getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId));
 	let profileData2 = getMapData(quidData2.profiles, interaction.guildId);
@@ -137,8 +134,7 @@ export async function playfightInteractionCollector(
 	profileData2 = decreasedStatsData2.profileData;
 
 	/* Gets the chosen game type errors if it doesn't exist */
-	const gameType = interaction.customId.split('_')[2]; // connectfour or tictactoe
-	if (gameType === undefined) { throw new TypeError('gameType is undefined'); }
+	const gameType = getArrayElement(interaction.customId.split('_'), 2); // connectfour or tictactoe
 
 	const emptyField = gameType === 'tictactoe' ? '◻️' : '⚫';
 	const player1Field = gameType === 'tictactoe' ? '⭕' : '🟡';
@@ -450,8 +446,8 @@ export async function playfightInteractionCollector(
 						.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}` }),
 					...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
 					...(decreasedStatsData2.injuryUpdateEmbed ? [decreasedStatsData2.injuryUpdateEmbed] : []),
-					...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
-					...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
+					...(afterGameChangesData?.levelUpCheck1.levelUpEmbed ? [afterGameChangesData.levelUpCheck1.levelUpEmbed] : []),
+					...(afterGameChangesData?.levelUpCheck2.levelUpEmbed ? [afterGameChangesData.levelUpCheck2.levelUpEmbed] : []),
 				],
 				components: disableAllComponents(componentArray),
 			})
@@ -561,25 +557,27 @@ function getWinningRow(
 async function checkAfterGameChanges(
 	interaction: ButtonInteraction<'cached'>,
 	userData1: UserSchema,
-	quidData1: Quid,
+	quidData1: Quid<true>,
 	profileData1: Profile,
 	userData2: UserSchema,
-	quidData2: Quid,
+	quidData2: Quid<true>,
 	profileData2: Profile,
 	serverData: ServerSchema,
 ): Promise<{
-	user1CheckLevelData: {
+	levelUpCheck1: {
 		levelUpEmbed: EmbedBuilder | null;
 		profileData: Profile;
 	};
-	user2CheckLevelData: {
+	levelUpCheck2: {
 		levelUpEmbed: EmbedBuilder | null;
 		profileData: Profile;
 	};
 }> {
 
-	const user1CheckLevelData = await checkLevelUp(interaction, userData1, quidData1, profileData1, serverData);
-	const user2CheckLevelData = await checkLevelUp(interaction, userData2, quidData2, profileData2, serverData);
+	const levelUpCheck1 = await checkLevelUp(interaction, userData1, quidData1, profileData1, serverData);
+	profileData1 = levelUpCheck1.profileData;
+	const levelUpCheck2 = await checkLevelUp(interaction, userData2, quidData2, profileData2, serverData);
+	profileData2 = levelUpCheck2.profileData;
 
 	await isPassedOut(interaction, userData1, quidData1, profileData1, true);
 	await isPassedOut(interaction, userData2, quidData2, profileData2, true);
@@ -595,5 +593,5 @@ async function checkAfterGameChanges(
 	await eatAdvice(interaction, userData1, profileData1);
 	await eatAdvice(interaction, userData2, profileData2);
 
-	return { user1CheckLevelData, user2CheckLevelData };
+	return { levelUpCheck1, levelUpCheck2 };
 }
