@@ -1,7 +1,7 @@
 import { addCorrectDietHungerPoints, removeHungerPoints } from '../commands/gameplay_maintenance/eat';
 import { getStatsPoints, isUnlucky, quidNeedsHealing } from '../commands/gameplay_maintenance/heal';
 import userModel from '../models/userModel';
-import { CommonPlantNames, commonPlantsInfo, Inventory, PlantEdibilityType, PlantInfo, Quid, RankType, RarePlantNames, rarePlantsInfo, ServerSchema, SpecialPlantNames, specialPlantsInfo, SpeciesDietType, speciesInfo, SpeciesNames, UncommonPlantNames, uncommonPlantsInfo, UserSchema } from '../typedef';
+import { CommonPlantNames, commonPlantsInfo, Inventory, MaterialNames, PlantEdibilityType, PlantInfo, Quid, RankType, RarePlantNames, rarePlantsInfo, ServerSchema, SpecialPlantNames, specialPlantsInfo, SpeciesDietType, speciesInfo, SpeciesNames, UncommonPlantNames, uncommonPlantsInfo, UserSchema } from '../typedef';
 import { changeCondition } from './changeCondition';
 import { deepCopyObject, getArrayElement, getMapData, getSmallerNumber, keyInObject, unsafeKeys, widenValues } from './helperFunctions';
 import { getRandomNumber, pullFromWeightedTable } from './randomizers';
@@ -87,8 +87,7 @@ export async function simulateMeatUse(
 }
 
 /**
- * It takes an array of meat types, and an inventory, and returns a random meat type from the array,
- * weighted by how many of each meat type is in the inventory
+ * It takes an array of meat types, and an inventory, and returns a random meat type from the array, weighted by how many of each meat type is in the inventory
  * @param {SpeciesNames[]} options - SpeciesNames[] - An array of the meat types you want to choose
  * from.
  * @param {Inventory} inventory - The inventory of the server
@@ -265,7 +264,7 @@ export async function pickPlant(
 	diffInfections = diffInfections - smallest + 1;
 	diffCold = diffCold - smallest + 1;
 	diffSprains = diffSprains - smallest + 1;
-	diffPoison = include === 0 ? 0 : diffPoison - smallest + 1; // Because there is no common plant against poison, if only common plants are included, the chance that poison is picked must be null
+	diffPoison = include === 0 ? 0 : (diffPoison - smallest + 1); // Because there is no common plant against poison, if only common plants are included, the chance that poison is picked must be null
 
 	const pick = pullFromWeightedTable({ 0: diffEating + diffHunger, 1: diffEnergy, 2: diffWounds, 3: diffInfections, 4: diffCold, 5: diffSprains, 6: diffPoison });
 	const options: Array<['commonPlants' | 'uncommonPlants' | 'rarePlants', CommonPlantNames | UncommonPlantNames | RarePlantNames]> = [];
@@ -287,14 +286,33 @@ export async function pickPlant(
 			) {
 
 				options.push([itemType, item]);
-				if (itemType === 'commonPlants' && include === 1) { options.push([itemType, item]); }
+				if (itemType === 'commonPlants' && include >= 1) { options.push([itemType, item]); }
 				if (itemType === 'commonPlants' && include === 2) { options.push([itemType, item]); }
 				if (itemType === 'uncommonPlants' && include === 2) { options.push([itemType, item]); }
 			}
 		}
 	}
+
+	if (options.length === 0) { throw new Error(`options is empty (include is ${include}, pick is ${pick})`); }
+
 	const object = options.reduce((prev, [curItemType, curItem], index) => ({ ...prev, [index]: inventory_[curItemType][curItem] + 1 }), {} as Record<number, number>);
 	return pickItem(object, options.map(([, item]) => item));
+}
+
+
+/**
+ * It takes an inventory and returns a random material weighted by how much of each material is in the inventory
+ * @param {Inventory} inventory - Inventory - this is the inventory object that we're going to be
+ * picking from.
+ * @returns A MaterialNames
+ */
+export function pickMaterial(
+	inventory: Inventory,
+): MaterialNames {
+
+	const options: MaterialNames[] = Object.keys(inventory.materials) as MaterialNames[];
+	const object = options.reduce((prev, curItem, index) => ({ ...prev, [index]: inventory.materials[curItem] + 1 }), {} as Record<number, number>);
+	return pickItem(object, options);
 }
 
 
@@ -305,7 +323,7 @@ function pickItem<T extends string>(object: Record<number, number>, options: T[]
 
 	// We make a new array, from the values of the object, where each item is the common denominotor divided by the property of the object multiplied by the numerator.
 	const sumArr = Object.values(object).reduce((prev, cur) => [...prev, (smallestCommon / cur) * numerator], [] as number[]);
-	const sum = sumArr.reduce((a, b) => a + b);
+	const sum = sumArr.reduce((a, b) => a + b, 0);
 	const x = 100 * (smallestCommon / sum);
 
 	// For the old object, we do Math.round(x * (numerator / property))

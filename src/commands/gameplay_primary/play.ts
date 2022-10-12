@@ -3,15 +3,16 @@ import { cooldownMap } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
 import { CurrentRegionType, Quid, RankType, ServerSchema, SlashCommand, SpeciesHabitatType, speciesInfo, UserSchema } from '../../typedef';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
-import { changeCondition, infectWithChance, pickRandomCommonPlant } from '../../utils/changeCondition';
+import { changeCondition, infectWithChance } from '../../utils/changeCondition';
 import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, getQuidDisplayname, getSmallerNumber, respond, update } from '../../utils/helperFunctions';
+import { getMapData, getQuidDisplayname, getSmallerNumber, keyInObject, respond, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
+import { pickPlant } from '../../utils/simulateItemUse';
 import { isResting } from '../gameplay_maintenance/rest';
 import { remindOfAttack } from './attack';
 import { sendQuestMessage } from './start-quest';
@@ -313,7 +314,7 @@ export async function executePlaying(
 	else {
 
 		const plantGame = createPlantGame(speciesInfo[quidData1.species].habitat);
-		const foundItem = pickRandomCommonPlant();
+		const foundItem = await pickPlant(0, serverData);
 
 		playComponent = plantGame.plantComponent;
 
@@ -361,7 +362,9 @@ export async function executePlaying(
 					u => u._id === userData1?._id,
 					(u) => {
 						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-						p.inventory.commonPlants[foundItem] += 1;
+						if (keyInObject(p.inventory.commonPlants, foundItem)) { p.inventory.commonPlants[foundItem] += 1; }
+						else if (keyInObject(p.inventory.uncommonPlants, foundItem)) { p.inventory.uncommonPlants[foundItem] += 1; }
+						else { p.inventory.rarePlants[foundItem] += 1; }
 					},
 				);
 				embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundItem}` });

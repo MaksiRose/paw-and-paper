@@ -1,6 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
 import userModel from '../models/userModel';
-import { commonPlantsInfo, CurrentRegionType, materialsInfo, Profile, Quid, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo, UserSchema } from '../typedef';
+import { CurrentRegionType, Profile, Quid, UserSchema } from '../typedef';
 import { deepCopyObject, getBiggerNumber, getMapData, getSmallerNumber } from './helperFunctions';
 import { pronoun } from './getPronouns';
 import { getRandomNumber, pullFromWeightedTable } from './randomizers';
@@ -300,44 +300,4 @@ export async function infectWithChance(
 			.setFooter({ text: `-${healthPoints} HP (from cold)` });
 	}
 	return null;
-}
-
-export function pickRandomCommonPlant() {
-
-	const commonPlantsKeys = Object.keys(commonPlantsInfo) as Array<keyof typeof commonPlantsInfo>;
-	const randomCommonPlant = commonPlantsKeys[getRandomNumber(commonPlantsKeys.length)];
-	if (randomCommonPlant === undefined) { throw new TypeError('randomCommonPlant is undefined'); }
-	return randomCommonPlant;
-}
-
-export function pickRandomUncommonPlant() {
-
-	const uncommonPlantsKeys = Object.keys(uncommonPlantsInfo) as Array<keyof typeof uncommonPlantsInfo>;
-	const randomUncommonPlant = uncommonPlantsKeys[getRandomNumber(uncommonPlantsKeys.length)];
-	if (randomUncommonPlant === undefined) { throw new TypeError('randomUncommonPlant is undefined'); }
-	return randomUncommonPlant;
-}
-
-export function pickRandomRarePlant() {
-
-	const rarePlantsKeys = Object.keys(rarePlantsInfo) as Array<keyof typeof rarePlantsInfo>;
-	const randomRarePlant = rarePlantsKeys[getRandomNumber(rarePlantsKeys.length)];
-	if (randomRarePlant === undefined) { throw new TypeError('randomRarePlant is undefined'); }
-	return randomRarePlant;
-}
-
-export function pickRandomSpecialPlant() {
-
-	const specialPlantsKeys = Object.keys(specialPlantsInfo) as Array<keyof typeof specialPlantsInfo>;
-	const randomSpecialPlant = specialPlantsKeys[getRandomNumber(specialPlantsKeys.length)];
-	if (randomSpecialPlant === undefined) { throw new TypeError('randomSpecialPlant is undefined'); }
-	return randomSpecialPlant;
-}
-
-export function pickRandomMaterial() {
-
-	const materialsKeys = Object.keys(materialsInfo) as Array<keyof typeof materialsInfo>;
-	const randomMaterial = materialsKeys[getRandomNumber(materialsKeys.length)];
-	if (randomMaterial === undefined) { throw new TypeError('randomMaterial is undefined'); }
-	return randomMaterial;
 }

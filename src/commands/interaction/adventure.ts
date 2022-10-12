@@ -1,11 +1,11 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
-import { getQuidDisplayname, getSmallerNumber, KeyOfUnion, sendErrorMessage, update, widenValues } from '../../utils/helperFunctions';
+import { getQuidDisplayname, getSmallerNumber, keyInObject, KeyOfUnion, sendErrorMessage, update, widenValues } from '../../utils/helperFunctions';
 import { respond } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
-import { CurrentRegionType, Inventory, Profile, Quid, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
+import { CurrentRegionType, Inventory, Profile, Quid, ServerSchema, SlashCommand, SpecialPlantNames, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
-import { changeCondition, pickRandomCommonPlant, pickRandomRarePlant, pickRandomSpecialPlant, pickRandomUncommonPlant } from '../../utils/changeCondition';
+import { changeCondition } from '../../utils/changeCondition';
 import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
@@ -15,6 +15,7 @@ import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { getHighestItem, remindOfAttack } from '../gameplay_primary/attack';
+import { pickPlant } from '../../utils/simulateItemUse';
 const { error_color } = require('../../../config.json');
 
 const name: SlashCommand['name'] = 'adventure';
@@ -428,28 +429,18 @@ export async function adventureInteractionCollector(
 
 					extraHealthPoints = getSmallerNumber(getRandomNumber(5, 8), winningProfileData.maxHealth - winningProfileData.health);
 				}
-				else if (Object.keys(winningProfileData.temporaryStatIncrease).length <= 1 && pullFromWeightedTable({ 0: finishedRounds * 3, 1: 45 - finishedRounds }) === 1) {
+				else if (Object.keys(winningProfileData.temporaryStatIncrease).length <= 1 && pullFromWeightedTable({ 0: 20 - finishedRounds, 1: finishedRounds - 10 }) === 0) {
 
-					foundItem = pickRandomSpecialPlant();
+					const specialPlants = Object.keys(serverData.inventory.specialPlants) as SpecialPlantNames[];
+					foundItem = specialPlants[getRandomNumber(specialPlants.length)]!;
 					winningProfileData.inventory.specialPlants[foundItem] += 1;
-				}
-				else if (pullFromWeightedTable({ 0: finishedRounds * 8, 1: 30 - finishedRounds }) === 1) {
-
-					if (pullFromWeightedTable({ 0: finishedRounds * 8, 1: 30 - finishedRounds }) === 1) {
-
-						foundItem = pickRandomRarePlant();
-						winningProfileData.inventory.rarePlants[foundItem] += 1;
-					}
-					else {
-
-						foundItem = pickRandomUncommonPlant();
-						winningProfileData.inventory.uncommonPlants[foundItem] += 1;
-					}
 				}
 				else {
 
-					foundItem = pickRandomCommonPlant();
-					winningProfileData.inventory.commonPlants[foundItem] += 1;
+					foundItem = await pickPlant(pullFromWeightedTable({ 0: finishedRounds + 10, 1: (2 * finishedRounds) - 10, 2: (20 - finishedRounds) * 3 }) as 0 | 1 | 2, serverData);
+					if (keyInObject(winningProfileData.inventory.commonPlants, foundItem)) { winningProfileData.inventory.commonPlants[foundItem] += 1; }
+					else if (keyInObject(winningProfileData.inventory.uncommonPlants, foundItem)) { winningProfileData.inventory.uncommonPlants[foundItem] += 1; }
+					else { winningProfileData.inventory.rarePlants[foundItem] += 1; }
 				}
 
 				await userModel

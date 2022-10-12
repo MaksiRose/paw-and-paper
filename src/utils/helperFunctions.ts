@@ -214,9 +214,9 @@ export async function sendErrorMessage(
  * @param {T} object - The object to be copied.
  * @returns A deep copy of the object.
  */
-export const deepCopyObject = <T>(
+export function deepCopyObject<T>(
 	object: T,
-): T => {
+): T {
 
 	let returnValue: T;
 
@@ -259,7 +259,7 @@ export const deepCopyObject = <T>(
 	}
 
 	return returnValue;
-};
+}
 
 export type KeyOfUnion<T> = T extends object ? T extends T ? keyof T : never : never; // `T extends object` to filter out primitives like `string`
 /* What this does is for every key in the inventory (like commonPlants, uncommonPlants etc.), it takes every single sub-key of all the keys and adds it to it. KeyOfUnion is used to combine all those sub-keys from all the keys. In the case that they are not part of the property, they will be of type never, meaning that they can't accidentally be assigned anything (which makes the type-checking still work) */

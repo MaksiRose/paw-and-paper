@@ -10,12 +10,12 @@ import { disableAllComponents } from '../../utils/componentDisabling';
 import { cooldownMap, serverActiveUsersMap } from '../../events/interactionCreate';
 import { createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
-import { changeCondition, pickRandomMaterial } from '../../utils/changeCondition';
+import { changeCondition } from '../../utils/changeCondition';
 import userModel from '../../models/userModel';
 import { sendQuestMessage } from './start-quest';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
-import { calculateInventorySize, pickMeat, pickPlant, simulateMeatUse, simulatePlantUse } from '../../utils/simulateItemUse';
+import { calculateInventorySize, pickMaterial, pickMeat, pickPlant, simulateMeatUse, simulatePlantUse } from '../../utils/simulateItemUse';
 
 type Position = { row: number, column: number; };
 const name: SlashCommand['name'] = 'explore';
@@ -363,7 +363,7 @@ export async function executeExploring(
 		}
 		else if (serverMaterialsCount < 36) {
 
-			const foundMaterial = pickRandomMaterial();
+			const foundMaterial = pickMaterial(serverData.inventory);
 
 			userData = await userModel.findOneAndUpdate(
 				u => u._id === userData!._id,
@@ -385,7 +385,7 @@ export async function executeExploring(
 	// If the user gets the right chance, find a plant
 	else if (pullFromWeightedTable({ 0: profileData.rank === RankType.Healer ? 2 : 1, 1: profileData.rank === RankType.Hunter ? 2 : 1 }) === 0) {
 
-		/* First we are calculating needed meat - existing meat through simulatePlantUse three times, of which two it is calculated for active users only. The results of these are added together and divided by 3 to get their average. This is then used to get a random number that can be between 1 higher and 1 lower than that. The user's level is added with this, and it is limited to not be below 1. */
+		/* First we are calculating needed plants - existing plants through simulatePlantUse three times, of which two it is calculated for active users only. The results of these are added together and divided by 3 to get their average. This is then used to get a random number that can be between 1 higher and 1 lower than that. The user's level is added with this, and it is limited to not be below 1. */
 		const simAverage = Math.round((await simulatePlantUse(serverData, true) + await simulatePlantUse(serverData, true) + await simulatePlantUse(serverData, false)) / 3);
 		const environmentLevel = getBiggerNumber(1, profileData.levels + getRandomNumber(3, simAverage - 1));
 

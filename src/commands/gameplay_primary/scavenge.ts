@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
 import userModel from '../../models/userModel';
-import { MaterialNames, materialsInfo, Quid, RankType, ServerSchema, SlashCommand, speciesInfo, UserSchema } from '../../typedef';
+import { Quid, RankType, ServerSchema, SlashCommand, speciesInfo, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
 import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
@@ -11,6 +11,7 @@ import { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural 
 import { getMapData, getQuidDisplayname, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
+import { pickMaterial, pickMeat } from '../../utils/simulateItemUse';
 import { remindOfAttack } from './attack';
 
 const name: SlashCommand['name'] = 'scavenge';
@@ -183,8 +184,8 @@ export async function executeScavenging(
 						const materialIsGettable = serverMaterialsCount < 36;
 						if (meatIsGettable && pullFromWeightedTable({ 0: 1, 1: materialIsGettable ? 1 : 0 }) === 0) {
 
-							const carcassArray = [...speciesInfo[(quidData as Quid<true>).species]?.biome1OpponentArray || []];
-							const foundCarcass = carcassArray[getRandomNumber(carcassArray.length)];
+							const carcassArray = [...speciesInfo[(quidData as Quid<true>).species].biome1OpponentArray];
+							const foundCarcass = pickMeat(carcassArray, serverData.inventory);
 							if (!foundCarcass) {
 								await sendErrorMessage(interaction, new Error('foundCarcass is undefined'))
 									.catch((error) => { console.error(error); });
@@ -204,7 +205,7 @@ export async function executeScavenging(
 						}
 						else if (materialIsGettable) {
 
-							const foundMaterial = (Object.keys(materialsInfo) as Array<MaterialNames>)[getRandomNumber(Object.keys(materialsInfo).length)];
+							const foundMaterial = pickMaterial(serverData.inventory);
 							if (!foundMaterial) {
 								await sendErrorMessage(interaction, new Error('foundMaterial is undefined'))
 									.catch((error) => { console.error(error); });
