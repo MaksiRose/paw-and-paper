@@ -139,8 +139,8 @@ export const command: SlashCommand = {
 		sharingCooldownAccountsMap.set(quidData1._id + interaction.guildId, Date.now());
 
 		/* Change the condition for user 1 */
-		const decreasedStatsData1 = await changeCondition(userData1, quidData1, profileData1, 0, CurrentRegionType.Ruins);
-		profileData1 = decreasedStatsData1.profileData;
+		const decreasedStatsData = await changeCondition(userData1, quidData1, profileData1, 0, CurrentRegionType.Ruins);
+		profileData1 = decreasedStatsData.profileData;
 
 		/* Give user 2 experience */
 		const experienceIncrease = getRandomNumber(Math.round((profileData2.levels * 50) * 0.15), Math.round((profileData2.levels * 50) * 0.05));
@@ -155,9 +155,11 @@ export const command: SlashCommand = {
 		profileData2 = getMapData(quidData2.profiles, interaction.guildId);
 
 		/* If user 2 had a cold, infect user 1 with a 30% chance. */
-		const infectedEmbed = await infectWithChance(userData1, quidData1, profileData1, quidData2, profileData2);
+		const infectedCheck = await infectWithChance(userData1, quidData1, profileData1, quidData2, profileData2);
+		profileData1 = infectedCheck.profileData;
 
-		const user2CheckLevelData = await checkLevelUp(interaction, userData2, quidData2, profileData2, serverData);
+		const levelUpCheck = await checkLevelUp(interaction, userData2, quidData2, profileData2, serverData);
+		profileData2 = levelUpCheck.profileData;
 
 		const botReply = await respond(interaction, {
 			content: `<@${userData2.userId[0]}>\n${messageContent}`,
@@ -166,10 +168,10 @@ export const command: SlashCommand = {
 					.setColor(quidData1.color)
 					.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
 					.setDescription(`*${quidData2.name} comes running to the old wooden trunk at the ruins where ${quidData1.name} sits, ready to tell an exciting story from long ago. ${upperCasePronoun(quidData2, 2)} eyes are sparkling as the ${quidData1.displayedSpecies || quidData1.species} recounts great adventures and the lessons to be learned from them.*`)
-					.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n+${experienceIncrease} XP (${profileData2.experience}/${profileData2.levels * 50}) for ${quidData2.name}` }),
-				...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
-				...(infectedEmbed ? [infectedEmbed] : []),
-				...(user2CheckLevelData.levelUpEmbed ? [user2CheckLevelData.levelUpEmbed] : []),
+					.setFooter({ text: `${decreasedStatsData.statsUpdateText}\n\n+${experienceIncrease} XP (${profileData2.experience}/${profileData2.levels * 50}) for ${quidData2.name}` }),
+				...(decreasedStatsData.injuryUpdateEmbed ? [decreasedStatsData.injuryUpdateEmbed] : []),
+				...(infectedCheck.infectedEmbed ? [infectedCheck.infectedEmbed] : []),
+				...(levelUpCheck.levelUpEmbed ? [levelUpCheck.levelUpEmbed] : []),
 			],
 		}, true);
 

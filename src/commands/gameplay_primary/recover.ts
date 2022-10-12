@@ -325,14 +325,15 @@ export const command: SlashCommand = {
 						}
 
 						const lastInteraction = interactions.last() || interaction;
-						const levelUpEmbed = (await checkLevelUp(lastInteraction, userData, quidData, profileData, serverData)).levelUpEmbed;
+						const levelUpCheck = await checkLevelUp(lastInteraction, userData, quidData, profileData, serverData);
+						profileData = levelUpCheck.profileData;
 
 						botReply = await (async function(messageObject) { return lastInteraction.isMessageComponent() ? await update(lastInteraction, messageObject) : await respond(lastInteraction, messageObject, true); })({
 							content: messageContent,
 							embeds: [
 								embed,
 								...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
-								...(levelUpEmbed ? [levelUpEmbed] : [])],
+								...(levelUpCheck.levelUpEmbed ? [levelUpCheck.levelUpEmbed] : [])],
 							components: disableAllComponents(componentArray),
 						});
 

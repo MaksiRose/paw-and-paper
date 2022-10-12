@@ -269,7 +269,12 @@ export async function executePlaying(
 		if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 
 		/* If user 2 had a cold, infect user 1 with a 30% chance. */
-		if (quidData2 && profileData2) { infectedEmbed = await infectWithChance(userData1, quidData1, profileData1, quidData2, profileData2); }
+		if (quidData2 && profileData2) {
+
+			const infectedCheck = await infectWithChance(userData1, quidData1, profileData1, quidData2, profileData2);
+			profileData1 = infectedCheck.profileData;
+			infectedEmbed = infectedCheck.infectedEmbed;
+		}
 	}
 	// with a 90% chance if the user is not a youngling, find nothing
 	else if (profileData1.rank !== RankType.Youngling

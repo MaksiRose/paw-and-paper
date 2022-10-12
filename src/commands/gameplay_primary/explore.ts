@@ -899,7 +899,8 @@ export async function executeExploring(
 	}
 
 	cooldownMap.set(userData._id + interaction.guildId, false);
-	const levelUpEmbed = (await checkLevelUp(interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
+	const levelUpCheck = await checkLevelUp(interaction, userData, quidData, profileData, serverData);
+	profileData = levelUpCheck.profileData;
 
 	if (foundQuest) {
 
@@ -912,7 +913,7 @@ export async function executeExploring(
 		);
 
 		botReply = await sendQuestMessage(interaction, userData, quidData, profileData, serverData, messageContent, embedArray, [...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
-			...(levelUpEmbed ? [levelUpEmbed] : [])], changedCondition.statsUpdateText);
+			...(levelUpCheck.levelUpEmbed ? [levelUpCheck.levelUpEmbed] : [])], changedCondition.statsUpdateText);
 	}
 	else {
 
@@ -922,7 +923,7 @@ export async function executeExploring(
 				...embedArray,
 				embed,
 				...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
-				...(levelUpEmbed ? [levelUpEmbed] : []),
+				...(levelUpCheck.levelUpEmbed ? [levelUpCheck.levelUpEmbed] : []),
 			],
 			components: [
 				...(exploreComponent ? [exploreComponent] : []),

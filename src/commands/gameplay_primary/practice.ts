@@ -217,14 +217,15 @@ export const command: SlashCommand = {
 			}
 			if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 
-			const levelUpEmbed = (await checkLevelUp(interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
+			const levelUpCheck = await checkLevelUp(interaction, userData, quidData, profileData, serverData);
+			profileData = levelUpCheck.profileData;
 
 			botReply = await update(newInteraction, {
 				embeds: [
 					...embedArray,
 					embed,
 					...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
-					...(levelUpEmbed ? [levelUpEmbed] : []),
+					...(levelUpCheck.levelUpEmbed ? [levelUpCheck.levelUpEmbed] : []),
 				],
 				components: [fightGame.fightComponent],
 			});

@@ -37,7 +37,7 @@ export const command: SlashCommand = {
 
 		/* Gets the current active quid and the server profile from the account */
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-		const profileData = getMapData(quidData.profiles, interaction.guildId);
+		let profileData = getMapData(quidData.profiles, interaction.guildId);
 		if (!hasSpecies(interaction, quidData)) { return; }
 
 		/* Checks if the profile is on a cooldown or passed out. */
@@ -131,6 +131,7 @@ export const command: SlashCommand = {
 		);
 
 		const levelUpCheck = await checkLevelUp(interaction, userData, quidData, profileData, serverData);
+		profileData = levelUpCheck.profileData;
 		await respond(interaction, {
 			content: messageContent,
 			embeds: [...embedArray, embed, ...levelUpCheck.levelUpEmbed ? [levelUpCheck.levelUpEmbed] : []],

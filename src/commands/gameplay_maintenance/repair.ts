@@ -113,7 +113,7 @@ export async function repairInteractionCollector(
 
 	/* Gets the current active quid and the server profile from the account */
 	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-	const profileData = getMapData(quidData.profiles, interaction.guildId);
+	let profileData = getMapData(quidData.profiles, interaction.guildId);
 
 	if (interaction.isButton()) {
 
@@ -149,7 +149,10 @@ export async function repairInteractionCollector(
 
 		const experiencePoints = isSuccessful === false ? 0 : profileData.rank == RankType.Elderly ? getRandomNumber(41, 20) : profileData.rank == RankType.Healer ? getRandomNumber(21, 10) : getRandomNumber(11, 5);
 		const changedCondition = await changeCondition(userData, quidData, profileData, experiencePoints);
-		const levelUpEmbed = (await checkLevelUp(interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
+		profileData = changedCondition.profileData;
+
+		const levelUpCheck = await checkLevelUp(interaction, userData, quidData, profileData, serverData);
+		profileData = levelUpCheck.profileData;
 
 		const denName = chosenDen.split(/(?=[A-Z])/).join(' ').toLowerCase();
 
@@ -161,7 +164,7 @@ export async function repairInteractionCollector(
 					.setDescription(`*${quidData.name} takes a ${chosenItem} and tries to ${repairKind === 'structure' ? 'tuck it into parts of the walls and ceiling that look less stable.' : repairKind === 'bedding' ? 'spread it over parts of the floor that look harsh and rocky.' : repairKind === 'thickness' ? 'cover parts of the walls that look a little thin with it.' : 'drag it over parts of the walls with bumps and material sticking out.'} ` + (isSuccessful ? `Immediately you can see the ${repairKind} of the den improving. What a success!*` : `After a few attempts, the material breaks into little pieces, rendering it useless. Looks like the ${quidData.displayedSpecies || quidData.species} has to try again...*`))
 					.setFooter({ text: `${changedCondition.statsUpdateText}\n\n-1 ${chosenItem} for ${interaction.guild.name}\n${isSuccessful ? `+${repairAmount}% ${repairKind} for ${denName} (${serverData.dens[chosenDen][repairKind]}%  total)` : ''}` }),
 				...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
-				...(levelUpEmbed ? [levelUpEmbed] : []),
+				...(levelUpCheck.levelUpEmbed ? [levelUpCheck.levelUpEmbed] : []),
 			],
 			components: disableAllComponents(interaction.message.components),
 		});

@@ -279,13 +279,13 @@ export async function infectWithChance(
 	profileData1: Profile,
 	quidData2: Quid,
 	profileData2: Profile,
-): Promise<EmbedBuilder | null> {
+): Promise<{ infectedEmbed: EmbedBuilder | null, profileData: Profile; }> {
 
 	if (profileData2.injuries.cold === true && profileData1.injuries.cold === false && pullFromWeightedTable({ 0: 3, 1: 7 }) === 0) {
 
 		const healthPoints = getSmallerNumber(getRandomNumber(5, 3), profileData1.health);
 
-		await userModel.findOneAndUpdate(
+		userData1 = await userModel.findOneAndUpdate(
 			u => u._id === userData1._id,
 			(u) => {
 				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, profileData1.serverId)).profiles, profileData1.serverId);
@@ -293,11 +293,15 @@ export async function infectWithChance(
 				p.injuries.cold = true;
 			},
 		);
+		quidData1 = getMapData(userData1.quids, quidData1._id);
+		profileData1 = getMapData(quidData1.profiles, profileData1.serverId);
 
-		return new EmbedBuilder()
-			.setColor(quidData1.color)
-			.setDescription(`*Suddenly, ${quidData1.name} starts coughing uncontrollably. Thinking back, they spent all day alongside ${quidData2.name}, who was coughing as well. That was probably not the best idea!*`)
-			.setFooter({ text: `-${healthPoints} HP (from cold)` });
+		return {
+			infectedEmbed: new EmbedBuilder()
+				.setColor(quidData1.color)
+				.setDescription(`*Suddenly, ${quidData1.name} starts coughing uncontrollably. Thinking back, they spent all day alongside ${quidData2.name}, who was coughing as well. That was probably not the best idea!*`)
+				.setFooter({ text: `-${healthPoints} HP (from cold)` }),
+			profileData: profileData1 };
 	}
-	return null;
+	return { infectedEmbed: null, profileData: profileData1 };
 }

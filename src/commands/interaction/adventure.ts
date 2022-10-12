@@ -334,8 +334,8 @@ export async function adventureInteractionCollector(
 							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}` }),
 						...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
 						...(decreasedStatsData2.injuryUpdateEmbed ? [decreasedStatsData2.injuryUpdateEmbed] : []),
-						...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
-						...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
+						...(afterGameChangesData?.levelUpCheck1.levelUpEmbed ? [afterGameChangesData.levelUpCheck1.levelUpEmbed] : []),
+						...(afterGameChangesData?.levelUpCheck2.levelUpEmbed ? [afterGameChangesData.levelUpCheck2.levelUpEmbed] : []),
 					],
 					components: disableAllComponents(componentArray),
 				})
@@ -401,8 +401,8 @@ export async function adventureInteractionCollector(
 							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraFooter}` }),
 						...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
 						...(decreasedStatsData2.injuryUpdateEmbed ? [decreasedStatsData2.injuryUpdateEmbed] : []),
-						...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
-						...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
+						...(afterGameChangesData?.levelUpCheck1.levelUpEmbed ? [afterGameChangesData.levelUpCheck1.levelUpEmbed] : []),
+						...(afterGameChangesData?.levelUpCheck2.levelUpEmbed ? [afterGameChangesData.levelUpCheck2.levelUpEmbed] : []),
 					],
 					components: disableAllComponents(componentArray),
 				})
@@ -462,8 +462,8 @@ export async function adventureInteractionCollector(
 							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraHealthPoints > 0 ? `+${extraHealthPoints} HP for ${winningQuidData.name} (${winningProfileData.health}/${winningProfileData.maxHealth})` : `+1 ${foundItem} for ${winningQuidData.name}`}` }),
 						...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
 						...(decreasedStatsData2.injuryUpdateEmbed ? [decreasedStatsData2.injuryUpdateEmbed] : []),
-						...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
-						...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
+						...(afterGameChangesData?.levelUpCheck1.levelUpEmbed ? [afterGameChangesData.levelUpCheck1.levelUpEmbed] : []),
+						...(afterGameChangesData?.levelUpCheck2.levelUpEmbed ? [afterGameChangesData.levelUpCheck2.levelUpEmbed] : []),
 					],
 					components: disableAllComponents(componentArray),
 				})
@@ -523,18 +523,20 @@ async function checkAfterGameChanges(
 	profileData2: Profile,
 	serverData: ServerSchema,
 ): Promise<{
-	user1CheckLevelData: {
+	levelUpCheck1: {
 		levelUpEmbed: EmbedBuilder | null;
 		profileData: Profile;
 	};
-	user2CheckLevelData: {
+	levelUpCheck2: {
 		levelUpEmbed: EmbedBuilder | null;
 		profileData: Profile;
 	};
 }> {
 
-	const user1CheckLevelData = await checkLevelUp(interaction, userData1, quidData1, profileData1, serverData);
-	const user2CheckLevelData = await checkLevelUp(interaction, userData2, quidData2, profileData2, serverData);
+	const levelUpCheck1 = await checkLevelUp(interaction, userData1, quidData1, profileData1, serverData);
+	profileData1 = levelUpCheck1.profileData;
+	const levelUpCheck2 = await checkLevelUp(interaction, userData2, quidData2, profileData2, serverData);
+	profileData2 = levelUpCheck2.profileData;
 
 	await isPassedOut(interaction, userData1, quidData1, profileData1, true);
 	await isPassedOut(interaction, userData2, quidData2, profileData2, true);
@@ -550,5 +552,5 @@ async function checkAfterGameChanges(
 	await eatAdvice(interaction, userData1, profileData1);
 	await eatAdvice(interaction, userData2, profileData2);
 
-	return { user1CheckLevelData, user2CheckLevelData };
+	return { levelUpCheck1, levelUpCheck2 };
 }

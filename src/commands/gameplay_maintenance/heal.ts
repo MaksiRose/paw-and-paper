@@ -213,7 +213,7 @@ export async function getHealResponse(
 
 	/* Gets the current active quid and the server profile from the account */
 	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-	const profileData = getMapData(quidData.profiles, interaction.guildId);
+	let profileData = getMapData(quidData.profiles, interaction.guildId);
 
 	const hurtQuids = await (async function(
 		guildId: string,
@@ -528,10 +528,16 @@ export async function getHealResponse(
 
 	const experiencePoints = isSuccessful === false ? 0 : profileData.rank == RankType.Elderly ? getRandomNumber(41, 20) : profileData.rank == RankType.Healer ? getRandomNumber(21, 10) : getRandomNumber(11, 5);
 	const changedCondition = await changeCondition(userData, quidData, profileData, experiencePoints);
+	profileData = changedCondition.profileData;
+
+	const infectedCheck = await infectWithChance(userData, quidData, profileData, quidToHeal, profileToHeal);
+	profileData = infectedCheck.profileData;
+
+	const levelUpCheck = await checkLevelUp(interaction, userData, quidData, profileData, serverData);
+	profileData = levelUpCheck.profileData;
+
 
 	const content = (userData._id !== userToHeal._id && isSuccessful === true ? `<@${userToHeal.userId[0]}>\n` : '') + messageContent;
-	const infectedEmbed = await infectWithChance(userData, quidData, profileData, quidToHeal, profileToHeal);
-	const levelUpEmbed = (await checkLevelUp(interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
 
 	if (interaction.isMessageComponent()) {
 
@@ -548,9 +554,9 @@ export async function getHealResponse(
 				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 				.setDescription(embedDescription)
 				.setFooter({ text: `${changedCondition.statsUpdateText}${statsUpdateText === '' ? '' : `\n${statsUpdateText}`}\n\n${denCondition}${item !== 'water' ? `\n-1 ${item} for ${interaction.guild.name}` : ''}` }),
-			...(infectedEmbed === null ? [] : [infectedEmbed]),
+			...(infectedCheck.infectedEmbed === null ? [] : [infectedCheck.infectedEmbed]),
 			...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
-			...(levelUpEmbed ? [levelUpEmbed] : []),
+			...(levelUpCheck.levelUpEmbed ? [levelUpCheck.levelUpEmbed] : []),
 		],
 		components: interaction.isMessageComponent() ? disableAllComponents(interaction.message.components) : [],
 	}, true);

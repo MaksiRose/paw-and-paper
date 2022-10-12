@@ -319,7 +319,9 @@ export async function executeScavenging(
 
 		cooldownMap.set(userData._id + interaction.guildId, false);
 
-		const levelUpEmbed = (await checkLevelUp(int, userData, quidData, profileData, serverData)).levelUpEmbed;
+		const levelUpCheck = await checkLevelUp(int, userData, quidData, profileData, serverData);
+		profileData = levelUpCheck.profileData;
+
 		const newComponents = disableAllComponents(componentArray);
 		newComponents.push(new ActionRowBuilder<ButtonBuilder>()
 			.setComponents(new ButtonBuilder()
@@ -332,7 +334,7 @@ export async function executeScavenging(
 				...embedArray,
 				embed,
 				...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
-				...(levelUpEmbed ? [levelUpEmbed] : []),
+				...(levelUpCheck.levelUpEmbed ? [levelUpCheck.levelUpEmbed] : []),
 			],
 			components: newComponents,
 		});

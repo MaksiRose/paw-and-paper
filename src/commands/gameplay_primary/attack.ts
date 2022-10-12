@@ -247,14 +247,15 @@ export async function executeAttacking(
 		}
 		embed.setFooter({ text: injuryText + changedCondition.statsUpdateText + '\n' + minusItemText + `\n${serverAttackInfo.idleHumans} humans remaining` });
 
-		const levelUpEmbed = (await checkLevelUp(interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
+		const levelUpCheck = await checkLevelUp(interaction, userData, quidData, profileData, serverData);
+		profileData = levelUpCheck.profileData;
 
 		botReply = await (async function(messageContent) { return newInteraction ? await update(newInteraction, messageContent) : await respond(interaction, messageContent, true); })({
 			embeds: [
 				...embedArray,
 				embed,
 				...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
-				...(levelUpEmbed ? [levelUpEmbed] : []),
+				...(levelUpCheck.levelUpEmbed ? [levelUpCheck.levelUpEmbed] : []),
 			],
 			components: [fightGame.fightComponent,
 				new ActionRowBuilder<ButtonBuilder>()
