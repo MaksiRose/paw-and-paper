@@ -11,7 +11,7 @@ import { createCommandComponentDisabler, disableAllComponents, disableCommandCom
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import getInventoryElements from '../../utils/getInventoryElements';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, getQuidDisplayname, getSmallerNumber, keyInObject, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
+import { getArrayElement, getMapData, getQuidDisplayname, getSmallerNumber, keyInObject, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { wearDownDen } from '../../utils/wearDownDen';
@@ -146,9 +146,7 @@ export async function healInteractionCollector(
 
 	if (interaction.isSelectMenu() && interaction.customId === 'heal_quids_options') {
 
-		const value = interaction.values[0];
-		if (value === undefined) { throw new TypeError('value is undefined'); }
-
+		const value = getArrayElement(interaction.values, 0);
 		if (value.startsWith('newpage_')) {
 
 			const page = Number(value.replace('newpage_', ''));
@@ -167,8 +165,7 @@ export async function healInteractionCollector(
 		const inventoryPage = Number(interaction.customId.split('_')[2]);
 		if (isNaN(inventoryPage)) { throw new TypeError('inventoryPage is NaN'); }
 		if (inventoryPage !== 1 && inventoryPage !== 2) { throw new TypeError('inventoryPage is not 1 or 2'); }
-		const quidId = interaction.customId.split('_')[3];
-		if (quidId === undefined) { throw new TypeError('quidId is undefined'); }
+		const quidId = getArrayElement(interaction.customId.split('_'), 3);
 
 		const quidToHeal = getMapData((await userModel.findOne(u => Object.keys(u.quids).includes(quidId))).quids, quidId);
 		await getHealResponse(interaction, userData, serverData, '', [], 0, quidToHeal, inventoryPage);

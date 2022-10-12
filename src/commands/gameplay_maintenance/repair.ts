@@ -8,7 +8,7 @@ import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
 import getInventoryElements from '../../utils/getInventoryElements';
 import { pronoun } from '../../utils/getPronouns';
-import { getMapData, getQuidDisplayname, getSmallerNumber, respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, getMapData, getQuidDisplayname, getSmallerNumber, respond, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -129,8 +129,7 @@ export async function repairInteractionCollector(
 		const chosenDen = interaction.customId.replace('repair_options_', '');
 		if (chosenDen !== 'sleepingDens' && chosenDen !== 'medicineDen' && chosenDen !== 'foodDen') { throw new Error('chosenDen is not a den'); }
 
-		const chosenItem = interaction.values[0] as MaterialNames | undefined;
-		if (chosenItem === undefined) { throw new TypeError('chosenItem is undefined'); }
+		const chosenItem = getArrayElement(interaction.values, 0) as MaterialNames;
 
 		const repairKind = materialsInfo[chosenItem].reinforcesStructure ? 'structure' : materialsInfo[chosenItem].improvesBedding ? 'bedding' : materialsInfo[chosenItem].thickensWalls ? 'thickness' : materialsInfo[chosenItem].removesOverhang ? 'evenness' : undefined;
 		if (repairKind === undefined) { throw new TypeError('repairKind is undefined'); }

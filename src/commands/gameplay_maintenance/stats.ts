@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatIn
 import userModel from '../../models/userModel';
 import { RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
-import { getMapData, respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, getMapData, respond, update } from '../../utils/helperFunctions';
 import { calculateInventorySize } from '../../utils/simulateItemUse';
 import { sendStoreMessage } from './store';
 const { error_color } = require('../../../config.json');
@@ -124,10 +124,8 @@ export async function statsInteractionCollector(
 
 	if (interaction.customId.includes('refresh')) {
 
-		const quidId = interaction.customId.split('_')[2];
-		if (quidId === undefined) { throw new TypeError('quidId is undefined'); }
-		const creatorUserId = interaction.customId.split('_')[3];
-		if (creatorUserId === undefined) { throw new TypeError('creatorUserId is undefined'); }
+		const quidId = getArrayElement(interaction.customId.split('_'), 2);
+		const creatorUserId = getArrayElement(interaction.customId.split('_'), 3);
 
 		const userData1 = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
 		await sendStatsMessage(interaction, userData1, quidId, creatorUserId);

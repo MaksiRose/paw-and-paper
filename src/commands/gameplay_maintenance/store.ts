@@ -6,7 +6,7 @@ import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
 import { pronoun, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, widenValues, unsafeKeys, respond, update, getQuidDisplayname } from '../../utils/helperFunctions';
+import { getMapData, widenValues, unsafeKeys, respond, update, getQuidDisplayname, getArrayElement } from '../../utils/helperFunctions';
 import { calculateInventorySize } from '../../utils/simulateItemUse';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
@@ -148,8 +148,7 @@ export async function storeInteractionCollector(
 
 		if (interaction.customId === 'store_options') {
 
-			const chosenFood = interaction.values[0] as CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | SpeciesNames | MaterialNames | undefined;
-			if (chosenFood === undefined) { throw new TypeError('chosenFood is undefined'); }
+			const chosenFood = getArrayElement(interaction.values, 0) as CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | SpeciesNames | MaterialNames;
 			let maximumAmount = 0;
 
 			const inventory_ = widenValues(profileData.inventory);
@@ -184,9 +183,8 @@ export async function storeInteractionCollector(
 
 		if (interaction.customId === 'store_amount') {
 
-			const chosenFood = interaction.values[0]?.split('_')[0] as CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | SpeciesNames | MaterialNames | undefined;
-			if (chosenFood === undefined) { throw new TypeError('chosenFood is undefined'); }
-			const chosenAmount = Number(interaction.values[0]?.split('_')[1]);
+			const chosenFood = getArrayElement(getArrayElement(interaction.values, 0).split('_'), 0) as CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | SpeciesNames | MaterialNames;
+			const chosenAmount = Number(getArrayElement(getArrayElement(interaction.values, 0).split('_'), 1));
 			if (isNaN(chosenAmount)) { throw new TypeError('chosenAmount is NaN'); }
 
 			const userInventory = widenValues(profileData.inventory);

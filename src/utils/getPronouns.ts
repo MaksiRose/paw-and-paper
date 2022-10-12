@@ -1,5 +1,5 @@
 import { Quid } from '../typedef';
-import { capitalizeString } from './helperFunctions';
+import { capitalizeString, getArrayElement } from './helperFunctions';
 import { getRandomNumber } from './randomizers';
 
 /**
@@ -18,9 +18,7 @@ export function pronoun(
 		if (pronoun) { possiblePronouns.push(pronoun); }
 	}
 
-	const returnString = possiblePronouns[getRandomNumber(possiblePronouns.length)];
-	if (returnString === undefined) { throw new TypeError('returnString is undefined'); }
-	return returnString;
+	return getArrayElement(possiblePronouns, getRandomNumber(possiblePronouns.length));
 }
 
 /**

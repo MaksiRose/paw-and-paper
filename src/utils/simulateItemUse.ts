@@ -1,7 +1,7 @@
 import { addCorrectDietHungerPoints, removeHungerPoints } from '../commands/gameplay_maintenance/eat';
 import { getStatsPoints, isUnlucky, quidNeedsHealing } from '../commands/gameplay_maintenance/heal';
 import userModel from '../models/userModel';
-import { CommonPlantNames, commonPlantsInfo, Inventory, MaterialNames, PlantEdibilityType, PlantInfo, Quid, RankType, RarePlantNames, rarePlantsInfo, ServerSchema, SpecialPlantNames, specialPlantsInfo, SpeciesDietType, speciesInfo, SpeciesNames, UncommonPlantNames, uncommonPlantsInfo, UserSchema } from '../typedef';
+import { CommonPlantNames, commonPlantsInfo, DenSchema, Inventory, MaterialNames, PlantEdibilityType, PlantInfo, Quid, RankType, RarePlantNames, rarePlantsInfo, ServerSchema, SpecialPlantNames, specialPlantsInfo, SpeciesDietType, speciesInfo, SpeciesNames, UncommonPlantNames, uncommonPlantsInfo, UserSchema } from '../typedef';
 import { changeCondition } from './changeCondition';
 import { deepCopyObject, getArrayElement, getMapData, getSmallerNumber, keyInObject, unsafeKeys, widenValues } from './helperFunctions';
 import { getRandomNumber, pullFromWeightedTable } from './randomizers';
@@ -144,8 +144,9 @@ async function getNeededMedicineItems(
 		const healerArray2 = healerArray1.filter(q => !quidNeedsHealing(q, serverData_.serverId));
 		const healer = healerArray2.length > 0 ? getArrayElement(healerArray2, getRandomNumber(healerArray2.length)) : healerArray1.length > 0 ? getArrayElement(healerArray1, getRandomNumber(healerArray1.length)) : undefined;
 		if (healer === undefined) { break; }
+		let healerProfile = getMapData(healer.profiles, serverData_.serverId);
 
-		let profile = getMapData(quid.profiles, serverData_.serverId);
+		const profile = getMapData(quid.profiles, serverData_.serverId);
 		while (quidNeedsHealing(quid, serverData_.serverId, checkOnlyFor)) {
 
 			// First, get the quid with the highest rank. Based on that, define itemInfo with or without uncommonPlants and/or rarePlants
@@ -175,7 +176,7 @@ async function getNeededMedicineItems(
 			}
 
 			// change the condition based on a simulation-version of changeCondition, and wear down the den
-			profile = (await changeCondition(undefined, quid, profile, 0)).profileData;
+			healerProfile = (await changeCondition(undefined, healer, healerProfile, 0)).profileData;
 
 			const denStatkind = (['structure', 'bedding', 'thickness', 'evenness'] as const)[getRandomNumber(4)];
 			if (denStatkind === undefined) { throw new TypeError('denStatkind is undefined'); }
@@ -301,6 +302,42 @@ export async function pickPlant(
 
 
 /**
+ * It simulates the use of material in a server, and returns the difference between the amount of material in the server's inventory and the amount of material needed
+ * @param {ServerSchema} serverData - The server data to use.
+ * @param {boolean} activeUsersOnly - If true, only users who have been active in the past week will be simulated.
+ * @returns The difference between the amount of material in the server's inventory and the amount of material needed
+ */
+export async function simulateMaterialUse(
+	serverData: ServerSchema,
+	activeUsersOnly: boolean,
+): Promise<number> {
+
+	const quids = await getUsersInServer(serverData.serverId, activeUsersOnly);
+	const serverData_ = deepCopyObject(serverData);
+	const neededItems = 0;
+
+	for (const den of Object.values(serverData.dens) as DenSchema[]) {
+
+		const repairerArray1 = quids.filter(q => {
+			const p = q.profiles[serverData_.serverId];
+			return p && p.rank !== RankType.Youngling && p.health > 0 && p.energy > 0 && p.hunger > 0 && p.thirst > 0;
+		});
+		const repairerArray2 = repairerArray1.filter(q => !quidNeedsHealing(q, serverData_.serverId));
+		const repairer = repairerArray2.length > 0 ? getArrayElement(repairerArray2, getRandomNumber(repairerArray2.length)) : repairerArray1.length > 0 ? getArrayElement(repairerArray1, getRandomNumber(repairerArray1.length)) : undefined;
+		if (repairer === undefined) { break; }
+		let repairerProfile = getMapData(repairer.profiles, serverData_.serverId);
+
+
+		repairerProfile = (await changeCondition(undefined, repairer, repairerProfile, 0)).profileData;
+	}
+
+	const existingItems = calculateInventorySize(serverData_.inventory, ([key]) => key === 'meat');
+	const itemDifference = existingItems - neededItems;
+
+	return itemDifference;
+}
+
+/**
  * It takes an inventory and returns a random material weighted by how much of each material is in the inventory
  * @param {Inventory} inventory - Inventory - this is the inventory object that we're going to be
  * picking from.
@@ -329,9 +366,7 @@ function pickItem<T extends string>(object: Record<number, number>, options: T[]
 	// For the old object, we do Math.round(x * (numerator / property))
 	object = Object.values(object).reduce((prev, cur, index) => ({ ...prev, [index]: Math.round(x * (numerator / cur)) }), {} as Record<number, number>);
 	const random = pullFromWeightedTable(object);
-	const result = options[random];
-	if (result === undefined) { throw new TypeError('result is undefined'); }
-	return result;
+	return getArrayElement(options, random);
 }
 
 function smallestCommons(

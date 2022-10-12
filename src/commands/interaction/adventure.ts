@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
-import { getQuidDisplayname, getSmallerNumber, keyInObject, KeyOfUnion, sendErrorMessage, update, widenValues } from '../../utils/helperFunctions';
+import { getArrayElement, getQuidDisplayname, getSmallerNumber, keyInObject, KeyOfUnion, sendErrorMessage, update, widenValues } from '../../utils/helperFunctions';
 import { respond } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { CurrentRegionType, Inventory, Profile, Quid, ServerSchema, SlashCommand, SpecialPlantNames, UserSchema } from '../../typedef';
@@ -134,8 +134,7 @@ export async function adventureInteractionCollector(
 	const chosenMemoryCardOptions: string[] = [];
 	for (let i = 0; i < 10; i++) {
 
-		const randomMemoryCardOption = allMemoryCardOptions.splice(getRandomNumber(allMemoryCardOptions.length), 1)[0];
-		if (randomMemoryCardOption === undefined) { throw new TypeError('randomMemoryCardOption is undefined'); }
+		const randomMemoryCardOption = getArrayElement(allMemoryCardOptions.splice(getRandomNumber(allMemoryCardOptions.length), 1), 0);
 		chosenMemoryCardOptions.push(randomMemoryCardOption, randomMemoryCardOption);
 	}
 
@@ -155,23 +154,20 @@ export async function adventureInteractionCollector(
 				.setStyle(ButtonStyle.Secondary),
 			);
 
-			const randomMemoryCardOption = chosenMemoryCardOptions.splice(getRandomNumber(chosenMemoryCardOptions.length), 1)[0];
-			if (randomMemoryCardOption === undefined) { throw new TypeError('randomMemoryCardOption is undefined'); }
+			const randomMemoryCardOption = getArrayElement(chosenMemoryCardOptions.splice(getRandomNumber(chosenMemoryCardOptions.length), 1), 0);
 			emojisInComponentArray[column]?.push(randomMemoryCardOption);
 		}
 	}
 
 
 	/* Gets the current active quid and the server profile from the account */
-	const userId1 = interaction.customId.split('_')[3];
-	if (userId1 === undefined) { throw new TypeError('userId1 is undefined'); }
+	const userId1 = getArrayElement(interaction.customId.split('_'), 3);
 	const userData1 = await userModel.findOne(u => u.userId.includes(userId1));
 	const quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
 	let profileData1 = getMapData(quidData1.profiles, interaction.guildId);
 
 	/* Gets the current active quid and the server profile from the partners account */
-	const userId2 = interaction.customId.split('_')[2];
-	if (userId2 === undefined) { throw new TypeError('userId2 is undefined'); }
+	const userId2 = getArrayElement(interaction.customId.split('_'), 2);
 	const userData2 = await userModel.findOne(u => u.userId.includes(userId2));
 	const quidData2 = getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId));
 	let profileData2 = getMapData(quidData2.profiles, interaction.guildId);
@@ -223,8 +219,7 @@ export async function adventureInteractionCollector(
 			chosenCardPositions[chosenCardPositions.current].row = row;
 
 			/* Getting the uncovered emoji from the current position, and erroring if there is no emoji */
-			const uncoveredEmoji = emojisInComponentArray[column]?.[row];
-			if (uncoveredEmoji === undefined) { return collector.stop('error_TypeError: uncoveredEmoji is undefined'); }
+			const uncoveredEmoji = getArrayElement(getArrayElement(emojisInComponentArray, column), row);
 
 			/* Changing the button's emoji to be the uncovered card and disabling it */
 			componentArray[column]?.components[row]?.setEmoji(uncoveredEmoji);

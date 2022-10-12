@@ -1,6 +1,6 @@
 import { Octokit } from '@octokit/rest';
 import { EmbedBuilder, SlashCommandBuilder, Team, User, ActionRowBuilder, ButtonBuilder, ButtonStyle, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ModalMessageModalSubmitInteraction, ChatInputCommandInteraction, AttachmentBuilder } from 'discord.js';
-import { respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, respond, update } from '../../utils/helperFunctions';
 import { CustomClient, SlashCommand } from '../../typedef';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { generateId } from 'crystalid';
@@ -208,11 +208,9 @@ export async function sendRespondToTicketModalResponse(
 ): Promise<void> {
 
 	const args = interaction.customId.replace('ticket_respond_', '').split('_');
-	const userOrChannelId = args[0];
-	const ticketId = args[1];
+	const userOrChannelId = getArrayElement(args, 0);
+	const ticketId = getArrayElement(args, 1);
 	const fromAdmin = args[2] === 'true';
-	if (userOrChannelId === undefined) { throw new TypeError('userOrChannelId is undefined'); }
-	if (ticketId === undefined) { throw new TypeError('ticketId is undefined'); }
 
 	const messageText = interaction.fields.getTextInputValue('ticket_textinput');
 

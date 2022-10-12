@@ -153,11 +153,13 @@ export async function sendEatMessage(
 
 			plantType = 'specialPlants';
 
-			const pickIncreasedStatType = (['health', 'energy', 'hunger', 'thirst'] as const)[getRandomNumber(4)];
+			const statArray = ['health', 'energy', 'hunger', 'thirst'] as const;
+
+			const pickIncreasedStatType = statArray[getRandomNumber(4)];
 			if (pickIncreasedStatType === undefined) { throw new TypeError('pickIncreasedStatType is undefined'); }
 			increasedStatType = pickIncreasedStatType;
 
-			const pickIncreasedMaxStatType = ([StatIncreaseType.MaxHealth, StatIncreaseType.MaxEnergy, StatIncreaseType.MaxHunger, StatIncreaseType.MaxThirst] as const)[(['health', 'energy', 'hunger', 'thirst'] as const).findIndex(v => v === increasedStatType)];
+			const pickIncreasedMaxStatType = ([StatIncreaseType.MaxHealth, StatIncreaseType.MaxEnergy, StatIncreaseType.MaxHunger, StatIncreaseType.MaxThirst] as const)[statArray.findIndex(v => v === increasedStatType)];
 			if (pickIncreasedMaxStatType === undefined) { throw new TypeError('pickIncreasedMaxStatType is undefined'); }
 			increasedMaxStatType = pickIncreasedMaxStatType;
 

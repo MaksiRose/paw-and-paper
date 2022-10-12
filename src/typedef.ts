@@ -369,7 +369,7 @@ export interface UserSchema {
 }
 
 
-interface DenSchema {
+export interface DenSchema {
 	/** How strong the structure of the den is */
 	structure: number;
 	/** How nice the ground of the den is */

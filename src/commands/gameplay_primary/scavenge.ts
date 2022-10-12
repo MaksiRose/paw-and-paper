@@ -8,10 +8,10 @@ import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, getQuidDisplayname, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
+import { getArrayElement, getMapData, getQuidDisplayname, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
-import { pickMaterial, pickMeat } from '../../utils/simulateItemUse';
+import { pickMaterial, pickMeat, simulateMeatUse } from '../../utils/simulateItemUse';
 import { remindOfAttack } from './attack';
 
 const name: SlashCommand['name'] = 'scavenge';
@@ -146,17 +146,12 @@ export async function executeScavenging(
 					/* Getting the position of the button that the user clicked. */
 					const verticalBoardPosition = Number(int.customId.split('_')[2]);
 					const horizontalBoardPosition = Number(int.customId.split('_')[3]);
-					const buttonInBoardPosition = componentArray[verticalBoardPosition]?.components[horizontalBoardPosition];
+					const buttonInBoardPosition = getArrayElement(getArrayElement(componentArray, verticalBoardPosition).components, horizontalBoardPosition);
 
 					/* Set the emoji of the button to the emoji in the gamePositionsArray. It will then disable the button. */
-					const emoji = gamePositionsArray[verticalBoardPosition]?.[horizontalBoardPosition];
-					if (!emoji) {
-						await sendErrorMessage(int, new Error('emoji is undefined'))
-							.catch((error) => { console.error(error); });
-						return;
-					}
-					buttonInBoardPosition?.setEmoji(emoji);
-					buttonInBoardPosition?.setDisabled(true);
+					const emoji = getArrayElement(getArrayElement(gamePositionsArray, verticalBoardPosition), horizontalBoardPosition);
+					buttonInBoardPosition.setEmoji(emoji);
+					buttonInBoardPosition.setDisabled(true);
 
 					/* Checking if the user has clicked on the correct field. If they have, it will stop the collector and if they haven't, it will edit the message with the new components. */
 					if (emoji === filledFieldArray[0]) {
@@ -164,25 +159,11 @@ export async function executeScavenging(
 						const playingField = componentArray.map(c => c.components.map(b => b.data.emoji?.name ?? unclickedField).join('')).join('\n');
 						componentArray = [];
 
-						/* Counting the number of profiles that have a rank higher than Youngling, the amount of meat and the amount of materials in the server's inventory. */
-						const highRankProfilesCount = (await userModel
-							.find(
-								(u) => Object.values(u.quids).filter(q => {
-									const p = q.profiles[interaction.guildId];
-									return p && p.rank !== RankType.Youngling;
-								}).length > 0))
-							.map(u => Object.values(u.quids).filter(q => {
-								const p = q.profiles[interaction.guildId];
-								return p && p.rank !== RankType.Youngling;
-							}).length)
-							.reduce((a, b) => a + b, 0);
-						const serverMeatCount = Object.values(serverData.inventory.meat).flat().reduce((a, b) => a + b, 0);
-						const serverMaterialsCount = Object.values(serverData.inventory.materials).flat().reduce((a, b) => a + b, 0);
+						const meatCount = Math.round((await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, false)) / 3);
+						const materialCount = Object.values(serverData.inventory.materials).flat().reduce((a, b) => a + b, 0);
 
 						/* Checking if the server has enough meat, if it doesn't, give the user meat. If it does, check if the server has enough materials, if it doesn't, give the user material. If it does, do nothing. */
-						const meatIsGettable = serverMeatCount < highRankProfilesCount * 2;
-						const materialIsGettable = serverMaterialsCount < 36;
-						if (meatIsGettable && pullFromWeightedTable({ 0: 1, 1: materialIsGettable ? 1 : 0 }) === 0) {
+						if (meatCount < 0 && pullFromWeightedTable({ 0: -meatCount, 1: -materialCount }) === 0) {
 
 							const carcassArray = [...speciesInfo[(quidData as Quid<true>).species].biome1OpponentArray];
 							const foundCarcass = pickMeat(carcassArray, serverData.inventory);
@@ -203,7 +184,7 @@ export async function executeScavenging(
 								},
 							);
 						}
-						else if (materialIsGettable) {
+						else if (materialCount < 0) {
 
 							const foundMaterial = pickMaterial(serverData.inventory);
 							if (!foundMaterial) {

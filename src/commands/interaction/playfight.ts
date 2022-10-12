@@ -9,7 +9,7 @@ import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidit
 import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getBiggerNumber, getMapData, getQuidDisplayname, getSmallerNumber, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
+import { getArrayElement, getBiggerNumber, getMapData, getQuidDisplayname, getSmallerNumber, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -114,15 +114,13 @@ export async function playfightInteractionCollector(
 	if (serverData === null) { throw new TypeError('serverData is null'); }
 
 	/* Gets the current active quid and the server profile from the account */
-	const userId1 = interaction.customId.split('_')[4];
-	if (userId1 === undefined) { throw new TypeError('userId1 is undefined'); }
+	const userId1 = getArrayElement(interaction.customId.split('_'), 4);
 	let userData1 = await userModel.findOne(u => u.userId.includes(userId1));
 	let quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
 	let profileData1 = getMapData(quidData1.profiles, interaction.guildId);
 
 	/* Gets the current active quid and the server profile from the partners account */
-	const userId2 = interaction.customId.split('_')[3];
-	if (userId2 === undefined) { throw new TypeError('userId2 is undefined'); }
+	const userId2 = getArrayElement(interaction.customId.split('_'), 3);
 	let userData2 = await userModel.findOne(u => u.userId.includes(userId2));
 	let quidData2 = getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId));
 	let profileData2 = getMapData(quidData2.profiles, interaction.guildId);
@@ -138,8 +136,7 @@ export async function playfightInteractionCollector(
 	profileData2 = decreasedStatsData2.profileData;
 
 	/* Gets the chosen game type errors if it doesn't exist */
-	const gameType = interaction.customId.split('_')[2]; // connectfour or tictactoe
-	if (gameType === undefined) { throw new TypeError('gameType is undefined'); }
+	const gameType = getArrayElement(interaction.customId.split('_'), 2); // connectfour or tictactoe
 
 	const emptyField = gameType === 'tictactoe' ? '◻️' : '⚫';
 	const player1Field = gameType === 'tictactoe' ? '⭕' : '🟡';

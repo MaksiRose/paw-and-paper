@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { respond, sendErrorMessage, update } from '../../utils/helperFunctions';
+import { getArrayElement, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
 import { ProxyListType, RankType, ServerSchema, SlashCommand, WayOfEarningType } from '../../typedef';
@@ -394,8 +394,7 @@ export async function serversettingsInteractionCollector(
 		}
 		else {
 
-			const channelId = selectOptionId.split('_')[2];
-			if (channelId === undefined) { throw new Error('channelId is undefined'); }
+			const channelId = getArrayElement(selectOptionId.split('_'), 2);
 
 			const newsChannel = await interaction.client.channels.fetch(update_channel_id);
 			if (newsChannel === null || newsChannel.type !== ChannelType.GuildNews) { throw new Error('News Channel is missing or not of type GuildNews.'); }
@@ -440,8 +439,7 @@ export async function serversettingsInteractionCollector(
 					if (error.httpStatus !== 404) { console.error(error); }
 				});
 
-			const channelIdOrOff = selectOptionId.split('_')[2];
-			if (channelIdOrOff === undefined) { throw new Error('channelId is undefined'); }
+			const channelIdOrOff = getArrayElement(selectOptionId.split('_'), 2);
 
 			if (channelIdOrOff === 'off') {
 

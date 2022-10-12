@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, GuildMember, ModalBuilder, ModalMessageModalSubmitInteraction, PermissionFlagsBits, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { capitalizeString, respond, update } from '../../utils/helperFunctions';
+import { capitalizeString, getArrayElement, respond, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
 import { Profile, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
@@ -132,8 +132,7 @@ export async function skillsInteractionCollector(
 	/* Creating a modal that allows the user to add a skill. */
 	if (interaction.isButton() && (interaction.customId === 'skills_add_personal_modal' || interaction.customId === 'skills_add_global_modal')) {
 
-		const category = interaction.customId.split('_')[2];
-		if (category === undefined) { throw new TypeError('category is undefined'); }
+		const category = getArrayElement(interaction.customId.split('_'), 2);
 
 		await interaction.showModal(new ModalBuilder()
 			.setCustomId(`skills_add_${category}`)
@@ -154,10 +153,8 @@ export async function skillsInteractionCollector(
 	/* Add a new select menu to select a skill to edit/remove. */
 	if (interaction.isButton() && (interaction.customId === 'skills_edit_personal' || interaction.customId === 'skills_edit_global' || interaction.customId === 'skills_remove_personal' || interaction.customId === 'skills_remove_global')) {
 
-		const type = interaction.customId.split('_')[1] as 'edit' | 'remove' | undefined;
-		const category = interaction.customId.split('_')[2] as 'global' | 'personal' | undefined;
-		if (type === undefined) { throw new TypeError('type is undefined'); }
-		if (category === undefined) { throw new TypeError('category is undefined'); }
+		const type = getArrayElement(interaction.customId.split('_'), 1) as 'edit' | 'remove';
+		const category = getArrayElement(interaction.customId.split('_'), 2) as 'global' | 'personal';
 
 		await update(interaction, {
 			components: [
@@ -189,8 +186,7 @@ export async function skillsInteractionCollector(
 		if (selectOptionId.startsWith('skills_edit_')) {
 
 			let page = Number(selectOptionId.split('_')[4] ?? 0) + 1;
-			const category = selectOptionId.split('_')[2] as 'global' | 'personal' | undefined;
-			if (category === undefined) { throw new TypeError('category is undefined'); }
+			const category = getArrayElement(selectOptionId.split('_'), 2) as 'global' | 'personal' ;
 			const totalPages = Math.ceil(((category === 'global' ? (serverData?.skills || []) : Object.keys(profileData?.skills.personal || {})).length) / 24);
 			if (page >= totalPages) { page = 0; }
 
@@ -206,8 +202,7 @@ export async function skillsInteractionCollector(
 		if (selectOptionId.startsWith('skills_remove_')) {
 
 			let page = Number(selectOptionId.split('_')[4] ?? 0) + 1;
-			const category = selectOptionId.split('_')[2] as 'global' | 'personal' | undefined;
-			if (category === undefined) { throw new TypeError('category is undefined'); }
+			const category = getArrayElement(selectOptionId.split('_'), 2) as 'global' | 'personal';
 			const totalPages = Math.ceil(((category === 'global' ? (serverData?.skills || []) : Object.keys(profileData?.skills.personal || {})).length) / 24);
 			if (page >= totalPages) { page = 0; }
 
@@ -225,12 +220,9 @@ export async function skillsInteractionCollector(
 	/* Creating a modal that allows the user to edit or modify a skill. */
 	if (interaction.isSelectMenu() && selectOptionId && (interaction.customId === 'skills_modify_options_modal' || interaction.customId === 'skills_edit_options_modal')) {
 
-		const type = selectOptionId.split('_')[1] as 'modify' | 'edit' | undefined;
-		const category = selectOptionId.split('_')[2] as 'personal' | 'global' | undefined;
-		const skillName = selectOptionId.split('_')[3];
-		if (type === undefined) { throw new TypeError('type is undefined'); }
-		if (category === undefined) { throw new TypeError('category is undefined'); }
-		if (skillName === undefined) { throw new TypeError('skillName is undefined'); }
+		const type = getArrayElement(selectOptionId.split('_'), 1) as 'modify' | 'edit';
+		const category = getArrayElement(selectOptionId.split('_'), 2) as 'personal' | 'global';
+		const skillName = getArrayElement(selectOptionId.split('_'), 3);
 
 		await interaction.showModal(new ModalBuilder()
 			.setCustomId(`skills_${type}_${category}_${skillName}`)
@@ -253,10 +245,8 @@ export async function skillsInteractionCollector(
 	/* Removing a skill. */
 	if (interaction.isSelectMenu() && selectOptionId && interaction.customId === 'skills_remove_options') {
 
-		const category = selectOptionId.split('_')[2] as 'global' | 'personal' | undefined;
-		const skillName = selectOptionId.split('_')[3];
-		if (category === undefined) { throw new TypeError('category is undefined'); }
-		if (skillName === undefined) { throw new TypeError('skillName is undefined'); }
+		const category = getArrayElement(selectOptionId.split('_'), 2) as 'global' | 'personal' ;
+		const skillName = getArrayElement(selectOptionId.split('_'), 3);
 
 		if (category === 'personal' && userData) {
 
@@ -327,11 +317,9 @@ export async function sendEditSkillsModalResponse(
 	let quidData = userData?.quids[userData?.currentQuid[interaction.guildId] || ''];
 	let profileData = quidData?.profiles[interaction.guildId];
 
-	const type = interaction.customId.split('_')[1] as 'modify' | 'edit' | 'add' | undefined;
-	const category = interaction.customId.split('_')[2] as 'personal' | 'global' | undefined;
-	const skillName = interaction.customId.split('_')[3];
-	if (type === undefined) { throw new TypeError('type is undefined'); }
-	if (category === undefined) { throw new TypeError('category is undefined'); }
+	const type = getArrayElement(interaction.customId.split('_'), 1) as 'modify' | 'edit' | 'add';
+	const category = getArrayElement(interaction.customId.split('_'), 2) as 'personal' | 'global';
+	const skillName = interaction.customId.split('_')[3]; // This can be undefined if type is add
 
 	if (type === 'add') {
 

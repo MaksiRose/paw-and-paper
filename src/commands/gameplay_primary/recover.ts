@@ -8,7 +8,7 @@ import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, getQuidDisplayname, respond, sendErrorMessage, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
+import { getArrayElement, getMapData, getQuidDisplayname, respond, sendErrorMessage, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
@@ -133,8 +133,7 @@ export const command: SlashCommand = {
 			componentArray.push(new ActionRowBuilder());
 			for (let j = 0; j < 3; j++) {
 
-				const chosenEmoji = recoverFieldOptions.splice(getRandomNumber(recoverFieldOptions.length), 1)[0];
-				if (chosenEmoji === undefined) { throw new TypeError('chosenEmoji is undefined'); }
+				const chosenEmoji = getArrayElement(recoverFieldOptions.splice(getRandomNumber(recoverFieldOptions.length), 1), 0);
 
 				componentArray[i]?.addComponents(new ButtonBuilder()
 					.setCustomId(`recover_${chosenEmoji}`)
@@ -166,8 +165,7 @@ export const command: SlashCommand = {
 
 			for (let index = 0; index < 3; index++) {
 
-				const randomEmoji = possibleEmojis[getRandomNumber(possibleEmojis.length)];
-				if (randomEmoji === undefined) { throw new TypeError('randomEmoji is undefined'); }
+				const randomEmoji = getArrayElement(possibleEmojis, getRandomNumber(possibleEmojis.length));
 				emojisToClick.push(randomEmoji);
 			}
 			let displayingEmoji = 0;

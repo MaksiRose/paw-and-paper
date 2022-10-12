@@ -4,7 +4,7 @@ import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasCooldown } from '../../utils/checkValidity';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import getInventoryElements from '../../utils/getInventoryElements';
-import { getMapData, respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, getMapData, respond, update } from '../../utils/helperFunctions';
 import { remindOfAttack } from '../gameplay_primary/attack';
 import { sendEatMessage } from './eat';
 const { default_color } = require('../../../config.json');
@@ -134,9 +134,7 @@ export async function inventoryInteractionCollector(
 		}
 		else {
 
-			const chosenFood = interaction.values[0];
-			if (chosenFood === undefined) { throw new TypeError('chosenFood is undefined'); }
-
+			const chosenFood = getArrayElement(interaction.values, 0);
 			await sendEatMessage(interaction, chosenFood, userData, quidData, profileData, serverData, '', []);
 			return;
 		}
