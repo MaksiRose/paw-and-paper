@@ -11,7 +11,7 @@ import { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural 
 import { getArrayElement, getMapData, getQuidDisplayname, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
-import { pickMaterial, pickMeat, simulateMeatUse } from '../../utils/simulateItemUse';
+import { pickMaterial, pickMeat, simulateMaterialUse, simulateMeatUse } from '../../utils/simulateItemUse';
 import { remindOfAttack } from './attack';
 
 const name: SlashCommand['name'] = 'scavenge';
@@ -160,7 +160,7 @@ export async function executeScavenging(
 						componentArray = [];
 
 						const meatCount = Math.round((await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, false)) / 3);
-						const materialCount = Object.values(serverData.inventory.materials).flat().reduce((a, b) => a + b, 0);
+						const materialCount = Math.round((await simulateMaterialUse(serverData, true) + await simulateMaterialUse(serverData, true) + await simulateMaterialUse(serverData, false)) / 3);
 
 						/* Checking if the server has enough meat, if it doesn't, give the user meat. If it does, check if the server has enough materials, if it doesn't, give the user material. If it does, do nothing. */
 						if (meatCount < 0 && pullFromWeightedTable({ 0: -meatCount, 1: -materialCount }) === 0) {

@@ -1,5 +1,6 @@
 import { addCorrectDietHungerPoints, removeHungerPoints } from '../commands/gameplay_maintenance/eat';
-import { getStatsPoints, isUnlucky, quidNeedsHealing } from '../commands/gameplay_maintenance/heal';
+import { getStatsPoints, isUnlucky as healingIsUnlucky, quidNeedsHealing } from '../commands/gameplay_maintenance/heal';
+import { addMaterialPoints, isUnlucky as repairingIsUnlucky } from '../commands/gameplay_maintenance/repair';
 import userModel from '../models/userModel';
 import { CommonPlantNames, commonPlantsInfo, DenSchema, Inventory, MaterialNames, PlantEdibilityType, PlantInfo, Quid, RankType, RarePlantNames, rarePlantsInfo, ServerSchema, SpecialPlantNames, specialPlantsInfo, SpeciesDietType, speciesInfo, SpeciesNames, UncommonPlantNames, uncommonPlantsInfo, UserSchema } from '../typedef';
 import { changeCondition } from './changeCondition';
@@ -161,7 +162,7 @@ async function getNeededMedicineItems(
 
 			// Copy the isSuccessful checks that have a chance that isSucessful goes from true to false. A function needs to be created in the heal file
 			// If it's successful, make the problems go away that this specific item can make go away, using getStatsPoints and the individual things for the injuries.
-			if (!isUnlucky(quid.user_id, healer.user_id, profile, serverData_)) {
+			if (!healingIsUnlucky(quid.user_id, healer.user_id, profile, serverData_)) {
 
 				const stats = getStatsPoints(item, profile);
 				profile.health += stats.health;
@@ -313,25 +314,36 @@ export async function simulateMaterialUse(
 ): Promise<number> {
 
 	const quids = await getUsersInServer(serverData.serverId, activeUsersOnly);
-	const serverData_ = deepCopyObject(serverData);
-	const neededItems = 0;
+	let neededItems = 0;
 
 	for (const den of Object.values(serverData.dens) as DenSchema[]) {
 
-		const repairerArray1 = quids.filter(q => {
-			const p = q.profiles[serverData_.serverId];
-			return p && p.rank !== RankType.Youngling && p.health > 0 && p.energy > 0 && p.hunger > 0 && p.thirst > 0;
-		});
-		const repairerArray2 = repairerArray1.filter(q => !quidNeedsHealing(q, serverData_.serverId));
-		const repairer = repairerArray2.length > 0 ? getArrayElement(repairerArray2, getRandomNumber(repairerArray2.length)) : repairerArray1.length > 0 ? getArrayElement(repairerArray1, getRandomNumber(repairerArray1.length)) : undefined;
-		if (repairer === undefined) { break; }
-		let repairerProfile = getMapData(repairer.profiles, serverData_.serverId);
+		while (den.bedding < 100 && den.evenness < 100 && den.structure < 100 && den.thickness < 100) {
 
+			const repairerArray1 = quids.filter(q => {
+				const p = q.profiles[serverData.serverId];
+				return p && p.rank !== RankType.Youngling && p.health > 0 && p.energy > 0 && p.hunger > 0 && p.thirst > 0;
+			});
+			const repairerArray2 = repairerArray1.filter(q => !quidNeedsHealing(q, serverData.serverId));
+			const repairer = repairerArray2.length > 0 ? getArrayElement(repairerArray2, getRandomNumber(repairerArray2.length)) : repairerArray1.length > 0 ? getArrayElement(repairerArray1, getRandomNumber(repairerArray1.length)) : undefined;
+			if (repairer === undefined) { break; }
+			let repairerProfile = getMapData(repairer.profiles, serverData.serverId);
 
-		repairerProfile = (await changeCondition(undefined, repairer, repairerProfile, 0)).profileData;
+			neededItems += 1;
+			if (!repairingIsUnlucky(repairerProfile)) {
+
+				const repairAmount = addMaterialPoints();
+				if (den.bedding < 100) { den.bedding += repairAmount; }
+				else if (den.evenness < 100) { den.evenness += repairAmount; }
+				else if (den.structure < 100) { den.structure += repairAmount; }
+				else { den.thickness += repairAmount; }
+			}
+
+			repairerProfile = (await changeCondition(undefined, repairer, repairerProfile, 0)).profileData;
+		}
 	}
 
-	const existingItems = calculateInventorySize(serverData_.inventory, ([key]) => key === 'meat');
+	const existingItems = calculateInventorySize(serverData.inventory, ([key]) => key === 'materials');
 	const itemDifference = existingItems - neededItems;
 
 	return itemDifference;

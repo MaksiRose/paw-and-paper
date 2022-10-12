@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, InteractionReplyOptions, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder, WebhookEditMessageOptions } from 'discord.js';
 import serverModel from '../../models/serverModel';
-import { MaterialNames, materialsInfo, Quid, RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
+import { MaterialNames, materialsInfo, Profile, Quid, RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
 import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
@@ -134,10 +134,10 @@ export async function repairInteractionCollector(
 		const repairKind = materialsInfo[chosenItem].reinforcesStructure ? 'structure' : materialsInfo[chosenItem].improvesBedding ? 'bedding' : materialsInfo[chosenItem].thickensWalls ? 'thickness' : materialsInfo[chosenItem].removesOverhang ? 'evenness' : undefined;
 		if (repairKind === undefined) { throw new TypeError('repairKind is undefined'); }
 
-		const repairAmount = getSmallerNumber(getRandomNumber(5, 6), 100 - serverData.dens[chosenDen][repairKind]);
+		const repairAmount = getSmallerNumber(addMaterialPoints(), 100 - serverData.dens[chosenDen][repairKind]);
 
 		/** True when the repairAmount is bigger than zero. If the user isn't of  rank Hunter or Elderly, a weighted table decided whether they are successful. */
-		const isSuccessful = repairAmount > 0 && (profileData.rank === RankType.Hunter || profileData.rank === RankType.Elderly || pullFromWeightedTable({ 0: profileData.rank === RankType.Healer ? 90 : 40, 1: 60 + profileData.sapling.waterCycles }) === 1);
+		const isSuccessful = repairAmount > 0 && !isUnlucky(profileData);
 
 		serverData = await serverModel.findOneAndUpdate(
 			s => s.serverId === serverData!.serverId,
@@ -215,3 +215,9 @@ function getMaterials(
 		],
 	};
 }
+
+export function addMaterialPoints() { return getRandomNumber(5, 6); }
+
+export function isUnlucky(
+	profileData: Profile,
+): boolean { return profileData.rank !== RankType.Hunter && profileData.rank !== RankType.Elderly && pullFromWeightedTable({ 0: profileData.rank === RankType.Healer ? 90 : 40, 1: 60 + profileData.sapling.waterCycles }) === 0; }
