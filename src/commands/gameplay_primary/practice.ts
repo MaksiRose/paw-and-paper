@@ -15,16 +15,14 @@ import { remindOfAttack } from './attack';
 
 const newCycleArray = ['attack', 'dodge', 'defend'] as const;
 
-const name: SlashCommand['name'] = 'practice';
-const description: SlashCommand['description'] = 'Practice fighting wild animals. You cannot get hurt here.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('practice')
+		.setDescription('Practice fighting in a safe environment. Not available to Younglings.')
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page2',
+	position: 1,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {

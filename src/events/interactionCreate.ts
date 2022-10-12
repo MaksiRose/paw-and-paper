@@ -104,7 +104,7 @@ export const event: DiscordEvent = {
 
 			/* Getting the command from the client and checking if the command is undefined.
 			If it is, it will error. */
-			const command = client.slashCommands[interaction.commandName];
+			const command = client.slashCommands.get(interaction.commandName);
 			if (command === undefined || !keyInObject(command, 'sendAutocomplete')) { return; }
 
 			/* It's sending the autocomplete message. */
@@ -117,7 +117,7 @@ export const event: DiscordEvent = {
 
 			/* Getting the command from the client and checking if the command is undefined.
 			If it is, it will error. */
-			const command = client.slashCommands[interaction.commandName];
+			const command = client.slashCommands.get(interaction.commandName);
 			if (command === undefined || !keyInObject(command, 'sendCommand')) {
 
 				return await sendErrorMessage(interaction, new Error('Unknown command'))
@@ -228,7 +228,7 @@ export const event: DiscordEvent = {
 
 			/* Getting the command from the client and checking if the command is undefined.
 			If it is, it will error. */
-			const command = client.contextMenuCommands[interaction.commandName];
+			const command = client.contextMenuCommands.get(interaction.commandName);
 			if (command === undefined || !keyInObject(command, 'sendCommand')) {
 
 				return await sendErrorMessage(interaction, new Error('Unknown command'))

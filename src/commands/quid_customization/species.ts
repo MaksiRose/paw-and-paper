@@ -9,15 +9,13 @@ import { pronoun, upperCasePronoun } from '../../utils/getPronouns';
 
 const speciesNameArray = (Object.keys(speciesInfo) as SpeciesNames[]).sort();
 
-const name: SlashCommand['name'] = 'species';
-const description: SlashCommand['description'] = 'Change your quid\'s species or displayed species.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('species')
+		.setDescription('Change your quid\'s species or displayed species.')
 		.toJSON(),
+	category: 'page1',
+	position: 1,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {

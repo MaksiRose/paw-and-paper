@@ -9,16 +9,14 @@ import { pronoun } from '../../utils/getPronouns';
 import { getMapData, getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
 import { remindOfAttack } from './attack';
 
-const name: SlashCommand['name'] = 'rank-up';
-const description: SlashCommand['description'] = 'Once you successfully finished a quest, you can move up a rank using this command.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('rank-up')
+		.setDescription('Once you successfully finished a quest, you can move up a rank using this command.')
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page2',
+	position: 8,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {

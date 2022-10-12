@@ -13,14 +13,10 @@ import { startResting } from '../gameplay_maintenance/rest';
 import { sendStoreMessage } from '../gameplay_maintenance/store';
 import { remindOfAttack } from './attack';
 
-const name: SlashCommand['name'] = 'travel-regions';
-const description: SlashCommand['description'] = 'Go to a specific region in your pack.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('travel-regions')
+		.setDescription('Go to a specific region in your pack, and see who else is there.')
 		.addStringOption(option =>
 			option.setName('region')
 				.setDescription('The region you want to travel to.')
@@ -36,6 +32,8 @@ export const command: SlashCommand = {
 
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page2',
+	position: 4,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false, // This is technically true, but it's set to false because it does not necessarily reflect your actual activity
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {

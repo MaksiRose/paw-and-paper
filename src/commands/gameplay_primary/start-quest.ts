@@ -11,16 +11,14 @@ import { getRandomNumber, generateWinChance } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
 const { error_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'start-quest';
-const description: SlashCommand['description'] = 'Get quests by playing (as Youngling) or exploring. Start them with this command.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('start-quest')
+		.setDescription('Get quests by playing (as Youngling) or exploring. Start them with this command.')
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page2',
+	position: 7,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {

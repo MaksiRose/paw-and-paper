@@ -6,15 +6,13 @@ import { hasName } from '../../utils/checkUserState';
 import { checkOldMentions, getFriendshipHearts, getFriendshipPoints } from '../../utils/friendshipHandling';
 import { getMapData } from '../../utils/helperFunctions';
 
-const name: SlashCommand['name'] = 'friendships';
-const description: SlashCommand['description'] = 'View a list of all the friendships that you have with other players.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('friendships')
+		.setDescription('View a list of all the friendships that you have with other players.')
 		.toJSON(),
+	category: 'page4',
+	position: 6,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {

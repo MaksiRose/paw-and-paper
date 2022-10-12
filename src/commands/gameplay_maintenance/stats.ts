@@ -7,20 +7,18 @@ import { calculateInventorySize } from '../../utils/simulateItemUse';
 import { sendStoreMessage } from './store';
 const { error_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'stats';
-const description: SlashCommand['description'] = 'Quick view of your quids condition.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('stats')
+		.setDescription('Quick view of your quids condition.')
 		.addUserOption(option =>
 			option.setName('user')
 				.setDescription('A user that you want to look up the stats of.')
 				.setRequired(false))
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page3',
+	position: 0,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {

@@ -14,14 +14,10 @@ import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
-const name: SlashCommand['name'] = 'playfight';
-const description: SlashCommand['description'] = 'You can play Connect Four or Tic Tac Toe.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('playfight')
+		.setDescription('Play Connect Four or Tic Tac Toe with someone.')
 		.setDMPermission(false)
 		.addUserOption(option =>
 			option.setName('user')
@@ -36,6 +32,8 @@ export const command: SlashCommand = {
 				)
 				.setRequired(true))
 		.toJSON(),
+	category: 'page4',
+	position: 2,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false, // This is technically true, but set to false because it does not reflect activity
 	sendCommand: async (client, interaction, userData1, serverData, embedArray) => {

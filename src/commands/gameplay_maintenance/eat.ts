@@ -15,14 +15,10 @@ import { showInventoryMessage } from './inventory';
 
 const allPlantsInfo = { ...commonPlantsInfo, ...uncommonPlantsInfo, ...rarePlantsInfo, ...specialPlantsInfo };
 
-const name: SlashCommand['name'] = 'eat';
-const description: SlashCommand['description'] = 'Take the appropriate food for your species out of the packs food pile and fill up your hunger meter.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('eat')
+		.setDescription('Take the appropriate food for your species out of the packs food pile and fill up your hunger meter.')
 		.setDMPermission(false)
 		.addStringOption(option =>
 			option.setName('food')
@@ -30,6 +26,8 @@ export const command: SlashCommand = {
 				.setAutocomplete(true)
 				.setRequired(false))
 		.toJSON(),
+	category: 'page3',
+	position: 3,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendAutocomplete: async (client, interaction, userData, serverData) => {

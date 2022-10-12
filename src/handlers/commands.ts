@@ -17,14 +17,14 @@ export async function execute(
 
 		const { command } = require(commandPath) as { command: SlashCommand; };
 		if (command.data !== undefined) { applicationCommands.push(command.data); }
-		client.slashCommands[command.name] = command;
+		client.slashCommands.set(command.data.name, command);
 	}
 
 	for (const commandPath of getFiles('../contextmenu')) {
 
 		const { command } = require(commandPath) as { command: ContextMenuCommand; };
 		if (command.data !== undefined) { applicationCommands.push(command.data); }
-		client.contextMenuCommands[command.name] = command;
+		client.contextMenuCommands.set(command.data.name, command);
 	}
 
 	/* Registers the applicationCommands array to Discord. */
@@ -41,7 +41,7 @@ export async function execute(
 
 			const { command } = require(`../commands_guild/${folderName}/${commandPath}`) as { command: SlashCommand; };
 			if (command.data !== undefined) { applicationCommandsGuild.push(command.data); }
-			client.slashCommands[command.name] = command;
+			client.slashCommands.set(command.data.name, command);
 		}
 
 		await client.application.commands.set(applicationCommandsGuild, folderName);

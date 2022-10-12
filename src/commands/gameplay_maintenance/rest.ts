@@ -11,16 +11,14 @@ import { remindOfAttack } from '../gameplay_primary/attack';
 
 const restingIntervalMap: Map<string, NodeJS.Timeout> = new Map();
 
-const name: SlashCommand['name'] = 'rest';
-const description: SlashCommand['description'] = 'Get some sleep and fill up your energy meter. Takes some time to refill.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('rest')
+		.setDescription('Get some sleep and fill up your energy meter. Takes some time to refill.')
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page3',
+	position: 5,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData) => {
@@ -91,7 +89,7 @@ export async function startResting(
 		},
 	);
 
-	const isAutomatic = !interaction.isCommand() || interaction.commandName !== name;
+	const isAutomatic = !interaction.isCommand() || interaction.commandName !== command.data.name;
 
 	const weardownText = await wearDownDen(serverData, CurrentRegionType.SleepingDens);
 	let energyPoints = 0;

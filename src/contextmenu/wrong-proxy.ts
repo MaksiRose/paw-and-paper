@@ -5,11 +5,9 @@ import { ContextMenuCommand, UserSchema, WebhookMessages } from '../typedef';
 import { disableAllComponents } from '../utils/componentDisabling';
 import { getArrayElement, getMapData, respond, update } from '../utils/helperFunctions';
 
-const name: ContextMenuCommand['name'] = 'Wrong Proxy 🔀';
 export const command: ContextMenuCommand = {
-	name: name,
 	data: {
-		name: name,
+		name: 'Wrong Proxy 🔀',
 		type: 3,
 		dm_permission: false,
 	},

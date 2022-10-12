@@ -16,16 +16,14 @@ const threeHours = oneHour * 3;
 const twentyFourHours = threeHours * 8;
 const userMap: Map<string, NodeJS.Timeout> = new Map();
 
-const name: SlashCommand['name'] = 'water-tree';
-const description: SlashCommand['description'] = 'If you have a ginkgo sapling, you can water it using this command.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('water-tree')
+		.setDescription('If you have a ginkgo sapling, you can water it using this command.')
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page3',
+	position: 9,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false, // This is technically true, but it's set to false because it's a task that you get reminded to do daily and does not reflect your actual activity
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {

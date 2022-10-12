@@ -11,16 +11,14 @@ import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
 const { default_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'drink';
-const description: SlashCommand['description'] = 'Drink some water and fill up your thirst meter.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('drink')
+		.setDescription('Drink some water and fill up your thirst meter.')
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page3',
+	position: 4,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {

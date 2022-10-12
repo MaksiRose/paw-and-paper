@@ -19,20 +19,18 @@ import { sendQuestMessage } from './start-quest';
 
 const tutorialMap: Map<string, number> = new Map();
 
-const name: SlashCommand['name'] = 'play';
-const description: SlashCommand['description'] = 'The main activity of Younglings. Costs energy, but gives XP.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('play')
+		.setDescription('Gain experience in a safe environment, or play with others to give them health.')
 		.addUserOption(option =>
 			option.setName('user')
 				.setDescription('The user you want to play with')
 				.setRequired(false))
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page2',
+	position: 0,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {

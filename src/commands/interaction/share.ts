@@ -17,20 +17,18 @@ import { remindOfAttack } from '../gameplay_primary/attack';
 const sharingCooldownAccountsMap: Map<string, number> = new Map();
 const twoHoursInMs = 7_200_000;
 
-const name: SlashCommand['name'] = 'share';
-const description: SlashCommand['description'] = 'Mention someone to share a story or anecdote. Costs energy, but gives XP to the other person.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('share')
+		.setDescription('Share an anecdote with someone and give them experience. Only available to Elderlies.')
 		.setDMPermission(false)
 		.addUserOption(option =>
 			option.setName('user')
 				.setDescription('The user that you want to share a story with.')
 				.setRequired(true))
 		.toJSON(),
+	category: 'page4',
+	position: 1,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData1, serverData, embedArray) => {
@@ -132,6 +130,7 @@ export const command: SlashCommand = {
 
 		/* Check if the user is interactable, and if they are, define quid data and profile data. */
 		if (!isInteractable(interaction, userData2, messageContent, embedArray)) { return; }
+
 		let quidData2 = getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId));
 		let profileData2 = getMapData(quidData2.profiles, interaction.guildId);
 

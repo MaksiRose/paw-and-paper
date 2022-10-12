@@ -3,14 +3,10 @@ import { Profile, SlashCommand } from '../../typedef';
 import { getRandomNumber } from '../../utils/randomizers';
 import { getQuidDisplayname, respond } from '../../utils/helperFunctions';
 
-const name: SlashCommand['name'] = 'roll';
-const description: SlashCommand['description'] = 'Roll dices.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('roll')
+		.setDescription('Roll dices.')
 		.addNumberOption(option =>
 			option.setName('sides')
 				.setDescription('The amount of sides the dice should have. Default is 6.')
@@ -26,6 +22,8 @@ export const command: SlashCommand = {
 				.setDescription('The amount that you would like to be added or subtracted from the roll. Can also be a /skill.')
 				.setAutocomplete(true))
 		.toJSON(),
+	category: 'page4',
+	position: 7,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendAutocomplete: async (client, interaction, userData) => {

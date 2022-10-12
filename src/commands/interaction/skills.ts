@@ -7,20 +7,18 @@ import { isInGuild } from '../../utils/checkUserState';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
 
-const name: SlashCommand['name'] = 'skills';
-const description: SlashCommand['description'] = 'Show a list of or edit custom skills/ability scores.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('skills')
+		.setDescription('Show a list of or edit custom skills/ability scores.')
 		.addUserOption(option =>
 			option.setName('user')
 				.setDescription('A user that you want to look up the skills of')
 				.setRequired(false))
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page4',
+	position: 8,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData, serverData) => {

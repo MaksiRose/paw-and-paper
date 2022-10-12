@@ -7,15 +7,13 @@ import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
 const { error_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'proxy';
-const description: SlashCommand['description'] = 'Add a proxy or autoproxy for your quid.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('proxy')
+		.setDescription('Add a proxy or autoproxy for your quid.')
 		.toJSON(),
+	category: 'page1',
+	position: 6,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {

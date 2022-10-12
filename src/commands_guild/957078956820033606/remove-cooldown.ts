@@ -4,14 +4,10 @@ import { SlashCommand } from '../../typedef';
 import userModel from '../../models/userModel';
 import { cooldownMap } from '../../events/interactionCreate';
 
-const name: SlashCommand['name'] = 'remove-cooldown';
-const description: SlashCommand['description'] = 'Remove the cooldown of a user in a guild';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('remove-cooldown')
+		.setDescription('Remove the cooldown of a user in a guild')
 		.setDMPermission(false)
 		.setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 		.addUserOption(option =>
@@ -23,6 +19,8 @@ export const command: SlashCommand = {
 				.setDescription('The guild to remove the cooldown in')
 				.setRequired(true))
 		.toJSON(),
+	category: 'other',
+	position: 0,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction) => {

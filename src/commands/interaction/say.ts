@@ -7,14 +7,10 @@ const { error_color } = require('../../../config.json');
 import userModel from '../../models/userModel';
 import { readFileSync, writeFileSync } from 'fs';
 
-const name: SlashCommand['name'] = 'say';
-const description: SlashCommand['description'] = 'Sends a message as if your quid was saying it.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('say')
+		.setDescription('Sends a message as if your quid was saying it.')
 		.addStringOption(option =>
 			option.setName('text')
 				.setDescription('The text that you want your quid to say.'))
@@ -23,6 +19,8 @@ export const command: SlashCommand = {
 				.setDescription('An attachment that you want to attach to the message'))
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page4',
+	position: 3,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {

@@ -10,14 +10,10 @@ import { getMapData, widenValues, unsafeKeys, respond, update, getQuidDisplaynam
 import { calculateInventorySize } from '../../utils/simulateItemUse';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
-const name: SlashCommand['name'] = 'store';
-const description: SlashCommand['description'] = 'Take items you have gathered for your pack, and put them in the pack inventory.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('store')
+		.setDescription('Take items you have gathered for your pack, and put them in the pack inventory.')
 		.setDMPermission(false)
 		.addSubcommand(option =>
 			option.setName('all')
@@ -26,6 +22,8 @@ export const command: SlashCommand = {
 			option.setName('custom')
 				.setDescription('Select this if you want to individually store your items away.'))
 		.toJSON(),
+	category: 'page3',
+	position: 2,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {

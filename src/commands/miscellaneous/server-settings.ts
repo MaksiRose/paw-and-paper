@@ -7,17 +7,15 @@ import { checkLevelRequirements, checkRankRequirements } from '../../utils/check
 import { getMapData } from '../../utils/helperFunctions';
 const { default_color, update_channel_id } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'server-settings';
-const description: SlashCommand['description'] = 'List of server-specific settings like shop roles, update notifications and more.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('server-settings')
+		.setDescription('List of server-specific settings like shop roles, update notifications and more.')
 		.setDMPermission(false)
 		.setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels + PermissionFlagsBits.ManageRoles)
 		.toJSON(),
+	category: 'page5',
+	position: 1,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData, serverData) => {

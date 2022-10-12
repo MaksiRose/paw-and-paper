@@ -5,14 +5,10 @@ import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
 import { BanList, SlashCommand } from '../../typedef';
 
-const name: SlashCommand['name'] = 'ban';
-const description: SlashCommand['description'] = 'Ban a user or server from using the bot';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('ban')
+		.setDescription('Ban a user or server from using the bot')
 		.addStringOption(option =>
 			option.setName('type')
 				.setDescription('Whether you want to ban a user or server')
@@ -28,6 +24,8 @@ export const command: SlashCommand = {
 		.setDMPermission(false)
 		.setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 		.toJSON(),
+	category: 'other',
+	position: 0,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction) => {

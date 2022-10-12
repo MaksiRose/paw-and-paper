@@ -14,16 +14,14 @@ import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers'
 import { pickMaterial, pickMeat, simulateMaterialUse, simulateMeatUse } from '../../utils/simulateItemUse';
 import { remindOfAttack } from './attack';
 
-const name: SlashCommand['name'] = 'scavenge';
-const description: SlashCommand['description'] = 'Scavenge for carcass and materials. Costs energy, but gives XP.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('scavenge')
+		.setDescription('Roam around near the pack for a chance to find carcass and materials. Not available to Younglings.')
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page2',
+	position: 3,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {

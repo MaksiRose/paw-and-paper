@@ -4,19 +4,17 @@ import { SlashCommand } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
 import { getMapData, getQuidDisplayname, respond } from '../../utils/helperFunctions';
 
-const name: SlashCommand['name'] = 'nickname';
-const description: SlashCommand['description'] = 'A global or server-specific replacement for your regular name.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('nickname')
+		.setDescription('A global or server-specific replacement for your regular name.')
 		.addStringOption(option =>
 			option.setName('nickname')
 				.setDescription('The nickname that you want your quid to have.')
 				.setMaxLength(48))
 		.toJSON(),
+	category: 'page1',
+	position: 7,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData, serverData) => {

@@ -11,15 +11,13 @@ const { error_color, default_color } = require('../../../config.json');
 const maxPronounLength = 16;
 const maxModalLength = (maxPronounLength * 5) + 8 + 5; // In the modal, the most you can input is 5 pronouns, the word 'singular' plus 5 slashes
 
-const name: SlashCommand['name'] = 'pronouns';
-const description: SlashCommand['description'] = 'Choose the pronouns you are using during roleplay.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('pronouns')
+		.setDescription('Choose the pronouns you are using during roleplay.')
 		.toJSON(),
+	category: 'page1',
+	position: 2,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {

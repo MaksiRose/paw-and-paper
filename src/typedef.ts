@@ -1,12 +1,12 @@
 import { Api } from '@top-gg/sdk';
-import { AutocompleteInteraction, Client, ClientOptions, MessageContextMenuCommandInteraction, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { AutocompleteInteraction, Client, ClientOptions, MessageContextMenuCommandInteraction, ChatInputCommandInteraction, EmbedBuilder, Collection } from 'discord.js';
 const bfd = require('bfd-api-redux/src/main');
 import { RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v10';
 
 export interface SlashCommand {
-	name: string;
-	description: string;
 	data: RESTPostAPIApplicationCommandsJSONBody;
+	category: 'page1' | 'page2' | 'page3' | 'page4' | 'page5' | 'other';
+	position: number;
 	/** Best practice is that only commands that immediately return without any form of interaction (Button, Select Menu, Modal) that changes something in the database are set to false. */
 	disablePreviousCommand: boolean;
 	modifiesServerProfile: boolean;
@@ -15,7 +15,6 @@ export interface SlashCommand {
 }
 
 export interface ContextMenuCommand {
-	name: string;
 	data: RESTPostAPIApplicationCommandsJSONBody;
 	sendCommand: (client: CustomClient, interaction: MessageContextMenuCommandInteraction) => Promise<void>;
 }
@@ -28,8 +27,8 @@ export interface Votes {
 
 export class CustomClient extends Client {
 
-	slashCommands: { [key in string]: SlashCommand };
-	contextMenuCommands: { [key in string]: ContextMenuCommand };
+	slashCommands: Collection<string, SlashCommand>;
+	contextMenuCommands: Collection<string, ContextMenuCommand>;
 	votes: {
 		bfd?: Votes & { client: typeof bfd; },
 		top?: Votes & { client: Api | null; },
@@ -39,8 +38,8 @@ export class CustomClient extends Client {
 	constructor(options: ClientOptions) {
 
 		super(options);
-		this.slashCommands = {};
-		this.contextMenuCommands = {};
+		this.slashCommands = new Collection();
+		this.contextMenuCommands = new Collection();
 		this.votes = {};
 	}
 }

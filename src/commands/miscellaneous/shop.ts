@@ -8,16 +8,14 @@ import { getMapData } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 const { error_color, default_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'shop';
-const description: SlashCommand['description'] = 'Buy roles with experience points.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('shop')
+		.setDescription('Buy roles with experience points.')
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page5',
+	position: 0,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData, serverData) => {

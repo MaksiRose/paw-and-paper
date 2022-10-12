@@ -9,16 +9,14 @@ import { remindOfAttack } from '../gameplay_primary/attack';
 import { sendEatMessage } from './eat';
 const { default_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'inventory';
-const description: SlashCommand['description'] = 'This is a collection of all the things your pack has gathered, listed up.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('inventory')
+		.setDescription('This is a collection of all the things your pack has gathered, listed up.')
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page3',
+	position: 1,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData, serverData) => {

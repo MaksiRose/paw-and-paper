@@ -8,16 +8,14 @@ import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { getMapData, getSmallerNumber, respond } from '../../utils/helperFunctions';
 const { default_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'vote';
-const description: SlashCommand['description'] = 'Vote for this bot on one of three websites and get +30 energy each time.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('vote')
+		.setDescription('Vote for this bot on one of three websites and get +30 energy each time.')
 		.setDMPermission(true)
 		.toJSON(),
+	category: 'page3',
+	position: 6,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {

@@ -10,19 +10,17 @@ import { getMapData } from '../../utils/helperFunctions';
 import { disableCommandComponent } from '../../utils/componentDisabling';
 const { error_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'profile';
-const description: SlashCommand['description'] = 'Look up all the available info about a quid or change the quid you are using.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('profile')
+		.setDescription('Look up all the available info about a quid or change the quid you are using.')
 		.addUserOption(option =>
 			option.setName('user')
 				.setDescription('A user that you want to look up the profile of.')
 				.setRequired(false))
 		.toJSON(),
+	category: 'page1',
+	position: 9,
 	disablePreviousCommand: false, // This command has checks in place that only change something if no other command is active
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {

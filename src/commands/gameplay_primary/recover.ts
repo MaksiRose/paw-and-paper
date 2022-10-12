@@ -16,16 +16,14 @@ import { remindOfAttack } from './attack';
 const recoverCooldownProfilesMap: Map<string, number> = new Map();
 const twelveHoursInMs = 43_200_000;
 
-const name: SlashCommand['name'] = 'recover';
-const description: SlashCommand['description'] = 'If the pack has no herbs to heal an injury, you can recover your injury using this command.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('recover')
+		.setDescription('If the pack has no herbs to heal an injury, you can recover your injury using this command.')
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page2',
+	position: 6,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {

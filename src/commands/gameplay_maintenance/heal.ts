@@ -19,14 +19,10 @@ import { remindOfAttack } from '../gameplay_primary/attack';
 
 const itemInfo = { ...commonPlantsInfo, ...uncommonPlantsInfo, ...rarePlantsInfo, ...specialPlantsInfo };
 
-const name: SlashCommand['name'] = 'heal';
-const description: SlashCommand['description'] = 'Heal your packmates. Costs energy, but gives XP.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('heal')
+		.setDescription('Heal injuries. Not available to Younglings. Less effective on yourself, and as Apprentice or Hunter.')
 		.addUserOption(option =>
 			option.setName('user')
 				.setDescription('The user you want to heal.')
@@ -37,6 +33,8 @@ export const command: SlashCommand = {
 				.setAutocomplete(true)
 				.setRequired(false))
 		.toJSON(),
+	category: 'page3',
+	position: 7,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendAutocomplete: async (client, interaction, userData, serverData) => {
@@ -249,7 +247,8 @@ export async function getHealResponse(
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(quidData.color)
 				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
-				.setDescription(`*${quidData.name} sits in front of the medicine den, looking if anyone needs help with injuries or illnesses.*`)],
+				.setDescription(`*${quidData.name} sits in front of the medicine den, looking if anyone needs help with injuries or illnesses.*`)
+				.setFooter({ text: 'Tip: Healing yourself has a lower chance of being successful than healing others. Healers and Elderlies are more often successful than Apprentices and Hunters.' })],
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 		});
 

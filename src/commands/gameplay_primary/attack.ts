@@ -18,16 +18,14 @@ type serverMapInfo = { startsTimestamp: number | null, idleHumans: number, endin
 const serverMap: Map<string, serverMapInfo > = new Map();
 const newCycleArray = ['attack', 'dodge', 'defend'] as const;
 
-const name: SlashCommand['name'] = 'attack';
-const description: SlashCommand['description'] = 'If humans are attacking the pack, you can fight back using this command.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('attack')
+		.setDescription('If humans are attacking the pack, you can fight back using this command.')
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page2',
+	position: 5,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {

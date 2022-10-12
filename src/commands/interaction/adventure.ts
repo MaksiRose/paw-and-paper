@@ -18,20 +18,18 @@ import { getHighestItem, remindOfAttack } from '../gameplay_primary/attack';
 import { pickPlant } from '../../utils/simulateItemUse';
 const { error_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'adventure';
-const description: SlashCommand['description'] = 'Go adventuring with a friend. Requires 6 friendship hearts.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('adventure')
+		.setDescription('Go adventuring with a friend. Requires 6 friendship hearts.')
 		.setDMPermission(false)
 		.addUserOption(option =>
 			option.setName('user')
 				.setDescription('The user that you want to adventure with.')
 				.setRequired(true))
 		.toJSON(),
+	category: 'page4',
+	position: 0,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData1, serverData, embedArray) => {

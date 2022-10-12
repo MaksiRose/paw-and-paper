@@ -27,14 +27,10 @@ const denSelectMenu = new ActionRowBuilder<ButtonBuilder>()
 		.setLabel('Medicine Den')
 		.setStyle(ButtonStyle.Secondary)]);
 
-const name: SlashCommand['name'] = 'repair';
-const description: SlashCommand['description'] = 'Repair dens. Costs energy, but gives XP.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('repair')
+		.setDescription('Improve a den\'s functionality. Not available to Younglings. Less effective as Apprentice or Healer.')
 		.addStringOption(option =>
 			option.setName('den')
 				.setDescription('The den that you want to repair')
@@ -42,6 +38,8 @@ export const command: SlashCommand = {
 				.setRequired(false))
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page3',
+	position: 8,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {

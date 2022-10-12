@@ -6,19 +6,17 @@ import { hasName } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
 const { error_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'avatar';
-const description: SlashCommand['description'] = 'Choose an avatar for your quid.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('avatar')
+		.setDescription('Choose an avatar for your quid.')
 		.addAttachmentOption(option =>
 			option.setName('picture')
 				.setDescription('The picture that you want the avatar to be')
 				.setRequired(true))
 		.toJSON(),
+	category: 'page1',
+	position: 3,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {

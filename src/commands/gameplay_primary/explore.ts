@@ -18,14 +18,11 @@ import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../
 import { calculateInventorySize, pickMaterial, pickMeat, pickPlant, simulateMeatUse, simulatePlantUse } from '../../utils/simulateItemUse';
 
 type Position = { row: number, column: number; };
-const name: SlashCommand['name'] = 'explore';
-const description: SlashCommand['description'] = 'The main activity of every rank above Younglings. Find meat and herbs. Costs energy, but gives XP.';
+
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('explore')
+		.setDescription('Travel through biomes to hunt for meat and gather herbs. Not available to Younglings.')
 		.addStringOption(option =>
 			option.setName('biome')
 				.setDescription('The biome you want to explore')
@@ -33,6 +30,8 @@ export const command: SlashCommand = {
 				.setRequired(false))
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page2',
+	position: 2,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendAutocomplete: async (client, interaction, userData, serverData) => {

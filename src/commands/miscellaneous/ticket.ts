@@ -7,14 +7,10 @@ import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
 const { error_color, default_color, github_token, ticket_channel_id } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'ticket';
-const description: SlashCommand['description'] = 'Report a bug, give feedback, suggest a feature!';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('ticket')
+		.setDescription('Report a bug, give feedback, suggest a feature!')
 		.addStringOption(option =>
 			option.setName('title')
 				.setDescription('Give a short summary of what the ticket is about')
@@ -36,6 +32,8 @@ export const command: SlashCommand = {
 			option.setName('attachment')
 				.setDescription('Optional picture or video to add context'))
 		.toJSON(),
+	category: 'page5',
+	position: 2,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction) => {
