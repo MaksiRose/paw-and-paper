@@ -58,8 +58,6 @@ export async function start(
 	dblAuthorization: string,
 ): Promise<void> {
 
-	process.on('uncaughtException', (error) => console.log(error));
-
 	client.votes.bfd = { token: bfdToken, authorization: bfdAuthorization, client: null };
 	client.votes.top = { token: topToken, authorization: topAuthorization, client: null };
 	client.votes.dbl = { token: dblToken, authorization: dblAuthorization, client: null };
