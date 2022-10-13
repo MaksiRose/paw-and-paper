@@ -71,18 +71,40 @@ export async function respond(
 ): Promise<Message<boolean>> {
 
 	let botReply: APIMessage | Message<boolean>;
-	if (!interaction.replied && !interaction.deferred) {
-		botReply = await interaction.reply({ ...options, content: options.content === '' ? undefined : options.content, fetchReply: true });
+
+	/* It is sending a reply if the interaction hasn't been replied nor deferred, or editing a reply if editMessage is true, else following up */
+	try {
+
+		if (!interaction.replied && !interaction.deferred) {
+			botReply = await interaction.reply({ ...options, content: options.content === '' ? undefined : options.content, fetchReply: true });
+		}
+		else if (editMessage) {
+			botReply = await interaction.editReply({ ...options, content: options.content === '' ? null : options.content });
+		}
+		else {
+			botReply = await interaction.followUp({ ...options, content: options.content === '' ? undefined : options.content });
+		}
+
 	}
-	else if (editMessage) {
-		botReply = await interaction.editReply({ ...options, content: options.content === '' ? null : options.content });
-	}
-	else {
-		botReply = await interaction.followUp({ ...options, content: options.content === '' ? undefined : options.content });
+	/** If an error occurred and it has status 404, try to either edit the message if editing was tried above, or send a new message in the other two cases */
+	catch (error: unknown) {
+
+		if ((objectHasKey(error, 'status') && error.status === 404) || (objectHasKey(error, 'httpStatus') && error.httpStatus === 404)) {
+
+			if ((interaction.replied || interaction.deferred) && editMessage) { botReply = await (await interaction.fetchReply()).edit({ ...options, flags: undefined }); }
+			else {
+
+				const channel = interaction.channel || (interaction.channelId ? await interaction.client.channels.fetch(interaction.channelId, { force: false }) : null);
+				if (channel && channel.isTextBased()) { botReply = await channel.send({ ...options, flags: undefined }); }
+				else { throw error; }
+
+			}
+		}
+		else { throw error; }
 	}
 
 	if (botReply instanceof Message) { return botReply; }
-	else { throw new Error('Message is APIMessage'); }
+	else { throw new TypeError('Message is APIMessage'); }
 }
 
 export async function update(
@@ -91,11 +113,27 @@ export async function update(
 ): Promise<Message<boolean>> {
 
 	let botReply: Message<boolean>;
-	if (!interaction.replied && !interaction.deferred) {
-		botReply = await interaction.update({ ...options, content: options.content === '' ? null : options.content, fetchReply: true });
+
+	/* It is sending a reply if the interaction hasn't been replied nor deferred, or editing a reply if editMessage is true, else following up */
+	try {
+
+		if (!interaction.replied && !interaction.deferred) {
+			botReply = await interaction.update({ ...options, content: options.content === '' ? null : options.content, fetchReply: true });
+		}
+		else {
+			botReply = await interaction.editReply({ ...options, content: options.content === '' ? null : options.content });
+		}
+
 	}
-	else {
-		botReply = await interaction.editReply({ ...options, content: options.content === '' ? null : options.content });
+	/** If an error occurred and it has status 404, try to either edit the message if editing was tried above, or send a new message in the other two cases */
+	catch (error: unknown) {
+
+		if ((objectHasKey(error, 'status') && error.status === 404) || (objectHasKey(error, 'httpStatus') && error.httpStatus === 404)) {
+
+			if (!interaction.replied && !interaction.deferred) { botReply = await interaction.message.edit({ ...options, flags: undefined }); }
+			else { botReply = await (await interaction.fetchReply()).edit({ ...options, flags: undefined }); }
+		}
+		else { throw error; }
 	}
 
 	return botReply;
@@ -109,7 +147,7 @@ export async function update(
 
 export async function sendErrorMessage(
 	interaction: ChatInputCommandInteraction | MessageContextMenuCommandInteraction | UserContextMenuCommandInteraction | SelectMenuInteraction | ButtonInteraction | ModalSubmitInteraction,
-	error: any,
+	error: unknown,
 ): Promise<any> {
 
 	try {
@@ -159,7 +197,7 @@ export async function sendErrorMessage(
 		guild_locale: interaction.guildLocale,
 	};
 
-	if (error.status === 404 || error.httpStatus === 404) {
+	if ((objectHasKey(error, 'status') && error.status === 404) || (objectHasKey(error, 'httpStatus') && error.httpStatus === 404)) {
 
 		console.error('Error 404 - An error is not being sent to the user. ', error);
 		return;
@@ -172,7 +210,7 @@ export async function sendErrorMessage(
 
 		const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
 		errorId = generateId();
-		errorStacks[errorId] = `${(error?.stack ?? JSON.stringify(error, null, '\t'))}\n${JSON.stringify(jsonInteraction, null, '\t')}`;
+		errorStacks[errorId] = `${(objectHasKey(error, 'stack') && error.stack) || JSON.stringify(error, null, '\t')}\n${JSON.stringify(jsonInteraction, null, '\t')}`;
 		writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
 	}
 	catch (e) {
@@ -282,6 +320,11 @@ export function keyInObject<T extends Record<PropertyKey, any>, K extends keyof 
 	obj: T,
 	key: PropertyKey,
 ): key is K { return Object.hasOwn(obj, key); }
+
+export function objectHasKey<T, K extends PropertyKey>(
+	obj: T,
+	key: K,
+): obj is T & Record<K, any> { return typeof obj === 'object' && obj !== null && Object.hasOwn(obj, key); }
 
 /**
  * Return the bigger of two numbers
