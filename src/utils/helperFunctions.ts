@@ -89,7 +89,7 @@ export async function respond(
 	/** If an error occurred and it has status 404, try to either edit the message if editing was tried above, or send a new message in the other two cases */
 	catch (error: unknown) {
 
-		if ((objectHasKey(error, 'status') && error.status === 404) || (objectHasKey(error, 'httpStatus') && error.httpStatus === 404)) {
+		if ((objectHasKey(error, 'code') && error.code === 'ECONNRESET') || (objectHasKey(error, 'status') && error.status === 404) || (objectHasKey(error, 'httpStatus') && error.httpStatus === 404)) {
 
 			if ((interaction.replied || interaction.deferred) && editMessage) { botReply = await (await interaction.fetchReply()).edit({ ...options, flags: undefined }); }
 			else {
@@ -128,7 +128,7 @@ export async function update(
 	/** If an error occurred and it has status 404, try to either edit the message if editing was tried above, or send a new message in the other two cases */
 	catch (error: unknown) {
 
-		if ((objectHasKey(error, 'status') && error.status === 404) || (objectHasKey(error, 'httpStatus') && error.httpStatus === 404)) {
+		if ((objectHasKey(error, 'code') && error.code === 'ECONNRESET') || (objectHasKey(error, 'status') && error.status === 404) || (objectHasKey(error, 'httpStatus') && error.httpStatus === 404)) {
 
 			if (!interaction.replied && !interaction.deferred) { botReply = await interaction.message.edit({ ...options, flags: undefined }); }
 			else { botReply = await (await interaction.fetchReply()).edit({ ...options, flags: undefined }); }
@@ -202,30 +202,34 @@ export async function sendErrorMessage(
 		console.error('Error 404 - An error is not being sent to the user. ', error);
 		return;
 	}
+	const isECONNRESET = objectHasKey(error, 'code') && error.code === 'ECONNRESET';
 	console.error(error, jsonInteraction);
 
 	let errorId: string | undefined = undefined;
 
-	try {
+	if (!isECONNRESET) {
 
-		const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
-		errorId = generateId();
-		errorStacks[errorId] = `${(objectHasKey(error, 'stack') && error.stack) || JSON.stringify(error, null, '\t')}\n${JSON.stringify(jsonInteraction, null, '\t')}`;
-		writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
-	}
-	catch (e) {
+		try {
 
-		errorId = undefined;
-		console.error('Cannot edit file ', e);
+			const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
+			errorId = generateId();
+			errorStacks[errorId] = `${(objectHasKey(error, 'stack') && error.stack) || JSON.stringify(error, null, '\t')}\n${JSON.stringify(jsonInteraction, null, '\t')}`;
+			writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
+		}
+		catch (e) {
+
+			errorId = undefined;
+			console.error('Cannot edit file ', e);
+		}
 	}
 
 	const messageOptions = {
 		embeds: [new EmbedBuilder()
 			.setColor(error_color)
-			.setTitle('There was an unexpected error executing this command:')
-			.setDescription(`\`\`\`\n${String(error).substring(0, 4090)}\n\`\`\``)
-			.setFooter({ text: 'If this is the first time you encountered the issue, please report it using the button below. After that, only report it again if the issue was supposed to be fixed after an update came out. To receive updates, ask a server administrator to do the "getupdates" command.' })],
-		components: [new ActionRowBuilder<ButtonBuilder>()
+			.setTitle(isECONNRESET ? 'The connection was abruptly closed. Apologies for the inconvenience.' : 'There was an unexpected error executing this command:')
+			.setDescription(isECONNRESET ? null : `\`\`\`\n${String(error).substring(0, 4090)}\n\`\`\``)
+			.setFooter(isECONNRESET ? null : { text: 'If this is the first time you encountered the issue, please report it using the button below. After that, only report it again if the issue was supposed to be fixed after an update came out. To receive updates, ask a server administrator to do the "getupdates" command.' })],
+		components: isECONNRESET ? [] : [new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
 				.setCustomId(`report_${interaction.user.id}${errorId ? `_${errorId}` : ''}`)
 				.setLabel('Report')
