@@ -93,7 +93,7 @@ export async function sendMessage(
 
 	if (quidData.profiles[webhookChannel.guildId] !== undefined) {
 
-		await userModel.findOneAndUpdate(
+		userData = await userModel.findOneAndUpdate(
 			(u => u._id === _id),
 			(u) => {
 				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, webhookChannel.guildId)).profiles, webhookChannel.guildId);
@@ -101,6 +101,7 @@ export async function sendMessage(
 				p.currentRegion = CurrentRegionType.Ruins;
 			},
 		);
+		quidData = getMapData(userData.quids, quidData._id);
 	}
 
 	const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8')) as WebhookMessages;

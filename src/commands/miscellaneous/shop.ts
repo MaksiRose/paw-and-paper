@@ -71,7 +71,7 @@ export async function shopInteractionCollector(
 		const buyItem = serverData.shop.find((shopRole) => shopRole.roleId === roleId);
 		if (buyItem === undefined) { throw new Error('roleId is undefined or could not be found in server shop'); }
 
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
+		let quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		let profileData = getMapData(quidData.profiles, interaction.guildId);
 
 		if (profileData.roles.some(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience')) {
@@ -89,6 +89,8 @@ export async function shopInteractionCollector(
 						p.roles = p.roles.filter(r => r.roleId !== userRole.roleId);
 					},
 				);
+				quidData = getMapData(userData.quids, quidData._id);
+				profileData = getMapData(quidData.profiles, profileData.serverId);
 
 				if (interaction.member.roles.cache.has(buyItem.roleId)) { await interaction.member.roles.remove(buyItem.roleId); }
 
@@ -144,6 +146,8 @@ export async function shopInteractionCollector(
 						});
 					},
 				);
+				quidData = getMapData(userData.quids, quidData._id);
+				profileData = getMapData(quidData.profiles, profileData.serverId);
 
 				if (!interaction.member.roles.cache.has(buyItem.roleId)) { await interaction.member.roles.add(buyItem.roleId); }
 
@@ -166,6 +170,8 @@ export async function shopInteractionCollector(
 							p.roles.filter(r => r.roleId !== role.roleId);
 						},
 					);
+					quidData = getMapData(userData.quids, quidData._id);
+					profileData = getMapData(quidData.profiles, profileData.serverId);
 
 					if (interaction.member.roles.cache.has(role.roleId)) {
 

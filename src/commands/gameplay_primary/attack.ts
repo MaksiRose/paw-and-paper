@@ -48,7 +48,7 @@ export async function executeAttacking(
 	if (!hasName(interaction, userData)) { return; }
 
 	/* Gets the current active quid and the server profile from the account */
-	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
+	let quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 	let profileData = getMapData(quidData.profiles, interaction.guildId);
 	if (!hasSpecies(interaction, quidData)) { return; }
 
@@ -231,7 +231,7 @@ export async function executeAttacking(
 					injuryText = `-${healthPoints} HP (from sprain)\n`;
 				}
 
-				await userModel.findOneAndUpdate(
+				userData = await userModel.findOneAndUpdate(
 					u => u._id === userData._id,
 					(u) => {
 						const p = getMapData(getMapData(u.quids, getMapData(userData!.currentQuid, interaction.guildId)).profiles, interaction.guildId);
@@ -239,6 +239,8 @@ export async function executeAttacking(
 						p.injuries = profileData.injuries;
 					},
 				);
+				quidData = getMapData(userData.quids, quidData._id);
+				profileData = getMapData(quidData.profiles, profileData.serverId);
 			}
 
 			serverAttackInfo.idleHumans += 1;

@@ -52,7 +52,7 @@ export async function executePlaying(
 	if (!hasName(interaction, userData1)) { return; }
 
 	/* Gets the current active quid and the server profile from the account */
-	const quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
+	let quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
 	let profileData1 = getMapData(quidData1.profiles, interaction.guildId);
 	if (!hasSpecies(interaction, quidData1)) { return; }
 
@@ -233,13 +233,16 @@ export async function executePlaying(
 					/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
 					playComponent = fightGame.chosenRightButtonOverwrite(i.customId);
 
-					await userModel.findOneAndUpdate(
+					userData1 = await userModel.findOneAndUpdate(
 						u => u._id === userData1!._id,
 						(u) => {
 							const p = getMapData(getMapData(u.quids, quidData1._id).profiles, interaction.guildId);
 							p.tutorials.play = true;
 						},
 					);
+					quidData1 = getMapData(userData1.quids, quidData1._id);
+					profileData1 = getMapData(quidData1.profiles, profileData1.serverId);
+
 					tutorialMap.delete(quidData1._id + profileData1.serverId);
 
 					whoWinsChance = 0;
@@ -304,7 +307,7 @@ export async function executePlaying(
 			embed.setFooter({ text: `-${healthPoints} HP (from wound)\n${changedCondition.statsUpdateText}` });
 		}
 
-		await userModel.findOneAndUpdate(
+		userData1 = await userModel.findOneAndUpdate(
 			u => u._id === userData1?._id,
 			(u) => {
 				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, profileData1.serverId)).profiles, profileData1.serverId);
@@ -312,6 +315,8 @@ export async function executePlaying(
 				p.injuries = profileData1.injuries;
 			},
 		);
+		quidData1 = getMapData(userData1.quids, quidData1._id);
+		profileData1 = getMapData(quidData1.profiles, profileData1.serverId);
 	}
 	// find a plant
 	else {
@@ -370,6 +375,8 @@ export async function executePlaying(
 						else { p.inventory.rarePlants[foundItem] += 1; }
 					},
 				);
+				quidData1 = getMapData(userData1.quids, quidData1._id);
+				profileData1 = getMapData(quidData1.profiles, profileData1.serverId);
 				embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundItem}` });
 			}
 			else {
@@ -387,13 +394,15 @@ export async function executePlaying(
 
 	if (foundQuest) {
 
-		await userModel.findOneAndUpdate(
+		userData1 = await userModel.findOneAndUpdate(
 			u => u._id === userData1!._id,
 			(u) => {
 				const p = getMapData(getMapData(u.quids, quidData1._id).profiles, interaction.guildId);
 				p.hasQuest = true;
 			},
 		);
+		quidData1 = getMapData(userData1.quids, quidData1._id);
+		profileData1 = getMapData(quidData1.profiles, profileData1.serverId);
 
 		botReply = await sendQuestMessage(interaction, userData1, quidData1, profileData1, serverData, messageContent, embedArray, [...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
 			...(levelUpEmbed ? [levelUpEmbed] : [])], changedCondition.statsUpdateText);

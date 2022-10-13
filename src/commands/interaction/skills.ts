@@ -255,6 +255,8 @@ export async function skillsInteractionCollector(
 					delete p.skills[category][skillName];
 				},
 			);
+			quidData = getMapData(userData.quids, quidData!._id);
+			profileData = getMapData(quidData.profiles, profileData!.serverId);
 		}
 		else {
 
@@ -264,7 +266,7 @@ export async function skillsInteractionCollector(
 
 			for (const user of allServerUsers) {
 
-				await userModel.findOneAndUpdate(
+				userData = await userModel.findOneAndUpdate(
 					u => u._id === user._id,
 					(u) => {
 						for (const q of Object.values(u.quids)) {
@@ -275,6 +277,8 @@ export async function skillsInteractionCollector(
 						}
 					},
 				);
+				quidData = getMapData(userData.quids, quidData!._id);
+				profileData = getMapData(quidData.profiles, profileData!.serverId);
 			}
 
 			await serverModel.findOneAndUpdate(
@@ -340,6 +344,8 @@ export async function sendEditSkillsModalResponse(
 					p.skills[category][newName] = 0;
 				},
 			);
+			quidData = getMapData(userData.quids, quidData!._id);
+			profileData = getMapData(quidData.profiles, profileData!.serverId);
 		}
 		else {
 
@@ -360,7 +366,7 @@ export async function sendEditSkillsModalResponse(
 
 			for (const user of allServerUsers) {
 
-				await userModel.findOneAndUpdate(
+				userData = await userModel.findOneAndUpdate(
 					u => u._id === user._id,
 					(u) => {
 						for (const q of Object.values(u.quids)) {
@@ -371,6 +377,8 @@ export async function sendEditSkillsModalResponse(
 						}
 					},
 				);
+				quidData = getMapData(userData.quids, quidData!._id);
+				profileData = getMapData(quidData.profiles, profileData!.serverId);
 			}
 
 			await serverModel.findOneAndUpdate(
@@ -418,6 +426,8 @@ export async function sendEditSkillsModalResponse(
 					delete p.skills.personal[skillName];
 				},
 			);
+			quidData = getMapData(userData.quids, quidData!._id);
+			profileData = getMapData(quidData.profiles, profileData!.serverId);
 		}
 		else {
 
@@ -438,7 +448,7 @@ export async function sendEditSkillsModalResponse(
 
 			for (const user of allServerUsers) {
 
-				await userModel.findOneAndUpdate(
+				userData = await userModel.findOneAndUpdate(
 					u => u._id === user._id,
 					(u) => {
 						for (const q of Object.values(u.quids)) {
@@ -450,6 +460,8 @@ export async function sendEditSkillsModalResponse(
 						}
 					},
 				);
+				quidData = getMapData(userData.quids, quidData!._id);
+				profileData = getMapData(quidData.profiles, profileData!.serverId);
 			}
 
 			await serverModel.findOneAndUpdate(

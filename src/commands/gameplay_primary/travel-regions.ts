@@ -138,13 +138,15 @@ async function sendTravelMessage(
 
 	if (chosenRegion && valueInObject(CurrentRegionType, chosenRegion)) {
 
-		await userModel.findOneAndUpdate(
+		userData = await userModel.findOneAndUpdate(
 			u => u._id === userData._id,
 			(u) => {
 				const p = getMapData(getMapData(u.quids, getMapData(userData!.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 				p.currentRegion = chosenRegion;
 			},
 		);
+		quidData = getMapData(userData.quids, quidData._id);
+		profileData = getMapData(quidData.profiles, profileData.serverId);
 	}
 
 	if (chosenRegion === CurrentRegionType.SleepingDens) {

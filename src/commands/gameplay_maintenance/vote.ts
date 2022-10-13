@@ -127,8 +127,8 @@ export async function voteInteractionCollector(
 
 		const energyPoints = getSmallerNumber(profileData.maxEnergy - profileData.energy, 30);
 
-		await userModel.findOneAndUpdate(
-			u => u._id === userData._id,
+		userData = await userModel.findOneAndUpdate(
+			u => u._id === userData!._id,
 			(u) => {
 				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 				p.energy += energyPoints;

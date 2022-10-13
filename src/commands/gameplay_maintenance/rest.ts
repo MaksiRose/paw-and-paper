@@ -79,7 +79,7 @@ export async function startResting(
 
 	const previousRegion = profileData.currentRegion;
 
-	await userModel.findOneAndUpdate(
+	userData = await userModel.findOneAndUpdate(
 		u => u._id === userData._id,
 		(u) => {
 			const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
@@ -88,6 +88,8 @@ export async function startResting(
 			u.advice.resting = true;
 		},
 	);
+	quidData = getMapData(userData.quids, quidData._id);
+	profileData = getMapData(quidData.profiles, profileData.serverId);
 
 	const isAutomatic = !interaction.isCommand() || interaction.commandName !== command.data.name;
 
@@ -137,6 +139,8 @@ export async function startResting(
 						p.currentRegion = previousRegion;
 					},
 				);
+				quidData = getMapData(userData.quids, quidData._id);
+				profileData = getMapData(quidData.profiles, profileData.serverId);
 
 				await botReply.delete();
 

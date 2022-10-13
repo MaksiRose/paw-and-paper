@@ -223,9 +223,9 @@ export async function playfightInteractionCollector(
 		let userDataCurrent = user1IsPlaying ? userData1 : userData2;
 		let userDataOther = user1IsPlaying ? userData2 : userData1;
 		let quidDataCurrent = user1IsPlaying ? quidData1 : quidData2;
-		const quidDataOther = user1IsPlaying ? quidData2 : quidData1;
+		let quidDataOther = user1IsPlaying ? quidData2 : quidData1;
 		let profileDataCurrent = user1IsPlaying ? profileData1 : profileData2;
-		const profileDataOther = user1IsPlaying ? profileData2 : profileData1;
+		let profileDataOther = user1IsPlaying ? profileData2 : profileData1;
 
 		async function sendNextRoundMessage(
 			userId: string,
@@ -410,6 +410,8 @@ export async function playfightInteractionCollector(
 						p.experience += experiencePoints;
 					},
 				);
+				quidDataCurrent = getMapData(userDataCurrent.quids, getMapData(userDataCurrent.currentQuid, interaction.guildId));
+				profileDataCurrent = getMapData(quidDataCurrent.profiles, interaction.guildId);
 
 				userDataOther = await userModel.findOneAndUpdate(
 					u => u._id === userDataOther._id,
@@ -418,6 +420,8 @@ export async function playfightInteractionCollector(
 						p.experience += experiencePoints;
 					},
 				);
+				quidDataOther = getMapData(userDataOther.quids, getMapData(userDataOther.currentQuid, interaction.guildId));
+				profileDataOther = getMapData(quidDataOther.profiles, interaction.guildId);
 			}
 
 			userData1 = user1IsPlaying ? userDataCurrent : userDataOther;

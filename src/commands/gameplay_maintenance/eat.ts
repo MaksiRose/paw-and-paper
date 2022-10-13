@@ -161,13 +161,15 @@ export async function sendEatMessage(
 			if (pickIncreasedMaxStatType === undefined) { throw new TypeError('pickIncreasedMaxStatType is undefined'); }
 			increasedMaxStatType = pickIncreasedMaxStatType;
 
-			await userModel.findOneAndUpdate(
+			userData = await userModel.findOneAndUpdate(
 				u => u._id === userData._id,
 				(u) => {
 					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 					p.temporaryStatIncrease[Date.now()] = increasedMaxStatType!;
 				},
 			);
+			quidData = getMapData(userData.quids, quidData._id);
+			profileData = getMapData(quidData.profiles, profileData.serverId);
 		}
 		else { throw new Error('chosenFood could not be assigned to any plant type'); }
 

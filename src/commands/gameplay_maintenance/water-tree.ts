@@ -34,7 +34,7 @@ export const command: SlashCommand = {
 		if (!hasName(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
+		let quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 		let profileData = getMapData(quidData.profiles, interaction.guildId);
 		if (!hasSpecies(interaction, quidData)) { return; }
 
@@ -118,8 +118,8 @@ export const command: SlashCommand = {
 		profileData.sapling.lastMessageChannelId = interaction.channelId;
 		profileData.sapling.sentReminder = false;
 
-		await userModel.findOneAndUpdate(
-			u => u._id === userData._id,
+		userData = await userModel.findOneAndUpdate(
+			u => u._id === userData!._id,
 			(u) => {
 				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 				p.sapling = profileData.sapling;
@@ -127,6 +127,8 @@ export const command: SlashCommand = {
 				p.health += healthPoints;
 			},
 		);
+		quidData = getMapData(userData.quids, quidData._id);
+		profileData = getMapData(quidData.profiles, profileData.serverId);
 
 		const levelUpCheck = await checkLevelUp(interaction, userData, quidData, profileData, serverData);
 		profileData = levelUpCheck.profileData;
@@ -152,13 +154,15 @@ export const command: SlashCommand = {
 					.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Dead.png')],
 			}, false);
 
-			await userModel.findOneAndUpdate(
-				u => u._id === userData._id,
+			userData = await userModel.findOneAndUpdate(
+				u => u._id === userData!._id,
 				(u) => {
 					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 					p.sapling = { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, lastMessageChannelId: null, sentReminder: false, sentGentleReminder: false };
 				},
 			);
+			quidData = getMapData(userData.quids, quidData._id);
+			profileData = getMapData(quidData.profiles, profileData.serverId);
 		}
 	},
 };
@@ -194,15 +198,17 @@ export async function sendReminder(
 
 			if (profileData.sapling.exists && userData.settings.reminders.water && !profileData.sapling.sentReminder) {
 
-				await userModel.findOneAndUpdate(
+				userData = await userModel.findOneAndUpdate(
 					u => u._id === userData._id,
 					(u) => {
 						const p = getMapData(getMapData(u.quids, quidData._id).profiles, profileData.serverId);
 						p.sapling.sentReminder = true;
 					},
 				);
+				quidData = getMapData(userData.quids, quidData._id);
+				profileData = getMapData(quidData.profiles, profileData.serverId);
 
-				const channel = await client.channels.fetch(profileData.sapling.lastMessageChannelId);
+				const channel = await client.channels.fetch(profileData.sapling.lastMessageChannelId!);
 				if (!channel || !channel.isTextBased() || channel.isDMBased()) { throw new Error('lastMessageChannelId is undefined, not a text based channel or a DM channel'); }
 
 				/* This has to be changed when multiple users are introduced. First idea is to also store, as part of the sapling object, which user last watered. Then, if that user fails, try again for all the other users. */

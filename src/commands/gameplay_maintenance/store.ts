@@ -139,8 +139,8 @@ export async function storeInteractionCollector(
 	if (serverData === null) { throw new TypeError('serverData is null.'); }
 
 	/* Gets the current active quid and the server profile from the account */
-	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-	const profileData = getMapData(quidData.profiles, interaction.guildId);
+	let quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
+	let profileData = getMapData(quidData.profiles, interaction.guildId);
 
 	if (interaction.isSelectMenu()) {
 
@@ -196,16 +196,18 @@ export async function storeInteractionCollector(
 				}
 			}
 
-			await userModel.findOneAndUpdate(
+			userData = await userModel.findOneAndUpdate(
 				u => u._id === userData!._id,
 				(u) => {
 					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 					p.inventory = userInventory;
 				},
 			);
+			quidData = getMapData(userData.quids, quidData._id);
+			profileData = getMapData(quidData.profiles, profileData.serverId);
 
-			await serverModel.findOneAndUpdate(
-				s => s._id === serverData._id,
+			serverData = await serverModel.findOneAndUpdate(
+				s => s._id === serverData!._id,
 				(s) => {
 					s.inventory = serverInventory;
 				},
@@ -263,15 +265,17 @@ async function storeAll(
 	}
 	embed.setFooter(footerText ? { text: footerText } : null);
 
-	await userModel.findOneAndUpdate(
+	userData = await userModel.findOneAndUpdate(
 		u => u._id === userData!._id,
 		(u) => {
 			const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 			p.inventory = userInventory;
 		},
 	);
+	quidData = getMapData(userData.quids, quidData._id);
+	profileData = getMapData(quidData.profiles, profileData.serverId);
 
-	await serverModel.findOneAndUpdate(
+	serverData = await serverModel.findOneAndUpdate(
 		s => s._id === serverData._id,
 		(s) => {
 			s.inventory = serverInventory;

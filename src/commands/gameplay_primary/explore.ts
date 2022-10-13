@@ -71,7 +71,7 @@ export async function executeExploring(
 	if (!hasName(interaction, userData)) { return; }
 
 	/* Gets the current active quid and the server profile from the account */
-	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
+	let quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 	let profileData = getMapData(quidData.profiles, interaction.guildId);
 	if (!hasSpecies(interaction, quidData)) { return; }
 
@@ -108,13 +108,15 @@ export async function executeExploring(
 			],
 		}, true);
 
-		await userModel.findOneAndUpdate(
+		userData = await userModel.findOneAndUpdate(
 			u => u._id === userData!._id,
 			(u) => {
 				const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
 				p.tutorials.explore = true;
 			},
 		);
+		quidData = getMapData(userData.quids, quidData._id);
+		profileData = getMapData(quidData.profiles, profileData.serverId);
 		return;
 	}
 
@@ -355,6 +357,8 @@ export async function executeExploring(
 					};
 				},
 			);
+			quidData = getMapData(userData.quids, quidData._id);
+			profileData = getMapData(quidData.profiles, profileData.serverId);
 
 			embed.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Discovery.png');
 			embed.setDescription(`*${quidData.name} is looking around for useful things around ${pronoun(quidData, 1)} when ${pronounAndPlural(quidData, 0, 'discover')} the sapling of a ginkgo tree. The ${quidData.displayedSpecies || quidData.species} remembers that they bring good luck and health. Surely it can't hurt to bring it back to the pack!*`);
@@ -371,6 +375,8 @@ export async function executeExploring(
 					p.inventory.materials[foundMaterial] += 1;
 				},
 			);
+			quidData = getMapData(userData.quids, quidData._id);
+			profileData = getMapData(quidData.profiles, profileData.serverId);
 
 			embed.setDescription(`*${quidData.name} is looking around for things around ${pronoun(quidData, 1)} but there doesn't appear to be anything useful. The ${quidData.displayedSpecies || quidData.species} decides to grab a ${foundMaterial} as to not go back with nothing to show.*`);
 			embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundMaterial}` });
@@ -524,6 +530,8 @@ export async function executeExploring(
 							else { p.inventory.rarePlants[foundItem] += 1; }
 						},
 					);
+					quidData = getMapData(userData.quids, quidData._id);
+					profileData = getMapData(quidData.profiles, profileData.serverId);
 
 					embed.setDescription(`*${quidData.name} gently lowers ${pronoun(quidData, 2)} head, picking up the ${foundItem} and carrying it back in ${pronoun(quidData, 2)} mouth. What a success!*`);
 
@@ -625,6 +633,8 @@ export async function executeExploring(
 							p.injuries = profileData.injuries;
 						},
 					);
+					quidData = getMapData(userData.quids, quidData._id);
+					profileData = getMapData(quidData.profiles, profileData.serverId);
 				}
 			})(interaction, userData, serverData, int);
 		}
@@ -892,6 +902,8 @@ export async function executeExploring(
 							p.injuries = profileData.injuries;
 						},
 					);
+					quidData = getMapData(userData.quids, quidData._id);
+					profileData = getMapData(quidData.profiles, profileData.serverId);
 				}
 			})(interaction, userData, serverData, int);
 		}
@@ -903,13 +915,15 @@ export async function executeExploring(
 
 	if (foundQuest) {
 
-		await userModel.findOneAndUpdate(
+		userData = await userModel.findOneAndUpdate(
 			u => u._id === userData!._id,
 			(u) => {
 				const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
 				p.hasQuest = true;
 			},
 		);
+		quidData = getMapData(userData.quids, quidData._id);
+		profileData = getMapData(quidData.profiles, profileData.serverId);
 
 		botReply = await sendQuestMessage(interaction, userData, quidData, profileData, serverData, messageContent, embedArray, [...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
 			...(levelUpCheck.levelUpEmbed ? [levelUpCheck.levelUpEmbed] : [])], changedCondition.statsUpdateText);
@@ -944,12 +958,14 @@ export async function executeExploring(
 
 	if (userData.advice.ginkgosapling === false && foundSapling) {
 
-		await userModel.findOneAndUpdate(
+		userData = await userModel.findOneAndUpdate(
 			u => u._id === userData!._id,
 			(u) => {
 				u.advice.ginkgosapling = true;
 			},
 		);
+		quidData = getMapData(userData.quids, quidData._id);
+		profileData = getMapData(quidData.profiles, profileData.serverId);
 
 		await respond(interaction, {
 			content: `${interaction.user.toString()} ❓ **Tip:**\nA Ginkgo sapling gives you more luck the older it gets. For example, you might find better items or be more often successful with healing or repairing.`,

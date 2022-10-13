@@ -43,7 +43,7 @@ export async function executeScavenging(
 	if (!hasName(interaction, userData)) { return; }
 
 	/* Gets the current active quid and the server profile from the account */
-	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
+	let quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 	let profileData = getMapData(quidData.profiles, interaction.guildId);
 	if (!hasSpecies(interaction, quidData)) { return; }
 
@@ -181,6 +181,8 @@ export async function executeScavenging(
 									p.inventory.meat[foundCarcass] += 1;
 								},
 							);
+							quidData = getMapData(userData.quids, quidData._id);
+							profileData = getMapData(quidData.profiles, profileData.serverId);
 						}
 						else if (materialCount < 0) {
 
@@ -201,6 +203,8 @@ export async function executeScavenging(
 									p.inventory.materials[foundMaterial] += 1;
 								},
 							);
+							quidData = getMapData(userData.quids, quidData._id);
+							profileData = getMapData(quidData.profiles, profileData.serverId);
 						}
 						else {
 
@@ -278,6 +282,8 @@ export async function executeScavenging(
 								p.injuries = profileData.injuries;
 							},
 						);
+						quidData = getMapData(userData.quids, quidData._id);
+						profileData = getMapData(quidData.profiles, profileData.serverId);
 					}
 
 					await sendFinalMessage(interactions.last() || interaction, userData, serverData);

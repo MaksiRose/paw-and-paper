@@ -27,8 +27,8 @@ export const command: SlashCommand = {
 		if (!hasName(interaction, userData)) { return; }
 
 		/* Gets the current active quid and the server profile from the account */
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-		const profileData = getMapData(quidData.profiles, interaction.guildId);
+		let quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
+		let profileData = getMapData(quidData.profiles, interaction.guildId);
 		if (!hasSpecies(interaction, quidData)) { return; }
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
@@ -38,13 +38,15 @@ export const command: SlashCommand = {
 
 		if (profileData.unlockedRanks === 1 && profileData.rank === RankType.Youngling) {
 
-			await userModel.findOneAndUpdate(
-				u => u._id === userData._id,
+			userData = await userModel.findOneAndUpdate(
+				u => u._id === userData!._id,
 				(u) => {
 					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 					p.rank = RankType.Apprentice;
 				},
 			);
+			quidData = getMapData(userData.quids, quidData._id);
+			profileData = getMapData(quidData.profiles, profileData.serverId);
 
 			await respond(interaction, {
 				content: messageContent,
@@ -89,13 +91,15 @@ export const command: SlashCommand = {
 		}
 		else if (profileData.unlockedRanks === 3 && (profileData.rank === RankType.Healer || profileData.rank === RankType.Hunter)) {
 
-			await userModel.findOneAndUpdate(
-				u => u._id === userData._id,
+			userData = await userModel.findOneAndUpdate(
+				u => u._id === userData!._id,
 				(u) => {
 					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 					p.rank = RankType.Elderly;
 				},
 			);
+			quidData = getMapData(userData.quids, quidData._id);
+			profileData = getMapData(quidData.profiles, profileData.serverId);
 
 			await respond(interaction, {
 				content: messageContent,
@@ -134,15 +138,14 @@ export async function rankupInteractionCollector(
 	const rank = interaction.customId.replace('rank_', '');
 	if (rank !== RankType.Hunter && rank !== RankType.Healer) { throw new Error('rank is not of RankType Hunter or Healer'); }
 
-	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-
-	await userModel.findOneAndUpdate(
-		u => u._id === userData._id,
+	userData = await userModel.findOneAndUpdate(
+		u => u._id === userData!._id,
 		(u) => {
 			const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 			p.rank = rank;
 		},
 	);
+	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 
 	await update(interaction, {
 		embeds: [new EmbedBuilder()

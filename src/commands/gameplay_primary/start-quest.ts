@@ -180,6 +180,8 @@ async function startQuest(
 			p.hasQuest = false;
 		},
 	);
+	quidData = getMapData(userData.quids, quidData._id);
+	profileData = getMapData(quidData.profiles, profileData.serverId);
 
 	const embed = new EmbedBuilder()
 		.setColor(quidData.color)
@@ -339,6 +341,8 @@ async function startQuest(
 						p.unlockedRanks += 1;
 					},
 				);
+				quidData = getMapData(userData.quids, quidData._id);
+				profileData = getMapData(quidData.profiles, profileData.serverId);
 			}
 
 			if (profileData.rank === RankType.Youngling) {
@@ -425,6 +429,8 @@ async function startQuest(
 						p.maxThirst += maxThirstPoints;
 					},
 				);
+				quidData = getMapData(userData.quids, quidData._id);
+				profileData = getMapData(quidData.profiles, profileData.serverId);
 			}
 			else { throw new Error('No rank type found'); }
 
