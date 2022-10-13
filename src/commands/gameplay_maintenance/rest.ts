@@ -157,6 +157,7 @@ export async function startResting(
 		}
 		catch (error) {
 
+			stopResting(userData._id, interaction.guildId);
 			await sendErrorMessage(interaction, error)
 				.catch(e => { console.error(e); });
 		}
