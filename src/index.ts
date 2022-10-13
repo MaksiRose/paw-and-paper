@@ -10,8 +10,5 @@ process.on('uncaughtException', async (err) => {
 process.on('uncaughtExceptionMonitor', async (err) => {
 	console.error('Uncaught Promise Exception (Monitor):\n', err);
 });
-process.on('multipleResolves', async (type, promise, reason) => {
-	console.error('Multiple Resolves:\n', type, promise, reason);
-});
 
 start(token, bfd_token, bfd_authorization, top_token, top_authorization, dbl_token, dbl_authorization);
