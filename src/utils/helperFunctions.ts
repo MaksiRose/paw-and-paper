@@ -202,6 +202,11 @@ export async function sendErrorMessage(
 		console.error('Error 404 - An error is not being sent to the user. ', error);
 		return;
 	}
+	else if ((objectHasKey(error, 'status') && error.status === 400) || (objectHasKey(error, 'httpStatus') && error.httpStatus === 400)) {
+
+		console.error('Error 400 - An error is not being sent to the user. ', error);
+		return;
+	}
 	const isECONNRESET = objectHasKey(error, 'code') && error.code === 'ECONNRESET';
 	console.error(error, jsonInteraction);
 
