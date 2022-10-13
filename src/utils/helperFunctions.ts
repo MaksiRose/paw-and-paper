@@ -57,16 +57,6 @@ export function getUserIds(
 export async function respond(
 	interaction: RepliableInteraction,
 	options: InteractionReplyOptions,
-	editMessage: false,
-): Promise<Message<boolean>>;
-export async function respond(
-	interaction: RepliableInteraction,
-	options: InteractionReplyOptions,
-	editMessage: true,
-): Promise<Message<boolean>>;
-export async function respond(
-	interaction: RepliableInteraction,
-	options: InteractionReplyOptions,
 	editMessage: boolean,
 ): Promise<Message<boolean>> {
 
@@ -100,6 +90,11 @@ export async function respond(
 
 			}
 		}
+		else if (((objectHasKey(error, 'status') && error.status === 400) || (objectHasKey(error, 'httpStatus') && error.httpStatus === 400)) && !interaction.replied && !interaction.deferred) {
+
+			interaction.replied = true;
+			botReply = await respond(interaction, options, editMessage);
+		}
 		else { throw error; }
 	}
 
@@ -132,6 +127,11 @@ export async function update(
 
 			if (!interaction.replied && !interaction.deferred) { botReply = await interaction.message.edit({ ...options, flags: undefined }); }
 			else { botReply = await (await interaction.fetchReply()).edit({ ...options, flags: undefined }); }
+		}
+		else if (((objectHasKey(error, 'status') && error.status === 400) || (objectHasKey(error, 'httpStatus') && error.httpStatus === 400)) && !interaction.replied && !interaction.deferred) {
+
+			interaction.replied = true;
+			botReply = await update(interaction, options);
 		}
 		else { throw error; }
 	}
