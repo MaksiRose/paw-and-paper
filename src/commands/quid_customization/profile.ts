@@ -79,7 +79,7 @@ export async function getMessageContent(
 	const user = await client.users.fetch(userId);
 
 	return {
-		content: !quidData ? (isYourself ? 'You are on an Empty Slot. Select a quid to switch to below.' : 'Select a quid to view below.') : undefined,
+		content: !quidData ? (isYourself ? 'You are on an Empty Slot. Select a quid to switch to below.' : 'Select a quid to view below.') : '',
 		embeds: !quidData ? embedArray : [...embedArray, new EmbedBuilder()
 			.setColor(quidData.color)
 			.setTitle(quidData.name)
