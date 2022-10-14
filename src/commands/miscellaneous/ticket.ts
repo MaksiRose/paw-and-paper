@@ -74,7 +74,7 @@ export async function createNewTicket(
 	/* Creating the ticket embed */
 	const ticketEmbed = new EmbedBuilder()
 		.setColor('#eb6420')
-		.setAuthor({ name: interaction.user.tag })
+		.setAuthor({ name: `${interaction.user.tag} (${interaction.user.id})` })
 		.setTitle(title)
 		.setDescription(description)
 		.setImage(attachmentURL)
@@ -191,7 +191,7 @@ export async function ticketInteractionCollector(
 				owner: 'MaksiRose',
 				repo: 'paw-and-paper',
 				title: embed?.title || 'New issue',
-				body: `Created by: ${interaction.user.tag} (${interaction.user.id})\n\n${embed?.description}\n\n${embed?.image ? `![](${embed.image?.url})` : ''}\n\n${ticketConversation ? `Additional conversation:\n\`\`\`\n${ticketConversation}\n\`\`\`` : ''}`,
+				body: `Created by: ${embed?.author}\n\n${embed?.description}${embed?.image ? `\n![](${embed.image?.url})` : ''}\n\n${ticketConversation ? `Additional conversation:\n\`\`\`\n${ticketConversation}\n\`\`\`` : ''}`,
 				labels: embed?.footer ? [embed.footer.text] : [],
 			});
 	}
