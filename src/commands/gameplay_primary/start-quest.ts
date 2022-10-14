@@ -535,7 +535,7 @@ async function apprenticeAdvice(
 ) {
 
 	await respond(interaction, {
-		content: `${interaction.user.toString()} ❓ **Tip:**\nAs apprentice, you unlock new commands: \`explore\`, \`heal\`, \`practice\`, and \`repair\`.\nCheck \`/help\` to see what they do!\nGo exploring via \`/explore\` to find more quests and rank up higher!`,
+		content: `${interaction.user.toString()} ❓ **Tip:**\nAs apprentice, you unlock new commands: \`explore\`, \`/scavenge\`, \`heal\`, \`practice\`, and \`repair\`.\nCheck \`/help\` to see what they do!\nGo exploring via \`/explore\` to find more quests and rank up higher!`,
 	}, false);
 }
 
