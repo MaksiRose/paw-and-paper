@@ -101,13 +101,13 @@ export async function skillsInteractionCollector(
 							.setCustomId(`${interaction.customId}_personal${interaction.customId === 'skills_add' ? '_modal' : ''}`)
 							.setLabel('Personal')
 							.setEmoji('👤')
-							.setDisabled(!profileData)
+							.setDisabled(profileData === undefined || (interaction.customId.includes('add') === false && Object.keys(profileData.skills.personal).length <= 0))
 							.setStyle(ButtonStyle.Secondary),
 						new ButtonBuilder()
 							.setCustomId(`${interaction.customId}_global${interaction.customId === 'skills_add' ? '_modal' : ''}`)
 							.setLabel('Global')
 							.setEmoji('👥')
-							.setDisabled(!interaction.member.permissions?.has(PermissionFlagsBits.Administrator))
+							.setDisabled(interaction.member.permissions.has(PermissionFlagsBits.Administrator) === false)
 							.setStyle(ButtonStyle.Secondary),
 						]),
 			],
