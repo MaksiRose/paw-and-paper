@@ -14,7 +14,7 @@ export const command: SlashCommand = {
 	position: 0,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction) => {
+	sendCommand: async (client, interaction, userData) => {
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
@@ -23,7 +23,7 @@ export const command: SlashCommand = {
 				.setDescription('This bot has powerful tools to help make your roleplay more immersive, or to express your mental shifts.\nAdditionally, it features a community-driven RPG about animals surviving in the wild. Your goal is to go up the ranks, level up, find items, help your friends and keep your stats high.\n\nClick on the menu options below to get an overview of the available commands!\n**If you are new, start with `/name (name)`!**')],
 			components: [new ActionRowBuilder<SelectMenuBuilder>()
 				.setComponents([new SelectMenuBuilder()
-					.setCustomId('help_options')
+					.setCustomId(`help_options_@${userData?._id ?? interaction.user.id}`)
 					.setPlaceholder('Select a page')
 					.setOptions([
 						{ label: 'Page 1', value: 'help_page1', description: 'Quid Customization', emoji: '📝' },
@@ -49,7 +49,7 @@ export async function helpInteractionCollector(
 	const title = `Page ${titleNr}: ${getArrayElement(titles, Number(titleNr) - 1)}`;
 
 	const description = client.slashCommands
-		.filter(c => c.category === value.replace('help_', ''))
+		.filter(c => c.category === getArrayElement(value.split('_'), 1))
 		.sort((c1, c2) => c1.position - c2.position)
 		.map(c => {
 

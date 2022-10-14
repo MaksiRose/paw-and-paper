@@ -95,6 +95,7 @@ export async function executeExploring(
 		return;
 	}
 
+	const stringInput = interaction.isChatInputCommand() ? interaction.options.getString('biome')?.toLowerCase() : interaction.customId.split('_')[3]?.toLowerCase();
 	if (profileData.tutorials.explore === false) {
 
 		await respond(interaction, {
@@ -102,7 +103,7 @@ export async function executeExploring(
 			components: [
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId('explore_new')
+						.setCustomId(`explore_new_@${userData._id}${stringInput ? `_${stringInput}` : ''}`)
 						.setLabel('I understand, let\'s explore!')
 						.setStyle(ButtonStyle.Success)),
 			],
@@ -124,7 +125,6 @@ export async function executeExploring(
 
 	/* Here we are getting the biomes available to the quid, getting a user input if there is one, and defining chosenBiome as the user input if it matches an available biome, else it is null. */
 	const availableBiomes = getAvailableBiomes(quidData, profileData);
-	const stringInput = interaction.isChatInputCommand() ? interaction.options.getString('biome')?.toLowerCase() : interaction.customId.split('_')[2]?.toLowerCase();
 	let chosenBiome = (stringInput && availableBiomes.includes(stringInput)) ? stringInput : null;
 
 	/** In case a biome was already chosen, the first waiting game reply would be the original reply. If they have to choose a biome, the biome choosing is the original reply, and the waiting game is an update to button click. To safe API calls, the update function is called with this interaction if it isn't null. This is later re-used for finding a plant/exploring */
@@ -942,7 +942,7 @@ export async function executeExploring(
 				...(exploreComponent ? [exploreComponent] : []),
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(`explore_new${stringInput ? `_${stringInput}` : ''}`)
+						.setCustomId(`explore_new_@${userData._id}${stringInput ? `_${stringInput}` : ''}`)
 						.setLabel('Explore again')
 						.setStyle(ButtonStyle.Primary)),
 			],

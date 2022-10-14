@@ -52,7 +52,7 @@ export async function showInventoryMessage(
 
 	const inventorySelectMenu = new ActionRowBuilder<SelectMenuBuilder>()
 		.setComponents(new SelectMenuBuilder()
-			.setCustomId(`inventory_pages_${showMaterialsPage}`)
+			.setCustomId(`inventory_pages_${showMaterialsPage}_@${userData._id}`)
 			.setPlaceholder('Select a page')
 			.setOptions([
 				{ label: 'Page 1', value: '1', description: 'common herbs', emoji: '🌱' },
@@ -85,7 +85,7 @@ export async function showInventoryMessage(
 			...profileData.hunger < profileData.maxHunger && foodSelectMenuOptions.length > 0
 				? [new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents(new SelectMenuBuilder()
-						.setCustomId('inventory_eat')
+						.setCustomId(`inventory_eat_@${userData._id}`)
 						.setPlaceholder('Select an item to eat')
 						.setOptions(foodSelectMenuOptions))]
 				: [],
@@ -109,10 +109,12 @@ export async function inventoryInteractionCollector(
 	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
 	const profileData = getMapData(quidData.profiles, interaction.guildId);
 
+	const selectOptionId = getArrayElement(interaction.values, 0);
+
 	if (interaction.customId.includes('pages')) {
 
 		const showMaterialsPage = interaction.customId.split('_')[2] === 'true';
-		const page = Number(interaction.values[0]);
+		const page = Number(selectOptionId);
 		if (isNaN(page)) { throw new Error('page is Not a Number'); }
 		if (page !== 1 && page !== 2 && page !== 3 && page !== 4) { throw new Error('page is an invalid number'); }
 
@@ -121,19 +123,18 @@ export async function inventoryInteractionCollector(
 	}
 	else if (interaction.customId.includes('eat')) {
 
-		if (interaction.customId.includes('newpage')) {
+		if (selectOptionId.includes('newpage')) {
 
-			const subPage = Number(interaction.values[0]?.split('_')[1]);
+			const subPage = Number(getArrayElement(selectOptionId.split('_'), 1));
 			if (isNaN(subPage)) { throw new Error('subPage is Not a Number'); }
-			const showMaterialsPage = interaction.values[0]?.split('_')[2] === 'true';
+			const showMaterialsPage = selectOptionId.split('_')[2] === 'true';
 
 			await showInventoryMessage(interaction, userData, profileData, serverData, 3, showMaterialsPage, subPage);
 			return;
 		}
 		else {
 
-			const chosenFood = getArrayElement(interaction.values, 0);
-			await sendEatMessage(interaction, chosenFood, userData, quidData, profileData, serverData, '', []);
+			await sendEatMessage(interaction, selectOptionId, userData, quidData, profileData, serverData, '', []);
 			return;
 		}
 	}

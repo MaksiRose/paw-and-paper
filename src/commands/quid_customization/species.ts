@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { SlashCommand, speciesInfo, SpeciesNames, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
@@ -63,7 +63,7 @@ function getSpeciesSelectMenu(page: number, quidId: string): SelectMenuBuilder {
 	}
 
 	return new SelectMenuBuilder()
-		.setCustomId(`species_speciesselect_${quidId}`)
+		.setCustomId(`species_speciesselect_@${quidId}`)
 		.setPlaceholder('Select a species')
 		.setOptions(speciesMenuOptions);
 }
@@ -71,7 +71,7 @@ function getSpeciesSelectMenu(page: number, quidId: string): SelectMenuBuilder {
 function getDisplayedSpeciesButton(quidId: string): ButtonBuilder {
 
 	return new ButtonBuilder()
-		.setCustomId(`species_displayedspeciesmodal_${quidId}`)
+		.setCustomId(`species_displayedspeciesmodal_@${quidId}`)
 		.setLabel('Change displayed species')
 		.setEmoji('📝')
 		.setStyle(ButtonStyle.Secondary);
@@ -87,7 +87,7 @@ export async function speciesInteractionCollector(
 	if (interaction.isButton() && interaction.customId.includes('displayedspeciesmodal')) {
 
 		if (userData === null) { throw new Error('userData is null'); }
-		const quidId = interaction.customId.split('_')[2] || '';
+		const quidId = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
 		const quidData = getMapData(userData.quids, quidId);
 
 		await interaction
@@ -111,7 +111,7 @@ export async function speciesInteractionCollector(
 	if (interaction.isSelectMenu() && selectOptionId && selectOptionId.includes('nextpage')) {
 
 		/* Getting the quidId from the customId */
-		const quidId = interaction.customId.split('_')[2] || '';
+		const quidId = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
 
 		/* Getting the speciesPage from the value Id, incrementing it by one or setting it to zero if the page number is bigger than the total amount of pages. */
 		let speciesPage = Number(selectOptionId.split('_')[2]) + 1;
@@ -129,7 +129,7 @@ export async function speciesInteractionCollector(
 	if (interaction.isSelectMenu() && selectOptionId && (selectOptionId.split('_')[1] || '') in speciesInfo) {
 
 		/* Getting the quidId from the customId */
-		const quidId = interaction.customId.split('_')[2] || '';
+		const quidId = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
 		/* Getting the species from the value */
 		const chosenSpecies = selectOptionId.split('_')[1] as SpeciesNames;
 
@@ -166,7 +166,7 @@ export async function sendEditDisplayedSpeciesModalResponse(
 	userData: UserSchema | null,
 ): Promise<void> {
 
-	const quidId = interaction.customId.split('_')[1] || '';
+	const quidId = getArrayElement(interaction.customId.split('_'), 1).replace('@', '');
 	const displayedSpecies = interaction.fields.getTextInputValue('species_textinput');
 
 	userData = await userModel.findOneAndUpdate(

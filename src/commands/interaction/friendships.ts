@@ -140,11 +140,11 @@ async function getFriendshipMessage(
 			[new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([
 					new ButtonBuilder()
-						.setCustomId(`friendships_left_${page}`)
+						.setCustomId(`friendships_left_${page}_@${userData._id}`)
 						.setEmoji('⬅️')
 						.setStyle(ButtonStyle.Secondary),
 					new ButtonBuilder()
-						.setCustomId(`friendships_right_${page}`)
+						.setCustomId(`friendships_right_${page}_@${userData._id}`)
 						.setEmoji('➡️')
 						.setStyle(ButtonStyle.Secondary),
 				])] :

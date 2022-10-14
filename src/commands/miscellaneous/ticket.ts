@@ -108,12 +108,12 @@ export async function createNewTicket(
 			embeds: [ticketEmbed],
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([new ButtonBuilder()
-					.setCustomId(`ticket_approve_ANYONECANCLICK_${ticketId}`)
+					.setCustomId(`ticket_approve_@EVERYONE_${ticketId}`)
 					.setLabel('Approve')
 					.setStyle(ButtonStyle.Success),
 				getRespondButton(true, interaction.user.id, ticketId, true),
 				new ButtonBuilder()
-					.setCustomId('ticket_reject_ANYONECANCLICK')
+					.setCustomId('ticket_reject_@EVERYONE')
 					.setLabel('Reject')
 					.setStyle(ButtonStyle.Danger)])],
 		});
@@ -139,7 +139,7 @@ export async function ticketInteractionCollector(
 
 		if (interaction.customId.includes('user')) {
 
-			const userId = interaction.customId.split('_')[3]?.replace('user', '') || '';
+			const userId = getArrayElement(interaction.customId.split('_'), 3).replace('user', '') || '';
 
 			const user = await interaction.client.users.fetch(userId);
 			const dmChannel = await user
@@ -160,7 +160,7 @@ export async function ticketInteractionCollector(
 
 		await interaction
 			.showModal(new ModalBuilder()
-				.setCustomId(`ticket_respond_${interaction.customId.replace('ticket_contact_ANYONECANCLICK_', '')}`)
+				.setCustomId(`ticket_respond_${interaction.customId.replace('ticket_contact_@EVERYONE_', '')}`)
 				.setTitle('Respond')
 				.setComponents(
 					new ActionRowBuilder<TextInputBuilder>()
@@ -258,7 +258,7 @@ export function getRespondButton(
 ): ButtonBuilder {
 
 	return new ButtonBuilder()
-		.setCustomId(`ticket_contact_ANYONECANCLICK_${isUser ? 'user' : 'channel'}${id}_${ticketId}_${fromAdmin}`)
+		.setCustomId(`ticket_contact_@EVERYONE_${isUser ? 'user' : 'channel'}${id}_${ticketId}_${fromAdmin}`)
 		.setLabel('Reply')
 		.setStyle(ButtonStyle.Secondary);
 }

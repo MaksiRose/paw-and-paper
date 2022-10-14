@@ -75,7 +75,7 @@ export async function sendStoreMessage(
 		return;
 	}
 
-	const { itemSelectMenu, storeAllButton } = getOriginalComponents(profileData);
+	const { itemSelectMenu, storeAllButton } = getOriginalComponents(userData._id, profileData);
 
 	const botReply = await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 		content: messageContent,
@@ -99,6 +99,7 @@ function getOriginalEmbed(
 }
 
 function getOriginalComponents(
+	_id: string,
 	profileData: Profile,
 	defaultItem?: CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | SpeciesNames | MaterialNames,
 ) {
@@ -116,13 +117,13 @@ function getOriginalComponents(
 
 	const itemSelectMenu = new ActionRowBuilder<SelectMenuBuilder>()
 		.setComponents(new SelectMenuBuilder()
-			.setCustomId('store_options')
+			.setCustomId(`store_options_@${_id}`)
 			.setPlaceholder('Select an item to store away')
 			.setOptions(itemSelectMenuOptions));
 
 	const storeAllButton = new ActionRowBuilder<ButtonBuilder>()
 		.setComponents(new ButtonBuilder()
-			.setCustomId('store_all')
+			.setCustomId(`store_all_@${_id}`)
 			.setLabel('Store everything')
 			.setStyle(ButtonStyle.Success));
 	return { itemSelectMenu, storeAllButton };
@@ -165,11 +166,11 @@ export async function storeInteractionCollector(
 				amountSelectMenuOptions.push({ label: `${i}`, value: `${chosenFood}_${i}` });
 			}
 
-			const itemSelectMenu = getOriginalComponents(profileData, chosenFood).itemSelectMenu;
+			const itemSelectMenu = getOriginalComponents(userData._id, profileData, chosenFood).itemSelectMenu;
 
 			const amountSelectMenu = new ActionRowBuilder<SelectMenuBuilder>()
 				.setComponents(new SelectMenuBuilder()
-					.setCustomId('store_amount')
+					.setCustomId(`store_amount_@${userData._id}`)
 					.setPlaceholder('Select the amount to store away')
 					.setOptions(amountSelectMenuOptions));
 
@@ -213,7 +214,7 @@ export async function storeInteractionCollector(
 				},
 			);
 
-			const { itemSelectMenu, storeAllButton } = getOriginalComponents(profileData);
+			const { itemSelectMenu, storeAllButton } = getOriginalComponents(userData._id, profileData);
 
 			const embed = new EmbedBuilder(interaction.message.embeds.splice(-1, 1)[0]?.toJSON() || getOriginalEmbed(userData, quidData, interaction.guildId).toJSON());
 			let footerText = embed.toJSON().footer?.text ?? '';
@@ -228,7 +229,7 @@ export async function storeInteractionCollector(
 		}
 	}
 
-	if (interaction.isButton() && interaction.customId === 'store_all') {
+	if (interaction.isButton() && interaction.customId.startsWith('store_all')) {
 
 		await storeAll(interaction, userData, quidData, profileData, serverData, interaction.message.embeds.splice(-1, 1)[0], interaction.message.embeds);
 	}

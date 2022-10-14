@@ -260,7 +260,7 @@ export async function executeAttacking(
 			components: [fightGame.fightComponent,
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId('attack_new')
+						.setCustomId(`attack_new_@${userData._id}`)
 						.setLabel('Attack again')
 						.setStyle(ButtonStyle.Primary))],
 		});

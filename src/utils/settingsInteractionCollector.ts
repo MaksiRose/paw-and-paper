@@ -45,7 +45,7 @@ export default async function settingsInteractionCollector(
 			await update(interaction, {
 				components: [new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(`settings_reminders_water_${isOn ? 'off' : 'on'}`)
+						.setCustomId(`settings_reminders_water_${isOn ? 'off' : 'on'}_@${userData._id}`)
 						.setLabel(`Turn water reminders ${isOn ? 'off' : 'on'}`)
 						.setStyle(ButtonStyle.Secondary))],
 			});
@@ -68,7 +68,7 @@ export default async function settingsInteractionCollector(
 			await update(interaction, {
 				components: [new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(`settings_reminders_resting_${isOn ? 'off' : 'on'}`)
+						.setCustomId(`settings_reminders_resting_${isOn ? 'off' : 'on'}_@${userData._id}`)
 						.setLabel(`Turn automatic resting pings ${isOn ? 'off' : 'on'}`)
 						.setStyle(ButtonStyle.Secondary))],
 			});

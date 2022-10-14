@@ -89,7 +89,7 @@ export const command: SlashCommand = {
 				.setFooter({ text: `The game that is being played is ${gameType}.` })],
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId(`playfight_confirm_${gameType.replace(/\s+/g, '').toLowerCase()}_${mentionedUser.id}_${interaction.user.id}`)
+					.setCustomId(`playfight_confirm_${gameType.replace(/\s+/g, '').toLowerCase()}_${mentionedUser.id}_@${interaction.user.id}`)
 					.setLabel('Accept challenge')
 					.setEmoji('🎭')
 					.setStyle(ButtonStyle.Success))],
@@ -112,7 +112,7 @@ export async function playfightInteractionCollector(
 	if (serverData === null) { throw new TypeError('serverData is null'); }
 
 	/* Gets the current active quid and the server profile from the account */
-	const userId1 = getArrayElement(interaction.customId.split('_'), 4);
+	const userId1 = getArrayElement(interaction.customId.split('_'), 4).replace('@', '');
 	let userData1 = await userModel.findOne(u => u.userId.includes(userId1));
 	let quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
 	let profileData1 = getMapData(quidData1.profiles, interaction.guildId);
@@ -122,6 +122,15 @@ export async function playfightInteractionCollector(
 	let userData2 = await userModel.findOne(u => u.userId.includes(userId2));
 	let quidData2 = getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId));
 	let profileData2 = getMapData(quidData2.profiles, interaction.guildId);
+
+	if (interaction.user.id === userId1) {
+
+		await respond(interaction, {
+			content: 'You can\'t accept your own invitation!',
+			ephemeral: true,
+		}, false);
+		return;
+	}
 
 	/* For both users, set cooldowns to true, but unregister the command from being disabled, and get the condition change */
 	cooldownMap.set(userData1._id + interaction.guildId, true);
@@ -340,12 +349,7 @@ export async function playfightInteractionCollector(
 				quidData2 = getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId));
 				profileData2 = getMapData(quidData2.profiles, interaction.guildId);
 
-				const afterGameChangesData = await checkAfterGameChanges(interaction, userData1, quidData1, profileData1, userData2, quidData2, profileData2, serverData)
-					.catch(async (error) => {
-
-						return await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
+				const afterGameChangesData = await checkAfterGameChanges(interaction, userData1, quidData1, profileData1, userData2, quidData2, profileData2, serverData);
 
 				await botReply
 					.edit({
@@ -358,8 +362,8 @@ export async function playfightInteractionCollector(
 								.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n${decreasedStatsData2.statsUpdateText}` }),
 							...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
 							...(decreasedStatsData2.injuryUpdateEmbed ? [decreasedStatsData2.injuryUpdateEmbed] : []),
-							...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
-							...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
+							...(afterGameChangesData.levelUpCheck1.levelUpEmbed ? [afterGameChangesData.levelUpCheck1.levelUpEmbed] : []),
+							...(afterGameChangesData.levelUpCheck2.levelUpEmbed ? [afterGameChangesData.levelUpCheck2.levelUpEmbed] : []),
 						],
 						components: disableAllComponents(componentArray),
 					})

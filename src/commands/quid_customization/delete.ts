@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, InteractionReplyOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
-import { respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, respond, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
 import { SlashCommand, UserSchema } from '../../typedef';
@@ -46,7 +46,7 @@ export async function deleteInteractionCollector(
 	const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
 
 	/* Creating a new page for the user to select an account to delete. */
-	if (interaction.isButton() && interaction.customId === 'delete_individual') {
+	if (interaction.isButton() && interaction.customId.startsWith('delete_individual')) {
 
 		await update(interaction, {
 			embeds: [new EmbedBuilder()
@@ -78,9 +78,9 @@ export async function deleteInteractionCollector(
 	}
 
 	/* Checking if the interaction is a select menu and if the quid ID of the value exists as a quid. If it does, it will edit the message to ask the user if they are sure they want to delete the quid. */
-	if (interaction.isSelectMenu() && selectOptionId && Object.keys(userData.quids).includes(selectOptionId.replace('delete_individual_', ''))) {
+	if (interaction.isSelectMenu() && selectOptionId && selectOptionId.includes('individual') && Object.keys(userData.quids).includes(getArrayElement(selectOptionId.split('_'), 2))) {
 
-		const _id = selectOptionId.replace('delete_individual_', '');
+		const _id = getArrayElement(selectOptionId.split('_'), 2);
 		const quid = getMapData(userData.quids, _id);
 
 		await update(interaction, {
@@ -92,12 +92,12 @@ export async function deleteInteractionCollector(
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents([
 						new ButtonBuilder()
-							.setCustomId(`delete_confirm_individual_${_id}`)
+							.setCustomId(`delete_confirm_individual_${_id}_@${userData._id}`)
 							.setLabel('Confirm')
 							.setEmoji('✔')
 							.setStyle(ButtonStyle.Danger),
 						new ButtonBuilder()
-							.setCustomId('delete_cancel')
+							.setCustomId(`delete_cancel_@${userData._id}`)
 							.setLabel('Cancel')
 							.setEmoji('✖')
 							.setStyle(ButtonStyle.Secondary),
@@ -108,7 +108,7 @@ export async function deleteInteractionCollector(
 	}
 
 	/* Creating a new page for the user to select their accounts on a server to delete. */
-	if (interaction.isButton() && interaction.customId === 'delete_server') {
+	if (interaction.isButton() && interaction.customId.startsWith('delete_server')) {
 
 		await update(interaction, {
 			embeds: [new EmbedBuilder()
@@ -140,9 +140,9 @@ export async function deleteInteractionCollector(
 	}
 
 	/* Checking if the interaction is a select menu and if the server ID is in the array of all servers. If it is, it will edit the message to ask the user if they are sure they want to delete all their information on the server. */
-	if (interaction.isSelectMenu() && selectOptionId && [...new Set([...Object.values(userData.quids).map(q => Object.keys(q.profiles)), ...Object.keys(userData.currentQuid)].flat())].includes(selectOptionId.replace('delete_server_', ''))) {
+	if (interaction.isSelectMenu() && selectOptionId && selectOptionId.includes('server') && [...new Set([...Object.values(userData.quids).map(q => Object.keys(q.profiles)), ...Object.keys(userData.currentQuid)].flat())].includes(getArrayElement(selectOptionId.split('_'), 2))) {
 
-		const server = await serverModel.findOne(s => s.serverId === selectOptionId.replace('delete_server_', ''));
+		const server = await serverModel.findOne(s => s.serverId === getArrayElement(selectOptionId.split('_'), 2));
 		const accountsOnServer = Object.values(userData.quids).map(q => q.profiles[server.serverId]).filter(p => p !== undefined);
 
 		await update(interaction, {
@@ -154,12 +154,12 @@ export async function deleteInteractionCollector(
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents([
 						new ButtonBuilder()
-							.setCustomId(`delete_confirm_server_${server.serverId}`)
+							.setCustomId(`delete_confirm_server_${server.serverId}_@${userData._id}`)
 							.setLabel('Confirm')
 							.setEmoji('✔')
 							.setStyle(ButtonStyle.Danger),
 						new ButtonBuilder()
-							.setCustomId('delete_cancel')
+							.setCustomId(`delete_cancel_@${userData._id}`)
 							.setLabel('Cancel')
 							.setEmoji('✖')
 							.setStyle(ButtonStyle.Secondary),
@@ -170,7 +170,7 @@ export async function deleteInteractionCollector(
 	}
 
 	/* Creating a new message asking the user if they are sure that they want to delete all their data. */
-	if (interaction.isButton() && interaction.customId === 'delete_all') {
+	if (interaction.isButton() && interaction.customId.startsWith('delete_all')) {
 
 		await update(interaction, {
 			embeds: [new EmbedBuilder()
@@ -182,12 +182,12 @@ export async function deleteInteractionCollector(
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents([
 						new ButtonBuilder()
-							.setCustomId('delete_confirm_all')
+							.setCustomId(`delete_confirm_all_@${userData._id}`)
 							.setLabel('Confirm')
 							.setEmoji('✔')
 							.setStyle(ButtonStyle.Danger),
 						new ButtonBuilder()
-							.setCustomId('delete_cancel')
+							.setCustomId(`delete_cancel_@${userData._id}`)
 							.setLabel('Cancel')
 							.setEmoji('✖')
 							.setStyle(ButtonStyle.Secondary),
@@ -200,12 +200,12 @@ export async function deleteInteractionCollector(
 	/* Deleting the data of the user. */
 	if (interaction.customId.startsWith('delete_confirm')) {
 
-		const type = (interaction.customId.split('_')[2]) as 'individual' | 'server' | 'all';
+		const type = getArrayElement(interaction.customId.split('_'), 2) as 'individual' | 'server' | 'all';
 
 		/* Deleting a user from the database. */
 		if (type === 'individual') {
 
-			const _id = interaction.customId.replace('delete_confirm_individual_', '');
+			const _id = getArrayElement(interaction.customId.split('_'), 3);
 			const quid = getMapData(userData.quids, _id);
 
 			await userModel.findOneAndUpdate(
@@ -230,7 +230,7 @@ export async function deleteInteractionCollector(
 		/* Deleting all accounts by a user on a server. */
 		if (type === 'server') {
 
-			const serverId = interaction.customId.replace('delete_confirm_server_', '');
+			const serverId = getArrayElement(interaction.customId.split('_'), 3);
 			const accountsOnServer = Object.values(userData.quids).map(q => q.profiles[serverId]).filter(p => p !== undefined);
 
 			await userModel.findOneAndUpdate(
@@ -274,7 +274,7 @@ export async function deleteInteractionCollector(
 	}
 
 	/* Editing the message to the original message. */
-	if (interaction.customId === 'delete_cancel') {
+	if (interaction.customId.startsWith('delete_cancel')) {
 
 		await update(interaction, await sendOriginalMessage(userData));
 		return;
@@ -300,17 +300,17 @@ async function getOriginalComponents(
 	const allServers = await getServersPage(0, userData);
 	return new ActionRowBuilder<ButtonBuilder>()
 		.setComponents([new ButtonBuilder()
-			.setCustomId('delete_individual')
+			.setCustomId(`delete_individual_@${userData._id}`)
 			.setLabel('A quid')
 			.setDisabled(getQuidsPage(0, userData).options.length <= 0)
 			.setStyle(ButtonStyle.Danger),
 		new ButtonBuilder()
-			.setCustomId('delete_server')
+			.setCustomId(`delete_server_@${userData._id}`)
 			.setLabel('All information on one server')
 			.setDisabled(allServers.options.length <= 0)
 			.setStyle(ButtonStyle.Danger),
 		new ButtonBuilder()
-			.setCustomId('delete_all')
+			.setCustomId(`delete_all_@${userData._id}`)
 			.setLabel('Everything')
 			.setStyle(ButtonStyle.Danger)]);
 }
@@ -318,7 +318,10 @@ async function getOriginalComponents(
 /**
  * Creates a select menu with the users accounts
  */
-function getQuidsPage(deletePage: number, userData: UserSchema): SelectMenuBuilder {
+function getQuidsPage(
+	deletePage: number,
+	userData: UserSchema,
+): SelectMenuBuilder {
 
 	let accountsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = Object.values(userData.quids).map(quid => ({ label: quid.name, value: `delete_individual_${quid._id}` }));
 
@@ -329,7 +332,7 @@ function getQuidsPage(deletePage: number, userData: UserSchema): SelectMenuBuild
 	}
 
 	return new SelectMenuBuilder()
-		.setCustomId('delete_individual_options')
+		.setCustomId(`delete_individual_options_@${userData._id}`)
 		.setPlaceholder('Select a quid')
 		.setOptions(accountsMenuOptions);
 }
@@ -359,7 +362,7 @@ async function getServersPage(
 	}
 
 	return new SelectMenuBuilder()
-		.setCustomId('delete_server_options')
+		.setCustomId(`delete_server_options_@${userData._id}`)
 		.setPlaceholder('Select a server')
 		.setOptions(accountsMenuOptions);
 }

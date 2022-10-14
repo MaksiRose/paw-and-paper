@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, ModalBuilder, ModalMessageModalSubmitInteraction, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { Quid, SlashCommand, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
@@ -61,7 +61,7 @@ function getPronounsMenu(userData: UserSchema, quidData: Quid) {
 	}
 
 	return new SelectMenuBuilder()
-		.setCustomId(`pronouns_selectmodal_${userData._id}_${quidData._id}`)
+		.setCustomId(`pronouns_selectmodal_@${quidData._id}`)
 		.setPlaceholder('Select a pronoun to change')
 		.setOptions(pronounsMenuOptions);
 }
@@ -72,8 +72,9 @@ export async function pronounsInteractionCollector(
 
 	if (interaction.isSelectMenu() && interaction.customId.includes('selectmodal')) {
 
-		const userData = await userModel.findOne(u => u._id === interaction.customId.split('_')[2]);
-		const quidData = getMapData(userData.quids, interaction.customId.split('_')[3] || '');
+		const _id = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
+		const userData = await userModel.findOne(u => Object.keys(u.quids).includes(_id));
+		const quidData = getMapData(userData.quids, _id);
 
 		/* Getting the position of the pronoun in the array, and the existing pronoun in that place */
 		const pronounNumber = interaction.values[0]?.split('_')[1] || 'add';
@@ -84,7 +85,7 @@ export async function pronounsInteractionCollector(
 
 		await interaction
 			.showModal(new ModalBuilder()
-				.setCustomId(`pronouns_${userData._id}_${quidData._id}_${pronounNumber}`)
+				.setCustomId(`pronouns_${quidData._id}_${pronounNumber}`)
 				.setTitle('Change pronouns')
 				.addComponents(
 					new ActionRowBuilder<TextInputBuilder>()
@@ -112,12 +113,13 @@ export async function sendEditPronounsModalResponse(
 	interaction: ModalMessageModalSubmitInteraction,
 ): Promise<void> {
 
-	let userData = await userModel.findOne(u => u._id === interaction.customId.split('_')[1]);
-	let quidData = getMapData(userData.quids, interaction.customId.split('_')[2] || '');
+	const _id = getArrayElement(interaction.customId.split('_'), 1);
+	let userData = await userModel.findOne(u => Object.keys(u.quids).includes(_id));
+	let quidData = getMapData(userData.quids, _id);
 
 	/* Getting the array position of the pronoun that is being edited, the pronouns that are being set, whether
 	the pronouns are being deleted, and whether the pronouns are being set to none. */
-	const pronounNumber = Number(interaction.customId.split('_')[3]);
+	const pronounNumber = Number(getArrayElement(interaction.customId.split('_'), 2));
 	const chosenPronouns = interaction.fields.getTextInputValue('pronouns_textinput').split('/');
 	const willBeDeleted = interaction.fields.getTextInputValue('pronouns_textinput') === '';
 	let isNone = false;

@@ -176,7 +176,7 @@ export async function hasFullInventory(
 			],
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId('stats_store')
+					.setCustomId(`stats_store_@${userData._id}`)
 					.setLabel('Store items away')
 					.setStyle(ButtonStyle.Secondary),
 				)],

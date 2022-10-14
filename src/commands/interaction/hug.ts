@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { SlashCommand, UserSchema } from '../../typedef';
 import { disableAllComponents } from '../../utils/componentDisabling';
@@ -70,12 +70,12 @@ export const command: SlashCommand = {
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([
 					new ButtonBuilder()
-						.setCustomId(`hug_accept_${mentionedUser.id}_${interaction.user.id}`)
+						.setCustomId(`hug_accept_${mentionedUser.id}_@${interaction.user.id}`)
 						.setLabel('Accept')
 						.setEmoji('🫂')
 						.setStyle(ButtonStyle.Success),
 					new ButtonBuilder()
-						.setCustomId(`hug_decline_${mentionedUser.id}_${interaction.user.id}`)
+						.setCustomId(`hug_decline_${mentionedUser.id}_@${interaction.user.id}`)
 						.setLabel('Decline')
 						.setStyle(ButtonStyle.Danger),
 				])],
@@ -91,10 +91,10 @@ export async function hugInteractionCollector(
 	partnerUserData: UserSchema | null,
 ): Promise<void> {
 
-	const originalUserId = interaction.customId.split('_')[3];
+	const originalUserId = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
 	const originalUser = originalUserId ? await interaction.client.users.fetch(originalUserId).catch(() => { return undefined; }) : undefined;
 	const originalMember = interaction.inCachedGuild() && originalUserId ? await interaction.guild.members.fetch(originalUserId).catch(() => { return undefined; }) : undefined;
-	if (!originalUser || !originalUserId || originalUserId === interaction.user.id) {
+	if (originalUser === undefined || originalUserId === interaction.user.id) {
 
 		await respond(interaction, {
 			content: 'You can\'t accept or decline this hug!',

@@ -63,6 +63,7 @@ export async function executePlaying(
 
 	if (await hasFullInventory(interaction, userData1, quidData1, profileData1, embedArray, messageContent)) { return; }
 
+	const mentionedUserId = interaction.isChatInputCommand() ? interaction.options.getUser('user')?.id : interaction.customId.split('_')[3];
 	const tutorialMapEntry = tutorialMap.get(quidData1._id + profileData1.serverId);
 	if (profileData1.tutorials.play === false && profileData1.rank === RankType.Youngling && (tutorialMapEntry === undefined || tutorialMapEntry === 0)) {
 
@@ -74,7 +75,7 @@ export async function executePlaying(
 			components: [
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId('play_new')
+						.setCustomId(`play_new_@${userData1._id}${mentionedUserId ? `_${mentionedUserId}` : ''}`)
 						.setLabel('I understand, let\'s try it out!')
 						.setStyle(ButtonStyle.Success)),
 			],
@@ -83,7 +84,6 @@ export async function executePlaying(
 		return;
 	}
 
-	const mentionedUserId = interaction.isChatInputCommand() ? interaction.options.getUser('user')?.id : interaction.customId.split('_')[2];
 	if (mentionedUserId && userData1.userId.includes(mentionedUserId)) {
 
 		await respond(interaction, {
@@ -423,7 +423,7 @@ export async function executePlaying(
 				...(playComponent ? [playComponent] : []),
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(`play_new${mentionedUserId ? `_${mentionedUserId}` : ''}`)
+						.setCustomId(`play_new_@${userData1._id}${mentionedUserId ? `_${mentionedUserId}` : ''}`)
 						.setLabel((tutorialMapEntry === 1 && tutorialMapEntry_ === 1) || (tutorialMapEntry === 2 && tutorialMapEntry_ === 2) ? 'Try again' : tutorialMapEntry === 1 && tutorialMapEntry_ === 2 ? 'Try another game' : 'Play again')
 						.setStyle(ButtonStyle.Primary)),
 			],

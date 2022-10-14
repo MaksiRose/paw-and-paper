@@ -102,7 +102,7 @@ export const command: SlashCommand = {
 				.setFooter({ text: 'The game that is being played is memory, meaning that a player has to uncover two cards, If the emojis match, the cards are left uncovered.' })],
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId(`adventure_confirm_${mentionedUser.id}_${interaction.user.id}`)
+					.setCustomId(`adventure_confirm_${mentionedUser.id}_@${interaction.user.id}`)
 					.setLabel('Start adventure')
 					.setEmoji('🧭')
 					.setStyle(ButtonStyle.Success))],
@@ -159,7 +159,7 @@ export async function adventureInteractionCollector(
 
 
 	/* Gets the current active quid and the server profile from the account */
-	const userId1 = getArrayElement(interaction.customId.split('_'), 3);
+	const userId1 = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
 	const userData1 = await userModel.findOne(u => u.userId.includes(userId1));
 	const quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
 	let profileData1 = getMapData(quidData1.profiles, interaction.guildId);
@@ -169,6 +169,15 @@ export async function adventureInteractionCollector(
 	const userData2 = await userModel.findOne(u => u.userId.includes(userId2));
 	const quidData2 = getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId));
 	let profileData2 = getMapData(quidData2.profiles, interaction.guildId);
+
+	if (interaction.user.id === userId1) {
+
+		await respond(interaction, {
+			content: 'You can\'t accept your own invitation!',
+			ephemeral: true,
+		}, false);
+		return;
+	}
 
 	/* For both users, set cooldowns to true, but unregister the command from being disabled, and get the condition change */
 	cooldownMap.set(userData1._id + interaction.guildId, true);

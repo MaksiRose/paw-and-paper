@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
-import { respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { Quid, ServerSchema, SlashCommand, UserSchema, WayOfEarningType } from '../../typedef';
 import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
@@ -57,8 +57,8 @@ export async function shopInteractionCollector(
 
 	if (selectOptionId && selectOptionId.startsWith('shop_nextpage_')) {
 
-		const shopKindPage = Number(selectOptionId.split('_')[2] || 0);
-		const nestedPage = Number(selectOptionId.split('_')[3] || 0);
+		const shopKindPage = Number(getArrayElement(selectOptionId.split('_'), 2));
+		const nestedPage = Number(getArrayElement(selectOptionId.split('_'), 3));
 		const { newShopKindPage, newNestedPage } = getShopInfo(serverData).nextPage(shopKindPage, nestedPage);
 
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
@@ -67,7 +67,7 @@ export async function shopInteractionCollector(
 	}
 	else if (selectOptionId && selectOptionId.startsWith('shop_')) {
 
-		const roleId = selectOptionId.split('_')[1];
+		const roleId = getArrayElement(selectOptionId.split('_'), 1);
 		const buyItem = serverData.shop.find((shopRole) => shopRole.roleId === roleId);
 		if (buyItem === undefined) { throw new Error('roleId is undefined or could not be found in server shop'); }
 
@@ -267,7 +267,7 @@ async function getShopResponse(
 			.setDescription(descriptionArray.join('\n'))],
 		components: [new ActionRowBuilder<SelectMenuBuilder>()
 			.setComponents(new SelectMenuBuilder()
-				.setCustomId(`shop_${quidData._id}`)
+				.setCustomId(`shop_@${quidData._id}`)
 				.setPlaceholder('Select a shop item')
 				.setOptions(shopMenuOptions))],
 	});

@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, GuildMember, InteractionReplyOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
-import { capitalizeString, getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
+import { capitalizeString, getArrayElement, getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { Quid, commonPlantsInfo, CurrentRegionType, CustomClient, materialsInfo, RankType, rarePlantsInfo, SlashCommand, specialPlantsInfo, speciesInfo, uncommonPlantsInfo, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
@@ -48,7 +48,7 @@ export const command: SlashCommand = {
 		else if (quidData && interaction.inCachedGuild() && await hasCooldown(interaction, userData, quidData)) { return; }
 
 		const response = await getMessageContent(client, mentionedUser?.id || interaction.user.id, userData, quidData, !mentionedUser, embedArray, interaction.guildId ?? '');
-		const selectMenu = getAccountsPage(userData, mentionedUser?.id || interaction.user.id, 0, !mentionedUser);
+		const selectMenu = getAccountsPage(userData, mentionedUser?.id || interaction.user.id, interaction.user.id, 0, !mentionedUser);
 
 		await respond(interaction, {
 			...response,
@@ -108,6 +108,7 @@ export async function getMessageContent(
 function getAccountsPage(
 	userData: UserSchema,
 	userId: string,
+	executorId: string,
 	quidsPage: number,
 	isYourself: boolean,
 ): SelectMenuBuilder {
@@ -123,7 +124,7 @@ function getAccountsPage(
 	}
 
 	return new SelectMenuBuilder()
-		.setCustomId(`profile_accountselect_${userId}`)
+		.setCustomId(`profile_accountselect_${userId}_@${executorId}`)
 		.setPlaceholder(`Select a quid to ${isYourself ? 'switch to' : 'view'}`)
 		.setOptions(accountMenuOptions);
 }
@@ -139,13 +140,13 @@ export async function profileInteractionCollector(
 	if (interaction.isButton() && interaction.customId.includes('learnabout')) {
 
 		/* Getting the userData from the customId */
-		const userId = interaction.customId.split('_')[2] || '';
+		const userId = getArrayElement(interaction.customId.split('_'), 2);
 		const userData = await userModel.findOne(u => u.userId.includes(userId));
 
 		/* Getting the DM channel, the select menu, and sending the message to the DM channel. */
 		const dmChannel = await interaction.user.createDM();
 
-		const selectMenu = getAccountsPage(userData, userId, 0, userData.userId.includes(interaction.user.id));
+		const selectMenu = getAccountsPage(userData, userId, interaction.user.id, 0, userData.userId.includes(interaction.user.id));
 
 		dmChannel.send({
 			content: interaction.message.content || undefined,
@@ -161,7 +162,7 @@ export async function profileInteractionCollector(
 	if (interaction.isSelectMenu() && selectOptionId && selectOptionId.includes('nextpage')) {
 
 		/* Getting the userData from the customId */
-		const userId = interaction.customId.split('_')[2] || '';
+		const userId = getArrayElement(interaction.customId.split('_'), 2);
 		const userData = await userModel.findOne(u => u.userId.includes(userId));
 
 		/* Getting the quidsPage from the value Id, incrementing it by one or setting it to zero if the page number is bigger than the total amount of pages. */
@@ -169,7 +170,7 @@ export async function profileInteractionCollector(
 		if (quidsPage >= Math.ceil((Object.keys(userData.quids).length + 1) / 24)) { quidsPage = 0; }
 
 		await update(interaction, {
-			components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getAccountsPage(userData, userId, quidsPage, userData.userId.includes(interaction.user.id))])],
+			components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getAccountsPage(userData, userId, interaction.user.id, quidsPage, userData.userId.includes(interaction.user.id))])],
 		});
 		return;
 	}
@@ -180,7 +181,7 @@ export async function profileInteractionCollector(
 		await interaction.deferUpdate();
 
 		/* Getting the userData from the customId */
-		const userId = interaction.customId.split('_')[2] || '';
+		const userId = getArrayElement(interaction.customId.split('_'), 2);
 		let userData = await userModel.findOne(u => u.userId.includes(userId));
 
 		/* Checking if the user is on a cooldown, and if they are, it will respond that they can't switch quids. */
@@ -317,7 +318,7 @@ export async function profileInteractionCollector(
 	if (interaction.isSelectMenu() && selectOptionId && selectOptionId.includes('view')) {
 
 		/* Getting the userData from the customId */
-		const userId = interaction.customId.split('_')[2] || '';
+		const userId = getArrayElement(interaction.customId.split('_'), 2);
 		const userData = await userModel.findOne(u => u.userId.includes(userId));
 
 		/* Getting the quid from the interaction value */

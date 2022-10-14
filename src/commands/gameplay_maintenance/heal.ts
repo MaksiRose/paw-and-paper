@@ -142,7 +142,7 @@ export async function healInteractionCollector(
 	if (serverData === null) { throw new TypeError('serverData is null'); }
 	if (userData === null) { throw new TypeError('userData is null'); }
 
-	if (interaction.isSelectMenu() && interaction.customId === 'heal_quids_options') {
+	if (interaction.isSelectMenu() && interaction.customId.startsWith('heal_quids_options')) {
 
 		const value = getArrayElement(interaction.values, 0);
 		if (value.startsWith('newpage_')) {
@@ -160,7 +160,7 @@ export async function healInteractionCollector(
 	}
 	else if (interaction.customId.startsWith('heal_page_')) {
 
-		const inventoryPage = Number(interaction.customId.split('_')[2]);
+		const inventoryPage = Number(getArrayElement(interaction.customId.split('_'), 2));
 		if (isNaN(inventoryPage)) { throw new TypeError('inventoryPage is NaN'); }
 		if (inventoryPage !== 1 && inventoryPage !== 2) { throw new TypeError('inventoryPage is not 1 or 2'); }
 		const quidId = getArrayElement(interaction.customId.split('_'), 3);
@@ -170,7 +170,7 @@ export async function healInteractionCollector(
 	}
 	else if (interaction.isSelectMenu() && interaction.customId.startsWith('heal_inventory_options_')) {
 
-		const quidId = interaction.customId.replace('heal_inventory_options_', '');
+		const quidId = getArrayElement(interaction.customId.split('_'), 3);
 		if (quidId === undefined) { throw new TypeError('quidId is undefined'); }
 
 		const quidToHeal = getMapData((await userModel.findOne(u => Object.keys(u.quids).includes(quidId))).quids, quidId);
@@ -236,7 +236,7 @@ export async function getHealResponse(
 
 	const quidsSelectMenu = new ActionRowBuilder<SelectMenuBuilder>()
 		.setComponents(new SelectMenuBuilder()
-			.setCustomId('heal_quids_options')
+			.setCustomId(`heal_quids_options_@${userData._id}`)
 			.setPlaceholder('Select a quid to heal')
 			.setOptions(quidsSelectMenuOptions));
 
@@ -263,12 +263,12 @@ export async function getHealResponse(
 
 		const pagesButtons = new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
-				.setCustomId(`heal_page_1_${quidToHeal._id}`)
+				.setCustomId(`heal_page_1_${quidToHeal._id}_@${userData._id}`)
 				.setLabel('Page 1')
 				.setEmoji('🌱')
 				.setStyle(ButtonStyle.Secondary),
 			new ButtonBuilder()
-				.setCustomId(`heal_page_2_${quidToHeal._id}`)
+				.setCustomId(`heal_page_2_${quidToHeal._id}_@${userData._id}`)
 				.setLabel('Page 2')
 				.setEmoji('🍀')
 				.setStyle(ButtonStyle.Secondary)]);
@@ -323,7 +323,7 @@ export async function getHealResponse(
 			.setDescription(embedDescription);
 		const inventorySelectMenu = new ActionRowBuilder<SelectMenuBuilder>()
 			.setComponents(new SelectMenuBuilder()
-				.setCustomId(`heal_inventory_options_${quidToHeal._id}`)
+				.setCustomId(`heal_inventory_options_${quidToHeal._id}_@${userData._id}`)
 				.setPlaceholder('Select an item')
 				.setOptions(selectMenuOptions));
 
@@ -492,7 +492,7 @@ export async function getHealResponse(
 
 			embedDescription = `*${quidData.name} takes ${quidToHeal.name}'s body, drags it over to the river, and positions ${pronoun(quidToHeal, 2)} head right over the water. The ${quidToHeal.displayedSpecies || quidToHeal.species} sticks ${pronoun(quidToHeal, 2)} tongue out and slowly starts drinking. Immediately you can observe how the newfound energy flows through ${pronoun(quidToHeal, 2)} body.*`;
 		}
-		else if (userToHeal._id === userData._id) {
+		else if (quidData._id === quidToHeal._id) {
 
 			embedDescription = `*${quidData.name} takes a ${item}. After a bit of preparation, the ${quidData.displayedSpecies || quidData.species} can apply it correctly. Immediately you can see the effect. ${upperCasePronounAndPlural(quidData, 0, 'feel')} much better!*`;
 		}
@@ -503,9 +503,9 @@ export async function getHealResponse(
 	}
 	else if (item === 'water') {
 
-		if (userData._id === userToHeal._id) {
+		if (quidData._id === quidToHeal._id) {
 
-			embedDescription = `*${quidData.name} thinks about just drinking some water, but that won't help with ${pronoun(quidData, 2)} issues...*"`;
+			embedDescription = `*${quidData.name} thinks about just drinking some water, but that won't help with ${pronoun(quidData, 2)} issues...*`;
 		}
 		else if (profileToHeal.thirst > 0) {
 
@@ -516,7 +516,7 @@ export async function getHealResponse(
 			embedDescription = `*${quidData.name} takes ${quidToHeal.name}'s body and tries to drag it over to the river. The ${quidData.displayedSpecies || quidData.species} attempts to position the ${quidToHeal.displayedSpecies || quidToHeal.species}'s head right over the water, but every attempt fails miserably. ${upperCasePronounAndPlural(quidData, 0, 'need')} to concentrate and try again.*`;
 		}
 	}
-	else if (userData._id === userToHeal._id) {
+	else if (quidData._id === quidToHeal._id) {
 
 		embedDescription = `*${quidData.name} holds the ${item} in ${pronoun(quidData, 2)} mouth, trying to find a way to apply it. After a few attempts, the herb breaks into little pieces, rendering it useless. Guess ${pronounAndPlural(quidData, 0, 'has', 'have')} to try again...*`;
 	}

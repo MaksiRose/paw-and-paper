@@ -12,6 +12,7 @@ import { showInventoryMessage } from '../gameplay_maintenance/inventory';
 import { startResting } from '../gameplay_maintenance/rest';
 import { sendStoreMessage } from '../gameplay_maintenance/store';
 import { remindOfAttack } from './attack';
+import { executePlaying } from './play';
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -100,7 +101,7 @@ export async function travelInteractionCollector(
 		}
 		else if (interaction.customId.includes('play')) {
 
-			// isnt out yet
+			await executePlaying(interaction, userData, serverData, embedArray);
 		}
 	}
 	else if (interaction.isSelectMenu()) {
@@ -124,7 +125,7 @@ async function sendTravelMessage(
 		.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL });
 	const travelComponent = new ActionRowBuilder<SelectMenuBuilder>()
 		.setComponents(new SelectMenuBuilder()
-			.setCustomId('travel_options')
+			.setCustomId(`travel_options_@${userData._id}`)
 			.setPlaceholder('Select a region to travel to')
 			.setOptions([
 				{ label: CurrentRegionType.SleepingDens, value: CurrentRegionType.SleepingDens, emoji: '💤' },
@@ -160,7 +161,7 @@ async function sendTravelMessage(
 			embeds: [...embedArray, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId('travel_rest')
+					.setCustomId(`travel_rest_@${userData._id}`)
 					.setLabel('Rest')
 					.setStyle(ButtonStyle.Primary))],
 		});
@@ -186,11 +187,11 @@ async function sendTravelMessage(
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([
 					new ButtonBuilder()
-						.setCustomId('travel_inventory')
+						.setCustomId(`travel_inventory_@${userData._id}`)
 						.setLabel('View inventory')
 						.setStyle(ButtonStyle.Primary),
 					new ButtonBuilder()
-						.setCustomId('travel_store')
+						.setCustomId(`travel_store_@${userData._id}`)
 						.setLabel('Store items away')
 						.setStyle(ButtonStyle.Primary),
 				])],
@@ -227,7 +228,7 @@ async function sendTravelMessage(
 				travelComponent,
 				...(profileData.rank === RankType.Youngling ? [] : [new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId('travel_heal')
+						.setCustomId(`travel_heal_@${userData._id}`)
 						.setLabel('Heal')
 						.setStyle(ButtonStyle.Primary))]),
 			],
@@ -265,7 +266,7 @@ async function sendTravelMessage(
 			embeds: [...embedArray, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId('travel_drink')
+					.setCustomId(`travel_drink_@${userData._id}`)
 					.setLabel('Drink')
 					.setStyle(ButtonStyle.Primary))],
 		});
@@ -290,7 +291,7 @@ async function sendTravelMessage(
 			embeds: [...embedArray, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId('travel_play')
+					.setCustomId(`travel_play_@${userData._id}`)
 					.setLabel('Play')
 					.setStyle(ButtonStyle.Primary))],
 		});

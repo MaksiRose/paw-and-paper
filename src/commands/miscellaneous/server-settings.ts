@@ -36,28 +36,29 @@ export const command: SlashCommand = {
 
 export async function serversettingsInteractionCollector(
 	interaction: ButtonInteraction | SelectMenuInteraction,
-	serverData: ServerSchema,
+	serverData: ServerSchema | null,
 ): Promise<void> {
 
+	if (!serverData) { throw new Error('serverData is null'); }
 	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
 	const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
 
 	/* It's checking if the interaction is a button that leads back to the main page, and it's updating the message with the main page content. */
-	if (interaction.isButton() && interaction.customId === 'serversettings_mainpage') {
+	if (interaction.isButton() && interaction.customId.includes('mainpage')) {
 
 		await update(interaction, getOriginalMessage(interaction, serverData));
 		return;
 	}
 
 	/* It's checking if the interaction value or customId includes shop, and sends a message if it does. */
-	if ((interaction.isButton() && interaction.customId === 'serversettings_shop') || (interaction.isSelectMenu() && interaction.values[0] === 'serversettings_shop')) {
+	if ((interaction.isButton() && interaction.customId.includes('shop')) || (interaction.isSelectMenu() && interaction.values[0] === 'serversettings_shop')) {
 
 		await update(interaction, await getShopMessage(interaction, serverData, 0));
 		return;
 	}
 
 	/* It's checking if the interaction is the shop select menu. */
-	if (interaction.isSelectMenu() && selectOptionId && interaction.customId === 'serversettings_shop_options') {
+	if (interaction.isSelectMenu() && selectOptionId && interaction.customId.includes('shop_options')) {
 
 		/* It's checking if the value is for turning a page. If it is, it's getting the page number from the value, and it's updating the message with the shop message with the page number. */
 		if (selectOptionId.includes('nextpage')) {
@@ -100,11 +101,11 @@ export async function serversettingsInteractionCollector(
 						if (collectorSelectOptionId.startsWith('serversettings_shop_add_nextpage_')) {
 
 							rolePage = Number(collectorSelectOptionId.replace('serversettings_shop_add_nextpage_', ''));
-							roleMenu = await getNewRoleMenu(i, serverData, rolePage).catch(() => { return null; });
+							roleMenu = await getNewRoleMenu(i, serverData!, rolePage).catch(() => { return null; });
 						}
 						else { role = collectorSelectOptionId.replace('serversettings_shop_add_', ''); }
 
-						await update(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
+						await update(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role))
 							.catch(error => { console.error(error); });
 					}
 
@@ -112,14 +113,14 @@ export async function serversettingsInteractionCollector(
 
 						wayOfEarning = collectorSelectOptionId.replace('serversettings_shop_wayofearning_', '') as WayOfEarningType;
 						requirement = null;
-						await update(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
+						await update(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role))
 							.catch(error => { console.error(error); });
 					}
 
 					if (i.isSelectMenu() && collectorSelectOptionId && i.customId === 'serversettings_shop_requirements') {
 
 						requirement = collectorSelectOptionId.replace('serversettings_shop_requirements_', '') as RankType;
-						await update(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
+						await update(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role))
 							.catch(error => { console.error(error); });
 					}
 
@@ -337,7 +338,7 @@ export async function serversettingsInteractionCollector(
 						}
 
 						requirement = modalTextInput;
-						await update(i, getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role))
+						await update(i, getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role))
 							.catch(error => { console.error(error); });
 						return;
 					}
@@ -356,7 +357,7 @@ export async function serversettingsInteractionCollector(
 
 					if (reason !== 'back') {
 
-						await update(interaction, await getShopMessage(interaction, serverData, 0))
+						await update(interaction, await getShopMessage(interaction, serverData!, 0))
 							.catch((error) => {
 								if (error.httpStatus !== 404) { console.error(error); }
 							});
@@ -380,7 +381,7 @@ export async function serversettingsInteractionCollector(
 	}
 
 	/* It's checking if the interaction is the updates select menu */
-	if (interaction.isSelectMenu() && selectOptionId && interaction.customId === 'serversettings_updates_options') {
+	if (interaction.isSelectMenu() && selectOptionId && interaction.customId.includes('updates_options')) {
 
 		/* It's checking if the value is for turning a page. If it is, it's getting the page number from the value, and it's updating the message with the shop message with the page number. */
 		if (selectOptionId.includes('nextpage')) {
@@ -420,7 +421,7 @@ export async function serversettingsInteractionCollector(
 	}
 
 	/* It's checking if the interaction is the visits select menu */
-	if (interaction.isSelectMenu() && selectOptionId && interaction.customId === 'serversettings_visits_options') {
+	if (interaction.isSelectMenu() && selectOptionId && interaction.customId.includes('visits_options')) {
 
 		/* It's checking if the value is for turning a page. If it is, it's getting the page number from the value, and it's updating the message with the shop message with the page number. */
 		if (selectOptionId.includes('nextpage')) {
@@ -478,7 +479,7 @@ export async function serversettingsInteractionCollector(
 		return;
 	}
 
-	if (interaction.isButton() && interaction.customId === 'serversettings_proxying_setTo') {
+	if (interaction.isButton() && interaction.customId.includes('proxying_setTo')) {
 
 		serverData = await serverModel.findOneAndUpdate(
 			s => s.serverId === interaction.guildId,
@@ -502,7 +503,7 @@ export async function serversettingsInteractionCollector(
 	}
 
 	/* It's checking if the interaction is the visits select menu */
-	if (interaction.isSelectMenu() && selectOptionId && interaction.customId === 'serversettings_proxying_options') {
+	if (interaction.isSelectMenu() && selectOptionId && interaction.customId.includes('proxying_options')) {
 
 		/* It's checking if the value is for turning a page. If it is, it's getting the page number from the value, and it's updating the message with the shop message with the page number. */
 		if (selectOptionId.includes('nextpage')) {
@@ -549,7 +550,7 @@ function getOriginalMessage(interaction: ChatInputCommandInteraction<'cached'> |
 			.setTitle('Select what you want to configure from the drop-down menu below.')],
 		components: [new ActionRowBuilder<SelectMenuBuilder>()
 			.setComponents([new SelectMenuBuilder()
-				.setCustomId('serversettings_options')
+				.setCustomId(`serversettings_options_@${interaction.user.id}`)
 				.setPlaceholder('Select an option to configure')
 				.setOptions(
 					{ value: 'serversettings_shop', label: 'Shop', description: 'Add, delete or edit earnable roles' },
@@ -588,13 +589,13 @@ async function getShopMessage(
 			.setDescription('The shop is a way for users to earn roles by ranking up, leveling up or spending their XP. You can configure this to your liking.')],
 		components: [new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
-				.setCustomId('serversettings_mainpage')
+				.setCustomId(`serversettings_mainpage_@${interaction.user.id}`)
 				.setLabel('Back')
 				.setEmoji('⬅️')
 				.setStyle(ButtonStyle.Secondary)]),
 		new ActionRowBuilder<SelectMenuBuilder>()
 			.setComponents([new SelectMenuBuilder()
-				.setCustomId('serversettings_shop_options')
+				.setCustomId(`serversettings_shop_options_@${interaction.user.id}`)
 				.setPlaceholder('Select to add/edit/delete a shop item')
 				.setOptions(roleMenuOptions)])],
 	};
@@ -618,7 +619,7 @@ async function getNewRoleMenu(
 	}
 
 	return new SelectMenuBuilder()
-		.setCustomId('serversettings_shop_add_options')
+		.setCustomId(`serversettings_shop_add_options_@${interaction.user.id}`)
 		.setPlaceholder('Select a role for users to earn/buy')
 		.setOptions(roleMenuOptions);
 }
@@ -629,12 +630,12 @@ function getShopRoleMessage(interaction: ButtonInteraction<'cached'> | SelectMen
 	const lastRowButtons = [
 		...(isNotSavable ? [] :
 			[new ButtonBuilder()
-				.setCustomId('serversettings_shop_save')
+				.setCustomId(`serversettings_shop_save_@${interaction.user.id}`)
 				.setLabel('Save')
 				.setStyle(ButtonStyle.Success)]),
 		...(serverData.shop.some(shopItem => shopItem.roleId === roleIdOrAdd) ?
 			[new ButtonBuilder()
-				.setCustomId('serversettings_shop_delete')
+				.setCustomId(`serversettings_shop_delete_@${interaction.user.id}`)
 				.setLabel('Delete')
 				.setStyle(ButtonStyle.Danger)] : []),
 	];
@@ -649,7 +650,7 @@ function getShopRoleMessage(interaction: ButtonInteraction<'cached'> | SelectMen
 		components: [
 			new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([new ButtonBuilder()
-					.setCustomId('serversettings_shop')
+					.setCustomId(`serversettings_shop_@${interaction.user.id}`)
 					.setLabel('Back')
 					.setEmoji('⬅️')
 					.setStyle(ButtonStyle.Secondary)]),
@@ -659,7 +660,7 @@ function getShopRoleMessage(interaction: ButtonInteraction<'cached'> | SelectMen
 			/* Select a way of earning (experience, levels, rank) */
 			new ActionRowBuilder<SelectMenuBuilder>()
 				.setComponents([new SelectMenuBuilder()
-					.setCustomId('serversettings_shop_wayofearning')
+					.setCustomId(`serversettings_shop_wayofearning_@${interaction.user.id}`)
 					.setPlaceholder('Select the way of earning the role')
 					.setOptions(
 						{ value: `serversettings_shop_wayofearning_${WayOfEarningType.Experience}`, label: 'Experience Points', description: 'Users can buy this role by spending XP' },
@@ -670,7 +671,7 @@ function getShopRoleMessage(interaction: ButtonInteraction<'cached'> | SelectMen
 			...(wayOfEarning === null ? [] :
 				[new ActionRowBuilder<SelectMenuBuilder | ButtonBuilder>()
 					.setComponents(wayOfEarning === WayOfEarningType.Rank ? [new SelectMenuBuilder()
-						.setCustomId('serversettings_shop_requirements')
+						.setCustomId(`serversettings_shop_requirements_@${interaction.user.id}`)
 						.setPlaceholder('Select a required rank')
 						.setOptions(
 							{ value: `serversettings_shop_requirements_${RankType.Youngling}`, label: RankType.Youngling },
@@ -680,7 +681,7 @@ function getShopRoleMessage(interaction: ButtonInteraction<'cached'> | SelectMen
 							{ value: `serversettings_shop_requirements_${RankType.Elderly}`, label: RankType.Elderly },
 						)] :
 						[new ButtonBuilder()
-							.setCustomId('serversettings_shop_requirementsmodal')
+							.setCustomId(`serversettings_shop_requirementsmodal_@${interaction.user.id}`)
 							.setLabel('Set a required number to reach')
 							.setStyle(ButtonStyle.Secondary)])]),
 			/* If it's savable, have a save button to save progress and if it's a shop item that's edited, have a delete button */
@@ -712,13 +713,13 @@ async function getUpdateMessage(
 			.setDescription('Selecting a channel means that it will follow the updates channel on the [Paw and Paper Support Server](https://discord.gg/9DENgj8q5Q). To learn more about channel following and how to remove a followed channel, read [Discord\'s FAQ](https://support.discord.com/hc/en-us/articles/360028384531-Channel-Following-FAQ).')],
 		components: [new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
-				.setCustomId('serversettings_mainpage')
+				.setCustomId(`serversettings_mainpage_@${interaction.user.id}`)
 				.setLabel('Back')
 				.setEmoji('⬅️')
 				.setStyle(ButtonStyle.Secondary)]),
 		new ActionRowBuilder<SelectMenuBuilder>()
 			.setComponents([new SelectMenuBuilder()
-				.setCustomId('serversettings_updates_options')
+				.setCustomId(`serversettings_updates_options_@${interaction.user.id}`)
 				.setPlaceholder('Select a channel to send updates to')
 				.setOptions(updatesMenuOptions)])],
 	};
@@ -746,13 +747,13 @@ async function getVisitsMessage(
 			.setDescription('Selecting a channel means that users can connect with other servers that have this feature turned on through that channel. The current selected option has a radio emoji next to it.')],
 		components: [new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
-				.setCustomId('serversettings_mainpage')
+				.setCustomId(`serversettings_mainpage_@${interaction.user.id}`)
 				.setLabel('Back')
 				.setEmoji('⬅️')
 				.setStyle(ButtonStyle.Secondary)]),
 		new ActionRowBuilder<SelectMenuBuilder>()
 			.setComponents([new SelectMenuBuilder()
-				.setCustomId('serversettings_visits_options')
+				.setCustomId(`serversettings_visits_options_@${interaction.user.id}`)
 				.setPlaceholder('Select a channel to set visits to')
 				.setOptions(updatesMenuOptions)])],
 	};
@@ -781,18 +782,18 @@ async function getProxyingMessage(
 			.setDescription('This toggles in which channels proxying should be disabled or enabled, using the drop-down menu below. Selected channels will have a radio emoji next to them. When it is set to blacklist, proxying is *only disabled* in the selected channels. When it is set to whitelist, proxying is *only enabled* in the selected channels.')],
 		components: [new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
-				.setCustomId('serversettings_mainpage')
+				.setCustomId(`serversettings_mainpage_@${interaction.user.id}`)
 				.setLabel('Back')
 				.setEmoji('⬅️')
 				.setStyle(ButtonStyle.Secondary)]),
 		new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
-				.setCustomId('serversettings_proxying_setTo')
+				.setCustomId(`serversettings_proxying_setTo_@${interaction.user.id}`)
 				.setLabel(`Currently set to ${serverData.proxySettings.channels.setTo === ProxyListType.Blacklist ? 'blacklist' : 'whitelist'}`)
 				.setStyle(ButtonStyle.Secondary)]),
 		new ActionRowBuilder<SelectMenuBuilder>()
 			.setComponents([new SelectMenuBuilder()
-				.setCustomId('serversettings_proxying_options')
+				.setCustomId(`serversettings_proxying_options_@${interaction.user.id}`)
 				.setPlaceholder(`Select channels to ${serverData.proxySettings.channels.setTo === ProxyListType.Blacklist ? 'disable' : 'enable'} proxying for`)
 				.setOptions(disableSelectMenuOptions)])],
 	};

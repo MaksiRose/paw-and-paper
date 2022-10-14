@@ -329,7 +329,7 @@ export async function executeScavenging(
 		const newComponents = disableAllComponents(componentArray);
 		newComponents.push(new ActionRowBuilder<ButtonBuilder>()
 			.setComponents(new ButtonBuilder()
-				.setCustomId('scavenge_new')
+				.setCustomId(`scavenge_new_@${userData._id}`)
 				.setLabel('Scavenge again')
 				.setStyle(ButtonStyle.Primary)));
 

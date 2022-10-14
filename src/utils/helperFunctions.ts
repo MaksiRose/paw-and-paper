@@ -177,14 +177,20 @@ export async function sendErrorMessage(
 		data: interaction.isCommand() ? {
 			id: interaction.commandId,
 			name: interaction.commandName,
-			type: interaction.commandType,
+			command_type: interaction.commandType,
 			options: interaction.options.data,
 			target_id: interaction.isContextMenuCommand() ? interaction.targetId : undefined,
-		} : undefined,
+		} : {
+			component_type: interaction.isMessageComponent() ? interaction.componentType : undefined,
+			custom_id: interaction.customId,
+			values: interaction.isSelectMenu() ? interaction.values : undefined,
+			fields: interaction.isModalSubmit() ? interaction.fields.fields.map(f => f.toJSON()) : undefined,
+			components: interaction.isModalSubmit() ? interaction.components : undefined,
+		},
 		guild_id: interaction.guildId ?? undefined,
 		channel_id: interaction.channelId ?? undefined,
 		user_id: interaction.user.id,
-		message: interaction.isMessageComponent() ? {
+		message: interaction.isMessageComponent() || (interaction.isModalSubmit() && interaction.isFromMessage()) ? {
 			id: interaction.message.id,
 			timestamp: interaction.message.createdTimestamp,
 			edited_timestamp: interaction.message.editedTimestamp,
@@ -204,7 +210,7 @@ export async function sendErrorMessage(
 	}
 	else if (objectHasKey(error, 'code') && error.code === 40060) {
 
-		console.error('Error 400 - An error is not being sent to the user: ', error);
+		console.error('Error 400 - An error is not being sent to the user:', error);
 		return;
 	}
 	const isECONNRESET = objectHasKey(error, 'code') && error.code === 'ECONNRESET';
@@ -236,7 +242,7 @@ export async function sendErrorMessage(
 			.setFooter(isECONNRESET ? null : { text: 'If this is the first time you encountered the issue, please report it using the button below. After that, only report it again if the issue was supposed to be fixed after an update came out. To receive updates, ask a server administrator to do the "getupdates" command.' })],
 		components: isECONNRESET ? [] : [new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
-				.setCustomId(`report_${interaction.user.id}${errorId ? `_${errorId}` : ''}`)
+				.setCustomId(`report_@${interaction.user.id}${errorId ? `_${errorId}` : ''}`)
 				.setLabel('Report')
 				.setStyle(ButtonStyle.Success)])],
 	};

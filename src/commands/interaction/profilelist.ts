@@ -27,7 +27,7 @@ export const command: SlashCommand = {
 		if (!isInGuild(interaction)) { return; }
 
 		/* Creating a message with up to 25 profiles of a certain rank, a select menu to select another rank and buttons to go back and fourth a page if the rank as more than 25 profiles. */
-		await respond(interaction, await getProfilesMessage(0, interaction.guild, RankType.Youngling), true);
+		await respond(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild, RankType.Youngling), true);
 	},
 };
 
@@ -37,7 +37,7 @@ export async function profilelistInteractionCollector(
 
 	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild.'); }
 
-	if (interaction.isSelectMenu() && interaction.customId === 'profilelist_rank_options') {
+	if (interaction.isSelectMenu() && interaction.customId.startsWith('profilelist_rank_options')) {
 
 		const rankName = (interaction.values[0] === 'profilelist_elderlies') ?
 			RankType.Elderly :
@@ -49,7 +49,7 @@ export async function profilelistInteractionCollector(
 
 		const profilesText = await getProfilesTexts(interaction.guild, rankName, rankName === RankType.Hunter ? RankType.Healer : undefined);
 
-		await update(interaction, await getProfilesMessage(0, interaction.guild, rankName, profilesText));
+		await update(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild, rankName, profilesText));
 		return;
 	}
 
@@ -78,7 +78,7 @@ export async function profilelistInteractionCollector(
 		if (page >= Math.ceil(profilesText.length / 25)) { page = 0; }
 	}
 
-	await respond(interaction, await getProfilesMessage(page, interaction.guild, rankName, profilesText), true);
+	await respond(interaction, await getProfilesMessage(interaction.user.id, page, interaction.guild, rankName, profilesText), true);
 	return;
 }
 
@@ -147,6 +147,7 @@ async function getProfilesTexts(
  * @returns An object with two properties: embeds and components.
  */
 async function getProfilesMessage(
+	_id: string,
 	page: number,
 	guild: Guild,
 	rank: RankType,
@@ -185,7 +186,7 @@ async function getProfilesMessage(
 		components: [
 			new ActionRowBuilder<SelectMenuBuilder>()
 				.setComponents(new SelectMenuBuilder()
-					.setCustomId('profilelist_rank_options')
+					.setCustomId(`profilelist_rank_options_@${_id}`)
 					.setPlaceholder('Select a rank')
 					.setOptions([
 						{ label: DisplayedRankType.Younglings, value: 'profilelist_younglings' },
@@ -196,11 +197,11 @@ async function getProfilesMessage(
 			...(profilesText.length > 25 ? [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([
 					new ButtonBuilder()
-						.setCustomId(`profilelist_left_${rank}_${page}`)
+						.setCustomId(`profilelist_left_${rank}_${page}_@${_id}`)
 						.setEmoji('⬅️')
 						.setStyle(ButtonStyle.Secondary),
 					new ButtonBuilder()
-						.setCustomId(`profilelist_right_${rank}_${page}`)
+						.setCustomId(`profilelist_right_${rank}_${page}_@${_id}`)
 						.setEmoji('➡️')
 						.setStyle(ButtonStyle.Secondary),
 				])] : []),

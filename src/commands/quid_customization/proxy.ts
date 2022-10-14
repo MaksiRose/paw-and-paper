@@ -1,5 +1,5 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, Collection, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, Collection, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, NonThreadGuildBasedChannel, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { getArrayElement, getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
 import { ProxyConfigType, ProxyListType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
@@ -42,11 +42,11 @@ export const command: SlashCommand = {
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([
 					new ButtonBuilder()
-						.setCustomId(`proxy_set_learnmore_${quidData._id}`)
+						.setCustomId(`proxy_set_learnmore_@${quidData._id}`)
 						.setLabel('Set?')
 						.setStyle(ButtonStyle.Success),
 					...(interaction.inGuild() ? [new ButtonBuilder()
-						.setCustomId(`proxy_always_learnmore_${quidData._id}`)
+						.setCustomId(`proxy_always_learnmore_@${quidData._id}`)
 						.setLabel('Always?')
 						.setStyle(ButtonStyle.Success)] : []),
 				])],
@@ -67,7 +67,7 @@ export async function proxyInteractionCollector(
 	/* If the user pressed the button to learn more about the set subcommand, explain it with a button that opens a modal. */
 	if (interaction.isButton() && interaction.customId.startsWith('proxy_set_learnmore')) {
 
-		const quidDataId = interaction.customId.split('_')[3];
+		const quidDataId = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
 
 		await update(interaction, {
 			embeds: [new EmbedBuilder(interaction.message.embeds[0]?.toJSON())
@@ -76,7 +76,7 @@ export async function proxyInteractionCollector(
 				.setFields()],
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([new ButtonBuilder()
-					.setCustomId(`proxy_set_modal_${quidDataId}`)
+					.setCustomId(`proxy_set_modal_@${quidDataId}`)
 					.setLabel('Set proxy')
 					.setStyle(ButtonStyle.Success)])],
 		});
@@ -86,7 +86,7 @@ export async function proxyInteractionCollector(
 	/* If the user pressed the button to set their proxy, open the modal. */
 	if (interaction.isButton() && interaction.customId.startsWith('proxy_set_modal')) {
 
-		const quidId = interaction.customId.split('_')[3] || '';
+		const quidId = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
 		const quidData = getMapData(userData.quids, quidId);
 
 		await interaction.showModal(new ModalBuilder()
@@ -118,14 +118,14 @@ export async function proxyInteractionCollector(
 		return;
 	}
 
-	const allChannels = (await interaction.guild?.channels?.fetch() ?? new Collection()).filter((c): c is TextChannel => c !== null && c.type === ChannelType.GuildText && c.viewable && c.permissionsFor(interaction.client.user?.id || '')?.has('SendMessages') == true && c.permissionsFor(interaction.user.id)?.has('ViewChannel') == true && c.permissionsFor(interaction.user.id)?.has('SendMessages') == true);
+	const allChannels = (await interaction.guild?.channels?.fetch() ?? new Collection()).filter((c): c is NonThreadGuildBasedChannel => c !== null && c.permissionsFor(interaction.client.user.id)?.has('ViewChannel') != false && c.permissionsFor(interaction.client.user.id)?.has('SendMessages') != false && c.permissionsFor(interaction.user.id)?.has('ViewChannel') != false && c.permissionsFor(interaction.user.id)?.has('SendMessages') != false);
 
 	/* If the user pressed the button to learn more about the always subcommand, explain it with a select menu to select channels. */
 	if (interaction.isButton() && interaction.customId.startsWith('proxy_always_learnmore')) {
 
 		if (!interaction.inGuild()) { throw new Error('Interaction is not in guild'); }
-		const quidId = interaction.customId.split('_')[3] || '';
-		const alwaysSelectMenu = await getSelectMenus(allChannels, userData, quidId, serverData, 0);
+		const quidId = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
+		const alwaysSelectMenu = await getSelectMenu(allChannels, userData, quidId, serverData, 0);
 
 		await update(interaction, {
 			embeds: [new EmbedBuilder(interaction.message.embeds[0]?.toJSON())
@@ -143,7 +143,7 @@ export async function proxyInteractionCollector(
 
 		let page = 0;
 		const selectOptionId = interaction.values[0];
-		const quidId = interaction.customId.split('_')[3] || '';
+		const quidId = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
 
 		/* If the user clicked the next page option, increment the page. */
 		if (selectOptionId && selectOptionId.includes('nextpage')) {
@@ -151,7 +151,7 @@ export async function proxyInteractionCollector(
 			page = Number(selectOptionId.split('nextpage_')[1]) + 1;
 			if (page >= Math.ceil((allChannels.size + 1) / 24)) { page = 0; }
 
-			const alwaysSelectMenu = await getSelectMenus(allChannels, userData, quidId, serverData, page);
+			const alwaysSelectMenu = await getSelectMenu(allChannels, userData, quidId, serverData, page);
 			await update(interaction, {
 				components: [new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents([alwaysSelectMenu])],
@@ -186,7 +186,7 @@ export async function proxyInteractionCollector(
 			);
 			const quidData = getMapData(userData.quids, quidId);
 
-			const alwaysSelectMenu = await getSelectMenus(allChannels, userData, quidId, serverData, page);
+			const alwaysSelectMenu = await getSelectMenu(allChannels, userData, quidId, serverData, page);
 			await update(interaction, {
 				components: [new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents([alwaysSelectMenu])],
@@ -210,7 +210,7 @@ export async function sendEditProxyModalResponse(
 
 	/* Check if user data exists, and get quidData, the chosen prefix and the chosen suffix */
 	if (userData === null) { throw new Error('userData is null'); }
-	const quidId = interaction.customId.split('_')[2] || '';
+	const quidId = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
 	const quidData = getMapData(userData.quids, quidId);
 	const chosenPrefix = interaction.fields.getTextInputValue('proxy_textinput_startsWith');
 	const chosenSuffix = interaction.fields.getTextInputValue('proxy_textinput_endsWith');
@@ -255,8 +255,8 @@ export async function sendEditProxyModalResponse(
 	return;
 }
 
-async function getSelectMenus(
-	allChannels: Collection<string, TextChannel>,
+async function getSelectMenu(
+	allChannels: Collection<string, NonThreadGuildBasedChannel>,
 	userData: UserSchema | null,
 	quidId: string,
 	serverData: ServerSchema | null,
@@ -272,7 +272,7 @@ async function getSelectMenus(
 	}
 
 	return new SelectMenuBuilder()
-		.setCustomId(`proxy_always_options_${quidId}`)
+		.setCustomId(`proxy_always_options_@${quidId}`)
 		.setPlaceholder('Select channels to automatically be proxied in')
 		.setOptions(alwaysSelectMenuOptions);
 }

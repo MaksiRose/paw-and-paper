@@ -13,20 +13,6 @@ import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
-const denSelectMenu = new ActionRowBuilder<ButtonBuilder>()
-	.addComponents([new ButtonBuilder()
-		.setCustomId('repair_sleepingDens')
-		.setLabel('Sleeping Dens')
-		.setStyle(ButtonStyle.Secondary),
-	new ButtonBuilder()
-		.setCustomId('repair_foodDen')
-		.setLabel('Food Den')
-		.setStyle(ButtonStyle.Secondary),
-	new ButtonBuilder()
-		.setCustomId('repair_medicineDen')
-		.setLabel('Medicine Den')
-		.setStyle(ButtonStyle.Secondary)]);
-
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
 		.setName('repair')
@@ -92,7 +78,7 @@ export const command: SlashCommand = {
 				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
 				.setColor(quidData.color)
 				.setDescription(`*${quidData.name} roams around the pack, looking if any dens need to be repaired.*`)],
-			components: [denSelectMenu],
+			components: [getDenButtons(userData._id)],
 		} : getMaterials(userData, quidData, serverData, chosenDen, embedArray, messageContent), true);
 
 		createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
@@ -115,7 +101,7 @@ export async function repairInteractionCollector(
 
 	if (interaction.isButton()) {
 
-		const chosenDen = interaction.customId.replace('repair_', '');
+		const chosenDen = getArrayElement(interaction.customId.split('_'), 1);
 		if (chosenDen !== 'sleepingDens' && chosenDen !== 'medicineDen' && chosenDen !== 'foodDen') { throw new Error('chosenDen is not a den'); }
 
 		await update(interaction, getMaterials(userData, quidData, serverData, chosenDen, [], ''));
@@ -124,7 +110,7 @@ export async function repairInteractionCollector(
 
 	if (interaction.isSelectMenu()) {
 
-		const chosenDen = interaction.customId.replace('repair_options_', '');
+		const chosenDen = getArrayElement(interaction.customId.split('_'), 2);
 		if (chosenDen !== 'sleepingDens' && chosenDen !== 'medicineDen' && chosenDen !== 'foodDen') { throw new Error('chosenDen is not a den'); }
 
 		const chosenItem = getArrayElement(interaction.values, 0) as MaterialNames;
@@ -175,6 +161,25 @@ export async function repairInteractionCollector(
 	}
 }
 
+function getDenButtons(
+	_id: string,
+) {
+
+	return new ActionRowBuilder<ButtonBuilder>()
+		.addComponents([new ButtonBuilder()
+			.setCustomId(`repair_sleepingDens_@${_id}`)
+			.setLabel('Sleeping Dens')
+			.setStyle(ButtonStyle.Secondary),
+		new ButtonBuilder()
+			.setCustomId(`repair_foodDen_@${_id}`)
+			.setLabel('Food Den')
+			.setStyle(ButtonStyle.Secondary),
+		new ButtonBuilder()
+			.setCustomId(`repair_medicineDen@${_id}`)
+			.setLabel('Medicine Den')
+			.setStyle(ButtonStyle.Secondary)]);
+}
+
 /**
  * Displays the condition of the currently chosen den, as well as a list of the packs materials.
  */
@@ -205,11 +210,11 @@ function getMaterials(
 				.setFooter({ text: 'Choose one of the materials above to repair the den with it!' }),
 		],
 		components: [
-			denSelectMenu,
+			getDenButtons(userData._id),
 			...selectMenuOptions.length > 0
 				? [new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents(new SelectMenuBuilder()
-						.setCustomId(`repair_options_${chosenDen}`)
+						.setCustomId(`repair_options_${chosenDen}_@${userData._id}`)
 						.setPlaceholder('Select an item to repair the den with')
 						.addOptions(selectMenuOptions))]
 				: [],

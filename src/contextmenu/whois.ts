@@ -77,7 +77,7 @@ export const command: ContextMenuCommand = {
 			...response,
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([new ButtonBuilder()
-					.setCustomId(`profile_learnabout_${interaction.user.id}`)
+					.setCustomId(`profile_learnabout_@${interaction.user.id}`)
 					.setLabel('Learn more (sends a DM)')
 					.setStyle(ButtonStyle.Success)])],
 			ephemeral: true,

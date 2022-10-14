@@ -80,7 +80,7 @@ export async function skillsInteractionCollector(
 	let profileData = quidData?.profiles[interaction.guildId];
 
 	/* Refresh the skills list. */
-	if (interaction.isButton() && interaction.customId === 'skills_refresh') {
+	if (interaction.isButton() && interaction.customId.includes('refresh')) {
 
 		await update(interaction, {
 			content: getSkillList(profileData),
@@ -88,49 +88,10 @@ export async function skillsInteractionCollector(
 		});
 		return;
 	}
-
-	/* Add two buttons "personal" and "global". */
-	if (interaction.isButton() && (interaction.customId === 'skills_add' || interaction.customId === 'skills_edit' || interaction.customId === 'skills_remove')) {
-
-		await update(interaction, {
-			components: [
-				getOriginalComponents(profileData, serverData, interaction.member),
-				new ActionRowBuilder<ButtonBuilder>()
-					.setComponents(
-						[new ButtonBuilder()
-							.setCustomId(`${interaction.customId}_personal${interaction.customId === 'skills_add' ? '_modal' : ''}`)
-							.setLabel('Personal')
-							.setEmoji('👤')
-							.setDisabled(profileData === undefined || (interaction.customId.includes('add') === false && Object.keys(profileData.skills.personal).length <= 0))
-							.setStyle(ButtonStyle.Secondary),
-						new ButtonBuilder()
-							.setCustomId(`${interaction.customId}_global${interaction.customId === 'skills_add' ? '_modal' : ''}`)
-							.setLabel('Global')
-							.setEmoji('👥')
-							.setDisabled(interaction.member.permissions.has(PermissionFlagsBits.Administrator) === false)
-							.setStyle(ButtonStyle.Secondary),
-						]),
-			],
-		});
-		return;
-	}
-
-	/* Add a new select menu to select a skill to modify. */
-	if (interaction.isButton() && interaction.customId === 'skills_modify') {
-
-		await update(interaction, {
-			components: [
-				getOriginalComponents(profileData, serverData, interaction.member),
-				getModifyMenu(profileData, 0),
-			],
-		});
-		return;
-	}
-
 	/* Creating a modal that allows the user to add a skill. */
-	if (interaction.isButton() && (interaction.customId === 'skills_add_personal_modal' || interaction.customId === 'skills_add_global_modal')) {
+	else if (interaction.isButton() && interaction.customId.includes('add') && interaction.customId.includes('modal')) {
 
-		const category = getArrayElement(interaction.customId.split('_'), 2);
+		const category = getArrayElement(interaction.customId.split('_'), 3);
 
 		await interaction.showModal(new ModalBuilder()
 			.setCustomId(`skills_add_${category}`)
@@ -147,24 +108,58 @@ export async function skillsInteractionCollector(
 			));
 		return;
 	}
-
 	/* Add a new select menu to select a skill to edit/remove. */
-	if (interaction.isButton() && (interaction.customId === 'skills_edit_personal' || interaction.customId === 'skills_edit_global' || interaction.customId === 'skills_remove_personal' || interaction.customId === 'skills_remove_global')) {
+	else if (interaction.isButton() && (interaction.customId.includes('personal') || interaction.customId.includes('global'))) {
 
 		const type = getArrayElement(interaction.customId.split('_'), 1) as 'edit' | 'remove';
-		const category = getArrayElement(interaction.customId.split('_'), 2) as 'global' | 'personal';
+		const category = getArrayElement(interaction.customId.split('_'), 3) as 'global' | 'personal';
 
 		await update(interaction, {
 			components: [
 				getOriginalComponents(profileData, serverData, interaction.member),
-				type === 'edit' ? getEditMenu(profileData, serverData, category, 0) : getRemoveMenu(profileData, serverData, category, 0),
+				type === 'edit' ? getEditMenu(userData?._id ?? interaction.user.id, profileData, serverData, category, 0) : getRemoveMenu(userData?._id ?? interaction.user.id, profileData, serverData, category, 0),
 			],
 		});
 		return;
 	}
+	/* Add two buttons "personal" and "global". */
+	else if (interaction.isButton() && (interaction.customId.includes('add') || interaction.customId.includes('edit') || interaction.customId.includes('remove'))) {
 
+		await update(interaction, {
+			components: [
+				getOriginalComponents(profileData, serverData, interaction.member),
+				new ActionRowBuilder<ButtonBuilder>()
+					.setComponents(
+						[new ButtonBuilder()
+							.setCustomId(`${interaction.customId}_personal${interaction.customId.includes('add') ? '_modal' : ''}`)
+							.setLabel('Personal')
+							.setEmoji('👤')
+							.setDisabled(profileData === undefined || (interaction.customId.includes('add') === false && Object.keys(profileData.skills.personal).length <= 0))
+							.setStyle(ButtonStyle.Secondary),
+						new ButtonBuilder()
+							.setCustomId(`${interaction.customId}_global${interaction.customId.includes('add') ? '_modal' : ''}`)
+							.setLabel('Global')
+							.setEmoji('👥')
+							.setDisabled(interaction.member.permissions.has(PermissionFlagsBits.Administrator) === false)
+							.setStyle(ButtonStyle.Secondary),
+						]),
+			],
+		});
+		return;
+	}
+	/* Add a new select menu to select a skill to modify. */
+	else if (interaction.isButton() && interaction.customId.includes('modify')) {
+
+		await update(interaction, {
+			components: [
+				getOriginalComponents(profileData, serverData, interaction.member),
+				getModifyMenu(userData?._id ?? interaction.user.id, profileData, 0),
+			],
+		});
+		return;
+	}
 	/* Change the page of the select menu. */
-	if (interaction.isSelectMenu() && selectOptionId && selectOptionId.includes('nextpage')) {
+	else if (interaction.isSelectMenu() && selectOptionId && selectOptionId.includes('nextpage')) {
 
 		if (selectOptionId.startsWith('skills_modify_')) {
 
@@ -175,7 +170,7 @@ export async function skillsInteractionCollector(
 			await update(interaction, {
 				components: [
 					getOriginalComponents(profileData, serverData, interaction.member),
-					getModifyMenu(profileData, page),
+					getModifyMenu(userData?._id ?? interaction.user.id, profileData, page),
 				],
 			});
 			return;
@@ -184,14 +179,14 @@ export async function skillsInteractionCollector(
 		if (selectOptionId.startsWith('skills_edit_')) {
 
 			let page = Number(selectOptionId.split('_')[4] ?? 0) + 1;
-			const category = getArrayElement(selectOptionId.split('_'), 2) as 'global' | 'personal' ;
+			const category = getArrayElement(selectOptionId.split('_'), 2) as 'global' | 'personal';
 			const totalPages = Math.ceil(((category === 'global' ? (serverData?.skills || []) : Object.keys(profileData?.skills.personal || {})).length) / 24);
 			if (page >= totalPages) { page = 0; }
 
 			await update(interaction, {
 				components: [
 					getOriginalComponents(profileData, serverData, interaction.member),
-					getEditMenu(profileData, serverData, category, page),
+					getEditMenu(userData?._id ?? interaction.user.id, profileData, serverData, category, page),
 				],
 			});
 			return;
@@ -207,16 +202,15 @@ export async function skillsInteractionCollector(
 			await update(interaction, {
 				components: [
 					getOriginalComponents(profileData, serverData, interaction.member),
-					getRemoveMenu(profileData, serverData, category, page),
+					getRemoveMenu(userData?._id ?? interaction.user.id, profileData, serverData, category, page),
 				],
 			});
 			return;
 		}
 		return;
 	}
-
 	/* Creating a modal that allows the user to edit or modify a skill. */
-	if (interaction.isSelectMenu() && selectOptionId && (interaction.customId === 'skills_modify_options_modal' || interaction.customId === 'skills_edit_options_modal')) {
+	else if (interaction.isSelectMenu() && selectOptionId && interaction.customId.includes('modal')) {
 
 		const type = getArrayElement(selectOptionId.split('_'), 1) as 'modify' | 'edit';
 		const category = getArrayElement(selectOptionId.split('_'), 2) as 'personal' | 'global';
@@ -239,9 +233,8 @@ export async function skillsInteractionCollector(
 		);
 		return;
 	}
-
 	/* Removing a skill. */
-	if (interaction.isSelectMenu() && selectOptionId && interaction.customId === 'skills_remove_options') {
+	else if (interaction.isSelectMenu() && selectOptionId && interaction.customId.includes('skills_remove_options')) {
 
 		const category = getArrayElement(selectOptionId.split('_'), 2) as 'global' | 'personal' ;
 		const skillName = getArrayElement(selectOptionId.split('_'), 3);
@@ -541,30 +534,30 @@ function getOriginalComponents(
 	return new ActionRowBuilder<ButtonBuilder>()
 		.setComponents(
 			[new ButtonBuilder()
-				.setCustomId('skills_add')
+				.setCustomId(`skills_add_@${member.id}`)
 				.setLabel('Add')
 				.setEmoji('✏️')
 				.setStyle(ButtonStyle.Secondary),
 			new ButtonBuilder()
-				.setCustomId('skills_edit')
+				.setCustomId(`skills_edit_@${member.id}`)
 				.setLabel('Edit')
 				.setEmoji('📝')
 				.setDisabled(([...Object.keys(profileData?.skills?.personal || {}), ...Object.keys(profileData?.skills?.global || {})].length <= 0) && (!member.permissions.has(PermissionFlagsBits.Administrator) || serverData.skills.length <= 0))
 				.setStyle(ButtonStyle.Secondary),
 			new ButtonBuilder()
-				.setCustomId('skills_remove')
+				.setCustomId(`skills_remove_@${member.id}`)
 				.setLabel('Delete')
 				.setEmoji('🗑️')
 				.setDisabled((Object.keys(profileData?.skills.personal || {}).length <= 0) && (!member.permissions.has(PermissionFlagsBits.Administrator) || serverData.skills.length <= 0))
 				.setStyle(ButtonStyle.Secondary),
 			new ButtonBuilder()
-				.setCustomId('skills_modify')
+				.setCustomId(`skills_modify_@${member.id}`)
 				.setLabel('Modify')
 				.setEmoji('↕️')
 				.setDisabled([...Object.keys(profileData?.skills?.personal || {}), ...Object.keys(profileData?.skills?.global || {})].length <= 0)
 				.setStyle(ButtonStyle.Secondary),
 			new ButtonBuilder()
-				.setCustomId('skills_refresh')
+				.setCustomId(`skills_refresh_@${member.id}`)
 				.setEmoji('🔁')
 				.setStyle(ButtonStyle.Secondary),
 			]);
@@ -595,6 +588,7 @@ function getSkillList(
  * @returns An Action Row with a select menu of skills
  */
 function getModifyMenu(
+	_id: string,
 	profileData: Profile | undefined,
 	page: number,
 ): ActionRowBuilder<SelectMenuBuilder> {
@@ -609,7 +603,7 @@ function getModifyMenu(
 
 	return new ActionRowBuilder<SelectMenuBuilder>()
 		.setComponents(new SelectMenuBuilder()
-			.setCustomId('skills_modify_options_modal')
+			.setCustomId(`skills_modify_options_modal_@${_id}`)
 			.setPlaceholder('Select a skill to modify')
 			.setOptions(modifyMenuOptions));
 }
@@ -623,6 +617,7 @@ function getModifyMenu(
  * @returns An Action Row with a select menu of skills
  */
 function getEditMenu(
+	_id: string,
 	profileData: Profile | undefined,
 	serverData: ServerSchema | undefined,
 	category: 'personal' | 'global',
@@ -639,7 +634,7 @@ function getEditMenu(
 
 	return new ActionRowBuilder<SelectMenuBuilder>()
 		.setComponents(new SelectMenuBuilder()
-			.setCustomId('skills_edit_options_modal')
+			.setCustomId(`skills_edit_options_modal_@${_id}`)
 			.setPlaceholder('Select a skill to edit')
 			.setOptions(editMenuOptions));
 }
@@ -653,6 +648,7 @@ function getEditMenu(
  * @returns An Action Row with a select menu of skills
  */
 function getRemoveMenu(
+	_id: string,
 	profileData: Profile | undefined,
 	serverData: ServerSchema | undefined,
 	category: 'personal' | 'global',
@@ -669,7 +665,7 @@ function getRemoveMenu(
 
 	return new ActionRowBuilder<SelectMenuBuilder>()
 		.setComponents(new SelectMenuBuilder()
-			.setCustomId('skills_remove_options')
+			.setCustomId(`skills_remove_options_@${_id}`)
 			.setPlaceholder('Select a skill to remove')
 			.setOptions(removeMenuOptions));
 }

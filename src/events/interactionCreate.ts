@@ -1,4 +1,4 @@
-import { EmbedBuilder, Interaction, RepliableInteraction } from 'discord.js';
+import { ButtonInteraction, EmbedBuilder, Interaction, RepliableInteraction, SelectMenuInteraction } from 'discord.js';
 import { deleteInteractionCollector } from '../commands/quid_customization/delete';
 import { profileInteractionCollector } from '../commands/quid_customization/profile';
 import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../commands/quid_customization/pronouns';
@@ -315,22 +315,8 @@ export const event: DiscordEvent = {
 		if (interaction.isMessageComponent()) {
 
 			/* It's checking if the user that created the command is the same as the user that is interacting with the command, or if the user that is interacting is mentioned in the interaction.customId. If neither is true, it will send an error message. */
-			const isNotCommandCreator = interaction.message.interaction && interaction.message.interaction.user.id !== interaction.user.id;
-			const isMentioned = interaction.customId.includes(interaction.user.id) || interaction.customId.includes('ANYONECANCLICK') || (userData && interaction.customId.includes(userData._id));
-			if (isNotCommandCreator && !isMentioned) {
-
-				await respond(interaction, {
-					content: 'Sorry, I only listen to the person that created the command 😣',
-					ephemeral: true,
-				}, false)
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							return await sendErrorMessage(interaction, error)
-								.catch(e => { console.error(e); });
-						}
-					});
-				return;
-			}
+			const isCommandCreator = interaction.message.interaction !== null && interaction.message.interaction.user.id === interaction.user.id;
+			const isMentioned = interaction.customId.includes('@' + interaction.user.id) || interaction.customId.includes('@EVERYONE') || (userData && (interaction.customId.includes(userData._id) || Object.keys(userData.quids).some(q => interaction.customId.includes('@' + q))));
 
 			if (interaction.isSelectMenu()) {
 
@@ -338,35 +324,35 @@ export const event: DiscordEvent = {
 
 				if (interaction.customId.startsWith('help_')) {
 
-					await helpInteractionCollector(client, interaction)
+					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, helpInteractionCollector, [client, interaction])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
 
 				if (interaction.customId.startsWith('shop_')) {
 
-					await shopInteractionCollector(interaction, userData, serverData)
+					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, shopInteractionCollector, [interaction, userData, serverData])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
 
 				if (interaction.customId.startsWith('inventory_')) {
 
-					await inventoryInteractionCollector(interaction, userData, serverData)
+					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, inventoryInteractionCollector, [interaction, userData, serverData])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
 
 				if (interaction.customId.startsWith('vote_')) {
 
-					await voteInteractionCollector(client, interaction, userData)
+					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, voteInteractionCollector, [client, interaction, userData])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
 
 				if (interaction.customId.startsWith('wrongproxy_')) {
 
-					await wrongproxyInteractionCollector(interaction, userData)
+					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, wrongproxyInteractionCollector, [interaction, userData])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
@@ -378,123 +364,140 @@ export const event: DiscordEvent = {
 
 				if (interaction.customId.startsWith('report_')) {
 
-					await update(interaction, {
-						components: disableAllComponents(interaction.message.components),
-					})
-						.catch((error) => { console.error(error); });
+					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, async () => {
 
-					const errorId = interaction.customId.split('_')[2] || generateId();
-					const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
-					const description = errorStacks[errorId] ? `\`\`\`\n${errorStacks[errorId]!.substring(0, 4090)}\n\`\`\`` : interaction.message.embeds[0]?.description;
+						await update(interaction, {
+							components: disableAllComponents(interaction.message.components),
+						}).catch((error) => { console.error(error); });
 
-					if (!description) {
+						const errorId = interaction.customId.split('_')[2] || generateId();
+						const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
+						const description = errorStacks[errorId] ? `\`\`\`\n${errorStacks[errorId]!.substring(0, 4090)}\n\`\`\`` : interaction.message.embeds[0]?.description;
 
-						await respond(interaction, {
-							embeds: [new EmbedBuilder()
-								.setColor(error_color)
-								.setDescription('There was an error trying to report the error... Ironic! Maybe you can try opening a ticket via `/ticket` instead?')],
-							ephemeral: true,
-						}, false);
-						return;
-					}
+						if (!description) {
 
-					await createNewTicket(client, interaction, `Error ${errorId}`, description, 'bug', null, errorId);
-					delete errorStacks[errorId];
-					writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
+							await respond(interaction, {
+								embeds: [new EmbedBuilder()
+									.setColor(error_color)
+									.setDescription('There was an error trying to report the error... Ironic! Maybe you can try opening a ticket via `/ticket` instead?')],
+								ephemeral: true,
+							}, false);
+							return;
+						}
+
+						await createNewTicket(client, interaction, `Error ${errorId}`, description, 'bug', null, errorId);
+						delete errorStacks[errorId];
+						writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
+
+					}, [])
+						.catch(async (error) => { await sendErrorMessage(interaction, error); });
+					return;
 				}
 
 				if (interaction.customId.startsWith('ticket_')) {
 
-					await ticketInteractionCollector(interaction)
+					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, ticketInteractionCollector, [interaction])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
 
 				if (interaction.customId.startsWith('hug_')) {
 
-					await hugInteractionCollector(interaction, userData)
+					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, hugInteractionCollector, [interaction, userData])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
 
 				if (interaction.customId.startsWith('friendships_')) {
 
-					await friendshipsInteractionCollector(interaction, userData)
+					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, friendshipsInteractionCollector, [interaction, userData])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
 
 				if (interaction.customId.startsWith('adventure_')) {
 
-					await adventureInteractionCollector(interaction, serverData)
+					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, adventureInteractionCollector, [interaction, serverData])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
 
 				if (interaction.customId.startsWith('playfight_')) {
 
-					await playfightInteractionCollector(interaction, serverData)
+					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, playfightInteractionCollector, [interaction, serverData])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
 
 				if (interaction.customId.startsWith('stats_')) {
 
-					await statsInteractionCollector(interaction, userData, serverData)
+					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, statsInteractionCollector, [interaction, userData, serverData])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
 
 				if (interaction.customId.startsWith('settings_')) {
 
-					await settingsInteractionCollector(client, interaction, userData)
+					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, settingsInteractionCollector, [client, interaction, userData])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
 
 				if (interaction.customId.startsWith('rank_')) {
 
-					await rankupInteractionCollector(interaction, userData, serverData)
+					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, rankupInteractionCollector, [interaction, userData, serverData])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
 
 				if (interaction.customId.startsWith('scavenge_new')) {
 
-					/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-					if (userData && scavengeCommand.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
+					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, async () => {
 
-					await executeScavenging(interaction, userData, serverData, [])
+						/* It's disabling all components if userData exists and the command is set to disable a previous command. */
+						if (userData && scavengeCommand.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
+
+						await executeScavenging(interaction, userData, serverData, []);
+					}, [])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
 
 				if (interaction.customId.startsWith('play_new')) {
 
-					/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-					if (userData && playCommand.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
+					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, async () => {
 
-					await executePlaying(interaction, userData, serverData, [])
+						/* It's disabling all components if userData exists and the command is set to disable a previous command. */
+						if (userData && playCommand.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
+
+						await executePlaying(interaction, userData, serverData, []);
+					}, [])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
 
 				if (interaction.customId.startsWith('explore_new')) {
 
-					/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-					if (userData && exploreCommand.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
+					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, async () => {
 
-					await executeExploring(interaction, userData, serverData, [])
+						/* It's disabling all components if userData exists and the command is set to disable a previous command. */
+						if (userData && exploreCommand.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
+
+						await executeExploring(interaction, userData, serverData, []);
+					}, [])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
 
 				if (interaction.customId.startsWith('attack_new')) {
 
-					/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-					if (userData && attackCommand.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
+					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, async () => {
 
-					await executeAttacking(interaction, userData, serverData, [])
+						/* It's disabling all components if userData exists and the command is set to disable a previous command. */
+						if (userData && attackCommand.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
+
+						await executeAttacking(interaction, userData, serverData, []);
+					}, [])
 						.catch(async (error) => { await sendErrorMessage(interaction, error); });
 					return;
 				}
@@ -502,7 +505,7 @@ export const event: DiscordEvent = {
 
 			if (interaction.customId.startsWith('profile_')) {
 
-				await profileInteractionCollector(client, interaction)
+				await interactionResponseGuard(interaction, isCommandCreator, isMentioned, profileInteractionCollector, [client, interaction])
 					.catch(async (error) => {
 						await sendErrorMessage(interaction, error)
 							.catch(e => { console.error(e); });
@@ -512,7 +515,7 @@ export const event: DiscordEvent = {
 
 			if (interaction.customId.startsWith('species_')) {
 
-				await speciesInteractionCollector(interaction, userData)
+				await interactionResponseGuard(interaction, isCommandCreator, isMentioned, speciesInteractionCollector, [interaction, userData])
 					.catch(async (error) => {
 						await sendErrorMessage(interaction, error)
 							.catch(e => { console.error(e); });
@@ -522,7 +525,7 @@ export const event: DiscordEvent = {
 
 			if (interaction.customId.startsWith('pronouns_')) {
 
-				await pronounsInteractionCollector(interaction)
+				await interactionResponseGuard(interaction, isCommandCreator, isMentioned, pronounsInteractionCollector, [interaction])
 					.catch(async (error) => {
 						await sendErrorMessage(interaction, error)
 							.catch(e => { console.error(e); });
@@ -532,7 +535,7 @@ export const event: DiscordEvent = {
 
 			if (interaction.customId.startsWith('proxy_')) {
 
-				await proxyInteractionCollector(interaction, userData, serverData)
+				await interactionResponseGuard(interaction, isCommandCreator, isMentioned, proxyInteractionCollector, [interaction, userData, serverData])
 					.catch(async (error) => {
 						await sendErrorMessage(interaction, error)
 							.catch(e => { console.error(e); });
@@ -542,7 +545,7 @@ export const event: DiscordEvent = {
 
 			if (interaction.customId.startsWith('delete_')) {
 
-				await deleteInteractionCollector(interaction, userData)
+				await interactionResponseGuard(interaction, isCommandCreator, isMentioned, deleteInteractionCollector, [interaction, userData])
 					.catch(async (error) => {
 						await sendErrorMessage(interaction, error)
 							.catch(e => { console.error(e); });
@@ -552,13 +555,7 @@ export const event: DiscordEvent = {
 
 			if (interaction.customId.startsWith('serversettings_')) {
 
-				if (!serverData) {
-
-					return await sendErrorMessage(interaction, new Error('serverData is null'))
-						.catch(e => { console.error(e); });
-				}
-
-				await serversettingsInteractionCollector(interaction, serverData)
+				await interactionResponseGuard(interaction, isCommandCreator, isMentioned, serversettingsInteractionCollector, [interaction, serverData])
 					.catch(async (error) => {
 						await sendErrorMessage(interaction, error)
 							.catch(e => { console.error(e); });
@@ -568,7 +565,7 @@ export const event: DiscordEvent = {
 
 			if (interaction.customId.startsWith('skills_')) {
 
-				await skillsInteractionCollector(interaction, serverData, userData)
+				await interactionResponseGuard(interaction, isCommandCreator, isMentioned, skillsInteractionCollector, [interaction, serverData, userData])
 					.catch(async (error) => {
 						await sendErrorMessage(interaction, error)
 							.catch(e => { console.error(e); });
@@ -578,7 +575,7 @@ export const event: DiscordEvent = {
 
 			if (interaction.customId.startsWith('profilelist_')) {
 
-				await profilelistInteractionCollector(interaction)
+				await interactionResponseGuard(interaction, isCommandCreator, isMentioned, profilelistInteractionCollector, [interaction])
 					.catch(async (error) => {
 						await sendErrorMessage(interaction, error)
 							.catch(e => { console.error(e); });
@@ -588,7 +585,7 @@ export const event: DiscordEvent = {
 
 			if (interaction.customId.startsWith('store_')) {
 
-				await storeInteractionCollector(interaction, userData, serverData)
+				await interactionResponseGuard(interaction, isCommandCreator, isMentioned, storeInteractionCollector, [interaction, userData, serverData])
 					.catch(async (error) => {
 						await sendErrorMessage(interaction, error)
 							.catch(e => { console.error(e); });
@@ -598,7 +595,7 @@ export const event: DiscordEvent = {
 
 			if (interaction.customId.startsWith('repair_')) {
 
-				await repairInteractionCollector(interaction, userData, serverData)
+				await interactionResponseGuard(interaction, isCommandCreator, isMentioned, repairInteractionCollector, [interaction, userData, serverData])
 					.catch(async (error) => {
 						await sendErrorMessage(interaction, error)
 							.catch(e => { console.error(e); });
@@ -608,7 +605,7 @@ export const event: DiscordEvent = {
 
 			if (interaction.customId.startsWith('heal_')) {
 
-				await healInteractionCollector(interaction, userData, serverData)
+				await interactionResponseGuard(interaction, isCommandCreator, isMentioned, healInteractionCollector, [interaction, userData, serverData])
 					.catch(async (error) => {
 						await sendErrorMessage(interaction, error)
 							.catch(e => { console.error(e); });
@@ -618,7 +615,7 @@ export const event: DiscordEvent = {
 
 			if (interaction.customId.startsWith('travel_')) {
 
-				await travelInteractionCollector(interaction, userData, serverData)
+				await interactionResponseGuard(interaction, isCommandCreator, isMentioned, travelInteractionCollector, [interaction, userData, serverData])
 					.catch(async (error) => {
 						await sendErrorMessage(interaction, error)
 							.catch(e => { console.error(e); });
@@ -675,3 +672,28 @@ setInterval(async function() {
 		serverActiveUsersMap.set(guildId, array);
 	}
 }, 60_000);
+
+async function interactionResponseGuard<T extends unknown[], U>(
+	interaction: ButtonInteraction | SelectMenuInteraction,
+	isCommandCreator: boolean,
+	isMentioned: boolean | null,
+	callback: (...args: T) => U,
+	callbackArgs: T,
+) {
+
+	if (!isCommandCreator && !isMentioned) {
+
+		await respond(interaction, {
+			content: 'Sorry, I only listen to the person that created the command 😣',
+			ephemeral: true,
+		}, false)
+			.catch(async (error) => {
+				if (error.httpStatus !== 404) {
+					return await sendErrorMessage(interaction, error)
+						.catch(e => { console.error(e); });
+				}
+			});
+		return;
+	}
+	return await callback(...callbackArgs);
+}

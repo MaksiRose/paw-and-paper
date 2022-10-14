@@ -66,11 +66,11 @@ async function sendStatsMessage(
 
 	const components = new ActionRowBuilder<ButtonBuilder>()
 		.setComponents([new ButtonBuilder()
-			.setCustomId(`stats_refresh_${quidId}_${creatorUserId}`)
+			.setCustomId(`stats_refresh_${quidId}_@${creatorUserId}`)
 			.setEmoji('🔁')
 			.setStyle(ButtonStyle.Secondary),
 		new ButtonBuilder()
-			.setCustomId(`stats_store_${creatorUserId}`)
+			.setCustomId(`stats_store_@${creatorUserId}`)
 			.setLabel('Store items away')
 			.setStyle(ButtonStyle.Secondary),
 		]);
@@ -123,7 +123,7 @@ export async function statsInteractionCollector(
 	if (interaction.customId.includes('refresh')) {
 
 		const quidId = getArrayElement(interaction.customId.split('_'), 2);
-		const creatorUserId = getArrayElement(interaction.customId.split('_'), 3);
+		const creatorUserId = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
 
 		const userData1 = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
 		await sendStatsMessage(interaction, userData1, quidId, creatorUserId);

@@ -6,7 +6,7 @@ import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { pronoun } from '../../utils/getPronouns';
-import { getMapData, getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, getMapData, getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
 import { remindOfAttack } from './attack';
 
 export const command: SlashCommand = {
@@ -72,12 +72,12 @@ export const command: SlashCommand = {
 				components: [new ActionRowBuilder<ButtonBuilder>()
 					.setComponents([
 						new ButtonBuilder()
-							.setCustomId('rank_Healer')
+							.setCustomId(`rank_Healer_@${userData._id}`)
 							.setLabel('Healer')
 							.setEmoji('🛡️')
 							.setStyle(ButtonStyle.Success),
 						new ButtonBuilder()
-							.setCustomId('rank_Hunter')
+							.setCustomId(`rank_Hunter_@${userData._id}`)
 							.setLabel('Hunter')
 							.setEmoji('⚔️')
 							.setStyle(ButtonStyle.Success),
@@ -135,7 +135,7 @@ export async function rankupInteractionCollector(
 	if (serverData === null) { throw new TypeError('serverData is null'); }
 	if (userData === null) { throw new TypeError('userData is null'); }
 
-	const rank = interaction.customId.replace('rank_', '');
+	const rank = getArrayElement(interaction.customId.split('_'), 1);
 	if (rank !== RankType.Hunter && rank !== RankType.Healer) { throw new Error('rank is not of RankType Hunter or Healer'); }
 
 	userData = await userModel.findOneAndUpdate(
