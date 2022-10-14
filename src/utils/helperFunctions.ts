@@ -123,12 +123,12 @@ export async function update(
 	/** If an error occurred and it has status 404, try to either edit the message if editing was tried above, or send a new message in the other two cases */
 	catch (error: unknown) {
 
-		if ((objectHasKey(error, 'code') && error.code === 'ECONNRESET') || (objectHasKey(error, 'status') && error.status === 404) || (objectHasKey(error, 'httpStatus') && error.httpStatus === 404)) {
+		if (objectHasKey(error, 'code') && (error.code === 'ECONNRESET' || error.code === 10062)) {
 
 			if (!interaction.replied && !interaction.deferred) { botReply = await interaction.message.edit({ ...options, flags: undefined }); }
 			else { botReply = await (await interaction.fetchReply()).edit({ ...options, flags: undefined }); }
 		}
-		else if (((objectHasKey(error, 'status') && error.status === 400) || (objectHasKey(error, 'httpStatus') && error.httpStatus === 400)) && !interaction.replied && !interaction.deferred) {
+		else if (objectHasKey(error, 'code') && error.code === 40060 && !interaction.replied && !interaction.deferred) {
 
 			interaction.replied = true;
 			botReply = await update(interaction, options);
@@ -197,14 +197,14 @@ export async function sendErrorMessage(
 		guild_locale: interaction.guildLocale,
 	};
 
-	if ((objectHasKey(error, 'status') && error.status === 404) || (objectHasKey(error, 'httpStatus') && error.httpStatus === 404)) {
+	if (objectHasKey(error, 'code') && error.code === 10062) {
 
-		console.error('Error 404 - An error is not being sent to the user. ', error);
+		console.error('Error 404 - An error is not being sent to the user:', error);
 		return;
 	}
-	else if ((objectHasKey(error, 'status') && error.status === 400) || (objectHasKey(error, 'httpStatus') && error.httpStatus === 400)) {
+	else if (objectHasKey(error, 'code') && error.code === 40060) {
 
-		console.error('Error 400 - An error is not being sent to the user. ', error);
+		console.error('Error 400 - An error is not being sent to the user: ', error);
 		return;
 	}
 	const isECONNRESET = objectHasKey(error, 'code') && error.code === 'ECONNRESET';
@@ -244,14 +244,14 @@ export async function sendErrorMessage(
 	await respond(interaction, { ...messageOptions, flags: undefined }, false)
 		.catch(async (error2) => {
 
-			console.error('Failed to send error message to user. ', error2);
+			console.error('Failed to send error message to user:', error2);
 			await (async () => {
 				if (interaction.isButton() || interaction.isSelectMenu()) { await interaction.message.reply({ ...messageOptions, failIfNotExists: false }); }
 				if (interaction.isMessageContextMenuCommand()) { await interaction.targetMessage.reply({ ...messageOptions, failIfNotExists: false }); }
 				if (interaction.isUserContextMenuCommand() || interaction.isChatInputCommand() || interaction.type === InteractionType.ModalSubmit) { await interaction.channel?.send(messageOptions); }
 			})()
 				.catch((error3) => {
-					console.error('Failed to send backup error message to user. ', error3);
+					console.error('Failed to send backup error message to user:', error3);
 				});
 		});
 }
