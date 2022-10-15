@@ -6,6 +6,7 @@ import { hasName } from '../../utils/checkUserState';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
 import { pronounCompromiser } from './profile';
+import { missingPermissions } from '../../utils/permissionHandler';
 const { error_color, default_color } = require('../../../config.json');
 
 const maxPronounLength = 16;
@@ -21,6 +22,10 @@ export const command: SlashCommand = {
 	disablePreviousCommand: true,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {
+
+		if (await missingPermissions(interaction, [
+			'ViewChannel', // Needed because of createCommandComponentDisabler
+		]) === true) { return; }
 
 		if (!hasName(interaction, userData)) { return; }
 

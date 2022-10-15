@@ -5,6 +5,7 @@ import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
 import { CustomClient, DiscordEvent, ProxyConfigType, ProxyListType, Quid, ServerSchema, UserSchema } from '../typedef';
 import { getMapData } from '../utils/helperFunctions';
+import { getMissingPermissionContent, hasPermission, permissionDisplay } from '../utils/permissionHandler';
 import { createGuild } from '../utils/updateGuild';
 
 export const event: DiscordEvent = {
@@ -14,7 +15,7 @@ export const event: DiscordEvent = {
 
 		if (message.author.bot || !message.inGuild()) { return; }
 
-		if (message.content.toLowerCase().startsWith('rp ')) {
+		if (message.content.toLowerCase().startsWith('rp ') && await hasPermission(message.guild.members.me || message.client.user.id, message.channel, message.channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) {
 
 			await message.reply({ content: '**Regular commands were replaced in favour of slash (`/`) commands.**\n\nIf you don\'t know what slash commands are or how to use them, read this article: <https://support.discord.com/hc/en-us/articles/1500000368501-Slash-Commands-FAQ>\n\nIf no slash commands for this bot appear, re-invite this bot by clicking on its profile and then on "Add to server".' });
 			return;
@@ -54,16 +55,18 @@ export const event: DiscordEvent = {
 
 		if (replaceMessage && (message.content.length > 0 || message.attachments.size > 0)) {
 
-			await sendMessage(message.channel, message.content, userData, quidData, userData._id, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
+			const isSuccessful = await sendMessage(message.channel, message.content, userData, quidData, userData._id, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
 				.catch(error => { console.error(error); });
+			if (!isSuccessful) { return; }
 
-			message
-				.delete()
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						console.error(error);
-					}
-				});
+			if (await hasPermission(message.guild.members.me || message.client.user.id, message.channel, 'ManageMessages')) {
+
+				await message.delete();
+			}
+			else if (await hasPermission(message.guild.members.me || message.client.user.id, message.channel, message.channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) {
+
+				await message.reply(getMissingPermissionContent(permissionDisplay.ManageMessages));
+			}
 		}
 	},
 };

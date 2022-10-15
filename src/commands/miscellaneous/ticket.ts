@@ -5,6 +5,7 @@ import { CustomClient, SlashCommand } from '../../typedef';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
+import { hasPermission } from '../../utils/permissionHandler';
 const { error_color, default_color, github_token, ticket_channel_id } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -87,7 +88,7 @@ export async function createNewTicket(
 			.fetch(ticket_channel_id)
 			.catch(() => { return null; });
 
-		if (serverChannel !== null && serverChannel.isTextBased() && !serverChannel.isDMBased() && serverChannel.guild.members.me?.permissionsIn(serverChannel.id).has('ViewChannel') && serverChannel.guild.members.me?.permissionsIn(serverChannel.id).has('SendMessages')) { return serverChannel; }
+		if (serverChannel !== null && serverChannel.isTextBased() && !serverChannel.isDMBased() && await hasPermission(serverChannel.guild.members.me ?? serverChannel.client.user.id, serverChannel, 'ViewChannel') && await hasPermission(serverChannel.guild.members.me ?? serverChannel.client.user.id, serverChannel, serverChannel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) { return serverChannel; }
 
 		let ownerId = '';
 		if (client.isReady()) {

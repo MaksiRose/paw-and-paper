@@ -6,6 +6,7 @@ import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
 import { hasName, isInGuild } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
+import { missingPermissions } from '../../utils/permissionHandler';
 const { error_color, default_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -67,6 +68,9 @@ export async function shopInteractionCollector(
 	}
 	else if (selectOptionId && selectOptionId.startsWith('shop_')) {
 
+		if (await missingPermissions(interaction, [
+			'ManageRoles', // Needed to give out roles configured in this shop
+		]) === true) { return; }
 		const roleId = getArrayElement(selectOptionId.split('_'), 1);
 		const buyItem = serverData.shop.find((shopRole) => shopRole.roleId === roleId);
 		if (buyItem === undefined) { throw new Error('roleId is undefined or could not be found in server shop'); }

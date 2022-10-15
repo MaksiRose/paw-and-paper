@@ -16,6 +16,7 @@ import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { getHighestItem, remindOfAttack } from '../gameplay_primary/attack';
 import { pickPlant } from '../../utils/simulateItemUse';
+import { missingPermissions } from '../../utils/permissionHandler';
 const { error_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -33,6 +34,11 @@ export const command: SlashCommand = {
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData1, serverData, embedArray) => {
+
+		if (await missingPermissions(interaction, [
+			'ViewChannel', // Needed because of createCommandComponentDisabler
+			/* 'ViewChannel',*/ interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
+		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
@@ -102,7 +108,7 @@ export const command: SlashCommand = {
 				.setFooter({ text: 'The game that is being played is memory, meaning that a player has to uncover two cards, If the emojis match, the cards are left uncovered.' })],
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId(`adventure_confirm_${mentionedUser.id}_@${interaction.user.id}`)
+					.setCustomId(`adventure_confirm_@${mentionedUser.id}_@${interaction.user.id}`)
 					.setLabel('Start adventure')
 					.setEmoji('🧭')
 					.setStyle(ButtonStyle.Success))],
@@ -118,6 +124,10 @@ export async function adventureInteractionCollector(
 	interaction: ButtonInteraction,
 	serverData: ServerSchema | null,
 ): Promise<void> {
+
+	if (await missingPermissions(interaction, [
+		'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
+	]) === true) { return; }
 
 	if (!interaction.customId.includes('confirm')) { return; }
 	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
@@ -165,7 +175,7 @@ export async function adventureInteractionCollector(
 	let profileData1 = getMapData(quidData1.profiles, interaction.guildId);
 
 	/* Gets the current active quid and the server profile from the partners account */
-	const userId2 = getArrayElement(interaction.customId.split('_'), 2);
+	const userId2 = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
 	const userData2 = await userModel.findOne(u => u.userId.includes(userId2));
 	const quidData2 = getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId));
 	let profileData2 = getMapData(quidData2.profiles, interaction.guildId);

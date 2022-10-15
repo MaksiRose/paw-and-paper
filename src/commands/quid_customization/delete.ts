@@ -5,6 +5,7 @@ import userModel from '../../models/userModel';
 import { SlashCommand, UserSchema } from '../../typedef';
 import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
+import { missingPermissions } from '../../utils/permissionHandler';
 const { error_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -17,6 +18,10 @@ export const command: SlashCommand = {
 	disablePreviousCommand: true,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {
+
+		if (await missingPermissions(interaction, [
+			'ViewChannel', // Needed because of createCommandComponentDisabler
+		]) === true) { return; }
 
 		/* Checking if the user has an account. If they do not, it will send a message saying they haave no account. */
 		if (!userData) {

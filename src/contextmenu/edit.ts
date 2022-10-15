@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { respond } from '../utils/helperFunctions';
 import userModel from '../models/userModel';
 import { ContextMenuCommand, WebhookMessages } from '../typedef';
+import { canManageWebhooks, missingPermissions } from '../utils/permissionHandler';
 
 export const command: ContextMenuCommand = {
 	data: {
@@ -11,6 +12,10 @@ export const command: ContextMenuCommand = {
 		dm_permission: false,
 	},
 	sendCommand: async (client, interaction) => {
+
+		if (await missingPermissions(interaction, [
+			'ManageWebhooks', // Needed for webhook interaction
+		]) === true) { return; }
 
 		/* This gets the webhookCache and userData */
 		const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8')) as WebhookMessages;
@@ -61,23 +66,10 @@ export async function sendEditMessageModalResponse(
 	webhook. If the webhook doesn't exist, it will create one. */
 	const webhookChannel = (interaction.channel.isThread() || false) ? interaction.channel.parent : interaction.channel;
 	if (webhookChannel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
-	if (webhookChannel.type === ChannelType.DM) { throw new Error('Webhook can\'t be edited, channel is DMChannel.'); }
-	const webhook = (await webhookChannel
-		.fetchWebhooks()
-		.catch(async (error) => {
-			if (error.httpStatus === 403) {
-				await interaction.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw err; });
-			}
-			throw error;
-		})
-	).find(webhook => webhook.name === 'PnP Profile Webhook') || await webhookChannel
-		.createWebhook({ name: 'PnP Profile Webhook' })
-		.catch(async (error) => {
-			if (error.httpStatus === 403) {
-				await interaction.channel?.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw err; });
-			}
-			throw error;
-		});
+	if (webhookChannel.type === ChannelType.DM || interaction.channel.type === ChannelType.DM) { throw new Error('Webhook can\'t be edited, channel is DMChannel.'); }
+	if (await canManageWebhooks(interaction.channel) === false) { return; }
+	const webhook = (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
+		|| await webhookChannel.createWebhook({ name: 'PnP Profile Webhook' });
 
 	/* This is editing the message with the messageId that was passed in the customId. */
 	const webhookMessage = await webhook

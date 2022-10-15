@@ -6,6 +6,7 @@ import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasCooldown, isPassedOut } from '../../utils/checkValidity';
 import { pronoun, pronounAndPlural, upperCasePronoun } from '../../utils/getPronouns';
 import { getMapData, getQuidDisplayname, respond, sendErrorMessage } from '../../utils/helperFunctions';
+import { missingPermissions } from '../../utils/permissionHandler';
 import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
@@ -48,6 +49,10 @@ export async function startResting(
 	profileData: Profile,
 	serverData: ServerSchema,
 ) {
+
+	if (await missingPermissions(interaction, [
+		'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call
+	]) === true) { return; }
 
 	const messageContent = remindOfAttack(interaction.guildId);
 

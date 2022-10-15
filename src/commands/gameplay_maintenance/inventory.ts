@@ -5,6 +5,7 @@ import { hasCooldown } from '../../utils/checkValidity';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import getInventoryElements from '../../utils/getInventoryElements';
 import { getArrayElement, getMapData, respond, update } from '../../utils/helperFunctions';
+import { missingPermissions } from '../../utils/permissionHandler';
 import { remindOfAttack } from '../gameplay_primary/attack';
 import { sendEatMessage } from './eat';
 const { default_color } = require('../../../config.json');
@@ -47,6 +48,10 @@ export async function showInventoryMessage(
 	showMaterialsPage = true,
 	subPage?: number,
 ) {
+
+	if (await missingPermissions(interaction, [
+		'ViewChannel', // Needed because of createCommandComponentDisabler
+	]) === true) { return; }
 
 	const messageContent = remindOfAttack(interaction.guildId);
 

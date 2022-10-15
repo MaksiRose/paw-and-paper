@@ -1,4 +1,4 @@
-import { Attachment, EmbedBuilder, MessageReference, NewsChannel, PrivateThreadChannel, PublicThreadChannel, SlashCommandBuilder, TextChannel, VoiceChannel } from 'discord.js';
+import { Attachment, EmbedBuilder, GuildTextBasedChannel, MessageReference, SlashCommandBuilder } from 'discord.js';
 import { getQuidDisplayname, respond } from '../../utils/helperFunctions';
 import { Quid, CurrentRegionType, SlashCommand, WebhookMessages, UserSchema } from '../../typedef';
 import { hasName, isInGuild } from '../../utils/checkUserState';
@@ -6,6 +6,7 @@ import { getMapData } from '../../utils/helperFunctions';
 const { error_color } = require('../../../config.json');
 import userModel from '../../models/userModel';
 import { readFileSync, writeFileSync } from 'fs';
+import { canManageWebhooks, getMissingPermissionContent, hasPermission, missingPermissions, permissionDisplay } from '../../utils/permissionHandler';
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -25,6 +26,10 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {
 
+		if (await missingPermissions(interaction, [
+			'ManageWebhooks', // Needed for webhook interaction
+		]) === true) { return; }
+
 		if (!isInGuild(interaction)) { return; }
 		if (!hasName(interaction, userData)) { return; }
 
@@ -43,9 +48,21 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		await sendMessage(interaction.channel, text, userData, quidData, userData._id, interaction.user.id, attachment ? [attachment] : undefined);
+		if (interaction.channel === null) {
+
+			await respond(interaction, {
+				embeds: [new EmbedBuilder()
+					.setColor(error_color)
+					.setTitle('The channel that this interaction came from couldn\'t be found :(')],
+				ephemeral: true,
+			}, false);
+			return;
+		}
+
+		const isSuccessful = await sendMessage(interaction.channel, text, userData, quidData, userData._id, interaction.user.id, attachment ? [attachment] : undefined);
 
 		await interaction.deferReply();
+		if (!isSuccessful) { return; }
 		await interaction.deleteReply();
 	},
 };
@@ -62,7 +79,7 @@ export const command: SlashCommand = {
  * @returns Nothing
  */
 export async function sendMessage(
-	channel: NewsChannel | TextChannel | PublicThreadChannel | PrivateThreadChannel | VoiceChannel | null,
+	channel: GuildTextBasedChannel,
 	text: string,
 	userData: UserSchema,
 	quidData: Quid,
@@ -70,26 +87,14 @@ export async function sendMessage(
 	authorId: string,
 	attachments?: Array<Attachment>,
 	reference?: MessageReference,
-): Promise<void> {
+): Promise<boolean> {
 
-	const webhookChannel = (channel && channel.isThread()) ? channel.parent : channel;
-	if (webhookChannel === null || channel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
-	const webhook = (await webhookChannel
-		.fetchWebhooks()
-		.catch(async (error) => {
-			if (error.status === 403) {
-				await channel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw err; });
-			}
-			throw error;
-		})
-	).find(webhook => webhook.name === 'PnP Profile Webhook') || await webhookChannel
-		.createWebhook({ name: 'PnP Profile Webhook' })
-		.catch(async (error) => {
-			if (error.status === 403) {
-				await channel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw err; });
-			}
-			throw error;
-		});
+	if (await canManageWebhooks(channel) === false) { return false; }
+
+	const webhookChannel = channel.isThread() ? channel.parent : channel;
+	if (webhookChannel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
+	const webhook = (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
+		|| await webhookChannel.createWebhook({ name: 'PnP Profile Webhook' });
 
 	if (quidData.profiles[webhookChannel.guildId] !== undefined) {
 
@@ -109,6 +114,17 @@ export async function sendMessage(
 	const embeds: Array<EmbedBuilder> = [];
 
 	if (reference && reference.messageId) {
+
+		const botMember = channel.guild.members.me || await channel.guild.members.fetchMe({ force: false });
+
+		if (await hasPermission(botMember || channel.client.user.id, channel.id, 'ReadMessageHistory') === false) {
+
+			if (await hasPermission(channel.guild.members.me || channel.client.user.id, channel, channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) {
+
+				await channel.send(getMissingPermissionContent(permissionDisplay.ReadMessageHistory));
+			}
+			return false;
+		}
 
 		const referencedMessage = await channel?.messages.fetch(reference.messageId);
 		const member = referencedMessage.member;
@@ -138,5 +154,5 @@ export async function sendMessage(
 	webhookCache[botMessage.id] = authorId + (quidData?._id !== undefined ? `_${quidData?._id}` : '');
 	writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
 
-	return;
+	return true;
 }

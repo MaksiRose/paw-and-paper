@@ -10,6 +10,7 @@ import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { pronoun, pronounAndPlural, upperCasePronoun } from '../../utils/getPronouns';
 import { getMapData, getQuidDisplayname, respond } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
+import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
 import { isResting } from '../gameplay_maintenance/rest';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -32,6 +33,10 @@ export const command: SlashCommand = {
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData1, serverData, embedArray) => {
+
+		if (await missingPermissions(interaction, [
+			'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
+		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }

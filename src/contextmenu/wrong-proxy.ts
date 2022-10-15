@@ -4,6 +4,7 @@ import userModel from '../models/userModel';
 import { ContextMenuCommand, UserSchema, WebhookMessages } from '../typedef';
 import { disableAllComponents } from '../utils/componentDisabling';
 import { getArrayElement, getMapData, getQuidDisplayname, respond, update } from '../utils/helperFunctions';
+import { canManageWebhooks, missingPermissions } from '../utils/permissionHandler';
 
 export const command: ContextMenuCommand = {
 	data: {
@@ -69,10 +70,15 @@ export async function wrongproxyInteractionCollector(
 	userData: UserSchema | null,
 ): Promise<void> {
 
+	if (await missingPermissions(interaction, [
+		'ViewChannel', 'ReadMessageHistory', // Needed for message fetch call
+		'ManageWebhooks', // Needed for webhook interaction
+	]) === true) { return; }
+
 	if (!interaction.inCachedGuild()) { throw new Error('interaction is not in cached guild'); }
 	if (userData === null) { throw new TypeError('userData is null'); }
 	const selectOptionId = getArrayElement(interaction.values, 0);
-	const targetMessageId = getArrayElement(interaction.customId.split('_'), 2);
+	const targetMessageId = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
 
 	/* Checking if the user has clicked on the "Show more accounts" button, and if they have, it will increase the page number by 1, and if the page number is greater than the total number of pages, it will set the page number to 0. Then, it will edit the bot reply to show the next page of accounts. */
 	if (selectOptionId.includes('nextpage')) {
@@ -98,22 +104,9 @@ export async function wrongproxyInteractionCollector(
 
 		const webhookChannel = (channel && channel.isThread()) ? channel.parent : channel;
 		if (webhookChannel === null || channel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
-		const webhook = (await webhookChannel
-			.fetchWebhooks()
-			.catch(async (error) => {
-				if (error.httpStatus === 403) {
-					await channel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw err; });
-				}
-				throw error;
-			})
-		).find(webhook => webhook.name === 'PnP Profile Webhook') || await webhookChannel
-			.createWebhook({ name: 'PnP Profile Webhook' })
-			.catch(async (error) => {
-				if (error.httpStatus === 403) {
-					await channel.send({ content: 'Please give me permission to create webhooks 😣' }).catch((err) => { throw err; });
-				}
-				throw error;
-			});
+		if (await canManageWebhooks(channel) === false) { return; }
+		const webhook = (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
+			|| await webhookChannel.createWebhook({ name: 'PnP Profile Webhook' });
 
 		const previousMessage = await channel.messages.fetch(targetMessageId);
 		if (previousMessage === undefined) { throw new TypeError('previousMessage is undefined'); }

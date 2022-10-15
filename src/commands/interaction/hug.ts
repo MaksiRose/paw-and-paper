@@ -5,6 +5,7 @@ import { SlashCommand, UserSchema } from '../../typedef';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { getRandomNumber } from '../../utils/randomizers';
+import { missingPermissions } from '../../utils/permissionHandler';
 const { error_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -21,6 +22,10 @@ export const command: SlashCommand = {
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {
+
+		if (await missingPermissions(interaction, [
+			'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
+		]) === true) { return; }
 
 		const quidData = userData ? userData.quids[userData.currentQuid[interaction.guildId || 'DM'] || ''] : undefined;
 		const member = interaction.inCachedGuild() ? await interaction.guild.members.fetch(interaction.user.id).catch(() => { return undefined; }) : undefined;
@@ -70,12 +75,12 @@ export const command: SlashCommand = {
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([
 					new ButtonBuilder()
-						.setCustomId(`hug_accept_${mentionedUser.id}_@${interaction.user.id}`)
+						.setCustomId(`hug_accept_@${mentionedUser.id}_@${interaction.user.id}`)
 						.setLabel('Accept')
 						.setEmoji('🫂')
 						.setStyle(ButtonStyle.Success),
 					new ButtonBuilder()
-						.setCustomId(`hug_decline_${mentionedUser.id}_@${interaction.user.id}`)
+						.setCustomId(`hug_decline_@${mentionedUser.id}_@${interaction.user.id}`)
 						.setLabel('Decline')
 						.setStyle(ButtonStyle.Danger),
 				])],
@@ -90,6 +95,10 @@ export async function hugInteractionCollector(
 	interaction: ButtonInteraction,
 	partnerUserData: UserSchema | null,
 ): Promise<void> {
+
+	if (await missingPermissions(interaction, [
+		'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
+	]) === true) { return; }
 
 	const originalUserId = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
 	const originalUser = originalUserId ? await interaction.client.users.fetch(originalUserId).catch(() => { return undefined; }) : undefined;

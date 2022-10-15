@@ -379,3 +379,11 @@ export function getQuidDisplayname(
 	const tag = user.tag.servers[serverId] || user.tag.global || '';
 	return (quid.nickname.servers[serverId] || quid.nickname.global || quid.name) + (tag ? ` ${tag}` : '');
 }
+
+export function addCommasAndAnd<T>(
+	list: T[],
+) {
+
+	if (list.length < 3) { return list.join(' and '); }
+	return `${list.slice(0, -1).join(', ')}, and ${getArrayElement(list, list.length - 1)}`;
+}

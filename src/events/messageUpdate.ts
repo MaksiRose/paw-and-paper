@@ -3,6 +3,7 @@ import { sendMessage } from '../commands/interaction/say';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
 import { CustomClient, DiscordEvent } from '../typedef';
+import { getMissingPermissionContent, hasPermission, permissionDisplay } from '../utils/permissionHandler';
 import { checkForProxy } from './messageCreate';
 
 export const event: DiscordEvent = {
@@ -24,16 +25,18 @@ export const event: DiscordEvent = {
 
 		if (replaceMessage && (newMessage.content.length > 0 || newMessage.attachments.size > 0)) {
 
-			await sendMessage(newMessage.channel, newMessage.content, userData, quidData, userData._id, newMessage.author.id, newMessage.attachments.size > 0 ? Array.from(newMessage.attachments.values()) : undefined, newMessage.reference ?? undefined)
+			const isSuccessful = await sendMessage(newMessage.channel, newMessage.content, userData, quidData, userData._id, newMessage.author.id, newMessage.attachments.size > 0 ? Array.from(newMessage.attachments.values()) : undefined, newMessage.reference ?? undefined)
 				.catch(error => { console.error(error); });
+			if (!isSuccessful) { return; }
 
-			newMessage
-				.delete()
-				.catch((error) => {
-					if (error.httpStatus !== 404) {
-						console.error(error);
-					}
-				});
+			if (await hasPermission(newMessage.guild.members.me || newMessage.client.user.id, newMessage.channel, 'ManageMessages')) {
+
+				await newMessage.delete();
+			}
+			else if (await hasPermission(newMessage.guild.members.me || newMessage.client.user.id, newMessage.channel, newMessage.channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) {
+
+				await newMessage.reply(getMissingPermissionContent(permissionDisplay.ManageMessages));
+			}
 		}
 	},
 };

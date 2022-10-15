@@ -43,7 +43,7 @@ export async function addFriendshipPoints(
 	if (getFriendshipHearts(previousFriendshipPoints) < getFriendshipHearts(newFriendshipPoints)) {
 
 		await message.channel
-			.send({
+			.send({ // Because of this, everything that calls addFriendshipPoints needs to be permission guarded
 				embeds: [new EmbedBuilder()
 					.setColor(quidData.color)
 					.setAuthor({ name: getQuidDisplayname(userData, quidData, message.guildId ?? ''), iconURL: quidData.avatarURL })

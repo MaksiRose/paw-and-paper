@@ -6,6 +6,7 @@ import { isInvalid } from '../../utils/checkValidity';
 import { pronounAndPlural } from '../../utils/getPronouns';
 import { getMapData, getQuidDisplayname, respond } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
+import { hasPermission } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
@@ -210,6 +211,10 @@ export async function sendReminder(
 
 				const channel = await client.channels.fetch(profileData.sapling.lastMessageChannelId!);
 				if (!channel || !channel.isTextBased() || channel.isDMBased()) { throw new Error('lastMessageChannelId is undefined, not a text based channel or a DM channel'); }
+
+				const member = channel.guild.members.me || await channel.guild.members.fetchMe({ force: false });
+
+				if (await hasPermission(member || channel.client.user.id, channel.id, 'ViewChannel') === false || await hasPermission(member || channel.client.user.id, channel.id, channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages') === false || await hasPermission(member || channel.client.user.id, channel.id, 'EmbedLinks') === false) { return; } // Needed for channel.send call
 
 				/* This has to be changed when multiple users are introduced. First idea is to also store, as part of the sapling object, which user last watered. Then, if that user fails, try again for all the other users. */
 				await channel.guild.members.fetch(userData.userId[0] || '');

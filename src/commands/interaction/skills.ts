@@ -6,6 +6,7 @@ import { Profile, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { isInGuild } from '../../utils/checkUserState';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
+import { missingPermissions } from '../../utils/permissionHandler';
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -22,6 +23,10 @@ export const command: SlashCommand = {
 	disablePreviousCommand: true,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData, serverData) => {
+
+		if (await missingPermissions(interaction, [
+			'ViewChannel', // Needed because of createCommandComponentDisabler
+		]) === true) { return; }
 
 		if (!isInGuild(interaction) || !serverData) { return; }
 

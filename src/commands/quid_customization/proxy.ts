@@ -5,6 +5,7 @@ import { ProxyConfigType, ProxyListType, ServerSchema, SlashCommand, UserSchema 
 import { hasName } from '../../utils/checkUserState';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
+import { missingPermissions } from '../../utils/permissionHandler';
 const { error_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -17,6 +18,10 @@ export const command: SlashCommand = {
 	disablePreviousCommand: true,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {
+
+		if (await missingPermissions(interaction, [
+			'ViewChannel', // Needed because of createCommandComponentDisabler
+		]) === true) { return; }
 
 		/* If the user does not have a quid selected, return. */
 		if (!hasName(interaction, userData)) { return; }

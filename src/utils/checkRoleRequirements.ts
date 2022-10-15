@@ -3,6 +3,7 @@ import { respond } from './helperFunctions';
 import userModel from '../models/userModel';
 import { RankType, ServerSchema, WayOfEarningType } from '../typedef';
 import { getMapData } from './helperFunctions';
+import { missingPermissions } from './permissionHandler';
 const { default_color, error_color } = require('../../config.json');
 
 /**
@@ -54,6 +55,9 @@ export async function checkRankRequirements(
 				/* It's checking if the member has the role. If they don't, it will add it to their roles. */
 				if (!member.roles.cache.has(item.roleId)) {
 
+					if (await missingPermissions(interaction, [
+						'ManageRoles', // Needed to give out roles configured in this shop
+					]) === true) { continue; }
 					await member.roles.add(item.roleId);
 
 					if (sendMessage) {
@@ -124,6 +128,9 @@ export async function checkLevelRequirements(
 				/* It's checking if the member has the role. If they don't, it will add it to their roles. */
 				if (!member.roles.cache.has(item.roleId)) {
 
+					if (await missingPermissions(interaction, [
+						'ManageRoles', // Needed to give out roles configured in this shop
+					]) === true) { continue; }
 					await member.roles.add(item.roleId);
 
 					if (sendMessage) {

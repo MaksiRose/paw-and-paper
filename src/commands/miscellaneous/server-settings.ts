@@ -5,6 +5,7 @@ import userModel from '../../models/userModel';
 import { ProxyListType, RankType, ServerSchema, SlashCommand, WayOfEarningType } from '../../typedef';
 import { checkLevelRequirements, checkRankRequirements } from '../../utils/checkRoleRequirements';
 import { getMapData } from '../../utils/helperFunctions';
+import { missingPermissions } from '../../utils/permissionHandler';
 const { default_color, update_channel_id } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -51,8 +52,11 @@ export async function serversettingsInteractionCollector(
 	}
 
 	/* It's checking if the interaction value or customId includes shop, and sends a message if it does. */
-	if ((interaction.isButton() && interaction.customId.includes('shop')) || (interaction.isSelectMenu() && interaction.values[0] === 'serversettings_shop')) {
+	if ((interaction.isButton() && interaction.customId.startsWith('serversettings_shop_@')) || (interaction.isSelectMenu() && interaction.values[0] === 'serversettings_shop')) {
 
+		if (await missingPermissions(interaction, [
+			'ManageRoles', // Needed to give out roles configured in this shop
+		]) === true) { return; }
 		await update(interaction, await getShopMessage(interaction, serverData, 0));
 		return;
 	}
@@ -85,7 +89,7 @@ export async function serversettingsInteractionCollector(
 
 			await update(interaction, getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role));
 
-			const modalCollector = new InteractionCollector(interaction.client, { channel: interaction.channel || undefined, interactionType: 5, message: interaction.message });
+			const modalCollector = new InteractionCollector(interaction.client, { channel: interaction.channel || undefined, interactionType: InteractionType.ModalSubmit, message: interaction.message });
 
 			const interactionCollector = interaction.message.createMessageComponentCollector({ filter: (i) => i.user.id === interaction.user.id, idle: 1_800_000 }); // idle for 30 minutes
 
@@ -94,9 +98,9 @@ export async function serversettingsInteractionCollector(
 
 					const collectorSelectOptionId = i.isSelectMenu() ? i.values[0] : undefined;
 
-					if (i.isButton() && i.customId === 'serversettings_shop') { interactionCollector.stop('back'); }
+					if (i.isButton() && i.customId.startsWith('serversettings_shop_@')) { interactionCollector.stop('back'); }
 
-					if (i.isSelectMenu() && collectorSelectOptionId && i.customId === 'serversettings_shop_add_options') {
+					if (i.isSelectMenu() && collectorSelectOptionId && i.customId.startsWith('serversettings_shop_add_options')) {
 
 						if (collectorSelectOptionId.startsWith('serversettings_shop_add_nextpage_')) {
 
@@ -109,7 +113,7 @@ export async function serversettingsInteractionCollector(
 							.catch(error => { console.error(error); });
 					}
 
-					if (i.isSelectMenu() && collectorSelectOptionId && i.customId === 'serversettings_shop_wayofearning') {
+					if (i.isSelectMenu() && collectorSelectOptionId && i.customId.startsWith('serversettings_shop_wayofearning')) {
 
 						wayOfEarning = collectorSelectOptionId.replace('serversettings_shop_wayofearning_', '') as WayOfEarningType;
 						requirement = null;
@@ -117,14 +121,14 @@ export async function serversettingsInteractionCollector(
 							.catch(error => { console.error(error); });
 					}
 
-					if (i.isSelectMenu() && collectorSelectOptionId && i.customId === 'serversettings_shop_requirements') {
+					if (i.isSelectMenu() && collectorSelectOptionId && i.customId.startsWith('serversettings_shop_requirements')) {
 
 						requirement = collectorSelectOptionId.replace('serversettings_shop_requirements_', '') as RankType;
 						await update(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role))
 							.catch(error => { console.error(error); });
 					}
 
-					if (i.isButton() && i.customId === 'serversettings_shop_requirementsmodal') {
+					if (i.isButton() && i.customId.startsWith('serversettings_shop_requirementsmodal')) {
 
 						await i
 							.showModal(new ModalBuilder()
@@ -145,7 +149,7 @@ export async function serversettingsInteractionCollector(
 							.catch(error => { console.error(error); });
 					}
 
-					if (i.isButton() && i.customId === 'serversettings_shop_save') {
+					if (i.isButton() && i.customId.startsWith('serversettings_shop_save')) {
 
 						/* Check if role, wayOfEarning or requirement is null */
 						if (role === null || wayOfEarning === null || requirement === null) {
@@ -245,7 +249,7 @@ export async function serversettingsInteractionCollector(
 						interactionCollector.stop('save');
 					}
 
-					if (i.isButton() && i.customId === 'serversettings_shop_delete') {
+					if (i.isButton() && i.customId.startsWith('serversettings_shop_delete')) {
 
 						// deleted shop items must be checked to be deleted/removed for all users
 						// send a success ephemeral message to the user
@@ -376,6 +380,9 @@ export async function serversettingsInteractionCollector(
 	/* It's checking if the interaction value includes updates, and sends a message if it does. */
 	if (interaction.isSelectMenu() && interaction.values[0] === 'serversettings_updates') {
 
+		if (await missingPermissions(interaction, [
+			'ViewChannel', 'ManageWebhooks', // Needed to add the follower
+		]) === true) { return; }
 		await update(interaction, await getUpdateMessage(interaction, serverData, 0));
 		return;
 	}
@@ -416,6 +423,9 @@ export async function serversettingsInteractionCollector(
 	/* It's checking if the interaction value includes visits, and sends a message if it does. */
 	if (interaction.isSelectMenu() && interaction.values[0] === 'serversettings_visits') {
 
+		if (await missingPermissions(interaction, [
+			'ManageWebhooks', // Needed to do visits
+		]) === true) { return; }
 		await update(interaction, await getVisitsMessage(interaction, serverData, 0));
 		return;
 	}

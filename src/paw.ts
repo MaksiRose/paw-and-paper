@@ -16,9 +16,9 @@ export const client = new CustomClient({
 	},
 	makeCache: manager => {
 		if (manager.name === 'GuildMemberManager') {
-			return new LimitedCollection({ maxSize: 0, keepOverLimit: (member) => {
+			return new LimitedCollection({ keepOverLimit: (member) => {
 				const allDocumentNames = readdirSync('./database/profiles').filter(f => f.endsWith('.json'));
-				return allDocumentNames
+				return member.id === member.client.user.id || allDocumentNames
 					.map(documentName => {
 						return JSON.parse(readFileSync(`./database/profiles/${documentName}`, 'utf-8')) as UserSchema;
 					})
@@ -118,15 +118,15 @@ export async function start(
 
 		if (event.once) {
 
-			client.once(event.name, (...args) => {
-				try { event.execute(client, ...args); }
+			client.once(event.name, async (...args) => {
+				try { await event.execute(client, ...args); }
 				catch (error) { console.error(error); }
 			});
 		}
 		else {
 
-			client.on(event.name, (...args) => {
-				try { event.execute(client, ...args); }
+			client.on(event.name, async (...args) => {
+				try { await event.execute(client, ...args); }
 				catch (error) { console.error(error); }
 			});
 		}

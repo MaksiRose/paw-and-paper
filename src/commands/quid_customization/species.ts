@@ -6,6 +6,7 @@ import { hasName } from '../../utils/checkUserState';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
 import { pronoun, upperCasePronoun } from '../../utils/getPronouns';
+import { missingPermissions } from '../../utils/permissionHandler';
 
 const speciesNameArray = (Object.keys(speciesInfo) as SpeciesNames[]).sort();
 
@@ -19,6 +20,10 @@ export const command: SlashCommand = {
 	disablePreviousCommand: true,
 	modifiesServerProfile: false,
 	sendCommand: async (client, interaction, userData) => {
+
+		if (await missingPermissions(interaction, [
+			'ViewChannel', // Needed because of createCommandComponentDisabler
+		]) === true) { return; }
 
 		if (!hasName(interaction, userData)) { return; }
 		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId || 'DM'));
@@ -81,6 +86,10 @@ export async function speciesInteractionCollector(
 	interaction: ButtonInteraction | SelectMenuInteraction,
 	userData: UserSchema | null,
 ): Promise<void> {
+
+	if (await missingPermissions(interaction, [
+		'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call
+	]) === true) { return; }
 
 	const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
 

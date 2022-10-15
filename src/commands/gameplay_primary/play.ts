@@ -11,6 +11,7 @@ import { createFightGame, createPlantGame, plantEmojis } from '../../utils/gameB
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
 import { getMapData, getQuidDisplayname, getSmallerNumber, keyInObject, respond, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
+import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { pickPlant } from '../../utils/simulateItemUse';
 import { isResting } from '../gameplay_maintenance/rest';
@@ -45,6 +46,11 @@ export async function executePlaying(
 	serverData: ServerSchema | null,
 	embedArray: EmbedBuilder[],
 ): Promise<void> {
+
+	if (await missingPermissions(interaction, [
+		'ViewChannel', // Needed because of createCommandComponentDisabler in sendQuestMessage
+		/* 'ViewChannel',*/ interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
+	]) === true) { return; }
 
 	/* This ensures that the user is in a guild and has a completed account. */
 	if (!isInGuild(interaction)) { return; }

@@ -6,6 +6,7 @@ import { hasName, hasSpecies } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { getMapData, getSmallerNumber, respond } from '../../utils/helperFunctions';
+import { missingPermissions } from '../../utils/permissionHandler';
 const { default_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -19,6 +20,10 @@ export const command: SlashCommand = {
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
+
+		if (await missingPermissions(interaction, [
+			'ViewChannel', // Needed because of createCommandComponentDisabler
+		]) === true) { return; }
 
 		if (!hasName(interaction, userData)) { return; }
 

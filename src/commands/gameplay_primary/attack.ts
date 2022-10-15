@@ -11,6 +11,7 @@ import { createFightGame } from '../../utils/gameBuilder';
 import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
 import { getMapData, getQuidDisplayname, getSmallerNumber, KeyOfUnion, respond, sendErrorMessage, unsafeKeys, update, ValueOf, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
+import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 const { default_color } = require('../../../config.json');
 
@@ -41,6 +42,10 @@ export async function executeAttacking(
 	serverData: ServerSchema | null,
 	embedArray: EmbedBuilder[],
 ): Promise<void> {
+
+	if (await missingPermissions(interaction, [
+		'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in remainingHumans
+	]) === true) { return; }
 
 	/* This ensures that the user is in a guild and has a completed account. */
 	if (!isInGuild(interaction)) { return; }
@@ -307,10 +312,14 @@ export async function executeAttacking(
  * @param {number} humanCount
  * @returns {void}
  */
-export function startAttack(
+export async function startAttack(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	humanCount: number,
-): void {
+): Promise<void> {
+
+	if (await missingPermissions(interaction, [
+		'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in remainingHumans
+	]) === true) { return; }
 
 	serverMap.set(interaction.guildId, { startsTimestamp: Date.now() + 120_000, idleHumans: humanCount, endingTimeout: null, ongoingFights: 0 });
 	setTimeout(async function() {

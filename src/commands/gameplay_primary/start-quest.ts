@@ -7,6 +7,7 @@ import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural } from '../../utils/getPronouns';
 import { getMapData, getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
+import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, generateWinChance } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
 const { error_color } = require('../../../config.json');
@@ -22,6 +23,10 @@ export const command: SlashCommand = {
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
+
+		if (await missingPermissions(interaction, [
+			'ViewChannel', // Needed because of createCommandComponentDisabler in sendQuestMessage
+		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
@@ -140,6 +145,7 @@ export async function sendQuestMessage(
 				.setStyle(ButtonStyle.Success))],
 	}, true);
 
+	/* The View Channels permissions that are needed for this function to work properly should be checked in all places that reference sendQuestMessage. It can't be checked for in here directly because a botReply must be returned. */
 	createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
 
 	return await (botReply as Message<true>)

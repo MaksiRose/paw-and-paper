@@ -13,6 +13,7 @@ import getInventoryElements from '../../utils/getInventoryElements';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
 import { getArrayElement, getMapData, getQuidDisplayname, getSmallerNumber, keyInObject, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
+import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -208,6 +209,11 @@ export async function getHealResponse(
 	inventoryPage: 1 | 2 = 1,
 	item?: CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | 'water',
 ): Promise<void> {
+
+	if (await missingPermissions(interaction, [
+		'ViewChannel', // Needed because of createCommandComponentDisabler
+		/* 'ViewChannel',*/ interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
+	]) === true) { return; }
 
 	/* Gets the current active quid and the server profile from the account */
 	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));

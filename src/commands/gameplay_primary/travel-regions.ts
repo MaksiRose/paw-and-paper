@@ -6,6 +6,7 @@ import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
 import { getMapData, getQuidDisplayname, respond, update, valueInObject } from '../../utils/helperFunctions';
+import { missingPermissions } from '../../utils/permissionHandler';
 import { sendDrinkMessage } from '../gameplay_maintenance/drink';
 import { getHealResponse } from '../gameplay_maintenance/heal';
 import { showInventoryMessage } from '../gameplay_maintenance/inventory';
@@ -38,6 +39,10 @@ export const command: SlashCommand = {
 	disablePreviousCommand: true,
 	modifiesServerProfile: false, // This is technically true, but it's set to false because it does not necessarily reflect your actual activity
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
+
+		if (await missingPermissions(interaction, [
+			'ViewChannel', // Needed because of createCommandComponentDisabler in sendQuestMessage
+		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }

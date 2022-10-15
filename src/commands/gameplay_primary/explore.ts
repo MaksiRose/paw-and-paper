@@ -16,6 +16,7 @@ import { sendQuestMessage } from './start-quest';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { calculateInventorySize, pickMaterial, pickMeat, pickPlant, simulateMeatUse, simulatePlantUse } from '../../utils/simulateItemUse';
+import { missingPermissions } from '../../utils/permissionHandler';
 
 type Position = { row: number, column: number; };
 
@@ -64,6 +65,11 @@ export async function executeExploring(
 	serverData: ServerSchema | null,
 	embedArray: EmbedBuilder[],
 ): Promise<void> {
+
+	if (await missingPermissions(interaction, [
+		'ViewChannel', // Needed because of createCommandComponentDisabler in sendQuestMessage
+		/* 'ViewChannel',*/ interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', 'EmbedLinks', // Needed for channel.send call in remainingHumans called by startAttack
+	]) === true) { return; }
 
 	/* This ensures that the user is in a guild and has a completed account. */
 	if (!isInGuild(interaction)) { return; }
@@ -320,7 +326,7 @@ export async function executeExploring(
 
 		// The numerator is the amount of items above 7 per profile, the denominator is the amount of profiles
 		const humanCount = Math.round((serverInventoryCount - (highRankProfilesCount * 7)) / highRankProfilesCount);
-		startAttack(interaction, humanCount);
+		await startAttack(interaction, humanCount);
 
 		messageContent = serverActiveUsersMap.get(interaction.guildId)?.map(user => `<@${user}>`).join(' ') ?? '';
 		embed.setDescription(`*${quidData.name} has just been looking around for food when ${pronounAndPlural(quidData, 0, 'suddenly hear')} voices to ${pronoun(quidData, 2)} right. Cautiously ${pronounAndPlural(quidData, 0, 'creep')} up, and sure enough: a group of humans! It looks like it's around ${humanCount}. They seem to be discussing something, and keep pointing over towards where the pack is lying. Alarmed, the ${quidData.displayedSpecies || quidData.species} runs away. **${upperCasePronoun(quidData, 0)} must gather as many packmates as possible to protect the pack!***`);

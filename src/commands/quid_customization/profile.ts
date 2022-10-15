@@ -8,6 +8,7 @@ import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
 import { hasCooldown, isResting } from '../../utils/checkValidity';
 import { getMapData } from '../../utils/helperFunctions';
 import { disableCommandComponent } from '../../utils/componentDisabling';
+import { hasPermission, missingPermissions } from '../../utils/permissionHandler';
 const { error_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -133,6 +134,10 @@ export async function profileInteractionCollector(
 	client: CustomClient,
 	interaction: ButtonInteraction | SelectMenuInteraction,
 ): Promise<void> {
+
+	if (await missingPermissions(interaction, [
+		'ViewChannel', // Needed because of disableCommandComponent
+	]) === true) { return; }
 
 	const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
 
@@ -279,6 +284,7 @@ export async function profileInteractionCollector(
 
 					for (const role of newProfileData.roles) {
 
+						if (await hasPermission(interaction.guild.members.me ?? interaction.client.user.id, interaction.channelId, 'ManageRoles') === false) { break; }
 						if (!member.roles.cache.has(role.roleId)) { await member.roles.add(role.roleId); }
 					}
 				}
@@ -292,6 +298,7 @@ export async function profileInteractionCollector(
 
 				for (const role of oldQuidData?.profiles?.[interaction?.guildId]?.roles || []) {
 
+					if (await hasPermission(interaction.guild.members.me ?? interaction.client.user.id, interaction.channelId, 'ManageRoles') === false) { break; }
 					const isInNewRoles = newQuidData?.profiles[interaction.guildId]?.roles.some(r => r.roleId === role.roleId && r.wayOfEarning === role.wayOfEarning && r.requirement === role.requirement) || false;
 					if (!isInNewRoles && member.roles.cache.has(role.roleId)) { await member.roles.remove(role.roleId); }
 				}

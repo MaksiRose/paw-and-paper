@@ -5,6 +5,7 @@ import { Quid, Profile, ServerSchema, UserSchema, WayOfEarningType } from '../ty
 import { checkLevelRequirements, checkRoleCatchBlock } from './checkRoleRequirements';
 import { getMapData } from './helperFunctions';
 import { upperCasePronounAndPlural } from './getPronouns';
+import { missingPermissions } from './permissionHandler';
 const { default_color } = require('../../config.json');
 
 /**
@@ -118,6 +119,9 @@ export async function decreaseLevel(
 			/* It's checking if the user has the role, and if they do, it will remove it and send a message to the user. */
 			if (member.roles.cache.has(role.roleId)) {
 
+				if (await missingPermissions(interaction, [
+					'ManageRoles', // Needed to give out roles configured in this shop
+				]) === true) { continue; }
 				await member.roles.remove(role.roleId);
 
 				await respond(interaction, {

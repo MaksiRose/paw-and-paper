@@ -11,6 +11,7 @@ import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
 import { getArrayElement, getBiggerNumber, getMapData, getQuidDisplayname, getSmallerNumber, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
+import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
@@ -37,6 +38,11 @@ export const command: SlashCommand = {
 	disablePreviousCommand: true,
 	modifiesServerProfile: false, // This is technically true, but set to false because it does not reflect activity
 	sendCommand: async (client, interaction, userData1, serverData, embedArray) => {
+
+		if (await missingPermissions(interaction, [
+			'ViewChannel', // Needed because of createCommandComponentDisabler
+			/* 'ViewChannel',*/ interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
+		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
@@ -89,7 +95,7 @@ export const command: SlashCommand = {
 				.setFooter({ text: `The game that is being played is ${gameType}.` })],
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId(`playfight_confirm_${gameType.replace(/\s+/g, '').toLowerCase()}_${mentionedUser.id}_@${interaction.user.id}`)
+					.setCustomId(`playfight_confirm_${gameType.replace(/\s+/g, '').toLowerCase()}_@${mentionedUser.id}_@${interaction.user.id}`)
 					.setLabel('Accept challenge')
 					.setEmoji('🎭')
 					.setStyle(ButtonStyle.Success))],
@@ -118,7 +124,7 @@ export async function playfightInteractionCollector(
 	let profileData1 = getMapData(quidData1.profiles, interaction.guildId);
 
 	/* Gets the current active quid and the server profile from the partners account */
-	const userId2 = getArrayElement(interaction.customId.split('_'), 3);
+	const userId2 = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
 	let userData2 = await userModel.findOne(u => u.userId.includes(userId2));
 	let quidData2 = getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId));
 	let profileData2 = getMapData(quidData2.profiles, interaction.guildId);

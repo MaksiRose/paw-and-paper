@@ -7,6 +7,7 @@ import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { pronoun } from '../../utils/getPronouns';
 import { getArrayElement, getMapData, getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
+import { missingPermissions } from '../../utils/permissionHandler';
 import { remindOfAttack } from './attack';
 
 export const command: SlashCommand = {
@@ -20,6 +21,10 @@ export const command: SlashCommand = {
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
 	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
+
+		if (await missingPermissions(interaction, [
+			'ViewChannel', // Needed because of createCommandComponentDisabler
+		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }

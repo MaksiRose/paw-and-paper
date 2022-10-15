@@ -7,6 +7,7 @@ import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
 import { pronoun, upperCasePronounAndPlural } from '../../utils/getPronouns';
 import { getMapData, widenValues, unsafeKeys, respond, update, getQuidDisplayname, getArrayElement } from '../../utils/helperFunctions';
+import { missingPermissions } from '../../utils/permissionHandler';
 import { calculateInventorySize } from '../../utils/simulateItemUse';
 import { remindOfAttack } from '../gameplay_primary/attack';
 
@@ -53,6 +54,10 @@ export async function sendStoreMessage(
 	serverData: ServerSchema,
 	embedArray: EmbedBuilder[],
 ): Promise<void> {
+
+	if (await missingPermissions(interaction, [
+		'ViewChannel', // Needed because of createCommandComponentDisabler
+	]) === true) { return; }
 
 	const messageContent = remindOfAttack(interaction.guildId);
 
