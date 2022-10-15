@@ -52,7 +52,7 @@ export const command: SlashCommand = {
 					new EmbedBuilder()
 						.setColor(error_color)
 						.setTitle('You have no open quests at the moment :(')
-						.setFooter({ text: `Go ${profileData.rank === RankType.Youngling ? 'playing' : 'exploring'} to get a quest!` }),
+						.setFooter({ text: `Go ${profileData.rank === RankType.Youngling ? 'playing' : 'exploring'} for a chance to get a quest!` }),
 				],
 			}, true);
 			return;
