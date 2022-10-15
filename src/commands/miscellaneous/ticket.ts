@@ -1,11 +1,12 @@
 import { Octokit } from '@octokit/rest';
-import { EmbedBuilder, SlashCommandBuilder, Team, User, ActionRowBuilder, ButtonBuilder, ButtonStyle, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ModalMessageModalSubmitInteraction, ChatInputCommandInteraction, AttachmentBuilder, Client } from 'discord.js';
+import { EmbedBuilder, SlashCommandBuilder, Team, User, ActionRowBuilder, ButtonBuilder, ButtonStyle, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ModalMessageModalSubmitInteraction, ChatInputCommandInteraction, AttachmentBuilder } from 'discord.js';
 import { getArrayElement, respond, update } from '../../utils/helperFunctions';
 import { SlashCommand } from '../../typedef';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
 import { hasPermission } from '../../utils/permissionHandler';
+import { client } from '../..';
 const { error_color, default_color, github_token, ticket_channel_id } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -37,7 +38,7 @@ export const command: SlashCommand = {
 	position: 2,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction) => {
+	sendCommand: async (interaction) => {
 
 		/* Checking if the ticket is empty. If it is, it will send an error message. */
 		const title = interaction.options.getString('title');
@@ -58,12 +59,11 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		await createNewTicket(client, interaction, title, description, label, attachmentURL, ticketId);
+		await createNewTicket(interaction, title, description, label, attachmentURL, ticketId);
 	},
 };
 
 export async function createNewTicket(
-	client: Client,
 	interaction: ChatInputCommandInteraction | ButtonInteraction,
 	title: string,
 	description: string,

@@ -1,11 +1,9 @@
-import { Client } from 'discord.js';
 import { sendReminder } from '../commands/gameplay_maintenance/water-tree';
 import userModel from '../models/userModel';
 import { getMapData } from '../utils/helperFunctions';
 
 /** It updates each profile to have no cooldown, not rest, and maximum energy, and then it executes the sendReminder function for each profile for which the sapling exists and where lastMessageChannelId is a string, if the user has enabled water reminders */
 export async function execute(
-	client: Client,
 ): Promise<void> {
 
 	const users = await userModel.find();
@@ -30,7 +28,7 @@ export async function execute(
 		if (userData.settings.reminders.water === true) {
 			for (const quid of Object.values(userData.quids)) {
 				for (const profile of Object.values(quid.profiles)) {
-					if (profile.sapling.exists && typeof profile.sapling.lastMessageChannelId === 'string' && !profile.sapling.sentReminder) { await sendReminder(client, userData, quid, profile); }
+					if (profile.sapling.exists && typeof profile.sapling.lastMessageChannelId === 'string' && !profile.sapling.sentReminder) { await sendReminder(userData, quid, profile); }
 				}
 			}
 		}

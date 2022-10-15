@@ -37,7 +37,7 @@ export const command: SlashCommand = {
 	position: 2,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false, // This is technically true, but set to false because it does not reflect activity
-	sendCommand: async (client, interaction, userData1, serverData, embedArray) => {
+	sendCommand: async (interaction, userData1, serverData, embedArray) => {
 
 		if (await missingPermissions(interaction, [
 			'ViewChannel', // Needed because of createCommandComponentDisabler

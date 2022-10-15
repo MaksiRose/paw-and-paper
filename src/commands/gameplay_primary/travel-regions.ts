@@ -38,7 +38,7 @@ export const command: SlashCommand = {
 	position: 4,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false, // This is technically true, but it's set to false because it does not necessarily reflect your actual activity
-	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
+	sendCommand: async (interaction, userData, serverData, embedArray) => {
 
 		if (await missingPermissions(interaction, [
 			'ViewChannel', // Needed because of createCommandComponentDisabler in sendQuestMessage

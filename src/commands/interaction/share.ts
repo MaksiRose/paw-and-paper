@@ -32,7 +32,7 @@ export const command: SlashCommand = {
 	position: 1,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendCommand: async (client, interaction, userData1, serverData, embedArray) => {
+	sendCommand: async (interaction, userData1, serverData, embedArray) => {
 
 		if (await missingPermissions(interaction, [
 			'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints

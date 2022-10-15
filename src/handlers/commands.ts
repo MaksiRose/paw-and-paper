@@ -2,12 +2,10 @@ import { RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v9';
 import { lstatSync, readdirSync } from 'fs';
 import { ContextMenuCommand, SlashCommand } from '../typedef';
 import path from 'path';
-import { handle } from '..';
-import { Client } from 'discord.js';
+import { client, handle } from '..';
 
 /** Adds all commands to the client */
 export async function execute(
-	client: Client,
 ): Promise<void> {
 
 	if (!client.application) { return; }

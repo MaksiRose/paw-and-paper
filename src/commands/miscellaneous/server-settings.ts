@@ -19,7 +19,7 @@ export const command: SlashCommand = {
 	position: 1,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction, userData, serverData) => {
+	sendCommand: async (interaction, userData, serverData) => {
 
 		// It should give you a message with the a drop-down of menus:
 		// shop (which has add, delete, edit), updates, visits, proxying (which as only disable all or disable auto right now)
@@ -89,7 +89,7 @@ export async function serversettingsInteractionCollector(
 
 			await update(interaction, getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role));
 
-			const modalCollector = new InteractionCollector(interaction.client, { channel: interaction.channel || undefined, interactionType: InteractionType.ModalSubmit, message: interaction.message });
+			const modalCollector = new InteractionCollector(interaction.{ channel: interaction.channel || undefined, interactionType: InteractionType.ModalSubmit, message: interaction.message });
 
 			const interactionCollector = interaction.message.createMessageComponentCollector({ filter: (i) => i.user.id === interaction.user.id, idle: 1_800_000 }); // idle for 30 minutes
 

@@ -1,10 +1,9 @@
-import { Client } from 'discord.js';
+import { client } from '..';
 import serverModel from '../models/serverModel';
 import { createGuild } from '../utils/updateGuild';
 
 /** It updates the database to reflect the current state of the servers */
 export async function execute(
-	client: Client,
 ): Promise<void> {
 
 	/* This updates each server to set currentlyVisiting to null. */
@@ -29,7 +28,7 @@ export async function execute(
 			},
 		).catch(async () => {
 			const guild = await client.guilds.fetch(OAuth2Guild.id);
-			await createGuild(client, guild)
+			await createGuild(guild)
 				.catch(async (error) => { console.error(error); });
 		});
 	}

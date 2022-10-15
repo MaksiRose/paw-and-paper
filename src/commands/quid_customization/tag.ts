@@ -17,7 +17,7 @@ export const command: SlashCommand = {
 	position: 8,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction, userData, serverData) => {
+	sendCommand: async (interaction, userData, serverData) => {
 
 		if (!hasName(interaction, userData)) { return; }
 

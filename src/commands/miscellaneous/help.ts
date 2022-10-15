@@ -1,7 +1,7 @@
-import { ActionRowBuilder, APIEmbedField, Client, EmbedBuilder, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, APIEmbedField, EmbedBuilder, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { getArrayElement, respond, update } from '../../utils/helperFunctions';
 import { SlashCommand } from '../../typedef';
-import { handle } from '../..';
+import { client, handle } from '../..';
 
 const { default_color, maksi, ezra, ren, jags, elliott, hazenith, johanna, sky, asriel } = require('../../../config.json');
 const { version } = require('../../../package.json');
@@ -15,7 +15,7 @@ export const command: SlashCommand = {
 	position: 0,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction, userData) => {
+	sendCommand: async (interaction, userData) => {
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
@@ -39,7 +39,6 @@ export const command: SlashCommand = {
 };
 
 export async function helpInteractionCollector(
-	client: Client,
 	interaction: SelectMenuInteraction,
 ): Promise<void> {
 

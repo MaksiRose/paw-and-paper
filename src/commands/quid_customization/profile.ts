@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonInteraction, Client, EmbedBuilder, GuildMember, InteractionReplyOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, GuildMember, InteractionReplyOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
 import { capitalizeString, getArrayElement, getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
@@ -9,6 +9,7 @@ import { hasCooldown, isResting } from '../../utils/checkValidity';
 import { getMapData } from '../../utils/helperFunctions';
 import { disableCommandComponent } from '../../utils/componentDisabling';
 import { hasPermission, missingPermissions } from '../../utils/permissionHandler';
+import { client } from '../..';
 const { error_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -24,7 +25,7 @@ export const command: SlashCommand = {
 	position: 9,
 	disablePreviousCommand: false, // This command has checks in place that only change something if no other command is active
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
+	sendCommand: async (interaction, userData, serverData, embedArray) => {
 
 		/* Getting userData and quidData either for mentionedUser if there is one or for interaction user otherwise */
 		const mentionedUser = interaction.options.getUser('user');
@@ -48,7 +49,7 @@ export const command: SlashCommand = {
 		/* Checking if the user has a cooldown. */
 		else if (quidData && interaction.inCachedGuild() && await hasCooldown(interaction, userData, quidData)) { return; }
 
-		const response = await getMessageContent(client, mentionedUser?.id || interaction.user.id, userData, quidData, !mentionedUser, embedArray, interaction.guildId ?? '');
+		const response = await getMessageContent(mentionedUser?.id || interaction.user.id, userData, quidData, !mentionedUser, embedArray, interaction.guildId ?? '');
 		const selectMenu = getAccountsPage(userData, mentionedUser?.id || interaction.user.id, interaction.user.id, 0, !mentionedUser);
 
 		await respond(interaction, {
@@ -68,7 +69,6 @@ export const command: SlashCommand = {
  * @returns The message object.
  */
 export async function getMessageContent(
-	client: Client,
 	userId: string,
 	userData: UserSchema,
 	quidData: Quid | undefined,
@@ -131,7 +131,6 @@ function getAccountsPage(
 }
 
 export async function profileInteractionCollector(
-	client: Client,
 	interaction: ButtonInteraction | SelectMenuInteraction,
 ): Promise<void> {
 
@@ -310,7 +309,7 @@ export async function profileInteractionCollector(
 		await interaction
 			.editReply({
 				// we can interaction.user.id because the "switchto" option is only available to yourself
-				...await getMessageContent(client, interaction.user.id, userData, newQuidData, userData.userId.includes(interaction.user.id), [], interaction.guildId ?? ''),
+				...await getMessageContent(interaction.user.id, userData, newQuidData, userData.userId.includes(interaction.user.id), [], interaction.guildId ?? ''),
 				components: interaction.message.components,
 			});
 
@@ -333,7 +332,7 @@ export async function profileInteractionCollector(
 		const quidData = userData.quids[_id];
 
 		await update(interaction, {
-			...await getMessageContent(client, userId, userData, quidData, userData.userId.includes(interaction.user.id), [], interaction.guildId ?? ''),
+			...await getMessageContent(userId, userData, quidData, userData.userId.includes(interaction.user.id), [], interaction.guildId ?? ''),
 			components: interaction.message.components,
 		});
 		return;

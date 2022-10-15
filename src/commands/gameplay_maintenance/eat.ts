@@ -30,7 +30,7 @@ export const command: SlashCommand = {
 	position: 3,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendAutocomplete: async (client, interaction, userData, serverData) => {
+	sendAutocomplete: async (interaction, userData, serverData) => {
 
 		if (!serverData) { return; }
 		const focusedValue = interaction.options.getFocused();
@@ -53,7 +53,7 @@ export const command: SlashCommand = {
 			choices.slice(0, 25).map(choice => ({ name: choice, value: choice })),
 		);
 	},
-	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
+	sendCommand: async (interaction, userData, serverData, embedArray) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }

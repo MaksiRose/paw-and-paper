@@ -7,7 +7,7 @@ import { getMapData } from '../utils/helperFunctions';
 export const event: DiscordEvent = {
 	name: 'roleDelete',
 	once: false,
-	async execute(client, role: Role) {
+	async execute(role: Role) {
 
 		const serverData = await serverModel.findOne(s => s.serverId === role.guild.id);
 		const roles = serverData.shop.filter(shoprole => shoprole.roleId === role.id);

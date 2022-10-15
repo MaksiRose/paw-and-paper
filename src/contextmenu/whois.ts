@@ -11,7 +11,7 @@ export const command: ContextMenuCommand = {
 		type: 3,
 		dm_permission: false,
 	},
-	sendCommand: async (client, interaction) => {
+	sendCommand: async (interaction) => {
 
 		/* This shouldn't happen as dm_permission is false. */
 		if (!interaction.inCachedGuild()) {
@@ -71,7 +71,7 @@ export const command: ContextMenuCommand = {
 			}])
 			.setTimestamp(new Date())];
 
-		const response = await getMessageContent(client, userId, userData, quidData, userData.userId.includes(interaction.user.id), embedArray, interaction.guildId);
+		const response = await getMessageContent(userId, userData, quidData, userData.userId.includes(interaction.user.id), embedArray, interaction.guildId);
 
 		await respond(interaction, {
 			...response,

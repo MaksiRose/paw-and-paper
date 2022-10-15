@@ -9,7 +9,7 @@ import { checkForProxy } from './messageCreate';
 export const event: DiscordEvent = {
 	name: 'messageUpdate',
 	once: false,
-	async execute(client, oldMessage: Message, newMessage: Message) {
+	async execute(oldMessage: Message, newMessage: Message) {
 
 		if (newMessage.author.bot || !newMessage.inGuild()) { return; }
 

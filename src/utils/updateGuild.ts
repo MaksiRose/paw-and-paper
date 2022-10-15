@@ -1,6 +1,7 @@
 import { generateId } from 'crystalid';
-import { Client, Guild } from 'discord.js';
+import { Guild } from 'discord.js';
 import { readdirSync, readFileSync, renameSync, writeFileSync } from 'fs';
+import { client } from '..';
 import serverModel from '../models/serverModel';
 import { BanList, commonPlantsInfo, DeleteList, materialsInfo, ProxyListType, rarePlantsInfo, ServerSchema, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../typedef';
 
@@ -8,7 +9,6 @@ import { BanList, commonPlantsInfo, DeleteList, materialsInfo, ProxyListType, ra
  * This creates a new guild if the guild isn't on the ban list, or restores it from the guilds that are to be deleted.
  */
 export async function createGuild(
-	client: Client,
 	guild: Guild,
 ): Promise<ServerSchema> {
 

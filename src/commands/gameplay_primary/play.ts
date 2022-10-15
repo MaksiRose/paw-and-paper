@@ -34,7 +34,7 @@ export const command: SlashCommand = {
 	position: 0,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
+	sendCommand: async (interaction, userData, serverData, embedArray) => {
 
 		await executePlaying(interaction, userData, serverData, embedArray);
 	},

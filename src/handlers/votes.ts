@@ -5,12 +5,10 @@ import express from 'express';
 import { readFileSync, writeFileSync } from 'fs';
 import AutoPoster from 'topgg-autoposter';
 import { Api, Webhook } from '@top-gg/sdk';
-import { Client } from 'discord.js';
-import { handle } from '..';
+import { client, handle } from '..';
 
 /** Updates server count on vote websites, starts event listeners to store successful votes, and adds structure to client to request individual votes */
 export async function execute(
-	client: Client,
 ): Promise<void> {
 
 	const limiter = rateLimit({

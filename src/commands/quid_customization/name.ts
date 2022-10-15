@@ -23,7 +23,7 @@ export const command: SlashCommand = {
 	position: 0,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction, userData, serverData) => {
+	sendCommand: async (interaction, userData, serverData) => {
 
 		let newAccount = false;
 		/* This is checking if the user has any data saved in the database. If they don't, it will create a new user. */

@@ -1,4 +1,5 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Client, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { client } from '../..';
 import userModel from '../../models/userModel';
 import { Profile, Quid, SlashCommand, UserSchema } from '../../typedef';
 import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
@@ -27,7 +28,7 @@ export const command: SlashCommand = {
 	position: 9,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false, // This is technically true, but it's set to false because it's a task that you get reminded to do daily and does not reflect your actual activity
-	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
+	sendCommand: async (interaction, userData, serverData, embedArray) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (!isInGuild(interaction)) { return; }
@@ -143,7 +144,7 @@ export const command: SlashCommand = {
 					.setStyle(ButtonStyle.Secondary))],
 		}, true);
 
-		if (userData.settings.reminders.water) { await sendReminder(client, userData, quidData, profileData); }
+		if (userData.settings.reminders.water) { await sendReminder(userData, quidData, profileData); }
 
 		if (profileData.sapling.health <= 0) {
 
@@ -169,7 +170,6 @@ export const command: SlashCommand = {
 };
 
 export async function sendReminder(
-	client: Client,
 	userData: UserSchema,
 	quidData: Quid<true>,
 	profileData: Profile,

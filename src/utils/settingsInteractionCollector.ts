@@ -1,11 +1,10 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, Client } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle } from 'discord.js';
 import { sendReminder, stopReminder } from '../commands/gameplay_maintenance/water-tree';
 import userModel from '../models/userModel';
 import { UserSchema } from '../typedef';
 import { respond, update } from './helperFunctions';
 
 export default async function settingsInteractionCollector(
-	client: Client,
 	interaction: ButtonInteraction,
 	userData: UserSchema | null,
 ): Promise<void> {
@@ -35,7 +34,7 @@ export default async function settingsInteractionCollector(
 
 						if (isOn) {
 
-							if (profile.sapling.exists && typeof profile.sapling.lastMessageChannelId === 'string' && !profile.sapling.sentReminder) { sendReminder(client, userData, quid, profile); }
+							if (profile.sapling.exists && typeof profile.sapling.lastMessageChannelId === 'string' && !profile.sapling.sentReminder) { sendReminder(userData, quid, profile); }
 						}
 						else { stopReminder(quid._id, interaction.guildId); }
 					}

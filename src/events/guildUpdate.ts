@@ -5,7 +5,7 @@ import { DiscordEvent } from '../typedef';
 export const event: DiscordEvent = {
 	name: 'guildUpdate',
 	once: false,
-	async execute(client, oldGuild: Guild, newGuild: Guild) {
+	async execute(oldGuild: Guild, newGuild: Guild) {
 
 		await serverModel.findOneAndUpdate(
 			s => s.serverId === newGuild.id,

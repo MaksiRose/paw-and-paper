@@ -11,7 +11,7 @@ import { createGuild } from '../utils/updateGuild';
 export const event: DiscordEvent = {
 	name: 'messageCreate',
 	once: false,
-	async execute(client, message: Message) {
+	async execute(message: Message) {
 
 		if (message.author.bot || !message.inGuild()) { return; }
 
@@ -28,7 +28,7 @@ export const event: DiscordEvent = {
 		/* Checking if the serverData is null. If it is null, it will create a guild. */
 		if (!serverData && message.inGuild()) {
 
-			serverData = await createGuild(client, message.guild)
+			serverData = await createGuild(message.guild)
 				.catch(async (error) => {
 					console.error(error);
 					return null;

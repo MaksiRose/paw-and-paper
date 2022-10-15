@@ -26,7 +26,7 @@ export const command: SlashCommand = {
 	position: 7,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendAutocomplete: async (client, interaction, userData) => {
+	sendAutocomplete: async (interaction, userData) => {
 
 		const focusedValue = interaction.options.getFocused();
 
@@ -55,7 +55,7 @@ export const command: SlashCommand = {
 			choices.slice(0, 25).map(choice => ({ name: choice, value: choice })),
 		);
 	},
-	sendCommand: async (client, interaction, userData) => {
+	sendCommand: async (interaction, userData) => {
 
 		const sides = interaction.options.getNumber('sides') ?? 6;
 		const multiplier = interaction.options.getNumber('multiplier') ?? 1;

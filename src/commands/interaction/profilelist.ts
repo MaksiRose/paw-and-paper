@@ -22,7 +22,7 @@ export const command: SlashCommand = {
 	position: 5,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction) => {
+	sendCommand: async (interaction) => {
 
 		if (!isInGuild(interaction)) { return; }
 

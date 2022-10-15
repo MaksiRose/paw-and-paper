@@ -42,7 +42,7 @@ import { executeExploring, command as exploreCommand } from '../commands/gamepla
 import { executeAttacking, command as attackCommand } from '../commands/gameplay_primary/attack';
 import { wrongproxyInteractionCollector } from '../contextmenu/wrong-proxy';
 import { missingPermissions } from '../utils/permissionHandler';
-import { handle } from '..';
+import { client, handle } from '../index';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
@@ -53,7 +53,7 @@ export const serverActiveUsersMap: Map<string, string[]> = new Map();
 export const event: DiscordEvent = {
 	name: 'interactionCreate',
 	once: false,
-	async execute(client, interaction: Interaction) {
+	async execute(interaction: Interaction) {
 		try {
 
 			/* This is only null when in DM without CHANNEL partial, or when channel cache is sweeped. Therefore, this is technically unsafe since this value could become null after this check. This scenario is unlikely though. */
@@ -73,7 +73,7 @@ export const event: DiscordEvent = {
 			}
 
 			/* Checking if the serverData is null. If it is null, it will create a guild. */
-			if (!serverData && interaction.inCachedGuild()) { serverData = await createGuild(client, interaction.guild); }
+			if (!serverData && interaction.inCachedGuild()) { serverData = await createGuild(interaction.guild); }
 
 			if (interaction.isRepliable() && interaction.inRawGuild()) {
 
@@ -96,7 +96,7 @@ export const event: DiscordEvent = {
 				if (command === undefined || !keyInObject(command, 'sendAutocomplete')) { return; }
 
 				/* It's sending the autocomplete message. */
-				await command.sendAutocomplete?.(client, interaction, userData, serverData);
+				await command.sendAutocomplete?.(interaction, userData, serverData);
 				return;
 			}
 
@@ -134,7 +134,7 @@ export const event: DiscordEvent = {
 
 				/* This sends the command and error message if an error occurs. */
 				console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully executed \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-				await command.sendCommand(client, interaction, userData, serverData, []);
+				await command.sendCommand(interaction, userData, serverData, []);
 
 				if (interaction.inGuild()) {
 
@@ -194,7 +194,7 @@ export const event: DiscordEvent = {
 
 				/* This sends the command and error message if an error occurs. */
 				console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully executed \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-				await command.sendCommand(client, interaction);
+				await command.sendCommand(interaction);
 				return;
 			}
 
@@ -252,7 +252,7 @@ export const event: DiscordEvent = {
 
 					if (interaction.customId.startsWith('help_')) {
 
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, helpInteractionCollector, [client, interaction]);
+						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, helpInteractionCollector, [interaction]);
 						return;
 					}
 
@@ -308,7 +308,7 @@ export const event: DiscordEvent = {
 								return;
 							}
 
-							await createNewTicket(client, interaction, `Error ${errorId}`, description, 'bug', null, errorId);
+							await createNewTicket(interaction, `Error ${errorId}`, description, 'bug', null, errorId);
 							delete errorStacks[errorId];
 							writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
 
@@ -354,7 +354,7 @@ export const event: DiscordEvent = {
 
 					if (interaction.customId.startsWith('settings_')) {
 
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, settingsInteractionCollector, [client, interaction, userData]);
+						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, settingsInteractionCollector, [interaction, userData]);
 						return;
 					}
 
@@ -415,7 +415,7 @@ export const event: DiscordEvent = {
 
 				if (interaction.customId.startsWith('profile_')) {
 
-					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, profileInteractionCollector, [client, interaction]);
+					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, profileInteractionCollector, [interaction]);
 					return;
 				}
 

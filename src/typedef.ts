@@ -1,4 +1,4 @@
-import { AutocompleteInteraction, Client, MessageContextMenuCommandInteraction, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { AutocompleteInteraction, MessageContextMenuCommandInteraction, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 import { RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v10';
 
 export interface SlashCommand {
@@ -8,13 +8,13 @@ export interface SlashCommand {
 	/** Best practice is that only commands that immediately return without any form of interaction (Button, Select Menu, Modal) that changes something in the database are set to false. */
 	disablePreviousCommand: boolean;
 	modifiesServerProfile: boolean;
-	sendCommand: (client: Client, interaction: ChatInputCommandInteraction, userData: UserSchema | null, serverData: ServerSchema | null, embedArray: Array<EmbedBuilder>) => Promise<void>;
-	sendAutocomplete?: (client: Client, interaction: AutocompleteInteraction, userData: UserSchema | null, serverData: ServerSchema | null) => Promise<void>;
+	sendCommand: (interaction: ChatInputCommandInteraction, userData: UserSchema | null, serverData: ServerSchema | null, embedArray: Array<EmbedBuilder>) => Promise<void>;
+	sendAutocomplete?: (interaction: AutocompleteInteraction, userData: UserSchema | null, serverData: ServerSchema | null) => Promise<void>;
 }
 
 export interface ContextMenuCommand {
 	data: RESTPostAPIApplicationCommandsJSONBody;
-	sendCommand: (client: Client, interaction: MessageContextMenuCommandInteraction) => Promise<void>;
+	sendCommand: (interaction: MessageContextMenuCommandInteraction) => Promise<void>;
 }
 
 export interface Votes {
@@ -406,7 +406,7 @@ export interface DiscordEvent {
 	name: string;
 	/** Whether the event should be executed once */
 	once: boolean;
-	execute: (client: Client, ...args: Array<any>) => Promise<void>;
+	execute: (...args: Array<any>) => Promise<void>;
 }
 
 

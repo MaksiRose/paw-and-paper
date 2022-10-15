@@ -35,7 +35,7 @@ export const command: SlashCommand = {
 	position: 2,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendAutocomplete: async (client, interaction, userData, serverData) => {
+	sendAutocomplete: async (interaction, userData, serverData) => {
 
 		if (!serverData || !interaction.inGuild()) { return; }
 		if (!userData) { return; }
@@ -53,7 +53,7 @@ export const command: SlashCommand = {
 			choices.slice(0, 25).map(choice => ({ name: choice, value: choice })),
 		);
 	},
-	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
+	sendCommand: async (interaction, userData, serverData, embedArray) => {
 
 		await executeExploring(interaction, userData, serverData, embedArray);
 	},
