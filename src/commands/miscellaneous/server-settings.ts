@@ -89,7 +89,7 @@ export async function serversettingsInteractionCollector(
 
 			await update(interaction, getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role));
 
-			const modalCollector = new InteractionCollector(interaction.{ channel: interaction.channel || undefined, interactionType: InteractionType.ModalSubmit, message: interaction.message });
+			const modalCollector = new InteractionCollector(interaction.client, { channel: interaction.channel || undefined, interactionType: InteractionType.ModalSubmit, message: interaction.message });
 
 			const interactionCollector = interaction.message.createMessageComponentCollector({ filter: (i) => i.user.id === interaction.user.id, idle: 1_800_000 }); // idle for 30 minutes
 

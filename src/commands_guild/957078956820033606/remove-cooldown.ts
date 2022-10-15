@@ -3,6 +3,7 @@ import { respond } from '../../utils/helperFunctions';
 import { SlashCommand } from '../../typedef';
 import userModel from '../../models/userModel';
 import { cooldownMap } from '../../events/interactionCreate';
+import { client } from '../..';
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
