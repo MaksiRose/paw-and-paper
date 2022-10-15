@@ -1,6 +1,6 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Client, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import userModel from '../../models/userModel';
-import { CustomClient, Profile, Quid, SlashCommand, UserSchema } from '../../typedef';
+import { Profile, Quid, SlashCommand, UserSchema } from '../../typedef';
 import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { pronounAndPlural } from '../../utils/getPronouns';
@@ -169,7 +169,7 @@ export const command: SlashCommand = {
 };
 
 export async function sendReminder(
-	client: CustomClient,
+	client: Client,
 	userData: UserSchema,
 	quidData: Quid<true>,
 	profileData: Profile,

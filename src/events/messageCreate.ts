@@ -3,7 +3,7 @@ import { sendMessage } from '../commands/interaction/say';
 // import { sendVisitMessage } from '../commands/interaction/requestvisit';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
-import { CustomClient, DiscordEvent, ProxyConfigType, ProxyListType, Quid, ServerSchema, UserSchema } from '../typedef';
+import { DiscordEvent, ProxyConfigType, ProxyListType, Quid, ServerSchema, UserSchema } from '../typedef';
 import { getMapData } from '../utils/helperFunctions';
 import { getMissingPermissionContent, hasPermission, permissionDisplay } from '../utils/permissionHandler';
 import { createGuild } from '../utils/updateGuild';
@@ -11,7 +11,7 @@ import { createGuild } from '../utils/updateGuild';
 export const event: DiscordEvent = {
 	name: 'messageCreate',
 	once: false,
-	async execute(client: CustomClient, message: Message) {
+	async execute(client, message: Message) {
 
 		if (message.author.bot || !message.inGuild()) { return; }
 

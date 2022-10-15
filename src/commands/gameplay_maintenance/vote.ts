@@ -1,7 +1,8 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
+import { handle } from '../..';
 import userModel from '../../models/userModel';
-import { CustomClient, SlashCommand, UserSchema, VoteList } from '../../typedef';
+import { SlashCommand, UserSchema, VoteList } from '../../typedef';
 import { hasName, hasSpecies } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
@@ -73,7 +74,6 @@ export const command: SlashCommand = {
 };
 
 export async function voteInteractionCollector(
-	client: CustomClient,
 	interaction: SelectMenuInteraction,
 	userData: UserSchema | null,
 ): Promise<void> {
@@ -87,12 +87,12 @@ export async function voteInteractionCollector(
 	const successfulTopVote = interaction.values[0] === 'top.gg'
 		&& (
 			(voteCache['id_' + interaction.user.id]?.lastRecordedTopVote ?? 0) > Date.now() - twelveHoursInMs
-			|| await client.votes.top?.client?.hasVoted(interaction.user.id)
+			|| await handle.votes.top?.client?.hasVoted(interaction.user.id)
 		);
 	const redeemedTopVote = successfulTopVote
 		&& Date.now() <= (voteCache['id_' + interaction.user.id]?.nextRedeemableTopVote || Date.now());
 
-	const discordsVote: { voted: boolean, votes: Array<{ expires: number; }>; } | undefined = await client.votes.bfd?.client?.checkVote(interaction.user.id);
+	const discordsVote: { voted: boolean, votes: Array<{ expires: number; }>; } | undefined = await handle.votes.bfd?.client?.checkVote(interaction.user.id);
 	const successfulDiscordsVote = interaction.values[0] === 'discords.com'
 		&& (
 			(voteCache['id_' + interaction.user.id]?.lastRecordedDiscordsVote ?? 0) > Date.now() - twelveHoursInMs

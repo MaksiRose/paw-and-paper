@@ -1,11 +1,11 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, Client } from 'discord.js';
 import { sendReminder, stopReminder } from '../commands/gameplay_maintenance/water-tree';
 import userModel from '../models/userModel';
-import { CustomClient, UserSchema } from '../typedef';
+import { UserSchema } from '../typedef';
 import { respond, update } from './helperFunctions';
 
 export default async function settingsInteractionCollector(
-	client: CustomClient,
+	client: Client,
 	interaction: ButtonInteraction,
 	userData: UserSchema | null,
 ): Promise<void> {

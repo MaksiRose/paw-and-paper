@@ -2,14 +2,14 @@ import { Message } from 'discord.js';
 import { sendMessage } from '../commands/interaction/say';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
-import { CustomClient, DiscordEvent } from '../typedef';
+import { DiscordEvent } from '../typedef';
 import { getMissingPermissionContent, hasPermission, permissionDisplay } from '../utils/permissionHandler';
 import { checkForProxy } from './messageCreate';
 
 export const event: DiscordEvent = {
 	name: 'messageUpdate',
 	once: false,
-	async execute(client: CustomClient, oldMessage: Message, newMessage: Message) {
+	async execute(client, oldMessage: Message, newMessage: Message) {
 
 		if (newMessage.author.bot || !newMessage.inGuild()) { return; }
 

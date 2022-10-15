@@ -1,10 +1,10 @@
+import { Client } from 'discord.js';
 import serverModel from '../models/serverModel';
-import { CustomClient } from '../typedef';
 import { createGuild } from '../utils/updateGuild';
 
 /** It updates the database to reflect the current state of the servers */
 export async function execute(
-	client: CustomClient,
+	client: Client,
 ): Promise<void> {
 
 	/* This updates each server to set currentlyVisiting to null. */

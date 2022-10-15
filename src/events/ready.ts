@@ -1,12 +1,12 @@
 import { readdirSync } from 'fs';
-import { CustomClient, DiscordEvent } from '../typedef';
+import { DiscordEvent } from '../typedef';
 import { ActivityType } from 'discord.js';
 import path from 'path';
 
 export const event: DiscordEvent = {
 	name: 'ready',
 	once: true,
-	async execute(client: CustomClient) {
+	async execute(client) {
 
 		/* Logging to the console that the bot is online and setting the bot's activity. */
 		console.log('Paw and Paper is online!');

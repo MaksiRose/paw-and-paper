@@ -1,7 +1,7 @@
 import { Octokit } from '@octokit/rest';
-import { EmbedBuilder, SlashCommandBuilder, Team, User, ActionRowBuilder, ButtonBuilder, ButtonStyle, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ModalMessageModalSubmitInteraction, ChatInputCommandInteraction, AttachmentBuilder } from 'discord.js';
+import { EmbedBuilder, SlashCommandBuilder, Team, User, ActionRowBuilder, ButtonBuilder, ButtonStyle, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ModalMessageModalSubmitInteraction, ChatInputCommandInteraction, AttachmentBuilder, Client } from 'discord.js';
 import { getArrayElement, respond, update } from '../../utils/helperFunctions';
-import { CustomClient, SlashCommand } from '../../typedef';
+import { SlashCommand } from '../../typedef';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
@@ -63,7 +63,7 @@ export const command: SlashCommand = {
 };
 
 export async function createNewTicket(
-	client: CustomClient,
+	client: Client,
 	interaction: ChatInputCommandInteraction | ButtonInteraction,
 	title: string,
 	description: string,

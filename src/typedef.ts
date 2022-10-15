@@ -1,6 +1,4 @@
-import { Api } from '@top-gg/sdk';
-import { AutocompleteInteraction, Client, ClientOptions, MessageContextMenuCommandInteraction, ChatInputCommandInteraction, EmbedBuilder, Collection } from 'discord.js';
-const bfd = require('bfd-api-redux/src/main');
+import { AutocompleteInteraction, Client, MessageContextMenuCommandInteraction, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 import { RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v10';
 
 export interface SlashCommand {
@@ -10,38 +8,19 @@ export interface SlashCommand {
 	/** Best practice is that only commands that immediately return without any form of interaction (Button, Select Menu, Modal) that changes something in the database are set to false. */
 	disablePreviousCommand: boolean;
 	modifiesServerProfile: boolean;
-	sendCommand: (client: CustomClient, interaction: ChatInputCommandInteraction, userData: UserSchema | null, serverData: ServerSchema | null, embedArray: Array<EmbedBuilder>) => Promise<void>;
-	sendAutocomplete?: (client: CustomClient, interaction: AutocompleteInteraction, userData: UserSchema | null, serverData: ServerSchema | null) => Promise<void>;
+	sendCommand: (client: Client, interaction: ChatInputCommandInteraction, userData: UserSchema | null, serverData: ServerSchema | null, embedArray: Array<EmbedBuilder>) => Promise<void>;
+	sendAutocomplete?: (client: Client, interaction: AutocompleteInteraction, userData: UserSchema | null, serverData: ServerSchema | null) => Promise<void>;
 }
 
 export interface ContextMenuCommand {
 	data: RESTPostAPIApplicationCommandsJSONBody;
-	sendCommand: (client: CustomClient, interaction: MessageContextMenuCommandInteraction) => Promise<void>;
+	sendCommand: (client: Client, interaction: MessageContextMenuCommandInteraction) => Promise<void>;
 }
 
 export interface Votes {
 	token: string;
 	authorization: string;
 	client: unknown;
-}
-
-export class CustomClient extends Client {
-
-	slashCommands: Collection<string, SlashCommand>;
-	contextMenuCommands: Collection<string, ContextMenuCommand>;
-	votes: {
-		bfd?: Votes & { client: typeof bfd; },
-		top?: Votes & { client: Api | null; },
-		dbl?: Votes & { client: null; };
-	};
-
-	constructor(options: ClientOptions) {
-
-		super(options);
-		this.slashCommands = new Collection();
-		this.contextMenuCommands = new Collection();
-		this.votes = {};
-	}
 }
 
 /** This object holds references to guilds and users that cannot make accounts in their respective Arrays. */
@@ -427,7 +406,7 @@ export interface DiscordEvent {
 	name: string;
 	/** Whether the event should be executed once */
 	once: boolean;
-	execute: (client: CustomClient, ...args: Array<any>) => Promise<void>;
+	execute: (client: Client, ...args: Array<any>) => Promise<void>;
 }
 
 

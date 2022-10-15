@@ -42,6 +42,7 @@ import { executeExploring, command as exploreCommand } from '../commands/gamepla
 import { executeAttacking, command as attackCommand } from '../commands/gameplay_primary/attack';
 import { wrongproxyInteractionCollector } from '../contextmenu/wrong-proxy';
 import { missingPermissions } from '../utils/permissionHandler';
+import { handle } from '..';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
@@ -91,7 +92,7 @@ export const event: DiscordEvent = {
 
 				/* Getting the command from the client and checking if the command is undefined.
 				If it is, it will error. */
-				const command = client.slashCommands.get(interaction.commandName);
+				const command = handle.slashCommands.get(interaction.commandName);
 				if (command === undefined || !keyInObject(command, 'sendAutocomplete')) { return; }
 
 				/* It's sending the autocomplete message. */
@@ -102,7 +103,7 @@ export const event: DiscordEvent = {
 			if (interaction.isChatInputCommand()) {
 
 				/* Getting the command from the client and checking if the command is undefined. If it is, it will error. */
-				const command = client.slashCommands.get(interaction.commandName);
+				const command = handle.slashCommands.get(interaction.commandName);
 				if (command === undefined || !keyInObject(command, 'sendCommand')) { return await sendErrorMessage(interaction, new Error('Unknown command')); }
 
 				/* If the user is not registered in the cooldown map, it's setting the cooldown to false for the user. */
@@ -188,7 +189,7 @@ export const event: DiscordEvent = {
 
 				/* Getting the command from the client and checking if the command is undefined.
 				If it is, it will error. */
-				const command = client.contextMenuCommands.get(interaction.commandName);
+				const command = handle.contextMenuCommands.get(interaction.commandName);
 				if (command === undefined || !keyInObject(command, 'sendCommand')) { return await sendErrorMessage(interaction, new Error('Unknown command')); }
 
 				/* This sends the command and error message if an error occurs. */
@@ -269,7 +270,7 @@ export const event: DiscordEvent = {
 
 					if (interaction.customId.startsWith('vote_')) {
 
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, voteInteractionCollector, [client, interaction, userData]);
+						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, voteInteractionCollector, [interaction, userData]);
 						return;
 					}
 

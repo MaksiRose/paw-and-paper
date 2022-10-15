@@ -1,8 +1,8 @@
-import { ActionRowBuilder, ButtonInteraction, EmbedBuilder, GuildMember, InteractionReplyOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonInteraction, Client, EmbedBuilder, GuildMember, InteractionReplyOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
 import { capitalizeString, getArrayElement, getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
-import { Quid, commonPlantsInfo, CurrentRegionType, CustomClient, materialsInfo, RankType, rarePlantsInfo, SlashCommand, specialPlantsInfo, speciesInfo, uncommonPlantsInfo, UserSchema } from '../../typedef';
+import { Quid, commonPlantsInfo, CurrentRegionType, materialsInfo, RankType, rarePlantsInfo, SlashCommand, specialPlantsInfo, speciesInfo, uncommonPlantsInfo, UserSchema } from '../../typedef';
 import { hasName } from '../../utils/checkUserState';
 import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
 import { hasCooldown, isResting } from '../../utils/checkValidity';
@@ -68,7 +68,7 @@ export const command: SlashCommand = {
  * @returns The message object.
  */
 export async function getMessageContent(
-	client: CustomClient,
+	client: Client,
 	userId: string,
 	userData: UserSchema,
 	quidData: Quid | undefined,
@@ -131,7 +131,7 @@ function getAccountsPage(
 }
 
 export async function profileInteractionCollector(
-	client: CustomClient,
+	client: Client,
 	interaction: ButtonInteraction | SelectMenuInteraction,
 ): Promise<void> {
 
