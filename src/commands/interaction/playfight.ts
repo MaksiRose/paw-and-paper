@@ -1,15 +1,16 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
-import userModel from '../../models/userModel';
-import { CurrentRegionType, Profile, Quid, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
+import userModel, { getUserData } from '../../models/userModel';
+import { ServerSchema } from '../../typings/data/server';
+import { CurrentRegionType, UserData } from '../../typings/data/user';
+import { SlashCommand } from '../../typings/handle';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
-import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
+import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
-import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getArrayElement, getBiggerNumber, getMapData, getQuidDisplayname, getSmallerNumber, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
+import { capitalizeString, getArrayElement, getBiggerNumber, getMapData, getSmallerNumber, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
@@ -37,7 +38,7 @@ export const command: SlashCommand = {
 	position: 2,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false, // This is technically true, but set to false because it does not reflect activity
-	sendCommand: async (interaction, userData1, serverData, embedArray) => {
+	sendCommand: async (interaction, userData1) => {
 
 		if (await missingPermissions(interaction, [
 			'ViewChannel', // Needed because of createCommandComponentDisabler
@@ -45,16 +46,11 @@ export const command: SlashCommand = {
 		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (!isInGuild(interaction)) { return; }
-		if (!hasName(interaction, userData1)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData1, interaction)) { return; }
 
-		/* Gets the current active quid and the server profile from the account */
-		const quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
-		const profileData1 = getMapData(quidData1.profiles, interaction.guildId);
-		if (!hasSpecies(interaction, quidData1)) { return; }
-
-		/* Checks if the profile is on a cooldown, passed out, or resting. */
-		if (await isInvalid(interaction, userData1, quidData1, profileData1, embedArray)) { return; }
+		/* Checks if the profile is resting, on a cooldown or passed out. */
+		const restEmbed = await isInvalid(interaction, userData1);
+		if (restEmbed === false) { return; }
 
 		/* Define messageContent as the return of remindOfAttack */
 		const messageContent = remindOfAttack(interaction.guildId);
@@ -68,18 +64,18 @@ export const command: SlashCommand = {
 
 			await respond(interaction, {
 				content: messageContent,
-				embeds: [...embedArray, new EmbedBuilder()
-					.setColor(quidData1.color)
-					.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
-					.setDescription(`*${quidData1.name} believes that ${pronounAndPlural(quidData1, 0, 'is', 'are')} so unmatched that only ${pronoun(quidData1, 0)} could defeat ${pronoun(quidData1, 4)}. But it doesn't take ${pronoun(quidData1, 1)} long to realize that it is more fun to fight a partner after all.*`)],
+				embeds: [...restEmbed, new EmbedBuilder()
+					.setColor(userData1.quid.color)
+					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
+					.setDescription(`*${userData1.quid.name} believes that ${userData1.quid.pronounAndPlural(0, 'is', 'are')} so unmatched that only ${userData1.quid.pronoun(0)} could defeat ${userData1.quid.pronoun(4)}. But it doesn't take ${userData1.quid.pronoun(1)} long to realize that it is more fun to fight a partner after all.*`)],
 			}, false);
 			return;
 		}
 
 		/* Define the partners user data, check if the user is interactable, and if they are, define quid data and profile data. */
-		const userData2 = await userModel.findOne(u => u.userId.includes(mentionedUser.id)).catch(() => { return null; });
-		if (!isInteractable(interaction, userData2, messageContent, embedArray)) { return; }
-		const quidData2 = getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId));
+		const _userData2 = await userModel.findOne(u => u.userId.includes(mentionedUser.id)).catch(() => { return null; });
+		const userData2 = _userData2 === null ? null : getUserData(_userData2, interaction.guildId, getMapData(_userData2.quids, getMapData(_userData2.currentQuid, interaction.guildId)));
+		if (!isInteractable(interaction, userData2, messageContent, restEmbed)) { return; }
 
 		/* Gets the selected game type. */
 		const gameType = interaction.options.getString('gametype');
@@ -88,10 +84,10 @@ export const command: SlashCommand = {
 		/* Sending a message asking the other player if they want to play, with a button to start the adventure. */
 		const botReply = await respond(interaction, {
 			content: `${mentionedUser.toString()}\n${messageContent}`,
-			embeds: [...embedArray, new EmbedBuilder()
-				.setColor(quidData1.color)
-				.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
-				.setDescription(`*${quidData1.name} hangs around the prairie when ${quidData2.name} comes by. The ${quidData2.displayedSpecies || quidData2.species} has things to do but ${quidData1.name}'s smug expression implies ${pronoun(quidData2, 0)} wouldn't be able to beat the ${quidData1.displayedSpecies || quidData1.species}.*`)
+			embeds: [...restEmbed, new EmbedBuilder()
+				.setColor(userData1.quid.color)
+				.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
+				.setDescription(`*${userData1.quid.name} hangs around the prairie when ${userData2.quid.name} comes by. The ${userData2.quid.getDisplayspecies()} has things to do but ${userData1.quid.name}'s smug expression implies ${userData2.quid.pronoun(0)} wouldn't be able to beat the ${userData1.quid.getDisplayspecies()}.*`)
 				.setFooter({ text: `The game that is being played is ${gameType}.` })],
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
@@ -113,21 +109,21 @@ export async function playfightInteractionCollector(
 ): Promise<void> {
 
 	if (!interaction.customId.includes('confirm')) { return; }
-	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild.'); }
+	if (serverData === null) { throw new Error('serverData is null'); }
+	if (!isInGuild(interaction)) { return; }
 	if (interaction.channel === null) { throw new Error('Interaction channel is null'); }
-	if (serverData === null) { throw new TypeError('serverData is null'); }
 
 	/* Gets the current active quid and the server profile from the account */
 	const userId1 = getArrayElement(interaction.customId.split('_'), 4).replace('@', '');
-	let userData1 = await userModel.findOne(u => u.userId.includes(userId1));
-	let quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
-	let profileData1 = getMapData(quidData1.profiles, interaction.guildId);
+	const _userData1 = await userModel.findOne(u => u.userId.includes(userId1));
+	const userData1 = getUserData(_userData1, interaction.guildId, getMapData(_userData1.quids, getMapData(_userData1.currentQuid, interaction.guildId)));
+	if (!hasNameAndSpecies(userData1)) { throw new Error('userData1.quid.species is empty string'); }
 
 	/* Gets the current active quid and the server profile from the partners account */
 	const userId2 = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
-	let userData2 = await userModel.findOne(u => u.userId.includes(userId2));
-	let quidData2 = getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId));
-	let profileData2 = getMapData(quidData2.profiles, interaction.guildId);
+	const _userData2 = await userModel.findOne(u => u.userId.includes(userId2));
+	const userData2 = getUserData(_userData2, interaction.guildId, getMapData(_userData2.quids, getMapData(_userData1.currentQuid, interaction.guildId)));
+	if (!hasNameAndSpecies(userData2)) { throw new Error('userData2.quid.species is empty string'); }
 
 	if (interaction.user.id === userId1) {
 
@@ -143,10 +139,8 @@ export async function playfightInteractionCollector(
 	cooldownMap.set(userData2._id + interaction.guildId, true);
 	delete disableCommandComponent[userData1._id + interaction.guildId];
 	delete disableCommandComponent[userData2._id + interaction.guildId];
-	const decreasedStatsData1 = await changeCondition(userData1, quidData1, profileData1, 0, CurrentRegionType.Prairie, true);
-	profileData1 = decreasedStatsData1.profileData;
-	const decreasedStatsData2 = await changeCondition(userData2, quidData2, profileData2, 0, CurrentRegionType.Prairie, true);
-	profileData2 = decreasedStatsData2.profileData;
+	const decreasedStatsData1 = await changeCondition(userData1, 0, CurrentRegionType.Prairie, true);
+	const decreasedStatsData2 = await changeCondition(userData2, 0, CurrentRegionType.Prairie, true);
 
 	/* Gets the chosen game type errors if it doesn't exist */
 	const gameType = getArrayElement(interaction.customId.split('_'), 2); // connectfour or tictactoe
@@ -224,23 +218,21 @@ export async function playfightInteractionCollector(
 
 	let newTurnEmbedTextArrayIndex = -1;
 
-	await startNewRound(getRandomNumber(2) === 0 ? true : false, interaction, userId1, userId2, serverData, interaction.message);
+	await startNewRound(getRandomNumber(2) === 0 ? true : false, interaction, userId1, userData1, userId2, userData2, serverData, interaction.message);
 
 	async function startNewRound(
 		user1IsPlaying: boolean,
 		interaction: ButtonInteraction<'cached'>,
 		userId1: string,
+		userData1: UserData<never, never>,
 		userId2: string,
+		userData2: UserData<never, never>,
 		serverData: ServerSchema,
 		botReply: Message<true>,
 	) {
 
-		let userDataCurrent = user1IsPlaying ? userData1 : userData2;
-		let userDataOther = user1IsPlaying ? userData2 : userData1;
-		let quidDataCurrent = user1IsPlaying ? quidData1 : quidData2;
-		let quidDataOther = user1IsPlaying ? quidData2 : quidData1;
-		let profileDataCurrent = user1IsPlaying ? profileData1 : profileData2;
-		let profileDataOther = user1IsPlaying ? profileData2 : profileData1;
+		const userDataCurrent = user1IsPlaying ? userData1 : userData2;
+		const userDataOther = user1IsPlaying ? userData2 : userData1;
 
 		async function sendNextRoundMessage(
 			userId: string,
@@ -250,9 +242,9 @@ export async function playfightInteractionCollector(
 		): Promise<Message<true>> {
 
 			const newTurnEmbedTextArray = [
-				`*${quidDataCurrent.name} bites into ${quidDataOther.name}, not very deep, but deep enough to hang onto the ${quidDataOther.displayedSpecies || quidDataOther.species}. ${quidDataOther.name} needs to get the ${quidDataCurrent.displayedSpecies || quidDataCurrent.species} off of ${pronoun(quidDataOther, 1)}.*`,
-				`*${quidDataCurrent.name} slams into ${quidDataOther.name}, leaving the ${quidDataOther.displayedSpecies || quidDataOther.species} disoriented. ${quidDataOther.name} needs to start an attack of ${pronoun(quidDataOther, 2)} own now.*`,
-				`*${quidDataOther.name} has gotten hold of ${quidDataCurrent.name}, but the ${quidDataCurrent.displayedSpecies || quidDataCurrent.displayedSpecies} manages to get ${pronoun(quidDataOther, 1)} off, sending the ${quidDataOther.displayedSpecies || quidDataOther.species} slamming into the ground. ${quidDataOther.name} needs to get up and try a new strategy.*`,
+				`*${userDataCurrent.quid.name} bites into ${userDataOther.quid.name}, not very deep, but deep enough to hang onto the ${userDataOther.quid.getDisplayspecies()}. ${userDataOther.quid.name} needs to get the ${userDataCurrent.quid.getDisplayspecies()} off of ${userDataOther.quid.pronoun(1)}.*`,
+				`*${userDataCurrent.quid.name} slams into ${userDataOther.quid.name}, leaving the ${userDataOther.quid.getDisplayspecies()} disoriented. ${userDataOther.quid.name} needs to start an attack of ${userDataOther.quid.pronoun(2)} own now.*`,
+				`*${userDataOther.quid.name} has gotten hold of ${userDataCurrent.quid.name}, but the ${userDataCurrent.quid.getDisplayspecies()} manages to get ${userDataOther.quid.pronoun(1)} off, sending the ${userDataOther.quid.getDisplayspecies()} slamming into the ground. ${userDataOther.quid.name} needs to get up and try a new strategy.*`,
 			] as const;
 
 			newTurnEmbedTextArrayIndex = getRandomNumber(newTurnEmbedTextArray.length, 0, newTurnEmbedTextArrayIndex === -1 ? undefined : newTurnEmbedTextArrayIndex);
@@ -262,8 +254,8 @@ export async function playfightInteractionCollector(
 			const message = await respond(int, {
 				content: `<@${userId}>`,
 				embeds: [new EmbedBuilder()
-					.setColor(quidData1.color)
-					.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
+					.setColor(userData1.quid.color)
+					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
 					.setDescription(newTurnEmbedTextArray[newTurnEmbedTextArrayIndex as 0 | 1 | 2] + (extraDescription ? `\n${extraDescription}` : ''))],
 				components: componentArray,
 			}, false);
@@ -336,7 +328,7 @@ export async function playfightInteractionCollector(
 					}
 					else {
 
-						await startNewRound(!user1IsPlaying, i, userId1, userId2, serverData, botReply);
+						await startNewRound(!user1IsPlaying, i, userId1, userData1, userId2, userData2, serverData, botReply);
 					}
 				}
 				catch (error) {
@@ -348,28 +340,23 @@ export async function playfightInteractionCollector(
 			.catch(async () => {
 
 				userData1 = user1IsPlaying ? userDataCurrent : userDataOther;
-				quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
-				profileData1 = getMapData(quidData1.profiles, interaction.guildId);
-
 				userData2 = user1IsPlaying ? userDataOther : userDataCurrent;
-				quidData2 = getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId));
-				profileData2 = getMapData(quidData2.profiles, interaction.guildId);
 
-				const afterGameChangesData = await checkAfterGameChanges(interaction, userData1, quidData1, profileData1, userData2, quidData2, profileData2, serverData);
+				const afterGameChangesData = await checkAfterGameChanges(interaction, userData1, userData2, serverData);
 
 				await botReply
 					.edit({
 						content: null,
 						embeds: [
 							new EmbedBuilder()
-								.setColor(quidData1.color)
-								.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
-								.setDescription(`*${quidDataCurrent.name} takes so long with ${pronoun(quidDataCurrent, 2)} decision on how to attack that ${quidDataOther.name} gets impatient and leaves.*`)
+								.setColor(userData1.quid.color)
+								.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
+								.setDescription(`*${userDataCurrent.quid.name} takes so long with ${userDataCurrent.quid.pronoun(2)} decision on how to attack that ${userDataOther.quid.name} gets impatient and leaves.*`)
 								.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n${decreasedStatsData2.statsUpdateText}` }),
-							...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
-							...(decreasedStatsData2.injuryUpdateEmbed ? [decreasedStatsData2.injuryUpdateEmbed] : []),
-							...(afterGameChangesData.levelUpCheck1.levelUpEmbed ? [afterGameChangesData.levelUpCheck1.levelUpEmbed] : []),
-							...(afterGameChangesData.levelUpCheck2.levelUpEmbed ? [afterGameChangesData.levelUpCheck2.levelUpEmbed] : []),
+							...decreasedStatsData1.injuryUpdateEmbed,
+							...decreasedStatsData2.injuryUpdateEmbed,
+							...(afterGameChangesData?.levelUpEmbed1 ?? []),
+							...(afterGameChangesData?.levelUpEmbed2 ?? []),
 						],
 						components: disableAllComponents(componentArray),
 					})
@@ -390,78 +377,64 @@ export async function playfightInteractionCollector(
 
 			if (reason.includes('win')) {
 
-				const x = getBiggerNumber(profileDataOther.levels - profileDataCurrent.levels, 0);
+				const x = getBiggerNumber(userDataOther.quid.profile.levels - userDataCurrent.quid.profile.levels, 0);
 				const extraExperience = Math.round((80 / (1 + Math.pow(Math.E, -0.09375 * x))) - 40);
 				const experiencePoints = getRandomNumber(11, 10) + extraExperience;
 
-				(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText = `\n+${experiencePoints} XP (${profileDataCurrent.experience + experiencePoints}/${profileDataCurrent.levels * 50}) for ${quidDataCurrent.name}${(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText}`;
+				(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText = `\n+${experiencePoints} XP (${userDataCurrent.quid.profile.experience + experiencePoints}/${userDataCurrent.quid.profile.levels * 50}) for ${userDataCurrent.quid.name}${(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText}`;
 
-				userDataCurrent = await userModel.findOneAndUpdate(
-					u => u._id === userDataCurrent._id,
+				await userDataCurrent.update(
 					(u) => {
 						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, i.guildId)).profiles, i.guildId);
 						p.experience += experiencePoints;
 					},
 				);
-				quidDataCurrent = getMapData(userDataCurrent.quids, getMapData(userDataCurrent.currentQuid, interaction.guildId));
-				profileDataCurrent = getMapData(quidDataCurrent.profiles, interaction.guildId);
 			}
 			else {
 
 				const experiencePoints = getRandomNumber(11, 5);
 
-				decreasedStatsData1.statsUpdateText = `\n+${experiencePoints} XP (${profileDataCurrent.experience + experiencePoints}/${profileDataCurrent.levels * 50}) for ${quidDataCurrent.name}${decreasedStatsData1.statsUpdateText}`;
-				decreasedStatsData2.statsUpdateText = `\n+${experiencePoints} XP (${profileDataOther.experience + experiencePoints}/${profileDataOther.levels * 50}) for ${quidDataOther.name}${decreasedStatsData2.statsUpdateText}`;
+				decreasedStatsData1.statsUpdateText = `\n+${experiencePoints} XP (${userDataCurrent.quid.profile.experience + experiencePoints}/${userDataCurrent.quid.profile.levels * 50}) for ${userDataCurrent.quid.name}${decreasedStatsData1.statsUpdateText}`;
+				decreasedStatsData2.statsUpdateText = `\n+${experiencePoints} XP (${userDataOther.quid.profile.experience + experiencePoints}/${userDataOther.quid.profile.levels * 50}) for ${userDataOther.quid.name}${decreasedStatsData2.statsUpdateText}`;
 
-				userDataCurrent = await userModel.findOneAndUpdate(
-					u => u._id === userDataCurrent._id,
+				await userDataCurrent.update(
 					(u) => {
 						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, i.guildId)).profiles, i.guildId);
 						p.experience += experiencePoints;
 					},
 				);
-				quidDataCurrent = getMapData(userDataCurrent.quids, getMapData(userDataCurrent.currentQuid, interaction.guildId));
-				profileDataCurrent = getMapData(quidDataCurrent.profiles, interaction.guildId);
 
-				userDataOther = await userModel.findOneAndUpdate(
-					u => u._id === userDataOther._id,
+				await userDataOther.update(
 					(u) => {
 						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, i.guildId)).profiles, i.guildId);
 						p.experience += experiencePoints;
 					},
 				);
-				quidDataOther = getMapData(userDataOther.quids, getMapData(userDataOther.currentQuid, interaction.guildId));
-				profileDataOther = getMapData(quidDataOther.profiles, interaction.guildId);
 			}
 
 			userData1 = user1IsPlaying ? userDataCurrent : userDataOther;
-			quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
-			profileData1 = getMapData(quidData1.profiles, interaction.guildId);
-
 			userData2 = user1IsPlaying ? userDataOther : userDataCurrent;
-			quidData2 = getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId));
-			profileData2 = getMapData(quidData2.profiles, interaction.guildId);
 
-			const afterGameChangesData = await checkAfterGameChanges(i, userData1, quidData1, profileData1, userData2, quidData2, profileData2, serverData)
+			const afterGameChangesData = await checkAfterGameChanges(i, userData1, userData2, serverData)
 				.catch((error) => { sendErrorMessage(i, error); });
 
 			await update(i, {
 				content: null,
 				embeds: [
 					...(gameType === 'connectfour' ? [new EmbedBuilder()
-						.setColor(quidData1.color)
+						.setColor(userData1.quid.color)
 						.setDescription(playingField.map(
 							row => row.join('').replaceAll('0', emptyField).replaceAll('1', player1Field).replaceAll('2', player2Field).replaceAll('3', '🟨').replaceAll('4', '🟥'),
 						).join('\n'))] : []),
 					new EmbedBuilder()
-						.setColor(quidData1.color)
-						.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
-						.setDescription(reason.includes('win') ? `*The two animals are pressing against each other with all their might. It seems like the fight will never end this way, but ${quidDataCurrent.name} has one more trick up ${pronoun(quidDataCurrent, 2)} sleeve: ${pronoun(quidDataCurrent, 0)} simply moves out of the way, letting ${quidDataOther.name} crash into the ground. ${upperCasePronounAndPlural(quidDataOther, 0, 'has', 'have')} a wry grin on ${pronoun(quidDataOther, 2)} face as ${pronounAndPlural(quidDataOther, 0, 'look')} up at the ${quidDataCurrent.displayedSpecies || quidDataCurrent.species}. ${quidDataCurrent.name} wins this fight, but who knows about the next one?*` : `*The two animals wrestle with each other until ${quidDataCurrent.name} falls over the ${quidDataOther.displayedSpecies || quidDataOther.species} and both of them land on the ground. They pant and glare at each other, but ${quidDataOther.name} can't contain ${pronoun(quidDataOther, 2)} laughter. The ${quidDataCurrent.displayedSpecies || quidDataCurrent.species} starts to giggle as well. The fight has been fun, even though no one won.*`)
+						.setColor(userData1.quid.color)
+						.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
+						.setDescription(reason.includes('win') ? `*The two animals are pressing against each other with all their might. It seems like the fight will never end this way, but ${userDataCurrent.quid.name} has one more trick up ${userDataCurrent.quid.pronoun(2)} sleeve: ${userDataCurrent.quid.pronoun(0)} simply moves out of the way, letting ${userDataOther.quid.name} crash into the ground. ${capitalizeString(userDataOther.quid.pronounAndPlural(0, 'has', 'have'))} a wry grin on ${userDataOther.quid.pronoun(2)} face as ${userDataOther.quid.pronounAndPlural(0, 'look')} up at the ${userDataCurrent.quid.getDisplayspecies()}. ${userDataCurrent.quid.name} wins this fight, but who knows about the next one?*` : `*The two animals wrestle with each other until ${userDataCurrent.quid.name} falls over the ${userDataOther.quid.getDisplayspecies()} and both of them land on the ground. They pant and glare at each other, but ${userDataOther.quid.name} can't contain ${userDataOther.quid.pronoun(2)} laughter. The ${userDataCurrent.quid.getDisplayspecies()} starts to giggle as well. The fight has been fun, even though no one won.*`)
 						.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}` }),
-					...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
-					...(decreasedStatsData2.injuryUpdateEmbed ? [decreasedStatsData2.injuryUpdateEmbed] : []),
-					...(afterGameChangesData?.levelUpCheck1.levelUpEmbed ? [afterGameChangesData.levelUpCheck1.levelUpEmbed] : []),
-					...(afterGameChangesData?.levelUpCheck2.levelUpEmbed ? [afterGameChangesData.levelUpCheck2.levelUpEmbed] : []),
+					...decreasedStatsData1.injuryUpdateEmbed,
+					...decreasedStatsData2.injuryUpdateEmbed,
+					...(afterGameChangesData?.levelUpEmbed1 ?? []),
+					...(afterGameChangesData?.levelUpEmbed2 ?? []),
 				],
 				components: disableAllComponents(componentArray),
 			})
@@ -570,42 +543,30 @@ function getWinningRow(
  */
 async function checkAfterGameChanges(
 	interaction: ButtonInteraction<'cached'>,
-	userData1: UserSchema,
-	quidData1: Quid<true>,
-	profileData1: Profile,
-	userData2: UserSchema,
-	quidData2: Quid<true>,
-	profileData2: Profile,
+	userData1: UserData<never, never>,
+	userData2: UserData<never, never>,
 	serverData: ServerSchema,
 ): Promise<{
-	levelUpCheck1: {
-		levelUpEmbed: EmbedBuilder | null;
-		profileData: Profile;
-	};
-	levelUpCheck2: {
-		levelUpEmbed: EmbedBuilder | null;
-		profileData: Profile;
-	};
+	levelUpEmbed1: EmbedBuilder[];
+	levelUpEmbed2: EmbedBuilder[]
 }> {
 
-	const levelUpCheck1 = await checkLevelUp(interaction, userData1, quidData1, profileData1, serverData);
-	profileData1 = levelUpCheck1.profileData;
-	const levelUpCheck2 = await checkLevelUp(interaction, userData2, quidData2, profileData2, serverData);
-	profileData2 = levelUpCheck2.profileData;
+	const levelUpEmbed1 = await checkLevelUp(interaction, userData1, serverData);
+	const levelUpEmbed2 = await checkLevelUp(interaction, userData2, serverData);
 
-	await isPassedOut(interaction, userData1, quidData1, profileData1, true);
-	await isPassedOut(interaction, userData2, quidData2, profileData2, true);
+	await isPassedOut(interaction, userData1, true);
+	await isPassedOut(interaction, userData2, true);
 
-	await addFriendshipPoints(interaction.message, userData1, quidData1._id, userData2, quidData2._id);
+	await addFriendshipPoints(interaction.message, userData1, userData2);
 
-	await restAdvice(interaction, userData1, profileData1);
-	await restAdvice(interaction, userData2, profileData2);
+	await restAdvice(interaction, userData1);
+	await restAdvice(interaction, userData2);
 
-	await drinkAdvice(interaction, userData1, profileData1);
-	await drinkAdvice(interaction, userData2, profileData2);
+	await drinkAdvice(interaction, userData1);
+	await drinkAdvice(interaction, userData2);
 
-	await eatAdvice(interaction, userData1, profileData1);
-	await eatAdvice(interaction, userData2, profileData2);
+	await eatAdvice(interaction, userData1);
+	await eatAdvice(interaction, userData2);
 
-	return { levelUpCheck1, levelUpCheck2 };
+	return { levelUpEmbed1, levelUpEmbed2 };
 }

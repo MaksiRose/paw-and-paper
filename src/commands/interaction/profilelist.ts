@@ -1,9 +1,10 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, Guild, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { respond, update } from '../../utils/helperFunctions';
-import userModel from '../../models/userModel';
-import { RankType, SlashCommand } from '../../typedef';
 import { isInGuild } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
+import { SlashCommand } from '../../typings/handle';
+import { RankType } from '../../typings/data/user';
+import userModel from '../../models/userModel';
 const { default_color } = require('../../../config.json');
 
 const guildCache: Map<string, Map<string, {

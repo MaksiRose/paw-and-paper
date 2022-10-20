@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonStyle, ButtonBuilder } from 'discord.js';
-import { SpeciesHabitatType } from '../typedef';
+import { SpeciesHabitatType } from '../typings/main';
 import { getArrayElement } from './helperFunctions';
 import { getRandomNumber } from './randomizers';
 

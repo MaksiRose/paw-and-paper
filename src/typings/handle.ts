@@ -1,5 +1,7 @@
-import { AutocompleteInteraction, MessageContextMenuCommandInteraction, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { AutocompleteInteraction, MessageContextMenuCommandInteraction, ChatInputCommandInteraction } from 'discord.js';
 import { RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v10';
+import { UserData } from './data/user';
+import { ServerSchema } from './data/server';
 
 export interface SlashCommand {
 	data: RESTPostAPIApplicationCommandsJSONBody;
@@ -8,8 +10,8 @@ export interface SlashCommand {
 	/** Best practice is that only commands that immediately return without any form of interaction (Button, Select Menu, Modal) that changes something in the database are set to false. */
 	disablePreviousCommand: boolean;
 	modifiesServerProfile: boolean;
-	sendCommand: (interaction: ChatInputCommandInteraction, userData: UserSchema | null, serverData: ServerSchema | null, embedArray: Array<EmbedBuilder>) => Promise<void>;
-	sendAutocomplete?: (interaction: AutocompleteInteraction, userData: UserSchema | null, serverData: ServerSchema | null) => Promise<void>;
+	sendCommand: (interaction: ChatInputCommandInteraction, userData: UserData<undefined, ''> | null, serverData: ServerSchema | null) => Promise<void>;
+	sendAutocomplete?: (interaction: AutocompleteInteraction, userData: UserData<undefined, ''> | null, serverData: ServerSchema | null) => Promise<void>;
 }
 
 export interface ContextMenuCommand {

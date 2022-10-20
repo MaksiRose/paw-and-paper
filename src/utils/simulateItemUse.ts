@@ -1,10 +1,15 @@
+import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '..';
 import { addCorrectDietHungerPoints, removeHungerPoints } from '../commands/gameplay_maintenance/eat';
 import { getStatsPoints, isUnlucky as healingIsUnlucky, quidNeedsHealing } from '../commands/gameplay_maintenance/heal';
 import { addMaterialPoints, isUnlucky as repairingIsUnlucky } from '../commands/gameplay_maintenance/repair';
-import userModel from '../models/userModel';
-import { CommonPlantNames, commonPlantsInfo, DenSchema, Inventory, MaterialNames, PlantEdibilityType, PlantInfo, Quid, RankType, RarePlantNames, rarePlantsInfo, ServerSchema, SpecialPlantNames, specialPlantsInfo, SpeciesDietType, speciesInfo, SpeciesNames, UncommonPlantNames, uncommonPlantsInfo, UserSchema } from '../typedef';
+import userModel, { getUserData } from '../models/userModel';
+import { CommonPlantNames, Inventory, MaterialNames, RarePlantNames, SpecialPlantNames, SpeciesNames, UncommonPlantNames } from '../typings/data/general';
+import { DenSchema, ServerSchema } from '../typings/data/server';
+import { RankType, UserData, UserSchema } from '../typings/data/user';
+import { PlantEdibilityType, PlantInfo, SpeciesDietType } from '../typings/main';
 import { changeCondition } from './changeCondition';
-import { deepCopyObject, getArrayElement, getMapData, getSmallerNumber, keyInObject, unsafeKeys, widenValues } from './helperFunctions';
+import { hasNameAndSpecies } from './checkUserState';
+import { deepCopyObject, getArrayElement, getSmallerNumber, keyInObject, unsafeKeys, widenValues } from './helperFunctions';
 import { getRandomNumber, pullFromWeightedTable } from './randomizers';
 import { wearDownAmount } from './wearDownDen';
 
@@ -39,13 +44,12 @@ export function calculateInventorySize(
 async function getUsersInServer(
 	guildId: string,
 	activeUsersOnly: boolean,
-): Promise<(Quid<true> & {user_id: string})[]> {
+): Promise<UserData<never, never>[]> {
 
 	const twoWeeksInMs = 1_209_600_000;
 
-	const userToQuidArray = (u: UserSchema) => Object.values(u.quids).map(q => ({ ...q, user_id: u._id })).filter((q: Quid & {user_id: string}): q is Quid<true> & {user_id: string} => {
-		const p = q?.profiles[guildId];
-		return q.species !== '' && p !== undefined && (activeUsersOnly ? p.lastActiveTimestamp > Date.now() - twoWeeksInMs : true);
+	const userToQuidArray = (u: UserSchema) => Object.values(u.quids).map(q => q.profiles[guildId] === undefined ? null : getUserData(u, guildId, q)).filter((user): user is UserData<never, never> => {
+		return hasNameAndSpecies(user) && (activeUsersOnly ? user.quid.profile.lastActiveTimestamp > Date.now() - twoWeeksInMs : true);
 	});
 
 	return (await userModel.find((u) => userToQuidArray(u).length > 0))
@@ -64,16 +68,15 @@ export async function simulateMeatUse(
 ): Promise<number> {
 
 	const serverData_ = deepCopyObject(serverData);
-	const quids = await getUsersInServer(serverData_.serverId, activeUsersOnly);
+	const users = await getUsersInServer(serverData_.serverId, activeUsersOnly);
 	let neededItems = 0;
 
-	for (const quid of quids.filter(q => speciesInfo[q.species].diet !== SpeciesDietType.Herbivore)) {
+	for (const user of users.filter(u => speciesInfo[u.quid.species].diet !== SpeciesDietType.Herbivore)) {
 
-		const profile = getMapData(quid.profiles, serverData_.serverId);
-		while (profile.hunger < profile.maxHunger) {
+		while (user.quid.profile.hunger < user.quid.profile.maxHunger) {
 
 			neededItems += 1;
-			profile.hunger += addCorrectDietHungerPoints() - removeHungerPoints(serverData_);
+			user.quid.profile.hunger += addCorrectDietHungerPoints() - removeHungerPoints(serverData_);
 
 			const denStatkind = (['structure', 'bedding', 'thickness', 'evenness'] as const)[getRandomNumber(4)];
 			if (denStatkind === undefined) { throw new TypeError('denStatkind is undefined'); }
@@ -106,19 +109,18 @@ export function pickMeat(
 
 
 function getNeededHungerItems(
-	quids: (Quid<true> & {user_id: string;})[],
+	users: UserData<never, never>[],
 	serverData: ServerSchema,
 ): number {
 
 	const serverData_ = deepCopyObject(serverData);
 	let neededItems = 0;
-	for (const quid of quids.filter(q => speciesInfo[q.species].diet !== SpeciesDietType.Carnivore)) {
+	for (const user of users.filter(u => speciesInfo[u.quid.species].diet !== SpeciesDietType.Carnivore)) {
 
-		const profile = getMapData(quid.profiles, serverData_.serverId);
-		while (profile.hunger < profile.maxHunger) {
+		while (user.quid.profile.hunger < user.quid.profile.maxHunger) {
 
 			neededItems += 1;
-			profile.hunger += addCorrectDietHungerPoints() - removeHungerPoints(serverData_);
+			user.quid.profile.hunger += addCorrectDietHungerPoints() - removeHungerPoints(serverData_);
 
 			const denStatkind = (['structure', 'bedding', 'thickness', 'evenness'] as const)[getRandomNumber(4)];
 			if (denStatkind === undefined) { throw new TypeError('denStatkind is undefined'); }
@@ -129,7 +131,7 @@ function getNeededHungerItems(
 }
 
 async function getNeededMedicineItems(
-	quids: (Quid<true> & { user_id: string; })[],
+	users: UserData<never, never>[],
 	serverData: ServerSchema,
 	checkOnlyFor?: 'energy' | 'hunger' | 'wounds' | 'infections' | 'cold' | 'sprains' | 'poison',
 ): Promise<number> {
@@ -137,49 +139,46 @@ async function getNeededMedicineItems(
 	const serverData_ = deepCopyObject(serverData);
 	let neededItems = 0;
 	/* For each quid, we are getting a random quid that is able to heal, preferably not the current quid unless that is the only available one, and preferably one that doesn't need healing unless that is not possible. Healing takes hunger away, which is why this is done before the other loop and separately from it. */
-	for (const quid of quids.filter(q => quidNeedsHealing(q, serverData_.serverId, checkOnlyFor))) {
+	for (const user of users.filter(u => quidNeedsHealing(u, checkOnlyFor))) {
 
-		let healerArray1 = quids.filter(q => {
-			const p = q.profiles[serverData_.serverId];
-			return p && p.rank !== RankType.Youngling && p.health > 0 && p.energy > 0 && p.hunger > 0 && p.thirst > 0;
+		let healerArray1 = users.filter(u => {
+			return u.quid.profile.rank !== RankType.Youngling && u.quid.profile.health > 0 && u.quid.profile.energy > 0 && u.quid.profile.hunger > 0 && u.quid.profile.thirst > 0;
 		});
-		if (healerArray1.length > 1) { healerArray1 = healerArray1.filter(q => q._id !== quid._id); }
-		const healerArray2 = healerArray1.filter(q => !quidNeedsHealing(q, serverData_.serverId));
+		if (healerArray1.length > 1) { healerArray1 = healerArray1.filter(u => u._id !== user._id); }
+		const healerArray2 = healerArray1.filter(u => !quidNeedsHealing(u));
 		const healer = healerArray2.length > 0 ? getArrayElement(healerArray2, getRandomNumber(healerArray2.length)) : healerArray1.length > 0 ? getArrayElement(healerArray1, getRandomNumber(healerArray1.length)) : undefined;
 		if (healer === undefined) { break; }
-		let healerProfile = getMapData(healer.profiles, serverData_.serverId);
 
-		const profile = getMapData(quid.profiles, serverData_.serverId);
-		while (quidNeedsHealing(quid, serverData_.serverId, checkOnlyFor)) {
+		while (quidNeedsHealing(user, checkOnlyFor)) {
 
 			// First, get the quid with the highest rank. Based on that, define itemInfo with or without uncommonPlants and/or rarePlants
-			const highestRank = quids.some(q => q.profiles[serverData_.serverId]?.rank === RankType.Elderly) ? 2 : quids.some(q => q.profiles[serverData_.serverId]?.rank === RankType.Hunter || q.profiles[serverData_.serverId]?.rank === RankType.Healer) ? 1 : 0;
+			const highestRank = users.some(u => u.quid.profile.rank === RankType.Elderly) ? 2 : users.some(u => u.quid.profile.rank === RankType.Hunter || u.quid.profile.rank === RankType.Healer) ? 1 : 0;
 			const itemInfo = { ...specialPlantsInfo, ...commonPlantsInfo, ...highestRank > 0 ? uncommonPlantsInfo : {}, ...highestRank > 1 ? rarePlantsInfo : {} };
 
 			// Based on the quids condition, choose item to pick. 0 thirst: water, 0 energy: itemInfo.filter(givesEnergy), 0 hunger: itemInfo.filter(edibility === PlantEdibilityType.Edible), wound: itemInfo.filter(healsWounds), infection: itemInfo.filter(healsInfection), cold: itemInfo.filter(healsColds), sprains: itemInfo.filter(healsSprains), poison: itemInfo.filter(healsPoison). If this returns undefined (which it can, ie when theres nothing that can heal poison), break the while loop.
-			const specificItems = (Object.entries(itemInfo) as [CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames, PlantInfo][]).filter(([, info]) => profile.energy <= 0 ? info.givesEnergy : profile.hunger <= 0 ? info.edibility === PlantEdibilityType.Edible : profile.injuries.wounds > 0 ? info.healsWounds : profile.injuries.infections > 0 ? info.healsInfections : profile.injuries.cold ? info.healsColds : profile.injuries.sprains > 0 ? info.healsSprains : info.healsPoison);
-			const item = profile.thirst <= 0 ? 'water' : specificItems[getRandomNumber(specificItems.length)]?.[0];
+			const specificItems = (Object.entries(itemInfo) as [CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames, PlantInfo][]).filter(([, info]) => user.quid.profile.energy <= 0 ? info.givesEnergy : user.quid.profile.hunger <= 0 ? info.edibility === PlantEdibilityType.Edible : user.quid.profile.injuries.wounds > 0 ? info.healsWounds : user.quid.profile.injuries.infections > 0 ? info.healsInfections : user.quid.profile.injuries.cold ? info.healsColds : user.quid.profile.injuries.sprains > 0 ? info.healsSprains : info.healsPoison);
+			const item = user.quid.profile.thirst <= 0 ? 'water' : specificItems[getRandomNumber(specificItems.length)]?.[0];
 			if (item === undefined) { break; }
 			if (item !== 'water') { neededItems += 1; }
 
 			// Copy the isSuccessful checks that have a chance that isSucessful goes from true to false. A function needs to be created in the heal file
 			// If it's successful, make the problems go away that this specific item can make go away, using getStatsPoints and the individual things for the injuries.
-			if (!healingIsUnlucky(quid.user_id, healer.user_id, profile, serverData_)) {
+			if (!healingIsUnlucky(user, healer, serverData_)) {
 
-				const stats = getStatsPoints(item, profile);
-				profile.health += stats.health;
-				profile.energy += stats.energy;
-				profile.hunger += stats.hunger;
-				profile.thirst += stats.thirst;
-				profile.injuries.wounds += item !== 'water' && itemInfo[item]?.healsWounds === true ? 1 : 0;
-				profile.injuries.infections += item !== 'water' && itemInfo[item]?.healsInfections === true ? 1 : 0;
-				profile.injuries.cold = item !== 'water' && itemInfo[item]?.healsColds === true ? false : profile.injuries.cold;
-				profile.injuries.sprains = item !== 'water' && itemInfo[item]?.healsSprains === true ? 1 : 0;
-				profile.injuries.poison = item !== 'water' && itemInfo[item]?.healsPoison === true ? false : profile.injuries.poison;
+				const stats = getStatsPoints(item, user);
+				user.quid.profile.health += stats.health;
+				user.quid.profile.energy += stats.energy;
+				user.quid.profile.hunger += stats.hunger;
+				user.quid.profile.thirst += stats.thirst;
+				user.quid.profile.injuries.wounds += item !== 'water' && itemInfo[item]?.healsWounds === true ? 1 : 0;
+				user.quid.profile.injuries.infections += item !== 'water' && itemInfo[item]?.healsInfections === true ? 1 : 0;
+				user.quid.profile.injuries.cold = item !== 'water' && itemInfo[item]?.healsColds === true ? false : user.quid.profile.injuries.cold;
+				user.quid.profile.injuries.sprains = item !== 'water' && itemInfo[item]?.healsSprains === true ? 1 : 0;
+				user.quid.profile.injuries.poison = item !== 'water' && itemInfo[item]?.healsPoison === true ? false : user.quid.profile.injuries.poison;
 			}
 
 			// change the condition based on a simulation-version of changeCondition, and wear down the den
-			healerProfile = (await changeCondition(undefined, healer, healerProfile, 0)).profileData;
+			await changeCondition(healer, 0, undefined, false, false);
 
 			const denStatkind = (['structure', 'bedding', 'thickness', 'evenness'] as const)[getRandomNumber(4)];
 			if (denStatkind === undefined) { throw new TypeError('denStatkind is undefined'); }
@@ -315,24 +314,22 @@ export async function simulateMaterialUse(
 ): Promise<number> {
 
 	const serverData_ = deepCopyObject(serverData);
-	const quids = await getUsersInServer(serverData_.serverId, activeUsersOnly);
+	const users = await getUsersInServer(serverData_.serverId, activeUsersOnly);
 	let neededItems = 0;
 
 	for (const den of Object.values(serverData_.dens) as DenSchema[]) {
 
 		while ((Object.values(den) as number[]).every(stat => stat >= 100) === false) {
 
-			const repairerArray1 = quids.filter(q => {
-				const p = q.profiles[serverData_.serverId];
-				return p && p.rank !== RankType.Youngling && p.health > 0 && p.energy > 0 && p.hunger > 0 && p.thirst > 0;
+			const repairerArray1 = users.filter(u => {
+				return u.quid.profile.rank !== RankType.Youngling && u.quid.profile.health > 0 && u.quid.profile.energy > 0 && u.quid.profile.hunger > 0 && u.quid.profile.thirst > 0;
 			});
-			const repairerArray2 = repairerArray1.filter(q => !quidNeedsHealing(q, serverData_.serverId));
+			const repairerArray2 = repairerArray1.filter(u => !quidNeedsHealing(u));
 			const repairer = repairerArray2.length > 0 ? getArrayElement(repairerArray2, getRandomNumber(repairerArray2.length)) : repairerArray1.length > 0 ? getArrayElement(repairerArray1, getRandomNumber(repairerArray1.length)) : undefined;
 			if (repairer === undefined) { break; }
-			let repairerProfile = getMapData(repairer.profiles, serverData_.serverId);
 
 			neededItems += 1;
-			const isUnlucky = repairingIsUnlucky(repairerProfile);
+			const isUnlucky = repairingIsUnlucky(repairer);
 			if (!isUnlucky) {
 
 				const repairAmount = addMaterialPoints();
@@ -342,7 +339,7 @@ export async function simulateMaterialUse(
 				else { den.thickness += repairAmount; }
 			}
 
-			repairerProfile = (await changeCondition(undefined, repairer, repairerProfile, 0)).profileData;
+			await changeCondition(repairer, 0, undefined, false, false);
 		}
 	}
 

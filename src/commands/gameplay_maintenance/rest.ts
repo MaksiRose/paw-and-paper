@@ -1,11 +1,11 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, RepliableInteraction, SlashCommandBuilder } from 'discord.js';
 import serverModel from '../../models/serverModel';
-import userModel from '../../models/userModel';
-import { CurrentRegionType, Profile, Quid, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
-import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
+import { ServerSchema } from '../../typings/data/server';
+import { CurrentRegionType, UserData } from '../../typings/data/user';
+import { SlashCommand } from '../../typings/handle';
+import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasCooldown, isPassedOut } from '../../utils/checkValidity';
-import { pronoun, pronounAndPlural, upperCasePronoun } from '../../utils/getPronouns';
-import { getMapData, getQuidDisplayname, respond, sendErrorMessage } from '../../utils/helperFunctions';
+import { capitalizeString, getMapData, respond, sendErrorMessage } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -25,28 +25,20 @@ export const command: SlashCommand = {
 	sendCommand: async (interaction, userData, serverData) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!hasName(interaction, userData)) { return; }
-
-		/* Gets the current active quid and the server profile from the account */
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-		const profileData = getMapData(quidData.profiles, interaction.guildId);
-		if (!hasSpecies(interaction, quidData)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
 
 		/* Checks if the profile is on a cooldown or passed out. */
-		if (await isPassedOut(interaction, userData, quidData, profileData, false)) { return; }
-		if (await hasCooldown(interaction, userData, quidData)) { return; }
+		if (await isPassedOut(interaction, userData, false)) { return; }
+		if (await hasCooldown(interaction, userData)) { return; }
 
-		await startResting(interaction, userData, quidData, profileData, serverData);
+		await startResting(interaction, userData, serverData);
 	},
 };
 
 export async function startResting(
 	interaction: RepliableInteraction<'cached'>,
-	userData: UserSchema,
-	quidData: Quid<true>,
-	profileData: Profile,
+	userData: UserData<never, never>,
 	serverData: ServerSchema,
 ) {
 
@@ -56,36 +48,35 @@ export async function startResting(
 
 	const messageContent = remindOfAttack(interaction.guildId);
 
-	if (profileData.isResting === true || isResting(userData._id, profileData.serverId)) {
+	if (userData.quid.profile.isResting === true || isResting(userData)) {
 
 		await respond(interaction, {
 			content: messageContent,
 			embeds: [new EmbedBuilder()
-				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
-				.setDescription(`*${quidData.name} dreams of resting on a beach, out in the sun. The imaginary wind rocked the also imaginative hammock. ${upperCasePronoun(quidData, 0)} must be really tired to dream of sleeping!*`),
+				.setColor(userData.quid.color)
+				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setDescription(`*${userData.quid.name} dreams of resting on a beach, out in the sun. The imaginary wind rocked the also imaginative hammock. ${capitalizeString(userData.quid.pronoun(0))} must be really tired to dream of sleeping!*`),
 			],
 		}, false);
 		return;
 	}
 
-	if (profileData.energy >= profileData.maxEnergy) {
+	if (userData.quid.profile.energy >= userData.quid.profile.maxEnergy) {
 
 		await respond(interaction, {
 			content: messageContent,
 			embeds: [new EmbedBuilder()
-				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
-				.setDescription(`*${quidData.name} trots around the dens eyeing ${pronoun(quidData, 2)} comfortable moss-covered bed. A nap looks nice, but ${pronounAndPlural(quidData, 0, 'has', 'have')} far too much energy to rest!*`),
+				.setColor(userData.quid.color)
+				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setDescription(`*${userData.quid.name} trots around the dens eyeing ${userData.quid.pronoun(2)} comfortable moss-covered bed. A nap looks nice, but ${userData.quid.pronounAndPlural(0, 'has', 'have')} far too much energy to rest!*`),
 			],
 		}, false);
 		return;
 	}
 
-	const previousRegion = profileData.currentRegion;
+	const previousRegion = userData.quid.profile.currentRegion;
 
-	userData = await userModel.findOneAndUpdate(
-		u => u._id === userData._id,
+	await userData.update(
 		(u) => {
 			const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 			p.isResting = true;
@@ -93,8 +84,6 @@ export async function startResting(
 			u.advice.resting = true;
 		},
 	);
-	quidData = getMapData(userData.quids, quidData._id);
-	profileData = getMapData(quidData.profiles, profileData.serverId);
 
 	const isAutomatic = !interaction.isCommand() || interaction.commandName !== command.data.name;
 
@@ -109,7 +98,7 @@ export async function startResting(
 
 	const botReply = await respond(interaction, {
 		content: messageContent,
-		embeds: [getRestingEmbed(userData, quidData, energyPoints, profileData, previousRegion, isAutomatic, weardownText)],
+		embeds: [getRestingEmbed(userData, energyPoints, previousRegion, isAutomatic, weardownText)],
 		components: isAutomatic ? [component] : [],
 	}, false);
 
@@ -118,51 +107,45 @@ export async function startResting(
 
 			energyPoints += 1;
 
-			userData = await userModel.findOneAndUpdate(
-				u => u._id === userData._id,
+			await userData.update(
 				(u) => {
 					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 					p.energy += 1;
 				},
 			);
-			quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-			profileData = getMapData(quidData.profiles, interaction.guildId);
 
-			const embed = getRestingEmbed(userData, quidData, energyPoints, profileData, previousRegion, isAutomatic, weardownText);
+			const embed = getRestingEmbed(userData, energyPoints, previousRegion, isAutomatic, weardownText);
 			await botReply.edit({
 				embeds: [embed],
 			});
 
 			/* It checks if the user has reached their maximum energy, and if they have, it stops the resting process. */
-			if (profileData.energy >= profileData.maxEnergy) {
+			if (userData.quid.profile.energy >= userData.quid.profile.maxEnergy) {
 
-				userData = await userModel.findOneAndUpdate(
-					u => u._id === userData._id,
+				await userData.update(
 					(u) => {
 						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 						p.isResting = false;
 						p.currentRegion = previousRegion;
 					},
 				);
-				quidData = getMapData(userData.quids, quidData._id);
-				profileData = getMapData(quidData.profiles, profileData.serverId);
 
 				await botReply.delete();
 
 				await botReply.channel.send({
 					content: userData.settings.reminders.resting ? interaction.user.toString() : undefined,
-					embeds: [embed.setDescription(`*${quidData.name}'s eyes blink open, ${pronounAndPlural(quidData, 0, 'sit')} up to stretch and then walk out into the light and buzz of late morning camp. Younglings are spilling out of the nursery, ambitious to start the day, Hunters and Healers are traveling in and out of the camp border. It is the start of the next good day!*`)],
+					embeds: [embed.setDescription(`*${userData.quid.name}'s eyes blink open, ${userData.quid.pronounAndPlural(0, 'sit')} up to stretch and then walk out into the light and buzz of late morning camp. Younglings are spilling out of the nursery, ambitious to start the day, Hunters and Healers are traveling in and out of the camp border. It is the start of the next good day!*`)],
 					components: isAutomatic ? [component] : [],
 				});
 
-				stopResting(userData._id, interaction.guildId);
+				stopResting(userData);
 				return;
 			}
 			return;
 		}
 		catch (error) {
 
-			stopResting(userData._id, interaction.guildId);
+			stopResting(userData);
 			await sendErrorMessage(interaction, error)
 				.catch(e => { console.error(e); });
 		}
@@ -180,32 +163,29 @@ export async function startResting(
  * @returns A function that returns an embed builder
  */
 function getRestingEmbed(
-	userData: UserSchema,
-	quidData: Quid<true>,
+	userData: UserData<never, never>,
 	energyPoints: number,
-	profileData: Profile,
 	previousRegion: CurrentRegionType,
 	isAutomatic: boolean,
 	weardownText: string,
 ): EmbedBuilder {
 
 	return new EmbedBuilder()
-		.setColor(quidData.color)
-		.setAuthor({ name: getQuidDisplayname(userData, quidData, profileData.serverId), iconURL: quidData.avatarURL })
-		.setDescription(`*${quidData.name}'s chest rises and falls with the crickets. Snoring bounces off each wall, finally exiting the den and rising free to the clouds.*`)
-		.setFooter({ text: `+${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})${(previousRegion !== CurrentRegionType.SleepingDens) ? '\nYou are now at the sleeping dens' : ''}${isAutomatic ? '\nYour quid started resting because you were inactive for 10 minutes' : ''}\n\n${weardownText}\n\nTip: You can also do "/vote" to get +30 energy per vote!` });
+		.setColor(userData.quid.color)
+		.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+		.setDescription(`*${userData.quid.name}'s chest rises and falls with the crickets. Snoring bounces off each wall, finally exiting the den and rising free to the clouds.*`)
+		.setFooter({ text: `+${energyPoints} energy (${userData.quid.profile.energy}/${userData.quid.profile.maxEnergy})${(previousRegion !== CurrentRegionType.SleepingDens) ? '\nYou are now at the sleeping dens' : ''}${isAutomatic ? '\nYour quid started resting because you were inactive for 10 minutes' : ''}\n\n${weardownText}\n\nTip: You can also do "/vote" to get +30 energy per vote!` });
 }
 
 /**
  * Clears the timeout of the specific user that is resting.
  */
 export function stopResting(
-	_id: string,
-	guildId: string,
+	userData: UserData<never, never>,
 ): void {
 
-	clearInterval(restingIntervalMap.get(_id + guildId));
-	restingIntervalMap.delete(_id + guildId);
+	clearInterval(restingIntervalMap.get(userData._id + userData.quid.profile.serverId));
+	restingIntervalMap.delete(userData._id + userData.quid.profile.serverId);
 }
 
 /**
@@ -215,9 +195,8 @@ export function stopResting(
  * @returns A boolean value.
  */
 export function isResting(
-	_id: string,
-	guildId: string,
-): boolean { return restingIntervalMap.has(_id + guildId); }
+	userData: UserData<never, never>,
+): boolean { return restingIntervalMap.has(userData._id + userData.quid.profile.serverId); }
 
 /**
  * It gets the server's den stats, calculates a multiplier based on those stats, and returns the

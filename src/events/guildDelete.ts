@@ -1,6 +1,6 @@
 import { Guild } from 'discord.js';
 import { client } from '../index';
-import { DiscordEvent } from '../typedef';
+import { DiscordEvent } from '../typings/main';
 import { deleteGuild } from '../utils/updateGuild';
 
 export const event: DiscordEvent = {

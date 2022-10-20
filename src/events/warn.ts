@@ -1,4 +1,4 @@
-import { DiscordEvent } from '../typedef';
+import { DiscordEvent } from '../typings/main';
 
 export const event: DiscordEvent = {
 	name: 'warn',

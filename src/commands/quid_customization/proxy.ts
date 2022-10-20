@@ -1,11 +1,13 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, Collection, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, NonThreadGuildBasedChannel, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { getArrayElement, getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
-import userModel from '../../models/userModel';
-import { ProxyConfigType, ProxyListType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
+import { getArrayElement, respond, update } from '../../utils/helperFunctions';
+import userModel, { getUserData } from '../../models/userModel';
 import { hasName } from '../../utils/checkUserState';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
+import { SlashCommand } from '../../typings/handle';
+import { ProxyConfigType, ProxyListType, UserData } from '../../typings/data/user';
+import { ServerSchema } from '../../typings/data/server';
 const { error_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -24,15 +26,13 @@ export const command: SlashCommand = {
 		]) === true) { return; }
 
 		/* If the user does not have a quid selected, return. */
-		if (!hasName(interaction, userData)) { return; }
-
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId || 'DM'));
+		if (!hasName(userData, interaction)) { return; }
 
 		/* Send a response to the user. */
 		const botReply = await respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
+				.setColor(userData.quid.color)
+				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setTitle('What is a proxy and how do I use this command?')
 				.setDescription('Proxying is a way to speak as if your quid was saying it. This means that your message will be replaced by one that has your quids name and avatar.')
 				.setFields([
@@ -47,11 +47,11 @@ export const command: SlashCommand = {
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([
 					new ButtonBuilder()
-						.setCustomId(`proxy_set_learnmore_@${quidData._id}`)
+						.setCustomId(`proxy_set_learnmore_@${userData.quid._id}`)
 						.setLabel('Set?')
 						.setStyle(ButtonStyle.Success),
 					...(interaction.inGuild() ? [new ButtonBuilder()
-						.setCustomId(`proxy_always_learnmore_@${quidData._id}`)
+						.setCustomId(`proxy_always_learnmore_@${userData.quid._id}`)
 						.setLabel('Always?')
 						.setStyle(ButtonStyle.Success)] : []),
 				])],
@@ -63,11 +63,8 @@ export const command: SlashCommand = {
 
 export async function proxyInteractionCollector(
 	interaction: ButtonInteraction | SelectMenuInteraction,
-	userData: UserSchema | null,
 	serverData: ServerSchema | null,
 ): Promise<void> {
-
-	if (userData === null) { throw new Error('userData is null'); }
 
 	/* If the user pressed the button to learn more about the set subcommand, explain it with a button that opens a modal. */
 	if (interaction.isButton() && interaction.customId.startsWith('proxy_set_learnmore')) {
@@ -92,10 +89,11 @@ export async function proxyInteractionCollector(
 	if (interaction.isButton() && interaction.customId.startsWith('proxy_set_modal')) {
 
 		const quidId = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
-		const quidData = getMapData(userData.quids, quidId);
+		const _userData = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
+		const userData = getUserData(_userData, interaction.guildId || 'DM', getMapData(_userData.quids, quidId));
 
 		await interaction.showModal(new ModalBuilder()
-			.setCustomId(`proxy_set_${quidData._id}`)
+			.setCustomId(`proxy_set_${userData.quid._id}`)
 			.setTitle('Set a proxy')
 			.addComponents(
 				new ActionRowBuilder<TextInputBuilder>({
@@ -105,7 +103,7 @@ export async function proxyInteractionCollector(
 						.setStyle(TextInputStyle.Short)
 						.setMaxLength(16)
 						.setRequired(false)
-						.setValue(quidData.proxy.startsWith),
+						.setValue(userData.quid.proxy.startsWith),
 					],
 				}),
 				new ActionRowBuilder<TextInputBuilder>({
@@ -115,7 +113,7 @@ export async function proxyInteractionCollector(
 						.setStyle(TextInputStyle.Short)
 						.setMaxLength(16)
 						.setRequired(false)
-						.setValue(quidData.proxy.endsWith),
+						.setValue(userData.quid.proxy.endsWith),
 					],
 				}),
 			),
@@ -130,7 +128,9 @@ export async function proxyInteractionCollector(
 
 		if (!interaction.inGuild()) { throw new Error('Interaction is not in guild'); }
 		const quidId = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
-		const alwaysSelectMenu = await getSelectMenu(allChannels, userData, quidId, serverData, 0);
+		const _userData = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
+		const userData = getUserData(_userData, interaction.guildId || 'DM', getMapData(_userData.quids, quidId));
+		const alwaysSelectMenu = await getSelectMenu(allChannels, userData, serverData, 0);
 
 		await update(interaction, {
 			embeds: [new EmbedBuilder(interaction.message.embeds[0]?.toJSON())
@@ -149,6 +149,8 @@ export async function proxyInteractionCollector(
 		let page = 0;
 		const selectOptionId = interaction.values[0];
 		const quidId = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
+		const _userData = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
+		const userData = getUserData(_userData, interaction.guildId || 'DM', getMapData(_userData.quids, quidId));
 
 		/* If the user clicked the next page option, increment the page. */
 		if (selectOptionId && selectOptionId.includes('nextpage')) {
@@ -156,7 +158,7 @@ export async function proxyInteractionCollector(
 			page = Number(selectOptionId.split('nextpage_')[1]) + 1;
 			if (page >= Math.ceil((allChannels.size + 1) / 24)) { page = 0; }
 
-			const alwaysSelectMenu = await getSelectMenu(allChannels, userData, quidId, serverData, page);
+			const alwaysSelectMenu = await getSelectMenu(allChannels, userData, serverData, page);
 			await update(interaction, {
 				components: [new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents([alwaysSelectMenu])],
@@ -165,11 +167,14 @@ export async function proxyInteractionCollector(
 		/* If the user clicked an always subcommand option, add/remove the channel and send a success message. */
 		else if (selectOptionId && interaction.customId.startsWith('proxy_always_options')) {
 
-			const channelId = selectOptionId.replace('proxy_', '');
-			const hasChannel = userData.settings.proxy.servers[interaction.guildId]?.autoproxy.channels.whitelist.includes(channelId) || false;
+			const quidId = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
+			const _userData = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
+			const userData = getUserData(_userData, interaction.guildId || 'DM', getMapData(_userData.quids, quidId));
 
-			userData = await userModel.findOneAndUpdate(
-				u => u._id === userData?._id,
+			const channelId = selectOptionId.replace('proxy_', '');
+			const hasChannel = userData.settings.proxy.server?.autoproxy.channels.whitelist.includes(channelId) || false;
+
+			await userData.update(
 				(u) => {
 					const sps = u.settings.proxy.servers[interaction.guildId];
 					if (!sps) {
@@ -189,9 +194,8 @@ export async function proxyInteractionCollector(
 					else { sps.autoproxy.channels.whitelist = sps.autoproxy.channels.whitelist.filter(string => string !== channelId); }
 				},
 			);
-			const quidData = getMapData(userData.quids, quidId);
 
-			const alwaysSelectMenu = await getSelectMenu(allChannels, userData, quidId, serverData, page);
+			const alwaysSelectMenu = await getSelectMenu(allChannels, userData, serverData, page);
 			await update(interaction, {
 				components: [new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents([alwaysSelectMenu])],
@@ -199,8 +203,8 @@ export async function proxyInteractionCollector(
 
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
-					.setColor(quidData.color)
-					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
+					.setColor(userData.quid.color)
+					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 					.setTitle(`${hasChannel ? 'Removed' : 'Added'} ${channelId === 'everywhere' ? channelId : interaction.guild.channels.cache.get(channelId)?.name} ${hasChannel ? 'from' : 'to'} the list of automatic proxy channels!`)],
 				ephemeral: true,
 			}, false);
@@ -210,20 +214,20 @@ export async function proxyInteractionCollector(
 
 export async function sendEditProxyModalResponse(
 	interaction: ModalSubmitInteraction,
-	userData: UserSchema | null,
 ): Promise<void> {
 
-	/* Check if user data exists, and get quidData, the chosen prefix and the chosen suffix */
-	if (userData === null) { throw new Error('userData is null'); }
+	/* Check if user data exists, and get userData.quid, the chosen prefix and the chosen suffix */
 	const quidId = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
-	const quidData = getMapData(userData.quids, quidId);
+	const _userData = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
+	const userData = getUserData(_userData, interaction.guildId || 'DM', getMapData(_userData.quids, quidId));
+
 	const chosenPrefix = interaction.fields.getTextInputValue('proxy_textinput_startsWith');
 	const chosenSuffix = interaction.fields.getTextInputValue('proxy_textinput_endsWith');
 
 	/* For each quid but the selected one, check if they already have the same prefix and suffix and send an error message if they do. */
-	for (const quid of Object.values(userData.quids)) {
+	for (const quid of userData.quids.values()) {
 
-		if (quid._id === quidData._id) { continue; }
+		if (quid._id === userData.quid._id) { continue; }
 
 		const isSamePrefix = chosenPrefix !== '' && quid.proxy.startsWith === chosenPrefix;
 		const isSameSuffix = chosenSuffix !== '' && quid.proxy.endsWith === chosenSuffix;
@@ -232,7 +236,7 @@ export async function sendEditProxyModalResponse(
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
-					.setDescription(`The prefix \`${chosenPrefix}\` and the suffix \`${chosenSuffix}\` are already used for ${quid.name} and can't be used for ${quidData.name} as well.`)],
+					.setDescription(`The prefix \`${chosenPrefix}\` and the suffix \`${chosenSuffix}\` are already used for ${quid.name} and can't be used for ${userData.quid.name} as well.`)],
 				ephemeral: true,
 			}, false);
 			return;
@@ -243,7 +247,7 @@ export async function sendEditProxyModalResponse(
 	await userModel.findOneAndUpdate(
 		u => u._id === userData?._id,
 		(u) => {
-			const q = getMapData(u.quids, quidData._id);
+			const q = getMapData(u.quids, userData.quid._id);
 			q.proxy.startsWith = chosenPrefix;
 			q.proxy.endsWith = chosenSuffix;
 		},
@@ -253,8 +257,8 @@ export async function sendEditProxyModalResponse(
 	const suffixResponse = chosenSuffix === '' ? 'no suffix' : `suffix: \`${chosenSuffix}\``;
 	await respond(interaction, {
 		embeds: [new EmbedBuilder()
-			.setColor(quidData.color)
-			.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
+			.setColor(userData.quid.color)
+			.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 			.setTitle(`Proxy set to ${prefixResponse} and ${suffixResponse}!`)],
 	}, true);
 	return;
@@ -262,13 +266,12 @@ export async function sendEditProxyModalResponse(
 
 async function getSelectMenu(
 	allChannels: Collection<string, NonThreadGuildBasedChannel>,
-	userData: UserSchema | null,
-	quidId: string,
+	userData: UserData<never, ''>,
 	serverData: ServerSchema | null,
 	page: number,
 ): Promise<SelectMenuBuilder> {
 
-	let alwaysSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = allChannels.map((channel, channelId) => ({ label: channel.name, value: `proxy_${channelId}`, emoji: userData && userData.settings.proxy.servers[serverData?.serverId || '']?.autoproxy.channels.whitelist.includes(channelId) ? '🔘' : undefined }));
+	let alwaysSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = allChannels.map((channel, channelId) => ({ label: channel.name, value: `proxy_${channelId}`, emoji: userData.settings.proxy.server?.autoproxy.channels.whitelist.includes(channelId) ? '🔘' : undefined }));
 
 	if (alwaysSelectMenuOptions.length > 25) {
 
@@ -277,7 +280,7 @@ async function getSelectMenu(
 	}
 
 	return new SelectMenuBuilder()
-		.setCustomId(`proxy_always_options_@${quidId}`)
+		.setCustomId(`proxy_always_options_@${userData.quid._id}`)
 		.setPlaceholder('Select channels to automatically be proxied in')
 		.setOptions(alwaysSelectMenuOptions);
 }

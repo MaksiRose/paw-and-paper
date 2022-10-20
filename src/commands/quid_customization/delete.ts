@@ -1,11 +1,11 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, InteractionReplyOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { getArrayElement, respond, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
-import userModel from '../../models/userModel';
-import { SlashCommand, UserSchema } from '../../typedef';
 import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
-import { getMapData } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
+import { SlashCommand } from '../../typings/handle';
+import { UserData } from '../../typings/data/user';
+import userModel from '../../models/userModel';
 const { error_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -44,7 +44,7 @@ export const command: SlashCommand = {
 
 export async function deleteInteractionCollector(
 	interaction: ButtonInteraction | SelectMenuInteraction,
-	userData: UserSchema | null,
+	userData: UserData<undefined, ''> | null,
 ): Promise<void> {
 
 	if (userData === null) { throw new Error('userData is null'); }
@@ -86,12 +86,12 @@ export async function deleteInteractionCollector(
 	if (interaction.isSelectMenu() && selectOptionId && selectOptionId.includes('individual') && Object.keys(userData.quids).includes(getArrayElement(selectOptionId.split('_'), 2))) {
 
 		const _id = getArrayElement(selectOptionId.split('_'), 2);
-		const quid = getMapData(userData.quids, _id);
+		const quid = userData.quids.get(_id);
 
 		await update(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(error_color)
-				.setTitle(`Are you sure you want to delete the quid named "${quid.name}"? This will be **permanent**!!!`)],
+				.setTitle(`Are you sure you want to delete the quid named "${quid?.name}"? This will be **permanent**!!!`)],
 			components: [
 				...disableAllComponents([await getOriginalComponents(userData), new ActionRowBuilder<SelectMenuBuilder>().setComponents(SelectMenuBuilder.from(interaction.component))]),
 				new ActionRowBuilder<ButtonBuilder>()
@@ -132,7 +132,7 @@ export async function deleteInteractionCollector(
 	if (interaction.isSelectMenu() && selectOptionId && selectOptionId.startsWith('delete_server_nextpage_')) {
 
 		let deletePage = Number(selectOptionId.replace('delete_server_nextpage_', '')) + 1;
-		if (deletePage >= Math.ceil([...new Set(Object.values(userData.quids).map(q => Object.keys(q.profiles)).flat())].length / 24)) { deletePage = 0; }
+		if (deletePage >= Math.ceil([...new Set(userData.quids.map(q => Object.keys(q.profiles)).flat())].length / 24)) { deletePage = 0; }
 
 		await update(interaction, {
 			components: [
@@ -145,10 +145,10 @@ export async function deleteInteractionCollector(
 	}
 
 	/* Checking if the interaction is a select menu and if the server ID is in the array of all servers. If it is, it will edit the message to ask the user if they are sure they want to delete all their information on the server. */
-	if (interaction.isSelectMenu() && selectOptionId && selectOptionId.includes('server') && [...new Set([...Object.values(userData.quids).map(q => Object.keys(q.profiles)), ...Object.keys(userData.currentQuid)].flat())].includes(getArrayElement(selectOptionId.split('_'), 2))) {
+	if (interaction.isSelectMenu() && selectOptionId && selectOptionId.includes('server') && [...new Set([...userData.quids.map(q => Object.keys(q.profiles)), ...Object.keys(userData.serverIdToQuidId)].flat())].includes(getArrayElement(selectOptionId.split('_'), 2))) {
 
 		const server = await serverModel.findOne(s => s.serverId === getArrayElement(selectOptionId.split('_'), 2));
-		const accountsOnServer = Object.values(userData.quids).map(q => q.profiles[server.serverId]).filter(p => p !== undefined);
+		const accountsOnServer = userData.quids.map(q => q.profiles[server.serverId]).filter(p => p !== undefined);
 
 		await update(interaction, {
 			embeds: [new EmbedBuilder()
@@ -211,10 +211,9 @@ export async function deleteInteractionCollector(
 		if (type === 'individual') {
 
 			const _id = getArrayElement(interaction.customId.split('_'), 3);
-			const quid = getMapData(userData.quids, _id);
+			const quid = userData.quids.get(_id);
 
-			await userModel.findOneAndUpdate(
-				u => u._id === userData?._id,
+			await userData.update(
 				(u) => {
 					delete u.quids[_id];
 					for (const serverId of Object.keys(u.currentQuid)) {
@@ -228,7 +227,7 @@ export async function deleteInteractionCollector(
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
-					.setTitle(`The quid \`${quid.name}\` was deleted permanently!`)],
+					.setTitle(`The quid \`${quid?.name}\` was deleted permanently!`)],
 			}, false);
 		}
 
@@ -236,10 +235,9 @@ export async function deleteInteractionCollector(
 		if (type === 'server') {
 
 			const serverId = getArrayElement(interaction.customId.split('_'), 3);
-			const accountsOnServer = Object.values(userData.quids).map(q => q.profiles[serverId]).filter(p => p !== undefined);
+			const accountsOnServer = userData.quids.map(q => q.profiles[serverId]).filter(p => p !== undefined);
 
-			await userModel.findOneAndUpdate(
-				u => u._id === userData?._id,
+			await userData.update(
 				(u) => {
 					for (const q of Object.values(u.quids)) {
 						if (q.profiles[serverId] !== undefined) { delete q.profiles[serverId]; }
@@ -287,7 +285,7 @@ export async function deleteInteractionCollector(
 }
 
 async function sendOriginalMessage(
-	userData: UserSchema,
+	userData: UserData<undefined, ''>,
 ): Promise<InteractionReplyOptions> {
 
 	return {
@@ -299,7 +297,7 @@ async function sendOriginalMessage(
 }
 
 async function getOriginalComponents(
-	userData: UserSchema,
+	userData: UserData<undefined, ''>,
 ): Promise<ActionRowBuilder<ButtonBuilder>> {
 
 	const allServers = await getServersPage(0, userData);
@@ -325,10 +323,10 @@ async function getOriginalComponents(
  */
 function getQuidsPage(
 	deletePage: number,
-	userData: UserSchema,
+	userData: UserData<undefined, ''>,
 ): SelectMenuBuilder {
 
-	let accountsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = Object.values(userData.quids).map(quid => ({ label: quid.name, value: `delete_individual_${quid._id}` }));
+	let accountsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = userData.quids.map(quid => ({ label: quid.name, value: `delete_individual_${quid._id}` }));
 
 	if (accountsMenuOptions.length > 25) {
 
@@ -347,12 +345,12 @@ function getQuidsPage(
  */
 async function getServersPage(
 	deletePage: number,
-	userData: UserSchema,
+	userData: UserData<undefined, ''>,
 ): Promise<SelectMenuBuilder> {
 
 	let accountsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
 
-	const serverIdList = [...new Set([...Object.values(userData.quids).map(q => Object.keys(q.profiles)), ...Object.keys(userData.currentQuid)].flat())];
+	const serverIdList = [...new Set([...userData.quids.map(q => Object.keys(q.profiles)), ...Object.keys(userData.serverIdToQuidId)].flat())];
 	for (const serverId of serverIdList) {
 
 		const server = await serverModel.findOne(s => s.serverId === serverId).catch(() => { return null; });

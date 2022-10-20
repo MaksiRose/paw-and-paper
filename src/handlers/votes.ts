@@ -1,5 +1,5 @@
 import rateLimit from 'express-rate-limit';
-import { VoteList } from '../typedef';
+import { VoteList } from '../typings/data/general';
 const bfd = require('bfd-api-redux');
 import express from 'express';
 import { readFileSync, writeFileSync } from 'fs';

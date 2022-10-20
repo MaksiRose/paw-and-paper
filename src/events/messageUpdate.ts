@@ -1,8 +1,9 @@
 import { Message } from 'discord.js';
 import { sendMessage } from '../commands/interaction/say';
 import serverModel from '../models/serverModel';
-import userModel from '../models/userModel';
-import { DiscordEvent } from '../typedef';
+import userModel, { getUserData } from '../models/userModel';
+import { DiscordEvent } from '../typings/main';
+import { getMapData } from '../utils/helperFunctions';
 import { getMissingPermissionContent, hasPermission, permissionDisplay } from '../utils/permissionHandler';
 import { checkForProxy } from './messageCreate';
 
@@ -13,19 +14,17 @@ export const event: DiscordEvent = {
 
 		if (newMessage.author.bot || !newMessage.inGuild()) { return; }
 
-		const userData = await userModel.findOne(u => u.userId.includes(newMessage.author.id)).catch(() => { return null; });
-		let quidData = userData?.quids?.[userData?.currentQuid?.[newMessage.guildId || 'DM'] || ''];
+		const _userData = await userModel.findOne(u => u.userId.includes(newMessage.author.id)).catch(() => { return null; });
 		const serverData = await serverModel.findOne(s => s.serverId === newMessage.guildId).catch(() => { return null; });
 
-		if (!userData || !quidData || !serverData) { return; }
+		if (_userData === null || serverData === null) { return; }
 
-		const { replaceMessage, messageContent, quidData: newQuid } = checkForProxy(serverData, newMessage, userData);
-		newMessage.content = messageContent;
-		if (newQuid !== null) { quidData = newQuid; }
+		const { replaceMessage, quidId } = checkForProxy(newMessage, getUserData(_userData, newMessage.guildId, _userData.quids[_userData.currentQuid[newMessage.guildId] ?? '']), serverData);
+		const userData = getUserData(_userData, newMessage.guildId, getMapData(_userData.quids, quidId));
 
-		if (replaceMessage && (newMessage.content.length > 0 || newMessage.attachments.size > 0)) {
+		if (userData.quid !== undefined && replaceMessage && (newMessage.content.length > 0 || newMessage.attachments.size > 0)) {
 
-			const isSuccessful = await sendMessage(newMessage.channel, newMessage.content, userData, quidData, userData._id, newMessage.author.id, newMessage.attachments.size > 0 ? Array.from(newMessage.attachments.values()) : undefined, newMessage.reference ?? undefined)
+			const isSuccessful = await sendMessage(newMessage.channel, newMessage.content, userData, newMessage.author.id, newMessage.attachments.size > 0 ? Array.from(newMessage.attachments.values()) : undefined, newMessage.reference ?? undefined)
 				.catch(error => { console.error(error); });
 			if (!isSuccessful) { return; }
 

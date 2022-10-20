@@ -1,11 +1,14 @@
 import { EmbedBuilder, GuildMember, SlashCommandBuilder } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 import { respond } from '../../utils/helperFunctions';
-import userModel from '../../models/userModel';
-import { BanList, commonPlantsInfo, CurrentRegionType, GivenIdList, materialsInfo, RankType, rarePlantsInfo, SlashCommand, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../../typedef';
 import { checkLevelRequirements, checkRankRequirements } from '../../utils/checkRoleRequirements';
 import { getRandomNumber } from '../../utils/randomizers';
 import { generateId } from 'crystalid';
+import { SlashCommand } from '../../typings/handle';
+import { BanList, GivenIdList } from '../../typings/data/general';
+import userModel, { getUserData } from '../../models/userModel';
+import { CurrentRegionType, RankType } from '../../typings/data/user';
+import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../..';
 const { version } = require('../../../package.json');
 const { default_color, error_color } = require('../../../config.json');
 
@@ -41,7 +44,7 @@ export const command: SlashCommand = {
 				return;
 			}
 
-			userData = await userModel.create({
+			const _userData = await userModel.create({
 				userId: [interaction.user.id],
 				tag: {
 					global: '',
@@ -60,6 +63,7 @@ export const command: SlashCommand = {
 				lastPlayedVersion: `${version.split('.').slice(0, -1).join('.')}`,
 				_id: generateId(),
 			});
+			userData = getUserData(_userData, interaction.guildId ?? 'DM', _userData.quids[_userData.currentQuid[interaction.guildId ?? 'DM'] ?? '']);
 		}
 
 		const name = interaction.options.getString('name');
@@ -77,11 +81,10 @@ export const command: SlashCommand = {
 		}
 
 		/* This is checking if the user has a quid in the database. If they don't, it will create a new user. */
-		const _id = userData.currentQuid[interaction.guildId || 'DM'] || await createId();
+		const _id = userData.serverIdToQuidId.get(interaction.guildId || 'DM') || await createId();
 
 
-		await userModel.findOneAndUpdate(
-			u => u._id === userData?._id,
+		await userData.update(
 			(u) => {
 				const q = u.quids[_id];
 				if (!q) {
@@ -146,14 +149,13 @@ export const command: SlashCommand = {
 				u.currentQuid[interaction.guildId || 'DM'] = _id;
 			},
 		);
-		const quidData = userData.quids[_id];
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
-				.setTitle(quidData === undefined ? `You successfully created the quid ${name}!` : `You successfully renamed your quid to ${name}!`)
+				.setTitle(userData.quid === undefined ? `You successfully created the quid ${name}!` : `You successfully renamed your quid to ${name}!`)
 				.setDescription(newAccount === false ? null : '__What is a quid?__\nTo avoid using limiting words like "character" or "person", Paw and Paper uses the made-up word quid. It is based off of the word [Quiddity](https://en.wikipedia.org/wiki/Quiddity), which means "what makes something what it is". Quid then means "someone who is what they are", which is vague on purpose because it changes based on what they are.')
-				.setFooter(quidData === undefined ? { text: 'To continue setting up your profile for the RPG, type "/species". For other options, review "/help".' } : null)],
+				.setFooter(userData.quid === undefined ? { text: 'To continue setting up your profile for the RPG, type "/species". For other options, review "/help".' } : null)],
 		}, true);
 
 		/* This is checking if the user is in a guild, if the server has data saved in the database, and if the guildmember data is cached. If all of these are true, it will check if the user has reached the requirements to get roles based on their rank and level. */

@@ -1,7 +1,8 @@
 import { Role } from 'discord.js';
 import serverModel from '../models/serverModel';
 import userModel from '../models/userModel';
-import { DiscordEvent, WayOfEarningType } from '../typedef';
+import { WayOfEarningType } from '../typings/data/user';
+import { DiscordEvent } from '../typings/main';
 import { getMapData } from '../utils/helperFunctions';
 
 export const event: DiscordEvent = {

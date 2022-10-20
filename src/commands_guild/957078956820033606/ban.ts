@@ -3,8 +3,9 @@ import { readFileSync, writeFileSync } from 'fs';
 import { respond } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
-import { BanList, SlashCommand } from '../../typedef';
 import { client } from '../..';
+import { SlashCommand } from '../../typings/handle';
+import { BanList } from '../../typings/data/general';
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()

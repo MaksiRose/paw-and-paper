@@ -2,10 +2,12 @@ import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, Channe
 import { getArrayElement, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
-import { ProxyListType, RankType, ServerSchema, SlashCommand, WayOfEarningType } from '../../typedef';
 import { checkLevelRequirements, checkRankRequirements } from '../../utils/checkRoleRequirements';
 import { getMapData } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
+import { SlashCommand } from '../../typings/handle';
+import { ServerSchema } from '../../typings/data/server';
+import { ProxyListType, RankType, WayOfEarningType } from '../../typings/data/user';
 const { default_color, update_channel_id } = require('../../../config.json');
 
 export const command: SlashCommand = {

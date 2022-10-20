@@ -1,5 +1,6 @@
 import { sendReminder } from '../commands/gameplay_maintenance/water-tree';
-import userModel from '../models/userModel';
+import userModel, { getUserData } from '../models/userModel';
+import { hasNameAndSpecies } from '../utils/checkUserState';
 import { getMapData } from '../utils/helperFunctions';
 
 /** It updates each profile to have no cooldown, not rest, and maximum energy, and then it executes the sendReminder function for each profile for which the sapling exists and where lastMessageChannelId is a string, if the user has enabled water reminders */
@@ -7,12 +8,12 @@ export async function execute(
 ): Promise<void> {
 
 	const users = await userModel.find();
-	for (const userData of users) {
+	for (const user of users) {
 
 		/* This updates each profile to have no cooldown, not rest, and maximum energy. */
 		await userModel
 			.findOneAndUpdate(
-				u => u._id === userData._id,
+				u => u._id === user._id,
 				(u) => {
 					for (const quid of Object.values(u.quids)) {
 						for (const profile of Object.values(quid.profiles)) {
@@ -25,10 +26,12 @@ export async function execute(
 			);
 
 		/* This executes the sendReminder function for each profile for which the sapling exists and where lastMessageChannelId is a string, if the user has enabled water reminders. */
-		if (userData.settings.reminders.water === true) {
-			for (const quid of Object.values(userData.quids)) {
+		if (user.settings.reminders.water === true) {
+			for (const quid of Object.values(user.quids)) {
 				for (const profile of Object.values(quid.profiles)) {
-					if (profile.sapling.exists && typeof profile.sapling.lastMessageChannelId === 'string' && !profile.sapling.sentReminder) { await sendReminder(userData, quid, profile); }
+
+					const userData = getUserData(user, profile.serverId, quid);
+					if (hasNameAndSpecies(userData) && userData.quid.profile.sapling.exists && typeof userData.quid.profile.sapling.lastMessageChannelId === 'string' && !userData.quid.profile.sapling.sentReminder) { await sendReminder(userData); }
 				}
 			}
 		}

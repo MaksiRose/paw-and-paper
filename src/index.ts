@@ -1,4 +1,4 @@
-import { Client, Collection, GatewayIntentBits, LimitedCollection } from 'discord.js';
+import { Client, Collection, GatewayIntentBits, Options } from 'discord.js';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import path from 'path';
 import { Api } from '@top-gg/sdk';
@@ -30,38 +30,36 @@ export const client = new Client({
 		parse: ['users', 'roles'],
 		repliedUser: false,
 	},
-	makeCache: manager => {
-		if (manager.name === 'GuildMemberManager') {
-			return new LimitedCollection({ keepOverLimit: (member) => {
-				const allDocumentNames = readdirSync('./database/profiles').filter(f => f.endsWith('.json'));
-				return member.id === member.client.user.id || allDocumentNames
-					.map(documentName => {
-						return JSON.parse(readFileSync(`./database/profiles/${documentName}`, 'utf-8')) as UserSchema;
-					})
-					.filter(v => v.userId.includes(member.id))
-					.length > 0;
-			} });
-		}
-		if (
-			manager.name === 'ApplicationCommandManager'
-			|| manager.name === 'BaseGuildEmojiManager'
-			|| manager.name === 'GuildBanManager'
-			|| manager.name === 'GuildEmojiManager'
-			|| manager.name === 'GuildInviteManager'
-			|| manager.name === 'GuildScheduledEventManager'
-			|| manager.name === 'GuildStickerManager'
-			|| manager.name === 'MessageManager' // This needs to be changed to allow keepOverLimit for messages by the bot
-			|| manager.name === 'PresenceManager'
-			|| manager.name === 'ReactionManager'
-			|| manager.name === 'ReactionUserManager'
-			|| manager.name === 'StageInstanceManager'
-			|| manager.name === 'ThreadManager'
-			|| manager.name === 'ThreadMemberManager'
-			|| manager.name === 'UserManager'
-			|| manager.name === 'VoiceStateManager'
-		) { return new LimitedCollection({ maxSize: 0 }); }
-		return new Collection();
-	},
+	makeCache: Options.cacheWithLimits({
+		...Options.DefaultMakeCacheSettings,
+		GuildMemberManager: { maxSize: 0, keepOverLimit: (member) => {
+			const allDocumentNames = readdirSync('./database/profiles').filter(f => f.endsWith('.json'));
+			return member.id === member.client.user.id || allDocumentNames
+				.map(documentName => {
+					return JSON.parse(readFileSync(`./database/profiles/${documentName}`, 'utf-8')) as UserSchema;
+				})
+				.filter(v => v.userId.includes(member.id))
+				.length > 0;
+		} },
+		MessageManager: { maxSize: 0, keepOverLimit: (member) => {
+			return member.id === member.client.user.id;
+		} },
+		ApplicationCommandManager: 0,
+		BaseGuildEmojiManager: 0,
+		GuildBanManager: 0,
+		GuildEmojiManager: 0,
+		GuildInviteManager: 0,
+		GuildScheduledEventManager: 0,
+		GuildStickerManager: 0,
+		PresenceManager: 0,
+		ReactionManager: 0,
+		ReactionUserManager: 0,
+		StageInstanceManager: 0,
+		ThreadManager: 0,
+		ThreadMemberManager: 0,
+		UserManager: 0,
+		VoiceStateManager: 0,
+	}),
 });
 
 export const handle: {

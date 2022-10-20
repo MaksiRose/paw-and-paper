@@ -1,3 +1,5 @@
+import { ProxyListType, RankType, WayOfEarningType } from './user';
+
 /** This object holds references to guilds and users that cannot make accounts in their respective Arrays. */
 export interface BanList {
 	users: Array<string>;

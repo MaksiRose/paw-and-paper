@@ -13,11 +13,10 @@ import { shopInteractionCollector } from '../commands/miscellaneous/shop';
 import { createNewTicket, sendRespondToTicketModalResponse, ticketInteractionCollector } from '../commands/miscellaneous/ticket';
 import { sendEditMessageModalResponse } from '../contextmenu/edit';
 import serverModel from '../models/serverModel';
-import userModel from '../models/userModel';
-import { ErrorStacks, DiscordEvent } from '../typedef';
+import userModel, { getUserData } from '../models/userModel';
+import { DiscordEvent } from '../typings/main';
 import { disableCommandComponent, disableAllComponents } from '../utils/componentDisabling';
-import { getMapData, getQuidDisplayname, keyInObject, update } from '../utils/helperFunctions';
-import { pronoun, pronounAndPlural } from '../utils/getPronouns';
+import { getMapData, keyInObject, update } from '../utils/helperFunctions';
 import { createGuild } from '../utils/updateGuild';
 import { respond } from '../utils/helperFunctions';
 import { sendErrorMessage } from '../utils/helperFunctions';
@@ -43,6 +42,8 @@ import { executeAttacking, command as attackCommand } from '../commands/gameplay
 import { wrongproxyInteractionCollector } from '../contextmenu/wrong-proxy';
 import { missingPermissions } from '../utils/permissionHandler';
 import { client, handle } from '../index';
+import { ErrorStacks } from '../typings/data/general';
+import { hasNameAndSpecies } from '../utils/checkUserState';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
@@ -59,7 +60,8 @@ export const event: DiscordEvent = {
 			/* This is only null when in DM without CHANNEL partial, or when channel cache is sweeped. Therefore, this is technically unsafe since this value could become null after this check. This scenario is unlikely though. */
 			if (!interaction.channel) { await client.channels.fetch(interaction.channelId || ''); }
 
-			let userData = await userModel.findOne(u => u.userId.includes(interaction.user.id)).catch(() => { return null; });
+			const _userData = await userModel.findOne(u => u.userId.includes(interaction.user.id)).catch(() => { return null; });
+			const userData = _userData === null ? null : getUserData(_userData, interaction.guildId ?? 'DM', _userData.quids[_userData.currentQuid[interaction.guildId ?? 'DM'] ?? '']);
 			let serverData = await serverModel.findOne(s => s.serverId === interaction.guildId).catch(() => { return null; });
 
 			/* It's setting the last interaction timestamp for the user to now. */
@@ -120,13 +122,12 @@ export const event: DiscordEvent = {
 				}
 
 				/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-				if (userData && interaction.inGuild() && command.modifiesServerProfile) {
+				if (userData && userData.quid && interaction.inGuild() && command.modifiesServerProfile) {
 
-					await userModel
-						.findOneAndUpdate(
-							u => u._id === userData!._id,
+					await userData
+						.update(
 							(u) => {
-								const p = getMapData(getMapData(u.quids, getMapData(userData!.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+								const p = getMapData(getMapData(u.quids, userData!.quid!._id).profiles, interaction.guildId);
 								p.lastActiveTimestamp = Date.now();
 							},
 						);
@@ -134,21 +135,16 @@ export const event: DiscordEvent = {
 
 				/* This sends the command and error message if an error occurs. */
 				console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully executed \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-				await command.sendCommand(interaction, userData, serverData, []);
+				await command.sendCommand(interaction, userData, serverData);
 
 				if (interaction.inGuild()) {
 
-					userData = await userModel.findOne(u => u.userId.includes(interaction.user.id)).catch(() => { return null; });
-					const quidData = userData?.quids?.[userData?.currentQuid?.[interaction.guildId] || ''];
-					const profileData = quidData?.profiles?.[interaction.guildId];
-
 					/* If sapling exists, a gentle reminder has not been sent and the watering time is after the perfect time, send a gentle reminder */
-					if (userData && profileData && profileData.sapling.exists && !profileData.sapling?.sentGentleReminder && Date.now() > (profileData.sapling.nextWaterTimestamp || 0) + 60_000) { // The 60 seconds is so this doesn't trigger when you just found your sapling while exploring
+					if (hasNameAndSpecies(userData) && userData.quid.profile.sapling.exists && !userData.quid.profile.sapling.sentGentleReminder && Date.now() > (userData.quid.profile.sapling.nextWaterTimestamp || 0) + 60_000) { // The 60 seconds is so this doesn't trigger when you just found your sapling while exploring
 
-						await userModel.findOneAndUpdate(
-							u => u._id === userData?._id,
+						await userData.update(
 							(u) => {
-								const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
+								const p = getMapData(getMapData(u.quids, userData!.quid!._id).profiles, interaction.guildId);
 								p.sapling.sentGentleReminder = true;
 							},
 						);
@@ -156,9 +152,9 @@ export const event: DiscordEvent = {
 						await interaction
 							.followUp({
 								embeds: [new EmbedBuilder()
-									.setColor(quidData.color)
-									.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
-									.setDescription(`*Engrossed in ${pronoun(quidData, 2)} work, ${quidData.name} suddenly remembers that ${pronounAndPlural(quidData, 0, 'has', 'have')} not yet watered ${pronoun(quidData, 2)} plant today. The ${quidData.displayedSpecies || quidData.species} should really do it soon!*`)
+									.setColor(userData.quid.color)
+									.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+									.setDescription(`*Engrossed in ${userData.quid.pronoun(2)} work, ${userData.quid.name} suddenly remembers that ${userData.quid.pronounAndPlural(0, 'has', 'have')} not yet watered ${userData.quid.pronoun(2)} plant today. The ${userData.quid.getDisplayspecies()} should really do it soon!*`)
 									.setFooter({ text: 'Type "/water-tree" to water your ginkgo sapling!' })],
 							});
 					}
@@ -210,7 +206,7 @@ export const event: DiscordEvent = {
 
 				if (interaction.customId.startsWith('species')) {
 
-					await sendEditDisplayedSpeciesModalResponse(interaction, userData);
+					await sendEditDisplayedSpeciesModalResponse(interaction);
 					return;
 				}
 
@@ -222,7 +218,7 @@ export const event: DiscordEvent = {
 
 				if (interaction.customId.startsWith('proxy')) {
 
-					await sendEditProxyModalResponse(interaction, userData);
+					await sendEditProxyModalResponse(interaction);
 					return;
 				}
 
@@ -244,7 +240,7 @@ export const event: DiscordEvent = {
 
 				/* It's checking if the user that created the command is the same as the user that is interacting with the command, or if the user that is interacting is mentioned in the interaction.customId. If neither is true, it will send an error message. */
 				const isCommandCreator = interaction.message.interaction !== null && interaction.message.interaction.user.id === interaction.user.id;
-				const isMentioned = interaction.customId.includes('@' + interaction.user.id) || interaction.customId.includes('@EVERYONE') || (userData && (interaction.customId.includes(userData._id) || Object.keys(userData.quids).some(q => interaction.customId.includes('@' + q))));
+				const isMentioned = interaction.customId.includes('@' + interaction.user.id) || interaction.customId.includes('@EVERYONE') || (_userData && (interaction.customId.includes(_userData._id) || Object.keys(_userData.quids).some(q => interaction.customId.includes('@' + q))));
 
 				if (interaction.isSelectMenu()) {
 
@@ -276,7 +272,7 @@ export const event: DiscordEvent = {
 
 					if (interaction.customId.startsWith('wrongproxy_')) {
 
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, wrongproxyInteractionCollector, [interaction, userData]);
+						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, wrongproxyInteractionCollector, [interaction, _userData]);
 						return;
 					}
 				}
@@ -354,7 +350,7 @@ export const event: DiscordEvent = {
 
 					if (interaction.customId.startsWith('settings_')) {
 
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, settingsInteractionCollector, [interaction, userData]);
+						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, settingsInteractionCollector, [interaction, userData, _userData]);
 						return;
 					}
 
@@ -371,7 +367,7 @@ export const event: DiscordEvent = {
 							/* It's disabling all components if userData exists and the command is set to disable a previous command. */
 							if (userData && scavengeCommand.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
 
-							await executeScavenging(interaction, userData, serverData, []);
+							await executeScavenging(interaction, userData, serverData);
 						}, []);
 						return;
 					}
@@ -383,7 +379,7 @@ export const event: DiscordEvent = {
 							/* It's disabling all components if userData exists and the command is set to disable a previous command. */
 							if (userData && playCommand.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
 
-							await executePlaying(interaction, userData, serverData, []);
+							await executePlaying(interaction, userData, serverData);
 						}, []);
 						return;
 					}
@@ -395,7 +391,7 @@ export const event: DiscordEvent = {
 							/* It's disabling all components if userData exists and the command is set to disable a previous command. */
 							if (userData && exploreCommand.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
 
-							await executeExploring(interaction, userData, serverData, []);
+							await executeExploring(interaction, userData, serverData);
 						}, []);
 						return;
 					}
@@ -407,7 +403,7 @@ export const event: DiscordEvent = {
 							/* It's disabling all components if userData exists and the command is set to disable a previous command. */
 							if (userData && attackCommand.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
 
-							await executeAttacking(interaction, userData, serverData, []);
+							await executeAttacking(interaction, userData, serverData);
 						}, []);
 						return;
 					}
@@ -421,7 +417,7 @@ export const event: DiscordEvent = {
 
 				if (interaction.customId.startsWith('species_')) {
 
-					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, speciesInteractionCollector, [interaction, userData]);
+					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, speciesInteractionCollector, [interaction ]);
 					return;
 				}
 
@@ -433,7 +429,7 @@ export const event: DiscordEvent = {
 
 				if (interaction.customId.startsWith('proxy_')) {
 
-					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, proxyInteractionCollector, [interaction, userData, serverData]);
+					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, proxyInteractionCollector, [interaction, serverData]);
 					return;
 				}
 
@@ -506,9 +502,8 @@ setInterval(async function() {
 
 		for (const [guildId, quidId] of Object.entries(user.currentQuid)) {
 
-			const quid = user.quids[quidId];
-			const activeProfile = quid?.profiles[guildId];
-			if (!quid || !activeProfile) { continue; }
+			const userData = getUserData(user, guildId, getMapData(user.quids, quidId));
+			if (!hasNameAndSpecies(userData)) { continue; }
 			const tenMinutesInMs = 600_000;
 
 			const lastInteraction = lastInteractionMap.get(user._id + guildId);
@@ -518,12 +513,12 @@ setInterval(async function() {
 			if (!serverData) { continue; }
 
 			const lastInteractionIsTenMinutesAgo = lastInteraction.createdTimestamp < Date.now() - tenMinutesInMs;
-			const hasLessThanMaxEnergy = activeProfile.energy < activeProfile.maxEnergy;
-			const isConscious = activeProfile.energy > 0 || activeProfile.health > 0 || activeProfile.hunger > 0 || activeProfile.thirst > 0;
-			const hasNoCooldown = cooldownMap.get(user._id + guildId) !== true;
-			if (lastInteractionIsTenMinutesAgo && activeProfile.isResting === false && isResting(user._id, guildId) === false && hasLessThanMaxEnergy && isConscious && hasNoCooldown) {
+			const hasLessThanMaxEnergy = userData.quid.profile.energy < userData.quid.profile.maxEnergy;
+			const isConscious = userData.quid.profile.energy > 0 || userData.quid.profile.health > 0 || userData.quid.profile.hunger > 0 || userData.quid.profile.thirst > 0;
+			const hasNoCooldown = cooldownMap.get(userData._id + guildId) !== true;
+			if (lastInteractionIsTenMinutesAgo && userData.quid.profile.isResting === false && isResting(userData) === false && hasLessThanMaxEnergy && isConscious && hasNoCooldown) {
 
-				await startResting(lastInteraction, user, quid, activeProfile, serverData)
+				await startResting(lastInteraction, userData, serverData)
 					.catch(async (error) => {
 						await sendErrorMessage(lastInteraction, error)
 							.catch(e => { console.error(e); });

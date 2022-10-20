@@ -1,6 +1,6 @@
 import { ActivityType } from 'discord.js';
 import { client } from '..';
-import { DiscordEvent } from '../typedef';
+import { DiscordEvent } from '../typings/main';
 
 export const event: DiscordEvent = {
 	name: 'shardReady',

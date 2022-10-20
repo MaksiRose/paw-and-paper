@@ -1,6 +1,6 @@
 import { readFileSync, unlinkSync, writeFileSync } from 'fs';
 import userModel from '../models/userModel';
-import { DeleteList } from '../typedef';
+import { DeleteList } from '../typings/data/general';
 import { getMapData } from '../utils/helperFunctions';
 
 /** It's checking whether the deletionTime of a property on the toDeleteList is older than an hour from now, and if it is, delete the property and delete the file from the toDelete folder. It's also checking whether a profile has a temporaryStatIncrease with a timestamp that is older than a week ago, and if it does, bring the stat back and delete the property from temporaryStatIncrease. */

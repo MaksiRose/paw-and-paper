@@ -1,6 +1,7 @@
 // @ts-check
 import serverModel from '../models/serverModel';
-import { CurrentRegionType, ServerSchema } from '../typedef';
+import { ServerSchema } from '../typings/data/server';
+import { CurrentRegionType } from '../typings/data/user';
 import { getSmallerNumber } from './helperFunctions';
 import { getRandomNumber } from './randomizers';
 

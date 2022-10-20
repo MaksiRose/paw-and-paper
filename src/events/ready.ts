@@ -1,5 +1,5 @@
 import { readdirSync } from 'fs';
-import { DiscordEvent } from '../typedef';
+import { DiscordEvent } from '../typings/main';
 import { ActivityType } from 'discord.js';
 import path from 'path';
 import { client } from '..';

@@ -1,9 +1,8 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { getQuidDisplayname, respond } from '../../utils/helperFunctions';
-import userModel from '../../models/userModel';
-import { SlashCommand } from '../../typedef';
+import { respond } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
+import { SlashCommand } from '../../typings/handle';
 const { error_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -23,7 +22,7 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction, userData) => {
 
-		if (!hasName(interaction, userData)) { return; }
+		if (!hasName(userData, interaction)) { return; }
 
 		/* Checking if the user has sent a valid hex code. If they have not, it will send an error message. */
 		const hexColor = interaction.options.getString('hex');
@@ -39,20 +38,18 @@ export const command: SlashCommand = {
 		}
 
 		/* Changing the hex code and sending a success message. */
-		userData = await userModel.findOneAndUpdate(
-			u => u._id === userData?._id,
+		await userData.update(
 			(u) => {
 				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DM'));
 				q.color = `#${hexColor}`;
 			},
 		);
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId || 'DM'));
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
-				.setTitle(`Profile color set to ${quidData.color}!`)],
+				.setColor(userData.quid.color)
+				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setTitle(`Profile color set to ${userData.quid.color}!`)],
 		}, true);
 		return;
 	},

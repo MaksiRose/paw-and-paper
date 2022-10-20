@@ -1,12 +1,13 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, Embed, EmbedBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import serverModel from '../../models/serverModel';
-import userModel from '../../models/userModel';
-import { CommonPlantNames, MaterialNames, Profile, Quid, RarePlantNames, ServerSchema, SlashCommand, SpecialPlantNames, SpeciesNames, UncommonPlantNames, UserSchema } from '../../typedef';
-import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
+import { CommonPlantNames, MaterialNames, RarePlantNames, SpecialPlantNames, SpeciesNames, UncommonPlantNames } from '../../typings/data/general';
+import { ServerSchema } from '../../typings/data/server';
+import { UserData } from '../../typings/data/user';
+import { SlashCommand } from '../../typings/handle';
+import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
-import { pronoun, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, widenValues, unsafeKeys, respond, update, getQuidDisplayname, getArrayElement } from '../../utils/helperFunctions';
+import { getMapData, widenValues, unsafeKeys, respond, update, getArrayElement, capitalizeString } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { calculateInventorySize } from '../../utils/simulateItemUse';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -27,32 +28,25 @@ export const command: SlashCommand = {
 	position: 2,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendCommand: async (interaction, userData, serverData, embedArray) => {
+	sendCommand: async (interaction, userData, serverData) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!hasName(interaction, userData)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
 
-		/* Gets the current active quid and the server profile from the account */
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-		const profileData = getMapData(quidData.profiles, interaction.guildId);
-		if (!hasSpecies(interaction, quidData)) { return; }
+		/* Checks if the profile is resting, on a cooldown or passed out. */
+		const restEmbed = await isInvalid(interaction, userData);
+		if (restEmbed === false) { return; }
 
-		/* Checks if the profile is on a cooldown or passed out. */
-		if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
-
-		await sendStoreMessage(interaction, userData, quidData, profileData, serverData, embedArray);
+		await sendStoreMessage(interaction, userData, serverData, restEmbed);
 	},
 };
 
 export async function sendStoreMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
-	userData: UserSchema,
-	quidData: Quid<true>,
-	profileData: Profile,
+	userData: UserData<never, never>,
 	serverData: ServerSchema,
-	embedArray: EmbedBuilder[],
+	restEmbed: EmbedBuilder[],
 ): Promise<void> {
 
 	if (await missingPermissions(interaction, [
@@ -61,14 +55,14 @@ export async function sendStoreMessage(
 
 	const messageContent = remindOfAttack(interaction.guildId);
 
-	if (calculateInventorySize(profileData.inventory) === 0) {
+	if (calculateInventorySize(userData.quid.profile.inventory) === 0) {
 
 		await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 			content: messageContent,
-			embeds: [...embedArray, new EmbedBuilder()
-				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
-				.setDescription(`*${quidData.name} goes to the food den to store ${pronoun(quidData, 2)} findings away, but ${pronoun(quidData, 2)} mouth is empty...*`),
+			embeds: [...restEmbed, new EmbedBuilder()
+				.setColor(userData.quid.color)
+				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setDescription(`*${userData.quid.name} goes to the food den to store ${userData.quid.pronoun(2)} findings away, but ${userData.quid.pronoun(2)} mouth is empty...*`),
 			],
 		});
 		return;
@@ -76,15 +70,15 @@ export async function sendStoreMessage(
 
 	if (interaction.isChatInputCommand() && interaction.options.getSubcommand(false) === 'all') {
 
-		await storeAll(interaction, userData, quidData, profileData, serverData);
+		await storeAll(interaction, userData, serverData);
 		return;
 	}
 
-	const { itemSelectMenu, storeAllButton } = getOriginalComponents(userData._id, profileData);
+	const { itemSelectMenu, storeAllButton } = getOriginalComponents(userData);
 
 	const botReply = await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 		content: messageContent,
-		embeds: [...embedArray, getOriginalEmbed(userData, quidData, interaction.guildId)],
+		embeds: [...restEmbed, getOriginalEmbed(userData)],
 		components: [itemSelectMenu, storeAllButton],
 	});
 
@@ -92,26 +86,23 @@ export async function sendStoreMessage(
 }
 
 function getOriginalEmbed(
-	userData: UserSchema,
-	quidData: Quid<true>,
-	serverId: string,
+	userData: UserData<never, never>,
 ): EmbedBuilder {
 
 	return new EmbedBuilder()
-		.setColor(quidData.color)
-		.setAuthor({ name: getQuidDisplayname(userData, quidData, serverId), iconURL: quidData.avatarURL })
-		.setDescription(`*${quidData.name} wanders to the food den, ready to store away ${pronoun(quidData, 2)} findings. ${upperCasePronounAndPlural(quidData, 0, 'circle')} the food pile…*`);
+		.setColor(userData.quid.color)
+		.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+		.setDescription(`*${userData.quid.name} wanders to the food den, ready to store away ${userData.quid.pronoun(2)} findings. ${capitalizeString(userData.quid.pronounAndPlural(0, 'circle'))} the food pile…*`);
 }
 
 function getOriginalComponents(
-	_id: string,
-	profileData: Profile,
+	userData: UserData<never, never>,
 	defaultItem?: CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | SpeciesNames | MaterialNames,
 ) {
 
 	const itemSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
 
-	const inventory_ = widenValues(profileData.inventory);
+	const inventory_ = widenValues(userData.quid.profile.inventory);
 	for (const itemType of unsafeKeys(inventory_)) {
 
 		for (const item of unsafeKeys(inventory_[itemType])) {
@@ -122,13 +113,13 @@ function getOriginalComponents(
 
 	const itemSelectMenu = new ActionRowBuilder<SelectMenuBuilder>()
 		.setComponents(new SelectMenuBuilder()
-			.setCustomId(`store_options_@${_id}`)
+			.setCustomId(`store_options_@${userData._id}`)
 			.setPlaceholder('Select an item to store away')
 			.setOptions(itemSelectMenuOptions));
 
 	const storeAllButton = new ActionRowBuilder<ButtonBuilder>()
 		.setComponents(new ButtonBuilder()
-			.setCustomId(`store_all_@${_id}`)
+			.setCustomId(`store_all_@${userData._id}`)
 			.setLabel('Store everything')
 			.setStyle(ButtonStyle.Success));
 	return { itemSelectMenu, storeAllButton };
@@ -136,17 +127,13 @@ function getOriginalComponents(
 
 export async function storeInteractionCollector(
 	interaction: ButtonInteraction | SelectMenuInteraction,
-	userData: UserSchema | null,
+	userData: UserData<undefined, ''> | null,
 	serverData: ServerSchema | null,
 ): Promise<void> {
 
-	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
-	if (userData === null) { throw new TypeError('userData is null.'); }
-	if (serverData === null) { throw new TypeError('serverData is null.'); }
-
-	/* Gets the current active quid and the server profile from the account */
-	let quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-	let profileData = getMapData(quidData.profiles, interaction.guildId);
+	/* This ensures that the user is in a guild and has a completed account. */
+	if (serverData === null) { throw new Error('serverData is null'); }
+	if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
 
 	if (interaction.isSelectMenu()) {
 
@@ -155,7 +142,7 @@ export async function storeInteractionCollector(
 			const chosenFood = getArrayElement(interaction.values, 0) as CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames | SpeciesNames | MaterialNames;
 			let maximumAmount = 0;
 
-			const inventory_ = widenValues(profileData.inventory);
+			const inventory_ = widenValues(userData.quid.profile.inventory);
 			for (const itemType of unsafeKeys(inventory_)) {
 
 				if (unsafeKeys(inventory_[itemType]).includes(chosenFood)) {
@@ -171,7 +158,7 @@ export async function storeInteractionCollector(
 				amountSelectMenuOptions.push({ label: `${i}`, value: `${chosenFood}_${i}` });
 			}
 
-			const itemSelectMenu = getOriginalComponents(userData._id, profileData, chosenFood).itemSelectMenu;
+			const itemSelectMenu = getOriginalComponents(userData, chosenFood).itemSelectMenu;
 
 			const amountSelectMenu = new ActionRowBuilder<SelectMenuBuilder>()
 				.setComponents(new SelectMenuBuilder()
@@ -191,7 +178,7 @@ export async function storeInteractionCollector(
 			const chosenAmount = Number(getArrayElement(getArrayElement(interaction.values, 0).split('_'), 1));
 			if (isNaN(chosenAmount)) { throw new TypeError('chosenAmount is NaN'); }
 
-			const userInventory = widenValues(profileData.inventory);
+			const userInventory = widenValues(userData.quid.profile.inventory);
 			const serverInventory = widenValues(serverData.inventory);
 			for (const itemType of unsafeKeys(userInventory)) {
 
@@ -202,15 +189,12 @@ export async function storeInteractionCollector(
 				}
 			}
 
-			userData = await userModel.findOneAndUpdate(
-				u => u._id === userData!._id,
+			await userData.update(
 				(u) => {
 					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 					p.inventory = userInventory;
 				},
 			);
-			quidData = getMapData(userData.quids, quidData._id);
-			profileData = getMapData(quidData.profiles, profileData.serverId);
 
 			serverData = await serverModel.findOneAndUpdate(
 				s => s._id === serverData!._id,
@@ -219,9 +203,9 @@ export async function storeInteractionCollector(
 				},
 			);
 
-			const { itemSelectMenu, storeAllButton } = getOriginalComponents(userData._id, profileData);
+			const { itemSelectMenu, storeAllButton } = getOriginalComponents(userData);
 
-			const embed = new EmbedBuilder(interaction.message.embeds.splice(-1, 1)[0]?.toJSON() || getOriginalEmbed(userData, quidData, interaction.guildId).toJSON());
+			const embed = new EmbedBuilder(interaction.message.embeds.splice(-1, 1)[0]?.toJSON() || getOriginalEmbed(userData).toJSON());
 			let footerText = embed.toJSON().footer?.text ?? '';
 			footerText += `\n+${chosenAmount} ${chosenFood} for ${interaction.guild.name}`;
 			embed.setFooter({ text: footerText });
@@ -236,24 +220,22 @@ export async function storeInteractionCollector(
 
 	if (interaction.isButton() && interaction.customId.startsWith('store_all')) {
 
-		await storeAll(interaction, userData, quidData, profileData, serverData, interaction.message.embeds.splice(-1, 1)[0], interaction.message.embeds);
+		await storeAll(interaction, userData, serverData, interaction.message.embeds.splice(-1, 1)[0], interaction.message.embeds);
 	}
 }
 
 async function storeAll(
 	interaction: ButtonInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
-	userData: UserSchema,
-	quidData: Quid<true>,
-	profileData: Profile,
+	userData: UserData<never, never>,
 	serverData: ServerSchema,
 	mainEmbed?: EmbedBuilder | Embed,
 	otherEmbeds?: EmbedBuilder[] | Embed[],
 ): Promise<void> {
 
-	const embed = new EmbedBuilder(mainEmbed?.toJSON() || getOriginalEmbed(userData, quidData, interaction.guildId).toJSON());
+	const embed = new EmbedBuilder(mainEmbed?.toJSON() || getOriginalEmbed(userData).toJSON());
 	let footerText = embed.toJSON().footer?.text ?? '';
 
-	const userInventory = widenValues(profileData.inventory);
+	const userInventory = widenValues(userData.quid.profile.inventory);
 	const serverInventory = widenValues(serverData.inventory);
 	for (const itemType of unsafeKeys(userInventory)) {
 
@@ -271,15 +253,12 @@ async function storeAll(
 	}
 	embed.setFooter(footerText ? { text: footerText } : null);
 
-	userData = await userModel.findOneAndUpdate(
-		u => u._id === userData!._id,
+	await userData.update(
 		(u) => {
 			const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 			p.inventory = userInventory;
 		},
 	);
-	quidData = getMapData(userData.quids, quidData._id);
-	profileData = getMapData(quidData.profiles, profileData.serverId);
 
 	serverData = await serverModel.findOneAndUpdate(
 		s => s._id === serverData._id,

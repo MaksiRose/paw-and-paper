@@ -1,3 +1,7 @@
+import { Collection } from 'discord.js';
+import userModel from '../../models/userModel';
+import { ValueOf } from '../../utils/helperFunctions';
+import { OmitFirstArgAndChangeReturn } from '../main';
 import { Inventory, ProxyLimitedList, ShopRole, SpeciesNames } from './general';
 
 export enum WayOfEarningType {
@@ -30,7 +34,7 @@ export enum CurrentRegionType {
 	Lake = 'lake'
 }
 
-export interface Profile {
+export interface ProfileSchema {
 	/** ID of the server that this information is associated with */
 	readonly serverId: string;
 	/** Rank of the quid */
@@ -71,7 +75,7 @@ export interface Profile {
 		play: boolean;
 		/** Whether this profile has completed the explore tutorial */
 		explore: boolean;
-	}
+	};
 	/** The sapling of the quid */
 	sapling: {
 		/** Whether there is a sapling */
@@ -107,10 +111,10 @@ export interface Profile {
 		personal: { [key in string]: number };
 	};
 	/** A timestamp for when the profile was last used */
-	lastActiveTimestamp: number
+	lastActiveTimestamp: number;
 }
 
-export interface Quid<isCompleted extends boolean = boolean> {
+export interface QuidSchema<Completed extends ''> {
 	/** Unique ID of the quid */
 	readonly _id: string;
 	/** Name of the quid */
@@ -121,7 +125,7 @@ export interface Quid<isCompleted extends boolean = boolean> {
 		servers: { [index: string]: string; };
 	};
 	/** Species of the quid */
-	species: isCompleted extends true ? SpeciesNames : SpeciesNames | '';
+	species: SpeciesNames | Completed;
 	/** Displayed species of the quid */
 	displayedSpecies: string;
 	/** Description of the quid */
@@ -140,7 +144,7 @@ export interface Quid<isCompleted extends boolean = boolean> {
 	/** Object of quid_id as key and an array of timestamps of when the mention has been done as the value */
 	mentions: { [key in string]: number[]; };
 	/** Object of server IDs this quid has been used on as the key and the information associated with it as the value */
-	profiles: { [key in string]: Profile; };
+	profiles: { [key in string]: ProfileSchema; };
 }
 
 export enum ProxyListType {
@@ -203,10 +207,37 @@ export interface UserSchema {
 		};
 	};
 	/** Object of names of quids as the key and the quids this user has created as value */
-	quids: { [key in string]: Quid };
+	quids: { [key in string]: QuidSchema<''> };
 	/** Object of the server IDs as the key and the id of the quid that is currently active as the value */
 	currentQuid: { [key in string]: string };
 	/** Last major version that the user played on */
 	lastPlayedVersion: string;
 	readonly _id: string;
+}
+
+
+export interface Quid<Completed extends ''> extends Omit<QuidSchema<Completed>, 'nickname' | 'profiles'> {
+	nickname: Omit<QuidSchema<Completed>['nickname'], 'servers'> & {
+		server: QuidSchema<Completed>['nickname']['servers'][string] | undefined;
+	},
+	profile: ProfileSchema | (Completed extends '' ? undefined : never);
+	getDisplayname: () => string;
+	getDisplayspecies: () => string;
+	pronoun: (pronounNumber: 0 | 1 | 2 | 3 | 4 | 5) => string;
+	pronounAndPlural: (pronounNumber: 0 | 1 | 2 | 3 | 4 | 5, string1: string, string2?: string) => string
+}
+
+export interface UserData<QuidExists extends undefined, QuidCompleted extends ''> extends Omit<UserSchema, 'quids' | 'currentQuid' | 'tag' | 'settings'> {
+	tag: Omit<UserSchema['tag'], 'servers'> & {
+		server: UserSchema['tag']['servers'][string] | undefined;
+	},
+	quid: Quid<QuidCompleted> | QuidExists,
+	quids: Collection<keyof UserSchema['quids'], ValueOf<UserSchema['quids']>>,
+	serverIdToQuidId: Collection<keyof UserSchema['currentQuid'], ValueOf<UserSchema['currentQuid']>>,
+	settings: Omit<UserSchema['settings'], 'proxy'> & {
+		proxy: Omit<UserSchema['settings']['proxy'], 'servers'> & {
+			server: UserSchema['settings']['proxy']['servers'][string] | undefined;
+		};
+	};
+	update: OmitFirstArgAndChangeReturn<typeof userModel['findOneAndUpdate'], Promise<void>>;
 }

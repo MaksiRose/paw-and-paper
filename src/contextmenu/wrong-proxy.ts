@@ -1,9 +1,11 @@
 import { ActionRowBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
-import userModel from '../models/userModel';
-import { ContextMenuCommand, UserSchema, WebhookMessages } from '../typedef';
+import userModel, { getUserData } from '../models/userModel';
+import { WebhookMessages } from '../typings/data/general';
+import { UserSchema } from '../typings/data/user';
+import { ContextMenuCommand } from '../typings/handle';
 import { disableAllComponents } from '../utils/componentDisabling';
-import { getArrayElement, getMapData, getQuidDisplayname, respond, update } from '../utils/helperFunctions';
+import { getArrayElement, getMapData, respond, update } from '../utils/helperFunctions';
 import { canManageWebhooks, missingPermissions } from '../utils/permissionHandler';
 
 export const command: ContextMenuCommand = {
@@ -67,7 +69,7 @@ function getQuidsPage(
 
 export async function wrongproxyInteractionCollector(
 	interaction: SelectMenuInteraction,
-	userData: UserSchema | null,
+	_userData: UserSchema | null,
 ): Promise<void> {
 
 	if (await missingPermissions(interaction, [
@@ -76,7 +78,7 @@ export async function wrongproxyInteractionCollector(
 	]) === true) { return; }
 
 	if (!interaction.inCachedGuild()) { throw new Error('interaction is not in cached guild'); }
-	if (userData === null) { throw new TypeError('userData is null'); }
+	if (_userData === null) { throw new TypeError('userData is null'); }
 	const selectOptionId = getArrayElement(interaction.values, 0);
 	const targetMessageId = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
 
@@ -85,9 +87,9 @@ export async function wrongproxyInteractionCollector(
 
 		/* Getting the quidsPage from the value Id, incrementing it by one or setting it to zero if the page number is bigger than the total amount of pages. */
 		let quidsPage = Number(selectOptionId.split('_')[2]) + 1;
-		if (quidsPage >= Math.ceil((Object.keys(userData.quids).length + 1) / 24)) { quidsPage = 0; }
+		if (quidsPage >= Math.ceil((Object.keys(_userData.quids).length + 1) / 24)) { quidsPage = 0; }
 
-		const quidMenu = getQuidsPage(userData, quidsPage, targetMessageId);
+		const quidMenu = getQuidsPage(_userData, quidsPage, targetMessageId);
 		await update(interaction, {
 			components: quidMenu.options.length > 0 ? [new ActionRowBuilder<SelectMenuBuilder>().setComponents(quidMenu)] : [],
 		});
@@ -98,7 +100,7 @@ export async function wrongproxyInteractionCollector(
 
 		/* Getting the quid form the value Id */
 		const quidId = getArrayElement(selectOptionId.split('_'), 2);
-		const quidData = getMapData(userData.quids, quidId);
+		const userData = getUserData(_userData, interaction.guildId, getMapData(_userData.quids, quidId));
 
 		const channel = interaction.channel;
 
@@ -116,15 +118,15 @@ export async function wrongproxyInteractionCollector(
 
 		const botMessage = await webhook
 			.send({
-				username: getQuidDisplayname(userData, quidData, channel.guildId),
-				avatarURL: quidData.avatarURL,
+				username: userData.quid.getDisplayname(),
+				avatarURL: userData.quid.avatarURL,
 				content: previousMessage.content || undefined,
 				files: previousMessage.attachments.toJSON(),
 				embeds: previousMessage.embeds,
 				threadId: channel.isThread() ? channel.id : undefined,
 			});
 
-		webhookCache[botMessage.id] = interaction.user.id + (quidData?._id !== undefined ? `_${quidData?._id}` : '');
+		webhookCache[botMessage.id] = `${interaction.user.id}_${userData.quid._id}`;
 		writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
 
 		/* Deleting the message. */

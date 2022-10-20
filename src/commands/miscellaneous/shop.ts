@@ -1,12 +1,13 @@
 import { ActionRowBuilder, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { getArrayElement, respond, update } from '../../utils/helperFunctions';
-import userModel from '../../models/userModel';
-import { Quid, ServerSchema, SlashCommand, UserSchema, WayOfEarningType } from '../../typedef';
 import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
-import { hasName, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
+import { SlashCommand } from '../../typings/handle';
+import { UserData, WayOfEarningType } from '../../typings/data/user';
+import { ServerSchema } from '../../typings/data/server';
 const { error_color, default_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -22,7 +23,7 @@ export const command: SlashCommand = {
 	sendCommand: async (interaction, userData, serverData) => {
 
 		if (!isInGuild(interaction)) { return; }
-		if (!hasName(interaction, userData)) { return; }
+		if (!hasName(userData, interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
 
 		const shopInfo = getShopInfo(serverData);
@@ -40,14 +41,13 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-		await getShopResponse(interaction, serverData, quidData, shopKindPage, nestedPage);
+		await getShopResponse(interaction, serverData, userData, shopKindPage, nestedPage);
 	},
 };
 
 export async function shopInteractionCollector(
 	interaction: SelectMenuInteraction,
-	userData: UserSchema | null,
+	userData: UserData<undefined, ''> | null,
 	serverData: ServerSchema | null,
 ): Promise<void> {
 
@@ -58,12 +58,12 @@ export async function shopInteractionCollector(
 
 	if (selectOptionId && selectOptionId.startsWith('shop_nextpage_')) {
 
+		if (!hasName(userData, interaction)) { return; }
 		const shopKindPage = Number(getArrayElement(selectOptionId.split('_'), 2));
 		const nestedPage = Number(getArrayElement(selectOptionId.split('_'), 3));
 		const { newShopKindPage, newNestedPage } = getShopInfo(serverData).nextPage(shopKindPage, nestedPage);
 
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-		await getShopResponse(interaction, serverData, quidData, newShopKindPage, newNestedPage);
+		await getShopResponse(interaction, serverData, userData, newShopKindPage, newNestedPage);
 		return;
 	}
 	else if (selectOptionId && selectOptionId.startsWith('shop_')) {
@@ -74,32 +74,26 @@ export async function shopInteractionCollector(
 		const roleId = getArrayElement(selectOptionId.split('_'), 1);
 		const buyItem = serverData.shop.find((shopRole) => shopRole.roleId === roleId);
 		if (buyItem === undefined) { throw new Error('roleId is undefined or could not be found in server shop'); }
+		if (!hasNameAndSpecies(userData, interaction)) { return; }
 
-		let quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-		let profileData = getMapData(quidData.profiles, interaction.guildId);
-
-		if (profileData.roles.some(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience')) {
+		if (userData.quid.profile.roles.some(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience')) {
 
 			try {
 
-				const userRole = profileData.roles.find(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience');
+				const userRole = userData.quid.profile.roles.find(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience');
 				if (userRole === undefined) { throw new Error('userRole is undefined'); }
 
-				userData = await userModel.findOneAndUpdate(
-					(u => u._id === userData?._id),
+				userData.update(
 					(u) => {
 						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 						p.experience += userRole.requirement as number;
 						p.roles = p.roles.filter(r => r.roleId !== userRole.roleId);
 					},
 				);
-				quidData = getMapData(userData.quids, quidData._id);
-				profileData = getMapData(quidData.profiles, profileData.serverId);
 
 				if (interaction.member.roles.cache.has(buyItem.roleId)) { await interaction.member.roles.remove(buyItem.roleId); }
 
-				const levelUpCheck = await checkLevelUp(interaction, userData, quidData, profileData, serverData);
-				profileData = levelUpCheck.profileData;
+				const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
 
 				await respond(interaction, {
 					embeds: [
@@ -107,7 +101,7 @@ export async function shopInteractionCollector(
 							.setColor(default_color)
 							.setAuthor({ name: serverData.name, iconURL: interaction.guild.iconURL() || undefined })
 							.setDescription(`You refunded the <@&${buyItem.roleId}> role!`),
-						...(levelUpCheck.levelUpEmbed ? [levelUpCheck.levelUpEmbed] : []),
+						...levelUpEmbed,
 					],
 				}, false);
 			}
@@ -116,7 +110,7 @@ export async function shopInteractionCollector(
 				await checkRoleCatchBlock(error, interaction, interaction.member);
 			}
 		}
-		else if ((profileData.levels * (profileData.levels - 1) / 2) * 50 + profileData.experience >= buyItem.requirement) {
+		else if ((userData.quid.profile.levels * (userData.quid.profile.levels - 1) / 2) * 50 + userData.quid.profile.experience >= buyItem.requirement) {
 
 			try {
 
@@ -124,25 +118,24 @@ export async function shopInteractionCollector(
 
 				while (cost > 0) {
 
-					if (cost <= profileData.experience) {
+					if (cost <= userData.quid.profile.experience) {
 
-						profileData.experience -= cost;
+						userData.quid.profile.experience -= cost;
 						cost -= cost;
 					}
 					else {
 
-						profileData.levels -= 1;
-						profileData.experience += profileData.levels * 50;
+						userData.quid.profile.levels -= 1;
+						userData.quid.profile.experience += userData.quid.profile.levels * 50;
 					}
 				}
-				if (profileData.experience < 0 || profileData.levels < 1) { throw new Error('Could not calculate item cost correctly'); }
+				if (userData.quid.profile.experience < 0 || userData.quid.profile.levels < 1) { throw new Error('Could not calculate item cost correctly'); }
 
-				userData = await userModel.findOneAndUpdate(
-					(u => u._id === userData?._id),
+				await userData.update(
 					(u) => {
 						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-						p.experience = profileData.experience;
-						p.levels = profileData.levels;
+						p.experience = userData!.quid!.profile.experience;
+						p.levels = userData!.quid!.profile.levels;
 						p.roles.push({
 							roleId: buyItem.roleId,
 							wayOfEarning: buyItem.wayOfEarning,
@@ -150,8 +143,6 @@ export async function shopInteractionCollector(
 						});
 					},
 				);
-				quidData = getMapData(userData.quids, quidData._id);
-				profileData = getMapData(quidData.profiles, profileData.serverId);
 
 				if (!interaction.member.roles.cache.has(buyItem.roleId)) { await interaction.member.roles.add(buyItem.roleId); }
 
@@ -163,19 +154,16 @@ export async function shopInteractionCollector(
 				}, false);
 
 
-				const roles = profileData.roles.filter(role => role.wayOfEarning === WayOfEarningType.Levels && role.requirement > profileData.levels);
+				const roles = userData.quid.profile.roles.filter(role => role.wayOfEarning === WayOfEarningType.Levels && role.requirement > userData.quid.profile.levels);
 
 				for (const role of roles) {
 
-					userData = await userModel.findOneAndUpdate(
-						(u => u._id === userData?._id),
+					await userData.update(
 						(u) => {
 							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 							p.roles.filter(r => r.roleId !== role.roleId);
 						},
 					);
-					quidData = getMapData(userData.quids, quidData._id);
-					profileData = getMapData(quidData.profiles, profileData.serverId);
 
 					if (interaction.member.roles.cache.has(role.roleId)) {
 
@@ -210,7 +198,7 @@ export async function shopInteractionCollector(
 async function getShopResponse(
 	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
 	serverData: ServerSchema,
-	quidData: Quid,
+	userData: UserData<never, ''>,
 	shopKindPage: number,
 	nestedPage: number,
 ): Promise<void> {
@@ -271,7 +259,7 @@ async function getShopResponse(
 			.setDescription(descriptionArray.join('\n'))],
 		components: [new ActionRowBuilder<SelectMenuBuilder>()
 			.setComponents(new SelectMenuBuilder()
-				.setCustomId(`shop_@${quidData._id}`)
+				.setCustomId(`shop_@${userData.quid._id}`)
 				.setPlaceholder('Select a shop item')
 				.setOptions(shopMenuOptions))],
 	});

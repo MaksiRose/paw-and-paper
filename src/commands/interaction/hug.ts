@@ -1,11 +1,13 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { getArrayElement, getQuidDisplayname, respond, update } from '../../utils/helperFunctions';
-import userModel from '../../models/userModel';
-import { SlashCommand, UserSchema } from '../../typedef';
+import { getArrayElement, respond, update } from '../../utils/helperFunctions';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { getRandomNumber } from '../../utils/randomizers';
 import { missingPermissions } from '../../utils/permissionHandler';
+import { SlashCommand } from '../../typings/handle';
+import { UserData } from '../../typings/data/user';
+import userModel, { getUserData } from '../../models/userModel';
+import { hasNameAndSpecies } from '../../utils/checkUserState';
 const { error_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -27,7 +29,6 @@ export const command: SlashCommand = {
 			'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
 		]) === true) { return; }
 
-		const quidData = userData ? userData.quids[userData.currentQuid[interaction.guildId || 'DM'] || ''] : undefined;
 		const member = interaction.inCachedGuild() ? await interaction.guild.members.fetch(interaction.user.id).catch(() => { return undefined; }) : undefined;
 
 		const mentionedUser = interaction.options.getUser('user');
@@ -53,10 +54,10 @@ export const command: SlashCommand = {
 
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
-					.setColor(quidData?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
+					.setColor(userData?.quid?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
 					.setAuthor({
-						name: (userData && quidData) ? getQuidDisplayname(userData, quidData, interaction.guildId ?? '') : (member?.displayName || interaction.user.tag),
-						iconURL: quidData?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
+						name: userData?.quid ? userData.quid.getDisplayname() : (member?.displayName || interaction.user.tag),
+						iconURL: userData?.quid?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
 					})
 					.setImage(selfHugURLs[getRandomNumber(selfHugURLs.length)] || null)],
 			}, true);
@@ -66,10 +67,10 @@ export const command: SlashCommand = {
 		await respond(interaction, {
 			content: mentionedUser.toString(),
 			embeds: [new EmbedBuilder()
-				.setColor(quidData?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
+				.setColor(userData?.quid?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
 				.setAuthor({
-					name: (userData && quidData) ? getQuidDisplayname(userData, quidData, interaction.guildId ?? '') : (member?.displayName || interaction.user.tag),
-					iconURL: quidData?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
+					name: userData?.quid ? userData.quid.getDisplayname() : (member?.displayName || interaction.user.tag),
+					iconURL: userData?.quid?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
 				})
 				.setDescription(`${mentionedUser.username}, do you accept the hug?`)],
 			components: [new ActionRowBuilder<ButtonBuilder>()
@@ -93,7 +94,7 @@ export const command: SlashCommand = {
  */
 export async function hugInteractionCollector(
 	interaction: ButtonInteraction,
-	partnerUserData: UserSchema | null,
+	partnerUserData: UserData<undefined, ''> | null,
 ): Promise<void> {
 
 	if (await missingPermissions(interaction, [
@@ -112,8 +113,8 @@ export async function hugInteractionCollector(
 		return;
 	}
 
-	const userData = await userModel.findOne(u => u.userId.includes(originalUserId)).catch(() => { return null; });
-	const quidData = userData ? userData.quids[userData.currentQuid[interaction.guildId || 'DM'] || ''] : undefined;
+	const _userData = await userModel.findOne(u => u.userId.includes(originalUserId)).catch(() => { return null; });
+	const userData = _userData === null ? null : getUserData(_userData, interaction.guildId || 'DM', _userData.quids[_userData.currentQuid[interaction.guildId || 'DM'] || '']);
 
 	if (interaction.customId.includes('accept')) {
 
@@ -141,18 +142,16 @@ export async function hugInteractionCollector(
 		await update(interaction, {
 			content: null,
 			embeds: [new EmbedBuilder()
-				.setColor(quidData?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
+				.setColor(userData?.quid?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
 				.setAuthor({
-					name: (userData && quidData) ? getQuidDisplayname(userData, quidData, interaction.guildId ?? '') : (originalMember?.displayName || originalUser.tag),
-					iconURL: quidData?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
+					name: userData?.quid ? userData.quid.getDisplayname() : (originalMember?.displayName || originalUser.tag),
+					iconURL: userData?.quid?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
 				})
 				.setImage(hugURLs[getRandomNumber(hugURLs.length)] || null)],
 			components: [],
 		});
 
-		const partnerQuidData = partnerUserData ? partnerUserData.quids[partnerUserData.currentQuid[interaction.guildId || 'DM'] || ''] : undefined;
-
-		if (userData && quidData && partnerUserData && partnerQuidData) { await addFriendshipPoints(interaction.message, userData, quidData._id, partnerUserData, partnerQuidData._id); }
+		if (hasNameAndSpecies(userData) && hasNameAndSpecies(partnerUserData)) { await addFriendshipPoints(interaction.message, userData, partnerUserData); }
 		return;
 	}
 
@@ -161,10 +160,10 @@ export async function hugInteractionCollector(
 		await update(interaction, {
 			content: null,
 			embeds: [new EmbedBuilder()
-				.setColor(quidData?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
+				.setColor(userData?.quid?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
 				.setAuthor({
-					name: (userData && quidData) ? getQuidDisplayname(userData, quidData, interaction.guildId ?? '') : (originalMember?.displayName || originalUser.tag),
-					iconURL: quidData?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
+					name: userData?.quid ? userData.quid.getDisplayname() : (originalMember?.displayName || originalUser.tag),
+					iconURL: userData?.quid?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
 				})
 				.setDescription(`${interaction.user.toString()} did not accept the hug.`)],
 			components: disableAllComponents(interaction.message.components),

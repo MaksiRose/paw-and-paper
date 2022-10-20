@@ -1,6 +1,6 @@
 import { RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v9';
 import { lstatSync, readdirSync } from 'fs';
-import { ContextMenuCommand, SlashCommand } from '../typedef';
+import { ContextMenuCommand, SlashCommand } from '../typings/handle';
 import path from 'path';
 import { client, handle } from '..';
 

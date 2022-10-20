@@ -1,12 +1,12 @@
 import { Octokit } from '@octokit/rest';
 import { EmbedBuilder, SlashCommandBuilder, Team, User, ActionRowBuilder, ButtonBuilder, ButtonStyle, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ModalMessageModalSubmitInteraction, ChatInputCommandInteraction, AttachmentBuilder } from 'discord.js';
 import { getArrayElement, respond, update } from '../../utils/helperFunctions';
-import { SlashCommand } from '../../typedef';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
 import { hasPermission } from '../../utils/permissionHandler';
 import { client } from '../..';
+import { SlashCommand } from '../../typings/handle';
 const { error_color, default_color, github_token, ticket_channel_id } = require('../../../config.json');
 
 export const command: SlashCommand = {

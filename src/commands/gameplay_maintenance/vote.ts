@@ -1,9 +1,10 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 import { handle } from '../..';
-import userModel from '../../models/userModel';
-import { SlashCommand, UserSchema, VoteList } from '../../typedef';
-import { hasName, hasSpecies } from '../../utils/checkUserState';
+import { VoteList } from '../../typings/data/general';
+import { UserData } from '../../typings/data/user';
+import { SlashCommand } from '../../typings/handle';
+import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { getMapData, getSmallerNumber, respond } from '../../utils/helperFunctions';
@@ -20,23 +21,24 @@ export const command: SlashCommand = {
 	position: 6,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendCommand: async (interaction, userData, serverData, embedArray) => {
+	sendCommand: async (interaction, userData) => {
 
 		if (await missingPermissions(interaction, [
 			'ViewChannel', // Needed because of createCommandComponentDisabler
 		]) === true) { return; }
 
-		if (!hasName(interaction, userData)) { return; }
+		if (!hasNameAndSpecies(userData, interaction)) { return; }
 
-		/* Gets the current active quid and the server profile from the account */
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId || 'DM'));
-		const profileData = getMapData(quidData.profiles, interaction.guildId || 'DM');
-		if (!hasSpecies(interaction, quidData)) { return; }
+		let restEmbed: EmbedBuilder[] = [];
+		if (interaction.inGuild()) {
 
-		if (interaction.inGuild() && await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
+			const restEmbedOrFalse = await isInvalid(interaction, userData);
+			if (restEmbedOrFalse === false) { return; }
+			else { restEmbed = restEmbedOrFalse; }
+		}
 
 		const botReply = await respond(interaction, {
-			embeds: [...embedArray, new EmbedBuilder()
+			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(default_color)
 				.setDescription('Click a button to be sent to that websites bot page. After voting for this bot, select the website you voted on from the drop-down menu to get +30 energy.')],
 			components: [
@@ -75,11 +77,11 @@ export const command: SlashCommand = {
 
 export async function voteInteractionCollector(
 	interaction: SelectMenuInteraction,
-	userData: UserSchema | null,
+	userData: UserData<undefined, ''> | null,
 ): Promise<void> {
 
-	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
-	if (userData === null) { throw new Error('userData is null'); }
+	/* This ensures that the user is in a guild and has a completed account. */
+	if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
 
 	const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8')) as VoteList;
 	const twelveHoursInMs = 43_200_000;
@@ -126,27 +128,20 @@ export async function voteInteractionCollector(
 		voteCache['id_' + interaction.user.id] = newUserVoteCache;
 		writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 
-		/* Gets the current active quid and the server profile from the account */
-		let quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId || 'DM'));
-		let profileData = getMapData(quidData.profiles, interaction.guildId || 'DM');
+		const energyPoints = getSmallerNumber(userData.quid.profile.maxEnergy - userData.quid.profile.energy, 30);
 
-		const energyPoints = getSmallerNumber(profileData.maxEnergy - profileData.energy, 30);
-
-		userData = await userModel.findOneAndUpdate(
-			u => u._id === userData!._id,
+		await userData.update(
 			(u) => {
 				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 				p.energy += energyPoints;
 			},
 		);
-		quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId || 'DM'));
-		profileData = getMapData(quidData.profiles, interaction.guildId || 'DM');
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
 				.setTitle('Thank you for voting ☺️')
-				.setFooter({ text: `+${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})` })],
+				.setFooter({ text: `+${energyPoints} energy (${userData.quid.profile.energy}/${userData.quid.profile.maxEnergy})` })],
 		}, false);
 		return;
 	}
