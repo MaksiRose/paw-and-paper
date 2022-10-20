@@ -22,6 +22,16 @@ export const event: DiscordEvent = {
 		const { replaceMessage, quidId } = checkForProxy(newMessage, getUserData(_userData, newMessage.guildId, _userData.quids[_userData.currentQuid[newMessage.guildId] ?? '']), serverData);
 		const userData = getUserData(_userData, newMessage.guildId, getMapData(_userData.quids, quidId));
 
+		await userData
+			.update(
+				(u) => {
+					u.userIds[newMessage.author.id] = {
+						...(u.userIds[newMessage.author.id] ?? {}),
+						[newMessage.guildId]: { isMember: true, lastUpdatedTimestamp: Date.now() },
+					};
+				},
+			);
+
 		if (userData.quid !== undefined && replaceMessage && (newMessage.content.length > 0 || newMessage.attachments.size > 0)) {
 
 			const isSuccessful = await sendMessage(newMessage.channel, newMessage.content, userData, newMessage.author.id, newMessage.attachments.size > 0 ? Array.from(newMessage.attachments.values()) : undefined, newMessage.reference ?? undefined)

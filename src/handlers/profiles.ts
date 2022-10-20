@@ -15,6 +15,19 @@ export async function execute(
 			.findOneAndUpdate(
 				u => u._id === user._id,
 				(u) => {
+					for (const userId of u.userId) {
+						if (u.userIds[userId] === undefined) {
+
+							u.userIds[userId] = {};
+							Object.values(u.quids).map(q => Object.values(q.profiles)).flat().forEach(p => {
+								p.serverId;
+								u.userIds[userId] = {
+									...(u.userIds[userId] ?? {}),
+									[p.serverId]: { isMember: false, lastUpdatedTimestamp: 0 },
+								};
+							});
+						}
+					}
 					for (const quid of Object.values(u.quids)) {
 						for (const profile of Object.values(quid.profiles)) {
 							const p = getMapData(getMapData(u.quids, quid._id).profiles, profile.serverId);

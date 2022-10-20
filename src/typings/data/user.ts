@@ -161,6 +161,8 @@ export enum ProxyConfigType {
 export interface UserSchema {
 	/** Array of IDs of the users associated with this account */
 	userId: Array<string>;
+	/** Object with discord user IDs as keys and values that are objects with discord server IDs as keys and values that are objects of whether the user is a member and when this was last updated */
+	userIds: Record<string, Record<string, { isMember: boolean; lastUpdatedTimestamp: number}>>
 	/** Tag of the account */
 	tag: {
 		global: string,

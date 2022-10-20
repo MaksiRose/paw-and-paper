@@ -18,6 +18,22 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 		},
 		locked: false,
 	},
+	userIds: {
+		type: 'map',
+		of: {
+			type: 'map',
+			of: {
+				type: 'object',
+				default: {
+					isMember: { type: 'boolean', default: false, locked: false },
+					lastUpdatedTimestamp: { type: 'number', default: 0, locked: false },
+				},
+				locked: false,
+			},
+			locked: false,
+		},
+		locked: false,
+	},
 	tag: {
 		type: 'object',
 		default: {
@@ -309,6 +325,7 @@ export function getUserData<T extends '' | never, U extends QuidSchema<T> | unde
 	const user: UserData<U extends QuidSchema<T> ? never : undefined, T> = {
 		_id: userData._id,
 		userId: userData.userId,
+		userIds: userData.userIds,
 		tag: {
 			global: userData.tag.global,
 			server: userData.tag.servers[server_id ?? ''],

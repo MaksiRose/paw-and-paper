@@ -121,14 +121,21 @@ export const event: DiscordEvent = {
 					await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.();
 				}
 
-				/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-				if (userData && userData.quid && interaction.inGuild() && command.modifiesServerProfile) {
+				if (userData && interaction.inGuild()) {
 
 					await userData
 						.update(
 							(u) => {
-								const p = getMapData(getMapData(u.quids, userData!.quid!._id).profiles, interaction.guildId);
-								p.lastActiveTimestamp = Date.now();
+								u.userIds[interaction.user.id] = {
+									...(u.userIds[interaction.user.id] ?? {}),
+									[interaction.guildId]: { isMember: true, lastUpdatedTimestamp: Date.now() },
+								};
+
+								if (userData.quid && command.modifiesServerProfile) {
+
+									const p = getMapData(getMapData(u.quids, userData!.quid!._id).profiles, interaction.guildId);
+									p.lastActiveTimestamp = Date.now();
+								}
 							},
 						);
 				}

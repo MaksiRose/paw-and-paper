@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, Guild, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, Collection, EmbedBuilder, Guild, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { respond, update } from '../../utils/helperFunctions';
 import { isInGuild } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
@@ -7,11 +7,8 @@ import { RankType } from '../../typings/data/user';
 import userModel from '../../models/userModel';
 const { default_color } = require('../../../config.json');
 
-const guildCache: Map<string, Map<string, {
-	cachedAt: number;
-	isInGuild: boolean;
-}>> = new Map();
 const oneWeekInMs = 604_800_000;
+const oneMonthInMs = 2_629_746_000;
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -96,10 +93,6 @@ async function getProfilesTexts(
 	rankName2?: RankType,
 ): Promise<string[]> {
 
-	if (!guildCache.has(guild.id)) { guildCache.set(guild.id, new Map()); }
-	const guildMemberCache = guildCache.get(guild.id);
-	if (guildMemberCache === undefined) { throw new TypeError('guildMemberCache is undefined'); }
-
 	const allRankUsersList = await userModel.find(
 		u => {
 			return Object.values(u.quids)
@@ -110,25 +103,32 @@ async function getProfilesTexts(
 		});
 	const rankTexts: string[] = [];
 
-	for (const u of Object.values(allRankUsersList)) {
+	for (const user of Object.values(allRankUsersList)) {
 
-		userIdLoop: for (const userId of u.userId) {
+		const userIds = new Collection(Object.entries(user.userIds)).sort((userId1, userId2) => ((userId2[guild.id]?.lastUpdatedTimestamp ?? 0) - (userId1[guild.id]?.lastUpdatedTimestamp ?? 0))); // This sorts the userIds in such a way that the one with the newest update is first and the one with the oldest update (or undefined) is last. In the for loop, it will therefore do as little tests and fetches as possible.
+		userIdLoop: for (const [userId, data] of userIds) {
 
 			/* It's getting the cache of the user in the guild. */
-			if (!guildMemberCache.has(userId)) { guildMemberCache.set(userId, { cachedAt: 0, isInGuild: false }); }
-			let guildMember = guildMemberCache.get(userId);
+			let guildMember = data[guild.id];
 
 			/* It's checking if there is no cache or if the cache is more than one week old. If it is, get new cache. If there is still no cache or the member is not in the guild, continue. */
-			if (!guildMember || guildMember.cachedAt < Date.now() - oneWeekInMs) {
+			const timeframe = guildMember?.isMember ? oneWeekInMs : oneMonthInMs; // If a person is supposedly in a guild, we want to be really sure they are actually in the guild since assuming wrongly can lead to unwanted behavior, and these checks are the only way of finding out when they left. On the contrary, when they are supposedly not in the guild, we might find out anyways through them using the bot in the server, so we don't need to check that often.
+			if (!guildMember || guildMember.lastUpdatedTimestamp < Date.now() - timeframe) {
 
 				const member = await guild.members.fetch(userId).catch(() => { return null; });
-				guildMemberCache.set(userId, { cachedAt: Date.now(), isInGuild: member !== null });
-				guildMember = guildMemberCache.get(userId);
+				guildMember = { isMember: member !== null, lastUpdatedTimestamp: Date.now() };
+				await userModel.findOneAndUpdate(
+					u => u._id === user._id,
+					(u => u.userIds[userId] = {
+						...(u.userIds[userId] ?? {}),
+						[guild.id]: guildMember!,
+					}),
+				);
 			}
-			if (!guildMember || !guildMember.isInGuild) { continue; }
+			if (!guildMember || !guildMember.isMember) { continue; }
 
 			/* For each quid, check if there is a profile, and if there is, add that profile to the rankTexts. */
-			for (const q of Object.values(u.quids)) {
+			for (const q of Object.values(user.quids)) {
 
 				const p = q.profiles[guild.id];
 				if (p !== undefined && (p.rank === rankName1 || p.rank === rankName2)) { rankTexts.push(`${q.name} (\`${p.health}/${p.maxHealth} HP\`) - <@${userId}>`); }

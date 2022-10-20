@@ -41,6 +41,16 @@ export const event: DiscordEvent = {
 		let { replaceMessage, quidId } = checkForProxy(message, getUserData(_userData, message.guildId, _userData.quids[_userData.currentQuid[message.guildId] ?? '']), serverData);
 		const userData = getUserData(_userData, message.guildId, getMapData(_userData.quids, quidId));
 
+		await userData
+			.update(
+				(u) => {
+					u.userIds[message.author.id] = {
+						...(u.userIds[message.author.id] ?? {}),
+						[message.guildId]: { isMember: true, lastUpdatedTimestamp: Date.now() },
+					};
+				},
+			);
+
 		if (serverData.currentlyVisiting !== null && message.channel.id === serverData.visitChannelId) {
 
 			const otherServerData = await serverModel.findOne(s => s.serverId === serverData?.currentlyVisiting);

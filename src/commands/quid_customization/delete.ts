@@ -239,6 +239,9 @@ export async function deleteInteractionCollector(
 
 			await userData.update(
 				(u) => {
+					for (const userId of Object.values(u.userIds)) {
+						if (userId[serverId] !== undefined) { delete userId[serverId]; }
+					}
 					for (const q of Object.values(u.quids)) {
 						if (q.profiles[serverId] !== undefined) { delete q.profiles[serverId]; }
 					}
