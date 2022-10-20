@@ -4,7 +4,7 @@ import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValid
 import { capitalizeString, getBiggerNumber, getMapData, getSmallerNumber, keyInObject, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import { remindOfAttack, startAttack } from './attack';
 import Fuse from 'fuse.js';
-import { disableAllComponents } from '../../utils/componentDisabling';
+import { disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { cooldownMap, serverActiveUsersMap } from '../../events/interactionCreate';
 import { createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -72,6 +72,9 @@ export async function executeExploring(
 	/* This ensures that the user is in a guild and has a completed account. */
 	if (serverData === null) { throw new Error('serverData is null'); }
 	if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+
+	/* It's disabling all components if userData exists and the command is set to disable a previous command. */
+	if (command.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
 
 	/* Checks if the profile is resting, on a cooldown or passed out. */
 	const restEmbed = await isInvalid(interaction, userData);

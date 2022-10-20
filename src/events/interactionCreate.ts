@@ -1,17 +1,5 @@
-import { ButtonInteraction, EmbedBuilder, Interaction, RepliableInteraction, SelectMenuInteraction } from 'discord.js';
-import { deleteInteractionCollector } from '../commands/quid_customization/delete';
-import { profileInteractionCollector } from '../commands/quid_customization/profile';
-import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../commands/quid_customization/pronouns';
-import { proxyInteractionCollector, sendEditProxyModalResponse } from '../commands/quid_customization/proxy';
-import { sendEditDisplayedSpeciesModalResponse, speciesInteractionCollector } from '../commands/quid_customization/species';
-import { friendshipsInteractionCollector } from '../commands/interaction/friendships';
-import { hugInteractionCollector } from '../commands/interaction/hug';
-import { sendEditSkillsModalResponse, skillsInteractionCollector } from '../commands/interaction/skills';
-import { helpInteractionCollector } from '../commands/miscellaneous/help';
-import { serversettingsInteractionCollector } from '../commands/miscellaneous/server-settings';
-import { shopInteractionCollector } from '../commands/miscellaneous/shop';
-import { createNewTicket, sendRespondToTicketModalResponse, ticketInteractionCollector } from '../commands/miscellaneous/ticket';
-import { sendEditMessageModalResponse } from '../contextmenu/edit';
+import { EmbedBuilder, Interaction, RepliableInteraction } from 'discord.js';
+import { createNewTicket } from '../commands/miscellaneous/ticket';
 import serverModel from '../models/serverModel';
 import userModel, { getUserData } from '../models/userModel';
 import { DiscordEvent } from '../typings/main';
@@ -20,26 +8,9 @@ import { getMapData, keyInObject, update } from '../utils/helperFunctions';
 import { createGuild } from '../utils/updateGuild';
 import { respond } from '../utils/helperFunctions';
 import { sendErrorMessage } from '../utils/helperFunctions';
-import { adventureInteractionCollector } from '../commands/interaction/adventure';
-import { playfightInteractionCollector } from '../commands/interaction/playfight';
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
-import { profilelistInteractionCollector } from '../commands/interaction/profilelist';
 import { isResting, startResting } from '../commands/gameplay_maintenance/rest';
-import { statsInteractionCollector } from '../commands/gameplay_maintenance/stats';
-import settingsInteractionCollector from '../utils/settingsInteractionCollector';
-import { storeInteractionCollector } from '../commands/gameplay_maintenance/store';
-import { inventoryInteractionCollector } from '../commands/gameplay_maintenance/inventory';
-import { voteInteractionCollector } from '../commands/gameplay_maintenance/vote';
-import { repairInteractionCollector } from '../commands/gameplay_maintenance/repair';
-import { healInteractionCollector } from '../commands/gameplay_maintenance/heal';
-import { rankupInteractionCollector } from '../commands/gameplay_primary/rank-up';
-import { executeScavenging, command as scavengeCommand } from '../commands/gameplay_primary/scavenge';
-import { travelInteractionCollector } from '../commands/gameplay_primary/travel-regions';
-import { executePlaying, command as playCommand } from '../commands/gameplay_primary/play';
-import { executeExploring, command as exploreCommand } from '../commands/gameplay_primary/explore';
-import { executeAttacking, command as attackCommand } from '../commands/gameplay_primary/attack';
-import { wrongproxyInteractionCollector } from '../contextmenu/wrong-proxy';
 import { missingPermissions } from '../utils/permissionHandler';
 import { client, handle } from '../index';
 import { ErrorStacks } from '../typings/data/general';
@@ -95,10 +66,10 @@ export const event: DiscordEvent = {
 				/* Getting the command from the client and checking if the command is undefined.
 				If it is, it will error. */
 				const command = handle.slashCommands.get(interaction.commandName);
-				if (command === undefined || !keyInObject(command, 'sendAutocomplete')) { return; }
+				if (command === undefined || command.sendAutocomplete === undefined) { return; }
 
 				/* It's sending the autocomplete message. */
-				await command.sendAutocomplete?.(interaction, userData, serverData);
+				await command.sendAutocomplete(interaction, userData, serverData);
 				return;
 			}
 
@@ -205,41 +176,13 @@ export const event: DiscordEvent = {
 
 				console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully submitted the modal \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
-				if (interaction.customId.startsWith('edit')) {
+				/* Getting the command from the client and checking if the command is undefined.
+				If it is, it will error. */
+				const command = handle.slashCommands.get(interaction.customId.split('_')[0] ?? '') ?? handle.contextMenuCommands.get(interaction.customId.split('_')[0] ?? '');
+				if (command === undefined || command.sendModalResponse === undefined) { return; }
 
-					await sendEditMessageModalResponse(interaction);
-					return;
-				}
-
-				if (interaction.customId.startsWith('species')) {
-
-					await sendEditDisplayedSpeciesModalResponse(interaction);
-					return;
-				}
-
-				if (interaction.customId.startsWith('pronouns') && interaction.isFromMessage()) {
-
-					await sendEditPronounsModalResponse(interaction);
-					return;
-				}
-
-				if (interaction.customId.startsWith('proxy')) {
-
-					await sendEditProxyModalResponse(interaction);
-					return;
-				}
-
-				if (interaction.customId.startsWith('ticket') && interaction.isFromMessage()) {
-
-					await sendRespondToTicketModalResponse(interaction);
-					return;
-				}
-
-				if (interaction.customId.startsWith('skills') && interaction.isFromMessage()) {
-
-					await sendEditSkillsModalResponse(interaction, serverData, userData);
-					return;
-				}
+				/* It's sending the autocomplete message. */
+				await command.sendModalResponse(interaction, userData, serverData);
 				return;
 			}
 
@@ -252,36 +195,6 @@ export const event: DiscordEvent = {
 				if (interaction.isSelectMenu()) {
 
 					console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully selected \x1b[31m${interaction.values[0]} \x1b[0mfrom the menu \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-
-					if (interaction.customId.startsWith('help_')) {
-
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, helpInteractionCollector, [interaction]);
-						return;
-					}
-
-					if (interaction.customId.startsWith('shop_')) {
-
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, shopInteractionCollector, [interaction, userData, serverData]);
-						return;
-					}
-
-					if (interaction.customId.startsWith('inventory_')) {
-
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, inventoryInteractionCollector, [interaction, userData, serverData]);
-						return;
-					}
-
-					if (interaction.customId.startsWith('vote_')) {
-
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, voteInteractionCollector, [interaction, userData]);
-						return;
-					}
-
-					if (interaction.customId.startsWith('wrongproxy_')) {
-
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, wrongproxyInteractionCollector, [interaction, _userData]);
-						return;
-					}
 				}
 
 				if (interaction.isButton()) {
@@ -290,203 +203,57 @@ export const event: DiscordEvent = {
 
 					if (interaction.customId.startsWith('report_')) {
 
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, async () => {
+						if (!isCommandCreator && !isMentioned) {
 
-							await update(interaction, {
-								components: disableAllComponents(interaction.message.components),
-							});
+							await respond(interaction, {
+								content: 'Sorry, I only listen to the person that created the command 😣',
+								ephemeral: true,
+							}, false);
+							return;
+						}
 
-							const errorId = interaction.customId.split('_')[2] || generateId();
-							const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
-							const description = errorStacks[errorId] ? `\`\`\`\n${errorStacks[errorId]!.substring(0, 4090)}\n\`\`\`` : interaction.message.embeds[0]?.description;
+						await update(interaction, {
+							components: disableAllComponents(interaction.message.components),
+						});
 
-							if (!description) {
+						const errorId = interaction.customId.split('_')[2] || generateId();
+						const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
+						const description = errorStacks[errorId] ? `\`\`\`\n${errorStacks[errorId]!.substring(0, 4090)}\n\`\`\`` : interaction.message.embeds[0]?.description;
 
-								await respond(interaction, {
-									embeds: [new EmbedBuilder()
-										.setColor(error_color)
-										.setDescription('There was an error trying to report the error... Ironic! Maybe you can try opening a ticket via `/ticket` instead?')],
-									ephemeral: true,
-								}, false);
-								return;
-							}
+						if (!description) {
 
-							await createNewTicket(interaction, `Error ${errorId}`, description, 'bug', null, errorId);
-							delete errorStacks[errorId];
-							writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
+							await respond(interaction, {
+								embeds: [new EmbedBuilder()
+									.setColor(error_color)
+									.setDescription('There was an error trying to report the error... Ironic! Maybe you can try opening a ticket via `/ticket` instead?')],
+								ephemeral: true,
+							}, false);
+							return;
+						}
 
-						}, []);
-						return;
-					}
-
-					if (interaction.customId.startsWith('ticket_')) {
-
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, ticketInteractionCollector, [interaction]);
-						return;
-					}
-
-					if (interaction.customId.startsWith('hug_')) {
-
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, hugInteractionCollector, [interaction, userData]);
-						return;
-					}
-
-					if (interaction.customId.startsWith('friendships_')) {
-
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, friendshipsInteractionCollector, [interaction, userData]);
-						return;
-					}
-
-					if (interaction.customId.startsWith('adventure_')) {
-
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, adventureInteractionCollector, [interaction, serverData]);
-						return;
-					}
-
-					if (interaction.customId.startsWith('playfight_')) {
-
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, playfightInteractionCollector, [interaction, serverData]);
-						return;
-					}
-
-					if (interaction.customId.startsWith('stats_')) {
-
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, statsInteractionCollector, [interaction, userData, serverData]);
-						return;
-					}
-
-					if (interaction.customId.startsWith('settings_')) {
-
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, settingsInteractionCollector, [interaction, userData, _userData]);
-						return;
-					}
-
-					if (interaction.customId.startsWith('rank_')) {
-
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, rankupInteractionCollector, [interaction, userData, serverData]);
-						return;
-					}
-
-					if (interaction.customId.startsWith('scavenge_new')) {
-
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, async () => {
-
-							/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-							if (userData && scavengeCommand.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
-
-							await executeScavenging(interaction, userData, serverData);
-						}, []);
-						return;
-					}
-
-					if (interaction.customId.startsWith('play_new')) {
-
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, async () => {
-
-							/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-							if (userData && playCommand.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
-
-							await executePlaying(interaction, userData, serverData);
-						}, []);
-						return;
-					}
-
-					if (interaction.customId.startsWith('explore_new')) {
-
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, async () => {
-
-							/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-							if (userData && exploreCommand.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
-
-							await executeExploring(interaction, userData, serverData);
-						}, []);
-						return;
-					}
-
-					if (interaction.customId.startsWith('attack_new')) {
-
-						await interactionResponseGuard(interaction, isCommandCreator, isMentioned, async () => {
-
-							/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-							if (userData && attackCommand.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
-
-							await executeAttacking(interaction, userData, serverData);
-						}, []);
+						await createNewTicket(interaction, `Error ${errorId}`, description, 'bug', null, errorId);
+						delete errorStacks[errorId];
+						writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
 						return;
 					}
 				}
 
-				if (interaction.customId.startsWith('profile_')) {
+				/* Getting the command from the client and checking if the command is undefined.
+				If it is, it will error. */
+				const command = handle.slashCommands.get(interaction.customId.split('_')[0] ?? '') ?? handle.contextMenuCommands.get(interaction.customId.split('_')[0] ?? '');
+				if (command === undefined || command.sendMessageComponentResponse === undefined) { return; }
 
-					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, profileInteractionCollector, [interaction]);
+				if (!isCommandCreator && !isMentioned) {
+
+					await respond(interaction, {
+						content: 'Sorry, I only listen to the person that created the command 😣',
+						ephemeral: true,
+					}, false);
 					return;
 				}
 
-				if (interaction.customId.startsWith('species_')) {
-
-					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, speciesInteractionCollector, [interaction ]);
-					return;
-				}
-
-				if (interaction.customId.startsWith('pronouns_')) {
-
-					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, pronounsInteractionCollector, [interaction]);
-					return;
-				}
-
-				if (interaction.customId.startsWith('proxy_')) {
-
-					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, proxyInteractionCollector, [interaction, serverData]);
-					return;
-				}
-
-				if (interaction.customId.startsWith('delete_')) {
-
-					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, deleteInteractionCollector, [interaction, userData]);
-					return;
-				}
-
-				if (interaction.customId.startsWith('serversettings_')) {
-
-					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, serversettingsInteractionCollector, [interaction, serverData]);
-					return;
-				}
-
-				if (interaction.customId.startsWith('skills_')) {
-
-					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, skillsInteractionCollector, [interaction, serverData, userData]);
-					return;
-				}
-
-				if (interaction.customId.startsWith('profilelist_')) {
-
-					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, profilelistInteractionCollector, [interaction]);
-					return;
-				}
-
-				if (interaction.customId.startsWith('store_')) {
-
-					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, storeInteractionCollector, [interaction, userData, serverData]);
-					return;
-				}
-
-				if (interaction.customId.startsWith('repair_')) {
-
-					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, repairInteractionCollector, [interaction, userData, serverData]);
-					return;
-				}
-
-				if (interaction.customId.startsWith('heal_')) {
-
-					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, healInteractionCollector, [interaction, userData, serverData]);
-					return;
-				}
-
-				if (interaction.customId.startsWith('travel_')) {
-
-					await interactionResponseGuard(interaction, isCommandCreator, isMentioned, travelInteractionCollector, [interaction, userData, serverData]);
-					return;
-				}
+				/* It's sending the autocomplete message. */
+				await command.sendMessageComponentResponse(interaction, userData, serverData);
 				return;
 			}
 		}
@@ -546,22 +313,3 @@ setInterval(async function() {
 		serverActiveUsersMap.set(guildId, array);
 	}
 }, 60_000);
-
-async function interactionResponseGuard<T extends unknown[], U>(
-	interaction: ButtonInteraction | SelectMenuInteraction,
-	isCommandCreator: boolean,
-	isMentioned: boolean | null,
-	callback: (...args: T) => U,
-	callbackArgs: T,
-) {
-
-	if (!isCommandCreator && !isMentioned) {
-
-		await respond(interaction, {
-			content: 'Sorry, I only listen to the person that created the command 😣',
-			ephemeral: true,
-		}, false);
-		return;
-	}
-	return await callback(...callbackArgs);
-}

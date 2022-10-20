@@ -8,7 +8,7 @@ import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { disableAllComponents } from '../../utils/componentDisabling';
+import { disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { capitalizeString, getArrayElement, getMapData, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -40,6 +40,9 @@ export async function executeScavenging(
 	/* This ensures that the user is in a guild and has a completed account. */
 	if (serverData === null) { throw new Error('serverData is null'); }
 	if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+
+	/* It's disabling all components if userData exists and the command is set to disable a previous command. */
+	if (command.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
 
 	/* Checks if the profile is resting, on a cooldown or passed out. */
 	const restEmbed = await isInvalid(interaction, userData);

@@ -79,7 +79,7 @@ export async function respond(
 	/** If an error occurred and it has status 404, try to either edit the message if editing was tried above, or send a new message in the other two cases */
 	catch (error: unknown) {
 
-		if ((objectHasKey(error, 'code') && error.code === 'ECONNRESET') || (objectHasKey(error, 'status') && error.status === 404) || (objectHasKey(error, 'httpStatus') && error.httpStatus === 404)) {
+		if (isObject(error) && (error.code === 'ECONNRESET' || error.status === 404 || error.httpStatus === 404)) {
 
 			if ((interaction.replied || interaction.deferred) && editMessage) { botReply = await (await interaction.fetchReply()).edit({ ...options, flags: undefined }); }
 			else {
@@ -90,7 +90,7 @@ export async function respond(
 
 			}
 		}
-		else if (((objectHasKey(error, 'status') && error.status === 400) || (objectHasKey(error, 'httpStatus') && error.httpStatus === 400)) && !interaction.replied && !interaction.deferred) {
+		else if (isObject(error) && (error.status === 400 || error.httpStatus === 400) && !interaction.replied && !interaction.deferred) {
 
 			interaction.replied = true;
 			botReply = await respond(interaction, options, editMessage);
@@ -123,12 +123,12 @@ export async function update(
 	/** If an error occurred and it has status 404, try to either edit the message if editing was tried above, or send a new message in the other two cases */
 	catch (error: unknown) {
 
-		if (objectHasKey(error, 'code') && (error.code === 'ECONNRESET' || error.code === 10062)) {
+		if (isObject(error) && (error.code === 'ECONNRESET' || error.code === 10062)) {
 
 			if (!interaction.replied && !interaction.deferred) { botReply = await interaction.message.edit({ ...options, flags: undefined }); }
 			else { botReply = await (await interaction.fetchReply()).edit({ ...options, flags: undefined }); }
 		}
-		else if (objectHasKey(error, 'code') && error.code === 40060 && !interaction.replied && !interaction.deferred) {
+		else if (isObject(error) && error.code === 40060 && !interaction.replied && !interaction.deferred) {
 
 			interaction.replied = true;
 			botReply = await update(interaction, options);
@@ -203,17 +203,17 @@ export async function sendErrorMessage(
 		guild_locale: interaction.guildLocale,
 	};
 
-	if (objectHasKey(error, 'code') && error.code === 10062) {
+	if (isObject(error) && error.code === 10062) {
 
 		console.error('Error 404 - An error is not being sent to the user:', error);
 		return;
 	}
-	else if (objectHasKey(error, 'code') && error.code === 40060) {
+	else if (isObject(error) && error.code === 40060) {
 
 		console.error('Error 400 - An error is not being sent to the user:', error);
 		return;
 	}
-	const isECONNRESET = objectHasKey(error, 'code') && error.code === 'ECONNRESET';
+	const isECONNRESET = isObject(error) && error.code === 'ECONNRESET';
 	console.error(error, jsonInteraction);
 
 	let errorId: string | undefined = undefined;
@@ -224,7 +224,7 @@ export async function sendErrorMessage(
 
 			const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
 			errorId = generateId();
-			errorStacks[errorId] = `${(objectHasKey(error, 'stack') && error.stack) || JSON.stringify(error, null, '\t')}\n${JSON.stringify(jsonInteraction, null, '\t')}`;
+			errorStacks[errorId] = `${(isObject(error) && error.stack) || JSON.stringify(error, null, '\t')}\n${JSON.stringify(jsonInteraction, null, '\t')}`;
 			writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
 		}
 		catch (e) {
@@ -336,10 +336,7 @@ export function keyInObject<T extends Record<PropertyKey, any>, K extends keyof 
 	key: PropertyKey,
 ): key is K { return Object.hasOwn(obj, key); }
 
-export function objectHasKey<T, K extends PropertyKey>(
-	obj: T,
-	key: K,
-): obj is T & Record<K, any> { return typeof obj === 'object' && obj !== null && Object.hasOwn(obj, key); }
+function isObject(val: any): val is Record<string | number | symbol, unknown> { return typeof val === 'object' && val !== null; }
 
 /**
  * Return the bigger of two numbers

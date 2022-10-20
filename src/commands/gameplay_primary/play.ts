@@ -10,6 +10,7 @@ import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../
 import { changeCondition, infectWithChance } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
+import { disableCommandComponent } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
 import { capitalizeString, getArrayElement, getMapData, getSmallerNumber, keyInObject, respond, update } from '../../utils/helperFunctions';
@@ -57,6 +58,9 @@ export async function executePlaying(
 	/* This ensures that the user is in a guild and has a completed account. */
 	if (serverData === null) { throw new Error('serverData is null'); }
 	if (!isInGuild(interaction) || !hasNameAndSpecies(userData1, interaction)) { return; }
+
+	/* It's disabling all components if userData exists and the command is set to disable a previous command. */
+	if (command.disablePreviousCommand) { await disableCommandComponent[userData1._id + (interaction.guildId || 'DM')]?.(); }
 
 	/* Checks if the profile is resting, on a cooldown or passed out. */
 	const restEmbed = await isInvalid(interaction, userData1);
