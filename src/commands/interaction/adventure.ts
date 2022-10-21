@@ -115,88 +115,84 @@ export const command: SlashCommand = {
 		createCommandComponentDisabler(userData1._id, interaction.guildId, botReply);
 		createCommandComponentDisabler(userData2._id, interaction.guildId, botReply);
 	},
-};
+	async sendMessageComponentResponse(interaction, userData, serverData) {
 
-export async function adventureInteractionCollector(
-	interaction: ButtonInteraction,
-	serverData: ServerSchema | null,
-): Promise<void> {
+		if (!interaction.isButton()) { return; }
+		if (await missingPermissions(interaction, [
+			'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
+		]) === true) { return; }
 
-	if (await missingPermissions(interaction, [
-		'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
-	]) === true) { return; }
+		if (!interaction.customId.includes('confirm')) { return; }
+		if (serverData === null) { throw new Error('serverData is null'); }
+		if (!isInGuild(interaction)) { return; }
+		if (interaction.channel === null) { throw new Error('Interaction channel is null'); }
 
-	if (!interaction.customId.includes('confirm')) { return; }
-	if (serverData === null) { throw new Error('serverData is null'); }
-	if (!isInGuild(interaction)) { return; }
-	if (interaction.channel === null) { throw new Error('Interaction channel is null'); }
+		/* Define the empty field emoji and the emoji options for the cards */
+		const coveredField = '⬛';
+		const allMemoryCardOptions = ['🌱', '🌿', '☘️', '🍀', '🍃', '💐', '🌷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🍇', '🍊', '🫒', '🌰', '🏕️', '🌲', '🌳', '🍂', '🍁', '🍄', '🐝', '🪱', '🐛', '🦋', '🐌', '🐞', '🐁', '🦔', '🌵', '🦂', '🏜️', '🎍', '🪴', '🎋', '🪨', '🌾', '🐍', '🦎', '🐫', '🐙', '🦑', '🦀', '🐡', '🐠', '🐟', '🌊', '🐚', '🪵', '🌴'];
 
-	/* Define the empty field emoji and the emoji options for the cards */
-	const coveredField = '⬛';
-	const allMemoryCardOptions = ['🌱', '🌿', '☘️', '🍀', '🍃', '💐', '🌷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🍇', '🍊', '🫒', '🌰', '🏕️', '🌲', '🌳', '🍂', '🍁', '🍄', '🐝', '🪱', '🐛', '🦋', '🐌', '🐞', '🐁', '🦔', '🌵', '🦂', '🏜️', '🎍', '🪴', '🎋', '🪨', '🌾', '🐍', '🦎', '🐫', '🐙', '🦑', '🦀', '🐡', '🐠', '🐟', '🌊', '🐚', '🪵', '🌴'];
+		/* Get an array of 10 emojis from the memory card options, each emoji added twice. */
+		const chosenMemoryCardOptions: string[] = [];
+		for (let i = 0; i < 10; i++) {
 
-	/* Get an array of 10 emojis from the memory card options, each emoji added twice. */
-	const chosenMemoryCardOptions: string[] = [];
-	for (let i = 0; i < 10; i++) {
-
-		const randomMemoryCardOption = getArrayElement(allMemoryCardOptions.splice(getRandomNumber(allMemoryCardOptions.length), 1), 0);
-		chosenMemoryCardOptions.push(randomMemoryCardOption, randomMemoryCardOption);
-	}
-
-	/* Get an array of the clickable components, as well as an array of the emojis that would be in their places if they were revealed. */
-	const componentArray: ActionRowBuilder<ButtonBuilder>[] = [];
-	const emojisInComponentArray: string[][] = [];
-	for (let column = 0; column < 4; column++) {
-
-		componentArray.push(new ActionRowBuilder<ButtonBuilder>().addComponents([]));
-		emojisInComponentArray.push([]);
-		for (let row = 0; row < 5; row++) {
-
-			componentArray[column]?.addComponents(new ButtonBuilder()
-				.setCustomId(`adventure_board_${column}_${row}`)
-				.setEmoji(coveredField)
-				.setDisabled(false)
-				.setStyle(ButtonStyle.Secondary),
-			);
-
-			const randomMemoryCardOption = getArrayElement(chosenMemoryCardOptions.splice(getRandomNumber(chosenMemoryCardOptions.length), 1), 0);
-			emojisInComponentArray[column]?.push(randomMemoryCardOption);
+			const randomMemoryCardOption = getArrayElement(allMemoryCardOptions.splice(getRandomNumber(allMemoryCardOptions.length), 1), 0);
+			chosenMemoryCardOptions.push(randomMemoryCardOption, randomMemoryCardOption);
 		}
-	}
+
+		/* Get an array of the clickable components, as well as an array of the emojis that would be in their places if they were revealed. */
+		const componentArray: ActionRowBuilder<ButtonBuilder>[] = [];
+		const emojisInComponentArray: string[][] = [];
+		for (let column = 0; column < 4; column++) {
+
+			componentArray.push(new ActionRowBuilder<ButtonBuilder>().addComponents([]));
+			emojisInComponentArray.push([]);
+			for (let row = 0; row < 5; row++) {
+
+				componentArray[column]?.addComponents(new ButtonBuilder()
+					.setCustomId(`adventure_board_${column}_${row}`)
+					.setEmoji(coveredField)
+					.setDisabled(false)
+					.setStyle(ButtonStyle.Secondary),
+				);
+
+				const randomMemoryCardOption = getArrayElement(chosenMemoryCardOptions.splice(getRandomNumber(chosenMemoryCardOptions.length), 1), 0);
+				emojisInComponentArray[column]?.push(randomMemoryCardOption);
+			}
+		}
 
 
-	/* Gets the current active quid and the server profile from the account */
-	const userId1 = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
-	const _userData1 = await userModel.findOne(u => u.userId.includes(userId1));
-	const userData1 = getUserData(_userData1, interaction.guildId, getMapData(_userData1.quids, getMapData(_userData1.currentQuid, interaction.guildId)));
-	if (!hasNameAndSpecies(userData1)) { throw new Error('userData1.quid.species is empty string'); }
+		/* Gets the current active quid and the server profile from the account */
+		const userId1 = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
+		const _userData1 = await userModel.findOne(u => u.userId.includes(userId1));
+		const userData1 = getUserData(_userData1, interaction.guildId, getMapData(_userData1.quids, getMapData(_userData1.currentQuid, interaction.guildId)));
+		if (!hasNameAndSpecies(userData1)) { throw new Error('userData1.quid.species is empty string'); }
 
-	/* Gets the current active quid and the server profile from the partners account */
-	const userId2 = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
-	const _userData2 = await userModel.findOne(u => u.userId.includes(userId2));
-	const userData2 = getUserData(_userData2, interaction.guildId, getMapData(_userData2.quids, getMapData(_userData1.currentQuid, interaction.guildId)));
-	if (!hasNameAndSpecies(userData2)) { throw new Error('userData2.quid.species is empty string'); }
+		/* Gets the current active quid and the server profile from the partners account */
+		const userId2 = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
+		const _userData2 = await userModel.findOne(u => u.userId.includes(userId2));
+		const userData2 = getUserData(_userData2, interaction.guildId, getMapData(_userData2.quids, getMapData(_userData1.currentQuid, interaction.guildId)));
+		if (!hasNameAndSpecies(userData2)) { throw new Error('userData2.quid.species is empty string'); }
 
-	if (interaction.user.id === userId1) {
+		if (interaction.user.id === userId1) {
 
-		await respond(interaction, {
-			content: 'You can\'t accept your own invitation!',
-			ephemeral: true,
-		}, false);
-		return;
-	}
+			await respond(interaction, {
+				content: 'You can\'t accept your own invitation!',
+				ephemeral: true,
+			}, false);
+			return;
+		}
 
-	/* For both users, set cooldowns to true, but unregister the command from being disabled, and get the condition change */
-	cooldownMap.set(userData1._id + interaction.guildId, true);
-	cooldownMap.set(userData2._id + interaction.guildId, true);
-	delete disableCommandComponent[userData1._id + interaction.guildId];
-	delete disableCommandComponent[userData2._id + interaction.guildId];
-	const experiencePoints = getRandomNumber(11, 5);
-	const decreasedStatsData1 = await changeCondition(userData1, experiencePoints, CurrentRegionType.Prairie, true);
-	const decreasedStatsData2 = await changeCondition(userData2, experiencePoints, CurrentRegionType.Prairie, true);
+		/* For both users, set cooldowns to true, but unregister the command from being disabled, and get the condition change */
+		cooldownMap.set(userData1._id + interaction.guildId, true);
+		cooldownMap.set(userData2._id + interaction.guildId, true);
+		delete disableCommandComponent[userData1._id + interaction.guildId];
+		delete disableCommandComponent[userData2._id + interaction.guildId];
+		const experiencePoints = getRandomNumber(11, 5);
+		const decreasedStatsData1 = await changeCondition(userData1, experiencePoints, CurrentRegionType.Prairie, true);
+		const decreasedStatsData2 = await changeCondition(userData2, experiencePoints, CurrentRegionType.Prairie, true);
 
-	/* Define number of rounds, and the uncovered card amount for both users. */
-	let finishedRounds = 0;
+		/* Define number of rounds, and the uncovered card amount for both users. */
+		let finishedRounds = 0;
 	type CardPositions = { column: number | null, row: number | null; };
 	let chosenCardPositions: { first: CardPositions, second: CardPositions, current: 'first' | 'second'; } = { first: { column: null, row: null }, second: { column: null, row: null }, current: 'first' };
 	let uncoveredCardsUser1 = 0;
@@ -483,7 +479,9 @@ export async function adventureInteractionCollector(
 				.catch(e => { console.error(e); });
 		}
 	});
-}
+
+	},
+};
 
 /**
  * It sends a message to the channel that the interaction was sent in

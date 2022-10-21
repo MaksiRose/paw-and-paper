@@ -100,6 +100,56 @@ export const command: SlashCommand = {
 
 		await getHealResponse(interaction, userData, serverData, messageContent, restEmbed, 0, chosenUserData, 1, chosenItem);
 	},
+	async sendMessageComponentResponse(interaction, userData, serverData) {
+
+		/* This ensures that the user is in a guild and has a completed account. */
+		if (serverData === null) { throw new Error('serverData is null'); }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+
+		if (interaction.isSelectMenu() && interaction.customId.startsWith('heal_quids_options')) {
+
+			const value = getArrayElement(interaction.values, 0);
+			if (value.startsWith('newpage_')) {
+
+				const page = Number(value.replace('newpage_', ''));
+				if (isNaN(page)) { throw new TypeError('page is NaN'); }
+
+				await getHealResponse(interaction, userData, serverData, '', [], page);
+			}
+			else {
+
+				const _userToHeal = await userModel.findOne(u => Object.keys(u.quids).includes(value));
+				const userToHeal = getUserData(_userToHeal, interaction.guildId, getMapData(_userToHeal.quids, value));
+
+				await getHealResponse(interaction, userData, serverData, '', [], 0, userToHeal);
+			}
+		}
+		else if (interaction.customId.startsWith('heal_page_')) {
+
+			const inventoryPage = Number(getArrayElement(interaction.customId.split('_'), 2));
+			if (isNaN(inventoryPage)) { throw new TypeError('inventoryPage is NaN'); }
+			if (inventoryPage !== 1 && inventoryPage !== 2) { throw new TypeError('inventoryPage is not 1 or 2'); }
+			const quidId = getArrayElement(interaction.customId.split('_'), 3);
+
+			const _userToHeal = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
+			const userToHeal = getUserData(_userToHeal, interaction.guildId, getMapData(_userToHeal.quids, quidId));
+
+			await getHealResponse(interaction, userData, serverData, '', [], 0, userToHeal, inventoryPage);
+		}
+		else if (interaction.isSelectMenu() && interaction.customId.startsWith('heal_inventory_options_')) {
+
+			const quidId = getArrayElement(interaction.customId.split('_'), 3);
+			if (quidId === undefined) { throw new TypeError('quidId is undefined'); }
+
+			const _userToHeal = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
+			const userToHeal = getUserData(_userToHeal, interaction.guildId, getMapData(_userToHeal.quids, quidId));
+
+			let chosenItem = interaction.values[0];
+			if (!chosenItem || !stringIsAvailableItem(chosenItem, serverData.inventory)) { chosenItem = undefined; }
+
+			await getHealResponse(interaction, userData, serverData, '', [], 0, userToHeal, 1, chosenItem);
+		}
+	},
 };
 
 /**
@@ -125,61 +175,6 @@ export function quidNeedsHealing(
 			|| ((checkOnlyFor === undefined || checkOnlyFor === 'sprains') && u.quid.profile.injuries.sprains > 0)
 			|| ((checkOnlyFor === undefined || checkOnlyFor === 'poison') && u.quid.profile.injuries.poison === true)
 		);
-}
-
-export async function healInteractionCollector(
-	interaction: SelectMenuInteraction | ButtonInteraction,
-	userData: UserData<undefined, ''> | null,
-	serverData: ServerSchema | null,
-): Promise<void> {
-
-	/* This ensures that the user is in a guild and has a completed account. */
-	if (serverData === null) { throw new Error('serverData is null'); }
-	if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
-
-	if (interaction.isSelectMenu() && interaction.customId.startsWith('heal_quids_options')) {
-
-		const value = getArrayElement(interaction.values, 0);
-		if (value.startsWith('newpage_')) {
-
-			const page = Number(value.replace('newpage_', ''));
-			if (isNaN(page)) { throw new TypeError('page is NaN'); }
-
-			await getHealResponse(interaction, userData, serverData, '', [], page);
-		}
-		else {
-
-			const _userToHeal = await userModel.findOne(u => Object.keys(u.quids).includes(value));
-			const userToHeal = getUserData(_userToHeal, interaction.guildId, getMapData(_userToHeal.quids, value));
-
-			await getHealResponse(interaction, userData, serverData, '', [], 0, userToHeal);
-		}
-	}
-	else if (interaction.customId.startsWith('heal_page_')) {
-
-		const inventoryPage = Number(getArrayElement(interaction.customId.split('_'), 2));
-		if (isNaN(inventoryPage)) { throw new TypeError('inventoryPage is NaN'); }
-		if (inventoryPage !== 1 && inventoryPage !== 2) { throw new TypeError('inventoryPage is not 1 or 2'); }
-		const quidId = getArrayElement(interaction.customId.split('_'), 3);
-
-		const _userToHeal = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
-		const userToHeal = getUserData(_userToHeal, interaction.guildId, getMapData(_userToHeal.quids, quidId));
-
-		await getHealResponse(interaction, userData, serverData, '', [], 0, userToHeal, inventoryPage);
-	}
-	else if (interaction.isSelectMenu() && interaction.customId.startsWith('heal_inventory_options_')) {
-
-		const quidId = getArrayElement(interaction.customId.split('_'), 3);
-		if (quidId === undefined) { throw new TypeError('quidId is undefined'); }
-
-		const _userToHeal = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
-		const userToHeal = getUserData(_userToHeal, interaction.guildId, getMapData(_userToHeal.quids, quidId));
-
-		let chosenItem = interaction.values[0];
-		if (!chosenItem || !stringIsAvailableItem(chosenItem, serverData.inventory)) { chosenItem = undefined; }
-
-		await getHealResponse(interaction, userData, serverData, '', [], 0, userToHeal, 1, chosenItem);
-	}
 }
 
 /** This function is used to make item-string equal to undefined in getHealResponse if the string isn't a herb/water that is also available */

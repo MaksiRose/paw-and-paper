@@ -1,11 +1,10 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { getArrayElement, respond, update } from '../../utils/helperFunctions';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { getRandomNumber } from '../../utils/randomizers';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
-import { UserData } from '../../typings/data/user';
 import userModel, { getUserData } from '../../models/userModel';
 import { hasNameAndSpecies } from '../../utils/checkUserState';
 const { error_color } = require('../../../config.json');
@@ -87,87 +86,82 @@ export const command: SlashCommand = {
 				])],
 		}, true);
 	},
+	async sendMessageComponentResponse(interaction, partnerUserData) {
+
+		if (!interaction.isButton()) { return; }
+		if (await missingPermissions(interaction, [
+			'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
+		]) === true) { return; }
+
+		const originalUserId = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
+		const originalUser = originalUserId ? await interaction.client.users.fetch(originalUserId).catch(() => { return undefined; }) : undefined;
+		const originalMember = interaction.inCachedGuild() && originalUserId ? await interaction.guild.members.fetch(originalUserId).catch(() => { return undefined; }) : undefined;
+		if (originalUser === undefined || originalUserId === interaction.user.id) {
+
+			await respond(interaction, {
+				content: 'You can\'t accept or decline this hug!',
+				ephemeral: true,
+			}, false);
+			return;
+		}
+
+		const _userData = await userModel.findOne(u => u.userId.includes(originalUserId)).catch(() => { return null; });
+		const userData = _userData === null ? null : getUserData(_userData, interaction.guildId || 'DM', _userData.quids[_userData.currentQuid[interaction.guildId || 'DM'] || '']);
+
+		if (interaction.customId.includes('accept')) {
+
+			const hugURLs = [
+				'https://c.tenor.com/h94rl66G50cAAAAC/hug-cats.gif',
+				'https://c.tenor.com/-YZ5lgNG7ecAAAAd/yes-love.gif',
+				'https://c.tenor.com/K-mORy7U1SsAAAAd/wolf-animal.gif',
+				'https://c.tenor.com/x2Ne9xx0SBgAAAAC/funny-animals-monkey-hug.gif',
+				'https://c.tenor.com/a8H63f_WrqEAAAAC/border-collie-hug.gif',
+				'https://c.tenor.com/jQud2Zph9OoAAAAC/animal-animals.gif',
+				'https://c.tenor.com/tyK64-bjkikAAAAC/sweet-animals-cute.gif',
+				'https://c.tenor.com/K2uYNMCeqe4AAAAC/bear-hug.gif',
+				'https://c.tenor.com/j9ovpes78QsAAAAd/huge-hug-bromance.gif',
+				'https://c.tenor.com/EKlPRdcuoccAAAAC/otter-cute.gif',
+				'https://c.tenor.com/N-MAzVmbytEAAAAd/cat-dog.gif',
+				'https://c.tenor.com/WvsUTL2ocVkAAAAd/cute-cats-cuddling-cats.gif',
+				'https://c.tenor.com/8SjdZ9f64s8AAAAd/animals-kiss.gif',
+				'https://c.tenor.com/VOLRmvc9PawAAAAd/cute-animals.gif',
+				'https://c.tenor.com/N4wxlSS6s6YAAAAd/wake-up-360baby-pandas.gif',
+				'https://c.tenor.com/twkOV4hc7JUAAAAd/kitty-cat.gif',
+				'https://c.tenor.com/4tu5hJ3Rl2EAAAAC/snuggle-bunny.gif',
+				'https://c.tenor.com/cQN_bn443gMAAAAS/fast-quick.gif',
+			];
+
+			await update(interaction, {
+				content: null,
+				embeds: [new EmbedBuilder()
+					.setColor(userData?.quid?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
+					.setAuthor({
+						name: userData?.quid ? userData.quid.getDisplayname() : (originalMember?.displayName || originalUser.tag),
+						iconURL: userData?.quid?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
+					})
+					.setImage(hugURLs[getRandomNumber(hugURLs.length)] || null)],
+				components: [],
+			});
+
+			if (hasNameAndSpecies(userData) && hasNameAndSpecies(partnerUserData)) { await addFriendshipPoints(interaction.message, userData, partnerUserData); }
+			return;
+		}
+
+		if (interaction.customId.includes('decline')) {
+
+			await update(interaction, {
+				content: null,
+				embeds: [new EmbedBuilder()
+					.setColor(userData?.quid?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
+					.setAuthor({
+						name: userData?.quid ? userData.quid.getDisplayname() : (originalMember?.displayName || originalUser.tag),
+						iconURL: userData?.quid?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
+					})
+					.setDescription(`${interaction.user.toString()} did not accept the hug.`)],
+				components: disableAllComponents(interaction.message.components),
+			});
+			return;
+		}
+
+	},
 };
-
-/**
- * A function that is called when the user accepts or declines the hug. It edits the message to show a hug gif and adds friendship points, or that the user didn't accept the hug.
- */
-export async function hugInteractionCollector(
-	interaction: ButtonInteraction,
-	partnerUserData: UserData<undefined, ''> | null,
-): Promise<void> {
-
-	if (await missingPermissions(interaction, [
-		'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
-	]) === true) { return; }
-
-	const originalUserId = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
-	const originalUser = originalUserId ? await interaction.client.users.fetch(originalUserId).catch(() => { return undefined; }) : undefined;
-	const originalMember = interaction.inCachedGuild() && originalUserId ? await interaction.guild.members.fetch(originalUserId).catch(() => { return undefined; }) : undefined;
-	if (originalUser === undefined || originalUserId === interaction.user.id) {
-
-		await respond(interaction, {
-			content: 'You can\'t accept or decline this hug!',
-			ephemeral: true,
-		}, false);
-		return;
-	}
-
-	const _userData = await userModel.findOne(u => u.userId.includes(originalUserId)).catch(() => { return null; });
-	const userData = _userData === null ? null : getUserData(_userData, interaction.guildId || 'DM', _userData.quids[_userData.currentQuid[interaction.guildId || 'DM'] || '']);
-
-	if (interaction.customId.includes('accept')) {
-
-		const hugURLs = [
-			'https://c.tenor.com/h94rl66G50cAAAAC/hug-cats.gif',
-			'https://c.tenor.com/-YZ5lgNG7ecAAAAd/yes-love.gif',
-			'https://c.tenor.com/K-mORy7U1SsAAAAd/wolf-animal.gif',
-			'https://c.tenor.com/x2Ne9xx0SBgAAAAC/funny-animals-monkey-hug.gif',
-			'https://c.tenor.com/a8H63f_WrqEAAAAC/border-collie-hug.gif',
-			'https://c.tenor.com/jQud2Zph9OoAAAAC/animal-animals.gif',
-			'https://c.tenor.com/tyK64-bjkikAAAAC/sweet-animals-cute.gif',
-			'https://c.tenor.com/K2uYNMCeqe4AAAAC/bear-hug.gif',
-			'https://c.tenor.com/j9ovpes78QsAAAAd/huge-hug-bromance.gif',
-			'https://c.tenor.com/EKlPRdcuoccAAAAC/otter-cute.gif',
-			'https://c.tenor.com/N-MAzVmbytEAAAAd/cat-dog.gif',
-			'https://c.tenor.com/WvsUTL2ocVkAAAAd/cute-cats-cuddling-cats.gif',
-			'https://c.tenor.com/8SjdZ9f64s8AAAAd/animals-kiss.gif',
-			'https://c.tenor.com/VOLRmvc9PawAAAAd/cute-animals.gif',
-			'https://c.tenor.com/N4wxlSS6s6YAAAAd/wake-up-360baby-pandas.gif',
-			'https://c.tenor.com/twkOV4hc7JUAAAAd/kitty-cat.gif',
-			'https://c.tenor.com/4tu5hJ3Rl2EAAAAC/snuggle-bunny.gif',
-			'https://c.tenor.com/cQN_bn443gMAAAAS/fast-quick.gif',
-		];
-
-		await update(interaction, {
-			content: null,
-			embeds: [new EmbedBuilder()
-				.setColor(userData?.quid?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
-				.setAuthor({
-					name: userData?.quid ? userData.quid.getDisplayname() : (originalMember?.displayName || originalUser.tag),
-					iconURL: userData?.quid?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
-				})
-				.setImage(hugURLs[getRandomNumber(hugURLs.length)] || null)],
-			components: [],
-		});
-
-		if (hasNameAndSpecies(userData) && hasNameAndSpecies(partnerUserData)) { await addFriendshipPoints(interaction.message, userData, partnerUserData); }
-		return;
-	}
-
-	if (interaction.customId.includes('decline')) {
-
-		await update(interaction, {
-			content: null,
-			embeds: [new EmbedBuilder()
-				.setColor(userData?.quid?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
-				.setAuthor({
-					name: userData?.quid ? userData.quid.getDisplayname() : (originalMember?.displayName || originalUser.tag),
-					iconURL: userData?.quid?.avatarURL || originalMember?.displayAvatarURL() || originalUser.avatarURL() || undefined,
-				})
-				.setDescription(`${interaction.user.toString()} did not accept the hug.`)],
-			components: disableAllComponents(interaction.message.components),
-		});
-		return;
-	}
-}

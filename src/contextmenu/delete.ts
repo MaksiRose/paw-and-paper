@@ -1,10 +1,10 @@
-import { ChannelType } from 'discord.js';
 import { readFileSync } from 'fs';
 import { respond } from '../utils/helperFunctions';
 import userModel from '../models/userModel';
 import { canManageWebhooks, missingPermissions } from '../utils/permissionHandler';
 import { WebhookMessages } from '../typings/data/general';
 import { ContextMenuCommand } from '../typings/handle';
+import { isInGuild } from '../utils/checkUserState';
 
 export const command: ContextMenuCommand = {
 	data: {
@@ -13,6 +13,9 @@ export const command: ContextMenuCommand = {
 		dm_permission: false,
 	},
 	sendCommand: async (interaction) => {
+
+		/* This shouldn't happen as dm_permission is false. */
+		if (!isInGuild(interaction)) { return; }
 
 		if (await missingPermissions(interaction, [
 			'ManageWebhooks', // Needed for webhook interaction
@@ -39,7 +42,6 @@ export const command: ContextMenuCommand = {
 		if (interaction.channel === null) { throw new Error('Interaction channel is null.'); }
 		const webhookChannel = interaction.channel.isThread() ? interaction.channel.parent : interaction.channel;
 		if (webhookChannel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
-		if (webhookChannel.type === ChannelType.DM || interaction.channel.type === ChannelType.DM) { throw new Error('Webhook can\'t be edited, channel is DMChannel.'); }
 		if (await canManageWebhooks(interaction.channel) === false) { return; }
 		const webhook = (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
 			|| await webhookChannel.createWebhook({ name: 'PnP Profile Webhook' });

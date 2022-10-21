@@ -1,6 +1,5 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { ServerSchema } from '../../typings/data/server';
-import { RankType, UserData } from '../../typings/data/user';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { RankType } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { checkRankRequirements } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
@@ -117,36 +116,32 @@ export const command: SlashCommand = {
 				.setFooter({ text: `Go ${userData.quid.profile.rank === 'Youngling' ? 'playing' : 'exploring'} until you find a quest! Once you have completed the quest, you can move up a rank.` })],
 		}, true);
 	},
+	async sendMessageComponentResponse(interaction, userData, serverData) {
+
+		if (!interaction.isButton()) { return; }
+		/* This ensures that the user is in a guild and has a completed account. */
+		if (serverData === null) { throw new Error('serverData is null'); }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+
+		const rank = getArrayElement(interaction.customId.split('_'), 1);
+		if (rank !== RankType.Hunter && rank !== RankType.Healer) { throw new Error('rank is not of RankType Hunter or Healer'); }
+
+		await userData.update(
+			(u) => {
+				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+				p.rank = rank;
+			},
+		);
+
+		await update(interaction, {
+			embeds: [new EmbedBuilder()
+				.setColor(userData.quid.color)
+				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setDescription(`*${userData.quid.name} stands before one of the eldest, excited to hear their following words.* "Congratulations, ${userData.quid.name}, you are now a fully-fledged ${rank}. I am certain you will contribute greatly to the pack in this role."\n*The ${userData.quid.getDisplayspecies()} grins from ear to ear.*`)],
+		});
+
+		await checkRankRequirements(serverData, interaction, interaction.member, rank, true);
+		return;
+
+	},
 };
-
-export async function rankupInteractionCollector(
-	interaction: ButtonInteraction,
-	userData: UserData<undefined, ''> | null,
-	serverData: ServerSchema | null,
-): Promise<void> {
-
-	/* This ensures that the user is in a guild and has a completed account. */
-	if (serverData === null) { throw new Error('serverData is null'); }
-	if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
-
-	const rank = getArrayElement(interaction.customId.split('_'), 1);
-	if (rank !== RankType.Hunter && rank !== RankType.Healer) { throw new Error('rank is not of RankType Hunter or Healer'); }
-
-	await userData.update(
-		(u) => {
-			const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-			p.rank = rank;
-		},
-	);
-
-	await update(interaction, {
-		embeds: [new EmbedBuilder()
-			.setColor(userData.quid.color)
-			.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-			.setDescription(`*${userData.quid.name} stands before one of the eldest, excited to hear their following words.* "Congratulations, ${userData.quid.name}, you are now a fully-fledged ${rank}. I am certain you will contribute greatly to the pack in this role."\n*The ${userData.quid.getDisplayspecies()} grins from ear to ear.*`)],
-	});
-
-	await checkRankRequirements(serverData, interaction, interaction.member, rank, true);
-
-	return;
-}

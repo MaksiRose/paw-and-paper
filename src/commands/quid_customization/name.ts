@@ -46,6 +46,11 @@ export const command: SlashCommand = {
 
 			const _userData = await userModel.create({
 				userId: [interaction.user.id],
+				userIds: {
+					[interaction.user.id]: interaction.inGuild() ? {
+						[interaction.guildId]: { isMember: true, lastUpdatedTimestamp: Date.now() },
+					} : {},
+				},
 				tag: {
 					global: '',
 					servers: {},

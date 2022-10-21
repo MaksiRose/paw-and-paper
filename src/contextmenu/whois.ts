@@ -5,6 +5,7 @@ import { respond } from '../utils/helperFunctions';
 import userModel, { getUserData } from '../models/userModel';
 import { WebhookMessages } from '../typings/data/general';
 import { ContextMenuCommand } from '../typings/handle';
+import { isInGuild } from '../utils/checkUserState';
 
 export const command: ContextMenuCommand = {
 	data: {
@@ -15,15 +16,7 @@ export const command: ContextMenuCommand = {
 	sendCommand: async (interaction) => {
 
 		/* This shouldn't happen as dm_permission is false. */
-		if (!interaction.inCachedGuild()) {
-
-			await interaction
-				.reply({
-					content: 'This interaction is guild-only!',
-					ephemeral: true,
-				});
-			return;
-		}
+		if (!isInGuild(interaction)) { return; }
 
 		/* This gets the webhookCache */
 		const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8')) as WebhookMessages;

@@ -1,6 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import userModel, { getUserData } from '../../models/userModel';
-import { ServerSchema } from '../../typings/data/server';
 import { RankType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
@@ -62,6 +61,35 @@ export const command: SlashCommand = {
 
 		await sendStatsMessage(interaction, userData, interaction.user.id);
 	},
+	async sendMessageComponentResponse(interaction, userData, serverData) {
+
+		if (!interaction.isButton()) { return; }
+		/* This ensures that the user is in a guild and has a completed account. */
+		if (serverData === null) { throw new Error('serverData is null'); }
+		if (!isInGuild(interaction)) { return; }
+
+		if (interaction.customId.includes('refresh')) {
+
+			const quidId = getArrayElement(interaction.customId.split('_'), 2);
+			const creatorUserId = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
+
+			const _userData = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
+			userData = getUserData(_userData, interaction.guildId, getMapData(_userData.quids, quidId));
+			if (!hasNameAndSpecies(userData)) { throw Error('userData.quid.species is empty string'); }
+			await sendStatsMessage(interaction, userData, creatorUserId);
+			return;
+		}
+
+		if (interaction.customId.includes('store')) {
+
+			if (!hasNameAndSpecies(userData, interaction)) { return; }
+			const restEmbed = await isInvalid(interaction, userData);
+			if (restEmbed === false) { return; }
+
+			await sendStoreMessage(interaction, userData, serverData, restEmbed);
+		}
+
+	},
 };
 
 async function sendStatsMessage(
@@ -116,36 +144,4 @@ async function sendStatsMessage(
 			(userData.quid.profile.hasQuest ? `\n${userData.quid.name} has one open quest!` : '') + (canRankUp ? `\n${userData.quid.name} can rank up!` : ''),
 		components: [components],
 	});
-}
-
-export async function statsInteractionCollector(
-	interaction: ButtonInteraction,
-	userData: UserData<undefined, ''> | null,
-	serverData: ServerSchema | null,
-): Promise<void> {
-
-	/* This ensures that the user is in a guild and has a completed account. */
-	if (serverData === null) { throw new Error('serverData is null'); }
-	if (!isInGuild(interaction)) { return; }
-
-	if (interaction.customId.includes('refresh')) {
-
-		const quidId = getArrayElement(interaction.customId.split('_'), 2);
-		const creatorUserId = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
-
-		const _userData = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
-		userData = getUserData(_userData, interaction.guildId, getMapData(_userData.quids, quidId));
-		if (!hasNameAndSpecies(userData)) { throw Error('userData.quid.species is empty string'); }
-		await sendStatsMessage(interaction, userData, creatorUserId);
-		return;
-	}
-
-	if (interaction.customId.includes('store')) {
-
-		if (!hasNameAndSpecies(userData, interaction)) { return; }
-		const restEmbed = await isInvalid(interaction, userData);
-		if (restEmbed === false) { return; }
-
-		await sendStoreMessage(interaction, userData, serverData, restEmbed);
-	}
 }

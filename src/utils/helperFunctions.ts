@@ -81,6 +81,7 @@ export async function respond(
 
 		if (isObject(error) && (error.code === 'ECONNRESET' || error.status === 404 || error.httpStatus === 404)) {
 
+			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
 			if ((interaction.replied || interaction.deferred) && editMessage) { botReply = await (await interaction.fetchReply()).edit({ ...options, flags: undefined }); }
 			else {
 
@@ -92,6 +93,7 @@ export async function respond(
 		}
 		else if (isObject(error) && (error.status === 400 || error.httpStatus === 400) && !interaction.replied && !interaction.deferred) {
 
+			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
 			interaction.replied = true;
 			botReply = await respond(interaction, options, editMessage);
 		}
@@ -125,11 +127,13 @@ export async function update(
 
 		if (isObject(error) && (error.code === 'ECONNRESET' || error.code === 10062)) {
 
+			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
 			if (!interaction.replied && !interaction.deferred) { botReply = await interaction.message.edit({ ...options, flags: undefined }); }
 			else { botReply = await (await interaction.fetchReply()).edit({ ...options, flags: undefined }); }
 		}
 		else if (isObject(error) && error.code === 40060 && !interaction.replied && !interaction.deferred) {
 
+			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
 			interaction.replied = true;
 			botReply = await update(interaction, options);
 		}
@@ -203,7 +207,12 @@ export async function sendErrorMessage(
 		guild_locale: interaction.guildLocale,
 	};
 
-	if (isObject(error) && error.code === 10062) {
+	const isECONNRESET = isObject(error) && error.code === 'ECONNRESET';
+	if (isECONNRESET) {
+
+		console.trace('ECONNRESET Error');
+	}
+	else if (isObject(error) && error.code === 10062) {
 
 		console.error('Error 404 - An error is not being sent to the user:', error);
 		return;
@@ -213,7 +222,6 @@ export async function sendErrorMessage(
 		console.error('Error 400 - An error is not being sent to the user:', error);
 		return;
 	}
-	const isECONNRESET = isObject(error) && error.code === 'ECONNRESET';
 	console.error(error, jsonInteraction);
 
 	let errorId: string | undefined = undefined;

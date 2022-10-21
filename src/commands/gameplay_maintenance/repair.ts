@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, InteractionReplyOptions, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder, WebhookEditMessageOptions } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, SelectMenuBuilder, SlashCommandBuilder, WebhookEditMessageOptions } from 'discord.js';
 import { materialsInfo } from '../..';
 import serverModel from '../../models/serverModel';
 import { MaterialNames } from '../../typings/data/general';
@@ -86,76 +86,72 @@ export const command: SlashCommand = {
 
 		createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
 	},
+	async sendMessageComponentResponse(interaction, userData, serverData) {
+
+		/* This ensures that the user is in a guild and has a completed account. */
+		if (serverData === null) { throw new Error('serverData is null'); }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+
+		if (interaction.isButton()) {
+
+			const chosenDen = getArrayElement(interaction.customId.split('_'), 1);
+			if (chosenDen !== 'sleepingDens' && chosenDen !== 'medicineDen' && chosenDen !== 'foodDen') { throw new Error('chosenDen is not a den'); }
+
+			await update(interaction, getMaterials(userData, serverData, chosenDen, [], ''));
+			return;
+		}
+
+		if (interaction.isSelectMenu()) {
+
+			const chosenDen = getArrayElement(interaction.customId.split('_'), 2);
+			if (chosenDen !== 'sleepingDens' && chosenDen !== 'medicineDen' && chosenDen !== 'foodDen') { throw new Error('chosenDen is not a den'); }
+
+			const chosenItem = getArrayElement(interaction.values, 0) as MaterialNames;
+
+			const repairKind = materialsInfo[chosenItem].reinforcesStructure ? 'structure' : materialsInfo[chosenItem].improvesBedding ? 'bedding' : materialsInfo[chosenItem].thickensWalls ? 'thickness' : materialsInfo[chosenItem].removesOverhang ? 'evenness' : undefined;
+			if (repairKind === undefined) { throw new TypeError('repairKind is undefined'); }
+
+			const repairAmount = getSmallerNumber(addMaterialPoints(), 100 - serverData.dens[chosenDen][repairKind]);
+
+			/** True when the repairAmount is bigger than zero. If the user isn't of  rank Hunter or Elderly, a weighted table decided whether they are successful. */
+			const isSuccessful = repairAmount > 0 && !isUnlucky(userData);
+
+			serverData = await serverModel.findOneAndUpdate(
+				s => s.serverId === serverData!.serverId,
+				(s) => {
+					s.inventory.materials[chosenItem] -= 1;
+					if (isSuccessful) { s.dens[chosenDen][repairKind] += repairAmount; }
+				},
+			);
+
+			const experiencePoints = isSuccessful === false ? 0 : userData.quid.profile.rank == RankType.Elderly ? getRandomNumber(41, 20) : userData.quid.profile.rank == RankType.Healer ? getRandomNumber(21, 10) : getRandomNumber(11, 5);
+			const changedCondition = await changeCondition(userData, experiencePoints);
+			const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
+
+			const denName = chosenDen.split(/(?=[A-Z])/).join(' ').toLowerCase();
+
+			await update(interaction, {
+				embeds: [
+					new EmbedBuilder()
+						.setColor(userData.quid.color)
+						.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+						.setDescription(`*${userData.quid.name} takes a ${chosenItem} and tries to ${repairKind === 'structure' ? 'tuck it into parts of the walls and ceiling that look less stable.' : repairKind === 'bedding' ? 'spread it over parts of the floor that look harsh and rocky.' : repairKind === 'thickness' ? 'cover parts of the walls that look a little thin with it.' : 'drag it over parts of the walls with bumps and material sticking out.'} ` + (isSuccessful ? `Immediately you can see the ${repairKind} of the den improving. What a success!*` : `After a few attempts, the material breaks into little pieces, rendering it useless. Looks like the ${userData.quid.getDisplayspecies()} has to try again...*`))
+						.setFooter({ text: `${changedCondition.statsUpdateText}\n\n-1 ${chosenItem} for ${interaction.guild.name}\n${isSuccessful ? `+${repairAmount}% ${repairKind} for ${denName} (${serverData.dens[chosenDen][repairKind]}%  total)` : ''}` }),
+					...changedCondition.injuryUpdateEmbed,
+					...levelUpEmbed,
+				],
+				components: disableAllComponents(interaction.message.components),
+			});
+
+			await isPassedOut(interaction, userData, true);
+
+			await restAdvice(interaction, userData);
+			await drinkAdvice(interaction, userData);
+			await eatAdvice(interaction, userData);
+		}
+	},
 };
 
-export async function repairInteractionCollector(
-	interaction: ButtonInteraction | SelectMenuInteraction,
-	userData: UserData<undefined, ''> | null,
-	serverData: ServerSchema | null,
-): Promise<void> {
-
-	/* This ensures that the user is in a guild and has a completed account. */
-	if (serverData === null) { throw new Error('serverData is null'); }
-	if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
-
-	if (interaction.isButton()) {
-
-		const chosenDen = getArrayElement(interaction.customId.split('_'), 1);
-		if (chosenDen !== 'sleepingDens' && chosenDen !== 'medicineDen' && chosenDen !== 'foodDen') { throw new Error('chosenDen is not a den'); }
-
-		await update(interaction, getMaterials(userData, serverData, chosenDen, [], ''));
-		return;
-	}
-
-	if (interaction.isSelectMenu()) {
-
-		const chosenDen = getArrayElement(interaction.customId.split('_'), 2);
-		if (chosenDen !== 'sleepingDens' && chosenDen !== 'medicineDen' && chosenDen !== 'foodDen') { throw new Error('chosenDen is not a den'); }
-
-		const chosenItem = getArrayElement(interaction.values, 0) as MaterialNames;
-
-		const repairKind = materialsInfo[chosenItem].reinforcesStructure ? 'structure' : materialsInfo[chosenItem].improvesBedding ? 'bedding' : materialsInfo[chosenItem].thickensWalls ? 'thickness' : materialsInfo[chosenItem].removesOverhang ? 'evenness' : undefined;
-		if (repairKind === undefined) { throw new TypeError('repairKind is undefined'); }
-
-		const repairAmount = getSmallerNumber(addMaterialPoints(), 100 - serverData.dens[chosenDen][repairKind]);
-
-		/** True when the repairAmount is bigger than zero. If the user isn't of  rank Hunter or Elderly, a weighted table decided whether they are successful. */
-		const isSuccessful = repairAmount > 0 && !isUnlucky(userData);
-
-		serverData = await serverModel.findOneAndUpdate(
-			s => s.serverId === serverData!.serverId,
-			(s) => {
-				s.inventory.materials[chosenItem] -= 1;
-				if (isSuccessful) { s.dens[chosenDen][repairKind] += repairAmount; }
-			},
-		);
-
-		const experiencePoints = isSuccessful === false ? 0 : userData.quid.profile.rank == RankType.Elderly ? getRandomNumber(41, 20) : userData.quid.profile.rank == RankType.Healer ? getRandomNumber(21, 10) : getRandomNumber(11, 5);
-		const changedCondition = await changeCondition(userData, experiencePoints);
-		const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
-
-		const denName = chosenDen.split(/(?=[A-Z])/).join(' ').toLowerCase();
-
-		await update(interaction, {
-			embeds: [
-				new EmbedBuilder()
-					.setColor(userData.quid.color)
-					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-					.setDescription(`*${userData.quid.name} takes a ${chosenItem} and tries to ${repairKind === 'structure' ? 'tuck it into parts of the walls and ceiling that look less stable.' : repairKind === 'bedding' ? 'spread it over parts of the floor that look harsh and rocky.' : repairKind === 'thickness' ? 'cover parts of the walls that look a little thin with it.' : 'drag it over parts of the walls with bumps and material sticking out.'} ` + (isSuccessful ? `Immediately you can see the ${repairKind} of the den improving. What a success!*` : `After a few attempts, the material breaks into little pieces, rendering it useless. Looks like the ${userData.quid.getDisplayspecies()} has to try again...*`))
-					.setFooter({ text: `${changedCondition.statsUpdateText}\n\n-1 ${chosenItem} for ${interaction.guild.name}\n${isSuccessful ? `+${repairAmount}% ${repairKind} for ${denName} (${serverData.dens[chosenDen][repairKind]}%  total)` : ''}` }),
-				...changedCondition.injuryUpdateEmbed,
-				...levelUpEmbed,
-			],
-			components: disableAllComponents(interaction.message.components),
-		});
-
-		await isPassedOut(interaction, userData, true);
-
-		await restAdvice(interaction, userData);
-		await drinkAdvice(interaction, userData);
-		await eatAdvice(interaction, userData);
-	}
-}
 
 function getDenButtons(
 	_id: string,

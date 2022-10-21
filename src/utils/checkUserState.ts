@@ -1,4 +1,4 @@
-import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
+import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, MessageContextMenuCommandInteraction, SelectMenuInteraction } from 'discord.js';
 import { respond } from './helperFunctions';
 import { UserData } from '../typings/data/user';
 const { default_color } = require('../../config.json');
@@ -80,11 +80,14 @@ export function isInGuild(
 	interaction: SelectMenuInteraction
 ): interaction is SelectMenuInteraction<'cached'>
 export function isInGuild(
-	interaction: ChatInputCommandInteraction | ButtonInteraction | SelectMenuInteraction
-): interaction is ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>
+	interaction: MessageContextMenuCommandInteraction
+): interaction is MessageContextMenuCommandInteraction<'cached'>
 export function isInGuild(
-	interaction: ChatInputCommandInteraction | ButtonInteraction | SelectMenuInteraction,
-): interaction is ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'> {
+	interaction: ChatInputCommandInteraction | ButtonInteraction | SelectMenuInteraction | MessageContextMenuCommandInteraction
+): interaction is ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'> | MessageContextMenuCommandInteraction<'cached'>
+export function isInGuild(
+	interaction: ChatInputCommandInteraction | ButtonInteraction | SelectMenuInteraction | MessageContextMenuCommandInteraction,
+): interaction is ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'> | MessageContextMenuCommandInteraction <'cached'> {
 
 	if (!interaction.inCachedGuild()) {
 

@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, Collection, EmbedBuilder, Guild, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder, Guild, SelectMenuBuilder, SlashCommandBuilder } from 'discord.js';
 import { respond, update } from '../../utils/helperFunctions';
 import { isInGuild } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
@@ -27,58 +27,56 @@ export const command: SlashCommand = {
 		/* Creating a message with up to 25 profiles of a certain rank, a select menu to select another rank and buttons to go back and fourth a page if the rank as more than 25 profiles. */
 		await respond(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild, RankType.Youngling), true);
 	},
-};
+	async sendMessageComponentResponse(interaction) {
 
-export async function profilelistInteractionCollector(
-	interaction: ButtonInteraction | SelectMenuInteraction,
-): Promise<void> {
+		if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild.'); }
 
-	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild.'); }
+		if (interaction.isSelectMenu() && interaction.customId.startsWith('profilelist_rank_options')) {
 
-	if (interaction.isSelectMenu() && interaction.customId.startsWith('profilelist_rank_options')) {
+			const rankName = (interaction.values[0] === 'profilelist_elderlies') ?
+				RankType.Elderly :
+				(interaction.values[0] === 'profilelist_younglings') ?
+					RankType.Youngling :
+					(interaction.values[0] === 'profilelist_apprentices') ?
+						RankType.Apprentice :
+						RankType.Hunter;
 
-		const rankName = (interaction.values[0] === 'profilelist_elderlies') ?
+			const profilesText = await getProfilesTexts(interaction.guild, rankName, rankName === RankType.Hunter ? RankType.Healer : undefined);
+
+			await update(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild, rankName, profilesText));
+			return;
+		}
+
+		const rankName = interaction.customId.includes(RankType.Elderly) ?
 			RankType.Elderly :
-			(interaction.values[0] === 'profilelist_younglings') ?
+			interaction.customId.includes(RankType.Youngling) ?
 				RankType.Youngling :
-				(interaction.values[0] === 'profilelist_apprentices') ?
+				interaction.customId.includes(RankType.Apprentice) ?
 					RankType.Apprentice :
 					RankType.Hunter;
 
 		const profilesText = await getProfilesTexts(interaction.guild, rankName, rankName === RankType.Hunter ? RankType.Healer : undefined);
 
-		await update(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild, rankName, profilesText));
+		/* Get the page number of the friendship list.  */
+		let page = Number(interaction.customId.split('_')[3] ?? 0);
+
+		/* Checking if the user clicked on the left or right button and then it is changing the page number accordingly. */
+		if (interaction.customId.includes('left')) {
+
+			page -= 1;
+			if (page < 0) { page = Math.ceil(profilesText.length / 25) - 1; }
+		}
+		else if (interaction.customId.includes('right')) {
+
+			page += 1;
+			if (page >= Math.ceil(profilesText.length / 25)) { page = 0; }
+		}
+
+		await respond(interaction, await getProfilesMessage(interaction.user.id, page, interaction.guild, rankName, profilesText), true);
 		return;
-	}
 
-	const rankName = interaction.customId.includes(RankType.Elderly) ?
-		RankType.Elderly :
-		interaction.customId.includes(RankType.Youngling) ?
-			RankType.Youngling :
-			interaction.customId.includes(RankType.Apprentice) ?
-				RankType.Apprentice :
-				RankType.Hunter;
-
-	const profilesText = await getProfilesTexts(interaction.guild, rankName, rankName === RankType.Hunter ? RankType.Healer : undefined);
-
-	/* Get the page number of the friendship list.  */
-	let page = Number(interaction.customId.split('_')[3] ?? 0);
-
-	/* Checking if the user clicked on the left or right button and then it is changing the page number accordingly. */
-	if (interaction.customId.includes('left')) {
-
-		page -= 1;
-		if (page < 0) { page = Math.ceil(profilesText.length / 25) - 1; }
-	}
-	else if (interaction.customId.includes('right')) {
-
-		page += 1;
-		if (page >= Math.ceil(profilesText.length / 25)) { page = 0; }
-	}
-
-	await respond(interaction, await getProfilesMessage(interaction.user.id, page, interaction.guild, rankName, profilesText), true);
-	return;
-}
+	},
+};
 
 /**
  * It gets all the users that have a profile in the guild, and then for each user, it gets the cache of the user in the guild, and if the user is in the guild, it gets the profile of each quid of the user and adds it to the rankTexts

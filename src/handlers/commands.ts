@@ -64,7 +64,7 @@ function getFiles(
 				...getFiles(`${directory}/${content}`),
 			];
 		}
-		else if (content.endsWith('.js')) {
+		else if (content.endsWith('.js') || content.endsWith('.ts')) {
 
 			commandFiles.push(`${directory}/${content.slice(0, -3)}`);
 		}

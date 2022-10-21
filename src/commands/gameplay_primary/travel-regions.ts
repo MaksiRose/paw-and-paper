@@ -1,6 +1,5 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, Message, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, Message, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import userModel from '../../models/userModel';
-import { ServerSchema } from '../../typings/data/server';
 import { CurrentRegionType, RankType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
@@ -59,53 +58,49 @@ export const command: SlashCommand = {
 		const botReply = await sendTravelMessage(interaction, userData, messageContent, restEmbed, chosenRegion);
 		createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
 	},
+	async sendMessageComponentResponse(interaction, userData, serverData) {
+
+		/* This ensures that the user is in a guild and has a completed account. */
+		if (serverData === null) { throw new Error('serverData is null'); }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+
+		const messageContent = interaction.message.content;
+		const restEmbed = interaction.message.embeds.slice(0, -1).map(c => new EmbedBuilder(c.toJSON()));
+
+		if (interaction.isButton()) {
+
+			if (interaction.customId.includes('rest')) {
+
+				await startResting(interaction, userData, serverData);
+			}
+			else if (interaction.customId.includes('inventory')) {
+
+				await showInventoryMessage(interaction, userData, serverData, 1);
+			}
+			else if (interaction.customId.includes('store')) {
+
+				await sendStoreMessage(interaction, userData, serverData, restEmbed);
+			}
+			else if (interaction.customId.includes('heal')) {
+
+				await getHealResponse(interaction, userData, serverData, messageContent, restEmbed, 0);
+			}
+			else if (interaction.customId.includes('drink')) {
+
+				await sendDrinkMessage(interaction, userData, messageContent, restEmbed);
+			}
+			else if (interaction.customId.includes('play')) {
+
+				await executePlaying(interaction, userData, serverData);
+			}
+		}
+		else if (interaction.isSelectMenu()) {
+
+			await sendTravelMessage(interaction, userData, '', restEmbed, interaction.values[0] ?? null);
+		}
+
+	},
 };
-
-export async function travelInteractionCollector(
-	interaction: ButtonInteraction | SelectMenuInteraction,
-	userData: UserData<undefined, ''> | null,
-	serverData: ServerSchema | null,
-): Promise<void> {
-
-	/* This ensures that the user is in a guild and has a completed account. */
-	if (serverData === null) { throw new Error('serverData is null'); }
-	if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
-
-	const messageContent = interaction.message.content;
-	const restEmbed = interaction.message.embeds.slice(0, -1).map(c => new EmbedBuilder(c.toJSON()));
-
-	if (interaction.isButton()) {
-
-		if (interaction.customId.includes('rest')) {
-
-			await startResting(interaction, userData, serverData);
-		}
-		else if (interaction.customId.includes('inventory')) {
-
-			await showInventoryMessage(interaction, userData, serverData, 1);
-		}
-		else if (interaction.customId.includes('store')) {
-
-			await sendStoreMessage(interaction, userData, serverData, restEmbed);
-		}
-		else if (interaction.customId.includes('heal')) {
-
-			await getHealResponse(interaction, userData, serverData, messageContent, restEmbed, 0);
-		}
-		else if (interaction.customId.includes('drink')) {
-
-			await sendDrinkMessage(interaction, userData, messageContent, restEmbed);
-		}
-		else if (interaction.customId.includes('play')) {
-
-			await executePlaying(interaction, userData, serverData);
-		}
-	}
-	else if (interaction.isSelectMenu()) {
-
-		await sendTravelMessage(interaction, userData, '', restEmbed, interaction.values[0] ?? null);
-	}
-}
 
 async function sendTravelMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
@@ -120,7 +115,7 @@ async function sendTravelMessage(
 		.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL });
 	const travelComponent = new ActionRowBuilder<SelectMenuBuilder>()
 		.setComponents(new SelectMenuBuilder()
-			.setCustomId(`travel_options_@${userData._id}`)
+			.setCustomId(`travel-regions_options_@${userData._id}`)
 			.setPlaceholder('Select a region to travel to')
 			.setOptions([
 				{ label: CurrentRegionType.SleepingDens, value: CurrentRegionType.SleepingDens, emoji: '💤' },
@@ -153,7 +148,7 @@ async function sendTravelMessage(
 			embeds: [...restEmbed, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId(`travel_rest_@${userData._id}`)
+					.setCustomId(`travel-regions_rest_@${userData._id}`)
 					.setLabel('Rest')
 					.setStyle(ButtonStyle.Primary))],
 		});
@@ -179,11 +174,11 @@ async function sendTravelMessage(
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([
 					new ButtonBuilder()
-						.setCustomId(`travel_inventory_@${userData._id}`)
+						.setCustomId(`travel-regions_inventory_@${userData._id}`)
 						.setLabel('View inventory')
 						.setStyle(ButtonStyle.Primary),
 					new ButtonBuilder()
-						.setCustomId(`travel_store_@${userData._id}`)
+						.setCustomId(`travel-regions_store_@${userData._id}`)
 						.setLabel('Store items away')
 						.setStyle(ButtonStyle.Primary),
 				])],
@@ -220,7 +215,7 @@ async function sendTravelMessage(
 				travelComponent,
 				...(userData.quid.profile.rank === RankType.Youngling ? [] : [new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(`travel_heal_@${userData._id}`)
+						.setCustomId(`travel-regions_heal_@${userData._id}`)
 						.setLabel('Heal')
 						.setStyle(ButtonStyle.Primary))]),
 			],
@@ -258,7 +253,7 @@ async function sendTravelMessage(
 			embeds: [...restEmbed, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId(`travel_drink_@${userData._id}`)
+					.setCustomId(`travel-regions_drink_@${userData._id}`)
 					.setLabel('Drink')
 					.setStyle(ButtonStyle.Primary))],
 		});
@@ -283,7 +278,7 @@ async function sendTravelMessage(
 			embeds: [...restEmbed, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId(`travel_play_@${userData._id}`)
+					.setCustomId(`travel-regions_play_@${userData._id}`)
 					.setLabel('Play')
 					.setStyle(ButtonStyle.Primary))],
 		});

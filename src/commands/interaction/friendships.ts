@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { respond, update } from '../../utils/helperFunctions';
 import { hasNameAndSpecies } from '../../utils/checkUserState';
 import { checkOldMentions, getFriendshipHearts, getFriendshipPoints } from '../../utils/friendshipHandling';
@@ -22,36 +22,34 @@ export const command: SlashCommand = {
 		/* Creating a message with up to 25 friendships and buttons to go back and fourth a page if the quid has more than 25 friends. */
 		await respond(interaction, await getFriendshipMessage(userData, interaction.guildId ?? '', 0), true);
 	},
+	async sendMessageComponentResponse(interaction, userData) {
+
+		if (!interaction.isButton()) { return; }
+		if (!hasNameAndSpecies(userData, interaction)) { return; }
+
+		/* Get the page number of the friendship list.  */
+		let page = Number(interaction.customId.split('_')[2] ?? 0);
+
+		/* Get a list of friendship texts for all the friendships this quid has */
+		const friendshipTexts = await getFriendshipTexts(userData);
+
+		/* Checking if the user clicked on the left or right button and then it is changing the page number accordingly. */
+		if (interaction.customId.includes('left')) {
+
+			page -= 1;
+			if (page < 0) { page = Math.ceil(friendshipTexts.length / 25) - 1; }
+		}
+		else if (interaction.customId.includes('right')) {
+
+			page += 1;
+			if (page >= Math.ceil(friendshipTexts.length / 25)) { page = 0; }
+		}
+
+		/* Updating the message with the correct friendship texts based on the new page. */
+		await update(interaction, await getFriendshipMessage(userData, interaction.guildId ?? '', page, friendshipTexts));
+
+	},
 };
-
-export async function friendshipsInteractionCollector(
-	interaction: ButtonInteraction,
-	userData: UserData<undefined, ''> | null,
-): Promise<void> {
-
-	if (!hasNameAndSpecies(userData, interaction)) { return; }
-
-	/* Get the page number of the friendship list.  */
-	let page = Number(interaction.customId.split('_')[2] ?? 0);
-
-	/* Get a list of friendship texts for all the friendships this quid has */
-	const friendshipTexts = await getFriendshipTexts(userData);
-
-	/* Checking if the user clicked on the left or right button and then it is changing the page number accordingly. */
-	if (interaction.customId.includes('left')) {
-
-		page -= 1;
-		if (page < 0) { page = Math.ceil(friendshipTexts.length / 25) - 1; }
-	}
-	else if (interaction.customId.includes('right')) {
-
-		page += 1;
-		if (page >= Math.ceil(friendshipTexts.length / 25)) { page = 0; }
-	}
-
-	/* Updating the message with the correct friendship texts based on the new page. */
-	await update(interaction, await getFriendshipMessage(userData, interaction.guildId ?? '', page, friendshipTexts));
-}
 
 /**
  * It gets an array of texts for all the friendships of the quid of the user who executed the command

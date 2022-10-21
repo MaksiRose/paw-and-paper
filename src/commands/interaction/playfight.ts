@@ -101,352 +101,350 @@ export const command: SlashCommand = {
 		createCommandComponentDisabler(userData1._id, interaction.guildId, botReply);
 		createCommandComponentDisabler(userData2._id, interaction.guildId, botReply);
 	},
-};
+	async sendMessageComponentResponse(interaction, userData, serverData) {
 
-export async function playfightInteractionCollector(
-	interaction: ButtonInteraction,
-	serverData: ServerSchema | null,
-): Promise<void> {
+		if (!interaction.isButton()) { return; }
 
-	if (!interaction.customId.includes('confirm')) { return; }
-	if (serverData === null) { throw new Error('serverData is null'); }
-	if (!isInGuild(interaction)) { return; }
-	if (interaction.channel === null) { throw new Error('Interaction channel is null'); }
+		if (!interaction.customId.includes('confirm')) { return; }
+		if (serverData === null) { throw new Error('serverData is null'); }
+		if (!isInGuild(interaction)) { return; }
+		if (interaction.channel === null) { throw new Error('Interaction channel is null'); }
 
-	/* Gets the current active quid and the server profile from the account */
-	const userId1 = getArrayElement(interaction.customId.split('_'), 4).replace('@', '');
-	const _userData1 = await userModel.findOne(u => u.userId.includes(userId1));
-	const userData1 = getUserData(_userData1, interaction.guildId, getMapData(_userData1.quids, getMapData(_userData1.currentQuid, interaction.guildId)));
-	if (!hasNameAndSpecies(userData1)) { throw new Error('userData1.quid.species is empty string'); }
+		/* Gets the current active quid and the server profile from the account */
+		const userId1 = getArrayElement(interaction.customId.split('_'), 4).replace('@', '');
+		const _userData1 = await userModel.findOne(u => u.userId.includes(userId1));
+		const userData1 = getUserData(_userData1, interaction.guildId, getMapData(_userData1.quids, getMapData(_userData1.currentQuid, interaction.guildId)));
+		if (!hasNameAndSpecies(userData1)) { throw new Error('userData1.quid.species is empty string'); }
 
-	/* Gets the current active quid and the server profile from the partners account */
-	const userId2 = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
-	const _userData2 = await userModel.findOne(u => u.userId.includes(userId2));
-	const userData2 = getUserData(_userData2, interaction.guildId, getMapData(_userData2.quids, getMapData(_userData1.currentQuid, interaction.guildId)));
-	if (!hasNameAndSpecies(userData2)) { throw new Error('userData2.quid.species is empty string'); }
+		/* Gets the current active quid and the server profile from the partners account */
+		const userId2 = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
+		const _userData2 = await userModel.findOne(u => u.userId.includes(userId2));
+		const userData2 = getUserData(_userData2, interaction.guildId, getMapData(_userData2.quids, getMapData(_userData1.currentQuid, interaction.guildId)));
+		if (!hasNameAndSpecies(userData2)) { throw new Error('userData2.quid.species is empty string'); }
 
-	if (interaction.user.id === userId1) {
+		if (interaction.user.id === userId1) {
 
-		await respond(interaction, {
-			content: 'You can\'t accept your own invitation!',
-			ephemeral: true,
-		}, false);
-		return;
-	}
+			await respond(interaction, {
+				content: 'You can\'t accept your own invitation!',
+				ephemeral: true,
+			}, false);
+			return;
+		}
 
-	/* For both users, set cooldowns to true, but unregister the command from being disabled, and get the condition change */
-	cooldownMap.set(userData1._id + interaction.guildId, true);
-	cooldownMap.set(userData2._id + interaction.guildId, true);
-	delete disableCommandComponent[userData1._id + interaction.guildId];
-	delete disableCommandComponent[userData2._id + interaction.guildId];
-	const decreasedStatsData1 = await changeCondition(userData1, 0, CurrentRegionType.Prairie, true);
-	const decreasedStatsData2 = await changeCondition(userData2, 0, CurrentRegionType.Prairie, true);
+		/* For both users, set cooldowns to true, but unregister the command from being disabled, and get the condition change */
+		cooldownMap.set(userData1._id + interaction.guildId, true);
+		cooldownMap.set(userData2._id + interaction.guildId, true);
+		delete disableCommandComponent[userData1._id + interaction.guildId];
+		delete disableCommandComponent[userData2._id + interaction.guildId];
+		const decreasedStatsData1 = await changeCondition(userData1, 0, CurrentRegionType.Prairie, true);
+		const decreasedStatsData2 = await changeCondition(userData2, 0, CurrentRegionType.Prairie, true);
 
-	/* Gets the chosen game type errors if it doesn't exist */
-	const gameType = getArrayElement(interaction.customId.split('_'), 2); // connectfour or tictactoe
+		/* Gets the chosen game type errors if it doesn't exist */
+		const gameType = getArrayElement(interaction.customId.split('_'), 2); // connectfour or tictactoe
 
-	const emptyField = gameType === 'tictactoe' ? '◻️' : '⚫';
-	const player1Field = gameType === 'tictactoe' ? '⭕' : '🟡';
-	const player2Field = gameType === 'tictactoe' ? '❌' : '🔴';
+		const emptyField = gameType === 'tictactoe' ? '◻️' : '⚫';
+		const player1Field = gameType === 'tictactoe' ? '⭕' : '🟡';
+		const player2Field = gameType === 'tictactoe' ? '❌' : '🔴';
 
-	let componentArray: ActionRowBuilder<ButtonBuilder>[] = [];
-	const playingField: number[][] = [];
-	for (let row = 0; row < (gameType === 'tictactoe' ? 3 : 6); row++) {
+		let componentArray: ActionRowBuilder<ButtonBuilder>[] = [];
+		const playingField: number[][] = [];
+		for (let row = 0; row < (gameType === 'tictactoe' ? 3 : 6); row++) {
 
-		playingField.push([]);
-		if (gameType === 'tictactoe') { componentArray.push(new ActionRowBuilder<ButtonBuilder>().addComponents([])); }
+			playingField.push([]);
+			if (gameType === 'tictactoe') { componentArray.push(new ActionRowBuilder<ButtonBuilder>().addComponents([])); }
 
-		for (let column = 0; column < (gameType === 'tictactoe' ? 3 : 7); column++) {
+			for (let column = 0; column < (gameType === 'tictactoe' ? 3 : 7); column++) {
 
-			playingField[row]?.push(0);
-			if (gameType === 'tictactoe') {
+				playingField[row]?.push(0);
+				if (gameType === 'tictactoe') {
 
-				componentArray[row]?.addComponents(new ButtonBuilder()
-					.setCustomId(`playfight_board_${row}_${column}`)
-					.setEmoji(emptyField)
-					.setDisabled(false)
-					.setStyle(ButtonStyle.Secondary),
-				);
+					componentArray[row]?.addComponents(new ButtonBuilder()
+						.setCustomId(`playfight_board_${row}_${column}`)
+						.setEmoji(emptyField)
+						.setDisabled(false)
+						.setStyle(ButtonStyle.Secondary),
+					);
+				}
 			}
 		}
-	}
 
-	if (gameType === 'connectfour') {
+		if (gameType === 'connectfour') {
 
-		componentArray.push(
-			new ActionRowBuilder<ButtonBuilder>().setComponents(
-				new ButtonBuilder()
-					.setCustomId('playfight_board_0')
-					.setEmoji('1️⃣')
-					.setDisabled(false)
-					.setStyle(ButtonStyle.Secondary),
-				new ButtonBuilder()
-					.setCustomId('playfight_board_1')
-					.setEmoji('2️⃣')
-					.setDisabled(false)
-					.setStyle(ButtonStyle.Secondary),
-				new ButtonBuilder()
-					.setCustomId('playfight_board_2')
-					.setEmoji('3️⃣')
-					.setDisabled(false)
-					.setStyle(ButtonStyle.Secondary),
-				new ButtonBuilder()
-					.setCustomId('playfight_board_3')
-					.setEmoji('4️⃣')
-					.setDisabled(false)
-					.setStyle(ButtonStyle.Secondary),
-			),
-			new ActionRowBuilder<ButtonBuilder>().setComponents(
-				new ButtonBuilder()
-					.setCustomId('playfight_board_4')
-					.setEmoji('5️⃣')
-					.setDisabled(false)
-					.setStyle(ButtonStyle.Secondary),
-				new ButtonBuilder()
-					.setCustomId('playfight_board_5')
-					.setEmoji('6️⃣')
-					.setDisabled(false)
-					.setStyle(ButtonStyle.Secondary),
-				new ButtonBuilder()
-					.setCustomId('playfight_board_6')
-					.setEmoji('7️⃣')
-					.setDisabled(false)
-					.setStyle(ButtonStyle.Secondary),
-			),
-		);
-	}
-
-	let newTurnEmbedTextArrayIndex = -1;
-
-	await startNewRound(getRandomNumber(2) === 0 ? true : false, interaction, userId1, userData1, userId2, userData2, serverData, interaction.message);
-
-	async function startNewRound(
-		user1IsPlaying: boolean,
-		interaction: ButtonInteraction<'cached'>,
-		userId1: string,
-		userData1: UserData<never, never>,
-		userId2: string,
-		userData2: UserData<never, never>,
-		serverData: ServerSchema,
-		botReply: Message<true>,
-	) {
-
-		const userDataCurrent = user1IsPlaying ? userData1 : userData2;
-		const userDataOther = user1IsPlaying ? userData2 : userData1;
-
-		async function sendNextRoundMessage(
-			userId: string,
-			int: ButtonInteraction,
-			oldMessage: Message,
-			extraDescription?: string,
-		): Promise<Message<true>> {
-
-			const newTurnEmbedTextArray = [
-				`*${userDataCurrent.quid.name} bites into ${userDataOther.quid.name}, not very deep, but deep enough to hang onto the ${userDataOther.quid.getDisplayspecies()}. ${userDataOther.quid.name} needs to get the ${userDataCurrent.quid.getDisplayspecies()} off of ${userDataOther.quid.pronoun(1)}.*`,
-				`*${userDataCurrent.quid.name} slams into ${userDataOther.quid.name}, leaving the ${userDataOther.quid.getDisplayspecies()} disoriented. ${userDataOther.quid.name} needs to start an attack of ${userDataOther.quid.pronoun(2)} own now.*`,
-				`*${userDataOther.quid.name} has gotten hold of ${userDataCurrent.quid.name}, but the ${userDataCurrent.quid.getDisplayspecies()} manages to get ${userDataOther.quid.pronoun(1)} off, sending the ${userDataOther.quid.getDisplayspecies()} slamming into the ground. ${userDataOther.quid.name} needs to get up and try a new strategy.*`,
-			] as const;
-
-			newTurnEmbedTextArrayIndex = getRandomNumber(newTurnEmbedTextArray.length, 0, newTurnEmbedTextArrayIndex === -1 ? undefined : newTurnEmbedTextArrayIndex);
-
-			await oldMessage.delete();
-
-			const message = await respond(int, {
-				content: `<@${userId}>`,
-				embeds: [new EmbedBuilder()
-					.setColor(userData1.quid.color)
-					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-					.setDescription(newTurnEmbedTextArray[newTurnEmbedTextArrayIndex as 0 | 1 | 2] + (extraDescription ? `\n${extraDescription}` : ''))],
-				components: componentArray,
-			}, false);
-
-			return message as Message<true>;
+			componentArray.push(
+				new ActionRowBuilder<ButtonBuilder>().setComponents(
+					new ButtonBuilder()
+						.setCustomId('playfight_board_0')
+						.setEmoji('1️⃣')
+						.setDisabled(false)
+						.setStyle(ButtonStyle.Secondary),
+					new ButtonBuilder()
+						.setCustomId('playfight_board_1')
+						.setEmoji('2️⃣')
+						.setDisabled(false)
+						.setStyle(ButtonStyle.Secondary),
+					new ButtonBuilder()
+						.setCustomId('playfight_board_2')
+						.setEmoji('3️⃣')
+						.setDisabled(false)
+						.setStyle(ButtonStyle.Secondary),
+					new ButtonBuilder()
+						.setCustomId('playfight_board_3')
+						.setEmoji('4️⃣')
+						.setDisabled(false)
+						.setStyle(ButtonStyle.Secondary),
+				),
+				new ActionRowBuilder<ButtonBuilder>().setComponents(
+					new ButtonBuilder()
+						.setCustomId('playfight_board_4')
+						.setEmoji('5️⃣')
+						.setDisabled(false)
+						.setStyle(ButtonStyle.Secondary),
+					new ButtonBuilder()
+						.setCustomId('playfight_board_5')
+						.setEmoji('6️⃣')
+						.setDisabled(false)
+						.setStyle(ButtonStyle.Secondary),
+					new ButtonBuilder()
+						.setCustomId('playfight_board_6')
+						.setEmoji('7️⃣')
+						.setDisabled(false)
+						.setStyle(ButtonStyle.Secondary),
+				),
+			);
 		}
 
-		botReply = await sendNextRoundMessage(
-			user1IsPlaying ? userId1 : userId2,
-			interaction,
-			botReply,
-			gameType === 'connectfour' ? playingField.map(
-				row => row.join('').replaceAll('0', emptyField).replaceAll('1', player1Field).replaceAll('2', player2Field),
-			).join('\n') + '\n1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣' : undefined,
-		);
+		let newTurnEmbedTextArrayIndex = -1;
 
-		await botReply
-			.awaitMessageComponent({
-				componentType: ComponentType.Button,
-				idle: 120_000,
-				filter: (i => i.customId.startsWith('playfight_') && userDataCurrent.userId.includes(i.user.id)),
-			})
-			.then(async i => {
-				try {
+		await startNewRound(getRandomNumber(2) === 0 ? true : false, interaction, userId1, userData1, userId2, userData2, serverData, interaction.message);
 
-					let column: number | undefined = undefined;
-					let row: number | undefined = undefined;
-					if (gameType === 'tictactoe') {
+		async function startNewRound(
+			user1IsPlaying: boolean,
+			interaction: ButtonInteraction<'cached'>,
+			userId1: string,
+			userData1: UserData<never, never>,
+			userId2: string,
+			userData2: UserData<never, never>,
+			serverData: ServerSchema,
+			botReply: Message<true>,
+		) {
 
-						/* The column and row of the current card are updated with their position */
-						row = Number(i.customId.split('_')[2]);
-						if (isNaN(row)) { throw new Error('row is Not a Number'); }
-						column = Number(i.customId.split('_')[3]);
-						if (isNaN(column)) { throw new Error('column is Not a Number'); }
+			const userDataCurrent = user1IsPlaying ? userData1 : userData2;
+			const userDataOther = user1IsPlaying ? userData2 : userData1;
 
-						componentArray[row]?.components[column]?.setEmoji(user1IsPlaying ? player1Field : player2Field);
-						componentArray[row]?.components[column]?.setDisabled(true);
+			async function sendNextRoundMessage(
+				userId: string,
+				int: ButtonInteraction,
+				oldMessage: Message,
+				extraDescription?: string,
+			): Promise<Message<true>> {
+
+				const newTurnEmbedTextArray = [
+					`*${userDataCurrent.quid.name} bites into ${userDataOther.quid.name}, not very deep, but deep enough to hang onto the ${userDataOther.quid.getDisplayspecies()}. ${userDataOther.quid.name} needs to get the ${userDataCurrent.quid.getDisplayspecies()} off of ${userDataOther.quid.pronoun(1)}.*`,
+					`*${userDataCurrent.quid.name} slams into ${userDataOther.quid.name}, leaving the ${userDataOther.quid.getDisplayspecies()} disoriented. ${userDataOther.quid.name} needs to start an attack of ${userDataOther.quid.pronoun(2)} own now.*`,
+					`*${userDataOther.quid.name} has gotten hold of ${userDataCurrent.quid.name}, but the ${userDataCurrent.quid.getDisplayspecies()} manages to get ${userDataOther.quid.pronoun(1)} off, sending the ${userDataOther.quid.getDisplayspecies()} slamming into the ground. ${userDataOther.quid.name} needs to get up and try a new strategy.*`,
+				] as const;
+
+				newTurnEmbedTextArrayIndex = getRandomNumber(newTurnEmbedTextArray.length, 0, newTurnEmbedTextArrayIndex === -1 ? undefined : newTurnEmbedTextArrayIndex);
+
+				await oldMessage.delete();
+
+				const message = await respond(int, {
+					content: `<@${userId}>`,
+					embeds: [new EmbedBuilder()
+						.setColor(userData1.quid.color)
+						.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
+						.setDescription(newTurnEmbedTextArray[newTurnEmbedTextArrayIndex as 0 | 1 | 2] + (extraDescription ? `\n${extraDescription}` : ''))],
+					components: componentArray,
+				}, false);
+
+				return message as Message<true>;
+			}
+
+			botReply = await sendNextRoundMessage(
+				user1IsPlaying ? userId1 : userId2,
+				interaction,
+				botReply,
+				gameType === 'connectfour' ? playingField.map(
+					row => row.join('').replaceAll('0', emptyField).replaceAll('1', player1Field).replaceAll('2', player2Field),
+				).join('\n') + '\n1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣' : undefined,
+			);
+
+			await botReply
+				.awaitMessageComponent({
+					componentType: ComponentType.Button,
+					idle: 120_000,
+					filter: (i => i.customId.startsWith('playfight_') && userDataCurrent.userId.includes(i.user.id)),
+				})
+				.then(async i => {
+					try {
+
+						let column: number | undefined = undefined;
+						let row: number | undefined = undefined;
+						if (gameType === 'tictactoe') {
+
+							/* The column and row of the current card are updated with their position */
+							row = Number(i.customId.split('_')[2]);
+							if (isNaN(row)) { throw new Error('row is Not a Number'); }
+							column = Number(i.customId.split('_')[3]);
+							if (isNaN(column)) { throw new Error('column is Not a Number'); }
+
+							componentArray[row]?.components[column]?.setEmoji(user1IsPlaying ? player1Field : player2Field);
+							componentArray[row]?.components[column]?.setDisabled(true);
 						playingField[row]![column] = user1IsPlaying ? 1 : 2;
-					}
-					else if (gameType === 'connectfour') {
+						}
+						else if (gameType === 'connectfour') {
 
-						/* The column and row of the current card are updated with their position */
-						column = Number(i.customId.split('_')[2]);
+							/* The column and row of the current card are updated with their position */
+							column = Number(i.customId.split('_')[2]);
 
-						for (let r = 5; r >= 0; r--) {
+							for (let r = 5; r >= 0; r--) {
 
-							if (playingField[r]?.[column] === 0) {
+								if (playingField[r]?.[column] === 0) {
 
-								row = r;
+									row = r;
 								playingField[r]![column] = (user1IsPlaying === true) ? 1 : 2;
 
 								if (r === 0) { componentArray[column <= 3 ? 0 : 1]?.components[column <= 3 ? column : column - 4]?.setDisabled(true); }
 
 								break;
+								}
 							}
+							if (row === undefined) { throw new Error('row is undefined'); }
 						}
-						if (row === undefined) { throw new Error('row is undefined'); }
-					}
-					else { throw new Error(`gameType "${gameType}" is invalid`); }
+						else { throw new Error(`gameType "${gameType}" is invalid`); }
 
-					const winningRow = getWinningRow(playingField, { row, column }, gameType === 'tictactoe' ? 3 : 4);
-					if (winningRow !== null) {
+						const winningRow = getWinningRow(playingField, { row, column }, gameType === 'tictactoe' ? 3 : 4);
+						if (winningRow !== null) {
 
-						if (gameType === 'connectfour') { winningRow.forEach(position => playingField[position.row]![position.column] = user1IsPlaying ? 3 : 4); }
-						return await executeGameEnd(i, 'win');
-					}
-					else if (playingField.every(row => row.every(column => column !== 0))) {
+							if (gameType === 'connectfour') { winningRow.forEach(position => playingField[position.row]![position.column] = user1IsPlaying ? 3 : 4); }
+							return await executeGameEnd(i, 'win');
+						}
+						else if (playingField.every(row => row.every(column => column !== 0))) {
 
-						return await executeGameEnd(i, 'tie');
-					}
-					else {
+							return await executeGameEnd(i, 'tie');
+						}
+						else {
 
-						await startNewRound(!user1IsPlaying, i, userId1, userData1, userId2, userData2, serverData, botReply);
+							await startNewRound(!user1IsPlaying, i, userId1, userData1, userId2, userData2, serverData, botReply);
+						}
 					}
+					catch (error) {
+
+						return await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+					}
+				})
+				.catch(async () => {
+
+					userData1 = user1IsPlaying ? userDataCurrent : userDataOther;
+					userData2 = user1IsPlaying ? userDataOther : userDataCurrent;
+
+					const afterGameChangesData = await checkAfterGameChanges(interaction, userData1, userData2, serverData);
+
+					await botReply
+						.edit({
+							content: null,
+							embeds: [
+								new EmbedBuilder()
+									.setColor(userData1.quid.color)
+									.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
+									.setDescription(`*${userDataCurrent.quid.name} takes so long with ${userDataCurrent.quid.pronoun(2)} decision on how to attack that ${userDataOther.quid.name} gets impatient and leaves.*`)
+									.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n${decreasedStatsData2.statsUpdateText}` }),
+								...decreasedStatsData1.injuryUpdateEmbed,
+								...decreasedStatsData2.injuryUpdateEmbed,
+								...(afterGameChangesData?.levelUpEmbed1 ?? []),
+								...(afterGameChangesData?.levelUpEmbed2 ?? []),
+							],
+							components: disableAllComponents(componentArray),
+						})
+						.catch(async (error) => {
+
+							return await sendErrorMessage(interaction, error)
+								.catch(e => { console.error(e); });
+						});
+					return;
+				});
+
+			async function executeGameEnd(
+				i: ButtonInteraction<'cached'>,
+				reason: string,
+			) {
+
+				componentArray = disableAllComponents(componentArray);
+
+				if (reason.includes('win')) {
+
+					const x = getBiggerNumber(userDataOther.quid.profile.levels - userDataCurrent.quid.profile.levels, 0);
+					const extraExperience = Math.round((80 / (1 + Math.pow(Math.E, -0.09375 * x))) - 40);
+					const experiencePoints = getRandomNumber(11, 10) + extraExperience;
+
+					(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText = `\n+${experiencePoints} XP (${userDataCurrent.quid.profile.experience + experiencePoints}/${userDataCurrent.quid.profile.levels * 50}) for ${userDataCurrent.quid.name}${(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText}`;
+
+					await userDataCurrent.update(
+						(u) => {
+							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, i.guildId)).profiles, i.guildId);
+							p.experience += experiencePoints;
+						},
+					);
 				}
-				catch (error) {
+				else {
 
-					return await sendErrorMessage(interaction, error)
-						.catch(e => { console.error(e); });
+					const experiencePoints = getRandomNumber(11, 5);
+
+					decreasedStatsData1.statsUpdateText = `\n+${experiencePoints} XP (${userDataCurrent.quid.profile.experience + experiencePoints}/${userDataCurrent.quid.profile.levels * 50}) for ${userDataCurrent.quid.name}${decreasedStatsData1.statsUpdateText}`;
+					decreasedStatsData2.statsUpdateText = `\n+${experiencePoints} XP (${userDataOther.quid.profile.experience + experiencePoints}/${userDataOther.quid.profile.levels * 50}) for ${userDataOther.quid.name}${decreasedStatsData2.statsUpdateText}`;
+
+					await userDataCurrent.update(
+						(u) => {
+							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, i.guildId)).profiles, i.guildId);
+							p.experience += experiencePoints;
+						},
+					);
+
+					await userDataOther.update(
+						(u) => {
+							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, i.guildId)).profiles, i.guildId);
+							p.experience += experiencePoints;
+						},
+					);
 				}
-			})
-			.catch(async () => {
 
 				userData1 = user1IsPlaying ? userDataCurrent : userDataOther;
 				userData2 = user1IsPlaying ? userDataOther : userDataCurrent;
 
-				const afterGameChangesData = await checkAfterGameChanges(interaction, userData1, userData2, serverData);
+				const afterGameChangesData = await checkAfterGameChanges(i, userData1, userData2, serverData)
+					.catch((error) => { sendErrorMessage(i, error); });
 
-				await botReply
-					.edit({
-						content: null,
-						embeds: [
-							new EmbedBuilder()
-								.setColor(userData1.quid.color)
-								.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-								.setDescription(`*${userDataCurrent.quid.name} takes so long with ${userDataCurrent.quid.pronoun(2)} decision on how to attack that ${userDataOther.quid.name} gets impatient and leaves.*`)
-								.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n${decreasedStatsData2.statsUpdateText}` }),
-							...decreasedStatsData1.injuryUpdateEmbed,
-							...decreasedStatsData2.injuryUpdateEmbed,
-							...(afterGameChangesData?.levelUpEmbed1 ?? []),
-							...(afterGameChangesData?.levelUpEmbed2 ?? []),
-						],
-						components: disableAllComponents(componentArray),
-					})
-					.catch(async (error) => {
-
-						return await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
+				await update(i, {
+					content: null,
+					embeds: [
+						...(gameType === 'connectfour' ? [new EmbedBuilder()
+							.setColor(userData1.quid.color)
+							.setDescription(playingField.map(
+								row => row.join('').replaceAll('0', emptyField).replaceAll('1', player1Field).replaceAll('2', player2Field).replaceAll('3', '🟨').replaceAll('4', '🟥'),
+							).join('\n'))] : []),
+						new EmbedBuilder()
+							.setColor(userData1.quid.color)
+							.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
+							.setDescription(reason.includes('win') ? `*The two animals are pressing against each other with all their might. It seems like the fight will never end this way, but ${userDataCurrent.quid.name} has one more trick up ${userDataCurrent.quid.pronoun(2)} sleeve: ${userDataCurrent.quid.pronoun(0)} simply moves out of the way, letting ${userDataOther.quid.name} crash into the ground. ${capitalizeString(userDataOther.quid.pronounAndPlural(0, 'has', 'have'))} a wry grin on ${userDataOther.quid.pronoun(2)} face as ${userDataOther.quid.pronounAndPlural(0, 'look')} up at the ${userDataCurrent.quid.getDisplayspecies()}. ${userDataCurrent.quid.name} wins this fight, but who knows about the next one?*` : `*The two animals wrestle with each other until ${userDataCurrent.quid.name} falls over the ${userDataOther.quid.getDisplayspecies()} and both of them land on the ground. They pant and glare at each other, but ${userDataOther.quid.name} can't contain ${userDataOther.quid.pronoun(2)} laughter. The ${userDataCurrent.quid.getDisplayspecies()} starts to giggle as well. The fight has been fun, even though no one won.*`)
+							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}` }),
+						...decreasedStatsData1.injuryUpdateEmbed,
+						...decreasedStatsData2.injuryUpdateEmbed,
+						...(afterGameChangesData?.levelUpEmbed1 ?? []),
+						...(afterGameChangesData?.levelUpEmbed2 ?? []),
+					],
+					components: disableAllComponents(componentArray),
+				})
+					.catch((error) => { sendErrorMessage(i, error); });
 				return;
-			});
-
-		async function executeGameEnd(
-			i: ButtonInteraction<'cached'>,
-			reason: string,
-		) {
-
-			componentArray = disableAllComponents(componentArray);
-
-			if (reason.includes('win')) {
-
-				const x = getBiggerNumber(userDataOther.quid.profile.levels - userDataCurrent.quid.profile.levels, 0);
-				const extraExperience = Math.round((80 / (1 + Math.pow(Math.E, -0.09375 * x))) - 40);
-				const experiencePoints = getRandomNumber(11, 10) + extraExperience;
-
-				(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText = `\n+${experiencePoints} XP (${userDataCurrent.quid.profile.experience + experiencePoints}/${userDataCurrent.quid.profile.levels * 50}) for ${userDataCurrent.quid.name}${(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText}`;
-
-				await userDataCurrent.update(
-					(u) => {
-						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, i.guildId)).profiles, i.guildId);
-						p.experience += experiencePoints;
-					},
-				);
-			}
-			else {
-
-				const experiencePoints = getRandomNumber(11, 5);
-
-				decreasedStatsData1.statsUpdateText = `\n+${experiencePoints} XP (${userDataCurrent.quid.profile.experience + experiencePoints}/${userDataCurrent.quid.profile.levels * 50}) for ${userDataCurrent.quid.name}${decreasedStatsData1.statsUpdateText}`;
-				decreasedStatsData2.statsUpdateText = `\n+${experiencePoints} XP (${userDataOther.quid.profile.experience + experiencePoints}/${userDataOther.quid.profile.levels * 50}) for ${userDataOther.quid.name}${decreasedStatsData2.statsUpdateText}`;
-
-				await userDataCurrent.update(
-					(u) => {
-						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, i.guildId)).profiles, i.guildId);
-						p.experience += experiencePoints;
-					},
-				);
-
-				await userDataOther.update(
-					(u) => {
-						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, i.guildId)).profiles, i.guildId);
-						p.experience += experiencePoints;
-					},
-				);
 			}
 
-			userData1 = user1IsPlaying ? userDataCurrent : userDataOther;
-			userData2 = user1IsPlaying ? userDataOther : userDataCurrent;
-
-			const afterGameChangesData = await checkAfterGameChanges(i, userData1, userData2, serverData)
-				.catch((error) => { sendErrorMessage(i, error); });
-
-			await update(i, {
-				content: null,
-				embeds: [
-					...(gameType === 'connectfour' ? [new EmbedBuilder()
-						.setColor(userData1.quid.color)
-						.setDescription(playingField.map(
-							row => row.join('').replaceAll('0', emptyField).replaceAll('1', player1Field).replaceAll('2', player2Field).replaceAll('3', '🟨').replaceAll('4', '🟥'),
-						).join('\n'))] : []),
-					new EmbedBuilder()
-						.setColor(userData1.quid.color)
-						.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-						.setDescription(reason.includes('win') ? `*The two animals are pressing against each other with all their might. It seems like the fight will never end this way, but ${userDataCurrent.quid.name} has one more trick up ${userDataCurrent.quid.pronoun(2)} sleeve: ${userDataCurrent.quid.pronoun(0)} simply moves out of the way, letting ${userDataOther.quid.name} crash into the ground. ${capitalizeString(userDataOther.quid.pronounAndPlural(0, 'has', 'have'))} a wry grin on ${userDataOther.quid.pronoun(2)} face as ${userDataOther.quid.pronounAndPlural(0, 'look')} up at the ${userDataCurrent.quid.getDisplayspecies()}. ${userDataCurrent.quid.name} wins this fight, but who knows about the next one?*` : `*The two animals wrestle with each other until ${userDataCurrent.quid.name} falls over the ${userDataOther.quid.getDisplayspecies()} and both of them land on the ground. They pant and glare at each other, but ${userDataOther.quid.name} can't contain ${userDataOther.quid.pronoun(2)} laughter. The ${userDataCurrent.quid.getDisplayspecies()} starts to giggle as well. The fight has been fun, even though no one won.*`)
-						.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}` }),
-					...decreasedStatsData1.injuryUpdateEmbed,
-					...decreasedStatsData2.injuryUpdateEmbed,
-					...(afterGameChangesData?.levelUpEmbed1 ?? []),
-					...(afterGameChangesData?.levelUpEmbed2 ?? []),
-				],
-				components: disableAllComponents(componentArray),
-			})
-				.catch((error) => { sendErrorMessage(i, error); });
-			return;
+			/* Set both user's cooldown to false */
+			cooldownMap.set(userData1._id + interaction.guildId, false);
+			cooldownMap.set(userData2._id + interaction.guildId, false);
 		}
-
-		/* Set both user's cooldown to false */
-		cooldownMap.set(userData1._id + interaction.guildId, false);
-		cooldownMap.set(userData2._id + interaction.guildId, false);
-	}
-}
+	},
+};
 
 type PlayingFieldPosition = { row: number, column: number; };
 function getWinningRow(

@@ -34,6 +34,44 @@ export const command: SlashCommand = {
 
 		await showInventoryMessage(interaction, userData, serverData, 1);
 	},
+	async sendMessageComponentResponse(interaction, userData, serverData) {
+
+		if (!interaction.isSelectMenu()) { return; }
+		/* This ensures that the user is in a guild and has a completed account. */
+		if (serverData === null) { throw new Error('serverData is null'); }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+
+		const selectOptionId = getArrayElement(interaction.values, 0);
+
+		if (interaction.customId.includes('pages')) {
+
+			const showMaterialsPage = interaction.customId.split('_')[2] === 'true';
+			const page = Number(selectOptionId);
+			if (isNaN(page)) { throw new Error('page is Not a Number'); }
+			if (page !== 1 && page !== 2 && page !== 3 && page !== 4) { throw new Error('page is an invalid number'); }
+
+			await showInventoryMessage(interaction, userData, serverData, page, showMaterialsPage);
+			return;
+		}
+		else if (interaction.customId.includes('eat')) {
+
+			if (selectOptionId.includes('newpage')) {
+
+				const subPage = Number(getArrayElement(selectOptionId.split('_'), 1));
+				if (isNaN(subPage)) { throw new Error('subPage is Not a Number'); }
+				const showMaterialsPage = selectOptionId.split('_')[2] === 'true';
+
+				await showInventoryMessage(interaction, userData, serverData, 3, showMaterialsPage, subPage);
+				return;
+			}
+			else {
+
+				await sendEatMessage(interaction, selectOptionId, userData, serverData, '', []);
+				return;
+			}
+		}
+
+	},
 };
 
 export async function showInventoryMessage(
@@ -94,45 +132,4 @@ export async function showInventoryMessage(
 	});
 
 	createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
-}
-
-export async function inventoryInteractionCollector(
-	interaction: SelectMenuInteraction,
-	userData: UserData<undefined, ''> | null,
-	serverData: ServerSchema | null,
-): Promise<void> {
-
-	/* This ensures that the user is in a guild and has a completed account. */
-	if (serverData === null) { throw new Error('serverData is null'); }
-	if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
-
-	const selectOptionId = getArrayElement(interaction.values, 0);
-
-	if (interaction.customId.includes('pages')) {
-
-		const showMaterialsPage = interaction.customId.split('_')[2] === 'true';
-		const page = Number(selectOptionId);
-		if (isNaN(page)) { throw new Error('page is Not a Number'); }
-		if (page !== 1 && page !== 2 && page !== 3 && page !== 4) { throw new Error('page is an invalid number'); }
-
-		await showInventoryMessage(interaction, userData, serverData, page, showMaterialsPage);
-		return;
-	}
-	else if (interaction.customId.includes('eat')) {
-
-		if (selectOptionId.includes('newpage')) {
-
-			const subPage = Number(getArrayElement(selectOptionId.split('_'), 1));
-			if (isNaN(subPage)) { throw new Error('subPage is Not a Number'); }
-			const showMaterialsPage = selectOptionId.split('_')[2] === 'true';
-
-			await showInventoryMessage(interaction, userData, serverData, 3, showMaterialsPage, subPage);
-			return;
-		}
-		else {
-
-			await sendEatMessage(interaction, selectOptionId, userData, serverData, '', []);
-			return;
-		}
-	}
 }

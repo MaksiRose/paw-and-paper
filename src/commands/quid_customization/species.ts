@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { capitalizeString, getArrayElement, respond, update } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
@@ -7,7 +7,6 @@ import { missingPermissions } from '../../utils/permissionHandler';
 import { speciesInfo } from '../..';
 import { SpeciesNames } from '../../typings/data/general';
 import { SlashCommand } from '../../typings/handle';
-import userModel, { getUserData } from '../../models/userModel';
 
 const speciesNameArray = (Object.keys(speciesInfo) as SpeciesNames[]).sort();
 
@@ -55,6 +54,105 @@ export const command: SlashCommand = {
 
 		createCommandComponentDisabler(userData._id, interaction.guildId || 'DM', botReply);
 	},
+	async sendMessageComponentResponse(interaction, userData) {
+
+		if (await missingPermissions(interaction, [
+			'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call
+		]) === true) { return; }
+
+		const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
+
+		const quidId = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
+		if (!hasName(userData) || userData.quid._id !== quidId) { return; }
+
+		if (interaction.isButton() && interaction.customId.includes('displayedspeciesmodal')) {
+
+			await interaction
+				.showModal(new ModalBuilder()
+					.setCustomId(`species_${userData.quid._id}`)
+					.setTitle('Change displayed species')
+					.setComponents(
+						new ActionRowBuilder<TextInputBuilder>()
+							.setComponents([new TextInputBuilder()
+								.setCustomId('species_textinput')
+								.setLabel('Displayed species')
+								.setStyle(TextInputStyle.Short)
+								.setMaxLength(24)
+								.setValue(userData.quid.displayedSpecies),
+							]),
+					),
+				);
+			return;
+		}
+
+		if (interaction.isSelectMenu() && selectOptionId && selectOptionId.includes('nextpage')) {
+
+			/* Getting the speciesPage from the value Id, incrementing it by one or setting it to zero if the page number is bigger than the total amount of pages. */
+			let speciesPage = Number(selectOptionId.split('_')[2]) + 1;
+			if (speciesPage >= Math.ceil(speciesNameArray.length / 24)) { speciesPage = 0; }
+
+			await update(interaction, {
+				components: [
+					new ActionRowBuilder<SelectMenuBuilder>().setComponents([getSpeciesSelectMenu(speciesPage, quidId)]),
+					new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(quidId)]),
+				],
+			});
+			return;
+		}
+
+		if (interaction.isSelectMenu() && selectOptionId && (selectOptionId.split('_')[1] || '') in speciesInfo) {
+		/* Getting the species from the value */
+			const chosenSpecies = selectOptionId.split('_')[1] as SpeciesNames;
+
+			await userData.update(
+				(u) => {
+					const q = getMapData(u.quids, quidId);
+					q.species = chosenSpecies;
+				},
+			);
+
+			await update(interaction, {
+				embeds: [new EmbedBuilder()
+					.setColor(userData.quid.color)
+					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+					.setDescription(`*A stranger carefully steps over the pack's borders. ${ capitalizeString(userData.quid.pronoun(2))} face seems friendly. Curious eyes watch ${userData.quid.pronoun(1)} as ${userData.quid.pronoun(0)} come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n"${userData.quid.name}," *the ${chosenSpecies} responds. The Alpha takes a friendly step towards ${userData.quid.pronoun(1)}.* "It's nice to have you here, ${userData.quid.name}," *they say. More and more packmates come closer to greet the newcomer.*`)
+					.setFooter({ text: 'You are now done setting up your quid for RPGing! Type "/profile" to look at it.\nWith "/help" you can see how else you can customize your profile, as well as your other options.\nYou can use the button below to change your displayed species.' })],
+				components: [
+					new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(quidId)]),
+				],
+			});
+
+			await interaction.message.channel
+				.send({
+					content: `${interaction.user.toString()} ❓ **Tip:**\nGo playing via \`/play\` to find quests and rank up!`,
+				});
+			return;
+		}
+
+	},
+	async sendModalResponse(interaction, userData) {
+
+		const quidId = getArrayElement(interaction.customId.split('_'), 1).replace('@', '');
+		if (!hasName(userData) || userData.quid._id !== quidId) { return; }
+
+		const displayedSpecies = interaction.fields.getTextInputValue('species_textinput');
+
+		await userData.update(
+			(u) => {
+				const q = getMapData(u.quids, quidId);
+				q.displayedSpecies = displayedSpecies;
+			},
+		);
+
+		await respond(interaction, {
+			embeds: [new EmbedBuilder()
+				.setColor(userData.quid.color)
+				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setTitle(displayedSpecies === '' ? 'Successfully removed your displayed species!' : `Successfully changed displayed species to ${displayedSpecies}!`)],
+		}, false);
+		return;
+
+	},
 };
 
 function getSpeciesSelectMenu(page: number, quidId: string): SelectMenuBuilder {
@@ -80,109 +178,4 @@ function getDisplayedSpeciesButton(quidId: string): ButtonBuilder {
 		.setLabel('Change displayed species')
 		.setEmoji('📝')
 		.setStyle(ButtonStyle.Secondary);
-}
-
-export async function speciesInteractionCollector(
-	interaction: ButtonInteraction | SelectMenuInteraction,
-): Promise<void> {
-
-	if (await missingPermissions(interaction, [
-		'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call
-	]) === true) { return; }
-
-	const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
-
-	const quidId = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
-	const _userData = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
-	const userData = getUserData(_userData, interaction.guildId || 'DM', getMapData(_userData.quids, quidId));
-
-	if (interaction.isButton() && interaction.customId.includes('displayedspeciesmodal')) {
-
-		await interaction
-			.showModal(new ModalBuilder()
-				.setCustomId(`species_${userData.quid._id}`)
-				.setTitle('Change displayed species')
-				.setComponents(
-					new ActionRowBuilder<TextInputBuilder>()
-						.setComponents([new TextInputBuilder()
-							.setCustomId('species_textinput')
-							.setLabel('Displayed species')
-							.setStyle(TextInputStyle.Short)
-							.setMaxLength(24)
-							.setValue(userData.quid.displayedSpecies),
-						]),
-				),
-			);
-		return;
-	}
-
-	if (interaction.isSelectMenu() && selectOptionId && selectOptionId.includes('nextpage')) {
-
-		/* Getting the speciesPage from the value Id, incrementing it by one or setting it to zero if the page number is bigger than the total amount of pages. */
-		let speciesPage = Number(selectOptionId.split('_')[2]) + 1;
-		if (speciesPage >= Math.ceil(speciesNameArray.length / 24)) { speciesPage = 0; }
-
-		await update(interaction, {
-			components: [
-				new ActionRowBuilder<SelectMenuBuilder>().setComponents([getSpeciesSelectMenu(speciesPage, quidId)]),
-				new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(quidId)]),
-			],
-		});
-		return;
-	}
-
-	if (interaction.isSelectMenu() && selectOptionId && (selectOptionId.split('_')[1] || '') in speciesInfo) {
-		/* Getting the species from the value */
-		const chosenSpecies = selectOptionId.split('_')[1] as SpeciesNames;
-
-		await userData.update(
-			(u) => {
-				const q = getMapData(u.quids, quidId);
-				q.species = chosenSpecies;
-			},
-		);
-
-		await update(interaction, {
-			embeds: [new EmbedBuilder()
-				.setColor(userData.quid.color)
-				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-				.setDescription(`*A stranger carefully steps over the pack's borders. ${ capitalizeString(userData.quid.pronoun(2))} face seems friendly. Curious eyes watch ${userData.quid.pronoun(1)} as ${userData.quid.pronoun(0)} come close to the Alpha.* "Welcome," *the Alpha says.* "What is your name?" \n"${userData.quid.name}," *the ${chosenSpecies} responds. The Alpha takes a friendly step towards ${userData.quid.pronoun(1)}.* "It's nice to have you here, ${userData.quid.name}," *they say. More and more packmates come closer to greet the newcomer.*`)
-				.setFooter({ text: 'You are now done setting up your quid for RPGing! Type "/profile" to look at it.\nWith "/help" you can see how else you can customize your profile, as well as your other options.\nYou can use the button below to change your displayed species.' })],
-			components: [
-				new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(quidId)]),
-			],
-		});
-
-		await interaction.message.channel
-			.send({
-				content: `${interaction.user.toString()} ❓ **Tip:**\nGo playing via \`/play\` to find quests and rank up!`,
-			});
-		return;
-	}
-}
-
-export async function sendEditDisplayedSpeciesModalResponse(
-	interaction: ModalSubmitInteraction,
-): Promise<void> {
-
-	const quidId = getArrayElement(interaction.customId.split('_'), 1).replace('@', '');
-	const _userData = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
-	const userData = getUserData(_userData, interaction.guildId || 'DM', getMapData(_userData.quids, quidId));
-
-	const displayedSpecies = interaction.fields.getTextInputValue('species_textinput');
-
-	await userData.update(
-		(u) => {
-			const q = getMapData(u.quids, quidId);
-			q.displayedSpecies = displayedSpecies;
-		},
-	);
-
-	await respond(interaction, {
-		embeds: [new EmbedBuilder()
-			.setColor(userData.quid.color)
-			.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-			.setTitle(displayedSpecies === '' ? 'Successfully removed your displayed species!' : `Successfully changed displayed species to ${displayedSpecies}!`)],
-	}, false);
-	return;
 }
