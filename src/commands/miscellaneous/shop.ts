@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
-import { getArrayElement, respond, update } from '../../utils/helperFunctions';
+import { respond, update } from '../../utils/helperFunctions';
 import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
 import { hasName, hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
@@ -8,7 +8,11 @@ import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
 import { UserData, WayOfEarningType } from '../../typings/data/user';
 import { ServerSchema } from '../../typings/data/server';
+import { constructCustomId, constructSelectOptions, deconstructSelectOptions } from '../../utils/customId';
 const { error_color, default_color } = require('../../../config.json');
+
+type CustomIdArgs = []
+type SelectOptionArgs = ['nextpage', `${number}`, `${number}`] | [string]
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -49,24 +53,25 @@ export const command: SlashCommand = {
 		if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
 		if (userData === null) { throw new Error('userData is null'); }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		const selectOptionId = interaction.values[0];
 
-		if (selectOptionId && selectOptionId.startsWith('shop_nextpage_')) {
+		const selectOptionId = deconstructSelectOptions(interaction);
+
+		if (selectOptionId[0] === 'nextpage') {
 
 			if (!hasName(userData, interaction)) { return; }
-			const shopKindPage = Number(getArrayElement(selectOptionId.split('_'), 2));
-			const nestedPage = Number(getArrayElement(selectOptionId.split('_'), 3));
+			const shopKindPage = Number(selectOptionId[1]);
+			const nestedPage = Number(selectOptionId[2]);
 			const { newShopKindPage, newNestedPage } = getShopInfo(serverData).nextPage(shopKindPage, nestedPage);
 
 			await getShopResponse(interaction, serverData, userData, newShopKindPage, newNestedPage);
 			return;
 		}
-		else if (selectOptionId && selectOptionId.startsWith('shop_')) {
+		else {
 
 			if (await missingPermissions(interaction, [
 				'ManageRoles', // Needed to give out roles configured in this shop
 			]) === true) { return; }
-			const roleId = getArrayElement(selectOptionId.split('_'), 1);
+			const roleId = selectOptionId[0];
 			const buyItem = serverData.shop.find((shopRole) => shopRole.roleId === roleId);
 			if (buyItem === undefined) { throw new Error('roleId is undefined or could not be found in server shop'); }
 			if (!hasNameAndSpecies(userData, interaction)) { return; }
@@ -210,7 +215,10 @@ async function getShopResponse(
 		for (const item of shopInfo.xpRoles) {
 
 			descriptionArray.push(`**${position + 1}.:** <@&${item.roleId}> for ${item.requirement} ${item.wayOfEarning}`);
-			shopMenuOptions.push({ label: `${position + 1}`, value: `shop_${item.roleId}` });
+			shopMenuOptions.push({
+				label: `${position + 1}`,
+				value: constructSelectOptions<SelectOptionArgs>([item.roleId]),
+			});
 			position += 1;
 		}
 	}
@@ -244,8 +252,10 @@ async function getShopResponse(
 
 		const currentPage = shopInfo.currentPage(shopKindPage, nestedPage);
 		shopMenuOptions.push({
-			label: 'Show more shop items', value: `shop_nextpage_${shopKindPage}_${nestedPage}`, description: `You are currently on page ${currentPage + 1}
-		`, emoji: '📋',
+			label: 'Show more shop items',
+			value: constructSelectOptions<SelectOptionArgs>(['nextpage', `${shopKindPage}`, `${nestedPage}`]),
+			description: `You are currently on page ${currentPage + 1}`,
+			emoji: '📋',
 		});
 	}
 
@@ -256,7 +266,7 @@ async function getShopResponse(
 			.setDescription(descriptionArray.join('\n'))],
 		components: [new ActionRowBuilder<SelectMenuBuilder>()
 			.setComponents(new SelectMenuBuilder()
-				.setCustomId(`shop_@${userData.quid._id}`)
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, []))
 				.setPlaceholder('Select a shop item')
 				.setOptions(shopMenuOptions))],
 	});

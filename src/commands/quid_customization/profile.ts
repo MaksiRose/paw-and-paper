@@ -1,6 +1,6 @@
 import { ActionRowBuilder, EmbedBuilder, GuildMember, InteractionReplyOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
 import { cooldownMap } from '../../events/interactionCreate';
-import { capitalizeString, getArrayElement, respond, update } from '../../utils/helperFunctions';
+import { capitalizeString, respond, update } from '../../utils/helperFunctions';
 import userModel, { getUserData } from '../../models/userModel';
 import { hasName, hasNameAndSpecies } from '../../utils/checkUserState';
 import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
@@ -11,7 +11,11 @@ import { hasPermission, missingPermissions } from '../../utils/permissionHandler
 import { client, commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../..';
 import { SlashCommand } from '../../typings/handle';
 import { CurrentRegionType, RankType, UserData } from '../../typings/data/user';
+import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';
 const { error_color } = require('../../../config.json');
+
+export type CustomIdArgs = ['accountselect' | 'learnabout', string]
+type SelectOptionArgs = ['nextpage', `${number}`] | ['switchto' | 'view', string]
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -64,20 +68,20 @@ export const command: SlashCommand = {
 			'ViewChannel', // Needed because of disableCommandComponent
 		]) === true) { return; }
 
-		const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
+		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
+		if (!customId) { return; }
+
+		/* Getting the userData from the customId */
+		const _userData = await userModel.findOne(u => u.userId.includes(customId.args[1]));
+		let userData = getUserData(_userData, interaction.guildId || 'DM', _userData.quids[_userData.currentQuid[interaction.guildId || 'DM'] || '']);
 
 		/* Checking if the user clicked the "Learn more" button, and if they did, copy the message to their DMs, but with the select Menu as a component instead of the button. */
-		if (interaction.isButton() && interaction.customId.includes('learnabout')) {
-
-			/* Getting the userData from the customId */
-			const userId = getArrayElement(interaction.customId.split('_'), 2);
-			const _userData = await userModel.findOne(u => u.userId.includes(userId));
-			const userData = getUserData(_userData, interaction.guildId || 'DM', _userData.quids[_userData.currentQuid[interaction.guildId || 'DM'] || '']);
+		if (interaction.isButton() && customId.args[0] === 'learnabout') {
 
 			/* Getting the DM channel, the select menu, and sending the message to the DM channel. */
 			const dmChannel = await interaction.user.createDM();
 
-			const selectMenu = getAccountsPage(userData, userId, interaction.user.id, 0, userData.userId.includes(interaction.user.id));
+			const selectMenu = getAccountsPage(userData, customId.args[1], interaction.user.id, 0, userData.userId.includes(interaction.user.id));
 
 			dmChannel.send({
 				content: interaction.message.content || undefined,
@@ -89,33 +93,27 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		/* Checking if the user has clicked on the "Show more accounts" button, and if they have, it will increase the page number by 1, and if the page number is greater than the total number of pages, it will set the page number to 0. Then, it will edit the bot reply to show the next page of accounts. */
-		if (interaction.isSelectMenu() && selectOptionId && selectOptionId.includes('nextpage')) {
+		if (interaction.isButton()) { return; }
 
-			/* Getting the userData from the customId */
-			const userId = getArrayElement(interaction.customId.split('_'), 2);
-			const _userData = await userModel.findOne(u => u.userId.includes(userId));
-			const userData = getUserData(_userData, interaction.guildId || 'DM', _userData.quids[_userData.currentQuid[interaction.guildId || 'DM'] || '']);
+		const selectOptionId = deconstructSelectOptions<SelectOptionArgs>(interaction);
+
+		/* Checking if the user has clicked on the "Show more accounts" button, and if they have, it will increase the page number by 1, and if the page number is greater than the total number of pages, it will set the page number to 0. Then, it will edit the bot reply to show the next page of accounts. */
+		if (interaction.isSelectMenu() && selectOptionId[0] === 'nextpage') {
 
 			/* Getting the quidsPage from the value Id, incrementing it by one or setting it to zero if the page number is bigger than the total amount of pages. */
-			let quidsPage = Number(selectOptionId.split('_')[2]) + 1;
+			let quidsPage = Number(selectOptionId[1]) + 1;
 			if (quidsPage >= Math.ceil((Object.keys(userData.quids).length + 1) / 24)) { quidsPage = 0; }
 
 			await update(interaction, {
-				components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getAccountsPage(userData, userId, interaction.user.id, quidsPage, userData.userId.includes(interaction.user.id))])],
+				components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getAccountsPage(userData, customId.args[1], interaction.user.id, quidsPage, userData.userId.includes(interaction.user.id))])],
 			});
 			return;
 		}
 
 		/* Checking if the user has clicked on a switchto button, and if they have, it will switch the user's current quid to the quid they have clicked on. */
-		if (interaction.isSelectMenu() && selectOptionId && selectOptionId.includes('switchto')) {
+		if (interaction.isSelectMenu() && selectOptionId[0] === 'switchto') {
 
 			await interaction.deferUpdate();
-
-			/* Getting the userData from the customId */
-			const userId = getArrayElement(interaction.customId.split('_'), 2);
-			const _userData = await userModel.findOne(u => u.userId.includes(userId));
-			const userData = getUserData(_userData, interaction.guildId || 'DM', _userData.quids[_userData.currentQuid[interaction.guildId || 'DM'] || '']);
 
 			/* Checking if the user is on a cooldown, and if they are, it will respond that they can't switch quids. */
 			if (cooldownMap.get(userData._id + interaction.guildId) === true) {
@@ -138,11 +136,11 @@ export const command: SlashCommand = {
 			}
 
 			/* Getting the old quid and the id of the quid the user has clicked on. Then it is updating the user's current quid to the quid they have clicked on. Then it is getting the new quid and profile. */
-			const _id = selectOptionId.split('_')[2] || ''; // this is either an id, an empty string if empty slot
+			const quidId = selectOptionId[1]; // this is either an id, an empty string if empty slot
 			await userData.update(
 				(u) => {
-					if (_id) {
-						u.currentQuid[interaction.guildId || 'DM'] = _id;
+					if (quidId) {
+						u.currentQuid[interaction.guildId || 'DM'] = quidId;
 
 					}
 					else { delete u.currentQuid[interaction.guildId || 'DM']; }
@@ -161,7 +159,7 @@ export const command: SlashCommand = {
 					/* Checking if there is no profile, and if there isn't, create one. */
 					await userData.update(
 						(u) => {
-							const q = getMapData(u.quids, _id);
+							const q = getMapData(u.quids, quidId);
 							const p = q.profiles[interaction.guildId];
 							if (!p) {
 								q.profiles[interaction.guildId] = {
@@ -244,16 +242,14 @@ export const command: SlashCommand = {
 		}
 
 		/* Checking if the user has clicked on the view button, and if they have, it will edit the message to show the quid they have clicked on. */
-		if (interaction.isSelectMenu() && selectOptionId && selectOptionId.includes('view')) {
+		if (interaction.isSelectMenu() && customId.args[0] === 'accountselect' && selectOptionId[0] === 'view') {
 
 			/* Getting the userData from the customId */
-			const userId = getArrayElement(interaction.customId.split('_'), 2);
-			const _userData = await userModel.findOne(u => u.userId.includes(userId));
-			const _id = selectOptionId.split('_')[2] || '';
-			const userData = getUserData(_userData, interaction.guildId || 'DM', _userData.quids[_id]);
+			const quidId = selectOptionId[1];
+			userData = getUserData(_userData, interaction.guildId || 'DM', _userData.quids[quidId]);
 
 			await update(interaction, {
-				...await getMessageContent(userId, userData, userData.userId.includes(interaction.user.id)),
+				...await getMessageContent(customId.args[1], userData, userData.userId.includes(interaction.user.id)),
 				components: interaction.message.components,
 			});
 			return;
@@ -315,18 +311,32 @@ function getAccountsPage(
 	isYourself: boolean,
 ): SelectMenuBuilder {
 
-	let accountMenuOptions: RestOrArray<SelectMenuComponentOptionData> = userData.quids.map(quid => ({ label: quid.name, value: `profile_${isYourself ? 'switchto' : 'view'}_${quid._id}` }));
+	let accountMenuOptions: RestOrArray<SelectMenuComponentOptionData> = userData.quids.map(quid => ({
+		label: quid.name,
+		value: constructSelectOptions<SelectOptionArgs>([isYourself ? 'switchto' : 'view', quid._id]),
+	}));
 
-	if (isYourself) { accountMenuOptions.push({ label: 'Empty Slot', value: 'profile_switchto_' }); }
+	if (isYourself) {
+
+		accountMenuOptions.push({
+			label: 'Empty Slot',
+			value: constructSelectOptions<SelectOptionArgs>(['switchto', '']),
+		});
+	}
 
 	if (accountMenuOptions.length > 25) {
 
 		accountMenuOptions = accountMenuOptions.splice(quidsPage * 24, 24);
-		accountMenuOptions.push({ label: 'Show more quids', value: `profile_nextpage_${quidsPage}`, description: `You are currently on page ${quidsPage + 1}`, emoji: '📋' });
+		accountMenuOptions.push({
+			label: 'Show more quids',
+			value: constructSelectOptions<SelectOptionArgs>(['nextpage', `${quidsPage}`]),
+			description: `You are currently on page ${quidsPage + 1}`,
+			emoji: '📋',
+		});
 	}
 
 	return new SelectMenuBuilder()
-		.setCustomId(`profile_accountselect_${userId}_@${executorId}`)
+		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, executorId, ['accountselect', userId]))
 		.setPlaceholder(`Select a quid to ${isYourself ? 'switch to' : 'view'}`)
 		.setOptions(accountMenuOptions);
 }

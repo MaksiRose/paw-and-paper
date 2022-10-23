@@ -1,13 +1,16 @@
 import { Octokit } from '@octokit/rest';
 import { EmbedBuilder, SlashCommandBuilder, Team, User, ActionRowBuilder, ButtonBuilder, ButtonStyle, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ChatInputCommandInteraction, AttachmentBuilder } from 'discord.js';
-import { getArrayElement, respond, update } from '../../utils/helperFunctions';
+import { respond, update } from '../../utils/helperFunctions';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
 import { hasPermission } from '../../utils/permissionHandler';
 import { client } from '../..';
 import { SlashCommand } from '../../typings/handle';
+import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 const { error_color, default_color, github_token, ticket_channel_id } = require('../../../config.json');
+
+type CustomIdArgs = ['contact', 'user' | 'channel', string, string, `${boolean}`] | ['reject'] | ['approve', string]
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -63,12 +66,13 @@ export const command: SlashCommand = {
 	},
 	async sendMessageComponentResponse(interaction) {
 
-		if (!interaction.isButton()) { return; }
-		if (interaction.customId.includes('contact')) {
+		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
+		if (!interaction.isButton() || !customId) { return; }
+		if (customId.args[0] === 'contact') {
 
-			if (interaction.customId.includes('user')) {
+			if (customId.args[1] === 'user') {
 
-				const userId = getArrayElement(interaction.customId.split('_'), 3).replace('user', '') || '';
+				const userId = customId.args[2];
 
 				const user = await interaction.client.users.fetch(userId);
 				const dmChannel = await user
@@ -89,12 +93,12 @@ export const command: SlashCommand = {
 
 			await interaction
 				.showModal(new ModalBuilder()
-					.setCustomId(`ticket_respond_${interaction.customId.replace('ticket_contact_@EVERYONE_', '')}`)
+					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, 'EVERYONE', customId.args))
 					.setTitle('Respond')
 					.setComponents(
 						new ActionRowBuilder<TextInputBuilder>()
 							.setComponents([new TextInputBuilder()
-								.setCustomId('ticket_textinput')
+								.setCustomId('response')
 								.setLabel('Message Text')
 								.setStyle(TextInputStyle.Paragraph)
 								.setRequired(true),
@@ -104,10 +108,10 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		if (interaction.customId.includes('approve')) {
+		if (customId.args[0] === 'approve') {
 
 			const embed = interaction.message.embeds[0];
-			const ticketId = interaction.customId.split('_')[3];
+			const ticketId = customId.args[1];
 			const ticketConversation = readFileSync(`./database/open_tickets/${ticketId}.txt`, 'utf-8');
 
 			const octokit = new Octokit({
@@ -132,13 +136,14 @@ export const command: SlashCommand = {
 	},
 	async sendModalResponse(interaction) {
 
-		if (!interaction.isFromMessage()) { return; }
-		const args = interaction.customId.replace('ticket_respond_', '').split('_');
-		const userOrChannelId = getArrayElement(args, 0);
-		const ticketId = getArrayElement(args, 1);
-		const fromAdmin = args[2] === 'true';
+		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
+		if (!interaction.isFromMessage() || !customId || customId.args[0] !== 'contact') { return; }
+		const userOrChannel = customId.args[1];
+		const userOrChannelId = customId.args[2];
+		const ticketId = customId.args[3];
+		const fromAdmin = customId.args[4] === 'true';
 
-		const messageText = interaction.fields.getTextInputValue('ticket_textinput');
+		const messageText = interaction.fields.getTextInputValue('response');
 
 		let ticketConversation = readFileSync(`./database/open_tickets/${ticketId}.txt`, 'utf-8');
 		ticketConversation += `\n\n${fromAdmin ? 'ADMIN:' : 'USER:'} ${messageText}`;
@@ -152,16 +157,14 @@ export const command: SlashCommand = {
 
 		const respondChannel = await async function() {
 
-			if (userOrChannelId.startsWith('user')) {
+			if (userOrChannel === 'user') {
 
-				const userId = userOrChannelId.replace('user', '');
-				const user = await interaction.client.users.fetch(userId);
+				const user = await interaction.client.users.fetch(userOrChannelId);
 				return await user.createDM();
 			}
-			else if (userOrChannelId.startsWith('channel')) {
+			else if (userOrChannel === 'channel') {
 
-				const channelId = userOrChannelId.replace('channel', '');
-				const serverChannel = await interaction.client.channels.fetch(channelId);
+				const serverChannel = await interaction.client.channels.fetch(userOrChannelId);
 				if (serverChannel !== null && serverChannel.isTextBased()) { return serverChannel; }
 			}
 			throw new Error('Couldn\'t get a channel');
@@ -225,12 +228,12 @@ export async function createNewTicket(
 			embeds: [ticketEmbed],
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([new ButtonBuilder()
-					.setCustomId(`ticket_approve_@EVERYONE_${ticketId}`)
+					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, 'EVERYONE', ['approve', ticketId]))
 					.setLabel('Approve')
 					.setStyle(ButtonStyle.Success),
 				getRespondButton(true, interaction.user.id, ticketId, true),
 				new ButtonBuilder()
-					.setCustomId('ticket_reject_@EVERYONE')
+					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, 'EVERYONE', ['reject']))
 					.setLabel('Reject')
 					.setStyle(ButtonStyle.Danger)])],
 		});
@@ -256,7 +259,7 @@ export function getRespondButton(
 ): ButtonBuilder {
 
 	return new ButtonBuilder()
-		.setCustomId(`ticket_contact_@EVERYONE_${isUser ? 'user' : 'channel'}${id}_${ticketId}_${fromAdmin}`)
+		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, 'EVERYONE', ['contact', isUser ? 'user' : 'channel', id, ticketId, `${fromAdmin}`]))
 		.setLabel('Reply')
 		.setStyle(ButtonStyle.Secondary);
 }

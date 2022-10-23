@@ -1,12 +1,16 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
-import { getArrayElement, respond, update } from '../../utils/helperFunctions';
+import { respond, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
 import { UserData } from '../../typings/data/user';
 import userModel from '../../models/userModel';
+import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';
 const { error_color } = require('../../../config.json');
+
+type CustomIdArgs = ['individual' | 'server' | 'all' | 'cancel'] | ['individual' | 'server', 'options'] | ['confirm', 'individual' | 'server', string] | ['confirm', 'all']
+type SelectOptionArgs = ['nextpage', `${number}`] | [string]
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -42,11 +46,12 @@ export const command: SlashCommand = {
 	},
 	async sendMessageComponentResponse(interaction, userData) {
 
+		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
+		if (!customId) { throw new Error('customId is undefined'); }
 		if (userData === null) { throw new Error('userData is null'); }
-		const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
 
 		/* Creating a new page for the user to select an account to delete. */
-		if (interaction.isButton() && interaction.customId.startsWith('delete_individual')) {
+		if (interaction.isButton() && customId.args[0] === 'individual') {
 
 			await update(interaction, {
 				embeds: [new EmbedBuilder()
@@ -61,54 +66,8 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		/* Checking if the interaction is a select menu and if the value starts with delete_individual_nextpage_. If it is, it increments the page number, and if the page number is greater than the number of pages, it sets the page number to 0. It will then edit the reply to have the new page of quids. */
-		if (interaction.isSelectMenu() && selectOptionId && selectOptionId.startsWith('delete_individual_nextpage_')) {
-
-			let deletePage = Number(selectOptionId.replace('delete_individual_nextpage_', '')) + 1;
-			if (deletePage >= Math.ceil(Object.keys(userData.quids).length / 24)) { deletePage = 0; }
-
-			await update(interaction, {
-				components: [
-					await getOriginalComponents(userData),
-					new ActionRowBuilder<SelectMenuBuilder>()
-						.setComponents([getQuidsPage(deletePage, userData)]),
-				],
-			});
-			return;
-		}
-
-		/* Checking if the interaction is a select menu and if the quid ID of the value exists as a quid. If it does, it will edit the message to ask the user if they are sure they want to delete the quid. */
-		if (interaction.isSelectMenu() && selectOptionId && selectOptionId.includes('individual') && Object.keys(userData.quids).includes(getArrayElement(selectOptionId.split('_'), 2))) {
-
-			const _id = getArrayElement(selectOptionId.split('_'), 2);
-			const quid = userData.quids.get(_id);
-
-			await update(interaction, {
-				embeds: [new EmbedBuilder()
-					.setColor(error_color)
-					.setTitle(`Are you sure you want to delete the quid named "${quid?.name}"? This will be **permanent**!!!`)],
-				components: [
-					...disableAllComponents([await getOriginalComponents(userData), new ActionRowBuilder<SelectMenuBuilder>().setComponents(SelectMenuBuilder.from(interaction.component))]),
-					new ActionRowBuilder<ButtonBuilder>()
-						.setComponents([
-							new ButtonBuilder()
-								.setCustomId(`delete_confirm_individual_${_id}_@${userData._id}`)
-								.setLabel('Confirm')
-								.setEmoji('✔')
-								.setStyle(ButtonStyle.Danger),
-							new ButtonBuilder()
-								.setCustomId(`delete_cancel_@${userData._id}`)
-								.setLabel('Cancel')
-								.setEmoji('✖')
-								.setStyle(ButtonStyle.Secondary),
-						]),
-				],
-			});
-			return;
-		}
-
 		/* Creating a new page for the user to select their accounts on a server to delete. */
-		if (interaction.isButton() && interaction.customId.startsWith('delete_server')) {
+		if (interaction.isButton() && customId.args[0] === 'server') {
 
 			await update(interaction, {
 				embeds: [new EmbedBuilder()
@@ -123,54 +82,8 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		/* Checking if the interaction is a select menu and if the value starts with delete_server_nextpage_. If it does, it increments the page number, and if the page number is greater than the number of pages, it sets the page number to 0. It will then edit the reply to have the new page of servers. */
-		if (interaction.isSelectMenu() && selectOptionId && selectOptionId.startsWith('delete_server_nextpage_')) {
-
-			let deletePage = Number(selectOptionId.replace('delete_server_nextpage_', '')) + 1;
-			if (deletePage >= Math.ceil([...new Set(userData.quids.map(q => Object.keys(q.profiles)).flat())].length / 24)) { deletePage = 0; }
-
-			await update(interaction, {
-				components: [
-					await getOriginalComponents(userData),
-					new ActionRowBuilder<SelectMenuBuilder>()
-						.setComponents([await getServersPage(deletePage, userData)]),
-				],
-			});
-			return;
-		}
-
-		/* Checking if the interaction is a select menu and if the server ID is in the array of all servers. If it is, it will edit the message to ask the user if they are sure they want to delete all their information on the server. */
-		if (interaction.isSelectMenu() && selectOptionId && selectOptionId.includes('server') && [...new Set([...userData.quids.map(q => Object.keys(q.profiles)), ...Object.keys(userData.serverIdToQuidId)].flat())].includes(getArrayElement(selectOptionId.split('_'), 2))) {
-
-			const server = await serverModel.findOne(s => s.serverId === getArrayElement(selectOptionId.split('_'), 2));
-			const accountsOnServer = userData.quids.map(q => q.profiles[server.serverId]).filter(p => p !== undefined);
-
-			await update(interaction, {
-				embeds: [new EmbedBuilder()
-					.setColor(error_color)
-					.setTitle(`Are you sure you want to delete all the information of ${accountsOnServer.length} quids on the server ${server.name}? This will be **permanent**!!!`)],
-				components: [
-					...disableAllComponents([await getOriginalComponents(userData), new ActionRowBuilder<SelectMenuBuilder>().setComponents(SelectMenuBuilder.from(interaction.component))]),
-					new ActionRowBuilder<ButtonBuilder>()
-						.setComponents([
-							new ButtonBuilder()
-								.setCustomId(`delete_confirm_server_${server.serverId}_@${userData._id}`)
-								.setLabel('Confirm')
-								.setEmoji('✔')
-								.setStyle(ButtonStyle.Danger),
-							new ButtonBuilder()
-								.setCustomId(`delete_cancel_@${userData._id}`)
-								.setLabel('Cancel')
-								.setEmoji('✖')
-								.setStyle(ButtonStyle.Secondary),
-						]),
-				],
-			});
-			return;
-		}
-
 		/* Creating a new message asking the user if they are sure that they want to delete all their data. */
-		if (interaction.isButton() && interaction.customId.startsWith('delete_all')) {
+		if (interaction.isButton() && customId.args[0] === 'all') {
 
 			await update(interaction, {
 				embeds: [new EmbedBuilder()
@@ -182,12 +95,12 @@ export const command: SlashCommand = {
 					new ActionRowBuilder<ButtonBuilder>()
 						.setComponents([
 							new ButtonBuilder()
-								.setCustomId(`delete_confirm_all_@${userData._id}`)
+								.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['confirm', 'all']))
 								.setLabel('Confirm')
 								.setEmoji('✔')
 								.setStyle(ButtonStyle.Danger),
 							new ButtonBuilder()
-								.setCustomId(`delete_cancel_@${userData._id}`)
+								.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['cancel']))
 								.setLabel('Cancel')
 								.setEmoji('✖')
 								.setStyle(ButtonStyle.Secondary),
@@ -198,21 +111,21 @@ export const command: SlashCommand = {
 		}
 
 		/* Deleting the data of the user. */
-		if (interaction.customId.startsWith('delete_confirm')) {
+		if (interaction.isButton() && customId.args[0] === 'confirm') {
 
-			const type = getArrayElement(interaction.customId.split('_'), 2) as 'individual' | 'server' | 'all';
+			const type = customId.args[1];
 
 			/* Deleting a user from the database. */
 			if (type === 'individual') {
 
-				const _id = getArrayElement(interaction.customId.split('_'), 3);
-				const quid = userData.quids.get(_id);
+				const quidId = customId.args[2];
+				const quid = userData.quids.get(quidId);
 
 				await userData.update(
 					(u) => {
-						delete u.quids[_id];
+						delete u.quids[quidId];
 						for (const serverId of Object.keys(u.currentQuid)) {
-							if (u.currentQuid[serverId] === _id) { delete u.currentQuid[serverId]; }
+							if (u.currentQuid[serverId] === quidId) { delete u.currentQuid[serverId]; }
 						}
 					},
 				);
@@ -229,7 +142,7 @@ export const command: SlashCommand = {
 			/* Deleting all accounts by a user on a server. */
 			if (type === 'server') {
 
-				const serverId = getArrayElement(interaction.customId.split('_'), 3);
+				const serverId = customId.args[2];
 				const accountsOnServer = userData.quids.map(q => q.profiles[serverId]).filter(p => p !== undefined);
 
 				await userData.update(
@@ -275,12 +188,107 @@ export const command: SlashCommand = {
 		}
 
 		/* Editing the message to the original message. */
-		if (interaction.customId.startsWith('delete_cancel')) {
+		if (interaction.isButton() && customId.args[0] === 'cancel') {
 
 			await update(interaction, await sendOriginalMessage(userData));
 			return;
 		}
 
+		if (interaction.isButton()) { return; }
+		const selectOptionId = deconstructSelectOptions<SelectOptionArgs>(interaction);
+
+		/* Checking if the interaction is a select menu and if the value starts with delete_individual_nextpage_. If it is, it increments the page number, and if the page number is greater than the number of pages, it sets the page number to 0. It will then edit the reply to have the new page of quids. */
+		if (interaction.isSelectMenu() && customId.args[0] === 'individual' && customId.args[1] === 'options' && selectOptionId[0] === 'nextpage') {
+
+			let deletePage = Number(selectOptionId[1]) + 1;
+			if (deletePage >= Math.ceil(Object.keys(userData.quids).length / 24)) { deletePage = 0; }
+
+			await update(interaction, {
+				components: [
+					await getOriginalComponents(userData),
+					new ActionRowBuilder<SelectMenuBuilder>()
+						.setComponents([getQuidsPage(deletePage, userData)]),
+				],
+			});
+			return;
+		}
+
+		/* Checking if the interaction is a select menu and if the quid ID of the value exists as a quid. If it does, it will edit the message to ask the user if they are sure they want to delete the quid. */
+		if (interaction.isSelectMenu() && customId.args[0] === 'individual' && customId.args[1] === 'options') {
+
+			const quidId = selectOptionId[0];
+			const quid = userData.quids.get(quidId);
+
+			await update(interaction, {
+				embeds: [new EmbedBuilder()
+					.setColor(error_color)
+					.setTitle(`Are you sure you want to delete the quid named "${quid?.name}"? This will be **permanent**!!!`)],
+				components: [
+					...disableAllComponents([await getOriginalComponents(userData), new ActionRowBuilder<SelectMenuBuilder>().setComponents(SelectMenuBuilder.from(interaction.component))]),
+					new ActionRowBuilder<ButtonBuilder>()
+						.setComponents([
+							new ButtonBuilder()
+								.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['confirm', 'individual', quidId]))
+								.setLabel('Confirm')
+								.setEmoji('✔')
+								.setStyle(ButtonStyle.Danger),
+							new ButtonBuilder()
+								.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['cancel']))
+								.setLabel('Cancel')
+								.setEmoji('✖')
+								.setStyle(ButtonStyle.Secondary),
+						]),
+				],
+			});
+			return;
+		}
+
+		/* Checking if the interaction is a select menu and if the value starts with delete_server_nextpage_. If it does, it increments the page number, and if the page number is greater than the number of pages, it sets the page number to 0. It will then edit the reply to have the new page of servers. */
+		if (interaction.isSelectMenu() && customId.args[0] === 'server' && customId.args[1] === 'options' && selectOptionId[0] === 'nextpage') {
+
+			let deletePage = Number(selectOptionId[1]) + 1;
+			if (deletePage >= Math.ceil([...new Set(userData.quids.map(q => Object.keys(q.profiles)).flat())].length / 24)) { deletePage = 0; }
+
+			await update(interaction, {
+				components: [
+					await getOriginalComponents(userData),
+					new ActionRowBuilder<SelectMenuBuilder>()
+						.setComponents([await getServersPage(deletePage, userData)]),
+				],
+			});
+			return;
+		}
+
+		/* Checking if the interaction is a select menu and if the server ID is in the array of all servers. If it is, it will edit the message to ask the user if they are sure they want to delete all their information on the server. */
+		if (interaction.isSelectMenu() && customId.args[0] === 'server' && customId.args[1] === 'options') {
+
+			const serverId = selectOptionId[0];
+			const accountsOnServer = userData.quids.map(q => q.profiles[serverId]).filter(p => p !== undefined);
+			const server = await serverModel.findOne(s => s.serverId === selectOptionId[0]).catch(() => null);
+
+			await update(interaction, {
+				embeds: [new EmbedBuilder()
+					.setColor(error_color)
+					.setTitle(`Are you sure you want to delete all the information of ${accountsOnServer.length} quids on the server ${server?.name}? This will be **permanent**!!!`)],
+				components: [
+					...disableAllComponents([await getOriginalComponents(userData), new ActionRowBuilder<SelectMenuBuilder>().setComponents(SelectMenuBuilder.from(interaction.component))]),
+					new ActionRowBuilder<ButtonBuilder>()
+						.setComponents([
+							new ButtonBuilder()
+								.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['confirm', 'server', serverId]))
+								.setLabel('Confirm')
+								.setEmoji('✔')
+								.setStyle(ButtonStyle.Danger),
+							new ButtonBuilder()
+								.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['cancel']))
+								.setLabel('Cancel')
+								.setEmoji('✖')
+								.setStyle(ButtonStyle.Secondary),
+						]),
+				],
+			});
+			return;
+		}
 	},
 };
 
@@ -303,17 +311,17 @@ async function getOriginalComponents(
 	const allServers = await getServersPage(0, userData);
 	return new ActionRowBuilder<ButtonBuilder>()
 		.setComponents([new ButtonBuilder()
-			.setCustomId(`delete_individual_@${userData._id}`)
+			.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['individual']))
 			.setLabel('A quid')
 			.setDisabled(getQuidsPage(0, userData).options.length <= 0)
 			.setStyle(ButtonStyle.Danger),
 		new ButtonBuilder()
-			.setCustomId(`delete_server_@${userData._id}`)
+			.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['server']))
 			.setLabel('All information on one server')
 			.setDisabled(allServers.options.length <= 0)
 			.setStyle(ButtonStyle.Danger),
 		new ButtonBuilder()
-			.setCustomId(`delete_all_@${userData._id}`)
+			.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['all']))
 			.setLabel('Everything')
 			.setStyle(ButtonStyle.Danger)]);
 }
@@ -326,16 +334,24 @@ function getQuidsPage(
 	userData: UserData<undefined, ''>,
 ): SelectMenuBuilder {
 
-	let accountsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = userData.quids.map(quid => ({ label: quid.name, value: `delete_individual_${quid._id}` }));
+	let accountsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = userData.quids.map(quid => ({
+		label: quid.name,
+		value: constructSelectOptions<SelectOptionArgs>([quid._id]),
+	}));
 
 	if (accountsMenuOptions.length > 25) {
 
 		accountsMenuOptions = accountsMenuOptions.splice(deletePage * 24, 24);
-		accountsMenuOptions.push({ label: 'Show more quids', value: `delete_individual_nextpage_${deletePage}`, description: `You are currently on page ${deletePage + 1}`, emoji: '📋' });
+		accountsMenuOptions.push({
+			label: 'Show more quids',
+			value: constructSelectOptions<SelectOptionArgs>(['nextpage', `${deletePage}`]),
+			description: `You are currently on page ${deletePage + 1}`,
+			emoji: '📋',
+		});
 	}
 
 	return new SelectMenuBuilder()
-		.setCustomId(`delete_individual_options_@${userData._id}`)
+		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['individual', 'options']))
 		.setPlaceholder('Select a quid')
 		.setOptions(accountsMenuOptions);
 }
@@ -355,17 +371,25 @@ async function getServersPage(
 
 		const server = await serverModel.findOne(s => s.serverId === serverId).catch(() => { return null; });
 		if (server === null) { continue; }
-		accountsMenuOptions.push({ label: server.name, value: `delete_server_${server.serverId}` });
+		accountsMenuOptions.push({
+			label: server.name,
+			value: constructSelectOptions<SelectOptionArgs>([server.serverId]),
+		});
 	}
 
 	if (accountsMenuOptions.length > 25) {
 
 		accountsMenuOptions = accountsMenuOptions.splice(deletePage * 24, 24);
-		accountsMenuOptions.push({ label: 'Show more servers', value: `delete_server_nextpage_${deletePage}`, description: `You are currently on page ${deletePage + 1}`, emoji: '📋' });
+		accountsMenuOptions.push({
+			label: 'Show more servers',
+			value: constructSelectOptions<SelectOptionArgs>(['nextpage', `${deletePage}`]),
+			description: `You are currently on page ${deletePage + 1}`,
+			emoji: '📋',
+		});
 	}
 
 	return new SelectMenuBuilder()
-		.setCustomId(`delete_server_options_@${userData._id}`)
+		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['server', 'options']))
 		.setPlaceholder('Select a server')
 		.setOptions(accountsMenuOptions);
 }

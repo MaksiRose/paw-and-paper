@@ -1,11 +1,12 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
 import { readFileSync } from 'fs';
-import { getMessageContent } from '../commands/quid_customization/profile';
+import { CustomIdArgs, getMessageContent } from '../commands/quid_customization/profile';
 import { respond } from '../utils/helperFunctions';
 import userModel, { getUserData } from '../models/userModel';
 import { WebhookMessages } from '../typings/data/general';
 import { ContextMenuCommand } from '../typings/handle';
 import { isInGuild } from '../utils/checkUserState';
+import { constructCustomId } from '../utils/customId';
 
 export const command: ContextMenuCommand = {
 	data: {
@@ -65,13 +66,13 @@ export const command: ContextMenuCommand = {
 			}])
 			.setTimestamp(new Date())];
 
-		const response = await getMessageContent(userId, userData, _userData.userId.includes(interaction.user.id), embedArray);
+		const response = await getMessageContent(userId, userData, userData.userId.includes(interaction.user.id), embedArray);
 
 		await respond(interaction, {
 			...response,
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([new ButtonBuilder()
-					.setCustomId(`profile_learnabout_@${interaction.user.id}`)
+					.setCustomId(constructCustomId<CustomIdArgs>('profile', interaction.user.id, ['learnabout', userId]))
 					.setLabel('Learn more (sends a DM)')
 					.setStyle(ButtonStyle.Success)])],
 			ephemeral: true,

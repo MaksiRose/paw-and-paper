@@ -16,6 +16,7 @@ import { client, handle } from '../index';
 import { ErrorStacks } from '../typings/data/general';
 import { hasNameAndSpecies } from '../utils/checkUserState';
 import { sendReminder, stopReminder } from '../commands/gameplay_maintenance/water-tree';
+import { deconstructCustomId } from '../utils/customId';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
@@ -317,13 +318,10 @@ export const event: DiscordEvent = {
 					}
 				}
 
-
-				// IMPORTANT: SOME COMMANDS NEED TO BE CHECKED ON WHETHER THE CUSTOMID START IS THE SAME AS THE COMMAND NAME
-
-
 				/* Getting the command from the client and checking if the command is undefined.
 				If it is, it will error. */
-				const command = handle.slashCommands.get(interaction.customId.split('_')[0] ?? '') ?? handle.contextMenuCommands.get(interaction.customId.split('_')[0] ?? '');
+				const customId = deconstructCustomId(interaction.customId);
+				const command = handle.slashCommands.get(customId?.commandName ?? '') ?? handle.contextMenuCommands.get(customId?.commandName ?? '');
 				if (command === undefined || command.sendMessageComponentResponse === undefined) { return; }
 
 				if (!isCommandCreator && !isMentioned) {

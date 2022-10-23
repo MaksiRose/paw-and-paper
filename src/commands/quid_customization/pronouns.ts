@@ -1,13 +1,17 @@
 import { ActionRowBuilder, EmbedBuilder, ModalBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { getArrayElement, respond, update } from '../../utils/helperFunctions';
-import { hasName, hasNameAndSpecies } from '../../utils/checkUserState';
+import { respond, update } from '../../utils/helperFunctions';
+import { hasName } from '../../utils/checkUserState';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
 import { pronounCompromiser } from './profile';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
 import { UserData } from '../../typings/data/user';
+import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';
 const { error_color, default_color } = require('../../../config.json');
+
+type CustomIdArgs = ['selectmodal'] | SelectOptionArgs
+type SelectOptionArgs = [`${number}` | 'add']
 
 const maxPronounLength = 16;
 const maxModalLength = (maxPronounLength * 5) + 8 + 5; // In the modal, the most you can input is 5 pronouns, the word 'singular' plus 5 slashes
@@ -43,30 +47,31 @@ export const command: SlashCommand = {
 	},
 	async sendMessageComponentResponse(interaction, userData) {
 
-		if (interaction.isSelectMenu() && interaction.customId.includes('selectmodal')) {
+		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
+		if (!hasName(userData) || !customId) { return; }
 
-			const quidId = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
-			if (!hasNameAndSpecies(userData) || userData.quid._id !== quidId) { return; }
+		if (interaction.isSelectMenu() && customId.args[0] === 'selectmodal') {
 
 			/* Getting the position of the pronoun in the array, and the existing pronoun in that place */
-			const pronounNumber = interaction.values[0]?.split('_')[1] || 'add';
-			const pronounSet = pronounNumber === 'add' ? [] : userData.quid.pronounSets[Number(pronounNumber)] || [];
+			const pronounNumber = deconstructSelectOptions<SelectOptionArgs>(interaction)[0];
+			const pronounSet = pronounNumber === 'add' ? [] : (userData.quid.pronounSets[Number(pronounNumber)]);
+			if (pronounSet === undefined) { throw new TypeError('pronounSet is undefined'); }
 
 			/* Getting the remaining length for the pronoun field in the profile command. */
 			const profilePronounFieldLengthLeft = 1024 - userData.quid.pronounSets.map(pSet => pronounCompromiser(pSet)).join('\n').length + pronounCompromiser(pronounSet).length;
 
 			await interaction
 				.showModal(new ModalBuilder()
-					.setCustomId(`pronouns_${userData.quid._id}_${pronounNumber}`)
+					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, [pronounNumber]))
 					.setTitle('Change pronouns')
 					.addComponents(
 						new ActionRowBuilder<TextInputBuilder>()
 							.setComponents([new TextInputBuilder()
-								.setCustomId('pronouns_textinput')
+								.setCustomId('pronounInput')
 								.setLabel('Text')
 								.setStyle(TextInputStyle.Short)
 								.setMinLength(userData.quid.pronounSets.length > 1 ? 0 : 4)
-							// Max Length is either maxModalLength or, if that would exceed the max field value length, make it what is left for a field value length.
+								// Max Length is either maxModalLength or, if that would exceed the max field value length, make it what is left for a field value length.
 								.setMaxLength((profilePronounFieldLengthLeft < maxModalLength) ? profilePronounFieldLengthLeft : maxModalLength)
 								.setRequired(userData.quid.pronounSets.length <= 0)
 								.setValue(pronounSet.join('/')),
@@ -84,13 +89,13 @@ export const command: SlashCommand = {
 	async sendModalResponse(interaction, userData) {
 
 		if (!interaction.isFromMessage()) { return; }
-		const quidId = getArrayElement(interaction.customId.split('_'), 1);
-		if (!hasNameAndSpecies(userData) || userData.quid._id !== quidId) { return; }
+		const customId = deconstructCustomId<SelectOptionArgs>(interaction.customId); // here it is SelectOptionArgs instead of CustomIdArgs because 'selectmodal' is only a customId for the select menu
+		if (!hasName(userData) || !customId) { return; }
 
 		/* Getting the array position of the pronoun that is being edited, the pronouns that are being set, whether the pronouns are being deleted, and whether the pronouns are being set to none. */
-		const pronounNumber = Number(getArrayElement(interaction.customId.split('_'), 2));
-		const chosenPronouns = interaction.fields.getTextInputValue('pronouns_textinput').split('/');
-		const willBeDeleted = interaction.fields.getTextInputValue('pronouns_textinput') === '';
+		const pronounNumber = Number(customId.args[0]);
+		const chosenPronouns = interaction.fields.getTextInputValue('pronounInput').split('/');
+		const willBeDeleted = interaction.fields.getTextInputValue('pronounInput') === '';
 		let isNone = false;
 
 		/* If the pronouns won't be deleted, the first chosen pronoun is none and there are no other pronouns chosen, set isNone to true. */
@@ -196,16 +201,23 @@ function getPronounsMenu(
 
 	userData.quid.pronounSets.forEach((pronounSet, value) => {
 
-		pronounsMenuOptions.push({ label: `${pronounSet[0]}/${pronounSet[1]}`, description: `(${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]}/${pronounSet[5]})`, value: `pronouns_${value}` });
+		pronounsMenuOptions.push({
+			label: `${pronounSet[0]}/${pronounSet[1]}`,
+			description: `(${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]}/${pronounSet[5]})`,
+			value: constructSelectOptions<SelectOptionArgs>([`${value}`]),
+		});
 	});
 
 	if (pronounsMenuOptions.length < 25 && profilePronounFieldLengthLeft >= 4) {
 
-		pronounsMenuOptions.push({ label: 'Add another pronoun', value: 'pronouns_add' });
+		pronounsMenuOptions.push({
+			label: 'Add another pronoun',
+			value: constructSelectOptions<SelectOptionArgs>(['add']),
+		});
 	}
 
 	return new SelectMenuBuilder()
-		.setCustomId(`pronouns_selectmodal_@${userData.quid._id}`)
+		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, ['selectmodal']))
 		.setPlaceholder('Select a pronoun to change')
 		.setOptions(pronounsMenuOptions);
 }

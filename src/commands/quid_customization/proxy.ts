@@ -1,14 +1,16 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder, ModalBuilder, NonThreadGuildBasedChannel, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { getArrayElement, respond, update } from '../../utils/helperFunctions';
-import userModel, { getUserData } from '../../models/userModel';
-import { hasName, hasNameAndSpecies } from '../../utils/checkUserState';
+import { respond, update } from '../../utils/helperFunctions';
+import { hasName, isInGuild } from '../../utils/checkUserState';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
 import { ProxyConfigType, ProxyListType, UserData } from '../../typings/data/user';
-import { ServerSchema } from '../../typings/data/server';
+import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';
 const { error_color } = require('../../../config.json');
+
+type CustomIdArgs = [] | ['set', 'learnmore' | 'modal'] | ['always', 'learnmore' | 'options']
+type SelectOptionArgs = [string] | ['nextpage', `${number}`]
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -47,11 +49,11 @@ export const command: SlashCommand = {
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([
 					new ButtonBuilder()
-						.setCustomId(`proxy_set_learnmore_@${userData.quid._id}`)
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, ['set', 'learnmore']))
 						.setLabel('Set?')
 						.setStyle(ButtonStyle.Success),
 					...(interaction.inGuild() ? [new ButtonBuilder()
-						.setCustomId(`proxy_always_learnmore_@${userData.quid._id}`)
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, ['always', 'learnmore']))
 						.setLabel('Always?')
 						.setStyle(ButtonStyle.Success)] : []),
 				])],
@@ -59,12 +61,13 @@ export const command: SlashCommand = {
 
 		if (userData) { createCommandComponentDisabler(userData._id, interaction.guildId || 'DM', botReply); }
 	},
-	async sendMessageComponentResponse(interaction, userData, serverData) {
+	async sendMessageComponentResponse(interaction, userData) {
 
-		const quidId = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
+		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
+		if (!hasName(userData) || !customId) { return; }
 
 		/* If the user pressed the button to learn more about the set subcommand, explain it with a button that opens a modal. */
-		if (interaction.isButton() && interaction.customId.startsWith('proxy_set_learnmore')) {
+		if (interaction.isButton() && customId.args[0] === 'set' && customId.args[1] === 'learnmore') {
 
 			await update(interaction, {
 				embeds: [new EmbedBuilder(interaction.message.embeds[0]?.toJSON())
@@ -73,25 +76,23 @@ export const command: SlashCommand = {
 					.setFields()],
 				components: [new ActionRowBuilder<ButtonBuilder>()
 					.setComponents([new ButtonBuilder()
-						.setCustomId(`proxy_set_modal_@${quidId}`)
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, ['set', 'modal']))
 						.setLabel('Set proxy')
 						.setStyle(ButtonStyle.Success)])],
 			});
 			return;
 		}
 
-		if (!hasNameAndSpecies(userData) || userData.quid._id !== quidId) { return; }
-
 		/* If the user pressed the button to set their proxy, open the modal. */
-		if (interaction.isButton() && interaction.customId.startsWith('proxy_set_modal')) {
+		if (interaction.isButton() && customId.args[0] === 'set' && customId.args[1] === 'modal') {
 
 			await interaction.showModal(new ModalBuilder()
-				.setCustomId(`proxy_set_${userData.quid._id}`)
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, []))
 				.setTitle('Set a proxy')
 				.addComponents(
 					new ActionRowBuilder<TextInputBuilder>({
 						components: [new TextInputBuilder()
-							.setCustomId('proxy_textinput_startsWith')
+							.setCustomId('startsWith')
 							.setLabel('Prefix (indicator before the message)')
 							.setStyle(TextInputStyle.Short)
 							.setMaxLength(16)
@@ -101,7 +102,7 @@ export const command: SlashCommand = {
 					}),
 					new ActionRowBuilder<TextInputBuilder>({
 						components: [new TextInputBuilder()
-							.setCustomId('proxy_textinput_endsWith')
+							.setCustomId('endsWith')
 							.setLabel('Suffix (indicator after the message)')
 							.setStyle(TextInputStyle.Short)
 							.setMaxLength(16)
@@ -114,13 +115,16 @@ export const command: SlashCommand = {
 			return;
 		}
 
+		/* Everything after this point relates to autoproxy and can only be executed in guilds */
+		if (!isInGuild(interaction)) { return; }
+
 		const allChannels = (await interaction.guild?.channels?.fetch() ?? new Collection()).filter((c): c is NonThreadGuildBasedChannel => c !== null && c.permissionsFor(interaction.client.user.id)?.has('ViewChannel') != false && c.permissionsFor(interaction.client.user.id)?.has('SendMessages') != false && c.permissionsFor(interaction.user.id)?.has('ViewChannel') != false && c.permissionsFor(interaction.user.id)?.has('SendMessages') != false);
 
 		/* If the user pressed the button to learn more about the always subcommand, explain it with a select menu to select channels. */
-		if (interaction.isButton() && interaction.customId.startsWith('proxy_always_learnmore')) {
+		if (interaction.isButton() && customId.args[0] === 'always' && customId.args[1] === 'learnmore') {
 
 			if (!interaction.inGuild()) { throw new Error('Interaction is not in guild'); }
-			const alwaysSelectMenu = await getSelectMenu(allChannels, userData, serverData, 0);
+			const alwaysSelectMenu = await getSelectMenu(allChannels, userData, 0);
 
 			await update(interaction, {
 				embeds: [new EmbedBuilder(interaction.message.embeds[0]?.toJSON())
@@ -134,31 +138,27 @@ export const command: SlashCommand = {
 		}
 
 		/* Responses for select menu selections */
-		if (interaction.isSelectMenu() && interaction.inCachedGuild()) {
+		if (interaction.isSelectMenu() && customId.args[0] === 'always' && customId.args[1] === 'options') {
 
 			let page = 0;
-			const selectOptionId = interaction.values[0];
+			const selectOptionId = deconstructSelectOptions<SelectOptionArgs>(interaction);
 
 			/* If the user clicked the next page option, increment the page. */
-			if (selectOptionId && selectOptionId.includes('nextpage')) {
+			if (selectOptionId[0] === 'nextpage') {
 
-				page = Number(selectOptionId.split('nextpage_')[1]) + 1;
+				page = Number(selectOptionId[1]) + 1;
 				if (page >= Math.ceil((allChannels.size + 1) / 24)) { page = 0; }
 
-				const alwaysSelectMenu = await getSelectMenu(allChannels, userData, serverData, page);
+				const alwaysSelectMenu = await getSelectMenu(allChannels, userData, page);
 				await update(interaction, {
 					components: [new ActionRowBuilder<SelectMenuBuilder>()
 						.setComponents([alwaysSelectMenu])],
 				});
 			}
 			/* If the user clicked an always subcommand option, add/remove the channel and send a success message. */
-			else if (selectOptionId && interaction.customId.startsWith('proxy_always_options')) {
+			else {
 
-				const quidId = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
-				const _userData = await userModel.findOne(u => Object.keys(u.quids).includes(quidId));
-				const userData = getUserData(_userData, interaction.guildId || 'DM', getMapData(_userData.quids, quidId));
-
-				const channelId = selectOptionId.replace('proxy_', '');
+				const channelId = selectOptionId[0];
 				const hasChannel = userData.settings.proxy.server?.autoproxy.channels.whitelist.includes(channelId) || false;
 
 				await userData.update(
@@ -182,7 +182,7 @@ export const command: SlashCommand = {
 					},
 				);
 
-				const alwaysSelectMenu = await getSelectMenu(allChannels, userData, serverData, page);
+				const alwaysSelectMenu = await getSelectMenu(allChannels, userData, page);
 				await update(interaction, {
 					components: [new ActionRowBuilder<SelectMenuBuilder>()
 						.setComponents([alwaysSelectMenu])],
@@ -192,7 +192,7 @@ export const command: SlashCommand = {
 					embeds: [new EmbedBuilder()
 						.setColor(userData.quid.color)
 						.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-						.setTitle(`${hasChannel ? 'Removed' : 'Added'} ${channelId === 'everywhere' ? channelId : interaction.guild.channels.cache.get(channelId)?.name} ${hasChannel ? 'from' : 'to'} the list of automatic proxy channels!`)],
+						.setTitle(`${hasChannel ? 'Removed' : 'Added'} ${interaction.guild.channels.cache.get(channelId)?.name} ${hasChannel ? 'from' : 'to'} the list of automatic proxy channels!`)],
 					ephemeral: true,
 				}, false);
 			}
@@ -201,12 +201,11 @@ export const command: SlashCommand = {
 	},
 	async sendModalResponse(interaction, userData) {
 
-		/* Check if user data exists, and get userData.quid, the chosen prefix and the chosen suffix */
-		const quidId = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
-		if (!hasNameAndSpecies(userData) || userData.quid._id !== quidId) { return; }
+		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
+		if (!hasName(userData) || !customId) { return; }
 
-		const chosenPrefix = interaction.fields.getTextInputValue('proxy_textinput_startsWith');
-		const chosenSuffix = interaction.fields.getTextInputValue('proxy_textinput_endsWith');
+		const chosenPrefix = interaction.fields.getTextInputValue('startsWith');
+		const chosenSuffix = interaction.fields.getTextInputValue('endsWith');
 
 		/* For each quid but the selected one, check if they already have the same prefix and suffix and send an error message if they do. */
 		for (const quid of userData.quids.values()) {
@@ -252,20 +251,27 @@ export const command: SlashCommand = {
 async function getSelectMenu(
 	allChannels: Collection<string, NonThreadGuildBasedChannel>,
 	userData: UserData<never, ''>,
-	serverData: ServerSchema | null,
 	page: number,
 ): Promise<SelectMenuBuilder> {
 
-	let alwaysSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = allChannels.map((channel, channelId) => ({ label: channel.name, value: `proxy_${channelId}`, emoji: userData.settings.proxy.server?.autoproxy.channels.whitelist.includes(channelId) ? '🔘' : undefined }));
+	let alwaysSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = allChannels.map((channel, channelId) => ({
+		label: channel.name,
+		value: constructSelectOptions<SelectOptionArgs>([channelId]),
+		emoji: userData.settings.proxy.server?.autoproxy.channels.whitelist.includes(channelId) ? '🔘' : undefined,
+	}));
 
 	if (alwaysSelectMenuOptions.length > 25) {
 
 		alwaysSelectMenuOptions = alwaysSelectMenuOptions.splice(page * 24, 24);
-		alwaysSelectMenuOptions.push({ label: 'Show more channels', value: `proxy_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
+		alwaysSelectMenuOptions.push({
+			label: 'Show more channels',
+			value: constructSelectOptions<SelectOptionArgs>(['nextpage', `${page}`]),
+			description: `You are currently on page ${page + 1}`, emoji: '📋',
+		});
 	}
 
 	return new SelectMenuBuilder()
-		.setCustomId(`proxy_always_options_@${userData.quid._id}`)
+		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, ['always', 'options']))
 		.setPlaceholder('Select channels to automatically be proxied in')
 		.setOptions(alwaysSelectMenuOptions);
 }
