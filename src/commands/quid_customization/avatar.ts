@@ -1,9 +1,8 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { getQuidDisplayname, respond } from '../../utils/helperFunctions';
-import userModel from '../../models/userModel';
-import { SlashCommand } from '../../typedef';
+import { respond } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
+import { SlashCommand } from '../../typings/handle';
 const { error_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -19,9 +18,9 @@ export const command: SlashCommand = {
 	position: 3,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction, userData) => {
+	sendCommand: async (interaction, userData) => {
 
-		if (!hasName(interaction, userData)) { return; }
+		if (!hasName(userData, interaction)) { return; }
 
 		/* Checking if the user has sent an attachment. If they have not, it will send an error message. */
 		const attachment = interaction.options.getAttachment('picture');
@@ -49,20 +48,18 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		userData = await userModel.findOneAndUpdate(
-			u => u._id === userData?._id,
+		await userData.update(
 			(u) => {
 				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DM'));
 				q.avatarURL = imageURL;
 			},
 		);
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId || 'DM'));
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: imageURL })
-				.setTitle(`Profile picture for ${quidData.name} set!`)
+				.setColor(userData.quid.color)
+				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: imageURL })
+				.setTitle(`Profile picture for ${userData.quid.name} set!`)
 				.setImage(imageURL)],
 		}, true);
 		return;

@@ -1,9 +1,8 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { getQuidDisplayname, respond } from '../../utils/helperFunctions';
-import userModel from '../../models/userModel';
-import { SlashCommand } from '../../typedef';
+import { respond } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
+import { SlashCommand } from '../../typings/handle';
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -19,27 +18,25 @@ export const command: SlashCommand = {
 	position: 5,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction, userData) => {
+	sendCommand: async (interaction, userData) => {
 
-		if (!hasName(interaction, userData)) { return; }
+		if (!hasName(userData, interaction)) { return; }
 
 		const desc = interaction.options.getString('description') || '';
 
-		userData = await userModel.findOneAndUpdate(
-			u => u._id === userData?._id,
+		await userData.update(
 			(u) => {
 				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DM'));
 				q.description = desc;
 			},
 		);
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId || 'DM'));
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
-				.setTitle(quidData.description === '' ? 'Your description has been reset!' : `Description for ${quidData.name} set:`)
-				.setDescription(quidData.description || null)],
+				.setColor(userData.quid.color)
+				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setTitle(userData.quid.description === '' ? 'Your description has been reset!' : `Description for ${userData.quid.name} set:`)
+				.setDescription(userData.quid.description || null)],
 		}, true);
 		return;
 	},

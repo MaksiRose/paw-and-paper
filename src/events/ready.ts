@@ -1,12 +1,13 @@
 import { readdirSync } from 'fs';
-import { CustomClient, DiscordEvent } from '../typedef';
+import { DiscordEvent } from '../typings/main';
 import { ActivityType } from 'discord.js';
 import path from 'path';
+import { client } from '..';
 
 export const event: DiscordEvent = {
 	name: 'ready',
 	once: true,
-	async execute(client: CustomClient) {
+	async execute() {
 
 		/* Logging to the console that the bot is online and setting the bot's activity. */
 		console.log('Paw and Paper is online!');
@@ -15,7 +16,7 @@ export const event: DiscordEvent = {
 		/* It's loading all the files in the handlers folder. */
 		for (const file of readdirSync(path.join(__dirname, '../handlers'))) {
 
-			try { await require(`../handlers/${file}`).execute(client); }
+			try { await require(`../handlers/${file}`).execute(); }
 			catch (error) { console.error(error); }
 		}
 	},

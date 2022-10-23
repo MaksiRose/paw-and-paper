@@ -1,5 +1,6 @@
 import { RestOrArray, SelectMenuComponentOptionData } from 'discord.js';
-import { commonPlantsInfo, Inventory, materialsInfo, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo } from '../typedef';
+import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo } from '..';
+import { Inventory } from '../typings/data/general';
 import { keyInObject, unsafeKeys, widenValues } from './helperFunctions';
 
 export default function getInventoryElements(

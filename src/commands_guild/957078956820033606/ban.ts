@@ -3,7 +3,9 @@ import { readFileSync, writeFileSync } from 'fs';
 import { respond } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
-import { BanList, SlashCommand } from '../../typedef';
+import { client } from '../..';
+import { SlashCommand } from '../../typings/handle';
+import { BanList } from '../../typings/data/general';
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -28,7 +30,7 @@ export const command: SlashCommand = {
 	position: 0,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction) => {
+	sendCommand: async (interaction) => {
 
 		if (!client.isReady()) { throw new Error('client isn\'t ready'); }
 

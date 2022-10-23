@@ -1,7 +1,9 @@
 import { Model } from 'hoatzin';
-import { commonPlantsInfo, Dens, materialsInfo, ProxyListType, rarePlantsInfo, Schema, ServerSchema, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../typedef';
+import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '..';
+import { ServerSchema } from '../typings/data/server';
+import { ProxyListType } from '../typings/data/user';
 
-const denType: Schema<Dens>[keyof Dens] = {
+const denType = {
 	type: 'object',
 	default: {
 		structure: { type: 'number', default: 100, locked: false },
@@ -10,7 +12,7 @@ const denType: Schema<Dens>[keyof Dens] = {
 		evenness: { type: 'number', default: 100, locked: false },
 	},
 	locked: false,
-};
+} as const;
 
 const serverModel = new Model<ServerSchema>('./database/servers', {
 	serverId: { type: 'string', default: '', locked: true },
@@ -20,32 +22,32 @@ const serverModel = new Model<ServerSchema>('./database/servers', {
 		default: {
 			commonPlants: {
 				type: 'object',
-				default: Object.fromEntries(Object.keys(commonPlantsInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()) as Record<keyof typeof commonPlantsInfo, Schema<Record<keyof typeof commonPlantsInfo, number>>[keyof typeof commonPlantsInfo]>,
+				default: Object.fromEntries(Object.keys(commonPlantsInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()),
 				locked: false,
 			},
 			uncommonPlants: {
 				type: 'object',
-				default: Object.fromEntries(Object.keys(uncommonPlantsInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()) as Record<keyof typeof uncommonPlantsInfo, Schema<Record<keyof typeof uncommonPlantsInfo, number>>[keyof typeof uncommonPlantsInfo]>,
+				default: Object.fromEntries(Object.keys(uncommonPlantsInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()),
 				locked: false,
 			},
 			rarePlants: {
 				type: 'object',
-				default: Object.fromEntries(Object.keys(rarePlantsInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()) as Record<keyof typeof rarePlantsInfo, Schema<Record<keyof typeof rarePlantsInfo, number>>[keyof typeof rarePlantsInfo]>,
+				default: Object.fromEntries(Object.keys(rarePlantsInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()),
 				locked: false,
 			},
 			specialPlants: {
 				type: 'object',
-				default: Object.fromEntries(Object.keys(specialPlantsInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()) as Record<keyof typeof specialPlantsInfo, Schema<Record<keyof typeof specialPlantsInfo, number>>[keyof typeof specialPlantsInfo]>,
+				default: Object.fromEntries(Object.keys(specialPlantsInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()),
 				locked: false,
 			},
 			meat: {
 				type: 'object',
-				default: Object.fromEntries(Object.keys(speciesInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()) as Record<keyof typeof speciesInfo, Schema<Record<keyof typeof speciesInfo, number>>[keyof typeof speciesInfo]>,
+				default: Object.fromEntries(Object.keys(speciesInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()),
 				locked: false,
 			},
 			materials: {
 				type: 'object',
-				default: Object.fromEntries(Object.keys(materialsInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()) as Record<keyof typeof materialsInfo, Schema<Record<keyof typeof materialsInfo, number>>[keyof typeof materialsInfo]>,
+				default: Object.fromEntries(Object.keys(materialsInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()),
 				locked: false,
 			},
 		},

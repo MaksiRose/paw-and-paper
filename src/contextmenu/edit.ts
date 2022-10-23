@@ -2,8 +2,10 @@ import { ActionRowBuilder, ChannelType, ModalBuilder, ModalSubmitInteraction, Te
 import { readFileSync } from 'fs';
 import { respond } from '../utils/helperFunctions';
 import userModel from '../models/userModel';
-import { ContextMenuCommand, WebhookMessages } from '../typedef';
 import { canManageWebhooks, missingPermissions } from '../utils/permissionHandler';
+import { WebhookMessages } from '../typings/data/general';
+import { ContextMenuCommand } from '../typings/handle';
+import { isInGuild } from '../utils/checkUserState';
 
 export const command: ContextMenuCommand = {
 	data: {
@@ -11,7 +13,10 @@ export const command: ContextMenuCommand = {
 		type: 3,
 		dm_permission: false,
 	},
-	sendCommand: async (client, interaction) => {
+	sendCommand: async (interaction) => {
+
+		/* This shouldn't happen as dm_permission is false. */
+		if (!isInGuild(interaction)) { return; }
 
 		if (await missingPermissions(interaction, [
 			'ManageWebhooks', // Needed for webhook interaction

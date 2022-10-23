@@ -1,11 +1,11 @@
 import { RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v9';
 import { lstatSync, readdirSync } from 'fs';
-import { ContextMenuCommand, CustomClient, SlashCommand } from '../typedef';
+import { ContextMenuCommand, SlashCommand } from '../typings/handle';
 import path from 'path';
+import { client, handle } from '..';
 
 /** Adds all commands to the client */
 export async function execute(
-	client: CustomClient,
 ): Promise<void> {
 
 	if (!client.application) { return; }
@@ -17,14 +17,14 @@ export async function execute(
 
 		const { command } = require(commandPath) as { command: SlashCommand; };
 		if (command.data !== undefined) { applicationCommands.push(command.data); }
-		client.slashCommands.set(command.data.name, command);
+		handle.slashCommands.set(command.data.name, command);
 	}
 
 	for (const commandPath of getFiles('../contextmenu')) {
 
 		const { command } = require(commandPath) as { command: ContextMenuCommand; };
 		if (command.data !== undefined) { applicationCommands.push(command.data); }
-		client.contextMenuCommands.set(command.data.name, command);
+		handle.contextMenuCommands.set(command.data.name, command);
 	}
 
 	/* Registers the applicationCommands array to Discord. */
@@ -41,7 +41,7 @@ export async function execute(
 
 			const { command } = require(`../commands_guild/${folderName}/${commandPath}`) as { command: SlashCommand; };
 			if (command.data !== undefined) { applicationCommandsGuild.push(command.data); }
-			client.slashCommands.set(command.data.name, command);
+			handle.slashCommands.set(command.data.name, command);
 		}
 
 		await client.application.commands.set(applicationCommandsGuild, folderName);
@@ -49,7 +49,9 @@ export async function execute(
 }
 
 /** Adds all file paths in a directory to an array and returns it */
-function getFiles(directory: string): Array<string> {
+function getFiles(
+	directory: string,
+): Array<string> {
 
 	let commandFiles: Array<string> = [];
 
@@ -62,7 +64,7 @@ function getFiles(directory: string): Array<string> {
 				...getFiles(`${directory}/${content}`),
 			];
 		}
-		else if (content.endsWith('.js')) {
+		else if (content.endsWith('.js') || content.endsWith('.ts')) {
 
 			commandFiles.push(`${directory}/${content.slice(0, -3)}`);
 		}

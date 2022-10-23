@@ -1,10 +1,12 @@
 import { ActionRowBuilder, ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
-import { Profile, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
-import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
-import { hasCooldown } from '../../utils/checkValidity';
+import { ServerSchema } from '../../typings/data/server';
+import { UserData } from '../../typings/data/user';
+import { SlashCommand } from '../../typings/handle';
+import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
+import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import getInventoryElements from '../../utils/getInventoryElements';
-import { getArrayElement, getMapData, respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, respond, update } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { remindOfAttack } from '../gameplay_primary/attack';
 import { sendEatMessage } from './eat';
@@ -20,29 +22,61 @@ export const command: SlashCommand = {
 	position: 1,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction, userData, serverData) => {
+	sendCommand: async (interaction, userData, serverData) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!hasName(interaction, userData)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
 
-		/* Gets the current active quid and the server profile from the account */
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-		const profileData = getMapData(quidData.profiles, interaction.guildId);
-		if (!hasSpecies(interaction, quidData)) { return; }
+		/* Checks if the profile is resting, on a cooldown or passed out. */
+		const restEmbed = await isInvalid(interaction, userData);
+		if (restEmbed === false) { return; }
 
-		/* Checks if the profile is on a cooldown. */
-		if (await hasCooldown(interaction, userData, quidData)) { return; }
+		await showInventoryMessage(interaction, userData, serverData, 1);
+	},
+	async sendMessageComponentResponse(interaction, userData, serverData) {
 
-		await showInventoryMessage(interaction, userData, profileData, serverData, 1);
+		if (!interaction.isSelectMenu()) { return; }
+		/* This ensures that the user is in a guild and has a completed account. */
+		if (serverData === null) { throw new Error('serverData is null'); }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+
+		const selectOptionId = getArrayElement(interaction.values, 0);
+
+		if (interaction.customId.includes('pages')) {
+
+			const showMaterialsPage = interaction.customId.split('_')[2] === 'true';
+			const page = Number(selectOptionId);
+			if (isNaN(page)) { throw new Error('page is Not a Number'); }
+			if (page !== 1 && page !== 2 && page !== 3 && page !== 4) { throw new Error('page is an invalid number'); }
+
+			await showInventoryMessage(interaction, userData, serverData, page, showMaterialsPage);
+			return;
+		}
+		else if (interaction.customId.includes('eat')) {
+
+			if (selectOptionId.includes('newpage')) {
+
+				const subPage = Number(getArrayElement(selectOptionId.split('_'), 1));
+				if (isNaN(subPage)) { throw new Error('subPage is Not a Number'); }
+				const showMaterialsPage = selectOptionId.split('_')[2] === 'true';
+
+				await showInventoryMessage(interaction, userData, serverData, 3, showMaterialsPage, subPage);
+				return;
+			}
+			else {
+
+				await sendEatMessage(interaction, selectOptionId, userData, serverData, '', []);
+				return;
+			}
+		}
+
 	},
 };
 
 export async function showInventoryMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>,
-	userData: UserSchema,
-	profileData: Profile,
+	userData: UserData<never, never>,
 	serverData: ServerSchema,
 	page: 1 | 2 | 3 | 4,
 	showMaterialsPage = true,
@@ -87,7 +121,7 @@ export async function showInventoryMessage(
 			.setDescription(description || null)],
 		components: [
 			inventorySelectMenu,
-			...profileData.hunger < profileData.maxHunger && foodSelectMenuOptions.length > 0
+			...userData.quid.profile.hunger < userData.quid.profile.maxHunger && foodSelectMenuOptions.length > 0
 				? [new ActionRowBuilder<SelectMenuBuilder>()
 					.setComponents(new SelectMenuBuilder()
 						.setCustomId(`inventory_eat_@${userData._id}`)
@@ -98,49 +132,4 @@ export async function showInventoryMessage(
 	});
 
 	createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
-}
-
-export async function inventoryInteractionCollector(
-	interaction: SelectMenuInteraction,
-	userData: UserSchema | null,
-	serverData: ServerSchema | null,
-): Promise<void> {
-
-	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
-	if (userData === null) { throw new Error('userData is null'); }
-	if (serverData === null) { throw new Error('serverData is null'); }
-
-	/* Gets the current active quid and the server profile from the account */
-	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-	const profileData = getMapData(quidData.profiles, interaction.guildId);
-
-	const selectOptionId = getArrayElement(interaction.values, 0);
-
-	if (interaction.customId.includes('pages')) {
-
-		const showMaterialsPage = interaction.customId.split('_')[2] === 'true';
-		const page = Number(selectOptionId);
-		if (isNaN(page)) { throw new Error('page is Not a Number'); }
-		if (page !== 1 && page !== 2 && page !== 3 && page !== 4) { throw new Error('page is an invalid number'); }
-
-		await showInventoryMessage(interaction, userData, profileData, serverData, page, showMaterialsPage);
-		return;
-	}
-	else if (interaction.customId.includes('eat')) {
-
-		if (selectOptionId.includes('newpage')) {
-
-			const subPage = Number(getArrayElement(selectOptionId.split('_'), 1));
-			if (isNaN(subPage)) { throw new Error('subPage is Not a Number'); }
-			const showMaterialsPage = selectOptionId.split('_')[2] === 'true';
-
-			await showInventoryMessage(interaction, userData, profileData, serverData, 3, showMaterialsPage, subPage);
-			return;
-		}
-		else {
-
-			await sendEatMessage(interaction, selectOptionId, userData, quidData, profileData, serverData, '', []);
-			return;
-		}
-	}
 }

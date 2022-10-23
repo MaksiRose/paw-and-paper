@@ -1,10 +1,11 @@
 import { ActivityType } from 'discord.js';
-import { CustomClient, DiscordEvent } from '../typedef';
+import { client } from '..';
+import { DiscordEvent } from '../typings/main';
 
 export const event: DiscordEvent = {
 	name: 'shardReady',
 	once: false,
-	async execute(client: CustomClient) {
+	async execute() {
 
 		client.user?.setActivity('/help', { type: ActivityType.Listening });
 	},

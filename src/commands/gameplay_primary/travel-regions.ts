@@ -1,11 +1,11 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, Message, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, Message, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import userModel from '../../models/userModel';
-import { CurrentRegionType, Profile, Quid, RankType, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
-import { hasName, hasSpecies, isInGuild } from '../../utils/checkUserState';
+import { CurrentRegionType, RankType, UserData } from '../../typings/data/user';
+import { SlashCommand } from '../../typings/handle';
+import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
-import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, getQuidDisplayname, respond, update, valueInObject } from '../../utils/helperFunctions';
+import { getMapData, respond, update, valueInObject } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { sendDrinkMessage } from '../gameplay_maintenance/drink';
 import { getHealResponse } from '../gameplay_maintenance/heal';
@@ -38,99 +38,84 @@ export const command: SlashCommand = {
 	position: 4,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false, // This is technically true, but it's set to false because it does not necessarily reflect your actual activity
-	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
+	sendCommand: async (interaction, userData, serverData) => {
 
 		if (await missingPermissions(interaction, [
 			'ViewChannel', // Needed because of createCommandComponentDisabler in sendQuestMessage
 		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!hasName(interaction, userData)) { return; }
-
-		/* Gets the current active quid and the server profile from the account */
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-		const profileData = getMapData(quidData.profiles, interaction.guildId);
-		if (!hasSpecies(interaction, quidData)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
-		if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
+		const restEmbed = await isInvalid(interaction, userData);
+		if (restEmbed === false) { return; }
 
 		const messageContent = remindOfAttack(interaction.guildId);
 		const chosenRegion = interaction.options.getString('region');
 
-		const botReply = await sendTravelMessage(interaction, userData, quidData, profileData, messageContent, embedArray, chosenRegion);
+		const botReply = await sendTravelMessage(interaction, userData, messageContent, restEmbed, chosenRegion);
 		createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
+	},
+	async sendMessageComponentResponse(interaction, userData, serverData) {
+
+		/* This ensures that the user is in a guild and has a completed account. */
+		if (serverData === null) { throw new Error('serverData is null'); }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+
+		const messageContent = interaction.message.content;
+		const restEmbed = interaction.message.embeds.slice(0, -1).map(c => new EmbedBuilder(c.toJSON()));
+
+		if (interaction.isButton()) {
+
+			if (interaction.customId.includes('rest')) {
+
+				await startResting(interaction, userData, serverData);
+			}
+			else if (interaction.customId.includes('inventory')) {
+
+				await showInventoryMessage(interaction, userData, serverData, 1);
+			}
+			else if (interaction.customId.includes('store')) {
+
+				await sendStoreMessage(interaction, userData, serverData, restEmbed);
+			}
+			else if (interaction.customId.includes('heal')) {
+
+				await getHealResponse(interaction, userData, serverData, messageContent, restEmbed, 0);
+			}
+			else if (interaction.customId.includes('drink')) {
+
+				await sendDrinkMessage(interaction, userData, messageContent, restEmbed);
+			}
+			else if (interaction.customId.includes('play')) {
+
+				await executePlaying(interaction, userData, serverData);
+			}
+		}
+		else if (interaction.isSelectMenu()) {
+
+			await sendTravelMessage(interaction, userData, '', restEmbed, interaction.values[0] ?? null);
+		}
+
 	},
 };
 
-export async function travelInteractionCollector(
-	interaction: ButtonInteraction | SelectMenuInteraction,
-	userData: UserSchema | null,
-	serverData: ServerSchema | null,
-): Promise<void> {
-
-	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
-	if (serverData === null) { throw new TypeError('serverData is null'); }
-	if (userData === null) { throw new TypeError('userData is null'); }
-
-	/* Gets the current active quid and the server profile from the account */
-	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-	const profileData = getMapData(quidData.profiles, interaction.guildId);
-
-	const messageContent = interaction.message.content;
-	const embedArray = interaction.message.embeds.slice(0, -1).map(c => new EmbedBuilder(c.toJSON()));
-
-	if (interaction.isButton()) {
-
-		if (interaction.customId.includes('rest')) {
-
-			await startResting(interaction, userData, quidData, profileData, serverData);
-		}
-		else if (interaction.customId.includes('inventory')) {
-
-			await showInventoryMessage(interaction, userData, profileData, serverData, 1);
-		}
-		else if (interaction.customId.includes('store')) {
-
-			await sendStoreMessage(interaction, userData, quidData, profileData, serverData, embedArray);
-		}
-		else if (interaction.customId.includes('heal')) {
-
-			await getHealResponse(interaction, userData, serverData, messageContent, embedArray, 0);
-		}
-		else if (interaction.customId.includes('drink')) {
-
-			await sendDrinkMessage(interaction, userData, quidData, profileData, messageContent, embedArray);
-		}
-		else if (interaction.customId.includes('play')) {
-
-			await executePlaying(interaction, userData, serverData, embedArray);
-		}
-	}
-	else if (interaction.isSelectMenu()) {
-
-		await sendTravelMessage(interaction, userData, quidData, profileData, '', embedArray, interaction.values[0] ?? null);
-	}
-}
-
 async function sendTravelMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
-	userData: UserSchema,
-	quidData: Quid<true>,
-	profileData: Profile,
+	userData: UserData<never, never>,
 	messageContent: string,
-	embedArray: EmbedBuilder[],
+	restEmbed: EmbedBuilder[],
 	chosenRegion: string | null,
 ): Promise<Message> {
 
 	const embed = new EmbedBuilder()
-		.setColor(quidData.color)
-		.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL });
+		.setColor(userData.quid.color)
+		.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL });
 	const travelComponent = new ActionRowBuilder<SelectMenuBuilder>()
 		.setComponents(new SelectMenuBuilder()
-			.setCustomId(`travel_options_@${userData._id}`)
+			.setCustomId(`travel-regions_options_@${userData._id}`)
 			.setPlaceholder('Select a region to travel to')
 			.setOptions([
 				{ label: CurrentRegionType.SleepingDens, value: CurrentRegionType.SleepingDens, emoji: '💤' },
@@ -144,36 +129,33 @@ async function sendTravelMessage(
 
 	if (chosenRegion && valueInObject(CurrentRegionType, chosenRegion)) {
 
-		userData = await userModel.findOneAndUpdate(
-			u => u._id === userData._id,
+		await userData.update(
 			(u) => {
-				const p = getMapData(getMapData(u.quids, getMapData(userData!.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+				const p = getMapData(getMapData(u.quids, userData.quid._id).profiles, interaction.guildId);
 				p.currentRegion = chosenRegion;
 			},
 		);
-		quidData = getMapData(userData.quids, quidData._id);
-		profileData = getMapData(quidData.profiles, profileData.serverId);
 	}
 
 	if (chosenRegion === CurrentRegionType.SleepingDens) {
 
-		embed.setDescription(`*${quidData.name} slowly trots to the sleeping dens, tired from all the hard work ${pronoun(quidData, 0)} did. For a moment, the ${quidData.displayedSpecies || quidData.species} thinks about if ${pronounAndPlural(quidData, 0, 'want')} to rest or just a break.*`);
+		embed.setDescription(`*${userData.quid.name} slowly trots to the sleeping dens, tired from all the hard work ${userData.quid.pronoun(0)} did. For a moment, the ${userData.quid.getDisplayspecies()} thinks about if ${userData.quid.pronounAndPlural(0, 'want')} to rest or just a break.*`);
 
 		return await (async function(messageOptions) {
 			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await respond(interaction, messageOptions, true);
 		})({
 			content: messageContent,
-			embeds: [...embedArray, embed],
+			embeds: [...restEmbed, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId(`travel_rest_@${userData._id}`)
+					.setCustomId(`travel-regions_rest_@${userData._id}`)
 					.setLabel('Rest')
 					.setStyle(ButtonStyle.Primary))],
 		});
 	}
 	else if (chosenRegion === CurrentRegionType.FoodDen) {
 
-		embed.setDescription(`*${quidData.name} runs to the food den. Maybe ${pronoun(quidData, 0)} will eat something, or put ${pronoun(quidData, 2)} food onto the pile.*`);
+		embed.setDescription(`*${userData.quid.name} runs to the food den. Maybe ${userData.quid.pronoun(0)} will eat something, or put ${userData.quid.pronoun(2)} food onto the pile.*`);
 		const allFoodDenUsersList = (await userModel.find(
 			(u) => {
 				return Object.values(u.quids).filter(q => {
@@ -188,15 +170,15 @@ async function sendTravelMessage(
 			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await respond(interaction, messageOptions, true);
 		})({
 			content: messageContent,
-			embeds: [...embedArray, embed],
+			embeds: [...restEmbed, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([
 					new ButtonBuilder()
-						.setCustomId(`travel_inventory_@${userData._id}`)
+						.setCustomId(`travel-regions_inventory_@${userData._id}`)
 						.setLabel('View inventory')
 						.setStyle(ButtonStyle.Primary),
 					new ButtonBuilder()
-						.setCustomId(`travel_store_@${userData._id}`)
+						.setCustomId(`travel-regions_store_@${userData._id}`)
 						.setLabel('Store items away')
 						.setStyle(ButtonStyle.Primary),
 				])],
@@ -204,7 +186,7 @@ async function sendTravelMessage(
 	}
 	else if (chosenRegion === CurrentRegionType.MedicineDen) {
 
-		embed.setDescription(`*${quidData.name} rushes over to the medicine den. Nearby are a mix of packmates, some with illnesses and injuries, others trying to heal them.*`);
+		embed.setDescription(`*${userData.quid.name} rushes over to the medicine den. Nearby are a mix of packmates, some with illnesses and injuries, others trying to heal them.*`);
 		const allMedicineDenUsersList = (await userModel.find(
 			(u) => {
 				return Object.values(u.quids).filter(q => {
@@ -228,12 +210,12 @@ async function sendTravelMessage(
 			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await respond(interaction, messageOptions, true);
 		})({
 			content: messageContent,
-			embeds: [...embedArray, embed],
+			embeds: [...restEmbed, embed],
 			components: [
 				travelComponent,
-				...(profileData.rank === RankType.Youngling ? [] : [new ActionRowBuilder<ButtonBuilder>()
+				...(userData.quid.profile.rank === RankType.Youngling ? [] : [new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(`travel_heal_@${userData._id}`)
+						.setCustomId(`travel-regions_heal_@${userData._id}`)
 						.setLabel('Heal')
 						.setStyle(ButtonStyle.Primary))]),
 			],
@@ -241,7 +223,7 @@ async function sendTravelMessage(
 	}
 	else if (chosenRegion === CurrentRegionType.Ruins) {
 
-		embed.setDescription(`*${quidData.name} walks up to the ruins, carefully stepping over broken bricks. Hopefully, ${pronoun(quidData, 0)} will find someone to talk with.*`);
+		embed.setDescription(`*${userData.quid.name} walks up to the ruins, carefully stepping over broken bricks. Hopefully, ${userData.quid.pronoun(0)} will find someone to talk with.*`);
 		const allRuinsUsersList = (await userModel.find(
 			(u) => {
 				return Object.values(u.quids).filter(q => {
@@ -256,29 +238,29 @@ async function sendTravelMessage(
 			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await respond(interaction, messageOptions, true);
 		})({
 			content: messageContent,
-			embeds: [...embedArray, embed],
+			embeds: [...restEmbed, embed],
 			components: [travelComponent],
 		});
 	}
 	else if (chosenRegion === CurrentRegionType.Lake) {
 
-		embed.setDescription(`*${quidData.name} looks at ${pronoun(quidData, 2)} reflection as ${pronounAndPlural(quidData, 0, 'passes', 'pass')} the lake. Suddenly the ${quidData.displayedSpecies || quidData.species} remembers how long ${pronounAndPlural(quidData, 0, 'has', 'have')}n't drunk anything.*`);
+		embed.setDescription(`*${userData.quid.name} looks at ${userData.quid.pronoun(2)} reflection as ${userData.quid.pronounAndPlural(0, 'passes', 'pass')} the lake. Suddenly the ${userData.quid.getDisplayspecies()} remembers how long ${userData.quid.pronounAndPlural(0, 'has', 'have')}n't drunk anything.*`);
 
 		return await (async function(messageOptions) {
 			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await respond(interaction, messageOptions, true);
 		})({
 			content: messageContent,
-			embeds: [...embedArray, embed],
+			embeds: [...restEmbed, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId(`travel_drink_@${userData._id}`)
+					.setCustomId(`travel-regions_drink_@${userData._id}`)
 					.setLabel('Drink')
 					.setStyle(ButtonStyle.Primary))],
 		});
 	}
 	else if (chosenRegion === CurrentRegionType.Prairie) {
 
-		embed.setDescription(`*${quidData.name} approaches the prairie, watching younger packmates testing their strength in playful fights. Maybe the ${quidData.displayedSpecies || quidData.species} could play with them!*`);
+		embed.setDescription(`*${userData.quid.name} approaches the prairie, watching younger packmates testing their strength in playful fights. Maybe the ${userData.quid.getDisplayspecies()} could play with them!*`);
 		const allPrairieUsersList = (await userModel.find(
 			(u) => {
 				return Object.values(u.quids).filter(q => {
@@ -293,17 +275,17 @@ async function sendTravelMessage(
 			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await respond(interaction, messageOptions, true);
 		})({
 			content: messageContent,
-			embeds: [...embedArray, embed],
+			embeds: [...restEmbed, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId(`travel_play_@${userData._id}`)
+					.setCustomId(`travel-regions_play_@${userData._id}`)
 					.setLabel('Play')
 					.setStyle(ButtonStyle.Primary))],
 		});
 	}
 	else {
 
-		embed.setDescription(`You are currently at the ${profileData.currentRegion}! Here are the regions you can go to:`);
+		embed.setDescription(`You are currently at the ${userData.quid.profile.currentRegion}! Here are the regions you can go to:`);
 		embed.setFields([
 			{ name: '💤 sleeping dens', value: 'A place to sleep and relax. Go here if you need to refill your energy!' },
 			{ name: '🍖 food den', value: 'Inspect all the food the pack has gathered, eat some or add to it from your inventory!' },
@@ -317,7 +299,7 @@ async function sendTravelMessage(
 			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await respond(interaction, messageOptions, true);
 		})({
 			content: messageContent,
-			embeds: [...embedArray, embed],
+			embeds: [...restEmbed, embed],
 			components: [travelComponent],
 		});
 	}

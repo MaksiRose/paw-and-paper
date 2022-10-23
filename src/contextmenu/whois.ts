@@ -1,9 +1,12 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
 import { readFileSync } from 'fs';
-import { getMessageContent } from '../commands/quid_customization/profile';
+import { CustomIdArgs, getMessageContent } from '../commands/quid_customization/profile';
 import { respond } from '../utils/helperFunctions';
-import userModel from '../models/userModel';
-import { ContextMenuCommand, WebhookMessages } from '../typedef';
+import userModel, { getUserData } from '../models/userModel';
+import { WebhookMessages } from '../typings/data/general';
+import { ContextMenuCommand } from '../typings/handle';
+import { isInGuild } from '../utils/checkUserState';
+import { constructCustomId } from '../utils/customId';
 
 export const command: ContextMenuCommand = {
 	data: {
@@ -11,18 +14,10 @@ export const command: ContextMenuCommand = {
 		type: 3,
 		dm_permission: false,
 	},
-	sendCommand: async (client, interaction) => {
+	sendCommand: async (interaction) => {
 
 		/* This shouldn't happen as dm_permission is false. */
-		if (!interaction.inCachedGuild()) {
-
-			await interaction
-				.reply({
-					content: 'This interaction is guild-only!',
-					ephemeral: true,
-				});
-			return;
-		}
+		if (!isInGuild(interaction)) { return; }
 
 		/* This gets the webhookCache */
 		const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8')) as WebhookMessages;
@@ -30,8 +25,7 @@ export const command: ContextMenuCommand = {
 		/* This sets the userId, userData and quidData to the default for the author of the selected message.
 		userId is its own variable here to ensure maintainability for when one account could be associated with several userIds. */
 		let userId = interaction.targetMessage.author.id;
-		let userData = await userModel.findOne(u => u.userId.includes(userId)).catch(() => { return null; });
-		let quidData = userData?.quids[userData.currentQuid[interaction.guildId || 'DM'] || ''];
+		let quidId = '';
 
 		/* This checks whether there is an entry for this message in webhookCache, and sets the userId, userData and quidData to the entry data if it exist. */
 		const webhookCacheEntry = webhookCache[interaction.targetId]?.split('_') || [];
@@ -40,12 +34,12 @@ export const command: ContextMenuCommand = {
 		if (uid && charid) {
 
 			userId = uid;
-			userData = await userModel.findOne(u => u.userId.includes(userId)).catch(() => { return null; });
-			quidData = userData?.quids[charid];
+			quidId = charid;
 		}
 
+		const _userData = await userModel.findOne(u => u.userId.includes(userId)).catch(() => { return null; });
 		/* This is checking whether the userData is null, and if it is, it will send a message to the user who clicked on the context menu. */
-		if (userData === null) {
+		if (_userData === null) {
 
 			await interaction
 				.reply({
@@ -54,6 +48,7 @@ export const command: ContextMenuCommand = {
 				});
 			return;
 		}
+		const userData = getUserData(_userData, interaction.guildId || 'DM', _userData.quids[quidId || _userData.currentQuid[interaction.guildId || 'DM'] || '']);
 
 		const member = await interaction.guild.members.fetch(userId).catch(() => { return undefined; });
 		const user = member ? member.user : await interaction.client.users.fetch(userId).catch(() => { return undefined; });
@@ -71,13 +66,13 @@ export const command: ContextMenuCommand = {
 			}])
 			.setTimestamp(new Date())];
 
-		const response = await getMessageContent(client, userId, userData, quidData, userData.userId.includes(interaction.user.id), embedArray, interaction.guildId);
+		const response = await getMessageContent(userId, userData, userData.userId.includes(interaction.user.id), embedArray);
 
 		await respond(interaction, {
 			...response,
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([new ButtonBuilder()
-					.setCustomId(`profile_learnabout_@${interaction.user.id}`)
+					.setCustomId(constructCustomId<CustomIdArgs>('profile', interaction.user.id, ['learnabout', userId]))
 					.setLabel('Learn more (sends a DM)')
 					.setStyle(ButtonStyle.Success)])],
 			ephemeral: true,

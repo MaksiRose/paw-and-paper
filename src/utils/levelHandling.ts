@@ -1,11 +1,10 @@
 import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
-import { respond, unsafeKeys, widenValues } from './helperFunctions';
-import userModel from '../models/userModel';
-import { Quid, Profile, ServerSchema, UserSchema, WayOfEarningType } from '../typedef';
+import { capitalizeString, respond, unsafeKeys, widenValues } from './helperFunctions';
 import { checkLevelRequirements, checkRoleCatchBlock } from './checkRoleRequirements';
 import { getMapData } from './helperFunctions';
-import { upperCasePronounAndPlural } from './getPronouns';
 import { missingPermissions } from './permissionHandler';
+import { UserData, WayOfEarningType } from '../typings/data/user';
+import { ServerSchema } from '../typings/data/server';
 const { default_color } = require('../../config.json');
 
 /**
@@ -13,64 +12,56 @@ const { default_color } = require('../../config.json');
  */
 export async function checkLevelUp(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>,
-	userData: UserSchema,
-	quidData: Quid,
-	profileData: Profile,
+	userData: UserData<never, never>,
 	serverData: ServerSchema,
-): Promise<{ levelUpEmbed: EmbedBuilder | null, profileData: Profile; }> {
+): Promise<EmbedBuilder[]> {
 
-	let embed: EmbedBuilder | null = null;
+	let embed: EmbedBuilder[] = [];
 
 	/* It's checking if the user has enough experience to level up. If they do, it will level them up and then check if they leveled up again. */
-	const requiredExperiencePoints = profileData.levels * 50;
-	if (profileData.experience >= requiredExperiencePoints) {
+	const requiredExperiencePoints = userData.quid.profile.levels * 50;
+	if (userData.quid.profile.experience >= requiredExperiencePoints) {
 
-		userData = await userModel.findOneAndUpdate(
-			u => u._id === userData._id,
+		await userData.update(
 			(u) => {
-				const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
+				const p = getMapData(getMapData(u.quids, userData.quid._id).profiles, interaction.guildId);
 				p.experience -= requiredExperiencePoints;
 				p.levels += 1;
 			},
 		);
-		quidData = getMapData(userData.quids, quidData._id);
-		profileData = getMapData(quidData.profiles, interaction.guildId);
 
-		embed = new EmbedBuilder()
-			.setColor(quidData.color)
-			.setTitle(`${quidData.name} just leveled up! ${upperCasePronounAndPlural(quidData, 0, 'is', 'are')} now level ${profileData.levels}.`);
+		embed = [new EmbedBuilder()
+			.setColor(userData.quid.color)
+			.setTitle(`${userData.quid.name} just leveled up! ${capitalizeString(userData.quid.pronounAndPlural(0, 'is', 'are'))} now level ${userData.quid.profile.levels}.`)];
 
-		const checkLevel = await checkLevelUp(interaction, userData, quidData, profileData, serverData);
-		profileData = checkLevel.profileData;
-		if (checkLevel.levelUpEmbed) { embed = checkLevel.levelUpEmbed; }
+		const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
+		if (levelUpEmbed) { embed = levelUpEmbed; }
 
 		const guild = interaction.guild || await interaction.client.guilds.fetch(interaction.guildId);
 		const member = await guild.members.fetch(interaction.user.id);
-		await checkLevelRequirements(serverData, interaction, member, profileData.levels);
+		await checkLevelRequirements(serverData, interaction, member, userData.quid.profile.levels);
 	}
 
-	return { levelUpEmbed: embed, profileData };
+	return embed;
 }
 
 /**
  * Decreases the users level based on their current levels and removes their inventory, returns footerText for an updated bot reply.
  */
 export async function decreaseLevel(
-	userData: UserSchema,
-	quidData: Quid,
-	profileData: Profile,
+	userData: UserData<never, never>,
 	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached' | 'raw'>,
 ): Promise<string> {
 
 	/* newUserLevel is nine tenths of current profile level. */
-	const newUserLevel = Math.round(profileData.levels - (profileData.levels / 10));
+	const newUserLevel = Math.round(userData.quid.profile.levels - (userData.quid.profile.levels / 10));
 
 	/* footerText displays how many levels are lost, if any, and how much experience is lost, if any. */
 	let footerText = '';
-	if (newUserLevel !== profileData.levels) { footerText += `-${profileData.levels - newUserLevel} level${(profileData.levels - newUserLevel > 1) ? 's' : ''}\n`; }
-	if (profileData.experience > 0) { footerText += `-${profileData.experience} XP`; }
+	if (newUserLevel !== userData.quid.profile.levels) { footerText += `-${userData.quid.profile.levels - newUserLevel} level${(userData.quid.profile.levels - newUserLevel > 1) ? 's' : ''}\n`; }
+	if (userData.quid.profile.experience > 0) { footerText += `-${userData.quid.profile.experience} XP`; }
 
-	const inventory_ = widenValues(profileData.inventory);
+	const inventory_ = widenValues(userData.quid.profile.inventory);
 	/* Updating the footerText and the database for any items the user had. */
 	for (const itemType of unsafeKeys(inventory_)) {
 
@@ -81,23 +72,20 @@ export async function decreaseLevel(
 		}
 	}
 
-	userData = await userModel.findOneAndUpdate(
-		u => u._id === userData._id,
+	await userData.update(
 		(u) => {
-			const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
+			const p = getMapData(getMapData(u.quids, userData.quid._id).profiles, interaction.guildId);
 			p.levels = newUserLevel;
 			p.experience = 0;
 			p.inventory = inventory_;
 		},
 	);
-	quidData = getMapData(userData.quids, quidData._id);
-	profileData = getMapData(quidData.profiles, interaction.guildId);
 
 
 	/* Get the guild, member, and the profileData roles where the wayOfEarning is levels and the role requirement bigger than the profile level. */
 	const guild = interaction.guild || await interaction.client.guilds.fetch(interaction.guildId);
 	const member = await guild.members.fetch(interaction.user.id);
-	const roles = profileData.roles.filter(role => role.wayOfEarning === WayOfEarningType.Levels && role.requirement > profileData.levels);
+	const roles = userData.quid.profile.roles.filter(role => role.wayOfEarning === WayOfEarningType.Levels && role.requirement > userData.quid.profile.levels);
 
 	/* It's checking if the user has any roles that are earned by leveling up, and if they do, it will remove them from the user's profileData.roles and remove the role from the user. */
 	for (const role of roles) {
@@ -105,14 +93,13 @@ export async function decreaseLevel(
 		try {
 
 			/* It's removing the role from the user's profileData.roles. */
-			const userRoleIndex = profileData.roles.indexOf(role);
-			if (userRoleIndex >= 0) { profileData.roles.splice(userRoleIndex, 1); }
+			const userRoleIndex = userData.quid.profile.roles.indexOf(role);
+			if (userRoleIndex >= 0) { userData.quid.profile.roles.splice(userRoleIndex, 1); }
 
-			await userModel.findOneAndUpdate(
-				u => u._id === userData._id,
+			await userData.update(
 				(u) => {
-					const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
-					p.roles = profileData.roles;
+					const p = getMapData(getMapData(u.quids, userData.quid._id).profiles, interaction.guildId);
+					p.roles = userData.quid.profile.roles;
 				},
 			);
 

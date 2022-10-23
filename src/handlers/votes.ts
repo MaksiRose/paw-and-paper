@@ -1,14 +1,14 @@
 import rateLimit from 'express-rate-limit';
-import { CustomClient, VoteList } from '../typedef';
+import { VoteList } from '../typings/data/general';
 const bfd = require('bfd-api-redux');
 import express from 'express';
 import { readFileSync, writeFileSync } from 'fs';
 import AutoPoster from 'topgg-autoposter';
 import { Api, Webhook } from '@top-gg/sdk';
+import { client, handle } from '..';
 
 /** Updates server count on vote websites, starts event listeners to store successful votes, and adds structure to client to request individual votes */
 export async function execute(
-	client: CustomClient,
 ): Promise<void> {
 
 	const limiter = rateLimit({
@@ -16,10 +16,10 @@ export async function execute(
 		max: 20,
 	});
 
-	if (client.votes.bfd && client.votes.bfd.token !== '' && client.votes.bfd.authorization !== '') {
+	if (handle.votes.bfd && handle.votes.bfd.token !== '' && handle.votes.bfd.authorization !== '') {
 
-		client.votes.bfd.client = new bfd(client.votes.bfd.token, client.user?.id);
-		client.votes.bfd.client.setServers((await client.guilds.fetch()).size);
+		handle.votes.bfd.client = new bfd(handle.votes.bfd.token, client.user?.id);
+		handle.votes.bfd.client.setServers((await client.guilds.fetch()).size);
 
 		const bfdApp = express();
 
@@ -28,7 +28,7 @@ export async function execute(
 
 		bfdApp.post('/discords', (request, response) => {
 
-			if (request.headers.authorization === client.votes.bfd?.authorization) {
+			if (request.headers.authorization === handle.votes.bfd?.authorization) {
 
 				const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8')) as VoteList;
 
@@ -49,12 +49,12 @@ export async function execute(
 		bfdApp.listen(3002);
 	}
 
-	if (client.votes.top && client.votes.top.token !== '' && client.votes.top.authorization !== '') {
+	if (handle.votes.top && handle.votes.top.token !== '' && handle.votes.top.authorization !== '') {
 
-		AutoPoster(client.votes.top.token, client);
+		AutoPoster(handle.votes.top.token, client);
 
-		client.votes.top.client = new Api(client.votes.top.token);
-		const webhook = new Webhook(client.votes.top.authorization);
+		handle.votes.top.client = new Api(handle.votes.top.token);
+		const webhook = new Webhook(handle.votes.top.authorization);
 
 		const topApp = express();
 
@@ -79,7 +79,7 @@ export async function execute(
 		topApp.listen(3000);
 	}
 
-	if (client.votes.dbl && client.votes.dbl.token !== '' && client.votes.dbl.authorization !== '') {
+	if (handle.votes.dbl && handle.votes.dbl.token !== '' && handle.votes.dbl.authorization !== '') {
 
 		const dblApp = express();
 
@@ -88,7 +88,7 @@ export async function execute(
 
 		dblApp.post('/dbl', (request, response) => {
 
-			if (request.headers.authorization === client.votes.dbl?.authorization) {
+			if (request.headers.authorization === handle.votes.dbl?.authorization) {
 
 				const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8')) as VoteList;
 

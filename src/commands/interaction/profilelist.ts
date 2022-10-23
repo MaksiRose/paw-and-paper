@@ -1,16 +1,14 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, Guild, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder, Guild, SelectMenuBuilder, SlashCommandBuilder } from 'discord.js';
 import { respond, update } from '../../utils/helperFunctions';
-import userModel from '../../models/userModel';
-import { RankType, SlashCommand } from '../../typedef';
 import { isInGuild } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
+import { SlashCommand } from '../../typings/handle';
+import { RankType } from '../../typings/data/user';
+import userModel from '../../models/userModel';
 const { default_color } = require('../../../config.json');
 
-const guildCache: Map<string, Map<string, {
-	cachedAt: number;
-	isInGuild: boolean;
-}>> = new Map();
 const oneWeekInMs = 604_800_000;
+const oneMonthInMs = 2_629_746_000;
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -22,65 +20,63 @@ export const command: SlashCommand = {
 	position: 5,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction) => {
+	sendCommand: async (interaction) => {
 
 		if (!isInGuild(interaction)) { return; }
 
 		/* Creating a message with up to 25 profiles of a certain rank, a select menu to select another rank and buttons to go back and fourth a page if the rank as more than 25 profiles. */
 		await respond(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild, RankType.Youngling), true);
 	},
-};
+	async sendMessageComponentResponse(interaction) {
 
-export async function profilelistInteractionCollector(
-	interaction: ButtonInteraction | SelectMenuInteraction,
-): Promise<void> {
+		if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild.'); }
 
-	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild.'); }
+		if (interaction.isSelectMenu() && interaction.customId.startsWith('profilelist_rank_options')) {
 
-	if (interaction.isSelectMenu() && interaction.customId.startsWith('profilelist_rank_options')) {
+			const rankName = (interaction.values[0] === 'profilelist_elderlies') ?
+				RankType.Elderly :
+				(interaction.values[0] === 'profilelist_younglings') ?
+					RankType.Youngling :
+					(interaction.values[0] === 'profilelist_apprentices') ?
+						RankType.Apprentice :
+						RankType.Hunter;
 
-		const rankName = (interaction.values[0] === 'profilelist_elderlies') ?
+			const profilesText = await getProfilesTexts(interaction.guild, rankName, rankName === RankType.Hunter ? RankType.Healer : undefined);
+
+			await update(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild, rankName, profilesText));
+			return;
+		}
+
+		const rankName = interaction.customId.includes(RankType.Elderly) ?
 			RankType.Elderly :
-			(interaction.values[0] === 'profilelist_younglings') ?
+			interaction.customId.includes(RankType.Youngling) ?
 				RankType.Youngling :
-				(interaction.values[0] === 'profilelist_apprentices') ?
+				interaction.customId.includes(RankType.Apprentice) ?
 					RankType.Apprentice :
 					RankType.Hunter;
 
 		const profilesText = await getProfilesTexts(interaction.guild, rankName, rankName === RankType.Hunter ? RankType.Healer : undefined);
 
-		await update(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild, rankName, profilesText));
+		/* Get the page number of the friendship list.  */
+		let page = Number(interaction.customId.split('_')[3] ?? 0);
+
+		/* Checking if the user clicked on the left or right button and then it is changing the page number accordingly. */
+		if (interaction.customId.includes('left')) {
+
+			page -= 1;
+			if (page < 0) { page = Math.ceil(profilesText.length / 25) - 1; }
+		}
+		else if (interaction.customId.includes('right')) {
+
+			page += 1;
+			if (page >= Math.ceil(profilesText.length / 25)) { page = 0; }
+		}
+
+		await respond(interaction, await getProfilesMessage(interaction.user.id, page, interaction.guild, rankName, profilesText), true);
 		return;
-	}
 
-	const rankName = interaction.customId.includes(RankType.Elderly) ?
-		RankType.Elderly :
-		interaction.customId.includes(RankType.Youngling) ?
-			RankType.Youngling :
-			interaction.customId.includes(RankType.Apprentice) ?
-				RankType.Apprentice :
-				RankType.Hunter;
-
-	const profilesText = await getProfilesTexts(interaction.guild, rankName, rankName === RankType.Hunter ? RankType.Healer : undefined);
-
-	/* Get the page number of the friendship list.  */
-	let page = Number(interaction.customId.split('_')[3] ?? 0);
-
-	/* Checking if the user clicked on the left or right button and then it is changing the page number accordingly. */
-	if (interaction.customId.includes('left')) {
-
-		page -= 1;
-		if (page < 0) { page = Math.ceil(profilesText.length / 25) - 1; }
-	}
-	else if (interaction.customId.includes('right')) {
-
-		page += 1;
-		if (page >= Math.ceil(profilesText.length / 25)) { page = 0; }
-	}
-
-	await respond(interaction, await getProfilesMessage(interaction.user.id, page, interaction.guild, rankName, profilesText), true);
-	return;
-}
+	},
+};
 
 /**
  * It gets all the users that have a profile in the guild, and then for each user, it gets the cache of the user in the guild, and if the user is in the guild, it gets the profile of each quid of the user and adds it to the rankTexts
@@ -95,10 +91,6 @@ async function getProfilesTexts(
 	rankName2?: RankType,
 ): Promise<string[]> {
 
-	if (!guildCache.has(guild.id)) { guildCache.set(guild.id, new Map()); }
-	const guildMemberCache = guildCache.get(guild.id);
-	if (guildMemberCache === undefined) { throw new TypeError('guildMemberCache is undefined'); }
-
 	const allRankUsersList = await userModel.find(
 		u => {
 			return Object.values(u.quids)
@@ -109,25 +101,32 @@ async function getProfilesTexts(
 		});
 	const rankTexts: string[] = [];
 
-	for (const u of Object.values(allRankUsersList)) {
+	for (const user of Object.values(allRankUsersList)) {
 
-		userIdLoop: for (const userId of u.userId) {
+		const userIds = new Collection(Object.entries(user.userIds)).sort((userId1, userId2) => ((userId2[guild.id]?.lastUpdatedTimestamp ?? 0) - (userId1[guild.id]?.lastUpdatedTimestamp ?? 0))); // This sorts the userIds in such a way that the one with the newest update is first and the one with the oldest update (or undefined) is last. In the for loop, it will therefore do as little tests and fetches as possible.
+		userIdLoop: for (const [userId, data] of userIds) {
 
 			/* It's getting the cache of the user in the guild. */
-			if (!guildMemberCache.has(userId)) { guildMemberCache.set(userId, { cachedAt: 0, isInGuild: false }); }
-			let guildMember = guildMemberCache.get(userId);
+			let guildMember = data[guild.id];
 
 			/* It's checking if there is no cache or if the cache is more than one week old. If it is, get new cache. If there is still no cache or the member is not in the guild, continue. */
-			if (!guildMember || guildMember.cachedAt < Date.now() - oneWeekInMs) {
+			const timeframe = guildMember?.isMember ? oneWeekInMs : oneMonthInMs; // If a person is supposedly in a guild, we want to be really sure they are actually in the guild since assuming wrongly can lead to unwanted behavior, and these checks are the only way of finding out when they left. On the contrary, when they are supposedly not in the guild, we might find out anyways through them using the bot in the server, so we don't need to check that often.
+			if (!guildMember || guildMember.lastUpdatedTimestamp < Date.now() - timeframe) {
 
 				const member = await guild.members.fetch(userId).catch(() => { return null; });
-				guildMemberCache.set(userId, { cachedAt: Date.now(), isInGuild: member !== null });
-				guildMember = guildMemberCache.get(userId);
+				guildMember = { isMember: member !== null, lastUpdatedTimestamp: Date.now() };
+				await userModel.findOneAndUpdate(
+					u => u._id === user._id,
+					(u => u.userIds[userId] = {
+						...(u.userIds[userId] ?? {}),
+						[guild.id]: guildMember!,
+					}),
+				);
 			}
-			if (!guildMember || !guildMember.isInGuild) { continue; }
+			if (!guildMember || !guildMember.isMember) { continue; }
 
 			/* For each quid, check if there is a profile, and if there is, add that profile to the rankTexts. */
-			for (const q of Object.values(u.quids)) {
+			for (const q of Object.values(user.quids)) {
 
 				const p = q.profiles[guild.id];
 				if (p !== undefined && (p.rank === rankName1 || p.rank === rankName2)) { rankTexts.push(`${q.name} (\`${p.health}/${p.maxHealth} HP\`) - <@${userId}>`); }

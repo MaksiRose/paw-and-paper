@@ -1,8 +1,9 @@
 import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
-import { SlashCommand } from '../../typedef';
 import userModel from '../../models/userModel';
 import { cooldownMap } from '../../events/interactionCreate';
+import { client } from '../..';
+import { SlashCommand } from '../../typings/handle';
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -23,7 +24,7 @@ export const command: SlashCommand = {
 	position: 0,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction) => {
+	sendCommand: async (interaction) => {
 
 		if (!client.isReady()) { return; }
 

@@ -1,5 +1,5 @@
 import { GuildChannelResolvable, GuildMember, PermissionResolvable, RepliableInteraction, Snowflake, PermissionFlagsBits, GuildTextBasedChannel } from 'discord.js';
-import { client } from '../paw';
+import { client } from '../index';
 import { addCommasAndAnd, respond } from './helperFunctions';
 
 export const permissionDisplay: Record<keyof typeof PermissionFlagsBits, string> = {

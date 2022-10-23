@@ -1,6 +1,10 @@
 // @ts-check
+import { Collection } from 'discord.js';
 import { Model } from 'hoatzin';
-import { commonPlantsInfo, materialsInfo, ProxyConfigType, ProxyListType, RankType, rarePlantsInfo, Schema, specialPlantsInfo, speciesInfo, uncommonPlantsInfo, UserSchema } from '../typedef';
+import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '..';
+import { ProxyConfigType, ProxyListType, Quid, QuidSchema, RankType, UserData, UserSchema } from '../typings/data/user';
+import { getArrayElement } from '../utils/helperFunctions';
+import { getRandomNumber } from '../utils/randomizers';
 const config = require('../../config.json');
 const pkg = require('../../package.json');
 
@@ -11,6 +15,22 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 			type: 'string',
 			default: '',
 			locked: true,
+		},
+		locked: false,
+	},
+	userIds: {
+		type: 'map',
+		of: {
+			type: 'map',
+			of: {
+				type: 'object',
+				default: {
+					isMember: { type: 'boolean', default: false, locked: false },
+					lastUpdatedTimestamp: { type: 'number', default: 0, locked: false },
+				},
+				locked: false,
+			},
+			locked: false,
 		},
 		locked: false,
 	},
@@ -214,32 +234,32 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 								default: {
 									commonPlants: {
 										type: 'object',
-										default: Object.fromEntries(Object.keys(commonPlantsInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()) as Record<keyof typeof commonPlantsInfo, Schema<Record<keyof typeof commonPlantsInfo, number>>[keyof typeof commonPlantsInfo]>,
+										default: Object.fromEntries(Object.keys(commonPlantsInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()),
 										locked: false,
 									},
 									uncommonPlants: {
 										type: 'object',
-										default: Object.fromEntries(Object.keys(uncommonPlantsInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()) as Record<keyof typeof uncommonPlantsInfo, Schema<Record<keyof typeof uncommonPlantsInfo, number>>[keyof typeof uncommonPlantsInfo]>,
+										default: Object.fromEntries(Object.keys(uncommonPlantsInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()),
 										locked: false,
 									},
 									rarePlants: {
 										type: 'object',
-										default: Object.fromEntries(Object.keys(rarePlantsInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()) as Record<keyof typeof rarePlantsInfo, Schema<Record<keyof typeof rarePlantsInfo, number>>[keyof typeof rarePlantsInfo]>,
+										default: Object.fromEntries(Object.keys(rarePlantsInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()),
 										locked: false,
 									},
 									specialPlants: {
 										type: 'object',
-										default: Object.fromEntries(Object.keys(specialPlantsInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()) as Record<keyof typeof specialPlantsInfo, Schema<Record<keyof typeof specialPlantsInfo, number>>[keyof typeof specialPlantsInfo]>,
+										default: Object.fromEntries(Object.keys(specialPlantsInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()),
 										locked: false,
 									},
 									meat: {
 										type: 'object',
-										default: Object.fromEntries(Object.keys(speciesInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()) as Record<keyof typeof speciesInfo, Schema<Record<keyof typeof speciesInfo, number>>[keyof typeof speciesInfo]>,
+										default: Object.fromEntries(Object.keys(speciesInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()),
 										locked: false,
 									},
 									materials: {
 										type: 'object',
-										default: Object.fromEntries(Object.keys(materialsInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()) as Record<keyof typeof materialsInfo, Schema<Record<keyof typeof materialsInfo, number>>[keyof typeof materialsInfo]>,
+										default: Object.fromEntries(Object.keys(materialsInfo).map(k => [k, { type: 'number', default: 0, locked: false }]).sort()),
 										locked: false,
 									},
 								},
@@ -295,3 +315,83 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 }, true);
 export default userModel;
 
+
+export function getUserData<T extends '' | never, U extends QuidSchema<T> | undefined>(
+	userData: UserSchema,
+	server_id: string,
+	quidData: U,
+): UserData<U extends QuidSchema<T> ? never : undefined, T> {
+
+	const user: UserData<U extends QuidSchema<T> ? never : undefined, T> = {
+		_id: userData._id,
+		userId: userData.userId,
+		userIds: userData.userIds,
+		tag: {
+			global: userData.tag.global,
+			server: userData.tag.servers[server_id ?? ''],
+		},
+		advice: userData.advice,
+		settings: {
+			reminders: userData.settings.reminders,
+			proxy: {
+				global: userData.settings.proxy.global,
+				server: userData.settings.proxy.servers[server_id ?? ''],
+			},
+		},
+		quid: (quidData === undefined ? undefined : {
+			_id: quidData._id,
+			name: quidData.name,
+			nickname: {
+				global: quidData.nickname.global,
+				server: quidData.nickname.servers[server_id ?? ''],
+			},
+			species: quidData.species,
+			displayedSpecies: quidData.displayedSpecies,
+			description: quidData.description,
+			avatarURL: quidData.avatarURL,
+			pronounSets: quidData.pronounSets,
+			proxy: quidData.proxy,
+			color: quidData.color,
+			mentions: quidData.mentions,
+			profile: quidData.profiles[server_id],
+			getDisplayname: function(): string {
+
+				const tag = user.tag.server || user.tag.global || '';
+				return (this.nickname.server || this.nickname.global || this.name) + (tag ? ` ${tag}` : '');
+			},
+			getDisplayspecies: function(): string { return this.displayedSpecies || this.species; },
+			pronoun: function(
+				pronounNumber: 0 | 1 | 2 | 3 | 4 | 5,
+			): string { return getArrayElement(getArrayElement(this.pronounSets, getRandomNumber(this.pronounSets.length)), pronounNumber); },
+			pronounAndPlural: function(
+				pronounNumber: 0 | 1 | 2 | 3 | 4 | 5,
+				string1: string,
+				string2?: string,
+			): string {
+
+				const pronounSet = getArrayElement(this.pronounSets, getRandomNumber(this.pronounSets.length));
+
+				const pronoun = getArrayElement(pronounSet, pronounNumber);
+				const isPlural = pronounSet[5] === 'plural';
+
+				if (string2 === undefined) { return `${pronoun} ${string1}${isPlural === false ? 's' : ''}`; }
+				return `${pronoun} ${isPlural === false ? string1 : string2}`;
+			},
+		}) as (U extends QuidSchema<T> ? never : undefined) | Quid<T>,
+		quids: new Collection(Object.entries(userData.quids)),
+		serverIdToQuidId: new Collection(Object.entries(userData.currentQuid)),
+		lastPlayedVersion: userData.lastPlayedVersion,
+		update: async function(
+			updateFunction: (value: UserSchema) => void,
+		): Promise<void> {
+
+			userData = await userModel.findOneAndUpdate(
+				u => u._id === userData._id,
+				updateFunction,
+			);
+			const player = getUserData(userData, server_id, userData.quids[quidData?._id ?? '']);
+			Object.assign(this, player);
+		},
+	};
+	return user;
+}

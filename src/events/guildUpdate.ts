@@ -1,11 +1,11 @@
 import { Guild } from 'discord.js';
 import serverModel from '../models/serverModel';
-import { DiscordEvent } from '../typedef';
+import { DiscordEvent } from '../typings/main';
 
 export const event: DiscordEvent = {
 	name: 'guildUpdate',
 	once: false,
-	async execute(client, oldGuild: Guild, newGuild: Guild) {
+	async execute(oldGuild: Guild, newGuild: Guild) {
 
 		await serverModel.findOneAndUpdate(
 			s => s.serverId === newGuild.id,

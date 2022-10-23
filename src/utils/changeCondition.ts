@@ -1,9 +1,7 @@
 import { EmbedBuilder } from 'discord.js';
-import userModel from '../models/userModel';
-import { CurrentRegionType, Profile, Quid, UserSchema } from '../typedef';
 import { deepCopyObject, getBiggerNumber, getMapData, getSmallerNumber } from './helperFunctions';
-import { pronoun } from './getPronouns';
 import { getRandomNumber, pullFromWeightedTable } from './randomizers';
+import { CurrentRegionType, ProfileSchema, UserData } from '../typings/data/user';
 
 /**
  * Calculate how much energy should be decreased based on how low the profile's health is.
@@ -11,14 +9,14 @@ import { getRandomNumber, pullFromWeightedTable } from './randomizers';
  * @returns A number.
  */
 function calculateEnergyDecrease(
-	profileData: Profile,
+	userData: UserData<never, never>,
 ): number {
 
 	/* Calculate energy point decrease based on health, which is lowest (0) when health is highest, and highest (10) when health is lowest. */
-	const healthDependentEnergyDecrease = Math.round(10 - (profileData.health / (profileData.maxHealth / 10)));
+	const healthDependentEnergyDecrease = Math.round(10 - (userData.quid.profile.health / (userData.quid.profile.maxHealth / 10)));
 
 	/* If energyDependentHungerDecrease is 0, return 0. If it's not 0, randomize a number between half of healthDependentEnergyDecrease and 1 higher than that, compare it with the profiles energy and return the smaller number. */
-	return healthDependentEnergyDecrease > 0 ? getSmallerNumber(getRandomNumber(2, Math.round(healthDependentEnergyDecrease / 2)), profileData.energy) : 0;
+	return healthDependentEnergyDecrease > 0 ? getSmallerNumber(getRandomNumber(2, Math.round(healthDependentEnergyDecrease / 2)), userData.quid.profile.energy) : 0;
 }
 
 /**
@@ -27,14 +25,14 @@ function calculateEnergyDecrease(
  * @returns A number.
  */
 function calculateHungerDecrease(
-	profileData: Profile,
+	userData: UserData<never, never>,
 ): number {
 
 	/* Calculate hunger point decrease based on energy, which is lowest (0) when energy is highest, and highest (10) when energy is lowest. */
-	const energyDependentHungerDecrease = Math.round(10 - (profileData.energy / (profileData.maxEnergy / 10)));
+	const energyDependentHungerDecrease = Math.round(10 - (userData.quid.profile.energy / (userData.quid.profile.maxEnergy / 10)));
 
 	/* If energyDependentHungerDecrease is 0, return 0. If it's not 0, randomize a number between energyDependentHungerDecrease and 2 higher than that, compare it with the profiles hunger and return the smaller number. */
-	return energyDependentHungerDecrease > 0 ? getSmallerNumber(getRandomNumber(3, energyDependentHungerDecrease), profileData.hunger) : 0;
+	return energyDependentHungerDecrease > 0 ? getSmallerNumber(getRandomNumber(3, energyDependentHungerDecrease), userData.quid.profile.hunger) : 0;
 }
 
 /**
@@ -43,14 +41,14 @@ function calculateHungerDecrease(
  * @returns A number.
  */
 function calculateThirstDecrease(
-	profileData: Profile,
+	userData: UserData<never, never>,
 ): number {
 
 	/* Calculate thirst point decrease based on energy, which is lowest (0) when energy is highest, and highest (10) when energy is lowest. */
-	const energyDependentThirstDecrease = Math.ceil(10 - (profileData.energy / (profileData.maxEnergy / 10)));
+	const energyDependentThirstDecrease = Math.ceil(10 - (userData.quid.profile.energy / (userData.quid.profile.maxEnergy / 10)));
 
 	/* If energyDependentThirstDecrease is 0, return 0. If it's not 0, randomize a number between energyDependentThirstDecrease and 2 higher than that, compare it with the profiles thirst and return the smaller number. */
-	return energyDependentThirstDecrease > 0 ? getSmallerNumber(getRandomNumber(3, energyDependentThirstDecrease), profileData.thirst) : 0;
+	return energyDependentThirstDecrease > 0 ? getSmallerNumber(getRandomNumber(3, energyDependentThirstDecrease), userData.quid.profile.thirst) : 0;
 }
 
 /**
@@ -61,28 +59,27 @@ function calculateThirstDecrease(
  * @returns An object with an embed and profileData
  */
 function decreaseHealth(
-	quidData: Quid,
-	profileData: Profile,
+	userData: UserData<never, never>,
 ): {
-	injuryUpdateEmbed: EmbedBuilder | null,
+	injuryUpdateEmbed: EmbedBuilder[],
 	totalHealthDecrease: number,
-	modifiedInjuryObject: Profile['injuries'];
+	modifiedInjuryObject: ProfileSchema['injuries'];
 	} {
 
 	/* Define the decreased health points, a modifiedInjuryObject */
 	let totalHealthDecrease = 0;
-	const modifiedInjuryObject = deepCopyObject(profileData.injuries);
+	const modifiedInjuryObject = deepCopyObject(userData.quid.profile.injuries);
 
 	/* If there are no injuries, return null as an embed and profileData as the profileData */
-	if (Object.values(profileData.injuries).every((value) => value == 0)) { return { injuryUpdateEmbed: null, totalHealthDecrease, modifiedInjuryObject }; }
+	if (Object.values(userData.quid.profile.injuries).every((value) => value == 0)) { return { injuryUpdateEmbed: [], totalHealthDecrease, modifiedInjuryObject }; }
 
 	/* Define an embed with a color */
 	const embed = new EmbedBuilder()
-		.setColor(quidData.color);
+		.setColor(userData.quid.color);
 	let description = '';
 
 	/* Cycle through the profile's wounds and for each one, let it heal (25% chance), become an infection (50% chance) or bleed */
-	for (let i = 0; i < profileData.injuries.wounds; i++) {
+	for (let i = 0; i < userData.quid.profile.injuries.wounds; i++) {
 
 		const getsHealed = pullFromWeightedTable({ 0: 1, 1: 3 });
 		const becomesInfection = pullFromWeightedTable({ 0: 1, 1: 1 });
@@ -91,7 +88,7 @@ function decreaseHealth(
 
 			modifiedInjuryObject.wounds -= 1;
 
-			description += `\n*One of ${quidData.name}'s wounds healed! What luck!*`;
+			description += `\n*One of ${userData.quid.name}'s wounds healed! What luck!*`;
 			continue;
 		}
 
@@ -102,15 +99,15 @@ function decreaseHealth(
 			modifiedInjuryObject.wounds -= 1;
 			modifiedInjuryObject.infections += 1;
 
-			description += `\n*One of ${quidData.name}'s wounds turned into an infection!*`;
+			description += `\n*One of ${userData.quid.name}'s wounds turned into an infection!*`;
 			continue;
 		}
 
-		description += `\n*One of ${quidData.name}'s wounds is bleeding!*`;
+		description += `\n*One of ${userData.quid.name}'s wounds is bleeding!*`;
 	}
 
 	/* Cycle through the profile's infections and for each one, let it heal (33% chance) or get worse */
-	for (let i = 0; i < profileData.injuries.infections; i++) {
+	for (let i = 0; i < userData.quid.profile.injuries.infections; i++) {
 
 		const getsHealed = pullFromWeightedTable({ 0: 1, 1: 2 });
 
@@ -118,18 +115,18 @@ function decreaseHealth(
 
 			modifiedInjuryObject.infections -= 1;
 
-			description += `\n*One of ${quidData.name}'s infections healed! What luck!*`;
+			description += `\n*One of ${userData.quid.name}'s infections healed! What luck!*`;
 			continue;
 		}
 
-		const minimumInfectionHealthDecrease = Math.round((10 - (profileData.health / (profileData.maxHealth / 10))) / 3);
+		const minimumInfectionHealthDecrease = Math.round((10 - (userData.quid.profile.health / (userData.quid.profile.maxHealth / 10))) / 3);
 		totalHealthDecrease += getRandomNumber(3, minimumInfectionHealthDecrease + 3);
 
-		description += `\n*One of ${quidData.name}'s infections is getting worse!*`;
+		description += `\n*One of ${userData.quid.name}'s infections is getting worse!*`;
 	}
 
 	/* Check if the user has a cold and let it heal (25% chance) or get worse */
-	if (profileData.injuries.cold == true) {
+	if (userData.quid.profile.injuries.cold == true) {
 
 		const getsHealed = pullFromWeightedTable({ 0: 1, 1: 3 });
 
@@ -137,19 +134,19 @@ function decreaseHealth(
 
 			modifiedInjuryObject.cold = false;
 
-			description += `\n*${quidData.name} recovered from ${pronoun(quidData, 2)} cold! What luck!*`;
+			description += `\n*${userData.quid.name} recovered from ${userData.quid.pronoun(2)} cold! What luck!*`;
 		}
 		else {
 
-			const minimumColdHealthDecrease = Math.round((10 - (profileData.health / (profileData.maxHealth / 10))) / 1.5);
+			const minimumColdHealthDecrease = Math.round((10 - (userData.quid.profile.health / (userData.quid.profile.maxHealth / 10))) / 1.5);
 			totalHealthDecrease += getRandomNumber(3, getBiggerNumber(minimumColdHealthDecrease, 1));
 
-			description += `\n*${quidData.name}'s cold is getting worse!*`;
+			description += `\n*${userData.quid.name}'s cold is getting worse!*`;
 		}
 	}
 
 	/* Cycle through the profile's sprains and for each one, let it heal (30% chance) or get worse */
-	for (let i = 0; i < profileData.injuries.sprains; i++) {
+	for (let i = 0; i < userData.quid.profile.injuries.sprains; i++) {
 
 		const getsHealed = pullFromWeightedTable({ 0: 3, 1: 7 });
 
@@ -157,18 +154,18 @@ function decreaseHealth(
 
 			modifiedInjuryObject.sprains -= 1;
 
-			description += `\n*One of ${quidData.name}'s sprains healed! What luck!*`;
+			description += `\n*One of ${userData.quid.name}'s sprains healed! What luck!*`;
 			continue;
 		}
 
-		const minimumSprainHealthDecrease = Math.round(profileData.levels / 2);
+		const minimumSprainHealthDecrease = Math.round(userData.quid.profile.levels / 2);
 		totalHealthDecrease += getRandomNumber(5, getSmallerNumber(minimumSprainHealthDecrease, 11));
 
-		description += `\n*One of ${quidData.name}'s sprains is getting worse!*`;
+		description += `\n*One of ${userData.quid.name}'s sprains is getting worse!*`;
 	}
 
 	/* Check if the user has poison and let it heal (20% chance) or get worse */
-	if (profileData.injuries.poison == true) {
+	if (userData.quid.profile.injuries.poison == true) {
 
 		const getsHealed = pullFromWeightedTable({ 0: 1, 1: 4 });
 
@@ -176,28 +173,27 @@ function decreaseHealth(
 
 			modifiedInjuryObject.poison = false;
 
-			description += `\n*${quidData.name} recovered from ${pronoun(quidData, 2)} poisoning! What luck!*`;
+			description += `\n*${userData.quid.name} recovered from ${userData.quid.pronoun(2)} poisoning! What luck!*`;
 		}
 		else {
 
-			const minimumPoisonHealthDecrease = Math.round((10 - (profileData.health / 10)) * 1.5);
+			const minimumPoisonHealthDecrease = Math.round((10 - (userData.quid.profile.health / 10)) * 1.5);
 			totalHealthDecrease += getRandomNumber(5, getBiggerNumber(minimumPoisonHealthDecrease, 1));
 
-			description += `\n*The poison in ${quidData.name}'s body is spreading!*`;
+			description += `\n*The poison in ${userData.quid.name}'s body is spreading!*`;
 		}
 	}
 
 	if (description.length > 0) { embed.setDescription(description); }
 
 	/* Add a footer to the embed if the total health decrease is more than 0, and return */
-	if (totalHealthDecrease > 0) { embed.setFooter({ text: `-${totalHealthDecrease} HP (${profileData.health - totalHealthDecrease}/${profileData.maxHealth})` }); }
-	return { injuryUpdateEmbed: embed, totalHealthDecrease, modifiedInjuryObject };
+	if (totalHealthDecrease > 0) { embed.setFooter({ text: `-${totalHealthDecrease} HP (${userData.quid.profile.health - totalHealthDecrease}/${userData.quid.profile.maxHealth})` }); }
+	return { injuryUpdateEmbed: [embed], totalHealthDecrease, modifiedInjuryObject };
 }
 
 export type DecreasedStatsData = {
 	statsUpdateText: string,
-	injuryUpdateEmbed: EmbedBuilder | null,
-	profileData: Profile;
+	injuryUpdateEmbed: EmbedBuilder[]
 };
 
 /**
@@ -211,36 +207,34 @@ export type DecreasedStatsData = {
  * @returns DecreasedStatsData
  */
 export async function changeCondition(
-	userData: UserSchema | undefined,
-	quidData: Quid,
-	profileData: Profile,
+	userData: UserData<never, never>,
 	experienceIncrease: number,
 	currentRegion?: CurrentRegionType,
 	secondPlayer = false,
+	update = true,
 ): Promise<DecreasedStatsData> {
 
-	const { injuryUpdateEmbed, totalHealthDecrease, modifiedInjuryObject } = decreaseHealth(quidData, profileData);
-	const energyDecrease = getSmallerNumber(calculateEnergyDecrease(profileData) + getRandomNumber(3, 1), profileData.energy);
-	const hungerDecrease = calculateHungerDecrease(profileData);
-	const thirstDecrease = calculateThirstDecrease(profileData);
-	const previousRegion = profileData.currentRegion;
+	const { injuryUpdateEmbed, totalHealthDecrease, modifiedInjuryObject } = decreaseHealth(userData);
+	const energyDecrease = getSmallerNumber(calculateEnergyDecrease(userData) + getRandomNumber(3, 1), userData.quid.profile.energy);
+	const hungerDecrease = calculateHungerDecrease(userData);
+	const thirstDecrease = calculateThirstDecrease(userData);
+	const previousRegion = userData.quid.profile.currentRegion;
 
-	if (userData === undefined) {
+	if (update === false) {
 
-		profileData.health -= totalHealthDecrease;
-		profileData.injuries = modifiedInjuryObject;
-		profileData.energy -= energyDecrease;
-		profileData.hunger -= hungerDecrease;
-		profileData.thirst -= thirstDecrease;
-		profileData.experience += experienceIncrease;
-		if (currentRegion) { profileData.currentRegion = currentRegion; }
+		userData.quid.profile.health -= totalHealthDecrease;
+		userData.quid.profile.injuries = modifiedInjuryObject;
+		userData.quid.profile.energy -= energyDecrease;
+		userData.quid.profile.hunger -= hungerDecrease;
+		userData.quid.profile.thirst -= thirstDecrease;
+		userData.quid.profile.experience += experienceIncrease;
+		if (currentRegion) { userData.quid.profile.currentRegion = currentRegion; }
 	}
 	else {
 
-		userData = await userModel.findOneAndUpdate(
-			u => u._id === userData!._id,
+		await userData.update(
 			(u) => {
-				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, profileData.serverId)).profiles, profileData.serverId);
+				const p = getMapData(getMapData(u.quids, userData.quid._id).profiles, userData.quid.profile.serverId);
 				p.health -= totalHealthDecrease;
 				p.injuries = modifiedInjuryObject;
 				p.energy -= energyDecrease;
@@ -250,18 +244,16 @@ export async function changeCondition(
 				if (currentRegion) { p.currentRegion = currentRegion; }
 			},
 		);
-		quidData = getMapData(userData.quids, getMapData(userData.currentQuid, profileData.serverId));
-		profileData = getMapData(quidData.profiles, profileData.serverId);
 	}
 
 	let statsUpdateText = '';
-	if (experienceIncrease > 0) { statsUpdateText += `\n+${experienceIncrease} XP (${profileData.experience}/${profileData.levels * 50})${secondPlayer ? ` for ${quidData.name}` : ''}`; }
-	if (energyDecrease > 0) { statsUpdateText += `\n-${energyDecrease} energy (${profileData.energy}/${profileData.maxEnergy})${secondPlayer ? ` for ${quidData.name}` : ''}`; }
-	if (hungerDecrease > 0) { statsUpdateText += `\n-${hungerDecrease} hunger (${profileData.hunger}/${profileData.maxHunger})${secondPlayer ? ` for ${quidData.name}` : ''}`; }
-	if (thirstDecrease > 0) { statsUpdateText += `\n-${thirstDecrease} thirst (${profileData.thirst}/${profileData.maxThirst})${secondPlayer ? ` for ${quidData.name}` : ''}`; }
-	if (currentRegion && previousRegion !== currentRegion) { statsUpdateText += `\n${secondPlayer ? `${quidData.name} is` : 'You are'} now at the ${currentRegion}`; }
+	if (experienceIncrease > 0) { statsUpdateText += `\n+${experienceIncrease} XP (${userData.quid.profile.experience}/${userData.quid.profile.levels * 50})${secondPlayer ? ` for ${userData.quid.name}` : ''}`; }
+	if (energyDecrease > 0) { statsUpdateText += `\n-${energyDecrease} energy (${userData.quid.profile.energy}/${userData.quid.profile.maxEnergy})${secondPlayer ? ` for ${userData.quid.name}` : ''}`; }
+	if (hungerDecrease > 0) { statsUpdateText += `\n-${hungerDecrease} hunger (${userData.quid.profile.hunger}/${userData.quid.profile.maxHunger})${secondPlayer ? ` for ${userData.quid.name}` : ''}`; }
+	if (thirstDecrease > 0) { statsUpdateText += `\n-${thirstDecrease} thirst (${userData.quid.profile.thirst}/${userData.quid.profile.maxThirst})${secondPlayer ? ` for ${userData.quid.name}` : ''}`; }
+	if (currentRegion && previousRegion !== currentRegion) { statsUpdateText += `\n${secondPlayer ? `${userData.quid.name} is` : 'You are'} now at the ${currentRegion}`; }
 
-	return { statsUpdateText, injuryUpdateEmbed, profileData };
+	return { statsUpdateText, injuryUpdateEmbed };
 }
 
 /**
@@ -274,34 +266,26 @@ export async function changeCondition(
  * @returns EmbedBuilder | null
  */
 export async function infectWithChance(
-	userData1: UserSchema,
-	quidData1: Quid,
-	profileData1: Profile,
-	quidData2: Quid,
-	profileData2: Profile,
-): Promise<{ infectedEmbed: EmbedBuilder | null, profileData: Profile; }> {
+	userData1: UserData<never, never>,
+	userData2: UserData<never, never>,
+): Promise<EmbedBuilder[]> {
 
-	if (profileData2.injuries.cold === true && profileData1.injuries.cold === false && pullFromWeightedTable({ 0: 3, 1: 7 }) === 0) {
+	if (userData2.quid.profile.injuries.cold === true && userData1.quid.profile.injuries.cold === false && pullFromWeightedTable({ 0: 3, 1: 7 }) === 0) {
 
-		const healthPoints = getSmallerNumber(getRandomNumber(5, 3), profileData1.health);
+		const healthPoints = getSmallerNumber(getRandomNumber(5, 3), userData1.quid.profile.health);
 
-		userData1 = await userModel.findOneAndUpdate(
-			u => u._id === userData1._id,
+		await userData1.update(
 			(u) => {
-				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, profileData1.serverId)).profiles, profileData1.serverId);
+				const p = getMapData(getMapData(u.quids, userData1.quid._id).profiles, userData1.quid.profile.serverId);
 				p.health -= healthPoints;
 				p.injuries.cold = true;
 			},
 		);
-		quidData1 = getMapData(userData1.quids, quidData1._id);
-		profileData1 = getMapData(quidData1.profiles, profileData1.serverId);
 
-		return {
-			infectedEmbed: new EmbedBuilder()
-				.setColor(quidData1.color)
-				.setDescription(`*Suddenly, ${quidData1.name} starts coughing uncontrollably. Thinking back, they spent all day alongside ${quidData2.name}, who was coughing as well. That was probably not the best idea!*`)
-				.setFooter({ text: `-${healthPoints} HP (from cold)` }),
-			profileData: profileData1 };
+		return [new EmbedBuilder()
+			.setColor(userData1.quid.color)
+			.setDescription(`*Suddenly, ${userData1.quid.name} starts coughing uncontrollably. Thinking back, they spent all day alongside ${userData2.quid.name}, who was coughing as well. That was probably not the best idea!*`)
+			.setFooter({ text: `-${healthPoints} HP (from cold)` })];
 	}
-	return { infectedEmbed: null, profileData: profileData1 };
+	return [];
 }

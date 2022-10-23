@@ -1,8 +1,9 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SelectMenuBuilder, SlashCommandBuilder } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
-import userModel from '../../models/userModel';
-import { CustomClient, SlashCommand, UserSchema, VoteList } from '../../typedef';
-import { hasName, hasSpecies } from '../../utils/checkUserState';
+import { handle } from '../..';
+import { VoteList } from '../../typings/data/general';
+import { SlashCommand } from '../../typings/handle';
+import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler } from '../../utils/componentDisabling';
 import { getMapData, getSmallerNumber, respond } from '../../utils/helperFunctions';
@@ -19,23 +20,24 @@ export const command: SlashCommand = {
 	position: 6,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
+	sendCommand: async (interaction, userData) => {
 
 		if (await missingPermissions(interaction, [
 			'ViewChannel', // Needed because of createCommandComponentDisabler
 		]) === true) { return; }
 
-		if (!hasName(interaction, userData)) { return; }
+		if (!hasNameAndSpecies(userData, interaction)) { return; }
 
-		/* Gets the current active quid and the server profile from the account */
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId || 'DM'));
-		const profileData = getMapData(quidData.profiles, interaction.guildId || 'DM');
-		if (!hasSpecies(interaction, quidData)) { return; }
+		let restEmbed: EmbedBuilder[] = [];
+		if (interaction.inGuild()) {
 
-		if (interaction.inGuild() && await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
+			const restEmbedOrFalse = await isInvalid(interaction, userData);
+			if (restEmbedOrFalse === false) { return; }
+			else { restEmbed = restEmbedOrFalse; }
+		}
 
 		const botReply = await respond(interaction, {
-			embeds: [...embedArray, new EmbedBuilder()
+			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(default_color)
 				.setDescription('Click a button to be sent to that websites bot page. After voting for this bot, select the website you voted on from the drop-down menu to get +30 energy.')],
 			components: [
@@ -70,90 +72,80 @@ export const command: SlashCommand = {
 
 		if (interaction.inGuild()) { createCommandComponentDisabler(userData._id, interaction.guildId, botReply); }
 	},
-};
+	async sendMessageComponentResponse(interaction, userData) {
 
-export async function voteInteractionCollector(
-	client: CustomClient,
-	interaction: SelectMenuInteraction,
-	userData: UserSchema | null,
-): Promise<void> {
+		if (!interaction.isSelectMenu()) { return; }
+		/* This ensures that the user is in a guild and has a completed account. */
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
 
-	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
-	if (userData === null) { throw new Error('userData is null'); }
+		const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8')) as VoteList;
+		const twelveHoursInMs = 43_200_000;
 
-	const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8')) as VoteList;
-	const twelveHoursInMs = 43_200_000;
-
-	const successfulTopVote = interaction.values[0] === 'top.gg'
+		const successfulTopVote = interaction.values[0] === 'top.gg'
 		&& (
 			(voteCache['id_' + interaction.user.id]?.lastRecordedTopVote ?? 0) > Date.now() - twelveHoursInMs
-			|| await client.votes.top?.client?.hasVoted(interaction.user.id)
+			|| await handle.votes.top?.client?.hasVoted(interaction.user.id)
 		);
-	const redeemedTopVote = successfulTopVote
+		const redeemedTopVote = successfulTopVote
 		&& Date.now() <= (voteCache['id_' + interaction.user.id]?.nextRedeemableTopVote || Date.now());
 
-	const discordsVote: { voted: boolean, votes: Array<{ expires: number; }>; } | undefined = await client.votes.bfd?.client?.checkVote(interaction.user.id);
-	const successfulDiscordsVote = interaction.values[0] === 'discords.com'
+		const discordsVote: { voted: boolean, votes: Array<{ expires: number; }>; } | undefined = await handle.votes.bfd?.client?.checkVote(interaction.user.id);
+		const successfulDiscordsVote = interaction.values[0] === 'discords.com'
 		&& (
 			(voteCache['id_' + interaction.user.id]?.lastRecordedDiscordsVote ?? 0) > Date.now() - twelveHoursInMs
 			|| discordsVote?.voted
 		);
-	const redeemedDiscordsVote = successfulDiscordsVote
+		const redeemedDiscordsVote = successfulDiscordsVote
 		&& Date.now() <= (voteCache['id_' + interaction.user.id]?.nextRedeemableDiscordsVote ?? Date.now());
 
-	const successfulDblVote = interaction.values[0] === 'discordbotlist.com'
+		const successfulDblVote = interaction.values[0] === 'discordbotlist.com'
 		&& (voteCache['id_' + interaction.user.id]?.lastRecordedDblVote ?? 0) > Date.now() - twelveHoursInMs;
-	const redeemedDblVote = successfulDblVote
+		const redeemedDblVote = successfulDblVote
 		&& Date.now() <= (voteCache['id_' + interaction.user.id]?.nextRedeemableDblVote ?? Date.now());
 
-	if (successfulTopVote || successfulDiscordsVote || successfulDblVote) {
+		if (successfulTopVote || successfulDiscordsVote || successfulDblVote) {
 
-		if (redeemedTopVote || redeemedDiscordsVote || redeemedDblVote) {
+			if (redeemedTopVote || redeemedDiscordsVote || redeemedDblVote) {
+
+				await respond(interaction, {
+					content: 'You already collected your reward for this vote!',
+					ephemeral: true,
+				}, false);
+				return;
+			}
+
+			const newUserVoteCache = voteCache['id_' + interaction.user.id] ?? {};
+
+			if (successfulTopVote) { newUserVoteCache.nextRedeemableTopVote = (voteCache['id_' + interaction.user.id]?.lastRecordedTopVote ?? Date.now()) + twelveHoursInMs; }
+			if (successfulDiscordsVote === true) { newUserVoteCache.nextRedeemableDiscordsVote = (voteCache['id_' + interaction.user.id]?.lastRecordedDiscordsVote ?? Date.now()) + twelveHoursInMs; }
+			if (successfulDblVote === true) { newUserVoteCache.nextRedeemableDblVote = (voteCache['id_' + interaction.user.id]?.lastRecordedDblVote ?? Date.now()) + twelveHoursInMs; }
+
+			voteCache['id_' + interaction.user.id] = newUserVoteCache;
+			writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
+
+			const energyPoints = getSmallerNumber(userData.quid.profile.maxEnergy - userData.quid.profile.energy, 30);
+
+			await userData.update(
+				(u) => {
+					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+					p.energy += energyPoints;
+				},
+			);
 
 			await respond(interaction, {
-				content: 'You already collected your reward for this vote!',
-				ephemeral: true,
+				embeds: [new EmbedBuilder()
+					.setColor(default_color)
+					.setTitle('Thank you for voting ☺️')
+					.setFooter({ text: `+${energyPoints} energy (${userData.quid.profile.energy}/${userData.quid.profile.maxEnergy})` })],
 			}, false);
 			return;
 		}
 
-		const newUserVoteCache = voteCache['id_' + interaction.user.id] ?? {};
-
-		if (successfulTopVote) { newUserVoteCache.nextRedeemableTopVote = (voteCache['id_' + interaction.user.id]?.lastRecordedTopVote ?? Date.now()) + twelveHoursInMs; }
-		if (successfulDiscordsVote === true) { newUserVoteCache.nextRedeemableDiscordsVote = (voteCache['id_' + interaction.user.id]?.lastRecordedDiscordsVote ?? Date.now()) + twelveHoursInMs; }
-		if (successfulDblVote === true) { newUserVoteCache.nextRedeemableDblVote = (voteCache['id_' + interaction.user.id]?.lastRecordedDblVote ?? Date.now()) + twelveHoursInMs; }
-
-		voteCache['id_' + interaction.user.id] = newUserVoteCache;
-		writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
-
-		/* Gets the current active quid and the server profile from the account */
-		let quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId || 'DM'));
-		let profileData = getMapData(quidData.profiles, interaction.guildId || 'DM');
-
-		const energyPoints = getSmallerNumber(profileData.maxEnergy - profileData.energy, 30);
-
-		userData = await userModel.findOneAndUpdate(
-			u => u._id === userData!._id,
-			(u) => {
-				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-				p.energy += energyPoints;
-			},
-		);
-		quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId || 'DM'));
-		profileData = getMapData(quidData.profiles, interaction.guildId || 'DM');
-
 		await respond(interaction, {
-			embeds: [new EmbedBuilder()
-				.setColor(default_color)
-				.setTitle('Thank you for voting ☺️')
-				.setFooter({ text: `+${energyPoints} energy (${profileData.energy}/${profileData.maxEnergy})` })],
+			content: 'You haven\'t voted on this website in the last 12 hours! (If this is not right, please open a ticket with /ticket)',
+			ephemeral: true,
 		}, false);
 		return;
-	}
 
-	await respond(interaction, {
-		content: 'You haven\'t voted on this website in the last 12 hours! (If this is not right, please open a ticket with /ticket)',
-		ephemeral: true,
-	}, false);
-	return;
-}
+	},
+};

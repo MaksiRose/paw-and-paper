@@ -1,6 +1,7 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
-import { SlashCommand } from '../../typedef';
+import { client } from '../..';
+import { SlashCommand } from '../../typings/handle';
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -11,7 +12,7 @@ export const command: SlashCommand = {
 	position: 0,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction) => {
+	sendCommand: async (interaction) => {
 
 		await respond(interaction, {
 			content: `Uptime: ${Math.floor((client.uptime || 0) / 3600000)} hours ${Math.floor((client.uptime || 0) / 60000) % 60} minutes\nPing: ${client.ws.ping} ms\nFinal permissions: ${interaction.guild!.members.me?.permissionsIn(interaction.channelId).toArray().join(', ')}`,

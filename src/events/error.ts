@@ -1,9 +1,9 @@
-import { DiscordEvent } from '../typedef';
+import { DiscordEvent } from '../typings/main';
 
 export const event: DiscordEvent = {
 	name: 'error',
 	once: false,
-	async execute(client, error: Error) {
+	async execute(error: Error) {
 
 		console.error(error);
 	},

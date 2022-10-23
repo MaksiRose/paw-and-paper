@@ -1,8 +1,7 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import userModel from '../../models/userModel';
-import { SlashCommand } from '../../typedef';
+import { SlashCommand } from '../../typings/handle';
 import { hasName } from '../../utils/checkUserState';
-import { getMapData, getQuidDisplayname, respond } from '../../utils/helperFunctions';
+import { getMapData, respond } from '../../utils/helperFunctions';
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -17,27 +16,25 @@ export const command: SlashCommand = {
 	position: 7,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction, userData, serverData) => {
+	sendCommand: async (interaction, userData, serverData) => {
 
-		if (!hasName(interaction, userData)) { return; }
+		if (!hasName(userData, interaction)) { return; }
 
 		const nickname = interaction.options.getString('nickname') || '';
 
-		userData = await userModel.findOneAndUpdate(
-			u => u._id === userData?._id,
+		await userData.update(
 			(u) => {
 				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DM'));
 				if (serverData) { q.nickname.servers[serverData.serverId] = nickname; }
 				else { q.nickname.global = nickname; }
 			},
 		);
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId || 'DM'));
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
-				.setTitle(serverData ? `Nickname for ${quidData.name} ${quidData.nickname.servers[serverData.serverId] ? `set to ${quidData.nickname.servers[serverData.serverId]}` : 'removed'} in ${serverData.name}!` : `Nickname for ${quidData.name} ${quidData.nickname.global ? `set to ${quidData.nickname.global}` : 'removed'} globally!`)
+				.setColor(userData.quid.color)
+				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setTitle(serverData ? `Nickname for ${userData.quid.name} ${userData.quid.nickname.server ? `set to ${userData.quid.nickname.server}` : 'removed'} in ${serverData.name}!` : `Nickname for ${userData.quid.name} ${userData.quid.nickname.global ? `set to ${userData.quid.nickname.global}` : 'removed'} globally!`)
 				.setDescription(serverData ? 'Tip: Nicknames can be set globally too by executing the command in DMs. The global nickname will be displayed when no server-specific nickname has been chosen.' : 'Tip: Nicknames can be set server-specific too by executing the command in the server. The server-specific nickname will overwrite the global nickname for that server.')],
 		}, true);
 		return;

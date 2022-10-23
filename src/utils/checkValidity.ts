@@ -1,32 +1,30 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
 import { cooldownMap } from '../events/interactionCreate';
-import { getQuidDisplayname, respond, sendErrorMessage } from './helperFunctions';
+import { capitalizeString, respond, sendErrorMessage } from './helperFunctions';
 import userModel from '../models/userModel';
-import { Quid, Profile, UserSchema } from '../typedef';
 import { getMapData } from './helperFunctions';
-import { pronoun, pronounAndPlural, upperCasePronoun } from './getPronouns';
 import { decreaseLevel } from './levelHandling';
-import { stopResting, isResting as checkResting } from '../commands/gameplay_maintenance/rest';
+import { stopResting, isResting } from '../commands/gameplay_maintenance/rest';
 import { calculateInventorySize } from './simulateItemUse';
+import { UserData } from '../typings/data/user';
+import { hasName, hasNameAndSpecies } from './checkUserState';
 const { error_color } = require('../../config.json');
 
 export async function isPassedOut(
 	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached' | 'raw'>,
-	userData: UserSchema,
-	quidData: Quid,
-	profileData: Profile,
+	userData: UserData<never, never>,
 	isNew: boolean,
 ): Promise<boolean> {
 
 	/* This is a function that checks if the user has passed out. If they have, it will send a message to the channel and return true. */
-	if (profileData.energy <= 0 || profileData.health <= 0 || profileData.hunger <= 0 || profileData.thirst <= 0) {
+	if (userData.quid.profile.energy <= 0 || userData.quid.profile.health <= 0 || userData.quid.profile.hunger <= 0 || userData.quid.profile.thirst <= 0) {
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
-				.setDescription(`*${quidData.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${pronounAndPlural(quidData, 0, 'screeches', 'screech')} with ${pronoun(quidData, 2)} last energy. Without help, ${pronoun(quidData, 0)} will not be able to continue.*`)
-				.setFooter(isNew ? { text: await decreaseLevel(userData, quidData, profileData, interaction) } : null)],
+				.setColor(userData.quid.color)
+				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setDescription(`*${userData.quid.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${userData.quid.pronounAndPlural(0, 'screeches', 'screech')} with ${userData.quid.pronoun(2)} last energy. Without help, ${userData.quid.pronoun(0)} will not be able to continue.*`)
+				.setFooter(isNew ? { text: await decreaseLevel(userData, interaction) } : null)],
 		}, false);
 
 		/* This is a tip that is sent to the user when they pass out for the first time. */
@@ -53,17 +51,16 @@ export async function isPassedOut(
  */
 export async function hasCooldown(
 	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'>,
-	userData: UserSchema,
-	quidData: Quid,
+	userData: UserData<never, never>,
 ): Promise<boolean> {
 
 	if (cooldownMap.get(userData._id + interaction.guildId) === true) {
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
-				.setDescription(`*${quidData.name} is so eager to get things done today that ${pronounAndPlural(quidData, 0, 'is', 'are')} somersaulting. ${upperCasePronoun(quidData, 0)} should probably take a few seconds to calm down.*`)],
+				.setColor(userData.quid.color)
+				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setDescription(`*${userData.quid.name} is so eager to get things done today that ${userData.quid.pronounAndPlural(0, 'is', 'are')} somersaulting. ${capitalizeString(userData.quid.pronoun(0))} should probably take a few seconds to calm down.*`)],
 		}, false)
 			.then(reply => {
 				setTimeout(async function() {
@@ -87,35 +84,31 @@ export async function hasCooldown(
 /**
  * Checks if the user is resting. If yes, then wake user up and attach an embed to the message. Returns the updated `userData`.
  */
-export async function isResting(
+export async function checkResting(
 	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached'>,
-	userData: UserSchema,
-	quidData: Quid,
-	profileData: Profile,
-	embedArray: Array<EmbedBuilder>,
-): Promise<UserSchema> {
+	userData: UserData<never, never>,
+): Promise<EmbedBuilder[]> {
 
 	/* This is a function that checks if the user is resting. If they are, it will wake them up and attach an embed to the message. */
-	if (profileData.isResting === true || checkResting(userData._id, interaction.guildId) === true) {
+	if (userData.quid.profile.isResting === true || isResting(userData) === true) {
 
-		userData = await userModel.findOneAndUpdate(
-			u => u._id === userData._id,
+		await userData.update(
 			(u) => {
-				const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
+				const p = getMapData(getMapData(u.quids, userData.quid._id).profiles, interaction.guildId);
 				p.isResting = false;
 			},
 		);
 
-		stopResting(userData._id, interaction.guildId);
+		stopResting(userData);
 
-		embedArray.unshift(new EmbedBuilder()
-			.setColor(quidData.color)
-			.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
-			.setDescription(`*${quidData.name} opens ${pronoun(quidData, 2)} eyes, blinking at the bright sun. After a long stretch, ${pronounAndPlural(quidData, 0, 'leave')} ${pronoun(quidData, 2)} den to continue ${pronoun(quidData, 2)} day.*`)
-			.setFooter({ text: `Current energy: ${profileData.energy}` }));
+		return [new EmbedBuilder()
+			.setColor(userData.quid.color)
+			.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+			.setDescription(`*${userData.quid.name} opens ${userData.quid.pronoun(2)} eyes, blinking at the bright sun. After a long stretch, ${userData.quid.pronounAndPlural(0, 'leave')} ${userData.quid.pronoun(2)} den to continue ${userData.quid.pronoun(2)} day.*`)
+			.setFooter({ text: `Current energy: ${userData.quid.profile.energy}` })];
 	}
 
-	return userData;
+	return [];
 }
 
 /**
@@ -123,27 +116,23 @@ export async function isResting(
  */
 export async function isInvalid(
 	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached'>,
-	userData: UserSchema,
-	quidData: Quid,
-	profileData: Profile,
-	embedArray: Array<EmbedBuilder>,
-): Promise<boolean> {
+	userData: UserData<never, never>,
+): Promise<EmbedBuilder[] | false> {
 
-	if (await isPassedOut(interaction, userData, quidData, profileData, false)) { return true; }
-	if (await hasCooldown(interaction, userData, quidData)) { return true; }
-	await isResting(interaction, userData, quidData, profileData, embedArray);
-	return false;
+	if (await isPassedOut(interaction, userData, false)) { return false; }
+	if (await hasCooldown(interaction, userData)) { return false; }
+	return await checkResting(interaction, userData);
 }
 
 function hasTooManyItems(
-	profileData: Profile,
+	userData: UserData<never, never>,
 ): boolean {
 
 	/** The amount of allowed items in a profiles inventory. */
 	const allowedItemAmount = 5;
 
 	/* Checks whether the combined number of all the items is bigger than the allowed item count. */
-	return calculateInventorySize(profileData.inventory) >= allowedItemAmount;
+	return calculateInventorySize(userData.quid.profile.inventory) >= allowedItemAmount;
 }
 
 /**
@@ -151,27 +140,25 @@ function hasTooManyItems(
  * @param interaction - The ChatInputCommandInteraction object.
  * @param quidData - The quid's data.
  * @param profileData - The profile data of the user.
- * @param embedArray - An array of embeds to send before the inventory full embed.
+ * @param restEmbed - An array of embeds to send before the inventory full embed.
  * @param messageContent - The message content to send with the embeds.
  * @returns A boolean.
  */
 export async function hasFullInventory(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
-	userData: UserSchema,
-	quidData: Quid,
-	profileData: Profile,
-	embedArray: EmbedBuilder[],
+	userData: UserData<never, never>,
+	restEmbed: EmbedBuilder[],
 	messageContent: string,
 ): Promise<boolean> {
 
-	if (hasTooManyItems(profileData)) {
+	if (hasTooManyItems(userData)) {
 
 		await respond(interaction, {
 			content: messageContent,
-			embeds: [...embedArray, new EmbedBuilder()
-				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
-				.setDescription(`*${quidData.name} approaches the pack borders, ${pronoun(quidData, 2)} mouth filled with various things. As eager as ${pronounAndPlural(quidData, 0, 'is', 'are')} to go into the wild, ${pronounAndPlural(quidData, 0, 'decide')} to store some things away first.*`)
+			embeds: [...restEmbed, new EmbedBuilder()
+				.setColor(userData.quid.color)
+				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setDescription(`*${userData.quid.name} approaches the pack borders, ${userData.quid.pronoun(2)} mouth filled with various things. As eager as ${userData.quid.pronounAndPlural(0, 'is', 'are')} to go into the wild, ${userData.quid.pronounAndPlural(0, 'decide')} to store some things away first.*`)
 				.setFooter({ text: 'You can only hold up to 5 items in your personal inventory. Type "/store" or click the button below to put things into the pack inventory!' }),
 			],
 			components: [new ActionRowBuilder<ButtonBuilder>()
@@ -190,10 +177,10 @@ export async function hasFullInventory(
 
 export function isInteractable(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
-	userData: UserSchema | null,
+	userData: UserData<undefined, ''> | null,
 	messageContent: string,
 	embedArray: EmbedBuilder[],
-): userData is UserSchema {
+): userData is UserData<never, never> {
 
 	if (!userData) {
 
@@ -208,9 +195,7 @@ export function isInteractable(
 		return false;
 	}
 
-	const quidData = userData.quids[userData.currentQuid[interaction.guildId] || ''];
-	const profileData = quidData?.profiles[interaction.guildId];
-	if (!quidData || !profileData) {
+	if (!hasName(userData)) {
 
 		respond(interaction, {
 			content: messageContent,
@@ -223,7 +208,7 @@ export function isInteractable(
 		return false;
 	}
 
-	if (quidData.name === '' || quidData.species === '') {
+	if (!hasNameAndSpecies(userData)) {
 
 		respond(interaction, {
 			content: messageContent,
@@ -236,7 +221,7 @@ export function isInteractable(
 		return false;
 	}
 
-	if (profileData.health <= 0 || profileData.energy <= 0 || profileData.hunger <= 0 || profileData.thirst <= 0) {
+	if (userData.quid.profile.health <= 0 || userData.quid.profile.energy <= 0 || userData.quid.profile.hunger <= 0 || userData.quid.profile.thirst <= 0) {
 
 		respond(interaction, {
 			content: messageContent,
@@ -249,7 +234,7 @@ export function isInteractable(
 		return false;
 	}
 
-	if (profileData.isResting || checkResting(userData._id, profileData.serverId)) {
+	if (userData.quid.profile.isResting || isResting(userData)) {
 
 		respond(interaction, {
 			content: messageContent,
@@ -275,7 +260,7 @@ export function isInteractable(
 		return false;
 	}
 
-	if (hasTooManyItems(profileData)) {
+	if (hasTooManyItems(userData)) {
 
 		respond(interaction, {
 			content: messageContent,
