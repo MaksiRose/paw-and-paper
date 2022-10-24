@@ -54,7 +54,7 @@ export const command: SlashCommand = {
 		/* Checking if the user has a cooldown. */
 		else if (hasNameAndSpecies(userData) && interaction.inCachedGuild() && await hasCooldown(interaction, userData)) { return; }
 
-		const response = await getProfileMessageOptions(mentionedUser?.id || interaction.user.id, userData, !mentionedUser);
+		const response = await getProfileMessageOptions(mentionedUser?.id || interaction.user.id, userData, userData.userId.includes(mentionedUser?.id || interaction.user.id));
 		const selectMenu = getAccountsPage(userData, mentionedUser?.id || interaction.user.id, interaction.user.id, 0, !mentionedUser);
 
 		await respond(interaction, {
