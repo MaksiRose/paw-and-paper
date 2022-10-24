@@ -54,7 +54,7 @@ export const command: SlashCommand = {
 		/* Checking if the user has a cooldown. */
 		else if (hasNameAndSpecies(userData) && interaction.inCachedGuild() && await hasCooldown(interaction, userData)) { return; }
 
-		const response = await getMessageContent(mentionedUser?.id || interaction.user.id, userData, !mentionedUser);
+		const response = await getProfileMessageOptions(mentionedUser?.id || interaction.user.id, userData, !mentionedUser);
 		const selectMenu = getAccountsPage(userData, mentionedUser?.id || interaction.user.id, interaction.user.id, 0, !mentionedUser);
 
 		await respond(interaction, {
@@ -230,7 +230,7 @@ export const command: SlashCommand = {
 			await interaction
 				.editReply({
 				// we can interaction.user.id because the "switchto" option is only available to yourself
-					...await getMessageContent(interaction.user.id, userData, userData.userId.includes(interaction.user.id)),
+					...await getProfileMessageOptions(interaction.user.id, userData, userData.userId.includes(interaction.user.id)),
 					components: interaction.message.components,
 				});
 
@@ -249,7 +249,7 @@ export const command: SlashCommand = {
 			userData = getUserData(_userData, interaction.guildId || 'DM', _userData.quids[quidId]);
 
 			await update(interaction, {
-				...await getMessageContent(customId.args[1], userData, userData.userId.includes(interaction.user.id)),
+				...await getProfileMessageOptions(customId.args[1], userData, userData.userId.includes(interaction.user.id)),
 				components: interaction.message.components,
 			});
 			return;
@@ -258,16 +258,7 @@ export const command: SlashCommand = {
 	},
 };
 
-/**
- * It takes in a client, userId, userData.quid, and isYourself, and returns a message object
- * @param client - Discords Client
- * @param userId - The user's ID
- * @param userData.quid - The quid data from the database.
- * @param isYourself - Whether the quid is by the user who executed the command
- * @param embedArray
- * @returns The message object.
- */
-export async function getMessageContent(
+export async function getProfileMessageOptions(
 	userId: string,
 	userData: UserData<undefined, ''>,
 	isYourself: boolean,

@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
 import { readFileSync } from 'fs';
-import { CustomIdArgs, getMessageContent } from '../commands/quid_customization/profile';
+import { CustomIdArgs, getProfileMessageOptions } from '../commands/quid_customization/profile';
 import { respond } from '../utils/helperFunctions';
 import userModel, { getUserData } from '../models/userModel';
 import { WebhookMessages } from '../typings/data/general';
@@ -66,7 +66,7 @@ export const command: ContextMenuCommand = {
 			}])
 			.setTimestamp(new Date())];
 
-		const response = await getMessageContent(userId, userData, userData.userId.includes(interaction.user.id), embedArray);
+		const response = await getProfileMessageOptions(userId, userData, userData.userId.includes(interaction.user.id), embedArray);
 
 		await respond(interaction, {
 			...response,
