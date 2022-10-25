@@ -127,7 +127,7 @@ export async function sendQuestMessage(
 	}
 	else { throw new Error('No rank was found for this profile'); }
 
-	embed.setFooter({ text: `${footerText}\n\nClick the button or type "/start-quest" to continue. *Level ${userData.quid.profile.rank == 'Elderly' ? '35' : (userData.quid.profile.rank == 'Hunter' || userData.quid.profile.rank == 'Healer') ? '20' : userData.quid.profile.rank == 'Apprentice' ? '10' : '2'} is recommended for this!*\n\nTip: Read the bottom text during the game carefully to find out which button to click. The button you chose will get a "radio button"-emoji, and the correct button will get a checkmark emoji. Sometimes you will lose a round even if you chose right, depending on how many levels you have, then there will be no checkmark emoji.` });
+	embed.setFooter({ text: `${footerText}\n\nClick the button or type "/start-quest" to continue.\n\nTip: Read the bottom text during the game carefully to find out which button to click. The button you chose will get a "radio button"-emoji, and the correct button will get a checkmark emoji. Sometimes you will lose a round even if you chose right, depending on how many levels you have, then there will be no checkmark emoji.` });
 
 	const botReply = await respond(interaction, {
 		content: `<@${interaction.user.id}>\n${messageContent}`,
