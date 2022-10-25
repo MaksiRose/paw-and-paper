@@ -310,6 +310,23 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 		of: { type: 'string', default: '', locked: false },
 		locked: false,
 	},
+	serverInfo: {
+		type: 'map',
+		of: {
+			type: 'object',
+			default: {
+				currentQuid: { type: 'string?', default: null, locked: false },
+				automaticRestingStartTimestamp: { type: 'number', default: 0, locked: false },
+				lastInteractionToken: { type: 'string', default: '', locked: false },
+				lastChannelId: { type: 'string', default: '', locked: false },
+				automaticRestingMessageId: { type: 'string?', default: null, locked: false },
+				componentDisablingChannelId: { type: 'string?', default: null, locked: false },
+				componentDisablingMessageId: { type: 'string?', default: null, locked: false },
+			},
+			locked: false,
+		},
+		locked: false,
+	},
 	lastPlayedVersion: { type: 'string', default: pkg.version, locked: false },
 	_id: { type: 'string', default: '', locked: true },
 }, true);
@@ -379,7 +396,7 @@ export function getUserData<T extends '' | never, U extends QuidSchema<T> | unde
 			},
 		}) as (U extends QuidSchema<T> ? never : undefined) | Quid<T>,
 		quids: new Collection(Object.entries(userData.quids)),
-		serverIdToQuidId: new Collection(Object.entries(userData.currentQuid)),
+		serverInfo: new Collection(Object.entries(userData.serverInfo)),
 		lastPlayedVersion: userData.lastPlayedVersion,
 		update: async function(
 			updateFunction: (value: UserSchema) => void,

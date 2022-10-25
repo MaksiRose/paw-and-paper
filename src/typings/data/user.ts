@@ -162,7 +162,7 @@ export interface UserSchema {
 	/** Array of IDs of the users associated with this account */
 	userId: Array<string>;
 	/** Object with discord user IDs as keys and values that are objects with discord server IDs as keys and values that are objects of whether the user is a member and when this was last updated */
-	userIds: Record<string, Record<string, { isMember: boolean; lastUpdatedTimestamp: number}>>
+	userIds: Record<string, Record<string, { isMember: boolean; lastUpdatedTimestamp: number; }>>;
 	/** Tag of the account */
 	tag: {
 		global: string,
@@ -212,6 +212,17 @@ export interface UserSchema {
 	quids: { [key in string]: QuidSchema<''> };
 	/** Object of the server IDs as the key and the id of the quid that is currently active as the value */
 	currentQuid: { [key in string]: string };
+	serverInfo: {
+		[key in string]: {
+			currentQuid: string | null,
+			automaticRestingStartTimestamp: number,
+			lastInteractionToken: string,
+			lastChannelId: string,
+			automaticRestingMessageId: string | null,
+			componentDisablingChannelId: string | null,
+			componentDisablingMessageId: string | null
+		}
+	};
 	/** Last major version that the user played on */
 	lastPlayedVersion: string;
 	readonly _id: string;
@@ -226,16 +237,16 @@ export interface Quid<Completed extends ''> extends Omit<QuidSchema<Completed>, 
 	getDisplayname: () => string;
 	getDisplayspecies: () => string;
 	pronoun: (pronounNumber: 0 | 1 | 2 | 3 | 4 | 5) => string;
-	pronounAndPlural: (pronounNumber: 0 | 1 | 2 | 3 | 4 | 5, string1: string, string2?: string) => string
+	pronounAndPlural: (pronounNumber: 0 | 1 | 2 | 3 | 4 | 5, string1: string, string2?: string) => string;
 }
 
-export interface UserData<QuidExists extends undefined, QuidCompleted extends ''> extends Omit<UserSchema, 'quids' | 'currentQuid' | 'tag' | 'settings'> {
+export interface UserData<QuidExists extends undefined, QuidCompleted extends ''> extends Omit<UserSchema, 'quids' | 'currentQuid' | 'serverInfo' | 'tag' | 'settings'> {
 	tag: Omit<UserSchema['tag'], 'servers'> & {
 		server: UserSchema['tag']['servers'][string] | undefined;
 	},
 	quid: Quid<QuidCompleted> | QuidExists,
 	quids: Collection<keyof UserSchema['quids'], ValueOf<UserSchema['quids']>>,
-	serverIdToQuidId: Collection<keyof UserSchema['currentQuid'], ValueOf<UserSchema['currentQuid']>>,
+	serverInfo: Collection<keyof UserSchema['serverInfo'], ValueOf<UserSchema['serverInfo']>>,
 	settings: Omit<UserSchema['settings'], 'proxy'> & {
 		proxy: Omit<UserSchema['settings']['proxy'], 'servers'> & {
 			server: UserSchema['settings']['proxy']['servers'][string] | undefined;
