@@ -196,7 +196,7 @@ export async function executePlaying(
 
 			whoWinsChance = 1;
 
-			if (fightGame.cycleKind === 'attack') {
+			if (fightGame.cycleKind === '_attack') {
 
 				embed.setDescription(`⏫ *${userData2?.quid?.name || 'The Elderly'} gets ready to attack. ${userData1.quid.name} must think quickly about how ${userData1.quid.pronounAndPlural(0, 'want')} to react.*`);
 				embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (⏫ Attack).\nTip: Dodging an attack surprises the opponent and puts you in the perfect position for a counterattack.' });
@@ -235,9 +235,9 @@ export async function executePlaying(
 				/* Here we make the button the player choses red, this will apply always except if the player choses the correct button, then this will be overwritten. */
 				playComponent = fightGame.chosenWrongButtonOverwrite(i.customId);
 
-				if ((i.customId.includes('attack') && fightGame.cycleKind === 'defend')
+				if ((i.customId.includes('_attack') && fightGame.cycleKind === 'defend')
 					|| (i.customId.includes('defend') && fightGame.cycleKind === 'dodge')
-					|| (i.customId.includes('dodge') && fightGame.cycleKind === 'attack')) {
+					|| (i.customId.includes('dodge') && fightGame.cycleKind === '_attack')) {
 
 					/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
 					playComponent = fightGame.chosenRightButtonOverwrite(i.customId);

@@ -106,7 +106,7 @@ export function createPlantGame(
 }
 
 
-const cycleKinds = ['attack', 'dodge', 'defend'] as const;
+const cycleKinds = ['_attack', 'dodge', 'defend'] as const; // It's _attack instead of attack because the overlap with the attack-command leads to bugs otherwise
 
 export type FightGame = {
 	thisRoundCycleIndex: number;
@@ -128,7 +128,7 @@ export function createFightGame(
 	const fightComponent = new ActionRowBuilder<ButtonBuilder>()
 		.setComponents([
 			new ButtonBuilder()
-				.setCustomId(`attack${roundNumber ? `_${roundNumber}` : ''}`)
+				.setCustomId(`_attack${roundNumber ? `_${roundNumber}` : ''}`)
 				.setLabel('Attack')
 				.setEmoji('⏫')
 				.setStyle(ButtonStyle.Secondary),
@@ -153,7 +153,7 @@ export function createFightGame(
 			const data = component.toJSON();
 
 			if (data.style !== ButtonStyle.Link && data.custom_id.includes(
-				cycleKind === 'defend' ? 'attack' : cycleKind === 'dodge' ? 'defend' : 'dodge',
+				cycleKind === 'defend' ? '_attack' : cycleKind === 'dodge' ? 'defend' : 'dodge',
 			)) { component.setStyle(ButtonStyle.Primary); }
 			return component;
 		})),

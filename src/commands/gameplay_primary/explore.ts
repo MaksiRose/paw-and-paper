@@ -726,7 +726,7 @@ export async function executeExploring(
 				const fightGame = createFightGame(totalCycles, lastRoundCycleIndex);
 
 				exploreComponent = fightGame.fightComponent;
-				if (fightGame.cycleKind === 'attack') {
+				if (fightGame.cycleKind === '_attack') {
 
 					embed.setDescription(`⏫ *The ${opponentSpecies} gets ready to attack. ${userData.quid.name} must think quickly about how ${userData.quid.pronounAndPlural(0, 'want')} to react.*`);
 					embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (⏫ Attack).' });
@@ -763,15 +763,15 @@ export async function executeExploring(
 						/* Here we make the button the player choses red, this will apply always except if the player choses the correct button, then this will be overwritten. */
 						exploreComponent = fightGame.chosenWrongButtonOverwrite(i.customId);
 
-						if ((i.customId.includes('attack') && fightGame.cycleKind === 'dodge')
-							|| (i.customId.includes('defend') && fightGame.cycleKind === 'attack')
+						if ((i.customId.includes('_attack') && fightGame.cycleKind === 'dodge')
+							|| (i.customId.includes('defend') && fightGame.cycleKind === '_attack')
 							|| (i.customId.includes('dodge') && fightGame.cycleKind === 'defend')) {
 
 							points -= 2;
 						}
-						else if ((i.customId.includes('attack') && fightGame.cycleKind === 'defend')
+						else if ((i.customId.includes('_attack') && fightGame.cycleKind === 'defend')
 							|| (i.customId.includes('defend') && fightGame.cycleKind === 'dodge')
-							|| (i.customId.includes('dodge') && fightGame.cycleKind === 'attack')) {
+							|| (i.customId.includes('dodge') && fightGame.cycleKind === '_attack')) {
 
 							/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
 							exploreComponent = fightGame.chosenRightButtonOverwrite(i.customId);
