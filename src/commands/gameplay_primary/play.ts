@@ -7,7 +7,7 @@ import { CurrentRegionType, QuidSchema, RankType, UserData, UserSchema } from '.
 import { SlashCommand } from '../../typings/handle';
 import { SpeciesHabitatType } from '../../typings/main';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
-import { changeCondition, infectWithChance } from '../../utils/changeCondition';
+import { userFindsQuest, changeCondition, infectWithChance } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableCommandComponent } from '../../utils/componentDisabling';
@@ -144,13 +144,10 @@ export async function executePlaying(
 
 	let foundQuest = false;
 	let playedTogether = false;
-	// If the user is a Youngling with a level over 2 that doesn't have a quest and has not unlocked any ranks and they haven't mentioned anyone, with a 1 in 3 chance get a quest
+	// If the user is a Youngling with a level over 2 that doesn't have a quest and has not unlocked any ranks and they haven't mentioned anyone, with an at least 33% chance get a quest
 	if (userData1.quid.profile.rank === RankType.Youngling
-		&& userData1.quid.profile.levels > 1
-		&& userData1.quid.profile.hasQuest === false
-		&& userData1.quid.profile.unlockedRanks === 0
 		&& !mentionedUserId
-		&& getRandomNumber(3) === 0) { foundQuest = true; }
+		&& userFindsQuest(userData1)) { foundQuest = true; }
 	// Play together either 100% of the time if someone was mentioned, or 70% of the time if either there is a userData2 or the user is a Youngling
 	else if (tutorialMapEntry !== 1
 		&& (mentionedUserId

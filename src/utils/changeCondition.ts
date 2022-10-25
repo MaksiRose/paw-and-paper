@@ -295,7 +295,7 @@ export async function infectWithChance(
  * @param userData - The database entry of the user for which to whether they are getting a quest.
  * @returns boolean
  */
-export function calculateQuestChance(
+export function userFindsQuest(
 	userData: UserData<never, never>,
 ): boolean {
 
