@@ -35,7 +35,7 @@ export async function checkLevelUp(
 			.setTitle(`${userData.quid.name} just leveled up! ${capitalizeString(userData.quid.pronounAndPlural(0, 'is', 'are'))} now level ${userData.quid.profile.levels}.`)];
 
 		const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
-		if (levelUpEmbed) { embed = levelUpEmbed; }
+		if (levelUpEmbed.length > 0) { embed = levelUpEmbed; }
 
 		const guild = interaction.guild || await interaction.client.guilds.fetch(interaction.guildId);
 		const member = await guild.members.fetch(interaction.user.id);

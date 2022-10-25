@@ -9,11 +9,14 @@ import { changeCondition } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
+import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { capitalizeString, getArrayElement, getMapData, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { pickMaterial, pickMeat, simulateMaterialUse, simulateMeatUse } from '../../utils/simulateItemUse';
 import { remindOfAttack } from './attack';
+
+type CustomIdArgs = ['new']
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -28,6 +31,14 @@ export const command: SlashCommand = {
 	sendCommand: async (interaction, userData, serverData) => {
 
 		await executeScavenging(interaction, userData, serverData);
+	},
+	async sendMessageComponentResponse(interaction, userData, serverData) {
+
+		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
+		if (interaction.isButton() && customId?.args[0] === 'new') {
+
+			await executeScavenging(interaction, userData, serverData);
+		}
 	},
 };
 
@@ -316,7 +327,7 @@ export async function executeScavenging(
 		const newComponents = disableAllComponents(componentArray);
 		newComponents.push(new ActionRowBuilder<ButtonBuilder>()
 			.setComponents(new ButtonBuilder()
-				.setCustomId(`scavenge_new_@${userData._id}`)
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['new']))
 				.setLabel('Scavenge again')
 				.setStyle(ButtonStyle.Primary)));
 

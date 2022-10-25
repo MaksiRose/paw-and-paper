@@ -7,10 +7,11 @@ import { CurrentRegionType, QuidSchema, RankType, UserData, UserSchema } from '.
 import { SlashCommand } from '../../typings/handle';
 import { SpeciesHabitatType } from '../../typings/main';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
-import { changeCondition, infectWithChance } from '../../utils/changeCondition';
+import { userFindsQuest, changeCondition, infectWithChance } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableCommandComponent } from '../../utils/componentDisabling';
+import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
 import { capitalizeString, getArrayElement, getMapData, getSmallerNumber, keyInObject, respond, update } from '../../utils/helperFunctions';
@@ -21,6 +22,8 @@ import { pickPlant } from '../../utils/simulateItemUse';
 import { isResting } from '../gameplay_maintenance/rest';
 import { remindOfAttack } from './attack';
 import { sendQuestMessage } from './start-quest';
+
+type CustomIdArgs = ['new'] | ['new', string]
 
 const tutorialMap: Map<string, number> = new Map();
 
@@ -41,6 +44,14 @@ export const command: SlashCommand = {
 	sendCommand: async (interaction, userData, serverData) => {
 
 		await executePlaying(interaction, userData, serverData);
+	},
+	async sendMessageComponentResponse(interaction, userData, serverData) {
+
+		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
+		if (interaction.isButton() && customId?.args[0] === 'new') {
+
+			await executePlaying(interaction, userData, serverData);
+		}
 	},
 };
 
@@ -70,7 +81,7 @@ export async function executePlaying(
 
 	if (await hasFullInventory(interaction, userData1, restEmbed, messageContent)) { return; }
 
-	const mentionedUserId = interaction.isChatInputCommand() ? interaction.options.getUser('user')?.id : interaction.customId.split('_')[3];
+	const mentionedUserId = interaction.isChatInputCommand() ? interaction.options.getUser('user')?.id : deconstructCustomId<CustomIdArgs>(interaction.customId)?.args[1];
 	const tutorialMapEntry = tutorialMap.get(userData1.quid._id + userData1.quid.profile.serverId);
 	if (userData1.quid.profile.tutorials.play === false && userData1.quid.profile.rank === RankType.Youngling && (tutorialMapEntry === undefined || tutorialMapEntry === 0)) {
 
@@ -82,7 +93,7 @@ export async function executePlaying(
 			components: [
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(`play_new_@${userData1._id}${mentionedUserId ? `_${mentionedUserId}` : ''}`)
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData1._id, ['new', ...(mentionedUserId ? [mentionedUserId] : []) as [string]]))
 						.setLabel('I understand, let\'s try it out!')
 						.setStyle(ButtonStyle.Success)),
 			],
@@ -144,13 +155,10 @@ export async function executePlaying(
 
 	let foundQuest = false;
 	let playedTogether = false;
-	// If the user is a Youngling with a level over 2 that doesn't have a quest and has not unlocked any ranks and they haven't mentioned anyone, with a 1 in 3 chance get a quest
+	// If the user is a Youngling with a level over 2 that doesn't have a quest and has not unlocked any ranks and they haven't mentioned anyone, with an at least 33% chance get a quest
 	if (userData1.quid.profile.rank === RankType.Youngling
-		&& userData1.quid.profile.levels > 1
-		&& userData1.quid.profile.hasQuest === false
-		&& userData1.quid.profile.unlockedRanks === 0
 		&& !mentionedUserId
-		&& getRandomNumber(3) === 0) { foundQuest = true; }
+		&& userFindsQuest(userData1)) { foundQuest = true; }
 	// Play together either 100% of the time if someone was mentioned, or 70% of the time if either there is a userData2 or the user is a Youngling
 	else if (tutorialMapEntry !== 1
 		&& (mentionedUserId
@@ -188,7 +196,7 @@ export async function executePlaying(
 
 			whoWinsChance = 1;
 
-			if (fightGame.cycleKind === 'attack') {
+			if (fightGame.cycleKind === '_attack') {
 
 				embed.setDescription(`⏫ *${userData2?.quid?.name || 'The Elderly'} gets ready to attack. ${userData1.quid.name} must think quickly about how ${userData1.quid.pronounAndPlural(0, 'want')} to react.*`);
 				embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (⏫ Attack).\nTip: Dodging an attack surprises the opponent and puts you in the perfect position for a counterattack.' });
@@ -227,9 +235,9 @@ export async function executePlaying(
 				/* Here we make the button the player choses red, this will apply always except if the player choses the correct button, then this will be overwritten. */
 				playComponent = fightGame.chosenWrongButtonOverwrite(i.customId);
 
-				if ((i.customId.includes('attack') && fightGame.cycleKind === 'defend')
+				if ((i.customId.includes('_attack') && fightGame.cycleKind === 'defend')
 					|| (i.customId.includes('defend') && fightGame.cycleKind === 'dodge')
-					|| (i.customId.includes('dodge') && fightGame.cycleKind === 'attack')) {
+					|| (i.customId.includes('dodge') && fightGame.cycleKind === '_attack')) {
 
 					/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
 					playComponent = fightGame.chosenRightButtonOverwrite(i.customId);
@@ -409,7 +417,7 @@ export async function executePlaying(
 				...(playComponent ? [playComponent] : []),
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(`play_new_@${userData1._id}${mentionedUserId ? `_${mentionedUserId}` : ''}`)
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData1._id, ['new', ...(mentionedUserId ? [mentionedUserId] : []) as [string]]))
 						.setLabel((tutorialMapEntry === 1 && tutorialMapEntry_ === 1) || (tutorialMapEntry === 2 && tutorialMapEntry_ === 2) ? 'Try again' : tutorialMapEntry === 1 && tutorialMapEntry_ === 2 ? 'Try another game' : 'Play again')
 						.setStyle(ButtonStyle.Primary)),
 			],

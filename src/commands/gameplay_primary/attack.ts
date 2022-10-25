@@ -10,6 +10,7 @@ import { changeCondition } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableCommandComponent } from '../../utils/componentDisabling';
+import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { createFightGame } from '../../utils/gameBuilder';
 import { getMapData, getSmallerNumber, KeyOfUnion, respond, sendErrorMessage, unsafeKeys, update, ValueOf, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
@@ -20,6 +21,8 @@ const { default_color } = require('../../../config.json');
 type serverMapInfo = { startsTimestamp: number | null, idleHumans: number, endingTimeout: NodeJS.Timeout | null, ongoingFights: number; }
 const serverMap: Map<string, serverMapInfo > = new Map();
 const newCycleArray = ['attack', 'dodge', 'defend'] as const;
+
+type CustomIdArgs = ['new'] | ['new', string]
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -34,6 +37,14 @@ export const command: SlashCommand = {
 	sendCommand: async (interaction, userData, serverData) => {
 
 		await executeAttacking(interaction, userData, serverData);
+	},
+	async sendMessageComponentResponse(interaction, userData, serverData) {
+
+		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
+		if (interaction.isButton() && customId?.args[0] === 'new') {
+
+			await executeAttacking(interaction, userData, serverData);
+		}
 	},
 };
 
@@ -118,7 +129,7 @@ export async function executeAttacking(
 
 		const fightGame = createFightGame(totalCycles, lastRoundCycleIndex);
 
-		if (fightGame.cycleKind === 'attack') {
+		if (fightGame.cycleKind === '_attack') {
 
 			embed.setDescription(`⏫ *The human gets ready to attack. ${userData.quid.name} must think quickly about how ${userData.quid.pronounAndPlural(0, 'want')} to react.*`);
 			embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (⏫ Attack).' });
@@ -154,15 +165,15 @@ export async function executeAttacking(
 				/* Here we make the button the player choses red, this will apply always except if the player choses the correct button, then this will be overwritten. */
 				fightGame.fightComponent = fightGame.chosenWrongButtonOverwrite(i.customId);
 
-				if ((i.customId.includes('attack') && fightGame.cycleKind === 'dodge')
-						|| (i.customId.includes('defend') && fightGame.cycleKind === 'attack')
+				if ((i.customId.includes('_attack') && fightGame.cycleKind === 'dodge')
+						|| (i.customId.includes('defend') && fightGame.cycleKind === '_attack')
 						|| (i.customId.includes('dodge') && fightGame.cycleKind === 'defend')) {
 
 					winLoseRatio -= 1;
 				}
-				else if ((i.customId.includes('attack') && fightGame.cycleKind === 'defend')
+				else if ((i.customId.includes('_attack') && fightGame.cycleKind === 'defend')
 						|| (i.customId.includes('defend') && fightGame.cycleKind === 'dodge')
-						|| (i.customId.includes('dodge') && fightGame.cycleKind === 'attack')) {
+						|| (i.customId.includes('dodge') && fightGame.cycleKind === '_attack')) {
 
 					/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
 					fightGame.fightComponent = fightGame.chosenRightButtonOverwrite(i.customId);
@@ -260,7 +271,7 @@ export async function executeAttacking(
 			components: [fightGame.fightComponent,
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(`attack_new_@${userData._id}`)
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['new']))
 						.setLabel('Attack again')
 						.setStyle(ButtonStyle.Primary))],
 		});

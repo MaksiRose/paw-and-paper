@@ -8,7 +8,7 @@ import { disableAllComponents, disableCommandComponent } from '../../utils/compo
 import { cooldownMap, serverActiveUsersMap } from '../../events/interactionCreate';
 import { createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
-import { changeCondition } from '../../utils/changeCondition';
+import { changeCondition, userFindsQuest } from '../../utils/changeCondition';
 import { sendQuestMessage } from './start-quest';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
@@ -20,7 +20,9 @@ import { SpeciesHabitatType } from '../../typings/main';
 import { speciesInfo } from '../..';
 import { ServerSchema } from '../../typings/data/server';
 import userModel from '../../models/userModel';
+import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 
+type CustomIdArgs = ['new'] | ['new', string]
 type Position = { row: number, column: number; };
 
 export const command: SlashCommand = {
@@ -55,6 +57,14 @@ export const command: SlashCommand = {
 	sendCommand: async (interaction, userData, serverData) => {
 
 		await executeExploring(interaction, userData, serverData);
+	},
+	async sendMessageComponentResponse(interaction, userData, serverData) {
+
+		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
+		if (interaction.isButton() && customId?.args[0] === 'new') {
+
+			await executeExploring(interaction, userData, serverData);
+		}
 	},
 };
 
@@ -97,7 +107,7 @@ export async function executeExploring(
 		return;
 	}
 
-	const stringInput = interaction.isChatInputCommand() ? interaction.options.getString('biome')?.toLowerCase() : interaction.customId.split('_')[3]?.toLowerCase();
+	const stringInput = interaction.isChatInputCommand() ? interaction.options.getString('biome')?.toLowerCase() : deconstructCustomId<CustomIdArgs>(interaction.customId)?.args[1]?.toLowerCase();
 	if (userData.quid.profile.tutorials.explore === false) {
 
 		await respond(interaction, {
@@ -105,7 +115,7 @@ export async function executeExploring(
 			components: [
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(`explore_new_@${userData._id}${stringInput ? `_${stringInput}` : ''}`)
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['new', ...(stringInput ? [stringInput] : []) as [string]]))
 						.setLabel('I understand, let\'s explore!')
 						.setStyle(ButtonStyle.Success)),
 			],
@@ -212,7 +222,6 @@ export async function executeExploring(
 	let waitingComponent = getWaitingComponent(waitingGameField, playerPos, empty, goal);
 
 	let botReply = await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })(getWaitingMessageObject(messageContent, restEmbed, userData, waitingString, waitingGameField, waitingComponent));
-	buttonInteraction = null;
 
 
 	const collector = (botReply as Message<true>).createMessageComponentCollector({
@@ -311,8 +320,14 @@ export async function executeExploring(
 
 	let foundQuest = false;
 	let foundSapling = false;
+	// If the chosen biome is the highest choosable biome, the user has no quest, has not unlocked a higher rank and they succeed in the chance, get a quest
+	if (chosenBiomeNumber === (availableBiomes.length - 1)
+		&& userFindsQuest(userData)) {
+
+		foundQuest = true;
+	}
 	// If the server has more items than 8 per profile (It's 2 more than counted when the humans spawn, to give users a bit of leeway), there is no attack, and the next possible attack is possible, start an attack
-	if (serverInventoryCount > highRankProfilesCount * 8
+	else if (serverInventoryCount > highRankProfilesCount * 8
 		&& remindOfAttack(interaction.guildId) === null
 		&& serverData.nextPossibleAttack <= Date.now()) {
 
@@ -323,14 +338,6 @@ export async function executeExploring(
 		messageContent = serverActiveUsersMap.get(interaction.guildId)?.map(user => `<@${user}>`).join(' ') ?? '';
 		embed.setDescription(`*${userData.quid.name} has just been looking around for food when ${userData.quid.pronounAndPlural(0, 'suddenly hear')} voices to ${userData.quid.pronoun(2)} right. Cautiously ${userData.quid.pronounAndPlural(0, 'creep')} up, and sure enough: a group of humans! It looks like it's around ${humanCount}. They seem to be discussing something, and keep pointing over towards where the pack is lying. Alarmed, the ${userData.quid.getDisplayspecies()} runs away. **${capitalizeString(userData.quid.pronoun(0))} must gather as many packmates as possible to protect the pack!***`);
 		embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\nYou have two minutes to prepare before the humans will attack!` });
-	}
-	// If the chosen biome is the highest choosable biome, the user has no quest, has not unlocked a higher rank and they succeed in the chance, get a  quest
-	else if (chosenBiomeNumber === (availableBiomes.length - 1)
-		&& userData.quid.profile.hasQuest === false
-		&& userData.quid.profile.unlockedRanks === (userData.quid.profile.rank === RankType.Apprentice ? 1 : userData.quid.profile.rank === RankType.Hunter || userData.quid.profile.rank === RankType.Healer ? 2 : 3)
-		&& getRandomNumber((userData.quid.profile.rank === RankType.Elderly) ? 500 : (userData.quid.profile.rank === RankType.Hunter || userData.quid.profile.rank == RankType.Healer) ? 375 : 250, 0) === 0) {
-
-		foundQuest = true;
 	}
 	// If the user gets the right chance, find sapling or material or nothing
 	else if (pullFromWeightedTable({ 0: 10, 1: 90 + userData.quid.profile.sapling.waterCycles }) === 0) {
@@ -718,7 +725,7 @@ export async function executeExploring(
 				const fightGame = createFightGame(totalCycles, lastRoundCycleIndex);
 
 				exploreComponent = fightGame.fightComponent;
-				if (fightGame.cycleKind === 'attack') {
+				if (fightGame.cycleKind === '_attack') {
 
 					embed.setDescription(`⏫ *The ${opponentSpecies} gets ready to attack. ${userData.quid.name} must think quickly about how ${userData.quid.pronounAndPlural(0, 'want')} to react.*`);
 					embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (⏫ Attack).' });
@@ -755,15 +762,15 @@ export async function executeExploring(
 						/* Here we make the button the player choses red, this will apply always except if the player choses the correct button, then this will be overwritten. */
 						exploreComponent = fightGame.chosenWrongButtonOverwrite(i.customId);
 
-						if ((i.customId.includes('attack') && fightGame.cycleKind === 'dodge')
-							|| (i.customId.includes('defend') && fightGame.cycleKind === 'attack')
+						if ((i.customId.includes('_attack') && fightGame.cycleKind === 'dodge')
+							|| (i.customId.includes('defend') && fightGame.cycleKind === '_attack')
 							|| (i.customId.includes('dodge') && fightGame.cycleKind === 'defend')) {
 
 							points -= 2;
 						}
-						else if ((i.customId.includes('attack') && fightGame.cycleKind === 'defend')
+						else if ((i.customId.includes('_attack') && fightGame.cycleKind === 'defend')
 							|| (i.customId.includes('defend') && fightGame.cycleKind === 'dodge')
-							|| (i.customId.includes('dodge') && fightGame.cycleKind === 'attack')) {
+							|| (i.customId.includes('dodge') && fightGame.cycleKind === '_attack')) {
 
 							/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
 							exploreComponent = fightGame.chosenRightButtonOverwrite(i.customId);
@@ -903,7 +910,7 @@ export async function executeExploring(
 			},
 		);
 
-		botReply = await sendQuestMessage(interaction, userData, serverData, messageContent, restEmbed, [...changedCondition.injuryUpdateEmbed, ...levelUpEmbed], changedCondition.statsUpdateText);
+		botReply = await sendQuestMessage(buttonInteraction || interaction, userData, serverData, messageContent, restEmbed, [...changedCondition.injuryUpdateEmbed, ...levelUpEmbed], changedCondition.statsUpdateText);
 	}
 	else {
 
@@ -919,7 +926,7 @@ export async function executeExploring(
 				...(exploreComponent ? [exploreComponent] : []),
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(`explore_new_@${userData._id}${stringInput ? `_${stringInput}` : ''}`)
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['new', ...(stringInput ? [stringInput] : []) as [string]]))
 						.setLabel('Explore again')
 						.setStyle(ButtonStyle.Primary)),
 			],

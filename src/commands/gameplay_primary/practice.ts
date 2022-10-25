@@ -132,7 +132,7 @@ export const command: SlashCommand = {
 
 			const fightGame = createFightGame(totalCycles, lastRoundCycleIndex);
 
-			if (fightGame.cycleKind === 'attack') {
+			if (fightGame.cycleKind === '_attack') {
 
 				embed.setDescription(`⏫ *The Elderly gets ready to attack. ${userData.quid.name} must think quickly about how ${userData.quid.pronounAndPlural(0, 'want')} to react.*`);
 				embed.setFooter({ text: 'Click the button that wins against your opponent\'s move (⏫ Attack).\nTip: Dodging an attack surprises the opponent and puts you in the perfect position for a counterattack.' });
@@ -167,15 +167,15 @@ export const command: SlashCommand = {
 					/* Here we make the button the player choses red, this will apply always except if the player choses the correct button, then this will be overwritten. */
 					fightGame.fightComponent = fightGame.chosenWrongButtonOverwrite(i.customId);
 
-					if ((i.customId.includes('attack') && fightGame.cycleKind === 'dodge')
-						|| (i.customId.includes('defend') && fightGame.cycleKind === 'attack')
+					if ((i.customId.includes('_attack') && fightGame.cycleKind === 'dodge')
+						|| (i.customId.includes('defend') && fightGame.cycleKind === '_attack')
 						|| (i.customId.includes('dodge') && fightGame.cycleKind === 'defend')) {
 
 						winLoseRatio -= 1;
 					}
-					else if ((i.customId.includes('attack') && fightGame.cycleKind === 'defend')
+					else if ((i.customId.includes('_attack') && fightGame.cycleKind === 'defend')
 						|| (i.customId.includes('defend') && fightGame.cycleKind === 'dodge')
-						|| (i.customId.includes('dodge') && fightGame.cycleKind === 'attack')) {
+						|| (i.customId.includes('dodge') && fightGame.cycleKind === '_attack')) {
 
 						/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
 						fightGame.fightComponent = fightGame.chosenRightButtonOverwrite(i.customId);
