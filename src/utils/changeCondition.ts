@@ -1,5 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
-import { deepCopyObject, getBiggerNumber, getMapData, getSmallerNumber } from './helperFunctions';
+import { deepCopyObject, getArrayElement, getBiggerNumber, getMapData, getSmallerNumber } from './helperFunctions';
 import { getRandomNumber, pullFromWeightedTable } from './randomizers';
 import { CurrentRegionType, ProfileSchema, UserData } from '../typings/data/user';
 
@@ -288,4 +288,41 @@ export async function infectWithChance(
 			.setFooter({ text: `-${healthPoints} HP (from cold)` })];
 	}
 	return [];
+}
+
+/**
+ * If the user has a quest or hasn't ranked up from their quest, it returns false. Else, it checks the minimum level at which a quest can appear, and if the user's level is lower than that, it returns false. Else, it calculates the chance of the user getting a quest, and returns true or false based on that.
+ * @param userData - The database entry of the user for which to whether they are getting a quest.
+ * @returns boolean
+ */
+export function calculateQuestChance(
+	userData: UserData<never, never>,
+): boolean {
+
+	const { levels: currLevel, experience: currExperience, hasQuest, rank, unlockedRanks, maxHealth, maxEnergy, maxHunger, maxThirst, temporaryStatIncrease } = userData.quid.profile;
+	if (hasQuest === true) { return false; }
+
+	const rankToNr = { Youngling: 0, Apprentice: 1, Hunter: 2, Healer: 2, Elderly: 3 }[rank];
+
+	/* If this is true, the person has gotten and successfully finished a quest (therefore unlocking the next rank), but hasn't ranked up yet */
+	if (rankToNr < unlockedRanks) { return false; }
+
+	/* To calculate the minLevel for elderlies, it calculates how many quests an elderly has had already based on their stat increase amount, since with every successful quest, one of their maxStats goes up by 10. */
+	const maxStatsIncrease = maxHealth + maxEnergy + maxHunger + maxThirst - 400;
+	const statIncreaseAmount = Math.round(maxStatsIncrease / 10) - Object.keys(temporaryStatIncrease).length;
+
+	/* The minimum levels at which a quest can potentially appear are:
+	Youngling - 2
+	Apprentice - 10
+	Hunter/Healer - 20
+	Elderly - every 10th after it (30, 40, 50, etc) */
+	const minLevel = getArrayElement([2, 10, 20, (3 + statIncreaseAmount) * 10], rankToNr);
+
+	if (currLevel < minLevel) { return false; }
+
+	const loosingChance = minLevel * (minLevel - 1) * 50;
+	const winningChance = currLevel * (currLevel - 1) * 25 + currExperience;
+
+	/* If currLevel is exactly the same as minLevel, this is a 33% chance, and from that point the chance is always increasing */
+	return pullFromWeightedTable({ 0: winningChance, 1: loosingChance }) === 0;
 }
