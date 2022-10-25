@@ -11,6 +11,7 @@ import { userFindsQuest, changeCondition, infectWithChance } from '../../utils/c
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableCommandComponent } from '../../utils/componentDisabling';
+import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
 import { capitalizeString, getArrayElement, getMapData, getSmallerNumber, keyInObject, respond, update } from '../../utils/helperFunctions';
@@ -21,6 +22,8 @@ import { pickPlant } from '../../utils/simulateItemUse';
 import { isResting } from '../gameplay_maintenance/rest';
 import { remindOfAttack } from './attack';
 import { sendQuestMessage } from './start-quest';
+
+type CustomIdArgs = ['new'] | ['new', string]
 
 const tutorialMap: Map<string, number> = new Map();
 
@@ -41,6 +44,14 @@ export const command: SlashCommand = {
 	sendCommand: async (interaction, userData, serverData) => {
 
 		await executePlaying(interaction, userData, serverData);
+	},
+	async sendMessageComponentResponse(interaction, userData, serverData) {
+
+		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
+		if (interaction.isButton() && customId?.args[0] === 'new') {
+
+			await executePlaying(interaction, userData, serverData);
+		}
 	},
 };
 
@@ -70,7 +81,7 @@ export async function executePlaying(
 
 	if (await hasFullInventory(interaction, userData1, restEmbed, messageContent)) { return; }
 
-	const mentionedUserId = interaction.isChatInputCommand() ? interaction.options.getUser('user')?.id : interaction.customId.split('_')[3];
+	const mentionedUserId = interaction.isChatInputCommand() ? interaction.options.getUser('user')?.id : deconstructCustomId<CustomIdArgs>(interaction.customId)?.args[1];
 	const tutorialMapEntry = tutorialMap.get(userData1.quid._id + userData1.quid.profile.serverId);
 	if (userData1.quid.profile.tutorials.play === false && userData1.quid.profile.rank === RankType.Youngling && (tutorialMapEntry === undefined || tutorialMapEntry === 0)) {
 
@@ -82,7 +93,7 @@ export async function executePlaying(
 			components: [
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(`play_new_@${userData1._id}${mentionedUserId ? `_${mentionedUserId}` : ''}`)
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData1._id, ['new', ...(mentionedUserId ? [mentionedUserId] : []) as [string]]))
 						.setLabel('I understand, let\'s try it out!')
 						.setStyle(ButtonStyle.Success)),
 			],
@@ -406,7 +417,7 @@ export async function executePlaying(
 				...(playComponent ? [playComponent] : []),
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(`play_new_@${userData1._id}${mentionedUserId ? `_${mentionedUserId}` : ''}`)
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData1._id, ['new', ...(mentionedUserId ? [mentionedUserId] : []) as [string]]))
 						.setLabel((tutorialMapEntry === 1 && tutorialMapEntry_ === 1) || (tutorialMapEntry === 2 && tutorialMapEntry_ === 2) ? 'Try again' : tutorialMapEntry === 1 && tutorialMapEntry_ === 2 ? 'Try another game' : 'Play again')
 						.setStyle(ButtonStyle.Primary)),
 			],

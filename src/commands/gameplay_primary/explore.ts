@@ -20,7 +20,9 @@ import { SpeciesHabitatType } from '../../typings/main';
 import { speciesInfo } from '../..';
 import { ServerSchema } from '../../typings/data/server';
 import userModel from '../../models/userModel';
+import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 
+type CustomIdArgs = ['new'] | ['new', string]
 type Position = { row: number, column: number; };
 
 export const command: SlashCommand = {
@@ -55,6 +57,14 @@ export const command: SlashCommand = {
 	sendCommand: async (interaction, userData, serverData) => {
 
 		await executeExploring(interaction, userData, serverData);
+	},
+	async sendMessageComponentResponse(interaction, userData, serverData) {
+
+		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
+		if (interaction.isButton() && customId?.args[0] === 'new') {
+
+			await executeExploring(interaction, userData, serverData);
+		}
 	},
 };
 
@@ -97,7 +107,7 @@ export async function executeExploring(
 		return;
 	}
 
-	const stringInput = interaction.isChatInputCommand() ? interaction.options.getString('biome')?.toLowerCase() : interaction.customId.split('_')[3]?.toLowerCase();
+	const stringInput = interaction.isChatInputCommand() ? interaction.options.getString('biome')?.toLowerCase() : deconstructCustomId<CustomIdArgs>(interaction.customId)?.args[1]?.toLowerCase();
 	if (userData.quid.profile.tutorials.explore === false) {
 
 		await respond(interaction, {
@@ -105,7 +115,7 @@ export async function executeExploring(
 			components: [
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(`explore_new_@${userData._id}${stringInput ? `_${stringInput}` : ''}`)
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['new', ...(stringInput ? [stringInput] : []) as [string]]))
 						.setLabel('I understand, let\'s explore!')
 						.setStyle(ButtonStyle.Success)),
 			],
@@ -917,7 +927,7 @@ export async function executeExploring(
 				...(exploreComponent ? [exploreComponent] : []),
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(`explore_new_@${userData._id}${stringInput ? `_${stringInput}` : ''}`)
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['new', ...(stringInput ? [stringInput] : []) as [string]]))
 						.setLabel('Explore again')
 						.setStyle(ButtonStyle.Primary)),
 			],

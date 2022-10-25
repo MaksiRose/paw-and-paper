@@ -10,6 +10,7 @@ import { changeCondition } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableCommandComponent } from '../../utils/componentDisabling';
+import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { createFightGame } from '../../utils/gameBuilder';
 import { getMapData, getSmallerNumber, KeyOfUnion, respond, sendErrorMessage, unsafeKeys, update, ValueOf, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
@@ -20,6 +21,8 @@ const { default_color } = require('../../../config.json');
 type serverMapInfo = { startsTimestamp: number | null, idleHumans: number, endingTimeout: NodeJS.Timeout | null, ongoingFights: number; }
 const serverMap: Map<string, serverMapInfo > = new Map();
 const newCycleArray = ['attack', 'dodge', 'defend'] as const;
+
+type CustomIdArgs = ['new'] | ['new', string]
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -34,6 +37,14 @@ export const command: SlashCommand = {
 	sendCommand: async (interaction, userData, serverData) => {
 
 		await executeAttacking(interaction, userData, serverData);
+	},
+	async sendMessageComponentResponse(interaction, userData, serverData) {
+
+		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
+		if (interaction.isButton() && customId?.args[0] === 'new') {
+
+			await executeAttacking(interaction, userData, serverData);
+		}
 	},
 };
 
@@ -260,7 +271,7 @@ export async function executeAttacking(
 			components: [fightGame.fightComponent,
 				new ActionRowBuilder<ButtonBuilder>()
 					.setComponents(new ButtonBuilder()
-						.setCustomId(`attack_new_@${userData._id}`)
+						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['new']))
 						.setLabel('Attack again')
 						.setStyle(ButtonStyle.Primary))],
 		});
