@@ -10,7 +10,7 @@ import { isInvalid } from '../../utils/checkValidity';
 import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { capitalizeString, getMapData, respond, update } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
-import { getRandomNumber, generateWinChance } from '../../utils/randomizers';
+import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
 const { error_color } = require('../../../config.json');
 
@@ -127,7 +127,7 @@ export async function sendQuestMessage(
 	}
 	else { throw new Error('No rank was found for this profile'); }
 
-	embed.setFooter({ text: `${footerText}\n\nClick the button or type "/start-quest" to continue.\n\nTip: Read the bottom text during the game carefully to find out which button to click. The button you chose will get a "radio button"-emoji, and the correct button will get a checkmark emoji. Sometimes you will lose a round even if you chose right, depending on how many levels you have, then there will be no checkmark emoji.` });
+	embed.setFooter({ text: `${footerText}\n\nClick the button or type "/start-quest" to continue.\n\nTip: Read the bottom text during the game carefully to find out which button to click. The button you chose will get a "radio button"-emoji, and the correct button will get a checkmark emoji. If you do not choose something fast enough, you will lose the round and no emoji is displayed.` });
 
 	const botReply = await respond(interaction, {
 		content: `<@${interaction.user.id}>\n${messageContent}`,
@@ -285,9 +285,6 @@ async function startQuest(
 			})
 			.catch(() => { return undefined; });
 
-		const winChance = generateWinChance(userData.quid.profile.levels, userData.quid.profile.rank === RankType.Elderly ? 35 : (userData.quid.profile.rank === RankType.Hunter || userData.quid.profile.rank === RankType.Healer) ? 20 : userData.quid.profile.rank === RankType.Apprentice ? 10 : 2);
-		const randomNumber = getRandomNumber(100);
-
 		if (newInteraction !== undefined) {
 
 			/* The button the user chose will get the "radio button"-emoji. */
@@ -299,20 +296,17 @@ async function startQuest(
 				return component;
 			}));
 
-			if (randomNumber <= winChance) {
+			/* The correct button will get the "checkbox"-emoji. */
+			questComponents.setComponents(questComponents.components.map(component => {
 
-				/* The correct button will get the "checkbox"-emoji. */
-				questComponents.setComponents(questComponents.components.map(component => {
+				const data = component.toJSON();
 
-					const data = component.toJSON();
-
-					if (data.style !== ButtonStyle.Link && data.custom_id.includes(`${buttonColorKind}${buttonTextOrColor}`)) { component.setEmoji('☑️'); }
-					return component;
-				}));
-			}
+				if (data.style !== ButtonStyle.Link && data.custom_id.includes(`${buttonColorKind}${buttonTextOrColor}`)) { component.setEmoji('☑️'); }
+				return component;
+			}));
 		}
 
-		if (newInteraction === undefined || !newInteraction.customId.includes(`${buttonColorKind}${buttonTextOrColor}`) || randomNumber > winChance) { missValue += 1; }
+		if (newInteraction === undefined || !newInteraction.customId.includes(`${buttonColorKind}${buttonTextOrColor}`)) { missValue += 1; }
 		else { hitValue += 1; }
 
 		questComponents = questComponents.setComponents(questComponents.components.map(component => {
