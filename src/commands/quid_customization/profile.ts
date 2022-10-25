@@ -54,8 +54,8 @@ export const command: SlashCommand = {
 		/* Checking if the user has a cooldown. */
 		else if (hasNameAndSpecies(userData) && interaction.inCachedGuild() && await hasCooldown(interaction, userData)) { return; }
 
-		const response = await getMessageContent(mentionedUser?.id || interaction.user.id, userData, !mentionedUser);
-		const selectMenu = getAccountsPage(userData, mentionedUser?.id || interaction.user.id, interaction.user.id, 0, !mentionedUser);
+		const response = await getProfileMessageOptions(mentionedUser?.id || interaction.user.id, userData, userData.userId.includes(mentionedUser?.id || interaction.user.id));
+		const selectMenu = getQuidSelectMenu(userData, mentionedUser?.id || interaction.user.id, interaction.user.id, 0, userData.userId.includes(mentionedUser?.id || interaction.user.id));
 
 		await respond(interaction, {
 			...response,
@@ -81,7 +81,7 @@ export const command: SlashCommand = {
 			/* Getting the DM channel, the select menu, and sending the message to the DM channel. */
 			const dmChannel = await interaction.user.createDM();
 
-			const selectMenu = getAccountsPage(userData, customId.args[1], interaction.user.id, 0, userData.userId.includes(interaction.user.id));
+			const selectMenu = getQuidSelectMenu(userData, customId.args[1], interaction.user.id, 0, userData.userId.includes(interaction.user.id));
 
 			dmChannel.send({
 				content: interaction.message.content || undefined,
@@ -105,7 +105,7 @@ export const command: SlashCommand = {
 			if (quidsPage >= Math.ceil((Object.keys(userData.quids).length + 1) / 24)) { quidsPage = 0; }
 
 			await update(interaction, {
-				components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getAccountsPage(userData, customId.args[1], interaction.user.id, quidsPage, userData.userId.includes(interaction.user.id))])],
+				components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getQuidSelectMenu(userData, customId.args[1], interaction.user.id, quidsPage, userData.userId.includes(interaction.user.id))])],
 			});
 			return;
 		}
@@ -230,7 +230,7 @@ export const command: SlashCommand = {
 			await interaction
 				.editReply({
 				// we can interaction.user.id because the "switchto" option is only available to yourself
-					...await getMessageContent(interaction.user.id, userData, userData.userId.includes(interaction.user.id)),
+					...await getProfileMessageOptions(interaction.user.id, userData, userData.userId.includes(interaction.user.id)),
 					components: interaction.message.components,
 				});
 
@@ -249,7 +249,7 @@ export const command: SlashCommand = {
 			userData = getUserData(_userData, interaction.guildId || 'DM', _userData.quids[quidId]);
 
 			await update(interaction, {
-				...await getMessageContent(customId.args[1], userData, userData.userId.includes(interaction.user.id)),
+				...await getProfileMessageOptions(customId.args[1], userData, userData.userId.includes(interaction.user.id)),
 				components: interaction.message.components,
 			});
 			return;
@@ -259,15 +259,14 @@ export const command: SlashCommand = {
 };
 
 /**
- * It takes in a client, userId, userData.quid, and isYourself, and returns a message object
- * @param client - Discords Client
- * @param userId - The user's ID
- * @param userData.quid - The quid data from the database.
- * @param isYourself - Whether the quid is by the user who executed the command
- * @param embedArray
- * @returns The message object.
+ * Returns the message content and embed(s) that displays the user's profile.
+ * @param userId - The user ID of the user whose profile is displayed. This is used to fetch the discord user tag.
+ * @param userData - The database entry of the user whose profile is displayed.
+ * @param isYourself - Whether the profile belongs to the person requesting the info.
+ * @param embedArray - Potential other embeds to display in front of the profile embed
+ * @returns - InteractionReplyOptions
  */
-export async function getMessageContent(
+export async function getProfileMessageOptions(
 	userId: string,
 	userData: UserData<undefined, ''>,
 	isYourself: boolean,
@@ -295,15 +294,15 @@ export async function getMessageContent(
 }
 
 /**
- * It takes in a profile, a list of inactive profiles, and a page number, and returns a menu with the
- * profile and inactive profiles as options.
- * @param userData - The user data.
- * @param userId - The userId of the user the userData belongs to
- * @param quidsPage - The current page of accounts the user is on.
- * @param isYourself - Whether the quid is by the user who executed the command
- * @returns A MessageSelectMenu object
+ * Returns a select menu with other quids of the user
+ * @param userData - The database entry of the user whose profile is displayed.
+ * @param userId - The user ID of the user whose profile is displayed. This is used to get the database entry again when something is selected
+ * @param executorId - The user ID of the user who executed the command. This is used to know who whether the person selecting from the select menu can do so.
+ * @param quidsPage - The current page of quids the user is on.
+ * @param isYourself - Whether the profile belongs to the person requesting the info.
+ * @returns A SelectMenuBuilder object
  */
-function getAccountsPage(
+function getQuidSelectMenu(
 	userData: UserData<undefined, ''>,
 	userId: string,
 	executorId: string,
@@ -311,23 +310,23 @@ function getAccountsPage(
 	isYourself: boolean,
 ): SelectMenuBuilder {
 
-	let accountMenuOptions: RestOrArray<SelectMenuComponentOptionData> = userData.quids.map(quid => ({
+	let quidOptions: RestOrArray<SelectMenuComponentOptionData> = userData.quids.map(quid => ({
 		label: quid.name,
 		value: constructSelectOptions<SelectOptionArgs>([isYourself ? 'switchto' : 'view', quid._id]),
 	}));
 
 	if (isYourself) {
 
-		accountMenuOptions.push({
+		quidOptions.push({
 			label: 'Empty Slot',
 			value: constructSelectOptions<SelectOptionArgs>(['switchto', '']),
 		});
 	}
 
-	if (accountMenuOptions.length > 25) {
+	if (quidOptions.length > 25) {
 
-		accountMenuOptions = accountMenuOptions.splice(quidsPage * 24, 24);
-		accountMenuOptions.push({
+		quidOptions = quidOptions.splice(quidsPage * 24, 24);
+		quidOptions.push({
 			label: 'Show more quids',
 			value: constructSelectOptions<SelectOptionArgs>(['nextpage', `${quidsPage}`]),
 			description: `You are currently on page ${quidsPage + 1}`,
@@ -338,7 +337,7 @@ function getAccountsPage(
 	return new SelectMenuBuilder()
 		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, executorId, ['accountselect', userId]))
 		.setPlaceholder(`Select a quid to ${isYourself ? 'switch to' : 'view'}`)
-		.setOptions(accountMenuOptions);
+		.setOptions(quidOptions);
 }
 
 export function pronounCompromiser(
