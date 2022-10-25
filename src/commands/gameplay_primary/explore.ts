@@ -222,7 +222,6 @@ export async function executeExploring(
 	let waitingComponent = getWaitingComponent(waitingGameField, playerPos, empty, goal);
 
 	let botReply = await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })(getWaitingMessageObject(messageContent, restEmbed, userData, waitingString, waitingGameField, waitingComponent));
-	buttonInteraction = null;
 
 
 	const collector = (botReply as Message<true>).createMessageComponentCollector({
@@ -911,7 +910,7 @@ export async function executeExploring(
 			},
 		);
 
-		botReply = await sendQuestMessage(interaction, userData, serverData, messageContent, restEmbed, [...changedCondition.injuryUpdateEmbed, ...levelUpEmbed], changedCondition.statsUpdateText);
+		botReply = await sendQuestMessage(buttonInteraction || interaction, userData, serverData, messageContent, restEmbed, [...changedCondition.injuryUpdateEmbed, ...levelUpEmbed], changedCondition.statsUpdateText);
 	}
 	else {
 
