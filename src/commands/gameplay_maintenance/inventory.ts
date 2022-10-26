@@ -4,7 +4,7 @@ import { UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
-import { createCommandComponentDisabler } from '../../utils/componentDisabling';
+import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import getInventoryElements from '../../utils/getInventoryElements';
 import { getArrayElement, respond, update } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
@@ -131,5 +131,5 @@ export async function showInventoryMessage(
 		],
 	});
 
-	createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
+	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
 }

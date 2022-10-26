@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { capitalizeString, keyInObject, respond, update } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
-import { createCommandComponentDisabler } from '../../utils/componentDisabling';
+import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { speciesInfo } from '../..';
@@ -56,7 +56,7 @@ export const command: SlashCommand = {
 			],
 		}, true);
 
-		createCommandComponentDisabler(userData._id, interaction.guildId || 'DM', botReply);
+		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, botReply.id);
 	},
 	async sendMessageComponentResponse(interaction, userData) {
 

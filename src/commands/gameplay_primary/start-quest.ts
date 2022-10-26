@@ -1,14 +1,13 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { speciesInfo } from '../..';
-import { cooldownMap } from '../../events/interactionCreate';
 import { ServerSchema } from '../../typings/data/server';
 import { RankType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { SpeciesHabitatType } from '../../typings/main';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
-import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
-import { capitalizeString, getMapData, respond, update } from '../../utils/helperFunctions';
+import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
+import { capitalizeString, getMapData, respond, setCooldown, update } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
@@ -141,7 +140,7 @@ export async function sendQuestMessage(
 	}, true);
 
 	/* The View Channels permissions that are needed for this function to work properly should be checked in all places that reference sendQuestMessage. It can't be checked for in here directly because a botReply must be returned. */
-	createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
+	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
 
 	return await (botReply as Message<true>)
 		.awaitMessageComponent({
@@ -150,8 +149,8 @@ export async function sendQuestMessage(
 			time: 300_000 })
 		.then(async (int) => {
 
-			cooldownMap.set(userData._id + interaction.guildId, true);
-			delete disableCommandComponent[userData._id + interaction.guildId];
+			setCooldown(userData, interaction.guildId, true);
+			deleteCommandDisablingInfo(userData, interaction.guildId);
 			return await startQuest(int, userData, serverData, messageContent, restEmbed, afterEmbedArray, botReply);
 		})
 		.catch(async () => {
@@ -320,7 +319,7 @@ async function startQuest(
 		embed.setFooter(null);
 		if (hitValue >= 10) {
 
-			cooldownMap.set(userData!._id + interaction.guildId, false);
+			setCooldown(userData, interaction.guildId, false);
 
 			if (userData.quid.profile.unlockedRanks < 3) {
 
@@ -432,7 +431,7 @@ async function startQuest(
 		}
 		else if (missValue >= 10) {
 
-			cooldownMap.set(userData!._id + interaction.guildId, false);
+			setCooldown(userData, interaction.guildId, false);
 
 			if (userData.quid.profile.rank === RankType.Youngling) {
 

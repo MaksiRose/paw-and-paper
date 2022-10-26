@@ -310,18 +310,20 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 		of: { type: 'string', default: '', locked: false },
 		locked: false,
 	},
-	serverInfo: {
+	servers: {
 		type: 'map',
 		of: {
 			type: 'object',
 			default: {
 				currentQuid: { type: 'string?', default: null, locked: false },
-				automaticRestingStartTimestamp: { type: 'number', default: 0, locked: false },
-				lastInteractionToken: { type: 'string', default: '', locked: false },
-				lastChannelId: { type: 'string', default: '', locked: false },
-				automaticRestingMessageId: { type: 'string?', default: null, locked: false },
+				lastInteractionTimestamp: { type: 'number?', default: null, locked: false },
+				lastInteractionToken: { type: 'string?', default: null, locked: false },
+				lastInteractionChannelId: { type: 'string?', default: null, locked: false },
+				restingMessageId: { type: 'string?', default: null, locked: false },
+				restingChannelId: { type: 'string?', default: null, locked: false },
 				componentDisablingChannelId: { type: 'string?', default: null, locked: false },
 				componentDisablingMessageId: { type: 'string?', default: null, locked: false },
+				hasCooldown: { type: 'boolean', default: false, locked: false },
 			},
 			locked: false,
 		},
@@ -345,14 +347,14 @@ export function getUserData<T extends '' | never, U extends QuidSchema<T> | unde
 		userIds: userData.userIds,
 		tag: {
 			global: userData.tag.global,
-			server: userData.tag.servers[server_id ?? ''],
+			server: userData.tag.servers[server_id],
 		},
 		advice: userData.advice,
 		settings: {
 			reminders: userData.settings.reminders,
 			proxy: {
 				global: userData.settings.proxy.global,
-				server: userData.settings.proxy.servers[server_id ?? ''],
+				server: userData.settings.proxy.servers[server_id],
 			},
 		},
 		quid: (quidData === undefined ? undefined : {
@@ -360,7 +362,7 @@ export function getUserData<T extends '' | never, U extends QuidSchema<T> | unde
 			name: quidData.name,
 			nickname: {
 				global: quidData.nickname.global,
-				server: quidData.nickname.servers[server_id ?? ''],
+				server: quidData.nickname.servers[server_id],
 			},
 			species: quidData.species,
 			displayedSpecies: quidData.displayedSpecies,
@@ -395,8 +397,9 @@ export function getUserData<T extends '' | never, U extends QuidSchema<T> | unde
 				return `${pronoun} ${isPlural === false ? string1 : string2}`;
 			},
 		}) as (U extends QuidSchema<T> ? never : undefined) | Quid<T>,
+		serverInfo: userData.servers[server_id],
 		quids: new Collection(Object.entries(userData.quids)),
-		serverInfo: new Collection(Object.entries(userData.serverInfo)),
+		servers: new Collection(Object.entries(userData.servers)),
 		lastPlayedVersion: userData.lastPlayedVersion,
 		update: async function(
 			updateFunction: (value: UserSchema) => void,

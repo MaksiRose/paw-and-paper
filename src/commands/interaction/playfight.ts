@@ -1,5 +1,4 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
-import { cooldownMap } from '../../events/interactionCreate';
 import userModel, { getUserData } from '../../models/userModel';
 import { ServerSchema } from '../../typings/data/server';
 import { CurrentRegionType, UserData } from '../../typings/data/user';
@@ -8,9 +7,9 @@ import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
+import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
-import { capitalizeString, getArrayElement, getBiggerNumber, getMapData, getSmallerNumber, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
+import { capitalizeString, getArrayElement, getBiggerNumber, getMapData, getSmallerNumber, respond, sendErrorMessage, setCooldown, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
@@ -98,8 +97,8 @@ export const command: SlashCommand = {
 		}, true);
 
 		/* Register the command to be disabled when another command is executed, for both players */
-		createCommandComponentDisabler(userData1._id, interaction.guildId, botReply);
-		createCommandComponentDisabler(userData2._id, interaction.guildId, botReply);
+		saveCommandDisablingInfo(userData1, interaction.guildId, interaction.channelId, botReply.id);
+		saveCommandDisablingInfo(userData2, interaction.guildId, interaction.channelId, botReply.id);
 	},
 	async sendMessageComponentResponse(interaction, userData, serverData) {
 
@@ -132,10 +131,10 @@ export const command: SlashCommand = {
 		}
 
 		/* For both users, set cooldowns to true, but unregister the command from being disabled, and get the condition change */
-		cooldownMap.set(userData1._id + interaction.guildId, true);
-		cooldownMap.set(userData2._id + interaction.guildId, true);
-		delete disableCommandComponent[userData1._id + interaction.guildId];
-		delete disableCommandComponent[userData2._id + interaction.guildId];
+		setCooldown(userData1, interaction.guildId, true);
+		setCooldown(userData2, interaction.guildId, true);
+		deleteCommandDisablingInfo(userData1, interaction.guildId);
+		deleteCommandDisablingInfo(userData2, interaction.guildId);
 		const decreasedStatsData1 = await changeCondition(userData1, 0, CurrentRegionType.Prairie, true);
 		const decreasedStatsData2 = await changeCondition(userData2, 0, CurrentRegionType.Prairie, true);
 
@@ -440,8 +439,8 @@ export const command: SlashCommand = {
 			}
 
 			/* Set both user's cooldown to false */
-			cooldownMap.set(userData1._id + interaction.guildId, false);
-			cooldownMap.set(userData2._id + interaction.guildId, false);
+			setCooldown(userData1, interaction.guildId, false);
+			setCooldown(userData2, interaction.guildId, false);
 		}
 	},
 };

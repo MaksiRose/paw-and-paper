@@ -1,7 +1,11 @@
 import { readFileSync, unlinkSync, writeFileSync } from 'fs';
-import userModel from '../models/userModel';
+import { isResting, startResting } from '../commands/gameplay_maintenance/rest';
+import { lastInteractionMap, serverActiveUsersMap } from '../events/interactionCreate';
+import serverModel from '../models/serverModel';
+import userModel, { getUserData } from '../models/userModel';
 import { DeleteList } from '../typings/data/general';
-import { getMapData } from '../utils/helperFunctions';
+import { hasNameAndSpecies } from '../utils/checkUserState';
+import { getMapData, sendErrorMessage } from '../utils/helperFunctions';
 
 /** It's checking whether the deletionTime of a property on the toDeleteList is older than an hour from now, and if it is, delete the property and delete the file from the toDelete folder. It's also checking whether a profile has a temporaryStatIncrease with a timestamp that is older than a week ago, and if it does, bring the stat back and delete the property from temporaryStatIncrease. */
 export async function execute(): Promise<void> {
@@ -51,4 +55,57 @@ export async function execute(): Promise<void> {
 			}
 		}
 	}, 3_600_000);
+
+
+	async function tenSecondInterval() {
+
+		const userArray = await userModel.find();
+		for (const user of userArray) {
+
+			for (const [guildId, quidId] of Object.entries(user.currentQuid)) {
+
+				const userData = getUserData(user, guildId, getMapData(user.quids, quidId));
+				if (!hasNameAndSpecies(userData)) { continue; }
+				const tenMinutesInMs = 600_000;
+
+				const serverInfo = userData.serverInfo;
+				if (!serverInfo || !serverInfo.lastInteractionTimestamp) { continue; }
+
+				const serverData = await serverModel.findOne(s => s.serverId === guildId).catch(() => { return null; });
+				if (!serverData) { continue; }
+
+				const lastInteractionIsTenMinutesAgo = serverInfo.lastInteractionTimestamp < Date.now() - tenMinutesInMs;
+				const hasLessThanMaxEnergy = userData.quid.profile.energy < userData.quid.profile.maxEnergy;
+				const isConscious = userData.quid.profile.energy > 0 || userData.quid.profile.health > 0 || userData.quid.profile.hunger > 0 || userData.quid.profile.thirst > 0;
+				const hasNoCooldown = userData.serverInfo?.hasCooldown !== true;
+				if (lastInteractionIsTenMinutesAgo && userData.quid.profile.isResting === false && isResting(userData) === false && hasLessThanMaxEnergy && isConscious && hasNoCooldown) {
+
+					const lastInteraction = lastInteractionMap.get(userData._id + guildId);
+					await startResting(lastInteraction, userData, serverData, '', true)
+						.catch(async (error) => {
+							if (lastInteraction !== undefined) {
+
+								await sendErrorMessage(lastInteraction, error)
+									.catch(e => { console.error(e); });
+							}
+							else { console.error(error); }
+						});
+				}
+			}
+		}
+
+		for (let [guildId, array] of serverActiveUsersMap.entries()) {
+
+			for (const userId of array) {
+
+				const userData = await userModel.findOne(u => u.userId.includes(userId)).catch(() => { return null; });
+				const serverInfo = userData?.servers[guildId];
+				/* If there is no last interaction or if the last interaction was created more than 5 minutes ago, remove the user from the array */
+				if (!serverInfo || !serverInfo.lastInteractionTimestamp || serverInfo.lastInteractionTimestamp <= Date.now() - 300_000) { array = array.filter(v => v !== userId); }
+			}
+			serverActiveUsersMap.set(guildId, array);
+		}
+	}
+	tenSecondInterval();
+	setInterval(tenSecondInterval, 10_000);
 }

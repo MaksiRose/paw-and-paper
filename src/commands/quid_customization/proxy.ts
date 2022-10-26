@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder, ModalBuilder, NonThreadGuildBasedChannel, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { respond, update } from '../../utils/helperFunctions';
 import { hasName, isInGuild } from '../../utils/checkUserState';
-import { createCommandComponentDisabler } from '../../utils/componentDisabling';
+import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
@@ -59,7 +59,7 @@ export const command: SlashCommand = {
 				])],
 		}, true);
 
-		if (userData) { createCommandComponentDisabler(userData._id, interaction.guildId || 'DM', botReply); }
+		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, botReply.id);
 	},
 	async sendMessageComponentResponse(interaction, userData) {
 

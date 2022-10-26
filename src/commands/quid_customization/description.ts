@@ -26,7 +26,7 @@ export const command: SlashCommand = {
 
 		await userData.update(
 			(u) => {
-				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DM'));
+				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DMs'));
 				q.description = desc;
 			},
 		);

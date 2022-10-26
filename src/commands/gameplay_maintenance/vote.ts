@@ -5,7 +5,7 @@ import { VoteList } from '../../typings/data/general';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
-import { createCommandComponentDisabler } from '../../utils/componentDisabling';
+import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import { getMapData, getSmallerNumber, respond } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 const { default_color } = require('../../../config.json');
@@ -70,7 +70,7 @@ export const command: SlashCommand = {
 			],
 		}, true);
 
-		if (interaction.inGuild()) { createCommandComponentDisabler(userData._id, interaction.guildId, botReply); }
+		if (interaction.inGuild()) { saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id); }
 	},
 	async sendMessageComponentResponse(interaction, userData) {
 

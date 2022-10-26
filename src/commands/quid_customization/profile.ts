@@ -1,6 +1,5 @@
 import { ActionRowBuilder, EmbedBuilder, GuildMember, InteractionReplyOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
-import { cooldownMap } from '../../events/interactionCreate';
-import { capitalizeString, respond, update } from '../../utils/helperFunctions';
+import { capitalizeString, respond, update, userDataServersObject } from '../../utils/helperFunctions';
 import userModel, { getUserData } from '../../models/userModel';
 import { hasName, hasNameAndSpecies } from '../../utils/checkUserState';
 import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
@@ -35,7 +34,7 @@ export const command: SlashCommand = {
 		/* Getting userData and userData.quid either for mentionedUser if there is one or for interaction user otherwise */
 		const mentionedUser = interaction.options.getUser('user');
 		const _userData = await userModel.findOne(u => u.userId.includes(!mentionedUser ? interaction.user.id : mentionedUser.id)).catch(() => { return null; });
-		userData = _userData === null ? null : getUserData(_userData, interaction.guildId || 'DM', _userData.quids[_userData.currentQuid[interaction.guildId || 'DM'] || '']);
+		userData = _userData === null ? null : getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[_userData.currentQuid[interaction.guildId || 'DMs'] || '']);
 
 		/* Responding if there is no userData */
 		if (!userData) {
@@ -73,7 +72,7 @@ export const command: SlashCommand = {
 
 		/* Getting the userData from the customId */
 		const _userData = await userModel.findOne(u => u.userId.includes(customId.args[1]));
-		let userData = getUserData(_userData, interaction.guildId || 'DM', _userData.quids[_userData.currentQuid[interaction.guildId || 'DM'] || '']);
+		let userData = getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[_userData.currentQuid[interaction.guildId || 'DMs'] || '']);
 
 		/* Checking if the user clicked the "Learn more" button, and if they did, copy the message to their DMs, but with the select Menu as a component instead of the button. */
 		if (interaction.isButton() && customId.args[0] === 'learnabout') {
@@ -116,7 +115,7 @@ export const command: SlashCommand = {
 			await interaction.deferUpdate();
 
 			/* Checking if the user is on a cooldown, and if they are, it will respond that they can't switch quids. */
-			if (cooldownMap.get(userData._id + interaction.guildId) === true) {
+			if (userData.serverInfo?.hasCooldown === true) {
 
 				await respond(interaction, {
 					content: 'You can\'t switch quids because your current quid is busy!',
@@ -126,7 +125,7 @@ export const command: SlashCommand = {
 			}
 
 			/* It's disabling all components of the previous message. */
-			await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.();
+			await disableCommandComponent(userData);
 
 			/* Checking if the user is resting, and if they are, it will stop the resting. */
 			const oldRoles = [...userData.quid?.profile?.roles || []];
@@ -139,11 +138,14 @@ export const command: SlashCommand = {
 			const quidId = selectOptionId[1]; // this is either an id, an empty string if empty slot
 			await userData.update(
 				(u) => {
+					u.servers[interaction.guildId || 'DMs'] = {
+						...userDataServersObject(u, interaction.guildId || 'DMs'),
+						currentQuid: quidId || null,
+					};
 					if (quidId) {
-						u.currentQuid[interaction.guildId || 'DM'] = quidId;
-
+						u.currentQuid[interaction.guildId || 'DMs'] = quidId;
 					}
-					else { delete u.currentQuid[interaction.guildId || 'DM']; }
+					else { delete u.currentQuid[interaction.guildId || 'DMs']; }
 				},
 			);
 
@@ -246,7 +248,7 @@ export const command: SlashCommand = {
 
 			/* Getting the userData from the customId */
 			const quidId = selectOptionId[1];
-			userData = getUserData(_userData, interaction.guildId || 'DM', _userData.quids[quidId]);
+			userData = getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[quidId]);
 
 			await update(interaction, {
 				...await getProfileMessageOptions(customId.args[1], userData, userData.userId.includes(interaction.user.id)),

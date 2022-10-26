@@ -1,6 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { speciesInfo } from '../..';
-import { cooldownMap } from '../../events/interactionCreate';
 import userModel, { getUserData } from '../../models/userModel';
 import { ServerSchema } from '../../typings/data/server';
 import { CurrentRegionType, QuidSchema, RankType, UserData, UserSchema } from '../../typings/data/user';
@@ -14,7 +13,7 @@ import { disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
-import { capitalizeString, getArrayElement, getMapData, getSmallerNumber, keyInObject, respond, update } from '../../utils/helperFunctions';
+import { capitalizeString, getArrayElement, getMapData, getSmallerNumber, keyInObject, respond, setCooldown, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -71,7 +70,7 @@ export async function executePlaying(
 	if (!isInGuild(interaction) || !hasNameAndSpecies(userData1, interaction)) { return; }
 
 	/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-	if (command.disablePreviousCommand) { await disableCommandComponent[userData1._id + (interaction.guildId || 'DM')]?.(); }
+	if (command.disablePreviousCommand) { await disableCommandComponent(userData1); }
 
 	/* Checks if the profile is resting, on a cooldown or passed out. */
 	const restEmbed = await isInvalid(interaction, userData1);
@@ -138,7 +137,7 @@ export async function executePlaying(
 	let userData2 = _userData2 ? getUserData(_userData2, interaction.guildId, _userData2.quids[_userData2.currentQuid[interaction.guildId] ?? '']) : null;
 	if (mentionedUserId && !isInteractable(interaction, userData2, messageContent, restEmbed)) { return; }
 
-	cooldownMap.set(userData1._id + interaction.guildId, true);
+	setCooldown(userData1, interaction.guildId, true);
 
 	const experiencePoints = userData1.quid.profile.rank === RankType.Youngling ? getRandomNumber(9, 1) : userData1.quid.profile.rank === RankType.Apprentice ? getRandomNumber(11, 5) : 0;
 	const changedCondition = await changeCondition(userData1, experiencePoints, CurrentRegionType.Prairie);
@@ -387,7 +386,7 @@ export async function executePlaying(
 		playComponent.setComponents(playComponent.components.map(c => c.setDisabled(true)));
 	}
 
-	cooldownMap.set(userData1._id + interaction.guildId, false);
+	setCooldown(userData1, interaction.guildId, false);
 	const levelUpEmbed = await checkLevelUp(interaction, userData1, serverData);
 
 	if (foundQuest) {
@@ -448,5 +447,5 @@ function isEligableForPlaying(
 ): quid is QuidSchema<never> {
 
 	const user = getUserData(userData, guildId, quid);
-	return hasNameAndSpecies(user) && user.quid.profile.currentRegion === CurrentRegionType.Prairie && user.quid.profile.energy > 0 && user.quid.profile.health > 0 && user.quid.profile.hunger > 0 && user.quid.profile.thirst > 0 && user.quid.profile.injuries.cold === false && cooldownMap.get(user._id + guildId) !== true && user.quid.profile.isResting === false && isResting(user) === false;
+	return hasNameAndSpecies(user) && user.quid.profile.currentRegion === CurrentRegionType.Prairie && user.quid.profile.energy > 0 && user.quid.profile.health > 0 && user.quid.profile.hunger > 0 && user.quid.profile.thirst > 0 && user.quid.profile.injuries.cold === false && user.serverInfo?.hasCooldown !== true && user.quid.profile.isResting === false && isResting(user) === false;
 }

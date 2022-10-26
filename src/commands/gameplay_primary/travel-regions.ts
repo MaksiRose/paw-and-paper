@@ -4,13 +4,13 @@ import { CurrentRegionType, RankType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
-import { createCommandComponentDisabler } from '../../utils/componentDisabling';
+import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import { getMapData, respond, update, valueInObject } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { sendDrinkMessage } from '../gameplay_maintenance/drink';
 import { getHealResponse } from '../gameplay_maintenance/heal';
 import { showInventoryMessage } from '../gameplay_maintenance/inventory';
-import { startResting } from '../gameplay_maintenance/rest';
+import { executeResting } from '../gameplay_maintenance/rest';
 import { sendStoreMessage } from '../gameplay_maintenance/store';
 import { remindOfAttack } from './attack';
 import { executePlaying } from './play';
@@ -56,7 +56,7 @@ export const command: SlashCommand = {
 		const chosenRegion = interaction.options.getString('region');
 
 		const botReply = await sendTravelMessage(interaction, userData, messageContent, restEmbed, chosenRegion);
-		createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
 	},
 	async sendMessageComponentResponse(interaction, userData, serverData) {
 
@@ -71,7 +71,7 @@ export const command: SlashCommand = {
 
 			if (interaction.customId.includes('rest')) {
 
-				await startResting(interaction, userData, serverData);
+				await executeResting(interaction, userData, serverData);
 			}
 			else if (interaction.customId.includes('inventory')) {
 

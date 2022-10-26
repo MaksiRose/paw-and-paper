@@ -1,11 +1,10 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { cooldownMap } from '../../events/interactionCreate';
 import { CurrentRegionType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
-import { getMapData, getSmallerNumber, respond, sendErrorMessage } from '../../utils/helperFunctions';
+import { getMapData, getSmallerNumber, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
 const { default_color } = require('../../../config.json');
@@ -55,7 +54,7 @@ export async function sendDrinkMessage(
 		return;
 	}
 
-	cooldownMap.set(userData._id + interaction.guildId, true);
+	setCooldown(userData, interaction.guildId, true);
 
 	const botReply = await respond(interaction, {
 		content: messageContent,
@@ -90,7 +89,7 @@ export async function sendDrinkMessage(
 	collector.on('end', async (collected) => {
 		try {
 
-			cooldownMap.set(userData._id + interaction.guildId, false);
+			setCooldown(userData, interaction.guildId, false);
 
 			const thirstPoints = getSmallerNumber(userData.quid.profile.maxThirst - userData.quid.profile.thirst, getRandomNumber(3, collected.size));
 			const currentRegion = userData.quid.profile.currentRegion;

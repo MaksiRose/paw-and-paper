@@ -4,13 +4,12 @@ import serverModel from '../models/serverModel';
 import userModel, { getUserData } from '../models/userModel';
 import { DiscordEvent } from '../typings/main';
 import { disableCommandComponent, disableAllComponents } from '../utils/componentDisabling';
-import { getMapData, keyInObject, update } from '../utils/helperFunctions';
+import { getMapData, keyInObject, update, userDataServersObject } from '../utils/helperFunctions';
 import { createGuild } from '../utils/updateGuild';
 import { respond } from '../utils/helperFunctions';
 import { sendErrorMessage } from '../utils/helperFunctions';
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
-import { isResting, startResting } from '../commands/gameplay_maintenance/rest';
 import { missingPermissions } from '../utils/permissionHandler';
 import { client, handle } from '../index';
 import { ErrorStacks } from '../typings/data/general';
@@ -20,7 +19,6 @@ import { deconstructCustomId } from '../utils/customId';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
-export const cooldownMap: Map<string, boolean> = new Map();
 export const lastInteractionMap: Map<string, RepliableInteraction<'cached'>> = new Map();
 export const serverActiveUsersMap: Map<string, string[]> = new Map();
 
@@ -34,13 +32,23 @@ export const event: DiscordEvent = {
 			if (!interaction.channel) { await client.channels.fetch(interaction.channelId || ''); }
 
 			const _userData = await userModel.findOne(u => u.userId.includes(interaction.user.id)).catch(() => { return null; });
-			const userData = _userData === null ? null : getUserData(_userData, interaction.guildId ?? 'DM', _userData.quids[_userData.currentQuid[interaction.guildId ?? 'DM'] ?? '']);
+			const userData = _userData === null ? null : getUserData(_userData, interaction.guildId ?? 'DMs', _userData.quids[_userData.currentQuid[interaction.guildId ?? 'DMs'] ?? '']);
 			let serverData = await serverModel.findOne(s => s.serverId === interaction.guildId).catch(() => { return null; });
 
 			/* It's setting the last interaction timestamp for the user to now. */
 			if (userData && interaction.inCachedGuild() && interaction.isRepliable()) {
 
 				lastInteractionMap.set(userData._id + interaction.guildId, interaction);
+				await userData.update(
+					(u) => {
+						u.servers[interaction.guildId] = {
+							...userDataServersObject(u, interaction.guildId),
+							lastInteractionTimestamp: interaction.createdTimestamp,
+							lastInteractionToken: interaction.token,
+							lastInteractionChannelId: interaction.channelId,
+						};
+					},
+				);
 
 				const serverActiveUsers = serverActiveUsersMap.get(interaction.guildId);
 				if (!serverActiveUsers) { serverActiveUsersMap.set(interaction.guildId, [interaction.user.id]); }
@@ -81,9 +89,6 @@ export const event: DiscordEvent = {
 				const command = handle.slashCommands.get(interaction.commandName);
 				if (command === undefined || !keyInObject(command, 'sendCommand')) { return await sendErrorMessage(interaction, new Error('Unknown command')); }
 
-				/* If the user is not registered in the cooldown map, it's setting the cooldown to false for the user. */
-				if (userData && interaction.guildId && !cooldownMap.has(userData._id + interaction.guildId)) { cooldownMap.set(userData._id + interaction.guildId, false); }
-
 				/* It's disabling all components if userData exists and the command is set to disable a previous command. */
 				if (userData && command.disablePreviousCommand) {
 
@@ -91,7 +96,7 @@ export const event: DiscordEvent = {
 						'ViewChannel',
 					]) === true) { return; }
 
-					await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.();
+					await disableCommandComponent(userData);
 				}
 
 				if (userData && interaction.inGuild()) {
@@ -349,48 +354,3 @@ export const event: DiscordEvent = {
 		}
 	},
 };
-
-setInterval(async function() {
-
-	const userArray = await userModel.find();
-	for (const user of userArray) {
-
-		for (const [guildId, quidId] of Object.entries(user.currentQuid)) {
-
-			const userData = getUserData(user, guildId, getMapData(user.quids, quidId));
-			if (!hasNameAndSpecies(userData)) { continue; }
-			const tenMinutesInMs = 600_000;
-
-			const lastInteraction = lastInteractionMap.get(user._id + guildId);
-			if (!lastInteraction) { continue; }
-
-			const serverData = await serverModel.findOne(s => s.serverId === lastInteraction.guildId).catch(() => { return null; });
-			if (!serverData) { continue; }
-
-			const lastInteractionIsTenMinutesAgo = lastInteraction.createdTimestamp < Date.now() - tenMinutesInMs;
-			const hasLessThanMaxEnergy = userData.quid.profile.energy < userData.quid.profile.maxEnergy;
-			const isConscious = userData.quid.profile.energy > 0 || userData.quid.profile.health > 0 || userData.quid.profile.hunger > 0 || userData.quid.profile.thirst > 0;
-			const hasNoCooldown = cooldownMap.get(userData._id + guildId) !== true;
-			if (lastInteractionIsTenMinutesAgo && userData.quid.profile.isResting === false && isResting(userData) === false && hasLessThanMaxEnergy && isConscious && hasNoCooldown) {
-
-				await startResting(lastInteraction, userData, serverData)
-					.catch(async (error) => {
-						await sendErrorMessage(lastInteraction, error)
-							.catch(e => { console.error(e); });
-					});
-			}
-		}
-	}
-
-	for (let [guildId, array] of serverActiveUsersMap.entries()) {
-
-		for (const userId of array) {
-
-			const userData = await userModel.findOne(u => u.userId.includes(userId)).catch(() => { return null; });
-			const lastInteraction = userData ? lastInteractionMap.get(userData._id + guildId) : undefined;
-			/* If there is no last interaction or if the last interaction was created more than 5 minutes ago, remove the user from the array */
-			if (!userData || !lastInteraction || lastInteraction.createdTimestamp <= Date.now() - 300_000) { array = array.filter(v => v !== userId); }
-		}
-		serverActiveUsersMap.set(guildId, array);
-	}
-}, 60_000);

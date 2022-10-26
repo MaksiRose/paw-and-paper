@@ -2,9 +2,9 @@ import { generateId } from 'crystalid';
 import { APIMessage } from 'discord-api-types/v9';
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, MessageContextMenuCommandInteraction, ModalMessageModalSubmitInteraction, ModalSubmitInteraction, RepliableInteraction, SelectMenuInteraction, UserContextMenuCommandInteraction, WebhookEditMessageOptions } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
-import { cooldownMap } from '../events/interactionCreate';
-import userModel from '../models/userModel';
+import userModel, { getUserData } from '../models/userModel';
 import { ErrorStacks } from '../typings/data/general';
+import { UserData, UserSchema } from '../typings/data/user';
 const { error_color } = require('../../config.json');
 
 /**
@@ -156,8 +156,9 @@ export async function sendErrorMessage(
 
 	try {
 
-		const userData = await userModel.findOne(u => u.userId.includes(interaction.user.id));
-		cooldownMap.set(userData._id + interaction.guildId, false);
+		const _userData = await userModel.findOne(u => u.userId.includes(interaction.user.id));
+		const userData = getUserData(_userData, interaction.guildId || 'DMs', undefined);
+		setCooldown(userData, interaction.guildId || 'DMs', false);
 	}
 	catch (newError) { console.error(newError); }
 
@@ -381,4 +382,38 @@ export function addCommasAndAnd<T>(
 
 	if (list.length < 3) { return list.join(' and '); }
 	return `${list.slice(0, -1).join(', ')}, and ${getArrayElement(list, list.length - 1)}`;
+}
+
+export function userDataServersObject(
+	u: UserSchema,
+	guildId: string,
+): UserSchema['servers'][string] {
+
+	return {
+		currentQuid: u.servers[guildId]?.currentQuid ?? u.currentQuid[guildId] ?? null,
+		lastInteractionTimestamp: u.servers[guildId]?.lastInteractionTimestamp ?? null,
+		lastInteractionToken: u.servers[guildId]?.lastInteractionToken ?? null,
+		lastInteractionChannelId: u.servers[guildId]?.lastInteractionChannelId ?? null,
+		restingMessageId: u.servers[guildId]?.restingMessageId ?? null,
+		restingChannelId: u.servers[guildId]?.restingChannelId ?? null,
+		componentDisablingChannelId: u.servers[guildId]?.componentDisablingChannelId ?? null,
+		componentDisablingMessageId: u.servers[guildId]?.componentDisablingMessageId ?? null,
+		hasCooldown: false,
+	};
+}
+
+export async function setCooldown(
+	userData: UserData<undefined, ''>,
+	guildId: string,
+	setTo: boolean,
+) {
+
+	await userData.update(
+		u => {
+			u.servers[guildId] = {
+				...userDataServersObject(u, guildId),
+				hasCooldown: setTo,
+			};
+		},
+	);
 }

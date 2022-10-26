@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
 import { respond, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
-import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
+import { saveCommandDisablingInfo, disableAllComponents } from '../../utils/componentDisabling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
 import { UserData } from '../../typings/data/user';
@@ -41,7 +41,7 @@ export const command: SlashCommand = {
 
 		const botReply = await respond(interaction, await sendOriginalMessage(userData), true);
 
-		createCommandComponentDisabler(userData._id, interaction.guildId || 'DM', botReply);
+		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, botReply.id);
 		return;
 	},
 	async sendMessageComponentResponse(interaction, userData) {
@@ -127,6 +127,9 @@ export const command: SlashCommand = {
 						for (const serverId of Object.keys(u.currentQuid)) {
 							if (u.currentQuid[serverId] === quidId) { delete u.currentQuid[serverId]; }
 						}
+						for (const serverInfo of Object.values(u.servers)) {
+							if (serverInfo.currentQuid) { serverInfo.currentQuid = null; }
+						}
 					},
 				);
 
@@ -154,6 +157,7 @@ export const command: SlashCommand = {
 							if (q.profiles[serverId] !== undefined) { delete q.profiles[serverId]; }
 						}
 						delete u.currentQuid[serverId];
+						delete u.servers[serverId];
 					},
 				);
 
@@ -366,7 +370,7 @@ async function getServersPage(
 
 	let accountsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
 
-	const serverIdList = [...new Set([...userData.quids.map(q => Object.keys(q.profiles)), ...Object.keys(userData.serverIdToQuidId)].flat())];
+	const serverIdList = [...new Set([...userData.quids.map(q => Object.keys(q.profiles)), ...Object.keys(userData.servers)].flat())];
 	for (const serverId of serverIdList) {
 
 		const server = await serverModel.findOne(s => s.serverId === serverId).catch(() => { return null; });

@@ -106,7 +106,7 @@ export const command: SlashCommand = {
 		}
 
 		const _userData = await userModel.findOne(u => u.userId.includes(originalUserId)).catch(() => { return null; });
-		const userData = _userData === null ? null : getUserData(_userData, interaction.guildId || 'DM', _userData.quids[_userData.currentQuid[interaction.guildId || 'DM'] || '']);
+		const userData = _userData === null ? null : getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[_userData.currentQuid[interaction.guildId || 'DMs'] || '']);
 
 		if (interaction.customId.includes('accept')) {
 

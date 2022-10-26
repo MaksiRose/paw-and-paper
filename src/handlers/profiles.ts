@@ -1,7 +1,7 @@
 import { sendReminder } from '../commands/gameplay_maintenance/water-tree';
 import userModel, { getUserData } from '../models/userModel';
 import { hasNameAndSpecies } from '../utils/checkUserState';
-import { getMapData } from '../utils/helperFunctions';
+import { userDataServersObject } from '../utils/helperFunctions';
 
 /** It updates each profile to have no cooldown, not rest, and maximum energy, and then it executes the sendReminder function for each profile for which the sapling exists and where lastMessageChannelId is a string, if the user has enabled water reminders */
 export async function execute(
@@ -19,20 +19,20 @@ export async function execute(
 						if (u.userIds[userId] === undefined) {
 
 							u.userIds[userId] = {};
-							Object.values(u.quids).map(q => Object.values(q.profiles)).flat().forEach(p => {
-								p.serverId;
+							Object.values(u.quids).map(q => Object.keys(q.profiles)).flat().forEach(serverId => {
+
 								u.userIds[userId] = {
 									...(u.userIds[userId] ?? {}),
-									[p.serverId]: { isMember: false, lastUpdatedTimestamp: 0 },
+									[serverId]: { isMember: false, lastUpdatedTimestamp: 0 },
 								};
 							});
 						}
 					}
-					for (const quid of Object.values(u.quids)) {
-						for (const profile of Object.values(quid.profiles)) {
-							const p = getMapData(getMapData(u.quids, quid._id).profiles, profile.serverId);
-							p.isResting = false;
-							p.energy = p.energy === 0 ? 0 : p.maxEnergy;
+
+					for (const serverId of [...Object.values(u.quids).map(q => Object.keys(q.profiles)).flat(), ...Object.keys(u.currentQuid), 'DMs']) {
+						if (u.servers[serverId] === undefined) {
+
+							u.servers[serverId] = userDataServersObject(u, serverId);
 						}
 					}
 				},

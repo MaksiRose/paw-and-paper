@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, Message, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
-import { cooldownMap, serverActiveUsersMap } from '../../events/interactionCreate';
+import { serverActiveUsersMap } from '../../events/interactionCreate';
 import serverModel from '../../models/serverModel';
 import { Inventory } from '../../typings/data/general';
 import { ServerSchema } from '../../typings/data/server';
@@ -12,7 +12,7 @@ import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { createFightGame } from '../../utils/gameBuilder';
-import { getMapData, getSmallerNumber, KeyOfUnion, respond, sendErrorMessage, unsafeKeys, update, ValueOf, widenValues } from '../../utils/helperFunctions';
+import { getMapData, getSmallerNumber, KeyOfUnion, respond, sendErrorMessage, setCooldown, unsafeKeys, update, ValueOf, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -64,7 +64,7 @@ export async function executeAttacking(
 	if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
 
 	/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-	if (command.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
+	if (command.disablePreviousCommand) { await disableCommandComponent(userData); }
 
 	/* Checks if the profile is resting, on a cooldown or passed out. */
 	const restEmbed = await isInvalid(interaction, userData);
@@ -99,7 +99,7 @@ export async function executeAttacking(
 		return;
 	}
 
-	cooldownMap.set(userData._id + interaction.guildId, true);
+	setCooldown(userData, interaction.guildId, true);
 	serverAttackInfo.idleHumans -= 1;
 	serverAttackInfo.ongoingFights += 1;
 
@@ -198,7 +198,7 @@ export async function executeAttacking(
 			return botReply;
 		}
 
-		cooldownMap.set(userData!._id + interaction.guildId, false);
+		setCooldown(userData, interaction.guildId, false);
 
 		let minusItemText = '';
 		let injuryText = '';
