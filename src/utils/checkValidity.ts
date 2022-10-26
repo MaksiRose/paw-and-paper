@@ -1,5 +1,4 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
-import { cooldownMap } from '../events/interactionCreate';
 import { capitalizeString, respond, sendErrorMessage } from './helperFunctions';
 import userModel from '../models/userModel';
 import { getMapData } from './helperFunctions';
@@ -54,7 +53,7 @@ export async function hasCooldown(
 	userData: UserData<never, never>,
 ): Promise<boolean> {
 
-	if (cooldownMap.get(userData._id + interaction.guildId) === true) {
+	if (userData.serverInfo?.hasCooldown === true) {
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
@@ -247,7 +246,7 @@ export function isInteractable(
 		return false;
 	}
 
-	if (cooldownMap.get(userData._id + interaction.guildId)) {
+	if (userData.serverInfo?.hasCooldown === true) {
 
 		respond(interaction, {
 			content: messageContent,

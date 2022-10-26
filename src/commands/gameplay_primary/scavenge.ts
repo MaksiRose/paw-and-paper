@@ -1,6 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { speciesInfo } from '../..';
-import { cooldownMap } from '../../events/interactionCreate';
 import { ServerSchema } from '../../typings/data/server';
 import { RankType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
@@ -10,7 +9,7 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
-import { capitalizeString, getArrayElement, getMapData, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
+import { capitalizeString, getArrayElement, getMapData, respond, sendErrorMessage, setCooldown, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { pickMaterial, pickMeat, simulateMaterialUse, simulateMeatUse } from '../../utils/simulateItemUse';
@@ -53,7 +52,7 @@ export async function executeScavenging(
 	if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
 
 	/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-	if (command.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
+	if (command.disablePreviousCommand) { await disableCommandComponent(userData); }
 
 	/* Checks if the profile is resting, on a cooldown or passed out. */
 	const restEmbed = await isInvalid(interaction, userData);
@@ -75,7 +74,7 @@ export async function executeScavenging(
 
 	if (await hasFullInventory(interaction, userData, restEmbed, messageContent)) { return; }
 
-	cooldownMap.set(userData._id + interaction.guildId, true);
+	setCooldown(userData, interaction.guildId, true);
 
 	const experiencePoints = getRandomNumber(11, 5);
 	const changedCondition = await changeCondition(userData, experiencePoints);
@@ -320,7 +319,7 @@ export async function executeScavenging(
 		serverData: ServerSchema,
 	) {
 
-		cooldownMap.set(userData._id + interaction.guildId, false);
+		setCooldown(userData, int.guildId, false);
 
 		const levelUpEmbed = await checkLevelUp(int, userData, serverData);
 

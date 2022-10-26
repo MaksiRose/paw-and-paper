@@ -9,7 +9,7 @@ import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
+import { saveCommandDisablingInfo, disableAllComponents } from '../../utils/componentDisabling';
 import getInventoryElements from '../../utils/getInventoryElements';
 import { getArrayElement, getSmallerNumber, respond, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
@@ -84,7 +84,7 @@ export const command: SlashCommand = {
 			components: [getDenButtons(userData._id)],
 		} : getMaterials(userData, serverData, chosenDen, restEmbed, messageContent), true);
 
-		createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
 	},
 	async sendMessageComponentResponse(interaction, userData, serverData) {
 

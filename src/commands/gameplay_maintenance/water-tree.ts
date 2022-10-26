@@ -201,7 +201,6 @@ export async function sendReminder(
 				if (await hasPermission(member || channel.client.user.id, channel.id, 'ViewChannel') === false || await hasPermission(member || channel.client.user.id, channel.id, channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages') === false || await hasPermission(member || channel.client.user.id, channel.id, 'EmbedLinks') === false) { return; } // Needed for channel.send call
 
 				/* This has to be changed when multiple users are introduced. First idea is to also store, as part of the sapling object, which user last watered. Then, if that user fails, try again for all the other users. */
-				await channel.guild.members.fetch(userData.userId[0] || '');
 				const isInactive = _userData.currentQuid[userData.quid.profile.serverId] !== userData.quid._id;
 
 				await channel.send({

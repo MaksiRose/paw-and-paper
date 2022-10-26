@@ -1,5 +1,4 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
-import { cooldownMap } from '../../events/interactionCreate';
 import { ServerSchema } from '../../typings/data/server';
 import { RankType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
@@ -7,9 +6,9 @@ import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../
 import { changeCondition } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
+import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
 import { createFightGame } from '../../utils/gameBuilder';
-import { respond, update } from '../../utils/helperFunctions';
+import { respond, setCooldown, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
@@ -78,7 +77,7 @@ export const command: SlashCommand = {
 			],
 		}, true);
 
-		createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
 
 		const int = await botReply
 			.awaitMessageComponent({
@@ -105,8 +104,8 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		cooldownMap.set(userData._id + interaction.guildId, true);
-		delete disableCommandComponent[userData._id + interaction.guildId];
+		setCooldown(userData, interaction.guildId, true);
+		deleteCommandDisablingInfo(userData, interaction.guildId);
 
 		const experiencePoints = getRandomNumber(5, 1);
 		const changedCondition = await changeCondition(userData, experiencePoints);
@@ -200,7 +199,7 @@ export const command: SlashCommand = {
 				return;
 			}
 
-			cooldownMap.set(userData!._id + interaction.guildId, false);
+			setCooldown(userData, interaction.guildId, false);
 
 			if (winLoseRatio > 0) {
 

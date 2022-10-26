@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, GuildMember, ModalBuilder
 import { capitalizeString, getArrayElement, respond, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
-import { createCommandComponentDisabler } from '../../utils/componentDisabling';
+import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
@@ -60,7 +60,7 @@ export const command: SlashCommand = {
 			content: getSkillList(userData),
 			components: isYourself ? [getOriginalComponents(userData, serverData, interaction.member)] : [],
 		}, true);
-		if (userData) { createCommandComponentDisabler(userData._id, interaction.guildId, botReply); }
+		if (userData) { saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id); }
 	},
 	async sendMessageComponentResponse(interaction, userData, serverData) {
 

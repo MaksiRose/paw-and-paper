@@ -12,7 +12,7 @@ import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition, infectWithChance } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
+import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import getInventoryElements from '../../utils/getInventoryElements';
 import { capitalizeString, getArrayElement, getMapData, getSmallerNumber, keyInObject, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
@@ -247,7 +247,7 @@ export async function getHealResponse(
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 		});
 
-		createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
 		return;
 	}
 
@@ -288,7 +288,7 @@ export async function getHealResponse(
 				components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 			});
 
-			createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
+			saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
 			return;
 		}
 
@@ -325,7 +325,7 @@ export async function getHealResponse(
 			components: [quidsSelectMenu, pagesButtons, inventorySelectMenu],
 		});
 
-		createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
 		return;
 	}
 
@@ -341,7 +341,7 @@ export async function getHealResponse(
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 		});
 
-		createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
 		return;
 	}
 
@@ -447,7 +447,7 @@ export async function getHealResponse(
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 		});
 
-		createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
 		return;
 	}
 
@@ -523,7 +523,7 @@ export async function getHealResponse(
 
 	if (interaction.isMessageComponent()) {
 
-		delete disableCommandComponent[userData._id + interaction.guildId];
+		deleteCommandDisablingInfo(userData, interaction.guildId);
 		await interaction.message.delete();
 	}
 

@@ -40,7 +40,7 @@ export const command: SlashCommand = {
 		/* Changing the hex code and sending a success message. */
 		await userData.update(
 			(u) => {
-				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DM'));
+				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DMs'));
 				q.color = `#${hexColor}`;
 			},
 		);

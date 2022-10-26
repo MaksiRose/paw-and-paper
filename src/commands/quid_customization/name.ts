@@ -1,6 +1,6 @@
 import { EmbedBuilder, GuildMember, SlashCommandBuilder } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
-import { respond } from '../../utils/helperFunctions';
+import { respond, userDataServersObject } from '../../utils/helperFunctions';
 import { checkLevelRequirements, checkRankRequirements } from '../../utils/checkRoleRequirements';
 import { getRandomNumber } from '../../utils/randomizers';
 import { generateId } from 'crystalid';
@@ -65,10 +65,11 @@ export const command: SlashCommand = {
 				},
 				quids: {},
 				currentQuid: {},
+				servers: {},
 				lastPlayedVersion: `${version.split('.').slice(0, -1).join('.')}`,
 				_id: generateId(),
 			});
-			userData = getUserData(_userData, interaction.guildId ?? 'DM', _userData.quids[_userData.currentQuid[interaction.guildId ?? 'DM'] ?? '']);
+			userData = getUserData(_userData, interaction.guildId ?? 'DMs', _userData.quids[_userData.currentQuid[interaction.guildId ?? 'DMs'] ?? '']);
 		}
 
 		const name = interaction.options.getString('name');
@@ -86,7 +87,7 @@ export const command: SlashCommand = {
 		}
 
 		/* This is checking if the user has a quid in the database. If they don't, it will create a new user. */
-		const _id = userData.serverIdToQuidId.get(interaction.guildId || 'DM') || await createId();
+		const _id = userData.servers.get(interaction.guildId || 'DMs')?.currentQuid || await createId();
 
 
 		await userData.update(
@@ -151,7 +152,11 @@ export const command: SlashCommand = {
 				}
 				else { q.name = name; }
 
-				u.currentQuid[interaction.guildId || 'DM'] = _id;
+				u.currentQuid[interaction.guildId || 'DMs'] = _id;
+				u.servers[interaction.guildId || 'DMs'] = {
+					...userDataServersObject(u, interaction.guildId || 'DMs'),
+					currentQuid: _id,
+				};
 			},
 		);
 

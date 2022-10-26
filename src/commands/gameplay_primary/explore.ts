@@ -1,11 +1,11 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { capitalizeString, getBiggerNumber, getMapData, getSmallerNumber, keyInObject, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
+import { capitalizeString, getBiggerNumber, getMapData, getSmallerNumber, keyInObject, respond, sendErrorMessage, setCooldown, update } from '../../utils/helperFunctions';
 import { remindOfAttack, startAttack } from './attack';
 import Fuse from 'fuse.js';
 import { disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
-import { cooldownMap, serverActiveUsersMap } from '../../events/interactionCreate';
+import { serverActiveUsersMap } from '../../events/interactionCreate';
 import { createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { changeCondition, userFindsQuest } from '../../utils/changeCondition';
@@ -84,7 +84,7 @@ export async function executeExploring(
 	if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
 
 	/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-	if (command.disablePreviousCommand) { await disableCommandComponent[userData._id + (interaction.guildId || 'DM')]?.(); }
+	if (command.disablePreviousCommand) { await disableCommandComponent(userData); }
 
 	/* Checks if the profile is resting, on a cooldown or passed out. */
 	const restEmbed = await isInvalid(interaction, userData);
@@ -130,7 +130,7 @@ export async function executeExploring(
 		return;
 	}
 
-	cooldownMap.set(userData._id + interaction.guildId, true);
+	setCooldown(userData, interaction.guildId, true);
 
 	/* Here we are getting the biomes available to the quid, getting a user input if there is one, and defining chosenBiome as the user input if it matches an available biome, else it is null. */
 	const availableBiomes = getAvailableBiomes(userData);
@@ -170,7 +170,7 @@ export async function executeExploring(
 			})
 			.catch(async () => {
 
-				cooldownMap.set(userData!._id + interaction.guildId, false);
+				setCooldown(userData, interaction.guildId, false);
 				await respond(interaction, { components: disableAllComponents(getBiomeMessage.components) }, true);
 
 				return null;
@@ -898,7 +898,7 @@ export async function executeExploring(
 		}
 	}
 
-	cooldownMap.set(userData._id + interaction.guildId, false);
+	setCooldown(userData, interaction.guildId, false);
 	const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
 
 	if (foundQuest) {

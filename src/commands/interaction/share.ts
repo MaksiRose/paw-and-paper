@@ -1,5 +1,4 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { cooldownMap } from '../../events/interactionCreate';
 import userModel, { getUserData } from '../../models/userModel';
 import { CurrentRegionType, QuidSchema, UserSchema } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
@@ -184,5 +183,5 @@ function isEligableForSharing(
 ): quid is QuidSchema<never> {
 
 	const user = getUserData(userData, guildId, quid);
-	return hasNameAndSpecies(user) && user.quid.profile !== undefined && user.quid.profile.currentRegion === CurrentRegionType.Ruins && user.quid.profile.energy > 0 && user.quid.profile.health > 0 && user.quid.profile.hunger > 0 && user.quid.profile.thirst > 0 && user.quid.profile.injuries.cold === false && cooldownMap.get(user._id + guildId) !== true && user.quid.profile.isResting === false && isResting(user) === false;
+	return hasNameAndSpecies(user) && user.quid.profile !== undefined && user.quid.profile.currentRegion === CurrentRegionType.Ruins && user.quid.profile.energy > 0 && user.quid.profile.health > 0 && user.quid.profile.hunger > 0 && user.quid.profile.thirst > 0 && user.quid.profile.injuries.cold === false && user.serverInfo?.hasCooldown !== true && user.quid.profile.isResting === false && isResting(user) === false;
 }

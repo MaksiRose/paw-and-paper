@@ -61,7 +61,9 @@ export interface ProfileSchema {
 	maxThirst: number;
 	/** Object with a timestamp as the key and the kind of stat that is increased as the value */
 	temporaryStatIncrease: { [key in string]: StatIncreaseType };
-	/** Whether the quid is resting */
+	/** Whether the quid is resting
+	 * @deprecated
+	 */
 	isResting: boolean;
 	/** Whether the quid has an open quest */
 	hasQuest: boolean;
@@ -159,10 +161,12 @@ export enum ProxyConfigType {
 }
 
 export interface UserSchema {
-	/** Array of IDs of the users associated with this account */
+	/** Array of IDs of the users associated with this account
+	 * @deprecated use userIds instead
+	 */
 	userId: Array<string>;
 	/** Object with discord user IDs as keys and values that are objects with discord server IDs as keys and values that are objects of whether the user is a member and when this was last updated */
-	userIds: Record<string, Record<string, { isMember: boolean; lastUpdatedTimestamp: number}>>
+	userIds: Record<string, Record<string, { isMember: boolean; lastUpdatedTimestamp: number; }>>;
 	/** Tag of the account */
 	tag: {
 		global: string,
@@ -210,8 +214,23 @@ export interface UserSchema {
 	};
 	/** Object of names of quids as the key and the quids this user has created as value */
 	quids: { [key in string]: QuidSchema<''> };
-	/** Object of the server IDs as the key and the id of the quid that is currently active as the value */
+	/** Object of the server IDs as the key and the id of the quid that is currently active as the value
+	 * @deprecated use servers instead
+	 */
 	currentQuid: { [key in string]: string };
+	servers: {
+		[key in string]: {
+			currentQuid: string | null,
+			lastInteractionTimestamp: number | null,
+			lastInteractionToken: string | null,
+			lastInteractionChannelId: string | null,
+			restingMessageId: string | null,
+			restingChannelId: string | null,
+			componentDisablingChannelId: string | null,
+			componentDisablingMessageId: string | null,
+			hasCooldown: boolean
+		}
+	};
 	/** Last major version that the user played on */
 	lastPlayedVersion: string;
 	readonly _id: string;
@@ -226,16 +245,17 @@ export interface Quid<Completed extends ''> extends Omit<QuidSchema<Completed>, 
 	getDisplayname: () => string;
 	getDisplayspecies: () => string;
 	pronoun: (pronounNumber: 0 | 1 | 2 | 3 | 4 | 5) => string;
-	pronounAndPlural: (pronounNumber: 0 | 1 | 2 | 3 | 4 | 5, string1: string, string2?: string) => string
+	pronounAndPlural: (pronounNumber: 0 | 1 | 2 | 3 | 4 | 5, string1: string, string2?: string) => string;
 }
 
-export interface UserData<QuidExists extends undefined, QuidCompleted extends ''> extends Omit<UserSchema, 'quids' | 'currentQuid' | 'tag' | 'settings'> {
+export interface UserData<QuidExists extends undefined, QuidCompleted extends ''> extends Omit<UserSchema, 'quids' | 'currentQuid' | 'servers' | 'tag' | 'settings'> {
 	tag: Omit<UserSchema['tag'], 'servers'> & {
 		server: UserSchema['tag']['servers'][string] | undefined;
 	},
 	quid: Quid<QuidCompleted> | QuidExists,
+	serverInfo: ValueOf<UserSchema['servers']> | undefined,
 	quids: Collection<keyof UserSchema['quids'], ValueOf<UserSchema['quids']>>,
-	serverIdToQuidId: Collection<keyof UserSchema['currentQuid'], ValueOf<UserSchema['currentQuid']>>,
+	servers: Collection<keyof UserSchema['servers'], ValueOf<UserSchema['servers']>>,
 	settings: Omit<UserSchema['settings'], 'proxy'> & {
 		proxy: Omit<UserSchema['settings']['proxy'], 'servers'> & {
 			server: UserSchema['settings']['proxy']['servers'][string] | undefined;

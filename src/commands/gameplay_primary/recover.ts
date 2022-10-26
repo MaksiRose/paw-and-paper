@@ -1,6 +1,5 @@
 import { ActionRowBuilder, APIActionRowComponent, APIButtonComponent, APISelectMenuComponent, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo } from '../..';
-import { cooldownMap } from '../../events/interactionCreate';
 import { Inventory } from '../../typings/data/general';
 import { ServerSchema } from '../../typings/data/server';
 import { UserData } from '../../typings/data/user';
@@ -9,8 +8,8 @@ import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition, DecreasedStatsData } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
-import { getArrayElement, getMapData, respond, sendErrorMessage, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
+import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
+import { getArrayElement, getMapData, respond, sendErrorMessage, setCooldown, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
@@ -97,7 +96,7 @@ export const command: SlashCommand = {
 			],
 		}, true);
 
-		createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
 
 		const buttonInteraction = await botReply
 			.awaitMessageComponent({
@@ -119,8 +118,8 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		cooldownMap.set(userData._id + interaction.guildId, true);
-		delete disableCommandComponent[userData._id + interaction.guildId];
+		setCooldown(userData, interaction.guildId, true);
+		deleteCommandDisablingInfo(userData, interaction.guildId);
 
 		const healKind = buttonInteraction.customId.replace('recover_', '');
 		const recoverFieldOptions = ['🌱', '🌿', '☘️', '🍀', '🍃', '💐', '🌷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🍇', '🍊', '🫒', '🌰', '🏕️', '🌲', '🌳', '🍂', '🍁', '🍄', '🐝', '🪱', '🐛', '🦋', '🐌', '🐞', '🐁', '🦔', '🌵', '🦂', '🏜️', '🎍', '🪴', '🎋', '🪨', '🌾', '🐍', '🦎', '🐫', '🐙', '🦑', '🦀', '🐡', '🐠', '🐟', '🌊', '🐚', '🪵', '🌴'];
@@ -338,7 +337,7 @@ export const command: SlashCommand = {
 						await drinkAdvice(lastInteraction, userData);
 						await eatAdvice(lastInteraction, userData);
 
-						cooldownMap.set(userData._id + interaction.guildId, false);
+						setCooldown(userData, interaction.guildId, false);
 					}
 					catch (error) {
 

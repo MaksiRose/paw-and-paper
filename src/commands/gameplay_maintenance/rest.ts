@@ -1,11 +1,12 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, RepliableInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionWebhook, Message, RepliableInteraction, SlashCommandBuilder } from 'discord.js';
+import { client } from '../..';
 import serverModel from '../../models/serverModel';
 import { ServerSchema } from '../../typings/data/server';
 import { CurrentRegionType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasCooldown, isPassedOut } from '../../utils/checkValidity';
-import { capitalizeString, getMapData, respond, sendErrorMessage } from '../../utils/helperFunctions';
+import { capitalizeString, getMapData, respond, sendErrorMessage, userDataServersObject } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -32,11 +33,11 @@ export const command: SlashCommand = {
 		if (await isPassedOut(interaction, userData, false)) { return; }
 		if (await hasCooldown(interaction, userData)) { return; }
 
-		await startResting(interaction, userData, serverData);
+		await executeResting(interaction, userData, serverData);
 	},
 };
 
-export async function startResting(
+export async function executeResting(
 	interaction: RepliableInteraction<'cached'>,
 	userData: UserData<never, never>,
 	serverData: ServerSchema,
@@ -74,47 +75,103 @@ export async function startResting(
 		return;
 	}
 
-	const previousRegion = userData.quid.profile.currentRegion;
+	await startResting(interaction, userData, serverData, messageContent, false);
+}
 
-	await userData.update(
-		(u) => {
-			const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-			p.isResting = true;
-			p.currentRegion = CurrentRegionType.SleepingDens;
-			u.advice.resting = true;
-		},
-	);
-
-	const isAutomatic = !interaction.isCommand() || interaction.commandName !== command.data.name;
-
-	const weardownText = await wearDownDen(serverData, CurrentRegionType.SleepingDens);
-	let energyPoints = 0;
+export async function startResting(
+	interaction: RepliableInteraction<'cached'> | undefined,
+	userData: UserData<never, never>,
+	serverData: ServerSchema,
+	messageContent: string,
+	isAutomatic: boolean,
+) {
 
 	const component = new ActionRowBuilder<ButtonBuilder>()
 		.setComponents(new ButtonBuilder()
 			.setCustomId(`settings_reminders_resting_${userData.settings.reminders.resting === true ? 'off' : 'on'}_@${userData._id}`)
 			.setLabel(`Turn automatic resting pings ${userData.settings.reminders.resting === true ? 'off' : 'on'}`)
 			.setStyle(ButtonStyle.Secondary));
+	const prePreviousRegionText = 'You are now at the ';
 
-	const botReply = await respond(interaction, {
-		content: messageContent,
-		embeds: [getRestingEmbed(userData, energyPoints, previousRegion, isAutomatic, weardownText)],
-		components: isAutomatic ? [component] : [],
-	}, false);
+	let botReply: Message<boolean>;
+	let previousRegion: CurrentRegionType;
+	let weardownText: string;
+	let energyPoints: number;
+	if (userData.serverInfo?.restingMessageId && userData.serverInfo?.restingChannelId) {
 
-	restingIntervalMap.set(userData._id + interaction.guildId, setInterval(async function(): Promise<void> {
+		const channel = await client.channels.fetch(userData.serverInfo.restingChannelId);
+		if (!channel || !channel.isTextBased()) { throw new TypeError('channel is not TextBasedChannel'); }
+		botReply = await channel.messages.fetch(userData.serverInfo.restingMessageId);
+
+		const embedFooterLines = botReply.embeds[0]?.footer?.text.split('\n');
+		isAutomatic = embedFooterLines?.[1]?.includes('inactive') === true || embedFooterLines?.[2]?.includes('inactive') === true;
+		previousRegion = (embedFooterLines?.[1]?.startsWith(prePreviousRegionText) === true) ? embedFooterLines[1].replace(prePreviousRegionText, '') as CurrentRegionType : userData.quid.profile.currentRegion;
+		weardownText = embedFooterLines?.[embedFooterLines.length - 3] ?? '';
+		energyPoints = Number(embedFooterLines?.[0]?.split(' ')[0]?.replace('+', '') ?? '0');
+	}
+	else {
+
+		previousRegion = userData.quid.profile.currentRegion;
+		weardownText = await wearDownDen(serverData, CurrentRegionType.SleepingDens);
+		energyPoints = 0;
+
+		await userData.update(
+			(u) => {
+				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, serverData.serverId)).profiles, serverData.serverId);
+				p.currentRegion = CurrentRegionType.SleepingDens;
+				u.advice.resting = true;
+			},
+		);
+
+		const messageOptions = {
+			content: messageContent,
+			embeds: [getRestingEmbed(userData, energyPoints, prePreviousRegionText, previousRegion, isAutomatic, weardownText)],
+			components: isAutomatic ? [component] : [],
+		};
+
+		if (interaction !== undefined) {
+
+			botReply = await respond(interaction, messageOptions, false);
+		}
+		else if (userData.serverInfo?.lastInteractionToken && client.isReady()) {
+
+			botReply = await new InteractionWebhook(client, client.application.id, userData.serverInfo.lastInteractionToken).send(messageOptions);
+		}
+		else if (userData.serverInfo?.lastInteractionChannelId) {
+
+			const channel = await client.channels.fetch(userData.serverInfo.lastInteractionChannelId);
+			if (!channel || !channel.isTextBased()) { throw new TypeError('channel is not TextBasedChannel'); }
+			botReply = await channel.send(messageOptions);
+		}
+		else {
+
+			throw new Error('Resting could not be started because no messageId and/or channelId of an existing message have been logged, interaction is undefined and lastInteractionToken and lastInteractionChannelId are null');
+		}
+
+		await userData.update(
+			(u) => {
+				u.servers[serverData.serverId] = {
+					...userDataServersObject(u, serverData.serverId),
+					restingChannelId: botReply?.channelId ?? null,
+					restingMessageId: botReply?.id ?? null,
+				};
+			},
+		);
+	}
+
+	restingIntervalMap.set(userData._id + serverData.serverId, setInterval(async function(): Promise<void> {
 		try {
 
 			energyPoints += 1;
 
 			await userData.update(
 				(u) => {
-					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, serverData.serverId)).profiles, serverData.serverId);
 					p.energy += 1;
 				},
 			);
 
-			const embed = getRestingEmbed(userData, energyPoints, previousRegion, isAutomatic, weardownText);
+			const embed = getRestingEmbed(userData, energyPoints, prePreviousRegionText, previousRegion, isAutomatic, weardownText);
 			await botReply.edit({
 				embeds: [embed],
 			});
@@ -124,16 +181,20 @@ export async function startResting(
 
 				await userData.update(
 					(u) => {
-						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-						p.isResting = false;
+						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, serverData.serverId)).profiles, serverData.serverId);
 						p.currentRegion = previousRegion;
+						u.servers[serverData.serverId] = {
+							...userDataServersObject(u, serverData.serverId),
+							restingChannelId: null,
+							restingMessageId: null,
+						};
 					},
 				);
 
 				await botReply.delete();
 
 				await botReply.channel.send({
-					content: userData.settings.reminders.resting ? interaction.user.toString() : undefined,
+					content: userData.settings.reminders.resting ? (interaction?.user.toString() || `<@${userData.userId[0]}>`) : undefined,
 					embeds: [embed.setDescription(`*${userData.quid.name}'s eyes blink open, ${userData.quid.pronounAndPlural(0, 'sit')} up to stretch and then walk out into the light and buzz of late morning camp. Younglings are spilling out of the nursery, ambitious to start the day, Hunters and Healers are traveling in and out of the camp border. It is the start of the next good day!*`)],
 					components: isAutomatic ? [component] : [],
 				});
@@ -146,10 +207,14 @@ export async function startResting(
 		catch (error) {
 
 			stopResting(userData);
-			await sendErrorMessage(interaction, error)
-				.catch(e => { console.error(e); });
+			if (interaction !== undefined) {
+
+				await sendErrorMessage(interaction, error)
+					.catch(e => { console.error(e); });
+			}
+			else { console.error(error); }
 		}
-	}, 30_000 + await getExtraRestingTime(interaction.guildId)));
+	}, 30_000 + await getExtraRestingTime(serverData.serverId)));
 }
 
 /**
@@ -165,6 +230,7 @@ export async function startResting(
 function getRestingEmbed(
 	userData: UserData<never, never>,
 	energyPoints: number,
+	prePreviousRegionText: string,
 	previousRegion: CurrentRegionType,
 	isAutomatic: boolean,
 	weardownText: string,
@@ -174,7 +240,7 @@ function getRestingEmbed(
 		.setColor(userData.quid.color)
 		.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 		.setDescription(`*${userData.quid.name}'s chest rises and falls with the crickets. Snoring bounces off each wall, finally exiting the den and rising free to the clouds.*`)
-		.setFooter({ text: `+${energyPoints} energy (${userData.quid.profile.energy}/${userData.quid.profile.maxEnergy})${(previousRegion !== CurrentRegionType.SleepingDens) ? '\nYou are now at the sleeping dens' : ''}${isAutomatic ? '\nYour quid started resting because you were inactive for 10 minutes' : ''}\n\n${weardownText}\n\nTip: You can also do "/vote" to get +30 energy per vote!` });
+		.setFooter({ text: `+${energyPoints} energy (${userData.quid.profile.energy}/${userData.quid.profile.maxEnergy})${(previousRegion !== CurrentRegionType.SleepingDens) ? `\n${prePreviousRegionText}sleeping dens` : ''}${isAutomatic ? '\nYour quid started resting because you were inactive for 10 minutes' : ''}\n\n${weardownText}\n\nTip: You can also do "/vote" to get +30 energy per vote!` });
 }
 
 /**

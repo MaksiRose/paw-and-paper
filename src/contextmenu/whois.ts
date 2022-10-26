@@ -48,7 +48,7 @@ export const command: ContextMenuCommand = {
 				});
 			return;
 		}
-		const userData = getUserData(_userData, interaction.guildId || 'DM', _userData.quids[quidId || _userData.currentQuid[interaction.guildId || 'DM'] || '']);
+		const userData = getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[quidId || _userData.currentQuid[interaction.guildId || 'DMs'] || '']);
 
 		const member = await interaction.guild.members.fetch(userId).catch(() => { return undefined; });
 		const user = member ? member.user : await interaction.client.users.fetch(userId).catch(() => { return undefined; });

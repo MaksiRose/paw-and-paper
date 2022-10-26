@@ -1,7 +1,6 @@
 import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { respond, userDataServersObject } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
-import { cooldownMap } from '../../events/interactionCreate';
 import { client } from '../..';
 import { SlashCommand } from '../../typings/handle';
 
@@ -61,7 +60,8 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		if (!cooldownMap.has(userData._id + guildId)) {
+		const serverInfo = userData.servers[guildId];
+		if (serverInfo === undefined) {
 
 			await respond(interaction, {
 				content: `There is no cooldown entry for ${user.tag} in ${guild.name}`,
@@ -70,7 +70,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		if (cooldownMap.get(userData._id + guildId) === false) {
+		if (serverInfo.hasCooldown === false) {
 
 			await respond(interaction, {
 				content: `The cooldown for ${user.tag} in ${guild.name} is already set to false`,
@@ -79,7 +79,15 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		cooldownMap.set(userData._id + guildId, false);
+		await userModel.findOneAndUpdate(
+			u => u._id === userData._id,
+			u => {
+				u.servers[guildId] = {
+					...userDataServersObject(u, guildId),
+					hasCooldown: false,
+				};
+			},
+		);
 		await respond(interaction, {
 			content: `Sucessfully set the cooldown for ${user.tag} in ${guild.name} to false`,
 		}, false);

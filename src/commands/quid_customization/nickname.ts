@@ -24,7 +24,7 @@ export const command: SlashCommand = {
 
 		await userData.update(
 			(u) => {
-				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DM'));
+				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DMs'));
 				if (serverData) { q.nickname.servers[serverData.serverId] = nickname; }
 				else { q.nickname.global = nickname; }
 			},

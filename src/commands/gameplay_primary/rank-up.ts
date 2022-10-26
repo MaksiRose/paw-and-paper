@@ -4,7 +4,7 @@ import { SlashCommand } from '../../typings/handle';
 import { checkRankRequirements } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
-import { createCommandComponentDisabler } from '../../utils/componentDisabling';
+import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import { getArrayElement, getMapData, respond, update } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { remindOfAttack } from './attack';
@@ -81,7 +81,7 @@ export const command: SlashCommand = {
 				],
 			}, true);
 
-			createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
+			saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
 
 			return;
 		}

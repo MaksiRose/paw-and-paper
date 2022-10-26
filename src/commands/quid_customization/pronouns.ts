@@ -1,7 +1,7 @@
 import { ActionRowBuilder, EmbedBuilder, ModalBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { respond, update } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
-import { createCommandComponentDisabler } from '../../utils/componentDisabling';
+import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
 import { pronounCompromiser } from './profile';
 import { missingPermissions } from '../../utils/permissionHandler';
@@ -42,7 +42,7 @@ export const command: SlashCommand = {
 			components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData)])],
 		}, true);
 
-		createCommandComponentDisabler(userData._id, interaction.guildId || 'DM', botReply);
+		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, botReply.id);
 		return;
 	},
 	async sendMessageComponentResponse(interaction, userData) {

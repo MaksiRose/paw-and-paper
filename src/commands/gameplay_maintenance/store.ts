@@ -6,7 +6,7 @@ import { UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
-import { createCommandComponentDisabler, disableAllComponents } from '../../utils/componentDisabling';
+import { saveCommandDisablingInfo, disableAllComponents } from '../../utils/componentDisabling';
 import { getMapData, widenValues, unsafeKeys, respond, update, getArrayElement, capitalizeString } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { calculateInventorySize } from '../../utils/simulateItemUse';
@@ -177,7 +177,7 @@ export async function sendStoreMessage(
 		components: [itemSelectMenu, storeAllButton],
 	});
 
-	createCommandComponentDisabler(userData._id, interaction.guildId, botReply);
+	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
 }
 
 function getOriginalEmbed(
