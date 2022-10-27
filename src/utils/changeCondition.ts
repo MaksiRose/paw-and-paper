@@ -305,7 +305,7 @@ export function userFindsQuest(
 	const rankToNr = { Youngling: 0, Apprentice: 1, Hunter: 2, Healer: 2, Elderly: 3 }[rank];
 
 	/* If this is true, the person has gotten and successfully finished a quest (therefore unlocking the next rank), but hasn't ranked up yet */
-	if (rankToNr < unlockedRanks) { return false; }
+	if (rankToNr !== unlockedRanks) { return false; }
 
 	/* To calculate the minLevel for elderlies, it calculates how many quests an elderly has had already based on their stat increase amount, since with every successful quest, one of their maxStats goes up by 10. */
 	const maxStatsIncrease = maxHealth + maxEnergy + maxHunger + maxThirst - 400;
