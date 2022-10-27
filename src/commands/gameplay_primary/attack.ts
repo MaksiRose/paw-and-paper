@@ -20,7 +20,6 @@ const { default_color } = require('../../../config.json');
 
 type serverMapInfo = { startsTimestamp: number | null, idleHumans: number, endingTimeout: NodeJS.Timeout | null, ongoingFights: number; }
 const serverMap: Map<string, serverMapInfo > = new Map();
-const newCycleArray = ['attack', 'dodge', 'defend'] as const;
 
 type CustomIdArgs = ['new'] | ['new', string]
 
@@ -194,7 +193,7 @@ export async function executeAttacking(
 
 		if (totalCycles < 5) {
 
-			botReply = await interactionCollector(interaction, userData, serverData, serverAttackInfo, restEmbed, newInteraction, fightGame.fightComponent, newCycleArray.findIndex(el => el === fightGame.cycleKind));
+			botReply = await interactionCollector(interaction, userData, serverData, serverAttackInfo, restEmbed, newInteraction, fightGame.fightComponent, fightGame.thisRoundCycleIndex);
 			return botReply;
 		}
 

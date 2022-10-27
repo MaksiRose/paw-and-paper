@@ -14,8 +14,6 @@ import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
 
-const newCycleArray = ['attack', 'dodge', 'defend'] as const;
-
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
 		.setName('practice')
@@ -195,7 +193,7 @@ export const command: SlashCommand = {
 
 			if (totalCycles < 3) {
 
-				await interactionCollector(interaction, userData, serverData, newInteraction, restEmbed, fightGame.fightComponent, newCycleArray.findIndex(el => el === fightGame.cycleKind));
+				await interactionCollector(interaction, userData, serverData, newInteraction, restEmbed, fightGame.fightComponent, fightGame.thisRoundCycleIndex);
 				return;
 			}
 
