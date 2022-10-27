@@ -68,11 +68,11 @@ export const event: DiscordEvent = {
 				.catch(error => { console.error(error); });
 			if (!isSuccessful) { return; }
 
-			if (await hasPermission(message.guild.members.me || message.client.user.id, message.channel, 'ManageMessages')) {
+			if (await hasPermission(message.guild.members.me || await message.channel.guild.members.fetchMe({ force: false }) || message.client.user.id, message.channel, 'ManageMessages')) {
 
 				await message.delete();
 			}
-			else if (await hasPermission(message.guild.members.me || message.client.user.id, message.channel, message.channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) {
+			else if (await hasPermission(message.guild.members.me || await message.channel.guild.members.fetchMe({ force: false }) || message.client.user.id, message.channel, message.channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) {
 
 				await message.reply(getMissingPermissionContent(permissionDisplay.ManageMessages));
 			}
