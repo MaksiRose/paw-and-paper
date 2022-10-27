@@ -398,7 +398,7 @@ export function userDataServersObject(
 		restingChannelId: u.servers[guildId]?.restingChannelId ?? null,
 		componentDisablingChannelId: u.servers[guildId]?.componentDisablingChannelId ?? null,
 		componentDisablingMessageId: u.servers[guildId]?.componentDisablingMessageId ?? null,
-		hasCooldown: false,
+		hasCooldown: u.servers[guildId]?.hasCooldown ?? false,
 	};
 }
 
