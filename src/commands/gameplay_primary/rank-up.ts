@@ -68,12 +68,12 @@ export const command: SlashCommand = {
 				components: [new ActionRowBuilder<ButtonBuilder>()
 					.setComponents([
 						new ButtonBuilder()
-							.setCustomId(`rank_Healer_@${userData._id}`)
+							.setCustomId(`rank-up_Healer_@${userData._id}`)
 							.setLabel('Healer')
 							.setEmoji('🛡️')
 							.setStyle(ButtonStyle.Success),
 						new ButtonBuilder()
-							.setCustomId(`rank_Hunter_@${userData._id}`)
+							.setCustomId(`rank-up_Hunter_@${userData._id}`)
 							.setLabel('Hunter')
 							.setEmoji('⚔️')
 							.setStyle(ButtonStyle.Success),
