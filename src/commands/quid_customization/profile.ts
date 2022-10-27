@@ -53,8 +53,8 @@ export const command: SlashCommand = {
 		/* Checking if the user has a cooldown. */
 		else if (hasNameAndSpecies(userData) && interaction.inCachedGuild() && await hasCooldown(interaction, userData)) { return; }
 
-		const response = await getProfileMessageOptions(mentionedUser?.id || interaction.user.id, userData, userData.userId.includes(mentionedUser?.id || interaction.user.id));
-		const selectMenu = getQuidSelectMenu(userData, mentionedUser?.id || interaction.user.id, interaction.user.id, 0, userData.userId.includes(mentionedUser?.id || interaction.user.id));
+		const response = await getProfileMessageOptions(mentionedUser?.id || interaction.user.id, userData, userData.userId.includes(interaction.user.id));
+		const selectMenu = getQuidSelectMenu(userData, mentionedUser?.id || interaction.user.id, interaction.user.id, 0, userData.userId.includes(interaction.user.id));
 
 		await respond(interaction, {
 			...response,
@@ -71,7 +71,7 @@ export const command: SlashCommand = {
 		if (!customId) { return; }
 
 		/* Getting the userData from the customId */
-		const _userData = await userModel.findOne(u => u.userId.includes(customId.args[1]));
+		let _userData = await userModel.findOne(u => u.userId.includes(customId.args[1]));
 		let userData = getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[_userData.currentQuid[interaction.guildId || 'DMs'] || '']);
 
 		/* Checking if the user clicked the "Learn more" button, and if they did, copy the message to their DMs, but with the select Menu as a component instead of the button. */
@@ -136,7 +136,8 @@ export const command: SlashCommand = {
 
 			/* Getting the old quid and the id of the quid the user has clicked on. Then it is updating the user's current quid to the quid they have clicked on. Then it is getting the new quid and profile. */
 			const quidId = selectOptionId[1]; // this is either an id, an empty string if empty slot
-			await userData.update(
+			_userData = await userModel.findOneAndUpdate(
+				u => u._id === _userData._id,
 				(u) => {
 					u.servers[interaction.guildId || 'DMs'] = {
 						...userDataServersObject(u, interaction.guildId || 'DMs'),
@@ -148,6 +149,7 @@ export const command: SlashCommand = {
 					else { delete u.currentQuid[interaction.guildId || 'DMs']; }
 				},
 			);
+			userData = getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[quidId]);
 
 			/* Getting the new quid data, and then it is checking if the user has clicked on an account, and if they have, it will add the roles of the account to the user. */
 
