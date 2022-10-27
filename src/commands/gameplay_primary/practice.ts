@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { ServerSchema } from '../../typings/data/server';
 import { RankType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
@@ -79,6 +79,7 @@ export const command: SlashCommand = {
 
 		const int = await botReply
 			.awaitMessageComponent({
+				componentType: ComponentType.Button,
 				filter: i => i.user.id === interaction.user.id,
 				time: 300_000,
 			})
@@ -156,6 +157,7 @@ export const command: SlashCommand = {
 
 			newInteraction = await botReply
 				.awaitMessageComponent({
+					componentType: ComponentType.Button,
 					filter: i => i.user.id === interaction.user.id,
 					time: userData.quid.profile.rank === RankType.Elderly ? 6_000 : userData.quid.profile.rank === RankType.Hunter || userData.quid.profile.rank === RankType.Healer ? 8_000 : 10_000,
 				})

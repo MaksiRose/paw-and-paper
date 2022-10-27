@@ -173,20 +173,20 @@ export async function sendReminder(
 	userMap.set(userData.quid._id + userData.quid.profile.serverId, setTimeout(async () => {
 		try {
 
-			const _userData = await userModel.findOne(u => u._id === userData._id);
+			const _userData = userModel.findOne(u => u._id === userData._id);
 			const newUserData = getUserData(_userData, userData.quid.profile.serverId, getMapData(_userData.quids, userData.quid._id));
 			if (!hasNameAndSpecies(newUserData)) { return; }
 			userData = newUserData;
 
 			if (typeof userData.quid.profile.sapling.lastMessageChannelId !== 'string') {
 
-				await removeChannel(userData);
+				removeChannel(userData);
 				return;
 			}
 
 			if (userData.quid.profile.sapling.exists && userData.settings.reminders.water && !userData.quid.profile.sapling.sentReminder) {
 
-				await userData.update(
+				userData.update(
 					(u) => {
 						const p = getMapData(getMapData(u.quids, userData.quid._id).profiles, userData.quid.profile.serverId);
 						p.sapling.sentReminder = true;
@@ -215,7 +215,7 @@ export async function sendReminder(
 		}
 		catch (error) {
 
-			await removeChannel(userData);
+			removeChannel(userData);
 			console.error(error);
 		}
 	}, (userData.quid.profile.sapling.nextWaterTimestamp ?? Date.now()) - Date.now()));
@@ -229,14 +229,21 @@ export function stopReminder(
 	if (userMap.has(quidId + serverId)) { clearTimeout(userMap.get(quidId + serverId)); }
 }
 
-async function removeChannel(
+function removeChannel(
 	userData: UserData<never, never>,
-): Promise<void> {
+): void {
 
-	await userData.update(
-		(u) => {
-			const p = getMapData(getMapData(u.quids, userData.quid._id).profiles, userData.quid.profile.serverId);
-			p.sapling.lastMessageChannelId = null;
-		},
-	).catch((error) => { console.log(error); });
+	try {
+
+		userData.update(
+			(u) => {
+				const p = getMapData(getMapData(u.quids, userData.quid._id).profiles, userData.quid.profile.serverId);
+				p.sapling.lastMessageChannelId = null;
+			},
+		);
+	}
+	catch (error) {
+
+		console.log(error);
+	}
 }

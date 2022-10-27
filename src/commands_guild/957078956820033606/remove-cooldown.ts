@@ -34,9 +34,7 @@ export const command: SlashCommand = {
 		const guildId = interaction.options.getString('guild');
 		if (user === null || guildId === null) { throw new TypeError('user or guildId is null'); }
 
-		const userData = await userModel
-			.findOne(u => u.userId.includes(user.id))
-			.catch(() => { return null; });
+		const userData = userModel.find(u => u.userId.includes(user.id))[0] ?? null;
 
 		if (!userData) {
 

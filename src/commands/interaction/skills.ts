@@ -38,7 +38,7 @@ export const command: SlashCommand = {
 		if (mentionedUser) {
 
 			isYourself = false;
-			const _userData = await userModel.findOne(u => u.userId.includes(mentionedUser.id)).catch(() => { return null; });
+			const _userData = userModel.find(u => u.userId.includes(mentionedUser.id))[0] ?? null;
 			userData = _userData === null ? null : getUserData(_userData, interaction.guildId, _userData?.quids[_userData.currentQuid[interaction.guildId] || '']);
 		}
 

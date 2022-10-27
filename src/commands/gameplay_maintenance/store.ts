@@ -123,7 +123,7 @@ export const command: SlashCommand = {
 
 				await update(interaction, {
 					embeds: [...interaction.message.embeds, embed],
-					components: itemSelectMenu.toJSON().components[0]?.options.length === 0 ? disableAllComponents(interaction.message.components) : [itemSelectMenu, storeAllButton],
+					components: itemSelectMenu.components[0]?.options.length === 0 ? disableAllComponents(interaction.message.components) : [itemSelectMenu, storeAllButton],
 				});
 				return;
 			}

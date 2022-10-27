@@ -100,6 +100,7 @@ export const command: SlashCommand = {
 
 		const buttonInteraction = await botReply
 			.awaitMessageComponent({
+				componentType: ComponentType.Button,
 				filter: i => i.user.id === interaction.user.id,
 				time: 120_000,
 			})
@@ -210,6 +211,7 @@ export const command: SlashCommand = {
 			) {
 
 				const collector = (botReply as Message<true>).createMessageComponentCollector({
+					componentType: ComponentType.Button,
 					filter: i => i.user.id === interaction.user.id,
 					idle: 10_000,
 					max: emojisToClick.length,

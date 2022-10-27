@@ -53,12 +53,12 @@ export async function createGuild(
 			delete toDeleteList[serverData._id];
 			renameSync(`./database/toDelete/${fileName}`, `./database/servers/${fileName}`);
 			writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
-			serverData = await serverModel.update(serverData._id);
+			serverData = serverModel.findOneAndUpdate(s => s._id === serverData._id, () => { return; });
 			return serverData;
 		}
 	}
 
-	serverData = await serverModel.create({
+	serverData = serverModel.create({
 		serverId: guild.id,
 		name: guild.name,
 		inventory: {

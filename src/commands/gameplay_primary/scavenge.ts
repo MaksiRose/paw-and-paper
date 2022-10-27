@@ -164,8 +164,8 @@ export async function executeScavenging(
 						const playingField = componentArray.map(c => c.components.map(b => b.data.emoji?.name ?? unclickedField).join('')).join('\n');
 						componentArray = [];
 
-						const meatCount = Math.round((await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, false)) / 3);
-						const materialCount = Math.round((await simulateMaterialUse(serverData, true) + await simulateMaterialUse(serverData, true) + await simulateMaterialUse(serverData, false)) / 3);
+						const meatCount = Math.round((simulateMeatUse(serverData, true) + simulateMeatUse(serverData, true) + simulateMeatUse(serverData, false)) / 3);
+						const materialCount = Math.round((simulateMaterialUse(serverData, true) + simulateMaterialUse(serverData, true) + simulateMaterialUse(serverData, false)) / 3);
 
 						/* Checking if the server has enough meat, if it doesn't, give the user meat. If it does, check if the server has enough materials, if it doesn't, give the user material. If it does, do nothing. */
 						if (meatCount < 0 && pullFromWeightedTable({ 0: -meatCount, 1: -materialCount }) === 0) {

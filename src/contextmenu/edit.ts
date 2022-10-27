@@ -24,7 +24,7 @@ export const command: ContextMenuCommand = {
 
 		/* This gets the webhookCache and userData */
 		const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8')) as WebhookMessages;
-		const userData = await userModel.findOne(u => u.userId.includes(webhookCache[interaction.targetId]?.split('_')[0] || '')).catch(() => { return null; });
+		const userData = userModel.find(u => u.userId.includes(webhookCache[interaction.targetId]?.split('_')[0] || ''))[0] ?? null;
 
 		/* This is checking if the user who is trying to edit the message is the same user who sent the message. */
 		if (userData === null || !userData.userId.includes(interaction.user.id)) {

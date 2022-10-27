@@ -48,7 +48,7 @@ export const command: SlashCommand = {
 			bannedList.users.push(id);
 			writeFileSync('./database/bannedList.json', JSON.stringify(bannedList, null, '\t'));
 
-			const profile = await userModel.findOne(u => u.userId.includes(id)).catch(() => { return null; });
+			const profile = userModel.find(u => u.userId.includes(id))[0] ?? null;
 			if (profile) {
 
 				await userModel.findOneAndDelete(u => u._id === profile._id);
@@ -82,7 +82,7 @@ export const command: SlashCommand = {
 			bannedList.servers.push(id);
 			writeFileSync('./database/bannedList.json', JSON.stringify(bannedList, null, '\t'));
 
-			const server = await serverModel.findOne(s => s.serverId === id).catch(() => { return null; });
+			const server = serverModel.find(s => s.serverId === id)[0] ?? null;
 			if (server) {
 
 				await serverModel.findOneAndDelete(u => u._id === server._id);

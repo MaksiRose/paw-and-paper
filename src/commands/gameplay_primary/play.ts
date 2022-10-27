@@ -113,13 +113,13 @@ export async function executePlaying(
 		return;
 	}
 
-	let _userData2 = mentionedUserId ? await userModel.findOne(u => u.userId.includes(mentionedUserId)).catch(() => { return null; }) : null;
+	let _userData2 = mentionedUserId ? (userModel.find(u => u.userId.includes(mentionedUserId))[0] ?? null) : null;
 	if (!_userData2) {
 
-		const usersEligibleForPlaying = (await userModel
+		const usersEligibleForPlaying = userModel
 			.find(
 				u => Object.values(u.quids).filter(q => isEligableForPlaying(u, q, interaction.guildId)).length > 0,
-			))
+			)
 			.filter(u => u._id !== userData1?._id);
 
 		if (usersEligibleForPlaying.length > 0) {
@@ -322,7 +322,7 @@ export async function executePlaying(
 	else {
 
 		const plantGame = createPlantGame(speciesInfo[userData1.quid.species].habitat);
-		const foundItem = await pickPlant(0, serverData);
+		const foundItem = pickPlant(0, serverData);
 
 		playComponent = plantGame.plantComponent;
 

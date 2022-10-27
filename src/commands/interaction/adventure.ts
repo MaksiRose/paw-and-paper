@@ -379,17 +379,14 @@ export const command: SlashCommand = {
 					extraFooter = `-${losingHealthPoints} HP (from wound) for ${losingUserData.quid.name}`;
 				}
 
-				await userModel
-					.findOneAndUpdate(
-						u => u._id === losingUserData._id,
-						(u => {
-							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, lastInteraction.guildId)).profiles, lastInteraction.guildId);
-							p.inventory = inventory_;
-							p.health -= losingHealthPoints;
-							p.injuries = losingUserData.quid.profile.injuries;
-						}),
-					)
-					.catch((error) => { sendErrorMessage(lastInteraction, error); });
+				losingUserData.update(
+					(u => {
+						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, lastInteraction.guildId)).profiles, lastInteraction.guildId);
+						p.inventory = inventory_;
+						p.health -= losingHealthPoints;
+						p.injuries = losingUserData.quid.profile.injuries;
+					}),
+				);
 
 
 				const afterGameChangesData = await checkAfterGameChanges(lastInteraction, userData1, userData2, serverData)
@@ -433,22 +430,19 @@ export const command: SlashCommand = {
 				}
 				else {
 
-					foundItem = await pickPlant(pullFromWeightedTable({ 0: finishedRounds + 10, 1: (2 * finishedRounds) - 10, 2: (20 - finishedRounds) * 3 }) as 0 | 1 | 2, serverData);
+					foundItem = pickPlant(pullFromWeightedTable({ 0: finishedRounds + 10, 1: (2 * finishedRounds) - 10, 2: (20 - finishedRounds) * 3 }) as 0 | 1 | 2, serverData);
 					if (keyInObject(winningUserData.quid.profile.inventory.commonPlants, foundItem)) { winningUserData.quid.profile.inventory.commonPlants[foundItem] += 1; }
 					else if (keyInObject(winningUserData.quid.profile.inventory.uncommonPlants, foundItem)) { winningUserData.quid.profile.inventory.uncommonPlants[foundItem] += 1; }
 					else { winningUserData.quid.profile.inventory.rarePlants[foundItem] += 1; }
 				}
 
-				await userModel
-					.findOneAndUpdate(
-						u => u._id === winningUserData._id,
-						(u => {
-							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, lastInteraction.guildId)).profiles, lastInteraction.guildId);
-							p.inventory = winningUserData.quid.profile.inventory;
-							p.health += extraHealthPoints;
-						}),
-					)
-					.catch((error) => { sendErrorMessage(lastInteraction, error); });
+				winningUserData.update(
+					(u => {
+						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, lastInteraction.guildId)).profiles, lastInteraction.guildId);
+						p.inventory = winningUserData.quid.profile.inventory;
+						p.health += extraHealthPoints;
+					}),
+				);
 
 
 				const afterGameChangesData = await checkAfterGameChanges(lastInteraction, userData1, userData2, serverData)

@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageComponentInteraction, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { getArrayElement, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
@@ -88,9 +88,12 @@ export const command: SlashCommand = {
 
 				const modalCollector = new InteractionCollector(interaction.client, { channel: interaction.channel || undefined, interactionType: InteractionType.ModalSubmit, message: interaction.message });
 
-				const interactionCollector = interaction.message.createMessageComponentCollector({ filter: (i) => i.user.id === interaction.user.id, idle: 1_800_000 }); // idle for 30 minutes
+				const interactionCollector = interaction.message.createMessageComponentCollector<ComponentType.Button | ComponentType.StringSelect>({
+					filter: (i) => i.user.id === interaction.user.id,
+					idle: 1_800_000,
+				}); // idle for 30 minutes
 
-				interactionCollector.on('collect', async i => {
+				interactionCollector.on('collect', async (i: MessageComponentInteraction<'cached'>) => {
 					try {
 
 						const collectorSelectOptionId = i.isSelectMenu() ? i.values[0] : undefined;

@@ -14,15 +14,15 @@ export const event: DiscordEvent = {
 
 		if (newMessage.author.bot || !newMessage.inGuild()) { return; }
 
-		const _userData = await userModel.findOne(u => u.userId.includes(newMessage.author.id)).catch(() => { return null; });
-		const serverData = await serverModel.findOne(s => s.serverId === newMessage.guildId).catch(() => { return null; });
+		const _userData = userModel.find(u => u.userId.includes(newMessage.author.id))[0] ?? null;
+		const serverData = serverModel.find(s => s.serverId === newMessage.guildId)[0] ?? null;
 
 		if (_userData === null || serverData === null) { return; }
 
 		const { replaceMessage, quidId } = checkForProxy(newMessage, getUserData(_userData, newMessage.guildId, _userData.quids[_userData.currentQuid[newMessage.guildId] ?? '']), serverData);
 		const userData = getUserData(_userData, newMessage.guildId, getMapData(_userData.quids, quidId));
 
-		await userData
+		userData
 			.update(
 				(u) => {
 					u.userIds[newMessage.author.id] = {

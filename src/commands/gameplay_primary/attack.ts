@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, Message, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { serverActiveUsersMap } from '../../events/interactionCreate';
 import serverModel from '../../models/serverModel';
 import { Inventory } from '../../typings/data/general';
@@ -156,6 +156,7 @@ export async function executeAttacking(
 
 		newInteraction = await botReply
 			.awaitMessageComponent({
+				componentType: ComponentType.Button,
 				filter: i => i.user.id === interaction.user.id,
 				time: userData.quid.profile.rank === RankType.Elderly ? 3_000 : userData.quid.profile.rank === RankType.Hunter || userData.quid.profile.rank === RankType.Healer ? 4_000 : userData.quid.profile.rank === RankType.Apprentice ? 5_000 : 10_000,
 			})

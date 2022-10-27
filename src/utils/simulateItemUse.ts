@@ -41,19 +41,18 @@ export function calculateInventorySize(
  * @param {boolean} activeUsersOnly - If true, only users who have been active in the last two weeks will be returned.
  * @returns An array of Quid objects.
  */
-async function getUsersInServer(
+function getUsersInServer(
 	guildId: string,
 	activeUsersOnly: boolean,
-): Promise<UserData<never, never>[]> {
+): UserData<never, never>[] {
 
 	const twoWeeksInMs = 1_209_600_000;
 
-	const userToQuidArray = (u: UserSchema) => Object.values(u.quids).map(q => q.profiles[guildId] === undefined ? null : getUserData(u, guildId, q)).filter((user): user is UserData<never, never> => {
-		return hasNameAndSpecies(user) && (activeUsersOnly ? user.quid.profile.lastActiveTimestamp > Date.now() - twoWeeksInMs : true);
-	});
+	const userToQuidArray = (u: UserSchema) => (Object.values(u.quids).map(q => q.profiles[guildId] === undefined ? null : getUserData(u, guildId, q)).filter((user): user is UserData<never, never> => {
+		return hasNameAndSpecies(user) && (activeUsersOnly ? (user.quid.profile.lastActiveTimestamp > (Date.now() - twoWeeksInMs)) : true);
+	}));
 
-	return (await userModel.find((u) => userToQuidArray(u).length > 0))
-		.map(userToQuidArray).flat();
+	return userModel.find((u) => userToQuidArray(u).length > 0).map(userToQuidArray).flat();
 }
 
 /**
@@ -62,13 +61,13 @@ async function getUsersInServer(
  * @param {boolean} activeUsersOnly - If true, only users who have been active in the past week will be simulated.
  * @returns The difference between the amount of meat in the server's inventory and the amount of meat needed
  */
-export async function simulateMeatUse(
+export function simulateMeatUse(
 	serverData: ServerSchema,
 	activeUsersOnly: boolean,
-): Promise<number> {
+): number {
 
 	const serverData_ = deepCopyObject(serverData);
-	const users = await getUsersInServer(serverData_.serverId, activeUsersOnly);
+	const users = getUsersInServer(serverData_.serverId, activeUsersOnly);
 	let neededItems = 0;
 
 	for (const user of users.filter(u => speciesInfo[u.quid.species].diet !== SpeciesDietType.Herbivore)) {
@@ -130,11 +129,11 @@ function getNeededHungerItems(
 	return neededItems;
 }
 
-async function getNeededMedicineItems(
+function getNeededMedicineItems(
 	users: UserData<never, never>[],
 	serverData: ServerSchema,
 	checkOnlyFor?: 'energy' | 'hunger' | 'wounds' | 'infections' | 'cold' | 'sprains' | 'poison',
-): Promise<number> {
+): number {
 
 	const serverData_ = deepCopyObject(serverData);
 	let neededItems = 0;
@@ -170,15 +169,15 @@ async function getNeededMedicineItems(
 				user.quid.profile.energy += stats.energy;
 				user.quid.profile.hunger += stats.hunger;
 				user.quid.profile.thirst += stats.thirst;
-				user.quid.profile.injuries.wounds += item !== 'water' && itemInfo[item]?.healsWounds === true ? 1 : 0;
-				user.quid.profile.injuries.infections += item !== 'water' && itemInfo[item]?.healsInfections === true ? 1 : 0;
+				user.quid.profile.injuries.wounds -= item !== 'water' && itemInfo[item]?.healsWounds === true ? 1 : 0;
+				user.quid.profile.injuries.infections -= item !== 'water' && itemInfo[item]?.healsInfections === true ? 1 : 0;
 				user.quid.profile.injuries.cold = item !== 'water' && itemInfo[item]?.healsColds === true ? false : user.quid.profile.injuries.cold;
-				user.quid.profile.injuries.sprains = item !== 'water' && itemInfo[item]?.healsSprains === true ? 1 : 0;
+				user.quid.profile.injuries.sprains -= item !== 'water' && itemInfo[item]?.healsSprains === true ? 1 : 0;
 				user.quid.profile.injuries.poison = item !== 'water' && itemInfo[item]?.healsPoison === true ? false : user.quid.profile.injuries.poison;
 			}
 
 			// change the condition based on a simulation-version of changeCondition, and wear down the den
-			await changeCondition(healer, 0, undefined, false, false);
+			changeCondition(healer, 0, undefined, false, false);
 
 			const denStatkind = (['structure', 'bedding', 'thickness', 'evenness'] as const)[getRandomNumber(4)];
 			if (denStatkind === undefined) { throw new TypeError('denStatkind is undefined'); }
@@ -194,13 +193,13 @@ async function getNeededMedicineItems(
  * @param {boolean} activeUsersOnly - boolean - If true, only quids that have been active in the past week will be included in the simulation.
  * @returns The difference between the amount of plants in the inventory and the amount of plants needed.
  */
-export async function simulatePlantUse(
+export function simulatePlantUse(
 	serverData: ServerSchema,
 	activeUsersOnly: boolean,
-): Promise<number> {
+): number {
 
-	const quids = await getUsersInServer(serverData.serverId, activeUsersOnly);
-	const neededItems = getNeededHungerItems(quids, serverData) + await getNeededMedicineItems(quids, serverData);
+	const quids = getUsersInServer(serverData.serverId, activeUsersOnly);
+	const neededItems = getNeededHungerItems(quids, serverData) + getNeededMedicineItems(quids, serverData);
 
 	const existingItems = calculateInventorySize(serverData.inventory, ([key]) => key === 'commonPlants' || key === 'uncommonPlants' || key === 'rarePlants' || key === 'specialPlants');
 	const itemDifference = existingItems - neededItems;
@@ -214,10 +213,10 @@ export async function simulatePlantUse(
  * @param {ServerSchema} serverData - The server data.
  * @returns A plant name.
  */
-export async function pickPlant(
+export function pickPlant(
 	include: 0 | 1 | 2,
 	serverData: ServerSchema,
-): Promise<CommonPlantNames | UncommonPlantNames | RarePlantNames> {
+): CommonPlantNames | UncommonPlantNames | RarePlantNames {
 
 	function changeInventory(
 		inventory: Inventory,
@@ -246,16 +245,16 @@ export async function pickPlant(
 
 	const itemInfo = { ...commonPlantsInfo, ...uncommonPlantsInfo, ...rarePlantsInfo, ...specialPlantsInfo };
 	const serverData_ = deepCopyObject(serverData);
-	const quids = await getUsersInServer(serverData_.serverId, false);
+	const quids = getUsersInServer(serverData_.serverId, false);
 
 	let diffEating = getNeededHungerItems(quids, serverData_) - calculateInventorySize(changeInventory(serverData.inventory, 'hunger'));
-	let diffEnergy = await getNeededMedicineItems(quids, serverData_, 'energy') - calculateInventorySize(changeInventory(serverData.inventory, 'energy'));
-	let diffHunger = await getNeededMedicineItems(quids, serverData_, 'hunger') - calculateInventorySize(changeInventory(serverData.inventory, 'hunger'));
-	let diffWounds = await getNeededMedicineItems(quids, serverData_, 'wounds') - calculateInventorySize(changeInventory(serverData.inventory, 'wounds'));
-	let diffInfections = await getNeededMedicineItems(quids, serverData_, 'infections') - calculateInventorySize(changeInventory(serverData.inventory, 'infections'));
-	let diffCold = await getNeededMedicineItems(quids, serverData_, 'cold') - calculateInventorySize(changeInventory(serverData.inventory, 'cold'));
-	let diffSprains = await getNeededMedicineItems(quids, serverData_, 'sprains') - calculateInventorySize(changeInventory(serverData.inventory, 'sprains'));
-	let diffPoison = await getNeededMedicineItems(quids, serverData_, 'poison') - calculateInventorySize(changeInventory(serverData.inventory, 'poison'));
+	let diffEnergy = getNeededMedicineItems(quids, serverData_, 'energy') - calculateInventorySize(changeInventory(serverData.inventory, 'energy'));
+	let diffHunger = getNeededMedicineItems(quids, serverData_, 'hunger') - calculateInventorySize(changeInventory(serverData.inventory, 'hunger'));
+	let diffWounds = getNeededMedicineItems(quids, serverData_, 'wounds') - calculateInventorySize(changeInventory(serverData.inventory, 'wounds'));
+	let diffInfections = getNeededMedicineItems(quids, serverData_, 'infections') - calculateInventorySize(changeInventory(serverData.inventory, 'infections'));
+	let diffCold = getNeededMedicineItems(quids, serverData_, 'cold') - calculateInventorySize(changeInventory(serverData.inventory, 'cold'));
+	let diffSprains = getNeededMedicineItems(quids, serverData_, 'sprains') - calculateInventorySize(changeInventory(serverData.inventory, 'sprains'));
+	let diffPoison = getNeededMedicineItems(quids, serverData_, 'poison') - calculateInventorySize(changeInventory(serverData.inventory, 'poison'));
 
 	const smallest = getSmallerNumber(getSmallerNumber(getSmallerNumber(getSmallerNumber(getSmallerNumber(getSmallerNumber(getSmallerNumber(diffEating, diffEnergy), diffHunger), diffWounds), diffInfections), diffCold), diffSprains), diffPoison);
 
@@ -308,13 +307,13 @@ export async function pickPlant(
  * @param {boolean} activeUsersOnly - If true, only users who have been active in the past week will be simulated.
  * @returns The difference between the amount of material in the server's inventory and the amount of material needed
  */
-export async function simulateMaterialUse(
+export function simulateMaterialUse(
 	serverData: ServerSchema,
 	activeUsersOnly: boolean,
-): Promise<number> {
+): number {
 
 	const serverData_ = deepCopyObject(serverData);
-	const users = await getUsersInServer(serverData_.serverId, activeUsersOnly);
+	const users = getUsersInServer(serverData_.serverId, activeUsersOnly);
 	let neededItems = 0;
 
 	for (const den of Object.values(serverData_.dens) as DenSchema[]) {
@@ -339,7 +338,7 @@ export async function simulateMaterialUse(
 				else { den.thickness += repairAmount; }
 			}
 
-			await changeCondition(repairer, 0, undefined, false, false);
+			changeCondition(repairer, 0, undefined, false, false);
 		}
 	}
 

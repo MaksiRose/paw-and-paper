@@ -10,7 +10,7 @@ export async function execute(
 	const servers = await serverModel.find();
 	for (const server of servers) {
 
-		await serverModel.findOneAndUpdate(
+		serverModel.findOneAndUpdate(
 			s => s._id === server._id,
 			(s) => { s.currentlyVisiting = null; },
 		);
@@ -21,15 +21,20 @@ export async function execute(
 	const allServers = await client.guilds.fetch();
 	for (const [, OAuth2Guild] of allServers) {
 
-		await serverModel.findOneAndUpdate(
-			s => s.serverId === OAuth2Guild.id,
-			(s) => {
-				s.name = OAuth2Guild.name;
-			},
-		).catch(async () => {
+		try {
+
+			serverModel.findOneAndUpdate(
+				s => s.serverId === OAuth2Guild.id,
+				(s) => {
+					s.name = OAuth2Guild.name;
+				},
+			);
+		}
+		catch {
+
 			const guild = await client.guilds.fetch(OAuth2Guild.id);
 			await createGuild(guild)
 				.catch(async (error) => { console.error(error); });
-		});
+		}
 	}
 }
