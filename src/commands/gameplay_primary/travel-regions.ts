@@ -91,7 +91,7 @@ export const command: SlashCommand = {
 			}
 			else if (interaction.customId.includes('play')) {
 
-				await executePlaying(interaction, userData, serverData);
+				await executePlaying(interaction, userData, serverData, { forceEdit: true });
 			}
 		}
 		else if (interaction.isSelectMenu()) {

@@ -159,6 +159,7 @@ export async function sendStoreMessage(
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setDescription(`*${userData.quid.name} goes to the food den to store ${userData.quid.pronoun(2)} findings away, but ${userData.quid.pronoun(2)} mouth is empty...*`),
 			],
+			components: [],
 		});
 		return;
 	}

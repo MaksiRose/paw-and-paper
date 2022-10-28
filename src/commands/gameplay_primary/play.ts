@@ -58,6 +58,7 @@ export async function executePlaying(
 	interaction: ChatInputCommandInteraction | ButtonInteraction,
 	userData1: UserData<undefined, ''> | null,
 	serverData: ServerSchema | null,
+	{ forceEdit = false } = {},
 ): Promise<void> {
 
 	if (await missingPermissions(interaction, [
@@ -84,7 +85,7 @@ export async function executePlaying(
 	const tutorialMapEntry = tutorialMap.get(userData1.quid._id + userData1.quid.profile.serverId);
 	if (userData1.quid.profile.tutorials.play === false && userData1.quid.profile.rank === RankType.Youngling && (tutorialMapEntry === undefined || tutorialMapEntry === 0)) {
 
-		await respond(interaction, {
+		await (async (int, messageOptions) => int.isButton() && forceEdit ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
 			content: '*About the structure of RPG messages:*\n\n- Most messages have `Roleplay text`, which is written in cursive, and only for fun!\n- More important is the `Info text`, which is at the bottom of each message, and has the most important info like how to play a game or stat changes. **Read this part first** to avoid confusion!\n\n> Here is an example of what this might look like:',
 			embeds: [new EmbedBuilder()
 				.setColor(userData1.quid.color)
@@ -96,20 +97,20 @@ export async function executePlaying(
 						.setLabel('I understand, let\'s try it out!')
 						.setStyle(ButtonStyle.Success)),
 			],
-		}, true);
+		});
 		tutorialMap.set(userData1.quid._id + userData1.quid.profile.serverId, 1);
 		return;
 	}
 
 	if (mentionedUserId && userData1.userId.includes(mentionedUserId)) {
 
-		await respond(interaction, {
+		await (async (int, messageOptions) => int.isButton() && forceEdit ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData1.quid.color)
 				.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
 				.setDescription(`*${userData1.quid.name} plays with ${userData1.quid.pronoun(4)}. The rest of the pack looks away in embarrassment.*`)],
-		}, true);
+		});
 		return;
 	}
 
@@ -212,11 +213,11 @@ export async function executePlaying(
 			}
 			else { throw new TypeError('cycleKind is undefined'); }
 
-			botReply = await respond(interaction, {
+			botReply = await (async (int, messageOptions) => int.isButton() && forceEdit ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, embed],
 				components: [playComponent],
-			}, true);
+			});
 
 			/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 			playComponent = fightGame.correctButtonOverwrite();
@@ -336,11 +337,11 @@ export async function executePlaying(
 		embed.setDescription(descriptionText);
 		embed.setFooter({ text: `Click the button with this emoji: ${plantGame.emojiToFind}, but without the campsite (${plantEmojis.toAvoid}).` });
 
-		botReply = await respond(interaction, {
+		botReply = await (async (int, messageOptions) => int.isButton() && forceEdit ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [playComponent],
-		}, true);
+		});
 
 		/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 		playComponent = plantGame.correctButtonOverwrite();
@@ -403,7 +404,7 @@ export async function executePlaying(
 	else {
 
 		const tutorialMapEntry_ = tutorialMap.get(userData1.quid._id + userData1.quid.profile.serverId);
-		botReply = await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })({
+		botReply = await (async function(messageObject) { return interaction.isButton() && forceEdit ? await update(interaction, messageObject) : buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })({
 			content: messageContent,
 			embeds: [
 				...restEmbed,

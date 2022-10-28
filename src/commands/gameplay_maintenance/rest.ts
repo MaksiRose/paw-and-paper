@@ -6,7 +6,7 @@ import { CurrentRegionType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasCooldown, isPassedOut } from '../../utils/checkValidity';
-import { capitalizeString, getMapData, respond, sendErrorMessage, userDataServersObject } from '../../utils/helperFunctions';
+import { capitalizeString, getMapData, respond, sendErrorMessage, update, userDataServersObject } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -51,27 +51,27 @@ export async function executeResting(
 
 	if (userData.quid.profile.isResting === true || isResting(userData)) {
 
-		await respond(interaction, {
+		await (async (int, messageOptions) => int.isButton() ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
 			content: messageContent,
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setDescription(`*${userData.quid.name} dreams of resting on a beach, out in the sun. The imaginary wind rocked the also imaginative hammock. ${capitalizeString(userData.quid.pronoun(0))} must be really tired to dream of sleeping!*`),
 			],
-		}, false);
+		});
 		return;
 	}
 
 	if (userData.quid.profile.energy >= userData.quid.profile.maxEnergy) {
 
-		await respond(interaction, {
+		await (async (int, messageOptions) => int.isButton() ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
 			content: messageContent,
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setDescription(`*${userData.quid.name} trots around the dens eyeing ${userData.quid.pronoun(2)} comfortable moss-covered bed. A nap looks nice, but ${userData.quid.pronounAndPlural(0, 'has', 'have')} far too much energy to rest!*`),
 			],
-		}, false);
+		});
 		return;
 	}
 
@@ -131,7 +131,7 @@ export async function startResting(
 
 		if (interaction !== undefined) {
 
-			botReply = await respond(interaction, messageOptions, false);
+			botReply = await (async (int) => int.isButton() && !isAutomatic ? await update(int, messageOptions) : await respond(int, messageOptions, false))(interaction);
 		}
 		else if (userData.serverInfo?.lastInteractionToken && client.isReady()) {
 

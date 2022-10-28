@@ -4,7 +4,7 @@ import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
-import { getMapData, getSmallerNumber, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
+import { getMapData, getSmallerNumber, respond, sendErrorMessage, setCooldown, update } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
 const { default_color } = require('../../../config.json');
@@ -44,19 +44,19 @@ export async function sendDrinkMessage(
 
 	if (userData.quid.profile.thirst >= userData.quid.profile.maxThirst) {
 
-		await respond(interaction, {
+		await (async (int, messageOptions) => int.isButton() ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setDescription(`*Water sounds churned in ${userData.quid.name}'s ear, ${userData.quid.pronoun(2)} mouth longing for just one more drink. It seems like ${userData.quid.pronoun(0)} can never be as hydrated as ${userData.quid.pronounAndPlural(0, 'want')}, but  ${userData.quid.pronoun(0)} had plenty of water today.*`)],
-		}, true);
+		});
 		return;
 	}
 
 	setCooldown(userData, interaction.guildId, true);
 
-	const botReply = await respond(interaction, {
+	const botReply = await (async (int, messageOptions) => int.isButton() ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
 		content: messageContent,
 		embeds: [...restEmbed, new EmbedBuilder()
 			.setColor(default_color)
@@ -66,7 +66,7 @@ export async function sendDrinkMessage(
 				.setCustomId('water')
 				.setEmoji('💧')
 				.setStyle(ButtonStyle.Primary))],
-	}, true);
+	});
 
 	const collector = botReply.createMessageComponentCollector({
 		componentType: ComponentType.Button,
@@ -103,14 +103,14 @@ export async function sendDrinkMessage(
 				},
 			);
 
-			await respond(interaction, {
+			await (async (int, messageOptions) => int.isButton() ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 					.setDescription(`*${userData.quid.name} scurries over to the river and takes hasty gulps. The fresh water runs down ${userData.quid.pronoun(2)} throat and fills ${userData.quid.pronoun(2)} body with new energy.*`)
 					.setFooter({ text: `+${thirstPoints} thirst (${userData.quid.profile.thirst}/${userData.quid.profile.maxThirst})${(currentRegion !== CurrentRegionType.Lake) ? '\nYou are now at the lake' : ''}\n\nDon't forget to stay hydrated in real life too! :)` })],
 				components: disableAllComponents(botReply.components),
-			}, true);
+			});
 		}
 		catch (error) {
 
