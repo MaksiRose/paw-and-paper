@@ -79,7 +79,7 @@ export async function respond(
 	/** If an error occurred and it has status 404, try to either edit the message if editing was tried above, or send a new message in the other two cases */
 	catch (error: unknown) {
 
-		if (isObject(error) && (error.code === 'ECONNRESET' || error.status === 404 || error.httpStatus === 404)) {
+		if (isObject(error) && (error.code === 'ECONNRESET' || error.code === 10062)) {
 
 			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
 			if ((interaction.replied || interaction.deferred) && editMessage) { botReply = await (await interaction.fetchReply()).edit({ ...options, flags: undefined }); }
@@ -91,7 +91,7 @@ export async function respond(
 
 			}
 		}
-		else if (isObject(error) && (error.status === 400 || error.httpStatus === 400) && !interaction.replied && !interaction.deferred) {
+		else if (isObject(error) && error.code === 40060) {
 
 			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
 			interaction.replied = true;
@@ -131,7 +131,7 @@ export async function update(
 			if (!interaction.replied && !interaction.deferred) { botReply = await interaction.message.edit({ ...options, flags: undefined }); }
 			else { botReply = await (await interaction.fetchReply()).edit({ ...options, flags: undefined }); }
 		}
-		else if (isObject(error) && error.code === 40060 && !interaction.replied && !interaction.deferred) {
+		else if (isObject(error) && error.code === 40060) {
 
 			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
 			interaction.replied = true;

@@ -100,7 +100,7 @@ export async function executeScavenging(
 		for (let j = 0; j < 5; j++) {
 
 			componentArray[i]?.addComponents(new ButtonBuilder()
-				.setCustomId(`scavenge_board_${i}_${j}`)
+				.setCustomId(`board_${i}_${j}`)
 				.setEmoji(unclickedField)
 				.setDisabled(false)
 				.setStyle(ButtonStyle.Secondary));
@@ -149,8 +149,8 @@ export async function executeScavenging(
 
 					correctButtonPresses += 1;
 					/* Getting the position of the button that the user clicked. */
-					const verticalBoardPosition = Number(int.customId.split('_')[2]);
-					const horizontalBoardPosition = Number(int.customId.split('_')[3]);
+					const verticalBoardPosition = Number(int.customId.split('_')[1]);
+					const horizontalBoardPosition = Number(int.customId.split('_')[2]);
 					const buttonInBoardPosition = getArrayElement(getArrayElement(componentArray, verticalBoardPosition).components, horizontalBoardPosition);
 
 					/* Set the emoji of the button to the emoji in the gamePositionsArray. It will then disable the button. */
@@ -218,7 +218,7 @@ export async function executeScavenging(
 					}
 					else {
 
-						botReply = await update(int, { components: componentArray });
+						botReply = await update(int, { components: correctButtonPresses < 4 ? componentArray : disableAllComponents(componentArray) });
 						if (correctButtonPresses >= 4) { collector.stop(); }
 					}
 				}
@@ -367,7 +367,7 @@ export async function executeScavenging(
 				return;
 			}
 			trapActionRow.addComponents(new ButtonBuilder()
-				.setCustomId(`scavenge_humantrap_${chosenEmoji}`)
+				.setCustomId(`humantrap_${chosenEmoji}`)
 				.setEmoji(chosenEmoji)
 				.setDisabled(false)
 				.setStyle(ButtonStyle.Secondary));
