@@ -14,7 +14,7 @@
 		"es6": true
 	},
 	"parserOptions": {
-		"ecmaVersion": 2021,
+		"ecmaVersion": "latest",
 		"sourceType": "module"
 	},
 	"rules": {
@@ -52,7 +52,7 @@
 		],
 		"handle-callback-err": "off",
 		"indent": [
-			"error",
+			"warn",
 			"tab",
 			{
 				"SwitchCase": 1
@@ -122,6 +122,14 @@
 		"spaced-comment": "error",
 		"yoda": "error",
 		"key-spacing": "error",
-		"block-spacing": "error"
+		"block-spacing": "error",
+		"no-whitespace-before-property": "error"
+		// "padded-blocks": [
+		// 	"error",
+		// 	"always",
+		// 	{
+		// 		"allowSingleLineBlocks": true
+		// 	}
+		// ],
 	}
 }

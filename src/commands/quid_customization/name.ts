@@ -1,30 +1,32 @@
 import { EmbedBuilder, GuildMember, SlashCommandBuilder } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
-import { respond } from '../../utils/helperFunctions';
-import userModel from '../../models/userModel';
-import { BanList, commonPlantsInfo, CurrentRegionType, GivenIdList, materialsInfo, RankType, rarePlantsInfo, SlashCommand, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../../typedef';
+import { respond, userDataServersObject } from '../../utils/helperFunctions';
 import { checkLevelRequirements, checkRankRequirements } from '../../utils/checkRoleRequirements';
 import { getRandomNumber } from '../../utils/randomizers';
+import { generateId } from 'crystalid';
+import { SlashCommand } from '../../typings/handle';
+import { BanList, GivenIdList } from '../../typings/data/general';
+import userModel, { getUserData } from '../../models/userModel';
+import { CurrentRegionType, RankType } from '../../typings/data/user';
+import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../..';
 const { version } = require('../../../package.json');
 const { default_color, error_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'name';
-const description: SlashCommand['description'] = 'Start your adventure! (Re-)name a quid.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('name')
+		.setDescription('Start your adventure! (Re-)name a quid.')
 		.addStringOption(option =>
 			option.setName('name')
 				.setDescription('The name that you want your quid to have.')
 				.setMaxLength(24) // A normal name should only have 24 characters, but a displayname/nickname should still have 32 characters max length.
 				.setRequired(true))
 		.toJSON(),
+	category: 'page1',
+	position: 0,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction, userData, serverData) => {
+	sendCommand: async (interaction, userData, serverData) => {
 
 		let newAccount = false;
 		/* This is checking if the user has any data saved in the database. If they don't, it will create a new user. */
@@ -42,8 +44,13 @@ export const command: SlashCommand = {
 				return;
 			}
 
-			userData = await userModel.create({
+			const _userData = await userModel.create({
 				userId: [interaction.user.id],
+				userIds: {
+					[interaction.user.id]: interaction.inGuild() ? {
+						[interaction.guildId]: { isMember: true, lastUpdatedTimestamp: Date.now() },
+					} : {},
+				},
 				tag: {
 					global: '',
 					servers: {},
@@ -58,9 +65,11 @@ export const command: SlashCommand = {
 				},
 				quids: {},
 				currentQuid: {},
+				servers: {},
 				lastPlayedVersion: `${version.split('.').slice(0, -1).join('.')}`,
-				uuid: '',
+				_id: generateId(),
 			});
+			userData = getUserData(_userData, interaction.guildId ?? 'DMs', _userData.quids[_userData.currentQuid[interaction.guildId ?? 'DMs'] ?? '']);
 		}
 
 		const name = interaction.options.getString('name');
@@ -78,11 +87,10 @@ export const command: SlashCommand = {
 		}
 
 		/* This is checking if the user has a quid in the database. If they don't, it will create a new user. */
-		const _id = userData.currentQuid[interaction.guildId || 'DM'] || await createId();
+		const _id = userData.servers.get(interaction.guildId || 'DMs')?.currentQuid || await createId();
 
 
-		await userModel.findOneAndUpdate(
-			u => u.uuid === userData?.uuid,
+		await userData.update(
 			(u) => {
 				const q = u.quids[_id];
 				if (!q) {
@@ -124,6 +132,7 @@ export const command: SlashCommand = {
 								hasQuest: false,
 								currentRegion: CurrentRegionType.Ruins,
 								unlockedRanks: 0,
+								tutorials: { play: false, explore: false },
 								sapling: { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, lastMessageChannelId: null, sentReminder: false, sentGentleReminder: false },
 								injuries: { wounds: 0, infections: 0, cold: false, sprains: 0, poison: false },
 								inventory: {
@@ -143,17 +152,20 @@ export const command: SlashCommand = {
 				}
 				else { q.name = name; }
 
-				u.currentQuid[interaction.guildId || 'DM'] = _id;
+				u.currentQuid[interaction.guildId || 'DMs'] = _id;
+				u.servers[interaction.guildId || 'DMs'] = {
+					...userDataServersObject(u, interaction.guildId || 'DMs'),
+					currentQuid: _id,
+				};
 			},
 		);
-		const quidData = userData.quids[_id];
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
-				.setTitle(quidData === undefined ? `You successfully created the quid ${name}!` : `You successfully renamed your quid to ${name}!`)
+				.setTitle(userData.quid === undefined ? `You successfully created the quid ${name}!` : `You successfully renamed your quid to ${name}!`)
 				.setDescription(newAccount === false ? null : '__What is a quid?__\nTo avoid using limiting words like "character" or "person", Paw and Paper uses the made-up word quid. It is based off of the word [Quiddity](https://en.wikipedia.org/wiki/Quiddity), which means "what makes something what it is". Quid then means "someone who is what they are", which is vague on purpose because it changes based on what they are.')
-				.setFooter(quidData === undefined ? { text: 'To continue setting up your profile for the RPG, type "/species". For other options, review "/help".' } : null)],
+				.setFooter(userData.quid === undefined ? { text: 'To continue setting up your profile for the RPG, type "/species". For other options, review "/help".' } : null)],
 		}, true);
 
 		/* This is checking if the user is in a guild, if the server has data saved in the database, and if the guildmember data is cached. If all of these are true, it will check if the user has reached the requirements to get roles based on their rank and level. */
@@ -171,16 +183,16 @@ export const command: SlashCommand = {
 async function createId(): Promise<string> {
 
 	const legend = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-	let uuid = '';
+	let _id = '';
 
-	for (let index = 0; index < 6; index++) { uuid += legend[getRandomNumber(legend.length)]; }
+	for (let index = 0; index < 6; index++) { _id += legend[getRandomNumber(legend.length)]; }
 
 	const givenIds = JSON.parse(readFileSync('./database/givenIds.json', 'utf-8')) as GivenIdList;
 
-	if (givenIds.includes(uuid)) { return await createId(); }
+	if (givenIds.includes(_id)) { return await createId(); }
 
-	givenIds.push(uuid);
+	givenIds.push(_id);
 	writeFileSync('./database/givenIds.json', JSON.stringify(givenIds, null, '\t'));
 
-	return uuid;
+	return _id;
 }

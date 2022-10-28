@@ -1,80 +1,87 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
-import { cooldownMap } from '../../events/interactionCreate';
-import userModel from '../../models/userModel';
-import { MaterialNames, materialsInfo, RankType, ServerSchema, SlashCommand, speciesInfo, SpeciesNames, UserSchema } from '../../typedef';
+import { speciesInfo } from '../..';
+import { ServerSchema } from '../../typings/data/server';
+import { RankType, UserData } from '../../typings/data/user';
+import { SlashCommand } from '../../typings/handle';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { disableAllComponents } from '../../utils/componentDisabling';
-import { pronoun, pronounAndPlural, upperCasePronoun, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getMapData, getQuidDisplayname, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
+import { disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
+import { constructCustomId, deconstructCustomId } from '../../utils/customId';
+import { capitalizeString, getArrayElement, getMapData, respond, sendErrorMessage, setCooldown, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
+import { pickMaterial, pickMeat, simulateMaterialUse, simulateMeatUse } from '../../utils/simulateItemUse';
 import { remindOfAttack } from './attack';
 
-const name: SlashCommand['name'] = 'scavenge';
-const description: SlashCommand['description'] = 'Scavenge for carcass and materials. Costs energy, but gives XP.';
+type CustomIdArgs = ['new']
+
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('scavenge')
+		.setDescription('Roam around near the pack for a chance to find carcass and materials. Not available to Younglings.')
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page2',
+	position: 3,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
+	sendCommand: async (interaction, userData, serverData) => {
 
-		await executeScavenging(interaction, userData, serverData, embedArray);
+		await executeScavenging(interaction, userData, serverData);
+	},
+	async sendMessageComponentResponse(interaction, userData, serverData) {
+
+		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
+		if (interaction.isButton() && customId?.args[0] === 'new') {
+
+			await executeScavenging(interaction, userData, serverData);
+		}
 	},
 };
 
 export async function executeScavenging(
 	interaction: ChatInputCommandInteraction | ButtonInteraction,
-	userData: UserSchema | null,
+	userData: UserData<undefined, ''> | null,
 	serverData: ServerSchema | null,
-	embedArray: EmbedBuilder[],
 ): Promise<void> {
 
 	/* This ensures that the user is in a guild and has a completed account. */
-	if (!isInGuild(interaction)) { return; }
 	if (serverData === null) { throw new Error('serverData is null'); }
-	if (!hasCompletedAccount(interaction, userData)) { return; }
+	if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
 
-	/* Gets the current active quid and the server profile from the account */
-	const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-	let profileData = getMapData(quidData.profiles, interaction.guildId);
+	/* It's disabling all components if userData exists and the command is set to disable a previous command. */
+	if (command.disablePreviousCommand) { await disableCommandComponent(userData); }
 
 	/* Checks if the profile is resting, on a cooldown or passed out. */
-	if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
+	const restEmbed = await isInvalid(interaction, userData);
+	if (restEmbed === false) { return; }
 
 	const messageContent = remindOfAttack(interaction.guildId);
 
-	if (profileData.rank === RankType.Youngling) {
+	if (userData.quid.profile.rank === RankType.Youngling) {
 
 		await respond(interaction, {
 			content: messageContent,
-			embeds: [...embedArray, new EmbedBuilder()
-				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
-				.setDescription(`*A hunter cuts ${quidData.name} as they see ${pronoun(quidData, 1)} running towards the pack borders.* "You don't have enough experience to go into the wilderness, ${profileData.rank}," *they say.*`)],
+			embeds: [...restEmbed, new EmbedBuilder()
+				.setColor(userData.quid.color)
+				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setDescription(`*A hunter cuts ${userData.quid.name} as they see ${userData.quid.pronoun(1)} running towards the pack borders.* "You don't have enough experience to go into the wilderness, ${userData.quid.profile.rank}," *they say.*`)],
 		}, true);
 		return;
 	}
 
-	if (await hasFullInventory(interaction, userData, quidData, profileData, embedArray, messageContent)) { return; }
+	if (await hasFullInventory(interaction, userData, restEmbed, messageContent)) { return; }
 
-	cooldownMap.set(userData.uuid + interaction.guildId, true);
+	setCooldown(userData, interaction.guildId, true);
 
 	const experiencePoints = getRandomNumber(11, 5);
-	const changedCondition = await changeCondition(userData, quidData, profileData, experiencePoints);
-	profileData = changedCondition.profileData;
+	const changedCondition = await changeCondition(userData, experiencePoints);
 
 	const embed = new EmbedBuilder()
-		.setColor(quidData.color)
-		.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL });
+		.setColor(userData.quid.color)
+		.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL });
 
 	/* Defining emojis and grids for the scavenge and the humantrap game. */
 	const unclickedField = '❔';
@@ -93,7 +100,7 @@ export async function executeScavenging(
 		for (let j = 0; j < 5; j++) {
 
 			componentArray[i]?.addComponents(new ButtonBuilder()
-				.setCustomId(`scavenge_board_${i}_${j}`)
+				.setCustomId(`board_${i}_${j}`)
 				.setEmoji(unclickedField)
 				.setDisabled(false)
 				.setStyle(ButtonStyle.Secondary));
@@ -108,10 +115,10 @@ export async function executeScavenging(
 
 	let botReply = await respond(interaction, {
 		content: messageContent,
-		embeds: [...embedArray, new EmbedBuilder()
-			.setColor(quidData.color)
-			.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
-			.setDescription(`*${quidData.name} carefully examines the terrain around the pack, hoping to find useful materials or carcasses. The ${quidData.displayedSpecies || quidData.species} must now prove prudence and a keen eye...*`)
+		embeds: [...restEmbed, new EmbedBuilder()
+			.setColor(userData.quid.color)
+			.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+			.setDescription(`*${userData.quid.name} carefully examines the terrain around the pack, hoping to find useful materials or carcasses. The ${userData.quid.getDisplayspecies()} must now prove prudence and a keen eye...*`)
 			.setFooter({ text: 'Click the fields to reveal what\'s underneath. Based on how close you are to the correct field, a color on a scale from green (closest) to red (farthest) is going to appear. You can click 4 times and have 2 minutes to win.' })],
 		components: componentArray,
 	}, true);
@@ -120,7 +127,7 @@ export async function executeScavenging(
 
 	async function interactionCollector(
 		interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
-		userData: UserSchema,
+		userData: UserData<never, never>,
 		serverData: ServerSchema,
 		isHumanTrap: boolean,
 	): Promise<void> {
@@ -142,19 +149,14 @@ export async function executeScavenging(
 
 					correctButtonPresses += 1;
 					/* Getting the position of the button that the user clicked. */
-					const verticalBoardPosition = Number(int.customId.split('_')[2]);
-					const horizontalBoardPosition = Number(int.customId.split('_')[3]);
-					const buttonInBoardPosition = componentArray[verticalBoardPosition]?.components[horizontalBoardPosition];
+					const verticalBoardPosition = Number(int.customId.split('_')[1]);
+					const horizontalBoardPosition = Number(int.customId.split('_')[2]);
+					const buttonInBoardPosition = getArrayElement(getArrayElement(componentArray, verticalBoardPosition).components, horizontalBoardPosition);
 
 					/* Set the emoji of the button to the emoji in the gamePositionsArray. It will then disable the button. */
-					const emoji = gamePositionsArray[verticalBoardPosition]?.[horizontalBoardPosition];
-					if (!emoji) {
-						await sendErrorMessage(int, new Error('emoji is undefined'))
-							.catch((error) => { console.error(error); });
-						return;
-					}
-					buttonInBoardPosition?.setEmoji(emoji);
-					buttonInBoardPosition?.setDisabled(true);
+					const emoji = getArrayElement(getArrayElement(gamePositionsArray, verticalBoardPosition), horizontalBoardPosition);
+					buttonInBoardPosition.setEmoji(emoji);
+					buttonInBoardPosition.setDisabled(true);
 
 					/* Checking if the user has clicked on the correct field. If they have, it will stop the collector and if they haven't, it will edit the message with the new components. */
 					if (emoji === filledFieldArray[0]) {
@@ -162,59 +164,43 @@ export async function executeScavenging(
 						const playingField = componentArray.map(c => c.components.map(b => b.data.emoji?.name ?? unclickedField).join('')).join('\n');
 						componentArray = [];
 
-						/* Counting the number of profiles that have a rank higher than Youngling, the amount of meat and the amount of materials in the server's inventory. */
-						const highRankProfilesCount = (await userModel
-							.find(
-								(u) => Object.values(u.quids).filter(q => {
-									const p = q.profiles[interaction.guildId];
-									return p && p.rank !== RankType.Youngling;
-								}).length > 0))
-							.map(u => Object.values(u.quids).filter(q => {
-								const p = q.profiles[interaction.guildId];
-								return p && p.rank !== RankType.Youngling;
-							}).length)
-							.reduce((a, b) => a + b, 0);
-						const serverMeatCount = Object.values(serverData.inventory.meat).flat().reduce((a, b) => a + b, 0);
-						const serverMaterialsCount = Object.values(serverData.inventory.materials).flat().reduce((a, b) => a + b, 0);
+						const meatCount = Math.round((simulateMeatUse(serverData, true) + simulateMeatUse(serverData, true) + simulateMeatUse(serverData, false)) / 3);
+						const materialCount = Math.round((simulateMaterialUse(serverData, true) + simulateMaterialUse(serverData, true) + simulateMaterialUse(serverData, false)) / 3);
 
 						/* Checking if the server has enough meat, if it doesn't, give the user meat. If it does, check if the server has enough materials, if it doesn't, give the user material. If it does, do nothing. */
-						const meatIsGettable = serverMeatCount < highRankProfilesCount * 2;
-						const materialIsGettable = serverMaterialsCount < 36;
-						if (meatIsGettable && pullFromWeightedTable({ 0: 1, 1: materialIsGettable ? 1 : 0 }) === 0) {
+						if (meatCount < 0 && pullFromWeightedTable({ 0: -meatCount, 1: -materialCount }) === 0) {
 
-							const carcassArray = [...speciesInfo[quidData.species as SpeciesNames]?.biome1OpponentArray || []];
-							const foundCarcass = carcassArray[getRandomNumber(carcassArray.length)];
+							const carcassArray = [...speciesInfo[userData.quid.species].biome1OpponentArray];
+							const foundCarcass = pickMeat(carcassArray, serverData.inventory);
 							if (!foundCarcass) {
 								await sendErrorMessage(interaction, new Error('foundCarcass is undefined'))
 									.catch((error) => { console.error(error); });
 								return;
 							}
 
-							embed.setDescription(`*After a while, ${quidData.name} can indeed find something useful: On the floor is a ${foundCarcass} that seems to have recently lost a fight fatally. Although the animal has a few injuries, it can still serve as great nourishment. What a success!*\n${playingField}`);
+							embed.setDescription(`*After a while, ${userData.quid.name} can indeed find something useful: On the floor is a ${foundCarcass} that seems to have recently lost a fight fatally. Although the animal has a few injuries, it can still serve as great nourishment. What a success!*\n${playingField}`);
 							embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundCarcass}` });
 
-							userData = await userModel.findOneAndUpdate(
-								u => u.uuid === userData?.uuid,
+							await userData.update(
 								(u) => {
 									const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 									p.inventory.meat[foundCarcass] += 1;
 								},
 							);
 						}
-						else if (materialIsGettable) {
+						else if (materialCount < 0) {
 
-							const foundMaterial = (Object.keys(materialsInfo) as Array<MaterialNames>)[getRandomNumber(Object.keys(materialsInfo).length)];
+							const foundMaterial = pickMaterial(serverData.inventory);
 							if (!foundMaterial) {
 								await sendErrorMessage(interaction, new Error('foundMaterial is undefined'))
 									.catch((error) => { console.error(error); });
 								return;
 							}
 
-							embed.setDescription(`*${quidData.name} searches in vain for edible remains of deceased animals. But the expedition is not without success: the ${quidData.displayedSpecies || quidData.species} sees a ${foundMaterial}, which can serve as a great material for repairs and work in the pack. ${upperCasePronoun(quidData, 0)} happily takes it home with ${pronoun(quidData, 1)}.*\n${playingField}`);
+							embed.setDescription(`*${userData.quid.name} searches in vain for edible remains of deceased animals. But the expedition is not without success: the ${userData.quid.getDisplayspecies()} sees a ${foundMaterial}, which can serve as a great material for repairs and work in the pack. ${capitalizeString(userData.quid.pronoun(0))} happily takes it home with ${userData.quid.pronoun(1)}.*\n${playingField}`);
 							embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundMaterial}` });
 
-							userData = await userModel.findOneAndUpdate(
-								u => u.uuid === userData?.uuid,
+							await userData.update(
 								(u) => {
 									const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 									p.inventory.materials[foundMaterial] += 1;
@@ -223,7 +209,7 @@ export async function executeScavenging(
 						}
 						else {
 
-							embed.setDescription(`*Although ${quidData.name} searches everything very thoroughly, there doesn't seem to be anything in the area that can be used at the moment. Probably everything has already been found. The ${quidData.displayedSpecies || quidData.species} decides to look again later.*\n${playingField}`);
+							embed.setDescription(`*Although ${userData.quid.name} searches everything very thoroughly, there doesn't seem to be anything in the area that can be used at the moment. Probably everything has already been found. The ${userData.quid.getDisplayspecies()} decides to look again later.*\n${playingField}`);
 							if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 						}
 
@@ -232,7 +218,7 @@ export async function executeScavenging(
 					}
 					else {
 
-						botReply = await update(int, { components: componentArray });
+						botReply = await update(int, { components: correctButtonPresses < 4 ? componentArray : disableAllComponents(componentArray) });
 						if (correctButtonPresses >= 4) { collector.stop(); }
 					}
 				}
@@ -263,38 +249,37 @@ export async function executeScavenging(
 					/* Checking if the user is hurt or not. If the user is hurt, it will subtract health points from the user and give them an injury. */
 					if (isHurt == 0) {
 
-						embed.setDescription(`*After ${quidData.name} gets over the initial shock, the ${quidData.displayedSpecies || quidData.species} quickly manages to free ${pronoun(quidData, 4)} from the net. That was close!*`);
+						embed.setDescription(`*After ${userData.quid.name} gets over the initial shock, the ${userData.quid.getDisplayspecies()} quickly manages to free ${userData.quid.pronoun(4)} from the net. That was close!*`);
 						if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 					}
 					else {
 
-						const healthPoints = function(health) { return (profileData.health - health < 0) ? profileData.health : health; }(getRandomNumber(5, 3));
+						const healthPoints = function(health) { return (userData.quid.profile.health - health < 0) ? userData.quid.profile.health : health; }(getRandomNumber(5, 3));
 
 						switch (pullFromWeightedTable({ 0: 1, 1: 1 })) {
 
 							case 0:
 
-								profileData.injuries.infections += 1;
+								userData.quid.profile.injuries.infections += 1;
 
-								embed.setDescription(`*${quidData.name} is still shocked for a while, but finally manages to free ${pronoun(quidData, 4)}. Not long after, however, ${pronounAndPlural(quidData, 0, 'feel')} a shock wave run through ${pronoun(quidData, 2)} body. Something sharp must have pressed into the ${quidData.displayedSpecies || quidData.species}. It looks infected.*`);
+								embed.setDescription(`*${userData.quid.name} is still shocked for a while, but finally manages to free ${userData.quid.pronoun(4)}. Not long after, however, ${userData.quid.pronounAndPlural(0, 'feel')} a shock wave run through ${userData.quid.pronoun(2)} body. Something sharp must have pressed into the ${userData.quid.getDisplayspecies()}. It looks infected.*`);
 								embed.setFooter({ text: `-${healthPoints} HP (from infection)\n${changedCondition.statsUpdateText}` });
 
 								break;
 
 							default:
 
-								profileData.injuries.sprains += 1;
+								userData.quid.profile.injuries.sprains += 1;
 
-								embed.setDescription(`*${quidData.name} is still shocked for a while, but finally manages to free ${pronoun(quidData, 4)}. But the escape was not perfect: while the ${quidData.displayedSpecies || quidData.species} was untangling ${pronoun(quidData, 4)} from the net, ${pronoun(quidData, 0)} got entangled and stuck. It looks sprained.*`);
+								embed.setDescription(`*${userData.quid.name} is still shocked for a while, but finally manages to free ${userData.quid.pronoun(4)}. But the escape was not perfect: while the ${userData.quid.getDisplayspecies()} was untangling ${userData.quid.pronoun(4)} from the net, ${userData.quid.pronoun(0)} got entangled and stuck. It looks sprained.*`);
 								embed.setFooter({ text: `-${healthPoints} HP (from sprain)\n${changedCondition.statsUpdateText}` });
 						}
 
-						userData = await userModel.findOneAndUpdate(
-							u => u.uuid === userData?.uuid,
+						await userData.update(
 							(u) => {
 								const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 								p.health -= healthPoints;
-								p.injuries = profileData.injuries;
+								p.injuries = userData.quid.profile.injuries;
 							},
 						);
 					}
@@ -330,35 +315,36 @@ export async function executeScavenging(
 	 */
 	async function sendFinalMessage(
 		int: ButtonInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
-		userData: UserSchema,
+		userData: UserData<never, never>,
 		serverData: ServerSchema,
 	) {
 
-		cooldownMap.set(userData.uuid + interaction.guildId, false);
+		setCooldown(userData, int.guildId, false);
 
-		const levelUpEmbed = (await checkLevelUp(int, userData, quidData, profileData, serverData)).levelUpEmbed;
+		const levelUpEmbed = await checkLevelUp(int, userData, serverData);
+
 		const newComponents = disableAllComponents(componentArray);
 		newComponents.push(new ActionRowBuilder<ButtonBuilder>()
 			.setComponents(new ButtonBuilder()
-				.setCustomId('scavenge_new')
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['new']))
 				.setLabel('Scavenge again')
 				.setStyle(ButtonStyle.Primary)));
 
 		botReply = await (async (int, messageOptions) => int.isButton() ? await update(int, messageOptions) : await respond(int, messageOptions, true))(int, {
 			embeds: [
-				...embedArray,
+				...(restEmbed as EmbedBuilder[]),
 				embed,
-				...(changedCondition.injuryUpdateEmbed ? [changedCondition.injuryUpdateEmbed] : []),
-				...(levelUpEmbed ? [levelUpEmbed] : []),
+				...changedCondition.injuryUpdateEmbed,
+				...levelUpEmbed,
 			],
 			components: newComponents,
 		});
 
-		await isPassedOut(int, userData, quidData, profileData, true);
+		await isPassedOut(int, userData, true);
 
-		await restAdvice(int, userData, profileData);
-		await drinkAdvice(int, userData, profileData);
-		await eatAdvice(int, userData, profileData);
+		await restAdvice(int, userData);
+		await drinkAdvice(int, userData);
+		await eatAdvice(int, userData);
 	}
 
 	/**
@@ -381,7 +367,7 @@ export async function executeScavenging(
 				return;
 			}
 			trapActionRow.addComponents(new ButtonBuilder()
-				.setCustomId(`scavenge_humantrap_${chosenEmoji}`)
+				.setCustomId(`humantrap_${chosenEmoji}`)
 				.setEmoji(chosenEmoji)
 				.setDisabled(false)
 				.setStyle(ButtonStyle.Secondary));
@@ -389,10 +375,10 @@ export async function executeScavenging(
 
 		componentArray = [trapActionRow];
 		botReply = await (async (messageOptions) => int.isButton() ? await update(int, messageOptions) : await respond(int, messageOptions, true))({
-			embeds: [...embedArray, new EmbedBuilder()
-				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(userData!, quidData, int.guildId), iconURL: quidData.avatarURL })
-				.setDescription(`*${quidData.name} has been searching for quite some time now, when a mishap happens to ${pronoun(quidData, 1)}. ${upperCasePronounAndPlural(quidData, 0, '\'s', '\'re')} not paying attention for only a moment, and suddenly everything happens very quickly. The ${quidData.displayedSpecies || quidData.species} has fallen into a trap that a human must have set here! Now ${pronoun(quidData, 0)} must quickly catch ${pronoun(quidData, 4)} again and try to free ${pronoun(quidData, 4)} before it comes to an accident.*`)
+			embeds: [...(restEmbed as EmbedBuilder[]), new EmbedBuilder()
+				.setColor(userData!.quid!.color)
+				.setAuthor({ name: userData!.quid!.getDisplayname(), iconURL: userData!.quid!.avatarURL })
+				.setDescription(`*${userData!.quid!.name} has been searching for quite some time now, when a mishap happens to ${userData!.quid!.pronoun(1)}. ${capitalizeString(userData!.quid!.pronounAndPlural(0, '\'s', '\'re'))} not paying attention for only a moment, and suddenly everything happens very quickly. The ${userData!.quid!.getDisplayspecies()} has fallen into a trap that a human must have set here! Now ${userData!.quid!.pronoun(0)} must quickly catch ${userData!.quid!.pronoun(4)} again and try to free ${userData!.quid!.pronoun(4)} before it comes to an accident.*`)
 				.setFooter({ text: `Click the "${humanTrapCorrectEmoji}" as many times as you can!` })],
 			components: componentArray,
 		});

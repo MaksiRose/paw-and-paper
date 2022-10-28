@@ -1,7 +1,6 @@
 // @ts-check
 import { ButtonInteraction, ChatInputCommandInteraction, SelectMenuInteraction } from 'discord.js';
-import userModel from '../models/userModel';
-import { Profile, UserSchema } from '../typedef';
+import { UserData } from '../typings/data/user';
 import { respond } from './helperFunctions';
 
 
@@ -12,16 +11,13 @@ import { respond } from './helperFunctions';
  * @param profileData - The user's profile on the server they are using the command on
  */
 export async function restAdvice(
-	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>
-	,
-	userData: UserSchema,
-	profileData: Profile,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	userData: UserData<never, never>,
 ): Promise<void> {
 
-	if (profileData.energy <= 80 && userData.advice.resting === false) {
+	if (userData.quid.profile.energy <= 80 && userData.advice.resting === false) {
 
-		await userModel.findOneAndUpdate(
-			u => u.uuid === userData.uuid,
+		await userData.update(
 			(u) => {
 				u.advice.resting = true;
 			},
@@ -40,16 +36,13 @@ export async function restAdvice(
  * @param profileData - The user's profile on the server they are using the command on
  */
 export async function drinkAdvice(
-	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>
-	,
-	userData: UserSchema,
-	profileData: Profile,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	userData: UserData<never, never>,
 ): Promise<void> {
 
-	if (profileData.thirst <= 80 && userData.advice.drinking === false) {
+	if (userData.quid.profile.thirst <= 80 && userData.advice.drinking === false) {
 
-		await userModel.findOneAndUpdate(
-			u => u.uuid === userData.uuid,
+		await userData.update(
 			(u) => {
 				u.advice.drinking = true;
 			},
@@ -68,16 +61,13 @@ export async function drinkAdvice(
  * @param profileData - The user's profile on the server they are using the command on
  */
 export async function eatAdvice(
-	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>
-	,
-	userData: UserSchema,
-	profileData: Profile,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	userData: UserData<never, never>,
 ): Promise<void> {
 
-	if (profileData.hunger <= 80 && userData.advice.eating === false) {
+	if (userData.quid.profile.hunger <= 80 && userData.advice.eating === false) {
 
-		await userModel.findOneAndUpdate(
-			u => u.uuid === userData.uuid,
+		await userData.update(
 			(u) => {
 				u.advice.eating = true;
 			},
@@ -96,13 +86,12 @@ export async function eatAdvice(
  */
 export async function coloredButtonsAdvice(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
-	userData: UserSchema,
+	userData: UserData<never, never>,
 ): Promise<void> {
 
 	if (userData.advice.coloredbuttons === false) {
 
-		await userModel.findOneAndUpdate(
-			u => u.uuid === userData.uuid,
+		await userData.update(
 			(u) => {
 				u.advice.coloredbuttons = true;
 			},

@@ -1,677 +1,346 @@
-import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, Interaction, MessageContextMenuCommandInteraction, ModalSubmitInteraction, SelectMenuInteraction, UserContextMenuCommandInteraction } from 'discord.js';
-import { deleteInteractionCollector } from '../commands/quid_customization/delete';
-import { profileInteractionCollector } from '../commands/quid_customization/profile';
-import { pronounsInteractionCollector, sendEditPronounsModalResponse } from '../commands/quid_customization/pronouns';
-import { proxyInteractionCollector, sendEditProxyModalResponse } from '../commands/quid_customization/proxy';
-import { sendEditDisplayedSpeciesModalResponse, speciesInteractionCollector } from '../commands/quid_customization/species';
-import { friendshipsInteractionCollector } from '../commands/interaction/friendships';
-import { hugInteractionCollector } from '../commands/interaction/hug';
-import { sendEditSkillsModalResponse, skillsInteractionCollector } from '../commands/interaction/skills';
-import { helpInteractionCollector } from '../commands/miscellaneous/help';
-import { serversettingsInteractionCollector } from '../commands/miscellaneous/server-settings';
-import { shopInteractionCollector } from '../commands/miscellaneous/shop';
-import { createNewTicket, sendRespondToTicketModalResponse, ticketInteractionCollector } from '../commands/miscellaneous/ticket';
-import { sendEditMessageModalResponse } from '../contextmenu/edit';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, Interaction, RepliableInteraction } from 'discord.js';
+import { createNewTicket } from '../commands/miscellaneous/ticket';
 import serverModel from '../models/serverModel';
-import userModel from '../models/userModel';
-import { ErrorStacks, Event } from '../typedef';
+import userModel, { getUserData } from '../models/userModel';
+import { DiscordEvent } from '../typings/main';
 import { disableCommandComponent, disableAllComponents } from '../utils/componentDisabling';
-import { getMapData, getQuidDisplayname, update } from '../utils/helperFunctions';
-import { pronoun, pronounAndPlural } from '../utils/getPronouns';
+import { getMapData, keyInObject, update } from '../utils/helperFunctions';
 import { createGuild } from '../utils/updateGuild';
 import { respond } from '../utils/helperFunctions';
 import { sendErrorMessage } from '../utils/helperFunctions';
-import { adventureInteractionCollector } from '../commands/interaction/adventure';
-import { playfightInteractionCollector } from '../commands/interaction/playfight';
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
-import { profilelistInteractionCollector } from '../commands/interaction/profilelist';
-import { isResting, startResting } from '../commands/gameplay_maintenance/rest';
-import { statsInteractionCollector } from '../commands/gameplay_maintenance/stats';
-import settingsInteractionCollector from '../utils/settingsInteractionCollector';
-import { storeInteractionCollector } from '../commands/gameplay_maintenance/store';
-import { inventoryInteractionCollector } from '../commands/gameplay_maintenance/inventory';
-import { voteInteractionCollector } from '../commands/gameplay_maintenance/vote';
-import { repairInteractionCollector } from '../commands/gameplay_maintenance/repair';
-import { healInteractionCollector } from '../commands/gameplay_maintenance/heal';
-import { rankupInteractionCollector } from '../commands/gameplay_primary/rank-up';
-import { executeScavenging, command as scavengeCommand } from '../commands/gameplay_primary/scavenge';
-import { travelInteractionCollector } from '../commands/gameplay_primary/travel-regions';
-import { executePlaying, command as playCommand } from '../commands/gameplay_primary/play';
-import { executeExploring, command as exploreCommand } from '../commands/gameplay_primary/explore';
-import { executeAttacking, command as attackCommand } from '../commands/gameplay_primary/attack';
-import { wrongproxyInteractionCollector } from '../contextmenu/wrong-proxy';
+import { missingPermissions } from '../utils/permissionHandler';
+import { client, handle } from '../index';
+import { ErrorStacks } from '../typings/data/general';
+import { hasNameAndSpecies } from '../utils/checkUserState';
+import { sendReminder, stopReminder } from '../commands/gameplay_maintenance/water-tree';
+import { deconstructCustomId } from '../utils/customId';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
-export const cooldownMap: Map<string, boolean> = new Map();
-export const lastInteractionMap: Map<string, ChatInputCommandInteraction<'cached'> | MessageContextMenuCommandInteraction<'cached'> | UserContextMenuCommandInteraction<'cached'> | SelectMenuInteraction<'cached'> | ButtonInteraction<'cached'> | ModalSubmitInteraction<'cached'>> = new Map(); // This should be replaced by RepliableInteraction<'cached'> once the Cached generic of RepliableInteraction is respected
+export const lastInteractionMap: Map<string, RepliableInteraction<'cached'>> = new Map();
 export const serverActiveUsersMap: Map<string, string[]> = new Map();
 
-export const event: Event = {
+export const event: DiscordEvent = {
 	name: 'interactionCreate',
 	once: false,
-	async execute(client, interaction: Interaction) {
+	async execute(interaction: Interaction) {
+		try {
 
-		/* This is only null when in DM without CHANNEL partial, or when channel cache is sweeped. Therefore, this is technically unsafe since this value could become null after this check. This scenario is unlikely though. */
-		if (!interaction.channel) { await client.channels.fetch(interaction.channelId || ''); }
+			/* This is only null when in DM without CHANNEL partial, or when channel cache is sweeped. Therefore, this is technically unsafe since this value could become null after this check. This scenario is unlikely though. */
+			if (!interaction.channel) { await client.channels.fetch(interaction.channelId || ''); }
 
-		let userData = await userModel.findOne(u => u.userId.includes(interaction.user.id)).catch(() => { return null; });
-		let serverData = await serverModel.findOne(s => s.serverId === interaction.guildId).catch(() => { return null; });
+			const _userData = userModel.find(u => u.userId.includes(interaction.user.id))[0] ?? null;
+			const userData = _userData === null ? null : getUserData(_userData, interaction.guildId ?? 'DMs', _userData.quids[_userData.currentQuid[interaction.guildId ?? 'DMs'] ?? '']);
+			let serverData = serverModel.find(s => s.serverId === interaction.guildId)[0] ?? null;
 
-		/* It's setting the last interaction timestamp for the user to now. */
-		if (userData && interaction.inCachedGuild() && interaction.isRepliable()) {
+			/* It's setting the last interaction timestamp for the user to now. */
+			if (userData && interaction.inCachedGuild() && interaction.isRepliable()) {
 
-			lastInteractionMap.set(userData.uuid + interaction.guildId, interaction);
+				lastInteractionMap.set(userData._id + interaction.guildId, interaction);
 
-			const serverActiveUsers = serverActiveUsersMap.get(interaction.guildId);
-			if (!serverActiveUsers) { serverActiveUsersMap.set(interaction.guildId, [interaction.user.id]); }
-			else if (!serverActiveUsers.includes(interaction.user.id)) { serverActiveUsers.push(interaction.user.id); }
-		}
-
-		/* Checking if the serverData is null. If it is null, it will create a guild. */
-		if (!serverData && interaction.inCachedGuild()) {
-
-			serverData = await createGuild(client, interaction.guild)
-				.catch(async (error) => {
-					console.error(error);
-					if (interaction.isRepliable()) {
-						await sendErrorMessage(interaction, new Error('Unknown command'))
-							.catch(e => { console.error(e); });
-					}
-					return null;
-				});
-		}
-
-		if (interaction.isRepliable() && interaction.inRawGuild()) {
-
-			await interaction
-				.reply({
-					content: 'Oops, I am missing the `bot` scope that is normally part of the invite link. Please re-invite the bot!',
-					ephemeral: true,
-				})
-				.catch((error) => {
-					if (error.httpStatus !== 404) { console.error(error); }
-				});
-			return;
-		}
-
-		if (interaction.isAutocomplete()) {
-
-			/**
-			 * https://discordjs.guide/interactions/autocomplete.html#responding-to-autocomplete-interactions
-			 */
-
-			/* Getting the command from the client and checking if the command is undefined.
-			If it is, it will error. */
-			const command = client.slashCommands[interaction.commandName];
-			if (command === undefined || !Object.hasOwn(command, 'sendAutocomplete')) { return; }
-
-			/* It's sending the autocomplete message. */
-			await command.sendAutocomplete?.(client, interaction, userData, serverData)
-				.catch(async (error) => { console.error(error); });
-			return;
-		}
-
-		if (interaction.isChatInputCommand()) {
-
-			/* Getting the command from the client and checking if the command is undefined.
-			If it is, it will error. */
-			const command = client.slashCommands[interaction.commandName];
-			if (command === undefined || !Object.hasOwn(command, 'sendCommand')) {
-
-				return await sendErrorMessage(interaction, new Error('Unknown command'))
-					.catch(e => { console.error(e); });
+				const serverActiveUsers = serverActiveUsersMap.get(interaction.guildId);
+				if (!serverActiveUsers) { serverActiveUsersMap.set(interaction.guildId, [interaction.user.id]); }
+				else if (!serverActiveUsers.includes(interaction.user.id)) { serverActiveUsers.push(interaction.user.id); }
 			}
 
-			/* If the user is not registered in the cooldown map, it's setting the cooldown to false for the user. */
-			if (userData && interaction.guildId && !cooldownMap.has(userData.uuid + interaction.guildId)) { cooldownMap.set(userData.uuid + interaction.guildId, false); }
+			/* Checking if the serverData is null. If it is null, it will create a guild. */
+			if (!serverData && interaction.inCachedGuild()) { serverData = await createGuild(interaction.guild); }
 
-			/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-			if (userData && command.disablePreviousCommand) {
+			if (interaction.isRepliable() && interaction.inRawGuild()) {
 
-				await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.()
-					.catch(async (error) => {
-						await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
+				await interaction
+					.reply({
+						content: 'Oops, I am missing the `bot` scope that is normally part of the invite link. Please re-invite the bot!',
 					});
+				return;
 			}
 
-			/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-			if (userData && interaction.inGuild() && command.modifiesServerProfile) {
+			if (interaction.isAutocomplete()) {
 
-				await userModel
-					.findOneAndUpdate(
-						u => u.uuid === userData!.uuid,
-						(u) => {
-							const p = getMapData(getMapData(u.quids, getMapData(userData!.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-							p.lastActiveTimestamp = Date.now();
-						},
-					);
+				/**
+				 * https://discordjs.guide/interactions/autocomplete.html#responding-to-autocomplete-interactions
+				 */
+
+				/* Getting the command from the client and checking if the command is undefined.
+				If it is, it will error. */
+				const command = handle.slashCommands.get(interaction.commandName);
+				if (command === undefined || command.sendAutocomplete === undefined) { return; }
+
+				/* It's sending the autocomplete message. */
+				await command.sendAutocomplete(interaction, userData, serverData);
+				return;
 			}
 
-			/* This sends the command and error message if an error occurs. */
-			console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully executed \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			await command
-				.sendCommand(client, interaction, userData, serverData, [])
-				.catch(async (error) => {
-					await sendErrorMessage(interaction, error)
-						.catch(e => { console.error(e); });
-				});
+			if (interaction.isChatInputCommand()) {
 
-			if (interaction.inGuild()) {
+				/* Getting the command from the client and checking if the command is undefined. If it is, it will error. */
+				const command = handle.slashCommands.get(interaction.commandName);
+				if (command === undefined || !keyInObject(command, 'sendCommand')) { return await sendErrorMessage(interaction, new Error('Unknown command')); }
 
-				userData = await userModel.findOne(u => u.userId.includes(interaction.user.id)).catch(() => { return null; });
-				const quidData = userData?.quids?.[userData?.currentQuid?.[interaction.guildId] || ''];
-				const profileData = quidData?.profiles?.[interaction.guildId];
+				/* It's disabling all components if userData exists and the command is set to disable a previous command. */
+				if (userData && command.disablePreviousCommand) {
 
-				/* If sapling exists, a gentle reminder has not been sent and the watering time is after the perfect time, send a gentle reminder */
-				if (userData && profileData && profileData.sapling.exists && !profileData.sapling?.sentGentleReminder && Date.now() > (profileData.sapling.nextWaterTimestamp || 0)) {
+					if (await missingPermissions(interaction, [
+						'ViewChannel',
+					]) === true) { return; }
 
-					await userModel.findOneAndUpdate(
-						u => u.uuid === userData?.uuid,
-						(u) => {
-							const p = getMapData(getMapData(u.quids, quidData._id).profiles, interaction.guildId);
-							p.sapling.sentGentleReminder = true;
-						},
-					)
-						.catch(async (error) => {
-							await sendErrorMessage(interaction, error)
-								.catch(e => { console.error(e); });
-						});
+					await disableCommandComponent(userData);
+				}
+
+				if (userData && interaction.inGuild()) {
+
+					await userData
+						.update(
+							(u) => {
+								u.userIds[interaction.user.id] = {
+									...(u.userIds[interaction.user.id] ?? {}),
+									[interaction.guildId]: { isMember: true, lastUpdatedTimestamp: Date.now() },
+								};
+
+								if (userData.quid && command.modifiesServerProfile) {
+
+									const p = getMapData(getMapData(u.quids, userData!.quid!._id).profiles, interaction.guildId);
+									p.lastActiveTimestamp = Date.now();
+								}
+							},
+						);
+				}
+
+				/* This sends the command and error message if an error occurs. */
+				console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully executed \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+				await command.sendCommand(interaction, userData, serverData);
+
+				if (interaction.inGuild()) {
+
+					/* If sapling exists, a gentle reminder has not been sent and the watering time is after the perfect time, send a gentle reminder */
+					if (hasNameAndSpecies(userData) && userData.quid.profile.sapling.exists && !userData.quid.profile.sapling.sentGentleReminder && Date.now() > (userData.quid.profile.sapling.nextWaterTimestamp || 0) + 60_000) { // The 60 seconds is so this doesn't trigger when you just found your sapling while exploring
+
+						await userData.update(
+							(u) => {
+								const p = getMapData(getMapData(u.quids, userData!.quid!._id).profiles, interaction.guildId);
+								p.sapling.sentGentleReminder = true;
+							},
+						);
+
+						await interaction
+							.followUp({
+								embeds: [new EmbedBuilder()
+									.setColor(userData.quid.color)
+									.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+									.setDescription(`*Engrossed in ${userData.quid.pronoun(2)} work, ${userData.quid.name} suddenly remembers that ${userData.quid.pronounAndPlural(0, 'has', 'have')} not yet watered ${userData.quid.pronoun(2)} plant today. The ${userData.quid.getDisplayspecies()} should really do it soon!*`)
+									.setFooter({ text: 'Type "/water-tree" to water your ginkgo sapling!' })],
+							});
+					}
+				}
+
+				/* This is checking if the user has used the bot since the last update. If they haven't, it will
+				send them a message telling them that there is a new update. */
+				if (Number(userData?.lastPlayedVersion) < Number(version.split('.').slice(0, -1).join('.'))) {
 
 					await interaction
 						.followUp({
-							embeds: [new EmbedBuilder()
-								.setColor(quidData.color)
-								.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
-								.setDescription(`*Engrossed in ${pronoun(quidData, 2)} work, ${quidData.name} suddenly remembers that ${pronounAndPlural(quidData, 0, 'has', 'have')} not yet watered ${pronoun(quidData, 2)} plant today. The ${quidData.displayedSpecies || quidData.species} should really do it soon!*`)
-								.setFooter({ text: 'Type "/water-tree" to water your ginkgo sapling!' })],
-						})
-						.catch(async (error) => {
-							await sendErrorMessage(interaction, error)
-								.catch(e => { console.error(e); });
+							content: `A new update has come out since you last used the bot! You can view the changelog here: <https://github.com/MaksiRose/paw-and-paper/releases/tag/v${version.split('.').slice(0, -1).join('.')}.0>`,
 						});
+
+					await userModel.findOneAndUpdate(
+						u => u.userId.includes(interaction.user.id),
+						(u) => {
+							u.lastPlayedVersion = version.split('.').slice(0, -1).join('.');
+						},
+					);
 				}
-			}
-
-			/* This is checking if the user has used the bot since the last update. If they haven't, it will
-			send them a message telling them that there is a new update. */
-			if (Number(userData?.lastPlayedVersion) < Number(version.split('.').slice(0, -1).join('.'))) {
-
-				await interaction
-					.followUp({
-						content: `A new update has come out since you last used the bot! You can view the changelog here: <https://github.com/MaksiRose/paw-and-paper/releases/tag/v${version.split('.').slice(0, -1).join('.')}.0>`,
-					})
-					.catch(async (error) => {
-						return await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
-
-				await userModel.findOneAndUpdate(
-					u => u.userId.includes(interaction.user.id),
-					(u) => {
-						u.lastPlayedVersion = version.split('.').slice(0, -1).join('.');
-					},
-				)
-					.catch(async (error) => {
-						await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
-			}
-			return;
-		}
-
-		if (interaction.isUserContextMenuCommand()) { return; }
-
-		if (interaction.isMessageContextMenuCommand()) {
-
-			/* Getting the command from the client and checking if the command is undefined.
-			If it is, it will error. */
-			const command = client.contextMenuCommands[interaction.commandName];
-			if (command === undefined || !Object.hasOwn(command, 'sendCommand')) {
-
-				return await sendErrorMessage(interaction, new Error('Unknown command'))
-					.catch(e => { console.error(e); });
-			}
-
-			/* This sends the command and error message if an error occurs. */
-			console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully executed \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-			await command
-				.sendCommand(client, interaction)
-				.catch(async (error) => {
-					await sendErrorMessage(interaction, error)
-						.catch(e => { console.error(e); });
-				});
-			return;
-		}
-
-		if (interaction.isModalSubmit()) {
-
-			console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully submitted the modal \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-
-			if (interaction.customId.startsWith('edit')) {
-
-				await sendEditMessageModalResponse(interaction)
-					.catch(async (error) => {
-						await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
 				return;
 			}
 
-			if (interaction.customId.startsWith('species')) {
+			if (interaction.isUserContextMenuCommand()) { return; }
 
-				await sendEditDisplayedSpeciesModalResponse(interaction, userData)
-					.catch(async (error) => {
-						await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
+			if (interaction.isMessageContextMenuCommand()) {
+
+				/* Getting the command from the client and checking if the command is undefined.
+				If it is, it will error. */
+				const command = handle.contextMenuCommands.get(interaction.commandName);
+				if (command === undefined || !keyInObject(command, 'sendCommand')) { return await sendErrorMessage(interaction, new Error('Unknown command')); }
+
+				/* This sends the command and error message if an error occurs. */
+				console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully executed \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+				await command.sendCommand(interaction);
 				return;
 			}
 
-			if (interaction.customId.startsWith('pronouns') && interaction.isFromMessage()) {
+			if (interaction.isModalSubmit()) {
 
-				await sendEditPronounsModalResponse(interaction)
-					.catch(async (error) => {
-						await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
+				console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully submitted the modal \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+
+				/* Getting the command from the client and checking if the command is undefined.
+				If it is, it will error. */
+				const command = handle.slashCommands.get(interaction.customId.split('_')[0] ?? '') ?? handle.contextMenuCommands.get(interaction.customId.split('_')[0] ?? '');
+				if (command === undefined || command.sendModalResponse === undefined) { return; }
+
+				/* It's sending the autocomplete message. */
+				await command.sendModalResponse(interaction, userData, serverData);
 				return;
 			}
 
-			if (interaction.customId.startsWith('proxy')) {
+			if (interaction.isMessageComponent()) {
 
-				await sendEditProxyModalResponse(interaction, userData)
-					.catch(async (error) => {
-						await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
-				return;
-			}
+				/* It's checking if the user that created the command is the same as the user that is interacting with the command, or if the user that is interacting is mentioned in the interaction.customId. If neither is true, it will send an error message. */
+				const isCommandCreator = interaction.message.interaction !== null && interaction.message.interaction.user.id === interaction.user.id;
+				const isMentioned = interaction.customId.includes('@' + interaction.user.id) || interaction.customId.includes('@EVERYONE') || (_userData && (interaction.customId.includes(_userData._id) || Object.keys(_userData.quids).some(q => interaction.customId.includes('@' + q))));
 
-			if (interaction.customId.startsWith('ticket') && interaction.isFromMessage()) {
+				if (interaction.isSelectMenu()) {
 
-				await sendRespondToTicketModalResponse(interaction)
-					.catch(async (error) => {
-						await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
-				return;
-			}
+					console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully selected \x1b[31m${interaction.values[0]} \x1b[0mfrom the menu \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+				}
 
-			if (interaction.customId.startsWith('skills') && interaction.isFromMessage()) {
+				if (interaction.isButton()) {
 
-				await sendEditSkillsModalResponse(interaction, serverData, userData)
-					.catch(async (error) => {
-						await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
-				return;
-			}
-			return;
-		}
+					console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully clicked the button \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
-		if (interaction.isMessageComponent()) {
+					if (interaction.customId.startsWith('report_')) {
 
-			/* It's checking if the user that created the command is the same as the user that is interacting with the command, or if the user that is interacting is mentioned in the interaction.customId. If neither is true, it will send an error message. */
-			const isNotCommandCreator = interaction.message.interaction && interaction.message.interaction.user.id !== interaction.user.id;
-			const isMentioned = interaction.customId.includes(interaction.user.id) || interaction.customId.includes('ANYONECANCLICK') || (userData && interaction.customId.includes(userData.uuid));
-			if (isNotCommandCreator && !isMentioned) {
+						if (!isCommandCreator && !isMentioned) {
 
-				await respond(interaction, {
-					content: 'Sorry, I only listen to the person that created the command 😣',
-					ephemeral: true,
-				}, false)
-					.catch(async (error) => {
-						if (error.httpStatus !== 404) {
-							return await sendErrorMessage(interaction, error)
-								.catch(e => { console.error(e); });
+							await respond(interaction, {
+								content: 'Sorry, I only listen to the person that created the command 😣',
+								ephemeral: true,
+							}, false);
+							return;
 						}
-					});
-				return;
-			}
 
-			if (interaction.isSelectMenu()) {
+						await update(interaction, {
+							components: disableAllComponents(interaction.message.components),
+						});
 
-				console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully selected \x1b[31m${interaction.values[0]} \x1b[0mfrom the menu \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+						const errorId = interaction.customId.split('_')[2] || generateId();
+						const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
+						const description = errorStacks[errorId] ? `\`\`\`\n${errorStacks[errorId]!.substring(0, 4090)}\n\`\`\`` : interaction.message.embeds[0]?.description;
 
-				if (interaction.customId.startsWith('help_')) {
+						if (!description) {
 
-					await helpInteractionCollector(client, interaction)
-						.catch(async (error) => { await sendErrorMessage(interaction, error); });
-					return;
-				}
+							await respond(interaction, {
+								embeds: [new EmbedBuilder()
+									.setColor(error_color)
+									.setDescription('There was an error trying to report the error... Ironic! Maybe you can try opening a ticket via `/ticket` instead?')],
+								ephemeral: true,
+							}, false);
+							return;
+						}
 
-				if (interaction.customId.startsWith('shop_')) {
-
-					await shopInteractionCollector(interaction, userData, serverData)
-						.catch(async (error) => { await sendErrorMessage(interaction, error); });
-					return;
-				}
-
-				if (interaction.customId.startsWith('inventory_')) {
-
-					await inventoryInteractionCollector(interaction, userData, serverData)
-						.catch(async (error) => { await sendErrorMessage(interaction, error); });
-					return;
-				}
-
-				if (interaction.customId.startsWith('vote_')) {
-
-					await voteInteractionCollector(client, interaction, userData)
-						.catch(async (error) => { await sendErrorMessage(interaction, error); });
-					return;
-				}
-
-				if (interaction.customId.startsWith('wrongproxy_')) {
-
-					await wrongproxyInteractionCollector(interaction, userData)
-						.catch(async (error) => { await sendErrorMessage(interaction, error); });
-					return;
-				}
-			}
-
-			if (interaction.isButton()) {
-
-				console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully clicked the button \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
-
-				if (interaction.customId.startsWith('report_')) {
-
-					await update(interaction, {
-						components: disableAllComponents(interaction.message.components),
-					})
-						.catch((error) => { console.error(error); });
-
-					const errorId = interaction.customId.split('_')[2] || generateId();
-					const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
-					const description = errorStacks[errorId] ? `\`\`\`\n${errorStacks[errorId]!.substring(0, 4090)}\n\`\`\`` : interaction.message.embeds[0]?.description;
-
-					if (!description) {
-
-						await respond(interaction, {
-							embeds: [new EmbedBuilder()
-								.setColor(error_color)
-								.setDescription('There was an error trying to report the error... Ironic! Maybe you can try opening a ticket via `/ticket` instead?')],
-							ephemeral: true,
-						}, false);
+						await createNewTicket(interaction, `Error ${errorId}`, description, 'bug', null, errorId);
+						delete errorStacks[errorId];
+						writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
 						return;
 					}
 
-					await createNewTicket(client, interaction, `Error ${errorId}`, description, 'bug', null, errorId);
-					delete errorStacks[errorId];
-					writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
+					if (interaction.customId.startsWith('settings_')) {
+
+						if (!isCommandCreator && !isMentioned) {
+
+							await respond(interaction, {
+								content: 'Sorry, I only listen to the person that created the command 😣',
+								ephemeral: true,
+							}, false);
+							return;
+						}
+
+						if (interaction.customId.includes('reminders')) {
+
+							if (userData === null || _userData === null) { throw new TypeError('userData is null'); }
+							if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
+
+							const isOn = interaction.customId.includes('on');
+
+							if (interaction.customId.includes('water')) {
+
+								await userData.update(
+									(u) => {
+										u.settings.reminders.water = isOn;
+									},
+								);
+
+								/* This executes the sendReminder function for each profile for which the sapling exists and where lastMessageChannelId is a string, if the user has enabled water reminders. */
+								if (userData.settings.reminders.water === true) {
+									for (const quid of userData.quids.values()) {
+										for (const profile of Object.values(quid.profiles)) {
+											if (isOn) {
+
+												const user = getUserData(_userData, profile.serverId, quid);
+												if (hasNameAndSpecies(user) && user.quid.profile.sapling.exists && typeof user.quid.profile.sapling.lastMessageChannelId === 'string' && !user.quid.profile.sapling.sentReminder) { sendReminder(user); }
+											}
+											else { stopReminder(quid._id, interaction.guildId); }
+										}
+									}
+								}
+
+								await update(interaction, {
+									components: [new ActionRowBuilder<ButtonBuilder>()
+										.setComponents(new ButtonBuilder()
+											.setCustomId(`settings_reminders_water_${isOn ? 'off' : 'on'}_@${userData._id}`)
+											.setLabel(`Turn water reminders ${isOn ? 'off' : 'on'}`)
+											.setStyle(ButtonStyle.Secondary))],
+								});
+
+								await respond(interaction, {
+									content: `You turned reminders for watering ${isOn ? 'on' : 'off'}!`,
+									ephemeral: true,
+								}, false);
+							}
+
+							if (interaction.customId.includes('resting')) {
+
+								await userData.update(
+									(u) => {
+										u.settings.reminders.resting = isOn;
+									},
+								);
+
+								await update(interaction, {
+									components: [new ActionRowBuilder<ButtonBuilder>()
+										.setComponents(new ButtonBuilder()
+											.setCustomId(`settings_reminders_resting_${isOn ? 'off' : 'on'}_@${userData._id}`)
+											.setLabel(`Turn automatic resting pings ${isOn ? 'off' : 'on'}`)
+											.setStyle(ButtonStyle.Secondary))],
+								});
+
+								await respond(interaction, {
+									content: `You turned pings for automatic resting ${isOn ? 'on' : 'off'}!`,
+									ephemeral: true,
+								}, false);
+							}
+						}
+					}
 				}
 
-				if (interaction.customId.startsWith('ticket_')) {
+				/* Getting the command from the client and checking if the command is undefined.
+				If it is, it will error. */
+				const customId = deconstructCustomId(interaction.customId);
+				const command = handle.slashCommands.get(customId?.commandName ?? '') ?? handle.contextMenuCommands.get(customId?.commandName ?? '');
+				if (command === undefined || command.sendMessageComponentResponse === undefined) { return; }
 
-					await ticketInteractionCollector(interaction)
-						.catch(async (error) => { await sendErrorMessage(interaction, error); });
+				if (!isCommandCreator && !isMentioned) {
+
+					await respond(interaction, {
+						content: 'Sorry, I only listen to the person that created the command 😣',
+						ephemeral: true,
+					}, false);
 					return;
 				}
 
-				if (interaction.customId.startsWith('hug_')) {
-
-					await hugInteractionCollector(interaction, userData)
-						.catch(async (error) => { await sendErrorMessage(interaction, error); });
-					return;
-				}
-
-				if (interaction.customId.startsWith('friendships_')) {
-
-					await friendshipsInteractionCollector(interaction, userData)
-						.catch(async (error) => { await sendErrorMessage(interaction, error); });
-					return;
-				}
-
-				if (interaction.customId.startsWith('adventure_')) {
-
-					await adventureInteractionCollector(interaction, serverData)
-						.catch(async (error) => { await sendErrorMessage(interaction, error); });
-					return;
-				}
-
-				if (interaction.customId.startsWith('playfight_')) {
-
-					await playfightInteractionCollector(interaction, serverData)
-						.catch(async (error) => { await sendErrorMessage(interaction, error); });
-					return;
-				}
-
-				if (interaction.customId.startsWith('stats_')) {
-
-					await statsInteractionCollector(interaction, userData, serverData)
-						.catch(async (error) => { await sendErrorMessage(interaction, error); });
-					return;
-				}
-
-				if (interaction.customId.startsWith('settings_')) {
-
-					await settingsInteractionCollector(client, interaction, userData)
-						.catch(async (error) => { await sendErrorMessage(interaction, error); });
-					return;
-				}
-
-				if (interaction.customId.startsWith('rank_')) {
-
-					await rankupInteractionCollector(interaction, userData, serverData)
-						.catch(async (error) => { await sendErrorMessage(interaction, error); });
-					return;
-				}
-
-				if (interaction.customId.startsWith('scavenge_new')) {
-
-					/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-					if (userData && scavengeCommand.disablePreviousCommand) { await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.(); }
-
-					await executeScavenging(interaction, userData, serverData, [])
-						.catch(async (error) => { await sendErrorMessage(interaction, error); });
-					return;
-				}
-
-				if (interaction.customId.startsWith('play_new')) {
-
-					/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-					if (userData && playCommand.disablePreviousCommand) { await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.(); }
-
-					await executePlaying(interaction, userData, serverData, [])
-						.catch(async (error) => { await sendErrorMessage(interaction, error); });
-					return;
-				}
-
-				if (interaction.customId.startsWith('explore_new')) {
-
-					/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-					if (userData && exploreCommand.disablePreviousCommand) { await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.(); }
-
-					await executeExploring(interaction, userData, serverData, [])
-						.catch(async (error) => { await sendErrorMessage(interaction, error); });
-					return;
-				}
-
-				if (interaction.customId.startsWith('attack_new')) {
-
-					/* It's disabling all components if userData exists and the command is set to disable a previous command. */
-					if (userData && attackCommand.disablePreviousCommand) { await disableCommandComponent[userData.uuid + (interaction.guildId || 'DM')]?.(); }
-
-					await executeAttacking(interaction, userData, serverData, [])
-						.catch(async (error) => { await sendErrorMessage(interaction, error); });
-					return;
-				}
-			}
-
-			if (interaction.customId.startsWith('profile_')) {
-
-				await profileInteractionCollector(client, interaction)
-					.catch(async (error) => {
-						await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
+				/* It's sending the autocomplete message. */
+				await command.sendMessageComponentResponse(interaction, userData, serverData);
 				return;
 			}
+		}
+		catch (error) {
 
-			if (interaction.customId.startsWith('species_')) {
+			if (interaction.isRepliable()) {
 
-				await speciesInteractionCollector(interaction, userData)
-					.catch(async (error) => {
-						await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
-				return;
+				await sendErrorMessage(interaction, error)
+					.catch(e => { console.error(e); });
 			}
-
-			if (interaction.customId.startsWith('pronouns_')) {
-
-				await pronounsInteractionCollector(interaction)
-					.catch(async (error) => {
-						await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
-				return;
-			}
-
-			if (interaction.customId.startsWith('proxy_')) {
-
-				await proxyInteractionCollector(interaction, userData, serverData)
-					.catch(async (error) => {
-						await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
-				return;
-			}
-
-			if (interaction.customId.startsWith('delete_')) {
-
-				await deleteInteractionCollector(interaction, userData)
-					.catch(async (error) => {
-						await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
-				return;
-			}
-
-			if (interaction.customId.startsWith('serversettings_')) {
-
-				if (!serverData) {
-
-					return await sendErrorMessage(interaction, new Error('serverData is null'))
-						.catch(e => { console.error(e); });
-				}
-
-				await serversettingsInteractionCollector(interaction, serverData)
-					.catch(async (error) => {
-						await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
-				return;
-			}
-
-			if (interaction.customId.startsWith('skills_')) {
-
-				await skillsInteractionCollector(interaction, serverData, userData)
-					.catch(async (error) => {
-						await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
-				return;
-			}
-
-			if (interaction.customId.startsWith('profilelist_')) {
-
-				await profilelistInteractionCollector(interaction)
-					.catch(async (error) => {
-						await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
-				return;
-			}
-
-			if (interaction.customId.startsWith('store_')) {
-
-				await storeInteractionCollector(interaction, userData, serverData)
-					.catch(async (error) => {
-						await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
-				return;
-			}
-
-			if (interaction.customId.startsWith('repair_')) {
-
-				await repairInteractionCollector(interaction, userData, serverData)
-					.catch(async (error) => {
-						await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
-				return;
-			}
-
-			if (interaction.customId.startsWith('heal_')) {
-
-				await healInteractionCollector(interaction, userData, serverData)
-					.catch(async (error) => {
-						await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
-				return;
-			}
-
-			if (interaction.customId.startsWith('travel_')) {
-
-				await travelInteractionCollector(interaction, userData, serverData)
-					.catch(async (error) => {
-						await sendErrorMessage(interaction, error)
-							.catch(e => { console.error(e); });
-					});
-				return;
-			}
-			return;
+			else { console.error(error); }
 		}
 	},
 };
-
-setInterval(async function() {
-
-	const userArray = await userModel.find();
-	for (const user of userArray) {
-
-		for (const [guildId, quidId] of Object.entries(user.currentQuid)) {
-
-			const quid = user.quids[quidId];
-			const activeProfile = quid?.profiles[guildId];
-			if (!quid || !activeProfile) { continue; }
-			const tenMinutesInMs = 600_000;
-
-			const lastInteraction = lastInteractionMap.get(user.uuid + guildId);
-			if (!lastInteraction) { continue; }
-
-			const serverData = await serverModel.findOne(s => s.serverId === lastInteraction.guildId).catch(() => { return null; });
-			if (!serverData) { continue; }
-
-			const lastInteractionIsTenMinutesAgo = lastInteraction.createdTimestamp < Date.now() - tenMinutesInMs;
-			const hasLessThanMaxEnergy = activeProfile.energy < activeProfile.maxEnergy;
-			const isConscious = activeProfile.energy > 0 || activeProfile.health > 0 || activeProfile.hunger > 0 || activeProfile.thirst > 0;
-			const hasNoCooldown = cooldownMap.get(user.uuid + guildId) !== true;
-			if (lastInteractionIsTenMinutesAgo && activeProfile.isResting === false && isResting(user.uuid, guildId) === false && hasLessThanMaxEnergy && isConscious && hasNoCooldown) {
-
-				await startResting(lastInteraction, user, quid, activeProfile, serverData)
-					.catch(async (error) => {
-						await sendErrorMessage(lastInteraction, error)
-							.catch(e => { console.error(e); });
-					});
-			}
-		}
-	}
-
-	for (let [guildId, array] of serverActiveUsersMap.entries()) {
-
-		for (const userId of array) {
-
-			const userData = await userModel.findOne(u => u.userId.includes(userId)).catch(() => { return null; });
-			const lastInteraction = userData ? lastInteractionMap.get(userData.uuid + guildId) : undefined;
-			/* If there is no last interaction or if the last interaction was created more than 5 minutes ago, remove the user from the array */
-			if (!userData || !lastInteraction || lastInteraction.createdTimestamp <= Date.now() - 300_000) { array = array.filter(v => v !== userId); }
-		}
-		serverActiveUsersMap.set(guildId, array);
-	}
-}, 60_000);

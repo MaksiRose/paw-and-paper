@@ -1,28 +1,88 @@
-import { Message, ComponentType, ButtonStyle, APIActionRowComponent, ActionRowBuilder, ActionRow, MessageActionRowComponent, APIMessageActionRowComponent, MessageActionRowComponentBuilder, ButtonBuilder, ButtonComponent, APIButtonComponent, SelectMenuBuilder, SelectMenuComponent, APISelectMenuComponent, isJSONEncodable } from 'discord.js';
+import { ComponentType, ButtonStyle, APIActionRowComponent, ActionRowBuilder, ActionRow, MessageActionRowComponent, APIMessageActionRowComponent, MessageActionRowComponentBuilder, ButtonBuilder, ButtonComponent, APIButtonComponent, SelectMenuBuilder, SelectMenuComponent, APISelectMenuComponent, isJSONEncodable } from 'discord.js';
+import { client } from '..';
+import { UserData } from '../typings/data/user';
+import { userDataServersObject } from './helperFunctions';
 
 /**
- * An object with player UUID + guild ID as keys and a property that is a promise function that deletes the entry and disables all components of a message that has been attached when the function was created.
+ * It deletes the command disabling info from the user data
+ * @param userData - The user's database entry.
+ * @param {string} guildId - The ID of the guild that the command disabling info is being deleted from.
  */
-export const disableCommandComponent: Record<string, (() => Promise<void>) | undefined> = {};
-
-/**
- * Creates an entry in the `disableCommandComponent` object that deletes itself and edits the botReply message object that has been attached to disable all components when being called.
- */
-export function createCommandComponentDisabler(
-	uuid: string,
+export async function deleteCommandDisablingInfo(
+	userData: UserData<undefined, ''>,
 	guildId: string,
-	botReply: Message,
-): void {
+): Promise<void> {
 
-	disableCommandComponent[uuid + guildId] = async () => {
+	await userData.update(
+		(u) => {
+			u.servers[guildId] = {
+				...userDataServersObject(u, guildId),
+				componentDisablingChannelId: null,
+				componentDisablingMessageId: null,
+			};
+		},
+	);
+}
 
-		delete disableCommandComponent[uuid + guildId];
+/**
+ * It disables the command-component by editing the bot's reply to the user's message
+ * @param userData - The user's database entry.
+ * @returns A promise that resolves when the command-component has been disabled.
+ */
+export async function disableCommandComponent(
+	userData: UserData<undefined, ''>,
+): Promise<void> {
 
-		botReply = botReply.channel.messages.cache.get(botReply.id) ?? botReply;
-		await botReply.edit({
+	const { serverInfo } = userData;
+	if (!serverInfo || !serverInfo.componentDisablingChannelId || !serverInfo.componentDisablingMessageId) { return; }
+
+	const channel = await client.channels.fetch(serverInfo.componentDisablingChannelId).catch(() => null);
+	if (!channel || !channel.isTextBased()) {
+
+		console.error(new TypeError(`Unable to disable command-component because the channel with ID ${serverInfo.componentDisablingChannelId} could not be fetched or is not text based`));
+		return;
+	}
+
+	const botReply = await channel.messages.fetch(serverInfo.componentDisablingMessageId).catch(() => null);
+	if (!botReply) {
+
+		console.error(new TypeError(`Unable to disable command-component because the message with ID ${serverInfo.componentDisablingMessageId} could not be fetched`));
+		return;
+	}
+
+	await Promise.all([
+		botReply.edit({
 			components: disableAllComponents(botReply.components),
-		});
-	};
+		}),
+		deleteCommandDisablingInfo(userData, botReply.guildId || 'DMs'),
+	]).catch(error => {
+		console.error(error);
+	});
+}
+
+/**
+ * It saves the channel and message IDs of the message that disables the bot's command-component
+ * @param userData - The user's database entry.
+ * @param {string} guildId - The ID of the guild the command was used in.
+ * @param {string} channelId - The ID of the channel where the command disabling message is.
+ * @param {string} messageId - The ID of the message to disable the components of.
+ */
+export async function saveCommandDisablingInfo(
+	userData: UserData<undefined, ''>,
+	guildId: string,
+	channelId: string,
+	messageId: string,
+): Promise<void> {
+
+	await userData.update(
+		(u) => {
+			u.servers[guildId] = {
+				...userDataServersObject(u, guildId),
+				componentDisablingChannelId: channelId,
+				componentDisablingMessageId: messageId,
+			};
+		},
+	);
 }
 
 /**

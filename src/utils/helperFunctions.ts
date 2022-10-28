@@ -2,9 +2,9 @@ import { generateId } from 'crystalid';
 import { APIMessage } from 'discord-api-types/v9';
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, MessageContextMenuCommandInteraction, ModalMessageModalSubmitInteraction, ModalSubmitInteraction, RepliableInteraction, SelectMenuInteraction, UserContextMenuCommandInteraction, WebhookEditMessageOptions } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
-import { cooldownMap } from '../events/interactionCreate';
-import userModel from '../models/userModel';
-import { ErrorStacks, Quid, UserSchema } from '../typedef';
+import userModel, { getUserData } from '../models/userModel';
+import { ErrorStacks } from '../typings/data/general';
+import { UserData, UserSchema } from '../typings/data/user';
 const { error_color } = require('../../config.json');
 
 /**
@@ -14,12 +14,27 @@ const { error_color } = require('../../config.json');
  * @returns T as the property from the key from the object
  */
 export function getMapData<T>(
-	map: Record<string, T>,
-	key: string,
+	map: Record<PropertyKey, T>,
+	key: PropertyKey,
 ): T {
-	const data = map[key];
-	if (data === undefined) throw new TypeError('data is undefined');
-	return data;
+	const element = map[key];
+	if (element === undefined) throw new TypeError('element is undefined');
+	return element;
+}
+
+/**
+ * It takes an array and an index, and returns the element at that index. If the element is undefined, it throws a type error instead.
+ * @param array - The array to get the element from.
+ * @param {number} index - The index of the element you want to get.
+ * @returns The element at the given index of the array.
+ */
+export function getArrayElement<T>(
+	array: Array<T>,
+	index: number,
+): T {
+	const element = array[index];
+	if (element === undefined) throw new TypeError('element is undefined');
+	return element;
 }
 
 export function getUserIds(
@@ -42,32 +57,51 @@ export function getUserIds(
 export async function respond(
 	interaction: RepliableInteraction,
 	options: InteractionReplyOptions,
-	editMessage: false,
-): Promise<Message<boolean>>;
-export async function respond(
-	interaction: RepliableInteraction,
-	options: InteractionReplyOptions,
-	editMessage: true,
-): Promise<Message<boolean>>;
-export async function respond(
-	interaction: RepliableInteraction,
-	options: InteractionReplyOptions,
 	editMessage: boolean,
 ): Promise<Message<boolean>> {
 
 	let botReply: APIMessage | Message<boolean>;
-	if (!interaction.replied && !interaction.deferred) {
-		botReply = await interaction.reply({ ...options, fetchReply: true });
+
+	/* It is sending a reply if the interaction hasn't been replied nor deferred, or editing a reply if editMessage is true, else following up */
+	try {
+
+		if (!interaction.replied && !interaction.deferred) {
+			botReply = await interaction.reply({ ...options, content: options.content === '' ? undefined : options.content, fetchReply: true });
+		}
+		else if (editMessage) {
+			botReply = await interaction.editReply({ ...options, content: options.content === '' ? null : options.content });
+		}
+		else {
+			botReply = await interaction.followUp({ ...options, content: options.content === '' ? undefined : options.content });
+		}
+
 	}
-	else if (editMessage) {
-		botReply = await interaction.editReply(options);
-	}
-	else {
-		botReply = await interaction.followUp(options);
+	/** If an error occurred and it has status 404, try to either edit the message if editing was tried above, or send a new message in the other two cases */
+	catch (error: unknown) {
+
+		if (isObject(error) && (error.code === 'ECONNRESET' || error.code === 10062)) {
+
+			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
+			if ((interaction.replied || interaction.deferred) && editMessage) { botReply = await (await interaction.fetchReply()).edit({ ...options, flags: undefined }); }
+			else {
+
+				const channel = interaction.channel || (interaction.channelId ? await interaction.client.channels.fetch(interaction.channelId, { force: false }) : null);
+				if (channel && channel.isTextBased()) { botReply = await channel.send({ ...options, flags: undefined }); }
+				else { throw error; }
+
+			}
+		}
+		else if (isObject(error) && error.code === 40060) {
+
+			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
+			interaction.replied = true;
+			botReply = await respond(interaction, options, editMessage);
+		}
+		else { throw error; }
 	}
 
 	if (botReply instanceof Message) { return botReply; }
-	else { throw new Error('Message is APIMessage'); }
+	else { throw new TypeError('Message is APIMessage'); }
 }
 
 export async function update(
@@ -76,11 +110,34 @@ export async function update(
 ): Promise<Message<boolean>> {
 
 	let botReply: Message<boolean>;
-	if (!interaction.replied && !interaction.deferred) {
-		botReply = await interaction.update({ ...options, fetchReply: true });
+
+	/* It is sending a reply if the interaction hasn't been replied nor deferred, or editing a reply if editMessage is true, else following up */
+	try {
+
+		if (!interaction.replied && !interaction.deferred) {
+			botReply = await interaction.update({ ...options, content: options.content === '' ? null : options.content, fetchReply: true });
+		}
+		else {
+			botReply = await interaction.editReply({ ...options, content: options.content === '' ? null : options.content });
+		}
+
 	}
-	else {
-		botReply = await interaction.editReply(options);
+	/** If an error occurred and it has status 404, try to either edit the message if editing was tried above, or send a new message in the other two cases */
+	catch (error: unknown) {
+
+		if (isObject(error) && (error.code === 'ECONNRESET' || error.code === 10062)) {
+
+			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
+			if (!interaction.replied && !interaction.deferred) { botReply = await interaction.message.edit({ ...options, flags: undefined }); }
+			else { botReply = await (await interaction.fetchReply()).edit({ ...options, flags: undefined }); }
+		}
+		else if (isObject(error) && error.code === 40060) {
+
+			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
+			interaction.replied = true;
+			botReply = await update(interaction, options);
+		}
+		else { throw error; }
 	}
 
 	return botReply;
@@ -94,13 +151,14 @@ export async function update(
 
 export async function sendErrorMessage(
 	interaction: ChatInputCommandInteraction | MessageContextMenuCommandInteraction | UserContextMenuCommandInteraction | SelectMenuInteraction | ButtonInteraction | ModalSubmitInteraction,
-	error: any,
+	error: unknown,
 ): Promise<any> {
 
 	try {
 
-		const userData = await userModel.findOne(u => u.userId.includes(interaction.user.id));
-		cooldownMap.set(userData.uuid + interaction.guildId, false);
+		const _userData = await userModel.findOne(u => u.userId.includes(interaction.user.id));
+		const userData = getUserData(_userData, interaction.guildId || 'DMs', undefined);
+		setCooldown(userData, interaction.guildId || 'DMs', false);
 	}
 	catch (newError) { console.error(newError); }
 
@@ -124,14 +182,20 @@ export async function sendErrorMessage(
 		data: interaction.isCommand() ? {
 			id: interaction.commandId,
 			name: interaction.commandName,
-			type: interaction.commandType,
+			command_type: interaction.commandType,
 			options: interaction.options.data,
 			target_id: interaction.isContextMenuCommand() ? interaction.targetId : undefined,
-		} : undefined,
+		} : {
+			component_type: interaction.isMessageComponent() ? interaction.componentType : undefined,
+			custom_id: interaction.customId,
+			values: interaction.isSelectMenu() ? interaction.values : undefined,
+			fields: interaction.isModalSubmit() ? interaction.fields.fields.map(f => f.toJSON()) : undefined,
+			components: interaction.isModalSubmit() ? interaction.components : undefined,
+		},
 		guild_id: interaction.guildId ?? undefined,
 		channel_id: interaction.channelId ?? undefined,
 		user_id: interaction.user.id,
-		message: interaction.isMessageComponent() ? {
+		message: interaction.isMessageComponent() || (interaction.isModalSubmit() && interaction.isFromMessage()) ? {
 			id: interaction.message.id,
 			timestamp: interaction.message.createdTimestamp,
 			edited_timestamp: interaction.message.editedTimestamp,
@@ -144,37 +208,50 @@ export async function sendErrorMessage(
 		guild_locale: interaction.guildLocale,
 	};
 
-	if (error.status === 404 || error.httpStatus === 404) {
+	const isECONNRESET = isObject(error) && error.code === 'ECONNRESET';
+	if (isECONNRESET) {
 
-		console.error('Error 404 - An error is not being sent to the user. ', error);
+		console.trace('ECONNRESET Error');
+	}
+	else if (isObject(error) && error.code === 10062) {
+
+		console.error('Error 404 - An error is not being sent to the user:', error);
+		return;
+	}
+	else if (isObject(error) && error.code === 40060) {
+
+		console.error('Error 400 - An error is not being sent to the user:', error);
 		return;
 	}
 	console.error(error, jsonInteraction);
 
 	let errorId: string | undefined = undefined;
 
-	try {
+	if (!isECONNRESET) {
 
-		const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
-		errorId = generateId();
-		errorStacks[errorId] = `${(error?.stack ?? JSON.stringify(error, null, '\t'))}\n${JSON.stringify(jsonInteraction, null, '\t')}`;
-		writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
-	}
-	catch (e) {
+		try {
 
-		errorId = undefined;
-		console.error('Cannot edit file ', e);
+			const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
+			errorId = generateId();
+			errorStacks[errorId] = `${(isObject(error) && error.stack) || JSON.stringify(error, null, '\t')}\n${JSON.stringify(jsonInteraction, null, '\t')}`;
+			writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
+		}
+		catch (e) {
+
+			errorId = undefined;
+			console.error('Cannot edit file ', e);
+		}
 	}
 
 	const messageOptions = {
 		embeds: [new EmbedBuilder()
 			.setColor(error_color)
-			.setTitle('There was an unexpected error executing this command:')
-			.setDescription(`\`\`\`\n${String(error).substring(0, 4090)}\n\`\`\``)
-			.setFooter({ text: 'If this is the first time you encountered the issue, please report it using the button below. After that, only report it again if the issue was supposed to be fixed after an update came out. To receive updates, ask a server administrator to do the "getupdates" command.' })],
-		components: [new ActionRowBuilder<ButtonBuilder>()
+			.setTitle(isECONNRESET ? 'The connection was abruptly closed. Apologies for the inconvenience.' : 'There was an unexpected error executing this command:')
+			.setDescription(isECONNRESET ? null : `\`\`\`\n${String(error).substring(0, 4090)}\n\`\`\``)
+			.setFooter(isECONNRESET ? null : { text: 'If this is the first time you encountered the issue, please report it using the button below. After that, only report it again if the issue was supposed to be fixed after an update came out. To receive updates, ask a server administrator to do the "getupdates" command.' })],
+		components: isECONNRESET ? [] : [new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
-				.setCustomId(`report_${interaction.user.id}${errorId ? `_${errorId}` : ''}`)
+				.setCustomId(`report_@${interaction.user.id}${errorId ? `_${errorId}` : ''}`)
 				.setLabel('Report')
 				.setStyle(ButtonStyle.Success)])],
 	};
@@ -182,14 +259,14 @@ export async function sendErrorMessage(
 	await respond(interaction, { ...messageOptions, flags: undefined }, false)
 		.catch(async (error2) => {
 
-			console.error('Failed to send error message to user. ', error2);
+			console.error('Failed to send error message to user:', error2);
 			await (async () => {
 				if (interaction.isButton() || interaction.isSelectMenu()) { await interaction.message.reply({ ...messageOptions, failIfNotExists: false }); }
 				if (interaction.isMessageContextMenuCommand()) { await interaction.targetMessage.reply({ ...messageOptions, failIfNotExists: false }); }
 				if (interaction.isUserContextMenuCommand() || interaction.isChatInputCommand() || interaction.type === InteractionType.ModalSubmit) { await interaction.channel?.send(messageOptions); }
 			})()
 				.catch((error3) => {
-					console.error('Failed to send backup error message to user. ', error3);
+					console.error('Failed to send backup error message to user:', error3);
 				});
 		});
 }
@@ -199,9 +276,9 @@ export async function sendErrorMessage(
  * @param {T} object - The object to be copied.
  * @returns A deep copy of the object.
  */
-export const deepCopyObject = <T>(
+export function deepCopyObject<T>(
 	object: T,
-): T => {
+): T {
 
 	let returnValue: T;
 
@@ -244,7 +321,7 @@ export const deepCopyObject = <T>(
 	}
 
 	return returnValue;
-};
+}
 
 export type KeyOfUnion<T> = T extends object ? T extends T ? keyof T : never : never; // `T extends object` to filter out primitives like `string`
 /* What this does is for every key in the inventory (like commonPlants, uncommonPlants etc.), it takes every single sub-key of all the keys and adds it to it. KeyOfUnion is used to combine all those sub-keys from all the keys. In the case that they are not part of the property, they will be of type never, meaning that they can't accidentally be assigned anything (which makes the type-checking still work) */
@@ -267,6 +344,8 @@ export function keyInObject<T extends Record<PropertyKey, any>, K extends keyof 
 	obj: T,
 	key: PropertyKey,
 ): key is K { return Object.hasOwn(obj, key); }
+
+function isObject(val: any): val is Record<string | number | symbol, unknown> { return typeof val === 'object' && val !== null; }
 
 /**
  * Return the bigger of two numbers
@@ -297,12 +376,44 @@ export function capitalizeString(
 	string: string,
 ): string { return string.charAt(0).toUpperCase() + string.slice(1); }
 
-export function getQuidDisplayname(
-	user: UserSchema,
-	quid: Quid,
-	serverId = '',
-): string {
+export function addCommasAndAnd<T>(
+	list: T[],
+) {
 
-	const tag = user.tag.servers[serverId] || user.tag.global || '';
-	return (quid.nickname.servers[serverId] || quid.nickname.global || quid.name) + (tag ? ` ${tag}` : '');
+	if (list.length < 3) { return list.join(' and '); }
+	return `${list.slice(0, -1).join(', ')}, and ${getArrayElement(list, list.length - 1)}`;
+}
+
+export function userDataServersObject(
+	u: UserSchema,
+	guildId: string,
+): UserSchema['servers'][string] {
+
+	return {
+		currentQuid: u.servers[guildId]?.currentQuid ?? u.currentQuid[guildId] ?? null,
+		lastInteractionTimestamp: u.servers[guildId]?.lastInteractionTimestamp ?? null,
+		lastInteractionToken: u.servers[guildId]?.lastInteractionToken ?? null,
+		lastInteractionChannelId: u.servers[guildId]?.lastInteractionChannelId ?? null,
+		restingMessageId: u.servers[guildId]?.restingMessageId ?? null,
+		restingChannelId: u.servers[guildId]?.restingChannelId ?? null,
+		componentDisablingChannelId: u.servers[guildId]?.componentDisablingChannelId ?? null,
+		componentDisablingMessageId: u.servers[guildId]?.componentDisablingMessageId ?? null,
+		hasCooldown: u.servers[guildId]?.hasCooldown ?? false,
+	};
+}
+
+export async function setCooldown(
+	userData: UserData<undefined, ''>,
+	guildId: string,
+	setTo: boolean,
+) {
+
+	await userData.update(
+		u => {
+			u.servers[guildId] = {
+				...userDataServersObject(u, guildId),
+				hasCooldown: setTo,
+			};
+		},
+	);
 }

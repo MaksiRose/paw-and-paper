@@ -1,16 +1,13 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { Profile, SlashCommand } from '../../typedef';
 import { getRandomNumber } from '../../utils/randomizers';
-import { getQuidDisplayname, respond } from '../../utils/helperFunctions';
+import { respond } from '../../utils/helperFunctions';
+import { SlashCommand } from '../../typings/handle';
+import { UserData } from '../../typings/data/user';
 
-const name: SlashCommand['name'] = 'roll';
-const description: SlashCommand['description'] = 'Roll dices.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('roll')
+		.setDescription('Roll dices.')
 		.addNumberOption(option =>
 			option.setName('sides')
 				.setDescription('The amount of sides the dice should have. Default is 6.')
@@ -26,51 +23,49 @@ export const command: SlashCommand = {
 				.setDescription('The amount that you would like to be added or subtracted from the roll. Can also be a /skill.')
 				.setAutocomplete(true))
 		.toJSON(),
+	category: 'page4',
+	position: 7,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendAutocomplete: async (client, interaction, userData) => {
+	sendAutocomplete: async (interaction, userData) => {
 
 		const focusedValue = interaction.options.getFocused();
 
-		const profileData = userData?.quids[userData?.currentQuid[interaction.guildId || 'DM'] || '']?.profiles[interaction.guildId || 'DM'];
-
 		const choices: string[] = [];
 		if (focusedValue === '') {
-			choices.push(...Object.keys(profileData?.skills?.global || []).map(v => `+ ${v}`));
-			choices.push(...Object.keys(profileData?.skills?.global || []).map(v => `- ${v}`));
-			choices.push(...Object.keys(profileData?.skills?.personal || []).map(v => `+ ${v}`));
-			choices.push(...Object.keys(profileData?.skills?.personal || []).map(v => `- ${v}`));
+			choices.push(...Object.keys(userData?.quid?.profile?.skills?.global || []).map(v => `+ ${v}`));
+			choices.push(...Object.keys(userData?.quid?.profile?.skills?.global || []).map(v => `- ${v}`));
+			choices.push(...Object.keys(userData?.quid?.profile?.skills?.personal || []).map(v => `+ ${v}`));
+			choices.push(...Object.keys(userData?.quid?.profile?.skills?.personal || []).map(v => `- ${v}`));
 			for (let i = 1; i < 11; i++) {
 				choices.push(`+ ${i}`);
 				choices.push(`- ${i}`);
 			}
 		}
-		else if (focusedValue.startsWith('+')) { choices.push(...findMatches('+', focusedValue.slice(1), profileData)); }
-		else if (focusedValue.startsWith('-')) { choices.push(...findMatches('-', focusedValue.slice(1), profileData)); }
+		else if (focusedValue.startsWith('+')) { choices.push(...findMatches('+', focusedValue.slice(1), userData)); }
+		else if (focusedValue.startsWith('-')) { choices.push(...findMatches('-', focusedValue.slice(1), userData)); }
 		else {
 
-			choices.push(...findMatches('+', focusedValue, profileData));
-			choices.push(...findMatches('-', focusedValue, profileData));
+			choices.push(...findMatches('+', focusedValue, userData));
+			choices.push(...findMatches('-', focusedValue, userData));
 		}
 
 		await interaction.respond(
 			choices.slice(0, 25).map(choice => ({ name: choice, value: choice })),
 		);
 	},
-	sendCommand: async (client, interaction, userData) => {
+	sendCommand: async (interaction, userData) => {
 
 		const sides = interaction.options.getNumber('sides') ?? 6;
 		const multiplier = interaction.options.getNumber('multiplier') ?? 1;
 
 		const args = getSubstringArray(interaction.options.getString('add-subtract') ?? '');
 		let addOrSubtract = 0;
-		const quidData = userData?.quids[userData?.currentQuid[interaction.guildId || 'DM'] || ''];
-		const profileData = quidData?.profiles[interaction.guildId || 'DM'];
 		for (let i = 0; i < args.length; i++) {
 
 			let argstr = args[i];
 			if (argstr === undefined) { continue; }
-			for (const [skill, value] of [...Object.entries(profileData?.skills?.global || {}), ...Object.entries(profileData?.skills?.personal || {})]) {
+			for (const [skill, value] of [...Object.entries(userData?.quid?.profile?.skills?.global || {}), ...Object.entries(userData?.quid?.profile?.skills?.personal || {})]) {
 
 				if (argstr.includes(skill)) { argstr = argstr.replace(skill, String(value)); }
 			}
@@ -87,10 +82,10 @@ export const command: SlashCommand = {
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(quidData?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
+				.setColor(userData?.quid?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
 				.setAuthor({
-					name: quidData ? getQuidDisplayname(userData, quidData, interaction.guildId ?? '') : member?.displayName || interaction.user.tag,
-					iconURL: quidData?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
+					name: userData?.quid ? userData.quid.getDisplayname() : member?.displayName || interaction.user.tag,
+					iconURL: userData?.quid?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
 				})
 				.setDescription(`🎲 You rolled a \`${result}\`!`)
 				.setFooter({ text: resultFull.length > 2048 ? resultFull.substring(0, 2047) + '…' : resultFull })],
@@ -102,14 +97,14 @@ export const command: SlashCommand = {
 function findMatches(
 	prefix: string,
 	stringToCheck: string,
-	profileData: Profile | undefined,
+	userData: UserData<undefined, ''> | null,
 	isComplete = false,
 ): string[] {
 
 	const choices: string[] = [];
 	stringToCheck = stringToCheck.trim();
 
-	for (const skill of [...Object.keys(profileData?.skills?.global || []), ...Object.keys(profileData?.skills?.personal || [])]) {
+	for (const skill of [...Object.keys(userData?.quid?.profile?.skills?.global || []), ...Object.keys(userData?.quid?.profile?.skills?.personal || [])]) {
 
 		if ((isComplete && skill === stringToCheck) || (!isComplete && skill.includes(stringToCheck))) { choices.push(`${prefix} ${skill}`); }
 	}
@@ -137,9 +132,9 @@ function findMatches(
 			for (let i = 1; i < substrings.length; i++) {
 
 				const substring1 = substrings.slice(0, i).join('');
-				const choices1 = findMatches(substring1.charAt(0), substring1.slice(1), profileData, true);
+				const choices1 = findMatches(substring1.charAt(0), substring1.slice(1), userData, true);
 				const substring2 = substrings.slice(i).join('');
-				const choices2 = findMatches(substring2.charAt(0), substring2.slice(1), profileData);
+				const choices2 = findMatches(substring2.charAt(0), substring2.slice(1), userData);
 
 				choices.push(...prepareCartesian(choices1, choices2));
 			}

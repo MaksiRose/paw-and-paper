@@ -1,20 +1,21 @@
 import { Octokit } from '@octokit/rest';
-import { EmbedBuilder, SlashCommandBuilder, Team, User, ActionRowBuilder, ButtonBuilder, ButtonStyle, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ModalMessageModalSubmitInteraction, ChatInputCommandInteraction, AttachmentBuilder } from 'discord.js';
+import { EmbedBuilder, SlashCommandBuilder, Team, User, ActionRowBuilder, ButtonBuilder, ButtonStyle, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ChatInputCommandInteraction, AttachmentBuilder } from 'discord.js';
 import { respond, update } from '../../utils/helperFunctions';
-import { CustomClient, SlashCommand } from '../../typedef';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
+import { hasPermission } from '../../utils/permissionHandler';
+import { client } from '../..';
+import { SlashCommand } from '../../typings/handle';
+import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 const { error_color, default_color, github_token, ticket_channel_id } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'ticket';
-const description: SlashCommand['description'] = 'Report a bug, give feedback, suggest a feature!';
+type CustomIdArgs = ['contact', 'user' | 'channel', string, string, `${boolean}`] | ['reject'] | ['approve', string]
+
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('ticket')
+		.setDescription('Report a bug, give feedback, suggest a feature!')
 		.addStringOption(option =>
 			option.setName('title')
 				.setDescription('Give a short summary of what the ticket is about')
@@ -36,9 +37,11 @@ export const command: SlashCommand = {
 			option.setName('attachment')
 				.setDescription('Optional picture or video to add context'))
 		.toJSON(),
+	category: 'page5',
+	position: 2,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction) => {
+	sendCommand: async (interaction) => {
 
 		/* Checking if the ticket is empty. If it is, it will send an error message. */
 		const title = interaction.options.getString('title');
@@ -59,12 +62,127 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		await createNewTicket(client, interaction, title, description, label, attachmentURL, ticketId);
+		await createNewTicket(interaction, title, description, label, attachmentURL, ticketId);
+	},
+	async sendMessageComponentResponse(interaction) {
+
+		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
+		if (!interaction.isButton() || !customId) { return; }
+		if (customId.args[0] === 'contact') {
+
+			if (customId.args[1] === 'user') {
+
+				const userId = customId.args[2];
+
+				const user = await interaction.client.users.fetch(userId);
+				const dmChannel = await user
+					.createDM()
+					.catch(error => {
+						if (error.status !== 403) { return null; }
+						throw error;
+					});
+
+				if (!dmChannel) {
+
+					await respond(interaction, {
+						content: `The user ${user.tag} doesn't allow DM's. Try sending a friend request or checking if you share a server with them.`,
+					}, true);
+					return;
+				}
+			}
+
+			await interaction
+				.showModal(new ModalBuilder()
+					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, 'EVERYONE', customId.args))
+					.setTitle('Respond')
+					.setComponents(
+						new ActionRowBuilder<TextInputBuilder>()
+							.setComponents([new TextInputBuilder()
+								.setCustomId('response')
+								.setLabel('Message Text')
+								.setStyle(TextInputStyle.Paragraph)
+								.setRequired(true),
+							]),
+					),
+				);
+			return;
+		}
+
+		if (customId.args[0] === 'approve') {
+
+			const embed = interaction.message.embeds[0];
+			const ticketId = customId.args[1];
+			const ticketConversation = readFileSync(`./database/open_tickets/${ticketId}.txt`, 'utf-8');
+
+			const octokit = new Octokit({
+				auth: github_token,
+				userAgent: 'paw-and-paper',
+			});
+
+			await octokit.rest.issues
+				.create({
+					owner: 'MaksiRose',
+					repo: 'paw-and-paper',
+					title: embed?.title || 'New issue',
+					body: `Created by: ${embed?.author}\n\n${embed?.description}${embed?.image ? `\n![](${embed.image?.url})` : ''}\n\n${ticketConversation ? `Additional conversation:\n\`\`\`\n${ticketConversation}\n\`\`\`` : ''}`,
+					labels: embed?.footer ? [embed.footer.text] : [],
+				});
+		}
+
+		await update(interaction, {
+			components: disableAllComponents(interaction.message.components),
+		});
+
+	},
+	async sendModalResponse(interaction) {
+
+		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
+		if (!interaction.isFromMessage() || !customId || customId.args[0] !== 'contact') { return; }
+		const userOrChannel = customId.args[1];
+		const userOrChannelId = customId.args[2];
+		const ticketId = customId.args[3];
+		const fromAdmin = customId.args[4] === 'true';
+
+		const messageText = interaction.fields.getTextInputValue('response');
+
+		let ticketConversation = readFileSync(`./database/open_tickets/${ticketId}.txt`, 'utf-8');
+		ticketConversation += `\n\n${fromAdmin ? 'ADMIN:' : 'USER:'} ${messageText}`;
+		writeFileSync(`./database/open_tickets/${ticketId}.txt`, ticketConversation);
+
+		await respond(interaction, {
+			content: `**You replied:**\n>>> ${messageText}`,
+			files: [new AttachmentBuilder(`./database/open_tickets/${ticketId}.txt`)
+				.setName('ticketConversation.txt')],
+		}, false);
+
+		const respondChannel = await async function() {
+
+			if (userOrChannel === 'user') {
+
+				const user = await interaction.client.users.fetch(userOrChannelId);
+				return await user.createDM();
+			}
+			else if (userOrChannel === 'channel') {
+
+				const serverChannel = await interaction.client.channels.fetch(userOrChannelId);
+				if (serverChannel !== null && serverChannel.isTextBased()) { return serverChannel; }
+			}
+			throw new Error('Couldn\'t get a channel');
+		}();
+
+		await respondChannel
+			.send({
+				content: `**New response to ticket:**\n>>> ${messageText}`,
+				embeds: interaction.message.embeds,
+				components: [new ActionRowBuilder<ButtonBuilder>()
+					.setComponents([getRespondButton(interaction.message.channel.isDMBased(), interaction.message.channel.isDMBased() ? interaction.user.id : interaction.message.channelId, ticketId, !fromAdmin)])],
+				files: [new AttachmentBuilder(`./database/open_tickets/${ticketId}.txt`)
+					.setName('ticketConversation.txt')],
+			});
 	},
 };
 
 export async function createNewTicket(
-	client: CustomClient,
 	interaction: ChatInputCommandInteraction | ButtonInteraction,
 	title: string,
 	description: string,
@@ -76,7 +194,7 @@ export async function createNewTicket(
 	/* Creating the ticket embed */
 	const ticketEmbed = new EmbedBuilder()
 		.setColor('#eb6420')
-		.setAuthor({ name: interaction.user.tag })
+		.setAuthor({ name: `${interaction.user.tag} (${interaction.user.id})` })
 		.setTitle(title)
 		.setDescription(description)
 		.setImage(attachmentURL)
@@ -89,7 +207,7 @@ export async function createNewTicket(
 			.fetch(ticket_channel_id)
 			.catch(() => { return null; });
 
-		if (serverChannel !== null && serverChannel.isTextBased() && !serverChannel.isDMBased() && serverChannel.guild.members.me?.permissionsIn(serverChannel.id).has('ViewChannel') && serverChannel.guild.members.me?.permissionsIn(serverChannel.id).has('SendMessages')) { return serverChannel; }
+		if (serverChannel !== null && serverChannel.isTextBased() && !serverChannel.isDMBased() && await hasPermission(serverChannel.guild.members.me ?? serverChannel.client.user.id, serverChannel, 'ViewChannel') && await hasPermission(serverChannel.guild.members.me ?? serverChannel.client.user.id, serverChannel, serverChannel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) { return serverChannel; }
 
 		let ownerId = '';
 		if (client.isReady()) {
@@ -110,12 +228,12 @@ export async function createNewTicket(
 			embeds: [ticketEmbed],
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([new ButtonBuilder()
-					.setCustomId(`ticket_approve_ANYONECANCLICK_${ticketId}`)
+					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, 'EVERYONE', ['approve', ticketId]))
 					.setLabel('Approve')
 					.setStyle(ButtonStyle.Success),
 				getRespondButton(true, interaction.user.id, ticketId, true),
 				new ButtonBuilder()
-					.setCustomId('ticket_reject_ANYONECANCLICK')
+					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, 'EVERYONE', ['reject']))
 					.setLabel('Reject')
 					.setStyle(ButtonStyle.Danger)])],
 		});
@@ -133,127 +251,6 @@ export async function createNewTicket(
 	}, true);
 }
 
-export async function ticketInteractionCollector(
-	interaction: ButtonInteraction,
-): Promise<void> {
-
-	if (interaction.customId.includes('contact')) {
-
-		if (interaction.customId.includes('user')) {
-
-			const userId = interaction.customId.split('_')[3]?.replace('user', '') || '';
-
-			const user = await interaction.client.users.fetch(userId);
-			const dmChannel = await user
-				.createDM()
-				.catch(error => {
-					if (error.status !== 403) { return null; }
-					throw error;
-				});
-
-			if (!dmChannel) {
-
-				await respond(interaction, {
-					content: `The user ${user.tag} doesn't allow DM's. Try sending a friend request or checking if you share a server with them.`,
-				}, true);
-				return;
-			}
-		}
-
-		await interaction
-			.showModal(new ModalBuilder()
-				.setCustomId(`ticket_respond_${interaction.customId.replace('ticket_contact_ANYONECANCLICK_', '')}`)
-				.setTitle('Respond')
-				.setComponents(
-					new ActionRowBuilder<TextInputBuilder>()
-						.setComponents([new TextInputBuilder()
-							.setCustomId('ticket_textinput')
-							.setLabel('Message Text')
-							.setStyle(TextInputStyle.Paragraph)
-							.setRequired(true),
-						]),
-				),
-			);
-		return;
-	}
-
-	if (interaction.customId.includes('approve')) {
-
-		const embed = interaction.message.embeds[0];
-		const ticketId = interaction.customId.split('_')[3];
-		const ticketConversation = readFileSync(`./database/open_tickets/${ticketId}.txt`, 'utf-8');
-
-		const octokit = new Octokit({
-			auth: github_token,
-			userAgent: 'paw-and-paper',
-		});
-
-		await octokit.rest.issues
-			.create({
-				owner: 'MaksiRose',
-				repo: 'paw-and-paper',
-				title: embed?.title || 'New issue',
-				body: `Created by: ${interaction.user.tag} (${interaction.user.id})\n\n${embed?.description}\n\n${embed?.image ? `![](${embed.image?.url})` : ''}\n\n${ticketConversation ? `Additional conversation:\n\`\`\`\n${ticketConversation}\n\`\`\`` : ''}`,
-				labels: embed?.footer ? [embed.footer.text] : [],
-			});
-	}
-
-	await update(interaction, {
-		components: disableAllComponents(interaction.message.components),
-	});
-}
-
-export async function sendRespondToTicketModalResponse(
-	interaction: ModalMessageModalSubmitInteraction,
-): Promise<void> {
-
-	const args = interaction.customId.replace('ticket_respond_', '').split('_');
-	const userOrChannelId = args[0];
-	const ticketId = args[1];
-	const fromAdmin = args[2] === 'true';
-	if (userOrChannelId === undefined) { throw new TypeError('userOrChannelId is undefined'); }
-	if (ticketId === undefined) { throw new TypeError('ticketId is undefined'); }
-
-	const messageText = interaction.fields.getTextInputValue('ticket_textinput');
-
-	let ticketConversation = readFileSync(`./database/open_tickets/${ticketId}.txt`, 'utf-8');
-	ticketConversation += `\n\n${fromAdmin ? 'ADMIN:' : 'USER:'} ${messageText}`;
-	writeFileSync(`./database/open_tickets/${ticketId}.txt`, ticketConversation);
-
-	await respond(interaction, {
-		content: `**You replied:**\n>>> ${messageText}`,
-		files: [new AttachmentBuilder(`./database/open_tickets/${ticketId}.txt`)
-			.setName('ticketConversation.txt')],
-	}, false);
-
-	const respondChannel = await async function() {
-
-		if (userOrChannelId.startsWith('user')) {
-
-			const userId = userOrChannelId.replace('user', '');
-			const user = await interaction.client.users.fetch(userId);
-			return await user.createDM();
-		}
-		else if (userOrChannelId.startsWith('channel')) {
-
-			const channelId = userOrChannelId.replace('channel', '');
-			const serverChannel = await interaction.client.channels.fetch(channelId);
-			if (serverChannel !== null && serverChannel.isTextBased()) { return serverChannel; }
-		}
-		throw new Error('Couldn\'t get a channel');
-	}();
-
-	await respondChannel
-		.send({
-			content: `**New response to ticket:**\n>>> ${messageText}`,
-			embeds: interaction.message.embeds,
-			components: [new ActionRowBuilder<ButtonBuilder>()
-				.setComponents([getRespondButton(interaction.message.channel.isDMBased(), interaction.message.channel.isDMBased() ? interaction.user.id : interaction.message.channelId, ticketId, !fromAdmin)])],
-			files: [new AttachmentBuilder(`./database/open_tickets/${ticketId}.txt`)
-				.setName('ticketConversation.txt')],
-		});
-}
-
 export function getRespondButton(
 	isUser: boolean,
 	id: string,
@@ -262,7 +259,7 @@ export function getRespondButton(
 ): ButtonBuilder {
 
 	return new ButtonBuilder()
-		.setCustomId(`ticket_contact_ANYONECANCLICK_${isUser ? 'user' : 'channel'}${id}_${ticketId}_${fromAdmin}`)
+		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, 'EVERYONE', ['contact', isUser ? 'user' : 'channel', id, ticketId, `${fromAdmin}`]))
 		.setLabel('Reply')
 		.setStyle(ButtonStyle.Secondary);
 }

@@ -1,7 +1,6 @@
 import { EmbedBuilder, Message } from 'discord.js';
-import userModel from '../models/userModel';
-import { UserSchema } from '../typedef';
-import { getMapData, getQuidDisplayname } from './helperFunctions';
+import { UserData } from '../typings/data/user';
+import { getMapData } from './helperFunctions';
 
 /* This is the required points to get a certain amount of friendship hearts */
 const requiredPoints = [1, 3, 6, 9, 15, 24, 39, 63, 99, 162] as const;
@@ -11,43 +10,35 @@ const requiredPoints = [1, 3, 6, 9, 15, 24, 39, 63, 99, 162] as const;
  */
 export async function addFriendshipPoints(
 	message: Message,
-	userData: UserSchema,
-	quidId: string,
-	partnerUserData: UserSchema,
-	partnerQuidId: string,
+	userData1: UserData<never, never>,
+	userData2: UserData<never, never>,
 ): Promise<void> {
 
-	let quidData = getMapData(userData.quids, quidId);
-	let partnerQuidData = getMapData(partnerUserData.quids, partnerQuidId);
-
 	/* Based on current friendship, the friendship points are calculated. */
-	const previousFriendshipPoints = getFriendshipPoints(quidData.mentions[partnerQuidId] || [], partnerQuidData.mentions[quidId] || []);
+	const previousFriendshipPoints = getFriendshipPoints(userData1.quid.mentions[userData2.quid._id] || [], userData2.quid.mentions[userData1.quid._id] || []);
 
 	/* It's updating the database with the new mention, and then grabbing the updated data from the database. */
-	userData = await userModel.findOneAndUpdate(
-		(u => u.uuid === userData.uuid),
+	await userData1.update(
 		(u) => {
-			const q = getMapData(u.quids, quidId);
-			const cmentions = q.mentions[partnerQuidId];
-			if (!cmentions) { q.mentions[partnerQuidId] = [message.createdTimestamp]; }
+			const q = getMapData(u.quids, userData1.quid._id);
+			const cmentions = q.mentions[userData2.quid._id];
+			if (!cmentions) { q.mentions[userData2.quid._id] = [message.createdTimestamp]; }
 			else { cmentions.push(message.createdTimestamp); }
 		},
 	);
 
-	[userData, partnerUserData] = await checkOldMentions(userData, quidData._id, partnerUserData, partnerQuidData._id);
-	quidData = getMapData(userData.quids, quidId);
-	partnerQuidData = getMapData(partnerUserData.quids, partnerQuidId);
-	const newFriendshipPoints = getFriendshipPoints(quidData.mentions[partnerQuidId] || [], partnerQuidData.mentions[quidId] || []);
+	await checkOldMentions(userData1, userData2);
+	const newFriendshipPoints = getFriendshipPoints(userData1.quid.mentions[userData2.quid._id] || [], userData2.quid.mentions[userData1.quid._id] || []);
 
 	/* A message is sent to the users if the friendship has more hearts now than it had before. */
 	if (getFriendshipHearts(previousFriendshipPoints) < getFriendshipHearts(newFriendshipPoints)) {
 
 		await message.channel
-			.send({
+			.send({ // Because of this, everything that calls addFriendshipPoints needs to be permission guarded
 				embeds: [new EmbedBuilder()
-					.setColor(quidData.color)
-					.setAuthor({ name: getQuidDisplayname(userData, quidData, message.guildId ?? ''), iconURL: quidData.avatarURL })
-					.setTitle(`The friendship between ${quidData.name} and ${partnerQuidData.name} grew 💗`)
+					.setColor(userData1.quid.color)
+					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
+					.setTitle(`The friendship between ${userData1.quid.name} and ${userData2.quid.name} grew 💗`)
 					.setDescription('❤️'.repeat(getFriendshipHearts(newFriendshipPoints)) + '🖤'.repeat(10 - getFriendshipHearts(newFriendshipPoints)))
 					.setFooter(getFriendshipHearts(newFriendshipPoints) === 6 ? { text: 'You can now adventure together using the "adventure" command!' } : null)],
 			});
@@ -75,30 +66,24 @@ export function getFriendshipPoints(
  * Checks if any mentions stored in a friendship are older than a week, and if they are, remove them.
  */
 export async function checkOldMentions(
-	userData: UserSchema,
-	quidId: string,
-	partnerUserData: UserSchema,
-	partnerQuidId: string,
-): Promise<readonly [UserSchema, UserSchema]> {
+	userData1: UserData<never, never>,
+	userData2: UserData<never, never>,
+): Promise<void> {
 
 	const oneWeekInMs = 604_800_000;
-	userData = await userModel.findOneAndUpdate(
-		(u => u.uuid === userData.uuid),
+	await userData1.update(
 		(u) => {
-			let cmentions = getMapData(u.quids, quidId).mentions[partnerQuidId];
+			let cmentions = getMapData(u.quids, userData1.quid._id).mentions[userData2.quid._id];
 			if (cmentions) { cmentions = cmentions.filter(ts => ts > Date.now() - oneWeekInMs); }
 		},
 	);
 
-	partnerUserData = await userModel.findOneAndUpdate(
-		(u => u.uuid === partnerUserData.uuid),
+	await userData2.update(
 		(u) => {
-			let cmentions = getMapData(u.quids, partnerQuidId).mentions[quidId];
+			let cmentions = getMapData(u.quids, userData2.quid._id).mentions[userData1.quid._id];
 			if (cmentions) { cmentions = cmentions.filter(ts => ts > Date.now() - oneWeekInMs); }
 		},
 	);
-
-	return [userData, partnerUserData] as const;
 }
 
 /**

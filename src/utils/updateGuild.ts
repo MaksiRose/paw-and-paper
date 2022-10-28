@@ -1,13 +1,16 @@
+import { generateId } from 'crystalid';
 import { Guild } from 'discord.js';
 import { readdirSync, readFileSync, renameSync, writeFileSync } from 'fs';
+import { client, commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '..';
 import serverModel from '../models/serverModel';
-import { BanList, commonPlantsInfo, CustomClient, DeleteList, materialsInfo, ProxyListType, rarePlantsInfo, ServerSchema, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../typedef';
+import { BanList, DeleteList } from '../typings/data/general';
+import { ServerSchema } from '../typings/data/server';
+import { ProxyListType } from '../typings/data/user';
 
 /**
  * This creates a new guild if the guild isn't on the ban list, or restores it from the guilds that are to be deleted.
  */
 export async function createGuild(
-	client: CustomClient,
 	guild: Guild,
 ): Promise<ServerSchema> {
 
@@ -47,15 +50,15 @@ export async function createGuild(
 
 		if (serverData.serverId === guild.id) {
 
-			delete toDeleteList[serverData.uuid];
+			delete toDeleteList[serverData._id];
 			renameSync(`./database/toDelete/${fileName}`, `./database/servers/${fileName}`);
 			writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
-			serverData = await serverModel.update(serverData.uuid);
+			serverData = serverModel.findOneAndUpdate(s => s._id === serverData._id, () => { return; });
 			return serverData;
 		}
 	}
 
-	serverData = await serverModel.create({
+	serverData = serverModel.create({
 		serverId: guild.id,
 		name: guild.name,
 		inventory: {
@@ -107,7 +110,7 @@ export async function createGuild(
 			logChannelId: null,
 		},
 		skills: ['strength', 'dexterity', 'constitution', 'charisma', 'wisdom', 'intelligence'],
-		uuid: '',
+		_id: generateId(),
 	});
 
 	return serverData;
@@ -123,10 +126,10 @@ export async function deleteGuild(
 	const toDeleteList = JSON.parse(readFileSync('./database/toDeleteList.json', 'utf-8')) as DeleteList;
 
 	const serverData = await serverModel.findOne(s => s.serverId === guildId);
-	renameSync(`./database/servers/${serverData.uuid}.json`, `./database/toDelete/${serverData.uuid}.json`);
+	renameSync(`./database/servers/${serverData._id}.json`, `./database/toDelete/${serverData._id}.json`);
 
 	const thirtyDaysInMs = 2_592_000_000;
-	toDeleteList[serverData.uuid] = Date.now() + thirtyDaysInMs;
+	toDeleteList[serverData._id] = Date.now() + thirtyDaysInMs;
 
 	writeFileSync('./database/toDeleteList.json', JSON.stringify(toDeleteList, null, '\t'));
 }

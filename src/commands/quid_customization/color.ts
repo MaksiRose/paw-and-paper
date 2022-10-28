@@ -1,34 +1,31 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { getQuidDisplayname, respond } from '../../utils/helperFunctions';
-import userModel from '../../models/userModel';
-import { SlashCommand } from '../../typedef';
+import { respond } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
+import { SlashCommand } from '../../typings/handle';
 const { error_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'color';
-const description: SlashCommand['description'] = 'Enter a valid hex code to give your messages and profile that color.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('color')
+		.setDescription('Enter a valid hex code to give your messages and profile that color.')
 		.addStringOption(option =>
-			option.setName('color')
-				.setDescription('A hex code. Valid hex codes contain only letters from \'a\' to \'f\' and/or numbers.')
+			option.setName('hex')
+				.setDescription('Valid hex codes consist of 6 characters containing letters from \'a\' to \'f\' and/or numbers.')
 				.setMinLength(6)
 				.setMaxLength(6)
 				.setRequired(true))
 		.toJSON(),
+	category: 'page1',
+	position: 4,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction, userData) => {
+	sendCommand: async (interaction, userData) => {
 
-		if (!hasName(interaction, userData)) { return; }
+		if (!hasName(userData, interaction)) { return; }
 
 		/* Checking if the user has sent a valid hex code. If they have not, it will send an error message. */
-		const hexColor = interaction.options.getString('color');
+		const hexColor = interaction.options.getString('hex');
 		if (!hexColor || !isValidHex(hexColor)) {
 
 			await respond(interaction, {
@@ -41,20 +38,18 @@ export const command: SlashCommand = {
 		}
 
 		/* Changing the hex code and sending a success message. */
-		userData = await userModel.findOneAndUpdate(
-			u => u.uuid === userData?.uuid,
+		await userData.update(
 			(u) => {
-				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DM'));
+				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DMs'));
 				q.color = `#${hexColor}`;
 			},
 		);
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId || 'DM'));
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
-				.setTitle(`Profile color set to ${quidData.color}!`)],
+				.setColor(userData.quid.color)
+				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setTitle(`Profile color set to ${userData.quid.color}!`)],
 		}, true);
 		return;
 	},

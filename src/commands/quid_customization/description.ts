@@ -1,47 +1,42 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { getQuidDisplayname, respond } from '../../utils/helperFunctions';
-import userModel from '../../models/userModel';
-import { SlashCommand } from '../../typedef';
+import { respond } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
+import { SlashCommand } from '../../typings/handle';
 
-const name: SlashCommand['name'] = 'description';
-const description: SlashCommand['description'] = 'Give a more detailed description of your quid.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('description')
+		.setDescription('Give a more detailed description of your quid.')
 		.addStringOption(option =>
 			option.setName('description')
 				.setDescription('The description of your quid.')
 				.setMaxLength(512),
 		)
 		.toJSON(),
+	category: 'page1',
+	position: 5,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction, userData) => {
+	sendCommand: async (interaction, userData) => {
 
-		if (!hasName(interaction, userData)) { return; }
+		if (!hasName(userData, interaction)) { return; }
 
 		const desc = interaction.options.getString('description') || '';
 
-		userData = await userModel.findOneAndUpdate(
-			u => u.uuid === userData?.uuid,
+		await userData.update(
 			(u) => {
-				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DM'));
+				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DMs'));
 				q.description = desc;
 			},
 		);
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId || 'DM'));
 
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(quidData.color)
-				.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId ?? ''), iconURL: quidData.avatarURL })
-				.setTitle(quidData.description === '' ? 'Your description has been reset!' : `Description for ${quidData.name} set:`)
-				.setDescription(quidData.description || null)],
+				.setColor(userData.quid.color)
+				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setTitle(userData.quid.description === '' ? 'Your description has been reset!' : `Description for ${userData.quid.name} set:`)
+				.setDescription(userData.quid.description || null)],
 		}, true);
 		return;
 	},

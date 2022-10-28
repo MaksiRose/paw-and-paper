@@ -1,17 +1,13 @@
 import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
-import { SlashCommand } from '../../typedef';
+import { respond, userDataServersObject } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
-import { cooldownMap } from '../../events/interactionCreate';
+import { client } from '../..';
+import { SlashCommand } from '../../typings/handle';
 
-const name: SlashCommand['name'] = 'remove-cooldown';
-const description: SlashCommand['description'] = 'Remove the cooldown of a user in a guild';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('remove-cooldown')
+		.setDescription('Remove the cooldown of a user in a guild')
 		.setDMPermission(false)
 		.setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 		.addUserOption(option =>
@@ -23,9 +19,11 @@ export const command: SlashCommand = {
 				.setDescription('The guild to remove the cooldown in')
 				.setRequired(true))
 		.toJSON(),
+	category: 'other',
+	position: 0,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction) => {
+	sendCommand: async (interaction) => {
 
 		if (!client.isReady()) { return; }
 
@@ -36,9 +34,7 @@ export const command: SlashCommand = {
 		const guildId = interaction.options.getString('guild');
 		if (user === null || guildId === null) { throw new TypeError('user or guildId is null'); }
 
-		const userData = await userModel
-			.findOne(u => u.userId.includes(user.id))
-			.catch(() => { return null; });
+		const userData = userModel.find(u => u.userId.includes(user.id))[0] ?? null;
 
 		if (!userData) {
 
@@ -62,7 +58,8 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		if (!cooldownMap.has(userData.uuid + guildId)) {
+		const serverInfo = userData.servers[guildId];
+		if (serverInfo === undefined) {
 
 			await respond(interaction, {
 				content: `There is no cooldown entry for ${user.tag} in ${guild.name}`,
@@ -71,7 +68,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		if (cooldownMap.get(userData.uuid + guildId) === false) {
+		if (serverInfo.hasCooldown === false) {
 
 			await respond(interaction, {
 				content: `The cooldown for ${user.tag} in ${guild.name} is already set to false`,
@@ -80,7 +77,15 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		cooldownMap.set(userData.uuid + guildId, false);
+		await userModel.findOneAndUpdate(
+			u => u._id === userData._id,
+			u => {
+				u.servers[guildId] = {
+					...userDataServersObject(u, guildId),
+					hasCooldown: false,
+				};
+			},
+		);
 		await respond(interaction, {
 			content: `Sucessfully set the cooldown for ${user.tag} in ${guild.name} to false`,
 		}, false);

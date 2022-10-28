@@ -1,5 +1,6 @@
 import { ActionRowBuilder, ButtonStyle, ButtonBuilder } from 'discord.js';
-import { SpeciesHabitatType } from '../typedef';
+import { SpeciesHabitatType } from '../typings/main';
+import { getArrayElement } from './helperFunctions';
 import { getRandomNumber } from './randomizers';
 
 export const plantEmojis = {
@@ -64,8 +65,7 @@ export function createPlantGame(
 			}
 			else {
 
-				const neutralEmoji = neutralEmojis.splice(getRandomNumber(neutralEmojis.length), 1)[0];
-				if (neutralEmoji === undefined) { throw new TypeError('neutralEmoji is undefined'); }
+				const neutralEmoji = getArrayElement(neutralEmojis.splice(getRandomNumber(neutralEmojis.length), 1), 0);
 				emojisInButton.push(neutralEmoji);
 			}
 		}
@@ -106,7 +106,7 @@ export function createPlantGame(
 }
 
 
-const cycleKinds = ['attack', 'dodge', 'defend'] as const;
+const cycleKinds = ['_attack', 'dodge', 'defend'] as const; // It's _attack instead of attack because the overlap with the attack-command leads to bugs otherwise
 
 export type FightGame = {
 	thisRoundCycleIndex: number;
@@ -128,7 +128,7 @@ export function createFightGame(
 	const fightComponent = new ActionRowBuilder<ButtonBuilder>()
 		.setComponents([
 			new ButtonBuilder()
-				.setCustomId(`attack${roundNumber ? `_${roundNumber}` : ''}`)
+				.setCustomId(`_attack${roundNumber ? `_${roundNumber}` : ''}`)
 				.setLabel('Attack')
 				.setEmoji('⏫')
 				.setStyle(ButtonStyle.Secondary),
@@ -153,7 +153,7 @@ export function createFightGame(
 			const data = component.toJSON();
 
 			if (data.style !== ButtonStyle.Link && data.custom_id.includes(
-				cycleKind === 'defend' ? 'attack' : cycleKind === 'dodge' ? 'defend' : 'dodge',
+				cycleKind === 'defend' ? '_attack' : cycleKind === 'dodge' ? 'defend' : 'dodge',
 			)) { component.setStyle(ButtonStyle.Primary); }
 			return component;
 		})),

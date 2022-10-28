@@ -1,26 +1,27 @@
 import { ChatInputCommandInteraction, EmbedBuilder, FormattingPatterns, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import Fuse from 'fuse.js';
+import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../..';
 import serverModel from '../../models/serverModel';
-import userModel from '../../models/userModel';
-import { CommonPlantNames, commonPlantsInfo, CurrentRegionType, PlantEdibilityType, Profile, Quid, RarePlantNames, rarePlantsInfo, ServerSchema, SlashCommand, SpecialPlantNames, specialPlantsInfo, SpeciesDietType, speciesInfo, SpeciesNames, StatIncreaseType, UncommonPlantNames, uncommonPlantsInfo, UserSchema } from '../../typedef';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import userModel, { getUserData } from '../../models/userModel';
+import { ServerSchema } from '../../typings/data/server';
+import { CurrentRegionType, StatIncreaseType, UserData } from '../../typings/data/user';
+import { SlashCommand } from '../../typings/handle';
+import { PlantEdibilityType, SpeciesDietType } from '../../typings/main';
+import { hasName, hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
-import { pronoun, pronounAndPlural, upperCasePronounAndPlural } from '../../utils/getPronouns';
-import { getBiggerNumber, getMapData, getQuidDisplayname, getSmallerNumber, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
+import { capitalizeString, getBiggerNumber, getMapData, getSmallerNumber, keyInObject, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
-import wearDownDen from '../../utils/wearDownDen';
+import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
 import { showInventoryMessage } from './inventory';
 
-const name: SlashCommand['name'] = 'eat';
-const description: SlashCommand['description'] = 'Take the appropriate food for your species out of the packs food pile and fill up your hunger meter.';
+const allPlantsInfo = { ...commonPlantsInfo, ...uncommonPlantsInfo, ...rarePlantsInfo, ...specialPlantsInfo };
+
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('eat')
+		.setDescription('Take the appropriate food for your species out of the packs food pile and fill up your hunger meter.')
 		.setDMPermission(false)
 		.addStringOption(option =>
 			option.setName('food')
@@ -28,9 +29,11 @@ export const command: SlashCommand = {
 				.setAutocomplete(true)
 				.setRequired(false))
 		.toJSON(),
+	category: 'page3',
+	position: 3,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendAutocomplete: async (client, interaction, userData, serverData) => {
+	sendAutocomplete: async (interaction, userData, serverData) => {
 
 		if (!serverData) { return; }
 		const focusedValue = interaction.options.getFocused();
@@ -53,67 +56,61 @@ export const command: SlashCommand = {
 			choices.slice(0, 25).map(choice => ({ name: choice, value: choice })),
 		);
 	},
-	sendCommand: async (client, interaction, userData, serverData, embedArray) => {
+	sendCommand: async (interaction, userData, serverData) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (!isInGuild(interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!hasCompletedAccount(interaction, userData)) { return; }
-
-		/* Gets the current active quid and the server profile from the account */
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-		const profileData = getMapData(quidData.profiles, interaction.guildId);
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
-		if (await isInvalid(interaction, userData, quidData, profileData, embedArray)) { return; }
+		const restEmbed = await isInvalid(interaction, userData);
+		if (restEmbed === false) { return; }
 
 		const messageContent = remindOfAttack(interaction.guildId);
 
-		if (profileData.hunger >= profileData.maxHunger) {
+		if (userData.quid.profile.hunger >= userData.quid.profile.maxHunger) {
 
 			await respond(interaction, {
 				content: messageContent,
-				embeds: [...embedArray, new EmbedBuilder()
-					.setColor(quidData.color)
-					.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL })
-					.setDescription(`*${quidData.name}'s stomach bloats as ${pronounAndPlural(quidData, 0, 'roll')} around camp, stuffing food into ${pronoun(quidData, 2)} mouth. The ${quidData.displayedSpecies || quidData.species} might need to take a break from food before ${pronounAndPlural(quidData, 0, 'goes', 'go')} into a food coma.*`)],
+				embeds: [...restEmbed, new EmbedBuilder()
+					.setColor(userData.quid.color)
+					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+					.setDescription(`*${userData.quid.name}'s stomach bloats as ${userData.quid.pronounAndPlural(0, 'roll')} around camp, stuffing food into ${userData.quid.pronoun(2)} mouth. The ${userData.quid.getDisplayspecies()} might need to take a break from food before ${userData.quid.pronounAndPlural(0, 'goes', 'go')} into a food coma.*`)],
 			}, true);
 			return;
 		}
 
 		const chosenFood = interaction.options.getString('food');
 
-		await sendEatMessage(interaction, chosenFood ?? '', userData, quidData, profileData, serverData, messageContent, embedArray);
+		await sendEatMessage(interaction, chosenFood ?? '', userData, serverData, messageContent, restEmbed);
 	},
 };
 
 export async function sendEatMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
 	chosenFood: string,
-	userData: UserSchema,
-	quidData: Quid,
-	profileData: Profile,
+	userData: UserData<never, never>,
 	serverData: ServerSchema,
-	messageContent: string | undefined,
-	embedArray: EmbedBuilder[],
+	messageContent: string,
+	restEmbed: EmbedBuilder[],
 ): Promise<void> {
 
 	const embed = new EmbedBuilder()
-		.setColor(quidData.color)
-		.setAuthor({ name: getQuidDisplayname(userData, quidData, interaction.guildId), iconURL: quidData.avatarURL });
+		.setColor(userData.quid.color)
+		.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL });
 
 	const mentionedUserMatch = chosenFood.match(FormattingPatterns.User);
 	if (mentionedUserMatch) {
 
-		const taggedUserData = await userModel.findOne(u => u.userId.includes(mentionedUserMatch[1] || ''));
-		const taggedQuidData = taggedUserData.quids[taggedUserData.currentQuid[interaction.guildId] || ''];
+		const _taggedUserData = await userModel.findOne(u => u.userId.includes(mentionedUserMatch[1] || ''));
+		const taggedUserData = getUserData(_taggedUserData, interaction.guildId, _taggedUserData.quids[_taggedUserData.currentQuid[interaction.guildId ?? ''] ?? '']);
 
-		if (taggedQuidData) {
+		if (hasName(taggedUserData)) {
 
-			embed.setDescription(`*${quidData.name} looks down at ${taggedQuidData.name} as ${pronounAndPlural(taggedQuidData, 0, 'nom')} on the ${taggedQuidData.displayedSpecies || taggedQuidData.species}'s leg.* "No eating packmates here!" *${taggedQuidData.name} chuckled, shaking off ${quidData.name}.*`);
+			embed.setDescription(`*${taggedUserData.quid.name} looks down at ${taggedUserData.quid.name} as ${taggedUserData.quid.pronounAndPlural(0, 'nom')} on the ${taggedUserData.quid.getDisplayspecies()}'s leg.* "No eating packmates here!" *${taggedUserData.quid.name} chuckled, shaking off ${taggedUserData.quid.name}.*`);
 			await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 				content: messageContent,
-				embeds: [...embedArray, embed],
+				embeds: [...restEmbed, embed],
 				components: interaction.isSelectMenu() ? disableAllComponents(interaction.message.components) : [],
 			});
 			return;
@@ -130,38 +127,37 @@ export async function sendEatMessage(
 	let footerText = '';
 	const inventory_ = widenValues(serverData.inventory);
 
-	const allPlantsInfo = { ...commonPlantsInfo, ...uncommonPlantsInfo, ...rarePlantsInfo, ...specialPlantsInfo };
-
-	if (chosenFoodIsPlant(allPlantsInfo, chosenFood)) {
+	if (keyInObject(allPlantsInfo, chosenFood)) {
 
 		let plantType: 'commonPlants' | 'uncommonPlants' | 'rarePlants' | 'specialPlants';
 
-		if (Object.hasOwn(commonPlantsInfo, chosenFood)) {
+		if (keyInObject(commonPlantsInfo, chosenFood)) {
 
 			plantType = 'commonPlants';
 		}
-		else if (Object.hasOwn(uncommonPlantsInfo, chosenFood)) {
+		else if (keyInObject(uncommonPlantsInfo, chosenFood)) {
 
 			plantType = 'uncommonPlants';
 		}
-		else if (Object.hasOwn(rarePlantsInfo, chosenFood)) {
+		else if (keyInObject(rarePlantsInfo, chosenFood)) {
 
 			plantType = 'rarePlants';
 		}
-		else if (Object.hasOwn(specialPlantsInfo, chosenFood)) {
+		else if (keyInObject(specialPlantsInfo, chosenFood)) {
 
 			plantType = 'specialPlants';
 
-			const pickIncreasedStatType = (['health', 'energy', 'hunger', 'thirst'] as const)[getRandomNumber(4)];
+			const statArray = ['health', 'energy', 'hunger', 'thirst'] as const;
+
+			const pickIncreasedStatType = statArray[getRandomNumber(4)];
 			if (pickIncreasedStatType === undefined) { throw new TypeError('pickIncreasedStatType is undefined'); }
 			increasedStatType = pickIncreasedStatType;
 
-			const pickIncreasedMaxStatType = ([StatIncreaseType.MaxHealth, StatIncreaseType.MaxEnergy, StatIncreaseType.MaxHunger, StatIncreaseType.MaxThirst] as const)[(['health', 'energy', 'hunger', 'thirst'] as const).findIndex(v => v === increasedStatType)];
+			const pickIncreasedMaxStatType = ([StatIncreaseType.MaxHealth, StatIncreaseType.MaxEnergy, StatIncreaseType.MaxHunger, StatIncreaseType.MaxThirst] as const)[statArray.findIndex(v => v === increasedStatType)];
 			if (pickIncreasedMaxStatType === undefined) { throw new TypeError('pickIncreasedMaxStatType is undefined'); }
 			increasedMaxStatType = pickIncreasedMaxStatType;
 
-			await userModel.findOneAndUpdate(
-				u => u.uuid === userData.uuid,
+			await userData.update(
 				(u) => {
 					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 					p.temporaryStatIncrease[Date.now()] = increasedMaxStatType!;
@@ -172,85 +168,84 @@ export async function sendEatMessage(
 
 		if (inventory_[plantType][chosenFood] <= 0) {
 
-			await sendNoItemMessage(embed, quidData, chosenFood, interaction, messageContent, embedArray);
+			await sendNoItemMessage(embed, userData, chosenFood, interaction, messageContent, restEmbed);
 			return;
 		}
 		inventory_[plantType][chosenFood] -= 1;
 
 		if (allPlantsInfo[chosenFood].edibility === PlantEdibilityType.Toxic) {
 
-			finalHungerPoints = getBiggerNumber(-profileData.hunger, getRandomNumber(3, -5) - removeHungerPoints(serverData));
-			finalHealthPoints = getBiggerNumber(-profileData.health, getRandomNumber(3, -10));
+			finalHungerPoints = getBiggerNumber(-userData.quid.profile.hunger, getRandomNumber(3, -5) - removeHungerPoints(serverData));
+			finalHealthPoints = getBiggerNumber(-userData.quid.profile.health, getRandomNumber(3, -10));
 
-			embed.setDescription(`*A yucky feeling drifts down ${quidData.name}'s throat. ${upperCasePronounAndPlural(quidData, 0, 'shakes and spits', 'shake and spit')} it out, trying to rid ${pronoun(quidData, 2)} mouth of the taste. The plant is poisonous!*`);
+			embed.setDescription(`*A yucky feeling drifts down ${userData.quid.name}'s throat. ${capitalizeString(userData.quid.pronounAndPlural(0, 'shakes and spits', 'shake and spit'))} it out, trying to rid ${userData.quid.pronoun(2)} mouth of the taste. The plant is poisonous!*`);
 		}
 
 		if (allPlantsInfo[chosenFood].edibility === PlantEdibilityType.Inedible) {
 
-			finalHungerPoints = getBiggerNumber(-profileData.hunger, getRandomNumber(3, -3) - removeHungerPoints(serverData));
+			finalHungerPoints = getBiggerNumber(-userData.quid.profile.hunger, getRandomNumber(3, -3) - removeHungerPoints(serverData));
 
-			embed.setDescription(`*${quidData.name} slowly opens ${pronoun(quidData, 2)} mouth and chomps onto the ${chosenFood}. The ${quidData.displayedSpecies || quidData.species} swallows it, but ${pronoun(quidData, 2)} face has a look of disgust. That wasn't very tasty!*`);
+			embed.setDescription(`*${userData.quid.name} slowly opens ${userData.quid.pronoun(2)} mouth and chomps onto the ${chosenFood}. The ${userData.quid.getDisplayspecies()} swallows it, but ${userData.quid.pronoun(2)} face has a look of disgust. That wasn't very tasty!*`);
 		}
 
 		if (allPlantsInfo[chosenFood].edibility === PlantEdibilityType.Edible) {
 
-			if (speciesInfo[quidData.species as SpeciesNames].diet === SpeciesDietType.Carnivore) {
+			if (speciesInfo[userData.quid.species].diet === SpeciesDietType.Carnivore) {
 
-				finalHungerPoints = getBiggerNumber(-profileData.hunger, getSmallerNumber(profileData.maxHunger - profileData.hunger, getRandomNumber(5, 1) - removeHungerPoints(serverData)));
+				finalHungerPoints = getBiggerNumber(-userData.quid.profile.hunger, getSmallerNumber(userData.quid.profile.maxHunger - userData.quid.profile.hunger, addIncorrectDietHungerPoints() - removeHungerPoints(serverData)));
 
-				embed.setDescription(`*${quidData.name} plucks a ${chosenFood} from the pack storage and nibbles away at it. It has a bitter, foreign taste, not the usual meaty meal the ${quidData.displayedSpecies || quidData.species} prefers.*`);
+				embed.setDescription(`*${userData.quid.name} plucks a ${chosenFood} from the pack storage and nibbles away at it. It has a bitter, foreign taste, not the usual meaty meal the ${userData.quid.getDisplayspecies()} prefers.*`);
 			}
 			else {
 
-				finalHungerPoints = getSmallerNumber(profileData.maxHunger - profileData.hunger, getRandomNumber(4, 15) - removeHungerPoints(serverData));
+				finalHungerPoints = getSmallerNumber(userData.quid.profile.maxHunger - userData.quid.profile.hunger, addCorrectDietHungerPoints() - removeHungerPoints(serverData));
 
-				embed.setDescription(`*Leaves flutter into the storage den, landing near ${quidData.name}'s feet. The ${quidData.displayedSpecies || quidData.species} searches around the inventory determined to find the perfect meal, and that ${pronounAndPlural(quidData, 0, 'does', 'do')}. ${quidData.name} plucks a ${chosenFood} from the pile and eats until ${pronoun(quidData, 2)} stomach is pleased.*`);
+				embed.setDescription(`*Leaves flutter into the storage den, landing near ${userData.quid.name}'s feet. The ${userData.quid.getDisplayspecies()} searches around the inventory determined to find the perfect meal, and that ${userData.quid.pronounAndPlural(0, 'does', 'do')}. ${userData.quid.name} plucks a ${chosenFood} from the pile and eats until ${userData.quid.pronoun(2)} stomach is pleased.*`);
 			}
 		}
 
 		if (allPlantsInfo[chosenFood].givesEnergy === true) {
 
-			finalEnergyPoints = getSmallerNumber(profileData.maxEnergy - profileData.energy, 20);
+			finalEnergyPoints = getSmallerNumber(userData.quid.profile.maxEnergy - userData.quid.profile.energy, 20);
 		}
 
 		if (allPlantsInfo[chosenFood].increasesMaxCondition === true) {
 
 			if (finalHungerPoints < 0) { finalHungerPoints = 0; }
 
-			embed.setDescription(`*${quidData.name} decides to have a special treat today. Slowly, ${pronounAndPlural(quidData, 0, 'chew')} on the ${chosenFood}, enjoying the fresh taste. It doesn't take long for the ${quidData.displayedSpecies || quidData.species} to feel a special effect kick in: It's as if ${pronoun(quidData, 0)} can have much more ${increasedStatType} than before. What an enchanting sensation!*`);
+			embed.setDescription(`*${userData.quid.name} decides to have a special treat today. Slowly, ${userData.quid.pronounAndPlural(0, 'chew')} on the ${chosenFood}, enjoying the fresh taste. It doesn't take long for the ${userData.quid.getDisplayspecies()} to feel a special effect kick in: It's as if ${userData.quid.pronoun(0)} can have much more ${increasedStatType} than before. What an enchanting sensation!*`);
 		}
 	}
-	else if (chosenFoodIsMeat(chosenFood)) {
+	else if (keyInObject(speciesInfo, chosenFood)) {
 
 		if (inventory_.meat[chosenFood] <= 0) {
 
-			await sendNoItemMessage(embed, quidData, chosenFood, interaction, messageContent, embedArray);
+			await sendNoItemMessage(embed, userData, chosenFood, interaction, messageContent, restEmbed);
 			return;
 		}
 		inventory_.meat[chosenFood] -= 1;
 
-		if (speciesInfo[quidData.species as SpeciesNames].diet === SpeciesDietType.Herbivore) {
+		if (speciesInfo[userData.quid.species].diet === SpeciesDietType.Herbivore) {
 
-			finalHungerPoints = getBiggerNumber(-profileData.hunger, getSmallerNumber(profileData.maxHunger - profileData.hunger, getRandomNumber(5, 1) - removeHungerPoints(serverData)));
+			finalHungerPoints = getBiggerNumber(-userData.quid.profile.hunger, getSmallerNumber(userData.quid.profile.maxHunger - userData.quid.profile.hunger, addIncorrectDietHungerPoints() - removeHungerPoints(serverData)));
 
-			embed.setDescription(`*${quidData.name} stands by the storage den, eyeing the varieties of food. A ${chosenFood} catches ${pronoun(quidData, 2)} attention. The ${quidData.displayedSpecies || quidData.species} walks over to it and begins to eat.* "This isn't very good!" *${quidData.name} whispers to ${pronoun(quidData, 4)} and leaves the den, stomach still growling, and craving for plants to grow.*`);
+			embed.setDescription(`*${userData.quid.name} stands by the storage den, eyeing the varieties of food. A ${chosenFood} catches ${userData.quid.pronoun(2)} attention. The ${userData.quid.getDisplayspecies()} walks over to it and begins to eat.* "This isn't very good!" *${userData.quid.name} whispers to ${userData.quid.pronoun(4)} and leaves the den, stomach still growling, and craving for plants to grow.*`);
 		}
 		else {
 
-			finalHungerPoints = getSmallerNumber(profileData.maxHunger - profileData.hunger, getRandomNumber(4, 15) - removeHungerPoints(serverData));
+			finalHungerPoints = getSmallerNumber(userData.quid.profile.maxHunger - userData.quid.profile.hunger, addCorrectDietHungerPoints() - removeHungerPoints(serverData));
 
-			embed.setDescription(`*${quidData.name} sits chewing maliciously on a ${chosenFood}. A dribble of blood escapes out of ${pronoun(quidData, 2)} jaw as the ${quidData.displayedSpecies || quidData.species} finishes off the meal. It was a delicious feast, but very messy!*`);
+			embed.setDescription(`*${userData.quid.name} sits chewing maliciously on a ${chosenFood}. A dribble of blood escapes out of ${userData.quid.pronoun(2)} jaw as the ${userData.quid.getDisplayspecies()} finishes off the meal. It was a delicious feast, but very messy!*`);
 		}
 	}
 	else {
 
-		await showInventoryMessage(interaction, userData, profileData, serverData, 1, false);
+		await showInventoryMessage(interaction, userData, serverData, 1, false);
 		return;
 	}
 
-	const previousRegion = profileData.currentRegion;
-	userData = await userModel.findOneAndUpdate(
-		u => u.uuid === userData.uuid,
+	const previousRegion = userData.quid.profile.currentRegion;
+	await userData.update(
 		(u) => {
 			u.advice.eating = true;
 			const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
@@ -261,8 +256,6 @@ export async function sendEatMessage(
 			if (increasedMaxStatType) { p[increasedMaxStatType] += 10; }
 		},
 	);
-	quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-	profileData = getMapData(quidData.profiles, interaction.guildId);
 
 	serverData = await serverModel.findOneAndUpdate(
 		s => s.serverId === interaction.guildId,
@@ -271,53 +264,41 @@ export async function sendEatMessage(
 		},
 	);
 
-	footerText += `${finalHungerPoints >= 0 ? '+' : ''}${finalHungerPoints} hunger (${profileData.hunger}/${profileData.maxHunger})`;
+	footerText += `${finalHungerPoints >= 0 ? '+' : ''}${finalHungerPoints} hunger (${userData.quid.profile.hunger}/${userData.quid.profile.maxHunger})`;
 
-	if (finalEnergyPoints !== 0) { footerText += `\n+${finalEnergyPoints} energy (${profileData.energy}/${profileData.maxHunger})`; }
-	if (finalHealthPoints !== 0) { footerText += `\n${finalHealthPoints} health (${profileData.health}/${profileData.maxHealth})`; }
-	if (increasedMaxStatType !== null && increasedStatType !== null) { footerText += `\n+10 maximum ${increasedStatType} (${profileData[increasedMaxStatType]}) for one week`; }
+	if (finalEnergyPoints !== 0) { footerText += `\n+${finalEnergyPoints} energy (${userData.quid.profile.energy}/${userData.quid.profile.maxHunger})`; }
+	if (finalHealthPoints !== 0) { footerText += `\n${finalHealthPoints} health (${userData.quid.profile.health}/${userData.quid.profile.maxHealth})`; }
+	if (increasedMaxStatType !== null && increasedStatType !== null) { footerText += `\n+10 maximum ${increasedStatType} (${userData.quid.profile[increasedMaxStatType]}) for one week`; }
 	if (previousRegion !== CurrentRegionType.FoodDen) { footerText += '\nYou are now at the food den'; }
 	embed.setFooter({ text: `${footerText}\n\n${await wearDownDen(serverData, CurrentRegionType.FoodDen)}\n-1 ${chosenFood} for ${interaction.guild.name}` });
 
 	await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 		content: messageContent,
-		embeds: [...embedArray, embed],
+		embeds: [...restEmbed, embed],
 		components: interaction.isSelectMenu() ? disableAllComponents(interaction.message.components) : [],
 	});
 	return;
 }
 
-function chosenFoodIsPlant(
-	allPlantsInfo: typeof commonPlantsInfo & typeof uncommonPlantsInfo & typeof rarePlantsInfo & typeof specialPlantsInfo,
-	chosenFood: string,
-): chosenFood is CommonPlantNames | UncommonPlantNames | RarePlantNames | SpecialPlantNames {
-
-	return Object.hasOwn(allPlantsInfo, chosenFood);
-}
-
-function chosenFoodIsMeat(
-	chosenFood: string,
-): chosenFood is SpeciesNames {
-
-	return Object.hasOwn(speciesInfo, chosenFood);
-}
-
 async function sendNoItemMessage(
 	embed: EmbedBuilder,
-	quidData: Quid,
+	userData: UserData<never, never>,
 	chosenFood: string,
 	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
-	messageContent: string | undefined,
-	embedArray: EmbedBuilder[],
+	messageContent: string,
+	restEmbed: EmbedBuilder[],
 ): Promise<void> {
 
-	embed.setDescription(`*${quidData.name} searches for a ${chosenFood} all over the pack, but couldn't find one...*`);
+	embed.setDescription(`*${userData.quid.name} searches for a ${chosenFood} all over the pack, but couldn't find one...*`);
 	await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 		content: messageContent,
-		embeds: [...embedArray, embed],
+		embeds: [...restEmbed, embed],
 		components: interaction.isSelectMenu() ? disableAllComponents(interaction.message.components) : [],
 	});
 }
+
+function addIncorrectDietHungerPoints() { return getRandomNumber(5, 1); }
+export function addCorrectDietHungerPoints() { return getRandomNumber(4, 15); }
 
 /**
  * It takes a message, finds the server data, calculates the den stats, calculates the multiplier, and
@@ -325,7 +306,7 @@ async function sendNoItemMessage(
  * @param serverData - The server data.
  * @returns the number of hunger points that will be removed from the user's character.
  */
-function removeHungerPoints(
+export function removeHungerPoints(
 	serverData: ServerSchema,
 ): number {
 

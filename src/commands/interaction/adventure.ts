@@ -1,56 +1,58 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
-import { cooldownMap } from '../../events/interactionCreate';
-import { getQuidDisplayname, getSmallerNumber, KeyOfUnion, sendErrorMessage, update, widenValues } from '../../utils/helperFunctions';
+import { getArrayElement, getSmallerNumber, keyInObject, KeyOfUnion, sendErrorMessage, setCooldown, update, widenValues } from '../../utils/helperFunctions';
 import { respond } from '../../utils/helperFunctions';
-import userModel from '../../models/userModel';
-import { CurrentRegionType, Inventory, Profile, Quid, ServerSchema, SlashCommand, UserSchema } from '../../typedef';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
-import { changeCondition, pickRandomCommonPlant, pickRandomRarePlant, pickRandomSpecialPlant, pickRandomUncommonPlant } from '../../utils/changeCondition';
-import { hasCompletedAccount, isInGuild } from '../../utils/checkUserState';
+import { changeCondition } from '../../utils/changeCondition';
+import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { createCommandComponentDisabler, disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
+import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
 import { addFriendshipPoints, checkOldMentions, getFriendshipHearts, getFriendshipPoints } from '../../utils/friendshipHandling';
 import { getMapData } from '../../utils/helperFunctions';
-import { pronoun, pronounAndPlural } from '../../utils/getPronouns';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { getHighestItem, remindOfAttack } from '../gameplay_primary/attack';
+import { pickPlant } from '../../utils/simulateItemUse';
+import { missingPermissions } from '../../utils/permissionHandler';
+import { SlashCommand } from '../../typings/handle';
+import userModel, { getUserData } from '../../models/userModel';
+import { ServerSchema } from '../../typings/data/server';
+import { CurrentRegionType, UserData } from '../../typings/data/user';
+import { Inventory, SpecialPlantNames } from '../../typings/data/general';
 const { error_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'adventure';
-const description: SlashCommand['description'] = 'Go adventuring with a friend. Requires 6 friendship hearts.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('adventure')
+		.setDescription('Go adventuring with a friend. Requires 6 friendship hearts.')
 		.setDMPermission(false)
 		.addUserOption(option =>
 			option.setName('user')
 				.setDescription('The user that you want to adventure with.')
 				.setRequired(true))
 		.toJSON(),
+	category: 'page4',
+	position: 0,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendCommand: async (client, interaction, userData1, serverData, embedArray) => {
+	sendCommand: async (interaction, userData1) => {
+
+		if (await missingPermissions(interaction, [
+			'ViewChannel', // Needed because of createCommandComponentDisabler
+			/* 'ViewChannel',*/ interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
+		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (!isInGuild(interaction)) { return; }
-		if (!hasCompletedAccount(interaction, userData1)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData1, interaction)) { return; }
 
-		/* Gets the current active quid and the server profile from the account */
-		const quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
-		const profileData1 = getMapData(quidData1.profiles, interaction.guildId);
-
-		/* Checks if the profile is on a cooldown, passed out, or resting. */
-		if (await isInvalid(interaction, userData1, quidData1, profileData1, embedArray)) { return; }
+		/* Checks if the profile is resting, on a cooldown or passed out. */
+		const restEmbed = await isInvalid(interaction, userData1);
+		if (restEmbed === false) { return; }
 
 		/* Define messageContent as the return of remindOfAttack */
 		const messageContent = remindOfAttack(interaction.guildId);
 
 		/* Checks whether the user's inventory is full and returns if it is. */
-		if (await hasFullInventory(interaction, userData1, quidData1, profileData1, embedArray, messageContent)) { return; }
+		if (await hasFullInventory(interaction, userData1, restEmbed, messageContent)) { return; }
 
 		/* Gets the mentioned user. */
 		const mentionedUser = interaction.options.getUser('user');
@@ -61,31 +63,31 @@ export const command: SlashCommand = {
 
 			await respond(interaction, {
 				content: messageContent,
-				embeds: [...embedArray, new EmbedBuilder()
-					.setColor(quidData1.color)
-					.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
-					.setDescription(`*${quidData1.name} is looking to go on an adventure, but going alone is very dangerous. The ${quidData1.displayedSpecies || quidData1.species} should find someone to take with ${pronoun(quidData1, 1)}.*`)],
+				embeds: [...restEmbed, new EmbedBuilder()
+					.setColor(userData1.quid.color)
+					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
+					.setDescription(`*${userData1.quid.name} is looking to go on an adventure, but going alone is very dangerous. The ${userData1.quid.getDisplayspecies()} should find someone to take with ${userData1.quid.pronoun(1)}.*`)],
 			}, false);
 			return;
 		}
 
 		/* Define the partners user data, check if the user is interactable, and if they are, define quid data and profile data. */
-		const userData2 = await userModel.findOne(u => u.userId.includes(mentionedUser.id)).catch(() => { return null; });
-		if (!isInteractable(interaction, userData2, messageContent, embedArray)) { return; }
-		const quidData2 = getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId));
+		const _userData2 = await userModel.findOne(u => u.userId.includes(mentionedUser.id));
+		const userData2 = getUserData(_userData2, interaction.guildId, getMapData(_userData2.quids, getMapData(_userData2.currentQuid, interaction.guildId)));
+		if (!isInteractable(interaction, userData2, messageContent, restEmbed)) { return; }
 
 		/* Check how many friendship hearts the players have and if it is less than the required amount, send an error message. */
-		await checkOldMentions(userData1, quidData1._id, userData2, quidData2._id);
-		const friendshipPoints = getFriendshipPoints(quidData1.mentions[quidData2._id] || [], quidData2.mentions[quidData1._id] || []);
+		await checkOldMentions(userData1, userData2);
+		const friendshipPoints = getFriendshipPoints(userData1.quid.mentions[userData2.quid._id] || [], userData2.quid.mentions[userData1.quid._id] || []);
 		const friendshipHearts = getFriendshipHearts(friendshipPoints);
 		const requiredFriendshipHearts = 6;
 		if (friendshipHearts < requiredFriendshipHearts) {
 
 			await respond(interaction, {
 				content: messageContent,
-				embeds: [...embedArray, new EmbedBuilder()
+				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(error_color)
-					.setTitle(`You and ${quidData2.name} need at least ${requiredFriendshipHearts} ❤️ to be able to adventure together!`)
+					.setTitle(`You and ${userData2.quid.name} need at least ${requiredFriendshipHearts} ❤️ to be able to adventure together!`)
 					.setDescription('You gain ❤️ by mentioning and interacting with each other. To check your friendships, type `/friendships`.'),
 				],
 			}, false);
@@ -94,99 +96,102 @@ export const command: SlashCommand = {
 
 		/* Sending a message asking the other player if they want to play, with a button to start the adventure. */
 		const botReply = await respond(interaction, {
-			content: `${(messageContent ?? '')}\n\n${mentionedUser.toString()}`,
-			embeds: [...embedArray, new EmbedBuilder()
-				.setColor(quidData1.color)
-				.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
-				.setDescription(`*${quidData1.name} impatiently paces at the pack borders, hoping for ${quidData2.name} to come and adventure with ${pronoun(quidData1, 1)}.*`)
+			content: `${mentionedUser.toString()}\n${messageContent}`,
+			embeds: [...restEmbed, new EmbedBuilder()
+				.setColor(userData1.quid.color)
+				.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
+				.setDescription(`*${userData1.quid.name} impatiently paces at the pack borders, hoping for ${userData2.quid.name} to come and adventure with ${userData1.quid.pronoun(1)}.*`)
 				.setFooter({ text: 'The game that is being played is memory, meaning that a player has to uncover two cards, If the emojis match, the cards are left uncovered.' })],
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId(`adventure_confirm_${mentionedUser.id}_${interaction.user.id}`)
+					.setCustomId(`adventure_confirm_@${mentionedUser.id}_@${interaction.user.id}`)
 					.setLabel('Start adventure')
 					.setEmoji('🧭')
 					.setStyle(ButtonStyle.Success))],
 		}, true);
 
 		/* Register the command to be disabled when another command is executed, for both players */
-		createCommandComponentDisabler(userData1.uuid, interaction.guildId, botReply);
-		createCommandComponentDisabler(userData2.uuid, interaction.guildId, botReply);
+		saveCommandDisablingInfo(userData1, interaction.guildId, interaction.channelId, botReply.id);
+		saveCommandDisablingInfo(userData2, interaction.guildId, interaction.channelId, botReply.id);
 	},
-};
+	async sendMessageComponentResponse(interaction, userData, serverData) {
 
-export async function adventureInteractionCollector(
-	interaction: ButtonInteraction,
-	serverData: ServerSchema | null,
-): Promise<void> {
+		if (!interaction.isButton()) { return; }
+		if (await missingPermissions(interaction, [
+			'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in addFriendshipPoints
+		]) === true) { return; }
 
-	if (!interaction.customId.includes('confirm')) { return; }
-	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
-	if (interaction.channel === null) { throw new Error('Interaction channel is null'); }
-	if (serverData === null) { throw new TypeError('serverData is null'); }
+		if (!interaction.customId.includes('confirm')) { return; }
+		if (serverData === null) { throw new Error('serverData is null'); }
+		if (!isInGuild(interaction)) { return; }
+		if (interaction.channel === null) { throw new Error('Interaction channel is null'); }
 
-	/* Define the empty field emoji and the emoji options for the cards */
-	const coveredField = '⬛';
-	const allMemoryCardOptions = ['🌱', '🌿', '☘️', '🍀', '🍃', '💐', '🌷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🍇', '🍊', '🫒', '🌰', '🏕️', '🌲', '🌳', '🍂', '🍁', '🍄', '🐝', '🪱', '🐛', '🦋', '🐌', '🐞', '🐁', '🦔', '🌵', '🦂', '🏜️', '🎍', '🪴', '🎋', '🪨', '🌾', '🐍', '🦎', '🐫', '🐙', '🦑', '🦀', '🐡', '🐠', '🐟', '🌊', '🐚', '🪵', '🌴'];
+		/* Define the empty field emoji and the emoji options for the cards */
+		const coveredField = '⬛';
+		const allMemoryCardOptions = ['🌱', '🌿', '☘️', '🍀', '🍃', '💐', '🌷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🍇', '🍊', '🫒', '🌰', '🏕️', '🌲', '🌳', '🍂', '🍁', '🍄', '🐝', '🪱', '🐛', '🦋', '🐌', '🐞', '🐁', '🦔', '🌵', '🦂', '🏜️', '🎍', '🪴', '🎋', '🪨', '🌾', '🐍', '🦎', '🐫', '🐙', '🦑', '🦀', '🐡', '🐠', '🐟', '🌊', '🐚', '🪵', '🌴'];
 
-	/* Get an array of 10 emojis from the memory card options, each emoji added twice. */
-	const chosenMemoryCardOptions: string[] = [];
-	for (let i = 0; i < 10; i++) {
+		/* Get an array of 10 emojis from the memory card options, each emoji added twice. */
+		const chosenMemoryCardOptions: string[] = [];
+		for (let i = 0; i < 10; i++) {
 
-		const randomMemoryCardOption = allMemoryCardOptions.splice(getRandomNumber(allMemoryCardOptions.length), 1)[0];
-		if (randomMemoryCardOption === undefined) { throw new TypeError('randomMemoryCardOption is undefined'); }
-		chosenMemoryCardOptions.push(randomMemoryCardOption, randomMemoryCardOption);
-	}
-
-	/* Get an array of the clickable components, as well as an array of the emojis that would be in their places if they were revealed. */
-	const componentArray: ActionRowBuilder<ButtonBuilder>[] = [];
-	const emojisInComponentArray: string[][] = [];
-	for (let column = 0; column < 4; column++) {
-
-		componentArray.push(new ActionRowBuilder<ButtonBuilder>().addComponents([]));
-		emojisInComponentArray.push([]);
-		for (let row = 0; row < 5; row++) {
-
-			componentArray[column]?.addComponents(new ButtonBuilder()
-				.setCustomId(`adventure_board_${column}_${row}`)
-				.setEmoji(coveredField)
-				.setDisabled(false)
-				.setStyle(ButtonStyle.Secondary),
-			);
-
-			const randomMemoryCardOption = chosenMemoryCardOptions.splice(getRandomNumber(chosenMemoryCardOptions.length), 1)[0];
-			if (randomMemoryCardOption === undefined) { throw new TypeError('randomMemoryCardOption is undefined'); }
-			emojisInComponentArray[column]?.push(randomMemoryCardOption);
+			const randomMemoryCardOption = getArrayElement(allMemoryCardOptions.splice(getRandomNumber(allMemoryCardOptions.length), 1), 0);
+			chosenMemoryCardOptions.push(randomMemoryCardOption, randomMemoryCardOption);
 		}
-	}
+
+		/* Get an array of the clickable components, as well as an array of the emojis that would be in their places if they were revealed. */
+		const componentArray: ActionRowBuilder<ButtonBuilder>[] = [];
+		const emojisInComponentArray: string[][] = [];
+		for (let column = 0; column < 4; column++) {
+
+			componentArray.push(new ActionRowBuilder<ButtonBuilder>().addComponents([]));
+			emojisInComponentArray.push([]);
+			for (let row = 0; row < 5; row++) {
+
+				componentArray[column]?.addComponents(new ButtonBuilder()
+					.setCustomId(`adventure_board_${column}_${row}`)
+					.setEmoji(coveredField)
+					.setDisabled(false)
+					.setStyle(ButtonStyle.Secondary),
+				);
+
+				const randomMemoryCardOption = getArrayElement(chosenMemoryCardOptions.splice(getRandomNumber(chosenMemoryCardOptions.length), 1), 0);
+				emojisInComponentArray[column]?.push(randomMemoryCardOption);
+			}
+		}
 
 
-	/* Gets the current active quid and the server profile from the account */
-	const userId1 = interaction.customId.split('_')[3];
-	if (userId1 === undefined) { throw new TypeError('userId1 is undefined'); }
-	const userData1 = await userModel.findOne(u => u.userId.includes(userId1));
-	const quidData1 = getMapData(userData1.quids, getMapData(userData1.currentQuid, interaction.guildId));
-	let profileData1 = getMapData(quidData1.profiles, interaction.guildId);
+		/* Gets the current active quid and the server profile from the account */
+		const userId1 = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
+		const _userData1 = await userModel.findOne(u => u.userId.includes(userId1));
+		const userData1 = getUserData(_userData1, interaction.guildId, getMapData(_userData1.quids, getMapData(_userData1.currentQuid, interaction.guildId)));
+		if (!hasNameAndSpecies(userData1)) { throw new Error('userData1.quid.species is empty string'); }
 
-	/* Gets the current active quid and the server profile from the partners account */
-	const userId2 = interaction.customId.split('_')[2];
-	if (userId2 === undefined) { throw new TypeError('userId2 is undefined'); }
-	const userData2 = await userModel.findOne(u => u.userId.includes(userId2));
-	const quidData2 = getMapData(userData2.quids, getMapData(userData2.currentQuid, interaction.guildId));
-	let profileData2 = getMapData(quidData2.profiles, interaction.guildId);
+		/* Gets the current active quid and the server profile from the partners account */
+		const userId2 = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
+		const _userData2 = await userModel.findOne(u => u.userId.includes(userId2));
+		const userData2 = getUserData(_userData2, interaction.guildId, getMapData(_userData2.quids, getMapData(_userData1.currentQuid, interaction.guildId)));
+		if (!hasNameAndSpecies(userData2)) { throw new Error('userData2.quid.species is empty string'); }
 
-	/* For both users, set cooldowns to true, but unregister the command from being disabled, and get the condition change */
-	cooldownMap.set(userData1.uuid + interaction.guildId, true);
-	cooldownMap.set(userData2.uuid + interaction.guildId, true);
-	delete disableCommandComponent[userData1.uuid + interaction.guildId];
-	delete disableCommandComponent[userData2.uuid + interaction.guildId];
-	const experiencePoints = getRandomNumber(11, 5);
-	const decreasedStatsData1 = await changeCondition(userData1, quidData1, profileData1, experiencePoints, CurrentRegionType.Prairie, true);
-	profileData1 = decreasedStatsData1.profileData;
-	const decreasedStatsData2 = await changeCondition(userData2, quidData2, profileData2, experiencePoints, CurrentRegionType.Prairie, true);
-	profileData2 = decreasedStatsData2.profileData;
+		if (interaction.user.id === userId1) {
 
-	/* Define number of rounds, and the uncovered card amount for both users. */
-	let finishedRounds = 0;
+			await respond(interaction, {
+				content: 'You can\'t accept your own invitation!',
+				ephemeral: true,
+			}, false);
+			return;
+		}
+
+		/* For both users, set cooldowns to true, but unregister the command from being disabled, and get the condition change */
+		setCooldown(userData1, interaction.guildId, true);
+		setCooldown(userData2, interaction.guildId, true);
+		deleteCommandDisablingInfo(userData1, interaction.guildId);
+		deleteCommandDisablingInfo(userData2, interaction.guildId);
+		const experiencePoints = getRandomNumber(11, 5);
+		const decreasedStatsData1 = await changeCondition(userData1, experiencePoints, CurrentRegionType.Prairie, true);
+		const decreasedStatsData2 = await changeCondition(userData2, experiencePoints, CurrentRegionType.Prairie, true);
+
+		/* Define number of rounds, and the uncovered card amount for both users. */
+		let finishedRounds = 0;
 	type CardPositions = { column: number | null, row: number | null; };
 	let chosenCardPositions: { first: CardPositions, second: CardPositions, current: 'first' | 'second'; } = { first: { column: null, row: null }, second: { column: null, row: null }, current: 'first' };
 	let uncoveredCardsUser1 = 0;
@@ -194,9 +199,8 @@ export async function adventureInteractionCollector(
 
 	let user1IsPlaying = getRandomNumber(2) === 0 ? true : false;
 	let userDataCurrent = user1IsPlaying ? userData1 : userData2;
-	let quidDataCurrent = getMapData(userDataCurrent.quids, getMapData(userDataCurrent.currentQuid, interaction.guildId));
 
-	await sendNextRoundMessage(interaction, user1IsPlaying ? userId1 : userId2, userData1, quidData1, quidData2, componentArray);
+	await sendNextRoundMessage(interaction, user1IsPlaying ? userId1 : userId2, userData1, userData2, componentArray);
 	let lastInteraction = interaction;
 
 	const collector = interaction.channel.createMessageComponentCollector({
@@ -221,8 +225,7 @@ export async function adventureInteractionCollector(
 			chosenCardPositions[chosenCardPositions.current].row = row;
 
 			/* Getting the uncovered emoji from the current position, and erroring if there is no emoji */
-			const uncoveredEmoji = emojisInComponentArray[column]?.[row];
-			if (uncoveredEmoji === undefined) { return collector.stop('error_TypeError: uncoveredEmoji is undefined'); }
+			const uncoveredEmoji = getArrayElement(getArrayElement(emojisInComponentArray, column), row);
 
 			/* Changing the button's emoji to be the uncovered card and disabling it */
 			componentArray[column]?.components[row]?.setEmoji(uncoveredEmoji);
@@ -279,13 +282,12 @@ export async function adventureInteractionCollector(
 
 						user1IsPlaying = !user1IsPlaying; // This is changed here because above, we are using user1IsPlaying to decide whether user1 should get +1 for uncovered cards or user2
 						userDataCurrent = user1IsPlaying ? userData1 : userData2;
-						quidDataCurrent = getMapData(userDataCurrent.quids, getMapData(userDataCurrent.currentQuid, i.guildId));
 
 						if (componentArray.every(actionRow => actionRow.components.every(button => button.toJSON().disabled === true))) { collector.stop('success'); }
 						else if (finishedRounds >= 20) { collector.stop('roundLimit'); }
 						else {
 
-							await sendNextRoundMessage(i, user1IsPlaying ? userId1 : userId2, userData1, quidData1, quidData2, componentArray)
+							await sendNextRoundMessage(i, user1IsPlaying ? userId1 : userId2, userData1, userData2, componentArray)
 								.catch((error) => {
 									collector.stop(`error_${error}`);
 									return undefined;
@@ -311,8 +313,8 @@ export async function adventureInteractionCollector(
 		try {
 
 			/* Set both user's cooldown to false */
-			cooldownMap.set(userData1.uuid + lastInteraction.guildId, false);
-			cooldownMap.set(userData2.uuid + lastInteraction.guildId, false);
+			setCooldown(userData1, interaction.guildId, false);
+			setCooldown(userData2, interaction.guildId, false);
 
 			if (reason.startsWith('error')) {
 
@@ -325,20 +327,20 @@ export async function adventureInteractionCollector(
 			// reason idle: someone waited too long
 			if (reason.includes('idle') || reason.includes('time')) {
 
-				const afterGameChangesData = await checkAfterGameChanges(lastInteraction, userData1, quidData1, profileData1, userData2, quidData2, profileData2, serverData)
-					.catch((error) => { sendErrorMessage(lastInteraction, error); });
+				const afterGameChangesData = await checkAfterGameChanges(lastInteraction, userData1, userData2, serverData)
+					.catch((error) => { sendErrorMessage(lastInteraction, error); return null; });
 
 				await update(lastInteraction, {
 					embeds: [
 						new EmbedBuilder()
-							.setColor(quidData1.color)
-							.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
-							.setDescription(`*${quidDataCurrent.name} decides that ${pronounAndPlural(quidDataCurrent, 0, 'has', 'have')} adventured enough and goes back to the pack.*`)
+							.setColor(userData1.quid.color)
+							.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
+							.setDescription(`*${userDataCurrent.quid.name} decides that ${userDataCurrent.quid.pronounAndPlural(0, 'has', 'have')} adventured enough and goes back to the pack.*`)
 							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}` }),
-						...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
-						...(decreasedStatsData2.injuryUpdateEmbed ? [decreasedStatsData2.injuryUpdateEmbed] : []),
-						...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
-						...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
+						...decreasedStatsData1.injuryUpdateEmbed,
+						...decreasedStatsData2.injuryUpdateEmbed,
+						...(afterGameChangesData?.levelUpEmbed1 ?? []),
+						...(afterGameChangesData?.levelUpEmbed2 ?? []),
 					],
 					components: disableAllComponents(componentArray),
 				})
@@ -350,62 +352,57 @@ export async function adventureInteractionCollector(
 			if (reason.includes('roundLimit')) {
 
 				const losingUserData = uncoveredCardsUser1 < uncoveredCardsUser2 ? userData1 : uncoveredCardsUser2 < uncoveredCardsUser1 ? userData2 : getRandomNumber(2) === 0 ? userData1 : userData2;
-				const losingQuidData = getMapData(losingUserData.quids, getMapData(losingUserData.currentQuid, lastInteraction.guildId));
-				const losingProfileData = getMapData(losingQuidData.profiles, lastInteraction.guildId);
 
-				const losingHealthPoints = getSmallerNumber(getRandomNumber(5, 3), losingProfileData.health);
+				const losingHealthPoints = getSmallerNumber(getRandomNumber(5, 3), losingUserData.quid.profile.health);
 
 				let extraDescription = '';
 				let extraFooter = '';
 
-				const { itemType, itemName } = getHighestItem(losingProfileData.inventory);
-				const inventory_ = widenValues(losingProfileData.inventory);
+				const { itemType, itemName } = getHighestItem(losingUserData.quid.profile.inventory);
+				const inventory_ = widenValues(losingUserData.quid.profile.inventory);
 				if (itemType && itemName && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
 
 					inventory_[itemType][itemName] -= 1;
-					extraDescription = `accidentally drops a ${itemName} that ${pronoun(losingQuidData, 0)} had with ${pronoun(losingQuidData, 1)}.`;
-					extraFooter = `-1 ${itemName} for ${losingQuidData.name}`;
+					extraDescription = `accidentally drops a ${itemName} that ${losingUserData.quid.pronoun(0)} had with ${losingUserData.quid.pronoun(1)}.`;
+					extraFooter = `-1 ${itemName} for ${losingUserData.quid.name}`;
 				}
-				else if (losingProfileData.injuries.cold === false && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
+				else if (losingUserData.quid.profile.injuries.cold === false && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
 
-					losingProfileData.injuries.cold = true;
-					extraDescription = `notices that ${pronounAndPlural(losingQuidData, 0, 'is', 'are')} feeling weak and can't stop coughing. The long jouney must've given ${pronoun(losingQuidData, 1)} a cold.`;
-					extraFooter = `-${losingHealthPoints} HP (from cold) for ${losingQuidData.name}`;
+					losingUserData.quid.profile.injuries.cold = true;
+					extraDescription = `notices that ${losingUserData.quid.pronounAndPlural(0, 'is', 'are')} feeling weak and can't stop coughing. The long jouney must've given ${losingUserData.quid.pronoun(1)} a cold.`;
+					extraFooter = `-${losingHealthPoints} HP (from cold) for ${losingUserData.quid.name}`;
 				}
 				else {
 
-					losingProfileData.injuries.wounds += 1;
-					extraDescription = `feels blood running down ${pronoun(losingQuidData, 2)} side. The humans must've wounded ${pronoun(losingQuidData, 0)}.`;
-					extraFooter = `-${losingHealthPoints} HP (from wound) for ${losingQuidData.name}`;
+					losingUserData.quid.profile.injuries.wounds += 1;
+					extraDescription = `feels blood running down ${losingUserData.quid.pronoun(2)} side. The humans must've wounded ${losingUserData.quid.pronoun(0)}.`;
+					extraFooter = `-${losingHealthPoints} HP (from wound) for ${losingUserData.quid.name}`;
 				}
 
-				await userModel
-					.findOneAndUpdate(
-						u => u.uuid === losingUserData.uuid,
-						(u => {
-							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, lastInteraction.guildId)).profiles, lastInteraction.guildId);
-							p.inventory = inventory_;
-							p.health -= losingHealthPoints;
-							p.injuries = losingProfileData.injuries;
-						}),
-					)
-					.catch((error) => { sendErrorMessage(lastInteraction, error); });
+				losingUserData.update(
+					(u => {
+						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, lastInteraction.guildId)).profiles, lastInteraction.guildId);
+						p.inventory = inventory_;
+						p.health -= losingHealthPoints;
+						p.injuries = losingUserData.quid.profile.injuries;
+					}),
+				);
 
 
-				const afterGameChangesData = await checkAfterGameChanges(lastInteraction, userData1, quidData1, profileData1, userData2, quidData2, profileData2, serverData)
-					.catch((error) => { sendErrorMessage(lastInteraction, error); });
+				const afterGameChangesData = await checkAfterGameChanges(lastInteraction, userData1, userData2, serverData)
+					.catch((error) => { sendErrorMessage(lastInteraction, error); return null; });
 
 				await update(lastInteraction, {
 					embeds: [
 						new EmbedBuilder()
-							.setColor(quidData1.color)
-							.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
-							.setDescription(`*The adventure didn't go as planned. Not only did the two animals get lost, they also had to run from humans. While running, ${losingQuidData.name} ${extraDescription} What a shame!*`)
+							.setColor(userData1.quid.color)
+							.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
+							.setDescription(`*The adventure didn't go as planned. Not only did the two animals get lost, they also had to run from humans. While running, ${losingUserData.quid.name} ${extraDescription} What a shame!*`)
 							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraFooter}` }),
-						...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
-						...(decreasedStatsData2.injuryUpdateEmbed ? [decreasedStatsData2.injuryUpdateEmbed] : []),
-						...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
-						...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
+						...decreasedStatsData1.injuryUpdateEmbed,
+						...decreasedStatsData2.injuryUpdateEmbed,
+						...(afterGameChangesData?.levelUpEmbed1 ?? []),
+						...(afterGameChangesData?.levelUpEmbed2 ?? []),
 					],
 					components: disableAllComponents(componentArray),
 				})
@@ -417,66 +414,51 @@ export async function adventureInteractionCollector(
 			if (reason.includes('success')) {
 
 				const winningUserData = uncoveredCardsUser1 > uncoveredCardsUser2 ? userData1 : uncoveredCardsUser2 > uncoveredCardsUser1 ? userData2 : getRandomNumber(2) === 0 ? userData1 : userData2;
-				const winningQuidData = getMapData(winningUserData.quids, getMapData(winningUserData.currentQuid, lastInteraction.guildId));
-				const winningProfileData = getMapData(winningQuidData.profiles, lastInteraction.guildId);
 
 				let foundItem: KeyOfUnion<Inventory[keyof Inventory]> | null = null;
 				let extraHealthPoints = 0;
 
-				if (winningProfileData.health < winningProfileData.maxHealth) {
+				if (winningUserData.quid.profile.health < winningUserData.quid.profile.maxHealth) {
 
-					extraHealthPoints = getSmallerNumber(getRandomNumber(5, 8), winningProfileData.maxHealth - winningProfileData.health);
+					extraHealthPoints = getSmallerNumber(getRandomNumber(5, 8), winningUserData.quid.profile.maxHealth - winningUserData.quid.profile.health);
 				}
-				else if (Object.keys(winningProfileData.temporaryStatIncrease).length <= 1 && pullFromWeightedTable({ 0: finishedRounds * 3, 1: 45 - finishedRounds }) === 1) {
+				else if (Object.keys(winningUserData.quid.profile.temporaryStatIncrease).length <= 1 && pullFromWeightedTable({ 0: 20 - finishedRounds, 1: finishedRounds - 10 }) === 0) {
 
-					foundItem = pickRandomSpecialPlant();
-					winningProfileData.inventory.specialPlants[foundItem] += 1;
-				}
-				else if (pullFromWeightedTable({ 0: finishedRounds * 8, 1: 30 - finishedRounds }) === 1) {
-
-					if (pullFromWeightedTable({ 0: finishedRounds * 8, 1: 30 - finishedRounds }) === 1) {
-
-						foundItem = pickRandomRarePlant();
-						winningProfileData.inventory.rarePlants[foundItem] += 1;
-					}
-					else {
-
-						foundItem = pickRandomUncommonPlant();
-						winningProfileData.inventory.uncommonPlants[foundItem] += 1;
-					}
+					const specialPlants = Object.keys(serverData.inventory.specialPlants) as SpecialPlantNames[];
+					foundItem = specialPlants[getRandomNumber(specialPlants.length)]!;
+					winningUserData.quid.profile.inventory.specialPlants[foundItem] += 1;
 				}
 				else {
 
-					foundItem = pickRandomCommonPlant();
-					winningProfileData.inventory.commonPlants[foundItem] += 1;
+					foundItem = pickPlant(pullFromWeightedTable({ 0: finishedRounds + 10, 1: (2 * finishedRounds) - 10, 2: (20 - finishedRounds) * 3 }) as 0 | 1 | 2, serverData);
+					if (keyInObject(winningUserData.quid.profile.inventory.commonPlants, foundItem)) { winningUserData.quid.profile.inventory.commonPlants[foundItem] += 1; }
+					else if (keyInObject(winningUserData.quid.profile.inventory.uncommonPlants, foundItem)) { winningUserData.quid.profile.inventory.uncommonPlants[foundItem] += 1; }
+					else { winningUserData.quid.profile.inventory.rarePlants[foundItem] += 1; }
 				}
 
-				await userModel
-					.findOneAndUpdate(
-						u => u.uuid === winningUserData.uuid,
-						(u => {
-							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, lastInteraction.guildId)).profiles, lastInteraction.guildId);
-							p.inventory = winningProfileData.inventory;
-							p.health += extraHealthPoints;
-						}),
-					)
-					.catch((error) => { sendErrorMessage(lastInteraction, error); });
+				winningUserData.update(
+					(u => {
+						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, lastInteraction.guildId)).profiles, lastInteraction.guildId);
+						p.inventory = winningUserData.quid.profile.inventory;
+						p.health += extraHealthPoints;
+					}),
+				);
 
 
-				const afterGameChangesData = await checkAfterGameChanges(lastInteraction, userData1, quidData1, profileData1, userData2, quidData2, profileData2, serverData)
+				const afterGameChangesData = await checkAfterGameChanges(lastInteraction, userData1, userData2, serverData)
 					.catch((error) => { sendErrorMessage(lastInteraction, error); });
 
 				await update(lastInteraction, {
 					embeds: [
 						new EmbedBuilder()
-							.setColor(quidData1.color)
-							.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
-							.setDescription(`*The two animals laugh as they return from a successful adventure. ${winningQuidData.name} ${foundItem === null ? 'feels especially refreshed from this trip' : `even found a ${foundItem} on the way`}. What a success!*`)
-							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraHealthPoints > 0 ? `+${extraHealthPoints} HP for ${winningQuidData.name} (${winningProfileData.health}/${winningProfileData.maxHealth})` : `+1 ${foundItem} for ${winningQuidData.name}`}` }),
-						...(decreasedStatsData1.injuryUpdateEmbed ? [decreasedStatsData1.injuryUpdateEmbed] : []),
-						...(decreasedStatsData2.injuryUpdateEmbed ? [decreasedStatsData2.injuryUpdateEmbed] : []),
-						...(afterGameChangesData?.user1CheckLevelData.levelUpEmbed ? [afterGameChangesData.user1CheckLevelData.levelUpEmbed] : []),
-						...(afterGameChangesData?.user2CheckLevelData.levelUpEmbed ? [afterGameChangesData.user2CheckLevelData.levelUpEmbed] : []),
+							.setColor(userData1.quid.color)
+							.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
+							.setDescription(`*The two animals laugh as they return from a successful adventure. ${winningUserData.quid.name} ${foundItem === null ? 'feels especially refreshed from this trip' : `even found a ${foundItem} on the way`}. What a success!*`)
+							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraHealthPoints > 0 ? `+${extraHealthPoints} HP for ${winningUserData.quid.name} (${winningUserData.quid.profile.health}/${winningUserData.quid.profile.maxHealth})` : `+1 ${foundItem} for ${winningUserData.quid.name}`}` }),
+						...decreasedStatsData1.injuryUpdateEmbed,
+						...decreasedStatsData2.injuryUpdateEmbed,
+						...(afterGameChangesData?.levelUpEmbed1 ?? []),
+						...(afterGameChangesData?.levelUpEmbed2 ?? []),
 					],
 					components: disableAllComponents(componentArray),
 				})
@@ -490,31 +472,32 @@ export async function adventureInteractionCollector(
 				.catch(e => { console.error(e); });
 		}
 	});
-}
+
+	},
+};
 
 /**
  * It sends a message to the channel that the interaction was sent in
  * @param interaction - The interaction object that was passed to the command.
  * @param userId - The user ID of the user who will play the next round
- * @param quidData1 - The first quid's data.
- * @param quidData2 - The other quid's data.
+ * @param userData1.quid - The first quid's data.
+ * @param userData2.quid - The other quid's data.
  * @param componentArray - This is an array of ActionRowBuilder<ButtonBuilder> objects.
  */
 async function sendNextRoundMessage(
 	interaction: ButtonInteraction<'cached'>,
 	userId: string,
-	userData1: UserSchema,
-	quidData1: Quid,
-	quidData2: Quid,
+	userData1: UserData<never, never>,
+	userData2: UserData<never, never>,
 	componentArray: ActionRowBuilder<ButtonBuilder>[],
 ): Promise<Message> {
 
 	const message = await respond(interaction, {
 		content: `<@${userId}>`,
 		embeds: [new EmbedBuilder()
-			.setColor(quidData1.color)
-			.setAuthor({ name: getQuidDisplayname(userData1, quidData1, interaction.guildId), iconURL: quidData1.avatarURL })
-			.setDescription(`*The two animals are strolling around. ${quidData2.name} notices something behind a plant and goes to take a closer look.*`)],
+			.setColor(userData1.quid.color)
+			.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
+			.setDescription(`*The two animals are strolling around. ${userData2.quid.name} notices something behind a plant and goes to take a closer look.*`)],
 		components: componentArray,
 	}, false);
 
@@ -528,40 +511,30 @@ async function sendNextRoundMessage(
  */
 async function checkAfterGameChanges(
 	interaction: ButtonInteraction<'cached'>,
-	userData1: UserSchema,
-	quidData1: Quid,
-	profileData1: Profile,
-	userData2: UserSchema,
-	quidData2: Quid,
-	profileData2: Profile,
+	userData1: UserData<never, never>,
+	userData2: UserData<never, never>,
 	serverData: ServerSchema,
 ): Promise<{
-	user1CheckLevelData: {
-		levelUpEmbed: EmbedBuilder | null;
-		profileData: Profile;
-	};
-	user2CheckLevelData: {
-		levelUpEmbed: EmbedBuilder | null;
-		profileData: Profile;
-	};
+	levelUpEmbed1: EmbedBuilder[],
+	levelUpEmbed2: EmbedBuilder[]
 }> {
 
-	const user1CheckLevelData = await checkLevelUp(interaction, userData1, quidData1, profileData1, serverData);
-	const user2CheckLevelData = await checkLevelUp(interaction, userData2, quidData2, profileData2, serverData);
+	const levelUpEmbed1 = await checkLevelUp(interaction, userData1, serverData);
+	const levelUpEmbed2 = await checkLevelUp(interaction, userData2, serverData);
 
-	await isPassedOut(interaction, userData1, quidData1, profileData1, true);
-	await isPassedOut(interaction, userData2, quidData2, profileData2, true);
+	await isPassedOut(interaction, userData1, true);
+	await isPassedOut(interaction, userData2, true);
 
-	await addFriendshipPoints(interaction.message, userData1, quidData1._id, userData2, quidData2._id);
+	await addFriendshipPoints(interaction.message, userData1, userData2);
 
-	await restAdvice(interaction, userData1, profileData1);
-	await restAdvice(interaction, userData2, profileData2);
+	await restAdvice(interaction, userData1);
+	await restAdvice(interaction, userData2);
 
-	await drinkAdvice(interaction, userData1, profileData1);
-	await drinkAdvice(interaction, userData2, profileData2);
+	await drinkAdvice(interaction, userData1);
+	await drinkAdvice(interaction, userData2);
 
-	await eatAdvice(interaction, userData1, profileData1);
-	await eatAdvice(interaction, userData2, profileData2);
+	await eatAdvice(interaction, userData1);
+	await eatAdvice(interaction, userData2);
 
-	return { user1CheckLevelData, user2CheckLevelData };
+	return { levelUpEmbed1, levelUpEmbed2 };
 }

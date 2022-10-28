@@ -1,29 +1,33 @@
 import { ActionRowBuilder, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { respond, update } from '../../utils/helperFunctions';
-import userModel from '../../models/userModel';
-import { Quid, ServerSchema, SlashCommand, UserSchema, WayOfEarningType } from '../../typedef';
 import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
-import { hasName, isInGuild } from '../../utils/checkUserState';
+import { hasName, hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
+import { missingPermissions } from '../../utils/permissionHandler';
+import { SlashCommand } from '../../typings/handle';
+import { UserData, WayOfEarningType } from '../../typings/data/user';
+import { ServerSchema } from '../../typings/data/server';
+import { constructCustomId, constructSelectOptions, deconstructSelectOptions } from '../../utils/customId';
 const { error_color, default_color } = require('../../../config.json');
 
-const name: SlashCommand['name'] = 'shop';
-const description: SlashCommand['description'] = 'Buy roles with experience points.';
+type CustomIdArgs = []
+type SelectOptionArgs = ['nextpage', `${number}`, `${number}`] | [string]
+
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('shop')
+		.setDescription('Buy roles with experience points.')
 		.setDMPermission(false)
 		.toJSON(),
+	category: 'page5',
+	position: 0,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction, userData, serverData) => {
+	sendCommand: async (interaction, userData, serverData) => {
 
 		if (!isInGuild(interaction)) { return; }
-		if (!hasName(interaction, userData)) { return; }
+		if (!hasName(userData, interaction)) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
 
 		const shopInfo = getShopInfo(serverData);
@@ -41,166 +45,162 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-		await getShopResponse(interaction, serverData, quidData, shopKindPage, nestedPage);
+		await getShopResponse(interaction, serverData, userData, shopKindPage, nestedPage);
 	},
-};
+	async sendMessageComponentResponse(interaction, userData, serverData) {
 
-export async function shopInteractionCollector(
-	interaction: SelectMenuInteraction,
-	userData: UserSchema | null,
-	serverData: ServerSchema | null,
-): Promise<void> {
+		if (!interaction.isSelectMenu()) { return; }
+		if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
+		if (userData === null) { throw new Error('userData is null'); }
+		if (serverData === null) { throw new Error('serverData is null'); }
 
-	if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
-	if (userData === null) { throw new Error('userData is null'); }
-	if (serverData === null) { throw new Error('serverData is null'); }
-	const selectOptionId = interaction.values[0];
+		const selectOptionId = deconstructSelectOptions(interaction);
 
-	if (selectOptionId && selectOptionId.startsWith('shop_nextpage_')) {
+		if (selectOptionId[0] === 'nextpage') {
 
-		const shopKindPage = Number(selectOptionId.split('_')[2] || 0);
-		const nestedPage = Number(selectOptionId.split('_')[3] || 0);
-		const { newShopKindPage, newNestedPage } = getShopInfo(serverData).nextPage(shopKindPage, nestedPage);
+			if (!hasName(userData, interaction)) { return; }
+			const shopKindPage = Number(selectOptionId[1]);
+			const nestedPage = Number(selectOptionId[2]);
+			const { newShopKindPage, newNestedPage } = getShopInfo(serverData).nextPage(shopKindPage, nestedPage);
 
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-		await getShopResponse(interaction, serverData, quidData, newShopKindPage, newNestedPage);
-		return;
-	}
-	else if (selectOptionId && selectOptionId.startsWith('shop_')) {
-
-		const roleId = selectOptionId.split('_')[1];
-		const buyItem = serverData.shop.find((shopRole) => shopRole.roleId === roleId);
-		if (buyItem === undefined) { throw new Error('roleId is undefined or could not be found in server shop'); }
-
-		const quidData = getMapData(userData.quids, getMapData(userData.currentQuid, interaction.guildId));
-		const profileData = getMapData(quidData.profiles, interaction.guildId);
-
-		if (profileData.roles.some(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience')) {
-
-			try {
-
-				const userRole = profileData.roles.find(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience');
-				if (userRole === undefined) { throw new Error('userRole is undefined'); }
-
-				userData = await userModel.findOneAndUpdate(
-					(u => u.uuid === userData?.uuid),
-					(u) => {
-						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-						p.experience += userRole.requirement as number;
-						p.roles = p.roles.filter(r => r.roleId !== userRole.roleId);
-					},
-				);
-
-				if (interaction.member.roles.cache.has(buyItem.roleId)) { await interaction.member.roles.remove(buyItem.roleId); }
-
-				const levelUpEmbed = (await checkLevelUp(interaction, userData, quidData, profileData, serverData)).levelUpEmbed;
-				await respond(interaction, {
-					embeds: [
-						new EmbedBuilder()
-							.setColor(default_color)
-							.setAuthor({ name: serverData.name, iconURL: interaction.guild.iconURL() || undefined })
-							.setDescription(`You refunded the <@&${buyItem.roleId}> role!`),
-						...(levelUpEmbed ? [levelUpEmbed] : []),
-					],
-				}, false);
-			}
-			catch (error) {
-
-				await checkRoleCatchBlock(error, interaction, interaction.member);
-			}
-		}
-		else if ((profileData.levels * (profileData.levels - 1) / 2) * 50 + profileData.experience >= buyItem.requirement) {
-
-			try {
-
-				let cost = buyItem.requirement as number;
-
-				while (cost > 0) {
-
-					if (cost <= profileData.experience) {
-
-						profileData.experience -= cost;
-						cost -= cost;
-					}
-					else {
-
-						profileData.levels -= 1;
-						profileData.experience += profileData.levels * 50;
-					}
-				}
-				if (profileData.experience < 0 || profileData.levels < 1) { throw new Error('Could not calculate item cost correctly'); }
-
-				userData = await userModel.findOneAndUpdate(
-					(u => u.uuid === userData?.uuid),
-					(u) => {
-						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-						p.experience = profileData.experience;
-						p.levels = profileData.levels;
-						p.roles.push({
-							roleId: buyItem.roleId,
-							wayOfEarning: buyItem.wayOfEarning,
-							requirement: buyItem.requirement,
-						});
-					},
-				);
-
-				if (!interaction.member.roles.cache.has(buyItem.roleId)) { await interaction.member.roles.add(buyItem.roleId); }
-
-				await respond(interaction, {
-					embeds: [new EmbedBuilder()
-						.setColor(default_color)
-						.setAuthor({ name: serverData.name, iconURL: interaction.guild.iconURL() || undefined })
-						.setDescription(`You bought the <@&${buyItem.roleId}> role for ${buyItem.requirement} experience!`)],
-				}, false);
-
-
-				const roles = profileData.roles.filter(role => role.wayOfEarning === WayOfEarningType.Levels && role.requirement > profileData.levels);
-
-				for (const role of roles) {
-
-					userData = await userModel.findOneAndUpdate(
-						(u => u.uuid === userData?.uuid),
-						(u) => {
-							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
-							p.roles.filter(r => r.roleId !== role.roleId);
-						},
-					);
-
-					if (interaction.member.roles.cache.has(role.roleId)) {
-
-						await interaction.member.roles.remove(role.roleId);
-
-						await respond(interaction, {
-							embeds: [new EmbedBuilder()
-								.setColor(default_color)
-								.setAuthor({ name: serverData.name, iconURL: interaction.guild.iconURL() || undefined })
-								.setDescription(`You lost the <@&${role.roleId}> role because of a lack of levels!`)],
-						}, false);
-					}
-				}
-			}
-			catch (error) {
-
-				await checkRoleCatchBlock(error, interaction, interaction.member);
-			}
+			await getShopResponse(interaction, serverData, userData, newShopKindPage, newNestedPage);
+			return;
 		}
 		else {
 
-			await respond(interaction, {
-				content: `You don't have the experience to buy the <@&${buyItem.roleId}> role!`,
-				ephemeral: true,
-			}, false);
+			if (await missingPermissions(interaction, [
+				'ManageRoles', // Needed to give out roles configured in this shop
+			]) === true) { return; }
+			const roleId = selectOptionId[0];
+			const buyItem = serverData.shop.find((shopRole) => shopRole.roleId === roleId);
+			if (buyItem === undefined) { throw new Error('roleId is undefined or could not be found in server shop'); }
+			if (!hasNameAndSpecies(userData, interaction)) { return; }
+
+			if (userData.quid.profile.roles.some(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience')) {
+
+				try {
+
+					const userRole = userData.quid.profile.roles.find(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience');
+					if (userRole === undefined) { throw new Error('userRole is undefined'); }
+
+					userData.update(
+						(u) => {
+							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+							p.experience += userRole.requirement as number;
+							p.roles = p.roles.filter(r => r.roleId !== userRole.roleId);
+						},
+					);
+
+					if (interaction.member.roles.cache.has(buyItem.roleId)) { await interaction.member.roles.remove(buyItem.roleId); }
+
+					const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
+
+					await respond(interaction, {
+						embeds: [
+							new EmbedBuilder()
+								.setColor(default_color)
+								.setAuthor({ name: serverData.name, iconURL: interaction.guild.iconURL() || undefined })
+								.setDescription(`You refunded the <@&${buyItem.roleId}> role!`),
+							...levelUpEmbed,
+						],
+					}, false);
+				}
+				catch (error) {
+
+					await checkRoleCatchBlock(error, interaction, interaction.member);
+				}
+			}
+			else if ((userData.quid.profile.levels * (userData.quid.profile.levels - 1) / 2) * 50 + userData.quid.profile.experience >= buyItem.requirement) {
+
+				try {
+
+					let cost = buyItem.requirement as number;
+
+					while (cost > 0) {
+
+						if (cost <= userData.quid.profile.experience) {
+
+							userData.quid.profile.experience -= cost;
+							cost -= cost;
+						}
+						else {
+
+							userData.quid.profile.levels -= 1;
+							userData.quid.profile.experience += userData.quid.profile.levels * 50;
+						}
+					}
+					if (userData.quid.profile.experience < 0 || userData.quid.profile.levels < 1) { throw new Error('Could not calculate item cost correctly'); }
+
+					await userData.update(
+						(u) => {
+							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+							p.experience = userData!.quid!.profile.experience;
+							p.levels = userData!.quid!.profile.levels;
+							p.roles.push({
+								roleId: buyItem.roleId,
+								wayOfEarning: buyItem.wayOfEarning,
+								requirement: buyItem.requirement,
+							});
+						},
+					);
+
+					if (!interaction.member.roles.cache.has(buyItem.roleId)) { await interaction.member.roles.add(buyItem.roleId); }
+
+					await respond(interaction, {
+						embeds: [new EmbedBuilder()
+							.setColor(default_color)
+							.setAuthor({ name: serverData.name, iconURL: interaction.guild.iconURL() || undefined })
+							.setDescription(`You bought the <@&${buyItem.roleId}> role for ${buyItem.requirement} experience!`)],
+					}, false);
+
+
+					const roles = userData.quid.profile.roles.filter(role => role.wayOfEarning === WayOfEarningType.Levels && role.requirement > userData.quid.profile.levels);
+
+					for (const role of roles) {
+
+						await userData.update(
+							(u) => {
+								const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+								p.roles.filter(r => r.roleId !== role.roleId);
+							},
+						);
+
+						if (interaction.member.roles.cache.has(role.roleId)) {
+
+							await interaction.member.roles.remove(role.roleId);
+
+							await respond(interaction, {
+								embeds: [new EmbedBuilder()
+									.setColor(default_color)
+									.setAuthor({ name: serverData.name, iconURL: interaction.guild.iconURL() || undefined })
+									.setDescription(`You lost the <@&${role.roleId}> role because of a lack of levels!`)],
+							}, false);
+						}
+					}
+				}
+				catch (error) {
+
+					await checkRoleCatchBlock(error, interaction, interaction.member);
+				}
+			}
+			else {
+
+				await respond(interaction, {
+					content: `You don't have the experience to buy the <@&${buyItem.roleId}> role!`,
+					ephemeral: true,
+				}, false);
+			}
+
+			return;
 		}
 
-		return;
-	}
-}
+	},
+};
 
 async function getShopResponse(
 	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
 	serverData: ServerSchema,
-	quidData: Quid,
+	userData: UserData<never, ''>,
 	shopKindPage: number,
 	nestedPage: number,
 ): Promise<void> {
@@ -215,7 +215,10 @@ async function getShopResponse(
 		for (const item of shopInfo.xpRoles) {
 
 			descriptionArray.push(`**${position + 1}.:** <@&${item.roleId}> for ${item.requirement} ${item.wayOfEarning}`);
-			shopMenuOptions.push({ label: `${position + 1}`, value: `shop_${item.roleId}` });
+			shopMenuOptions.push({
+				label: `${position + 1}`,
+				value: constructSelectOptions<SelectOptionArgs>([item.roleId]),
+			});
 			position += 1;
 		}
 	}
@@ -249,8 +252,10 @@ async function getShopResponse(
 
 		const currentPage = shopInfo.currentPage(shopKindPage, nestedPage);
 		shopMenuOptions.push({
-			label: 'Show more shop items', value: `shop_nextpage_${shopKindPage}_${nestedPage}`, description: `You are currently on page ${currentPage + 1}
-		`, emoji: '📋',
+			label: 'Show more shop items',
+			value: constructSelectOptions<SelectOptionArgs>(['nextpage', `${shopKindPage}`, `${nestedPage}`]),
+			description: `You are currently on page ${currentPage + 1}`,
+			emoji: '📋',
 		});
 	}
 
@@ -261,7 +266,7 @@ async function getShopResponse(
 			.setDescription(descriptionArray.join('\n'))],
 		components: [new ActionRowBuilder<SelectMenuBuilder>()
 			.setComponents(new SelectMenuBuilder()
-				.setCustomId(`shop_${quidData._id}`)
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, []))
 				.setPlaceholder('Select a shop item')
 				.setOptions(shopMenuOptions))],
 	});

@@ -3,16 +3,14 @@ import { readFileSync, writeFileSync } from 'fs';
 import { respond } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
-import { BanList, SlashCommand } from '../../typedef';
+import { client } from '../..';
+import { SlashCommand } from '../../typings/handle';
+import { BanList } from '../../typings/data/general';
 
-const name: SlashCommand['name'] = 'ban';
-const description: SlashCommand['description'] = 'Ban a user or server from using the bot';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('ban')
+		.setDescription('Ban a user or server from using the bot')
 		.addStringOption(option =>
 			option.setName('type')
 				.setDescription('Whether you want to ban a user or server')
@@ -28,9 +26,11 @@ export const command: SlashCommand = {
 		.setDMPermission(false)
 		.setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 		.toJSON(),
+	category: 'other',
+	position: 0,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction) => {
+	sendCommand: async (interaction) => {
 
 		if (!client.isReady()) { throw new Error('client isn\'t ready'); }
 
@@ -48,10 +48,10 @@ export const command: SlashCommand = {
 			bannedList.users.push(id);
 			writeFileSync('./database/bannedList.json', JSON.stringify(bannedList, null, '\t'));
 
-			const profile = await userModel.findOne(u => u.userId.includes(id)).catch(() => { return null; });
+			const profile = userModel.find(u => u.userId.includes(id))[0] ?? null;
 			if (profile) {
 
-				await userModel.findOneAndDelete(u => u.uuid === profile.uuid);
+				await userModel.findOneAndDelete(u => u._id === profile._id);
 				const user = await client.users.fetch(id).catch(() => { return null; });
 
 				if (user) {
@@ -82,10 +82,10 @@ export const command: SlashCommand = {
 			bannedList.servers.push(id);
 			writeFileSync('./database/bannedList.json', JSON.stringify(bannedList, null, '\t'));
 
-			const server = await serverModel.findOne(s => s.serverId === id).catch(() => { return null; });
+			const server = serverModel.find(s => s.serverId === id)[0] ?? null;
 			if (server) {
 
-				await serverModel.findOneAndDelete(u => u.uuid === server.uuid);
+				await serverModel.findOneAndDelete(u => u._id === server._id);
 				const guild = await interaction.client.guilds.fetch(id).catch(() => { return null; });
 				const user = await client.users.fetch(guild?.ownerId || '').catch(() => { return null; });
 

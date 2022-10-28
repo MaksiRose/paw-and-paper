@@ -1,8 +1,10 @@
 import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, GuildMember, SelectMenuInteraction } from 'discord.js';
+import userModel, { getUserData } from '../models/userModel';
+import { ServerSchema } from '../typings/data/server';
+import { RankType, WayOfEarningType } from '../typings/data/user';
 import { respond } from './helperFunctions';
-import userModel from '../models/userModel';
-import { RankType, ServerSchema, WayOfEarningType } from '../typedef';
 import { getMapData } from './helperFunctions';
+import { missingPermissions } from './permissionHandler';
 const { default_color, error_color } = require('../../config.json');
 
 /**
@@ -32,14 +34,14 @@ export async function checkRankRequirements(
 			try {
 
 				/* Get the userData and the roles of the current quid. */
-				const userData = await userModel.findOne(u => u.userId.includes(member.id));
-				const roles = userData.quids[userData.currentQuid[interaction.guildId] || '']?.profiles[interaction.guildId]?.roles;
+				const _userData = await userModel.findOne(u => u.userId.includes(member.id));
+				const userData = getUserData(_userData, interaction.guildId, _userData.quids[_userData.currentQuid[member.guild.id] ?? '']);
+				const roles = userData.quid?.profile?.roles;
 
 				/* It's checking if the role is in the database. If it's not, it will add it to the database. */
 				if (roles && !roles.some(r => r.roleId === item.roleId && r.wayOfEarning === item.wayOfEarning && r.requirement === item.requirement)) {
 
-					await userModel.findOneAndUpdate(
-						u => u.uuid === userData.uuid,
+					await userData.update(
 						(u) => {
 							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 							p.roles.push({
@@ -54,6 +56,9 @@ export async function checkRankRequirements(
 				/* It's checking if the member has the role. If they don't, it will add it to their roles. */
 				if (!member.roles.cache.has(item.roleId)) {
 
+					if (await missingPermissions(interaction, [
+						'ManageRoles', // Needed to give out roles configured in this shop
+					]) === true) { continue; }
 					await member.roles.add(item.roleId);
 
 					if (sendMessage) {
@@ -102,14 +107,15 @@ export async function checkLevelRequirements(
 			try {
 
 				/* Get the userData and the roles of the current quid. */
-				const userData = await userModel.findOne(u => u.userId.includes(member.id));
-				const roles = userData.quids[userData.currentQuid[interaction.guildId] || '']?.profiles[interaction.guildId]?.roles;
+				const _userData = await userModel.findOne(u => u.userId.includes(member.id));
+				const userData = getUserData(_userData, interaction.guildId, _userData.quids[_userData.currentQuid[member.guild.id] ?? '']);
+				const roles = userData.quid?.profile?.roles;
 
 				/* It's checking if the role is in the database. If it's not, it will add it to the database. */
 				if (roles && roles.some(r => r.roleId === item.roleId && r.wayOfEarning === item.wayOfEarning && r.requirement === item.requirement) === false) {
 
 					await userModel.findOneAndUpdate(
-						u => u.uuid === userData.uuid,
+						u => u._id === userData._id,
 						(u) => {
 							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 							p.roles.push({
@@ -124,6 +130,9 @@ export async function checkLevelRequirements(
 				/* It's checking if the member has the role. If they don't, it will add it to their roles. */
 				if (!member.roles.cache.has(item.roleId)) {
 
+					if (await missingPermissions(interaction, [
+						'ManageRoles', // Needed to give out roles configured in this shop
+					]) === true) { continue; }
 					await member.roles.add(item.roleId);
 
 					if (sendMessage) {

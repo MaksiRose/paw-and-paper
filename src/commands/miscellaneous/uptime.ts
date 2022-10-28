@@ -1,22 +1,21 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
-import { SlashCommand } from '../../typedef';
+import { client } from '../..';
+import { SlashCommand } from '../../typings/handle';
 
-const name: SlashCommand['name'] = 'uptime';
-const description: SlashCommand['description'] = 'How long the bot has been online for and its ping.';
 export const command: SlashCommand = {
-	name: name,
-	description: description,
 	data: new SlashCommandBuilder()
-		.setName(name)
-		.setDescription(description)
+		.setName('uptime')
+		.setDescription('How long the bot has been online for and its ping.')
 		.toJSON(),
+	category: 'other',
+	position: 0,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (client, interaction) => {
+	sendCommand: async (interaction) => {
 
 		await respond(interaction, {
-			content: `Uptime: ${Math.floor((client.uptime || 0) / 3600000)} hours ${Math.floor((client.uptime || 0) / 60000) % 60} minutes\nPing: ${client.ws.ping} ms`,
+			content: `Uptime: ${Math.floor((client.uptime || 0) / 3600000)} hours ${Math.floor((client.uptime || 0) / 60000) % 60} minutes\nPing: ${client.ws.ping} ms\nFinal permissions: ${interaction.guild!.members.me?.permissionsIn(interaction.channelId).toArray().join(', ')}`,
 		}, true);
 	},
 };

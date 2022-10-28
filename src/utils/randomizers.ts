@@ -1,3 +1,5 @@
+import { getArrayElement } from './helperFunctions';
+
 /**
  * Generates a random number between the minimum and the maximum which is the minimum + size - 1.
  * @param size The amount of different numbers than can be generated. Must be 0 or higher.
@@ -63,9 +65,7 @@ export function pullFromWeightedTable(
 		for (let j = 0; j < (values[i] ?? 0); j++) { table.push(Number(i)); }
 	}
 
-	const returnNumber = table[getRandomNumber(table.length)];
-	if (returnNumber === undefined) { throw new TypeError('returnNumber is undefined'); }
-	return returnNumber;
+	return getArrayElement(table, getRandomNumber(table.length));
 }
 
 /**

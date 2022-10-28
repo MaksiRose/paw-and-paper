@@ -1,24 +1,26 @@
-import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, MessageContextMenuCommandInteraction, SelectMenuInteraction } from 'discord.js';
 import { respond } from './helperFunctions';
-import { UserSchema } from '../typedef';
-const { error_color } = require('../../config.json');
+import { UserData } from '../typings/data/user';
+const { default_color } = require('../../config.json');
 
 /**
  * Checks if there is an account and if the account has a name, returns false if they do, and if not, sends a message telling the user to create an account and return true.
  */
 export function hasName(
-	interaction: ChatInputCommandInteraction | ButtonInteraction,
-	userData: UserSchema | null,
-): userData is UserSchema {
+	userData: UserData<undefined, ''> | null | undefined,
+	interaction?: ChatInputCommandInteraction | ButtonInteraction | SelectMenuInteraction,
+): userData is UserData<never, ''> {
 
-	const quidData = userData?.quids[userData.currentQuid[interaction.guildId || 'DM'] || ''];
-	if (!quidData || quidData.name === '') {
+	if (userData?.quid === undefined || userData.quid.name === '') {
 
-		respond(interaction, {
-			embeds: [new EmbedBuilder()
-				.setColor(error_color)
-				.setTitle(Object.keys(userData?.quids || {}).length > 0 ? 'Please type "/profile" to switch to a quid!' : 'Please type "/name" to create a new quid!')],
-		}, true);
+		if (interaction) {
+
+			respond(interaction, {
+				embeds: [new EmbedBuilder()
+					.setColor(default_color)
+					.setDescription(Object.keys(userData?.quids || {}).length > 0 ? 'Please type "/profile" to switch to a quid!' : 'Please type "/name" to create a new quid!')],
+			}, true);
+		}
 
 		return false;
 	}
@@ -29,37 +31,40 @@ export function hasName(
 /**
  * Checks if the account has a species, returns false if they do, and if not, sends a message telling the user to create an account and returns true.
  */
-function hasSpecies(
-	interaction: ChatInputCommandInteraction | ButtonInteraction,
-	userData: UserSchema | null,
-): boolean {
+export function hasNameAndSpecies(
+	userData: UserData<undefined, ''> | null | undefined,
+	interaction?: ChatInputCommandInteraction | ButtonInteraction | SelectMenuInteraction,
+): userData is UserData<never, never> {
 
-	const quidData = userData?.quids[userData.currentQuid[interaction.guildId || 'DM'] || ''];
-	if (quidData?.species === '') {
+	if (!hasName(userData, interaction)) { return false; }
+	if (userData.quid.species === '') {
 
-		respond(interaction, {
-			embeds: [new EmbedBuilder()
-				.setColor(error_color)
-				.setTitle(`To access this command, you need to choose ${quidData?.name}'s species!`)],
-		}, true);
+		if (interaction) {
+
+			respond(interaction, {
+				embeds: [new EmbedBuilder()
+					.setColor(default_color)
+					.setDescription(`To access this command, you need to choose ${userData.quid.name}'s species (with "/species")!`)],
+			}, true);
+		}
+
+		return false;
+	}
+	if (userData.quid.profile === undefined) {
+
+		if (interaction) {
+
+			respond(interaction, {
+				embeds: [new EmbedBuilder()
+					.setColor(default_color)
+					.setDescription('Uh-oh, an error occurred and some data is missing. Please use "/profile" to select another quid (or an empty slot) and then re-select this quid. If this error persists, open a ticket with "/ticket".')],
+			}, true);
+		}
 
 		return false;
 	}
 
 	return true;
-}
-
-/**
- * Checks if the user has a name and a species, returns false if they do, and if they don't, sends the appropriate message and returns true.
- */
-export function hasCompletedAccount(
-	interaction: ChatInputCommandInteraction | ButtonInteraction,
-	userData: UserSchema | null,
-): userData is UserSchema {
-
-	if (hasName(interaction, userData) && hasSpecies(interaction, userData)) { return true; }
-
-	return false;
 }
 
 /**
@@ -72,18 +77,24 @@ export function isInGuild(
 	interaction: ButtonInteraction
 ): interaction is ButtonInteraction<'cached'>
 export function isInGuild(
-	interaction: ChatInputCommandInteraction | ButtonInteraction
-): interaction is ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>
+	interaction: SelectMenuInteraction
+): interaction is SelectMenuInteraction<'cached'>
 export function isInGuild(
-	interaction: ChatInputCommandInteraction | ButtonInteraction,
-): interaction is ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> {
+	interaction: MessageContextMenuCommandInteraction
+): interaction is MessageContextMenuCommandInteraction<'cached'>
+export function isInGuild(
+	interaction: ChatInputCommandInteraction | ButtonInteraction | SelectMenuInteraction | MessageContextMenuCommandInteraction
+): interaction is ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'> | MessageContextMenuCommandInteraction<'cached'>
+export function isInGuild(
+	interaction: ChatInputCommandInteraction | ButtonInteraction | SelectMenuInteraction | MessageContextMenuCommandInteraction,
+): interaction is ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'> | MessageContextMenuCommandInteraction <'cached'> {
 
 	if (!interaction.inCachedGuild()) {
 
 		respond(interaction, {
 			embeds: [new EmbedBuilder()
-				.setColor(error_color)
-				.setTitle('This command cannot be executed in DMs!')],
+				.setColor(default_color)
+				.setDescription('This command cannot be executed in DMs!')],
 			ephemeral: true,
 		}, false);
 
