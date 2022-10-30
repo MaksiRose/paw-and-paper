@@ -206,13 +206,13 @@ export type DecreasedStatsData = {
  * @param [secondPlayer] - Whether there is a second player. If true, stats will include who the stat is for
  * @returns DecreasedStatsData
  */
-export function changeCondition(
+export async function changeCondition(
 	userData: UserData<never, never>,
 	experienceIncrease: number,
 	currentRegion?: CurrentRegionType,
 	secondPlayer = false,
 	update = true,
-): DecreasedStatsData {
+): Promise<DecreasedStatsData> {
 
 	const { injuryUpdateEmbed, totalHealthDecrease, modifiedInjuryObject } = decreaseHealth(userData);
 	const energyDecrease = getSmallerNumber(calculateEnergyDecrease(userData) + getRandomNumber(3, 1), userData.quid.profile.energy);
@@ -232,7 +232,7 @@ export function changeCondition(
 	}
 	else {
 
-		userData.update(
+		await userData.update(
 			(u) => {
 				const p = getMapData(getMapData(u.quids, userData.quid._id).profiles, userData.quid.profile.serverId);
 				p.health -= totalHealthDecrease;

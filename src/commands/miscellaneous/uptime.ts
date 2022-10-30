@@ -15,7 +15,7 @@ export const command: SlashCommand = {
 	sendCommand: async (interaction) => {
 
 		await respond(interaction, {
-			content: `Uptime: ${Math.floor((client.uptime || 0) / 3600000)} hours ${Math.floor((client.uptime || 0) / 60000) % 60} minutes\nPing: ${client.ws.ping} ms\nFinal permissions: ${interaction.guild!.members.me?.permissionsIn(interaction.channelId).toArray().join(', ')}`,
+			content: `Uptime: ${Math.floor((client.uptime || 0) / 3600000)} hours ${Math.floor((client.uptime || 0) / 60000) % 60} minutes\nPing: ${client.ws.ping} ms\nServer count: ${client.guilds.cache.size}`,
 		}, true);
 	},
 };
