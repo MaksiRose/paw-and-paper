@@ -5,13 +5,13 @@ import serverModel from '../../models/serverModel';
 import userModel, { getUserData } from '../../models/userModel';
 import { CommonPlantNames, Inventory, RarePlantNames, SpecialPlantNames, UncommonPlantNames } from '../../typings/data/general';
 import { ServerSchema } from '../../typings/data/server';
-import { CurrentRegionType, RankType, UserData, UserSchema } from '../../typings/data/user';
+import { CurrentRegionType, RankType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { PlantEdibilityType } from '../../typings/main';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition, infectWithChance } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
-import { isInvalid, isPassedOut } from '../../utils/checkValidity';
+import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import getInventoryElements from '../../utils/getInventoryElements';
@@ -93,7 +93,8 @@ export const command: SlashCommand = {
 		// Make a function that makes a message for you. If you give it a valid user or quid, it will give you the problems the user has + a list of herbs. if you give it a page (1 | 2), it will give you a list of herbs from that page. If you give it an available herb as well, it will check whether there was an existing message where a problem was mentioned that the user already not has anymore (in which case it will refresh the info and tell the user to pick again) and if not, apply the herb.
 		const chosenUser = interaction.options.getUser('user');
 		const _chosenUserData = !chosenUser ? null : (await userModel.findOne(u => u.userId.includes(chosenUser.id)).catch(() => null));
-		const chosenUserData = _chosenUserData === null ? undefined : getUserData(_chosenUserData, interaction.guildId, getMapData(_chosenUserData.quids, getMapData(_chosenUserData.currentQuid, interaction.guildId)));
+		const chosenUserData = _chosenUserData === null ? undefined : getUserData(_chosenUserData, interaction.guildId, _chosenUserData.quids[_chosenUserData.servers[interaction.guildId]?.currentQuid ?? '']);
+		if (chosenUserData && !isInteractable(interaction, chosenUserData, messageContent, restEmbed)) { return; }
 
 		let chosenItem = interaction.options.getString('item') ?? undefined;
 		if (!chosenItem || !stringIsAvailableItem(chosenItem, serverData.inventory)) { chosenItem = undefined; }
@@ -159,7 +160,7 @@ export const command: SlashCommand = {
  * @returns A boolean value.
  */
 export function quidNeedsHealing(
-	u: UserData<never, ''>,
+	u: UserData<undefined, ''>,
 	checkOnlyFor?: 'energy' | 'hunger' | 'wounds' | 'infections' | 'cold' | 'sprains' | 'poison',
 ): u is UserData<never, never> {
 
@@ -210,13 +211,10 @@ export async function getHealResponse(
 	]) === true) { return; }
 
 	const hurtQuids = await (async function(
-	): Promise<UserData<never, ''>[]> {
+	): Promise<UserData<never, never>[]> {
 
-		function getHurtQuids(
-			u: UserSchema,
-		): UserData<never, ''>[] { return Object.entries(u.currentQuid).map(([guildId, quidId]) => getUserData(u, guildId, getMapData(u.quids, quidId))).filter(user => quidNeedsHealing(user)); }
-
-		return (await userModel.find(u => getHurtQuids(u).length > 0)).map(user => getHurtQuids(user)).flat();
+		const users = (await userModel.find()).map(u => Object.values(u.quids).map(q => getUserData(u, interaction.guildId, u.quids[q._id]))).flat();
+		return users.filter((u): u is UserData<never, never> => quidNeedsHealing(u));
 	})();
 
 	let quidsSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = hurtQuids.map(u => ({ label: u.quid.name, value: u.quid._id }));
@@ -331,7 +329,7 @@ export async function getHealResponse(
 
 	// This part of the code is only executed if a herb has been given
 
-	if (!hurtQuids.some(quid => quid._id === userToHeal!.quid._id)) {
+	if (!hurtQuids.some(user => user.quid._id === userToHeal.quid._id)) {
 
 		const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 			content: messageContent,
