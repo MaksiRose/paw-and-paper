@@ -6,7 +6,7 @@ import userModel, { getUserData } from '../models/userModel';
 import { ServerSchema } from '../typings/data/server';
 import { ProxyConfigType, ProxyListType, UserData } from '../typings/data/user';
 import { DiscordEvent } from '../typings/main';
-import { getMapData } from '../utils/helperFunctions';
+import { hasName } from '../utils/checkUserState';
 import { getMissingPermissionContent, hasPermission, permissionDisplay } from '../utils/permissionHandler';
 import { createGuild } from '../utils/updateGuild';
 
@@ -39,7 +39,7 @@ export const event: DiscordEvent = {
 		if (_userData === null || serverData === null) { return; }
 
 		let { replaceMessage, quidId } = checkForProxy(message, getUserData(_userData, message.guildId, _userData.quids[_userData.currentQuid[message.guildId] ?? '']), serverData);
-		const userData = getUserData(_userData, message.guildId, getMapData(_userData.quids, quidId));
+		const userData = getUserData(_userData, message.guildId, _userData.quids[quidId]);
 
 		await userData
 			.update(
@@ -63,7 +63,7 @@ export const event: DiscordEvent = {
 			}
 		}
 
-		if (replaceMessage && (message.content.length > 0 || message.attachments.size > 0)) {
+		if (hasName(userData) && replaceMessage && (message.content.length > 0 || message.attachments.size > 0)) {
 
 			const isSuccessful = await sendMessage(message.channel, message.content, userData, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
 				.catch(error => { console.error(error); });
