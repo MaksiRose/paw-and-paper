@@ -96,7 +96,7 @@ export const command: SlashCommand = {
 		}
 
 
-		let _userData2 = mentionedUser ? (userModel.find(u => u.userId.includes(mentionedUser.id))[0] ?? null) : null;
+		let _userData2 = mentionedUser ? (await userModel.findOne(u => u.userId.includes(mentionedUser.id)).catch(() => null)) : null;
 
 		if (!mentionedUser) {
 

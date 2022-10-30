@@ -261,5 +261,5 @@ export interface UserData<QuidExists extends undefined, QuidCompleted extends ''
 			server: UserSchema['settings']['proxy']['servers'][string] | undefined;
 		};
 	};
-	update: OmitFirstArgAndChangeReturn<typeof userModel['findOneAndUpdate'], void>;
+	update: OmitFirstArgAndChangeReturn<typeof userModel['update'], Promise<void>>;
 }

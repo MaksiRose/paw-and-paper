@@ -23,7 +23,7 @@ export const command: ContextMenuCommand = {
 
 		/* This gets the webhookCache and userData */
 		const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8')) as WebhookMessages;
-		const userData = userModel.find(u => u.userId.includes(webhookCache[interaction.targetId]?.split('_')[0] || ''))[0] ?? null;
+		const userData = await userModel.findOne(u => u.userId.includes(webhookCache[interaction.targetId]?.split('_')[0] || '')).catch(() => null);
 
 		/* This is checking if the user who is trying to delete the message is the same user who sent the message. */
 		if (userData === null || !userData.userId.includes(interaction.user.id)) {

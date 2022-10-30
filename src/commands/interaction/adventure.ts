@@ -182,8 +182,8 @@ export const command: SlashCommand = {
 		}
 
 		/* For both users, set cooldowns to true, but unregister the command from being disabled, and get the condition change */
-		setCooldown(userData1, interaction.guildId, true);
-		setCooldown(userData2, interaction.guildId, true);
+		await setCooldown(userData1, interaction.guildId, true);
+		await setCooldown(userData2, interaction.guildId, true);
 		deleteCommandDisablingInfo(userData1, interaction.guildId);
 		deleteCommandDisablingInfo(userData2, interaction.guildId);
 		const experiencePoints = getRandomNumber(11, 5);
@@ -313,8 +313,8 @@ export const command: SlashCommand = {
 		try {
 
 			/* Set both user's cooldown to false */
-			setCooldown(userData1, interaction.guildId, false);
-			setCooldown(userData2, interaction.guildId, false);
+			await setCooldown(userData1, interaction.guildId, false);
+			await setCooldown(userData2, interaction.guildId, false);
 
 			if (reason.startsWith('error')) {
 
@@ -430,7 +430,7 @@ export const command: SlashCommand = {
 				}
 				else {
 
-					foundItem = pickPlant(pullFromWeightedTable({ 0: finishedRounds + 10, 1: (2 * finishedRounds) - 10, 2: (20 - finishedRounds) * 3 }) as 0 | 1 | 2, serverData);
+					foundItem = await pickPlant(pullFromWeightedTable({ 0: finishedRounds + 10, 1: (2 * finishedRounds) - 10, 2: (20 - finishedRounds) * 3 }) as 0 | 1 | 2, serverData);
 					if (keyInObject(winningUserData.quid.profile.inventory.commonPlants, foundItem)) { winningUserData.quid.profile.inventory.commonPlants[foundItem] += 1; }
 					else if (keyInObject(winningUserData.quid.profile.inventory.uncommonPlants, foundItem)) { winningUserData.quid.profile.inventory.uncommonPlants[foundItem] += 1; }
 					else { winningUserData.quid.profile.inventory.rarePlants[foundItem] += 1; }

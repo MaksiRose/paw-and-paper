@@ -98,7 +98,7 @@ export async function executeAttacking(
 		return;
 	}
 
-	setCooldown(userData, interaction.guildId, true);
+	await setCooldown(userData, interaction.guildId, true);
 	serverAttackInfo.idleHumans -= 1;
 	serverAttackInfo.ongoingFights += 1;
 
@@ -198,7 +198,7 @@ export async function executeAttacking(
 			return botReply;
 		}
 
-		setCooldown(userData, interaction.guildId, false);
+		await setCooldown(userData, interaction.guildId, false);
 
 		let minusItemText = '';
 		let injuryText = '';
@@ -220,8 +220,8 @@ export async function executeAttacking(
 				inventory_[itemType][itemName] -= minusAmount;
 			}
 
-			await serverModel.findOneAndUpdate(
-				s => s.serverId === serverData.serverId,
+			serverData = await serverModel.update(
+				serverData,
 				(s) => s.inventory = inventory_,
 			);
 
@@ -301,8 +301,8 @@ export async function executeAttacking(
 		if (serverAttackInfo.endingTimeout) { clearTimeout(serverAttackInfo.endingTimeout); }
 		serverMap.delete(interaction.guild.id);
 
-		await serverModel.findOneAndUpdate(
-			s => s.serverId === serverData.serverId,
+		serverData = await serverModel.update(
+			serverData,
 			(s) => s.nextPossibleAttack = Date.now() + 86_400_000, // 24 hours
 		);
 	}
@@ -402,7 +402,7 @@ async function remainingHumans(
 		.setTitle('The attack is over!')
 		.setDescription(`*Before anyone could stop them, the last ${serverAttackInfo.idleHumans	} humans run into the food den, take whatever they can grab and run away. The battle wasn't easy, but it is over at last.*`);
 
-	const serverData = await serverModel.findOne(s => s.serverId === interaction.guildId);
+	let serverData = await serverModel.findOne(s => s.serverId === interaction.guildId);
 
 	let footerText = '';
 	const inventory_ = widenValues(serverData.inventory);
@@ -421,8 +421,8 @@ async function remainingHumans(
 	}
 	if (footerText.length > 0) { embed.setFooter({ text: footerText }); }
 
-	await serverModel.findOneAndUpdate(
-		s => s.serverId === serverData.serverId,
+	serverData = await serverModel.update(
+		serverData,
 		(s) => {
 			s.inventory = inventory_,
 			s.nextPossibleAttack = Date.now() + 86_400_000; // 24 hours

@@ -173,7 +173,7 @@ export async function sendReminder(
 	userMap.set(userData.quid._id + userData.quid.profile.serverId, setTimeout(async () => {
 		try {
 
-			const _userData = userModel.findOne(u => u._id === userData._id);
+			const _userData = await userModel.findOne(u => u._id === userData._id);
 			const newUserData = getUserData(_userData, userData.quid.profile.serverId, getMapData(_userData.quids, userData.quid._id));
 			if (!hasNameAndSpecies(newUserData)) { return; }
 			userData = newUserData;

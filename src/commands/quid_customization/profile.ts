@@ -33,7 +33,7 @@ export const command: SlashCommand = {
 
 		/* Getting userData and userData.quid either for mentionedUser if there is one or for interaction user otherwise */
 		const mentionedUser = interaction.options.getUser('user');
-		const _userData = userModel.find(u => u.userId.includes(!mentionedUser ? interaction.user.id : mentionedUser.id))[0] ?? null;
+		const _userData = await userModel.findOne(u => u.userId.includes(!mentionedUser ? interaction.user.id : mentionedUser.id)).catch(() => null);
 		userData = _userData === null ? null : getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[_userData.currentQuid[interaction.guildId || 'DMs'] || '']);
 
 		/* Responding if there is no userData */
@@ -136,8 +136,8 @@ export const command: SlashCommand = {
 
 			/* Getting the old quid and the id of the quid the user has clicked on. Then it is updating the user's current quid to the quid they have clicked on. Then it is getting the new quid and profile. */
 			const quidId = selectOptionId[1]; // this is either an id, an empty string if empty slot
-			_userData = await userModel.findOneAndUpdate(
-				u => u._id === _userData._id,
+			_userData = await userModel.update(
+				_userData,
 				(u) => {
 					u.servers[interaction.guildId || 'DMs'] = {
 						...userDataServersObject(u, interaction.guildId || 'DMs'),

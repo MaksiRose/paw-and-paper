@@ -158,7 +158,7 @@ export async function sendErrorMessage(
 
 		const _userData = await userModel.findOne(u => u.userId.includes(interaction.user.id));
 		const userData = getUserData(_userData, interaction.guildId || 'DMs', undefined);
-		setCooldown(userData, interaction.guildId || 'DMs', false);
+		await setCooldown(userData, interaction.guildId || 'DMs', false);
 	}
 	catch (newError) { console.error(newError); }
 

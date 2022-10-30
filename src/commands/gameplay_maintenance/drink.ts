@@ -54,7 +54,7 @@ export async function sendDrinkMessage(
 		return;
 	}
 
-	setCooldown(userData, interaction.guildId, true);
+	await setCooldown(userData, interaction.guildId, true);
 
 	const botReply = await (async (int, messageOptions) => int.isButton() ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
 		content: messageContent,
@@ -89,7 +89,7 @@ export async function sendDrinkMessage(
 	collector.on('end', async (collected) => {
 		try {
 
-			setCooldown(userData, interaction.guildId, false);
+			await setCooldown(userData, interaction.guildId, false);
 
 			const thirstPoints = getSmallerNumber(userData.quid.profile.maxThirst - userData.quid.profile.thirst, getRandomNumber(3, collected.size));
 			const currentRegion = userData.quid.profile.currentRegion;

@@ -34,7 +34,7 @@ export const command: SlashCommand = {
 		const guildId = interaction.options.getString('guild');
 		if (user === null || guildId === null) { throw new TypeError('user or guildId is null'); }
 
-		const userData = userModel.find(u => u.userId.includes(user.id))[0] ?? null;
+		const userData = await userModel.findOne(u => u.userId.includes(user.id)).catch(() => null);
 
 		if (!userData) {
 
@@ -77,8 +77,8 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		await userModel.findOneAndUpdate(
-			u => u._id === userData._id,
+		await userModel.update(
+			userData,
 			u => {
 				u.servers[guildId] = {
 					...userDataServersObject(u, guildId),

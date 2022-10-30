@@ -5,7 +5,7 @@ import serverModel from '../models/serverModel';
 import userModel, { getUserData } from '../models/userModel';
 import { DeleteList } from '../typings/data/general';
 import { hasNameAndSpecies } from '../utils/checkUserState';
-import { getMapData, sendErrorMessage, userDataServersObject } from '../utils/helperFunctions';
+import { getMapData, sendErrorMessage } from '../utils/helperFunctions';
 
 /** It's checking whether the deletionTime of a property on the toDeleteList is older than an hour from now, and if it is, delete the property and delete the file from the toDelete folder. It's also checking whether a profile has a temporaryStatIncrease with a timestamp that is older than a week ago, and if it does, bring the stat back and delete the property from temporaryStatIncrease. */
 export async function execute(): Promise<void> {
@@ -39,8 +39,8 @@ export async function execute(): Promise<void> {
 
 						if (Number(timestamp) < Date.now() - 604_800_000) {
 
-							userModel.findOneAndUpdate(
-								u => u._id === userData._id,
+							userModel.update(
+								userData,
 								(u) => {
 									const p = getMapData(getMapData(u.quids, quidData._id).profiles, profileData.serverId);
 									p[statKind] -= 10;
@@ -67,23 +67,6 @@ export async function execute(): Promise<void> {
 				const userData = getUserData(user, guildId, getMapData(user.quids, quidId));
 
 
-				/* Map the interaction to the database */
-				const lastInteraction = lastInteractionMap.get(userData._id + guildId);
-				if (lastInteraction) {
-
-					await userData.update(
-						(u) => {
-							u.servers[guildId] = {
-								...userDataServersObject(u, guildId),
-								lastInteractionTimestamp: lastInteraction.createdTimestamp,
-								lastInteractionToken: lastInteraction.token,
-								lastInteractionChannelId: lastInteraction.channelId,
-							};
-						},
-					);
-				}
-
-
 				/* start resting if possible */
 				if (!hasNameAndSpecies(userData)) { continue; }
 				const tenMinutesInMs = 600_000;
@@ -91,7 +74,7 @@ export async function execute(): Promise<void> {
 				const serverInfo = userData.serverInfo;
 				if (!serverInfo || !serverInfo.lastInteractionTimestamp) { continue; }
 
-				const serverData = serverModel.find(s => s.serverId === guildId)[0];
+				const serverData = await serverModel.findOne(s => s.serverId === guildId).catch(() => null);
 				if (!serverData) { continue; }
 
 				const lastInteractionIsTenMinutesAgo = serverInfo.lastInteractionTimestamp < Date.now() - tenMinutesInMs;
@@ -118,7 +101,7 @@ export async function execute(): Promise<void> {
 
 			for (const userId of array) {
 
-				const userData = userModel.find(u => u.userId.includes(userId))[0];
+				const userData = await userModel.findOne(u => u.userId.includes(userId)).catch(() => null);
 				const serverInfo = userData?.servers[guildId];
 				/* If there is no last interaction or if the last interaction was created more than 5 minutes ago, remove the user from the array */
 				if (!serverInfo || !serverInfo.lastInteractionTimestamp || serverInfo.lastInteractionTimestamp <= Date.now() - 300_000) { array = array.filter(v => v !== userId); }

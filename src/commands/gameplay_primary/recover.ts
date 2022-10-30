@@ -119,7 +119,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		setCooldown(userData, interaction.guildId, true);
+		await setCooldown(userData, interaction.guildId, true);
 		deleteCommandDisablingInfo(userData, interaction.guildId);
 
 		const healKind = buttonInteraction.customId.replace('recover_', '');
@@ -339,7 +339,7 @@ export const command: SlashCommand = {
 						await drinkAdvice(lastInteraction, userData);
 						await eatAdvice(lastInteraction, userData);
 
-						setCooldown(userData, interaction.guildId, false);
+						await setCooldown(userData, interaction.guildId, false);
 					}
 					catch (error) {
 

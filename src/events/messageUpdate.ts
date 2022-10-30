@@ -3,7 +3,7 @@ import { sendMessage } from '../commands/interaction/say';
 import serverModel from '../models/serverModel';
 import userModel, { getUserData } from '../models/userModel';
 import { DiscordEvent } from '../typings/main';
-import { getMapData } from '../utils/helperFunctions';
+import { hasName } from '../utils/checkUserState';
 import { getMissingPermissionContent, hasPermission, permissionDisplay } from '../utils/permissionHandler';
 import { checkForProxy } from './messageCreate';
 
@@ -14,13 +14,13 @@ export const event: DiscordEvent = {
 
 		if (newMessage.author.bot || !newMessage.inGuild()) { return; }
 
-		const _userData = userModel.find(u => u.userId.includes(newMessage.author.id))[0] ?? null;
-		const serverData = serverModel.find(s => s.serverId === newMessage.guildId)[0] ?? null;
+		const _userData = await userModel.findOne(u => u.userId.includes(newMessage.author.id)).catch(() => null);
+		const serverData = await serverModel.findOne(s => s.serverId === newMessage.guildId).catch(() => null);
 
 		if (_userData === null || serverData === null) { return; }
 
 		const { replaceMessage, quidId } = checkForProxy(newMessage, getUserData(_userData, newMessage.guildId, _userData.quids[_userData.currentQuid[newMessage.guildId] ?? '']), serverData);
-		const userData = getUserData(_userData, newMessage.guildId, getMapData(_userData.quids, quidId));
+		const userData = getUserData(_userData, newMessage.guildId, _userData.quids[quidId]);
 
 		userData
 			.update(
@@ -32,7 +32,7 @@ export const event: DiscordEvent = {
 				},
 			);
 
-		if (userData.quid !== undefined && replaceMessage && (newMessage.content.length > 0 || newMessage.attachments.size > 0)) {
+		if (hasName(userData) && replaceMessage && (newMessage.content.length > 0 || newMessage.attachments.size > 0)) {
 
 			const isSuccessful = await sendMessage(newMessage.channel, newMessage.content, userData, newMessage.author.id, newMessage.attachments.size > 0 ? Array.from(newMessage.attachments.values()) : undefined, newMessage.reference ?? undefined)
 				.catch(error => { console.error(error); });

@@ -6,7 +6,7 @@ import userModel, { getUserData } from '../models/userModel';
 import { ServerSchema } from '../typings/data/server';
 import { ProxyConfigType, ProxyListType, UserData } from '../typings/data/user';
 import { DiscordEvent } from '../typings/main';
-import { getMapData } from '../utils/helperFunctions';
+import { hasName } from '../utils/checkUserState';
 import { getMissingPermissionContent, hasPermission, permissionDisplay } from '../utils/permissionHandler';
 import { createGuild } from '../utils/updateGuild';
 
@@ -23,8 +23,8 @@ export const event: DiscordEvent = {
 			return;
 		}
 
-		const _userData = userModel.find(u => u.userId.includes(message.author.id))[0] ?? null;
-		let serverData = serverModel.find(s => s.serverId === message.guildId)[0] ?? null;
+		const _userData = await userModel.findOne(u => u.userId.includes(message.author.id)).catch(() => null);
+		let serverData = await serverModel.findOne(s => s.serverId === message.guildId).catch(() => null);
 
 		/* Checking if the serverData is null. If it is null, it will create a guild. */
 		if (!serverData && message.inGuild()) {
@@ -39,7 +39,7 @@ export const event: DiscordEvent = {
 		if (_userData === null || serverData === null) { return; }
 
 		let { replaceMessage, quidId } = checkForProxy(message, getUserData(_userData, message.guildId, _userData.quids[_userData.currentQuid[message.guildId] ?? '']), serverData);
-		const userData = getUserData(_userData, message.guildId, getMapData(_userData.quids, quidId));
+		const userData = getUserData(_userData, message.guildId, _userData.quids[quidId]);
 
 		await userData
 			.update(
@@ -49,6 +49,7 @@ export const event: DiscordEvent = {
 						[message.guildId]: { isMember: true, lastUpdatedTimestamp: Date.now() },
 					};
 				},
+				{ log: false },
 			);
 
 		if (serverData.currentlyVisiting !== null && message.channel.id === serverData.visitChannelId) {
@@ -62,7 +63,7 @@ export const event: DiscordEvent = {
 			}
 		}
 
-		if (replaceMessage && (message.content.length > 0 || message.attachments.size > 0)) {
+		if (hasName(userData) && replaceMessage && (message.content.length > 0 || message.attachments.size > 0)) {
 
 			const isSuccessful = await sendMessage(message.channel, message.content, userData, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
 				.catch(error => { console.error(error); });

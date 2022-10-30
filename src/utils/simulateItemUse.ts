@@ -41,10 +41,10 @@ export function calculateInventorySize(
  * @param {boolean} activeUsersOnly - If true, only users who have been active in the last two weeks will be returned.
  * @returns An array of Quid objects.
  */
-function getUsersInServer(
+async function getUsersInServer(
 	guildId: string,
 	activeUsersOnly: boolean,
-): UserData<never, never>[] {
+): Promise<UserData<never, never>[]> {
 
 	const twoWeeksInMs = 1_209_600_000;
 
@@ -52,7 +52,7 @@ function getUsersInServer(
 		return hasNameAndSpecies(user) && (activeUsersOnly ? (user.quid.profile.lastActiveTimestamp > (Date.now() - twoWeeksInMs)) : true);
 	}));
 
-	return userModel.find((u) => userToQuidArray(u).length > 0).map(userToQuidArray).flat();
+	return (await userModel.find((u) => userToQuidArray(u).length > 0)).map(userToQuidArray).flat();
 }
 
 /**
@@ -61,13 +61,13 @@ function getUsersInServer(
  * @param {boolean} activeUsersOnly - If true, only users who have been active in the past week will be simulated.
  * @returns The difference between the amount of meat in the server's inventory and the amount of meat needed
  */
-export function simulateMeatUse(
+export async function simulateMeatUse(
 	serverData: ServerSchema,
 	activeUsersOnly: boolean,
-): number {
+): Promise<number> {
 
 	const serverData_ = deepCopyObject(serverData);
-	const users = getUsersInServer(serverData_.serverId, activeUsersOnly);
+	const users = await getUsersInServer(serverData_.serverId, activeUsersOnly);
 	let neededItems = 0;
 
 	for (const user of users.filter(u => speciesInfo[u.quid.species].diet !== SpeciesDietType.Herbivore)) {
@@ -193,12 +193,12 @@ function getNeededMedicineItems(
  * @param {boolean} activeUsersOnly - boolean - If true, only quids that have been active in the past week will be included in the simulation.
  * @returns The difference between the amount of plants in the inventory and the amount of plants needed.
  */
-export function simulatePlantUse(
+export async function simulatePlantUse(
 	serverData: ServerSchema,
 	activeUsersOnly: boolean,
-): number {
+): Promise<number> {
 
-	const quids = getUsersInServer(serverData.serverId, activeUsersOnly);
+	const quids = await getUsersInServer(serverData.serverId, activeUsersOnly);
 	const neededItems = getNeededHungerItems(quids, serverData) + getNeededMedicineItems(quids, serverData);
 
 	const existingItems = calculateInventorySize(serverData.inventory, ([key]) => key === 'commonPlants' || key === 'uncommonPlants' || key === 'rarePlants' || key === 'specialPlants');
@@ -213,10 +213,10 @@ export function simulatePlantUse(
  * @param {ServerSchema} serverData - The server data.
  * @returns A plant name.
  */
-export function pickPlant(
+export async function pickPlant(
 	include: 0 | 1 | 2,
 	serverData: ServerSchema,
-): CommonPlantNames | UncommonPlantNames | RarePlantNames {
+): Promise<CommonPlantNames | UncommonPlantNames | RarePlantNames> {
 
 	function changeInventory(
 		inventory: Inventory,
@@ -245,7 +245,7 @@ export function pickPlant(
 
 	const itemInfo = { ...commonPlantsInfo, ...uncommonPlantsInfo, ...rarePlantsInfo, ...specialPlantsInfo };
 	const serverData_ = deepCopyObject(serverData);
-	const quids = getUsersInServer(serverData_.serverId, false);
+	const quids = await getUsersInServer(serverData_.serverId, false);
 
 	let diffEating = getNeededHungerItems(quids, serverData_) - calculateInventorySize(changeInventory(serverData.inventory, 'hunger'));
 	let diffEnergy = getNeededMedicineItems(quids, serverData_, 'energy') - calculateInventorySize(changeInventory(serverData.inventory, 'energy'));
@@ -265,7 +265,7 @@ export function pickPlant(
 	diffInfections = diffInfections - smallest + 1;
 	diffCold = diffCold - smallest + 1;
 	diffSprains = diffSprains - smallest + 1;
-	diffPoison = include === 0 ? 0 : (diffPoison - smallest + 1); // Because there is no common plant against poison, if only common plants are included, the chance that poison is picked must be null
+	diffPoison = include < 2 ? 0 : (diffPoison - smallest + 1); // Because there is no common plant against poison, if only common plants are included, the chance that poison is picked must be null
 
 	const pick = pullFromWeightedTable({ 0: diffEating + diffHunger, 1: diffEnergy, 2: diffWounds, 3: diffInfections, 4: diffCold, 5: diffSprains, 6: diffPoison });
 	const options: Array<['commonPlants' | 'uncommonPlants' | 'rarePlants', CommonPlantNames | UncommonPlantNames | RarePlantNames]> = [];
@@ -307,13 +307,13 @@ export function pickPlant(
  * @param {boolean} activeUsersOnly - If true, only users who have been active in the past week will be simulated.
  * @returns The difference between the amount of material in the server's inventory and the amount of material needed
  */
-export function simulateMaterialUse(
+export async function simulateMaterialUse(
 	serverData: ServerSchema,
 	activeUsersOnly: boolean,
-): number {
+): Promise<number> {
 
 	const serverData_ = deepCopyObject(serverData);
-	const users = getUsersInServer(serverData_.serverId, activeUsersOnly);
+	const users = await getUsersInServer(serverData_.serverId, activeUsersOnly);
 	let neededItems = 0;
 
 	for (const den of Object.values(serverData_.dens) as DenSchema[]) {
