@@ -329,7 +329,7 @@ export async function getHealResponse(
 
 	// This part of the code is only executed if a herb has been given
 
-	if (!hurtQuids.some(quid => quid._id === userToHeal!.quid._id)) {
+	if (!hurtQuids.some(user => user.quid._id === userToHeal.quid._id)) {
 
 		const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
 			content: messageContent,
