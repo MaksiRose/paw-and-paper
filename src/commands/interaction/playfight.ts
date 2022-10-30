@@ -131,8 +131,8 @@ export const command: SlashCommand = {
 		}
 
 		/* For both users, set cooldowns to true, but unregister the command from being disabled, and get the condition change */
-		setCooldown(userData1, interaction.guildId, true);
-		setCooldown(userData2, interaction.guildId, true);
+		await setCooldown(userData1, interaction.guildId, true);
+		await setCooldown(userData2, interaction.guildId, true);
 		deleteCommandDisablingInfo(userData1, interaction.guildId);
 		deleteCommandDisablingInfo(userData2, interaction.guildId);
 		const decreasedStatsData1 = await changeCondition(userData1, 0, CurrentRegionType.Prairie, true);
@@ -439,8 +439,8 @@ export const command: SlashCommand = {
 			}
 
 			/* Set both user's cooldown to false */
-			setCooldown(userData1, interaction.guildId, false);
-			setCooldown(userData2, interaction.guildId, false);
+			await setCooldown(userData1, interaction.guildId, false);
+			await setCooldown(userData2, interaction.guildId, false);
 		}
 	},
 };

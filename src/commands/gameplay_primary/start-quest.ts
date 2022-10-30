@@ -149,7 +149,7 @@ export async function sendQuestMessage(
 			time: 300_000 })
 		.then(async (int) => {
 
-			setCooldown(userData, interaction.guildId, true);
+			await setCooldown(userData, interaction.guildId, true);
 			deleteCommandDisablingInfo(userData, interaction.guildId);
 			return await startQuest(int, userData, serverData, messageContent, restEmbed, afterEmbedArray, botReply);
 		})
@@ -319,7 +319,7 @@ async function startQuest(
 		embed.setFooter(null);
 		if (hitValue >= 10) {
 
-			setCooldown(userData, interaction.guildId, false);
+			await setCooldown(userData, interaction.guildId, false);
 
 			if (userData.quid.profile.unlockedRanks < 3) {
 
@@ -431,7 +431,7 @@ async function startQuest(
 		}
 		else if (missValue >= 10) {
 
-			setCooldown(userData, interaction.guildId, false);
+			await setCooldown(userData, interaction.guildId, false);
 
 			if (userData.quid.profile.rank === RankType.Youngling) {
 

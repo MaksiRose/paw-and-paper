@@ -130,7 +130,7 @@ export async function executeExploring(
 		return;
 	}
 
-	setCooldown(userData, interaction.guildId, true);
+	await setCooldown(userData, interaction.guildId, true);
 
 	/* Here we are getting the biomes available to the quid, getting a user input if there is one, and defining chosenBiome as the user input if it matches an available biome, else it is null. */
 	const availableBiomes = getAvailableBiomes(userData);
@@ -170,7 +170,7 @@ export async function executeExploring(
 			})
 			.catch(async () => {
 
-				setCooldown(userData, interaction.guildId, false);
+				await setCooldown(userData, interaction.guildId, false);
 				await respond(interaction, { components: disableAllComponents(getBiomeMessage.components) }, true);
 
 				return null;
@@ -898,7 +898,7 @@ export async function executeExploring(
 		}
 	}
 
-	setCooldown(userData, interaction.guildId, false);
+	await setCooldown(userData, interaction.guildId, false);
 	const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
 
 	if (foundQuest) {

@@ -138,7 +138,7 @@ export async function executePlaying(
 	let userData2 = _userData2 ? getUserData(_userData2, interaction.guildId, _userData2.quids[_userData2.currentQuid[interaction.guildId] ?? '']) : null;
 	if (mentionedUserId && !isInteractable(interaction, userData2, messageContent, restEmbed)) { return; }
 
-	setCooldown(userData1, interaction.guildId, true);
+	await setCooldown(userData1, interaction.guildId, true);
 
 	const experiencePoints = userData1.quid.profile.rank === RankType.Youngling ? getRandomNumber(9, 1) : userData1.quid.profile.rank === RankType.Apprentice ? getRandomNumber(11, 5) : 0;
 	const changedCondition = await changeCondition(userData1, experiencePoints, CurrentRegionType.Prairie);
@@ -387,7 +387,7 @@ export async function executePlaying(
 		playComponent.setComponents(playComponent.components.map(c => c.setDisabled(true)));
 	}
 
-	setCooldown(userData1, interaction.guildId, false);
+	await setCooldown(userData1, interaction.guildId, false);
 	const levelUpEmbed = await checkLevelUp(interaction, userData1, serverData);
 
 	if (foundQuest) {

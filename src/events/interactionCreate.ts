@@ -4,7 +4,7 @@ import serverModel from '../models/serverModel';
 import userModel, { getUserData } from '../models/userModel';
 import { DiscordEvent } from '../typings/main';
 import { disableCommandComponent, disableAllComponents } from '../utils/componentDisabling';
-import { getMapData, keyInObject, update } from '../utils/helperFunctions';
+import { getMapData, keyInObject, update, userDataServersObject } from '../utils/helperFunctions';
 import { createGuild } from '../utils/updateGuild';
 import { respond } from '../utils/helperFunctions';
 import { sendErrorMessage } from '../utils/helperFunctions';
@@ -39,6 +39,17 @@ export const event: DiscordEvent = {
 			if (userData && interaction.inCachedGuild() && interaction.isRepliable()) {
 
 				lastInteractionMap.set(userData._id + interaction.guildId, interaction);
+				await userData.update(
+					(u) => {
+						u.servers[interaction.guildId] = {
+							...userDataServersObject(u, interaction.guildId),
+							lastInteractionTimestamp: interaction.createdTimestamp,
+							lastInteractionToken: interaction.token,
+							lastInteractionChannelId: interaction.channelId,
+						};
+					},
+					{ log: false },
+				);
 
 				const serverActiveUsers = serverActiveUsersMap.get(interaction.guildId);
 				if (!serverActiveUsers) { serverActiveUsersMap.set(interaction.guildId, [interaction.user.id]); }

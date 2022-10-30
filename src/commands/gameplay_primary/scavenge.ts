@@ -74,7 +74,7 @@ export async function executeScavenging(
 
 	if (await hasFullInventory(interaction, userData, restEmbed, messageContent)) { return; }
 
-	setCooldown(userData, interaction.guildId, true);
+	await setCooldown(userData, interaction.guildId, true);
 
 	const experiencePoints = getRandomNumber(11, 5);
 	const changedCondition = await changeCondition(userData, experiencePoints);
@@ -319,7 +319,7 @@ export async function executeScavenging(
 		serverData: ServerSchema,
 	) {
 
-		setCooldown(userData, int.guildId, false);
+		await setCooldown(userData, int.guildId, false);
 
 		const levelUpEmbed = await checkLevelUp(int, userData, serverData);
 

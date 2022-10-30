@@ -49,6 +49,7 @@ export const event: DiscordEvent = {
 						[message.guildId]: { isMember: true, lastUpdatedTimestamp: Date.now() },
 					};
 				},
+				{ log: false },
 			);
 
 		if (serverData.currentlyVisiting !== null && message.channel.id === serverData.visitChannelId) {

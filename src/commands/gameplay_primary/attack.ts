@@ -98,7 +98,7 @@ export async function executeAttacking(
 		return;
 	}
 
-	setCooldown(userData, interaction.guildId, true);
+	await setCooldown(userData, interaction.guildId, true);
 	serverAttackInfo.idleHumans -= 1;
 	serverAttackInfo.ongoingFights += 1;
 
@@ -198,7 +198,7 @@ export async function executeAttacking(
 			return botReply;
 		}
 
-		setCooldown(userData, interaction.guildId, false);
+		await setCooldown(userData, interaction.guildId, false);
 
 		let minusItemText = '';
 		let injuryText = '';
