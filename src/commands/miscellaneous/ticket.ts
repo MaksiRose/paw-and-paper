@@ -124,7 +124,7 @@ export const command: SlashCommand = {
 					owner: 'MaksiRose',
 					repo: 'paw-and-paper',
 					title: embed?.title || 'New issue',
-					body: `Created by: ${embed?.author}\n\n${embed?.description}${embed?.image ? `\n![](${embed.image?.url})` : ''}\n\n${ticketConversation ? `Additional conversation:\n\`\`\`\n${ticketConversation}\n\`\`\`` : ''}`,
+					body: `Created by: ${embed?.author?.name}\n\n${embed?.description}${embed?.image ? `\n![](${embed.image?.url})` : ''}\n\n${ticketConversation ? `Additional conversation:\n\`\`\`\n${ticketConversation}\n\`\`\`` : ''}`,
 					labels: embed?.footer ? [embed.footer.text] : [],
 				});
 		}
