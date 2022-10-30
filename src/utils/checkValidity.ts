@@ -178,14 +178,14 @@ export function isInteractable(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	userData: UserData<undefined, ''> | null,
 	messageContent: string,
-	embedArray: EmbedBuilder[],
+	restEmbed: EmbedBuilder[],
 ): userData is UserData<never, never> {
 
 	if (!userData) {
 
 		respond(interaction, {
 			content: messageContent,
-			embeds: [...embedArray, new EmbedBuilder()
+			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(error_color)
 				.setTitle('The mentioned user has no account :('),
 			],
@@ -198,7 +198,7 @@ export function isInteractable(
 
 		respond(interaction, {
 			content: messageContent,
-			embeds: [...embedArray, new EmbedBuilder()
+			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(error_color)
 				.setTitle('The mentioned user has no selected quid :('),
 			],
@@ -211,7 +211,7 @@ export function isInteractable(
 
 		respond(interaction, {
 			content: messageContent,
-			embeds: [...embedArray, new EmbedBuilder()
+			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(error_color)
 				.setTitle('The mentioned user\'s selected quid is not set up for the RPG :('),
 			],
@@ -224,7 +224,7 @@ export function isInteractable(
 
 		respond(interaction, {
 			content: messageContent,
-			embeds: [...embedArray, new EmbedBuilder()
+			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(error_color)
 				.setTitle('The mentioned user\'s selected quid is passed out :('),
 			],
@@ -237,7 +237,7 @@ export function isInteractable(
 
 		respond(interaction, {
 			content: messageContent,
-			embeds: [...embedArray, new EmbedBuilder()
+			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(error_color)
 				.setTitle('The mentioned user\'s selected quid is resting :('),
 			],
@@ -250,7 +250,7 @@ export function isInteractable(
 
 		respond(interaction, {
 			content: messageContent,
-			embeds: [...embedArray, new EmbedBuilder()
+			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(error_color)
 				.setTitle('The mentioned user\'s selected quid is busy :('),
 			],
@@ -263,7 +263,7 @@ export function isInteractable(
 
 		respond(interaction, {
 			content: messageContent,
-			embeds: [...embedArray, new EmbedBuilder()
+			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(error_color)
 				.setTitle('The mentioned user\'s selected quid has too many items in their inventory :('),
 			],
