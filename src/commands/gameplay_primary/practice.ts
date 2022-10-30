@@ -103,7 +103,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		setCooldown(userData, interaction.guildId, true);
+		await setCooldown(userData, interaction.guildId, true);
 		deleteCommandDisablingInfo(userData, interaction.guildId);
 
 		const experiencePoints = getRandomNumber(5, 1);
@@ -199,7 +199,7 @@ export const command: SlashCommand = {
 				return;
 			}
 
-			setCooldown(userData, interaction.guildId, false);
+			await setCooldown(userData, interaction.guildId, false);
 
 			if (winLoseRatio > 0) {
 

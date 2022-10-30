@@ -37,7 +37,7 @@ export const command: ContextMenuCommand = {
 			quidId = charid;
 		}
 
-		const _userData = userModel.find(u => u.userId.includes(userId))[0] ?? null;
+		const _userData = await userModel.findOne(u => u.userId.includes(userId)).catch(() => null);
 		/* This is checking whether the userData is null, and if it is, it will send a message to the user who clicked on the context menu. */
 		if (_userData === null) {
 

@@ -114,13 +114,13 @@ export async function executePlaying(
 		return;
 	}
 
-	let _userData2 = mentionedUserId ? (userModel.find(u => u.userId.includes(mentionedUserId))[0] ?? null) : null;
+	let _userData2 = mentionedUserId ? (await userModel.findOne(u => u.userId.includes(mentionedUserId)).catch(() => null)) : null;
 	if (!_userData2) {
 
-		const usersEligibleForPlaying = userModel
+		const usersEligibleForPlaying = (await userModel
 			.find(
 				u => Object.values(u.quids).filter(q => isEligableForPlaying(u, q, interaction.guildId)).length > 0,
-			)
+			))
 			.filter(u => u._id !== userData1?._id);
 
 		if (usersEligibleForPlaying.length > 0) {
@@ -138,7 +138,7 @@ export async function executePlaying(
 	let userData2 = _userData2 ? getUserData(_userData2, interaction.guildId, _userData2.quids[_userData2.currentQuid[interaction.guildId] ?? '']) : null;
 	if (mentionedUserId && !isInteractable(interaction, userData2, messageContent, restEmbed)) { return; }
 
-	setCooldown(userData1, interaction.guildId, true);
+	await setCooldown(userData1, interaction.guildId, true);
 
 	const experiencePoints = userData1.quid.profile.rank === RankType.Youngling ? getRandomNumber(9, 1) : userData1.quid.profile.rank === RankType.Apprentice ? getRandomNumber(11, 5) : 0;
 	const changedCondition = await changeCondition(userData1, experiencePoints, CurrentRegionType.Prairie);
@@ -323,7 +323,7 @@ export async function executePlaying(
 	else {
 
 		const plantGame = createPlantGame(speciesInfo[userData1.quid.species].habitat);
-		const foundItem = pickPlant(0, serverData);
+		const foundItem = await pickPlant(0, serverData);
 
 		playComponent = plantGame.plantComponent;
 
@@ -387,7 +387,7 @@ export async function executePlaying(
 		playComponent.setComponents(playComponent.components.map(c => c.setDisabled(true)));
 	}
 
-	setCooldown(userData1, interaction.guildId, false);
+	await setCooldown(userData1, interaction.guildId, false);
 	const levelUpEmbed = await checkLevelUp(interaction, userData1, serverData);
 
 	if (foundQuest) {

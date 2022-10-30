@@ -268,7 +268,7 @@ export const command: SlashCommand = {
 
 			const serverId = selectOptionId[0];
 			const accountsOnServer = userData.quids.map(q => q.profiles[serverId]).filter(p => p !== undefined);
-			const server = serverModel.find(s => s.serverId === selectOptionId[0])[0] ?? null;
+			const server = await serverModel.findOne(s => s.serverId === selectOptionId[0]).catch(() => null);
 
 			await update(interaction, {
 				embeds: [new EmbedBuilder()
@@ -373,7 +373,7 @@ async function getServersPage(
 	const serverIdList = [...new Set([...userData.quids.map(q => Object.keys(q.profiles)), ...Object.keys(userData.servers)].flat())];
 	for (const serverId of serverIdList) {
 
-		const server = serverModel.find(s => s.serverId === serverId)[0] ?? null;
+		const server = await serverModel.findOne(s => s.serverId === serverId).catch(() => null);
 		if (server === null) { continue; }
 		accountsMenuOptions.push({
 			label: server.name,

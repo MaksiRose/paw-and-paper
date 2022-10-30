@@ -354,13 +354,15 @@ export function getUserData<T extends '' | never, U extends QuidSchema<T> | unde
 		quids: new Collection(Object.entries(userData.quids)),
 		servers: new Collection(Object.entries(userData.servers)),
 		lastPlayedVersion: userData.lastPlayedVersion,
-		update: function(
+		update: async function(
 			updateFunction: (value: UserSchema) => void,
-		): void {
+			options: { log?: boolean } = {},
+		): Promise<void> {
 
-			userData = userModel.findOneAndUpdate(
-				u => u._id === userData._id,
+			userData = await userModel.update(
+				userData,
 				updateFunction,
+				options,
 			);
 			const player = getUserData(userData, server_id, userData.quids[quidData?._id ?? '']);
 			Object.assign(this, player);

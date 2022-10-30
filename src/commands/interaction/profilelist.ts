@@ -115,8 +115,8 @@ async function getProfilesTexts(
 
 				const member = await guild.members.fetch(userId).catch(() => { return null; });
 				guildMember = { isMember: member !== null, lastUpdatedTimestamp: Date.now() };
-				await userModel.findOneAndUpdate(
-					u => u._id === user._id,
+				await userModel.update(
+					user,
 					(u => u.userIds[userId] = {
 						...(u.userIds[userId] ?? {}),
 						[guild.id]: guildMember!,

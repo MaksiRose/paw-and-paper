@@ -14,8 +14,8 @@ export const event: DiscordEvent = {
 
 		if (newMessage.author.bot || !newMessage.inGuild()) { return; }
 
-		const _userData = userModel.find(u => u.userId.includes(newMessage.author.id))[0] ?? null;
-		const serverData = serverModel.find(s => s.serverId === newMessage.guildId)[0] ?? null;
+		const _userData = await userModel.findOne(u => u.userId.includes(newMessage.author.id)).catch(() => null);
+		const serverData = await serverModel.findOne(s => s.serverId === newMessage.guildId).catch(() => null);
 
 		if (_userData === null || serverData === null) { return; }
 

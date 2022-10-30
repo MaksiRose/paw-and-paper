@@ -10,8 +10,8 @@ export async function execute(
 	const servers = await serverModel.find();
 	for (const server of servers) {
 
-		serverModel.findOneAndUpdate(
-			s => s._id === server._id,
+		serverModel.update(
+			server,
 			(s) => { s.currentlyVisiting = null; },
 		);
 	}

@@ -114,8 +114,7 @@ export async function checkLevelRequirements(
 				/* It's checking if the role is in the database. If it's not, it will add it to the database. */
 				if (roles && roles.some(r => r.roleId === item.roleId && r.wayOfEarning === item.wayOfEarning && r.requirement === item.requirement) === false) {
 
-					await userModel.findOneAndUpdate(
-						u => u._id === userData._id,
+					await userData.update(
 						(u) => {
 							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
 							p.roles.push({

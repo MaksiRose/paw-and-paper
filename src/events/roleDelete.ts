@@ -33,8 +33,8 @@ export const event: DiscordEvent = {
 
 						const userRole = profile.roles[userRoleIndex];
 						if (!userRole) { continue; }
-						userModel.findOneAndUpdate(
-							u => u._id === user._id,
+						userModel.update(
+							user,
 							(u) => {
 								const p = getMapData(getMapData(u.quids, quid._id).profiles, profile.serverId);
 								p.roles.splice(userRoleIndex, 1);

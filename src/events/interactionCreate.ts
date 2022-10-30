@@ -4,7 +4,7 @@ import serverModel from '../models/serverModel';
 import userModel, { getUserData } from '../models/userModel';
 import { DiscordEvent } from '../typings/main';
 import { disableCommandComponent, disableAllComponents } from '../utils/componentDisabling';
-import { getMapData, keyInObject, update } from '../utils/helperFunctions';
+import { getMapData, keyInObject, update, userDataServersObject } from '../utils/helperFunctions';
 import { createGuild } from '../utils/updateGuild';
 import { respond } from '../utils/helperFunctions';
 import { sendErrorMessage } from '../utils/helperFunctions';
@@ -31,14 +31,25 @@ export const event: DiscordEvent = {
 			/* This is only null when in DM without CHANNEL partial, or when channel cache is sweeped. Therefore, this is technically unsafe since this value could become null after this check. This scenario is unlikely though. */
 			if (!interaction.channel) { await client.channels.fetch(interaction.channelId || ''); }
 
-			const _userData = userModel.find(u => u.userId.includes(interaction.user.id))[0] ?? null;
+			const _userData = await userModel.findOne(u => u.userId.includes(interaction.user.id)).catch(() => null);
 			const userData = _userData === null ? null : getUserData(_userData, interaction.guildId ?? 'DMs', _userData.quids[_userData.currentQuid[interaction.guildId ?? 'DMs'] ?? '']);
-			let serverData = serverModel.find(s => s.serverId === interaction.guildId)[0] ?? null;
+			let serverData = await serverModel.findOne(s => s.serverId === interaction.guildId).catch(() => null);
 
 			/* It's setting the last interaction timestamp for the user to now. */
 			if (userData && interaction.inCachedGuild() && interaction.isRepliable()) {
 
 				lastInteractionMap.set(userData._id + interaction.guildId, interaction);
+				await userData.update(
+					(u) => {
+						u.servers[interaction.guildId] = {
+							...userDataServersObject(u, interaction.guildId),
+							lastInteractionTimestamp: interaction.createdTimestamp,
+							lastInteractionToken: interaction.token,
+							lastInteractionChannelId: interaction.channelId,
+						};
+					},
+					{ log: false },
+				);
 
 				const serverActiveUsers = serverActiveUsersMap.get(interaction.guildId);
 				if (!serverActiveUsers) { serverActiveUsersMap.set(interaction.guildId, [interaction.user.id]); }
