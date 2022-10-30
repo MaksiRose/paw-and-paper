@@ -107,8 +107,8 @@ export const command: SlashCommand = {
 					},
 				);
 
-				serverData = await serverModel.findOneAndUpdate(
-					s => s._id === serverData!._id,
+				serverData = await serverModel.update(
+					serverData,
 					(s) => {
 						s.inventory = serverInventory;
 					},
@@ -257,8 +257,8 @@ async function storeAll(
 		},
 	);
 
-	serverData = await serverModel.findOneAndUpdate(
-		s => s._id === serverData._id,
+	serverData = await serverModel.update(
+		serverData,
 		(s) => {
 			s.inventory = serverInventory;
 		},

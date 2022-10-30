@@ -92,7 +92,7 @@ export const command: SlashCommand = {
 
 		// Make a function that makes a message for you. If you give it a valid user or quid, it will give you the problems the user has + a list of herbs. if you give it a page (1 | 2), it will give you a list of herbs from that page. If you give it an available herb as well, it will check whether there was an existing message where a problem was mentioned that the user already not has anymore (in which case it will refresh the info and tell the user to pick again) and if not, apply the herb.
 		const chosenUser = interaction.options.getUser('user');
-		const _chosenUserData = !chosenUser ? null : (userModel.find(u => u.userId.includes(chosenUser.id))[0] ?? null);
+		const _chosenUserData = !chosenUser ? null : (await userModel.findOne(u => u.userId.includes(chosenUser.id)).catch(() => null));
 		const chosenUserData = _chosenUserData === null ? undefined : getUserData(_chosenUserData, interaction.guildId, getMapData(_chosenUserData.quids, getMapData(_chosenUserData.currentQuid, interaction.guildId)));
 
 		let chosenItem = interaction.options.getString('item') ?? undefined;
@@ -363,8 +363,8 @@ export async function getHealResponse(
 		else if (keyInObject(serverData.inventory.rarePlants, item)) { serverData.inventory.rarePlants[item] -= 1; }
 		else if (keyInObject(serverData.inventory.specialPlants, item)) { serverData.inventory.specialPlants[item] -= 1; }
 		else { throw new Error('item does not exist in serverData.inventory'); }
-		serverData = await serverModel.findOneAndUpdate(
-			s => s.serverId === serverData.serverId,
+		serverData = await serverModel.update(
+			serverData,
 			(s) => { s.inventory = serverData.inventory; },
 		);
 

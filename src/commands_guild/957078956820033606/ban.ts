@@ -48,10 +48,10 @@ export const command: SlashCommand = {
 			bannedList.users.push(id);
 			writeFileSync('./database/bannedList.json', JSON.stringify(bannedList, null, '\t'));
 
-			const profile = userModel.find(u => u.userId.includes(id))[0] ?? null;
+			const profile = await userModel.findOne(u => u.userId.includes(id)).catch(() => null);
 			if (profile) {
 
-				await userModel.findOneAndDelete(u => u._id === profile._id);
+				await userModel.delete(profile);
 				const user = await client.users.fetch(id).catch(() => { return null; });
 
 				if (user) {
@@ -82,10 +82,10 @@ export const command: SlashCommand = {
 			bannedList.servers.push(id);
 			writeFileSync('./database/bannedList.json', JSON.stringify(bannedList, null, '\t'));
 
-			const server = serverModel.find(s => s.serverId === id)[0] ?? null;
+			const server = await serverModel.findOne(s => s.serverId === id).catch(() => null);
 			if (server) {
 
-				await serverModel.findOneAndDelete(u => u._id === server._id);
+				await serverModel.delete(server);
 				const guild = await interaction.client.guilds.fetch(id).catch(() => { return null; });
 				const user = await client.users.fetch(guild?.ownerId || '').catch(() => { return null; });
 

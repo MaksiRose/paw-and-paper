@@ -38,7 +38,7 @@ export const command: SlashCommand = {
 		if (mentionedUser) {
 
 			isYourself = false;
-			const _userData = userModel.find(u => u.userId.includes(mentionedUser.id))[0] ?? null;
+			const _userData = await userModel.findOne(u => u.userId.includes(mentionedUser.id)).catch(() => null);
 			userData = _userData === null ? null : getUserData(_userData, interaction.guildId, _userData?.quids[_userData.currentQuid[interaction.guildId] || '']);
 		}
 
@@ -260,8 +260,8 @@ export const command: SlashCommand = {
 					);
 				}
 
-				await serverModel.findOneAndUpdate(
-					s => s.serverId === interaction.guildId,
+				serverData = await serverModel.update(
+					serverData,
 					(s) => {
 						s.skills = s.skills.filter(n => n !== skillName);
 					},
@@ -280,7 +280,7 @@ export const command: SlashCommand = {
 		}
 
 	},
-	async  sendModalResponse(interaction, userData, serverData) {
+	async sendModalResponse(interaction, userData, serverData) {
 
 		if (!interaction.isFromMessage()) { return; }
 		if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
@@ -343,8 +343,8 @@ export const command: SlashCommand = {
 					);
 				}
 
-				await serverModel.findOneAndUpdate(
-					s => s.serverId === interaction.guildId,
+				serverData = await serverModel.update(
+					serverData,
 					(s) => {
 						s.skills.push(newName);
 					},
@@ -417,8 +417,8 @@ export const command: SlashCommand = {
 					);
 				}
 
-				await serverModel.findOneAndUpdate(
-					s => s.serverId === interaction.guildId,
+				serverData = await serverModel.update(
+					serverData,
 					(s) => {
 						s.skills.push(newName);
 						s.skills = s.skills.filter(n => n !== skillName);

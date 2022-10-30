@@ -23,8 +23,8 @@ export const event: DiscordEvent = {
 			return;
 		}
 
-		const _userData = userModel.find(u => u.userId.includes(message.author.id))[0] ?? null;
-		let serverData = serverModel.find(s => s.serverId === message.guildId)[0] ?? null;
+		const _userData = await userModel.findOne(u => u.userId.includes(message.author.id)).catch(() => null);
+		let serverData = await serverModel.findOne(s => s.serverId === message.guildId).catch(() => null);
 
 		/* Checking if the serverData is null. If it is null, it will create a guild. */
 		if (!serverData && message.inGuild()) {

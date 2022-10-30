@@ -430,7 +430,7 @@ export const command: SlashCommand = {
 				}
 				else {
 
-					foundItem = pickPlant(pullFromWeightedTable({ 0: finishedRounds + 10, 1: (2 * finishedRounds) - 10, 2: (20 - finishedRounds) * 3 }) as 0 | 1 | 2, serverData);
+					foundItem = await pickPlant(pullFromWeightedTable({ 0: finishedRounds + 10, 1: (2 * finishedRounds) - 10, 2: (20 - finishedRounds) * 3 }) as 0 | 1 | 2, serverData);
 					if (keyInObject(winningUserData.quid.profile.inventory.commonPlants, foundItem)) { winningUserData.quid.profile.inventory.commonPlants[foundItem] += 1; }
 					else if (keyInObject(winningUserData.quid.profile.inventory.uncommonPlants, foundItem)) { winningUserData.quid.profile.inventory.uncommonPlants[foundItem] += 1; }
 					else { winningUserData.quid.profile.inventory.rarePlants[foundItem] += 1; }

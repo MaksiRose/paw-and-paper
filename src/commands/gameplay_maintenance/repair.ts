@@ -116,8 +116,8 @@ export const command: SlashCommand = {
 			/** True when the repairAmount is bigger than zero. If the user isn't of  rank Hunter or Elderly, a weighted table decided whether they are successful. */
 			const isSuccessful = repairAmount > 0 && !isUnlucky(userData);
 
-			serverData = await serverModel.findOneAndUpdate(
-				s => s.serverId === serverData!.serverId,
+			serverData = await serverModel.update(
+				serverData,
 				(s) => {
 					s.inventory.materials[chosenItem] -= 1;
 					if (isSuccessful) { s.dens[chosenDen][repairKind] += repairAmount; }

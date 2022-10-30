@@ -257,8 +257,8 @@ export async function sendEatMessage(
 		},
 	);
 
-	serverData = await serverModel.findOneAndUpdate(
-		s => s.serverId === interaction.guildId,
+	serverData = await serverModel.update(
+		serverData,
 		(s) => {
 			s.inventory = inventory_;
 		},
