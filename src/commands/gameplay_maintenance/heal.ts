@@ -310,7 +310,7 @@ export async function getHealResponse(
 		const inventoryEmbed = new EmbedBuilder()
 			.setColor(userData.quid.color)
 			.setTitle(`Inventory of ${interaction.guild.name} - Page ${inventoryPage}`)
-			.setDescription(embedDescription);
+			.setDescription(embedDescription || null);
 		const inventorySelectMenu = new ActionRowBuilder<SelectMenuBuilder>()
 			.setComponents(new SelectMenuBuilder()
 				.setCustomId(`heal_inventory_options_${userToHeal.quid._id}_@${userData._id}`)

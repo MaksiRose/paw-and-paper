@@ -197,7 +197,7 @@ function getMaterials(
 			new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setTitle(`Inventory of ${serverData.name} - Materials`)
-				.setDescription(description)
+				.setDescription(description || null)
 				.setFooter({ text: 'Choose one of the materials above to repair the den with it!' }),
 		],
 		components: [
