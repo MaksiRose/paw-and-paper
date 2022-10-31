@@ -348,6 +348,7 @@ export async function getHealResponse(
 	let isSuccessful = false;
 
 	let injuryUpdateText = '';
+	const injuries = { ...userToHeal.quid.profile.injuries };
 
 	if (item === 'water') {
 
@@ -377,55 +378,55 @@ export async function getHealResponse(
 
 		if (itemInfo[item].healsWounds) {
 
-			if (userToHeal.quid.profile.injuries.wounds > 0) {
+			if (injuries.wounds > 0) {
 
 				isSuccessful = true;
 				injuryUpdateText += `\n-1 wound for ${userToHeal.quid.name}`;
-				userToHeal.quid.profile.injuries.wounds -= 1;
+				injuries.wounds -= 1;
 			}
 			else if (userCondition?.includes('wounds')) { userHasChangedCondition = true; }
 		}
 
 		if (itemInfo[item].healsInfections) {
 
-			if (userToHeal.quid.profile.injuries.infections > 0) {
+			if (injuries.infections > 0) {
 
 				isSuccessful = true;
 				injuryUpdateText += `\n-1 infection for ${userToHeal.quid.name}`;
-				userToHeal.quid.profile.injuries.infections -= 1;
+				injuries.infections -= 1;
 			}
 			else if (userCondition?.includes('infections')) { userHasChangedCondition = true; }
 		}
 
 		if (itemInfo[item].healsColds) {
 
-			if (userToHeal.quid.profile.injuries.cold == true) {
+			if (injuries.cold == true) {
 
 				isSuccessful = true;
 				injuryUpdateText += `\ncold healed for ${userToHeal.quid.name}`;
-				userToHeal.quid.profile.injuries.cold = false;
+				injuries.cold = false;
 			}
 			else if (userCondition?.includes('cold')) { userHasChangedCondition = true; }
 		}
 
 		if (itemInfo[item].healsSprains) {
 
-			if (userToHeal.quid.profile.injuries.sprains > 0) {
+			if (injuries.sprains > 0) {
 
 				isSuccessful = true;
 				injuryUpdateText += `\n-1 sprain for ${userToHeal.quid.name}`;
-				userToHeal.quid.profile.injuries.sprains -= 1;
+				injuries.sprains -= 1;
 			}
 			else if (userCondition?.includes('sprains')) { userHasChangedCondition = true; }
 		}
 
 		if (itemInfo[item].healsPoison) {
 
-			if (userToHeal.quid.profile.injuries.poison == true) {
+			if (injuries.poison == true) {
 
 				isSuccessful = true;
 				injuryUpdateText += `\npoison healed for ${userToHeal.quid.name}`;
-				userToHeal.quid.profile.injuries.poison = false;
+				injuries.poison = false;
 			}
 			else if (userCondition?.includes('poison')) { userHasChangedCondition = true; }
 		}
@@ -466,7 +467,7 @@ export async function getHealResponse(
 				p.hunger += chosenUserPlus.hunger;
 				p.energy += chosenUserPlus.energy;
 				p.health += chosenUserPlus.health;
-				p.injuries = userToHeal.quid.profile.injuries;
+				p.injuries = injuries;
 			},
 		);
 
