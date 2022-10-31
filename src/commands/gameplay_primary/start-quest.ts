@@ -316,7 +316,7 @@ async function startQuest(
 			return component;
 		}));
 
-		embed.setFooter(null);
+		embed.setFooter({ text: 'Type "/rank-up" to rank up.' });
 		if (hitValue >= 10) {
 
 			await setCooldown(userData, interaction.guildId, false);
@@ -384,24 +384,24 @@ async function startQuest(
 					case 0:
 
 						maxHealthPoints = 10;
-						embed.setFooter({ text: '+10 maximum health\n\n' });
+						embed.setFooter({ text: '+10 maximum health' });
 						break;
 
 					case 1:
 
 						maxEnergyPoints = 10;
-						embed.setFooter({ text: '+10 maximum energy\n\n' });
+						embed.setFooter({ text: '+10 maximum energy' });
 						break;
 
 					case 2:
 						maxHungerPoints = 10;
-						embed.setFooter({ text: '+10 maximum hunger\n\n' });
+						embed.setFooter({ text: '+10 maximum hunger' });
 						break;
 
 					default:
 
 						maxThirstPoints = 10;
-						embed.setFooter({ text: '+10 maximum thirst\n\n' });
+						embed.setFooter({ text: '+10 maximum thirst' });
 						break;
 				}
 
@@ -416,8 +416,6 @@ async function startQuest(
 				);
 			}
 			else { throw new Error('No rank type found'); }
-
-			embed.setFooter({ text: (embed.data.footer?.text ?? '') + 'Type "/rank-up" to rank up.' });
 
 			botReply = await update(interaction, {
 				content: messageContent,

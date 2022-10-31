@@ -334,14 +334,18 @@ export function getUserData<T extends '' | never, U extends QuidSchema<T> | unde
 			getDisplayspecies: function(): string { return this.displayedSpecies || this.species; },
 			pronoun: function(
 				pronounNumber: 0 | 1 | 2 | 3 | 4 | 5,
-			): string { return getArrayElement(getArrayElement(this.pronounSets, getRandomNumber(this.pronounSets.length)), pronounNumber); },
+			): string {
+
+				const pronounSet = getRandomPronounSet(this.pronounSets, this.name);
+				return getArrayElement(pronounSet, pronounNumber);
+			},
 			pronounAndPlural: function(
 				pronounNumber: 0 | 1 | 2 | 3 | 4 | 5,
 				string1: string,
 				string2?: string,
 			): string {
 
-				const pronounSet = getArrayElement(this.pronounSets, getRandomNumber(this.pronounSets.length));
+				const pronounSet = getRandomPronounSet(this.pronounSets, this.name);
 
 				const pronoun = getArrayElement(pronounSet, pronounNumber);
 				const isPlural = pronounSet[5] === 'plural';
@@ -369,4 +373,15 @@ export function getUserData<T extends '' | never, U extends QuidSchema<T> | unde
 		},
 	};
 	return user;
+}
+
+function getRandomPronounSet(
+	pronounSets: string[][],
+	name: string,
+): string[] {
+
+	let pronounSet = getArrayElement(pronounSets, getRandomNumber(pronounSets.length));
+	if (pronounSet.length === 1 && pronounSet[0] === 'none') { pronounSet = [name, name, `${name}s`, `${name}s`, `${name}self`, 'singular']; }
+
+	return pronounSet;
 }
