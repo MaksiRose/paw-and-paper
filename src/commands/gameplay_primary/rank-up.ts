@@ -106,6 +106,17 @@ export const command: SlashCommand = {
 
 			return;
 		}
+		else if (userData.quid.profile.rank === RankType.Elderly) {
+
+			await respond(interaction, {
+				content: messageContent,
+				embeds: [...restEmbed, new EmbedBuilder()
+					.setColor(userData.quid.color)
+					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+					.setDescription(`*${userData.quid.name} is very wise from all the adventures ${userData.quid.pronoun(0)} had, but also a little... quaint. The ${userData.quid.getDisplayspecies()} seems to have forgotten that as Elderly, ${userData.quid.pronounAndPlural(0, 'has', 'have')} already achieved the highest possible rank.*`)],
+			}, true);
+			return;
+		}
 
 		await respond(interaction, {
 			content: messageContent,
