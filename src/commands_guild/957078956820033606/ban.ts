@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from 'fs';
 import { respond } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import userModel from '../../models/userModel';
-import { client } from '../..';
+import { client } from '../../client';
 import { SlashCommand } from '../../typings/handle';
 import { BanList } from '../../typings/data/general';
 

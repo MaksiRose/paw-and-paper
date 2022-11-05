@@ -1,4 +1,4 @@
-import { client } from '..';
+import { client } from '../client';
 import serverModel from '../models/serverModel';
 import { createGuild } from '../utils/updateGuild';
 

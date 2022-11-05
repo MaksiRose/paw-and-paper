@@ -2,7 +2,7 @@ import { readdirSync } from 'fs';
 import { DiscordEvent } from '../typings/main';
 import { ActivityType } from 'discord.js';
 import path from 'path';
-import { client } from '..';
+import { client } from '../client';
 
 export const event: DiscordEvent = {
 	name: 'ready',

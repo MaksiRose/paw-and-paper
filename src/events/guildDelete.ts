@@ -1,5 +1,5 @@
 import { Guild } from 'discord.js';
-import { client } from '../index';
+import { client } from '../client';
 import { DiscordEvent } from '../typings/main';
 import { deleteGuild } from '../utils/updateGuild';
 

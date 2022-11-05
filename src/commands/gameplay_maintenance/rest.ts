@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionWebhook, Message, RepliableInteraction, SlashCommandBuilder } from 'discord.js';
-import { client } from '../..';
+import { client } from '../../client';
 import serverModel from '../../models/serverModel';
 import { ServerSchema } from '../../typings/data/server';
 import { CurrentRegionType, UserData } from '../../typings/data/user';

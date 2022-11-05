@@ -5,7 +5,7 @@ import { disableAllComponents } from '../../utils/componentDisabling';
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
 import { hasPermission } from '../../utils/permissionHandler';
-import { client } from '../..';
+import { client } from '../../client';
 import { SlashCommand } from '../../typings/handle';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 const { error_color, default_color, github_token, ticket_channel_id } = require('../../../config.json');

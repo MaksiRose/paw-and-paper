@@ -1,7 +1,7 @@
 import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
 import { respond, userDataServersObject } from '../../utils/helperFunctions';
 import userModel from '../../models/userModel';
-import { client } from '../..';
+import { client } from '../../client';
 import { SlashCommand } from '../../typings/handle';
 
 export const command: SlashCommand = {

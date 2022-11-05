@@ -1,5 +1,5 @@
 import { ComponentType, ButtonStyle, APIActionRowComponent, ActionRowBuilder, ActionRow, MessageActionRowComponent, APIMessageActionRowComponent, MessageActionRowComponentBuilder, ButtonBuilder, ButtonComponent, APIButtonComponent, SelectMenuBuilder, SelectMenuComponent, APISelectMenuComponent, isJSONEncodable } from 'discord.js';
-import { client } from '..';
+import { client } from '../client';
 import { UserData } from '../typings/data/user';
 import { userDataServersObject } from './helperFunctions';
 
