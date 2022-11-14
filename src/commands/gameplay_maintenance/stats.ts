@@ -31,7 +31,10 @@ export const command: SlashCommand = {
 		const mentionedUser = interaction.options.getUser('user');
 		if (mentionedUser) {
 
-			const _userData = await userModel.findOne(u => u.userId.includes(mentionedUser.id)).catch(() => null);
+			const _userData = (() => {
+				try { return userModel.findOne(u => u.userId.includes(mentionedUser.id)); }
+				catch { return null; }
+			})();
 			if (!_userData) {
 
 				await respond(interaction, {

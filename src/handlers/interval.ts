@@ -74,7 +74,10 @@ export async function execute(): Promise<void> {
 				const serverInfo = userData.serverInfo;
 				if (!serverInfo || !serverInfo.lastInteractionTimestamp) { continue; }
 
-				const serverData = await serverModel.findOne(s => s.serverId === guildId).catch(() => null);
+				const serverData = (() => {
+					try { return serverModel.findOne(s => s.serverId === guildId); }
+					catch { return null; }
+				})();
 				if (!serverData) { continue; }
 
 				const lastInteractionIsTenMinutesAgo = serverInfo.lastInteractionTimestamp < Date.now() - tenMinutesInMs;
@@ -101,7 +104,10 @@ export async function execute(): Promise<void> {
 
 			for (const userId of array) {
 
-				const userData = await userModel.findOne(u => u.userId.includes(userId)).catch(() => null);
+				const userData = (() => {
+					try { return userModel.findOne(u => u.userId.includes(userId)); }
+					catch { return null; }
+				})();
 				const serverInfo = userData?.servers[guildId];
 				/* If there is no last interaction or if the last interaction was created more than 5 minutes ago, remove the user from the array */
 				if (!serverInfo || !serverInfo.lastInteractionTimestamp || serverInfo.lastInteractionTimestamp <= Date.now() - 300_000) { array = array.filter(v => v !== userId); }

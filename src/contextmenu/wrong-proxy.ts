@@ -22,7 +22,10 @@ export const command: ContextMenuCommand = {
 
 		/* This gets the webhookCache and userData */
 		const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8')) as WebhookMessages;
-		const _userData = await userModel.findOne(u => u.userId.includes(webhookCache[interaction.targetId]?.split('_')[0] || '')).catch(() => null);
+		const _userData = (() => {
+			try { return userModel.findOne(u => u.userId.includes(webhookCache[interaction.targetId]?.split('_')[0] || '')); }
+			catch { return null; }
+		})();
 		const userData = _userData === null ? null : getUserData(_userData, interaction.guildId, undefined);
 
 		/* This is checking if the user who is trying to edit the message is the same user who sent the message. */

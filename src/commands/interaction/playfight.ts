@@ -72,7 +72,10 @@ export const command: SlashCommand = {
 		}
 
 		/* Define the partners user data, check if the user is interactable, and if they are, define quid data and profile data. */
-		const _userData2 = await userModel.findOne(u => u.userId.includes(mentionedUser.id)).catch(() => null);
+		const _userData2 = (() => {
+			try { return userModel.findOne(u => u.userId.includes(mentionedUser.id)); }
+			catch { return null; }
+		})();
 		const userData2 = _userData2 === null ? null : getUserData(_userData2, interaction.guildId, getMapData(_userData2.quids, getMapData(_userData2.currentQuid, interaction.guildId)));
 		if (!isInteractable(interaction, userData2, messageContent, restEmbed)) { return; }
 

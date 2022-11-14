@@ -33,7 +33,10 @@ export const command: SlashCommand = {
 
 		/* Getting userData and userData.quid either for mentionedUser if there is one or for interaction user otherwise */
 		const mentionedUser = interaction.options.getUser('user');
-		const _userData = await userModel.findOne(u => u.userId.includes(!mentionedUser ? interaction.user.id : mentionedUser.id)).catch(() => null);
+		const _userData = (() => {
+			try { return userModel.findOne(u => u.userId.includes(!mentionedUser ? interaction.user.id : mentionedUser.id)); }
+			catch { return null; }
+		})();
 		userData = _userData === null ? null : getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[_userData.currentQuid[interaction.guildId || 'DMs'] || '']);
 
 		/* Responding if there is no userData */
