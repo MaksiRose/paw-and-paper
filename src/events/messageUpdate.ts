@@ -14,8 +14,14 @@ export const event: DiscordEvent = {
 
 		if (newMessage.author.bot || !newMessage.inGuild()) { return; }
 
-		const _userData = await userModel.findOne(u => u.userId.includes(newMessage.author.id)).catch(() => null);
-		const serverData = await serverModel.findOne(s => s.serverId === newMessage.guildId).catch(() => null);
+		const _userData = (() => {
+			try { return userModel.findOne(u => u.userId.includes(newMessage.author.id)); }
+			catch { return null; }
+		})();
+		const serverData = (() => {
+			try { return serverModel.findOne(s => s.serverId === newMessage.guildId); }
+			catch { return null; }
+		})();
 
 		if (_userData === null || serverData === null) { return; }
 

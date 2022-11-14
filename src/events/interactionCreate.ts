@@ -31,9 +31,15 @@ export const event: DiscordEvent = {
 			/* This is only null when in DM without CHANNEL partial, or when channel cache is sweeped. Therefore, this is technically unsafe since this value could become null after this check. This scenario is unlikely though. */
 			if (!interaction.channel) { await client.channels.fetch(interaction.channelId || ''); }
 
-			const _userData = await userModel.findOne(u => u.userId.includes(interaction.user.id)).catch(() => null);
+			const _userData = (() => {
+				try { return userModel.findOne(u => u.userId.includes(interaction.user.id)); }
+				catch { return null; }
+			})();
 			const userData = _userData === null ? null : getUserData(_userData, interaction.guildId ?? 'DMs', _userData.quids[_userData.currentQuid[interaction.guildId ?? 'DMs'] ?? '']);
-			let serverData = await serverModel.findOne(s => s.serverId === interaction.guildId).catch(() => null);
+			let serverData = (() => {
+				try { return serverModel.findOne(s => s.serverId === interaction.guildId); }
+				catch { return null; }
+			})();
 
 			/* It's setting the last interaction timestamp for the user to now. */
 			if (userData && interaction.inCachedGuild() && interaction.isRepliable()) {

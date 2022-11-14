@@ -114,7 +114,10 @@ export async function executePlaying(
 		return;
 	}
 
-	let _userData2 = mentionedUserId ? (await userModel.findOne(u => u.userId.includes(mentionedUserId)).catch(() => null)) : null;
+	let _userData2 = mentionedUserId ? (() => {
+		try { return userModel.findOne(u => u.userId.includes(mentionedUserId)); }
+		catch { return null; }
+	})() : null;
 	if (!_userData2) {
 
 		const usersEligibleForPlaying = (await userModel

@@ -92,7 +92,10 @@ export const command: SlashCommand = {
 
 		// Make a function that makes a message for you. If you give it a valid user or quid, it will give you the problems the user has + a list of herbs. if you give it a page (1 | 2), it will give you a list of herbs from that page. If you give it an available herb as well, it will check whether there was an existing message where a problem was mentioned that the user already not has anymore (in which case it will refresh the info and tell the user to pick again) and if not, apply the herb.
 		const chosenUser = interaction.options.getUser('user');
-		const _chosenUserData = !chosenUser ? null : (await userModel.findOne(u => u.userId.includes(chosenUser.id)).catch(() => null));
+		const _chosenUserData = !chosenUser ? null : (() => {
+			try { return userModel.findOne(u => u.userId.includes(chosenUser.id)); }
+			catch { return null; }
+		})();
 		const chosenUserData = _chosenUserData === null ? undefined : getUserData(_chosenUserData, interaction.guildId, _chosenUserData.quids[_chosenUserData.servers[interaction.guildId]?.currentQuid ?? '']);
 		if (chosenUserData && !isInteractable(interaction, chosenUserData, messageContent, restEmbed)) { return; }
 
