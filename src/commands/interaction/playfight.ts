@@ -161,7 +161,7 @@ export const command: SlashCommand = {
 				if (gameType === 'tictactoe') {
 
 					componentArray[row]?.addComponents(new ButtonBuilder()
-						.setCustomId(`playfight_board_${row}_${column}`)
+						.setCustomId(`board_${row}_${column}`)
 						.setEmoji(emptyField)
 						.setDisabled(false)
 						.setStyle(ButtonStyle.Secondary),
@@ -175,39 +175,39 @@ export const command: SlashCommand = {
 			componentArray.push(
 				new ActionRowBuilder<ButtonBuilder>().setComponents(
 					new ButtonBuilder()
-						.setCustomId('playfight_board_0')
+						.setCustomId('board_0')
 						.setEmoji('1️⃣')
 						.setDisabled(false)
 						.setStyle(ButtonStyle.Secondary),
 					new ButtonBuilder()
-						.setCustomId('playfight_board_1')
+						.setCustomId('board_1')
 						.setEmoji('2️⃣')
 						.setDisabled(false)
 						.setStyle(ButtonStyle.Secondary),
 					new ButtonBuilder()
-						.setCustomId('playfight_board_2')
+						.setCustomId('board_2')
 						.setEmoji('3️⃣')
 						.setDisabled(false)
 						.setStyle(ButtonStyle.Secondary),
 					new ButtonBuilder()
-						.setCustomId('playfight_board_3')
+						.setCustomId('board_3')
 						.setEmoji('4️⃣')
 						.setDisabled(false)
 						.setStyle(ButtonStyle.Secondary),
 				),
 				new ActionRowBuilder<ButtonBuilder>().setComponents(
 					new ButtonBuilder()
-						.setCustomId('playfight_board_4')
+						.setCustomId('board_4')
 						.setEmoji('5️⃣')
 						.setDisabled(false)
 						.setStyle(ButtonStyle.Secondary),
 					new ButtonBuilder()
-						.setCustomId('playfight_board_5')
+						.setCustomId('board_5')
 						.setEmoji('6️⃣')
 						.setDisabled(false)
 						.setStyle(ButtonStyle.Secondary),
 					new ButtonBuilder()
-						.setCustomId('playfight_board_6')
+						.setCustomId('board_6')
 						.setEmoji('7️⃣')
 						.setDisabled(false)
 						.setStyle(ButtonStyle.Secondary),
@@ -275,7 +275,7 @@ export const command: SlashCommand = {
 				.awaitMessageComponent({
 					componentType: ComponentType.Button,
 					idle: 120_000,
-					filter: (i => i.customId.startsWith('playfight_') && userDataCurrent.userId.includes(i.user.id)),
+					filter: (i => i.customId.includes('board') && userDataCurrent.userId.includes(i.user.id)),
 				})
 				.then(async i => {
 					try {
@@ -285,9 +285,9 @@ export const command: SlashCommand = {
 						if (gameType === 'tictactoe') {
 
 							/* The column and row of the current card are updated with their position */
-							row = Number(i.customId.split('_')[2]);
+							row = Number(i.customId.split('_')[1]);
 							if (isNaN(row)) { throw new Error('row is Not a Number'); }
-							column = Number(i.customId.split('_')[3]);
+							column = Number(i.customId.split('_')[2]);
 							if (isNaN(column)) { throw new Error('column is Not a Number'); }
 
 							componentArray[row]?.components[column]?.setEmoji(user1IsPlaying ? player1Field : player2Field);
@@ -297,7 +297,7 @@ export const command: SlashCommand = {
 						else if (gameType === 'connectfour') {
 
 							/* The column and row of the current card are updated with their position */
-							column = Number(i.customId.split('_')[2]);
+							column = Number(i.customId.split('_')[1]);
 
 							for (let r = 5; r >= 0; r--) {
 
