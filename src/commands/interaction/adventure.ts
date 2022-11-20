@@ -511,7 +511,7 @@ async function sendNextRoundMessage(
 		components: componentArray,
 	}, false);
 
-	await interaction.message.delete();
+	await interaction.message.delete(); // Maybe there is a way to save an API call that goes towards the limit here, maybe create a new InteractionWebhook based on componentDisablingToken and call delete on that based on componentDisablingMessageId, and then delete these things afterwards or something else entirely. This method could be used as backup in case the previous interaction is older than 15 minutes.
 
 	return message;
 }

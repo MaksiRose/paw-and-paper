@@ -65,7 +65,7 @@ export async function hasCooldown(
 				setTimeout(async function() {
 
 					await reply
-						.delete()
+						.delete() // instead of doing this, an InteractionWebhook could be created using the interaction token and the id of the reply, and then deleteMessage could be called there. That API call wouldnt go towards the API call limit
 						.catch (async error => {
 
 							await sendErrorMessage(interaction, error)

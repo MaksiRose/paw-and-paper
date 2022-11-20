@@ -248,7 +248,7 @@ export const command: SlashCommand = {
 
 				newTurnEmbedTextArrayIndex = getRandomNumber(newTurnEmbedTextArray.length, 0, newTurnEmbedTextArrayIndex === -1 ? undefined : newTurnEmbedTextArrayIndex);
 
-				await oldMessage.delete();
+				await oldMessage.delete(); // Instead of having an oldMessage, it should have an interaction token and message id passed here so that a new InteractionWebhook can be created that can then call delete via the id. That API call wouldnt go towards the API call limit
 
 				const message = await respond(int, {
 					content: `<@${userId}>`,

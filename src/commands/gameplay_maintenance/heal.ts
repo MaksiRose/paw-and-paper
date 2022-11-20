@@ -527,7 +527,7 @@ export async function getHealResponse(
 	if (interaction.isMessageComponent()) {
 
 		deleteCommandDisablingInfo(userData, interaction.guildId);
-		await interaction.message.delete();
+		await interaction.message.delete(); // Maybe a way to make an API call that doesn't count towards the limit is to move this a line higher, create a new InteractionWebhook based on componentDisablingToken and call delete on that based on componentDisablingMessageId, and then delete these things afterwards. This method could be a backup in case the previous interaction is older than 15 minutes
 	}
 
 	const botReply = await respond(interaction, {
