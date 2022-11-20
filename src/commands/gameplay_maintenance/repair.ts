@@ -167,7 +167,7 @@ function getDenButtons(
 			.setLabel('Food Den')
 			.setStyle(ButtonStyle.Secondary),
 		new ButtonBuilder()
-			.setCustomId(`repair_medicineDen@${_id}`)
+			.setCustomId(`repair_medicineDen_@${_id}`)
 			.setLabel('Medicine Den')
 			.setStyle(ButtonStyle.Secondary)]);
 }
