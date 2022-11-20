@@ -148,7 +148,7 @@ export const command: SlashCommand = {
 			for (let row = 0; row < 5; row++) {
 
 				componentArray[column]?.addComponents(new ButtonBuilder()
-					.setCustomId(`adventure_board_${column}_${row}`)
+					.setCustomId(`board_${column}_${row}`)
 					.setEmoji(coveredField)
 					.setDisabled(false)
 					.setStyle(ButtonStyle.Secondary),
@@ -192,296 +192,296 @@ export const command: SlashCommand = {
 
 		/* Define number of rounds, and the uncovered card amount for both users. */
 		let finishedRounds = 0;
-	type CardPositions = { column: number | null, row: number | null; };
-	let chosenCardPositions: { first: CardPositions, second: CardPositions, current: 'first' | 'second'; } = { first: { column: null, row: null }, second: { column: null, row: null }, current: 'first' };
-	let uncoveredCardsUser1 = 0;
-	let uncoveredCardsUser2 = 0;
+		type CardPositions = { column: number | null, row: number | null; };
+		let chosenCardPositions: { first: CardPositions, second: CardPositions, current: 'first' | 'second'; } = { first: { column: null, row: null }, second: { column: null, row: null }, current: 'first' };
+		let uncoveredCardsUser1 = 0;
+		let uncoveredCardsUser2 = 0;
 
-	let user1IsPlaying = getRandomNumber(2) === 0 ? true : false;
-	let userDataCurrent = user1IsPlaying ? userData1 : userData2;
+		let user1IsPlaying = getRandomNumber(2) === 0 ? true : false;
+		let userDataCurrent = user1IsPlaying ? userData1 : userData2;
 
-	await sendNextRoundMessage(interaction, user1IsPlaying ? userId1 : userId2, userData1, userData2, componentArray);
-	let lastInteraction = interaction;
+		await sendNextRoundMessage(interaction, user1IsPlaying ? userId1 : userId2, userData1, userData2, componentArray);
+		let lastInteraction = interaction;
 
-	const collector = interaction.channel.createMessageComponentCollector({
-		componentType: ComponentType.Button,
-		// This returns `reason` as 'idle' on end event
-		idle: 120_000,
-		filter: (i => i.customId.startsWith('adventure_') && userDataCurrent.userId.includes(i.user.id)),
-	});
+		const collector = interaction.channel.createMessageComponentCollector({
+			componentType: ComponentType.Button,
+			// This returns `reason` as 'idle' on end event
+			idle: 120_000,
+			filter: (i => i.customId.includes('board') && userDataCurrent.userId.includes(i.user.id)),
+		});
 
-	collector.on('collect', async (i) => {
-		try {
+		collector.on('collect', async (i) => {
+			try {
 
-			if (!i.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
-			lastInteraction = i;
+				if (!i.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
+				lastInteraction = i;
 
-			/* The column and row of the current card are updated with their position */
-			const column = Number(i.customId.split('_')[2]);
-			if (isNaN(column)) { return collector.stop('error_Error: column is Not a Number'); }
-			const row = Number(i.customId.split('_')[3]);
-			if (isNaN(row)) { return collector.stop('error_Error: column is Not a Number'); }
-			chosenCardPositions[chosenCardPositions.current].column = column;
-			chosenCardPositions[chosenCardPositions.current].row = row;
+				/* The column and row of the current card are updated with their position */
+				const column = Number(i.customId.split('_')[1]);
+				if (isNaN(column)) { return collector.stop('error_Error: column is Not a Number'); }
+				const row = Number(i.customId.split('_')[2]);
+				if (isNaN(row)) { return collector.stop('error_Error: column is Not a Number'); }
+				chosenCardPositions[chosenCardPositions.current].column = column;
+				chosenCardPositions[chosenCardPositions.current].row = row;
 
-			/* Getting the uncovered emoji from the current position, and erroring if there is no emoji */
-			const uncoveredEmoji = getArrayElement(getArrayElement(emojisInComponentArray, column), row);
+				/* Getting the uncovered emoji from the current position, and erroring if there is no emoji */
+				const uncoveredEmoji = getArrayElement(getArrayElement(emojisInComponentArray, column), row);
 
-			/* Changing the button's emoji to be the uncovered card and disabling it */
-			componentArray[column]?.components[row]?.setEmoji(uncoveredEmoji);
-			componentArray[column]?.components[row]?.setDisabled(true);
+				/* Changing the button's emoji to be the uncovered card and disabling it */
+				componentArray[column]?.components[row]?.setEmoji(uncoveredEmoji);
+				componentArray[column]?.components[row]?.setDisabled(true);
 
-			const updatedInteraction = await update(i, { components: chosenCardPositions.current === 'first' ? componentArray : disableAllComponents(componentArray) })
-				.catch((error) => {
-					collector.stop(`error_${error}`);
-					return undefined;
-				});
-			if (!updatedInteraction) { return; }
+				const updatedInteraction = await update(i, { components: chosenCardPositions.current === 'first' ? componentArray : disableAllComponents(componentArray) })
+					.catch((error) => {
+						collector.stop(`error_${error}`);
+						return undefined;
+					});
+				if (!updatedInteraction) { return; }
 
-			if (chosenCardPositions.current === 'first') {
+				if (chosenCardPositions.current === 'first') {
 
-				chosenCardPositions.current = 'second';
-			}
-			else {
-
-				finishedRounds += 1;
-				chosenCardPositions.current = 'first';
-
-				setTimeout(async () => {
-					try {
-
-						/* Getting the column and row from the first selected button */
-						const firstPickColumn = chosenCardPositions.first.column;
-						if (firstPickColumn === null) { return collector.stop('error_Error: firstPickColumn is null'); }
-						const firstPickRow = chosenCardPositions.first.row;
-						if (firstPickRow === null) { return collector.stop('error_Error: firstPickRow is null'); }
-
-						/* Getting the column and row from the second selected button */
-						const secondPickColumn = chosenCardPositions.second.column;
-						if (secondPickColumn === null) { return collector.stop('error_Error: secondPickColumn is null'); }
-						const secondPickRow = chosenCardPositions.second.row;
-						if (secondPickRow === null) { return collector.stop('error_Error: secondPickRow is null'); }
-
-						/* If there are no emojis or the emojis don't match, set both buttons emojis to covered fields and enable them */
-						const firstPickEmoji = componentArray[firstPickColumn]?.components[firstPickRow]?.toJSON().emoji?.name;
-						const secondPickEmoji = componentArray[secondPickColumn]?.components[secondPickRow]?.toJSON().emoji?.name;
-						if (firstPickEmoji === undefined || secondPickEmoji === undefined || firstPickEmoji !== secondPickEmoji) {
-
-							componentArray[firstPickColumn]?.components[firstPickRow]?.setEmoji(coveredField);
-							componentArray[firstPickColumn]?.components[firstPickRow]?.setDisabled(false);
-
-							componentArray[secondPickColumn]?.components[secondPickRow]?.setEmoji(coveredField);
-							componentArray[secondPickColumn]?.components[secondPickRow]?.setDisabled(false);
-						}
-						else {
-
-							user1IsPlaying ? uncoveredCardsUser1 += 1 : uncoveredCardsUser2 += 1;
-						}
-
-						chosenCardPositions = { first: { column: null, row: null }, second: { column: null, row: null }, current: 'first' }; // This is updated here because above, we are using chosenCardPositions to decide whether the buttons are going to be reset or not
-
-						user1IsPlaying = !user1IsPlaying; // This is changed here because above, we are using user1IsPlaying to decide whether user1 should get +1 for uncovered cards or user2
-						userDataCurrent = user1IsPlaying ? userData1 : userData2;
-
-						if (componentArray.every(actionRow => actionRow.components.every(button => button.toJSON().disabled === true))) { collector.stop('success'); }
-						else if (finishedRounds >= 20) { collector.stop('roundLimit'); }
-						else {
-
-							await sendNextRoundMessage(i, user1IsPlaying ? userId1 : userId2, userData1, userData2, componentArray)
-								.catch((error) => {
-									collector.stop(`error_${error}`);
-									return undefined;
-								});
-						}
-					}
-					catch (error) {
-
-						await sendErrorMessage(i, error)
-							.catch(e => { console.error(e); });
-					}
-				}, 3_000);
-			}
-		}
-		catch (error) {
-
-			await sendErrorMessage(i, error)
-				.catch(e => { console.error(e); });
-		}
-	});
-
-	collector.on('end', async (collected, reason) => {
-		try {
-
-			/* Set both user's cooldown to false */
-			await setCooldown(userData1, interaction.guildId, false);
-			await setCooldown(userData2, interaction.guildId, false);
-
-			if (reason.startsWith('error')) {
-
-				const errorReason = reason.split('_').slice(1).join('_') || 'An unexpected error occurred.';
-				await sendErrorMessage(lastInteraction, errorReason)
-					.catch((error) => { console.error(error); });
-				return;
-			}
-
-			// reason idle: someone waited too long
-			if (reason.includes('idle') || reason.includes('time')) {
-
-				const levelUpEmbeds = await checkLevelUps(lastInteraction, userData1, userData2, serverData)
-					.catch((error) => { sendErrorMessage(lastInteraction, error); return null; });
-
-				await update(lastInteraction, {
-					embeds: [
-						new EmbedBuilder()
-							.setColor(userData1.quid.color)
-							.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-							.setDescription(`*${userDataCurrent.quid.name} decides that ${userDataCurrent.quid.pronounAndPlural(0, 'has', 'have')} adventured enough and goes back to the pack.*`)
-							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}` }),
-						...decreasedStatsData1.injuryUpdateEmbed,
-						...decreasedStatsData2.injuryUpdateEmbed,
-						...(levelUpEmbeds?.levelUpEmbed1 ?? []),
-						...(levelUpEmbeds?.levelUpEmbed2 ?? []),
-					],
-					components: disableAllComponents(componentArray),
-				})
-					.catch((error) => { sendErrorMessage(lastInteraction, error); });
-
-				await checkAfterGameChanges(interaction, userData1, userData2)
-					.catch((error) => { sendErrorMessage(lastInteraction, error); return null; });
-				return;
-			}
-
-			// reason roundLimit: too many rounds went past
-			if (reason.includes('roundLimit')) {
-
-				const losingUserData = uncoveredCardsUser1 < uncoveredCardsUser2 ? userData1 : uncoveredCardsUser2 < uncoveredCardsUser1 ? userData2 : getRandomNumber(2) === 0 ? userData1 : userData2;
-
-				const losingHealthPoints = getSmallerNumber(getRandomNumber(5, 3), losingUserData.quid.profile.health);
-
-				let extraDescription = '';
-				let extraFooter = '';
-
-				const { itemType, itemName } = getHighestItem(losingUserData.quid.profile.inventory);
-				const inventory_ = widenValues(losingUserData.quid.profile.inventory);
-				if (itemType && itemName && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
-
-					inventory_[itemType][itemName] -= 1;
-					extraDescription = `accidentally drops a ${itemName} that ${losingUserData.quid.pronoun(0)} had with ${losingUserData.quid.pronoun(1)}.`;
-					extraFooter = `-1 ${itemName} for ${losingUserData.quid.name}`;
-				}
-				else if (losingUserData.quid.profile.injuries.cold === false && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
-
-					losingUserData.quid.profile.injuries.cold = true;
-					extraDescription = `notices that ${losingUserData.quid.pronounAndPlural(0, 'is', 'are')} feeling weak and can't stop coughing. The long jouney must've given ${losingUserData.quid.pronoun(1)} a cold.`;
-					extraFooter = `-${losingHealthPoints} HP (from cold) for ${losingUserData.quid.name}`;
+					chosenCardPositions.current = 'second';
 				}
 				else {
 
-					losingUserData.quid.profile.injuries.wounds += 1;
-					extraDescription = `feels blood running down ${losingUserData.quid.pronoun(2)} side. The humans must've wounded ${losingUserData.quid.pronoun(0)}.`;
-					extraFooter = `-${losingHealthPoints} HP (from wound) for ${losingUserData.quid.name}`;
+					finishedRounds += 1;
+					chosenCardPositions.current = 'first';
+
+					setTimeout(async () => {
+						try {
+
+							/* Getting the column and row from the first selected button */
+							const firstPickColumn = chosenCardPositions.first.column;
+							if (firstPickColumn === null) { return collector.stop('error_Error: firstPickColumn is null'); }
+							const firstPickRow = chosenCardPositions.first.row;
+							if (firstPickRow === null) { return collector.stop('error_Error: firstPickRow is null'); }
+
+							/* Getting the column and row from the second selected button */
+							const secondPickColumn = chosenCardPositions.second.column;
+							if (secondPickColumn === null) { return collector.stop('error_Error: secondPickColumn is null'); }
+							const secondPickRow = chosenCardPositions.second.row;
+							if (secondPickRow === null) { return collector.stop('error_Error: secondPickRow is null'); }
+
+							/* If there are no emojis or the emojis don't match, set both buttons emojis to covered fields and enable them */
+							const firstPickEmoji = componentArray[firstPickColumn]?.components[firstPickRow]?.toJSON().emoji?.name;
+							const secondPickEmoji = componentArray[secondPickColumn]?.components[secondPickRow]?.toJSON().emoji?.name;
+							if (firstPickEmoji === undefined || secondPickEmoji === undefined || firstPickEmoji !== secondPickEmoji) {
+
+								componentArray[firstPickColumn]?.components[firstPickRow]?.setEmoji(coveredField);
+								componentArray[firstPickColumn]?.components[firstPickRow]?.setDisabled(false);
+
+								componentArray[secondPickColumn]?.components[secondPickRow]?.setEmoji(coveredField);
+								componentArray[secondPickColumn]?.components[secondPickRow]?.setDisabled(false);
+							}
+							else {
+
+								user1IsPlaying ? uncoveredCardsUser1 += 1 : uncoveredCardsUser2 += 1;
+							}
+
+							chosenCardPositions = { first: { column: null, row: null }, second: { column: null, row: null }, current: 'first' }; // This is updated here because above, we are using chosenCardPositions to decide whether the buttons are going to be reset or not
+
+							user1IsPlaying = !user1IsPlaying; // This is changed here because above, we are using user1IsPlaying to decide whether user1 should get +1 for uncovered cards or user2
+							userDataCurrent = user1IsPlaying ? userData1 : userData2;
+
+							if (componentArray.every(actionRow => actionRow.components.every(button => button.toJSON().disabled === true))) { collector.stop('success'); }
+							else if (finishedRounds >= 20) { collector.stop('roundLimit'); }
+							else {
+
+								await sendNextRoundMessage(i, user1IsPlaying ? userId1 : userId2, userData1, userData2, componentArray)
+									.catch((error) => {
+										collector.stop(`error_${error}`);
+										return undefined;
+									});
+							}
+						}
+						catch (error) {
+
+							await sendErrorMessage(i, error)
+								.catch(e => { console.error(e); });
+						}
+					}, 3_000);
 				}
-
-				losingUserData.update(
-					(u => {
-						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, lastInteraction.guildId)).profiles, lastInteraction.guildId);
-						p.inventory = inventory_;
-						p.health -= losingHealthPoints;
-						p.injuries = losingUserData.quid.profile.injuries;
-					}),
-				);
-
-
-				const levelUpEmbeds = await checkLevelUps(lastInteraction, userData1, userData2, serverData)
-					.catch((error) => { sendErrorMessage(lastInteraction, error); return null; });
-
-				await update(lastInteraction, {
-					embeds: [
-						new EmbedBuilder()
-							.setColor(userData1.quid.color)
-							.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-							.setDescription(`*The adventure didn't go as planned. Not only did the two animals get lost, they also had to run from humans. While running, ${losingUserData.quid.name} ${extraDescription} What a shame!*`)
-							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraFooter}` }),
-						...decreasedStatsData1.injuryUpdateEmbed,
-						...decreasedStatsData2.injuryUpdateEmbed,
-						...(levelUpEmbeds?.levelUpEmbed1 ?? []),
-						...(levelUpEmbeds?.levelUpEmbed2 ?? []),
-					],
-					components: disableAllComponents(componentArray),
-				})
-					.catch((error) => { sendErrorMessage(lastInteraction, error); });
-
-
-				await checkAfterGameChanges(interaction, userData1, userData2)
-					.catch((error) => { sendErrorMessage(lastInteraction, error); return null; });
-				return;
 			}
+			catch (error) {
 
-			// reason success: every card has been uncovered
-			if (reason.includes('success')) {
-
-				const winningUserData = uncoveredCardsUser1 > uncoveredCardsUser2 ? userData1 : uncoveredCardsUser2 > uncoveredCardsUser1 ? userData2 : getRandomNumber(2) === 0 ? userData1 : userData2;
-
-				let foundItem: KeyOfUnion<Inventory[keyof Inventory]> | null = null;
-				let extraHealthPoints = 0;
-
-				if (winningUserData.quid.profile.health < winningUserData.quid.profile.maxHealth) {
-
-					extraHealthPoints = getSmallerNumber(getRandomNumber(5, 8), winningUserData.quid.profile.maxHealth - winningUserData.quid.profile.health);
-				}
-				else if (Object.keys(winningUserData.quid.profile.temporaryStatIncrease).length <= 1 && pullFromWeightedTable({ 0: 20 - finishedRounds, 1: finishedRounds - 10 }) === 0) {
-
-					const specialPlants = Object.keys(serverData.inventory.specialPlants) as SpecialPlantNames[];
-					foundItem = specialPlants[getRandomNumber(specialPlants.length)]!;
-					winningUserData.quid.profile.inventory.specialPlants[foundItem] += 1;
-				}
-				else {
-
-					foundItem = await pickPlant(pullFromWeightedTable({ 0: finishedRounds + 10, 1: (2 * finishedRounds) - 10, 2: (20 - finishedRounds) * 3 }) as 0 | 1 | 2, serverData);
-					if (keyInObject(winningUserData.quid.profile.inventory.commonPlants, foundItem)) { winningUserData.quid.profile.inventory.commonPlants[foundItem] += 1; }
-					else if (keyInObject(winningUserData.quid.profile.inventory.uncommonPlants, foundItem)) { winningUserData.quid.profile.inventory.uncommonPlants[foundItem] += 1; }
-					else { winningUserData.quid.profile.inventory.rarePlants[foundItem] += 1; }
-				}
-
-				winningUserData.update(
-					(u => {
-						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, lastInteraction.guildId)).profiles, lastInteraction.guildId);
-						p.inventory = winningUserData.quid.profile.inventory;
-						p.health += extraHealthPoints;
-					}),
-				);
-
-
-				const levelUpEmbeds = await checkLevelUps(lastInteraction, userData1, userData2, serverData)
-					.catch((error) => { sendErrorMessage(lastInteraction, error); });
-
-				await update(lastInteraction, {
-					embeds: [
-						new EmbedBuilder()
-							.setColor(userData1.quid.color)
-							.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-							.setDescription(`*The two animals laugh as they return from a successful adventure. ${winningUserData.quid.name} ${foundItem === null ? 'feels especially refreshed from this trip' : `even found a ${foundItem} on the way`}. What a success!*`)
-							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraHealthPoints > 0 ? `+${extraHealthPoints} HP for ${winningUserData.quid.name} (${winningUserData.quid.profile.health}/${winningUserData.quid.profile.maxHealth})` : `+1 ${foundItem} for ${winningUserData.quid.name}`}` }),
-						...decreasedStatsData1.injuryUpdateEmbed,
-						...decreasedStatsData2.injuryUpdateEmbed,
-						...(levelUpEmbeds?.levelUpEmbed1 ?? []),
-						...(levelUpEmbeds?.levelUpEmbed2 ?? []),
-					],
-					components: disableAllComponents(componentArray),
-				})
-					.catch((error) => { sendErrorMessage(lastInteraction, error); });
-
-				await checkAfterGameChanges(interaction, userData1, userData2)
-					.catch((error) => { sendErrorMessage(lastInteraction, error); return null; });
-				return;
+				await sendErrorMessage(i, error)
+					.catch(e => { console.error(e); });
 			}
-		}
-		catch (error) {
+		});
 
-			await sendErrorMessage(lastInteraction, error)
-				.catch(e => { console.error(e); });
-		}
-	});
+		collector.on('end', async (collected, reason) => {
+			try {
+
+				/* Set both user's cooldown to false */
+				await setCooldown(userData1, interaction.guildId, false);
+				await setCooldown(userData2, interaction.guildId, false);
+
+				if (reason.startsWith('error')) {
+
+					const errorReason = reason.split('_').slice(1).join('_') || 'An unexpected error occurred.';
+					await sendErrorMessage(lastInteraction, errorReason)
+						.catch((error) => { console.error(error); });
+					return;
+				}
+
+				// reason idle: someone waited too long
+				if (reason.includes('idle') || reason.includes('time')) {
+
+					const levelUpEmbeds = await checkLevelUps(lastInteraction, userData1, userData2, serverData)
+						.catch((error) => { sendErrorMessage(lastInteraction, error); return null; });
+
+					await update(lastInteraction, {
+						embeds: [
+							new EmbedBuilder()
+								.setColor(userData1.quid.color)
+								.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
+								.setDescription(`*${userDataCurrent.quid.name} decides that ${userDataCurrent.quid.pronounAndPlural(0, 'has', 'have')} adventured enough and goes back to the pack.*`)
+								.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}` }),
+							...decreasedStatsData1.injuryUpdateEmbed,
+							...decreasedStatsData2.injuryUpdateEmbed,
+							...(levelUpEmbeds?.levelUpEmbed1 ?? []),
+							...(levelUpEmbeds?.levelUpEmbed2 ?? []),
+						],
+						components: disableAllComponents(componentArray),
+					})
+						.catch((error) => { sendErrorMessage(lastInteraction, error); });
+
+					await checkAfterGameChanges(interaction, userData1, userData2)
+						.catch((error) => { sendErrorMessage(lastInteraction, error); return null; });
+					return;
+				}
+
+				// reason roundLimit: too many rounds went past
+				if (reason.includes('roundLimit')) {
+
+					const losingUserData = uncoveredCardsUser1 < uncoveredCardsUser2 ? userData1 : uncoveredCardsUser2 < uncoveredCardsUser1 ? userData2 : getRandomNumber(2) === 0 ? userData1 : userData2;
+
+					const losingHealthPoints = getSmallerNumber(getRandomNumber(5, 3), losingUserData.quid.profile.health);
+
+					let extraDescription = '';
+					let extraFooter = '';
+
+					const { itemType, itemName } = getHighestItem(losingUserData.quid.profile.inventory);
+					const inventory_ = widenValues(losingUserData.quid.profile.inventory);
+					if (itemType && itemName && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
+
+						inventory_[itemType][itemName] -= 1;
+						extraDescription = `accidentally drops a ${itemName} that ${losingUserData.quid.pronoun(0)} had with ${losingUserData.quid.pronoun(1)}.`;
+						extraFooter = `-1 ${itemName} for ${losingUserData.quid.name}`;
+					}
+					else if (losingUserData.quid.profile.injuries.cold === false && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
+
+						losingUserData.quid.profile.injuries.cold = true;
+						extraDescription = `notices that ${losingUserData.quid.pronounAndPlural(0, 'is', 'are')} feeling weak and can't stop coughing. The long jouney must've given ${losingUserData.quid.pronoun(1)} a cold.`;
+						extraFooter = `-${losingHealthPoints} HP (from cold) for ${losingUserData.quid.name}`;
+					}
+					else {
+
+						losingUserData.quid.profile.injuries.wounds += 1;
+						extraDescription = `feels blood running down ${losingUserData.quid.pronoun(2)} side. The humans must've wounded ${losingUserData.quid.pronoun(0)}.`;
+						extraFooter = `-${losingHealthPoints} HP (from wound) for ${losingUserData.quid.name}`;
+					}
+
+					losingUserData.update(
+						(u => {
+							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, lastInteraction.guildId)).profiles, lastInteraction.guildId);
+							p.inventory = inventory_;
+							p.health -= losingHealthPoints;
+							p.injuries = losingUserData.quid.profile.injuries;
+						}),
+					);
+
+
+					const levelUpEmbeds = await checkLevelUps(lastInteraction, userData1, userData2, serverData)
+						.catch((error) => { sendErrorMessage(lastInteraction, error); return null; });
+
+					await update(lastInteraction, {
+						embeds: [
+							new EmbedBuilder()
+								.setColor(userData1.quid.color)
+								.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
+								.setDescription(`*The adventure didn't go as planned. Not only did the two animals get lost, they also had to run from humans. While running, ${losingUserData.quid.name} ${extraDescription} What a shame!*`)
+								.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraFooter}` }),
+							...decreasedStatsData1.injuryUpdateEmbed,
+							...decreasedStatsData2.injuryUpdateEmbed,
+							...(levelUpEmbeds?.levelUpEmbed1 ?? []),
+							...(levelUpEmbeds?.levelUpEmbed2 ?? []),
+						],
+						components: disableAllComponents(componentArray),
+					})
+						.catch((error) => { sendErrorMessage(lastInteraction, error); });
+
+
+					await checkAfterGameChanges(interaction, userData1, userData2)
+						.catch((error) => { sendErrorMessage(lastInteraction, error); return null; });
+					return;
+				}
+
+				// reason success: every card has been uncovered
+				if (reason.includes('success')) {
+
+					const winningUserData = uncoveredCardsUser1 > uncoveredCardsUser2 ? userData1 : uncoveredCardsUser2 > uncoveredCardsUser1 ? userData2 : getRandomNumber(2) === 0 ? userData1 : userData2;
+
+					let foundItem: KeyOfUnion<Inventory[keyof Inventory]> | null = null;
+					let extraHealthPoints = 0;
+
+					if (winningUserData.quid.profile.health < winningUserData.quid.profile.maxHealth) {
+
+						extraHealthPoints = getSmallerNumber(getRandomNumber(5, 8), winningUserData.quid.profile.maxHealth - winningUserData.quid.profile.health);
+					}
+					else if (Object.keys(winningUserData.quid.profile.temporaryStatIncrease).length <= 1 && pullFromWeightedTable({ 0: 20 - finishedRounds, 1: finishedRounds - 10 }) === 0) {
+
+						const specialPlants = Object.keys(serverData.inventory.specialPlants) as SpecialPlantNames[];
+						foundItem = specialPlants[getRandomNumber(specialPlants.length)]!;
+						winningUserData.quid.profile.inventory.specialPlants[foundItem] += 1;
+					}
+					else {
+
+						foundItem = await pickPlant(pullFromWeightedTable({ 0: finishedRounds + 10, 1: (2 * finishedRounds) - 10, 2: (20 - finishedRounds) * 3 }) as 0 | 1 | 2, serverData);
+						if (keyInObject(winningUserData.quid.profile.inventory.commonPlants, foundItem)) { winningUserData.quid.profile.inventory.commonPlants[foundItem] += 1; }
+						else if (keyInObject(winningUserData.quid.profile.inventory.uncommonPlants, foundItem)) { winningUserData.quid.profile.inventory.uncommonPlants[foundItem] += 1; }
+						else { winningUserData.quid.profile.inventory.rarePlants[foundItem] += 1; }
+					}
+
+					winningUserData.update(
+						(u => {
+							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, lastInteraction.guildId)).profiles, lastInteraction.guildId);
+							p.inventory = winningUserData.quid.profile.inventory;
+							p.health += extraHealthPoints;
+						}),
+					);
+
+
+					const levelUpEmbeds = await checkLevelUps(lastInteraction, userData1, userData2, serverData)
+						.catch((error) => { sendErrorMessage(lastInteraction, error); });
+
+					await update(lastInteraction, {
+						embeds: [
+							new EmbedBuilder()
+								.setColor(userData1.quid.color)
+								.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
+								.setDescription(`*The two animals laugh as they return from a successful adventure. ${winningUserData.quid.name} ${foundItem === null ? 'feels especially refreshed from this trip' : `even found a ${foundItem} on the way`}. What a success!*`)
+								.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraHealthPoints > 0 ? `+${extraHealthPoints} HP for ${winningUserData.quid.name} (${winningUserData.quid.profile.health}/${winningUserData.quid.profile.maxHealth})` : `+1 ${foundItem} for ${winningUserData.quid.name}`}` }),
+							...decreasedStatsData1.injuryUpdateEmbed,
+							...decreasedStatsData2.injuryUpdateEmbed,
+							...(levelUpEmbeds?.levelUpEmbed1 ?? []),
+							...(levelUpEmbeds?.levelUpEmbed2 ?? []),
+						],
+						components: disableAllComponents(componentArray),
+					})
+						.catch((error) => { sendErrorMessage(lastInteraction, error); });
+
+					await checkAfterGameChanges(interaction, userData1, userData2)
+						.catch((error) => { sendErrorMessage(lastInteraction, error); return null; });
+					return;
+				}
+			}
+			catch (error) {
+
+				await sendErrorMessage(lastInteraction, error)
+					.catch(e => { console.error(e); });
+			}
+		});
 
 	},
 };
