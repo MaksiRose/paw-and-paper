@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'disc
 import { readFileSync } from 'fs';
 import { CustomIdArgs, getProfileMessageOptions } from '../commands/quid_customization/profile';
 import { respond } from '../utils/helperFunctions';
-import userModel, { getUserData } from '../models/userModel';
+import { userModel, getUserData } from '../models/userModel';
 import { WebhookMessages } from '../typings/data/general';
 import { ContextMenuCommand } from '../typings/handle';
 import { isInGuild } from '../utils/checkUserState';

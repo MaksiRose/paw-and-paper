@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
 import { capitalizeString, respond, sendErrorMessage } from './helperFunctions';
-import userModel from '../models/userModel';
+import { userModel } from '../models/userModel';
 import { getMapData } from './helperFunctions';
 import { decreaseLevel } from './levelHandling';
 import { stopResting, isResting } from '../commands/gameplay_maintenance/rest';
@@ -65,7 +65,7 @@ export async function hasCooldown(
 				setTimeout(async function() {
 
 					await reply
-						.delete()
+						.delete() // instead of doing this, an InteractionWebhook could be created using the interaction token and the id of the reply, and then deleteMessage could be called there. That API call wouldnt go towards the API call limit
 						.catch (async error => {
 
 							await sendErrorMessage(interaction, error)
@@ -175,10 +175,11 @@ export async function hasFullInventory(
 }
 
 export function isInteractable(
-	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>,
 	userData: UserData<undefined, ''> | null,
 	messageContent: string,
 	restEmbed: EmbedBuilder[],
+	options?: { checkPassedOut?: boolean, checkResting?: boolean, checkCooldown?: boolean, checkFullInventory?: boolean },
 ): userData is UserData<never, never> {
 
 	if (!userData) {
@@ -220,7 +221,7 @@ export function isInteractable(
 		return false;
 	}
 
-	if (userData.quid.profile.health <= 0 || userData.quid.profile.energy <= 0 || userData.quid.profile.hunger <= 0 || userData.quid.profile.thirst <= 0) {
+	if (options?.checkPassedOut !== false && (userData.quid.profile.health <= 0 || userData.quid.profile.energy <= 0 || userData.quid.profile.hunger <= 0 || userData.quid.profile.thirst <= 0)) {
 
 		respond(interaction, {
 			content: messageContent,
@@ -233,7 +234,7 @@ export function isInteractable(
 		return false;
 	}
 
-	if (userData.quid.profile.isResting || isResting(userData)) {
+	if (options?.checkResting !== false && (userData.quid.profile.isResting || isResting(userData))) {
 
 		respond(interaction, {
 			content: messageContent,
@@ -246,7 +247,7 @@ export function isInteractable(
 		return false;
 	}
 
-	if (userData.serverInfo?.hasCooldown === true) {
+	if (options?.checkCooldown !== false && userData.serverInfo?.hasCooldown === true) {
 
 		respond(interaction, {
 			content: messageContent,
@@ -259,7 +260,7 @@ export function isInteractable(
 		return false;
 	}
 
-	if (hasTooManyItems(userData)) {
+	if (options?.checkFullInventory !== false && hasTooManyItems(userData)) {
 
 		respond(interaction, {
 			content: messageContent,

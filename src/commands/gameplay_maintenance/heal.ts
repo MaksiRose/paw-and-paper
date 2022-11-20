@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatIn
 import Fuse from 'fuse.js';
 import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo } from '../..';
 import serverModel from '../../models/serverModel';
-import userModel, { getUserData } from '../../models/userModel';
+import { userModel, getUserData } from '../../models/userModel';
 import { CommonPlantNames, Inventory, RarePlantNames, SpecialPlantNames, UncommonPlantNames } from '../../typings/data/general';
 import { ServerSchema } from '../../typings/data/server';
 import { CurrentRegionType, RankType, UserData } from '../../typings/data/user';
@@ -97,7 +97,7 @@ export const command: SlashCommand = {
 			catch { return null; }
 		})();
 		const chosenUserData = _chosenUserData === null ? undefined : getUserData(_chosenUserData, interaction.guildId, _chosenUserData.quids[_chosenUserData.servers[interaction.guildId]?.currentQuid ?? '']);
-		if (chosenUserData && !isInteractable(interaction, chosenUserData, messageContent, restEmbed)) { return; }
+		if (chosenUserData && !isInteractable(interaction, chosenUserData, messageContent, restEmbed, { checkFullInventory: false, checkPassedOut: false })) { return; }
 
 		let chosenItem = interaction.options.getString('item') ?? undefined;
 		if (!chosenItem || !stringIsAvailableItem(chosenItem, serverData.inventory)) { chosenItem = undefined; }
@@ -124,6 +124,7 @@ export const command: SlashCommand = {
 
 				const _userToHeal = await userModel.findOne(u => Object.keys(u.quids).includes(value));
 				const userToHeal = getUserData(_userToHeal, interaction.guildId, getMapData(_userToHeal.quids, value));
+				if (!isInteractable(interaction, userToHeal, '', [], { checkFullInventory: false, checkPassedOut: false })) { return; }
 
 				await getHealResponse(interaction, userData, serverData, '', [], 0, userToHeal);
 			}
@@ -248,7 +249,7 @@ export async function getHealResponse(
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 		});
 
-		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
 		return;
 	}
 
@@ -289,7 +290,7 @@ export async function getHealResponse(
 				components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 			});
 
-			saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
+			saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
 			return;
 		}
 
@@ -326,7 +327,7 @@ export async function getHealResponse(
 			components: [quidsSelectMenu, pagesButtons, inventorySelectMenu],
 		});
 
-		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
 		return;
 	}
 
@@ -342,7 +343,7 @@ export async function getHealResponse(
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 		});
 
-		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
 		return;
 	}
 
@@ -365,8 +366,8 @@ export async function getHealResponse(
 		else if (keyInObject(serverData.inventory.rarePlants, item)) { serverData.inventory.rarePlants[item] -= 1; }
 		else if (keyInObject(serverData.inventory.specialPlants, item)) { serverData.inventory.specialPlants[item] -= 1; }
 		else { throw new Error('item does not exist in serverData.inventory'); }
-		serverData = await serverModel.update(
-			serverData,
+		serverData = await serverModel.findOneAndUpdate(
+			s => s._id === serverData._id,
 			(s) => { s.inventory = serverData.inventory; },
 		);
 
@@ -449,7 +450,7 @@ export async function getHealResponse(
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 		});
 
-		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
 		return;
 	}
 
@@ -526,7 +527,7 @@ export async function getHealResponse(
 	if (interaction.isMessageComponent()) {
 
 		deleteCommandDisablingInfo(userData, interaction.guildId);
-		await interaction.message.delete();
+		await interaction.message.delete(); // Maybe a way to make an API call that doesn't count towards the limit is to move this a line higher, create a new InteractionWebhook based on componentDisablingToken and call delete on that based on componentDisablingMessageId, and then delete these things afterwards. This method could be a backup in case the previous interaction is older than 15 minutes
 	}
 
 	const botReply = await respond(interaction, {
@@ -570,7 +571,7 @@ export function getStatsPoints(
 	const thirst = item === 'water' ? getSmallerNumber(getRandomNumber(10, 6), userToHeal.quid.profile.maxThirst - userToHeal.quid.profile.thirst) : 0;
 	const health = item === 'water' ? 0 : getSmallerNumber(getRandomNumber(10, 6), userToHeal.quid.profile.maxHealth - userToHeal.quid.profile.health);
 	const energy = (item !== 'water' && itemInfo[item].givesEnergy) ? getSmallerNumber(30, userToHeal.quid.profile.maxEnergy - userToHeal.quid.profile.energy) : 0;
-	const hunger = (item !== 'water' && itemInfo[item].givesEnergy) ? getSmallerNumber(5, userToHeal.quid.profile.maxHunger - userToHeal.quid.profile.hunger) : 0;
+	const hunger = (item !== 'water' && itemInfo[item].edibility === PlantEdibilityType.Edible) ? getSmallerNumber(5, userToHeal.quid.profile.maxHunger - userToHeal.quid.profile.hunger) : 0;
 	return { thirst, hunger, energy, health };
 }
 

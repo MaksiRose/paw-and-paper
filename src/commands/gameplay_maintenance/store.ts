@@ -107,8 +107,8 @@ export const command: SlashCommand = {
 					},
 				);
 
-				serverData = await serverModel.update(
-					serverData,
+				serverData = await serverModel.findOneAndUpdate(
+					s => s._id === serverData?._id,
 					(s) => {
 						s.inventory = serverInventory;
 					},
@@ -178,7 +178,7 @@ export async function sendStoreMessage(
 		components: [itemSelectMenu, storeAllButton],
 	});
 
-	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
+	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
 }
 
 function getOriginalEmbed(
@@ -257,8 +257,8 @@ async function storeAll(
 		},
 	);
 
-	serverData = await serverModel.update(
-		serverData,
+	serverData = await serverModel.findOneAndUpdate(
+		s => s._id === serverData._id,
 		(s) => {
 			s.inventory = serverInventory;
 		},

@@ -8,7 +8,7 @@ import { getRandomNumber } from '../utils/randomizers';
 const config = require('../../config.json');
 const pkg = require('../../package.json');
 
-const userModel = new Model<UserSchema>('./database/profiles', {
+export const userModel = new Model<UserSchema>('./database/profiles', {
 	userId: {
 		type: 'array',
 		of: {
@@ -278,6 +278,7 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 				restingChannelId: { type: 'string?', default: null },
 				componentDisablingChannelId: { type: 'string?', default: null },
 				componentDisablingMessageId: { type: 'string?', default: null },
+				componentDisablingToken: { type: 'string?', default: null },
 				hasCooldown: { type: 'boolean', default: false },
 			},
 		},
@@ -285,7 +286,6 @@ const userModel = new Model<UserSchema>('./database/profiles', {
 	lastPlayedVersion: { type: 'string', default: pkg.version },
 	_id: { type: 'string', default: '', locked: true },
 }, true);
-export default userModel;
 
 
 export function getUserData<T extends '' | never, U extends QuidSchema<T> | undefined>(
@@ -358,13 +358,13 @@ export function getUserData<T extends '' | never, U extends QuidSchema<T> | unde
 		quids: new Collection(Object.entries(userData.quids)),
 		servers: new Collection(Object.entries(userData.servers)),
 		lastPlayedVersion: userData.lastPlayedVersion,
-		update: async function(
+		update: function(
 			updateFunction: (value: UserSchema) => void,
 			options: { log?: boolean } = {},
-		): Promise<void> {
+		): void {
 
-			userData = await userModel.update(
-				userData,
+			userData = userModel.findOneAndUpdate(
+				u => u._id === userData._id,
 				updateFunction,
 				options,
 			);

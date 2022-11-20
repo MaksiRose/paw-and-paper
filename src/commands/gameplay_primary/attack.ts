@@ -220,8 +220,8 @@ export async function executeAttacking(
 				inventory_[itemType][itemName] -= minusAmount;
 			}
 
-			serverData = await serverModel.update(
-				serverData,
+			serverData = await serverModel.findOneAndUpdate(
+				s => s._id === serverData._id,
 				(s) => s.inventory = inventory_,
 			);
 
@@ -301,8 +301,8 @@ export async function executeAttacking(
 		if (serverAttackInfo.endingTimeout) { clearTimeout(serverAttackInfo.endingTimeout); }
 		serverMap.delete(interaction.guild.id);
 
-		serverData = await serverModel.update(
-			serverData,
+		serverData = await serverModel.findOneAndUpdate(
+			s => s._id === serverData?._id,
 			(s) => s.nextPossibleAttack = Date.now() + 86_400_000, // 24 hours
 		);
 	}
@@ -421,8 +421,8 @@ async function remainingHumans(
 	}
 	if (footerText.length > 0) { embed.setFooter({ text: footerText }); }
 
-	serverData = await serverModel.update(
-		serverData,
+	serverData = await serverModel.findOneAndUpdate(
+		s => s._id === serverData._id,
 		(s) => {
 			s.inventory = inventory_,
 			s.nextPossibleAttack = Date.now() + 86_400_000; // 24 hours

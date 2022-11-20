@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
-import userModel, { getUserData } from '../../models/userModel';
+import { userModel, getUserData } from '../../models/userModel';
 import { ServerSchema } from '../../typings/data/server';
 import { CurrentRegionType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
@@ -100,8 +100,8 @@ export const command: SlashCommand = {
 		}, true);
 
 		/* Register the command to be disabled when another command is executed, for both players */
-		saveCommandDisablingInfo(userData1, interaction.guildId, interaction.channelId, botReply.id);
-		saveCommandDisablingInfo(userData2, interaction.guildId, interaction.channelId, botReply.id);
+		saveCommandDisablingInfo(userData1, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
+		saveCommandDisablingInfo(userData2, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
 	},
 	async sendMessageComponentResponse(interaction, userData, serverData) {
 
@@ -121,7 +121,7 @@ export const command: SlashCommand = {
 		/* Gets the current active quid and the server profile from the partners account */
 		const userId2 = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
 		const _userData2 = await userModel.findOne(u => u.userId.includes(userId2));
-		const userData2 = getUserData(_userData2, interaction.guildId, getMapData(_userData2.quids, getMapData(_userData1.currentQuid, interaction.guildId)));
+		const userData2 = getUserData(_userData2, interaction.guildId, getMapData(_userData2.quids, getMapData(_userData2.currentQuid, interaction.guildId)));
 		if (!hasNameAndSpecies(userData2)) { throw new Error('userData2.quid.species is empty string'); }
 
 		if (interaction.user.id === userId1) {
@@ -161,7 +161,7 @@ export const command: SlashCommand = {
 				if (gameType === 'tictactoe') {
 
 					componentArray[row]?.addComponents(new ButtonBuilder()
-						.setCustomId(`playfight_board_${row}_${column}`)
+						.setCustomId(`board_${row}_${column}`)
 						.setEmoji(emptyField)
 						.setDisabled(false)
 						.setStyle(ButtonStyle.Secondary),
@@ -175,39 +175,39 @@ export const command: SlashCommand = {
 			componentArray.push(
 				new ActionRowBuilder<ButtonBuilder>().setComponents(
 					new ButtonBuilder()
-						.setCustomId('playfight_board_0')
+						.setCustomId('board_0')
 						.setEmoji('1️⃣')
 						.setDisabled(false)
 						.setStyle(ButtonStyle.Secondary),
 					new ButtonBuilder()
-						.setCustomId('playfight_board_1')
+						.setCustomId('board_1')
 						.setEmoji('2️⃣')
 						.setDisabled(false)
 						.setStyle(ButtonStyle.Secondary),
 					new ButtonBuilder()
-						.setCustomId('playfight_board_2')
+						.setCustomId('board_2')
 						.setEmoji('3️⃣')
 						.setDisabled(false)
 						.setStyle(ButtonStyle.Secondary),
 					new ButtonBuilder()
-						.setCustomId('playfight_board_3')
+						.setCustomId('board_3')
 						.setEmoji('4️⃣')
 						.setDisabled(false)
 						.setStyle(ButtonStyle.Secondary),
 				),
 				new ActionRowBuilder<ButtonBuilder>().setComponents(
 					new ButtonBuilder()
-						.setCustomId('playfight_board_4')
+						.setCustomId('board_4')
 						.setEmoji('5️⃣')
 						.setDisabled(false)
 						.setStyle(ButtonStyle.Secondary),
 					new ButtonBuilder()
-						.setCustomId('playfight_board_5')
+						.setCustomId('board_5')
 						.setEmoji('6️⃣')
 						.setDisabled(false)
 						.setStyle(ButtonStyle.Secondary),
 					new ButtonBuilder()
-						.setCustomId('playfight_board_6')
+						.setCustomId('board_6')
 						.setEmoji('7️⃣')
 						.setDisabled(false)
 						.setStyle(ButtonStyle.Secondary),
@@ -248,7 +248,7 @@ export const command: SlashCommand = {
 
 				newTurnEmbedTextArrayIndex = getRandomNumber(newTurnEmbedTextArray.length, 0, newTurnEmbedTextArrayIndex === -1 ? undefined : newTurnEmbedTextArrayIndex);
 
-				await oldMessage.delete();
+				await oldMessage.delete(); // Instead of having an oldMessage, it should have an interaction token and message id passed here so that a new InteractionWebhook can be created that can then call delete via the id. That API call wouldnt go towards the API call limit
 
 				const message = await respond(int, {
 					content: `<@${userId}>`,
@@ -275,7 +275,7 @@ export const command: SlashCommand = {
 				.awaitMessageComponent({
 					componentType: ComponentType.Button,
 					idle: 120_000,
-					filter: (i => i.customId.startsWith('playfight_') && userDataCurrent.userId.includes(i.user.id)),
+					filter: (i => i.customId.includes('board') && userDataCurrent.userId.includes(i.user.id)),
 				})
 				.then(async i => {
 					try {
@@ -285,9 +285,9 @@ export const command: SlashCommand = {
 						if (gameType === 'tictactoe') {
 
 							/* The column and row of the current card are updated with their position */
-							row = Number(i.customId.split('_')[2]);
+							row = Number(i.customId.split('_')[1]);
 							if (isNaN(row)) { throw new Error('row is Not a Number'); }
-							column = Number(i.customId.split('_')[3]);
+							column = Number(i.customId.split('_')[2]);
 							if (isNaN(column)) { throw new Error('column is Not a Number'); }
 
 							componentArray[row]?.components[column]?.setEmoji(user1IsPlaying ? player1Field : player2Field);
@@ -297,7 +297,7 @@ export const command: SlashCommand = {
 						else if (gameType === 'connectfour') {
 
 							/* The column and row of the current card are updated with their position */
-							column = Number(i.customId.split('_')[2]);
+							column = Number(i.customId.split('_')[1]);
 
 							for (let r = 5; r >= 0; r--) {
 
@@ -341,10 +341,11 @@ export const command: SlashCommand = {
 					userData1 = user1IsPlaying ? userDataCurrent : userDataOther;
 					userData2 = user1IsPlaying ? userDataOther : userDataCurrent;
 
-					const afterGameChangesData = await checkAfterGameChanges(interaction, userData1, userData2, serverData);
+					const levelUpEmbeds = await checkLevelUps(interaction, userData1, userData2, serverData)
+						.catch((error) => { sendErrorMessage(interaction, error); });
 
-					await botReply
-						.edit({
+					await interaction.webhook // i'm not sure why im doing this over calling respond. botReply should be the reply to interaction no matter what. i'm keeping this to avoid bugs, if this bugs out at any point i will have to revisit
+						.editMessage(botReply.id, {
 							content: null,
 							embeds: [
 								new EmbedBuilder()
@@ -354,8 +355,8 @@ export const command: SlashCommand = {
 									.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n${decreasedStatsData2.statsUpdateText}` }),
 								...decreasedStatsData1.injuryUpdateEmbed,
 								...decreasedStatsData2.injuryUpdateEmbed,
-								...(afterGameChangesData?.levelUpEmbed1 ?? []),
-								...(afterGameChangesData?.levelUpEmbed2 ?? []),
+								...(levelUpEmbeds?.levelUpEmbed1 ?? []),
+								...(levelUpEmbeds?.levelUpEmbed2 ?? []),
 							],
 							components: disableAllComponents(componentArray),
 						})
@@ -364,6 +365,9 @@ export const command: SlashCommand = {
 							return await sendErrorMessage(interaction, error)
 								.catch(e => { console.error(e); });
 						});
+
+					await checkAfterGameChanges(interaction, userData1, userData2)
+						.catch((error) => { sendErrorMessage(interaction, error); return null; });
 					return;
 				});
 
@@ -414,7 +418,7 @@ export const command: SlashCommand = {
 				userData1 = user1IsPlaying ? userDataCurrent : userDataOther;
 				userData2 = user1IsPlaying ? userDataOther : userDataCurrent;
 
-				const afterGameChangesData = await checkAfterGameChanges(i, userData1, userData2, serverData)
+				const levelUpEmbeds = await checkLevelUps(i, userData1, userData2, serverData)
 					.catch((error) => { sendErrorMessage(i, error); });
 
 				await update(i, {
@@ -432,12 +436,15 @@ export const command: SlashCommand = {
 							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}` }),
 						...decreasedStatsData1.injuryUpdateEmbed,
 						...decreasedStatsData2.injuryUpdateEmbed,
-						...(afterGameChangesData?.levelUpEmbed1 ?? []),
-						...(afterGameChangesData?.levelUpEmbed2 ?? []),
+						...(levelUpEmbeds?.levelUpEmbed1 ?? []),
+						...(levelUpEmbeds?.levelUpEmbed2 ?? []),
 					],
 					components: disableAllComponents(componentArray),
 				})
 					.catch((error) => { sendErrorMessage(i, error); });
+
+				await checkAfterGameChanges(interaction, userData1, userData2)
+					.catch((error) => { sendErrorMessage(i, error); return null; });
 				return;
 			}
 
@@ -539,25 +546,39 @@ function getWinningRow(
 }
 
 /**
+ * It checks if the user has leveled up, and if so, it returns an embed
+ * @param interaction - ButtonInteraction<'cached'>
+ * @param userData1 - The user data of the user who pressed the button.
+ * @param userData2 - UserData<never, never>
+ * @param {ServerSchema} serverData - ServerSchema
+ * @returns An object with two properties, levelUpEmbed1 and levelUpEmbed2.
+ */
+async function checkLevelUps(
+	interaction: ButtonInteraction<'cached'>,
+	userData1: UserData<never, never>,
+	userData2: UserData<never, never>,
+	serverData: ServerSchema,
+): Promise<{
+	levelUpEmbed1: EmbedBuilder[],
+	levelUpEmbed2: EmbedBuilder[];
+}> {
+
+	const levelUpEmbed1 = await checkLevelUp(interaction, userData1, serverData);
+	const levelUpEmbed2 = await checkLevelUp(interaction, userData2, serverData);
+	return { levelUpEmbed1, levelUpEmbed2 };
+}
+
+/**
  * Checks for both players whether to level them up, if they are passed out, whether to add friendship points, and if they need to be given any advice.
  */
 async function checkAfterGameChanges(
 	interaction: ButtonInteraction<'cached'>,
 	userData1: UserData<never, never>,
 	userData2: UserData<never, never>,
-	serverData: ServerSchema,
-): Promise<{
-	levelUpEmbed1: EmbedBuilder[];
-	levelUpEmbed2: EmbedBuilder[]
-}> {
-
-	const levelUpEmbed1 = await checkLevelUp(interaction, userData1, serverData);
-	const levelUpEmbed2 = await checkLevelUp(interaction, userData2, serverData);
+): Promise<void> {
 
 	await isPassedOut(interaction, userData1, true);
 	await isPassedOut(interaction, userData2, true);
-
-	await addFriendshipPoints(interaction.message, userData1, userData2);
 
 	await restAdvice(interaction, userData1);
 	await restAdvice(interaction, userData2);
@@ -568,5 +589,5 @@ async function checkAfterGameChanges(
 	await eatAdvice(interaction, userData1);
 	await eatAdvice(interaction, userData2);
 
-	return { levelUpEmbed1, levelUpEmbed2 };
+	await addFriendshipPoints(interaction.message, userData1, userData2);
 }

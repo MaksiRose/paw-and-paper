@@ -84,7 +84,7 @@ export const command: SlashCommand = {
 			components: [getDenButtons(userData._id)],
 		} : getMaterials(userData, serverData, chosenDen, restEmbed, messageContent), true);
 
-		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
 	},
 	async sendMessageComponentResponse(interaction, userData, serverData) {
 
@@ -116,8 +116,8 @@ export const command: SlashCommand = {
 			/** True when the repairAmount is bigger than zero. If the user isn't of  rank Hunter or Elderly, a weighted table decided whether they are successful. */
 			const isSuccessful = repairAmount > 0 && !isUnlucky(userData);
 
-			serverData = await serverModel.update(
-				serverData,
+			serverData = await serverModel.findOneAndUpdate(
+				s => s._id === serverData?._id,
 				(s) => {
 					s.inventory.materials[chosenItem] -= 1;
 					if (isSuccessful) { s.dens[chosenDen][repairKind] += repairAmount; }
@@ -167,7 +167,7 @@ function getDenButtons(
 			.setLabel('Food Den')
 			.setStyle(ButtonStyle.Secondary),
 		new ButtonBuilder()
-			.setCustomId(`repair_medicineDen@${_id}`)
+			.setCustomId(`repair_medicineDen_@${_id}`)
 			.setLabel('Medicine Den')
 			.setStyle(ButtonStyle.Secondary)]);
 }

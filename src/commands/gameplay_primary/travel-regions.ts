@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, Message, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
-import userModel from '../../models/userModel';
+import { userModel } from '../../models/userModel';
 import { CurrentRegionType, RankType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
@@ -56,7 +56,7 @@ export const command: SlashCommand = {
 		const chosenRegion = interaction.options.getString('region');
 
 		const botReply = await sendTravelMessage(interaction, userData, messageContent, restEmbed, chosenRegion);
-		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
 	},
 	async sendMessageComponentResponse(interaction, userData, serverData) {
 

@@ -2,7 +2,7 @@ import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 import { respond } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
-import userModel from '../../models/userModel';
+import { userModel } from '../../models/userModel';
 import { client } from '../..';
 import { SlashCommand } from '../../typings/handle';
 import { BanList } from '../../typings/data/general';
@@ -54,7 +54,7 @@ export const command: SlashCommand = {
 			})();
 			if (profile) {
 
-				userModel.delete(profile);
+				userModel.findOneAndDelete(u => u._id === profile._id);
 				const user = await client.users.fetch(id).catch(() => { return null; });
 
 				if (user) {
@@ -91,7 +91,7 @@ export const command: SlashCommand = {
 			})();
 			if (server) {
 
-				await serverModel.delete(server);
+				await serverModel.findOneAndDelete(s => s._id === server._id);
 				const guild = await interaction.client.guilds.fetch(id).catch(() => { return null; });
 				const user = await client.users.fetch(guild?.ownerId || '').catch(() => { return null; });
 
