@@ -278,6 +278,7 @@ export const userModel = new Model<UserSchema>('./database/profiles', {
 				restingChannelId: { type: 'string?', default: null },
 				componentDisablingChannelId: { type: 'string?', default: null },
 				componentDisablingMessageId: { type: 'string?', default: null },
+				componentDisablingToken: { type: 'string?', default: null },
 				hasCooldown: { type: 'boolean', default: false },
 			},
 		},

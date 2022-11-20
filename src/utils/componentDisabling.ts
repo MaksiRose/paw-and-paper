@@ -1,4 +1,4 @@
-import { ComponentType, ButtonStyle, APIActionRowComponent, ActionRowBuilder, ActionRow, MessageActionRowComponent, APIMessageActionRowComponent, MessageActionRowComponentBuilder, ButtonBuilder, ButtonComponent, APIButtonComponent, SelectMenuBuilder, SelectMenuComponent, APISelectMenuComponent, isJSONEncodable } from 'discord.js';
+import { ComponentType, ButtonStyle, APIActionRowComponent, ActionRowBuilder, ActionRow, MessageActionRowComponent, APIMessageActionRowComponent, MessageActionRowComponentBuilder, ButtonBuilder, ButtonComponent, APIButtonComponent, SelectMenuBuilder, SelectMenuComponent, APISelectMenuComponent, isJSONEncodable, InteractionWebhook } from 'discord.js';
 import { client } from '..';
 import { UserData } from '../typings/data/user';
 import { userDataServersObject } from './helperFunctions';
@@ -19,6 +19,7 @@ export async function deleteCommandDisablingInfo(
 				...userDataServersObject(u, guildId),
 				componentDisablingChannelId: null,
 				componentDisablingMessageId: null,
+				componentDisablingToken: null,
 			};
 		},
 	);
@@ -34,30 +35,47 @@ export async function disableCommandComponent(
 ): Promise<void> {
 
 	const { serverInfo } = userData;
-	if (!serverInfo || !serverInfo.componentDisablingChannelId || !serverInfo.componentDisablingMessageId) { return; }
+	if (serverInfo === undefined) { return; }
 
-	const channel = await client.channels.fetch(serverInfo.componentDisablingChannelId).catch(() => null);
-	if (!channel || !channel.isTextBased()) {
+	if (serverInfo.componentDisablingToken !== null && serverInfo.componentDisablingMessageId !== null && client.isReady()) {
 
-		console.error(new TypeError(`Unable to disable command-component because the channel with ID ${serverInfo.componentDisablingChannelId} could not be fetched or is not text based`));
-		return;
+		const interaction = new InteractionWebhook(client, client.application.id, serverInfo.componentDisablingToken);
+
+		const botReply = await interaction.fetchMessage(serverInfo.componentDisablingMessageId);
+		await Promise.all([
+			interaction.editMessage(serverInfo.componentDisablingMessageId, {
+				components: disableAllComponents(botReply.components),
+			}),
+			deleteCommandDisablingInfo(userData, botReply.guildId || 'DMs'),
+		]).catch(error => {
+			console.error(error);
+		});
 	}
+	else if (serverInfo.componentDisablingChannelId !== null && serverInfo.componentDisablingMessageId !== null) {
 
-	const botReply = await channel.messages.fetch(serverInfo.componentDisablingMessageId).catch(() => null);
-	if (!botReply) {
+		const channel = await client.channels.fetch(serverInfo.componentDisablingChannelId).catch(() => null);
+		if (!channel || !channel.isTextBased()) {
 
-		console.error(new TypeError(`Unable to disable command-component because the message with ID ${serverInfo.componentDisablingMessageId} could not be fetched`));
-		return;
+			console.error(new TypeError(`Unable to disable command-component because the channel with ID ${serverInfo.componentDisablingChannelId} could not be fetched or is not text based`));
+			return;
+		}
+
+		const botReply = await channel.messages.fetch(serverInfo.componentDisablingMessageId).catch(() => null);
+		if (!botReply) {
+
+			console.error(new TypeError(`Unable to disable command-component because the message with ID ${serverInfo.componentDisablingMessageId} could not be fetched`));
+			return;
+		}
+
+		await Promise.all([
+			botReply.edit({
+				components: disableAllComponents(botReply.components),
+			}),
+			deleteCommandDisablingInfo(userData, botReply.guildId || 'DMs'),
+		]).catch(error => {
+			console.error(error);
+		});
 	}
-
-	await Promise.all([
-		botReply.edit({
-			components: disableAllComponents(botReply.components),
-		}),
-		deleteCommandDisablingInfo(userData, botReply.guildId || 'DMs'),
-	]).catch(error => {
-		console.error(error);
-	});
 }
 
 /**
@@ -72,6 +90,7 @@ export async function saveCommandDisablingInfo(
 	guildId: string,
 	channelId: string,
 	messageId: string,
+	interactionToken: string,
 ): Promise<void> {
 
 	await userData.update(
@@ -80,6 +99,7 @@ export async function saveCommandDisablingInfo(
 				...userDataServersObject(u, guildId),
 				componentDisablingChannelId: channelId,
 				componentDisablingMessageId: messageId,
+				componentDisablingToken: interactionToken,
 			};
 		},
 	);

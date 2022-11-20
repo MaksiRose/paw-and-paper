@@ -81,7 +81,7 @@ export const command: SlashCommand = {
 				],
 			}, true);
 
-			saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
+			saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
 
 			return;
 		}

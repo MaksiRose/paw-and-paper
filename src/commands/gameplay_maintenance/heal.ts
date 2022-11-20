@@ -249,7 +249,7 @@ export async function getHealResponse(
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 		});
 
-		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
 		return;
 	}
 
@@ -290,7 +290,7 @@ export async function getHealResponse(
 				components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 			});
 
-			saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
+			saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
 			return;
 		}
 
@@ -327,7 +327,7 @@ export async function getHealResponse(
 			components: [quidsSelectMenu, pagesButtons, inventorySelectMenu],
 		});
 
-		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
 		return;
 	}
 
@@ -343,7 +343,7 @@ export async function getHealResponse(
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 		});
 
-		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
 		return;
 	}
 
@@ -450,7 +450,7 @@ export async function getHealResponse(
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 		});
 
-		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
 		return;
 	}
 

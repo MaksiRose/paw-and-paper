@@ -140,7 +140,7 @@ export async function sendQuestMessage(
 	}, true);
 
 	/* The View Channels permissions that are needed for this function to work properly should be checked in all places that reference sendQuestMessage. It can't be checked for in here directly because a botReply must be returned. */
-	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
+	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
 
 	return await (botReply as Message<true>)
 		.awaitMessageComponent({

@@ -56,7 +56,7 @@ export const command: SlashCommand = {
 		const chosenRegion = interaction.options.getString('region');
 
 		const botReply = await sendTravelMessage(interaction, userData, messageContent, restEmbed, chosenRegion);
-		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
 	},
 	async sendMessageComponentResponse(interaction, userData, serverData) {
 

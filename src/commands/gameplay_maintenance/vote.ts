@@ -70,7 +70,7 @@ export const command: SlashCommand = {
 			],
 		}, true);
 
-		if (interaction.inGuild()) { saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id); }
+		if (interaction.inGuild()) { saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token); }
 	},
 	async sendMessageComponentResponse(interaction, userData) {
 
