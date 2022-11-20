@@ -1,4 +1,4 @@
-import { ComponentType, ButtonStyle, APIActionRowComponent, ActionRowBuilder, ActionRow, MessageActionRowComponent, APIMessageActionRowComponent, MessageActionRowComponentBuilder, ButtonBuilder, ButtonComponent, APIButtonComponent, SelectMenuBuilder, SelectMenuComponent, APISelectMenuComponent, isJSONEncodable } from 'discord.js';
+import { ComponentType, ButtonStyle, APIActionRowComponent, ActionRowBuilder, ActionRow, MessageActionRowComponent, APIMessageActionRowComponent, MessageActionRowComponentBuilder, ButtonBuilder, ButtonComponent, APIButtonComponent, SelectMenuBuilder, SelectMenuComponent, APISelectMenuComponent, isJSONEncodable, InteractionWebhook } from 'discord.js';
 import { client } from '..';
 import { UserData } from '../typings/data/user';
 import { userDataServersObject } from './helperFunctions';
@@ -37,7 +37,21 @@ export async function disableCommandComponent(
 	const { serverInfo } = userData;
 	if (serverInfo === undefined) { return; }
 
-	if (serverInfo.componentDisablingChannelId !== null && serverInfo.componentDisablingMessageId !== null) {
+	if (serverInfo.componentDisablingToken !== null && serverInfo.componentDisablingMessageId !== null && client.isReady()) {
+
+		const interaction = new InteractionWebhook(client, client.application.id, serverInfo.componentDisablingToken);
+
+		const botReply = await interaction.fetchMessage(serverInfo.componentDisablingMessageId);
+		await Promise.all([
+			interaction.editMessage(serverInfo.componentDisablingMessageId, {
+				components: disableAllComponents(botReply.components),
+			}),
+			deleteCommandDisablingInfo(userData, botReply.guildId || 'DMs'),
+		]).catch(error => {
+			console.error(error);
+		});
+	}
+	else if (serverInfo.componentDisablingChannelId !== null && serverInfo.componentDisablingMessageId !== null) {
 
 		const channel = await client.channels.fetch(serverInfo.componentDisablingChannelId).catch(() => null);
 		if (!channel || !channel.isTextBased()) {

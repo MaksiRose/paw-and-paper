@@ -184,8 +184,8 @@ export const command: SlashCommand = {
 
 				const viewingInterval = setInterval(async function() {
 
-					botReply = await botReply
-						.edit({
+					botReply = await interaction.webhook // i'm not sure why im doing this over calling update. botReply should be the reply to the original interaction no matter what. i'm keeping this to avoid bugs, if this bugs out at any point i will have to revisit
+						.editMessage(botReply.id, {
 							content: messageContent,
 							embeds: [new EmbedBuilder()
 								.setColor(userData.quid.color)

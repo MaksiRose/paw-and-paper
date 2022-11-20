@@ -1,4 +1,4 @@
-import { ActionRowBuilder, EmbedBuilder, GuildMember, IntegrationApplication, InteractionReplyOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, EmbedBuilder, GuildMember, InteractionReplyOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
 import { capitalizeString, respond, update, userDataServersObject } from '../../utils/helperFunctions';
 import { userModel, getUserData } from '../../models/userModel';
 import { hasName, hasNameAndSpecies } from '../../utils/checkUserState';

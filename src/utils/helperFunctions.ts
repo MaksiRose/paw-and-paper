@@ -82,11 +82,14 @@ export async function respond(
 		if (isObject(error) && (error.code === 'ECONNRESET' || error.code === 10062)) {
 
 			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
-			if ((interaction.replied || interaction.deferred) && editMessage) { botReply = await (await interaction.fetchReply()).edit({ ...options, flags: undefined }); }
+			if ((interaction.replied || interaction.deferred) && editMessage) { // Error code 10062 can never lead to this since an Unknown Interaction can't also be replied or deferred. Therefore, it is safe to call respond again
+
+				botReply = await respond(interaction, options, editMessage);
+			}
 			else {
 
 				const channel = interaction.channel || (interaction.channelId ? await interaction.client.channels.fetch(interaction.channelId, { force: false }) : null);
-				if (channel && channel.isTextBased()) { botReply = await channel.send({ ...options, flags: undefined }); }
+				if (channel && channel.isTextBased()) { botReply = await channel.send({ ...options, content: options.content === '' ? undefined : options.content, flags: undefined }); }
 				else { throw error; }
 
 			}
@@ -128,8 +131,8 @@ export async function update(
 		if (isObject(error) && (error.code === 'ECONNRESET' || error.code === 10062)) {
 
 			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
-			if (!interaction.replied && !interaction.deferred) { botReply = await interaction.message.edit({ ...options, flags: undefined }); }
-			else { botReply = await (await interaction.fetchReply()).edit({ ...options, flags: undefined }); }
+			if (!interaction.replied && !interaction.deferred) { botReply = await interaction.message.edit({ ...options, content: options.content === '' ? null : options.content, flags: undefined }); }
+			else { botReply = await update(interaction, options); } // Error code 10062 can never lead to this since an Unknown Interaction can't also be replied or deferred. Therefore, it is safe to call update again
 		}
 		else if (isObject(error) && error.code === 40060) {
 

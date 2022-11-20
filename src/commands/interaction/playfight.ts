@@ -344,8 +344,8 @@ export const command: SlashCommand = {
 					const levelUpEmbeds = await checkLevelUps(interaction, userData1, userData2, serverData)
 						.catch((error) => { sendErrorMessage(interaction, error); });
 
-					await botReply
-						.edit({
+					await interaction.webhook // i'm not sure why im doing this over calling respond. botReply should be the reply to interaction no matter what. i'm keeping this to avoid bugs, if this bugs out at any point i will have to revisit
+						.editMessage(botReply.id, {
 							content: null,
 							embeds: [
 								new EmbedBuilder()
