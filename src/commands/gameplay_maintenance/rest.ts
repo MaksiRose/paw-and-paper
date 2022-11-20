@@ -179,15 +179,11 @@ export async function startResting(
 			/* It checks if the user has reached their maximum energy, and if they have, it stops the resting process. */
 			if (userData.quid.profile.energy >= userData.quid.profile.maxEnergy) {
 
-				await userData.update(
+				stopResting(userData);
+				userData.update(
 					(u) => {
 						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, serverData.serverId)).profiles, serverData.serverId);
 						p.currentRegion = previousRegion;
-						u.servers[serverData.serverId] = {
-							...userDataServersObject(u, serverData.serverId),
-							restingChannelId: null,
-							restingMessageId: null,
-						};
 					},
 				);
 
@@ -198,8 +194,6 @@ export async function startResting(
 					embeds: [embed.setDescription(`*${userData.quid.name}'s eyes blink open, ${userData.quid.pronounAndPlural(0, 'sit')} up to stretch and then walk out into the light and buzz of late morning camp. Younglings are spilling out of the nursery, ambitious to start the day, Hunters and Healers are traveling in and out of the camp border. It is the start of the next good day!*`)],
 					components: isAutomatic ? [component] : [],
 				});
-
-				stopResting(userData);
 				return;
 			}
 			return;
@@ -249,6 +243,16 @@ function getRestingEmbed(
 export function stopResting(
 	userData: UserData<never, never>,
 ): void {
+
+	userData.update(
+		(u) => {
+			u.servers[userData.quid.profile.serverId] = {
+				...userDataServersObject(u, userData.quid.profile.serverId),
+				restingChannelId: null,
+				restingMessageId: null,
+			};
+		},
+	);
 
 	clearInterval(restingIntervalMap.get(userData._id + userData.quid.profile.serverId));
 	restingIntervalMap.delete(userData._id + userData.quid.profile.serverId);
