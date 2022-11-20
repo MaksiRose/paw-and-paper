@@ -341,7 +341,8 @@ export const command: SlashCommand = {
 					userData1 = user1IsPlaying ? userDataCurrent : userDataOther;
 					userData2 = user1IsPlaying ? userDataOther : userDataCurrent;
 
-					const afterGameChangesData = await checkAfterGameChanges(interaction, userData1, userData2, serverData);
+					const levelUpEmbeds = await checkLevelUps(interaction, userData1, userData2, serverData)
+						.catch((error) => { sendErrorMessage(interaction, error); });
 
 					await botReply
 						.edit({
@@ -354,8 +355,8 @@ export const command: SlashCommand = {
 									.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n${decreasedStatsData2.statsUpdateText}` }),
 								...decreasedStatsData1.injuryUpdateEmbed,
 								...decreasedStatsData2.injuryUpdateEmbed,
-								...(afterGameChangesData?.levelUpEmbed1 ?? []),
-								...(afterGameChangesData?.levelUpEmbed2 ?? []),
+								...(levelUpEmbeds?.levelUpEmbed1 ?? []),
+								...(levelUpEmbeds?.levelUpEmbed2 ?? []),
 							],
 							components: disableAllComponents(componentArray),
 						})
@@ -364,6 +365,9 @@ export const command: SlashCommand = {
 							return await sendErrorMessage(interaction, error)
 								.catch(e => { console.error(e); });
 						});
+
+					await checkAfterGameChanges(interaction, userData1, userData2)
+						.catch((error) => { sendErrorMessage(interaction, error); return null; });
 					return;
 				});
 
@@ -414,7 +418,7 @@ export const command: SlashCommand = {
 				userData1 = user1IsPlaying ? userDataCurrent : userDataOther;
 				userData2 = user1IsPlaying ? userDataOther : userDataCurrent;
 
-				const afterGameChangesData = await checkAfterGameChanges(i, userData1, userData2, serverData)
+				const levelUpEmbeds = await checkLevelUps(i, userData1, userData2, serverData)
 					.catch((error) => { sendErrorMessage(i, error); });
 
 				await update(i, {
@@ -432,12 +436,15 @@ export const command: SlashCommand = {
 							.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}` }),
 						...decreasedStatsData1.injuryUpdateEmbed,
 						...decreasedStatsData2.injuryUpdateEmbed,
-						...(afterGameChangesData?.levelUpEmbed1 ?? []),
-						...(afterGameChangesData?.levelUpEmbed2 ?? []),
+						...(levelUpEmbeds?.levelUpEmbed1 ?? []),
+						...(levelUpEmbeds?.levelUpEmbed2 ?? []),
 					],
 					components: disableAllComponents(componentArray),
 				})
 					.catch((error) => { sendErrorMessage(i, error); });
+
+				await checkAfterGameChanges(interaction, userData1, userData2)
+					.catch((error) => { sendErrorMessage(i, error); return null; });
 				return;
 			}
 
@@ -539,25 +546,39 @@ function getWinningRow(
 }
 
 /**
+ * It checks if the user has leveled up, and if so, it returns an embed
+ * @param interaction - ButtonInteraction<'cached'>
+ * @param userData1 - The user data of the user who pressed the button.
+ * @param userData2 - UserData<never, never>
+ * @param {ServerSchema} serverData - ServerSchema
+ * @returns An object with two properties, levelUpEmbed1 and levelUpEmbed2.
+ */
+async function checkLevelUps(
+	interaction: ButtonInteraction<'cached'>,
+	userData1: UserData<never, never>,
+	userData2: UserData<never, never>,
+	serverData: ServerSchema,
+): Promise<{
+	levelUpEmbed1: EmbedBuilder[],
+	levelUpEmbed2: EmbedBuilder[];
+}> {
+
+	const levelUpEmbed1 = await checkLevelUp(interaction, userData1, serverData);
+	const levelUpEmbed2 = await checkLevelUp(interaction, userData2, serverData);
+	return { levelUpEmbed1, levelUpEmbed2 };
+}
+
+/**
  * Checks for both players whether to level them up, if they are passed out, whether to add friendship points, and if they need to be given any advice.
  */
 async function checkAfterGameChanges(
 	interaction: ButtonInteraction<'cached'>,
 	userData1: UserData<never, never>,
 	userData2: UserData<never, never>,
-	serverData: ServerSchema,
-): Promise<{
-	levelUpEmbed1: EmbedBuilder[];
-	levelUpEmbed2: EmbedBuilder[]
-}> {
-
-	const levelUpEmbed1 = await checkLevelUp(interaction, userData1, serverData);
-	const levelUpEmbed2 = await checkLevelUp(interaction, userData2, serverData);
+): Promise<void> {
 
 	await isPassedOut(interaction, userData1, true);
 	await isPassedOut(interaction, userData2, true);
-
-	await addFriendshipPoints(interaction.message, userData1, userData2);
 
 	await restAdvice(interaction, userData1);
 	await restAdvice(interaction, userData2);
@@ -568,5 +589,5 @@ async function checkAfterGameChanges(
 	await eatAdvice(interaction, userData1);
 	await eatAdvice(interaction, userData2);
 
-	return { levelUpEmbed1, levelUpEmbed2 };
+	await addFriendshipPoints(interaction.message, userData1, userData2);
 }
