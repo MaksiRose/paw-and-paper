@@ -2,7 +2,7 @@ import { generateId } from 'crystalid';
 import { APIMessage } from 'discord-api-types/v9';
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, MessageContextMenuCommandInteraction, ModalMessageModalSubmitInteraction, ModalSubmitInteraction, RepliableInteraction, SelectMenuInteraction, UserContextMenuCommandInteraction, WebhookEditMessageOptions } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
-import userModel, { getUserData } from '../models/userModel';
+import { userModel, getUserData } from '../models/userModel';
 import { ErrorStacks } from '../typings/data/general';
 import { UserData, UserSchema } from '../typings/data/user';
 const { error_color } = require('../../config.json');

@@ -2,7 +2,7 @@ import { ChatInputCommandInteraction, EmbedBuilder, FormattingPatterns, SelectMe
 import Fuse from 'fuse.js';
 import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../..';
 import serverModel from '../../models/serverModel';
-import userModel, { getUserData } from '../../models/userModel';
+import { userModel, getUserData } from '../../models/userModel';
 import { ServerSchema } from '../../typings/data/server';
 import { CurrentRegionType, StatIncreaseType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
@@ -102,7 +102,7 @@ export async function sendEatMessage(
 	const mentionedUserMatch = chosenFood.match(FormattingPatterns.User);
 	if (mentionedUserMatch) {
 
-		const _taggedUserData = await userModel.findOne(u => u.userId.includes(mentionedUserMatch[1] || ''));
+		const _taggedUserData = userModel.findOne(u => u.userId.includes(mentionedUserMatch[1] || ''));
 		const taggedUserData = getUserData(_taggedUserData, interaction.guildId, _taggedUserData.quids[_taggedUserData.currentQuid[interaction.guildId ?? ''] ?? '']);
 
 		if (hasName(taggedUserData)) {
@@ -257,8 +257,8 @@ export async function sendEatMessage(
 		},
 	);
 
-	serverData = await serverModel.update(
-		serverData,
+	serverData = await serverModel.findOneAndUpdate(
+		s => s._id === serverData._id,
 		(s) => {
 			s.inventory = inventory_;
 		},

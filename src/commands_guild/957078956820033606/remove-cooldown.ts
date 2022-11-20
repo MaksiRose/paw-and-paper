@@ -1,6 +1,6 @@
 import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
 import { respond, userDataServersObject } from '../../utils/helperFunctions';
-import userModel from '../../models/userModel';
+import { userModel } from '../../models/userModel';
 import { client } from '../..';
 import { SlashCommand } from '../../typings/handle';
 
@@ -80,8 +80,8 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		await userModel.update(
-			userData,
+		await userModel.findOneAndUpdate(
+			u => u._id === userData._id,
 			u => {
 				u.servers[guildId] = {
 					...userDataServersObject(u, guildId),

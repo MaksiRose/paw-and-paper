@@ -19,7 +19,7 @@ import { RankType, UserData } from '../../typings/data/user';
 import { SpeciesHabitatType } from '../../typings/main';
 import { speciesInfo } from '../..';
 import { ServerSchema } from '../../typings/data/server';
-import userModel from '../../models/userModel';
+import { userModel } from '../../models/userModel';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 
 type CustomIdArgs = ['new'] | ['new', string]

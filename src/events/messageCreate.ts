@@ -2,7 +2,7 @@ import { Message } from 'discord.js';
 import { sendMessage } from '../commands/interaction/say';
 // import { sendVisitMessage } from '../commands/interaction/requestvisit';
 import serverModel from '../models/serverModel';
-import userModel, { getUserData } from '../models/userModel';
+import { userModel, getUserData } from '../models/userModel';
 import { ServerSchema } from '../typings/data/server';
 import { ProxyConfigType, ProxyListType, UserData } from '../typings/data/user';
 import { DiscordEvent } from '../typings/main';

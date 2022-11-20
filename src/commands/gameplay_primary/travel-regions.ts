@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, Message, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
-import userModel from '../../models/userModel';
+import { userModel } from '../../models/userModel';
 import { CurrentRegionType, RankType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';

@@ -22,8 +22,8 @@ export async function wearDownDen(
 
 	const denWeardownPoints = wearDownAmount(serverData.dens[denName][denStatkind]);
 
-	serverData = await serverModel.update(
-		serverData,
+	serverData = await serverModel.findOneAndUpdate(
+		s => s._id === serverData._id,
 		(s) => { s.dens[denName][denStatkind] -= denWeardownPoints; },
 	);
 

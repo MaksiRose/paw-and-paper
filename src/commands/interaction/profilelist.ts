@@ -4,7 +4,7 @@ import { isInGuild } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
 import { SlashCommand } from '../../typings/handle';
 import { RankType } from '../../typings/data/user';
-import userModel from '../../models/userModel';
+import { userModel } from '../../models/userModel';
 const { default_color } = require('../../../config.json');
 
 const oneWeekInMs = 604_800_000;
@@ -115,8 +115,8 @@ async function getProfilesTexts(
 
 				const member = await guild.members.fetch(userId).catch(() => { return null; });
 				guildMember = { isMember: member !== null, lastUpdatedTimestamp: Date.now() };
-				await userModel.update(
-					user,
+				await userModel.findOneAndUpdate(
+					u => u._id === user._id,
 					(u => u.userIds[userId] = {
 						...(u.userIds[userId] ?? {}),
 						[guild.id]: guildMember!,

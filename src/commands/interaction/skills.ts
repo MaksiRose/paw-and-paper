@@ -6,7 +6,7 @@ import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
-import userModel, { getUserData } from '../../models/userModel';
+import { userModel, getUserData } from '../../models/userModel';
 import { UserData } from '../../typings/data/user';
 import { ServerSchema } from '../../typings/data/server';
 
@@ -263,8 +263,8 @@ export const command: SlashCommand = {
 					);
 				}
 
-				serverData = await serverModel.update(
-					serverData,
+				serverData = await serverModel.findOneAndUpdate(
+					s => s._id === serverData?._id,
 					(s) => {
 						s.skills = s.skills.filter(n => n !== skillName);
 					},
@@ -346,8 +346,8 @@ export const command: SlashCommand = {
 					);
 				}
 
-				serverData = await serverModel.update(
-					serverData,
+				serverData = await serverModel.findOneAndUpdate(
+					s => s._id === serverData?._id,
 					(s) => {
 						s.skills.push(newName);
 					},
@@ -420,8 +420,8 @@ export const command: SlashCommand = {
 					);
 				}
 
-				serverData = await serverModel.update(
-					serverData,
+				serverData = await serverModel.findOneAndUpdate(
+					s => s._id === serverData?._id,
 					(s) => {
 						s.skills.push(newName);
 						s.skills = s.skills.filter(n => n !== skillName);

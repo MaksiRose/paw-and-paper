@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
 import { capitalizeString, respond, sendErrorMessage } from './helperFunctions';
-import userModel from '../models/userModel';
+import { userModel } from '../models/userModel';
 import { getMapData } from './helperFunctions';
 import { decreaseLevel } from './levelHandling';
 import { stopResting, isResting } from '../commands/gameplay_maintenance/rest';

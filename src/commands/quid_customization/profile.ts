@@ -1,6 +1,6 @@
 import { ActionRowBuilder, EmbedBuilder, GuildMember, InteractionReplyOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
 import { capitalizeString, respond, update, userDataServersObject } from '../../utils/helperFunctions';
-import userModel, { getUserData } from '../../models/userModel';
+import { userModel, getUserData } from '../../models/userModel';
 import { hasName, hasNameAndSpecies } from '../../utils/checkUserState';
 import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
 import { hasCooldown, checkResting } from '../../utils/checkValidity';
@@ -139,8 +139,8 @@ export const command: SlashCommand = {
 
 			/* Getting the old quid and the id of the quid the user has clicked on. Then it is updating the user's current quid to the quid they have clicked on. Then it is getting the new quid and profile. */
 			const quidId = selectOptionId[1]; // this is either an id, an empty string if empty slot
-			_userData = await userModel.update(
-				_userData,
+			_userData = await userModel.findOneAndUpdate(
+				u => u._id === _userData._id,
 				(u) => {
 					u.servers[interaction.guildId || 'DMs'] = {
 						...userDataServersObject(u, interaction.guildId || 'DMs'),
