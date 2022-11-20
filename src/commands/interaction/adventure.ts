@@ -169,7 +169,7 @@ export const command: SlashCommand = {
 		/* Gets the current active quid and the server profile from the partners account */
 		const userId2 = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
 		const _userData2 = await userModel.findOne(u => u.userId.includes(userId2));
-		const userData2 = getUserData(_userData2, interaction.guildId, getMapData(_userData2.quids, getMapData(_userData1.currentQuid, interaction.guildId)));
+		const userData2 = getUserData(_userData2, interaction.guildId, getMapData(_userData2.quids, getMapData(_userData2.currentQuid, interaction.guildId)));
 		if (!hasNameAndSpecies(userData2)) { throw new Error('userData2.quid.species is empty string'); }
 
 		if (interaction.user.id === userId1) {
