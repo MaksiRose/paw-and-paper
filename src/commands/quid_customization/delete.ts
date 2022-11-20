@@ -5,7 +5,7 @@ import { saveCommandDisablingInfo, disableAllComponents } from '../../utils/comp
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
 import { UserData } from '../../typings/data/user';
-import userModel from '../../models/userModel';
+import { userModel } from '../../models/userModel';
 import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';
 const { error_color } = require('../../../config.json');
 

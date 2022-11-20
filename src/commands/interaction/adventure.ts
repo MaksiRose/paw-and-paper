@@ -14,7 +14,7 @@ import { getHighestItem, remindOfAttack } from '../gameplay_primary/attack';
 import { pickPlant } from '../../utils/simulateItemUse';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
-import userModel, { getUserData } from '../../models/userModel';
+import { userModel, getUserData } from '../../models/userModel';
 import { ServerSchema } from '../../typings/data/server';
 import { CurrentRegionType, UserData } from '../../typings/data/user';
 import { Inventory, SpecialPlantNames } from '../../typings/data/general';

@@ -1,5 +1,5 @@
 import { sendReminder } from '../commands/gameplay_maintenance/water-tree';
-import userModel, { getUserData } from '../models/userModel';
+import { userModel, getUserData } from '../models/userModel';
 import { hasNameAndSpecies } from '../utils/checkUserState';
 import { userDataServersObject } from '../utils/helperFunctions';
 
@@ -11,8 +11,8 @@ export async function execute(
 	for (const user of users) {
 
 		/* This updates each profile to have no cooldown, not rest, and maximum energy. */
-		await userModel.update(
-			user,
+		await userModel.findOneAndUpdate(
+			u => u._id === user._id,
 			(u) => {
 				for (const userId of u.userId) {
 					if (u.userIds[userId] === undefined) {

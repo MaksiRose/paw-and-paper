@@ -2,7 +2,7 @@ import { readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { isResting, startResting } from '../commands/gameplay_maintenance/rest';
 import { lastInteractionMap, serverActiveUsersMap } from '../events/interactionCreate';
 import serverModel from '../models/serverModel';
-import userModel, { getUserData } from '../models/userModel';
+import { userModel, getUserData } from '../models/userModel';
 import { DeleteList } from '../typings/data/general';
 import { hasNameAndSpecies } from '../utils/checkUserState';
 import { getMapData, sendErrorMessage } from '../utils/helperFunctions';
@@ -39,8 +39,8 @@ export async function execute(): Promise<void> {
 
 						if (Number(timestamp) < Date.now() - 604_800_000) {
 
-							userModel.update(
-								userData,
+							userModel.findOneAndUpdate(
+								u => u._id === userData._id,
 								(u) => {
 									const p = getMapData(getMapData(u.quids, quidData._id).profiles, profileData.serverId);
 									p[statKind] -= 10;

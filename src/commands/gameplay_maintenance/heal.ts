@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatIn
 import Fuse from 'fuse.js';
 import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo } from '../..';
 import serverModel from '../../models/serverModel';
-import userModel, { getUserData } from '../../models/userModel';
+import { userModel, getUserData } from '../../models/userModel';
 import { CommonPlantNames, Inventory, RarePlantNames, SpecialPlantNames, UncommonPlantNames } from '../../typings/data/general';
 import { ServerSchema } from '../../typings/data/server';
 import { CurrentRegionType, RankType, UserData } from '../../typings/data/user';
@@ -365,8 +365,8 @@ export async function getHealResponse(
 		else if (keyInObject(serverData.inventory.rarePlants, item)) { serverData.inventory.rarePlants[item] -= 1; }
 		else if (keyInObject(serverData.inventory.specialPlants, item)) { serverData.inventory.specialPlants[item] -= 1; }
 		else { throw new Error('item does not exist in serverData.inventory'); }
-		serverData = await serverModel.update(
-			serverData,
+		serverData = await serverModel.findOneAndUpdate(
+			s => s._id === serverData._id,
 			(s) => { s.inventory = serverData.inventory; },
 		);
 

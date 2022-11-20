@@ -1,5 +1,5 @@
 import { Collection } from 'discord.js';
-import userModel from '../../models/userModel';
+import { userModel } from '../../models/userModel';
 import { ValueOf } from '../../utils/helperFunctions';
 import { OmitFirstArgAndChangeReturn } from '../main';
 import { Inventory, ProxyLimitedList, ShopRole, SpeciesNames } from './general';
@@ -261,5 +261,5 @@ export interface UserData<QuidExists extends undefined, QuidCompleted extends ''
 			server: UserSchema['settings']['proxy']['servers'][string] | undefined;
 		};
 	};
-	update: OmitFirstArgAndChangeReturn<typeof userModel['update'], Promise<void>>;
+	update: OmitFirstArgAndChangeReturn<typeof userModel['findOneAndUpdate'], void>;
 }

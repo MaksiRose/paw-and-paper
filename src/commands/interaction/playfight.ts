@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
-import userModel, { getUserData } from '../../models/userModel';
+import { userModel, getUserData } from '../../models/userModel';
 import { ServerSchema } from '../../typings/data/server';
 import { CurrentRegionType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';

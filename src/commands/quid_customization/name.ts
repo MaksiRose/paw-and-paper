@@ -6,7 +6,7 @@ import { getRandomNumber } from '../../utils/randomizers';
 import { generateId } from 'crystalid';
 import { SlashCommand } from '../../typings/handle';
 import { BanList, GivenIdList } from '../../typings/data/general';
-import userModel, { getUserData } from '../../models/userModel';
+import { userModel, getUserData } from '../../models/userModel';
 import { CurrentRegionType, RankType } from '../../typings/data/user';
 import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../..';
 const { version } = require('../../../package.json');

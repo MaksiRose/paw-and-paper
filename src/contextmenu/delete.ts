@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { respond } from '../utils/helperFunctions';
-import userModel from '../models/userModel';
+import { userModel } from '../models/userModel';
 import { canManageWebhooks, missingPermissions } from '../utils/permissionHandler';
 import { WebhookMessages } from '../typings/data/general';
 import { ContextMenuCommand } from '../typings/handle';

@@ -1,5 +1,5 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import userModel, { getUserData } from '../../models/userModel';
+import { userModel, getUserData } from '../../models/userModel';
 import { CurrentRegionType, QuidSchema, UserSchema } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
