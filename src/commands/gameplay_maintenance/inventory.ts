@@ -131,5 +131,5 @@ export async function showInventoryMessage(
 		],
 	});
 
-	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id);
+	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
 }

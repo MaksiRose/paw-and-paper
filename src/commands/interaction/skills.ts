@@ -63,7 +63,7 @@ export const command: SlashCommand = {
 			content: getSkillList(userData),
 			components: isYourself ? [getOriginalComponents(userData, serverData, interaction.member)] : [],
 		}, true);
-		if (userData) { saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id); }
+		if (userData) { saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token); }
 	},
 	async sendMessageComponentResponse(interaction, userData, serverData) {
 

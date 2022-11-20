@@ -41,7 +41,7 @@ export const command: SlashCommand = {
 
 		const botReply = await respond(interaction, await sendOriginalMessage(userData), true);
 
-		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, botReply.id);
+		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, botReply.id, interaction.token);
 		return;
 	},
 	async sendMessageComponentResponse(interaction, userData) {

@@ -19,6 +19,7 @@ export async function deleteCommandDisablingInfo(
 				...userDataServersObject(u, guildId),
 				componentDisablingChannelId: null,
 				componentDisablingMessageId: null,
+				componentDisablingToken: null,
 			};
 		},
 	);
@@ -34,30 +35,33 @@ export async function disableCommandComponent(
 ): Promise<void> {
 
 	const { serverInfo } = userData;
-	if (!serverInfo || !serverInfo.componentDisablingChannelId || !serverInfo.componentDisablingMessageId) { return; }
+	if (serverInfo === undefined) { return; }
 
-	const channel = await client.channels.fetch(serverInfo.componentDisablingChannelId).catch(() => null);
-	if (!channel || !channel.isTextBased()) {
+	if (serverInfo.componentDisablingChannelId !== null && serverInfo.componentDisablingMessageId !== null) {
 
-		console.error(new TypeError(`Unable to disable command-component because the channel with ID ${serverInfo.componentDisablingChannelId} could not be fetched or is not text based`));
-		return;
+		const channel = await client.channels.fetch(serverInfo.componentDisablingChannelId).catch(() => null);
+		if (!channel || !channel.isTextBased()) {
+
+			console.error(new TypeError(`Unable to disable command-component because the channel with ID ${serverInfo.componentDisablingChannelId} could not be fetched or is not text based`));
+			return;
+		}
+
+		const botReply = await channel.messages.fetch(serverInfo.componentDisablingMessageId).catch(() => null);
+		if (!botReply) {
+
+			console.error(new TypeError(`Unable to disable command-component because the message with ID ${serverInfo.componentDisablingMessageId} could not be fetched`));
+			return;
+		}
+
+		await Promise.all([
+			botReply.edit({
+				components: disableAllComponents(botReply.components),
+			}),
+			deleteCommandDisablingInfo(userData, botReply.guildId || 'DMs'),
+		]).catch(error => {
+			console.error(error);
+		});
 	}
-
-	const botReply = await channel.messages.fetch(serverInfo.componentDisablingMessageId).catch(() => null);
-	if (!botReply) {
-
-		console.error(new TypeError(`Unable to disable command-component because the message with ID ${serverInfo.componentDisablingMessageId} could not be fetched`));
-		return;
-	}
-
-	await Promise.all([
-		botReply.edit({
-			components: disableAllComponents(botReply.components),
-		}),
-		deleteCommandDisablingInfo(userData, botReply.guildId || 'DMs'),
-	]).catch(error => {
-		console.error(error);
-	});
 }
 
 /**
@@ -72,6 +76,7 @@ export async function saveCommandDisablingInfo(
 	guildId: string,
 	channelId: string,
 	messageId: string,
+	interactionToken: string,
 ): Promise<void> {
 
 	await userData.update(
@@ -80,6 +85,7 @@ export async function saveCommandDisablingInfo(
 				...userDataServersObject(u, guildId),
 				componentDisablingChannelId: channelId,
 				componentDisablingMessageId: messageId,
+				componentDisablingToken: interactionToken,
 			};
 		},
 	);

@@ -56,7 +56,7 @@ export const command: SlashCommand = {
 			],
 		}, true);
 
-		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, botReply.id);
+		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, botReply.id, interaction.token);
 	},
 	async sendMessageComponentResponse(interaction, userData) {
 

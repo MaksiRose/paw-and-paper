@@ -228,6 +228,7 @@ export interface UserSchema {
 			restingChannelId: string | null,
 			componentDisablingChannelId: string | null,
 			componentDisablingMessageId: string | null,
+			componentDisablingToken: string | null,
 			hasCooldown: boolean
 		}
 	};
