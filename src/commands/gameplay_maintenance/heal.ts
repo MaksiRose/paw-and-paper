@@ -97,7 +97,7 @@ export const command: SlashCommand = {
 			catch { return null; }
 		})();
 		const chosenUserData = _chosenUserData === null ? undefined : getUserData(_chosenUserData, interaction.guildId, _chosenUserData.quids[_chosenUserData.servers[interaction.guildId]?.currentQuid ?? '']);
-		if (chosenUserData && !isInteractable(interaction, chosenUserData, messageContent, restEmbed)) { return; }
+		if (chosenUserData && !isInteractable(interaction, chosenUserData, messageContent, restEmbed, { checkFullInventory: false, checkPassedOut: false })) { return; }
 
 		let chosenItem = interaction.options.getString('item') ?? undefined;
 		if (!chosenItem || !stringIsAvailableItem(chosenItem, serverData.inventory)) { chosenItem = undefined; }
@@ -124,6 +124,7 @@ export const command: SlashCommand = {
 
 				const _userToHeal = await userModel.findOne(u => Object.keys(u.quids).includes(value));
 				const userToHeal = getUserData(_userToHeal, interaction.guildId, getMapData(_userToHeal.quids, value));
+				if (!isInteractable(interaction, userToHeal, '', [], { checkFullInventory: false, checkPassedOut: false })) { return; }
 
 				await getHealResponse(interaction, userData, serverData, '', [], 0, userToHeal);
 			}
