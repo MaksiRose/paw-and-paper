@@ -570,7 +570,7 @@ export function getStatsPoints(
 	const thirst = item === 'water' ? getSmallerNumber(getRandomNumber(10, 6), userToHeal.quid.profile.maxThirst - userToHeal.quid.profile.thirst) : 0;
 	const health = item === 'water' ? 0 : getSmallerNumber(getRandomNumber(10, 6), userToHeal.quid.profile.maxHealth - userToHeal.quid.profile.health);
 	const energy = (item !== 'water' && itemInfo[item].givesEnergy) ? getSmallerNumber(30, userToHeal.quid.profile.maxEnergy - userToHeal.quid.profile.energy) : 0;
-	const hunger = (item !== 'water' && itemInfo[item].givesEnergy) ? getSmallerNumber(5, userToHeal.quid.profile.maxHunger - userToHeal.quid.profile.hunger) : 0;
+	const hunger = (item !== 'water' && itemInfo[item].edibility === PlantEdibilityType.Edible) ? getSmallerNumber(5, userToHeal.quid.profile.maxHunger - userToHeal.quid.profile.hunger) : 0;
 	return { thirst, hunger, energy, health };
 }
 
