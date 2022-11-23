@@ -84,7 +84,7 @@ export const command: SlashCommand = {
 			components: [getDenButtons(userData._id)],
 		} : getMaterials(userData, serverData, chosenDen, restEmbed, messageContent), true);
 
-		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 	},
 	async sendMessageComponentResponse(interaction, userData, serverData) {
 

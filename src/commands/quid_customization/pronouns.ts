@@ -42,7 +42,7 @@ export const command: SlashCommand = {
 			components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData)])],
 		}, true);
 
-		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, botReply.id, interaction.token);
+		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, botReply.id, interaction);
 		return;
 	},
 	async sendMessageComponentResponse(interaction, userData) {

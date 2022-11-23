@@ -59,7 +59,7 @@ export const command: SlashCommand = {
 				])],
 		}, true);
 
-		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, botReply.id, interaction.token);
+		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, botReply.id, interaction);
 	},
 	async sendMessageComponentResponse(interaction, userData) {
 

@@ -1,19 +1,22 @@
-import { ComponentType, ButtonStyle, APIActionRowComponent, ActionRowBuilder, ActionRow, MessageActionRowComponent, APIMessageActionRowComponent, MessageActionRowComponentBuilder, ButtonBuilder, ButtonComponent, APIButtonComponent, SelectMenuBuilder, SelectMenuComponent, APISelectMenuComponent, isJSONEncodable, InteractionWebhook } from 'discord.js';
+import { ComponentType, ButtonStyle, APIActionRowComponent, ActionRowBuilder, ActionRow, MessageActionRowComponent, APIMessageActionRowComponent, MessageActionRowComponentBuilder, ButtonBuilder, ButtonComponent, APIButtonComponent, SelectMenuBuilder, SelectMenuComponent, APISelectMenuComponent, isJSONEncodable, SnowflakeUtil, RepliableInteraction } from 'discord.js';
 import { client } from '..';
 import { UserData } from '../typings/data/user';
 import { userDataServersObject } from './helperFunctions';
+
+export const componentDisablingInteractions = new Map<string, RepliableInteraction>();
 
 /**
  * It deletes the command disabling info from the user data
  * @param userData - The user's database entry.
  * @param {string} guildId - The ID of the guild that the command disabling info is being deleted from.
  */
-export async function deleteCommandDisablingInfo(
+export function deleteCommandDisablingInfo(
 	userData: UserData<undefined, ''>,
 	guildId: string,
-): Promise<void> {
+): void {
 
-	await userData.update(
+	componentDisablingInteractions.delete(userData._id + guildId);
+	userData.update(
 		(u) => {
 			u.servers[guildId] = {
 				...userDataServersObject(u, guildId),
@@ -37,19 +40,26 @@ export async function disableCommandComponent(
 	const { serverInfo } = userData;
 	if (serverInfo === undefined) { return; }
 
-	if (serverInfo.componentDisablingToken !== null && serverInfo.componentDisablingMessageId !== null && client.isReady()) {
+	const interaction = componentDisablingInteractions.get(userData._id + userData.quid?.profile?.serverId);
+	const fifteenMinutesInMs = 900_000;
+	if (interaction !== undefined && serverInfo.componentDisablingMessageId !== null && client.isReady() && SnowflakeUtil.deconstruct(interaction.id).timestamp > Date.now() - fifteenMinutesInMs) {
 
-		const interaction = new InteractionWebhook(client, client.application.id, serverInfo.componentDisablingToken);
+		const botReply = await interaction.webhook.fetchMessage(serverInfo.componentDisablingMessageId)
+			.catch(error => {
+				componentDisablingInteractions.delete(userData._id + userData.quid?.profile?.serverId);
+				console.error(error);
+				return undefined;
+			});
+		if (botReply === undefined) { return; }
 
-		const botReply = await interaction.fetchMessage(serverInfo.componentDisablingMessageId);
-		await Promise.all([
-			interaction.editMessage(serverInfo.componentDisablingMessageId, {
-				components: disableAllComponents(botReply.components),
-			}),
-			deleteCommandDisablingInfo(userData, botReply.guildId || 'DMs'),
-		]).catch(error => {
+		await interaction.webhook.editMessage(serverInfo.componentDisablingMessageId, {
+			components: disableAllComponents(botReply.components),
+		}).catch(error => {
+			componentDisablingInteractions.delete(userData._id + userData.quid?.profile?.serverId);
 			console.error(error);
 		});
+
+		deleteCommandDisablingInfo(userData, botReply.guildId || 'DMs');
 	}
 	else if (serverInfo.componentDisablingChannelId !== null && serverInfo.componentDisablingMessageId !== null) {
 
@@ -67,14 +77,11 @@ export async function disableCommandComponent(
 			return;
 		}
 
-		await Promise.all([
-			botReply.edit({
-				components: disableAllComponents(botReply.components),
-			}),
-			deleteCommandDisablingInfo(userData, botReply.guildId || 'DMs'),
-		]).catch(error => {
-			console.error(error);
+		await botReply.edit({
+			components: disableAllComponents(botReply.components),
 		});
+
+		deleteCommandDisablingInfo(userData, botReply.guildId || 'DMs');
 	}
 }
 
@@ -85,21 +92,21 @@ export async function disableCommandComponent(
  * @param {string} channelId - The ID of the channel where the command disabling message is.
  * @param {string} messageId - The ID of the message to disable the components of.
  */
-export async function saveCommandDisablingInfo(
+export function saveCommandDisablingInfo(
 	userData: UserData<undefined, ''>,
 	guildId: string,
 	channelId: string,
 	messageId: string,
-	interactionToken: string,
-): Promise<void> {
+	interaction: RepliableInteraction,
+): void {
 
-	await userData.update(
+	componentDisablingInteractions.set(userData._id + guildId, interaction);
+	userData.update(
 		(u) => {
 			u.servers[guildId] = {
 				...userDataServersObject(u, guildId),
 				componentDisablingChannelId: channelId,
 				componentDisablingMessageId: messageId,
-				componentDisablingToken: interactionToken,
 			};
 		},
 	);
