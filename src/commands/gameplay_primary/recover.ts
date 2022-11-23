@@ -96,7 +96,7 @@ export const command: SlashCommand = {
 			],
 		}, true);
 
-		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 
 		const buttonInteraction = await botReply
 			.awaitMessageComponent({

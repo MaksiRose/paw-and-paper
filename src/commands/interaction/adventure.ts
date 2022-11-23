@@ -111,8 +111,8 @@ export const command: SlashCommand = {
 		}, true);
 
 		/* Register the command to be disabled when another command is executed, for both players */
-		saveCommandDisablingInfo(userData1, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
-		saveCommandDisablingInfo(userData2, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
+		saveCommandDisablingInfo(userData1, interaction.guildId, interaction.channelId, botReply.id, interaction);
+		saveCommandDisablingInfo(userData2, interaction.guildId, interaction.channelId, botReply.id, interaction);
 	},
 	async sendMessageComponentResponse(interaction, userData, serverData) {
 

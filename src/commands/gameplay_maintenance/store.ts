@@ -178,7 +178,7 @@ export async function sendStoreMessage(
 		components: [itemSelectMenu, storeAllButton],
 	});
 
-	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction.token);
+	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 }
 
 function getOriginalEmbed(
