@@ -6,7 +6,7 @@ import { UserData } from '../typings/data/user';
 import { ContextMenuCommand } from '../typings/handle';
 import { hasName, isInGuild } from '../utils/checkUserState';
 import { disableAllComponents } from '../utils/componentDisabling';
-import { getArrayElement, respond, update } from '../utils/helperFunctions';
+import { getArrayElement, reply, update } from '../utils/helperFunctions';
 import { canManageWebhooks, missingPermissions } from '../utils/permissionHandler';
 
 export const command: ContextMenuCommand = {
@@ -40,7 +40,7 @@ export const command: ContextMenuCommand = {
 		}
 
 		const quidMenu = getQuidsPage(userData, 0, interaction.targetId);
-		await respond(interaction, {
+		await reply(interaction, {
 			content: 'Select a quid that you want the proxied message to be from instead.\n⚠️ CAUTION! This does *not edit* the message, but deletes it and sends a new one with the new avatar and username, but same content. It is therefore not adviced to use this feature on older messages.',
 			components: quidMenu.options.length > 0 ? [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(quidMenu)] : [],
 			ephemeral: true,

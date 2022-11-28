@@ -1,5 +1,5 @@
 import { ActionRowBuilder, EmbedBuilder, GuildMember, InteractionReplyOptions, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
-import { capitalizeString, respond, update, userDataServersObject } from '../../utils/helperFunctions';
+import { capitalizeString, reply, update, userDataServersObject } from '../../utils/helperFunctions';
 import { userModel, getUserData } from '../../models/userModel';
 import { hasName, hasNameAndSpecies } from '../../utils/checkUserState';
 import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
@@ -45,7 +45,7 @@ export const command: SlashCommand = {
 			if (!mentionedUser) { hasName(userData, interaction); }
 			else {
 
-				await respond(interaction, {
+				await reply(interaction, {
 					embeds: [new EmbedBuilder()
 						.setColor(error_color)
 						.setTitle('This user has no account!')],
@@ -59,7 +59,7 @@ export const command: SlashCommand = {
 		const response = await getProfileMessageOptions(mentionedUser?.id || interaction.user.id, userData, userData.userId.includes(interaction.user.id));
 		const selectMenu = getQuidSelectMenu(userData, mentionedUser?.id || interaction.user.id, interaction.user.id, 0, userData.userId.includes(interaction.user.id));
 
-		await respond(interaction, {
+		await reply(interaction, {
 			...response,
 			components: (selectMenu.options.length > 0) ? [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([selectMenu])] : [],
 		}, true);
@@ -120,7 +120,7 @@ export const command: SlashCommand = {
 			/* Checking if the user is on a cooldown, and if they are, it will respond that they can't switch quids. */
 			if (userData.serverInfo?.hasCooldown === true) {
 
-				await respond(interaction, {
+				await reply(interaction, {
 					content: 'You can\'t switch quids because your current quid is busy!',
 					ephemeral: true,
 				}, false);
@@ -241,7 +241,7 @@ export const command: SlashCommand = {
 					components: interaction.message.components,
 				});
 
-			respond(interaction, {
+			reply(interaction, {
 				content: `You successfully switched to \`${userData.quid?.name || 'Empty Slot'}\`!`,
 				ephemeral: true,
 			}, false);

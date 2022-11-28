@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ChannelType, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { readFileSync } from 'fs';
-import { respond } from '../utils/helperFunctions';
+import { reply } from '../utils/helperFunctions';
 import { userModel } from '../models/userModel';
 import { canManageWebhooks, missingPermissions } from '../utils/permissionHandler';
 import { WebhookMessages } from '../typings/data/general';
@@ -87,7 +87,7 @@ export async function sendEditMessageModalResponse(
 		});
 
 	/* This is sending a message to the user that sent the command. */
-	await respond(interaction, {
+	await reply(interaction, {
 		content: `[Edited!](<${webhookMessage.url}>) ✅`,
 		ephemeral: true,
 	}, false);

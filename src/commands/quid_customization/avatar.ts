@@ -1,5 +1,5 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { reply } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
 import { SlashCommand } from '../../typings/handle';
@@ -26,7 +26,7 @@ export const command: SlashCommand = {
 		const attachment = interaction.options.getAttachment('picture');
 		if (!attachment) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('Please send an image to set as your quids avatar!')],
@@ -39,7 +39,7 @@ export const command: SlashCommand = {
 		const imageURL = attachment.url;
 		if (!imageURL.endsWith('.png') && !imageURL.endsWith('.jpeg') && !imageURL.endsWith('.jpg') && !imageURL.endsWith('.raw') && !imageURL.endsWith('.webp')) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('This image extension is not supported! Please send a .png, .jp(e)g, .raw or .webp image.')],
@@ -55,7 +55,7 @@ export const command: SlashCommand = {
 			},
 		);
 
-		await respond(interaction, {
+		await reply(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: imageURL })

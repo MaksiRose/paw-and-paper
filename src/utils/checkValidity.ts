@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, AnySelectMenuInteraction } from 'discord.js';
-import { capitalizeString, respond, sendErrorMessage } from './helperFunctions';
+import { capitalizeString, reply, sendErrorMessage } from './helperFunctions';
 import { userModel } from '../models/userModel';
 import { getMapData } from './helperFunctions';
 import { decreaseLevel } from './levelHandling';
@@ -18,7 +18,7 @@ export async function isPassedOut(
 	/* This is a function that checks if the user has passed out. If they have, it will send a message to the channel and return true. */
 	if (userData.quid.profile.energy <= 0 || userData.quid.profile.health <= 0 || userData.quid.profile.hunger <= 0 || userData.quid.profile.thirst <= 0) {
 
-		await respond(interaction, {
+		await reply(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
@@ -34,7 +34,7 @@ export async function isPassedOut(
 				(u) => { u.advice.passingout = true; },
 			);
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: `${interaction.user.toString()} ❓ **Tip:**\nIf your health, energy, hunger or thirst points hit zero, you pass out. Another player has to heal you so you can continue playing.\nMake sure to always watch your stats to prevent passing out!`,
 			}, false);
 		}
@@ -55,7 +55,7 @@ export async function hasCooldown(
 
 	if (userData.serverInfo?.hasCooldown === true) {
 
-		await respond(interaction, {
+		await reply(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
@@ -152,7 +152,7 @@ export async function hasFullInventory(
 
 	if (hasTooManyItems(userData)) {
 
-		await respond(interaction, {
+		await reply(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData.quid.color)
@@ -184,7 +184,7 @@ export function isInteractable(
 
 	if (!userData) {
 
-		respond(interaction, {
+		reply(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(error_color)
@@ -197,7 +197,7 @@ export function isInteractable(
 
 	if (!hasName(userData)) {
 
-		respond(interaction, {
+		reply(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(error_color)
@@ -210,7 +210,7 @@ export function isInteractable(
 
 	if (!hasNameAndSpecies(userData)) {
 
-		respond(interaction, {
+		reply(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(error_color)
@@ -223,7 +223,7 @@ export function isInteractable(
 
 	if (options?.checkPassedOut !== false && (userData.quid.profile.health <= 0 || userData.quid.profile.energy <= 0 || userData.quid.profile.hunger <= 0 || userData.quid.profile.thirst <= 0)) {
 
-		respond(interaction, {
+		reply(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(error_color)
@@ -236,7 +236,7 @@ export function isInteractable(
 
 	if (options?.checkResting !== false && (userData.quid.profile.isResting || isResting(userData))) {
 
-		respond(interaction, {
+		reply(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(error_color)
@@ -249,7 +249,7 @@ export function isInteractable(
 
 	if (options?.checkCooldown !== false && userData.serverInfo?.hasCooldown === true) {
 
-		respond(interaction, {
+		reply(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(error_color)
@@ -262,7 +262,7 @@ export function isInteractable(
 
 	if (options?.checkFullInventory !== false && hasTooManyItems(userData)) {
 
-		respond(interaction, {
+		reply(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(error_color)

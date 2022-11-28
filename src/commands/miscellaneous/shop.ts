@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
-import { respond, update } from '../../utils/helperFunctions';
+import { reply, update } from '../../utils/helperFunctions';
 import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
 import { hasName, hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
@@ -36,7 +36,7 @@ export const command: SlashCommand = {
 
 		if (serverData.shop.length === 0 || shopKindPage === null) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('There are currently no roles in the shop!')],
@@ -95,7 +95,7 @@ export const command: SlashCommand = {
 
 					const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
 
-					await respond(interaction, {
+					await reply(interaction, {
 						embeds: [
 							new EmbedBuilder()
 								.setColor(default_color)
@@ -146,7 +146,7 @@ export const command: SlashCommand = {
 
 					if (!interaction.member.roles.cache.has(buyItem.roleId)) { await interaction.member.roles.add(buyItem.roleId); }
 
-					await respond(interaction, {
+					await reply(interaction, {
 						embeds: [new EmbedBuilder()
 							.setColor(default_color)
 							.setAuthor({ name: serverData.name, iconURL: interaction.guild.iconURL() || undefined })
@@ -169,7 +169,7 @@ export const command: SlashCommand = {
 
 							await interaction.member.roles.remove(role.roleId);
 
-							await respond(interaction, {
+							await reply(interaction, {
 								embeds: [new EmbedBuilder()
 									.setColor(default_color)
 									.setAuthor({ name: serverData.name, iconURL: interaction.guild.iconURL() || undefined })
@@ -185,7 +185,7 @@ export const command: SlashCommand = {
 			}
 			else {
 
-				await respond(interaction, {
+				await reply(interaction, {
 					content: `You don't have the experience to buy the <@&${buyItem.roleId}> role!`,
 					ephemeral: true,
 				}, false);
@@ -259,7 +259,7 @@ async function getShopResponse(
 		});
 	}
 
-	await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+	await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await reply(interaction, messageObject, true); })({
 		embeds: [new EmbedBuilder()
 			.setColor(default_color)
 			.setAuthor({ name: serverData.name, iconURL: interaction.guild?.iconURL() || undefined })

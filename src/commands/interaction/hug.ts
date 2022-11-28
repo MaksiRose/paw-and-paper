@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { getArrayElement, respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, reply, update } from '../../utils/helperFunctions';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { getRandomNumber } from '../../utils/randomizers';
@@ -33,7 +33,7 @@ export const command: SlashCommand = {
 		const mentionedUser = interaction.options.getUser('user');
 		if (!mentionedUser) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('Please mention a user that you want to hug!')],
@@ -51,7 +51,7 @@ export const command: SlashCommand = {
 				'https://c.tenor.com/P5lPftY1nzUAAAAd/tired-exhausted.gif',
 			];
 
-			await respond(interaction, {
+			await reply(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(userData?.quid?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
 					.setAuthor({
@@ -63,7 +63,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		await respond(interaction, {
+		await reply(interaction, {
 			content: mentionedUser.toString(),
 			embeds: [new EmbedBuilder()
 				.setColor(userData?.quid?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
@@ -98,7 +98,7 @@ export const command: SlashCommand = {
 		const originalMember = interaction.inCachedGuild() && originalUserId ? await interaction.guild.members.fetch(originalUserId).catch(() => { return undefined; }) : undefined;
 		if (originalUser === undefined || originalUserId === interaction.user.id) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: 'You can\'t accept or decline this hug!',
 				ephemeral: true,
 			}, false);

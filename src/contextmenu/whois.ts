@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
 import { readFileSync } from 'fs';
 import { CustomIdArgs, getProfileMessageOptions } from '../commands/quid_customization/profile';
-import { respond } from '../utils/helperFunctions';
+import { reply } from '../utils/helperFunctions';
 import { userModel, getUserData } from '../models/userModel';
 import { WebhookMessages } from '../typings/data/general';
 import { ContextMenuCommand } from '../typings/handle';
@@ -71,7 +71,7 @@ export const command: ContextMenuCommand = {
 
 		const response = await getProfileMessageOptions(userId, userData, userData.userId.includes(interaction.user.id), embedArray);
 
-		await respond(interaction, {
+		await reply(interaction, {
 			...response,
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([new ButtonBuilder()

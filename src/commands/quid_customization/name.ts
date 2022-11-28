@@ -1,6 +1,6 @@
 import { EmbedBuilder, GuildMember, SlashCommandBuilder } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
-import { respond, userDataServersObject } from '../../utils/helperFunctions';
+import { reply, userDataServersObject } from '../../utils/helperFunctions';
 import { checkLevelRequirements, checkRankRequirements } from '../../utils/checkRoleRequirements';
 import { getRandomNumber } from '../../utils/randomizers';
 import { generateId } from 'crystalid';
@@ -37,7 +37,7 @@ export const command: SlashCommand = {
 			const bannedList = JSON.parse(readFileSync('./database/bannedList.json', 'utf-8')) as BanList;
 			if (bannedList.users.includes(interaction.user.id)) {
 
-				await respond(interaction, {
+				await reply(interaction, {
 					content: 'I am sorry to inform you that you have been banned from using this bot.',
 					ephemeral: true,
 				}, false);
@@ -77,7 +77,7 @@ export const command: SlashCommand = {
 		/* This is checking if the user has inputted a name for their quid. If they haven't, it will send them an error message. If they have, it will check if the name is too long. If it is, it will send them an error message. */
 		if (!name) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('Please input a name for your quid.')],
@@ -160,7 +160,7 @@ export const command: SlashCommand = {
 			},
 		);
 
-		await respond(interaction, {
+		await reply(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
 				.setTitle(userData.quid === undefined ? `You successfully created the quid ${name}!` : `You successfully renamed your quid to ${name}!`)

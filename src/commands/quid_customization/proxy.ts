@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder, ModalBuilder, NonThreadGuildBasedChannel, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { respond, update } from '../../utils/helperFunctions';
+import { reply, update } from '../../utils/helperFunctions';
 import { hasName, isInGuild } from '../../utils/checkUserState';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
@@ -31,7 +31,7 @@ export const command: SlashCommand = {
 		if (!hasName(userData, interaction)) { return; }
 
 		/* Send a response to the user. */
-		const botReply = await respond(interaction, {
+		const botReply = await reply(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
@@ -188,7 +188,7 @@ export const command: SlashCommand = {
 						.setComponents([alwaysSelectMenu])],
 				});
 
-				await respond(interaction, {
+				await reply(interaction, {
 					embeds: [new EmbedBuilder()
 						.setColor(userData.quid.color)
 						.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
@@ -216,7 +216,7 @@ export const command: SlashCommand = {
 			const isSameSuffix = chosenSuffix !== '' && quid.proxy.endsWith === chosenSuffix;
 			if (isSamePrefix && isSameSuffix) {
 
-				await respond(interaction, {
+				await reply(interaction, {
 					embeds: [new EmbedBuilder()
 						.setColor(error_color)
 						.setDescription(`The prefix \`${chosenPrefix}\` and the suffix \`${chosenSuffix}\` are already used for ${quid.name} and can't be used for ${userData.quid.name} as well.`)],
@@ -237,7 +237,7 @@ export const command: SlashCommand = {
 
 		const prefixResponse = chosenPrefix === '' ? 'no prefix' : `prefix: \`${chosenPrefix}\``;
 		const suffixResponse = chosenSuffix === '' ? 'no suffix' : `suffix: \`${chosenSuffix}\``;
-		await respond(interaction, {
+		await reply(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })

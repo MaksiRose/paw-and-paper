@@ -10,7 +10,7 @@ import { PlantEdibilityType, SpeciesDietType } from '../../typings/main';
 import { hasName, hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
-import { capitalizeString, getBiggerNumber, getMapData, getSmallerNumber, keyInObject, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
+import { capitalizeString, getBiggerNumber, getMapData, getSmallerNumber, keyInObject, reply, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
 import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -70,7 +70,7 @@ export const command: SlashCommand = {
 
 		if (userData.quid.profile.hunger >= userData.quid.profile.maxHunger) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
@@ -108,7 +108,7 @@ export async function sendEatMessage(
 		if (hasName(taggedUserData)) {
 
 			embed.setDescription(`*${taggedUserData.quid.name} looks down at ${taggedUserData.quid.name} as ${taggedUserData.quid.pronounAndPlural(0, 'nom')} on the ${taggedUserData.quid.getDisplayspecies()}'s leg.* "No eating packmates here!" *${taggedUserData.quid.name} chuckled, shaking off ${taggedUserData.quid.name}.*`);
-			await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+			await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await reply(interaction, messageObject, true); })({
 				content: messageContent,
 				embeds: [...restEmbed, embed],
 				components: interaction.isSelectMenu() ? disableAllComponents(interaction.message.components) : [],
@@ -272,7 +272,7 @@ export async function sendEatMessage(
 	if (previousRegion !== CurrentRegionType.FoodDen) { footerText += '\nYou are now at the food den'; }
 	embed.setFooter({ text: `${footerText}\n\n${await wearDownDen(serverData, CurrentRegionType.FoodDen)}\n-1 ${chosenFood} for ${interaction.guild.name}` });
 
-	await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+	await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await reply(interaction, messageObject, true); })({
 		content: messageContent,
 		embeds: [...restEmbed, embed],
 		components: interaction.isSelectMenu() ? disableAllComponents(interaction.message.components) : [],
@@ -290,7 +290,7 @@ async function sendNoItemMessage(
 ): Promise<void> {
 
 	embed.setDescription(`*${userData.quid.name} searches for a ${chosenFood} all over the pack, but couldn't find one...*`);
-	await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+	await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await reply(interaction, messageObject, true); })({
 		content: messageContent,
 		embeds: [...restEmbed, embed],
 		components: interaction.isSelectMenu() ? disableAllComponents(interaction.message.components) : [],

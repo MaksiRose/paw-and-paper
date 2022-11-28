@@ -5,7 +5,7 @@ import { checkRankRequirements } from '../../utils/checkRoleRequirements';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
-import { getArrayElement, getMapData, respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, getMapData, reply, update } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { remindOfAttack } from './attack';
 
@@ -44,7 +44,7 @@ export const command: SlashCommand = {
 				},
 			);
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
@@ -58,7 +58,7 @@ export const command: SlashCommand = {
 		}
 		else if (userData.quid.profile.unlockedRanks === 2 && userData.quid.profile.rank === RankType.Apprentice) {
 
-			const botReply = await respond(interaction, {
+			const botReply = await reply(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
@@ -94,7 +94,7 @@ export const command: SlashCommand = {
 				},
 			);
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
@@ -108,7 +108,7 @@ export const command: SlashCommand = {
 		}
 		else if (userData.quid.profile.rank === RankType.Elderly) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
@@ -118,7 +118,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		await respond(interaction, {
+		await reply(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData.quid.color)

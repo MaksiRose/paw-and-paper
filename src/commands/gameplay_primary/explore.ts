@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { capitalizeString, getBiggerNumber, getMapData, getSmallerNumber, keyInObject, respond, sendErrorMessage, setCooldown, update } from '../../utils/helperFunctions';
+import { capitalizeString, getBiggerNumber, getMapData, getSmallerNumber, keyInObject, reply, sendErrorMessage, setCooldown, update } from '../../utils/helperFunctions';
 import { remindOfAttack, startAttack } from './attack';
 import Fuse from 'fuse.js';
 import { disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
@@ -97,7 +97,7 @@ export async function executeExploring(
 	/* Checks  if the user is a Youngling and sends a message that they are too young if they are. */
 	if (userData.quid.profile.rank === RankType.Youngling) {
 
-		await respond(interaction, {
+		await reply(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData.quid.color)
@@ -110,7 +110,7 @@ export async function executeExploring(
 	const stringInput = interaction.isChatInputCommand() ? interaction.options.getString('biome')?.toLowerCase() : deconstructCustomId<CustomIdArgs>(interaction.customId)?.args[1]?.toLowerCase();
 	if (userData.quid.profile.tutorials.explore === false) {
 
-		await respond(interaction, {
+		await reply(interaction, {
 			content: 'Tip: When exploring, you encounter animals that have levels and plants in different leveled environments. These levels are in relation to your own level and determine whether you have a higher chance of beating them or getting hurt. Tactically use the Leave/Flee button if you think that the level is too high for you to beat.',
 			components: [
 				new ActionRowBuilder<ButtonBuilder>()
@@ -148,7 +148,7 @@ export async function executeExploring(
 				.setLabel(capitalizeString(value))
 				.setStyle(ButtonStyle.Primary)));
 
-		const getBiomeMessage = await respond(interaction, {
+		const getBiomeMessage = await reply(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData.quid.color)
@@ -171,7 +171,7 @@ export async function executeExploring(
 			.catch(async () => {
 
 				await setCooldown(userData, interaction.guildId, false);
-				await respond(interaction, { components: disableAllComponents(getBiomeMessage.components) }, true);
+				await reply(interaction, { components: disableAllComponents(getBiomeMessage.components) }, true);
 
 				return null;
 			});
@@ -221,7 +221,7 @@ export async function executeExploring(
 
 	let waitingComponent = getWaitingComponent(waitingGameField, playerPos, empty, goal);
 
-	let botReply = await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })(getWaitingMessageObject(messageContent, restEmbed, userData, waitingString, waitingGameField, waitingComponent));
+	let botReply = await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await reply(interaction, messageObject, true); })(getWaitingMessageObject(messageContent, restEmbed, userData, waitingString, waitingGameField, waitingComponent));
 
 
 	const collector = (botReply as Message<true>).createMessageComponentCollector({
@@ -410,7 +410,7 @@ export async function executeExploring(
 		else { throw new Error('userData.quid species habitat not found'); }
 		embed.setFooter({ text: `The ${foundItem} is in an environment of difficulty level ${environmentLevel}.\nYou will be presented five buttons with five emojis each. The footer will show you an emoji, and you have to find the button with that emoji, but without the campsite (${plantEmojis.toAvoid}).` });
 
-		await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })({
+		await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await reply(interaction, messageObject, true); })({
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [new ActionRowBuilder<ButtonBuilder>()
@@ -660,7 +660,7 @@ export async function executeExploring(
 		else { throw new Error('userData.quid species habitat not found'); }
 		embed.setFooter({ text: `The ${opponentSpecies} is level ${opponentLevel}.\nYou will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response.` });
 
-		await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })({
+		await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await reply(interaction, messageObject, true); })({
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [new ActionRowBuilder<ButtonBuilder>()
@@ -914,7 +914,7 @@ export async function executeExploring(
 	}
 	else {
 
-		botReply = await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })({
+		botReply = await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await reply(interaction, messageObject, true); })({
 			content: messageContent,
 			embeds: [
 				...restEmbed,
@@ -948,7 +948,7 @@ export async function executeExploring(
 			},
 		);
 
-		await respond(interaction, {
+		await reply(interaction, {
 			content: `${interaction.user.toString()} ❓ **Tip:**\nA Ginkgo sapling gives you more luck the older it gets. For example, you might find better items or be more often successful with healing or repairing.`,
 		}, false);
 	}

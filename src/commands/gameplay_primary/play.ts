@@ -13,7 +13,7 @@ import { disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
-import { capitalizeString, getArrayElement, getMapData, getSmallerNumber, keyInObject, respond, setCooldown, update } from '../../utils/helperFunctions';
+import { capitalizeString, getArrayElement, getMapData, getSmallerNumber, keyInObject, reply, setCooldown, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -85,7 +85,7 @@ export async function executePlaying(
 	const tutorialMapEntry = tutorialMap.get(userData1.quid._id + userData1.quid.profile.serverId);
 	if (userData1.quid.profile.tutorials.play === false && userData1.quid.profile.rank === RankType.Youngling && (tutorialMapEntry === undefined || tutorialMapEntry === 0)) {
 
-		await (async (int, messageOptions) => int.isButton() && forceEdit ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
+		await (async (int, messageOptions) => int.isButton() && forceEdit ? await update(int, messageOptions) : await reply(int, messageOptions, true))(interaction, {
 			content: '*About the structure of RPG messages:*\n\n- Most messages have `Roleplay text`, which is written in cursive, and only for fun!\n- More important is the `Info text`, which is at the bottom of each message, and has the most important info like how to play a game or stat changes. **Read this part first** to avoid confusion!\n\n> Here is an example of what this might look like:',
 			embeds: [new EmbedBuilder()
 				.setColor(userData1.quid.color)
@@ -104,7 +104,7 @@ export async function executePlaying(
 
 	if (mentionedUserId && userData1.userId.includes(mentionedUserId)) {
 
-		await (async (int, messageOptions) => int.isButton() && forceEdit ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
+		await (async (int, messageOptions) => int.isButton() && forceEdit ? await update(int, messageOptions) : await reply(int, messageOptions, true))(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData1.quid.color)
@@ -216,7 +216,7 @@ export async function executePlaying(
 			}
 			else { throw new TypeError('cycleKind is undefined'); }
 
-			botReply = await (async (int, messageOptions) => int.isButton() && forceEdit ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
+			botReply = await (async (int, messageOptions) => int.isButton() && forceEdit ? await update(int, messageOptions) : await reply(int, messageOptions, true))(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, embed],
 				components: [playComponent],
@@ -340,7 +340,7 @@ export async function executePlaying(
 		embed.setDescription(descriptionText);
 		embed.setFooter({ text: `Click the button with this emoji: ${plantGame.emojiToFind}, but without the campsite (${plantEmojis.toAvoid}).` });
 
-		botReply = await (async (int, messageOptions) => int.isButton() && forceEdit ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
+		botReply = await (async (int, messageOptions) => int.isButton() && forceEdit ? await update(int, messageOptions) : await reply(int, messageOptions, true))(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [playComponent],
@@ -407,7 +407,7 @@ export async function executePlaying(
 	else {
 
 		const tutorialMapEntry_ = tutorialMap.get(userData1.quid._id + userData1.quid.profile.serverId);
-		botReply = await (async function(messageObject) { return interaction.isButton() && forceEdit ? await update(interaction, messageObject) : buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })({
+		botReply = await (async function(messageObject) { return interaction.isButton() && forceEdit ? await update(interaction, messageObject) : buttonInteraction ? await update(buttonInteraction, messageObject) : await reply(interaction, messageObject, true); })({
 			content: messageContent,
 			embeds: [
 				...restEmbed,
@@ -428,7 +428,7 @@ export async function executePlaying(
 
 		if (tutorialMapEntry === 2 && tutorialMapEntry_ === undefined) {
 
-			await respond(buttonInteraction ?? interaction, {
+			await reply(buttonInteraction ?? interaction, {
 				content: 'Good job! You have understood the basics of how to play the RPG. From now on, there is a time limit of a few seconds for clicking the minigame-buttons. Have fun!',
 			}, false);
 		}

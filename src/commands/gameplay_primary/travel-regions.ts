@@ -5,7 +5,7 @@ import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
-import { getMapData, respond, update, valueInObject } from '../../utils/helperFunctions';
+import { getMapData, reply, update, valueInObject } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { sendDrinkMessage } from '../gameplay_maintenance/drink';
 import { getHealResponse } from '../gameplay_maintenance/heal';
@@ -142,7 +142,7 @@ async function sendTravelMessage(
 		embed.setDescription(`*${userData.quid.name} slowly trots to the sleeping dens, tired from all the hard work ${userData.quid.pronoun(0)} did. For a moment, the ${userData.quid.getDisplayspecies()} thinks about if ${userData.quid.pronounAndPlural(0, 'want')} to rest or just a break.*`);
 
 		return await (async function(messageOptions) {
-			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await respond(interaction, messageOptions, true);
+			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await reply(interaction, messageOptions, true);
 		})({
 			content: messageContent,
 			embeds: [...restEmbed, embed],
@@ -167,7 +167,7 @@ async function sendTravelMessage(
 		if (allFoodDenUsersList.length > 0) { embed.addFields({ name: 'Packmates at the food den:', value: allFoodDenUsersList.join('\n') }); }
 
 		return await (async function(messageOptions) {
-			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await respond(interaction, messageOptions, true);
+			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await reply(interaction, messageOptions, true);
 		})({
 			content: messageContent,
 			embeds: [...restEmbed, embed],
@@ -207,7 +207,7 @@ async function sendTravelMessage(
 		if (allHealerUsersList.length > 0) { embed.addFields({ name: 'Packmates that can heal:', value: allHealerUsersList.join('\n') }); }
 
 		return await (async function(messageOptions) {
-			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await respond(interaction, messageOptions, true);
+			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await reply(interaction, messageOptions, true);
 		})({
 			content: messageContent,
 			embeds: [...restEmbed, embed],
@@ -235,7 +235,7 @@ async function sendTravelMessage(
 		if (allRuinsUsersList.length > 0) { embed.addFields({ name: 'Packmates at the ruins:', value: allRuinsUsersList.join('\n') }); }
 
 		return await (async function(messageOptions) {
-			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await respond(interaction, messageOptions, true);
+			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await reply(interaction, messageOptions, true);
 		})({
 			content: messageContent,
 			embeds: [...restEmbed, embed],
@@ -247,7 +247,7 @@ async function sendTravelMessage(
 		embed.setDescription(`*${userData.quid.name} looks at ${userData.quid.pronoun(2)} reflection as ${userData.quid.pronounAndPlural(0, 'passes', 'pass')} the lake. Suddenly the ${userData.quid.getDisplayspecies()} remembers how long ${userData.quid.pronounAndPlural(0, 'has', 'have')}n't drunk anything.*`);
 
 		return await (async function(messageOptions) {
-			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await respond(interaction, messageOptions, true);
+			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await reply(interaction, messageOptions, true);
 		})({
 			content: messageContent,
 			embeds: [...restEmbed, embed],
@@ -272,7 +272,7 @@ async function sendTravelMessage(
 		if (allPrairieUsersList.length > 0) { embed.addFields({ name: 'Packmates at the prairie:', value: allPrairieUsersList.join('\n') }); }
 
 		return await (async function(messageOptions) {
-			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await respond(interaction, messageOptions, true);
+			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await reply(interaction, messageOptions, true);
 		})({
 			content: messageContent,
 			embeds: [...restEmbed, embed],
@@ -296,7 +296,7 @@ async function sendTravelMessage(
 		]);
 
 		return await (async function(messageOptions) {
-			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await respond(interaction, messageOptions, true);
+			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await reply(interaction, messageOptions, true);
 		})({
 			content: messageContent,
 			embeds: [...restEmbed, embed],

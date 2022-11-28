@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, GuildMember, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { capitalizeString, getArrayElement, respond, update } from '../../utils/helperFunctions';
+import { capitalizeString, getArrayElement, reply, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
@@ -59,7 +59,7 @@ export const command: SlashCommand = {
 		}
 
 		/* Creating a message with 4 buttons and a skill list. */
-		const botReply = await respond(interaction, {
+		const botReply = await reply(interaction, {
 			content: getSkillList(userData),
 			components: isYourself ? [getOriginalComponents(userData, serverData, interaction.member)] : [],
 		}, true);
@@ -276,7 +276,7 @@ export const command: SlashCommand = {
 				components: [getOriginalComponents(userData, serverData, interaction.member)],
 			});
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: `You removed the ${category} skill \`${skillName}\`!`,
 			}, false);
 			return;
@@ -300,7 +300,7 @@ export const command: SlashCommand = {
 
 				if ([...Object.keys(userData?.quid?.profile?.skills?.personal || {}), ...serverData.skills].includes(newName)) {
 
-					await respond(interaction, {
+					await reply(interaction, {
 						content: `I can't add the personal skill \`${newName}\` since the name interferes with another skills name!`,
 						ephemeral: true,
 					}, false);
@@ -324,7 +324,7 @@ export const command: SlashCommand = {
 
 				if (allSkillNamesList.includes(newName)) {
 
-					await respond(interaction, {
+					await reply(interaction, {
 						content: `I can't add the global skill \`${newName}\` since the name interferes with another skills name!`,
 						ephemeral: true,
 					}, false);
@@ -359,7 +359,7 @@ export const command: SlashCommand = {
 				components: [getOriginalComponents(userData, serverData, interaction.member)],
 			});
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: `You added the ${category} skill \`${newName}\`!`,
 			}, false);
 			return;
@@ -372,7 +372,7 @@ export const command: SlashCommand = {
 
 				if ([...Object.keys(userData?.quid?.profile?.skills?.personal || {}), ...serverData.skills].includes(newName)) {
 
-					await respond(interaction, {
+					await reply(interaction, {
 						content: `I can't edit the personal skill \`${skillName}\` to be called \`${newName}\` since the name interferes with another skills name!`,
 						ephemeral: true,
 					}, false);
@@ -397,7 +397,7 @@ export const command: SlashCommand = {
 
 				if (allSkillNamesList.includes(newName)) {
 
-					await respond(interaction, {
+					await reply(interaction, {
 						content: `I can't edit the global skill \`${skillName}\` to be called \`${newName}\` since the new name interferes with another skills name!`,
 						ephemeral: true,
 					}, false);
@@ -433,7 +433,7 @@ export const command: SlashCommand = {
 				components: [getOriginalComponents(userData, serverData, interaction.member)],
 			});
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: `You changed the name of the ${category} skill \`${skillName}\` to \`${newName}\`!`,
 			}, false);
 			return;
@@ -447,7 +447,7 @@ export const command: SlashCommand = {
 
 			if (isNaN(newValue)) {
 
-				await respond(interaction, {
+				await reply(interaction, {
 					content: 'Please enter a valid number!',
 					ephemeral: true,
 				}, false);
@@ -467,7 +467,7 @@ export const command: SlashCommand = {
 				components: [getOriginalComponents(userData, serverData, interaction.member)],
 			});
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: `You changed the value of the ${category} skill \`${skillName}\` from \`${oldValue}\` to \`${userData?.quid?.profile.skills[category][skillName]}\`!`,
 			}, false);
 		}

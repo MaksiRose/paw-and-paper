@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder, Guild, StringSelectMenuBuilder, SlashCommandBuilder } from 'discord.js';
-import { respond, update } from '../../utils/helperFunctions';
+import { reply, update } from '../../utils/helperFunctions';
 import { isInGuild } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
 import { SlashCommand } from '../../typings/handle';
@@ -25,7 +25,7 @@ export const command: SlashCommand = {
 		if (!isInGuild(interaction)) { return; }
 
 		/* Creating a message with up to 25 profiles of a certain rank, a select menu to select another rank and buttons to go back and fourth a page if the rank as more than 25 profiles. */
-		await respond(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild, RankType.Youngling), true);
+		await reply(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild, RankType.Youngling), true);
 	},
 	async sendMessageComponentResponse(interaction) {
 
@@ -72,7 +72,7 @@ export const command: SlashCommand = {
 			if (page >= Math.ceil(profilesText.length / 25)) { page = 0; }
 		}
 
-		await respond(interaction, await getProfilesMessage(interaction.user.id, page, interaction.guild, rankName, profilesText), true);
+		await reply(interaction, await getProfilesMessage(interaction.user.id, page, interaction.guild, rankName, profilesText), true);
 		return;
 
 	},

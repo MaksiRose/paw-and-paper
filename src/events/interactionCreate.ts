@@ -6,7 +6,7 @@ import { DiscordEvent } from '../typings/main';
 import { disableCommandComponent, disableAllComponents } from '../utils/componentDisabling';
 import { getMapData, keyInObject, update, userDataServersObject } from '../utils/helperFunctions';
 import { createGuild } from '../utils/updateGuild';
-import { respond } from '../utils/helperFunctions';
+import { reply } from '../utils/helperFunctions';
 import { sendErrorMessage } from '../utils/helperFunctions';
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
@@ -219,7 +219,7 @@ export const event: DiscordEvent = {
 
 						if (!isCommandCreator && !isMentioned) {
 
-							await respond(interaction, {
+							await reply(interaction, {
 								content: 'Sorry, I only listen to the person that created the command 😣',
 								ephemeral: true,
 							}, false);
@@ -236,7 +236,7 @@ export const event: DiscordEvent = {
 
 						if (!description) {
 
-							await respond(interaction, {
+							await reply(interaction, {
 								embeds: [new EmbedBuilder()
 									.setColor(error_color)
 									.setDescription('There was an error trying to report the error... Ironic! Maybe you can try opening a ticket via `/ticket` instead?')],
@@ -255,7 +255,7 @@ export const event: DiscordEvent = {
 
 						if (!isCommandCreator && !isMentioned) {
 
-							await respond(interaction, {
+							await reply(interaction, {
 								content: 'Sorry, I only listen to the person that created the command 😣',
 								ephemeral: true,
 							}, false);
@@ -299,7 +299,7 @@ export const event: DiscordEvent = {
 											.setStyle(ButtonStyle.Secondary))],
 								});
 
-								await respond(interaction, {
+								await reply(interaction, {
 									content: `You turned reminders for watering ${isOn ? 'on' : 'off'}!`,
 									ephemeral: true,
 								}, false);
@@ -321,7 +321,7 @@ export const event: DiscordEvent = {
 											.setStyle(ButtonStyle.Secondary))],
 								});
 
-								await respond(interaction, {
+								await reply(interaction, {
 									content: `You turned pings for automatic resting ${isOn ? 'on' : 'off'}!`,
 									ephemeral: true,
 								}, false);
@@ -338,7 +338,7 @@ export const event: DiscordEvent = {
 
 				if (!isCommandCreator && !isMentioned) {
 
-					await respond(interaction, {
+					await reply(interaction, {
 						content: 'Sorry, I only listen to the person that created the command 😣',
 						ephemeral: true,
 					}, false);

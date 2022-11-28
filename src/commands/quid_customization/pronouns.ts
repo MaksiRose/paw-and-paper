@@ -1,5 +1,5 @@
 import { ActionRowBuilder, EmbedBuilder, ModalBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { respond, update } from '../../utils/helperFunctions';
+import { reply, update } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
@@ -33,7 +33,7 @@ export const command: SlashCommand = {
 
 		if (!hasName(userData, interaction)) { return; }
 
-		const botReply = await respond(interaction, {
+		const botReply = await reply(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
@@ -107,7 +107,7 @@ export const command: SlashCommand = {
 			chosenPronouns.forEach((pronoun, value) => chosenPronouns[value] = `"${pronoun}"`);
 			chosenPronouns[chosenPronouns.length - 1] = `and ${chosenPronouns[chosenPronouns.length - 1]}`;
 
-			await respond(interaction, {
+			await reply(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setDescription(`You provided **${chosenPronouns.length}** arguments: ${chosenPronouns.join(', ')}.\nThe first 5 arguments should be of the pronoun you want, and the 6th argument should be either "singular" or "plural".`)],
@@ -119,7 +119,7 @@ export const command: SlashCommand = {
 		/* Checking if the 6th spot is either singular or plural. */
 		if (!willBeDeleted && !isNone && chosenPronouns[5] !== 'singular' && chosenPronouns[5] !== 'plural') {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setDescription(`For the 6th spot, you wrote "${chosenPronouns[5]}". The 6th spot should be either "singular" or "plural".`)],
@@ -131,7 +131,7 @@ export const command: SlashCommand = {
 		/* It checks if the quid already has the pronouns that are being set. */
 		if (!willBeDeleted && userData.quid.pronounSets.map(pronounSet => pronounSet.join('/')).includes(chosenPronouns.join('/'))) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setDescription('The quid already has this pronoun!')],
@@ -148,7 +148,7 @@ export const command: SlashCommand = {
 
 				if (pronoun.length < 1 || pronoun.length > maxPronounLength) {
 
-					await respond(interaction, {
+					await reply(interaction, {
 						embeds: [new EmbedBuilder()
 							.setColor(error_color)
 							.setDescription(`Each pronoun must be between 1 and ${maxPronounLength} characters long.`)],
@@ -178,7 +178,7 @@ export const command: SlashCommand = {
 		});
 
 		const addedOrEditedTo = isNaN(pronounNumber) ? 'added pronoun' : `edited pronoun from ${oldPronounSet?.join('/')} to`;
-		await respond(interaction, {
+		await reply(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })

@@ -9,7 +9,7 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
-import { capitalizeString, getArrayElement, getBiggerNumber, getMapData, getSmallerNumber, respond, sendErrorMessage, setCooldown, update } from '../../utils/helperFunctions';
+import { capitalizeString, getArrayElement, getBiggerNumber, getMapData, getSmallerNumber, reply, sendErrorMessage, setCooldown, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
@@ -61,7 +61,7 @@ export const command: SlashCommand = {
 		/* Checks whether the mentioned user is associated with the account. */
 		if (userData1.userId.includes(mentionedUser.id)) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData1.quid.color)
@@ -84,7 +84,7 @@ export const command: SlashCommand = {
 		if (gameType === null) { throw new TypeError('gameType is null'); }
 
 		/* Sending a message asking the other player if they want to play, with a button to start the adventure. */
-		const botReply = await respond(interaction, {
+		const botReply = await reply(interaction, {
 			content: `${mentionedUser.toString()}\n${messageContent}`,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData1.quid.color)
@@ -126,7 +126,7 @@ export const command: SlashCommand = {
 
 		if (interaction.user.id === userId1) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: 'You can\'t accept your own invitation!',
 				ephemeral: true,
 			}, false);
@@ -250,7 +250,7 @@ export const command: SlashCommand = {
 
 				await oldMessage.delete(); // Instead of having an oldMessage, it should have an interaction token and message id passed here so that a new InteractionWebhook can be created that can then call delete via the id. That API call wouldnt go towards the API call limit
 
-				const message = await respond(int, {
+				const message = await reply(int, {
 					content: `<@${userId}>`,
 					embeds: [new EmbedBuilder()
 						.setColor(userData1.quid.color)

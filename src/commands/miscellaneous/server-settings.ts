@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageComponentInteraction, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { getArrayElement, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
+import { getArrayElement, reply, sendErrorMessage, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import { userModel } from '../../models/userModel';
 import { checkLevelRequirements, checkRankRequirements } from '../../utils/checkRoleRequirements';
@@ -32,7 +32,7 @@ export const command: SlashCommand = {
 		/* It's checking if the message is in a guild, and if it is, it's checking if the guild is in the database. If it's not, it throws an error. Else, it's responding with the original message */
 		if (serverData === null || !interaction.inCachedGuild()) { throw new Error('Message is not in configured guild'); }
 
-		await respond(interaction, getOriginalMessage(interaction, serverData), true);
+		await reply(interaction, getOriginalMessage(interaction, serverData), true);
 		return;
 	},
 	async sendMessageComponentResponse(interaction, userData, serverData) {
@@ -412,7 +412,7 @@ export const command: SlashCommand = {
 						if (error.httpStatus !== 404) { console.error(error); }
 					});
 
-				await respond(interaction, {
+				await reply(interaction, {
 					content: `Updates are now posted to <#${channelId}>!`,
 					ephemeral: true,
 				}, false);
@@ -459,7 +459,7 @@ export const command: SlashCommand = {
 						},
 					);
 
-					await respond(interaction, {
+					await reply(interaction, {
 						content: 'Visits have successfully been turned off!',
 						ephemeral: true,
 					}, false);
@@ -473,7 +473,7 @@ export const command: SlashCommand = {
 						},
 					);
 
-					await respond(interaction, {
+					await reply(interaction, {
 						content: `Visits are now possible in <#${channelIdOrOff}>!`,
 						ephemeral: true,
 					}, false);
@@ -505,7 +505,7 @@ export const command: SlashCommand = {
 
 			const setTo = serverData.proxySettings.channels.setTo;
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: `Proxying is now only ${setTo === ProxyListType.Blacklist ? 'disabled' : 'enabled'} in the ${setTo === ProxyListType.Blacklist ? 'blacklisted' : 'whitelisted'} channels!`,
 				ephemeral: true,
 			}, false);
@@ -542,7 +542,7 @@ export const command: SlashCommand = {
 						if (error.httpStatus !== 404) { console.error(error); }
 					});
 
-				await respond(interaction, {
+				await reply(interaction, {
 					content: `${hasChannel ? 'Removed' : 'Added'} <#${channelId}> ${hasChannel ? 'from' : 'to'} the proxying ${setTo}!`,
 					ephemeral: true,
 				}, false);

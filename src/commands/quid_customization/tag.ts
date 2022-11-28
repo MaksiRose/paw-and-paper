@@ -1,7 +1,7 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { SlashCommand } from '../../typings/handle';
 import { hasName } from '../../utils/checkUserState';
-import { respond } from '../../utils/helperFunctions';
+import { reply } from '../../utils/helperFunctions';
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -29,7 +29,7 @@ export const command: SlashCommand = {
 			},
 		);
 
-		await respond(interaction, {
+		await reply(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })

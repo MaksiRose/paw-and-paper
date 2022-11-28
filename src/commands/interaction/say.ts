@@ -1,5 +1,5 @@
 import { Attachment, EmbedBuilder, GuildTextBasedChannel, MessageReference, SlashCommandBuilder } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { reply } from '../../utils/helperFunctions';
 import { hasName, isInGuild } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
 import { readFileSync, writeFileSync } from 'fs';
@@ -39,7 +39,7 @@ export const command: SlashCommand = {
 
 		if (!text && !attachment) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('I cannot send an empty message!')],
@@ -50,7 +50,7 @@ export const command: SlashCommand = {
 
 		if (interaction.channel === null) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('The channel that this interaction came from couldn\'t be found :(')],

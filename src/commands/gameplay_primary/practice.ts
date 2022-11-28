@@ -8,7 +8,7 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
 import { createFightGame } from '../../utils/gameBuilder';
-import { respond, setCooldown, update } from '../../utils/helperFunctions';
+import { reply, setCooldown, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
@@ -42,7 +42,7 @@ export const command: SlashCommand = {
 
 		if (userData.quid.profile.rank === RankType.Youngling) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
@@ -52,7 +52,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		let botReply = await respond(interaction, {
+		let botReply = await reply(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData.quid.color)
@@ -93,7 +93,7 @@ export const command: SlashCommand = {
 
 		if (int === undefined) {
 
-			botReply = await respond(interaction, {
+			botReply = await reply(interaction, {
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })

@@ -7,7 +7,7 @@ import { SpeciesHabitatType } from '../../typings/main';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
-import { capitalizeString, getMapData, respond, setCooldown, update } from '../../utils/helperFunctions';
+import { capitalizeString, getMapData, reply, setCooldown, update } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
@@ -41,7 +41,7 @@ export const command: SlashCommand = {
 
 		if (!userData.quid.profile.hasQuest) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: messageContent,
 				embeds: [
 					...restEmbed,
@@ -128,7 +128,7 @@ export async function sendQuestMessage(
 
 	embed.setFooter({ text: `${footerText}\n\nClick the button or type "/start-quest" to continue.\n\nTip: Read the bottom text during the game carefully to find out which button to click. The button you chose will get a "radio button"-emoji, and the correct button will get a checkmark emoji. If you do not choose something fast enough, you will lose the round and no emoji is displayed.` });
 
-	const botReply = await respond(interaction, {
+	const botReply = await reply(interaction, {
 		content: `<@${interaction.user.id}>\n${messageContent}`,
 		embeds: [...restEmbed, embed, ...afterEmbedArray],
 		components: [new ActionRowBuilder<ButtonBuilder>()
@@ -155,7 +155,7 @@ export async function sendQuestMessage(
 		})
 		.catch(async () => {
 
-			return await respond(interaction, { components: disableAllComponents(botReply.components) }, true);
+			return await reply(interaction, { components: disableAllComponents(botReply.components) }, true);
 		});
 }
 
@@ -515,7 +515,7 @@ async function apprenticeAdvice(
 	interaction: ButtonInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
 ) {
 
-	await respond(interaction, {
+	await reply(interaction, {
 		content: `${interaction.user.toString()} ❓ **Tip:**\nAs apprentice, you unlock new commands: \`explore\`, \`/scavenge\`, \`heal\`, \`practice\`, and \`repair\`.\nCheck \`/help\` to see what they do!\nGo exploring via \`/explore\` to find more quests and rank up higher!`,
 	}, false);
 }
@@ -527,7 +527,7 @@ async function hunterhealerAdvice(
 	interaction: ButtonInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
 ) {
 
-	await respond(interaction, {
+	await reply(interaction, {
 		content: `${interaction.user.toString()} ❓ **Tip:**\nHunters and Healers have different strengths and weaknesses!\nHealers can \`heal\` perfectly and find more plants when \`exploring\`, but they are not so good at \`repairing\`.\nHunters can \`repair\` perfectly and find more enemies when \`exploring\`, but they are not so good at \`healing\`.\nHunters and Healers don't get advantages from the \`play\` command.`,
 	}, false);
 }
@@ -539,7 +539,7 @@ async function elderlyAdvice(
 	interaction: ButtonInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
 ) {
 
-	await respond(interaction, {
+	await reply(interaction, {
 		content: `${interaction.user.toString()} ❓ **Tip:**\nElderlies have the abilities of both Hunters and Healers!\nAdditionally, they can use the \`share\` command.`,
 	}, false);
 }

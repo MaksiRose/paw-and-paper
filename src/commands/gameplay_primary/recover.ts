@@ -9,7 +9,7 @@ import { changeCondition, DecreasedStatsData } from '../../utils/changeCondition
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
-import { getArrayElement, getMapData, respond, sendErrorMessage, setCooldown, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
+import { getArrayElement, getMapData, reply, sendErrorMessage, setCooldown, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
@@ -48,7 +48,7 @@ export const command: SlashCommand = {
 		const recoverCooldown = recoverCooldownProfilesMap.get(userData.quid._id + interaction.guildId);
 		if (recoverCooldown && Date.now() - recoverCooldown < twelveHoursInMs) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
@@ -59,7 +59,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		let botReply = await respond(interaction, {
+		let botReply = await reply(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData.quid.color)
@@ -108,7 +108,7 @@ export const command: SlashCommand = {
 
 		if (buttonInteraction === undefined) {
 
-			botReply = await respond(interaction, {
+			botReply = await reply(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
@@ -323,7 +323,7 @@ export const command: SlashCommand = {
 						const lastInteraction = interactions.last() || interaction;
 						const levelUpEmbed = await checkLevelUp(lastInteraction, userData, serverData);
 
-						botReply = await (async function(messageObject) { return lastInteraction.isMessageComponent() ? await update(lastInteraction, messageObject) : await respond(lastInteraction, messageObject, true); })({
+						botReply = await (async function(messageObject) { return lastInteraction.isMessageComponent() ? await update(lastInteraction, messageObject) : await reply(lastInteraction, messageObject, true); })({
 							content: messageContent,
 							embeds: [
 								embed,

@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { reply } from '../../utils/helperFunctions';
 import { client } from '../..';
 import { SlashCommand } from '../../typings/handle';
 
@@ -14,7 +14,7 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction) => {
 
-		await respond(interaction, {
+		await reply(interaction, {
 			content: `Uptime: ${Math.floor((client.uptime || 0) / 3600000)} hours ${Math.floor((client.uptime || 0) / 60000) % 60} minutes\nPing: ${client.ws.ping} ms\nServer count: ${client.guilds.cache.size}`,
 		}, true);
 	},

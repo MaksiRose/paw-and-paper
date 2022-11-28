@@ -15,7 +15,7 @@ import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidit
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import getInventoryElements from '../../utils/getInventoryElements';
-import { capitalizeString, getArrayElement, getMapData, getSmallerNumber, keyInObject, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
+import { capitalizeString, getArrayElement, getMapData, getSmallerNumber, keyInObject, reply, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -80,7 +80,7 @@ export const command: SlashCommand = {
 
 		if (userData.quid.profile.rank === RankType.Youngling) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
@@ -239,7 +239,7 @@ export async function getHealResponse(
 
 	if (!hasNameAndSpecies(userToHeal)) {
 
-		const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+		const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await reply(interaction, messageObject, true); })({
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(userData.quid.color)
@@ -281,7 +281,7 @@ export async function getHealResponse(
 
 		if (healUserConditionText === '') {
 
-			const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+			const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await reply(interaction, messageObject, true); })({
 				content: messageContent,
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(userData.quid.color)
@@ -321,7 +321,7 @@ export async function getHealResponse(
 				.setPlaceholder('Select an item')
 				.setOptions(selectMenuOptions));
 
-		const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+		const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await reply(interaction, messageObject, true); })({
 			content: messageContent,
 			embeds: [...embedArray, quidConditionEmbed, inventoryEmbed],
 			components: [quidsSelectMenu, pagesButtons, inventorySelectMenu],
@@ -335,7 +335,7 @@ export async function getHealResponse(
 
 	if (!hurtQuids.some(user => user.quid._id === userToHeal.quid._id)) {
 
-		const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+		const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await reply(interaction, messageObject, true); })({
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(userData.quid.color)
@@ -443,7 +443,7 @@ export async function getHealResponse(
 
 	if (isSuccessful === false && userHasChangedCondition === true) {
 
-		const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+		const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await reply(interaction, messageObject, true); })({
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setTitle(`${userToHeal.quid.name}'s condition changed before you healed them. Please try again.`)],
@@ -530,7 +530,7 @@ export async function getHealResponse(
 		await interaction.message.delete(); // Maybe a way to make an API call that doesn't count towards the limit is to move this a line higher, create a new InteractionWebhook based on componentDisablingToken and call delete on that based on componentDisablingMessageId, and then delete these things afterwards. This method could be a backup in case the previous interaction is older than 15 minutes
 	}
 
-	const botReply = await respond(interaction, {
+	const botReply = await reply(interaction, {
 		content: content,
 		embeds: [
 			...embedArray,

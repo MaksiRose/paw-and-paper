@@ -6,7 +6,7 @@ import { CurrentRegionType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasCooldown, isPassedOut } from '../../utils/checkValidity';
-import { capitalizeString, getMapData, respond, sendErrorMessage, update, userDataServersObject } from '../../utils/helperFunctions';
+import { capitalizeString, getMapData, reply, sendErrorMessage, update, userDataServersObject } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -51,7 +51,7 @@ export async function executeResting(
 
 	if (userData.quid.profile.isResting === true || isResting(userData)) {
 
-		await (async (int, messageOptions) => int.isButton() ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
+		await (async (int, messageOptions) => int.isButton() ? await update(int, messageOptions) : await reply(int, messageOptions, true))(interaction, {
 			content: messageContent,
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
@@ -64,7 +64,7 @@ export async function executeResting(
 
 	if (userData.quid.profile.energy >= userData.quid.profile.maxEnergy) {
 
-		await (async (int, messageOptions) => int.isButton() ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
+		await (async (int, messageOptions) => int.isButton() ? await update(int, messageOptions) : await reply(int, messageOptions, true))(interaction, {
 			content: messageContent,
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
@@ -131,7 +131,7 @@ export async function startResting(
 
 		if (interaction !== undefined) {
 
-			botReply = await (async (int) => int.isButton() && !isAutomatic ? await update(int, messageOptions) : await respond(int, messageOptions, false))(interaction);
+			botReply = await (async (int) => int.isButton() && !isAutomatic ? await update(int, messageOptions) : await reply(int, messageOptions, false))(interaction);
 		}
 		else if (userData.serverInfo?.lastInteractionToken && client.isReady()) {
 

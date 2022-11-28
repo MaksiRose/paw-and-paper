@@ -5,7 +5,7 @@ import { UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
-import { getMapData, respond } from '../../utils/helperFunctions';
+import { getMapData, reply } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { hasPermission } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -42,7 +42,7 @@ export const command: SlashCommand = {
 
 		if (userData.quid.profile.sapling.exists === false) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
@@ -125,7 +125,7 @@ export const command: SlashCommand = {
 		);
 
 		const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
-		await respond(interaction, {
+		await reply(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed, ...levelUpEmbed],
 			components: [new ActionRowBuilder<ButtonBuilder>()
@@ -139,7 +139,7 @@ export const command: SlashCommand = {
 
 		if (userData.quid.profile.sapling.health <= 0) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(userData.quid.color)
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })

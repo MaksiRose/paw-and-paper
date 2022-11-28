@@ -1,6 +1,6 @@
 import { Octokit } from '@octokit/rest';
 import { EmbedBuilder, SlashCommandBuilder, Team, User, ActionRowBuilder, ButtonBuilder, ButtonStyle, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ChatInputCommandInteraction, AttachmentBuilder } from 'discord.js';
-import { respond, update } from '../../utils/helperFunctions';
+import { reply, update } from '../../utils/helperFunctions';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
@@ -52,7 +52,7 @@ export const command: SlashCommand = {
 
 		if (!title || !description || !label) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('Your ticket doesn\'t have a title, description and label!')
@@ -84,7 +84,7 @@ export const command: SlashCommand = {
 
 				if (!dmChannel) {
 
-					await respond(interaction, {
+					await reply(interaction, {
 						content: `The user ${user.tag} doesn't allow DM's. Try sending a friend request or checking if you share a server with them.`,
 					}, true);
 					return;
@@ -149,7 +149,7 @@ export const command: SlashCommand = {
 		ticketConversation += `\n\n${fromAdmin ? 'ADMIN:' : 'USER:'} ${messageText}`;
 		writeFileSync(`./database/open_tickets/${ticketId}.txt`, ticketConversation);
 
-		await respond(interaction, {
+		await reply(interaction, {
 			content: `**You replied:**\n>>> ${messageText}`,
 			files: [new AttachmentBuilder(`./database/open_tickets/${ticketId}.txt`)
 				.setName('ticketConversation.txt')],
@@ -242,7 +242,7 @@ export async function createNewTicket(
 	writeFileSync(`./database/open_tickets/${ticketId}.txt`, 'FULL CONVERSATION REGARDING THIS TICKET');
 
 	/* Sending the response to the user. */
-	await respond(interaction, {
+	await reply(interaction, {
 		embeds: [new EmbedBuilder()
 			.setColor(default_color)
 			.setTitle('Thank you for your contribution!')

@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { getArrayElement, getSmallerNumber, keyInObject, KeyOfUnion, sendErrorMessage, setCooldown, update, widenValues } from '../../utils/helperFunctions';
-import { respond } from '../../utils/helperFunctions';
+import { reply } from '../../utils/helperFunctions';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
@@ -61,7 +61,7 @@ export const command: SlashCommand = {
 		/* Checks whether the mentioned user is associated with the account. */
 		if (userData1.userId.includes(mentionedUser.id)) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData1.quid.color)
@@ -83,7 +83,7 @@ export const command: SlashCommand = {
 		const requiredFriendshipHearts = 6;
 		if (friendshipHearts < requiredFriendshipHearts) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(error_color)
@@ -95,7 +95,7 @@ export const command: SlashCommand = {
 		}
 
 		/* Sending a message asking the other player if they want to play, with a button to start the adventure. */
-		const botReply = await respond(interaction, {
+		const botReply = await reply(interaction, {
 			content: `${mentionedUser.toString()}\n${messageContent}`,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData1.quid.color)
@@ -174,7 +174,7 @@ export const command: SlashCommand = {
 
 		if (interaction.user.id === userId1) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: 'You can\'t accept your own invitation!',
 				ephemeral: true,
 			}, false);
@@ -502,7 +502,7 @@ async function sendNextRoundMessage(
 	componentArray: ActionRowBuilder<ButtonBuilder>[],
 ): Promise<Message> {
 
-	const message = await respond(interaction, {
+	const message = await reply(interaction, {
 		content: `<@${userId}>`,
 		embeds: [new EmbedBuilder()
 			.setColor(userData1.quid.color)

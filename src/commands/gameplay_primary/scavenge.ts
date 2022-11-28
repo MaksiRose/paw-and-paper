@@ -9,7 +9,7 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
-import { capitalizeString, getArrayElement, getMapData, respond, sendErrorMessage, setCooldown, update } from '../../utils/helperFunctions';
+import { capitalizeString, getArrayElement, getMapData, reply, sendErrorMessage, setCooldown, update } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { pickMaterial, pickMeat, simulateMaterialUse, simulateMeatUse } from '../../utils/simulateItemUse';
@@ -62,7 +62,7 @@ export async function executeScavenging(
 
 	if (userData.quid.profile.rank === RankType.Youngling) {
 
-		await respond(interaction, {
+		await reply(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData.quid.color)
@@ -113,7 +113,7 @@ export async function executeScavenging(
 		}
 	}
 
-	let botReply = await respond(interaction, {
+	let botReply = await reply(interaction, {
 		content: messageContent,
 		embeds: [...restEmbed, new EmbedBuilder()
 			.setColor(userData.quid.color)
@@ -330,7 +330,7 @@ export async function executeScavenging(
 				.setLabel('Scavenge again')
 				.setStyle(ButtonStyle.Primary)));
 
-		botReply = await (async (int, messageOptions) => int.isButton() ? await update(int, messageOptions) : await respond(int, messageOptions, true))(int, {
+		botReply = await (async (int, messageOptions) => int.isButton() ? await update(int, messageOptions) : await reply(int, messageOptions, true))(int, {
 			embeds: [
 				...(restEmbed as EmbedBuilder[]),
 				embed,
@@ -374,7 +374,7 @@ export async function executeScavenging(
 		}
 
 		componentArray = [trapActionRow];
-		botReply = await (async (messageOptions) => int.isButton() ? await update(int, messageOptions) : await respond(int, messageOptions, true))({
+		botReply = await (async (messageOptions) => int.isButton() ? await update(int, messageOptions) : await reply(int, messageOptions, true))({
 			embeds: [...(restEmbed as EmbedBuilder[]), new EmbedBuilder()
 				.setColor(userData!.quid!.color)
 				.setAuthor({ name: userData!.quid!.getDisplayname(), iconURL: userData!.quid!.avatarURL })

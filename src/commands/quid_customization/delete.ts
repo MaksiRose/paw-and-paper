@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
-import { respond, update } from '../../utils/helperFunctions';
+import { reply, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import { saveCommandDisablingInfo, disableAllComponents } from '../../utils/componentDisabling';
 import { missingPermissions } from '../../utils/permissionHandler';
@@ -30,7 +30,7 @@ export const command: SlashCommand = {
 		/* Checking if the user has an account. If they do not, it will send a message saying they haave no account. */
 		if (!userData) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('You have no account!')],
@@ -39,7 +39,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		const botReply = await respond(interaction, await sendOriginalMessage(userData), true);
+		const botReply = await reply(interaction, await sendOriginalMessage(userData), true);
 
 		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, botReply.id, interaction);
 		return;
@@ -135,7 +135,7 @@ export const command: SlashCommand = {
 
 				await update(interaction, await sendOriginalMessage(userData));
 
-				await respond(interaction, {
+				await reply(interaction, {
 					embeds: [new EmbedBuilder()
 						.setColor(error_color)
 						.setTitle(`The quid \`${quid?.name}\` was deleted permanently!`)],
@@ -165,7 +165,7 @@ export const command: SlashCommand = {
 
 				await update(interaction, await sendOriginalMessage(userData));
 
-				await respond(interaction, {
+				await reply(interaction, {
 					embeds: [new EmbedBuilder()
 						.setColor(error_color)
 						.setTitle(`All the data of ${accountsOnServer.length} quids on the server \`${server.name}\` was deleted permanently!`)],
@@ -181,7 +181,7 @@ export const command: SlashCommand = {
 					components: disableAllComponents(interaction.message.components),
 				});
 
-				await respond(interaction, {
+				await reply(interaction, {
 					embeds: [new EmbedBuilder()
 						.setColor(error_color)
 						.setTitle('All your data was deleted permanently!')],

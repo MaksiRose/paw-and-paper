@@ -54,7 +54,7 @@ export function getUserIds(
  * @param editMessage - boolean - If true, the bot will edit the original message instead of sending a follow-up message.
  * @returns A promise that resolves to a Message<boolean>
  */
-export async function respond(
+export async function reply(
 	interaction: RepliableInteraction,
 	options: InteractionReplyOptions,
 	editMessage: boolean,
@@ -84,7 +84,7 @@ export async function respond(
 			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
 			if ((interaction.replied || interaction.deferred) && editMessage) { // Error code 10062 can never lead to this since an Unknown Interaction can't also be replied or deferred. Therefore, it is safe to call respond again
 
-				botReply = await respond(interaction, options, editMessage);
+				botReply = await reply(interaction, options, editMessage);
 			}
 			else {
 
@@ -98,7 +98,7 @@ export async function respond(
 
 			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
 			interaction.replied = true;
-			botReply = await respond(interaction, options, editMessage);
+			botReply = await reply(interaction, options, editMessage);
 		}
 		else { throw error; }
 	}
@@ -259,7 +259,7 @@ export async function sendErrorMessage(
 				.setStyle(ButtonStyle.Success)])],
 	};
 
-	await respond(interaction, { ...messageOptions, flags: undefined }, false)
+	await reply(interaction, { ...messageOptions, flags: undefined }, false)
 		.catch(async (error2) => {
 
 			console.error('Failed to send error message to user:', error2);

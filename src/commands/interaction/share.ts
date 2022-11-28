@@ -7,7 +7,7 @@ import { changeCondition, infectWithChance } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
-import { capitalizeString, getMapData, respond } from '../../utils/helperFunctions';
+import { capitalizeString, getMapData, reply } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
@@ -52,7 +52,7 @@ export const command: SlashCommand = {
 		const sharingCooldown = sharingCooldownAccountsMap.get(userData1.quid._id + interaction.guildId);
 		if (sharingCooldown && Date.now() - sharingCooldown < twoHoursInMs) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData1.quid.color)
@@ -67,7 +67,7 @@ export const command: SlashCommand = {
 		/* Checks whether the user is an elderly. */
 		if (userData1.quid.profile.rank !== 'Elderly') {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData1.quid.color)
@@ -84,7 +84,7 @@ export const command: SlashCommand = {
 		/* Checks whether the mentioned user is associated with the account. */
 		if (mentionedUser && userData1.userId.includes(mentionedUser.id)) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData1.quid.color)
@@ -111,7 +111,7 @@ export const command: SlashCommand = {
 
 			if (usersEligibleForSharing.length <= 0) {
 
-				await respond(interaction, {
+				await reply(interaction, {
 					content: messageContent,
 					embeds: [...restEmbed, new EmbedBuilder()
 						.setColor(userData1.quid.color)
@@ -154,7 +154,7 @@ export const command: SlashCommand = {
 
 		const levelUpEmbed = await checkLevelUp(interaction, userData2, serverData);
 
-		const botReply = await respond(interaction, {
+		const botReply = await reply(interaction, {
 			content: `<@${userData2.userId[0]}>\n${messageContent}`,
 			embeds: [
 				new EmbedBuilder()

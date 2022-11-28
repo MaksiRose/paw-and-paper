@@ -4,7 +4,7 @@ import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
-import { getMapData, getSmallerNumber, respond, sendErrorMessage, setCooldown, update } from '../../utils/helperFunctions';
+import { getMapData, getSmallerNumber, reply, sendErrorMessage, setCooldown, update } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
 const { default_color } = require('../../../config.json');
@@ -44,7 +44,7 @@ export async function sendDrinkMessage(
 
 	if (userData.quid.profile.thirst >= userData.quid.profile.maxThirst) {
 
-		await (async (int, messageOptions) => int.isButton() ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
+		await (async (int, messageOptions) => int.isButton() ? await update(int, messageOptions) : await reply(int, messageOptions, true))(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData.quid.color)
@@ -56,7 +56,7 @@ export async function sendDrinkMessage(
 
 	await setCooldown(userData, interaction.guildId, true);
 
-	const botReply = await (async (int, messageOptions) => int.isButton() ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
+	const botReply = await (async (int, messageOptions) => int.isButton() ? await update(int, messageOptions) : await reply(int, messageOptions, true))(interaction, {
 		content: messageContent,
 		embeds: [...restEmbed, new EmbedBuilder()
 			.setColor(default_color)
@@ -103,7 +103,7 @@ export async function sendDrinkMessage(
 				},
 			);
 
-			await (async (int, messageOptions) => int.isButton() ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
+			await (async (int, messageOptions) => int.isButton() ? await update(int, messageOptions) : await reply(int, messageOptions, true))(interaction, {
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })

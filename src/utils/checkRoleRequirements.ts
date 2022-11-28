@@ -2,7 +2,7 @@ import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, GuildMemb
 import { userModel, getUserData } from '../models/userModel';
 import { ServerSchema } from '../typings/data/server';
 import { RankType, WayOfEarningType } from '../typings/data/user';
-import { respond } from './helperFunctions';
+import { reply } from './helperFunctions';
 import { getMapData } from './helperFunctions';
 import { missingPermissions } from './permissionHandler';
 const { default_color, error_color } = require('../../config.json');
@@ -62,7 +62,7 @@ export async function checkRankRequirements(
 					await member.roles.add(item.roleId);
 
 					if (sendMessage) {
-						await respond(interaction, {
+						await reply(interaction, {
 							content: member.toString(),
 							embeds: [new EmbedBuilder()
 								.setColor(default_color)
@@ -135,7 +135,7 @@ export async function checkLevelRequirements(
 					await member.roles.add(item.roleId);
 
 					if (sendMessage) {
-						await respond(interaction, {
+						await reply(interaction, {
 							content: member.toString(),
 							embeds: [new EmbedBuilder()
 								.setColor(default_color)
@@ -168,7 +168,7 @@ export async function checkRoleCatchBlock(
 	/* It's checking if the httpStatus is 403. If it is, then respond that the bot does not have permission to manage roles, or the role is above its highest role, else respond that there was an error trying to add/remove the role. */
 	if (error.httpStatus === 403) {
 
-		await respond(interaction, {
+		await reply(interaction, {
 			content: member.toString(),
 			embeds: [new EmbedBuilder()
 				.setColor(error_color)
@@ -178,7 +178,7 @@ export async function checkRoleCatchBlock(
 	else {
 
 		console.error(error);
-		await respond(interaction, {
+		await reply(interaction, {
 			content: member.toString(),
 			embeds: [new EmbedBuilder()
 				.setColor(error_color)

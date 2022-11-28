@@ -4,7 +4,7 @@ import { RankType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
-import { getArrayElement, getMapData, respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, getMapData, reply, update } from '../../utils/helperFunctions';
 import { calculateInventorySize } from '../../utils/simulateItemUse';
 import { sendStoreMessage } from './store';
 const { error_color } = require('../../../config.json');
@@ -37,7 +37,7 @@ export const command: SlashCommand = {
 			})();
 			if (!_userData) {
 
-				await respond(interaction, {
+				await reply(interaction, {
 					embeds: [new EmbedBuilder()
 						.setColor(error_color)
 						.setTitle('There is nothing to show here :('),
@@ -50,7 +50,7 @@ export const command: SlashCommand = {
 			userData = getUserData(_userData, interaction.guildId, getMapData(_userData.quids, getMapData(_userData.currentQuid, interaction.guildId)));
 			if (!hasNameAndSpecies(userData)) {
 
-				await respond(interaction, {
+				await reply(interaction, {
 					embeds: [new EmbedBuilder()
 						.setColor(error_color)
 						.setTitle('The selected quid has no profile :('),
@@ -137,7 +137,7 @@ async function sendStatsMessage(
 
 	const canRankUp = userData.quid.profile.unlockedRanks > { [RankType.Youngling]: 0, [RankType.Apprentice]: 1, [RankType.Hunter]: 2, [RankType.Healer]: 2, [RankType.Elderly]: 3 }[userData.quid.profile.rank];
 
-	await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+	await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await reply(interaction, messageObject, true); })({
 		content: `🚩 Levels: \`${userData.quid.profile.levels}\` - 🏷️ Rank: ${userData.quid.profile.rank}\n` +
 			`✨ XP: \`${userData.quid.profile.experience}/${userData.quid.profile.levels * 50}\` - 🗺️ Region: ${userData.quid.profile.currentRegion}\n` +
 			`❤️ HP: \`${userData.quid.profile.health}/${userData.quid.profile.maxHealth}\` - ⚡ Energy: \`${userData.quid.profile.energy}/${userData.quid.profile.maxEnergy}\`\n` +

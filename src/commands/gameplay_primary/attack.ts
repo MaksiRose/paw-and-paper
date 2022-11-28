@@ -12,7 +12,7 @@ import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { createFightGame } from '../../utils/gameBuilder';
-import { getMapData, getSmallerNumber, KeyOfUnion, respond, sendErrorMessage, setCooldown, unsafeKeys, update, ValueOf, widenValues } from '../../utils/helperFunctions';
+import { getMapData, getSmallerNumber, KeyOfUnion, reply, sendErrorMessage, setCooldown, unsafeKeys, update, ValueOf, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -72,7 +72,7 @@ export async function executeAttacking(
 	const serverAttackInfo = serverMap.get(interaction.guild.id);
 	if (!serverAttackInfo || serverAttackInfo.startsTimestamp !== null) {
 
-		await respond(interaction, {
+		await reply(interaction, {
 			embeds: [
 				...restEmbed,
 				new EmbedBuilder()
@@ -86,7 +86,7 @@ export async function executeAttacking(
 
 	if (serverAttackInfo.idleHumans <= 0) {
 
-		await respond(interaction, {
+		await reply(interaction, {
 			embeds: [
 				...restEmbed,
 				new EmbedBuilder()
@@ -146,7 +146,7 @@ export async function executeAttacking(
 		else { throw new Error('cycleKind is not attack, dodge or defend'); }
 		embed.setFooter({ text: 'You will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response.' });
 
-		botReply = await (async function(messageContent) { return newInteraction ? await update(newInteraction, messageContent) : await respond(interaction, messageContent, true); })({
+		botReply = await (async function(messageContent) { return newInteraction ? await update(newInteraction, messageContent) : await reply(interaction, messageContent, true); })({
 			embeds: [...restEmbed, embed],
 			components: [...previousFightComponents ? [previousFightComponents] : [], fightGame.fightComponent],
 		});
@@ -261,7 +261,7 @@ export async function executeAttacking(
 
 		const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
 
-		botReply = await (async function(messageContent) { return newInteraction ? await update(newInteraction, messageContent) : await respond(interaction, messageContent, true); })({
+		botReply = await (async function(messageContent) { return newInteraction ? await update(newInteraction, messageContent) : await reply(interaction, messageContent, true); })({
 			embeds: [
 				...restEmbed,
 				embed,
@@ -290,7 +290,7 @@ export async function executeAttacking(
 
 	if (serverAttackInfo.idleHumans <= 0 && serverAttackInfo.ongoingFights <= 0) {
 
-		await respond(interaction, {
+		await reply(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
 				.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined })
@@ -334,7 +334,7 @@ export async function startAttack(
 			const serverAttackInfo = serverMap.get(interaction.guildId);
 			if (!serverAttackInfo) { return; }
 
-			const botReply = await respond(interaction, {
+			const botReply = await reply(interaction, {
 				content: serverActiveUsersMap.get(interaction.guildId)?.map(user => `<@!${user}>`).join(' '),
 				embeds: [new EmbedBuilder()
 					.setColor(/** @type {`#${string}`} */(default_color))

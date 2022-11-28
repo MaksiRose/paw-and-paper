@@ -1,5 +1,5 @@
 import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
-import { respond, userDataServersObject } from '../../utils/helperFunctions';
+import { reply, userDataServersObject } from '../../utils/helperFunctions';
 import { userModel } from '../../models/userModel';
 import { client } from '../..';
 import { SlashCommand } from '../../typings/handle';
@@ -41,7 +41,7 @@ export const command: SlashCommand = {
 
 		if (!userData) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: `The user "${user.tag}" does not have an account`,
 				ephemeral: true,
 			}, false);
@@ -54,7 +54,7 @@ export const command: SlashCommand = {
 
 		if (!guild) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: `A guild with the ID "${guildId}" does not exist or Paw and Paper isn't in it`,
 				ephemeral: true,
 			}, false);
@@ -64,7 +64,7 @@ export const command: SlashCommand = {
 		const serverInfo = userData.servers[guildId];
 		if (serverInfo === undefined) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: `There is no cooldown entry for ${user.tag} in ${guild.name}`,
 				ephemeral: true,
 			}, false);
@@ -73,7 +73,7 @@ export const command: SlashCommand = {
 
 		if (serverInfo.hasCooldown === false) {
 
-			await respond(interaction, {
+			await reply(interaction, {
 				content: `The cooldown for ${user.tag} in ${guild.name} is already set to false`,
 				ephemeral: true,
 			}, false);
@@ -89,7 +89,7 @@ export const command: SlashCommand = {
 				};
 			},
 		);
-		await respond(interaction, {
+		await reply(interaction, {
 			content: `Sucessfully set the cooldown for ${user.tag} in ${guild.name} to false`,
 		}, false);
 	},

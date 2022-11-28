@@ -1,5 +1,5 @@
 import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, MessageContextMenuCommandInteraction, AnySelectMenuInteraction } from 'discord.js';
-import { respond } from './helperFunctions';
+import { reply } from './helperFunctions';
 import { UserData } from '../typings/data/user';
 const { default_color } = require('../../config.json');
 
@@ -15,7 +15,7 @@ export function hasName(
 
 		if (interaction) {
 
-			respond(interaction, {
+			reply(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
 					.setDescription(Object.keys(userData?.quids || {}).length > 0 ? 'Please type "/profile" to switch to a quid!' : 'Please type "/name" to create a new quid!')],
@@ -41,7 +41,7 @@ export function hasNameAndSpecies(
 
 		if (interaction) {
 
-			respond(interaction, {
+			reply(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
 					.setDescription(`To access this command, you need to choose ${userData.quid.name}'s species (with "/species")!`)],
@@ -54,7 +54,7 @@ export function hasNameAndSpecies(
 
 		if (interaction) {
 
-			respond(interaction, {
+			reply(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
 					.setDescription('Uh-oh, an error occurred and some data is missing. Please use "/profile" to select another quid (or an empty slot) and then re-select this quid. If this error persists, open a ticket with "/ticket".')],
@@ -91,7 +91,7 @@ export function isInGuild(
 
 	if (!interaction.inCachedGuild()) {
 
-		respond(interaction, {
+		reply(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
 				.setDescription('This command cannot be executed in DMs!')],

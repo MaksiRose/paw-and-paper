@@ -1,5 +1,5 @@
 import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, AnySelectMenuInteraction } from 'discord.js';
-import { capitalizeString, respond, unsafeKeys, widenValues } from './helperFunctions';
+import { capitalizeString, reply, unsafeKeys, widenValues } from './helperFunctions';
 import { checkLevelRequirements, checkRoleCatchBlock } from './checkRoleRequirements';
 import { getMapData } from './helperFunctions';
 import { missingPermissions } from './permissionHandler';
@@ -111,7 +111,7 @@ export async function decreaseLevel(
 				]) === true) { continue; }
 				await member.roles.remove(role.roleId);
 
-				await respond(interaction, {
+				await reply(interaction, {
 					content: member.toString(),
 					embeds: [new EmbedBuilder()
 						.setColor(default_color)

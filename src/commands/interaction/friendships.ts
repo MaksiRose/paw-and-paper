@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { respond, update } from '../../utils/helperFunctions';
+import { reply, update } from '../../utils/helperFunctions';
 import { hasNameAndSpecies } from '../../utils/checkUserState';
 import { checkOldMentions, getFriendshipHearts, getFriendshipPoints } from '../../utils/friendshipHandling';
 import { SlashCommand } from '../../typings/handle';
@@ -20,7 +20,7 @@ export const command: SlashCommand = {
 		if (!hasNameAndSpecies(userData, interaction)) { return; }
 
 		/* Creating a message with up to 25 friendships and buttons to go back and fourth a page if the quid has more than 25 friends. */
-		await respond(interaction, await getFriendshipMessage(userData, interaction.guildId ?? '', 0), true);
+		await reply(interaction, await getFriendshipMessage(userData, interaction.guildId ?? '', 0), true);
 	},
 	async sendMessageComponentResponse(interaction, userData) {
 

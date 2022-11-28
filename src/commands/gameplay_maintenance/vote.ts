@@ -6,7 +6,7 @@ import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
-import { getMapData, getSmallerNumber, respond } from '../../utils/helperFunctions';
+import { getMapData, getSmallerNumber, reply } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 const { default_color } = require('../../../config.json');
 
@@ -36,7 +36,7 @@ export const command: SlashCommand = {
 			else { restEmbed = restEmbedOrFalse; }
 		}
 
-		const botReply = await respond(interaction, {
+		const botReply = await reply(interaction, {
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(default_color)
 				.setDescription('Click a button to be sent to that websites bot page. After voting for this bot, select the website you voted on from the drop-down menu to get +30 energy.')],
@@ -107,7 +107,7 @@ export const command: SlashCommand = {
 
 			if (redeemedTopVote || redeemedDiscordsVote || redeemedDblVote) {
 
-				await respond(interaction, {
+				await reply(interaction, {
 					content: 'You already collected your reward for this vote!',
 					ephemeral: true,
 				}, false);
@@ -132,7 +132,7 @@ export const command: SlashCommand = {
 				},
 			);
 
-			await respond(interaction, {
+			await reply(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
 					.setTitle('Thank you for voting ☺️')
@@ -141,7 +141,7 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		await respond(interaction, {
+		await reply(interaction, {
 			content: 'You haven\'t voted on this website in the last 12 hours! (If this is not right, please open a ticket with /ticket)',
 			ephemeral: true,
 		}, false);

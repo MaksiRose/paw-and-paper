@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { capitalizeString, keyInObject, respond, update } from '../../utils/helperFunctions';
+import { capitalizeString, keyInObject, reply, update } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
@@ -48,7 +48,7 @@ export const command: SlashCommand = {
 			.setDescription(`${userData.quid.name} is a ${userData.quid.getDisplayspecies()}! You cannot change ${userData.quid.pronoun(2)} species, but you can create another quid via \`/profile\`. Alternatively, you can use the button below to change what species is displayed to be anything you want.`)
 			.setFooter({ text: `Here is a list of species that you can choose when making a new quid: ${speciesNameArray.join(', ')}` });
 
-		const botReply = await respond(interaction, {
+		const botReply = await reply(interaction, {
 			embeds: userData.quid.species === '' ? [newSpeciesEmbed] : [existingSpeciesEmbed],
 			components: [
 				...(userData.quid.species === '' ? [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([speciesMenu])] : []),
@@ -146,7 +146,7 @@ export const command: SlashCommand = {
 			},
 		);
 
-		await respond(interaction, {
+		await reply(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })

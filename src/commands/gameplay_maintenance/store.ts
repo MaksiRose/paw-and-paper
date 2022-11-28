@@ -7,7 +7,7 @@ import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents } from '../../utils/componentDisabling';
-import { getMapData, widenValues, unsafeKeys, respond, update, getArrayElement, capitalizeString } from '../../utils/helperFunctions';
+import { getMapData, widenValues, unsafeKeys, reply, update, getArrayElement, capitalizeString } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { calculateInventorySize } from '../../utils/simulateItemUse';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -152,7 +152,7 @@ export async function sendStoreMessage(
 
 	if (calculateInventorySize(userData.quid.profile.inventory) === 0) {
 
-		await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+		await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await reply(interaction, messageObject, true); })({
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData.quid.color)
@@ -172,7 +172,7 @@ export async function sendStoreMessage(
 
 	const { itemSelectMenu, storeAllButton } = getOriginalComponents(userData);
 
-	const botReply = await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+	const botReply = await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await reply(interaction, messageObject, true); })({
 		content: messageContent,
 		embeds: [...restEmbed, getOriginalEmbed(userData)],
 		components: [itemSelectMenu, storeAllButton],
@@ -264,7 +264,7 @@ async function storeAll(
 		},
 	);
 
-	await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+	await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await reply(interaction, messageObject, true); })({
 		embeds: [...(otherEmbeds ?? []), embed],
 		components: interaction.isButton() ? disableAllComponents(interaction.message.components) : [],
 	});

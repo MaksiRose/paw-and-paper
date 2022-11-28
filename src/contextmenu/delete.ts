@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { respond } from '../utils/helperFunctions';
+import { reply } from '../utils/helperFunctions';
 import { userModel } from '../models/userModel';
 import { canManageWebhooks, missingPermissions } from '../utils/permissionHandler';
 import { WebhookMessages } from '../typings/data/general';
@@ -53,7 +53,7 @@ export const command: ContextMenuCommand = {
 		await webhook.deleteMessage(interaction.targetId, interaction.channel.isThread() ? interaction.channel.id : undefined);
 
 		/* Sending a message to the user who deleted the message. */
-		await respond(interaction, {
+		await reply(interaction, {
 			content: 'Deleted! ✅',
 			ephemeral: true,
 		}, false);

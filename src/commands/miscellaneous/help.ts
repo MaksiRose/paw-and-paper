@@ -1,5 +1,5 @@
 import { ActionRowBuilder, APIEmbedField, EmbedBuilder, StringSelectMenuBuilder, SlashCommandBuilder } from 'discord.js';
-import { getArrayElement, respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, reply, update } from '../../utils/helperFunctions';
 import { client, handle } from '../..';
 import { SlashCommand } from '../../typings/handle';
 
@@ -17,7 +17,7 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction, userData) => {
 
-		await respond(interaction, {
+		await reply(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
 				.setTitle('Welcome to Paw and Paper!')
