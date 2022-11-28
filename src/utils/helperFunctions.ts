@@ -1,6 +1,6 @@
 import { generateId } from 'crystalid';
 import { APIMessage } from 'discord-api-types/v9';
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, ModalMessageModalSubmitInteraction, RepliableInteraction, AnySelectMenuInteraction, WebhookEditMessageOptions } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, ModalMessageModalSubmitInteraction, RepliableInteraction, AnySelectMenuInteraction, WebhookEditMessageOptions, Snowflake, InteractionResponse } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 import { userModel, getUserData } from '../models/userModel';
 import { ErrorStacks } from '../typings/data/general';
@@ -53,6 +53,7 @@ export function getUserIds(
  * @param options - WebhookEditMessageOptions & InteractionReplyOptions
  * @param editMessage - boolean - If true, the bot will edit the original message instead of sending a follow-up message.
  * @returns A promise that resolves to a Message<boolean>
+ * @deprecated Use respond instead
  */
 export async function reply(
 	interaction: RepliableInteraction,
@@ -107,6 +108,13 @@ export async function reply(
 	else { throw new TypeError('Message is APIMessage'); }
 }
 
+/**
+ *
+ * @param interaction
+ * @param options
+ * @returns
+ * @deprecated Use respond instead
+ */
 export async function update(
 	interaction: ButtonInteraction | AnySelectMenuInteraction | ModalMessageModalSubmitInteraction,
 	options: WebhookEditMessageOptions,
@@ -139,6 +147,78 @@ export async function update(
 			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
 			interaction.replied = true;
 			botReply = await update(interaction, options);
+		}
+		else { throw error; }
+	}
+
+	return botReply;
+}
+
+/**
+ * It sends a reply or updates the message the interaction comes from if the interaction hasn't been replied nor deferred, or edits a reply if
+ * an editId has been provided, else follows up
+ * @param {RepliableInteraction} interaction - The interaction object that is being replied to.
+ * @param options - The options to send to the message.
+ * @param {'reply' | 'update'} [type=reply] - 'reply' | 'update' = 'reply'
+ * @param {Snowflake | '@original'} editId - The ID of the message to edit. If it is '@original', it
+ * will edit the original message.
+ * @returns A promise that resolves to an InteractionResponse<boolean> or a Message<boolean>
+ */
+export async function respond(
+	interaction: RepliableInteraction,
+	options: InteractionReplyOptions & WebhookEditMessageOptions,
+	type: 'reply' | 'update' = 'reply',
+	editId: Snowflake | '@original',
+): Promise<InteractionResponse<boolean> | Message<boolean>> {
+
+	let botReply: InteractionResponse<boolean> | Message<boolean>;
+
+	/* It is sending a reply if the interaction hasn't been replied nor deferred, or editing a reply if editMessage is true, else following up */
+	try {
+
+		if (!interaction.replied && !interaction.deferred) {
+			if (interaction.isMessageComponent() && type === 'update') {
+				botReply = await interaction.update({ ...options, content: options.content === '' ? null : options.content, flags: undefined });
+			}
+			else {
+				botReply = await interaction.reply({ ...options, content: options.content === '' ? undefined : options.content });
+			}
+		}
+		else if (editId !== undefined) {
+			botReply = await interaction.webhook.editMessage(editId, { ...options, content: options.content === '' ? null : options.content });
+		}
+		else {
+			botReply = await interaction.followUp({ ...options, content: options.content === '' ? undefined : options.content });
+		}
+
+	}
+	/** If an error occurred and it has status 404, try to either edit the message if editing was tried above, or send a new message in the other two cases */
+	catch (error: unknown) {
+
+		if (isObject(error) && (error.code === 'ECONNRESET' || error.code === 10062)) {
+
+			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
+			if ((interaction.replied || interaction.deferred) && editId !== undefined) { // Error code 10062 can never lead to this since an Unknown Interaction can't also be replied or deferred. Therefore, it is safe to call respond again
+
+				botReply = await respond(interaction, options, type, editId);
+			}
+			else if (!interaction.replied && !interaction.deferred && interaction.isMessageComponent() && type === 'update') {
+
+				botReply = await interaction.message.edit({ ...options, content: options.content === '' ? null : options.content, flags: undefined });
+			}
+			else {
+
+				const channel = interaction.channel || (interaction.channelId ? await interaction.client.channels.fetch(interaction.channelId, { force: false }) : null);
+				if (channel && channel.isTextBased()) { botReply = await channel.send({ ...options, content: options.content === '' ? undefined : options.content, flags: undefined }); }
+				else { throw error; }
+
+			}
+		}
+		else if (isObject(error) && error.code === 40060) {
+
+			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
+			interaction.replied = true;
+			botReply = await respond(interaction, options, type, editId);
 		}
 		else { throw error; }
 	}
