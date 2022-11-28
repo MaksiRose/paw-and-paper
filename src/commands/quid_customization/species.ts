@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { capitalizeString, keyInObject, respond, update } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
@@ -51,7 +51,7 @@ export const command: SlashCommand = {
 		const botReply = await respond(interaction, {
 			embeds: userData.quid.species === '' ? [newSpeciesEmbed] : [existingSpeciesEmbed],
 			components: [
-				...(userData.quid.species === '' ? [new ActionRowBuilder<SelectMenuBuilder>().setComponents([speciesMenu])] : []),
+				...(userData.quid.species === '' ? [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([speciesMenu])] : []),
 				new ActionRowBuilder<ButtonBuilder>().setComponents([displayedSpeciesButton]),
 			],
 		}, true);
@@ -98,7 +98,7 @@ export const command: SlashCommand = {
 
 			await update(interaction, {
 				components: [
-					new ActionRowBuilder<SelectMenuBuilder>().setComponents([getSpeciesSelectMenu(speciesPage, customId.executorId)]),
+					new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([getSpeciesSelectMenu(speciesPage, customId.executorId)]),
 					new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(customId.executorId)]),
 				],
 			});
@@ -157,7 +157,7 @@ export const command: SlashCommand = {
 	},
 };
 
-function getSpeciesSelectMenu(page: number, quidId: string): SelectMenuBuilder {
+function getSpeciesSelectMenu(page: number, quidId: string): StringSelectMenuBuilder {
 
 	let speciesMenuOptions: RestOrArray<SelectMenuComponentOptionData> = speciesNameArray.map(speciesName => ({
 		label: speciesName,
@@ -174,7 +174,7 @@ function getSpeciesSelectMenu(page: number, quidId: string): SelectMenuBuilder {
 		});
 	}
 
-	return new SelectMenuBuilder()
+	return new StringSelectMenuBuilder()
 		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, quidId, ['speciesselect']))
 		.setPlaceholder('Select a species')
 		.setOptions(speciesMenuOptions);

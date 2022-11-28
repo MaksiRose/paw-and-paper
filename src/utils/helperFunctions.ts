@@ -1,6 +1,6 @@
 import { generateId } from 'crystalid';
 import { APIMessage } from 'discord-api-types/v9';
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, MessageContextMenuCommandInteraction, ModalMessageModalSubmitInteraction, ModalSubmitInteraction, RepliableInteraction, SelectMenuInteraction, UserContextMenuCommandInteraction, WebhookEditMessageOptions } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, ModalMessageModalSubmitInteraction, RepliableInteraction, AnySelectMenuInteraction, WebhookEditMessageOptions } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 import { userModel, getUserData } from '../models/userModel';
 import { ErrorStacks } from '../typings/data/general';
@@ -108,7 +108,7 @@ export async function respond(
 }
 
 export async function update(
-	interaction: ButtonInteraction | SelectMenuInteraction | ModalMessageModalSubmitInteraction,
+	interaction: ButtonInteraction | AnySelectMenuInteraction | ModalMessageModalSubmitInteraction,
 	options: WebhookEditMessageOptions,
 ): Promise<Message<boolean>> {
 
@@ -153,7 +153,7 @@ export async function update(
  */
 
 export async function sendErrorMessage(
-	interaction: ChatInputCommandInteraction | MessageContextMenuCommandInteraction | UserContextMenuCommandInteraction | SelectMenuInteraction | ButtonInteraction | ModalSubmitInteraction,
+	interaction: RepliableInteraction,
 	error: unknown,
 ): Promise<any> {
 

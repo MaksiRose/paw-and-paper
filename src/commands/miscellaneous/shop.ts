@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { respond, update } from '../../utils/helperFunctions';
 import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
 import { hasName, hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
@@ -198,7 +198,7 @@ export const command: SlashCommand = {
 };
 
 async function getShopResponse(
-	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	serverData: ServerSchema,
 	userData: UserData<never, ''>,
 	shopKindPage: number,
@@ -264,8 +264,8 @@ async function getShopResponse(
 			.setColor(default_color)
 			.setAuthor({ name: serverData.name, iconURL: interaction.guild?.iconURL() || undefined })
 			.setDescription(descriptionArray.join('\n'))],
-		components: [new ActionRowBuilder<SelectMenuBuilder>()
-			.setComponents(new SelectMenuBuilder()
+		components: [new ActionRowBuilder<StringSelectMenuBuilder>()
+			.setComponents(new StringSelectMenuBuilder()
 				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, []))
 				.setPlaceholder('Select a shop item')
 				.setOptions(shopMenuOptions))],

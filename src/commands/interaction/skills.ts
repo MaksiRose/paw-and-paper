@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, GuildMember, ModalBuilder, PermissionFlagsBits, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, GuildMember, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { capitalizeString, getArrayElement, respond, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
@@ -548,7 +548,7 @@ function getModifyMenu(
 	_id: string,
 	userData: UserData<undefined, ''> | null,
 	page: number,
-): ActionRowBuilder<SelectMenuBuilder> {
+): ActionRowBuilder<StringSelectMenuBuilder> {
 
 	let modifyMenuOptions: RestOrArray<SelectMenuComponentOptionData> = Object.entries(userData?.quid?.profile?.skills || {}).map(([skillCategoryName, skillCategory]) => Object.keys(skillCategory).map(skillName => ({ label: skillName, value: `skills_modify_${skillCategoryName}_${skillName}` }))).flat();
 
@@ -558,8 +558,8 @@ function getModifyMenu(
 		modifyMenuOptions.push({ label: 'Show more skills', value: `skills_modify_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
 	}
 
-	return new ActionRowBuilder<SelectMenuBuilder>()
-		.setComponents(new SelectMenuBuilder()
+	return new ActionRowBuilder<StringSelectMenuBuilder>()
+		.setComponents(new StringSelectMenuBuilder()
 			.setCustomId(`skills_modify_options_modal_@${_id}`)
 			.setPlaceholder('Select a skill to modify')
 			.setOptions(modifyMenuOptions));
@@ -579,7 +579,7 @@ function getEditMenu(
 	serverData: ServerSchema | undefined,
 	category: 'personal' | 'global',
 	page: number,
-): ActionRowBuilder<SelectMenuBuilder> {
+): ActionRowBuilder<StringSelectMenuBuilder> {
 
 	let editMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (category === 'global' ? (serverData?.skills || []) : Object.keys(userData?.quid?.profile?.skills.personal || {})).map(skillName => ({ label: skillName, value: `skills_edit_${category}_${skillName}` }));
 
@@ -589,8 +589,8 @@ function getEditMenu(
 		editMenuOptions.push({ label: 'Show more skills', value: `skills_edit_${category}_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
 	}
 
-	return new ActionRowBuilder<SelectMenuBuilder>()
-		.setComponents(new SelectMenuBuilder()
+	return new ActionRowBuilder<StringSelectMenuBuilder>()
+		.setComponents(new StringSelectMenuBuilder()
 			.setCustomId(`skills_edit_options_modal_@${_id}`)
 			.setPlaceholder('Select a skill to edit')
 			.setOptions(editMenuOptions));
@@ -610,7 +610,7 @@ function getRemoveMenu(
 	serverData: ServerSchema | undefined,
 	category: 'personal' | 'global',
 	page: number,
-): ActionRowBuilder<SelectMenuBuilder> {
+): ActionRowBuilder<StringSelectMenuBuilder> {
 
 	let removeMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (category === 'global' ? (serverData?.skills || []) : Object.keys(userData?.quid?.profile?.skills.personal || {})).map(skillName => ({ label: skillName, value: `skills_remove_${category}_${skillName}` }));
 
@@ -620,8 +620,8 @@ function getRemoveMenu(
 		removeMenuOptions.push({ label: 'Show more skills', value: `skills_remove_${category}_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
 	}
 
-	return new ActionRowBuilder<SelectMenuBuilder>()
-		.setComponents(new SelectMenuBuilder()
+	return new ActionRowBuilder<StringSelectMenuBuilder>()
+		.setComponents(new StringSelectMenuBuilder()
 			.setCustomId(`skills_remove_options_@${_id}`)
 			.setPlaceholder('Select a skill to remove')
 			.setOptions(removeMenuOptions));

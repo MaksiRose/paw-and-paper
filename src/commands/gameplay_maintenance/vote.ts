@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SelectMenuBuilder, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, StringSelectMenuBuilder, SlashCommandBuilder } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 import { handle } from '../..';
 import { VoteList } from '../../typings/data/general';
@@ -56,8 +56,8 @@ export const command: SlashCommand = {
 							.setURL('https://discordbotlist.com/bots/paw-and-paper')
 							.setStyle(ButtonStyle.Link),
 					]),
-				new ActionRowBuilder<SelectMenuBuilder>()
-					.setComponents(new SelectMenuBuilder()
+				new ActionRowBuilder<StringSelectMenuBuilder>()
+					.setComponents(new StringSelectMenuBuilder()
 						.setCustomId(`vote_options_@${userData._id}`)
 						.setPlaceholder('Select the site on which you voted')
 						.setOptions([

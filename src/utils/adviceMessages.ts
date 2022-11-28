@@ -1,5 +1,5 @@
 // @ts-check
-import { ButtonInteraction, ChatInputCommandInteraction, SelectMenuInteraction } from 'discord.js';
+import { ButtonInteraction, ChatInputCommandInteraction, AnySelectMenuInteraction } from 'discord.js';
 import { UserData } from '../typings/data/user';
 import { respond } from './helperFunctions';
 
@@ -11,7 +11,7 @@ import { respond } from './helperFunctions';
  * @param profileData - The user's profile on the server they are using the command on
  */
 export async function restAdvice(
-	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	userData: UserData<never, never>,
 ): Promise<void> {
 
@@ -36,7 +36,7 @@ export async function restAdvice(
  * @param profileData - The user's profile on the server they are using the command on
  */
 export async function drinkAdvice(
-	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	userData: UserData<never, never>,
 ): Promise<void> {
 
@@ -61,7 +61,7 @@ export async function drinkAdvice(
  * @param profileData - The user's profile on the server they are using the command on
  */
 export async function eatAdvice(
-	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	userData: UserData<never, never>,
 ): Promise<void> {
 

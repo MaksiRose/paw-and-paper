@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, StringSelectMenuBuilder, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { ServerSchema } from '../../typings/data/server';
 import { UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
@@ -75,7 +75,7 @@ export const command: SlashCommand = {
 };
 
 export async function showInventoryMessage(
-	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	userData: UserData<never, never>,
 	serverData: ServerSchema,
 	page: 1 | 2 | 3 | 4,
@@ -89,8 +89,8 @@ export async function showInventoryMessage(
 
 	const messageContent = remindOfAttack(interaction.guildId);
 
-	const inventorySelectMenu = new ActionRowBuilder<SelectMenuBuilder>()
-		.setComponents(new SelectMenuBuilder()
+	const inventorySelectMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
+		.setComponents(new StringSelectMenuBuilder()
 			.setCustomId(`inventory_pages_${showMaterialsPage}_@${userData._id}`)
 			.setPlaceholder('Select a page')
 			.setOptions([
@@ -122,8 +122,8 @@ export async function showInventoryMessage(
 		components: [
 			inventorySelectMenu,
 			...userData.quid.profile.hunger < userData.quid.profile.maxHunger && foodSelectMenuOptions.length > 0
-				? [new ActionRowBuilder<SelectMenuBuilder>()
-					.setComponents(new SelectMenuBuilder()
+				? [new ActionRowBuilder<StringSelectMenuBuilder>()
+					.setComponents(new StringSelectMenuBuilder()
 						.setCustomId(`inventory_eat_@${userData._id}`)
 						.setPlaceholder('Select an item to eat')
 						.setOptions(foodSelectMenuOptions))]

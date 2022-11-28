@@ -1,4 +1,4 @@
-import { ComponentType, ButtonStyle, APIActionRowComponent, ActionRowBuilder, ActionRow, MessageActionRowComponent, APIMessageActionRowComponent, MessageActionRowComponentBuilder, ButtonBuilder, ButtonComponent, APIButtonComponent, SelectMenuBuilder, SelectMenuComponent, APISelectMenuComponent, isJSONEncodable, SnowflakeUtil, RepliableInteraction } from 'discord.js';
+import { ComponentType, ButtonStyle, APIActionRowComponent, ActionRowBuilder, ActionRow, MessageActionRowComponent, APIMessageActionRowComponent, MessageActionRowComponentBuilder, ButtonBuilder, ButtonComponent, APIButtonComponent, StringSelectMenuBuilder, SelectMenuComponent, APISelectMenuComponent, isJSONEncodable, SnowflakeUtil, RepliableInteraction, RoleSelectMenuBuilder, UserSelectMenuBuilder, ChannelSelectMenuBuilder, MentionableSelectMenuBuilder } from 'discord.js';
 import { client } from '..';
 import { UserData } from '../typings/data/user';
 import { userDataServersObject } from './helperFunctions';
@@ -119,8 +119,8 @@ export function disableAllComponents(
 	messageComponents: ActionRowBuilder<ButtonBuilder>[] | ActionRow<ButtonComponent>[] | APIActionRowComponent<APIButtonComponent>[],
 ): ActionRowBuilder<ButtonBuilder>[];
 export function disableAllComponents(
-	messageComponents: ActionRowBuilder<SelectMenuBuilder>[] | ActionRow<SelectMenuComponent>[] | APIActionRowComponent<APISelectMenuComponent>[],
-): ActionRowBuilder<SelectMenuBuilder>[];
+	messageComponents: ActionRowBuilder<StringSelectMenuBuilder>[] | ActionRow<SelectMenuComponent>[] | APIActionRowComponent<APISelectMenuComponent>[],
+): ActionRowBuilder<StringSelectMenuBuilder>[];
 export function disableAllComponents(
 	messageComponents: ActionRowBuilder<MessageActionRowComponentBuilder>[] | ActionRow<MessageActionRowComponent>[] | APIActionRowComponent<APIMessageActionRowComponent>[],
 ): ActionRowBuilder<MessageActionRowComponentBuilder>[];
@@ -136,7 +136,7 @@ export function disableAllComponents(
 			const data = isJSONEncodable(component) ? component.toJSON() : component;
 
 			if (data.type !== ComponentType.Button || data.style !== ButtonStyle.Link) { data.disabled = true; }
-			return data.type === ComponentType.Button ? new ButtonBuilder(data) : new SelectMenuBuilder(data);
+			return data.type === ComponentType.Button ? new ButtonBuilder(data) : data.type === ComponentType.StringSelect ? new StringSelectMenuBuilder(data) : data.type === ComponentType.RoleSelect ? new RoleSelectMenuBuilder(data) : data.type === ComponentType.UserSelect ? new UserSelectMenuBuilder(data) : data.type === ComponentType.ChannelSelect ? new ChannelSelectMenuBuilder(data) :	new MentionableSelectMenuBuilder(data);
 		}));
 	});
 }

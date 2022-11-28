@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder, ModalBuilder, NonThreadGuildBasedChannel, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder, ModalBuilder, NonThreadGuildBasedChannel, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { respond, update } from '../../utils/helperFunctions';
 import { hasName, isInGuild } from '../../utils/checkUserState';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
@@ -131,7 +131,7 @@ export const command: SlashCommand = {
 					.setTitle('Here is how to use the always subcommand:')
 					.setDescription('When this feature is enabled, every message you send will be treated as if it was proxied, even if the proxy isn\'t included.\nYou can either toggle it for the entire server, or specific channels, using the drop-down menu below. Enabled channels will have a radio emoji next to it.')
 					.setFields()],
-				components: [new ActionRowBuilder<SelectMenuBuilder>()
+				components: [new ActionRowBuilder<StringSelectMenuBuilder>()
 					.setComponents([alwaysSelectMenu])],
 			});
 			return;
@@ -151,7 +151,7 @@ export const command: SlashCommand = {
 
 				const alwaysSelectMenu = await getSelectMenu(allChannels, userData, page);
 				await update(interaction, {
-					components: [new ActionRowBuilder<SelectMenuBuilder>()
+					components: [new ActionRowBuilder<StringSelectMenuBuilder>()
 						.setComponents([alwaysSelectMenu])],
 				});
 			}
@@ -184,7 +184,7 @@ export const command: SlashCommand = {
 
 				const alwaysSelectMenu = await getSelectMenu(allChannels, userData, page);
 				await update(interaction, {
-					components: [new ActionRowBuilder<SelectMenuBuilder>()
+					components: [new ActionRowBuilder<StringSelectMenuBuilder>()
 						.setComponents([alwaysSelectMenu])],
 				});
 
@@ -252,7 +252,7 @@ async function getSelectMenu(
 	allChannels: Collection<string, NonThreadGuildBasedChannel>,
 	userData: UserData<never, ''>,
 	page: number,
-): Promise<SelectMenuBuilder> {
+): Promise<StringSelectMenuBuilder> {
 
 	let alwaysSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = allChannels.map((channel, channelId) => ({
 		label: channel.name,
@@ -270,7 +270,7 @@ async function getSelectMenu(
 		});
 	}
 
-	return new SelectMenuBuilder()
+	return new StringSelectMenuBuilder()
 		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, ['always', 'options']))
 		.setPlaceholder('Select channels to automatically be proxied in')
 		.setOptions(alwaysSelectMenuOptions);

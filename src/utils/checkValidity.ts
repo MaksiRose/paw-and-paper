@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, AnySelectMenuInteraction } from 'discord.js';
 import { capitalizeString, respond, sendErrorMessage } from './helperFunctions';
 import { userModel } from '../models/userModel';
 import { getMapData } from './helperFunctions';
@@ -10,7 +10,7 @@ import { hasName, hasNameAndSpecies } from './checkUserState';
 const { error_color } = require('../../config.json');
 
 export async function isPassedOut(
-	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached' | 'raw'>,
+	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'> | AnySelectMenuInteraction<'cached' | 'raw'>,
 	userData: UserData<never, never>,
 	isNew: boolean,
 ): Promise<boolean> {
@@ -84,7 +84,7 @@ export async function hasCooldown(
  * Checks if the user is resting. If yes, then wake user up and attach an embed to the message. Returns the updated `userData`.
  */
 export async function checkResting(
-	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'> | AnySelectMenuInteraction<'cached'>,
 	userData: UserData<never, never>,
 ): Promise<EmbedBuilder[]> {
 
@@ -175,7 +175,7 @@ export async function hasFullInventory(
 }
 
 export function isInteractable(
-	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	userData: UserData<undefined, ''> | null,
 	messageContent: string,
 	restEmbed: EmbedBuilder[],

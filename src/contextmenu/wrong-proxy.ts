@@ -1,4 +1,4 @@
-import { ActionRowBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData } from 'discord.js';
+import { ActionRowBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 import { userModel, getUserData } from '../models/userModel';
 import { WebhookMessages } from '../typings/data/general';
@@ -42,7 +42,7 @@ export const command: ContextMenuCommand = {
 		const quidMenu = getQuidsPage(userData, 0, interaction.targetId);
 		await respond(interaction, {
 			content: 'Select a quid that you want the proxied message to be from instead.\n⚠️ CAUTION! This does *not edit* the message, but deletes it and sends a new one with the new avatar and username, but same content. It is therefore not adviced to use this feature on older messages.',
-			components: quidMenu.options.length > 0 ? [new ActionRowBuilder<SelectMenuBuilder>().setComponents(quidMenu)] : [],
+			components: quidMenu.options.length > 0 ? [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(quidMenu)] : [],
 			ephemeral: true,
 		}, false);
 	},
@@ -68,7 +68,7 @@ export const command: ContextMenuCommand = {
 
 			const quidMenu = getQuidsPage(userData, quidsPage, targetMessageId);
 			await update(interaction, {
-				components: quidMenu.options.length > 0 ? [new ActionRowBuilder<SelectMenuBuilder>().setComponents(quidMenu)] : [],
+				components: quidMenu.options.length > 0 ? [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(quidMenu)] : [],
 			});
 			return;
 		}
@@ -122,13 +122,13 @@ export const command: ContextMenuCommand = {
  * @param {UserSchema} userData - The user's data
  * @param {number} quidsPage - The page of quids to show.
  * @param {string} targetMessageId - The message ID of the message that the user wants to replace the quid in
- * @returns A SelectMenuBuilder object
+ * @returns A StringSelectMenuBuilder object
  */
 function getQuidsPage(
 	userData: UserData<undefined, ''>,
 	quidsPage: number,
 	targetMessageId: string,
-): SelectMenuBuilder {
+): StringSelectMenuBuilder {
 
 	let quidMenuOptions: RestOrArray<SelectMenuComponentOptionData> = userData.quids.map(quid => ({ label: quid.name, value: `wrongproxy_replace_${quid._id}` }));
 
@@ -138,7 +138,7 @@ function getQuidsPage(
 		quidMenuOptions.push({ label: 'Show more quids', value: `wrongproxy_nextpage_${quidsPage}`, description: `You are currently on page ${quidsPage + 1}`, emoji: '📋' });
 	}
 
-	return new SelectMenuBuilder()
+	return new StringSelectMenuBuilder()
 		.setCustomId(`${command.data.name}_quidselect_@${targetMessageId}`)
 		.setPlaceholder('Select a quid')
 		.setOptions(quidMenuOptions);

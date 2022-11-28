@@ -1,4 +1,4 @@
-import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, GuildMember, SelectMenuInteraction } from 'discord.js';
+import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, GuildMember, AnySelectMenuInteraction } from 'discord.js';
 import { userModel, getUserData } from '../models/userModel';
 import { ServerSchema } from '../typings/data/server';
 import { RankType, WayOfEarningType } from '../typings/data/user';
@@ -87,7 +87,7 @@ export async function checkRankRequirements(
  */
 export async function checkLevelRequirements(
 	serverData: ServerSchema,
-	interaction: ChatInputCommandInteraction | ButtonInteraction | SelectMenuInteraction,
+	interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction,
 	member: GuildMember | undefined,
 	userLevel: number,
 	sendMessage = false,
@@ -158,7 +158,7 @@ export async function checkLevelRequirements(
  */
 export async function checkRoleCatchBlock(
 	error: any,
-	interaction: ChatInputCommandInteraction | ButtonInteraction | SelectMenuInteraction,
+	interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction,
 	member: GuildMember,
 ): Promise<void> {
 

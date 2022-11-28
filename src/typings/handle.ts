@@ -1,11 +1,11 @@
-import { AutocompleteInteraction, MessageContextMenuCommandInteraction, ChatInputCommandInteraction, ButtonInteraction, SelectMenuInteraction, ModalSubmitInteraction } from 'discord.js';
+import { AutocompleteInteraction, MessageContextMenuCommandInteraction, ChatInputCommandInteraction, ButtonInteraction, AnySelectMenuInteraction, ModalSubmitInteraction } from 'discord.js';
 import { RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v10';
 import { UserData } from './data/user';
 import { ServerSchema } from './data/server';
 
 interface Command {
 	data: RESTPostAPIApplicationCommandsJSONBody;
-	sendMessageComponentResponse?: (interaction: SelectMenuInteraction | ButtonInteraction, userData: UserData<undefined, ''> | null, serverData: ServerSchema | null) => Promise<void>;
+	sendMessageComponentResponse?: (interaction: AnySelectMenuInteraction | ButtonInteraction, userData: UserData<undefined, ''> | null, serverData: ServerSchema | null) => Promise<void>;
 	sendModalResponse?: (interaction: ModalSubmitInteraction, userData: UserData<undefined, ''> | null, serverData: ServerSchema | null) => Promise<void>;
 }
 

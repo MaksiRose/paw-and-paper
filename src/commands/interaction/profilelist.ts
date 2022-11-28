@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder, Guild, SelectMenuBuilder, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder, Guild, StringSelectMenuBuilder, SlashCommandBuilder } from 'discord.js';
 import { respond, update } from '../../utils/helperFunctions';
 import { isInGuild } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
@@ -153,7 +153,7 @@ async function getProfilesMessage(
 	profilesText?: string[],
 ): Promise<{
 	embeds: EmbedBuilder[];
-	components: ActionRowBuilder<ButtonBuilder | SelectMenuBuilder>[];
+	components: ActionRowBuilder<ButtonBuilder | StringSelectMenuBuilder>[];
 }> {
 
 	/* Getting an array of strings for all the profiles with that rank. */
@@ -183,8 +183,8 @@ async function getProfilesMessage(
 				profilesText.slice(page * 25, (page + 1) * 25).join('\n') :
 				'There are no profiles with this rank on this server :(')],
 		components: [
-			new ActionRowBuilder<SelectMenuBuilder>()
-				.setComponents(new SelectMenuBuilder()
+			new ActionRowBuilder<StringSelectMenuBuilder>()
+				.setComponents(new StringSelectMenuBuilder()
 					.setCustomId(`profilelist_rank_options_@${_id}`)
 					.setPlaceholder('Select a rank')
 					.setOptions([

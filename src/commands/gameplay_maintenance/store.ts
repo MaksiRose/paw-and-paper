@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, Embed, EmbedBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, Embed, EmbedBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
 import serverModel from '../../models/serverModel';
 import { CommonPlantNames, MaterialNames, RarePlantNames, SpecialPlantNames, SpeciesNames, UncommonPlantNames } from '../../typings/data/general';
 import { ServerSchema } from '../../typings/data/server';
@@ -71,8 +71,8 @@ export const command: SlashCommand = {
 
 				const itemSelectMenu = getOriginalComponents(userData, chosenFood).itemSelectMenu;
 
-				const amountSelectMenu = new ActionRowBuilder<SelectMenuBuilder>()
-					.setComponents(new SelectMenuBuilder()
+				const amountSelectMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
+					.setComponents(new StringSelectMenuBuilder()
 						.setCustomId(`store_amount_@${userData._id}`)
 						.setPlaceholder('Select the amount to store away')
 						.setOptions(amountSelectMenuOptions));
@@ -207,8 +207,8 @@ function getOriginalComponents(
 		}
 	}
 
-	const itemSelectMenu = new ActionRowBuilder<SelectMenuBuilder>()
-		.setComponents(new SelectMenuBuilder()
+	const itemSelectMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
+		.setComponents(new StringSelectMenuBuilder()
 			.setCustomId(`store_options_@${userData._id}`)
 			.setPlaceholder('Select an item to store away')
 			.setOptions(itemSelectMenuOptions));

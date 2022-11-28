@@ -1,4 +1,4 @@
-import { SelectMenuInteraction } from 'discord.js';
+import { AnySelectMenuInteraction } from 'discord.js';
 import { getArrayElement } from './helperFunctions';
 
 export type DeconstructedCustomId<T extends string[]> = {
@@ -47,12 +47,12 @@ export function constructCustomId<T extends string[]>(
 }
 
 /**
- * It takes a SelectMenuInteraction and returns an array of strings
- * @param {SelectMenuInteraction} interaction - SelectMenuInteraction
+ * It takes a AnySelectMenuInteraction and returns an array of strings
+ * @param {AnySelectMenuInteraction} interaction - AnySelectMenuInteraction
  * @returns The first element of the array of values, split into its args.
  */
 export function deconstructSelectOptions<T extends string[]>(
-	interaction: SelectMenuInteraction,
+	interaction: AnySelectMenuInteraction,
 ): T {
 
 	return getArrayElement(interaction.values, 0).split('_') as T;

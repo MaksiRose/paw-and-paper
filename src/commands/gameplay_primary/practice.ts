@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { ServerSchema } from '../../typings/data/server';
 import { RankType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
@@ -122,7 +122,7 @@ export const command: SlashCommand = {
 			interaction: ChatInputCommandInteraction<'cached'>,
 			userData: UserData<never, never>,
 			serverData: ServerSchema,
-			newInteraction: ButtonInteraction | SelectMenuInteraction,
+			newInteraction: ButtonInteraction | AnySelectMenuInteraction,
 			restEmbed: EmbedBuilder[],
 			previousFightComponents?: ActionRowBuilder<ButtonBuilder>,
 			lastRoundCycleIndex?: number,

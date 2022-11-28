@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageComponentInteraction, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageComponentInteraction, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { getArrayElement, respond, sendErrorMessage, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import { userModel } from '../../models/userModel';
@@ -553,15 +553,15 @@ export const command: SlashCommand = {
 	},
 };
 
-function getOriginalMessage(interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>, serverData: ServerSchema): InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions {
+function getOriginalMessage(interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>, serverData: ServerSchema): InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions {
 
 	return {
 		embeds: [new EmbedBuilder()
 			.setColor(default_color)
 			.setAuthor({ name: serverData.name, iconURL: interaction.guild?.iconURL() || undefined })
 			.setTitle('Select what you want to configure from the drop-down menu below.')],
-		components: [new ActionRowBuilder<SelectMenuBuilder>()
-			.setComponents([new SelectMenuBuilder()
+		components: [new ActionRowBuilder<StringSelectMenuBuilder>()
+			.setComponents([new StringSelectMenuBuilder()
 				.setCustomId(`server-settings_options_@${interaction.user.id}`)
 				.setPlaceholder('Select an option to configure')
 				.setOptions(
@@ -574,7 +574,7 @@ function getOriginalMessage(interaction: ChatInputCommandInteraction<'cached'> |
 }
 
 async function getShopMessage(
-	interaction: ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	interaction: ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	serverData: ServerSchema,
 	page: number,
 ): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
@@ -605,8 +605,8 @@ async function getShopMessage(
 				.setLabel('Back')
 				.setEmoji('⬅️')
 				.setStyle(ButtonStyle.Secondary)]),
-		new ActionRowBuilder<SelectMenuBuilder>()
-			.setComponents([new SelectMenuBuilder()
+		new ActionRowBuilder<StringSelectMenuBuilder>()
+			.setComponents([new StringSelectMenuBuilder()
 				.setCustomId(`server-settings_shop_options_@${interaction.user.id}`)
 				.setPlaceholder('Select to add/edit/delete a shop item')
 				.setOptions(roleMenuOptions)])],
@@ -614,10 +614,10 @@ async function getShopMessage(
 }
 
 async function getNewRoleMenu(
-	interaction: SelectMenuInteraction<'cached'>,
+	interaction: AnySelectMenuInteraction<'cached'>,
 	serverData: ServerSchema,
 	page: number,
-): Promise<SelectMenuBuilder> {
+): Promise<StringSelectMenuBuilder> {
 
 	let roles = await interaction.guild.roles.fetch();
 	roles = roles.filter(role => role.id !== role.guild.id && !serverData.shop.some(shopItem => shopItem.roleId === role.id));
@@ -630,13 +630,13 @@ async function getNewRoleMenu(
 		roleMenuOptions.push({ label: 'Show more roles', value: `server-settings_shop_add_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
 	}
 
-	return new SelectMenuBuilder()
+	return new StringSelectMenuBuilder()
 		.setCustomId(`server-settings_shop_add_options_@${interaction.user.id}`)
 		.setPlaceholder('Select a role for users to earn/buy')
 		.setOptions(roleMenuOptions);
 }
 
-function getShopRoleMessage(interaction: ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>, roleMenu: SelectMenuBuilder | null, roleIdOrAdd: string, serverData: ServerSchema, wayOfEarning: ServerSchema['shop'][number]['wayOfEarning'] | null, requirement: ServerSchema['shop'][number]['requirement'] | null, role: ServerSchema['shop'][number]['roleId'] | null): { embeds: Array<EmbedBuilder>, components: Array<ActionRowBuilder<SelectMenuBuilder | ButtonBuilder>>; } {
+function getShopRoleMessage(interaction: ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>, roleMenu: StringSelectMenuBuilder | null, roleIdOrAdd: string, serverData: ServerSchema, wayOfEarning: ServerSchema['shop'][number]['wayOfEarning'] | null, requirement: ServerSchema['shop'][number]['requirement'] | null, role: ServerSchema['shop'][number]['roleId'] | null): { embeds: Array<EmbedBuilder>, components: Array<ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder>>; } {
 
 	const isNotSavable = wayOfEarning === null || requirement === null || role === null;
 	const lastRowButtons = [
@@ -667,11 +667,11 @@ function getShopRoleMessage(interaction: ButtonInteraction<'cached'> | SelectMen
 					.setEmoji('⬅️')
 					.setStyle(ButtonStyle.Secondary)]),
 			/* Only add a role selector if this is to add and not edit a role */
-			...(roleMenu ? [new ActionRowBuilder<SelectMenuBuilder>()
+			...(roleMenu ? [new ActionRowBuilder<StringSelectMenuBuilder>()
 				.setComponents([roleMenu])] : []),
 			/* Select a way of earning (experience, levels, rank) */
-			new ActionRowBuilder<SelectMenuBuilder>()
-				.setComponents([new SelectMenuBuilder()
+			new ActionRowBuilder<StringSelectMenuBuilder>()
+				.setComponents([new StringSelectMenuBuilder()
 					.setCustomId(`server-settings_shop_wayofearning_@${interaction.user.id}`)
 					.setPlaceholder('Select the way of earning the role')
 					.setOptions(
@@ -681,8 +681,8 @@ function getShopRoleMessage(interaction: ButtonInteraction<'cached'> | SelectMen
 					)]),
 			/* When no way of earning is selected, do not have this, if the way of earning is rank, make it a select for a required rank, else make it a button that opens a modal */
 			...(wayOfEarning === null ? [] :
-				[new ActionRowBuilder<SelectMenuBuilder | ButtonBuilder>()
-					.setComponents(wayOfEarning === WayOfEarningType.Rank ? [new SelectMenuBuilder()
+				[new ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder>()
+					.setComponents(wayOfEarning === WayOfEarningType.Rank ? [new StringSelectMenuBuilder()
 						.setCustomId(`server-settings_shop_requirements_@${interaction.user.id}`)
 						.setPlaceholder('Select a required rank')
 						.setOptions(
@@ -704,7 +704,7 @@ function getShopRoleMessage(interaction: ButtonInteraction<'cached'> | SelectMen
 }
 
 async function getUpdateMessage(
-	interaction: SelectMenuInteraction<'cached'>,
+	interaction: AnySelectMenuInteraction<'cached'>,
 	serverData: ServerSchema,
 	page: number,
 ): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
@@ -729,8 +729,8 @@ async function getUpdateMessage(
 				.setLabel('Back')
 				.setEmoji('⬅️')
 				.setStyle(ButtonStyle.Secondary)]),
-		new ActionRowBuilder<SelectMenuBuilder>()
-			.setComponents([new SelectMenuBuilder()
+		new ActionRowBuilder<StringSelectMenuBuilder>()
+			.setComponents([new StringSelectMenuBuilder()
 				.setCustomId(`server-settings_updates_options_@${interaction.user.id}`)
 				.setPlaceholder('Select a channel to send updates to')
 				.setOptions(updatesMenuOptions)])],
@@ -738,7 +738,7 @@ async function getUpdateMessage(
 }
 
 async function getVisitsMessage(
-	interaction: SelectMenuInteraction<'cached'>,
+	interaction: AnySelectMenuInteraction<'cached'>,
 	serverData: ServerSchema,
 	page: number,
 ): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
@@ -763,8 +763,8 @@ async function getVisitsMessage(
 				.setLabel('Back')
 				.setEmoji('⬅️')
 				.setStyle(ButtonStyle.Secondary)]),
-		new ActionRowBuilder<SelectMenuBuilder>()
-			.setComponents([new SelectMenuBuilder()
+		new ActionRowBuilder<StringSelectMenuBuilder>()
+			.setComponents([new StringSelectMenuBuilder()
 				.setCustomId(`server-settings_visits_options_@${interaction.user.id}`)
 				.setPlaceholder('Select a channel to set visits to')
 				.setOptions(updatesMenuOptions)])],
@@ -772,7 +772,7 @@ async function getVisitsMessage(
 }
 
 async function getProxyingMessage(
-	interaction: SelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>,
+	interaction: AnySelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>,
 	serverData: ServerSchema,
 	page: number,
 ): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
@@ -803,8 +803,8 @@ async function getProxyingMessage(
 				.setCustomId(`server-settings_proxying_setTo_@${interaction.user.id}`)
 				.setLabel(`Currently set to ${serverData.proxySettings.channels.setTo === ProxyListType.Blacklist ? 'blacklist' : 'whitelist'}`)
 				.setStyle(ButtonStyle.Secondary)]),
-		new ActionRowBuilder<SelectMenuBuilder>()
-			.setComponents([new SelectMenuBuilder()
+		new ActionRowBuilder<StringSelectMenuBuilder>()
+			.setComponents([new StringSelectMenuBuilder()
 				.setCustomId(`server-settings_proxying_options_@${interaction.user.id}`)
 				.setPlaceholder(`Select channels to ${serverData.proxySettings.channels.setTo === ProxyListType.Blacklist ? 'disable' : 'enable'} proxying for`)
 				.setOptions(disableSelectMenuOptions)])],

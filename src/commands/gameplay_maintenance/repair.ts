@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, SelectMenuBuilder, SlashCommandBuilder, WebhookEditMessageOptions } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, StringSelectMenuBuilder, SlashCommandBuilder, WebhookEditMessageOptions } from 'discord.js';
 import { materialsInfo } from '../..';
 import serverModel from '../../models/serverModel';
 import { MaterialNames } from '../../typings/data/general';
@@ -203,8 +203,8 @@ function getMaterials(
 		components: [
 			getDenButtons(userData._id),
 			...selectMenuOptions.length > 0
-				? [new ActionRowBuilder<SelectMenuBuilder>()
-					.setComponents(new SelectMenuBuilder()
+				? [new ActionRowBuilder<StringSelectMenuBuilder>()
+					.setComponents(new StringSelectMenuBuilder()
 						.setCustomId(`repair_options_${chosenDen}_@${userData._id}`)
 						.setPlaceholder('Select an item to repair the den with')
 						.addOptions(selectMenuOptions))]

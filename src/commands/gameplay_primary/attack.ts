@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { serverActiveUsersMap } from '../../events/interactionCreate';
 import serverModel from '../../models/serverModel';
 import { Inventory } from '../../typings/data/general';
@@ -121,7 +121,7 @@ export async function executeAttacking(
 		serverData: ServerSchema,
 		serverAttackInfo: serverMapInfo,
 		restEmbed: EmbedBuilder[],
-		newInteraction?: ButtonInteraction | SelectMenuInteraction,
+		newInteraction?: ButtonInteraction | AnySelectMenuInteraction,
 		previousFightComponents?: ActionRowBuilder<ButtonBuilder>,
 		lastRoundCycleIndex?: number,
 	): Promise<Message> {

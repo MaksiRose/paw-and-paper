@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, Message, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, Message, StringSelectMenuBuilder, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { userModel } from '../../models/userModel';
 import { CurrentRegionType, RankType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
@@ -103,7 +103,7 @@ export const command: SlashCommand = {
 };
 
 async function sendTravelMessage(
-	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	userData: UserData<never, never>,
 	messageContent: string,
 	restEmbed: EmbedBuilder[],
@@ -113,8 +113,8 @@ async function sendTravelMessage(
 	const embed = new EmbedBuilder()
 		.setColor(userData.quid.color)
 		.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL });
-	const travelComponent = new ActionRowBuilder<SelectMenuBuilder>()
-		.setComponents(new SelectMenuBuilder()
+	const travelComponent = new ActionRowBuilder<StringSelectMenuBuilder>()
+		.setComponents(new StringSelectMenuBuilder()
 			.setCustomId(`travel-regions_options_@${userData._id}`)
 			.setPlaceholder('Select a region to travel to')
 			.setOptions([

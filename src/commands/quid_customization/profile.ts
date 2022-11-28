@@ -1,4 +1,4 @@
-import { ActionRowBuilder, EmbedBuilder, GuildMember, InteractionReplyOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, EmbedBuilder, GuildMember, InteractionReplyOptions, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
 import { capitalizeString, respond, update, userDataServersObject } from '../../utils/helperFunctions';
 import { userModel, getUserData } from '../../models/userModel';
 import { hasName, hasNameAndSpecies } from '../../utils/checkUserState';
@@ -61,7 +61,7 @@ export const command: SlashCommand = {
 
 		await respond(interaction, {
 			...response,
-			components: (selectMenu.options.length > 0) ? [new ActionRowBuilder<SelectMenuBuilder>().setComponents([selectMenu])] : [],
+			components: (selectMenu.options.length > 0) ? [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([selectMenu])] : [],
 		}, true);
 	},
 	async sendMessageComponentResponse(interaction) {
@@ -88,7 +88,7 @@ export const command: SlashCommand = {
 			dmChannel.send({
 				content: interaction.message.content || undefined,
 				embeds: interaction.message.embeds,
-				components: (selectMenu.options.length > 0) ? [new ActionRowBuilder<SelectMenuBuilder>().setComponents([selectMenu])] : [],
+				components: (selectMenu.options.length > 0) ? [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([selectMenu])] : [],
 			});
 
 			await interaction.deferUpdate();
@@ -107,7 +107,7 @@ export const command: SlashCommand = {
 			if (quidsPage >= Math.ceil((Object.keys(userData.quids).length + 1) / 24)) { quidsPage = 0; }
 
 			await update(interaction, {
-				components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getQuidSelectMenu(userData, customId.args[1], interaction.user.id, quidsPage, userData.userId.includes(interaction.user.id))])],
+				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([getQuidSelectMenu(userData, customId.args[1], interaction.user.id, quidsPage, userData.userId.includes(interaction.user.id))])],
 			});
 			return;
 		}
@@ -307,7 +307,7 @@ export async function getProfileMessageOptions(
  * @param executorId - The user ID of the user who executed the command. This is used to know who whether the person selecting from the select menu can do so.
  * @param quidsPage - The current page of quids the user is on.
  * @param isYourself - Whether the profile belongs to the person requesting the info.
- * @returns A SelectMenuBuilder object
+ * @returns A StringSelectMenuBuilder object
  */
 function getQuidSelectMenu(
 	userData: UserData<undefined, ''>,
@@ -315,7 +315,7 @@ function getQuidSelectMenu(
 	executorId: string,
 	quidsPage: number,
 	isYourself: boolean,
-): SelectMenuBuilder {
+): StringSelectMenuBuilder {
 
 	let quidOptions: RestOrArray<SelectMenuComponentOptionData> = userData.quids.map(quid => ({
 		label: quid.name,
@@ -341,7 +341,7 @@ function getQuidSelectMenu(
 		});
 	}
 
-	return new SelectMenuBuilder()
+	return new StringSelectMenuBuilder()
 		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, executorId, ['accountselect', userId]))
 		.setPlaceholder(`Select a quid to ${isYourself ? 'switch to' : 'view'}`)
 		.setOptions(quidOptions);

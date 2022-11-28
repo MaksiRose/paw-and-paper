@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import Fuse from 'fuse.js';
 import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo } from '../..';
 import serverModel from '../../models/serverModel';
@@ -198,7 +198,7 @@ function stringIsAvailableItem(
 }
 
 export async function getHealResponse(
-	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | AnySelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>,
 	userData: UserData<never, never>,
 	serverData: ServerSchema,
 	messageContent: string,
@@ -231,8 +231,8 @@ export async function getHealResponse(
 		quidsSelectMenuOptions.push({ label: 'Show more user options', value: `newpage_${newQuidPage}`, description: `You are currently on page ${quidPage + 1}`, emoji: '📋' });
 	}
 
-	const quidsSelectMenu = new ActionRowBuilder<SelectMenuBuilder>()
-		.setComponents(new SelectMenuBuilder()
+	const quidsSelectMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
+		.setComponents(new StringSelectMenuBuilder()
 			.setCustomId(`heal_quids_options_@${userData._id}`)
 			.setPlaceholder('Select a quid to heal')
 			.setOptions(quidsSelectMenuOptions));
@@ -315,8 +315,8 @@ export async function getHealResponse(
 			.setColor(userData.quid.color)
 			.setTitle(`Inventory of ${interaction.guild.name} - Page ${inventoryPage}`)
 			.setDescription(embedDescription || null);
-		const inventorySelectMenu = new ActionRowBuilder<SelectMenuBuilder>()
-			.setComponents(new SelectMenuBuilder()
+		const inventorySelectMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
+			.setComponents(new StringSelectMenuBuilder()
 				.setCustomId(`heal_inventory_options_${userToHeal.quid._id}_@${userData._id}`)
 				.setPlaceholder('Select an item')
 				.setOptions(selectMenuOptions));

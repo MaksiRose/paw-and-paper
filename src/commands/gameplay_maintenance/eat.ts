@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, EmbedBuilder, FormattingPatterns, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, EmbedBuilder, FormattingPatterns, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import Fuse from 'fuse.js';
 import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../..';
 import serverModel from '../../models/serverModel';
@@ -87,7 +87,7 @@ export const command: SlashCommand = {
 };
 
 export async function sendEatMessage(
-	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	chosenFood: string,
 	userData: UserData<never, never>,
 	serverData: ServerSchema,
@@ -284,7 +284,7 @@ async function sendNoItemMessage(
 	embed: EmbedBuilder,
 	userData: UserData<never, never>,
 	chosenFood: string,
-	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	messageContent: string,
 	restEmbed: EmbedBuilder[],
 ): Promise<void> {

@@ -1,4 +1,4 @@
-import { ActionRowBuilder, EmbedBuilder, ModalBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, EmbedBuilder, ModalBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { respond, update } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
@@ -39,7 +39,7 @@ export const command: SlashCommand = {
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setTitle(`What pronouns does ${userData.quid.name} have?`)
 				.setDescription('To change your quids pronouns, select an existing one from the drop-down menu below to edit it, or select "Add another pronoun" to add another one. A pop-up with a text box will open.\n\nTo set the pronouns to they/them for example, type `they/them/their/theirs/themselves/plural`.\nThe 6th spot should be either `singular` ("he/she __is__") or `plural` ("they __are__").\nTo set the pronouns to your own name, you can type `none`.\nTo delete the pronouns, leave the text box empty.\n\nThis is how it would look during roleplay:\n> **They** and the friend that came with **them** laid in **their** den. It was **theirs** because they built it **themselves**. \nYou can use this as reference when thinking about how to add your own (neo-)pronouns.')],
-			components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData)])],
+			components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([getPronounsMenu(userData)])],
 		}, true);
 
 		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, botReply.id, interaction);
@@ -80,7 +80,7 @@ export const command: SlashCommand = {
 				);
 
 			await update(interaction, {
-				components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData)])],
+				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([getPronounsMenu(userData)])],
 			});
 			return;
 		}
@@ -174,7 +174,7 @@ export const command: SlashCommand = {
 		);
 
 		await update(interaction, {
-			components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData)])],
+			components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([getPronounsMenu(userData)])],
 		});
 
 		const addedOrEditedTo = isNaN(pronounNumber) ? 'added pronoun' : `edited pronoun from ${oldPronounSet?.join('/')} to`;
@@ -191,7 +191,7 @@ export const command: SlashCommand = {
 /** Creating a drop - down menu with all the pronouns the quid has. */
 function getPronounsMenu(
 	userData: UserData<never, ''>,
-): SelectMenuBuilder {
+): StringSelectMenuBuilder {
 
 	/* Getting the remaining length for the pronoun field in the profile command. */
 	const profilePronounFieldLengthLeft = 1024 - userData.quid.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n').length;
@@ -216,7 +216,7 @@ function getPronounsMenu(
 		});
 	}
 
-	return new SelectMenuBuilder()
+	return new StringSelectMenuBuilder()
 		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, ['selectmodal']))
 		.setPlaceholder('Select a pronoun to change')
 		.setOptions(pronounsMenuOptions);

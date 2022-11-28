@@ -1,4 +1,4 @@
-import { ActionRowBuilder, APIEmbedField, EmbedBuilder, SelectMenuBuilder, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, APIEmbedField, EmbedBuilder, StringSelectMenuBuilder, SlashCommandBuilder } from 'discord.js';
 import { getArrayElement, respond, update } from '../../utils/helperFunctions';
 import { client, handle } from '../..';
 import { SlashCommand } from '../../typings/handle';
@@ -22,8 +22,8 @@ export const command: SlashCommand = {
 				.setColor(default_color)
 				.setTitle('Welcome to Paw and Paper!')
 				.setDescription('This bot has powerful tools to help make your roleplay more immersive, or to express your mental shifts.\nAdditionally, it features a community-driven RPG about animals surviving in the wild. Your goal is to go up the ranks, level up, find items, help your friends and keep your stats high.\n\nClick on the menu options below to get an overview of the available commands!\n**If you are new, start with `/name (name)`!**')],
-			components: [new ActionRowBuilder<SelectMenuBuilder>()
-				.setComponents([new SelectMenuBuilder()
+			components: [new ActionRowBuilder<StringSelectMenuBuilder>()
+				.setComponents([new StringSelectMenuBuilder()
 					.setCustomId(`help_options_@${userData?._id ?? interaction.user.id}`)
 					.setPlaceholder('Select a page')
 					.setOptions([

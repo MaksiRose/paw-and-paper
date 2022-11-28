@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
 import { respond, update } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import { saveCommandDisablingInfo, disableAllComponents } from '../../utils/componentDisabling';
@@ -59,7 +59,7 @@ export const command: SlashCommand = {
 					.setTitle('Please select a quid that you want to delete.')],
 				components: [
 					await getOriginalComponents(userData),
-					new ActionRowBuilder<SelectMenuBuilder>()
+					new ActionRowBuilder<StringSelectMenuBuilder>()
 						.setComponents([getQuidsPage(0, userData)]),
 				],
 			});
@@ -75,7 +75,7 @@ export const command: SlashCommand = {
 					.setTitle('Please select a server that you want to delete all information off of.')],
 				components: [
 					await getOriginalComponents(userData),
-					new ActionRowBuilder<SelectMenuBuilder>()
+					new ActionRowBuilder<StringSelectMenuBuilder>()
 						.setComponents([await getServersPage(0, userData)]),
 				],
 			});
@@ -210,7 +210,7 @@ export const command: SlashCommand = {
 			await update(interaction, {
 				components: [
 					await getOriginalComponents(userData),
-					new ActionRowBuilder<SelectMenuBuilder>()
+					new ActionRowBuilder<StringSelectMenuBuilder>()
 						.setComponents([getQuidsPage(deletePage, userData)]),
 				],
 			});
@@ -228,7 +228,7 @@ export const command: SlashCommand = {
 					.setColor(error_color)
 					.setTitle(`Are you sure you want to delete the quid named "${quid?.name}"? This will be **permanent**!!!`)],
 				components: [
-					...disableAllComponents([await getOriginalComponents(userData), new ActionRowBuilder<SelectMenuBuilder>().setComponents(SelectMenuBuilder.from(interaction.component))]),
+					...disableAllComponents([await getOriginalComponents(userData), new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(StringSelectMenuBuilder.from(interaction.component))]),
 					new ActionRowBuilder<ButtonBuilder>()
 						.setComponents([
 							new ButtonBuilder()
@@ -256,7 +256,7 @@ export const command: SlashCommand = {
 			await update(interaction, {
 				components: [
 					await getOriginalComponents(userData),
-					new ActionRowBuilder<SelectMenuBuilder>()
+					new ActionRowBuilder<StringSelectMenuBuilder>()
 						.setComponents([await getServersPage(deletePage, userData)]),
 				],
 			});
@@ -278,7 +278,7 @@ export const command: SlashCommand = {
 					.setColor(error_color)
 					.setTitle(`Are you sure you want to delete all the information of ${accountsOnServer.length} quids on the server ${server?.name}? This will be **permanent**!!!`)],
 				components: [
-					...disableAllComponents([await getOriginalComponents(userData), new ActionRowBuilder<SelectMenuBuilder>().setComponents(SelectMenuBuilder.from(interaction.component))]),
+					...disableAllComponents([await getOriginalComponents(userData), new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(StringSelectMenuBuilder.from(interaction.component))]),
 					new ActionRowBuilder<ButtonBuilder>()
 						.setComponents([
 							new ButtonBuilder()
@@ -339,7 +339,7 @@ async function getOriginalComponents(
 function getQuidsPage(
 	deletePage: number,
 	userData: UserData<undefined, ''>,
-): SelectMenuBuilder {
+): StringSelectMenuBuilder {
 
 	let accountsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = userData.quids.map(quid => ({
 		label: quid.name,
@@ -357,7 +357,7 @@ function getQuidsPage(
 		});
 	}
 
-	return new SelectMenuBuilder()
+	return new StringSelectMenuBuilder()
 		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['individual', 'options']))
 		.setPlaceholder('Select a quid')
 		.setOptions(accountsMenuOptions);
@@ -369,7 +369,7 @@ function getQuidsPage(
 async function getServersPage(
 	deletePage: number,
 	userData: UserData<undefined, ''>,
-): Promise<SelectMenuBuilder> {
+): Promise<StringSelectMenuBuilder> {
 
 	let accountsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
 
@@ -398,7 +398,7 @@ async function getServersPage(
 		});
 	}
 
-	return new SelectMenuBuilder()
+	return new StringSelectMenuBuilder()
 		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['server', 'options']))
 		.setPlaceholder('Select a server')
 		.setOptions(accountsMenuOptions);
