@@ -4,7 +4,7 @@ import serverModel from '../models/serverModel';
 import { userModel, getUserData } from '../models/userModel';
 import { DiscordEvent } from '../typings/main';
 import { disableCommandComponent, disableAllComponents } from '../utils/componentDisabling';
-import { getMapData, keyInObject, update, userDataServersObject } from '../utils/helperFunctions';
+import { getMapData, keyInObject, respond, update, userDataServersObject } from '../utils/helperFunctions';
 import { createGuild } from '../utils/updateGuild';
 import { reply } from '../utils/helperFunctions';
 import { sendErrorMessage } from '../utils/helperFunctions';
@@ -32,10 +32,10 @@ export const event: DiscordEvent = {
 			if (!interaction.channel) { await client.channels.fetch(interaction.channelId || ''); }
 
 			const _userData = (() => {
-				try { return userModel.findOne(u => u.userId.includes(interaction.user.id)); }
+				try { return userModel.findOne(u => Object.keys(u.userIds).includes(interaction.user.id)); }
 				catch { return null; }
 			})();
-			const userData = _userData === null ? null : getUserData(_userData, interaction.guildId ?? 'DMs', _userData.quids[_userData.currentQuid[interaction.guildId ?? 'DMs'] ?? '']);
+			const userData = _userData === null ? null : getUserData(_userData, interaction.guildId ?? 'DMs', _userData.quids[_userData.servers[interaction.guildId ?? 'DMs']?.currentQuid ?? '']);
 			let serverData = (() => {
 				try { return serverModel.findOne(s => s.serverId === interaction.guildId); }
 				catch { return null; }
@@ -162,7 +162,7 @@ export const event: DiscordEvent = {
 						});
 
 					await userModel.findOneAndUpdate(
-						u => u.userId.includes(interaction.user.id),
+						u => Object.keys(u.userIds).includes(interaction.user.id),
 						(u) => {
 							u.lastPlayedVersion = version.split('.').slice(0, -1).join('.');
 						},
@@ -206,7 +206,7 @@ export const event: DiscordEvent = {
 				const isCommandCreator = interaction.message.interaction !== null && interaction.message.interaction.user.id === interaction.user.id;
 				const isMentioned = interaction.customId.includes('@' + interaction.user.id) || interaction.customId.includes('@EVERYONE') || (_userData && (interaction.customId.includes(_userData._id) || Object.keys(_userData.quids).some(q => interaction.customId.includes('@' + q))));
 
-				if (interaction.isSelectMenu()) {
+				if (interaction.isAnySelectMenu()) {
 
 					console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully selected \x1b[31m${interaction.values[0]} \x1b[0mfrom the menu \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 				}
@@ -219,16 +219,18 @@ export const event: DiscordEvent = {
 
 						if (!isCommandCreator && !isMentioned) {
 
-							await reply(interaction, {
+							// This should always be a reply to the error messave
+							await respond(interaction, {
 								content: 'Sorry, I only listen to the person that created the command 😣',
 								ephemeral: true,
-							}, false);
+							});
 							return;
 						}
 
-						await update(interaction, {
+						// This should always update the error message
+						await respond(interaction, {
 							components: disableAllComponents(interaction.message.components),
-						});
+						}, 'update', '@original');
 
 						const errorId = interaction.customId.split('_')[2] || generateId();
 						const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
@@ -236,12 +238,13 @@ export const event: DiscordEvent = {
 
 						if (!description) {
 
-							await reply(interaction, {
+							// This should always be a followUp to the updated error message
+							await respond(interaction, {
 								embeds: [new EmbedBuilder()
 									.setColor(error_color)
 									.setDescription('There was an error trying to report the error... Ironic! Maybe you can try opening a ticket via `/ticket` instead?')],
 								ephemeral: true,
-							}, false);
+							}, 'reply', '@original');
 							return;
 						}
 

@@ -168,7 +168,7 @@ export async function respond(
 	interaction: RepliableInteraction,
 	options: InteractionReplyOptions & WebhookEditMessageOptions,
 	type: 'reply' | 'update' = 'reply',
-	editId: Snowflake | '@original',
+	editId?: Snowflake | '@original',
 ): Promise<InteractionResponse<boolean> | Message<boolean>> {
 
 	let botReply: InteractionResponse<boolean> | Message<boolean>;

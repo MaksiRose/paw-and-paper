@@ -1,6 +1,6 @@
 import { Octokit } from '@octokit/rest';
 import { EmbedBuilder, SlashCommandBuilder, Team, User, ActionRowBuilder, ButtonBuilder, ButtonStyle, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ChatInputCommandInteraction, AttachmentBuilder } from 'discord.js';
-import { reply, update } from '../../utils/helperFunctions';
+import { reply, respond, update } from '../../utils/helperFunctions';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
@@ -241,14 +241,14 @@ export async function createNewTicket(
 	/* Creating a text file of the ticket conversation */
 	writeFileSync(`./database/open_tickets/${ticketId}.txt`, 'FULL CONVERSATION REGARDING THIS TICKET');
 
-	/* Sending the response to the user. */
-	await reply(interaction, {
+	// This should be a reply in case of a /ticket command, and an edit to the updated error message in case of a report-button being clicked
+	await respond(interaction, {
 		embeds: [new EmbedBuilder()
 			.setColor(default_color)
 			.setTitle('Thank you for your contribution!')
 			.setDescription('You help improve the bot.\nNote: To suggest a species [use this form](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement%2Cnon-code&template=species_request.yaml&title=New+species%3A+).')
 			.setFooter({ text: 'We might need to get in contact with you for clarification regarding your ticket. If we have no way of contacting you (i.e. DMs being closed, not allowing friend requests and not being in the support server), your ticket might not be considered.' }), ticketEmbed],
-	}, true);
+	}, 'reply', '@original');
 }
 
 export function getRespondButton(
