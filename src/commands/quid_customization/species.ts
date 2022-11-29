@@ -66,7 +66,7 @@ export const command: SlashCommand = {
 		]) === true) { return; }
 
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
-		if (!hasName(userData) || !customId) { return; }
+		if (!hasName(userData) || !customId) { return; } // this would always be a reply
 
 		if (interaction.isButton() && customId.args[0] === 'displayedspeciesmodal') {
 
@@ -138,7 +138,7 @@ export const command: SlashCommand = {
 	async sendModalResponse(interaction, userData) {
 
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
-		if (!hasName(userData) || !customId) { return; }
+		if (!hasName(userData) || !customId) { return; } // this would always be a reply
 
 		const displayedSpecies = interaction.fields.getTextInputValue('displayedspecies');
 
