@@ -219,7 +219,7 @@ export const event: DiscordEvent = {
 
 						if (!isCommandCreator && !isMentioned) {
 
-							// This should always be a reply to the error messave
+							// This should always be a reply to the error message
 							await respond(interaction, {
 								content: 'Sorry, I only listen to the person that created the command 😣',
 								ephemeral: true,
@@ -244,7 +244,7 @@ export const event: DiscordEvent = {
 									.setColor(error_color)
 									.setDescription('There was an error trying to report the error... Ironic! Maybe you can try opening a ticket via `/ticket` instead?')],
 								ephemeral: true,
-							}, 'reply', '@original');
+							});
 							return;
 						}
 
@@ -258,10 +258,11 @@ export const event: DiscordEvent = {
 
 						if (!isCommandCreator && !isMentioned) {
 
-							await reply(interaction, {
+							// This should always be a reply to the message with the setting-button
+							await respond(interaction, {
 								content: 'Sorry, I only listen to the person that created the command 😣',
 								ephemeral: true,
-							}, false);
+							});
 							return;
 						}
 
@@ -294,18 +295,20 @@ export const event: DiscordEvent = {
 									}
 								}
 
-								await update(interaction, {
+								// This should always update the message with the settings-button
+								await respond(interaction, {
 									components: [new ActionRowBuilder<ButtonBuilder>()
 										.setComponents(new ButtonBuilder()
 											.setCustomId(`settings_reminders_water_${isOn ? 'off' : 'on'}_@${userData._id}`)
 											.setLabel(`Turn water reminders ${isOn ? 'off' : 'on'}`)
 											.setStyle(ButtonStyle.Secondary))],
-								});
+								}, 'update', '@original');
 
-								await reply(interaction, {
+								// This should always be a followUp to the updated error message
+								await respond(interaction, {
 									content: `You turned reminders for watering ${isOn ? 'on' : 'off'}!`,
 									ephemeral: true,
-								}, false);
+								});
 							}
 
 							if (interaction.customId.includes('resting')) {
@@ -316,18 +319,20 @@ export const event: DiscordEvent = {
 									},
 								);
 
-								await update(interaction, {
+								// This should always update the message with the settings-button
+								await respond(interaction, {
 									components: [new ActionRowBuilder<ButtonBuilder>()
 										.setComponents(new ButtonBuilder()
 											.setCustomId(`settings_reminders_resting_${isOn ? 'off' : 'on'}_@${userData._id}`)
 											.setLabel(`Turn automatic resting pings ${isOn ? 'off' : 'on'}`)
 											.setStyle(ButtonStyle.Secondary))],
-								});
+								}, 'update', '@original');
 
-								await reply(interaction, {
+								// This should always be a followUp to the updated error message
+								await respond(interaction, {
 									content: `You turned pings for automatic resting ${isOn ? 'on' : 'off'}!`,
 									ephemeral: true,
-								}, false);
+								});
 							}
 						}
 					}
