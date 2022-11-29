@@ -4,9 +4,8 @@ import serverModel from '../models/serverModel';
 import { userModel, getUserData } from '../models/userModel';
 import { DiscordEvent } from '../typings/main';
 import { disableCommandComponent, disableAllComponents } from '../utils/componentDisabling';
-import { getMapData, keyInObject, respond, update, userDataServersObject } from '../utils/helperFunctions';
+import { getMapData, keyInObject, respond, userDataServersObject } from '../utils/helperFunctions';
 import { createGuild } from '../utils/updateGuild';
-import { reply } from '../utils/helperFunctions';
 import { sendErrorMessage } from '../utils/helperFunctions';
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
@@ -346,10 +345,11 @@ export const event: DiscordEvent = {
 
 				if (!isCommandCreator && !isMentioned) {
 
-					await reply(interaction, {
+					// This should always be a reply to the message with the component
+					await respond(interaction, {
 						content: 'Sorry, I only listen to the person that created the command 😣',
 						ephemeral: true,
-					}, false);
+					});
 					return;
 				}
 
