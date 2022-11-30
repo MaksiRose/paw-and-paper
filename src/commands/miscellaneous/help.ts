@@ -1,5 +1,5 @@
 import { ActionRowBuilder, APIEmbedField, EmbedBuilder, StringSelectMenuBuilder, SlashCommandBuilder } from 'discord.js';
-import { getArrayElement, reply, update } from '../../utils/helperFunctions';
+import { getArrayElement, respond } from '../../utils/helperFunctions';
 import { client, handle } from '../..';
 import { SlashCommand } from '../../typings/handle';
 
@@ -17,7 +17,8 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction, userData) => {
 
-		await reply(interaction, {
+		// This is always a reply
+		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
 				.setTitle('Welcome to Paw and Paper!')
@@ -33,12 +34,12 @@ export const command: SlashCommand = {
 						{ label: 'Page 4', value: 'help_page4', description: 'Interaction', emoji: '👥' },
 						{ label: 'Page 5', value: 'help_page5', description: 'Miscellaneous', emoji: '⚙️' },
 					])])],
-		}, true);
+		});
 		return;
 	},
 	async sendMessageComponentResponse(interaction) {
 
-		if (!interaction.isSelectMenu()) { return; }
+		if (!interaction.isStringSelectMenu()) { return; }
 		const value = getArrayElement(interaction.values, 0);
 
 		const titles = ['📝 Quid Customization', '🎲 Gameplay (Primary)', '🍗 Gameplay (Maintenance)', '👥 Interaction', '⚙️ Miscellaneous'];
@@ -76,13 +77,14 @@ export const command: SlashCommand = {
 
 		}
 
-		await update(interaction, {
+		// This is always an update to the message with the select menu
+		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
 				.setTitle(title)
 				.setDescription(description)
 				.setFields(fields)],
-		});
+		}, 'update', '@original');
 
 		return;
 
