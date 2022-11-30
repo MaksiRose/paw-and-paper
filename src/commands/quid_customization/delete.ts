@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
-import { reply, update } from '../../utils/helperFunctions';
+import { respond } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import { saveCommandDisablingInfo, disableAllComponents } from '../../utils/componentDisabling';
 import { missingPermissions } from '../../utils/permissionHandler';
@@ -30,18 +30,20 @@ export const command: SlashCommand = {
 		/* Checking if the user has an account. If they do not, it will send a message saying they haave no account. */
 		if (!userData) {
 
-			await reply(interaction, {
+			// This is always a reply
+			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('You have no account!')],
 				ephemeral: true,
-			}, false);
+			});
 			return;
 		}
 
-		const botReply = await reply(interaction, await sendOriginalMessage(userData), true);
+		// This is always a reply
+		const { id: messageId } = await respond(interaction, await sendOriginalMessage(userData));
 
-		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, botReply.id, interaction);
+		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, messageId, interaction);
 		return;
 	},
 	async sendMessageComponentResponse(interaction, userData) {
@@ -53,7 +55,8 @@ export const command: SlashCommand = {
 		/* Creating a new page for the user to select an account to delete. */
 		if (interaction.isButton() && customId.args[0] === 'individual') {
 
-			await update(interaction, {
+			// This is always an update to the message with the button
+			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('Please select a quid that you want to delete.')],
@@ -62,14 +65,15 @@ export const command: SlashCommand = {
 					new ActionRowBuilder<StringSelectMenuBuilder>()
 						.setComponents([getQuidsPage(0, userData)]),
 				],
-			});
+			}, 'update', '@original');
 			return;
 		}
 
 		/* Creating a new page for the user to select their accounts on a server to delete. */
 		if (interaction.isButton() && customId.args[0] === 'server') {
 
-			await update(interaction, {
+			// This is always an update to the message with the button
+			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('Please select a server that you want to delete all information off of.')],
@@ -78,14 +82,15 @@ export const command: SlashCommand = {
 					new ActionRowBuilder<StringSelectMenuBuilder>()
 						.setComponents([await getServersPage(0, userData)]),
 				],
-			});
+			}, 'update', '@original');
 			return;
 		}
 
 		/* Creating a new message asking the user if they are sure that they want to delete all their data. */
 		if (interaction.isButton() && customId.args[0] === 'all') {
 
-			await update(interaction, {
+			// This is always an update to the message with the button
+			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('Are you sure you want to delete all your data? This will be **permanent**!!!')
@@ -106,7 +111,7 @@ export const command: SlashCommand = {
 								.setStyle(ButtonStyle.Secondary),
 						]),
 				],
-			});
+			}, 'update', '@original');
 			return;
 		}
 
@@ -124,7 +129,9 @@ export const command: SlashCommand = {
 				await userData.update(
 					(u) => {
 						delete u.quids[quidId];
+						// eslint-disable-next-line deprecation/deprecation
 						for (const serverId of Object.keys(u.currentQuid)) {
+							// eslint-disable-next-line deprecation/deprecation
 							if (u.currentQuid[serverId] === quidId) { delete u.currentQuid[serverId]; }
 						}
 						for (const serverInfo of Object.values(u.servers)) {
@@ -133,13 +140,15 @@ export const command: SlashCommand = {
 					},
 				);
 
-				await update(interaction, await sendOriginalMessage(userData));
+				// This is always an update to the message with the button
+				await respond(interaction, await sendOriginalMessage(userData), 'update', '@original');
 
-				await reply(interaction, {
+				// This is always a followUp
+				await respond(interaction, {
 					embeds: [new EmbedBuilder()
 						.setColor(error_color)
 						.setTitle(`The quid \`${quid?.name}\` was deleted permanently!`)],
-				}, false);
+				});
 			}
 
 			/* Deleting all accounts by a user on a server. */
@@ -156,6 +165,7 @@ export const command: SlashCommand = {
 						for (const q of Object.values(u.quids)) {
 							if (q.profiles[serverId] !== undefined) { delete q.profiles[serverId]; }
 						}
+						// eslint-disable-next-line deprecation/deprecation
 						delete u.currentQuid[serverId];
 						delete u.servers[serverId];
 					},
@@ -163,13 +173,15 @@ export const command: SlashCommand = {
 
 				const server = await serverModel.findOne(s => s.serverId === serverId);
 
-				await update(interaction, await sendOriginalMessage(userData));
+				// This is always an update to the message with the button
+				await respond(interaction, await sendOriginalMessage(userData), 'update', '@original');
 
-				await reply(interaction, {
+				// This is always a followUp
+				await respond(interaction, {
 					embeds: [new EmbedBuilder()
 						.setColor(error_color)
 						.setTitle(`All the data of ${accountsOnServer.length} quids on the server \`${server.name}\` was deleted permanently!`)],
-				}, false);
+				});
 			}
 
 			/* Deleting all the data of the user. */
@@ -177,15 +189,17 @@ export const command: SlashCommand = {
 
 				await userModel.findOneAndDelete(u => u._id === userData?._id);
 
-				await update(interaction, {
+				// This is always an update to the message with the button
+				await respond(interaction, {
 					components: disableAllComponents(interaction.message.components),
-				});
+				}, 'update', '@original');
 
-				await reply(interaction, {
+				// This is always a followUp
+				await respond(interaction, {
 					embeds: [new EmbedBuilder()
 						.setColor(error_color)
 						.setTitle('All your data was deleted permanently!')],
-				}, false);
+				});
 				return;
 			}
 			return;
@@ -194,7 +208,8 @@ export const command: SlashCommand = {
 		/* Editing the message to the original message. */
 		if (interaction.isButton() && customId.args[0] === 'cancel') {
 
-			await update(interaction, await sendOriginalMessage(userData));
+			// This is always an update to the message with the button
+			await respond(interaction, await sendOriginalMessage(userData), 'update', '@original');
 			return;
 		}
 
@@ -202,28 +217,30 @@ export const command: SlashCommand = {
 		const selectOptionId = deconstructSelectOptions<SelectOptionArgs>(interaction);
 
 		/* Checking if the interaction is a select menu and if the value starts with delete_individual_nextpage_. If it is, it increments the page number, and if the page number is greater than the number of pages, it sets the page number to 0. It will then edit the reply to have the new page of quids. */
-		if (interaction.isSelectMenu() && customId.args[0] === 'individual' && customId.args[1] === 'options' && selectOptionId[0] === 'nextpage') {
+		if (interaction.isStringSelectMenu() && customId.args[0] === 'individual' && customId.args[1] === 'options' && selectOptionId[0] === 'nextpage') {
 
 			let deletePage = Number(selectOptionId[1]) + 1;
 			if (deletePage >= Math.ceil(Object.keys(userData.quids).length / 24)) { deletePage = 0; }
 
-			await update(interaction, {
+			// This is always an update to the message with the select menu
+			await respond(interaction, {
 				components: [
 					await getOriginalComponents(userData),
 					new ActionRowBuilder<StringSelectMenuBuilder>()
 						.setComponents([getQuidsPage(deletePage, userData)]),
 				],
-			});
+			}, 'update', '@original');
 			return;
 		}
 
 		/* Checking if the interaction is a select menu and if the quid ID of the value exists as a quid. If it does, it will edit the message to ask the user if they are sure they want to delete the quid. */
-		if (interaction.isSelectMenu() && customId.args[0] === 'individual' && customId.args[1] === 'options') {
+		if (interaction.isStringSelectMenu() && customId.args[0] === 'individual' && customId.args[1] === 'options') {
 
 			const quidId = selectOptionId[0];
 			const quid = userData.quids.get(quidId);
 
-			await update(interaction, {
+			// This is always an update to the message with the select menu
+			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle(`Are you sure you want to delete the quid named "${quid?.name}"? This will be **permanent**!!!`)],
@@ -243,28 +260,29 @@ export const command: SlashCommand = {
 								.setStyle(ButtonStyle.Secondary),
 						]),
 				],
-			});
+			}, 'update', '@original');
 			return;
 		}
 
 		/* Checking if the interaction is a select menu and if the value starts with delete_server_nextpage_. If it does, it increments the page number, and if the page number is greater than the number of pages, it sets the page number to 0. It will then edit the reply to have the new page of servers. */
-		if (interaction.isSelectMenu() && customId.args[0] === 'server' && customId.args[1] === 'options' && selectOptionId[0] === 'nextpage') {
+		if (interaction.isStringSelectMenu() && customId.args[0] === 'server' && customId.args[1] === 'options' && selectOptionId[0] === 'nextpage') {
 
 			let deletePage = Number(selectOptionId[1]) + 1;
 			if (deletePage >= Math.ceil([...new Set(userData.quids.map(q => Object.keys(q.profiles)).flat())].length / 24)) { deletePage = 0; }
 
-			await update(interaction, {
+			// This is always an update to the message with the select menu
+			await respond(interaction, {
 				components: [
 					await getOriginalComponents(userData),
 					new ActionRowBuilder<StringSelectMenuBuilder>()
 						.setComponents([await getServersPage(deletePage, userData)]),
 				],
-			});
+			}, 'update', '@original');
 			return;
 		}
 
 		/* Checking if the interaction is a select menu and if the server ID is in the array of all servers. If it is, it will edit the message to ask the user if they are sure they want to delete all their information on the server. */
-		if (interaction.isSelectMenu() && customId.args[0] === 'server' && customId.args[1] === 'options') {
+		if (interaction.isStringSelectMenu() && customId.args[0] === 'server' && customId.args[1] === 'options') {
 
 			const serverId = selectOptionId[0];
 			const accountsOnServer = userData.quids.map(q => q.profiles[serverId]).filter(p => p !== undefined);
@@ -273,7 +291,8 @@ export const command: SlashCommand = {
 				catch { return null; }
 			})();
 
-			await update(interaction, {
+			// This is always an update to the message with the select menu
+			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle(`Are you sure you want to delete all the information of ${accountsOnServer.length} quids on the server ${server?.name}? This will be **permanent**!!!`)],
@@ -293,7 +312,7 @@ export const command: SlashCommand = {
 								.setStyle(ButtonStyle.Secondary),
 						]),
 				],
-			});
+			}, 'update', '@original');
 			return;
 		}
 	},
