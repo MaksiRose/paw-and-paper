@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageComponentInteraction, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { getArrayElement, reply, sendErrorMessage, update } from '../../utils/helperFunctions';
+import { getArrayElement, respond, sendErrorMessage } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import { userModel } from '../../models/userModel';
 import { checkLevelRequirements, checkRankRequirements } from '../../utils/checkRoleRequirements';
@@ -32,41 +32,46 @@ export const command: SlashCommand = {
 		/* It's checking if the message is in a guild, and if it is, it's checking if the guild is in the database. If it's not, it throws an error. Else, it's responding with the original message */
 		if (serverData === null || !interaction.inCachedGuild()) { throw new Error('Message is not in configured guild'); }
 
-		await reply(interaction, getOriginalMessage(interaction, serverData), true);
+		// This is always a reply
+		await respond(interaction, getOriginalMessage(interaction, serverData));
 		return;
 	},
 	async sendMessageComponentResponse(interaction, userData, serverData) {
 
 		if (!serverData) { throw new Error('serverData is null'); }
 		if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
-		const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
+		const selectOptionId = interaction.isAnySelectMenu() ? interaction.values[0] : undefined;
 
 		/* It's checking if the interaction is a button that leads back to the main page, and it's updating the message with the main page content. */
 		if (interaction.isButton() && interaction.customId.includes('mainpage')) {
 
-			await update(interaction, getOriginalMessage(interaction, serverData));
+			// This is always an update to the message with the button
+			await respond(interaction, getOriginalMessage(interaction, serverData), 'update', '@original');
 			return;
 		}
 
 		/* It's checking if the interaction value or customId includes shop, and sends a message if it does. */
-		if ((interaction.isButton() && interaction.customId.startsWith('server-settings_shop_@')) || (interaction.isSelectMenu() && interaction.values[0] === 'server-settings_shop')) {
+		if ((interaction.isButton() && interaction.customId.startsWith('server-settings_shop_@')) || (interaction.isStringSelectMenu() && interaction.values[0] === 'server-settings_shop')) {
 
 			if (await missingPermissions(interaction, [
 				'ManageRoles', // Needed to give out roles configured in this shop
 			]) === true) { return; }
-			await update(interaction, await getShopMessage(interaction, serverData, 0));
+
+			// This is always an update to the message with the component
+			await respond(interaction, await getShopMessage(interaction, serverData, 0), 'update', '@original');
 			return;
 		}
 
 		/* It's checking if the interaction is the shop select menu. */
-		if (interaction.isSelectMenu() && selectOptionId && interaction.customId.includes('shop_options')) {
+		if (interaction.isStringSelectMenu() && selectOptionId && interaction.customId.includes('shop_options')) {
 
 			/* It's checking if the value is for turning a page. If it is, it's getting the page number from the value, and it's updating the message with the shop message with the page number. */
 			if (selectOptionId.includes('nextpage')) {
 
 				const page = Number(selectOptionId.split('_')[3]);
 
-				await update(interaction, await getShopMessage(interaction, serverData, page));
+				// This is always an update to the message with the select menu
+				await respond(interaction, await getShopMessage(interaction, serverData, page), 'update', '@original');
 				return;
 			}
 			else {
@@ -84,7 +89,8 @@ export const command: SlashCommand = {
 					return await getNewRoleMenu(interaction, serverData, rolePage);
 				}();
 
-				await update(interaction, getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role));
+				// This is always an update to the message with the select menu
+				await respond(interaction, getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role), 'update', '@original');
 
 				const modalCollector = new InteractionCollector(interaction.client, { channel: interaction.channel || undefined, interactionType: InteractionType.ModalSubmit, message: interaction.message });
 
@@ -96,11 +102,12 @@ export const command: SlashCommand = {
 				interactionCollector.on('collect', async (i: MessageComponentInteraction<'cached'>) => {
 					try {
 
-						const collectorSelectOptionId = i.isSelectMenu() ? i.values[0] : undefined;
+						const collectorSelectOptionId = i.isStringSelectMenu() ? i.values[0] : undefined;
 
+						// This is also picked up by sendMessageComponentResponse, so we do not reply and stop the collector since it will reply and start a new collector from the parent function
 						if (i.isButton() && i.customId.startsWith('server-settings_shop_@')) { interactionCollector.stop('back'); }
 
-						if (i.isSelectMenu() && collectorSelectOptionId && i.customId.startsWith('server-settings_shop_add_options')) {
+						if (i.isStringSelectMenu() && collectorSelectOptionId && i.customId.startsWith('server-settings_shop_add_options')) {
 
 							if (collectorSelectOptionId.startsWith('server-settings_shop_add_nextpage_')) {
 
@@ -109,22 +116,27 @@ export const command: SlashCommand = {
 							}
 							else { role = collectorSelectOptionId.replace('server-settings_shop_add_', ''); }
 
-							await update(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role))
+							// This is always an update to the message with the select menu
+							await respond(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role), 'update', '@original')
 								.catch(error => { console.error(error); });
 						}
 
-						if (i.isSelectMenu() && collectorSelectOptionId && i.customId.startsWith('server-settings_shop_wayofearning')) {
+						if (i.isStringSelectMenu() && collectorSelectOptionId && i.customId.startsWith('server-settings_shop_wayofearning')) {
 
 							wayOfEarning = collectorSelectOptionId.replace('server-settings_shop_wayofearning_', '') as WayOfEarningType;
 							requirement = null;
-							await update(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role))
+
+							// This is always an update to the message with the select menu
+							await respond(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role), 'update', '@original')
 								.catch(error => { console.error(error); });
 						}
 
-						if (i.isSelectMenu() && collectorSelectOptionId && i.customId.startsWith('server-settings_shop_requirements')) {
+						if (i.isStringSelectMenu() && collectorSelectOptionId && i.customId.startsWith('server-settings_shop_requirements')) {
 
 							requirement = collectorSelectOptionId.replace('server-settings_shop_requirements_', '') as RankType;
-							await update(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role))
+
+							// This is always an update to the message with the select menu
+							await respond(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role), 'update', '@original')
 								.catch(error => { console.error(error); });
 						}
 
@@ -154,8 +166,8 @@ export const command: SlashCommand = {
 							/* Check if role, wayOfEarning or requirement is null */
 							if (role === null || wayOfEarning === null || requirement === null) {
 
-								await i
-									.reply({ content: 'Something went wrong. You shouldn\'t be able to save yet, either the role, way of earning or requirement is missing.', ephemeral: true })
+								// This is always a reply
+								await respond(i, { content: 'Something went wrong. You shouldn\'t be able to save yet, either the role, way of earning or requirement is missing.', ephemeral: true })
 									.catch(error => { console.error(error); });
 								return;
 							}
@@ -174,12 +186,11 @@ export const command: SlashCommand = {
 								},
 							);
 
-							/* Reply to the user that the role is configured */
-							await i
-								.reply({
-									content: `<@&${role}> ${roleIdOrAdd === 'add' ? 'added to the shop' : 'edited'}! The requirement is ${requirement} ${wayOfEarning}.`,
-									ephemeral: true,
-								})
+							// This is always a reply
+							await respond(i, {
+								content: `<@&${role}> ${roleIdOrAdd === 'add' ? 'added to the shop' : 'edited'}! The requirement is ${requirement} ${wayOfEarning}.`,
+								ephemeral: true,
+							})
 								.catch(error => { console.error(error); });
 
 							/* Get all the users that have at least one quid with a profile on this server */
@@ -207,7 +218,7 @@ export const command: SlashCommand = {
 										/* Giving users the role if they meet the requirements or removing it if they don't. */
 										if (wayOfEarning === WayOfEarningType.Levels) {
 
-											const member = await i.guild.members.fetch(u.userId[0] || '').catch(() => { return undefined; });
+											const member = await i.guild.members.fetch(Object.keys(u.userIds)[0] || '').catch(() => { return undefined; });
 											await checkLevelRequirements(serverData, i, member, p.levels, false);
 
 											if (p.levels < requirement && member && member.roles.cache.has(role)) {
@@ -220,7 +231,7 @@ export const command: SlashCommand = {
 
 										if (wayOfEarning === WayOfEarningType.Rank && typeof requirement === 'string') {
 
-											const member = await i.guild.members.fetch(u.userId[0] || '').catch(() => { return undefined; });
+											const member = await i.guild.members.fetch(Object.keys(u.userIds)[0] || '').catch(() => { return undefined; });
 											await checkRankRequirements(serverData, i, member, p.rank, false);
 
 											const rankList = { Youngling: 0, Apprentice: 1, Hunter: 2, Healer: 2, Elderly: 2 };
@@ -234,7 +245,7 @@ export const command: SlashCommand = {
 
 										if (wayOfEarning === WayOfEarningType.Experience) {
 
-											const member = await i.guild.members.fetch(u.userId[0] || '').catch(() => { return undefined; });
+											const member = await i.guild.members.fetch(Object.keys(u.userIds)[0] || '').catch(() => { return undefined; });
 											if (member && member.roles.cache.has(role)) {
 
 												await member.roles
@@ -258,8 +269,8 @@ export const command: SlashCommand = {
 							/* Check if role, wayOfEarning or requirement is null */
 							if (role === null || wayOfEarning === null || requirement === null) {
 
-								await i
-									.reply({ content: 'Something went wrong. You shouldn\'t be able to save yet, either the role, way of earning or requirement is missing.', ephemeral: true })
+								// This is always a reply
+								await respond(i, { content: 'Something went wrong. You shouldn\'t be able to save yet, either the role, way of earning or requirement is missing.', ephemeral: true })
 									.catch(error => { console.error(error); });
 								return;
 							}
@@ -272,12 +283,11 @@ export const command: SlashCommand = {
 								},
 							);
 
-							/* Reply to the user that the role is configured */
-							await i
-								.reply({
-									content: `<@&${role}> with the requirement of ${requirement} ${wayOfEarning} was deleted from the shop.`,
-									ephemeral: true,
-								})
+							// This is always a reply
+							await respond(i, {
+								content: `<@&${role}> with the requirement of ${requirement} ${wayOfEarning} was deleted from the shop.`,
+								ephemeral: true,
+							})
 								.catch(error => { console.error(error); });
 
 							/* Get all the users that have at least one quid with a profile on this server */
@@ -303,7 +313,7 @@ export const command: SlashCommand = {
 										);
 
 										/* Remove the role from users that have it. */
-										const member = await i.guild.members.fetch(u.userId[0] || '').catch(() => { return undefined; });
+										const member = await i.guild.members.fetch(Object.keys(u.userIds)[0] || '').catch(() => { return undefined; });
 
 										if (member && member.roles.cache.has(role)) {
 
@@ -335,14 +345,15 @@ export const command: SlashCommand = {
 
 							if (Number.isInteger(Number(modalTextInput)) === false || Number(modalTextInput) <= 0) {
 
-								await i
-									.reply({ content: 'Please only input positive numbers without any commas or dots!', ephemeral: true })
+								// This is always a reply
+								await respond(i, { content: 'Please only input positive numbers without any commas or dots!', ephemeral: true })
 									.catch(error => { console.error(error); });
 								return;
 							}
 
 							requirement = modalTextInput;
-							await update(i, getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role))
+							// This is always an update to the message the modal was called from
+							await respond(i, getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role), 'update', '@original')
 								.catch(error => { console.error(error); });
 							return;
 						}
@@ -361,7 +372,8 @@ export const command: SlashCommand = {
 
 						if (reason !== 'back') {
 
-							await update(interaction, await getShopMessage(interaction, serverData!, 0))
+							// This is an update to "interaction" rather than "i", therefore this will always be an editReply to the original message which is an update to the message with the component
+							await respond(interaction, await getShopMessage(interaction, serverData!, 0), 'update', '@original')
 								.catch((error) => {
 									if (error.httpStatus !== 404) { console.error(error); }
 								});
@@ -378,72 +390,81 @@ export const command: SlashCommand = {
 		}
 
 		/* It's checking if the interaction value includes updates, and sends a message if it does. */
-		if (interaction.isSelectMenu() && interaction.values[0] === 'server-settings_updates') {
+		if (interaction.isStringSelectMenu() && interaction.values[0] === 'server-settings_updates') {
 
 			if (await missingPermissions(interaction, [
 				'ViewChannel', 'ManageWebhooks', // Needed to add the follower
 			]) === true) { return; }
-			await update(interaction, await getUpdateMessage(interaction, serverData, 0));
+
+			// This is always an update to the message with the select menu
+			await respond(interaction, await getUpdateMessage(interaction, serverData, 0), 'update', '@original');
 			return;
 		}
 
 		/* It's checking if the interaction is the updates select menu */
-		if (interaction.isSelectMenu() && selectOptionId && interaction.customId.includes('updates_options')) {
+		if (interaction.isStringSelectMenu() && selectOptionId && interaction.customId.includes('updates_options')) {
 
 			/* It's checking if the value is for turning a page. If it is, it's getting the page number from the value, and it's updating the message with the shop message with the page number. */
 			if (selectOptionId.includes('nextpage')) {
 
 				const page = Number(selectOptionId.split('_')[3]);
 
-				await update(interaction, await getUpdateMessage(interaction, serverData, page));
+				// This is always an update to the message with the select menu
+				await respond(interaction, await getUpdateMessage(interaction, serverData, page), 'update', '@original');
 				return;
 			}
 			else {
 
 				const channelId = getArrayElement(selectOptionId.split('_'), 2);
 
-				const newsChannel = await interaction.client.channels.fetch(update_channel_id);
-				if (newsChannel === null || newsChannel.type !== ChannelType.GuildNews) { throw new Error('News Channel is missing or not of type GuildNews.'); }
+				const announcementChannel = await interaction.client.channels.fetch(update_channel_id);
+				if (announcementChannel === null || announcementChannel.type !== ChannelType.GuildAnnouncement) { throw new Error('Announcement Channel is missing or not of type GuildAnnouncement.'); }
 
-				await newsChannel.addFollower(channelId);
+				await announcementChannel.addFollower(channelId);
 
-				await update(interaction, getOriginalMessage(interaction, serverData))
+				// This is always an update to the message with the select menu
+				await respond(interaction, getOriginalMessage(interaction, serverData), 'update', '@original')
 					.catch((error) => {
 						if (error.httpStatus !== 404) { console.error(error); }
 					});
 
-				await reply(interaction, {
+				// This is always a followUp
+				await respond(interaction, {
 					content: `Updates are now posted to <#${channelId}>!`,
 					ephemeral: true,
-				}, false);
+				});
 				return;
 			}
 		}
 
 		/* It's checking if the interaction value includes visits, and sends a message if it does. */
-		if (interaction.isSelectMenu() && interaction.values[0] === 'server-settings_visits') {
+		if (interaction.isStringSelectMenu() && interaction.values[0] === 'server-settings_visits') {
 
 			if (await missingPermissions(interaction, [
 				'ManageWebhooks', // Needed to do visits
 			]) === true) { return; }
-			await update(interaction, await getVisitsMessage(interaction, serverData, 0));
+
+			// This is always an update to the message with the select menu
+			await respond(interaction, await getVisitsMessage(interaction, serverData, 0), 'update', '@original');
 			return;
 		}
 
 		/* It's checking if the interaction is the visits select menu */
-		if (interaction.isSelectMenu() && selectOptionId && interaction.customId.includes('visits_options')) {
+		if (interaction.isStringSelectMenu() && selectOptionId && interaction.customId.includes('visits_options')) {
 
 			/* It's checking if the value is for turning a page. If it is, it's getting the page number from the value, and it's updating the message with the shop message with the page number. */
 			if (selectOptionId.includes('nextpage')) {
 
 				const page = Number(selectOptionId.split('_')[3]);
 
-				await update(interaction, await getVisitsMessage(interaction, serverData, page));
+				// This is always an update to the message with the select menu
+				await respond(interaction, await getVisitsMessage(interaction, serverData, page), 'update', '@original');
 				return;
 			}
 			else {
 
-				await update(interaction, getOriginalMessage(interaction, serverData))
+				// This is always an update to the message with the select menu
+				await respond(interaction, getOriginalMessage(interaction, serverData), 'update', '@original')
 					.catch((error) => {
 						if (error.httpStatus !== 404) { console.error(error); }
 					});
@@ -459,10 +480,11 @@ export const command: SlashCommand = {
 						},
 					);
 
-					await reply(interaction, {
+					// This is always a followUp
+					await respond(interaction, {
 						content: 'Visits have successfully been turned off!',
 						ephemeral: true,
-					}, false);
+					});
 				}
 				else {
 
@@ -473,19 +495,21 @@ export const command: SlashCommand = {
 						},
 					);
 
-					await reply(interaction, {
+					// This is always a followUp
+					await respond(interaction, {
 						content: `Visits are now possible in <#${channelIdOrOff}>!`,
 						ephemeral: true,
-					}, false);
+					});
 				}
 				return;
 			}
 		}
 
 		/* It's checking if the interaction value includes visits, and sends a message if it does. */
-		if (interaction.isSelectMenu() && interaction.values[0] === 'server-settings_proxying') {
+		if (interaction.isStringSelectMenu() && interaction.values[0] === 'server-settings_proxying') {
 
-			await update(interaction, await getProxyingMessage(interaction, serverData, 0));
+			// This is always an update to the message with the select menu
+			await respond(interaction, await getProxyingMessage(interaction, serverData, 0), 'update', '@original');
 			return;
 		}
 
@@ -498,29 +522,32 @@ export const command: SlashCommand = {
 				},
 			);
 
-			await update(interaction, await getProxyingMessage(interaction, serverData, 0))
+			// This is always an update to the message with the select menu
+			await respond(interaction, await getProxyingMessage(interaction, serverData, 0), 'update', '@original')
 				.catch((error) => {
 					if (error.httpStatus !== 404) { console.error(error); }
 				});
 
 			const setTo = serverData.proxySettings.channels.setTo;
 
-			await reply(interaction, {
+			// This is always a followUp
+			await respond(interaction, {
 				content: `Proxying is now only ${setTo === ProxyListType.Blacklist ? 'disabled' : 'enabled'} in the ${setTo === ProxyListType.Blacklist ? 'blacklisted' : 'whitelisted'} channels!`,
 				ephemeral: true,
-			}, false);
+			});
 			return;
 		}
 
 		/* It's checking if the interaction is the visits select menu */
-		if (interaction.isSelectMenu() && selectOptionId && interaction.customId.includes('proxying_options')) {
+		if (interaction.isStringSelectMenu() && selectOptionId && interaction.customId.includes('proxying_options')) {
 
 			/* It's checking if the value is for turning a page. If it is, it's getting the page number from the value, and it's updating the message with the shop message with the page number. */
 			if (selectOptionId.includes('nextpage')) {
 
 				const page = Number(selectOptionId.split('_')[3]);
 
-				await update(interaction, await getProxyingMessage(interaction, serverData, page));
+				// This is always an update to the message with the select menu
+				await respond(interaction, await getProxyingMessage(interaction, serverData, page), 'update', '@original');
 				return;
 			}
 			else {
@@ -537,15 +564,17 @@ export const command: SlashCommand = {
 					},
 				);
 
-				await update(interaction, await getProxyingMessage(interaction, serverData, 0))
+				// This is always an update to the message with the select menu
+				await respond(interaction, await getProxyingMessage(interaction, serverData, 0), 'update', '@original')
 					.catch((error) => {
 						if (error.httpStatus !== 404) { console.error(error); }
 					});
 
-				await reply(interaction, {
+				// This is always a followUp
+				await respond(interaction, {
 					content: `${hasChannel ? 'Removed' : 'Added'} <#${channelId}> ${hasChannel ? 'from' : 'to'} the proxying ${setTo}!`,
 					ephemeral: true,
-				}, false);
+				});
 				return;
 			}
 		}
