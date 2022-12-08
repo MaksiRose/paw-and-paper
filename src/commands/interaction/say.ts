@@ -1,5 +1,5 @@
 import { Attachment, EmbedBuilder, GuildTextBasedChannel, MessageReference, SlashCommandBuilder } from 'discord.js';
-import { reply } from '../../utils/helperFunctions';
+import { respond } from '../../utils/helperFunctions';
 import { hasName, isInGuild } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
 import { readFileSync, writeFileSync } from 'fs';
@@ -39,29 +39,31 @@ export const command: SlashCommand = {
 
 		if (!text && !attachment) {
 
-			await reply(interaction, {
+			// This is always a reply
+			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('I cannot send an empty message!')],
 				ephemeral: true,
-			}, false);
+			});
 			return;
 		}
 
 		if (interaction.channel === null) {
 
-			await reply(interaction, {
+			// This is always a reply
+			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('The channel that this interaction came from couldn\'t be found :(')],
 				ephemeral: true,
-			}, false);
+			});
 			return;
 		}
 
 		const isSuccessful = await sendMessage(interaction.channel, text, userData, interaction.user.id, attachment ? [attachment] : undefined);
 
-		await interaction.deferReply();
+		await interaction.deferReply({ ephemeral: true });
 		if (!isSuccessful) { return; }
 		await interaction.deleteReply();
 	},
@@ -96,7 +98,7 @@ export async function sendMessage(
 
 	await userData.update(
 		(u) => {
-			const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, webhookChannel.guildId)).profiles, webhookChannel.guildId);
+			const p = getMapData(getMapData(u.quids, getMapData(u.servers, webhookChannel.guildId).currentQuid ?? '').profiles, webhookChannel.guildId);
 			p.experience += 1;
 			p.currentRegion = CurrentRegionType.Ruins;
 		},
