@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { userModel, getUserData } from '../../models/userModel';
 import { ServerSchema } from '../../typings/data/server';
 import { CurrentRegionType, UserData } from '../../typings/data/user';
@@ -9,7 +9,7 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
-import { capitalizeString, getArrayElement, getBiggerNumber, getMapData, getSmallerNumber, reply, sendErrorMessage, setCooldown, update } from '../../utils/helperFunctions';
+import { capitalizeString, getArrayElement, getBiggerNumber, getMapData, getSmallerNumber, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
@@ -45,7 +45,7 @@ export const command: SlashCommand = {
 		]) === true) { return; }
 
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData1, interaction)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData1, interaction)) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		const restEmbed = await isInvalid(interaction, userData1);
@@ -59,24 +59,25 @@ export const command: SlashCommand = {
 		if (mentionedUser === null) { throw new TypeError('mentionedUser is null'); }
 
 		/* Checks whether the mentioned user is associated with the account. */
-		if (userData1.userId.includes(mentionedUser.id)) {
+		if (Object.keys(userData1.userIds).includes(mentionedUser.id)) {
 
-			await reply(interaction, {
+			// This is always a reply
+			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData1.quid.color)
 					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
 					.setDescription(`*${userData1.quid.name} believes that ${userData1.quid.pronounAndPlural(0, 'is', 'are')} so unmatched that only ${userData1.quid.pronoun(0)} could defeat ${userData1.quid.pronoun(4)}. But it doesn't take ${userData1.quid.pronoun(1)} long to realize that it is more fun to fight a partner after all.*`)],
-			}, false);
+			});
 			return;
 		}
 
 		/* Define the partners user data, check if the user is interactable, and if they are, define quid data and profile data. */
 		const _userData2 = (() => {
-			try { return userModel.findOne(u => u.userId.includes(mentionedUser.id)); }
+			try { return userModel.findOne(u => Object.keys(u.userIds).includes(mentionedUser.id)); }
 			catch { return null; }
 		})();
-		const userData2 = _userData2 === null ? null : getUserData(_userData2, interaction.guildId, getMapData(_userData2.quids, getMapData(_userData2.currentQuid, interaction.guildId)));
+		const userData2 = _userData2 === null ? null : getUserData(_userData2, interaction.guildId, getMapData(_userData2.quids, getMapData(_userData2.servers, interaction.guildId).currentQuid ?? ''));
 		if (!isInteractable(interaction, userData2, messageContent, restEmbed)) { return; }
 
 		/* Gets the selected game type. */
@@ -84,7 +85,8 @@ export const command: SlashCommand = {
 		if (gameType === null) { throw new TypeError('gameType is null'); }
 
 		/* Sending a message asking the other player if they want to play, with a button to start the adventure. */
-		const botReply = await reply(interaction, {
+		// This is always a reply
+		const botReply = await respond(interaction, {
 			content: `${mentionedUser.toString()}\n${messageContent}`,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData1.quid.color)
@@ -97,7 +99,7 @@ export const command: SlashCommand = {
 					.setLabel('Accept challenge')
 					.setEmoji('🎭')
 					.setStyle(ButtonStyle.Success))],
-		}, true);
+		});
 
 		/* Register the command to be disabled when another command is executed, for both players */
 		saveCommandDisablingInfo(userData1, interaction.guildId, interaction.channelId, botReply.id, interaction);
@@ -109,27 +111,28 @@ export const command: SlashCommand = {
 
 		if (!interaction.customId.includes('confirm')) { return; }
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction)) { return; }
+		if (!isInGuild(interaction)) { return; } // This is always a reply
 		if (interaction.channel === null) { throw new Error('Interaction channel is null'); }
 
 		/* Gets the current active quid and the server profile from the account */
 		const userId1 = getArrayElement(interaction.customId.split('_'), 4).replace('@', '');
-		const _userData1 = await userModel.findOne(u => u.userId.includes(userId1));
-		const userData1 = getUserData(_userData1, interaction.guildId, getMapData(_userData1.quids, getMapData(_userData1.currentQuid, interaction.guildId)));
+		const _userData1 = await userModel.findOne(u => Object.keys(u.userIds).includes(userId1));
+		const userData1 = getUserData(_userData1, interaction.guildId, getMapData(_userData1.quids, getMapData(_userData1.servers, interaction.guildId).currentQuid ?? ''));
 		if (!hasNameAndSpecies(userData1)) { throw new Error('userData1.quid.species is empty string'); }
 
 		/* Gets the current active quid and the server profile from the partners account */
 		const userId2 = getArrayElement(interaction.customId.split('_'), 3).replace('@', '');
-		const _userData2 = await userModel.findOne(u => u.userId.includes(userId2));
-		const userData2 = getUserData(_userData2, interaction.guildId, getMapData(_userData2.quids, getMapData(_userData2.currentQuid, interaction.guildId)));
+		const _userData2 = await userModel.findOne(u => Object.keys(u.userIds).includes(userId2));
+		const userData2 = getUserData(_userData2, interaction.guildId, getMapData(_userData2.quids, getMapData(_userData2.servers, interaction.guildId).currentQuid ?? ''));
 		if (!hasNameAndSpecies(userData2)) { throw new Error('userData2.quid.species is empty string'); }
 
 		if (interaction.user.id === userId1) {
 
-			await reply(interaction, {
+			// This is always a reply
+			await respond(interaction, {
 				content: 'You can\'t accept your own invitation!',
 				ephemeral: true,
-			}, false);
+			});
 			return;
 		}
 
@@ -217,7 +220,7 @@ export const command: SlashCommand = {
 
 		let newTurnEmbedTextArrayIndex = -1;
 
-		await startNewRound(getRandomNumber(2) === 0 ? true : false, interaction, userId1, userData1, userId2, userData2, serverData, interaction.message);
+		await startNewRound(getRandomNumber(2) === 0 ? true : false, interaction, userId1, userData1, userId2, userData2, serverData);
 
 		async function startNewRound(
 			user1IsPlaying: boolean,
@@ -227,58 +230,45 @@ export const command: SlashCommand = {
 			userId2: string,
 			userData2: UserData<never, never>,
 			serverData: ServerSchema,
-			botReply: Message<true>,
+			previousInteraction?: ButtonInteraction<'cached'>,
 		) {
 
 			const userDataCurrent = user1IsPlaying ? userData1 : userData2;
 			const userDataOther = user1IsPlaying ? userData2 : userData1;
 
-			async function sendNextRoundMessage(
-				userId: string,
-				int: ButtonInteraction,
-				oldMessage: Message,
-				extraDescription?: string,
-			): Promise<Message<true>> {
+			const newTurnEmbedTextArray = [
+				`*${userDataCurrent.quid.name} bites into ${userDataOther.quid.name}, not very deep, but deep enough to hang onto the ${userDataOther.quid.getDisplayspecies()}. ${userDataOther.quid.name} needs to get the ${userDataCurrent.quid.getDisplayspecies()} off of ${userDataOther.quid.pronoun(1)}.*`,
+				`*${userDataCurrent.quid.name} slams into ${userDataOther.quid.name}, leaving the ${userDataOther.quid.getDisplayspecies()} disoriented. ${userDataOther.quid.name} needs to start an attack of ${userDataOther.quid.pronoun(2)} own now.*`,
+				`*${userDataOther.quid.name} has gotten hold of ${userDataCurrent.quid.name}, but the ${userDataCurrent.quid.getDisplayspecies()} manages to get ${userDataOther.quid.pronoun(1)} off, sending the ${userDataOther.quid.getDisplayspecies()} slamming into the ground. ${userDataOther.quid.name} needs to get up and try a new strategy.*`,
+			] as const;
 
-				const newTurnEmbedTextArray = [
-					`*${userDataCurrent.quid.name} bites into ${userDataOther.quid.name}, not very deep, but deep enough to hang onto the ${userDataOther.quid.getDisplayspecies()}. ${userDataOther.quid.name} needs to get the ${userDataCurrent.quid.getDisplayspecies()} off of ${userDataOther.quid.pronoun(1)}.*`,
-					`*${userDataCurrent.quid.name} slams into ${userDataOther.quid.name}, leaving the ${userDataOther.quid.getDisplayspecies()} disoriented. ${userDataOther.quid.name} needs to start an attack of ${userDataOther.quid.pronoun(2)} own now.*`,
-					`*${userDataOther.quid.name} has gotten hold of ${userDataCurrent.quid.name}, but the ${userDataCurrent.quid.getDisplayspecies()} manages to get ${userDataOther.quid.pronoun(1)} off, sending the ${userDataOther.quid.getDisplayspecies()} slamming into the ground. ${userDataOther.quid.name} needs to get up and try a new strategy.*`,
-				] as const;
+			newTurnEmbedTextArrayIndex = getRandomNumber(newTurnEmbedTextArray.length, 0, newTurnEmbedTextArrayIndex === -1 ? undefined : newTurnEmbedTextArrayIndex);
 
-				newTurnEmbedTextArrayIndex = getRandomNumber(newTurnEmbedTextArray.length, 0, newTurnEmbedTextArrayIndex === -1 ? undefined : newTurnEmbedTextArrayIndex);
+			// This is always a reply
+			const botReply = await respond(interaction, {
+				content: `<@${user1IsPlaying ? userId1 : userId2}>`,
+				embeds: [new EmbedBuilder()
+					.setColor(userData1.quid.color)
+					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
+					.setDescription(newTurnEmbedTextArray[newTurnEmbedTextArrayIndex as 0 | 1 | 2] + `\n${gameType === 'connectfour' ? playingField.map(
+						row => row.join('').replaceAll('0', emptyField).replaceAll('1', player1Field).replaceAll('2', player2Field),
+					).join('\n') + '\n1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣' : ''}`)],
+				components: componentArray,
+			});
 
-				await oldMessage.delete(); // Instead of having an oldMessage, it should have an interaction token and message id passed here so that a new InteractionWebhook can be created that can then call delete via the id. That API call wouldnt go towards the API call limit
-
-				const message = await reply(int, {
-					content: `<@${userId}>`,
-					embeds: [new EmbedBuilder()
-						.setColor(userData1.quid.color)
-						.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-						.setDescription(newTurnEmbedTextArray[newTurnEmbedTextArrayIndex as 0 | 1 | 2] + (extraDescription ? `\n${extraDescription}` : ''))],
-					components: componentArray,
-				}, false);
-
-				return message as Message<true>;
-			}
-
-			botReply = await sendNextRoundMessage(
-				user1IsPlaying ? userId1 : userId2,
-				interaction,
-				botReply,
-				gameType === 'connectfour' ? playingField.map(
-					row => row.join('').replaceAll('0', emptyField).replaceAll('1', player1Field).replaceAll('2', player2Field),
-				).join('\n') + '\n1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣' : undefined,
-			);
+			if (previousInteraction !== undefined) { await previousInteraction.webhook.deleteMessage('@original'); }
+			else { await interaction.message.delete(); }
 
 			await botReply
 				.awaitMessageComponent({
 					componentType: ComponentType.Button,
 					idle: 120_000,
-					filter: (i => i.customId.includes('board') && userDataCurrent.userId.includes(i.user.id)),
+					filter: (i => i.customId.includes('board') && Object.keys(userDataCurrent.userIds).includes(i.user.id)),
 				})
 				.then(async i => {
 					try {
+
+						if (!i.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
 
 						let column: number | undefined = undefined;
 						let row: number | undefined = undefined;
@@ -292,7 +282,7 @@ export const command: SlashCommand = {
 
 							componentArray[row]?.components[column]?.setEmoji(user1IsPlaying ? player1Field : player2Field);
 							componentArray[row]?.components[column]?.setDisabled(true);
-						playingField[row]![column] = user1IsPlaying ? 1 : 2;
+							playingField[row]![column] = user1IsPlaying ? 1 : 2;
 						}
 						else if (gameType === 'connectfour') {
 
@@ -304,11 +294,11 @@ export const command: SlashCommand = {
 								if (playingField[r]?.[column] === 0) {
 
 									row = r;
-								playingField[r]![column] = (user1IsPlaying === true) ? 1 : 2;
+									playingField[r]![column] = (user1IsPlaying === true) ? 1 : 2;
 
-								if (r === 0) { componentArray[column <= 3 ? 0 : 1]?.components[column <= 3 ? column : column - 4]?.setDisabled(true); }
+									if (r === 0) { componentArray[column <= 3 ? 0 : 1]?.components[column <= 3 ? column : column - 4]?.setDisabled(true); }
 
-								break;
+									break;
 								}
 							}
 							if (row === undefined) { throw new Error('row is undefined'); }
@@ -327,7 +317,7 @@ export const command: SlashCommand = {
 						}
 						else {
 
-							await startNewRound(!user1IsPlaying, i, userId1, userData1, userId2, userData2, serverData, botReply);
+							await startNewRound(!user1IsPlaying, i, userId1, userData1, userId2, userData2, serverData, interaction);
 						}
 					}
 					catch (error) {
@@ -344,22 +334,22 @@ export const command: SlashCommand = {
 					const levelUpEmbeds = await checkLevelUps(interaction, userData1, userData2, serverData)
 						.catch((error) => { sendErrorMessage(interaction, error); });
 
-					await interaction.webhook // i'm not sure why im doing this over calling respond. botReply should be the reply to interaction no matter what. i'm keeping this to avoid bugs, if this bugs out at any point i will have to revisit
-						.editMessage(botReply.id, {
-							content: null,
-							embeds: [
-								new EmbedBuilder()
-									.setColor(userData1.quid.color)
-									.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-									.setDescription(`*${userDataCurrent.quid.name} takes so long with ${userDataCurrent.quid.pronoun(2)} decision on how to attack that ${userDataOther.quid.name} gets impatient and leaves.*`)
-									.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n${decreasedStatsData2.statsUpdateText}` }),
-								...decreasedStatsData1.injuryUpdateEmbed,
-								...decreasedStatsData2.injuryUpdateEmbed,
-								...(levelUpEmbeds?.levelUpEmbed1 ?? []),
-								...(levelUpEmbeds?.levelUpEmbed2 ?? []),
-							],
-							components: disableAllComponents(componentArray),
-						})
+					// This should always be an editReply to the original reply
+					await respond(interaction, {
+						content: '', // This is converted to null in the function
+						embeds: [
+							new EmbedBuilder()
+								.setColor(userData1.quid.color)
+								.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
+								.setDescription(`*${userDataCurrent.quid.name} takes so long with ${userDataCurrent.quid.pronoun(2)} decision on how to attack that ${userDataOther.quid.name} gets impatient and leaves.*`)
+								.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n\n${decreasedStatsData2.statsUpdateText}` }),
+							...decreasedStatsData1.injuryUpdateEmbed,
+							...decreasedStatsData2.injuryUpdateEmbed,
+							...(levelUpEmbeds?.levelUpEmbed1 ?? []),
+							...(levelUpEmbeds?.levelUpEmbed2 ?? []),
+						],
+						components: disableAllComponents(componentArray),
+					}, 'reply', botReply.id)
 						.catch(async (error) => {
 
 							return await sendErrorMessage(interaction, error)
@@ -388,7 +378,7 @@ export const command: SlashCommand = {
 
 					await userDataCurrent.update(
 						(u) => {
-							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, i.guildId)).profiles, i.guildId);
+							const p = getMapData(getMapData(u.quids, getMapData(u.servers, i.guildId).currentQuid ?? '').profiles, i.guildId);
 							p.experience += experiencePoints;
 						},
 					);
@@ -402,14 +392,14 @@ export const command: SlashCommand = {
 
 					await userDataCurrent.update(
 						(u) => {
-							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, i.guildId)).profiles, i.guildId);
+							const p = getMapData(getMapData(u.quids, getMapData(u.servers, i.guildId).currentQuid ?? '').profiles, i.guildId);
 							p.experience += experiencePoints;
 						},
 					);
 
 					await userDataOther.update(
 						(u) => {
-							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, i.guildId)).profiles, i.guildId);
+							const p = getMapData(getMapData(u.quids, getMapData(u.servers, i.guildId).currentQuid ?? '').profiles, i.guildId);
 							p.experience += experiencePoints;
 						},
 					);
@@ -421,8 +411,9 @@ export const command: SlashCommand = {
 				const levelUpEmbeds = await checkLevelUps(i, userData1, userData2, serverData)
 					.catch((error) => { sendErrorMessage(i, error); });
 
-				await update(i, {
-					content: null,
+				// This is an update to the message with the button
+				await respond(i, {
+					content: '', // This is converted to null within the function
 					embeds: [
 						...(gameType === 'connectfour' ? [new EmbedBuilder()
 							.setColor(userData1.quid.color)
@@ -440,7 +431,7 @@ export const command: SlashCommand = {
 						...(levelUpEmbeds?.levelUpEmbed2 ?? []),
 					],
 					components: disableAllComponents(componentArray),
-				})
+				}, 'update', '@original')
 					.catch((error) => { sendErrorMessage(i, error); });
 
 				await checkAfterGameChanges(interaction, userData1, userData2)
