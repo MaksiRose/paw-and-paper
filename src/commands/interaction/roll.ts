@@ -1,6 +1,6 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { getRandomNumber } from '../../utils/randomizers';
-import { reply } from '../../utils/helperFunctions';
+import { respond } from '../../utils/helperFunctions';
 import { SlashCommand } from '../../typings/handle';
 import { UserData } from '../../typings/data/user';
 
@@ -80,7 +80,8 @@ export const command: SlashCommand = {
 		const resultFull = rolledDice.join(', ') + (addOrSubtract > 0 ? ` + ${addOrSubtract}` : addOrSubtract < 0 ? ` ${addOrSubtract}` : '');
 		const member = interaction.inCachedGuild() ? await interaction.guild.members.fetch(interaction.user.id).catch(() => { return undefined; }) : undefined;
 
-		await reply(interaction, {
+		// This is always a reply
+		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(userData?.quid?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
 				.setAuthor({
@@ -89,7 +90,7 @@ export const command: SlashCommand = {
 				})
 				.setDescription(`🎲 You rolled a \`${result}\`!`)
 				.setFooter({ text: resultFull.length > 2048 ? resultFull.substring(0, 2047) + '…' : resultFull })],
-		}, true);
+		});
 		return;
 	},
 };
