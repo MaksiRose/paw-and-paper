@@ -5,7 +5,7 @@ import { UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
-import { getMapData, reply } from '../../utils/helperFunctions';
+import { getMapData, respond } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { hasPermission } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -32,7 +32,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		const restEmbed = await isInvalid(interaction, userData);
@@ -42,7 +42,8 @@ export const command: SlashCommand = {
 
 		if (userData.quid.profile.sapling.exists === false) {
 
-			await reply(interaction, {
+			// This is always a reply
+			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
@@ -50,7 +51,7 @@ export const command: SlashCommand = {
 					.setDescription(`*${userData.quid.name} has already fetched water when ${userData.quid.pronounAndPlural(0, 'remember')} that ${userData.quid.pronounAndPlural(0, 'has', 'have')} nothing to water.*`)
 					.setFooter({ text: 'Go exploring to find a ginkgo tree to water!' })],
 				ephemeral: true,
-			}, false);
+			});
 			return;
 		}
 
@@ -117,7 +118,7 @@ export const command: SlashCommand = {
 
 		await userData.update(
 			(u) => {
-				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+				const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 				p.sapling = userData!.quid!.profile.sapling;
 				p.experience += experiencePoints;
 				p.health += healthPoints;
@@ -125,7 +126,8 @@ export const command: SlashCommand = {
 		);
 
 		const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
-		await reply(interaction, {
+		// This is always a reply
+		await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed, ...levelUpEmbed],
 			components: [new ActionRowBuilder<ButtonBuilder>()
@@ -133,23 +135,24 @@ export const command: SlashCommand = {
 					.setCustomId(`settings_reminders_water_${userData.settings.reminders.water === true ? 'off' : 'on'}_@${userData._id}`)
 					.setLabel(`Turn water reminders ${userData.settings.reminders.water === true ? 'off' : 'on'}`)
 					.setStyle(ButtonStyle.Secondary))],
-		}, true);
+		});
 
 		if (userData.settings.reminders.water) { await sendReminder(userData); }
 
 		if (userData.quid.profile.sapling.health <= 0) {
 
-			await reply(interaction, {
+			// This is always a followUp
+			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(userData.quid.color)
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 					.setDescription(`*No matter what ${userData.quid.name} does, all the leaves on the ginkgo tree have either fallen off, or are dark brown and hang limply. It's time to say goodbye to the tree.*`)
 					.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Dead.png')],
-			}, false);
+			});
 
 			await userData.update(
 				(u) => {
-					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+					const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 					p.sapling = { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, lastMessageChannelId: null, sentReminder: false, sentGentleReminder: false };
 				},
 			);
@@ -201,10 +204,10 @@ export async function sendReminder(
 				if (await hasPermission(member || channel.client.user.id, channel.id, 'ViewChannel') === false || await hasPermission(member || channel.client.user.id, channel.id, channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages') === false || await hasPermission(member || channel.client.user.id, channel.id, 'EmbedLinks') === false) { return; } // Needed for channel.send call
 
 				/* This has to be changed when multiple users are introduced. First idea is to also store, as part of the sapling object, which user last watered. Then, if that user fails, try again for all the other users. */
-				const isInactive = _userData.currentQuid[userData.quid.profile.serverId] !== userData.quid._id;
+				const isInactive = _userData.servers[userData.quid.profile.serverId]?.currentQuid !== userData.quid._id;
 
 				await channel.send({
-					content: `<@${userData.userId[0]}>`,
+					content: `<@${Object.keys(userData.userIds)[0]}>`,
 					embeds: [new EmbedBuilder()
 						.setColor(userData.quid.color)
 						.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
