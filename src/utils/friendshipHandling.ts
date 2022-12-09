@@ -1,4 +1,4 @@
-import { EmbedBuilder, Message } from 'discord.js';
+import { EmbedBuilder, TextBasedChannel } from 'discord.js';
 import { UserData } from '../typings/data/user';
 import { getMapData } from './helperFunctions';
 
@@ -9,7 +9,8 @@ const requiredPoints = [1, 3, 6, 9, 15, 24, 39, 63, 99, 162] as const;
  * Creates a friendship or adds friendship points to an existing friendship. Sends a message if they have more hearts than before.
  */
 export async function addFriendshipPoints(
-	message: Message,
+	message: { createdTimestamp: number, channel: TextBasedChannel
+},
 	userData1: UserData<never, never>,
 	userData2: UserData<never, never>,
 ): Promise<void> {
