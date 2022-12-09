@@ -137,6 +137,7 @@ export const command: SlashCommand = {
 	},
 };
 
+// This can either be called directly from the store command, the stats command, or the travel-regions command
 export async function sendStoreMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	userData: UserData<never, never>,
