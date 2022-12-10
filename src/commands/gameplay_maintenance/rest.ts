@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionWebhook, Message, RepliableInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, Message, RepliableInteraction, SlashCommandBuilder } from 'discord.js';
 import { client } from '../..';
 import serverModel from '../../models/serverModel';
 import { ServerSchema } from '../../typings/data/server';
@@ -140,10 +140,6 @@ export async function startResting(
 			const { id: botReplyId } = await respond(interaction, messageOptions, shouldUpdate ? 'update' : 'reply', shouldUpdate ? '@original' : undefined);
 			botReply = await interaction.fetchReply(botReplyId);
 		}
-		else if (userData.serverInfo?.lastInteractionToken && client.isReady()) {
-
-			botReply = await new InteractionWebhook(client, client.application.id, userData.serverInfo.lastInteractionToken).send(messageOptions);
-		}
 		else if (userData.serverInfo?.lastInteractionChannelId) {
 
 			const channel = await client.channels.fetch(userData.serverInfo.lastInteractionChannelId);
@@ -152,7 +148,7 @@ export async function startResting(
 		}
 		else {
 
-			throw new Error('Resting could not be started because no messageId and/or channelId of an existing message have been logged, interaction is undefined and lastInteractionToken and lastInteractionChannelId are null');
+			throw new Error('Resting could not be started because no messageId and/or channelId of an existing message have been logged, interaction is undefined and lastInteractionChannelId is null');
 		}
 
 		await userData.update(
