@@ -222,12 +222,14 @@ export interface UserSchema {
 		[key in string]: {
 			currentQuid: string | null,
 			lastInteractionTimestamp: number | null,
+			/** @deprecated */
 			lastInteractionToken: string | null,
 			lastInteractionChannelId: string | null,
 			restingMessageId: string | null,
 			restingChannelId: string | null,
 			componentDisablingChannelId: string | null,
 			componentDisablingMessageId: string | null,
+			/** @deprecated */
 			componentDisablingToken: string | null,
 			hasCooldown: boolean
 		}
