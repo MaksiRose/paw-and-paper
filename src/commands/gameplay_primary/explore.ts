@@ -1,7 +1,7 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { capitalizeString, getBiggerNumber, getMapData, getSmallerNumber, keyInObject, reply, sendErrorMessage, setCooldown, update } from '../../utils/helperFunctions';
+import { capitalizeString, getBiggerNumber, getMapData, getSmallerNumber, keyInObject, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { remindOfAttack, startAttack } from './attack';
 import Fuse from 'fuse.js';
 import { disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
@@ -68,7 +68,7 @@ export const command: SlashCommand = {
 	},
 };
 
-export async function executeExploring(
+async function executeExploring(
 	interaction: ChatInputCommandInteraction | ButtonInteraction,
 	userData: UserData<undefined, ''> | null,
 	serverData: ServerSchema | null,
@@ -81,7 +81,7 @@ export async function executeExploring(
 
 	/* This ensures that the user is in a guild and has a completed account. */
 	if (serverData === null) { throw new Error('serverData is null'); }
-	if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+	if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 	/* It's disabling all components if userData exists and the command is set to disable a previous command. */
 	if (command.disablePreviousCommand) { await disableCommandComponent(userData); }
@@ -97,20 +97,22 @@ export async function executeExploring(
 	/* Checks  if the user is a Youngling and sends a message that they are too young if they are. */
 	if (userData.quid.profile.rank === RankType.Youngling) {
 
-		await reply(interaction, {
+		// This is always a reply
+		await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setDescription(`*A hunter cuts ${userData.quid.name} as they see ${userData.quid.pronoun(1)} running towards the pack borders.* "You don't have enough experience to go into the wilderness, ${userData.quid.profile.rank}," *they say.*`)],
-		}, true);
+		});
 		return;
 	}
 
 	const stringInput = interaction.isChatInputCommand() ? interaction.options.getString('biome')?.toLowerCase() : deconstructCustomId<CustomIdArgs>(interaction.customId)?.args[1]?.toLowerCase();
 	if (userData.quid.profile.tutorials.explore === false) {
 
-		await reply(interaction, {
+		// This is always a reply
+		await respond(interaction, {
 			content: 'Tip: When exploring, you encounter animals that have levels and plants in different leveled environments. These levels are in relation to your own level and determine whether you have a higher chance of beating them or getting hurt. Tactically use the Leave/Flee button if you think that the level is too high for you to beat.',
 			components: [
 				new ActionRowBuilder<ButtonBuilder>()
@@ -119,7 +121,7 @@ export async function executeExploring(
 						.setLabel('I understand, let\'s explore!')
 						.setStyle(ButtonStyle.Success)),
 			],
-		}, true);
+		});
 
 		await userData.update(
 			(u) => {
@@ -148,16 +150,17 @@ export async function executeExploring(
 				.setLabel(capitalizeString(value))
 				.setStyle(ButtonStyle.Primary)));
 
-		const getBiomeMessage = await reply(interaction, {
+		// This is always a reply
+		const getBiomeMessage = await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setDescription(`*${userData.quid.name} is longing for adventure as ${userData.quid.pronounAndPlural(0, 'look')} into the wild outside of camp. All there is to decide is where the journey will lead ${userData.quid.pronoun(1)}.*`)],
 			components: [biomeComponent],
-		}, true);
+		});
 
-		chosenBiome = await (getBiomeMessage as Message<true>)
+		chosenBiome = await (getBiomeMessage as Message<true> | InteractionResponse<true>)
 			.awaitMessageComponent({
 				filter: (i) => i.user.id === interaction.user.id,
 				componentType: ComponentType.Button,
@@ -171,7 +174,7 @@ export async function executeExploring(
 			.catch(async () => {
 
 				await setCooldown(userData, interaction.guildId, false);
-				await reply(interaction, { components: disableAllComponents(getBiomeMessage.components) }, true);
+				await respond(interaction, { components: disableAllComponents([biomeComponent]) }, 'reply', '@original'); // This is always an editReply
 
 				return null;
 			});
@@ -221,7 +224,8 @@ export async function executeExploring(
 
 	let waitingComponent = getWaitingComponent(waitingGameField, playerPos, empty, goal);
 
-	let botReply = await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await reply(interaction, messageObject, true); })(getWaitingMessageObject(messageContent, restEmbed, userData, waitingString, waitingGameField, waitingComponent));
+	// This is a reply to "interaction" if a biome was already pre-chosen, or an update to the message with the button ("buttonInteraction") otherwise
+	let botReply = await respond(buttonInteraction ?? interaction, getWaitingMessageObject(messageContent, restEmbed, userData, waitingString, waitingGameField, waitingComponent), buttonInteraction !== null ? 'update' : 'reply', buttonInteraction !== null ? '@original' : undefined);
 
 
 	const collector = (botReply as Message<true>).createMessageComponentCollector({
@@ -277,7 +281,8 @@ export async function executeExploring(
 
 			waitingComponent = getWaitingComponent(waitingGameField, playerPos, empty, goal);
 
-			botReply = await update(int, getWaitingMessageObject(messageContent, restEmbed, userData!, waitingString, waitingGameField, waitingComponent));
+			// This is an update to the message with the button
+			botReply = await respond(int, getWaitingMessageObject(messageContent, restEmbed, userData!, waitingString, waitingGameField, waitingComponent), 'update', '@original');
 		}
 		catch (error) {
 
@@ -333,7 +338,7 @@ export async function executeExploring(
 
 		// The numerator is the amount of items above 7 per profile, the denominator is the amount of profiles
 		const humanCount = Math.round((serverInventoryCount - (highRankProfilesCount * 7)) / highRankProfilesCount);
-		await startAttack(interaction, humanCount);
+		await startAttack(buttonInteraction ?? interaction, humanCount);
 
 		messageContent = serverActiveUsersMap.get(interaction.guildId)?.map(user => `<@${user}>`).join(' ') ?? '';
 		embed.setDescription(`*${userData.quid.name} has just been looking around for food when ${userData.quid.pronounAndPlural(0, 'suddenly hear')} voices to ${userData.quid.pronoun(2)} right. Cautiously ${userData.quid.pronounAndPlural(0, 'creep')} up, and sure enough: a group of humans! It looks like it's around ${humanCount}. They seem to be discussing something, and keep pointing over towards where the pack is lying. Alarmed, the ${userData.quid.getDisplayspecies()} runs away. **${capitalizeString(userData.quid.pronoun(0))} must gather as many packmates as possible to protect the pack!***`);
@@ -410,7 +415,8 @@ export async function executeExploring(
 		else { throw new Error('userData.quid species habitat not found'); }
 		embed.setFooter({ text: `The ${foundItem} is in an environment of difficulty level ${environmentLevel}.\nYou will be presented five buttons with five emojis each. The footer will show you an emoji, and you have to find the button with that emoji, but without the campsite (${plantEmojis.toAvoid}).` });
 
-		await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await reply(interaction, messageObject, true); })({
+		// This is either an update or an editReply if there is a buttonInteraction, or an editReply if it's an interaction
+		await respond(buttonInteraction ?? interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [new ActionRowBuilder<ButtonBuilder>()
@@ -424,7 +430,7 @@ export async function executeExploring(
 					.setLabel('Leave')
 					.setEmoji('💨')
 					.setStyle(ButtonStyle.Primary))],
-		});
+		}, 'update', '@original');
 
 		const int = await (botReply as Message<true>)
 			.awaitMessageComponent({
@@ -464,11 +470,12 @@ export async function executeExploring(
 				exploreComponent = plantGame.plantComponent;
 				embed.setFooter({ text: `Click the button with this emoji: ${plantGame.emojiToFind}, but without the campsite (${plantEmojis.toAvoid}).` });
 
-				botReply = await update(newInteraction, {
+				// This is always an update to the message with the button
+				botReply = await respond(newInteraction, {
 					content: messageContent,
 					embeds: [...restEmbed, embed],
 					components: [...previousExploreComponents ? [previousExploreComponents] : [], exploreComponent],
-				});
+				}, 'update', '@original');
 
 				/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 				exploreComponent = plantGame.correctButtonOverwrite();
@@ -660,7 +667,8 @@ export async function executeExploring(
 		else { throw new Error('userData.quid species habitat not found'); }
 		embed.setFooter({ text: `The ${opponentSpecies} is level ${opponentLevel}.\nYou will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response.` });
 
-		await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await reply(interaction, messageObject, true); })({
+		// This is either an update or an editReply if there is a buttonInteraction, or an editReply if it's an interaction
+		await respond(buttonInteraction ?? interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [new ActionRowBuilder<ButtonBuilder>()
@@ -674,7 +682,7 @@ export async function executeExploring(
 					.setLabel('Flee')
 					.setEmoji('💨')
 					.setStyle(ButtonStyle.Primary))],
-		});
+		}, 'update', '@original');
 
 		const int = await (botReply as Message<true>)
 			.awaitMessageComponent({
@@ -742,11 +750,12 @@ export async function executeExploring(
 				}
 				else { throw new Error('cycleKind is not attack, dodge or defend'); }
 
-				botReply = await update(newInteraction, {
+				// This is always an update to the message with the button
+				botReply = await respond(newInteraction, {
 					content: messageContent,
 					embeds: [...restEmbed, embed],
 					components: [...previousExploreComponents ? [previousExploreComponents] : [], exploreComponent],
-				});
+				}, 'update', '@original');
 
 				/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 				exploreComponent = fightGame.correctButtonOverwrite();
@@ -914,7 +923,8 @@ export async function executeExploring(
 	}
 	else {
 
-		botReply = await (async function(messageObject) { return buttonInteraction ? await update(buttonInteraction, messageObject) : await reply(interaction, messageObject, true); })({
+		// This is either an update or an editReply if there is a buttonInteraction, or an editReply if it's an interaction
+		botReply = await respond(buttonInteraction ?? interaction, {
 			content: messageContent,
 			embeds: [
 				...restEmbed,
@@ -930,7 +940,7 @@ export async function executeExploring(
 						.setLabel('Explore again')
 						.setStyle(ButtonStyle.Primary)),
 			],
-		});
+		}, 'update', '@original');
 	}
 
 	await isPassedOut(interaction, userData, true);
@@ -948,9 +958,10 @@ export async function executeExploring(
 			},
 		);
 
-		await reply(interaction, {
+		// This is always a followUp
+		await respond(buttonInteraction ?? interaction, {
 			content: `${interaction.user.toString()} ❓ **Tip:**\nA Ginkgo sapling gives you more luck the older it gets. For example, you might find better items or be more often successful with healing or repairing.`,
-		}, false);
+		});
 	}
 }
 
