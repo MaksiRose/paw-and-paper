@@ -8,7 +8,7 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
 import { createFightGame } from '../../utils/gameBuilder';
-import { reply, setCooldown, update } from '../../utils/helperFunctions';
+import { respond, setCooldown } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
@@ -32,7 +32,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		const restEmbed = await isInvalid(interaction, userData);
@@ -42,38 +42,42 @@ export const command: SlashCommand = {
 
 		if (userData.quid.profile.rank === RankType.Youngling) {
 
-			await reply(interaction, {
+			// This is always a reply
+			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 					.setDescription(`*The Elderly shakes their head as they see ${userData.quid.name} approaching.*\n"At your age, you shouldn't prepare for fights. Go play with your friends instead!"`)],
-			}, true);
+			});
 			return;
 		}
 
-		let botReply = await reply(interaction, {
+		const components = [new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([
+				new ButtonBuilder()
+					.setCustomId('practice_accept')
+					.setLabel('Accept')
+					.setEmoji('⚔️')
+					.setStyle(ButtonStyle.Primary),
+				new ButtonBuilder()
+					.setCustomId('practice_decline')
+					.setLabel('Decline')
+					.setEmoji('💨')
+					.setStyle(ButtonStyle.Secondary),
+			]),
+		];
+
+		// This is always a reply
+		let botReply = await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setDescription(`*A very experienced Elderly approaches ${userData.quid.name}.* "I've seen that you have not performed well in fights lately. Do you want to practice with me for a bit to strengthen your skills?"`)
 				.setFooter({ text: 'You will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response. The footer will provide hints as to which button you should click. This is a memory game, so try to remember which button to click in which situation.' })],
-			components: [new ActionRowBuilder<ButtonBuilder>()
-				.setComponents([
-					new ButtonBuilder()
-						.setCustomId('practice_accept')
-						.setLabel('Accept')
-						.setEmoji('⚔️')
-						.setStyle(ButtonStyle.Primary),
-					new ButtonBuilder()
-						.setCustomId('practice_decline')
-						.setLabel('Decline')
-						.setEmoji('💨')
-						.setStyle(ButtonStyle.Secondary),
-				]),
-			],
-		}, true);
+			components: components,
+		});
 
 		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 
@@ -85,21 +89,20 @@ export const command: SlashCommand = {
 			})
 			.then(async i => {
 
-				await i.deferUpdate();
-				if (i.customId === 'practice-decline') { return undefined; }
 				return i;
 			})
 			.catch(() => { return undefined; });
 
-		if (int === undefined) {
+		if (int === undefined || int.customId === 'practice-decline') {
 
-			botReply = await reply(interaction, {
+			// This is an edit to the reply if there is no int, or an update
+			botReply = await respond(int ?? interaction, {
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 					.setDescription(`*After a bit of thinking, ${userData.quid.name} decides that now is not a good time to practice ${userData.quid.pronoun(2)} fighting skills. Politely, ${userData.quid.pronounAndPlural(0, 'decline')} the Elderlies offer.*`)],
-				components: disableAllComponents(botReply.components),
-			}, true);
+				components: disableAllComponents(components),
+			}, int !== undefined ? 'update' : 'reply', '@original');
 			return;
 		}
 
@@ -147,10 +150,11 @@ export const command: SlashCommand = {
 			}
 			else { throw new Error('cycleKind is not attack, dodge or defend'); }
 
-			botReply = await update(newInteraction, {
+			// This is always an update to the interaction
+			botReply = await respond(newInteraction, {
 				embeds: [...restEmbed, embed],
 				components: [...previousFightComponents ? [previousFightComponents] : [], fightGame.fightComponent],
-			});
+			}, 'update', '@original');
 
 			/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 			fightGame.fightComponent = fightGame.correctButtonOverwrite();
@@ -217,7 +221,8 @@ export const command: SlashCommand = {
 
 			const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
 
-			botReply = await update(newInteraction, {
+			// This is always an update
+			botReply = await respond(newInteraction, {
 				embeds: [
 					...restEmbed,
 					embed,
@@ -225,7 +230,7 @@ export const command: SlashCommand = {
 					...levelUpEmbed,
 				],
 				components: [fightGame.fightComponent],
-			});
+			}, 'update', '@original');
 
 			await isPassedOut(interaction, userData, true);
 
