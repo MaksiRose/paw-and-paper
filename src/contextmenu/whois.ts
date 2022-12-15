@@ -80,7 +80,6 @@ export const command: ContextMenuCommand = {
 					.setLabel('Learn more (sends a DM)')
 					.setStyle(ButtonStyle.Success)])],
 			ephemeral: true,
-			fetchReply: true,
 		});
 	},
 };

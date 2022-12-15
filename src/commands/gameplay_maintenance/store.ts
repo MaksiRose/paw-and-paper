@@ -180,6 +180,7 @@ export async function sendStoreMessage(
 		content: messageContent,
 		embeds: [...restEmbed, getOriginalEmbed(userData)],
 		components: [itemSelectMenu, storeAllButton],
+		fetchReply: true,
 	}, 'update', '@original');
 
 	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);

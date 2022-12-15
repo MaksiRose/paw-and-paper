@@ -85,6 +85,7 @@ export const command: SlashCommand = {
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setDescription(`*${userData.quid.name} roams around the pack, looking if any dens need to be repaired.*`)],
 			components: [getDenButtons(userData._id)],
+			fetchReply: true,
 		} : getMaterials(userData, serverData, chosenDen, restEmbed, messageContent));
 
 		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);

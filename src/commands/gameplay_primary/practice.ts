@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, AnySelectMenuInteraction, SlashCommandBuilder, Message, InteractionResponse } from 'discord.js';
 import { ServerSchema } from '../../typings/data/server';
 import { RankType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
@@ -69,7 +69,7 @@ export const command: SlashCommand = {
 		];
 
 		// This is always a reply
-		let botReply = await respond(interaction, {
+		let botReply: Message | InteractionResponse = await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData.quid.color)
@@ -77,6 +77,7 @@ export const command: SlashCommand = {
 				.setDescription(`*A very experienced Elderly approaches ${userData.quid.name}.* "I've seen that you have not performed well in fights lately. Do you want to practice with me for a bit to strengthen your skills?"`)
 				.setFooter({ text: 'You will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response. The footer will provide hints as to which button you should click. This is a memory game, so try to remember which button to click in which situation.' })],
 			components: components,
+			fetchReply: true,
 		});
 
 		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
@@ -222,7 +223,7 @@ export const command: SlashCommand = {
 			const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
 
 			// This is always an update
-			botReply = await respond(newInteraction, {
+			await respond(newInteraction, {
 				embeds: [
 					...restEmbed,
 					embed,

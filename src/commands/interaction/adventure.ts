@@ -109,6 +109,7 @@ export const command: SlashCommand = {
 					.setLabel('Start adventure')
 					.setEmoji('🧭')
 					.setStyle(ButtonStyle.Success))],
+			fetchReply: true,
 		});
 
 		/* Register the command to be disabled when another command is executed, for both players */

@@ -41,12 +41,12 @@ export const command: ContextMenuCommand = {
 		}
 
 		await interaction.showModal(new ModalBuilder()
-			.setCustomId(`edit_${interaction.targetId}`)
+			.setCustomId(`${command.data.name}_${interaction.targetId}`)
 			.setTitle('Edit a message')
 			.addComponents(
 				new ActionRowBuilder<TextInputBuilder>({
 					components: [new TextInputBuilder()
-						.setCustomId('edit-textinput')
+						.setCustomId('text')
 						.setLabel('Text')
 						.setStyle(TextInputStyle.Paragraph)
 						.setMinLength(1)
@@ -59,6 +59,7 @@ export const command: ContextMenuCommand = {
 	},
 	async sendModalResponse(interaction) {
 
+		console.log('test');
 		/* Returns if interaction.channel is null. This should not happen as this is checked in interactionCreate. */
 		if (!interaction.channel) { return; }
 
@@ -76,7 +77,7 @@ export const command: ContextMenuCommand = {
 		/* This is editing the message with the messageId that was passed in the customId. */
 		const webhookMessage = await webhook
 			.editMessage(messageId, {
-				content: interaction.fields.getTextInputValue('edit-textinput'),
+				content: interaction.fields.getTextInputValue('text'),
 				threadId: interaction.channel.isThread() ? interaction.channel.id : undefined,
 			});
 

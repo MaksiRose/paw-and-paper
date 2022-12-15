@@ -47,113 +47,6 @@ export function getUserIds(
 }
 
 /**
- * It replies to an interaction, and if the interaction has already been replied to, it will edit or followup the reply instead.
- * @param interaction - The interaction object that was passed to the command handler.
- * @param options - WebhookEditMessageOptions & InteractionReplyOptions
- * @param editMessage - boolean - If true, the bot will edit the original message instead of sending a follow-up message.
- * @returns A promise that resolves to a Message<boolean>
- * @deprecated Use respond instead
- */
-// export async function reply(
-// 	interaction: RepliableInteraction,
-// 	options: InteractionReplyOptions,
-// 	editMessage: boolean,
-// ): Promise<Message<boolean>> {
-
-// 	let botReply: APIMessage | Message<boolean>;
-
-// 	/* It is sending a reply if the interaction hasn't been replied nor deferred, or editing a reply if editMessage is true, else following up */
-// 	try {
-
-// 		if (!interaction.replied && !interaction.deferred) {
-// 			botReply = await interaction.reply({ ...options, content: options.content === '' ? undefined : options.content, fetchReply: true });
-// 		}
-// 		else if (editMessage) {
-// 			botReply = await interaction.editReply({ ...options, content: options.content === '' ? null : options.content });
-// 		}
-// 		else {
-// 			botReply = await interaction.followUp({ ...options, content: options.content === '' ? undefined : options.content });
-// 		}
-
-// 	}
-// 	/** If an error occurred and it has status 404, try to either edit the message if editing was tried above, or send a new message in the other two cases */
-// 	catch (error: unknown) {
-
-// 		if (isObject(error) && (error.code === 'ECONNRESET' || error.code === 10062)) {
-
-// 			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
-// 			if ((interaction.replied || interaction.deferred) && editMessage) { // Error code 10062 can never lead to this since an Unknown Interaction can't also be replied or deferred. Therefore, it is safe to call respond again
-
-// 				botReply = await reply(interaction, options, editMessage);
-// 			}
-// 			else {
-
-// 				const channel = interaction.channel || (interaction.channelId ? await interaction.client.channels.fetch(interaction.channelId, { force: false }) : null);
-// 				if (channel && channel.isTextBased()) { botReply = await channel.send({ ...options, content: options.content === '' ? undefined : options.content, flags: undefined }); }
-// 				else { throw error; }
-
-// 			}
-// 		}
-// 		else if (isObject(error) && error.code === 40060) {
-
-// 			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
-// 			interaction.replied = true;
-// 			botReply = await reply(interaction, options, editMessage);
-// 		}
-// 		else { throw error; }
-// 	}
-
-// 	if (botReply instanceof Message) { return botReply; }
-// 	else { throw new TypeError('Message is APIMessage'); }
-// }
-
-/**
- *
- * @param interaction
- * @param options
- * @returns
- * @deprecated Use respond instead
- */
-// export async function update(
-// 	interaction: ButtonInteraction | AnySelectMenuInteraction | ModalMessageModalSubmitInteraction,
-// 	options: WebhookEditMessageOptions,
-// ): Promise<Message<boolean>> {
-
-// 	let botReply: Message<boolean>;
-
-// 	/* It is sending a reply if the interaction hasn't been replied nor deferred, or editing a reply if editMessage is true, else following up */
-// 	try {
-
-// 		if (!interaction.replied && !interaction.deferred) {
-// 			botReply = await interaction.update({ ...options, content: options.content === '' ? null : options.content, fetchReply: true });
-// 		}
-// 		else {
-// 			botReply = await interaction.editReply({ ...options, content: options.content === '' ? null : options.content });
-// 		}
-
-// 	}
-// 	/** If an error occurred and it has status 404, try to either edit the message if editing was tried above, or send a new message in the other two cases */
-// 	catch (error: unknown) {
-
-// 		if (isObject(error) && (error.code === 'ECONNRESET' || error.code === 10062)) {
-
-// 			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
-// 			if (!interaction.replied && !interaction.deferred) { botReply = await interaction.message.edit({ ...options, content: options.content === '' ? null : options.content, flags: undefined }); }
-// 			else { botReply = await update(interaction, options); } // Error code 10062 can never lead to this since an Unknown Interaction can't also be replied or deferred. Therefore, it is safe to call update again
-// 		}
-// 		else if (isObject(error) && error.code === 40060) {
-
-// 			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
-// 			interaction.replied = true;
-// 			botReply = await update(interaction, options);
-// 		}
-// 		else { throw error; }
-// 	}
-
-// 	return botReply;
-// }
-
-/**
  * It sends a reply or updates the message the interaction comes from if the interaction hasn't been replied nor deferred, or edits a reply if
  * an editId has been provided, else follows up
  * @param {RepliableInteraction} interaction - The interaction object that is being replied to.
@@ -165,7 +58,19 @@ export function getUserIds(
  */
 export async function respond(
 	interaction: RepliableInteraction,
-	options: InteractionReplyOptions & WebhookEditMessageOptions,
+	options: InteractionReplyOptions & WebhookEditMessageOptions & {fetchReply: true},
+	type?: 'reply' | 'update',
+	editId?: Snowflake | '@original',
+): Promise<Message<boolean>>
+export async function respond(
+	interaction: RepliableInteraction,
+	options: InteractionReplyOptions & WebhookEditMessageOptions & {fetchReply?: boolean},
+	type?: 'reply' | 'update',
+	editId?: Snowflake | '@original',
+): Promise<InteractionResponse<boolean> | Message<boolean>>
+export async function respond(
+	interaction: RepliableInteraction,
+	options: InteractionReplyOptions & WebhookEditMessageOptions & {fetchReply?: boolean},
 	type: 'reply' | 'update' = 'reply',
 	editId?: Snowflake | '@original',
 ): Promise<InteractionResponse<boolean> | Message<boolean>> {
@@ -176,7 +81,7 @@ export async function respond(
 	try {
 
 		if (!interaction.replied && !interaction.deferred) {
-			if (interaction.isMessageComponent() && type === 'update') {
+			if ((interaction.isMessageComponent() || (interaction.isModalSubmit() && interaction.isFromMessage())) && type === 'update') {
 				botReply = await interaction.update({ ...options, content: options.content === '' ? null : options.content, flags: undefined });
 			}
 			else {

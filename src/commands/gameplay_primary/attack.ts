@@ -445,7 +445,7 @@ async function remainingHumans(
 	}
 	catch {
 
-		const channel = botReply instanceof Message ? botReply.channel : botReply.interaction.channel ?? (botReply.interaction.isRepliable() ? (await botReply.interaction.fetchReply(botReply.id)).channel : null);
+		const channel = botReply instanceof Message ? botReply.channel : botReply.interaction.channel ?? (botReply.interaction.isRepliable() ? (await botReply.interaction.fetchReply()).channel : null);
 		if (!channel) { throw new TypeError('channel is null'); }
 		await channel.send({ embeds: [embed] });
 	}

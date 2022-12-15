@@ -142,6 +142,7 @@ export async function sendQuestMessage(
 		content: `<@${interaction.user.id}>\n${messageContent}`,
 		embeds: [...restEmbed, embed, ...afterEmbedArray],
 		components: components,
+		fetchReply: true,
 	}, respondType, '@original');
 
 	/* The View Channels permissions that are needed for this function to work properly should be checked in all places that reference sendQuestMessage. It can't be checked for in here directly because a botReply must be returned. */

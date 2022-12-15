@@ -90,7 +90,7 @@ export const command: SlashCommand = {
 		];
 
 		// This is always a reply
-		let botReply = await respond(interaction, {
+		let botReply: Message | InteractionResponse = await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData.quid.color)
@@ -98,6 +98,7 @@ export const command: SlashCommand = {
 				.setDescription(`*${userData.quid.name} walks towards the entrance of the grotto, where an elderly is already waiting for ${userData.quid.pronoun(1)}.*\n"Do you already know about this place? It has everything needed to heal any injury or illness. This makes it very precious, and so it should only be used in emergencies. So only go here if you can't find anything in the medicine den that can cure you!"\n*The ${userData.quid.getDisplayspecies()} must decide which of their injuries ${userData.quid.pronounAndPlural(0, 'want')} to heal here.*`)
 				.setFooter({ text: 'You can only select an injury when the pack has no herbs that can heal that injury.' })],
 			components: components,
+			fetchReply: true,
 		});
 
 		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);

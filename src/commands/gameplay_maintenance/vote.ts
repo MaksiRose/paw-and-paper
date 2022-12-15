@@ -69,6 +69,7 @@ export const command: SlashCommand = {
 						.setDisabled(!interaction.inGuild()),
 					),
 			],
+			fetchReply: interaction.inGuild() ? true : false,
 		});
 
 		if (interaction.inGuild()) { saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction); }

@@ -41,7 +41,7 @@ export const command: SlashCommand = {
 		}
 
 		// This is always a reply
-		const { id: messageId } = await respond(interaction, await sendOriginalMessage(userData));
+		const { id: messageId } = await respond(interaction, await sendOriginalMessage(userData) && { fetchReply: true });
 
 		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, messageId, interaction);
 		return;

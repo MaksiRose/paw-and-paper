@@ -57,6 +57,7 @@ export const command: SlashCommand = {
 						.setLabel('Always?')
 						.setStyle(ButtonStyle.Success)] : []),
 				])],
+			fetchReply: true,
 		});
 
 		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, messageId, interaction);

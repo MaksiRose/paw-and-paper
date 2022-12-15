@@ -129,6 +129,7 @@ export async function showInventoryMessage(
 						.setOptions(foodSelectMenuOptions))]
 				: [],
 		],
+		fetchReply: true,
 	}, 'update', '@original');
 
 	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);

@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
 import { speciesInfo } from '../..';
 import { ServerSchema } from '../../typings/data/server';
 import { RankType, UserData } from '../../typings/data/user';
@@ -137,7 +137,7 @@ async function executeScavenging(
 		let correctButtonPresses = 0;
 
 		/* Creating a collector that will collect the interactions of the user with the message. */
-		const collector = (botReply as Message<true>).createMessageComponentCollector({
+		const collector = (botReply as Message<true> | InteractionResponse<true>).createMessageComponentCollector({
 			filter: i => i.user.id === interaction.user.id,
 			componentType: ComponentType.Button,
 			time: isHumanTrap ? 12_000 : 120_000,
@@ -334,7 +334,7 @@ async function executeScavenging(
 				.setStyle(ButtonStyle.Primary)));
 
 		// This is only a reply if the user never pressed a button, else this is an update
-		botReply = await respond(int, {
+		await respond(int, {
 			embeds: [
 				...(restEmbed as EmbedBuilder[]),
 				embed,
@@ -379,7 +379,7 @@ async function executeScavenging(
 
 		componentArray = [trapActionRow];
 		// This is only a reply if the user never pressed a button, else this is an update
-		botReply = await respond(int, {
+		await respond(int, {
 			embeds: [...(restEmbed as EmbedBuilder[]), new EmbedBuilder()
 				.setColor(userData!.quid!.color)
 				.setAuthor({ name: userData!.quid!.getDisplayname(), iconURL: userData!.quid!.avatarURL })

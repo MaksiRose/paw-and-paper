@@ -55,6 +55,7 @@ export const command: SlashCommand = {
 				...(userData.quid.species === '' ? [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([speciesMenu])] : []),
 				new ActionRowBuilder<ButtonBuilder>().setComponents([displayedSpeciesButton]),
 			],
+			fetchReply: true,
 		});
 
 		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, botReply.id, interaction);

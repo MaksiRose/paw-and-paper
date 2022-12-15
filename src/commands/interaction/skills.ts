@@ -62,8 +62,9 @@ export const command: SlashCommand = {
 		const botReply = await respond(interaction, {
 			content: getSkillList(userData),
 			components: isYourself ? [getOriginalComponents(userData, serverData, interaction.member)] : [],
+			fetchReply: userData !== null ? true : false,
 		});
-		if (userData) { saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction); }
+		if (userData !== null) { saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction); }
 	},
 	async sendMessageComponentResponse(interaction, userData, serverData) {
 

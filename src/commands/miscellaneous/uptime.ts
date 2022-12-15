@@ -15,8 +15,9 @@ export const command: SlashCommand = {
 	sendCommand: async (interaction) => {
 
 		// This is always a reply
-		await respond(interaction, {
+		const { id } = await respond(interaction, {
 			content: `Uptime: ${Math.floor(interaction.client.uptime / 3600000)} hours ${Math.floor(interaction.client.uptime / 60000) % 60} minutes\nPing: ${client.ws.ping} ms\nServer count: ${client.guilds.cache.size}`,
 		});
+		console.log(id);
 	},
 };

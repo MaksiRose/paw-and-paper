@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { userModel, getUserData } from '../../models/userModel';
 import { ServerSchema } from '../../typings/data/server';
 import { CurrentRegionType, UserData } from '../../typings/data/user';
@@ -99,6 +99,7 @@ export const command: SlashCommand = {
 					.setLabel('Accept challenge')
 					.setEmoji('🎭')
 					.setStyle(ButtonStyle.Success))],
+			fetchReply: true,
 		});
 
 		/* Register the command to be disabled when another command is executed, for both players */
@@ -349,7 +350,7 @@ export const command: SlashCommand = {
 							...(levelUpEmbeds?.levelUpEmbed2 ?? []),
 						],
 						components: disableAllComponents(componentArray),
-					}, 'reply', botReply.id)
+					}, 'reply', botReply instanceof Message ? botReply.id : '@original')
 						.catch(async (error) => {
 
 							return await sendErrorMessage(interaction, error)
