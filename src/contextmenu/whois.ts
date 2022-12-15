@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
 import { readFileSync } from 'fs';
 import { CustomIdArgs, getProfileMessageOptions } from '../commands/quid_customization/profile';
-import { reply } from '../utils/helperFunctions';
+import { respond } from '../utils/helperFunctions';
 import { userModel, getUserData } from '../models/userModel';
 import { WebhookMessages } from '../typings/data/general';
 import { ContextMenuCommand } from '../typings/handle';
@@ -38,7 +38,7 @@ export const command: ContextMenuCommand = {
 		}
 
 		const _userData = (() => {
-			try { return userModel.findOne(u => u.userId.includes(userId)); }
+			try { return userModel.findOne(u => Object.keys(u.userIds).includes(userId)); }
 			catch { return null; }
 		})();
 		/* This is checking whether the userData is null, and if it is, it will send a message to the user who clicked on the context menu. */
@@ -51,7 +51,7 @@ export const command: ContextMenuCommand = {
 				});
 			return;
 		}
-		const userData = getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[quidId || _userData.currentQuid[interaction.guildId || 'DMs'] || '']);
+		const userData = getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[quidId || _userData.servers[interaction.guildId || 'DMs']?.currentQuid || '']);
 
 		const member = await interaction.guild.members.fetch(userId).catch(() => { return undefined; });
 		const user = member ? member.user : await interaction.client.users.fetch(userId).catch(() => { return undefined; });
@@ -69,9 +69,10 @@ export const command: ContextMenuCommand = {
 			}])
 			.setTimestamp(new Date())];
 
-		const response = await getProfileMessageOptions(userId, userData, userData.userId.includes(interaction.user.id), embedArray);
+		const response = await getProfileMessageOptions(userId, userData, Object.keys(userData.userIds).includes(interaction.user.id), embedArray);
 
-		await reply(interaction, {
+		// This is always a reply
+		await respond(interaction, {
 			...response,
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([new ButtonBuilder()
@@ -80,6 +81,6 @@ export const command: ContextMenuCommand = {
 					.setStyle(ButtonStyle.Success)])],
 			ephemeral: true,
 			fetchReply: true,
-		}, false);
+		});
 	},
 };
