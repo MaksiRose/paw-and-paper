@@ -161,7 +161,8 @@ export async function startResting(
 		);
 	}
 
-	restingIntervalMap.set(userData._id + serverData.serverId, setInterval(async function(): Promise<void> {
+	stopResting(userData); // This is just a safety net to make absolutely sure that no two restingIntervals are running at the same time
+	const intervalId = setInterval(async function(): Promise<void> {
 		try {
 
 			energyPoints += 1;
@@ -203,6 +204,7 @@ export async function startResting(
 		catch (error) {
 
 			stopResting(userData);
+			clearInterval(intervalId); // This is another safety net to make sure that an infinite loop doesn't happen, so the interval ID of this exact interval is saved seperately and cleared here
 			if (interaction !== undefined) {
 
 				await sendErrorMessage(interaction, error)
@@ -210,7 +212,8 @@ export async function startResting(
 			}
 			else { console.error(error); }
 		}
-	}, 30_000 + await getExtraRestingTime(serverData.serverId)));
+	}, 30_000 + await getExtraRestingTime(serverData.serverId));
+	restingIntervalMap.set(userData._id + userData.quid.profile.serverId, intervalId);
 }
 
 /**
