@@ -1,6 +1,6 @@
-import { ActionRowBuilder, ChannelType, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, ChannelType, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { readFileSync } from 'fs';
-import { reply } from '../utils/helperFunctions';
+import { respond } from '../utils/helperFunctions';
 import { userModel } from '../models/userModel';
 import { canManageWebhooks, missingPermissions } from '../utils/permissionHandler';
 import { WebhookMessages } from '../typings/data/general';
@@ -25,12 +25,12 @@ export const command: ContextMenuCommand = {
 		/* This gets the webhookCache and userData */
 		const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8')) as WebhookMessages;
 		const userData = (() => {
-			try { return userModel.findOne(u => u.userId.includes(webhookCache[interaction.targetId]?.split('_')[0] || '')); }
+			try { return userModel.findOne(u => Object.keys(u.userIds).includes(webhookCache[interaction.targetId]?.split('_')[0] || '')); }
 			catch { return null; }
 		})();
 
 		/* This is checking if the user who is trying to edit the message is the same user who sent the message. */
-		if (userData === null || !userData.userId.includes(interaction.user.id)) {
+		if (userData === null || !Object.keys(userData.userIds).includes(interaction.user.id)) {
 
 			await interaction
 				.reply({
@@ -57,39 +57,34 @@ export const command: ContextMenuCommand = {
 			),
 		);
 	},
-};
+	async sendModalResponse(interaction) {
 
-export async function sendEditMessageModalResponse(
-	interaction: ModalSubmitInteraction,
-) {
+		/* Returns if interaction.channel is null. This should not happen as this is checked in interactionCreate. */
+		if (!interaction.channel) { return; }
 
-	/* Returns if interaction.channel is null. This should not happen as this is checked in interactionCreate. */
-	if (!interaction.channel) { return; }
+		/* This gets the messageId of the message that will be edited. */
+		const messageId = interaction.customId.split('_')[1] || '';
 
-	/* This gets the messageId of the message that will be edited. */
-	const messageId = interaction.customId.split('_')[1] || '';
-
-	/* This is checking if the channel is a thread, if it is, it will get the parent channel. If the
-	channel is a DM, it will throw an error. If the channel is a guild channel, it will get the
-	webhook. If the webhook doesn't exist, it will create one. */
-	const webhookChannel = (interaction.channel.isThread() || false) ? interaction.channel.parent : interaction.channel;
-	if (webhookChannel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
-	if (webhookChannel.type === ChannelType.DM || interaction.channel.type === ChannelType.DM) { throw new Error('Webhook can\'t be edited, channel is DMChannel.'); }
-	if (await canManageWebhooks(interaction.channel) === false) { return; }
-	const webhook = (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
+		/* This is checking if the channel is a thread, if it is, it will get the parent channel. If the channel is a DM, it will throw an error. If the channel is a guild channel, it will get the webhook. If the webhook doesn't exist, it will create one. */
+		const webhookChannel = (interaction.channel.isThread() || false) ? interaction.channel.parent : interaction.channel;
+		if (webhookChannel === null) { throw new Error('Webhook can\'t be edited, interaction channel is thread and parent channel cannot be found'); }
+		if (webhookChannel.type === ChannelType.DM || interaction.channel.type === ChannelType.DM) { throw new Error('Webhook can\'t be edited, channel is DMChannel.'); }
+		if (await canManageWebhooks(interaction.channel) === false) { return; }
+		const webhook = (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
 		|| await webhookChannel.createWebhook({ name: 'PnP Profile Webhook' });
 
-	/* This is editing the message with the messageId that was passed in the customId. */
-	const webhookMessage = await webhook
-		.editMessage(messageId, {
-			content: interaction.fields.getTextInputValue('edit-textinput'),
-			threadId: interaction.channel.isThread() ? interaction.channel.id : undefined,
-		});
+		/* This is editing the message with the messageId that was passed in the customId. */
+		const webhookMessage = await webhook
+			.editMessage(messageId, {
+				content: interaction.fields.getTextInputValue('edit-textinput'),
+				threadId: interaction.channel.isThread() ? interaction.channel.id : undefined,
+			});
 
-	/* This is sending a message to the user that sent the command. */
-	await reply(interaction, {
-		content: `[Edited!](<${webhookMessage.url}>) ✅`,
-		ephemeral: true,
-	}, false);
-	return;
-}
+		// This is always a reply
+		await respond(interaction, {
+			content: `[Edited!](<${webhookMessage.url}>) ✅`,
+			ephemeral: true,
+		});
+		return;
+	},
+};
