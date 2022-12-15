@@ -14,7 +14,7 @@ export async function execute(
 		await userModel.findOneAndUpdate(
 			u => u._id === user._id,
 			(u) => {
-				for (const userId of u.userId) {
+				for (const userId of Object.keys(u.userIds)) {
 					if (u.userIds[userId] === undefined) {
 
 						u.userIds[userId] = {};
@@ -28,7 +28,7 @@ export async function execute(
 					}
 				}
 
-				for (const serverId of [...Object.values(u.quids).map(q => Object.keys(q.profiles)).flat(), ...Object.keys(u.currentQuid), 'DMs']) {
+				for (const serverId of [...Object.values(u.quids).map(q => Object.keys(q.profiles)).flat(), ...Object.keys(u.servers), 'DMs']) {
 					if (u.servers[serverId] === undefined) {
 
 						u.servers[serverId] = userDataServersObject(u, serverId);

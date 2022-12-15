@@ -62,10 +62,10 @@ export async function execute(): Promise<void> {
 		const userArray = await userModel.find();
 		for (const user of userArray) {
 
-			for (const [guildId, quidId] of Object.entries(user.currentQuid)) {
+			for (const [guildId, { currentQuid: quidId }] of Object.entries(user.servers)) {
 
+				if (!quidId) { continue; }
 				const userData = getUserData(user, guildId, getMapData(user.quids, quidId));
-
 
 				/* start resting if possible */
 				if (!hasNameAndSpecies(userData)) { continue; }
@@ -84,7 +84,7 @@ export async function execute(): Promise<void> {
 				const hasLessThanMaxEnergy = userData.quid.profile.energy < userData.quid.profile.maxEnergy;
 				const isConscious = userData.quid.profile.energy > 0 || userData.quid.profile.health > 0 || userData.quid.profile.hunger > 0 || userData.quid.profile.thirst > 0;
 				const hasNoCooldown = userData.serverInfo?.hasCooldown !== true;
-				if (lastInteractionIsTenMinutesAgo && userData.quid.profile.isResting === false && isResting(userData) === false && hasLessThanMaxEnergy && isConscious && hasNoCooldown) {
+				if (lastInteractionIsTenMinutesAgo && isResting(userData) === false && hasLessThanMaxEnergy && isConscious && hasNoCooldown) {
 
 					const lastInteraction = lastInteractionMap.get(userData._id + guildId);
 					await startResting(lastInteraction, userData, serverData, '', true)
@@ -105,7 +105,7 @@ export async function execute(): Promise<void> {
 			for (const userId of array) {
 
 				const userData = (() => {
-					try { return userModel.findOne(u => u.userId.includes(userId)); }
+					try { return userModel.findOne(u => Object.keys(u.userIds).includes(userId)); }
 					catch { return null; }
 				})();
 				const serverInfo = userData?.servers[guildId];
