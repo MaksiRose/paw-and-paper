@@ -15,7 +15,7 @@ export const event: DiscordEvent = {
 		if (newMessage.author.bot || !newMessage.inGuild()) { return; }
 
 		const _userData = (() => {
-			try { return userModel.findOne(u => u.userId.includes(newMessage.author.id)); }
+			try { return userModel.findOne(u => Object.keys(u.userIds).includes(newMessage.author.id)); }
 			catch { return null; }
 		})();
 		const serverData = (() => {
@@ -25,7 +25,7 @@ export const event: DiscordEvent = {
 
 		if (_userData === null || serverData === null) { return; }
 
-		const { replaceMessage, quidId } = checkForProxy(newMessage, getUserData(_userData, newMessage.guildId, _userData.quids[_userData.currentQuid[newMessage.guildId] ?? '']), serverData);
+		const { replaceMessage, quidId } = checkForProxy(newMessage, getUserData(_userData, newMessage.guildId, _userData.quids[_userData.servers[newMessage.guildId]?.currentQuid ?? '']), serverData);
 		const userData = getUserData(_userData, newMessage.guildId, _userData.quids[quidId]);
 
 		userData
