@@ -1,6 +1,6 @@
 import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
-import { reply } from '../../utils/helperFunctions';
+import { respond } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import { userModel } from '../../models/userModel';
 import { client } from '../..';
@@ -49,7 +49,7 @@ export const command: SlashCommand = {
 			writeFileSync('./database/bannedList.json', JSON.stringify(bannedList, null, '\t'));
 
 			const profile = (() => {
-				try { return userModel.findOne(u => u.userId.includes(id)); }
+				try { return userModel.findOne(u => Object.keys(u.userIds).includes(id)); }
 				catch { return null; }
 			})();
 			if (profile) {
@@ -62,21 +62,24 @@ export const command: SlashCommand = {
 					await user.createDM();
 					await user.send({ content: 'I am sorry to inform you that you have been banned from using this bot.' });
 
-					await reply(interaction, {
+					// This is always a reply
+					await respond(interaction, {
 						content: `Banned user ${user.tag}, deleted their account and was able to notify them about it.`,
-					}, true);
+					});
 					return;
 				}
 
-				await reply(interaction, {
+				// This is always a reply
+				await respond(interaction, {
 					content: `Banned user ${id} deleted their account but was not able to notify them about it.`,
-				}, true);
+				});
 				return;
 			}
 
-			await reply(interaction, {
+			// This is always a reply
+			await respond(interaction, {
 				content: `Banned user ${id} but couldn't find an account associated with them.`,
-			}, true);
+			});
 			return;
 		}
 
@@ -100,21 +103,24 @@ export const command: SlashCommand = {
 					await user.createDM();
 					await user.send({ content: `I am sorry to inform you that your guild \`${guild.name}\` has been banned from using this bot.` });
 
-					await reply(interaction, {
+					// This is always a reply
+					await respond(interaction, {
 						content: `Banned server ${guild.name}, deleted their account and was able to notify the guild owner about it.`,
-					}, true);
+					});
 					return;
 				}
 
-				await reply(interaction, {
+				// This is always a reply
+				await respond(interaction, {
 					content: `Banned server ${id}, deleted their account but was not able to notify the guild owner about it.`,
-				}, true);
+				});
 				return;
 			}
 
-			await reply(interaction, {
+			// This is always a reply
+			await respond(interaction, {
 				content: `Banned server ${id} but couldn't find an account associated with them.`,
-			}, true);
+			});
 			return;
 		}
 	},
