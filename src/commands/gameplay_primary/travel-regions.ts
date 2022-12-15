@@ -1,11 +1,11 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, Message, StringSelectMenuBuilder, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, StringSelectMenuBuilder, SlashCommandBuilder, Snowflake, StringSelectMenuInteraction } from 'discord.js';
 import { userModel } from '../../models/userModel';
 import { CurrentRegionType, RankType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
-import { getMapData, reply, update, valueInObject } from '../../utils/helperFunctions';
+import { getMapData, respond, valueInObject } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { sendDrinkMessage } from '../gameplay_maintenance/drink';
 import { getHealResponse } from '../gameplay_maintenance/heal';
@@ -46,7 +46,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		const restEmbed = await isInvalid(interaction, userData);
@@ -55,8 +55,8 @@ export const command: SlashCommand = {
 		const messageContent = remindOfAttack(interaction.guildId);
 		const chosenRegion = interaction.options.getString('region');
 
-		const botReply = await sendTravelMessage(interaction, userData, messageContent, restEmbed, chosenRegion);
-		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
+		const id = await sendTravelMessage(interaction, userData, messageContent, restEmbed, chosenRegion);
+		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, id, interaction);
 	},
 	async sendMessageComponentResponse(interaction, userData, serverData) {
 
@@ -94,7 +94,7 @@ export const command: SlashCommand = {
 				await executePlaying(interaction, userData, serverData, { forceEdit: true });
 			}
 		}
-		else if (interaction.isSelectMenu()) {
+		else if (interaction.isStringSelectMenu()) {
 
 			await sendTravelMessage(interaction, userData, '', restEmbed, interaction.values[0] ?? null);
 		}
@@ -103,12 +103,12 @@ export const command: SlashCommand = {
 };
 
 async function sendTravelMessage(
-	interaction: ChatInputCommandInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | StringSelectMenuInteraction<'cached'>,
 	userData: UserData<never, never>,
 	messageContent: string,
 	restEmbed: EmbedBuilder[],
 	chosenRegion: string | null,
-): Promise<Message> {
+): Promise<Snowflake> {
 
 	const embed = new EmbedBuilder()
 		.setColor(userData.quid.color)
@@ -141,9 +141,7 @@ async function sendTravelMessage(
 
 		embed.setDescription(`*${userData.quid.name} slowly trots to the sleeping dens, tired from all the hard work ${userData.quid.pronoun(0)} did. For a moment, the ${userData.quid.getDisplayspecies()} thinks about if ${userData.quid.pronounAndPlural(0, 'want')} to rest or just a break.*`);
 
-		return await (async function(messageOptions) {
-			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await reply(interaction, messageOptions, true);
-		})({
+		return (await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
@@ -151,7 +149,7 @@ async function sendTravelMessage(
 					.setCustomId(`travel-regions_rest_@${userData._id}`)
 					.setLabel('Rest')
 					.setStyle(ButtonStyle.Primary))],
-		});
+		}, 'update', '@original')).id;
 	}
 	else if (chosenRegion === CurrentRegionType.FoodDen) {
 
@@ -163,12 +161,10 @@ async function sendTravelMessage(
 					return p && p.currentRegion === CurrentRegionType.FoodDen;
 				}).length > 0;
 			},
-		)).map(user => `<@${user.userId[0]}>`).slice(0, 45);
+		)).map(user => `<@${Object.keys(user.userIds)[0]}>`).slice(0, 45);
 		if (allFoodDenUsersList.length > 0) { embed.addFields({ name: 'Packmates at the food den:', value: allFoodDenUsersList.join('\n') }); }
 
-		return await (async function(messageOptions) {
-			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await reply(interaction, messageOptions, true);
-		})({
+		return (await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
@@ -182,7 +178,7 @@ async function sendTravelMessage(
 						.setLabel('Store items away')
 						.setStyle(ButtonStyle.Primary),
 				])],
-		});
+		}, 'update', '@original')).id;
 	}
 	else if (chosenRegion === CurrentRegionType.MedicineDen) {
 
@@ -194,7 +190,7 @@ async function sendTravelMessage(
 					return p && p.currentRegion === CurrentRegionType.MedicineDen;
 				}).length > 0;
 			},
-		)).map(user => `<@${user.userId[0]}>`).slice(0, 45);
+		)).map(user => `<@${Object.keys(user.userIds)[0]}>`).slice(0, 45);
 		if (allMedicineDenUsersList.length > 0) { embed.addFields({ name: 'Packmates at the medicine den:', value: allMedicineDenUsersList.join('\n') }); }
 		const allHealerUsersList = (await userModel.find(
 			(u) => {
@@ -203,12 +199,10 @@ async function sendTravelMessage(
 					return p && p.rank !== RankType.Youngling;
 				}).length > 0;
 			},
-		)).map(user => `<@${user.userId[0]}>`).slice(0, 45);
+		)).map(user => `<@${Object.keys(user.userIds)[0]}>`).slice(0, 45);
 		if (allHealerUsersList.length > 0) { embed.addFields({ name: 'Packmates that can heal:', value: allHealerUsersList.join('\n') }); }
 
-		return await (async function(messageOptions) {
-			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await reply(interaction, messageOptions, true);
-		})({
+		return (await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [
@@ -219,7 +213,7 @@ async function sendTravelMessage(
 						.setLabel('Heal')
 						.setStyle(ButtonStyle.Primary))]),
 			],
-		});
+		}, 'update', '@original')).id;
 	}
 	else if (chosenRegion === CurrentRegionType.Ruins) {
 
@@ -231,24 +225,20 @@ async function sendTravelMessage(
 					return p && p.currentRegion === CurrentRegionType.Ruins;
 				}).length > 0;
 			},
-		)).map(user => `<@${user.userId[0]}>`).slice(0, 45);
+		)).map(user => `<@${Object.keys(user.userIds)[0]}>`).slice(0, 45);
 		if (allRuinsUsersList.length > 0) { embed.addFields({ name: 'Packmates at the ruins:', value: allRuinsUsersList.join('\n') }); }
 
-		return await (async function(messageOptions) {
-			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await reply(interaction, messageOptions, true);
-		})({
+		return (await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [travelComponent],
-		});
+		}, 'update', '@original')).id;
 	}
 	else if (chosenRegion === CurrentRegionType.Lake) {
 
 		embed.setDescription(`*${userData.quid.name} looks at ${userData.quid.pronoun(2)} reflection as ${userData.quid.pronounAndPlural(0, 'passes', 'pass')} the lake. Suddenly the ${userData.quid.getDisplayspecies()} remembers how long ${userData.quid.pronounAndPlural(0, 'has', 'have')}n't drunk anything.*`);
 
-		return await (async function(messageOptions) {
-			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await reply(interaction, messageOptions, true);
-		})({
+		return (await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
@@ -256,7 +246,7 @@ async function sendTravelMessage(
 					.setCustomId(`travel-regions_drink_@${userData._id}`)
 					.setLabel('Drink')
 					.setStyle(ButtonStyle.Primary))],
-		});
+		}, 'update', '@original')).id;
 	}
 	else if (chosenRegion === CurrentRegionType.Prairie) {
 
@@ -268,12 +258,10 @@ async function sendTravelMessage(
 					return p && p.currentRegion === CurrentRegionType.Prairie;
 				}).length > 0;
 			},
-		)).map(user => `<@${user.userId[0]}>`).slice(0, 45);
+		)).map(user => `<@${Object.keys(user.userIds)[0]}>`).slice(0, 45);
 		if (allPrairieUsersList.length > 0) { embed.addFields({ name: 'Packmates at the prairie:', value: allPrairieUsersList.join('\n') }); }
 
-		return await (async function(messageOptions) {
-			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await reply(interaction, messageOptions, true);
-		})({
+		return (await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [travelComponent, new ActionRowBuilder<ButtonBuilder>()
@@ -281,7 +269,7 @@ async function sendTravelMessage(
 					.setCustomId(`travel-regions_play_@${userData._id}`)
 					.setLabel('Play')
 					.setStyle(ButtonStyle.Primary))],
-		});
+		}, 'update', '@original')).id;
 	}
 	else {
 
@@ -295,12 +283,10 @@ async function sendTravelMessage(
 			{ name: '🌼 prairie', value: 'This is where the Younglings go to play! Everyone else can also come here and play with them.' },
 		]);
 
-		return await (async function(messageOptions) {
-			return interaction.isSelectMenu() ? await update(interaction, messageOptions) : await reply(interaction, messageOptions, true);
-		})({
+		return (await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [travelComponent],
-		});
+		}, 'update', '@original')).id;
 	}
 }
