@@ -251,7 +251,7 @@ export interface Quid<Completed extends ''> extends Omit<QuidSchema<Completed>, 
 	pronounAndPlural: (pronounNumber: 0 | 1 | 2 | 3 | 4 | 5, string1: string, string2?: string) => string;
 }
 
-export interface UserData<QuidExists extends undefined, QuidCompleted extends ''> extends Omit<UserSchema, 'quids' | 'currentQuid' | 'servers' | 'tag' | 'settings'> {
+export interface UserData<QuidExists extends undefined, QuidCompleted extends ''> extends Omit<UserSchema, 'quids' | 'currentQuid' | 'servers' | 'tag' | 'settings' | 'userId'> {
 	tag: Omit<UserSchema['tag'], 'servers'> & {
 		server: UserSchema['tag']['servers'][string] | undefined;
 	},

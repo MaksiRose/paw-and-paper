@@ -296,7 +296,6 @@ export function getUserData<T extends '' | never, U extends QuidSchema<T> | unde
 
 	const user: UserData<U extends QuidSchema<T> ? never : undefined, T> = {
 		_id: userData._id,
-		userId: userData.userId,
 		userIds: userData.userIds,
 		tag: {
 			global: userData.tag.global,
