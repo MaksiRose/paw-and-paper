@@ -1,5 +1,5 @@
 import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
-import { reply, userDataServersObject } from '../../utils/helperFunctions';
+import { reply, respond, userDataServersObject } from '../../utils/helperFunctions';
 import { userModel } from '../../models/userModel';
 import { client } from '../..';
 import { SlashCommand } from '../../typings/handle';
@@ -35,16 +35,17 @@ export const command: SlashCommand = {
 		if (user === null || guildId === null) { throw new TypeError('user or guildId is null'); }
 
 		const userData = (() => {
-			try { return userModel.findOne(u => u.userId.includes(user.id)); }
+			try { return userModel.findOne(u => Object.keys(u.userIds).includes(user.id)); }
 			catch { return null; }
 		})();
 
 		if (!userData) {
 
-			await reply(interaction, {
+			// This is always a reply
+			await respond(interaction, {
 				content: `The user "${user.tag}" does not have an account`,
 				ephemeral: true,
-			}, false);
+			});
 			return;
 		}
 
@@ -54,29 +55,32 @@ export const command: SlashCommand = {
 
 		if (!guild) {
 
-			await reply(interaction, {
+			// This is always a reply
+			await respond(interaction, {
 				content: `A guild with the ID "${guildId}" does not exist or Paw and Paper isn't in it`,
 				ephemeral: true,
-			}, false);
+			});
 			return;
 		}
 
 		const serverInfo = userData.servers[guildId];
 		if (serverInfo === undefined) {
 
-			await reply(interaction, {
+			// This is always a reply
+			await respond(interaction, {
 				content: `There is no cooldown entry for ${user.tag} in ${guild.name}`,
 				ephemeral: true,
-			}, false);
+			});
 			return;
 		}
 
 		if (serverInfo.hasCooldown === false) {
 
-			await reply(interaction, {
+			// This is always a reply
+			await respond(interaction, {
 				content: `The cooldown for ${user.tag} in ${guild.name} is already set to false`,
 				ephemeral: true,
-			}, false);
+			});
 			return;
 		}
 
@@ -89,8 +93,10 @@ export const command: SlashCommand = {
 				};
 			},
 		);
-		await reply(interaction, {
+
+		// This is always a reply
+		await respond(interaction, {
 			content: `Sucessfully set the cooldown for ${user.tag} in ${guild.name} to false`,
-		}, false);
+		});
 	},
 };
