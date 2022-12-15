@@ -1,6 +1,5 @@
 import { generateId } from 'crystalid';
-import { APIMessage } from 'discord-api-types/v9';
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, ModalMessageModalSubmitInteraction, RepliableInteraction, AnySelectMenuInteraction, WebhookEditMessageOptions, Snowflake, InteractionResponse } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, RepliableInteraction, WebhookEditMessageOptions, Snowflake, InteractionResponse } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 import { userModel, getUserData } from '../models/userModel';
 import { ErrorStacks } from '../typings/data/general';
@@ -55,58 +54,58 @@ export function getUserIds(
  * @returns A promise that resolves to a Message<boolean>
  * @deprecated Use respond instead
  */
-export async function reply(
-	interaction: RepliableInteraction,
-	options: InteractionReplyOptions,
-	editMessage: boolean,
-): Promise<Message<boolean>> {
+// export async function reply(
+// 	interaction: RepliableInteraction,
+// 	options: InteractionReplyOptions,
+// 	editMessage: boolean,
+// ): Promise<Message<boolean>> {
 
-	let botReply: APIMessage | Message<boolean>;
+// 	let botReply: APIMessage | Message<boolean>;
 
-	/* It is sending a reply if the interaction hasn't been replied nor deferred, or editing a reply if editMessage is true, else following up */
-	try {
+// 	/* It is sending a reply if the interaction hasn't been replied nor deferred, or editing a reply if editMessage is true, else following up */
+// 	try {
 
-		if (!interaction.replied && !interaction.deferred) {
-			botReply = await interaction.reply({ ...options, content: options.content === '' ? undefined : options.content, fetchReply: true });
-		}
-		else if (editMessage) {
-			botReply = await interaction.editReply({ ...options, content: options.content === '' ? null : options.content });
-		}
-		else {
-			botReply = await interaction.followUp({ ...options, content: options.content === '' ? undefined : options.content });
-		}
+// 		if (!interaction.replied && !interaction.deferred) {
+// 			botReply = await interaction.reply({ ...options, content: options.content === '' ? undefined : options.content, fetchReply: true });
+// 		}
+// 		else if (editMessage) {
+// 			botReply = await interaction.editReply({ ...options, content: options.content === '' ? null : options.content });
+// 		}
+// 		else {
+// 			botReply = await interaction.followUp({ ...options, content: options.content === '' ? undefined : options.content });
+// 		}
 
-	}
-	/** If an error occurred and it has status 404, try to either edit the message if editing was tried above, or send a new message in the other two cases */
-	catch (error: unknown) {
+// 	}
+// 	/** If an error occurred and it has status 404, try to either edit the message if editing was tried above, or send a new message in the other two cases */
+// 	catch (error: unknown) {
 
-		if (isObject(error) && (error.code === 'ECONNRESET' || error.code === 10062)) {
+// 		if (isObject(error) && (error.code === 'ECONNRESET' || error.code === 10062)) {
 
-			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
-			if ((interaction.replied || interaction.deferred) && editMessage) { // Error code 10062 can never lead to this since an Unknown Interaction can't also be replied or deferred. Therefore, it is safe to call respond again
+// 			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
+// 			if ((interaction.replied || interaction.deferred) && editMessage) { // Error code 10062 can never lead to this since an Unknown Interaction can't also be replied or deferred. Therefore, it is safe to call respond again
 
-				botReply = await reply(interaction, options, editMessage);
-			}
-			else {
+// 				botReply = await reply(interaction, options, editMessage);
+// 			}
+// 			else {
 
-				const channel = interaction.channel || (interaction.channelId ? await interaction.client.channels.fetch(interaction.channelId, { force: false }) : null);
-				if (channel && channel.isTextBased()) { botReply = await channel.send({ ...options, content: options.content === '' ? undefined : options.content, flags: undefined }); }
-				else { throw error; }
+// 				const channel = interaction.channel || (interaction.channelId ? await interaction.client.channels.fetch(interaction.channelId, { force: false }) : null);
+// 				if (channel && channel.isTextBased()) { botReply = await channel.send({ ...options, content: options.content === '' ? undefined : options.content, flags: undefined }); }
+// 				else { throw error; }
 
-			}
-		}
-		else if (isObject(error) && error.code === 40060) {
+// 			}
+// 		}
+// 		else if (isObject(error) && error.code === 40060) {
 
-			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
-			interaction.replied = true;
-			botReply = await reply(interaction, options, editMessage);
-		}
-		else { throw error; }
-	}
+// 			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
+// 			interaction.replied = true;
+// 			botReply = await reply(interaction, options, editMessage);
+// 		}
+// 		else { throw error; }
+// 	}
 
-	if (botReply instanceof Message) { return botReply; }
-	else { throw new TypeError('Message is APIMessage'); }
-}
+// 	if (botReply instanceof Message) { return botReply; }
+// 	else { throw new TypeError('Message is APIMessage'); }
+// }
 
 /**
  *
@@ -115,44 +114,44 @@ export async function reply(
  * @returns
  * @deprecated Use respond instead
  */
-export async function update(
-	interaction: ButtonInteraction | AnySelectMenuInteraction | ModalMessageModalSubmitInteraction,
-	options: WebhookEditMessageOptions,
-): Promise<Message<boolean>> {
+// export async function update(
+// 	interaction: ButtonInteraction | AnySelectMenuInteraction | ModalMessageModalSubmitInteraction,
+// 	options: WebhookEditMessageOptions,
+// ): Promise<Message<boolean>> {
 
-	let botReply: Message<boolean>;
+// 	let botReply: Message<boolean>;
 
-	/* It is sending a reply if the interaction hasn't been replied nor deferred, or editing a reply if editMessage is true, else following up */
-	try {
+// 	/* It is sending a reply if the interaction hasn't been replied nor deferred, or editing a reply if editMessage is true, else following up */
+// 	try {
 
-		if (!interaction.replied && !interaction.deferred) {
-			botReply = await interaction.update({ ...options, content: options.content === '' ? null : options.content, fetchReply: true });
-		}
-		else {
-			botReply = await interaction.editReply({ ...options, content: options.content === '' ? null : options.content });
-		}
+// 		if (!interaction.replied && !interaction.deferred) {
+// 			botReply = await interaction.update({ ...options, content: options.content === '' ? null : options.content, fetchReply: true });
+// 		}
+// 		else {
+// 			botReply = await interaction.editReply({ ...options, content: options.content === '' ? null : options.content });
+// 		}
 
-	}
-	/** If an error occurred and it has status 404, try to either edit the message if editing was tried above, or send a new message in the other two cases */
-	catch (error: unknown) {
+// 	}
+// 	/** If an error occurred and it has status 404, try to either edit the message if editing was tried above, or send a new message in the other two cases */
+// 	catch (error: unknown) {
 
-		if (isObject(error) && (error.code === 'ECONNRESET' || error.code === 10062)) {
+// 		if (isObject(error) && (error.code === 'ECONNRESET' || error.code === 10062)) {
 
-			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
-			if (!interaction.replied && !interaction.deferred) { botReply = await interaction.message.edit({ ...options, content: options.content === '' ? null : options.content, flags: undefined }); }
-			else { botReply = await update(interaction, options); } // Error code 10062 can never lead to this since an Unknown Interaction can't also be replied or deferred. Therefore, it is safe to call update again
-		}
-		else if (isObject(error) && error.code === 40060) {
+// 			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
+// 			if (!interaction.replied && !interaction.deferred) { botReply = await interaction.message.edit({ ...options, content: options.content === '' ? null : options.content, flags: undefined }); }
+// 			else { botReply = await update(interaction, options); } // Error code 10062 can never lead to this since an Unknown Interaction can't also be replied or deferred. Therefore, it is safe to call update again
+// 		}
+// 		else if (isObject(error) && error.code === 40060) {
 
-			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
-			interaction.replied = true;
-			botReply = await update(interaction, options);
-		}
-		else { throw error; }
-	}
+// 			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
+// 			interaction.replied = true;
+// 			botReply = await update(interaction, options);
+// 		}
+// 		else { throw error; }
+// 	}
 
-	return botReply;
-}
+// 	return botReply;
+// }
 
 /**
  * It sends a reply or updates the message the interaction comes from if the interaction hasn't been replied nor deferred, or edits a reply if
@@ -239,7 +238,7 @@ export async function sendErrorMessage(
 
 	try {
 
-		const _userData = await userModel.findOne(u => u.userId.includes(interaction.user.id));
+		const _userData = await userModel.findOne(u => Object.keys(u.userIds).includes(interaction.user.id));
 		const userData = getUserData(_userData, interaction.guildId || 'DMs', undefined);
 		await setCooldown(userData, interaction.guildId || 'DMs', false);
 	}
@@ -248,7 +247,7 @@ export async function sendErrorMessage(
 	if (interaction.type === InteractionType.ApplicationCommand) {
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to execute \x1b[31m${interaction.commandName} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 	}
-	else if (interaction.isSelectMenu()) {
+	else if (interaction.isAnySelectMenu()) {
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to select \x1b[31m${interaction.values[0]} \x1b[0mfrom the menu \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 	}
 	else if (interaction.isButton()) {
@@ -271,7 +270,7 @@ export async function sendErrorMessage(
 		} : {
 			component_type: interaction.isMessageComponent() ? interaction.componentType : undefined,
 			custom_id: interaction.customId,
-			values: interaction.isSelectMenu() ? interaction.values : undefined,
+			values: interaction.isAnySelectMenu() ? interaction.values : undefined,
 			fields: interaction.isModalSubmit() ? interaction.fields.fields.map(f => f.toJSON()) : undefined,
 			components: interaction.isModalSubmit() ? interaction.components : undefined,
 		},
@@ -339,12 +338,13 @@ export async function sendErrorMessage(
 				.setStyle(ButtonStyle.Success)])],
 	};
 
-	await reply(interaction, { ...messageOptions, flags: undefined }, false)
+	// This is a reply or a followUp
+	await respond(interaction, { ...messageOptions, flags: undefined })
 		.catch(async (error2) => {
 
 			console.error('Failed to send error message to user:', error2);
 			await (async () => {
-				if (interaction.isButton() || interaction.isSelectMenu()) { await interaction.message.reply({ ...messageOptions, failIfNotExists: false }); }
+				if (interaction.isMessageComponent()) { await interaction.message.reply({ ...messageOptions, failIfNotExists: false }); }
 				if (interaction.isMessageContextMenuCommand()) { await interaction.targetMessage.reply({ ...messageOptions, failIfNotExists: false }); }
 				if (interaction.isUserContextMenuCommand() || interaction.isChatInputCommand() || interaction.type === InteractionType.ModalSubmit) { await interaction.channel?.send(messageOptions); }
 			})()
@@ -473,15 +473,15 @@ export function userDataServersObject(
 ): UserSchema['servers'][string] {
 
 	return {
-		currentQuid: u.servers[guildId]?.currentQuid ?? u.currentQuid[guildId] ?? null,
+		currentQuid: u.servers[guildId]?.currentQuid ?? null,
 		lastInteractionTimestamp: u.servers[guildId]?.lastInteractionTimestamp ?? null,
-		lastInteractionToken: u.servers[guildId]?.lastInteractionToken ?? null,
+		lastInteractionToken: null,
 		lastInteractionChannelId: u.servers[guildId]?.lastInteractionChannelId ?? null,
 		restingMessageId: u.servers[guildId]?.restingMessageId ?? null,
 		restingChannelId: u.servers[guildId]?.restingChannelId ?? null,
 		componentDisablingChannelId: u.servers[guildId]?.componentDisablingChannelId ?? null,
 		componentDisablingMessageId: u.servers[guildId]?.componentDisablingMessageId ?? null,
-		componentDisablingToken: u.servers[guildId]?.componentDisablingToken ?? null,
+		componentDisablingToken: null,
 		hasCooldown: u.servers[guildId]?.hasCooldown ?? false,
 	};
 }
