@@ -228,7 +228,7 @@ async function executeExploring(
 	let botReply = await respond(buttonInteraction ?? interaction, getWaitingMessageObject(messageContent, restEmbed, userData, waitingString, waitingGameField, waitingComponent), buttonInteraction !== null ? 'update' : 'reply', buttonInteraction !== null ? '@original' : undefined);
 
 
-	const collector = (botReply as Message<true>).createMessageComponentCollector({
+	const collector = (botReply as Message<true> | InteractionResponse<true>).createMessageComponentCollector({
 		filter: (i) => i.user.id === interaction.user.id,
 		componentType: ComponentType.Button,
 		time: 15_000,
@@ -416,7 +416,7 @@ async function executeExploring(
 		embed.setFooter({ text: `The ${foundItem} is in an environment of difficulty level ${environmentLevel}.\nYou will be presented five buttons with five emojis each. The footer will show you an emoji, and you have to find the button with that emoji, but without the campsite (${plantEmojis.toAvoid}).` });
 
 		// This is either an update or an editReply if there is a buttonInteraction, or an editReply if it's an interaction
-		await respond(buttonInteraction ?? interaction, {
+		botReply = await respond(buttonInteraction ?? interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [new ActionRowBuilder<ButtonBuilder>()
@@ -432,7 +432,7 @@ async function executeExploring(
 					.setStyle(ButtonStyle.Primary))],
 		}, 'update', '@original');
 
-		const int = await (botReply as Message<true>)
+		const int = await (botReply as Message<true> | InteractionResponse<true>)
 			.awaitMessageComponent({
 				filter: i => i.user.id === interaction.user.id,
 				componentType: ComponentType.Button,
@@ -480,7 +480,7 @@ async function executeExploring(
 				/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 				exploreComponent = plantGame.correctButtonOverwrite();
 
-				newInteraction = await (botReply as Message<true>)
+				newInteraction = await (botReply as Message<true> | InteractionResponse<true>)
 					.awaitMessageComponent({
 						filter: i => i.user.id === interaction.user.id,
 						componentType: ComponentType.Button,
@@ -668,7 +668,7 @@ async function executeExploring(
 		embed.setFooter({ text: `The ${opponentSpecies} is level ${opponentLevel}.\nYou will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response.` });
 
 		// This is either an update or an editReply if there is a buttonInteraction, or an editReply if it's an interaction
-		await respond(buttonInteraction ?? interaction, {
+		botReply = await respond(buttonInteraction ?? interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [new ActionRowBuilder<ButtonBuilder>()
@@ -684,7 +684,7 @@ async function executeExploring(
 					.setStyle(ButtonStyle.Primary))],
 		}, 'update', '@original');
 
-		const int = await (botReply as Message<true>)
+		const int = await (botReply as Message<true> | InteractionResponse<true>)
 			.awaitMessageComponent({
 				filter: i => i.user.id === interaction.user.id,
 				componentType: ComponentType.Button,
@@ -760,7 +760,7 @@ async function executeExploring(
 				/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 				exploreComponent = fightGame.correctButtonOverwrite();
 
-				newInteraction = await (botReply as Message<true>)
+				newInteraction = await (botReply as Message<true> | InteractionResponse<true>)
 					.awaitMessageComponent({
 						filter: i => i.user.id === interaction.user.id,
 						componentType: ComponentType.Button,
@@ -919,12 +919,13 @@ async function executeExploring(
 			},
 		);
 
-		botReply = await sendQuestMessage(buttonInteraction || interaction, userData, serverData, messageContent, restEmbed, [...changedCondition.injuryUpdateEmbed, ...levelUpEmbed], changedCondition.statsUpdateText);
+		// This is either an update or an editReply if there is a buttonInteraction, or an editReply if it's an interaction
+		await sendQuestMessage(buttonInteraction ?? interaction, 'update', userData, serverData, messageContent, restEmbed, [...changedCondition.injuryUpdateEmbed, ...levelUpEmbed], changedCondition.statsUpdateText);
 	}
 	else {
 
 		// This is either an update or an editReply if there is a buttonInteraction, or an editReply if it's an interaction
-		botReply = await respond(buttonInteraction ?? interaction, {
+		await respond(buttonInteraction ?? interaction, {
 			content: messageContent,
 			embeds: [
 				...restEmbed,

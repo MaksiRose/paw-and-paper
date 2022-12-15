@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder, SnowflakeUtil } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder, Snowflake, SnowflakeUtil } from 'discord.js';
 import { speciesInfo } from '../..';
 import { userModel, getUserData } from '../../models/userModel';
 import { ServerSchema } from '../../typings/data/server';
@@ -160,7 +160,7 @@ export async function executePlaying(
 		.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL });
 	let infectedEmbed: EmbedBuilder[] = [];
 	let playComponent: ActionRowBuilder<ButtonBuilder> | null = null;
-	let botReply: Message | InteractionResponse;
+	let responseId: Snowflake;
 	/** This is used in case the user is fighting or finding a plant, in order to respond to the interaction */
 	let buttonInteraction: ButtonInteraction<'cached'> | null = null;
 
@@ -225,7 +225,7 @@ export async function executePlaying(
 			else { throw new TypeError('cycleKind is undefined'); }
 
 			// This is an update when forceEdit is true, which it is only for the travel-regions command, else this is a reply
-			botReply = await respond(interaction, {
+			const botReply = await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, embed],
 				components: [playComponent],
@@ -350,7 +350,7 @@ export async function executePlaying(
 		embed.setFooter({ text: `Click the button with this emoji: ${plantGame.emojiToFind}, but without the campsite (${plantEmojis.toAvoid}).` });
 
 		// This is an update when forceEdit is true, which it is only for the travel-regions command, else this is a reply
-		botReply = await respond(interaction, {
+		const botReply = await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [playComponent],
@@ -360,7 +360,7 @@ export async function executePlaying(
 		playComponent = plantGame.correctButtonOverwrite();
 		if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 
-		const i = await (botReply as Message<true>)
+		const i = await (botReply as Message<true> | InteractionResponse<true>)
 			.awaitMessageComponent({
 				filter: i => i.user.id === interaction.user.id,
 				componentType: ComponentType.Button,
@@ -412,13 +412,14 @@ export async function executePlaying(
 			},
 		);
 
-		botReply = await sendQuestMessage(interaction, userData1, serverData, messageContent, restEmbed, [...changedCondition.injuryUpdateEmbed, ...levelUpEmbed], changedCondition.statsUpdateText);
+		// This is an update when forceEdit is true, which it is only for the travel-regions command, else this is a reply
+		responseId = await sendQuestMessage(interaction, forceEdit ? 'update' : 'reply', userData1, serverData, messageContent, restEmbed, [...changedCondition.injuryUpdateEmbed, ...levelUpEmbed], changedCondition.statsUpdateText);
 	}
 	else {
 
 		const tutorialMapEntry_ = tutorialMap.get(userData1.quid._id + userData1.quid.profile.serverId);
 		// This is an update when forceEdit is true, which it is only for the travel-regions command, else this is a reply
-		botReply = await respond(buttonInteraction ?? interaction, {
+		({ id: responseId } = await respond(buttonInteraction ?? interaction, {
 			content: messageContent,
 			embeds: [
 				...restEmbed,
@@ -435,7 +436,7 @@ export async function executePlaying(
 						.setLabel((tutorialMapEntry === 1 && tutorialMapEntry_ === 1) || (tutorialMapEntry === 2 && tutorialMapEntry_ === 2) ? 'Try again' : tutorialMapEntry === 1 && tutorialMapEntry_ === 2 ? 'Try another game' : 'Play again')
 						.setStyle(ButtonStyle.Primary)),
 			],
-		}, (forceEdit || buttonInteraction !== null) ? 'update' : 'reply', '@original');
+		}, (forceEdit || buttonInteraction !== null) ? 'update' : 'reply', '@original'));
 
 		if (tutorialMapEntry === 2 && tutorialMapEntry_ === undefined) {
 
@@ -455,7 +456,7 @@ export async function executePlaying(
 
 	const channel = interaction.channel ?? await interaction.client.channels.fetch(interaction.channelId);
 	if (channel === null || !channel.isTextBased()) { throw new TypeError('interaction.channel is null or not text based'); }
-	if (playedTogether && hasNameAndSpecies(userData2)) { await addFriendshipPoints({ createdTimestamp: SnowflakeUtil.timestampFrom(botReply.id), channel: channel }, userData1, userData2); } // I have to call SnowflakeUtil since InteractionResponse wrongly misses the createdTimestamp which is hopefully added in the future
+	if (playedTogether && hasNameAndSpecies(userData2)) { await addFriendshipPoints({ createdTimestamp: SnowflakeUtil.timestampFrom(responseId), channel: channel }, userData1, userData2); } // I have to call SnowflakeUtil since InteractionResponse wrongly misses the createdTimestamp which is hopefully added in the future
 }
 
 function isEligableForPlaying(
