@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { reply } from '../utils/helperFunctions';
+import { respond } from '../utils/helperFunctions';
 import { userModel } from '../models/userModel';
 import { canManageWebhooks, missingPermissions } from '../utils/permissionHandler';
 import { WebhookMessages } from '../typings/data/general';
@@ -24,12 +24,12 @@ export const command: ContextMenuCommand = {
 		/* This gets the webhookCache and userData */
 		const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8')) as WebhookMessages;
 		const userData = (() => {
-			try { return userModel.findOne(u => u.userId.includes(webhookCache[interaction.targetId]?.split('_')[0] || '')); }
+			try { return userModel.findOne(u => Object.keys(u.userIds).includes(webhookCache[interaction.targetId]?.split('_')[0] || '')); }
 			catch { return null; }
 		})();
 
 		/* This is checking if the user who is trying to delete the message is the same user who sent the message. */
-		if (userData === null || !userData.userId.includes(interaction.user.id)) {
+		if (userData === null || !Object.keys(userData.userIds).includes(interaction.user.id)) {
 
 			await interaction
 				.reply({
@@ -52,11 +52,11 @@ export const command: ContextMenuCommand = {
 		/* Deleting the message. */
 		await webhook.deleteMessage(interaction.targetId, interaction.channel.isThread() ? interaction.channel.id : undefined);
 
-		/* Sending a message to the user who deleted the message. */
-		await reply(interaction, {
+		// This is always a reply
+		await respond(interaction, {
 			content: 'Deleted! ✅',
 			ephemeral: true,
-		}, false);
+		});
 		return;
 	},
 };
