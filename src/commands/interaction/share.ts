@@ -1,4 +1,5 @@
-import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { EmbedBuilder, SlashCommandBuilder, SnowflakeUtil } from 'discord.js';
+import { client } from '../..';
 import { userModel, getUserData } from '../../models/userModel';
 import { CurrentRegionType, QuidSchema, UserSchema } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
@@ -7,7 +8,7 @@ import { changeCondition, infectWithChance } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
-import { capitalizeString, getMapData, respond } from '../../utils/helperFunctions';
+import { capitalizeString, getMapData, respond, userDataServersObject } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
@@ -39,7 +40,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData1, interaction)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData1, interaction)) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		const restEmbed = await isInvalid(interaction, userData1);
@@ -52,6 +53,7 @@ export const command: SlashCommand = {
 		const sharingCooldown = sharingCooldownAccountsMap.get(userData1.quid._id + interaction.guildId);
 		if (sharingCooldown && Date.now() - sharingCooldown < twoHoursInMs) {
 
+			// This is always a reply
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
@@ -60,13 +62,14 @@ export const command: SlashCommand = {
 					.setTitle('You can only share every 2 hours!')
 					.setDescription(`You can share again <t:${Math.floor((sharingCooldown + twoHoursInMs) / 1_000)}:R>.`),
 				],
-			}, false);
+			});
 			return;
 		}
 
 		/* Checks whether the user is an elderly. */
 		if (userData1.quid.profile.rank !== 'Elderly') {
 
+			// This is always a reply
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
@@ -74,7 +77,7 @@ export const command: SlashCommand = {
 					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
 					.setDescription(`*${userData1.quid.name} is about to begin sharing a story when an elderly interrupts them.* "Oh, young ${userData1.quid.getDisplayspecies()}, you need to have a lot more adventures before you can start advising others!"`),
 				],
-			}, false);
+			});
 			return;
 		}
 
@@ -82,8 +85,9 @@ export const command: SlashCommand = {
 		const mentionedUser = interaction.options.getUser('user');
 
 		/* Checks whether the mentioned user is associated with the account. */
-		if (mentionedUser && userData1.userId.includes(mentionedUser.id)) {
+		if (mentionedUser && Object.keys(userData1.userIds).includes(mentionedUser.id)) {
 
+			// This is always a reply
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
@@ -91,13 +95,13 @@ export const command: SlashCommand = {
 					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
 					.setDescription(`*${userData1.quid.name} is very wise from all the adventures ${userData1.quid.pronoun(0)} had, but also a little... quaint. Sometimes ${userData1.quid.pronounAndPlural(0, 'sit')} down at the fireplace, mumbling to ${userData1.quid.pronoun(4)} a story from back in the day. Busy packmates look at ${userData1.quid.pronoun(1)} in confusion as they pass by.*`),
 				],
-			}, false);
+			});
 			return;
 		}
 
 
 		let _userData2 = mentionedUser ? (() => {
-			try { return userModel.findOne(u => u.userId.includes(mentionedUser.id)); }
+			try { return userModel.findOne(u => Object.keys(u.userIds).includes(mentionedUser.id)); }
 			catch { return null; }
 		})() : null;
 
@@ -111,6 +115,7 @@ export const command: SlashCommand = {
 
 			if (usersEligibleForSharing.length <= 0) {
 
+				// This is always a reply
 				await respond(interaction, {
 					content: messageContent,
 					embeds: [...restEmbed, new EmbedBuilder()
@@ -118,7 +123,7 @@ export const command: SlashCommand = {
 						.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
 						.setDescription(`*${userData1.quid.name} sits on an old wooden trunk at the ruins, ready to tell a story to any willing listener. But to ${userData1.quid.pronoun(2)} disappointment, no one seems to be around.*`),
 					],
-				}, false);
+				});
 				return;
 			}
 
@@ -126,12 +131,19 @@ export const command: SlashCommand = {
 			if (_userData2) {
 
 				const newCurrentQuid = Object.values(_userData2.quids).find(q => isEligableForSharing(_userData2!, q, interaction.guildId));
-				if (newCurrentQuid) { _userData2.currentQuid[interaction.guildId] = newCurrentQuid._id; }
+				if (newCurrentQuid) {
+
+					userDataServersObject;
+					_userData2.servers[interaction.guildId] = {
+						...userDataServersObject(_userData2, interaction.guildId),
+						currentQuid: newCurrentQuid._id,
+					};
+				}
 			}
 		}
 
 		/* Check if the user is interactable, and if they are, define quid data and profile data. */
-		const userData2 = _userData2 ? getUserData(_userData2, interaction.guildId, _userData2.quids[_userData2.currentQuid[interaction.guildId] ?? '']) : null;
+		const userData2 = _userData2 ? getUserData(_userData2, interaction.guildId, _userData2.quids[_userData2.servers[interaction.guildId]?.currentQuid ?? '']) : null;
 		if (!isInteractable(interaction, userData2, messageContent, restEmbed)) { return; }
 
 		/* Add the sharing cooldown to user */
@@ -154,8 +166,9 @@ export const command: SlashCommand = {
 
 		const levelUpEmbed = await checkLevelUp(interaction, userData2, serverData);
 
+		// This is always a reply
 		const botReply = await respond(interaction, {
-			content: `<@${userData2.userId[0]}>\n${messageContent}`,
+			content: `<@${Object.keys(userData2.userIds)[0]}>\n${messageContent}`,
 			embeds: [
 				new EmbedBuilder()
 					.setColor(userData1.quid.color)
@@ -166,9 +179,11 @@ export const command: SlashCommand = {
 				...infectedEmbed,
 				...levelUpEmbed,
 			],
-		}, true);
+		});
 
-		await addFriendshipPoints(botReply, userData1, userData2);
+		const channel = interaction.channel ?? await client.channels.fetch(interaction.channelId);
+		if (channel === null || !channel.isTextBased()) { throw new TypeError('interaction.channel is null or not text based'); }
+		await addFriendshipPoints({ createdTimestamp: SnowflakeUtil.timestampFrom(botReply.id), channel: channel }, userData1, userData2); // I have to call SnowflakeUtil since InteractionResponse wrongly misses the createdTimestamp which is hopefully added in the future
 
 		await isPassedOut(interaction, userData1, true);
 
@@ -186,5 +201,5 @@ function isEligableForSharing(
 ): quid is QuidSchema<never> {
 
 	const user = getUserData(userData, guildId, quid);
-	return hasNameAndSpecies(user) && user.quid.profile !== undefined && user.quid.profile.currentRegion === CurrentRegionType.Ruins && user.quid.profile.energy > 0 && user.quid.profile.health > 0 && user.quid.profile.hunger > 0 && user.quid.profile.thirst > 0 && user.quid.profile.injuries.cold === false && user.serverInfo?.hasCooldown !== true && user.quid.profile.isResting === false && isResting(user) === false;
+	return hasNameAndSpecies(user) && user.quid.profile !== undefined && user.quid.profile.currentRegion === CurrentRegionType.Ruins && user.quid.profile.energy > 0 && user.quid.profile.health > 0 && user.quid.profile.hunger > 0 && user.quid.profile.thirst > 0 && user.quid.profile.injuries.cold === false && user.serverInfo?.hasCooldown !== true && isResting(user) === false;
 }

@@ -6,7 +6,7 @@ import { UserData } from '../typings/data/user';
 import { ContextMenuCommand } from '../typings/handle';
 import { hasName, isInGuild } from '../utils/checkUserState';
 import { disableAllComponents } from '../utils/componentDisabling';
-import { getArrayElement, respond, update } from '../utils/helperFunctions';
+import { getArrayElement, respond } from '../utils/helperFunctions';
 import { canManageWebhooks, missingPermissions } from '../utils/permissionHandler';
 
 export const command: ContextMenuCommand = {
@@ -23,13 +23,13 @@ export const command: ContextMenuCommand = {
 		/* This gets the webhookCache and userData */
 		const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8')) as WebhookMessages;
 		const _userData = (() => {
-			try { return userModel.findOne(u => u.userId.includes(webhookCache[interaction.targetId]?.split('_')[0] || '')); }
+			try { return userModel.findOne(u => Object.keys(u.userIds).includes(webhookCache[interaction.targetId]?.split('_')[0] || '')); }
 			catch { return null; }
 		})();
 		const userData = _userData === null ? null : getUserData(_userData, interaction.guildId, undefined);
 
 		/* This is checking if the user who is trying to edit the message is the same user who sent the message. */
-		if (userData === null || !userData.userId.includes(interaction.user.id)) {
+		if (userData === null || !Object.keys(userData.userIds).includes(interaction.user.id)) {
 
 			await interaction
 				.reply({
@@ -40,15 +40,16 @@ export const command: ContextMenuCommand = {
 		}
 
 		const quidMenu = getQuidsPage(userData, 0, interaction.targetId);
+		// This is always a reply
 		await respond(interaction, {
 			content: 'Select a quid that you want the proxied message to be from instead.\n⚠️ CAUTION! This does *not edit* the message, but deletes it and sends a new one with the new avatar and username, but same content. It is therefore not adviced to use this feature on older messages.',
 			components: quidMenu.options.length > 0 ? [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(quidMenu)] : [],
 			ephemeral: true,
-		}, false);
+		});
 	},
 	async sendMessageComponentResponse(interaction, userData) {
 
-		if (!interaction.isSelectMenu()) { return; }
+		if (!interaction.isStringSelectMenu()) { return; }
 		if (await missingPermissions(interaction, [
 			'ViewChannel', 'ReadMessageHistory', // Needed for message fetch call
 			'ManageWebhooks', // Needed for webhook interaction
@@ -67,9 +68,10 @@ export const command: ContextMenuCommand = {
 			if (quidsPage >= Math.ceil((Object.keys(userData.quids).length + 1) / 24)) { quidsPage = 0; }
 
 			const quidMenu = getQuidsPage(userData, quidsPage, targetMessageId);
-			await update(interaction, {
+			// This is always an update to the message with the select menu
+			await respond(interaction, {
 				components: quidMenu.options.length > 0 ? [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(quidMenu)] : [],
-			});
+			}, 'update', '@original');
 			return;
 		}
 
@@ -109,9 +111,10 @@ export const command: ContextMenuCommand = {
 			/* Deleting the message. */
 			await webhook.deleteMessage(targetMessageId, channel.isThread() ? channel.id : undefined);
 
-			await update(interaction, {
+			// This is always an update to the message with the select menu
+			await respond(interaction, {
 				components: disableAllComponents(interaction.message.components),
-			});
+			}, 'update', '@original');
 		}
 
 	},

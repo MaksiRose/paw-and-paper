@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder, Snowflake, SnowflakeUtil } from 'discord.js';
 import { speciesInfo } from '../..';
 import { userModel, getUserData } from '../../models/userModel';
 import { ServerSchema } from '../../typings/data/server';
@@ -13,7 +13,7 @@ import { disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
-import { capitalizeString, getArrayElement, getMapData, getSmallerNumber, keyInObject, respond, setCooldown, update } from '../../utils/helperFunctions';
+import { capitalizeString, getArrayElement, getMapData, getSmallerNumber, keyInObject, respond, setCooldown, userDataServersObject } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -85,7 +85,8 @@ export async function executePlaying(
 	const tutorialMapEntry = tutorialMap.get(userData1.quid._id + userData1.quid.profile.serverId);
 	if (userData1.quid.profile.tutorials.play === false && userData1.quid.profile.rank === RankType.Youngling && (tutorialMapEntry === undefined || tutorialMapEntry === 0)) {
 
-		await (async (int, messageOptions) => int.isButton() && forceEdit ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
+		// This is an update when forceEdit is true, which it is only for the travel-regions command, else this is a reply
+		await respond(interaction, {
 			content: '*About the structure of RPG messages:*\n\n- Most messages have `Roleplay text`, which is written in cursive, and only for fun!\n- More important is the `Info text`, which is at the bottom of each message, and has the most important info like how to play a game or stat changes. **Read this part first** to avoid confusion!\n\n> Here is an example of what this might look like:',
 			embeds: [new EmbedBuilder()
 				.setColor(userData1.quid.color)
@@ -97,25 +98,26 @@ export async function executePlaying(
 						.setLabel('I understand, let\'s try it out!')
 						.setStyle(ButtonStyle.Success)),
 			],
-		});
+		}, forceEdit ? 'update' : 'reply', '@original');
 		tutorialMap.set(userData1.quid._id + userData1.quid.profile.serverId, 1);
 		return;
 	}
 
-	if (mentionedUserId && userData1.userId.includes(mentionedUserId)) {
+	if (mentionedUserId && Object.keys(userData1.userIds).includes(mentionedUserId)) {
 
-		await (async (int, messageOptions) => int.isButton() && forceEdit ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
+		// This is an update when forceEdit is true, which it is only for the travel-regions command, else this is a reply
+		await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData1.quid.color)
 				.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
 				.setDescription(`*${userData1.quid.name} plays with ${userData1.quid.pronoun(4)}. The rest of the pack looks away in embarrassment.*`)],
-		});
+		}, forceEdit ? 'update' : 'reply', '@original');
 		return;
 	}
 
 	let _userData2 = mentionedUserId ? (() => {
-		try { return userModel.findOne(u => u.userId.includes(mentionedUserId)); }
+		try { return userModel.findOne(u => Object.keys(u.userIds).includes(mentionedUserId)); }
 		catch { return null; }
 	})() : null;
 	if (!_userData2) {
@@ -132,13 +134,19 @@ export async function executePlaying(
 			if (_userData2) {
 
 				const newCurrentQuid = Object.values(_userData2.quids).find(q => isEligableForPlaying(_userData2!, q, interaction.guildId));
-				if (newCurrentQuid) { _userData2.currentQuid[interaction.guildId] = newCurrentQuid._id; }
+				if (newCurrentQuid) {
+
+					_userData2.servers[interaction.guildId] = {
+						...userDataServersObject(_userData2, interaction.guildId),
+						currentQuid: newCurrentQuid._id,
+					};
+				}
 			}
 		}
 	}
 
 	/* Check if the user is interactable, and if they are, define quid data and profile data. */
-	let userData2 = _userData2 ? getUserData(_userData2, interaction.guildId, _userData2.quids[_userData2.currentQuid[interaction.guildId] ?? '']) : null;
+	let userData2 = _userData2 ? getUserData(_userData2, interaction.guildId, _userData2.quids[_userData2.servers[interaction.guildId]?.currentQuid ?? '']) : null;
 	if (mentionedUserId && !isInteractable(interaction, userData2, messageContent, restEmbed)) { return; }
 
 	await setCooldown(userData1, interaction.guildId, true);
@@ -152,7 +160,7 @@ export async function executePlaying(
 		.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL });
 	let infectedEmbed: EmbedBuilder[] = [];
 	let playComponent: ActionRowBuilder<ButtonBuilder> | null = null;
-	let botReply: Message;
+	let responseId: Snowflake;
 	/** This is used in case the user is fighting or finding a plant, in order to respond to the interaction */
 	let buttonInteraction: ButtonInteraction<'cached'> | null = null;
 
@@ -216,16 +224,17 @@ export async function executePlaying(
 			}
 			else { throw new TypeError('cycleKind is undefined'); }
 
-			botReply = await (async (int, messageOptions) => int.isButton() && forceEdit ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
+			// This is an update when forceEdit is true, which it is only for the travel-regions command, else this is a reply
+			const botReply = await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, embed],
 				components: [playComponent],
-			});
+			}, forceEdit ? 'update' : 'reply', '@original');
 
 			/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 			playComponent = fightGame.correctButtonOverwrite();
 
-			const i = await (botReply as Message<true>)
+			const i = await (botReply as Message<true> | InteractionResponse<true>)
 				.awaitMessageComponent({
 					filter: i => i.user.id === interaction.user.id,
 					componentType: ComponentType.Button,
@@ -316,7 +325,7 @@ export async function executePlaying(
 
 		await userData1.update(
 			(u) => {
-				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, userData1!.quid!.profile.serverId)).profiles, userData1!.quid!.profile.serverId);
+				const p = getMapData(getMapData(u.quids, getMapData(u.servers, userData1!.quid!.profile.serverId).currentQuid ?? '').profiles, userData1!.quid!.profile.serverId);
 				p.health -= healthPoints;
 				p.injuries = userData1!.quid!.profile.injuries;
 			},
@@ -340,17 +349,18 @@ export async function executePlaying(
 		embed.setDescription(descriptionText);
 		embed.setFooter({ text: `Click the button with this emoji: ${plantGame.emojiToFind}, but without the campsite (${plantEmojis.toAvoid}).` });
 
-		botReply = await (async (int, messageOptions) => int.isButton() && forceEdit ? await update(int, messageOptions) : await respond(int, messageOptions, true))(interaction, {
+		// This is an update when forceEdit is true, which it is only for the travel-regions command, else this is a reply
+		const botReply = await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [playComponent],
-		});
+		}, forceEdit ? 'update' : 'reply', '@original');
 
 		/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 		playComponent = plantGame.correctButtonOverwrite();
 		if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 
-		const i = await (botReply as Message<true>)
+		const i = await (botReply as Message<true> | InteractionResponse<true>)
 			.awaitMessageComponent({
 				filter: i => i.user.id === interaction.user.id,
 				componentType: ComponentType.Button,
@@ -372,7 +382,7 @@ export async function executePlaying(
 
 				await userData1.update(
 					(u) => {
-						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+						const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 						if (keyInObject(p.inventory.commonPlants, foundItem)) { p.inventory.commonPlants[foundItem] += 1; }
 						else if (keyInObject(p.inventory.uncommonPlants, foundItem)) { p.inventory.uncommonPlants[foundItem] += 1; }
 						else { p.inventory.rarePlants[foundItem] += 1; }
@@ -402,12 +412,14 @@ export async function executePlaying(
 			},
 		);
 
-		botReply = await sendQuestMessage(interaction, userData1, serverData, messageContent, restEmbed, [...changedCondition.injuryUpdateEmbed, ...levelUpEmbed], changedCondition.statsUpdateText);
+		// This is an update when forceEdit is true, which it is only for the travel-regions command, else this is a reply
+		responseId = await sendQuestMessage(interaction, forceEdit ? 'update' : 'reply', userData1, serverData, messageContent, restEmbed, [...changedCondition.injuryUpdateEmbed, ...levelUpEmbed], changedCondition.statsUpdateText);
 	}
 	else {
 
 		const tutorialMapEntry_ = tutorialMap.get(userData1.quid._id + userData1.quid.profile.serverId);
-		botReply = await (async function(messageObject) { return interaction.isButton() && forceEdit ? await update(interaction, messageObject) : buttonInteraction ? await update(buttonInteraction, messageObject) : await respond(interaction, messageObject, true); })({
+		// This is an update when forceEdit is true, which it is only for the travel-regions command, else this is a reply
+		({ id: responseId } = await respond(buttonInteraction ?? interaction, {
 			content: messageContent,
 			embeds: [
 				...restEmbed,
@@ -424,13 +436,14 @@ export async function executePlaying(
 						.setLabel((tutorialMapEntry === 1 && tutorialMapEntry_ === 1) || (tutorialMapEntry === 2 && tutorialMapEntry_ === 2) ? 'Try again' : tutorialMapEntry === 1 && tutorialMapEntry_ === 2 ? 'Try another game' : 'Play again')
 						.setStyle(ButtonStyle.Primary)),
 			],
-		});
+		}, (forceEdit || buttonInteraction !== null) ? 'update' : 'reply', '@original'));
 
 		if (tutorialMapEntry === 2 && tutorialMapEntry_ === undefined) {
 
+			// This is always a followUp
 			await respond(buttonInteraction ?? interaction, {
 				content: 'Good job! You have understood the basics of how to play the RPG. From now on, there is a time limit of a few seconds for clicking the minigame-buttons. Have fun!',
-			}, false);
+			});
 		}
 	}
 
@@ -441,7 +454,9 @@ export async function executePlaying(
 	await drinkAdvice(interaction, userData1);
 	await eatAdvice(interaction, userData1);
 
-	if (playedTogether && hasNameAndSpecies(userData2)) { await addFriendshipPoints(botReply, userData1, userData2); }
+	const channel = interaction.channel ?? await interaction.client.channels.fetch(interaction.channelId);
+	if (channel === null || !channel.isTextBased()) { throw new TypeError('interaction.channel is null or not text based'); }
+	if (playedTogether && hasNameAndSpecies(userData2)) { await addFriendshipPoints({ createdTimestamp: SnowflakeUtil.timestampFrom(responseId), channel: channel }, userData1, userData2); } // I have to call SnowflakeUtil since InteractionResponse wrongly misses the createdTimestamp which is hopefully added in the future
 }
 
 function isEligableForPlaying(
@@ -451,5 +466,5 @@ function isEligableForPlaying(
 ): quid is QuidSchema<never> {
 
 	const user = getUserData(userData, guildId, quid);
-	return hasNameAndSpecies(user) && user.quid.profile.currentRegion === CurrentRegionType.Prairie && user.quid.profile.energy > 0 && user.quid.profile.health > 0 && user.quid.profile.hunger > 0 && user.quid.profile.thirst > 0 && user.quid.profile.injuries.cold === false && user.serverInfo?.hasCooldown !== true && user.quid.profile.isResting === false && isResting(user) === false;
+	return hasNameAndSpecies(user) && user.quid.profile.currentRegion === CurrentRegionType.Prairie && user.quid.profile.energy > 0 && user.quid.profile.health > 0 && user.quid.profile.hunger > 0 && user.quid.profile.thirst > 0 && user.quid.profile.injuries.cold === false && user.serverInfo?.hasCooldown !== true && isResting(user) === false;
 }

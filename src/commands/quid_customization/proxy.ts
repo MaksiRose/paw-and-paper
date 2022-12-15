@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder, ModalBuilder, NonThreadGuildBasedChannel, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { respond, update } from '../../utils/helperFunctions';
+import { respond } from '../../utils/helperFunctions';
 import { hasName, isInGuild } from '../../utils/checkUserState';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
@@ -28,10 +28,10 @@ export const command: SlashCommand = {
 		]) === true) { return; }
 
 		/* If the user does not have a quid selected, return. */
-		if (!hasName(userData, interaction)) { return; }
+		if (!hasName(userData, interaction)) { return; } // This is always a reply
 
-		/* Send a response to the user. */
-		const botReply = await respond(interaction, {
+		// This is always a reply
+		const { id: messageId } = await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
@@ -57,19 +57,21 @@ export const command: SlashCommand = {
 						.setLabel('Always?')
 						.setStyle(ButtonStyle.Success)] : []),
 				])],
-		}, true);
+			fetchReply: true,
+		});
 
-		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, botReply.id, interaction);
+		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, messageId, interaction);
 	},
 	async sendMessageComponentResponse(interaction, userData) {
 
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
-		if (!hasName(userData) || !customId) { return; }
+		if (!hasName(userData) || !customId) { return; } // This is always a reply
 
 		/* If the user pressed the button to learn more about the set subcommand, explain it with a button that opens a modal. */
 		if (interaction.isButton() && customId.args[0] === 'set' && customId.args[1] === 'learnmore') {
 
-			await update(interaction, {
+			// This is always an update to the message with the button
+			await respond(interaction, {
 				embeds: [new EmbedBuilder(interaction.message.embeds[0]?.toJSON())
 					.setTitle('Here is how to use the set subcommand:')
 					.setDescription('Proxying is a way to speak as if your quid was saying it. The proxy is an indicator to the bot you want your message to be proxied. It consists of a prefix (indicator before the message) and a suffix (indicator after the message). You can either set both or one of them.\n\nExamples:\nprefix: `<`, suffix: `>`, example message: `<hello friends>`\nprefix: `P: `, no suffix, example message: `P: hello friends`\nno prefix, suffix: ` -p`, example message: `hello friends -p`\nThis is case-sensitive (meaning that upper and lowercase matters).')
@@ -79,7 +81,7 @@ export const command: SlashCommand = {
 						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, ['set', 'modal']))
 						.setLabel('Set proxy')
 						.setStyle(ButtonStyle.Success)])],
-			});
+			}, 'update', '@original');
 			return;
 		}
 
@@ -126,19 +128,20 @@ export const command: SlashCommand = {
 			if (!interaction.inGuild()) { throw new Error('Interaction is not in guild'); }
 			const alwaysSelectMenu = await getSelectMenu(allChannels, userData, 0);
 
-			await update(interaction, {
+			// This is always an update to the message with the button
+			await respond(interaction, {
 				embeds: [new EmbedBuilder(interaction.message.embeds[0]?.toJSON())
 					.setTitle('Here is how to use the always subcommand:')
 					.setDescription('When this feature is enabled, every message you send will be treated as if it was proxied, even if the proxy isn\'t included.\nYou can either toggle it for the entire server, or specific channels, using the drop-down menu below. Enabled channels will have a radio emoji next to it.')
 					.setFields()],
 				components: [new ActionRowBuilder<StringSelectMenuBuilder>()
 					.setComponents([alwaysSelectMenu])],
-			});
+			}, 'update', '@original');
 			return;
 		}
 
 		/* Responses for select menu selections */
-		if (interaction.isSelectMenu() && customId.args[0] === 'always' && customId.args[1] === 'options') {
+		if (interaction.isStringSelectMenu() && customId.args[0] === 'always' && customId.args[1] === 'options') {
 
 			let page = 0;
 			const selectOptionId = deconstructSelectOptions<SelectOptionArgs>(interaction);
@@ -150,10 +153,11 @@ export const command: SlashCommand = {
 				if (page >= Math.ceil((allChannels.size + 1) / 24)) { page = 0; }
 
 				const alwaysSelectMenu = await getSelectMenu(allChannels, userData, page);
-				await update(interaction, {
+				// This is always an update to the message with the select menu
+				await respond(interaction, {
 					components: [new ActionRowBuilder<StringSelectMenuBuilder>()
 						.setComponents([alwaysSelectMenu])],
-				});
+				}, 'update', '@original');
 			}
 			/* If the user clicked an always subcommand option, add/remove the channel and send a success message. */
 			else {
@@ -183,18 +187,20 @@ export const command: SlashCommand = {
 				);
 
 				const alwaysSelectMenu = await getSelectMenu(allChannels, userData, page);
-				await update(interaction, {
+				// This is always an update to the message with the select menu
+				await respond(interaction, {
 					components: [new ActionRowBuilder<StringSelectMenuBuilder>()
 						.setComponents([alwaysSelectMenu])],
-				});
+				}, 'update', '@original');
 
+				// This is always a followUp
 				await respond(interaction, {
 					embeds: [new EmbedBuilder()
 						.setColor(userData.quid.color)
 						.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 						.setTitle(`${hasChannel ? 'Removed' : 'Added'} ${interaction.guild.channels.cache.get(channelId)?.name} ${hasChannel ? 'from' : 'to'} the list of automatic proxy channels!`)],
 					ephemeral: true,
-				}, false);
+				});
 			}
 		}
 
@@ -202,7 +208,7 @@ export const command: SlashCommand = {
 	async sendModalResponse(interaction, userData) {
 
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
-		if (!hasName(userData) || !customId) { return; }
+		if (!hasName(userData) || !customId) { return; } // This is always a reply
 
 		const chosenPrefix = interaction.fields.getTextInputValue('startsWith');
 		const chosenSuffix = interaction.fields.getTextInputValue('endsWith');
@@ -216,12 +222,13 @@ export const command: SlashCommand = {
 			const isSameSuffix = chosenSuffix !== '' && quid.proxy.endsWith === chosenSuffix;
 			if (isSamePrefix && isSameSuffix) {
 
+				// This is always a reply
 				await respond(interaction, {
 					embeds: [new EmbedBuilder()
 						.setColor(error_color)
 						.setDescription(`The prefix \`${chosenPrefix}\` and the suffix \`${chosenSuffix}\` are already used for ${quid.name} and can't be used for ${userData.quid.name} as well.`)],
 					ephemeral: true,
-				}, false);
+				});
 				return;
 			}
 		}
@@ -237,12 +244,13 @@ export const command: SlashCommand = {
 
 		const prefixResponse = chosenPrefix === '' ? 'no prefix' : `prefix: \`${chosenPrefix}\``;
 		const suffixResponse = chosenSuffix === '' ? 'no suffix' : `suffix: \`${chosenSuffix}\``;
+		// This is always a reply
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setTitle(`Proxy set to ${prefixResponse} and ${suffixResponse}!`)],
-		}, true);
+		});
 		return;
 
 	},

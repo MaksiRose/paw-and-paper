@@ -6,7 +6,7 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import getInventoryElements from '../../utils/getInventoryElements';
-import { getArrayElement, respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, respond } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { remindOfAttack } from '../gameplay_primary/attack';
 import { sendEatMessage } from './eat';
@@ -26,7 +26,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		const restEmbed = await isInvalid(interaction, userData);
@@ -36,10 +36,10 @@ export const command: SlashCommand = {
 	},
 	async sendMessageComponentResponse(interaction, userData, serverData) {
 
-		if (!interaction.isSelectMenu()) { return; }
+		if (!interaction.isStringSelectMenu()) { return; }
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 		const selectOptionId = getArrayElement(interaction.values, 0);
 
@@ -70,7 +70,6 @@ export const command: SlashCommand = {
 				return;
 			}
 		}
-
 	},
 };
 
@@ -112,7 +111,8 @@ export async function showInventoryMessage(
 		foodSelectMenuOptions.push({ label: 'Show more meat options', value: `newpage_${newSubPage}_${showMaterialsPage}`, description: `You are currently on page ${(subPage ?? 0) + 1}`, emoji: '📋' });
 	}
 
-	const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+	// This is an update to the message with the component (either being "View Inventory" from travel-regions command or selecting a different page), and a reply when doing the inventory command or the eat command without selecting food
+	const botReply = await respond(interaction, {
 		content: messageContent,
 		embeds: [new EmbedBuilder()
 			.setColor(default_color)
@@ -129,7 +129,8 @@ export async function showInventoryMessage(
 						.setOptions(foodSelectMenuOptions))]
 				: [],
 		],
-	});
+		fetchReply: true,
+	}, 'update', '@original');
 
 	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 }

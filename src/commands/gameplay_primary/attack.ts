@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, AnySelectMenuInteraction, SlashCommandBuilder, InteractionResponse, SnowflakeUtil } from 'discord.js';
 import { serverActiveUsersMap } from '../../events/interactionCreate';
 import serverModel from '../../models/serverModel';
 import { Inventory } from '../../typings/data/general';
@@ -12,7 +12,7 @@ import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { createFightGame } from '../../utils/gameBuilder';
-import { getMapData, getSmallerNumber, KeyOfUnion, respond, sendErrorMessage, setCooldown, unsafeKeys, update, ValueOf, widenValues } from '../../utils/helperFunctions';
+import { getMapData, getSmallerNumber, KeyOfUnion, respond, sendErrorMessage, setCooldown, unsafeKeys, ValueOf, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -48,7 +48,7 @@ export const command: SlashCommand = {
 };
 
 
-export async function executeAttacking(
+async function executeAttacking(
 	interaction: ChatInputCommandInteraction | ButtonInteraction,
 	userData: UserData<undefined, ''> | null,
 	serverData: ServerSchema | null,
@@ -60,7 +60,7 @@ export async function executeAttacking(
 
 	/* This ensures that the user is in a guild and has a completed account. */
 	if (serverData === null) { throw new Error('serverData is null'); }
-	if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+	if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 	/* It's disabling all components if userData exists and the command is set to disable a previous command. */
 	if (command.disablePreviousCommand) { await disableCommandComponent(userData); }
@@ -72,6 +72,7 @@ export async function executeAttacking(
 	const serverAttackInfo = serverMap.get(interaction.guild.id);
 	if (!serverAttackInfo || serverAttackInfo.startsTimestamp !== null) {
 
+		// This is always a reply
 		await respond(interaction, {
 			embeds: [
 				...restEmbed,
@@ -80,12 +81,13 @@ export async function executeAttacking(
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 					.setDescription(`*${userData.quid.name} is ready to attack any intruder. But no matter how far ${userData.quid.pronounAndPlural(0, 'look')}, ${userData.quid.pronoun(0)} can't see anyone. It seems that the pack is not under attack at the moment.*`),
 			],
-		}, true);
+		});
 		return;
 	}
 
 	if (serverAttackInfo.idleHumans <= 0) {
 
+		// This is always a reply
 		await respond(interaction, {
 			embeds: [
 				...restEmbed,
@@ -94,7 +96,7 @@ export async function executeAttacking(
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 					.setDescription(`*${userData.quid.name} looks around, searching for a human to attack. It looks like everyone is already being attacked by other pack members. The ${userData.quid.getDisplayspecies()} better not interfere before ${userData.quid.pronounAndPlural(0, 'hurt')} ${userData.quid.pronoun(2)} friends.*`),
 			],
-		}, true);
+		});
 		return;
 	}
 
@@ -111,7 +113,7 @@ export async function executeAttacking(
 
 	let totalCycles: 0 | 1 | 2 = 0;
 	let winLoseRatio = 0;
-	let botReply: Message;
+	let botReply: Message | InteractionResponse;
 
 	botReply = await interactionCollector(interaction, userData, serverData, serverAttackInfo, restEmbed);
 
@@ -124,7 +126,7 @@ export async function executeAttacking(
 		newInteraction?: ButtonInteraction | AnySelectMenuInteraction,
 		previousFightComponents?: ActionRowBuilder<ButtonBuilder>,
 		lastRoundCycleIndex?: number,
-	): Promise<Message> {
+	): Promise<Message | InteractionResponse> {
 
 		const fightGame = createFightGame(totalCycles, lastRoundCycleIndex);
 
@@ -146,10 +148,11 @@ export async function executeAttacking(
 		else { throw new Error('cycleKind is not attack, dodge or defend'); }
 		embed.setFooter({ text: 'You will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response.' });
 
-		botReply = await (async function(messageContent) { return newInteraction ? await update(newInteraction, messageContent) : await respond(interaction, messageContent, true); })({
+		// This is a reply for the first time this is called (aka the original interaction hasn't been replied to), an editReply if an awaitMessageComponent event timed out (For this reason, an editMessageId is provided even when newInteraction is undefined), and an update to the message with the button every other time
+		botReply = await respond(newInteraction ?? interaction, {
 			embeds: [...restEmbed, embed],
 			components: [...previousFightComponents ? [previousFightComponents] : [], fightGame.fightComponent],
-		});
+		}, newInteraction !== undefined ? 'update' : 'reply', '@original');
 
 		/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 		fightGame.fightComponent = fightGame.correctButtonOverwrite();
@@ -261,7 +264,8 @@ export async function executeAttacking(
 
 		const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
 
-		botReply = await (async function(messageContent) { return newInteraction ? await update(newInteraction, messageContent) : await respond(interaction, messageContent, true); })({
+		// This is an editReply if the last awaitMessageComponent event timed out (For this reason, an editMessageId is always provided), else it is an update to the message with the button. newInteraction is undefined when every event timed out.
+		botReply = await respond(newInteraction ?? interaction, {
 			embeds: [
 				...restEmbed,
 				embed,
@@ -274,7 +278,7 @@ export async function executeAttacking(
 						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['new']))
 						.setLabel('Attack again')
 						.setStyle(ButtonStyle.Primary))],
-		});
+		}, 'update', '@original');
 
 		await isPassedOut(interaction, userData, true);
 
@@ -290,13 +294,14 @@ export async function executeAttacking(
 
 	if (serverAttackInfo.idleHumans <= 0 && serverAttackInfo.ongoingFights <= 0) {
 
+		// This is always a followUp
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
 				.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined })
 				.setTitle('The attack is over!')
 				.setDescription('*The packmates howl, dance and cheer as the humans run back into the woods. The battle wasn\'t easy, but they were victorious nonetheless.*')],
-		}, false);
+		});
 
 		if (serverAttackInfo.endingTimeout) { clearTimeout(serverAttackInfo.endingTimeout); }
 		serverMap.delete(interaction.guild.id);
@@ -334,6 +339,7 @@ export async function startAttack(
 			const serverAttackInfo = serverMap.get(interaction.guildId);
 			if (!serverAttackInfo) { return; }
 
+			// This is always a followUp
 			const botReply = await respond(interaction, {
 				content: serverActiveUsersMap.get(interaction.guildId)?.map(user => `<@!${user}>`).join(' '),
 				embeds: [new EmbedBuilder()
@@ -341,7 +347,7 @@ export async function startAttack(
 					.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined })
 					.setDescription(`*The packmates get ready as ${serverAttackInfo.idleHumans} humans run over the borders. Now it is up to them to defend their land.*`)
 					.setFooter({ text: 'You have 5 minutes to defeat all the humans. Type \'/attack\' to attack one.' })],
-			}, false);
+			});
 
 			serverAttackInfo.startsTimestamp = null;
 			serverAttackInfo.endingTimeout = setTimeout(async function() {
@@ -392,7 +398,7 @@ export function remindOfAttack(
  */
 async function remainingHumans(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
-	botReply: Message,
+	botReply: Message | InteractionResponse,
 	serverAttackInfo: serverMapInfo,
 ): Promise<void> {
 
@@ -421,6 +427,8 @@ async function remainingHumans(
 	}
 	if (footerText.length > 0) { embed.setFooter({ text: footerText }); }
 
+	serverMap.delete(interaction.guild.id);
+
 	serverData = await serverModel.findOneAndUpdate(
 		s => s._id === serverData._id,
 		(s) => {
@@ -429,9 +437,18 @@ async function remainingHumans(
 		},
 	);
 
-	await botReply.channel.send({ embeds: [embed] });
+	try {
 
-	serverMap.delete(interaction.guild.id);
+		const fifteenMinutesInMs = 900_000;
+		if (SnowflakeUtil.deconstruct(interaction.id).timestamp < Date.now() - fifteenMinutesInMs) { throw new Error('Interaction is older than 15 minutes'); }
+		await respond(interaction, { embeds: [embed] });
+	}
+	catch {
+
+		const channel = botReply instanceof Message ? botReply.channel : botReply.interaction.channel ?? (botReply.interaction.isRepliable() ? (await botReply.interaction.fetchReply()).channel : null);
+		if (!channel) { throw new TypeError('channel is null'); }
+		await channel.send({ embeds: [embed] });
+	}
 }
 
 

@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { respond, update } from '../../utils/helperFunctions';
+import { respond } from '../../utils/helperFunctions';
 import { hasNameAndSpecies } from '../../utils/checkUserState';
 import { checkOldMentions, getFriendshipHearts, getFriendshipPoints } from '../../utils/friendshipHandling';
 import { SlashCommand } from '../../typings/handle';
@@ -17,15 +17,15 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction, userData) => {
 
-		if (!hasNameAndSpecies(userData, interaction)) { return; }
+		if (!hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 		/* Creating a message with up to 25 friendships and buttons to go back and fourth a page if the quid has more than 25 friends. */
-		await respond(interaction, await getFriendshipMessage(userData, interaction.guildId ?? '', 0), true);
+		await respond(interaction, await getFriendshipMessage(userData, interaction.guildId ?? '', 0)); // This is always a reply
 	},
 	async sendMessageComponentResponse(interaction, userData) {
 
 		if (!interaction.isButton()) { return; }
-		if (!hasNameAndSpecies(userData, interaction)) { return; }
+		if (!hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 		/* Get the page number of the friendship list.  */
 		let page = Number(interaction.customId.split('_')[2] ?? 0);
@@ -45,9 +45,8 @@ export const command: SlashCommand = {
 			if (page >= Math.ceil(friendshipTexts.length / 25)) { page = 0; }
 		}
 
-		/* Updating the message with the correct friendship texts based on the new page. */
-		await update(interaction, await getFriendshipMessage(userData, interaction.guildId ?? '', page, friendshipTexts));
-
+		// This is always an update to the message with the button
+		await respond(interaction, await getFriendshipMessage(userData, interaction.guildId ?? '', page, friendshipTexts), 'update', '@original');
 	},
 };
 
@@ -94,7 +93,7 @@ async function getFriendshipTexts(
 		const friendshipHearts = getFriendshipHearts(friendshipPoints);
 		if (friendshipHearts <= 0) { continue; }
 
-		friendshipTexts.push(`${otherUserData.quids.get(_id)?.name} (<@${otherUserData.userId[0]}>) - ${'❤️'.repeat(friendshipHearts) + '🖤'.repeat(10 - friendshipHearts)}`);
+		friendshipTexts.push(`${otherUserData.quids.get(_id)?.name} (<@${Object.keys(otherUserData.userIds)[0]}>) - ${'❤️'.repeat(friendshipHearts) + '🖤'.repeat(10 - friendshipHearts)}`);
 	}
 
 	return friendshipTexts;

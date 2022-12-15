@@ -222,12 +222,14 @@ export interface UserSchema {
 		[key in string]: {
 			currentQuid: string | null,
 			lastInteractionTimestamp: number | null,
+			/** @deprecated */
 			lastInteractionToken: string | null,
 			lastInteractionChannelId: string | null,
 			restingMessageId: string | null,
 			restingChannelId: string | null,
 			componentDisablingChannelId: string | null,
 			componentDisablingMessageId: string | null,
+			/** @deprecated */
 			componentDisablingToken: string | null,
 			hasCooldown: boolean
 		}
@@ -249,7 +251,7 @@ export interface Quid<Completed extends ''> extends Omit<QuidSchema<Completed>, 
 	pronounAndPlural: (pronounNumber: 0 | 1 | 2 | 3 | 4 | 5, string1: string, string2?: string) => string;
 }
 
-export interface UserData<QuidExists extends undefined, QuidCompleted extends ''> extends Omit<UserSchema, 'quids' | 'currentQuid' | 'servers' | 'tag' | 'settings'> {
+export interface UserData<QuidExists extends undefined, QuidCompleted extends ''> extends Omit<UserSchema, 'quids' | 'currentQuid' | 'servers' | 'tag' | 'settings' | 'userId'> {
 	tag: Omit<UserSchema['tag'], 'servers'> & {
 		server: UserSchema['tag']['servers'][string] | undefined;
 	},

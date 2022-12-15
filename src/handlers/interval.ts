@@ -5,7 +5,7 @@ import serverModel from '../models/serverModel';
 import { userModel, getUserData } from '../models/userModel';
 import { DeleteList } from '../typings/data/general';
 import { hasNameAndSpecies } from '../utils/checkUserState';
-import { getMapData, sendErrorMessage } from '../utils/helperFunctions';
+import { getMapData, sendErrorMessage, userDataServersObject } from '../utils/helperFunctions';
 
 /** It's checking whether the deletionTime of a property on the toDeleteList is older than an hour from now, and if it is, delete the property and delete the file from the toDelete folder. It's also checking whether a profile has a temporaryStatIncrease with a timestamp that is older than a week ago, and if it does, bring the stat back and delete the property from temporaryStatIncrease. */
 export async function execute(): Promise<void> {
@@ -62,10 +62,10 @@ export async function execute(): Promise<void> {
 		const userArray = await userModel.find();
 		for (const user of userArray) {
 
-			for (const [guildId, quidId] of Object.entries(user.currentQuid)) {
+			for (const [guildId, { currentQuid: quidId }] of Object.entries(user.servers)) {
 
+				if (!quidId) { continue; }
 				const userData = getUserData(user, guildId, getMapData(user.quids, quidId));
-
 
 				/* start resting if possible */
 				if (!hasNameAndSpecies(userData)) { continue; }
@@ -84,7 +84,7 @@ export async function execute(): Promise<void> {
 				const hasLessThanMaxEnergy = userData.quid.profile.energy < userData.quid.profile.maxEnergy;
 				const isConscious = userData.quid.profile.energy > 0 || userData.quid.profile.health > 0 || userData.quid.profile.hunger > 0 || userData.quid.profile.thirst > 0;
 				const hasNoCooldown = userData.serverInfo?.hasCooldown !== true;
-				if (lastInteractionIsTenMinutesAgo && userData.quid.profile.isResting === false && isResting(userData) === false && hasLessThanMaxEnergy && isConscious && hasNoCooldown) {
+				if (lastInteractionIsTenMinutesAgo && isResting(userData) === false && hasLessThanMaxEnergy && isConscious && hasNoCooldown) {
 
 					const lastInteraction = lastInteractionMap.get(userData._id + guildId);
 					await startResting(lastInteraction, userData, serverData, '', true)
@@ -93,8 +93,21 @@ export async function execute(): Promise<void> {
 
 								await sendErrorMessage(lastInteraction, error)
 									.catch(e => { console.error(e); });
+								lastInteractionMap.delete(userData._id + guildId); // This is to avoid sending repeating error messages every 10 seconds
 							}
-							else { console.error(error); }
+							else {
+
+								console.error(error);
+								// This is to avoid sending repeating error messages to the console every 10 seconds
+								userData.update(
+									(u) => {
+										u.servers[guildId] = {
+											...userDataServersObject(u, guildId),
+											lastInteractionTimestamp: null,
+										};
+									},
+								);
+							}
 						});
 				}
 			}
@@ -105,7 +118,7 @@ export async function execute(): Promise<void> {
 			for (const userId of array) {
 
 				const userData = (() => {
-					try { return userModel.findOne(u => u.userId.includes(userId)); }
+					try { return userModel.findOne(u => Object.keys(u.userIds).includes(userId)); }
 					catch { return null; }
 				})();
 				const serverInfo = userData?.servers[guildId];

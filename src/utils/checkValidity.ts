@@ -1,7 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, AnySelectMenuInteraction } from 'discord.js';
 import { capitalizeString, respond, sendErrorMessage } from './helperFunctions';
 import { userModel } from '../models/userModel';
-import { getMapData } from './helperFunctions';
 import { decreaseLevel } from './levelHandling';
 import { stopResting, isResting } from '../commands/gameplay_maintenance/rest';
 import { calculateInventorySize } from './simulateItemUse';
@@ -18,13 +17,14 @@ export async function isPassedOut(
 	/* This is a function that checks if the user has passed out. If they have, it will send a message to the channel and return true. */
 	if (userData.quid.profile.energy <= 0 || userData.quid.profile.health <= 0 || userData.quid.profile.hunger <= 0 || userData.quid.profile.thirst <= 0) {
 
+		// This is always a followUp
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setDescription(`*${userData.quid.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${userData.quid.pronounAndPlural(0, 'screeches', 'screech')} with ${userData.quid.pronoun(2)} last energy. Without help, ${userData.quid.pronoun(0)} will not be able to continue.*`)
 				.setFooter(isNew ? { text: await decreaseLevel(userData, interaction) } : null)],
-		}, false);
+		});
 
 		/* This is a tip that is sent to the user when they pass out for the first time. */
 		if (userData.advice.passingout === false) {
@@ -34,9 +34,10 @@ export async function isPassedOut(
 				(u) => { u.advice.passingout = true; },
 			);
 
+			// This is always a followUp
 			await respond(interaction, {
 				content: `${interaction.user.toString()} ❓ **Tip:**\nIf your health, energy, hunger or thirst points hit zero, you pass out. Another player has to heal you so you can continue playing.\nMake sure to always watch your stats to prevent passing out!`,
-			}, false);
+			});
 		}
 
 		return true;
@@ -55,24 +56,24 @@ export async function hasCooldown(
 
 	if (userData.serverInfo?.hasCooldown === true) {
 
-		await respond(interaction, {
+		// This is always a followUp
+		const { id } = await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setDescription(`*${userData.quid.name} is so eager to get things done today that ${userData.quid.pronounAndPlural(0, 'is', 'are')} somersaulting. ${capitalizeString(userData.quid.pronoun(0))} should probably take a few seconds to calm down.*`)],
-		}, false)
-			.then(reply => {
-				setTimeout(async function() {
+		});
 
-					await reply
-						.delete() // instead of doing this, an InteractionWebhook could be created using the interaction token and the id of the reply, and then deleteMessage could be called there. That API call wouldnt go towards the API call limit
-						.catch (async error => {
+		setTimeout(async function() {
 
-							await sendErrorMessage(interaction, error)
-								.catch(e => { console.error(e); });
-						});
-				}, 10_000);
-			});
+			await interaction
+				.deleteReply(id)
+				.catch (async error => {
+
+					await sendErrorMessage(interaction, error)
+						.catch(e => { console.error(e); });
+				});
+		}, 10_000);
 
 		return true;
 	}
@@ -89,14 +90,7 @@ export async function checkResting(
 ): Promise<EmbedBuilder[]> {
 
 	/* This is a function that checks if the user is resting. If they are, it will wake them up and attach an embed to the message. */
-	if (userData.quid.profile.isResting === true || isResting(userData) === true) {
-
-		await userData.update(
-			(u) => {
-				const p = getMapData(getMapData(u.quids, userData.quid._id).profiles, interaction.guildId);
-				p.isResting = false;
-			},
-		);
+	if (isResting(userData) === true) {
 
 		stopResting(userData);
 
@@ -152,6 +146,7 @@ export async function hasFullInventory(
 
 	if (hasTooManyItems(userData)) {
 
+		// This is always a reply
 		await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
@@ -166,7 +161,7 @@ export async function hasFullInventory(
 					.setLabel('Store items away')
 					.setStyle(ButtonStyle.Secondary),
 				)],
-		}, false);
+		});
 
 		return true;
 	}
@@ -184,6 +179,7 @@ export function isInteractable(
 
 	if (!userData) {
 
+		// This is always a reply
 		respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
@@ -191,12 +187,13 @@ export function isInteractable(
 				.setTitle('The mentioned user has no account :('),
 			],
 			ephemeral: true,
-		}, false);
+		});
 		return false;
 	}
 
 	if (!hasName(userData)) {
 
+		// This is always a reply
 		respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
@@ -204,12 +201,13 @@ export function isInteractable(
 				.setTitle('The mentioned user has no selected quid :('),
 			],
 			ephemeral: true,
-		}, false);
+		});
 		return false;
 	}
 
 	if (!hasNameAndSpecies(userData)) {
 
+		// This is always a reply
 		respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
@@ -217,12 +215,13 @@ export function isInteractable(
 				.setTitle('The mentioned user\'s selected quid is not set up for the RPG :('),
 			],
 			ephemeral: true,
-		}, false);
+		});
 		return false;
 	}
 
 	if (options?.checkPassedOut !== false && (userData.quid.profile.health <= 0 || userData.quid.profile.energy <= 0 || userData.quid.profile.hunger <= 0 || userData.quid.profile.thirst <= 0)) {
 
+		// This is always a reply
 		respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
@@ -230,12 +229,13 @@ export function isInteractable(
 				.setTitle('The mentioned user\'s selected quid is passed out :('),
 			],
 			ephemeral: true,
-		}, false);
+		});
 		return false;
 	}
 
-	if (options?.checkResting !== false && (userData.quid.profile.isResting || isResting(userData))) {
+	if (options?.checkResting !== false && isResting(userData)) {
 
+		// This is always a reply
 		respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
@@ -243,12 +243,13 @@ export function isInteractable(
 				.setTitle('The mentioned user\'s selected quid is resting :('),
 			],
 			ephemeral: true,
-		}, false);
+		});
 		return false;
 	}
 
 	if (options?.checkCooldown !== false && userData.serverInfo?.hasCooldown === true) {
 
+		// This is always a reply
 		respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
@@ -256,12 +257,13 @@ export function isInteractable(
 				.setTitle('The mentioned user\'s selected quid is busy :('),
 			],
 			ephemeral: true,
-		}, false);
+		});
 		return false;
 	}
 
 	if (options?.checkFullInventory !== false && hasTooManyItems(userData)) {
 
+		// This is always a reply
 		respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
@@ -269,7 +271,7 @@ export function isInteractable(
 				.setTitle('The mentioned user\'s selected quid has too many items in their inventory :('),
 			],
 			ephemeral: true,
-		}, false);
+		});
 		return false;
 	}
 

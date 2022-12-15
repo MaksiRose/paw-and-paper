@@ -11,7 +11,7 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents } from '../../utils/componentDisabling';
 import getInventoryElements from '../../utils/getInventoryElements';
-import { getArrayElement, getSmallerNumber, respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, getSmallerNumber, respond } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -40,7 +40,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		const restEmbed = await isInvalid(interaction, userData);
@@ -50,18 +50,20 @@ export const command: SlashCommand = {
 
 		if (userData.quid.profile.rank === RankType.Youngling) {
 
+			// This is always a reply
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 					.setDescription(`*A hunter rushes to stop the ${userData.quid.profile.rank}.*\n"${userData.quid.name}, you are not trained to repair dens, it is very dangerous! You should be playing on the prairie instead."\n*${userData.quid.name} lowers ${userData.quid.pronoun(2)} head and leaves in shame.*`)],
-			}, true);
+			});
 			return;
 		}
 
 		if (Object.values(serverData.inventory.materials).filter(value => value > 0).length <= 0) {
 
+			// This is always a reply
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
@@ -69,12 +71,13 @@ export const command: SlashCommand = {
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 					.setDescription(`*${userData.quid.name} goes to look if any dens need to be repaired. But it looks like the pack has nothing that can be used to repair dens in the first place. Looks like the ${userData.quid.getDisplayspecies()} needs to go out and find materials first!*`)
 					.setFooter({ text: 'Materials can be found through scavenging and adventuring.' })],
-			}, true);
+			});
 			return;
 		}
 
 		const chosenDen = interaction.options.getString('den');
 
+		// This is always a reply
 		const botReply = await respond(interaction, (chosenDen !== 'sleepingDens' && chosenDen !== 'medicineDen' && chosenDen !== 'foodDen') ? {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
@@ -82,7 +85,8 @@ export const command: SlashCommand = {
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setDescription(`*${userData.quid.name} roams around the pack, looking if any dens need to be repaired.*`)],
 			components: [getDenButtons(userData._id)],
-		} : getMaterials(userData, serverData, chosenDen, restEmbed, messageContent), true);
+			fetchReply: true,
+		} : getMaterials(userData, serverData, chosenDen, restEmbed, messageContent));
 
 		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 	},
@@ -90,18 +94,19 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 		if (interaction.isButton()) {
 
 			const chosenDen = getArrayElement(interaction.customId.split('_'), 1);
 			if (chosenDen !== 'sleepingDens' && chosenDen !== 'medicineDen' && chosenDen !== 'foodDen') { throw new Error('chosenDen is not a den'); }
 
-			await update(interaction, getMaterials(userData, serverData, chosenDen, [], ''));
+			// This is always an update to the message with the button
+			await respond(interaction, getMaterials(userData, serverData, chosenDen, [], ''), 'update', '@original');
 			return;
 		}
 
-		if (interaction.isSelectMenu()) {
+		if (interaction.isStringSelectMenu()) {
 
 			const chosenDen = getArrayElement(interaction.customId.split('_'), 2);
 			if (chosenDen !== 'sleepingDens' && chosenDen !== 'medicineDen' && chosenDen !== 'foodDen') { throw new Error('chosenDen is not a den'); }
@@ -130,7 +135,8 @@ export const command: SlashCommand = {
 
 			const denName = chosenDen.split(/(?=[A-Z])/).join(' ').toLowerCase();
 
-			await update(interaction, {
+			// This is always an update to the message with the select menu
+			await respond(interaction, {
 				embeds: [
 					new EmbedBuilder()
 						.setColor(userData.quid.color)
@@ -141,7 +147,7 @@ export const command: SlashCommand = {
 					...levelUpEmbed,
 				],
 				components: disableAllComponents(interaction.message.components),
-			});
+			}, 'update', '@original');
 
 			await isPassedOut(interaction, userData, true);
 

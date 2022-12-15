@@ -20,18 +20,19 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction, userData) => {
 
-		if (!hasName(userData, interaction)) { return; }
+		if (!hasName(userData, interaction)) { return; } // This is always a reply
 
 		/* Checking if the user has sent an attachment. If they have not, it will send an error message. */
 		const attachment = interaction.options.getAttachment('picture');
 		if (!attachment) {
 
+			// This is always a reply
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('Please send an image to set as your quids avatar!')],
 				ephemeral: true,
-			}, false);
+			});
 			return;
 		}
 
@@ -39,29 +40,31 @@ export const command: SlashCommand = {
 		const imageURL = attachment.url;
 		if (!imageURL.endsWith('.png') && !imageURL.endsWith('.jpeg') && !imageURL.endsWith('.jpg') && !imageURL.endsWith('.raw') && !imageURL.endsWith('.webp')) {
 
+			// This is always a reply
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('This image extension is not supported! Please send a .png, .jp(e)g, .raw or .webp image.')],
 				ephemeral: true,
-			}, false);
+			});
 			return;
 		}
 
 		await userData.update(
 			(u) => {
-				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DMs'));
+				const q = getMapData(u.quids, getMapData(u.servers, interaction.guildId || 'DMs').currentQuid ?? '');
 				q.avatarURL = imageURL;
 			},
 		);
 
+		// This is always a reply
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: imageURL })
 				.setTitle(`Profile picture for ${userData.quid.name} set!`)
 				.setImage(imageURL)],
-		}, true);
+		});
 		return;
 	},
 };

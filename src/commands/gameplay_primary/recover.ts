@@ -1,4 +1,4 @@
-import { ActionRowBuilder, APIActionRowComponent, APIButtonComponent, APISelectMenuComponent, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, APIActionRowComponent, APIButtonComponent, APISelectMenuComponent, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
 import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo } from '../..';
 import { Inventory } from '../../typings/data/general';
 import { ServerSchema } from '../../typings/data/server';
@@ -9,7 +9,7 @@ import { changeCondition, DecreasedStatsData } from '../../utils/changeCondition
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
-import { getArrayElement, getMapData, respond, sendErrorMessage, setCooldown, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
+import { getArrayElement, getMapData, respond, sendErrorMessage, setCooldown, unsafeKeys, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
@@ -36,7 +36,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		const restEmbed = await isInvalid(interaction, userData);
@@ -48,6 +48,7 @@ export const command: SlashCommand = {
 		const recoverCooldown = recoverCooldownProfilesMap.get(userData.quid._id + interaction.guildId);
 		if (recoverCooldown && Date.now() - recoverCooldown < twelveHoursInMs) {
 
+			// This is always a reply
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
@@ -55,50 +56,54 @@ export const command: SlashCommand = {
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 					.setDescription(`*${userData.quid.name} walks towards the entrance of the grotto, when an elderly is stopping ${userData.quid.pronoun(1)}.*\n"Didn't I see you in here in the past 12 hours? You shouldn't use the grotto this often, it's a very precious place that needs to be preserved as much as possible!"\n\nYou can recover again <t:${Math.floor((recoverCooldown + twelveHoursInMs) / 1_000)}:R>.`),
 				],
-			}, false);
+			});
 			return;
 		}
 
-		let botReply = await respond(interaction, {
+		let components = [new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId('recover_wounds')
+				.setLabel('Wound')
+				.setDisabled(userData.quid.profile.injuries.wounds <= 0 || inventoryHasHealingItem(serverData.inventory, 'healsWounds'))
+				.setStyle(ButtonStyle.Secondary),
+			new ButtonBuilder()
+				.setCustomId('recover_infections')
+				.setLabel('Infection')
+				.setDisabled(userData.quid.profile.injuries.infections <= 0 || inventoryHasHealingItem(serverData.inventory, 'healsInfections'))
+				.setStyle(ButtonStyle.Secondary),
+			new ButtonBuilder()
+				.setCustomId('recover_cold')
+				.setLabel('Cold')
+				.setDisabled(userData.quid.profile.injuries.cold === false || inventoryHasHealingItem(serverData.inventory, 'healsColds'))
+				.setStyle(ButtonStyle.Secondary),
+			new ButtonBuilder()
+				.setCustomId('recover_sprains')
+				.setLabel('Sprain')
+				.setDisabled(userData.quid.profile.injuries.sprains <= 0 || inventoryHasHealingItem(serverData.inventory, 'healsSprains'))
+				.setStyle(ButtonStyle.Secondary),
+			new ButtonBuilder()
+				.setCustomId('recover_poison')
+				.setLabel('Poison')
+				.setDisabled(userData.quid.profile.injuries.poison === false || inventoryHasHealingItem(serverData.inventory, 'healsPoison'))
+				.setStyle(ButtonStyle.Secondary),
+			]),
+		];
+
+		// This is always a reply
+		let botReply: Message | InteractionResponse = await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setDescription(`*${userData.quid.name} walks towards the entrance of the grotto, where an elderly is already waiting for ${userData.quid.pronoun(1)}.*\n"Do you already know about this place? It has everything needed to heal any injury or illness. This makes it very precious, and so it should only be used in emergencies. So only go here if you can't find anything in the medicine den that can cure you!"\n*The ${userData.quid.getDisplayspecies()} must decide which of their injuries ${userData.quid.pronounAndPlural(0, 'want')} to heal here.*`)
 				.setFooter({ text: 'You can only select an injury when the pack has no herbs that can heal that injury.' })],
-			components: [new ActionRowBuilder<ButtonBuilder>()
-				.setComponents([new ButtonBuilder()
-					.setCustomId('recover_wounds')
-					.setLabel('Wound')
-					.setDisabled(userData.quid.profile.injuries.wounds <= 0 || inventoryHasHealingItem(serverData.inventory, 'healsWounds'))
-					.setStyle(ButtonStyle.Secondary),
-				new ButtonBuilder()
-					.setCustomId('recover_infections')
-					.setLabel('Infection')
-					.setDisabled(userData.quid.profile.injuries.infections <= 0 || inventoryHasHealingItem(serverData.inventory, 'healsInfections'))
-					.setStyle(ButtonStyle.Secondary),
-				new ButtonBuilder()
-					.setCustomId('recover_cold')
-					.setLabel('Cold')
-					.setDisabled(userData.quid.profile.injuries.cold === false || inventoryHasHealingItem(serverData.inventory, 'healsColds'))
-					.setStyle(ButtonStyle.Secondary),
-				new ButtonBuilder()
-					.setCustomId('recover_sprains')
-					.setLabel('Sprain')
-					.setDisabled(userData.quid.profile.injuries.sprains <= 0 || inventoryHasHealingItem(serverData.inventory, 'healsSprains'))
-					.setStyle(ButtonStyle.Secondary),
-				new ButtonBuilder()
-					.setCustomId('recover_poison')
-					.setLabel('Poison')
-					.setDisabled(userData.quid.profile.injuries.poison === false || inventoryHasHealingItem(serverData.inventory, 'healsPoison'))
-					.setStyle(ButtonStyle.Secondary),
-				]),
-			],
-		}, true);
+			components: components,
+			fetchReply: true,
+		});
 
 		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 
-		const buttonInteraction = await botReply
+		const buttonInteraction = await (botReply as Message<true> | InteractionResponse<true>)
 			.awaitMessageComponent({
 				componentType: ComponentType.Button,
 				filter: i => i.user.id === interaction.user.id,
@@ -108,14 +113,15 @@ export const command: SlashCommand = {
 
 		if (buttonInteraction === undefined) {
 
+			// This is always an editReply
 			botReply = await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 					.setDescription(`*After careful consideration, ${userData.quid.name} decides that none of ${userData.quid.pronoun(2)} injuries are urgent enough to use the grotto to regenerate. The ${userData.quid.getDisplayspecies()} might inspect the medicine den for useful plants instead.*`)],
-				components: disableAllComponents(botReply.components),
-			}, true);
+				components: disableAllComponents(components),
+			}, 'reply', '@original');
 			return;
 		}
 
@@ -144,12 +150,14 @@ export const command: SlashCommand = {
 			}
 		}
 
-		botReply = await update(buttonInteraction, {
+		// This is always an update to the message with the button
+		components = disableAllComponents(componentArray);
+		botReply = await respond(buttonInteraction, {
 			content: messageContent,
-			components: disableAllComponents(componentArray),
-		});
+			components: components,
+		}, 'update', '@original');
 
-		startNewRound(interaction, userData, serverData, []);
+		startNewRound(buttonInteraction, userData, serverData, []);
 
 
 		/**
@@ -157,7 +165,7 @@ export const command: SlashCommand = {
 		 * @param emojisToClick - An array of emojis that the user has to click in order.
 		 */
 		async function startNewRound(
-			interaction: ChatInputCommandInteraction<'cached'>,
+			interaction: ButtonInteraction<'cached'>,
 			userData: UserData<never, never>,
 			serverData: ServerSchema,
 			emojisToClick: string[],
@@ -172,11 +180,11 @@ export const command: SlashCommand = {
 			let choosingEmoji = 0;
 
 			(function(
-				interaction: ChatInputCommandInteraction<'cached'>,
+				interaction: ButtonInteraction<'cached'>,
 				userData: UserData<never, never>,
 				serverData: ServerSchema,
 				callback: (
-					interaction: ChatInputCommandInteraction<'cached'>,
+					interaction: ButtonInteraction<'cached'>,
 					userData: UserData<never, never>,
 					serverData: ServerSchema
 				) => Promise<void>,
@@ -184,16 +192,16 @@ export const command: SlashCommand = {
 
 				const viewingInterval = setInterval(async function() {
 
-					botReply = await interaction.webhook // i'm not sure why im doing this over calling update. botReply should be the reply to the original interaction no matter what. i'm keeping this to avoid bugs, if this bugs out at any point i will have to revisit
-						.editMessage(botReply.id, {
-							content: messageContent,
-							embeds: [new EmbedBuilder()
-								.setColor(userData.quid.color)
-								.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-								.setDescription(drawEmojibar(displayingEmoji, emojisToClick))
-								.setFooter({ text: 'After a list of emojis is displayed to you one by one, choose the same emojis from the buttons below in the same order.' })],
-							components: displayingEmoji === emojisToClick.length ? enableAllComponents(componentArray.map(c => c.toJSON())) : botReply.components,
-						});
+					// This is always editReply;
+					botReply = await respond(interaction, {
+						content: messageContent,
+						embeds: [new EmbedBuilder()
+							.setColor(userData.quid.color)
+							.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+							.setDescription(drawEmojibar(displayingEmoji, emojisToClick))
+							.setFooter({ text: 'After a list of emojis is displayed to you one by one, choose the same emojis from the buttons below in the same order.' })],
+						components: displayingEmoji === emojisToClick.length ? enableAllComponents(componentArray.map(c => c.toJSON())) : components,
+					}, 'reply', '@original');
 
 					if (displayingEmoji === emojisToClick.length) {
 
@@ -205,26 +213,27 @@ export const command: SlashCommand = {
 					displayingEmoji += 1;
 				}, 2_000);
 			})(interaction, userData, serverData, async function(
-				interaction: ChatInputCommandInteraction<'cached'>,
+				interaction: ButtonInteraction<'cached'>,
 				userData: UserData<never, never>,
 				serverData: ServerSchema,
 			) {
 
-				const collector = (botReply as Message<true>).createMessageComponentCollector({
+				const collector = (botReply as Message<true> | InteractionResponse<true>).createMessageComponentCollector({
 					componentType: ComponentType.Button,
 					filter: i => i.user.id === interaction.user.id,
 					idle: 10_000,
-					max: emojisToClick.length,
 				});
+				let thisRoundEmojisClicked = 0;
 
 				collector.on('collect', async (int) => {
 					try {
 
+						thisRoundEmojisClicked += 1;
 						choosingEmoji += 1;
 
 						if (int.customId.replace('recover_', '') === emojisToClick[choosingEmoji - 1]) {
 
-							botReply = await update(int, {
+							botReply = await respond(int, {
 								content: messageContent,
 								embeds: [new EmbedBuilder()
 									.setColor(userData.quid.color)
@@ -232,7 +241,8 @@ export const command: SlashCommand = {
 									.setDescription('✅'.repeat(choosingEmoji - 1) + '✅')
 									.setFooter({ text: 'After a list of emojis is displayed to you one by one, choose the same emojis from the buttons below in the same order.' })],
 								components: choosingEmoji === emojisToClick.length ? disableAllComponents(componentArray) : undefined,
-							});
+							}, 'update', '@original');
+							if (emojisToClick.length >= thisRoundEmojisClicked) { collector.stop('max'); }
 						}
 						else {
 
@@ -250,6 +260,7 @@ export const command: SlashCommand = {
 				collector.on('end', async (interactions, reason) => {
 					try {
 
+						const lastInteraction = interactions.last() ?? interaction;
 						let changedCondition: DecreasedStatsData;
 
 						let embed: EmbedBuilder;
@@ -265,7 +276,7 @@ export const command: SlashCommand = {
 						}
 						else if (emojisToClick.length < 12) {
 
-							await startNewRound(interaction, userData, serverData, emojisToClick);
+							await startNewRound(lastInteraction, userData, serverData, emojisToClick);
 							return;
 						}
 						else {
@@ -306,7 +317,7 @@ export const command: SlashCommand = {
 
 							await userData.update(
 								(u) => {
-									const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+									const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 									p.injuries = userData.quid.profile.injuries;
 								},
 							);
@@ -320,10 +331,9 @@ export const command: SlashCommand = {
 								.setFooter({ text: `${changedCondition.statsUpdateText}\n${injuryText}` });
 						}
 
-						const lastInteraction = interactions.last() || interaction;
 						const levelUpEmbed = await checkLevelUp(lastInteraction, userData, serverData);
 
-						botReply = await (async function(messageObject) { return lastInteraction.isMessageComponent() ? await update(lastInteraction, messageObject) : await respond(lastInteraction, messageObject, true); })({
+						botReply = await respond(lastInteraction, {
 							content: messageContent,
 							embeds: [
 								embed,
@@ -331,7 +341,7 @@ export const command: SlashCommand = {
 								...levelUpEmbed,
 							],
 							components: disableAllComponents(componentArray),
-						});
+						}, 'update', '@original');
 
 						await isPassedOut(lastInteraction, userData, true);
 

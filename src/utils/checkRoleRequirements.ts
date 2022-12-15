@@ -2,7 +2,7 @@ import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, GuildMemb
 import { userModel, getUserData } from '../models/userModel';
 import { ServerSchema } from '../typings/data/server';
 import { RankType, WayOfEarningType } from '../typings/data/user';
-import { respond } from './helperFunctions';
+import { respond, sendErrorMessage } from './helperFunctions';
 import { getMapData } from './helperFunctions';
 import { missingPermissions } from './permissionHandler';
 const { default_color, error_color } = require('../../config.json');
@@ -34,8 +34,8 @@ export async function checkRankRequirements(
 			try {
 
 				/* Get the userData and the roles of the current quid. */
-				const _userData = await userModel.findOne(u => u.userId.includes(member.id));
-				const userData = getUserData(_userData, interaction.guildId, _userData.quids[_userData.currentQuid[member.guild.id] ?? '']);
+				const _userData = await userModel.findOne(u => Object.keys(u.userIds).includes(member.id));
+				const userData = getUserData(_userData, interaction.guildId, _userData.quids[_userData.servers[member.guild.id]?.currentQuid ?? '']);
 				const roles = userData.quid?.profile?.roles;
 
 				/* It's checking if the role is in the database. If it's not, it will add it to the database. */
@@ -43,7 +43,7 @@ export async function checkRankRequirements(
 
 					await userData.update(
 						(u) => {
-							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+							const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 							p.roles.push({
 								roleId: item.roleId,
 								wayOfEarning: item.wayOfEarning,
@@ -62,13 +62,15 @@ export async function checkRankRequirements(
 					await member.roles.add(item.roleId);
 
 					if (sendMessage) {
+
+						// This is always a followUp
 						await respond(interaction, {
 							content: member.toString(),
 							embeds: [new EmbedBuilder()
 								.setColor(default_color)
 								.setAuthor(interaction.guild ? { name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined } : null)
 								.setDescription(`You got the <@&${item.roleId}> role for being ${item.requirement}!`)],
-						}, false);
+						});
 					}
 				}
 			}
@@ -107,8 +109,8 @@ export async function checkLevelRequirements(
 			try {
 
 				/* Get the userData and the roles of the current quid. */
-				const _userData = await userModel.findOne(u => u.userId.includes(member.id));
-				const userData = getUserData(_userData, interaction.guildId, _userData.quids[_userData.currentQuid[member.guild.id] ?? '']);
+				const _userData = await userModel.findOne(u => Object.keys(u.userIds).includes(member.id));
+				const userData = getUserData(_userData, interaction.guildId, _userData.quids[_userData.servers[member.guild.id]?.currentQuid ?? '']);
 				const roles = userData.quid?.profile?.roles;
 
 				/* It's checking if the role is in the database. If it's not, it will add it to the database. */
@@ -116,7 +118,7 @@ export async function checkLevelRequirements(
 
 					await userData.update(
 						(u) => {
-							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+							const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 							p.roles.push({
 								roleId: item.roleId,
 								wayOfEarning: item.wayOfEarning,
@@ -135,13 +137,15 @@ export async function checkLevelRequirements(
 					await member.roles.add(item.roleId);
 
 					if (sendMessage) {
+
+						// This is always a followUp
 						await respond(interaction, {
 							content: member.toString(),
 							embeds: [new EmbedBuilder()
 								.setColor(default_color)
 								.setAuthor(interaction.guild ? { name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined } : null)
 								.setDescription(`You got the <@&${item.roleId}> role for being level ${item.requirement}!`)],
-						}, false);
+						});
 					}
 				}
 			}
@@ -168,21 +172,17 @@ export async function checkRoleCatchBlock(
 	/* It's checking if the httpStatus is 403. If it is, then respond that the bot does not have permission to manage roles, or the role is above its highest role, else respond that there was an error trying to add/remove the role. */
 	if (error.httpStatus === 403) {
 
+		// This is always a followUp
 		await respond(interaction, {
 			content: member.toString(),
 			embeds: [new EmbedBuilder()
 				.setColor(error_color)
 				.setTitle('I don\'t have permission to manage roles, or the role is above my highest role. Please ask an admin to edit my permissions or move the wanted role below mine.')],
-		}, false);
+		});
 	}
 	else {
 
-		console.error(error);
-		await respond(interaction, {
-			content: member.toString(),
-			embeds: [new EmbedBuilder()
-				.setColor(error_color)
-				.setTitle('There was an error trying to add/remove the role :(')],
-		}, false);
+		await sendErrorMessage(interaction, error)
+			.catch(e => { console.error(e); });
 	}
 }

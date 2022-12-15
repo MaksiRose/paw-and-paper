@@ -22,35 +22,37 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction, userData) => {
 
-		if (!hasName(userData, interaction)) { return; }
+		if (!hasName(userData, interaction)) { return; } // This is always a reply
 
 		/* Checking if the user has sent a valid hex code. If they have not, it will send an error message. */
 		const hexColor = interaction.options.getString('hex');
 		if (!hexColor || !isValidHex(hexColor)) {
 
+			// This is always a reply
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('Please send a valid hex code! Valid hex codes consist of 6 characters and contain only letters from \'a\' to \'f\' and/or numbers.')],
 				ephemeral: true,
-			}, false);
+			});
 			return;
 		}
 
 		/* Changing the hex code and sending a success message. */
 		await userData.update(
 			(u) => {
-				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DMs'));
+				const q = getMapData(u.quids, getMapData(u.servers, interaction.guildId || 'DMs').currentQuid ?? '');
 				q.color = `#${hexColor}`;
 			},
 		);
 
+		// This is always a reply
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setTitle(`Profile color set to ${userData.quid.color}!`)],
-		}, true);
+		});
 		return;
 	},
 };

@@ -111,13 +111,14 @@ export async function decreaseLevel(
 				]) === true) { continue; }
 				await member.roles.remove(role.roleId);
 
+				// This is a followUp
 				await respond(interaction, {
 					content: member.toString(),
 					embeds: [new EmbedBuilder()
 						.setColor(default_color)
 						.setAuthor({ name: guild.name, iconURL: guild.iconURL() || undefined })
 						.setDescription(`You lost the <@&${role.roleId}> role because of a lack of levels!`)],
-				}, false);
+				});
 			}
 		}
 		catch (error) {

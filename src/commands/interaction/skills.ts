@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, GuildMember, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { capitalizeString, getArrayElement, respond, update } from '../../utils/helperFunctions';
+import { capitalizeString, getArrayElement, respond } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
@@ -30,7 +30,7 @@ export const command: SlashCommand = {
 			'ViewChannel', // Needed because of createCommandComponentDisabler
 		]) === true) { return; }
 
-		if (!isInGuild(interaction) || !serverData) { return; }
+		if (!isInGuild(interaction) || !serverData) { return; } // This is always a reply
 
 		/* Check if the user wants their own or someone elses skills, and redefine userData if so. */
 		let isYourself = true;
@@ -39,10 +39,10 @@ export const command: SlashCommand = {
 
 			isYourself = false;
 			const _userData = (() => {
-				try { return userModel.findOne(u => u.userId.includes(mentionedUser.id)); }
+				try { return userModel.findOne(u => Object.keys(u.userIds).includes(mentionedUser.id)); }
 				catch { return null; }
 			})();
-			userData = _userData === null ? null : getUserData(_userData, interaction.guildId, _userData?.quids[_userData.currentQuid[interaction.guildId] || '']);
+			userData = _userData === null ? null : getUserData(_userData, interaction.guildId, _userData?.quids[_userData.servers[interaction.guildId]?.currentQuid || '']);
 		}
 
 		/* Allign the users global skills with the ones defined in the serverData. */
@@ -58,12 +58,13 @@ export const command: SlashCommand = {
 			);
 		}
 
-		/* Creating a message with 4 buttons and a skill list. */
+		// This is always a reply
 		const botReply = await respond(interaction, {
 			content: getSkillList(userData),
 			components: isYourself ? [getOriginalComponents(userData, serverData, interaction.member)] : [],
-		}, true);
-		if (userData) { saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction); }
+			fetchReply: userData !== null ? true : false,
+		});
+		if (userData !== null) { saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction); }
 	},
 	async sendMessageComponentResponse(interaction, userData, serverData) {
 
@@ -71,15 +72,16 @@ export const command: SlashCommand = {
 		if (serverData === null) { throw new TypeError('serverData is null'); }
 
 		/* Make interaction.values[0] its own variable so its existence can be checked in an if-statement */
-		const selectOptionId = interaction.isSelectMenu() ? interaction.values[0] : undefined;
+		const selectOptionId = interaction.isAnySelectMenu() ? interaction.values[0] : undefined;
 
 		/* Refresh the skills list. */
 		if (interaction.isButton() && interaction.customId.includes('refresh')) {
 
-			await update(interaction, {
+			// This is always an update to the message with the button
+			await respond(interaction, {
 				content: getSkillList(userData),
 				components: interaction.message.components,
-			});
+			}, 'update', '@original');
 			return;
 		}
 		/* Creating a modal that allows the user to add a skill. */
@@ -108,18 +110,20 @@ export const command: SlashCommand = {
 			const type = getArrayElement(interaction.customId.split('_'), 1) as 'edit' | 'remove';
 			const category = getArrayElement(interaction.customId.split('_'), 3) as 'global' | 'personal';
 
-			await update(interaction, {
+			// This is always an update to the message with the button
+			await respond(interaction, {
 				components: [
 					getOriginalComponents(userData, serverData, interaction.member),
 					type === 'edit' ? getEditMenu(userData?._id ?? interaction.user.id, userData, serverData, category, 0) : getRemoveMenu(userData?._id ?? interaction.user.id, userData, serverData, category, 0),
 				],
-			});
+			}, 'update', '@original');
 			return;
 		}
 		/* Add two buttons "personal" and "global". */
 		else if (interaction.isButton() && (interaction.customId.includes('add') || interaction.customId.includes('edit') || interaction.customId.includes('remove'))) {
 
-			await update(interaction, {
+			// This is always an update to the message with the button
+			await respond(interaction, {
 				components: [
 					getOriginalComponents(userData, serverData, interaction.member),
 					new ActionRowBuilder<ButtonBuilder>()
@@ -138,22 +142,23 @@ export const command: SlashCommand = {
 								.setStyle(ButtonStyle.Secondary),
 							]),
 				],
-			});
+			}, 'update', '@original');
 			return;
 		}
 		/* Add a new select menu to select a skill to modify. */
 		else if (interaction.isButton() && interaction.customId.includes('modify')) {
 
-			await update(interaction, {
+			// This is always an update to the message with the button
+			await respond(interaction, {
 				components: [
 					getOriginalComponents(userData, serverData, interaction.member),
 					getModifyMenu(userData?._id ?? interaction.user.id, userData, 0),
 				],
-			});
+			}, 'update', '@original');
 			return;
 		}
 		/* Change the page of the select menu. */
-		else if (interaction.isSelectMenu() && selectOptionId && selectOptionId.includes('nextpage')) {
+		else if (interaction.isStringSelectMenu() && selectOptionId && selectOptionId.includes('nextpage')) {
 
 			if (selectOptionId.startsWith('skills_modify_')) {
 
@@ -161,12 +166,13 @@ export const command: SlashCommand = {
 				const totalPages = Math.ceil((Object.keys(userData?.quid?.profile?.skills.global || {}).length + Object.keys(userData?.quid?.profile?.skills.personal || {}).length) / 24);
 				if (page >= totalPages) { page = 0; }
 
-				await update(interaction, {
+				// This is always an update to the message with the button
+				await respond(interaction, {
 					components: [
 						getOriginalComponents(userData, serverData, interaction.member),
 						getModifyMenu(userData?._id ?? interaction.user.id, userData, page),
 					],
-				});
+				}, 'update', '@original');
 				return;
 			}
 
@@ -177,12 +183,13 @@ export const command: SlashCommand = {
 				const totalPages = Math.ceil(((category === 'global' ? (serverData?.skills || []) : Object.keys(userData?.quid?.profile?.skills.personal || {})).length) / 24);
 				if (page >= totalPages) { page = 0; }
 
-				await update(interaction, {
+				// This is always an update to the message with the button
+				await respond(interaction, {
 					components: [
 						getOriginalComponents(userData, serverData, interaction.member),
 						getEditMenu(userData?._id ?? interaction.user.id, userData, serverData, category, page),
 					],
-				});
+				}, 'update', '@original');
 				return;
 			}
 
@@ -193,18 +200,19 @@ export const command: SlashCommand = {
 				const totalPages = Math.ceil(((category === 'global' ? (serverData?.skills || []) : Object.keys(userData?.quid?.profile?.skills.personal || {})).length) / 24);
 				if (page >= totalPages) { page = 0; }
 
-				await update(interaction, {
+				// This is always an update to the message with the button
+				await respond(interaction, {
 					components: [
 						getOriginalComponents(userData, serverData, interaction.member),
 						getRemoveMenu(userData?._id ?? interaction.user.id, userData, serverData, category, page),
 					],
-				});
+				}, 'update', '@original');
 				return;
 			}
 			return;
 		}
 		/* Creating a modal that allows the user to edit or modify a skill. */
-		else if (interaction.isSelectMenu() && selectOptionId && interaction.customId.includes('modal')) {
+		else if (interaction.isStringSelectMenu() && selectOptionId && interaction.customId.includes('modal')) {
 
 			const type = getArrayElement(selectOptionId.split('_'), 1) as 'modify' | 'edit';
 			const category = getArrayElement(selectOptionId.split('_'), 2) as 'personal' | 'global';
@@ -228,7 +236,7 @@ export const command: SlashCommand = {
 			return;
 		}
 		/* Removing a skill. */
-		else if (interaction.isSelectMenu() && selectOptionId && interaction.customId.includes('skills_remove_options')) {
+		else if (interaction.isStringSelectMenu() && selectOptionId && interaction.customId.includes('skills_remove_options')) {
 
 			const category = getArrayElement(selectOptionId.split('_'), 2) as 'global' | 'personal' ;
 			const skillName = getArrayElement(selectOptionId.split('_'), 3);
@@ -237,7 +245,7 @@ export const command: SlashCommand = {
 
 				await userData.update(
 					(u) => {
-						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+						const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 						delete p.skills[category][skillName];
 					},
 				);
@@ -255,7 +263,7 @@ export const command: SlashCommand = {
 						(u) => {
 							for (const q of Object.values(u.quids)) {
 								if (q.profiles[interaction.guildId] !== undefined) {
-									const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+									const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 									delete p.skills[category][skillName];
 								}
 							}
@@ -271,14 +279,16 @@ export const command: SlashCommand = {
 				);
 			}
 
-			await update(interaction, {
+			// This is always an update to the message with the button
+			await respond(interaction, {
 				content: getSkillList(userData),
 				components: [getOriginalComponents(userData, serverData, interaction.member)],
-			});
+			}, 'update', '@original');
 
+			// This is always a followUp
 			await respond(interaction, {
 				content: `You removed the ${category} skill \`${skillName}\`!`,
-			}, false);
+			});
 			return;
 		}
 
@@ -300,16 +310,17 @@ export const command: SlashCommand = {
 
 				if ([...Object.keys(userData?.quid?.profile?.skills?.personal || {}), ...serverData.skills].includes(newName)) {
 
+					// This is always a reply
 					await respond(interaction, {
 						content: `I can't add the personal skill \`${newName}\` since the name interferes with another skills name!`,
 						ephemeral: true,
-					}, false);
+					});
 					return;
 				}
 
 				await userData.update(
 					(u) => {
-						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+						const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 						p.skills[category][newName] = 0;
 					},
 				);
@@ -324,10 +335,11 @@ export const command: SlashCommand = {
 
 				if (allSkillNamesList.includes(newName)) {
 
+					// This is always a reply
 					await respond(interaction, {
 						content: `I can't add the global skill \`${newName}\` since the name interferes with another skills name!`,
 						ephemeral: true,
-					}, false);
+					});
 					return;
 				}
 
@@ -338,7 +350,7 @@ export const command: SlashCommand = {
 						(u) => {
 							for (const q of Object.values(u.quids)) {
 								if (q.profiles[interaction.guildId] !== undefined) {
-									const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+									const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 									p.skills.global[newName] = 0;
 								}
 							}
@@ -354,14 +366,16 @@ export const command: SlashCommand = {
 				);
 			}
 
-			await update(interaction, {
+			// This is always an update to the message the modal comes from
+			await respond(interaction, {
 				content: getSkillList(userData),
 				components: [getOriginalComponents(userData, serverData, interaction.member)],
-			});
+			}, 'update', '@original');
 
+			// This is always a followUp
 			await respond(interaction, {
 				content: `You added the ${category} skill \`${newName}\`!`,
-			}, false);
+			});
 			return;
 		}
 		else if (type === 'edit') {
@@ -372,16 +386,17 @@ export const command: SlashCommand = {
 
 				if ([...Object.keys(userData?.quid?.profile?.skills?.personal || {}), ...serverData.skills].includes(newName)) {
 
+					// This is always a reply
 					await respond(interaction, {
 						content: `I can't edit the personal skill \`${skillName}\` to be called \`${newName}\` since the name interferes with another skills name!`,
 						ephemeral: true,
-					}, false);
+					});
 					return;
 				}
 
 				await userData.update(
 					(u) => {
-						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+						const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 						p.skills.personal[newName] = p.skills.personal[skillName] ?? 0;
 						delete p.skills.personal[skillName];
 					},
@@ -397,10 +412,11 @@ export const command: SlashCommand = {
 
 				if (allSkillNamesList.includes(newName)) {
 
+					// This is always a reply
 					await respond(interaction, {
 						content: `I can't edit the global skill \`${skillName}\` to be called \`${newName}\` since the new name interferes with another skills name!`,
 						ephemeral: true,
-					}, false);
+					});
 					return;
 				}
 
@@ -411,7 +427,7 @@ export const command: SlashCommand = {
 						(u) => {
 							for (const q of Object.values(u.quids)) {
 								if (q.profiles[interaction.guildId] !== undefined) {
-									const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+									const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 									p.skills.global[newName] = p.skills.global[skillName] ?? 0;
 									delete p.skills.global[skillName];
 								}
@@ -428,14 +444,17 @@ export const command: SlashCommand = {
 					},
 				);
 			}
-			await update(interaction, {
+
+			// This is always an update to the message the modal comes from
+			await respond(interaction, {
 				content: getSkillList(userData),
 				components: [getOriginalComponents(userData, serverData, interaction.member)],
-			});
+			}, 'update', '@original');
 
+			// This is always a followUp
 			await respond(interaction, {
 				content: `You changed the name of the ${category} skill \`${skillName}\` to \`${newName}\`!`,
-			}, false);
+			});
 			return;
 		}
 		else if (type === 'modify' && userData && userData?.quid && userData?.quid?.profile) {
@@ -447,29 +466,33 @@ export const command: SlashCommand = {
 
 			if (isNaN(newValue)) {
 
+				// This is always a reply
 				await respond(interaction, {
 					content: 'Please enter a valid number!',
 					ephemeral: true,
-				}, false);
+				});
 				return;
 			}
 
 			await userData.update(
 				(u) => {
-					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+					const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 					if (plusOrMinus === '+') { p.skills[category][skillName] += newValue; }
 					else if (plusOrMinus === '-') { p.skills[category][skillName] -= newValue; }
 					else { p.skills[category][skillName] = newValue; }
 				},
 			);
-			await update(interaction, {
+
+			// This is always an update to the message the modal comes from
+			await respond(interaction, {
 				content: getSkillList(userData),
 				components: [getOriginalComponents(userData, serverData, interaction.member)],
-			});
+			}, 'update', '@original');
 
+			// This is always a followUp
 			await respond(interaction, {
 				content: `You changed the value of the ${category} skill \`${skillName}\` from \`${oldValue}\` to \`${userData?.quid?.profile.skills[category][skillName]}\`!`,
-			}, false);
+			});
 		}
 
 	},
