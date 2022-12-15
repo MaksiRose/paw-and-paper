@@ -1,5 +1,5 @@
 import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
-import { reply } from '../../utils/helperFunctions';
+import { respond } from '../../utils/helperFunctions';
 import { client } from '../..';
 import { SlashCommand } from '../../typings/handle';
 
@@ -21,9 +21,10 @@ export const command: SlashCommand = {
 		await client.application.fetch();
 		if ((client.application.owner instanceof User) ? interaction.user.id !== client.application.owner.id : client.application.owner ? !client.application.owner.members.has(interaction.user.id) : false) { return; }
 
-		await reply(interaction, {
+		// This is always a reply
+		await respond(interaction, {
 			content: 'Restarted!',
-		}, false);
+		});
 
 		client.destroy();
 		process.exit();
