@@ -1,7 +1,7 @@
 // @ts-check
 import { ButtonInteraction, ChatInputCommandInteraction, AnySelectMenuInteraction } from 'discord.js';
 import { UserData } from '../typings/data/user';
-import { reply } from './helperFunctions';
+import { respond } from './helperFunctions';
 
 
 /**
@@ -23,9 +23,10 @@ export async function restAdvice(
 			},
 		);
 
-		await reply(interaction, {
+		// This is always a followUp
+		await respond(interaction, {
 			content: `${interaction.user.toString()} ❓ **Tip:**\nRest via \`/rest\` to fill up your energy. Resting takes a while, so be patient!\nYou can also do \`/vote\` to get +30 energy per vote!`,
-		}, false);
+		});
 	}
 }
 
@@ -48,9 +49,10 @@ export async function drinkAdvice(
 			},
 		);
 
-		await reply(interaction, {
+		// This is always a followUp
+		await respond(interaction, {
 			content: `${interaction.user.toString()} ❓ **Tip:**\nDrink via \`/drink\` to fill up your thirst.`,
-		}, false);
+		});
 	}
 }
 
@@ -73,9 +75,10 @@ export async function eatAdvice(
 			},
 		);
 
-		await reply(interaction, {
+		// This is always a followUp
+		await respond(interaction, {
 			content: `${interaction.user.toString()} ❓ **Tip:**\nEat via \`/eat\` to fill up your hunger. Carnivores prefer meat, and herbivores prefer plants! Omnivores can eat both.`,
-		}, false);
+		});
 	}
 }
 
@@ -97,8 +100,9 @@ export async function coloredButtonsAdvice(
 			},
 		);
 
-		await reply(interaction, {
+		// This is always a followUp
+		await respond(interaction, {
 			content: `${interaction.user.toString()} ❓ **Tip:**\nA red button means that you picked wrong, the blue button is what you should've picked instead. A green button means that you picked correct.`,
-		}, false);
+		});
 	}
 }
