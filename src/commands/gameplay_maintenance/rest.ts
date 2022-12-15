@@ -137,7 +137,7 @@ export async function startResting(
 
 			// This is always a reply, except if it's from the button from the travel-regions command (aka, a button and non-automatic), in which case it's an update to the message with the button
 			const shouldUpdate = interaction.isButton() && isAutomatic === false;
-			botReply = await respond(interaction, messageOptions && { fetchReply: true }, shouldUpdate ? 'update' : 'reply', shouldUpdate ? '@original' : undefined);
+			botReply = await respond(interaction, { ...messageOptions, fetchReply: true }, shouldUpdate ? 'update' : 'reply', shouldUpdate ? '@original' : undefined);
 		}
 		else if (userData.serverInfo?.lastInteractionChannelId) {
 

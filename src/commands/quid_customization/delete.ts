@@ -9,8 +9,8 @@ import { userModel } from '../../models/userModel';
 import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';
 const { error_color } = require('../../../config.json');
 
-type CustomIdArgs = ['individual' | 'server' | 'all' | 'cancel'] | ['individual' | 'server', 'options'] | ['confirm', 'individual' | 'server', string] | ['confirm', 'all']
-type SelectOptionArgs = ['nextpage', `${number}`] | [string]
+type CustomIdArgs = ['individual' | 'server' | 'all' | 'cancel'] | ['individual' | 'server', 'options'] | ['confirm', 'individual' | 'server', string] | ['confirm', 'all'];
+type SelectOptionArgs = ['nextpage', `${number}`] | [string];
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -41,7 +41,7 @@ export const command: SlashCommand = {
 		}
 
 		// This is always a reply
-		const { id: messageId } = await respond(interaction, await sendOriginalMessage(userData) && { fetchReply: true });
+		const { id: messageId } = await respond(interaction, { ...sendOriginalMessage(userData), fetchReply: true });
 
 		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, messageId, interaction);
 		return;
@@ -61,7 +61,7 @@ export const command: SlashCommand = {
 					.setColor(error_color)
 					.setTitle('Please select a quid that you want to delete.')],
 				components: [
-					await getOriginalComponents(userData),
+					getOriginalComponents(userData),
 					new ActionRowBuilder<StringSelectMenuBuilder>()
 						.setComponents([getQuidsPage(0, userData)]),
 				],
@@ -78,9 +78,9 @@ export const command: SlashCommand = {
 					.setColor(error_color)
 					.setTitle('Please select a server that you want to delete all information off of.')],
 				components: [
-					await getOriginalComponents(userData),
+					getOriginalComponents(userData),
 					new ActionRowBuilder<StringSelectMenuBuilder>()
-						.setComponents([await getServersPage(0, userData)]),
+						.setComponents([getServersPage(0, userData)]),
 				],
 			}, 'update', '@original');
 			return;
@@ -96,7 +96,7 @@ export const command: SlashCommand = {
 					.setTitle('Are you sure you want to delete all your data? This will be **permanent**!!!')
 					.setDescription('Are you unhappy with your experience, or have other concerns? Let us know using `/ticket` (an account is not needed).')],
 				components: [
-					...disableAllComponents([await getOriginalComponents(userData)]),
+					...disableAllComponents([getOriginalComponents(userData)]),
 					new ActionRowBuilder<ButtonBuilder>()
 						.setComponents([
 							new ButtonBuilder()
@@ -141,7 +141,7 @@ export const command: SlashCommand = {
 				);
 
 				// This is always an update to the message with the button
-				await respond(interaction, await sendOriginalMessage(userData), 'update', '@original');
+				await respond(interaction, sendOriginalMessage(userData), 'update', '@original');
 
 				// This is always a followUp
 				await respond(interaction, {
@@ -174,7 +174,7 @@ export const command: SlashCommand = {
 				const server = await serverModel.findOne(s => s.serverId === serverId);
 
 				// This is always an update to the message with the button
-				await respond(interaction, await sendOriginalMessage(userData), 'update', '@original');
+				await respond(interaction, sendOriginalMessage(userData), 'update', '@original');
 
 				// This is always a followUp
 				await respond(interaction, {
@@ -209,7 +209,7 @@ export const command: SlashCommand = {
 		if (interaction.isButton() && customId.args[0] === 'cancel') {
 
 			// This is always an update to the message with the button
-			await respond(interaction, await sendOriginalMessage(userData), 'update', '@original');
+			await respond(interaction, sendOriginalMessage(userData), 'update', '@original');
 			return;
 		}
 
@@ -225,7 +225,7 @@ export const command: SlashCommand = {
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
 				components: [
-					await getOriginalComponents(userData),
+					getOriginalComponents(userData),
 					new ActionRowBuilder<StringSelectMenuBuilder>()
 						.setComponents([getQuidsPage(deletePage, userData)]),
 				],
@@ -245,7 +245,7 @@ export const command: SlashCommand = {
 					.setColor(error_color)
 					.setTitle(`Are you sure you want to delete the quid named "${quid?.name}"? This will be **permanent**!!!`)],
 				components: [
-					...disableAllComponents([await getOriginalComponents(userData), new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(StringSelectMenuBuilder.from(interaction.component))]),
+					...disableAllComponents([getOriginalComponents(userData), new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(StringSelectMenuBuilder.from(interaction.component))]),
 					new ActionRowBuilder<ButtonBuilder>()
 						.setComponents([
 							new ButtonBuilder()
@@ -273,9 +273,9 @@ export const command: SlashCommand = {
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
 				components: [
-					await getOriginalComponents(userData),
+					getOriginalComponents(userData),
 					new ActionRowBuilder<StringSelectMenuBuilder>()
-						.setComponents([await getServersPage(deletePage, userData)]),
+						.setComponents([getServersPage(deletePage, userData)]),
 				],
 			}, 'update', '@original');
 			return;
@@ -297,7 +297,7 @@ export const command: SlashCommand = {
 					.setColor(error_color)
 					.setTitle(`Are you sure you want to delete all the information of ${accountsOnServer.length} quids on the server ${server?.name}? This will be **permanent**!!!`)],
 				components: [
-					...disableAllComponents([await getOriginalComponents(userData), new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(StringSelectMenuBuilder.from(interaction.component))]),
+					...disableAllComponents([getOriginalComponents(userData), new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(StringSelectMenuBuilder.from(interaction.component))]),
 					new ActionRowBuilder<ButtonBuilder>()
 						.setComponents([
 							new ButtonBuilder()
@@ -318,23 +318,23 @@ export const command: SlashCommand = {
 	},
 };
 
-async function sendOriginalMessage(
+function sendOriginalMessage(
 	userData: UserData<undefined, ''>,
-): Promise<InteractionReplyOptions> {
+): InteractionReplyOptions {
 
 	return {
 		embeds: [new EmbedBuilder()
 			.setColor(error_color)
 			.setTitle('Please select what you want to delete.')],
-		components: [await getOriginalComponents(userData)],
+		components: [getOriginalComponents(userData)],
 	};
 }
 
-async function getOriginalComponents(
+function getOriginalComponents(
 	userData: UserData<undefined, ''>,
-): Promise<ActionRowBuilder<ButtonBuilder>> {
+): ActionRowBuilder<ButtonBuilder> {
 
-	const allServers = await getServersPage(0, userData);
+	const allServers = getServersPage(0, userData);
 	return new ActionRowBuilder<ButtonBuilder>()
 		.setComponents([new ButtonBuilder()
 			.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['individual']))
@@ -385,10 +385,10 @@ function getQuidsPage(
 /**
  * Creates a select menu with the servers that have accounts with this user
  */
-async function getServersPage(
+function getServersPage(
 	deletePage: number,
 	userData: UserData<undefined, ''>,
-): Promise<StringSelectMenuBuilder> {
+): StringSelectMenuBuilder {
 
 	let accountsMenuOptions: RestOrArray<SelectMenuComponentOptionData> = [];
 
