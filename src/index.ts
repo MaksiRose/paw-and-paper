@@ -25,7 +25,7 @@ function sweepFilter(something: {id: Snowflake, client: Client<true>}) {
 		.map(documentName => {
 			return JSON.parse(readFileSync(`./database/profiles/${documentName}`, 'utf-8')) as UserSchema;
 		})
-		.filter(v => v.userId.includes(something.id))
+		.filter(u => Object.keys(u.userIds).includes(something.id))
 		.length <= 0);
 }
 

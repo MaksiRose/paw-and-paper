@@ -1,6 +1,6 @@
 import { GuildChannelResolvable, GuildMember, PermissionResolvable, RepliableInteraction, Snowflake, PermissionFlagsBits, GuildTextBasedChannel } from 'discord.js';
 import { client } from '../index';
-import { addCommasAndAnd, reply } from './helperFunctions';
+import { addCommasAndAnd, respond } from './helperFunctions';
 
 export const permissionDisplay: Record<keyof typeof PermissionFlagsBits, string> = {
 	AddReactions: 'add reactions',
@@ -88,7 +88,8 @@ export async function missingPermissions(
 
 	if (displayed.length <= 0) { return false; }
 
-	await reply(interaction, getMissingPermissionContent(addCommasAndAnd(displayed)), false);
+	// This is always a reply
+	await respond(interaction, getMissingPermissionContent(addCommasAndAnd(displayed)));
 	return true;
 }
 

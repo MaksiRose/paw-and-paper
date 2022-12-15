@@ -1,5 +1,5 @@
 import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, AnySelectMenuInteraction } from 'discord.js';
-import { capitalizeString, reply, unsafeKeys, widenValues } from './helperFunctions';
+import { capitalizeString, respond, unsafeKeys, widenValues } from './helperFunctions';
 import { checkLevelRequirements, checkRoleCatchBlock } from './checkRoleRequirements';
 import { getMapData } from './helperFunctions';
 import { missingPermissions } from './permissionHandler';
@@ -111,13 +111,14 @@ export async function decreaseLevel(
 				]) === true) { continue; }
 				await member.roles.remove(role.roleId);
 
-				await reply(interaction, {
+				// This is a followUp
+				await respond(interaction, {
 					content: member.toString(),
 					embeds: [new EmbedBuilder()
 						.setColor(default_color)
 						.setAuthor({ name: guild.name, iconURL: guild.iconURL() || undefined })
 						.setDescription(`You lost the <@&${role.roleId}> role because of a lack of levels!`)],
-				}, false);
+				});
 			}
 		}
 		catch (error) {
