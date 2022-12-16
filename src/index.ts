@@ -6,7 +6,8 @@ import { ContextMenuCommand, SlashCommand, Votes } from './typings/handle';
 import { BanList, CommonPlantNames, DeleteList, GivenIdList, MaterialNames, RarePlantNames, SpecialPlantNames, SpeciesNames, UncommonPlantNames, VoteList, WebhookMessages } from './typings/data/general';
 import { DiscordEvent, MaterialInfo, PlantEdibilityType, PlantInfo, SpeciesDietType, SpeciesHabitatType, SpeciesInfo } from './typings/main';
 import { UserSchema } from './typings/data/user';
-const { token, bfd_token, bfd_authorization, top_token, top_authorization, dbl_token, dbl_authorization } = require('../config.json');
+import { Octokit } from '@octokit/rest';
+const { token, bfd_token, bfd_authorization, top_token, top_authorization, dbl_token, dbl_authorization, github_token } = require('../config.json');
 const bfd = require('bfd-api-redux/src/main');
 
 process.on('unhandledRejection', async (err) => {
@@ -94,6 +95,11 @@ export const handle: {
 		dbl: { token: dbl_token, authorization: dbl_authorization, client: null },
 	},
 };
+
+export const octokit = new Octokit({
+	auth: github_token,
+	userAgent: 'paw-and-paper',
+});
 
 export const commonPlantsInfo: { [key in CommonPlantNames]: PlantInfo; } = {
 	'raspberry': {
