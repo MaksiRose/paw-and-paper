@@ -1,6 +1,6 @@
 import { ActionRowBuilder, APIEmbedField, EmbedBuilder, StringSelectMenuBuilder, SlashCommandBuilder, ButtonStyle } from 'discord.js';
 import { getArrayElement, respond } from '../../utils/helperFunctions';
-import { client, handle } from '../..';
+import { client, handle, octokit } from '../..';
 import { SlashCommand } from '../../typings/handle';
 import { ButtonBuilder } from '@discordjs/builders';
 
@@ -18,13 +18,22 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction, userData) => {
 
+		const tag = `v${version.split('.').slice(0, -1).join('.')}.0`;
+		const release = await octokit.rest.repos.getReleaseByTag({
+			owner: 'MaksiRose',
+			repo: 'paw-and-paper',
+			tag: tag,
+		});
+
+		console.log();
+
 		// This is always a reply
 		await respond(interaction, {
 			embeds: [
 				new EmbedBuilder()
 					.setColor(default_color)
 					.setTitle('Welcome to Paw and Paper!')
-					.setDescription('This bot has powerful tools to help make your roleplay more immersive, or to express your mental shifts.\nAdditionally, it features a community-driven RPG about animals surviving in the wild. Your goal is to go up the ranks, level up, find items, help your friends and keep your stats high.\n\nClick on the menu options below to get an overview of the available commands!\n**If you are new, start with `/name (name)`!**'),
+					.setDescription(`This bot has powerful tools to help make your roleplay more immersive, or to express your mental shifts.\nAdditionally, it features a community-driven RPG about animals surviving in the wild. Your goal is to go up the ranks, level up, find items, help your friends and keep your stats high.\n\nClick on the menu options below to get an overview of the available commands!\n**If you are new, start with \`/name (name)\`!**\n\n*Latest changes:*\n> ${release.data.body?.split('\n').slice(1, 4).join('\n> ')}\n> [Full changelog](https://github.com/MaksiRose/paw-and-paper/releases/tag/${tag})`),
 			],
 			components: [buildPageSelect(userData?._id ?? interaction.user.id)],
 		});

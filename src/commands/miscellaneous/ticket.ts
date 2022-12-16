@@ -1,14 +1,13 @@
-import { Octokit } from '@octokit/rest';
 import { EmbedBuilder, SlashCommandBuilder, Team, User, ActionRowBuilder, ButtonBuilder, ButtonStyle, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ChatInputCommandInteraction, AttachmentBuilder, ChannelType } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
 import { hasPermission } from '../../utils/permissionHandler';
-import { client } from '../..';
+import { client, octokit } from '../..';
 import { SlashCommand } from '../../typings/handle';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
-const { error_color, default_color, github_token, ticket_channel_id } = require('../../../config.json');
+const { error_color, default_color, ticket_channel_id } = require('../../../config.json');
 
 type CustomIdArgs = ['contact', 'user' | 'channel', string, string, `${boolean}`] | ['reject'] | ['approve', string];
 
@@ -115,11 +114,6 @@ export const command: SlashCommand = {
 			const embed = interaction.message.embeds[0];
 			const ticketId = customId.args[1];
 			const ticketConversation = readFileSync(`./database/open_tickets/${ticketId}.txt`, 'utf-8');
-
-			const octokit = new Octokit({
-				auth: github_token,
-				userAgent: 'paw-and-paper',
-			});
 
 			await octokit.rest.issues
 				.create({
