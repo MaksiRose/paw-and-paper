@@ -176,7 +176,7 @@ export const command: SlashCommand = {
 
 		await respondChannel
 			.send({
-				content: `**New response to ticket:**\n>>> ${messageText}`,
+				content: `**New response to ticket ${ticketId}:**\n>>> ${messageText}`,
 				embeds: interaction.message.embeds,
 				components: [new ActionRowBuilder<ButtonBuilder>()
 					.setComponents([getRespondButton(interaction.message.channel.isDMBased(), interaction.message.channel.isDMBased() ? interaction.user.id : interaction.message.channelId, ticketId, !fromAdmin)])],
@@ -205,7 +205,7 @@ export async function createNewTicket(
 		.setFooter({ text: label });
 
 	const messageOptions = {
-		content: '**New ticket**',
+		content: `**Ticket ${ticketId}**`,
 		embeds: [ticketEmbed],
 		components: [new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
