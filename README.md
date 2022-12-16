@@ -77,7 +77,7 @@ This needs to include the following information:
 ```
 {
 	"token": "your discord token",
-	"test_token": "another discord token for a test bot, if necessary",
+	"test_guild_id": "your test guild",
 	"bfd_token": "your discords.com token",
 	"bfd_authorization": "authorization chosen on discords.com",
 	"top_token": "your top.gg token",
@@ -87,6 +87,8 @@ This needs to include the following information:
 	"github_token": "your github token",
 	"default_color": "#b4a257",
 	"error_color": "#d0342c",
+	"update_channel_id": "channel users can receive updates from",
+	"ticket_channel_id": "channel tickets are sent to"
 }
 ```
 > Anything that you don't have or need from this list can be left as an empty string.
