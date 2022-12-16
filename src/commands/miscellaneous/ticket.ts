@@ -278,7 +278,10 @@ export async function createNewTicket(
 
 		const owner = await client.users.fetch(ownerId);
 		const dmChannel = await owner.createDM();
-		await dmChannel.send(messageOptions);
+		await dmChannel.send({
+			content: `**Ticket ${ticketId}**`,
+			embeds: [ticketEmbed],
+		});
 	})();
 
 	const dmIsSuccessful = await interaction.user.send(messageOptions)
