@@ -1,5 +1,5 @@
 import { Octokit } from '@octokit/rest';
-import { EmbedBuilder, SlashCommandBuilder, Team, User, ActionRowBuilder, ButtonBuilder, ButtonStyle, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ChatInputCommandInteraction, AttachmentBuilder } from 'discord.js';
+import { EmbedBuilder, SlashCommandBuilder, Team, User, ActionRowBuilder, ButtonBuilder, ButtonStyle, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ChatInputCommandInteraction, AttachmentBuilder, ChannelType } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { generateId } from 'crystalid';
@@ -10,7 +10,7 @@ import { SlashCommand } from '../../typings/handle';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 const { error_color, default_color, github_token, ticket_channel_id } = require('../../../config.json');
 
-type CustomIdArgs = ['contact', 'user' | 'channel', string, string, `${boolean}`] | ['reject'] | ['approve', string]
+type CustomIdArgs = ['contact', 'user' | 'channel', string, string, `${boolean}`] | ['reject'] | ['approve', string];
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -204,14 +204,70 @@ export async function createNewTicket(
 		.setImage(attachmentURL)
 		.setFooter({ text: label });
 
-	/* Sending the ticket to the dedicated channel */
-	const ticketChannel = await async function() {
+	const messageOptions = {
+		content: '**New ticket**',
+		embeds: [ticketEmbed],
+		components: [new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, 'EVERYONE', ['approve', ticketId]))
+				.setLabel('Approve')
+				.setStyle(ButtonStyle.Success),
+			getRespondButton(true, interaction.user.id, ticketId, true),
+			new ButtonBuilder()
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, 'EVERYONE', ['reject']))
+				.setLabel('Reject')
+				.setStyle(ButtonStyle.Danger)])],
+	};
+
+	/* Sending the ticket to the dedicated channel or creating a thread/post */
+	(async function() {
 
 		const serverChannel = await client.channels
 			.fetch(ticket_channel_id)
 			.catch(() => { return null; });
 
-		if (serverChannel !== null && serverChannel.isTextBased() && !serverChannel.isDMBased() && await hasPermission(serverChannel.guild.members.me ?? serverChannel.client.user.id, serverChannel, 'ViewChannel') && await hasPermission(serverChannel.guild.members.me ?? serverChannel.client.user.id, serverChannel, serverChannel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) { return serverChannel; }
+		if (serverChannel !== null && !serverChannel.isDMBased()) {
+
+			const memberResolvable = serverChannel.guild.members.me ?? serverChannel.client.user.id;
+
+			if (
+				serverChannel.isTextBased() && await hasPermission(memberResolvable, serverChannel, 'ViewChannel')
+			) {
+
+				if (serverChannel.isThread()) {
+
+					if (await hasPermission(memberResolvable, serverChannel, 'SendMessagesInThreads')) {
+
+						await serverChannel.send(messageOptions);
+						return;
+					}
+				}
+				else if (serverChannel.type !== ChannelType.GuildVoice && await hasPermission(memberResolvable, serverChannel, 'CreatePublicThreads')) {
+
+					if (await hasPermission(memberResolvable, serverChannel, 'SendMessagesInThreads')) {
+
+						const thread = await serverChannel.threads.create({ name: title });
+						await thread.send(messageOptions);
+						return;
+					}
+				}
+				else if (await hasPermission(memberResolvable, serverChannel, 'SendMessages')) {
+
+					await serverChannel.send(messageOptions);
+					return;
+				}
+			}
+			else if (
+				serverChannel.type === ChannelType.GuildForum
+				&& await hasPermission(memberResolvable, serverChannel, 'ViewChannel')
+				&& await hasPermission(memberResolvable, serverChannel, 'SendMessages')
+				&& await hasPermission(memberResolvable, serverChannel, 'SendMessagesInThreads')
+			) {
+
+				await serverChannel.threads.create({ name: title, message: messageOptions });
+				return;
+			}
+		}
 
 		let ownerId = '';
 		if (client.isReady()) {
@@ -223,24 +279,8 @@ export async function createNewTicket(
 
 		const owner = await client.users.fetch(ownerId);
 		const dmChannel = await owner.createDM();
-		return dmChannel;
-	}();
-
-	await ticketChannel
-		.send({
-			content: '**New ticket**',
-			embeds: [ticketEmbed],
-			components: [new ActionRowBuilder<ButtonBuilder>()
-				.setComponents([new ButtonBuilder()
-					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, 'EVERYONE', ['approve', ticketId]))
-					.setLabel('Approve')
-					.setStyle(ButtonStyle.Success),
-				getRespondButton(true, interaction.user.id, ticketId, true),
-				new ButtonBuilder()
-					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, 'EVERYONE', ['reject']))
-					.setLabel('Reject')
-					.setStyle(ButtonStyle.Danger)])],
-		});
+		await dmChannel.send(messageOptions);
+	})();
 
 	/* Creating a text file of the ticket conversation */
 	writeFileSync(`./database/open_tickets/${ticketId}.txt`, 'FULL CONVERSATION REGARDING THIS TICKET');
