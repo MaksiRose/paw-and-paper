@@ -1,5 +1,5 @@
 import { Octokit } from '@octokit/rest';
-import { EmbedBuilder, SlashCommandBuilder, Team, User, ActionRowBuilder, ButtonBuilder, ButtonStyle, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ChatInputCommandInteraction, AttachmentBuilder } from 'discord.js';
+import { EmbedBuilder, SlashCommandBuilder, Team, User, ActionRowBuilder, ButtonBuilder, ButtonStyle, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ChatInputCommandInteraction, AttachmentBuilder, ChannelType } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { generateId } from 'crystalid';
@@ -10,7 +10,7 @@ import { SlashCommand } from '../../typings/handle';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 const { error_color, default_color, github_token, ticket_channel_id } = require('../../../config.json');
 
-type CustomIdArgs = ['contact', 'user' | 'channel', string, string, `${boolean}`] | ['reject'] | ['approve', string]
+type CustomIdArgs = ['contact', 'user' | 'channel', string, string, `${boolean}`] | ['reject'] | ['approve', string];
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -176,8 +176,7 @@ export const command: SlashCommand = {
 
 		await respondChannel
 			.send({
-				content: `**New response to ticket:**\n>>> ${messageText}`,
-				embeds: interaction.message.embeds,
+				content: `**New response to ticket ${ticketId}:**\n>>> ${messageText}`,
 				components: [new ActionRowBuilder<ButtonBuilder>()
 					.setComponents([getRespondButton(interaction.message.channel.isDMBased(), interaction.message.channel.isDMBased() ? interaction.user.id : interaction.message.channelId, ticketId, !fromAdmin)])],
 				files: [new AttachmentBuilder(`./database/open_tickets/${ticketId}.txt`)
@@ -204,14 +203,70 @@ export async function createNewTicket(
 		.setImage(attachmentURL)
 		.setFooter({ text: label });
 
-	/* Sending the ticket to the dedicated channel */
-	const ticketChannel = await async function() {
+	const messageOptions = {
+		content: `**Ticket ${ticketId}**`,
+		embeds: [ticketEmbed],
+		components: [new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, 'EVERYONE', ['approve', ticketId]))
+				.setLabel('Approve')
+				.setStyle(ButtonStyle.Success),
+			getRespondButton(true, interaction.user.id, ticketId, true),
+			new ButtonBuilder()
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, 'EVERYONE', ['reject']))
+				.setLabel('Reject')
+				.setStyle(ButtonStyle.Danger)])],
+	};
+
+	/* Sending the ticket to the dedicated channel or creating a thread/post */
+	(async function() {
 
 		const serverChannel = await client.channels
 			.fetch(ticket_channel_id)
 			.catch(() => { return null; });
 
-		if (serverChannel !== null && serverChannel.isTextBased() && !serverChannel.isDMBased() && await hasPermission(serverChannel.guild.members.me ?? serverChannel.client.user.id, serverChannel, 'ViewChannel') && await hasPermission(serverChannel.guild.members.me ?? serverChannel.client.user.id, serverChannel, serverChannel.isThread() ? 'SendMessagesInThreads' : 'SendMessages')) { return serverChannel; }
+		if (serverChannel !== null && !serverChannel.isDMBased()) {
+
+			const memberResolvable = serverChannel.guild.members.me ?? serverChannel.client.user.id;
+
+			if (
+				serverChannel.isTextBased() && await hasPermission(memberResolvable, serverChannel, 'ViewChannel')
+			) {
+
+				if (serverChannel.isThread()) {
+
+					if (await hasPermission(memberResolvable, serverChannel, 'SendMessagesInThreads')) {
+
+						await serverChannel.send(messageOptions);
+						return;
+					}
+				}
+				else if (serverChannel.type !== ChannelType.GuildVoice && await hasPermission(memberResolvable, serverChannel, 'CreatePublicThreads')) {
+
+					if (await hasPermission(memberResolvable, serverChannel, 'SendMessagesInThreads')) {
+
+						const thread = await serverChannel.threads.create({ name: title });
+						await thread.send(messageOptions);
+						return;
+					}
+				}
+				else if (await hasPermission(memberResolvable, serverChannel, 'SendMessages')) {
+
+					await serverChannel.send(messageOptions);
+					return;
+				}
+			}
+			else if (
+				serverChannel.type === ChannelType.GuildForum
+				&& await hasPermission(memberResolvable, serverChannel, 'ViewChannel')
+				&& await hasPermission(memberResolvable, serverChannel, 'SendMessages')
+				&& await hasPermission(memberResolvable, serverChannel, 'SendMessagesInThreads')
+			) {
+
+				await serverChannel.threads.create({ name: title, message: messageOptions });
+				return;
+			}
+		}
 
 		let ownerId = '';
 		if (client.isReady()) {
@@ -223,35 +278,25 @@ export async function createNewTicket(
 
 		const owner = await client.users.fetch(ownerId);
 		const dmChannel = await owner.createDM();
-		return dmChannel;
-	}();
+		await dmChannel.send(messageOptions);
+	})();
 
-	await ticketChannel
-		.send({
-			content: '**New ticket**',
-			embeds: [ticketEmbed],
-			components: [new ActionRowBuilder<ButtonBuilder>()
-				.setComponents([new ButtonBuilder()
-					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, 'EVERYONE', ['approve', ticketId]))
-					.setLabel('Approve')
-					.setStyle(ButtonStyle.Success),
-				getRespondButton(true, interaction.user.id, ticketId, true),
-				new ButtonBuilder()
-					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, 'EVERYONE', ['reject']))
-					.setLabel('Reject')
-					.setStyle(ButtonStyle.Danger)])],
-		});
+	const dmIsSuccessful = await interaction.user.send(messageOptions)
+		.then(() => true)
+		.catch(() => false);
 
 	/* Creating a text file of the ticket conversation */
 	writeFileSync(`./database/open_tickets/${ticketId}.txt`, 'FULL CONVERSATION REGARDING THIS TICKET');
 
 	// This should be a reply in case of a /ticket command, and an edit to the updated error message in case of a report-button being clicked
 	await respond(interaction, {
+		content: dmIsSuccessful ? undefined : `**Ticket ${ticketId}**`,
 		embeds: [new EmbedBuilder()
 			.setColor(default_color)
 			.setTitle('Thank you for your contribution!')
-			.setDescription('You help improve the bot.\nNote: To suggest a species [use this form](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement%2Cnon-code&template=species_request.yaml&title=New+species%3A+).')
-			.setFooter({ text: 'We might need to get in contact with you for clarification regarding your ticket. If we have no way of contacting you (i.e. DMs being closed, not allowing friend requests and not being in the support server), your ticket might not be considered.' }), ticketEmbed],
+			.setDescription('You help improve the bot.\nNote: To suggest a species [use this form](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement%2Cnon-code&template=species_request.yaml&title=New+species%3A+). To get easier help, [join the support server](https://discord.gg/9DENgj8q5Q).')
+			.setFooter({ text: 'We might need to get in contact with you for clarification regarding your ticket. If we have no way of contacting you (i.e. DMs being closed, not allowing friend requests and not being in the support server), your ticket might not be considered.' }),
+		...dmIsSuccessful ? [] : [ticketEmbed]],
 	}, 'reply', '@original');
 }
 
