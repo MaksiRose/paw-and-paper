@@ -177,7 +177,6 @@ export const command: SlashCommand = {
 		await respondChannel
 			.send({
 				content: `**New response to ticket ${ticketId}:**\n>>> ${messageText}`,
-				embeds: interaction.message.embeds,
 				components: [new ActionRowBuilder<ButtonBuilder>()
 					.setComponents([getRespondButton(interaction.message.channel.isDMBased(), interaction.message.channel.isDMBased() ? interaction.user.id : interaction.message.channelId, ticketId, !fromAdmin)])],
 				files: [new AttachmentBuilder(`./database/open_tickets/${ticketId}.txt`)
@@ -282,16 +281,22 @@ export async function createNewTicket(
 		await dmChannel.send(messageOptions);
 	})();
 
+	const dmIsSuccessful = await interaction.user.send(messageOptions)
+		.then(() => true)
+		.catch(() => false);
+
 	/* Creating a text file of the ticket conversation */
 	writeFileSync(`./database/open_tickets/${ticketId}.txt`, 'FULL CONVERSATION REGARDING THIS TICKET');
 
 	// This should be a reply in case of a /ticket command, and an edit to the updated error message in case of a report-button being clicked
 	await respond(interaction, {
+		content: dmIsSuccessful ? undefined : `**Ticket ${ticketId}**`,
 		embeds: [new EmbedBuilder()
 			.setColor(default_color)
 			.setTitle('Thank you for your contribution!')
 			.setDescription('You help improve the bot.\nNote: To suggest a species [use this form](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement%2Cnon-code&template=species_request.yaml&title=New+species%3A+).')
-			.setFooter({ text: 'We might need to get in contact with you for clarification regarding your ticket. If we have no way of contacting you (i.e. DMs being closed, not allowing friend requests and not being in the support server), your ticket might not be considered.' }), ticketEmbed],
+			.setFooter({ text: 'We might need to get in contact with you for clarification regarding your ticket. If we have no way of contacting you (i.e. DMs being closed, not allowing friend requests and not being in the support server), your ticket might not be considered.' }),
+		...dmIsSuccessful ? [] : [ticketEmbed]],
 	}, 'reply', '@original');
 }
 
