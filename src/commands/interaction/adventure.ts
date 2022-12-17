@@ -358,45 +358,106 @@ export const command: SlashCommand = {
 				// reason roundLimit: too many rounds went past
 				if (reason.includes('roundLimit')) {
 
-					const losingHealthPoints = getSmallerNumber(getSmallerNumber(getRandomNumber(5, 3), userData1.quid.profile.health), userData2.quid.profile.health);
+					const randomHP = getRandomNumber(5, 3);
 
-					const extraDescription = '';
-					const extraFooter = '';
+					const pickLoss = function(
+						losingUserData: UserData<never, never>,
+					): { extraFooter: string, outcome: string | 1 | 2; } {
 
-					const { itemType: itemType1, itemName: itemName1 } = getHighestItem(userData1.quid.profile.inventory);
-					const inventory1_ = widenValues(userData1.quid.profile.inventory);
+						let extraFooter = '';
+						let outcome: string | 1 | 2;
+						const losingHealthPoints = getSmallerNumber(randomHP, losingUserData.quid.profile.health);
 
-					const { itemType: itemType2, itemName: itemName2 } = getHighestItem(userData2.quid.profile.inventory);
-					const inventory2_ = widenValues(userData2.quid.profile.inventory);
+						const { itemType, itemName } = getHighestItem(losingUserData.quid.profile.inventory);
+						const inventory_ = widenValues(losingUserData.quid.profile.inventory);
+						if (itemType && itemName && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
 
-					// if (itemType1 && itemName1 && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
+							inventory_[itemType][itemName] -= 1;
+							extraFooter = `-1 ${itemName} for ${losingUserData.quid.name}`;
+							outcome = itemName;
+						}
+						else if (losingUserData.quid.profile.injuries.cold === false && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
 
-					// 	inventory_[itemType][itemName] -= 1;
-					// 	extraDescription = `accidentally drop a ${itemName} and a ${itemName} that they had with them.`;
-					// 	extraFooter = `-1 ${itemName} for ${losingUserData.quid.name}`;
-					// }
-					// else if (losingUserData.quid.profile.injuries.cold === false && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
+							losingUserData.quid.profile.injuries.cold = true;
+							extraFooter = `-${losingHealthPoints} HP (from cold) for ${losingUserData.quid.name}`;
+							outcome = 1;
+						}
+						else {
 
-					// 	losingUserData.quid.profile.injuries.cold = true;
-					// 	extraDescription = `notice that they are feeling weak and can't stop coughing. The long jouney must've given them a cold.`;
-					// 	extraFooter = `-${losingHealthPoints} HP (from cold) for ${losingUserData.quid.name}`;
-					// }
-					// else {
+							losingUserData.quid.profile.injuries.wounds += 1;
+							extraFooter = `-${losingHealthPoints} HP (from wound) for ${losingUserData.quid.name}`;
+							outcome = 2;
+						}
 
-					// 	losingUserData.quid.profile.injuries.wounds += 1;
-					// 	extraDescription = `feel blood running down their sides. The humans must've wounded them.`;
-					// 	extraFooter = `-${losingHealthPoints} HP (from wound) for ${losingUserData.quid.name}`;
-					// }
+						losingUserData.update(
+							(u => {
+								const p = getMapData(getMapData(u.quids, getMapData(u.servers, lastInteraction.guildId).currentQuid ?? '').profiles, lastInteraction.guildId);
+								p.inventory = inventory_;
+								p.health -= losingHealthPoints;
+								p.injuries = losingUserData.quid.profile.injuries;
+							}),
+						);
 
-					// losingUserData.update(
-					// 	(u => {
-					// 		const p = getMapData(getMapData(u.quids, getMapData(u.servers, lastInteraction.guildId).currentQuid ?? '').profiles, lastInteraction.guildId);
-					// 		p.inventory = inventory_;
-					// 		p.health -= losingHealthPoints;
-					// 		p.injuries = losingUserData.quid.profile.injuries;
-					// 	}),
-					// );
+						return { extraFooter, outcome };
+					};
 
+					const losingItemText = (
+						{ name, item }: { name: string, item: string; },
+						x: { type: 0, name2: string, item2: string; } | { type: 1, pronoun0: string, pronoun1: string; },
+					): string => `${name} drops a ${item}${x.type === 0 ? ` and ${x.name2} a ${x.item2}` : ''} that ${x.type === 1 ? x.pronoun0 : 'the two animals'} had with ${x.type === 1 ? x.pronoun1 : 'them'}.`;
+					// losingUserData.quid.pronoun(0)
+					// losingUserData.quid.pronoun(1)
+
+					const coldText = (
+						x?: { name: string, pronoun0: string, pronoun1: string; },
+					): string => `${x === undefined ? 'The two animals' : x.name} notice${x === undefined ? '' : 's'} that ${x === undefined ? 'they are' : x.pronoun0} feeling weak and can't stop coughing. The long jouney must've given ${x === undefined ? 'them' : x.pronoun1} a cold.`;
+					// losingUserData.quid.pronounAndPlural(0, 'is', 'are')
+					// losingUserData.quid.pronoun(1)
+
+					const woundText = (
+						x?: { name: string, pronoun0: string, pronoun1: string; },
+					): string => `${x === undefined ? 'The two animals' : x.name} feel${x === undefined ? '' : 's'} blood running down ${x === undefined ? 'their' : x.pronoun0} side. The humans must've wounded ${x === undefined ? 'them' : x.pronoun1}.`;
+					// losingUserData.quid.pronoun(2)
+					// losingUserData.quid.pronoun(1)
+
+					const { extraFooter: extraFooter1, outcome: outcome1 } = pickLoss(userData1);
+					const { extraFooter: extraFooter2, outcome: outcome2 } = pickLoss(userData2);
+
+					let extraDescription: string;
+					if (typeof outcome1 === 'string' && typeof outcome2 === 'string') {
+						extraDescription = losingItemText({ name: userData1.quid.name, item: outcome1 }, { type: 0, name2: userData2.quid.name, item2: outcome2 });
+					}
+					else if (outcome1 === 1 && outcome2 === 1) {
+						extraDescription = coldText();
+					}
+					else if (outcome1 === 2 && outcome2 === 2) {
+						extraDescription = woundText();
+					}
+					else {
+						let desc1: string;
+						if (outcome1 === 1) {
+							desc1 = coldText({ name: userData1.quid.name, pronoun0: userData1.quid.pronounAndPlural(0, 'is', 'are'), pronoun1: userData1.quid.pronoun(1) });
+						}
+						else if (outcome1 === 2) {
+							desc1 = woundText({ name: userData1.quid.name, pronoun0: userData1.quid.pronoun(2), pronoun1: userData1.quid.pronoun(0) });
+						}
+						else {
+							desc1 = losingItemText({ name: userData1.quid.name, item: outcome1 }, { type: 1, pronoun0: userData1.quid.pronoun(0), pronoun1: userData1.quid.pronoun(1) });
+						}
+
+						let desc2: string;
+						if (outcome2 === 1) {
+							desc2 = coldText({ name: userData2.quid.name, pronoun0: userData2.quid.pronounAndPlural(0, 'is', 'are'), pronoun1: userData2.quid.pronoun(1) });
+						}
+						else if (outcome2 === 2) {
+							desc2 = woundText({ name: userData2.quid.name, pronoun0: userData2.quid.pronoun(2), pronoun1: userData2.quid.pronoun(0) });
+						}
+						else {
+							desc2 = losingItemText({ name: userData2.quid.name, item: outcome2 }, { type: 1, pronoun0: userData2.quid.pronoun(0), pronoun1: userData2.quid.pronoun(1) });
+						}
+
+						extraDescription = `${desc1} Also, ${desc2}`;
+					}
 
 					const levelUpEmbeds = await checkLevelUps(lastInteraction, userData1, userData2, serverData)
 						.catch((error) => { sendErrorMessage(lastInteraction, error); return null; });
@@ -407,8 +468,8 @@ export const command: SlashCommand = {
 							new EmbedBuilder()
 								.setColor(userData1.quid.color)
 								.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-								.setDescription(`*The adventure didn't go as planned. Not only did the two animals get lost, they also had to run from humans. While running, the two animals ${extraDescription} What a shame!*`)
-								.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraFooter}` }),
+								.setDescription(`*The adventure didn't go as planned. Not only did the two animals get lost, they also had to run from humans. While running, ${userData1.quid.name} ${extraDescription} What a shame!*`)
+								.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraFooter1}\n${extraFooter2}` }),
 							...decreasedStatsData1.injuryUpdateEmbed,
 							...decreasedStatsData2.injuryUpdateEmbed,
 							...(levelUpEmbeds?.levelUpEmbed1 ?? []),
@@ -521,7 +582,7 @@ async function sendNextRoundMessage(
 		components: componentArray,
 	});
 
-	if (isReplied) { await interaction.webhook.deleteMessage('@original');	}
+	if (isReplied) { await interaction.webhook.deleteMessage('@original'); }
 	else { await interaction.message.delete(); }
 
 	return id;
