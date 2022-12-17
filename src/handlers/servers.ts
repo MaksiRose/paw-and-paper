@@ -8,6 +8,7 @@ export async function execute(
 
 	/* This updates each server to set currentlyVisiting to null. */
 	const servers = await serverModel.find();
+	console.log(`Updating ${servers.length} servers...`);
 	for (const server of servers) {
 
 		serverModel.findOneAndUpdate(

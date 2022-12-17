@@ -963,17 +963,18 @@ async function start(
 
 		const { event } = require(`./events/${file}`) as { event: DiscordEvent; };
 
+		console.log(`${event.name} is now loaded`);
 		if (event.once) {
 
-			client.once(event.name, async (...args) => {
-				try { await event.execute(...args); }
+			client.once(event.name, (...args) => {
+				try { event.execute(...args); }
 				catch (error) { console.error(error); }
 			});
 		}
 		else {
 
-			client.on(event.name, async (...args) => {
-				try { await event.execute(...args); }
+			client.on(event.name, (...args) => {
+				try { event.execute(...args); }
 				catch (error) { console.error(error); }
 			});
 		}

@@ -16,7 +16,8 @@ export const event: DiscordEvent = {
 		/* It's loading all the files in the handlers folder. */
 		for (const file of readdirSync(path.join(__dirname, '../handlers'))) {
 
-			try { await require(`../handlers/${file}`).execute(); }
+			console.log(`Execute handler ${file}...`);
+			try { await require(`../handlers/${file}`).execute(); } // This waits for the command handler to be done, which is really slow because each file has to be required one after the other. For some reason, no other events play until this is finished.
 			catch (error) { console.error(error); }
 		}
 	},

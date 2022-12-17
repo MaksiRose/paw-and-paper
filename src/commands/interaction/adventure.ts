@@ -358,42 +358,44 @@ export const command: SlashCommand = {
 				// reason roundLimit: too many rounds went past
 				if (reason.includes('roundLimit')) {
 
-					const losingUserData = uncoveredCardsUser1 < uncoveredCardsUser2 ? userData1 : uncoveredCardsUser2 < uncoveredCardsUser1 ? userData2 : getRandomNumber(2) === 0 ? userData1 : userData2;
+					const losingHealthPoints = getSmallerNumber(getSmallerNumber(getRandomNumber(5, 3), userData1.quid.profile.health), userData2.quid.profile.health);
 
-					const losingHealthPoints = getSmallerNumber(getRandomNumber(5, 3), losingUserData.quid.profile.health);
+					const extraDescription = '';
+					const extraFooter = '';
 
-					let extraDescription = '';
-					let extraFooter = '';
+					const { itemType: itemType1, itemName: itemName1 } = getHighestItem(userData1.quid.profile.inventory);
+					const inventory1_ = widenValues(userData1.quid.profile.inventory);
 
-					const { itemType, itemName } = getHighestItem(losingUserData.quid.profile.inventory);
-					const inventory_ = widenValues(losingUserData.quid.profile.inventory);
-					if (itemType && itemName && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
+					const { itemType: itemType2, itemName: itemName2 } = getHighestItem(userData2.quid.profile.inventory);
+					const inventory2_ = widenValues(userData2.quid.profile.inventory);
 
-						inventory_[itemType][itemName] -= 1;
-						extraDescription = `accidentally drops a ${itemName} that ${losingUserData.quid.pronoun(0)} had with ${losingUserData.quid.pronoun(1)}.`;
-						extraFooter = `-1 ${itemName} for ${losingUserData.quid.name}`;
-					}
-					else if (losingUserData.quid.profile.injuries.cold === false && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
+					// if (itemType1 && itemName1 && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
 
-						losingUserData.quid.profile.injuries.cold = true;
-						extraDescription = `notices that ${losingUserData.quid.pronounAndPlural(0, 'is', 'are')} feeling weak and can't stop coughing. The long jouney must've given ${losingUserData.quid.pronoun(1)} a cold.`;
-						extraFooter = `-${losingHealthPoints} HP (from cold) for ${losingUserData.quid.name}`;
-					}
-					else {
+					// 	inventory_[itemType][itemName] -= 1;
+					// 	extraDescription = `accidentally drop a ${itemName} and a ${itemName} that they had with them.`;
+					// 	extraFooter = `-1 ${itemName} for ${losingUserData.quid.name}`;
+					// }
+					// else if (losingUserData.quid.profile.injuries.cold === false && pullFromWeightedTable({ 0: 1, 1: 1 }) === 0) {
 
-						losingUserData.quid.profile.injuries.wounds += 1;
-						extraDescription = `feels blood running down ${losingUserData.quid.pronoun(2)} side. The humans must've wounded ${losingUserData.quid.pronoun(0)}.`;
-						extraFooter = `-${losingHealthPoints} HP (from wound) for ${losingUserData.quid.name}`;
-					}
+					// 	losingUserData.quid.profile.injuries.cold = true;
+					// 	extraDescription = `notice that they are feeling weak and can't stop coughing. The long jouney must've given them a cold.`;
+					// 	extraFooter = `-${losingHealthPoints} HP (from cold) for ${losingUserData.quid.name}`;
+					// }
+					// else {
 
-					losingUserData.update(
-						(u => {
-							const p = getMapData(getMapData(u.quids, getMapData(u.servers, lastInteraction.guildId).currentQuid ?? '').profiles, lastInteraction.guildId);
-							p.inventory = inventory_;
-							p.health -= losingHealthPoints;
-							p.injuries = losingUserData.quid.profile.injuries;
-						}),
-					);
+					// 	losingUserData.quid.profile.injuries.wounds += 1;
+					// 	extraDescription = `feel blood running down their sides. The humans must've wounded them.`;
+					// 	extraFooter = `-${losingHealthPoints} HP (from wound) for ${losingUserData.quid.name}`;
+					// }
+
+					// losingUserData.update(
+					// 	(u => {
+					// 		const p = getMapData(getMapData(u.quids, getMapData(u.servers, lastInteraction.guildId).currentQuid ?? '').profiles, lastInteraction.guildId);
+					// 		p.inventory = inventory_;
+					// 		p.health -= losingHealthPoints;
+					// 		p.injuries = losingUserData.quid.profile.injuries;
+					// 	}),
+					// );
 
 
 					const levelUpEmbeds = await checkLevelUps(lastInteraction, userData1, userData2, serverData)
@@ -405,7 +407,7 @@ export const command: SlashCommand = {
 							new EmbedBuilder()
 								.setColor(userData1.quid.color)
 								.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-								.setDescription(`*The adventure didn't go as planned. Not only did the two animals get lost, they also had to run from humans. While running, ${losingUserData.quid.name} ${extraDescription} What a shame!*`)
+								.setDescription(`*The adventure didn't go as planned. Not only did the two animals get lost, they also had to run from humans. While running, the two animals ${extraDescription} What a shame!*`)
 								.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraFooter}` }),
 							...decreasedStatsData1.injuryUpdateEmbed,
 							...decreasedStatsData2.injuryUpdateEmbed,

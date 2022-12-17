@@ -8,6 +8,7 @@ export async function execute(
 ): Promise<void> {
 
 	const users = await userModel.find();
+	console.log(`Updating ${users.length} users...`);
 	for (const user of users) {
 
 		/* This updates each profile to have no cooldown, not rest, and maximum energy. */

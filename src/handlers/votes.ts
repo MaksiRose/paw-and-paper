@@ -47,7 +47,7 @@ export async function execute(
 			console.error(err);
 		});
 
-		bfdApp.listen(3002);
+		bfdApp.listen(3002, () => { console.log('Now listening to discords.com requests.'); });
 	}
 
 	if (handle.votes.top && handle.votes.top.token !== '' && handle.votes.top.authorization !== '') {
@@ -78,7 +78,7 @@ export async function execute(
 			console.error(err);
 		});
 
-		topApp.listen(3000);
+		topApp.listen(3000, () => { console.log('Now listening to top.gg requests.'); });
 	}
 
 	if (handle.votes.dbl && handle.votes.dbl.token !== '' && handle.votes.dbl.authorization !== '') {
@@ -109,6 +109,6 @@ export async function execute(
 			console.error(err);
 		});
 
-		dblApp.listen(3001);
+		dblApp.listen(3001, () => { console.log('Now listening to top.gg requests.'); });
 	}
 }
