@@ -924,46 +924,43 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 	},
 };
 
-start();
+if (existsSync('./database/bannedList.json') == false) {
 
-async function start(
-): Promise<void> {
+	writeFileSync('./database/bannedList.json', JSON.stringify(({ users: [], servers: [] }) as BanList, null, '\t'));
+}
 
-	if (existsSync('./database/bannedList.json') == false) {
+if (existsSync('./database/errorStacks.json') == false) {
 
-		writeFileSync('./database/bannedList.json', JSON.stringify(({ users: [], servers: [] }) as BanList, null, '\t'));
-	}
+	writeFileSync('./database/errorStacks.json', JSON.stringify(({}) as WebhookMessages, null, '\t'));
+}
 
-	if (existsSync('./database/errorStacks.json') == false) {
+if (existsSync('./database/givenIds.json') == false) {
 
-		writeFileSync('./database/errorStacks.json', JSON.stringify(({}) as WebhookMessages, null, '\t'));
-	}
+	writeFileSync('./database/givenIds.json', JSON.stringify(([]) as GivenIdList, null, '\t'));
+}
 
-	if (existsSync('./database/givenIds.json') == false) {
+if (existsSync('./database/toDeleteList.json') == false) {
 
-		writeFileSync('./database/givenIds.json', JSON.stringify(([]) as GivenIdList, null, '\t'));
-	}
+	writeFileSync('./database/toDeleteList.json', JSON.stringify(({}) as DeleteList, null, '\t'));
+}
 
-	if (existsSync('./database/toDeleteList.json') == false) {
+if (existsSync('./database/voteCache.json') == false) {
 
-		writeFileSync('./database/toDeleteList.json', JSON.stringify(({}) as DeleteList, null, '\t'));
-	}
+	writeFileSync('./database/voteCache.json', JSON.stringify(({}) as VoteList, null, '\t'));
+}
 
-	if (existsSync('./database/voteCache.json') == false) {
+if (existsSync('./database/webhookCache.json') == false) {
 
-		writeFileSync('./database/voteCache.json', JSON.stringify(({}) as VoteList, null, '\t'));
-	}
+	writeFileSync('./database/webhookCache.json', JSON.stringify(({}) as WebhookMessages, null, '\t'));
+}
 
-	if (existsSync('./database/webhookCache.json') == false) {
+Promise.all(
+	readdirSync(path.join(__dirname, './events')).map((file) => import(`./events/${file}`)),
+).then(function(modules) {
 
-		writeFileSync('./database/webhookCache.json', JSON.stringify(({}) as WebhookMessages, null, '\t'));
-	}
+	modules.forEach(function({ event }: {event: DiscordEvent}) {
 
-	for (const file of readdirSync(path.join(__dirname, './events'))) {
-
-		const { event } = require(`./events/${file}`) as { event: DiscordEvent; };
-
-		console.log(`${event.name} is now loaded`);
+		console.log(`Activated ${event.name} event`);
 		if (event.once) {
 
 			client.once(event.name, (...args) => {
@@ -978,7 +975,14 @@ async function start(
 				catch (error) { console.error(error); }
 			});
 		}
-	}
+	});
 
-	await client.login(token);
-}
+	client.login(token);
+
+	/* It's loading all the files in the handlers folder. */
+	readdirSync(path.join(__dirname, './handlers')).forEach(function(fileName) {
+
+		console.log(`Execute handler ${fileName}...`);
+		import(`./handlers/${fileName}`).then(function(module) { module.execute(); });
+	});
+});

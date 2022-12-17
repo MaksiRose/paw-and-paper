@@ -2,37 +2,35 @@ import { RESTPostAPIApplicationCommandsJSONBody } from 'discord-api-types/v9';
 import { lstatSync, readdirSync } from 'fs';
 import { ContextMenuCommand, SlashCommand } from '../typings/handle';
 import path from 'path';
-import { client, handle } from '..';
+import { handle } from '..';
+
+export const applicationCommands: Array<RESTPostAPIApplicationCommandsJSONBody> = [];
+export const applicationCommandsGuilds: Map<string, Array<RESTPostAPIApplicationCommandsJSONBody>> = new Map();
 
 /** Adds all commands to the client */
 export async function execute(
 ): Promise<void> {
 
-	if (!client.application) { return; }
+	/* Adds all commands to client.commands property, and to the applicationCommands array if the command.data is not undefined. */
+	Promise.all(
+		getFiles('../commands').map((commandPath) => import(commandPath)),
+	).then(modules => modules.forEach(function({ command }: { command: SlashCommand; }) {
 
-	const applicationCommands: Array<RESTPostAPIApplicationCommandsJSONBody> = [];
-	/* Adds all commands to client.commands property, and to the applicationCommands array if
-	the command.data is not undefined. */
-	for (const commandPath of getFiles('../commands')) {
-
-		const { command } = require(commandPath) as { command: SlashCommand; };
 		if (command.data !== undefined) { applicationCommands.push(command.data); }
 		handle.slashCommands.set(command.data.name, command);
 		console.log(`Added ${command.data.name} to the slash commands`);
-	}
+	}));
 
-	for (const commandPath of getFiles('../contextmenu')) {
+	Promise.all(
+		getFiles('../contextmenu').map((commandPath) => import(commandPath)),
+	).then(modules => modules.forEach(function({ command }: { command: ContextMenuCommand; }) {
 
-		const { command } = require(commandPath) as { command: ContextMenuCommand; };
 		if (command.data !== undefined) { applicationCommands.push(command.data); }
 		handle.contextMenuCommands.set(command.data.name, command);
 		console.log(`Added ${command.data.name} to the context menu commands`);
-	}
+	}));
 
 	/* Registers the applicationCommands array to Discord. */
-	await client.application.commands.set(applicationCommands);
-
-
 	for (const folderName of readdirSync(path.join(__dirname, '../commands_guild'))) {
 
 		if (!lstatSync(path.join(__dirname, `../commands_guild/${folderName}`)).isDirectory()) { continue; }
@@ -41,13 +39,13 @@ export async function execute(
 
 		for (const commandPath of readdirSync(path.join(__dirname, `../commands_guild/${folderName}`))) {
 
-			const { command } = require(`../commands_guild/${folderName}/${commandPath}`) as { command: SlashCommand; };
+			const { command } = await import(`../commands_guild/${folderName}/${commandPath}`) as { command: SlashCommand; };
 			if (command.data !== undefined) { applicationCommandsGuild.push(command.data); }
 			handle.slashCommands.set(command.data.name, command);
 			console.log(`Added ${command.data.name} to the slash commands of guild ${folderName}`);
 		}
 
-		await client.application.commands.set(applicationCommandsGuild, folderName);
+		applicationCommandsGuilds.set(folderName, applicationCommandsGuild);
 	}
 }
 
