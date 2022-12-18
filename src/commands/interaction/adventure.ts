@@ -358,7 +358,7 @@ export const command: SlashCommand = {
 				// reason roundLimit: too many rounds went past
 				if (reason.includes('roundLimit')) {
 
-					const randomHP = getRandomNumber(5, 3);
+					const maxHP = getRandomNumber(5, 3);
 
 					const pickLoss = function(
 						losingUserData: UserData<never, never>,
@@ -366,7 +366,7 @@ export const command: SlashCommand = {
 
 						let extraFooter = '';
 						let outcome: string | 1 | 2;
-						const losingHealthPoints = getSmallerNumber(randomHP, losingUserData.quid.profile.health);
+						const losingHealthPoints = getSmallerNumber(maxHP, losingUserData.quid.profile.health);
 
 						const { itemType, itemName } = getHighestItem(losingUserData.quid.profile.inventory);
 						const inventory_ = widenValues(losingUserData.quid.profile.inventory);
@@ -405,20 +405,14 @@ export const command: SlashCommand = {
 						{ name, item }: { name: string, item: string; },
 						x: { type: 0, name2: string, item2: string; } | { type: 1, pronoun0: string, pronoun1: string; },
 					): string => `${name} drops a ${item}${x.type === 0 ? ` and ${x.name2} a ${x.item2}` : ''} that ${x.type === 1 ? x.pronoun0 : 'the two animals'} had with ${x.type === 1 ? x.pronoun1 : 'them'}.`;
-					// losingUserData.quid.pronoun(0)
-					// losingUserData.quid.pronoun(1)
 
 					const coldText = (
 						x?: { name: string, pronoun0: string, pronoun1: string; },
 					): string => `${x === undefined ? 'The two animals' : x.name} notice${x === undefined ? '' : 's'} that ${x === undefined ? 'they are' : x.pronoun0} feeling weak and can't stop coughing. The long jouney must've given ${x === undefined ? 'them' : x.pronoun1} a cold.`;
-					// losingUserData.quid.pronounAndPlural(0, 'is', 'are')
-					// losingUserData.quid.pronoun(1)
 
 					const woundText = (
 						x?: { name: string, pronoun0: string, pronoun1: string; },
 					): string => `${x === undefined ? 'The two animals' : x.name} feel${x === undefined ? '' : 's'} blood running down ${x === undefined ? 'their' : x.pronoun0} side. The humans must've wounded ${x === undefined ? 'them' : x.pronoun1}.`;
-					// losingUserData.quid.pronoun(2)
-					// losingUserData.quid.pronoun(1)
 
 					const { extraFooter: extraFooter1, outcome: outcome1 } = pickLoss(userData1);
 					const { extraFooter: extraFooter2, outcome: outcome2 } = pickLoss(userData2);
@@ -488,36 +482,86 @@ export const command: SlashCommand = {
 				// reason success: every card has been uncovered
 				if (reason.includes('success')) {
 
-					const winningUserData = uncoveredCardsUser1 > uncoveredCardsUser2 ? userData1 : uncoveredCardsUser2 > uncoveredCardsUser1 ? userData2 : getRandomNumber(2) === 0 ? userData1 : userData2;
+					const maxHP = getRandomNumber(5, 8);
 
-					let foundItem: KeyOfUnion<Inventory[keyof Inventory]> | null = null;
-					let extraHealthPoints = 0;
+					const pickGain = async function(
+						winningUserData: UserData<never, never>,
+					): Promise<{ foundItem: KeyOfUnion<Inventory[keyof Inventory]> | null, extraHealthPoints: number; }> {
 
-					if (winningUserData.quid.profile.health < winningUserData.quid.profile.maxHealth) {
+						let foundItem: KeyOfUnion<Inventory[keyof Inventory]> | null = null;
+						let extraHealthPoints = 0;
 
-						extraHealthPoints = getSmallerNumber(getRandomNumber(5, 8), winningUserData.quid.profile.maxHealth - winningUserData.quid.profile.health);
+						if (winningUserData.quid.profile.health < winningUserData.quid.profile.maxHealth) {
+
+							extraHealthPoints = getSmallerNumber(maxHP, winningUserData.quid.profile.maxHealth - winningUserData.quid.profile.health);
+						}
+						else if (Object.keys(winningUserData.quid.profile.temporaryStatIncrease).length <= 1 && pullFromWeightedTable({ 0: 20 - finishedRounds, 1: finishedRounds - 10 }) === 0) {
+
+							const specialPlants = Object.keys(serverData.inventory.specialPlants) as SpecialPlantNames[];
+							foundItem = specialPlants[getRandomNumber(specialPlants.length)]!;
+							winningUserData.quid.profile.inventory.specialPlants[foundItem] += 1;
+						}
+						else {
+
+							foundItem = await pickPlant(pullFromWeightedTable({ 0: finishedRounds + 10, 1: (2 * finishedRounds) - 10, 2: (20 - finishedRounds) * 3 }) as 0 | 1 | 2, serverData);
+							if (keyInObject(winningUserData.quid.profile.inventory.commonPlants, foundItem)) { winningUserData.quid.profile.inventory.commonPlants[foundItem] += 1; }
+							else if (keyInObject(winningUserData.quid.profile.inventory.uncommonPlants, foundItem)) { winningUserData.quid.profile.inventory.uncommonPlants[foundItem] += 1; }
+							else { winningUserData.quid.profile.inventory.rarePlants[foundItem] += 1; }
+						}
+
+						winningUserData.update(
+							(u => {
+								const p = getMapData(getMapData(u.quids, getMapData(u.servers, lastInteraction.guildId).currentQuid ?? '').profiles, lastInteraction.guildId);
+								p.inventory = winningUserData.quid.profile.inventory;
+								p.health += extraHealthPoints;
+							}),
+						);
+
+						return { foundItem, extraHealthPoints };
+					};
+
+					const healthText = function(
+						{ type, name }: {type: 0 | 1, name: string},
+					) {
+						return `${name} feel${type === 0 ? 's' : ''} especially refreshed from this trip`;
+					};
+
+					const itemText = function(
+						{ name, item }: { name: string, item: string; },
+						x?: {name: string, item: string},
+					) {
+						return `${name} even found a ${item} on the way${x === undefined ? '' : `, and ${x.name} a ${x.item}`}`;
+					};
+
+					const { foundItem: foundItem1, extraHealthPoints: extraHealthPoints1 } = await pickGain(userData1);
+					const { foundItem: foundItem2, extraHealthPoints: extraHealthPoints2 } = await pickGain(userData2);
+
+					let extraDescription: string;
+					if (foundItem1 === null && foundItem2 === null) {
+						extraDescription = healthText({ type: 1, name: 'They' });
 					}
-					else if (Object.keys(winningUserData.quid.profile.temporaryStatIncrease).length <= 1 && pullFromWeightedTable({ 0: 20 - finishedRounds, 1: finishedRounds - 10 }) === 0) {
-
-						const specialPlants = Object.keys(serverData.inventory.specialPlants) as SpecialPlantNames[];
-						foundItem = specialPlants[getRandomNumber(specialPlants.length)]!;
-						winningUserData.quid.profile.inventory.specialPlants[foundItem] += 1;
+					else if (foundItem1 !== null && foundItem2 !== null) {
+						extraDescription = itemText({ name: userData1.quid.name, item: foundItem1 }, { name: userData2.quid.name, item: foundItem2 });
 					}
 					else {
+						let desc1: string;
+						if (foundItem1 === null) {
+							desc1 = healthText({ type: 0, name: userData1.quid.name });
+						}
+						else {
+							desc1 = itemText({ name: userData1.quid.name, item: foundItem1 });
+						}
 
-						foundItem = await pickPlant(pullFromWeightedTable({ 0: finishedRounds + 10, 1: (2 * finishedRounds) - 10, 2: (20 - finishedRounds) * 3 }) as 0 | 1 | 2, serverData);
-						if (keyInObject(winningUserData.quid.profile.inventory.commonPlants, foundItem)) { winningUserData.quid.profile.inventory.commonPlants[foundItem] += 1; }
-						else if (keyInObject(winningUserData.quid.profile.inventory.uncommonPlants, foundItem)) { winningUserData.quid.profile.inventory.uncommonPlants[foundItem] += 1; }
-						else { winningUserData.quid.profile.inventory.rarePlants[foundItem] += 1; }
+						let desc2: string;
+						if (foundItem2 === null) {
+							desc2 = healthText({ type: 0, name: userData2.quid.name });
+						}
+						else {
+							desc2 = itemText({ name: userData2.quid.name, item: foundItem2 });
+						}
+
+						extraDescription = `${desc1}, and ${desc2}`;
 					}
-
-					winningUserData.update(
-						(u => {
-							const p = getMapData(getMapData(u.quids, getMapData(u.servers, lastInteraction.guildId).currentQuid ?? '').profiles, lastInteraction.guildId);
-							p.inventory = winningUserData.quid.profile.inventory;
-							p.health += extraHealthPoints;
-						}),
-					);
 
 
 					const levelUpEmbeds = await checkLevelUps(lastInteraction, userData1, userData2, serverData)
@@ -529,8 +573,8 @@ export const command: SlashCommand = {
 							new EmbedBuilder()
 								.setColor(userData1.quid.color)
 								.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-								.setDescription(`*The two animals laugh as they return from a successful adventure. ${winningUserData.quid.name} ${foundItem === null ? 'feels especially refreshed from this trip' : `even found a ${foundItem} on the way`}. What a success!*`)
-								.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraHealthPoints > 0 ? `+${extraHealthPoints} HP for ${winningUserData.quid.name} (${winningUserData.quid.profile.health}/${winningUserData.quid.profile.maxHealth})` : `+1 ${foundItem} for ${winningUserData.quid.name}`}` }),
+								.setDescription(`*The two animals laugh as they return from a successful adventure. ${extraDescription}. What a success!*`)
+								.setFooter({ text: `${decreasedStatsData1.statsUpdateText}\n${decreasedStatsData2.statsUpdateText}\n\n${extraHealthPoints1 > 0 ? `+${extraHealthPoints1} HP for ${userData1.quid.name} (${userData1.quid.profile.health}/${userData1.quid.profile.maxHealth})` : `+1 ${foundItem1} for ${userData1.quid.name}`}\n${extraHealthPoints2 > 0 ? `+${extraHealthPoints2} HP for ${userData2.quid.name} (${userData2.quid.profile.health}/${userData2.quid.profile.maxHealth})` : `+1 ${foundItem2} for ${userData2.quid.name}`}` }),
 							...decreasedStatsData1.injuryUpdateEmbed,
 							...decreasedStatsData2.injuryUpdateEmbed,
 							...(levelUpEmbeds?.levelUpEmbed1 ?? []),
