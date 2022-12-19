@@ -148,6 +148,7 @@ export const command: SlashCommand = {
 								roles: [],
 								skills: { global: {}, personal: {} },
 								lastActiveTimestamp: 0,
+								passedOutTimestamp: 0,
 							},
 						} : {},
 					};

@@ -1,6 +1,5 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, AnySelectMenuInteraction } from 'discord.js';
-import { capitalizeString, respond, sendErrorMessage } from './helperFunctions';
-import { userModel } from '../models/userModel';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, AnySelectMenuInteraction, time } from 'discord.js';
+import { capitalizeString, getMapData, respond, sendErrorMessage } from './helperFunctions';
 import { decreaseLevel } from './levelHandling';
 import { stopResting, isResting } from '../commands/gameplay_maintenance/rest';
 import { calculateInventorySize } from './simulateItemUse';
@@ -17,20 +16,44 @@ export async function isPassedOut(
 	/* This is a function that checks if the user has passed out. If they have, it will send a message to the channel and return true. */
 	if (userData.quid.profile.energy <= 0 || userData.quid.profile.health <= 0 || userData.quid.profile.hunger <= 0 || userData.quid.profile.thirst <= 0) {
 
+		const sixHoursInMs = 21_600_000;
+
+		if (isNew) {
+
+			userData.update(
+				(u) => {
+					const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
+					p.passedOutTimestamp = Date.now();
+				},
+			);
+		}
+		else if (userData.quid.profile.passedOutTimestamp + sixHoursInMs < Date.now()) {
+
+			userData.update(
+				(u) => {
+					const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
+					if (p.energy <= 0) { p.energy = 1; }
+					if (p.health <= 0) { p.health = 1; }
+					if (p.hunger <= 0) { p.hunger = 1; }
+					if (p.thirst <= 0) { p.thirst = 1; }
+				},
+			);
+			return false;
+		}
+
 		// This is always a followUp
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-				.setDescription(`*${userData.quid.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${userData.quid.pronounAndPlural(0, 'screeches', 'screech')} with ${userData.quid.pronoun(2)} last energy. Without help, ${userData.quid.pronoun(0)} will not be able to continue.*`)
+				.setDescription(`*${userData.quid.name} lies on the ground near the pack borders, barely awake.* "Healer!" *${userData.quid.pronounAndPlural(0, 'screeches', 'screech')} with ${userData.quid.pronoun(2)} last energy. Without help, ${userData.quid.pronoun(0)} will not be able to continue.*\n\nIf no one heals you, you will stop being unconscious ${time(Math.floor((userData.quid.profile.passedOutTimestamp + sixHoursInMs) / 1000), 'R')}.`)
 				.setFooter(isNew ? { text: await decreaseLevel(userData, interaction) } : null)],
 		});
 
 		/* This is a tip that is sent to the user when they pass out for the first time. */
 		if (userData.advice.passingout === false) {
 
-			await userModel.findOneAndUpdate(
-				u => u._id === userData._id,
+			await userData.update(
 				(u) => { u.advice.passingout = true; },
 			);
 
