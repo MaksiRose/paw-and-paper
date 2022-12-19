@@ -255,6 +255,7 @@ export const userModel = new Model<UserSchema>('./database/profiles', {
 								},
 							},
 							lastActiveTimestamp: { type: 'number', default: 0 },
+							passedOutTimestamp: { type: 'number', default: 0 },
 						},
 					},
 				},

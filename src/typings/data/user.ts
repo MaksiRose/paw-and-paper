@@ -114,6 +114,8 @@ export interface ProfileSchema {
 	};
 	/** A timestamp for when the profile was last used */
 	lastActiveTimestamp: number;
+	/** A timestamp for when the user last passed out */
+	passedOutTimestamp: number;
 }
 
 export interface QuidSchema<Completed extends ''> {
