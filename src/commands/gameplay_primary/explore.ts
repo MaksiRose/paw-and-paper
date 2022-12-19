@@ -561,15 +561,16 @@ async function executeExploring(
 
 					const healthPoints = getSmallerNumber(userData.quid.profile.health, getRandomNumber(5, 3));
 
-					const allElderlyUsersArray = await userModel.find(
+					const twoWeeksInMs = 1_209_600_000;
+					const activeElderlyAccounts = await userModel.find(
 						(u) => {
 							return Object.values(u.quids).filter(q => {
 								const p = q.profiles[interaction.guildId];
-								return p !== undefined && p.rank === RankType.Elderly;
+								return p !== undefined && p.rank === RankType.Elderly && p.lastActiveTimestamp > (Date.now() - twoWeeksInMs);
 							}).length > 0;
 						});
 
-					if (getRandomNumber(2) === 0 && allElderlyUsersArray.length > 0) {
+					if (getRandomNumber(2) === 0 && activeElderlyAccounts.length > 0) {
 
 						userData.quid.profile.injuries.poison = true;
 
