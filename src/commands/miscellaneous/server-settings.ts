@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageComponentInteraction, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageComponentInteraction, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle, RoleSelectMenuBuilder } from 'discord.js';
 import { getArrayElement, respond, sendErrorMessage } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import { userModel } from '../../models/userModel';
@@ -78,11 +78,11 @@ export const command: SlashCommand = {
 
 				const roleIdOrAdd = selectOptionId.split('_')[2] || '';
 
-				let rolePage = 0;
+				const rolePage = 0;
 				let role: ServerSchema['shop'][number]['roleId'] | null = serverData.shop.find(shopItem => shopItem.roleId === roleIdOrAdd)?.roleId || null;
 				let wayOfEarning: ServerSchema['shop'][number]['wayOfEarning'] | null = serverData.shop.find(shopItem => shopItem.roleId === role)?.wayOfEarning || null;
 				let requirement: ServerSchema['shop'][number]['requirement'] | null = serverData.shop.find(shopItem => shopItem.roleId === role)?.requirement || null;
-				let roleMenu = await async function() {
+				const roleMenu = await async function() {
 
 					if (roleIdOrAdd !== 'add') { return null; }
 
@@ -102,19 +102,14 @@ export const command: SlashCommand = {
 				interactionCollector.on('collect', async (i: MessageComponentInteraction<'cached'>) => {
 					try {
 
-						const collectorSelectOptionId = i.isStringSelectMenu() ? i.values[0] : undefined;
+						const collectorSelectOptionId = i.isAnySelectMenu() ? i.values[0] : undefined;
 
 						// This is also picked up by sendMessageComponentResponse, so we do not reply and stop the collector since it will reply and start a new collector from the parent function
 						if (i.isButton() && i.customId.startsWith('server-settings_shop_@')) { interactionCollector.stop('back'); }
 
-						if (i.isStringSelectMenu() && collectorSelectOptionId && i.customId.startsWith('server-settings_shop_add_options')) {
+						if (i.isRoleSelectMenu() && collectorSelectOptionId && i.customId.startsWith('server-settings_shop_add_options')) {
 
-							if (collectorSelectOptionId.startsWith('server-settings_shop_add_nextpage_')) {
-
-								rolePage = Number(collectorSelectOptionId.replace('server-settings_shop_add_nextpage_', ''));
-								roleMenu = await getNewRoleMenu(i, serverData!, rolePage).catch(() => { return null; });
-							}
-							else { role = collectorSelectOptionId.replace('server-settings_shop_add_', ''); }
+							role = collectorSelectOptionId;
 
 							// This is always an update to the message with the select menu
 							await respond(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role), 'update', '@original')
@@ -646,7 +641,7 @@ async function getNewRoleMenu(
 	interaction: AnySelectMenuInteraction<'cached'>,
 	serverData: ServerSchema,
 	page: number,
-): Promise<StringSelectMenuBuilder> {
+): Promise<RoleSelectMenuBuilder> {
 
 	let roles = await interaction.guild.roles.fetch();
 	roles = roles.filter(role => role.id !== role.guild.id && !serverData.shop.some(shopItem => shopItem.roleId === role.id));
@@ -659,13 +654,14 @@ async function getNewRoleMenu(
 		roleMenuOptions.push({ label: 'Show more roles', value: `server-settings_shop_add_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
 	}
 
-	return new StringSelectMenuBuilder()
+	// This should be a RoleSelectMenu
+	return new RoleSelectMenuBuilder()
 		.setCustomId(`server-settings_shop_add_options_@${interaction.user.id}`)
 		.setPlaceholder('Select a role for users to earn/buy')
-		.setOptions(roleMenuOptions);
+		.setMaxValues(1);
 }
 
-function getShopRoleMessage(interaction: ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>, roleMenu: StringSelectMenuBuilder | null, roleIdOrAdd: string, serverData: ServerSchema, wayOfEarning: ServerSchema['shop'][number]['wayOfEarning'] | null, requirement: ServerSchema['shop'][number]['requirement'] | null, role: ServerSchema['shop'][number]['roleId'] | null): { embeds: Array<EmbedBuilder>, components: Array<ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder>>; } {
+function getShopRoleMessage(interaction: ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>, roleMenu: StringSelectMenuBuilder | RoleSelectMenuBuilder | null, roleIdOrAdd: string, serverData: ServerSchema, wayOfEarning: ServerSchema['shop'][number]['wayOfEarning'] | null, requirement: ServerSchema['shop'][number]['requirement'] | null, role: ServerSchema['shop'][number]['roleId'] | null): { embeds: Array<EmbedBuilder>, components: Array<ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder | RoleSelectMenuBuilder>>; } {
 
 	const isNotSavable = wayOfEarning === null || requirement === null || role === null;
 	const lastRowButtons = [
@@ -696,7 +692,7 @@ function getShopRoleMessage(interaction: ButtonInteraction<'cached'> | AnySelect
 					.setEmoji('⬅️')
 					.setStyle(ButtonStyle.Secondary)]),
 			/* Only add a role selector if this is to add and not edit a role */
-			...(roleMenu ? [new ActionRowBuilder<StringSelectMenuBuilder>()
+			...(roleMenu ? [new ActionRowBuilder<StringSelectMenuBuilder|RoleSelectMenuBuilder>()
 				.setComponents([roleMenu])] : []),
 			/* Select a way of earning (experience, levels, rank) */
 			new ActionRowBuilder<StringSelectMenuBuilder>()
@@ -759,6 +755,7 @@ async function getUpdateMessage(
 				.setEmoji('⬅️')
 				.setStyle(ButtonStyle.Secondary)]),
 		new ActionRowBuilder<StringSelectMenuBuilder>()
+			// This should be a ChannelSelectMenu
 			.setComponents([new StringSelectMenuBuilder()
 				.setCustomId(`server-settings_updates_options_@${interaction.user.id}`)
 				.setPlaceholder('Select a channel to send updates to')
@@ -793,6 +790,7 @@ async function getVisitsMessage(
 				.setEmoji('⬅️')
 				.setStyle(ButtonStyle.Secondary)]),
 		new ActionRowBuilder<StringSelectMenuBuilder>()
+			// This should be a ChannelSelectMenu
 			.setComponents([new StringSelectMenuBuilder()
 				.setCustomId(`server-settings_visits_options_@${interaction.user.id}`)
 				.setPlaceholder('Select a channel to set visits to')
@@ -806,6 +804,7 @@ async function getProxyingMessage(
 	page: number,
 ): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
 
+	// This should use selected options with the select menu allowing up to 25 selected options
 	const setTo = serverData.proxySettings.channels.setTo === ProxyListType.Blacklist ? 'blacklist' : 'whitelist';
 	let disableSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).filter((c): c is TextChannel => c !== null && c.type === ChannelType.GuildText).map((channel, channelId) => ({ label: channel.name, value: `server-settings_proxying_${channelId}`, emoji: serverData.proxySettings.channels[setTo].includes(channelId) ? '🔘' : undefined }));
 
