@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageComponentInteraction, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle, RoleSelectMenuBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageComponentInteraction, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle, RoleSelectMenuBuilder, ChannelSelectMenuBuilder } from 'discord.js';
 import { getArrayElement, respond, sendErrorMessage } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import { userModel } from '../../models/userModel';
@@ -392,44 +392,32 @@ export const command: SlashCommand = {
 			]) === true) { return; }
 
 			// This is always an update to the message with the select menu
-			await respond(interaction, await getUpdateMessage(interaction, serverData, 0), 'update', '@original');
+			await respond(interaction, await getUpdateMessage(interaction, serverData), 'update', '@original');
 			return;
 		}
 
 		/* It's checking if the interaction is the updates select menu */
-		if (interaction.isStringSelectMenu() && selectOptionId && interaction.customId.includes('updates_options')) {
+		if (interaction.isChannelSelectMenu() && selectOptionId && interaction.customId.includes('updates_options')) {
 
-			/* It's checking if the value is for turning a page. If it is, it's getting the page number from the value, and it's updating the message with the shop message with the page number. */
-			if (selectOptionId.includes('nextpage')) {
+			const channelId = selectOptionId;
 
-				const page = Number(selectOptionId.split('_')[3]);
+			const announcementChannel = await interaction.client.channels.fetch(update_channel_id);
+			if (announcementChannel === null || announcementChannel.type !== ChannelType.GuildAnnouncement) { throw new Error('Announcement Channel is missing or not of type GuildAnnouncement.'); }
 
-				// This is always an update to the message with the select menu
-				await respond(interaction, await getUpdateMessage(interaction, serverData, page), 'update', '@original');
-				return;
-			}
-			else {
+			await announcementChannel.addFollower(channelId);
 
-				const channelId = getArrayElement(selectOptionId.split('_'), 2);
-
-				const announcementChannel = await interaction.client.channels.fetch(update_channel_id);
-				if (announcementChannel === null || announcementChannel.type !== ChannelType.GuildAnnouncement) { throw new Error('Announcement Channel is missing or not of type GuildAnnouncement.'); }
-
-				await announcementChannel.addFollower(channelId);
-
-				// This is always an update to the message with the select menu
-				await respond(interaction, getOriginalMessage(interaction, serverData), 'update', '@original')
-					.catch((error) => {
-						if (error.httpStatus !== 404) { console.error(error); }
-					});
-
-				// This is always a followUp
-				await respond(interaction, {
-					content: `Updates are now posted to <#${channelId}>!`,
-					ephemeral: true,
+			// This is always an update to the message with the select menu
+			await respond(interaction, getOriginalMessage(interaction, serverData), 'update', '@original')
+				.catch((error) => {
+					if (error.httpStatus !== 404) { console.error(error); }
 				});
-				return;
-			}
+
+			// This is always a followUp
+			await respond(interaction, {
+				content: `Updates are now posted to <#${channelId}>!`,
+				ephemeral: true,
+			});
+			return;
 		}
 
 		/* It's checking if the interaction value includes visits, and sends a message if it does. */
@@ -654,7 +642,6 @@ async function getNewRoleMenu(
 		roleMenuOptions.push({ label: 'Show more roles', value: `server-settings_shop_add_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
 	}
 
-	// This should be a RoleSelectMenu
 	return new RoleSelectMenuBuilder()
 		.setCustomId(`server-settings_shop_add_options_@${interaction.user.id}`)
 		.setPlaceholder('Select a role for users to earn/buy')
@@ -731,16 +718,7 @@ function getShopRoleMessage(interaction: ButtonInteraction<'cached'> | AnySelect
 async function getUpdateMessage(
 	interaction: AnySelectMenuInteraction<'cached'>,
 	serverData: ServerSchema,
-	page: number,
 ): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
-
-	let updatesMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).filter((c): c is TextChannel => c !== null && c.type === ChannelType.GuildText).map(channel => ({ label: channel.name, value: `server-settings_updates_${channel.id}` }));
-
-	if (updatesMenuOptions.length > 25) {
-
-		updatesMenuOptions = updatesMenuOptions.splice(page * 24, 24);
-		updatesMenuOptions.push({ label: 'Show more channels', value: `server-settings_updates_nextpage_${page}`, description: `You are currently on page ${page + 1}`, emoji: '📋' });
-	}
 
 	return {
 		embeds: [new EmbedBuilder()
@@ -754,12 +732,12 @@ async function getUpdateMessage(
 				.setLabel('Back')
 				.setEmoji('⬅️')
 				.setStyle(ButtonStyle.Secondary)]),
-		new ActionRowBuilder<StringSelectMenuBuilder>()
-			// This should be a ChannelSelectMenu
-			.setComponents([new StringSelectMenuBuilder()
+		new ActionRowBuilder<ChannelSelectMenuBuilder>()
+			.setComponents([new ChannelSelectMenuBuilder()
 				.setCustomId(`server-settings_updates_options_@${interaction.user.id}`)
 				.setPlaceholder('Select a channel to send updates to')
-				.setOptions(updatesMenuOptions)])],
+				.setMaxValues(1)
+				.setChannelTypes([ChannelType.GuildText])])],
 	};
 }
 
