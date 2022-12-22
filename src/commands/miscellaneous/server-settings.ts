@@ -1,5 +1,5 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageComponentInteraction, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle, RoleSelectMenuBuilder, ChannelSelectMenuBuilder } from 'discord.js';
-import { getArrayElement, respond, sendErrorMessage } from '../../utils/helperFunctions';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionCollector, InteractionReplyOptions, InteractionType, InteractionUpdateOptions, MessageComponentInteraction, MessageEditOptions, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, TextChannel, TextInputBuilder, TextInputStyle, RoleSelectMenuBuilder, ChannelSelectMenuBuilder, channelMention } from 'discord.js';
+import { respond, sendErrorMessage } from '../../utils/helperFunctions';
 import serverModel from '../../models/serverModel';
 import { userModel } from '../../models/userModel';
 import { checkLevelRequirements, checkRankRequirements } from '../../utils/checkRoleRequirements';
@@ -433,59 +433,45 @@ export const command: SlashCommand = {
 		}
 
 		/* It's checking if the interaction is the visits select menu */
-		if (interaction.isStringSelectMenu() && selectOptionId && interaction.customId.includes('visits_options')) {
+		if (interaction.isChannelSelectMenu() && interaction.customId.includes('visits_options')) {
 
-			/* It's checking if the value is for turning a page. If it is, it's getting the page number from the value, and it's updating the message with the shop message with the page number. */
-			if (selectOptionId.includes('nextpage')) {
+			// This is always an update to the message with the select menu
+			await respond(interaction, getOriginalMessage(interaction, serverData), 'update', '@original')
+				.catch((error) => {
+					if (error.httpStatus !== 404) { console.error(error); }
+				});
 
-				const page = Number(selectOptionId.split('_')[3]);
+			if (selectOptionId === undefined || selectOptionId === serverData.visitChannelId) {
 
-				// This is always an update to the message with the select menu
-				await respond(interaction, await getVisitsMessage(interaction, serverData, page), 'update', '@original');
-				return;
+				await serverModel.findOneAndUpdate(
+					s => s.serverId === interaction.guildId,
+					(s) => {
+						s.visitChannelId = null;
+					},
+				);
+
+				// This is always a followUp
+				await respond(interaction, {
+					content: 'Visits have successfully been turned off!',
+					ephemeral: true,
+				});
 			}
 			else {
 
-				// This is always an update to the message with the select menu
-				await respond(interaction, getOriginalMessage(interaction, serverData), 'update', '@original')
-					.catch((error) => {
-						if (error.httpStatus !== 404) { console.error(error); }
-					});
+				await serverModel.findOneAndUpdate(
+					s => s.serverId === interaction.guildId,
+					(s) => {
+						s.visitChannelId = selectOptionId;
+					},
+				);
 
-				const channelIdOrOff = getArrayElement(selectOptionId.split('_'), 2);
-
-				if (channelIdOrOff === 'off') {
-
-					await serverModel.findOneAndUpdate(
-						s => s.serverId === interaction.guildId,
-						(s) => {
-							s.visitChannelId = null;
-						},
-					);
-
-					// This is always a followUp
-					await respond(interaction, {
-						content: 'Visits have successfully been turned off!',
-						ephemeral: true,
-					});
-				}
-				else {
-
-					await serverModel.findOneAndUpdate(
-						s => s.serverId === interaction.guildId,
-						(s) => {
-							s.visitChannelId = channelIdOrOff;
-						},
-					);
-
-					// This is always a followUp
-					await respond(interaction, {
-						content: `Visits are now possible in <#${channelIdOrOff}>!`,
-						ephemeral: true,
-					});
-				}
-				return;
+				// This is always a followUp
+				await respond(interaction, {
+					content: `Visits are now possible in ${channelMention(selectOptionId)}!`,
+					ephemeral: true,
+				});
 			}
+			return;
 		}
 
 		/* It's checking if the interaction value includes visits, and sends a message if it does. */
@@ -760,19 +746,20 @@ async function getVisitsMessage(
 			.setColor(default_color)
 			.setAuthor({ name: serverData.name, iconURL: interaction.guild?.iconURL() || undefined })
 			.setTitle('Settings ➜ Visits')
-			.setDescription('Selecting a channel means that users can connect with other servers that have this feature turned on through that channel. The current selected option has a radio emoji next to it.')],
+			.setDescription(`Selecting a channel means that users can connect with other servers that have this feature turned on through that channel. Selecting the current visiting channel will disable visiting.\nCurrent visiting channel: ${serverData.visitChannelId === null ? 'none' : channelMention(serverData.visitChannelId)}`)],
 		components: [new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
 				.setCustomId(`server-settings_mainpage_@${interaction.user.id}`)
 				.setLabel('Back')
 				.setEmoji('⬅️')
 				.setStyle(ButtonStyle.Secondary)]),
-		new ActionRowBuilder<StringSelectMenuBuilder>()
-			// This should be a ChannelSelectMenu
-			.setComponents([new StringSelectMenuBuilder()
+		new ActionRowBuilder<ChannelSelectMenuBuilder>()
+			.setComponents([new ChannelSelectMenuBuilder()
 				.setCustomId(`server-settings_visits_options_@${interaction.user.id}`)
 				.setPlaceholder('Select a channel to set visits to')
-				.setOptions(updatesMenuOptions)])],
+				.setMaxValues(1)
+				.setMinValues(0)
+				.addChannelTypes([ChannelType.GuildText, ChannelType.PrivateThread, ChannelType.PublicThread])])],
 	};
 }
 
