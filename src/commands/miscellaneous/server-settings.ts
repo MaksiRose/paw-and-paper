@@ -769,7 +769,7 @@ async function getProxyingMessage(
 	page: number,
 ): Promise<InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions> {
 
-	// This should use selected options with the select menu allowing up to 25 selected options
+	// If ChannelSelects ever allow for default values, then this could be implemented here. Right now, using default values clashes with the "Show more channels" feature
 	const setTo = serverData.proxySettings.channels.setTo === ProxyListType.Blacklist ? 'blacklist' : 'whitelist';
 	let disableSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = (await interaction.guild.channels.fetch()).filter((c): c is TextChannel => c !== null && c.type === ChannelType.GuildText).map((channel, channelId) => ({ label: channel.name, value: `server-settings_proxying_${channelId}`, emoji: serverData.proxySettings.channels[setTo].includes(channelId) ? '🔘' : undefined }));
 
