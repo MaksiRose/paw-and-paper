@@ -262,6 +262,7 @@ async function getSelectMenu(
 	page: number,
 ): Promise<StringSelectMenuBuilder> {
 
+	// If ChannelSelects ever allow for default values, then this could be implemented here. Right now, using default values clashes with the "Show more channels" feature
 	let alwaysSelectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = allChannels.map((channel, channelId) => ({
 		label: channel.name,
 		value: constructSelectOptions<SelectOptionArgs>([channelId]),
