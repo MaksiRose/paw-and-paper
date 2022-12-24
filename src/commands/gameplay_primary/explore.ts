@@ -323,7 +323,7 @@ async function executeExploring(
 	}
 	// If the server has 6 or more items in the inventory than needed, there is no attack, and the next possible attack is possible, start an attack
 	else if (itemUse >= 6
-		&& remindOfAttack(interaction.guildId) === null
+		&& remindOfAttack(interaction.guildId) === ''
 		&& serverData.nextPossibleAttack <= Date.now()) {
 
 		// It should be at least two humans, or more if there are more people active
