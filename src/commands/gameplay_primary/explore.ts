@@ -385,7 +385,7 @@ async function executeExploring(
 	else if (pullFromWeightedTable({ 0: userData.quid.profile.rank === RankType.Healer ? 2 : 1, 1: userData.quid.profile.rank === RankType.Hunter ? 2 : 1 }) === 0) {
 
 		/* First we are calculating needed plants - existing plants through simulatePlantUse three times, of which two it is calculated for active users only. The results of these are added together and divided by 3 to get their average. This is then used to get a random number that can be between 1 higher and 1 lower than that. The user's level is added with this, and it is limited to not be below 1. */
-		const simAverage = Math.round((await simulatePlantUse(serverData, true) + await simulatePlantUse(serverData, true) + await simulatePlantUse(serverData, false)) / 3);
+		const simAverage = Math.round((plantUse + await simulatePlantUse(serverData, true) + await simulatePlantUse(serverData, false)) / 3);
 		const environmentLevel = getBiggerNumber(1, userData.quid.profile.levels + getRandomNumber(3, simAverage - 1));
 
 		const foundItem = await pickPlant(chosenBiomeNumber, serverData);
@@ -634,7 +634,7 @@ async function executeExploring(
 	else {
 
 		/* First we are calculating needed meat - existing meat through simulateMeatUse three times, of which two it is calculated for active users only. The results of these are added together and divided by 3 to get their average. This is then used to get a random number that can be between 1 higher and 1 lower than that. The user's level is added with this, and it is limited to not be below 1. */
-		const simAverage = Math.round((await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, false)) / 3);
+		const simAverage = Math.round((meatUse + await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, false)) / 3);
 		const opponentLevel = getBiggerNumber(1, userData.quid.profile.levels + getRandomNumber(3, simAverage - 1));
 
 		const opponentsArray = speciesInfo[userData.quid.species].biome1OpponentArray.concat([
