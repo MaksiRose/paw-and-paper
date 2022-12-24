@@ -1,12 +1,12 @@
-import { Client, Collection, GatewayIntentBits, Options, Snowflake } from 'discord.js';
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
-import path from 'path';
+import { Client, Collection, GatewayIntentBits, Options, RESTPostAPIApplicationCommandsJSONBody, Snowflake } from 'discord.js';
+import { existsSync, lstatSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { Api } from '@top-gg/sdk';
 import { ContextMenuCommand, SlashCommand, Votes } from './typings/handle';
 import { BanList, CommonPlantNames, DeleteList, GivenIdList, MaterialNames, RarePlantNames, SpecialPlantNames, SpeciesNames, UncommonPlantNames, VoteList, WebhookMessages } from './typings/data/general';
 import { DiscordEvent, MaterialInfo, PlantEdibilityType, PlantInfo, SpeciesDietType, SpeciesHabitatType, SpeciesInfo } from './typings/main';
 import { UserSchema } from './typings/data/user';
 import { Octokit } from '@octokit/rest';
+import path from 'path';
 const { token, bfd_token, bfd_authorization, top_token, top_authorization, dbl_token, dbl_authorization, github_token } = require('../config.json');
 const bfd = require('bfd-api-redux/src/main');
 
@@ -924,6 +924,9 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 	},
 };
 
+export const applicationCommands: Array<RESTPostAPIApplicationCommandsJSONBody> = [];
+export const applicationCommandsGuilds: Map<string, Array<RESTPostAPIApplicationCommandsJSONBody>> = new Map();
+
 if (existsSync('./database/bannedList.json') == false) {
 
 	writeFileSync('./database/bannedList.json', JSON.stringify(({ users: [], servers: [] }) as BanList, null, '\t'));
@@ -977,12 +980,68 @@ Promise.all(
 		}
 	});
 
+	// The following is done seperately from the command handler files since all the handlers need to be called after the client is ready, while the below needs to be run beforehand due to the importing taking up a lot of CPU and preventing heartbeats from being set and received properly.
+
+	/* Adds all commands to client.commands property, and to the applicationCommands array if the command.data is not undefined. */
+	Promise.all(
+		getFiles('../commands').map((commandPath) => import(commandPath)),
+	).then(modules => modules.forEach(function({ command }: { command: SlashCommand; }) {
+
+		if (command.data !== undefined) { applicationCommands.push(command.data); }
+		handle.slashCommands.set(command.data.name, command);
+		console.log(`Added ${command.data.name} to the slash commands`);
+	}));
+
+	Promise.all(
+		getFiles('../contextmenu').map((commandPath) => import(commandPath)),
+	).then(modules => modules.forEach(function({ command }: { command: ContextMenuCommand; }) {
+
+		if (command.data !== undefined) { applicationCommands.push(command.data); }
+		handle.contextMenuCommands.set(command.data.name, command);
+		console.log(`Added ${command.data.name} to the context menu commands`);
+	}));
+
+	/* Registers the applicationCommands array to Discord. */
+	for (const folderName of readdirSync(path.join(__dirname, '../commands_guild'))) {
+
+		if (!lstatSync(path.join(__dirname, `../commands_guild/${folderName}`)).isDirectory()) { continue; }
+
+		const applicationCommandsGuild: Array<RESTPostAPIApplicationCommandsJSONBody> = [];
+
+		Promise.all(
+			getFiles(`../commands_guild/${folderName}`).map((commandPath) => import(commandPath)),
+		).then(modules => modules.forEach(function({ command }: { command: SlashCommand; }) {
+
+			if (command.data !== undefined) { applicationCommandsGuild.push(command.data); }
+			handle.slashCommands.set(command.data.name, command);
+			console.log(`Added ${command.data.name} to the slash commands of guild ${folderName}`);
+		})).finally(function() { applicationCommandsGuilds.set(folderName, applicationCommandsGuild); });
+	}
+
 	client.login(token);
-
-	/* It's loading all the files in the handlers folder. */
-	readdirSync(path.join(__dirname, './handlers')).forEach(function(fileName) {
-
-		console.log(`Execute handler ${fileName}...`);
-		import(`./handlers/${fileName}`).then(function(module) { module.execute(); });
-	});
 });
+
+/** Adds all file paths in a directory to an array and returns it */
+function getFiles(
+	directory: string,
+): Array<string> {
+
+	let commandFiles: Array<string> = [];
+
+	for (const content of readdirSync(path.join(__dirname, directory))) {
+
+		if (lstatSync(path.join(__dirname, `${directory}/${content}`)).isDirectory()) {
+
+			commandFiles = [
+				...commandFiles,
+				...getFiles(`${directory}/${content}`),
+			];
+		}
+		else if (content.endsWith('.js') || content.endsWith('.ts')) {
+
+			commandFiles.push(`${directory}/${content.slice(0, -3)}`);
+		}
+	}
+
+	return commandFiles;
+}
