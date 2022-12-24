@@ -14,10 +14,10 @@ export const event: DiscordEvent = {
 		client.user?.setActivity('/help', { type: ActivityType.Listening });
 
 		/* It's loading all the files in the handlers folder. */
-		readdirSync(path.join(__dirname, './handlers')).forEach(function(fileName) {
+		readdirSync(path.join(__dirname, '../handlers')).forEach(function(fileName) {
 
 			console.log(`Execute handler ${fileName}...`);
-			import(`./handlers/${fileName}`).then(function(module) { module.execute(); });
+			import(`../handlers/${fileName}`).then(function(module) { module.execute(); });
 		});
 	},
 };

@@ -984,7 +984,7 @@ Promise.all(
 
 	/* Adds all commands to client.commands property, and to the applicationCommands array if the command.data is not undefined. */
 	Promise.all(
-		getFiles('../commands').map((commandPath) => import(commandPath)),
+		getFiles('./commands').map((commandPath) => import(commandPath)),
 	).then(modules => modules.forEach(function({ command }: { command: SlashCommand; }) {
 
 		if (command.data !== undefined) { applicationCommands.push(command.data); }
@@ -993,7 +993,7 @@ Promise.all(
 	}));
 
 	Promise.all(
-		getFiles('../contextmenu').map((commandPath) => import(commandPath)),
+		getFiles('./contextmenu').map((commandPath) => import(commandPath)),
 	).then(modules => modules.forEach(function({ command }: { command: ContextMenuCommand; }) {
 
 		if (command.data !== undefined) { applicationCommands.push(command.data); }
@@ -1002,14 +1002,14 @@ Promise.all(
 	}));
 
 	/* Registers the applicationCommands array to Discord. */
-	for (const folderName of readdirSync(path.join(__dirname, '../commands_guild'))) {
+	for (const folderName of readdirSync(path.join(__dirname, './commands_guild'))) {
 
-		if (!lstatSync(path.join(__dirname, `../commands_guild/${folderName}`)).isDirectory()) { continue; }
+		if (!lstatSync(path.join(__dirname, `./commands_guild/${folderName}`)).isDirectory()) { continue; }
 
 		const applicationCommandsGuild: Array<RESTPostAPIApplicationCommandsJSONBody> = [];
 
 		Promise.all(
-			getFiles(`../commands_guild/${folderName}`).map((commandPath) => import(commandPath)),
+			getFiles(`./commands_guild/${folderName}`).map((commandPath) => import(commandPath)),
 		).then(modules => modules.forEach(function({ command }: { command: SlashCommand; }) {
 
 			if (command.data !== undefined) { applicationCommandsGuild.push(command.data); }
