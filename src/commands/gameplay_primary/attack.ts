@@ -359,6 +359,7 @@ export async function startAttack(
 						clearInterval(interval);
 						return;
 					}
+					if (serverAttackInfo.idleHumans <= 0) { return; }
 
 					const embed = new EmbedBuilder()
 						.setColor(default_color)
