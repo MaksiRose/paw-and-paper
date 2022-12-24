@@ -18,7 +18,7 @@ import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 const { default_color } = require('../../../config.json');
 
-type serverMapInfo = { startsTimestamp: number | null, idleHumans: number, endingTimeout: NodeJS.Timeout | null, ongoingFights: number; }
+type serverMapInfo = { startsTimestamp: number | null, idleHumans: number, endingTimeout: NodeJS.Timeout | null, ongoingFights: number, stealInterval: NodeJS.Timer | null }
 const serverMap: Map<string, serverMapInfo > = new Map();
 
 type CustomIdArgs = ['new'] | ['new', string]
@@ -332,7 +332,7 @@ export async function startAttack(
 		'ViewChannel', interaction.channel?.isThread() ? 'SendMessagesInThreads' : 'SendMessages', 'EmbedLinks', // Needed for channel.send call in remainingHumans
 	]) === true) { return; }
 
-	serverMap.set(interaction.guildId, { startsTimestamp: Date.now() + 120_000, idleHumans: humanCount, endingTimeout: null, ongoingFights: 0 });
+	serverMap.set(interaction.guildId, { startsTimestamp: Date.now() + 120_000, idleHumans: humanCount, endingTimeout: null, ongoingFights: 0, stealInterval: null });
 	setTimeout(async function() {
 		try {
 
@@ -350,12 +350,74 @@ export async function startAttack(
 			});
 
 			serverAttackInfo.startsTimestamp = null;
+
+			const interval = setInterval(async function() {
+				try {
+					const serverAttackInfo = serverMap.get(interaction.guildId);
+					if (!serverAttackInfo) {
+
+						clearInterval(interval);
+						return;
+					}
+
+					const embed = new EmbedBuilder()
+						.setColor(default_color)
+						.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() || undefined })
+						.setTitle('The humans are stealing items!')
+						.setDescription(`*Before anyone could stop them, ${serverAttackInfo.idleHumans} humans run into the food den, and take whatever they can grab.*`);
+
+					let serverData = await serverModel.findOne(s => s.serverId === interaction.guildId);
+
+					let footerText = '';
+					const inventory_ = widenValues(serverData.inventory);
+					for (let i = 0; i < serverAttackInfo.idleHumans; i++) {
+
+						const { itemType, itemName } = getHighestItem(inventory_);
+
+						if (itemType && itemName) {
+
+							const minusAmount = Math.ceil(inventory_[itemType][itemName] / 10);
+							footerText += `\n-${minusAmount} ${itemName} for ${interaction.guild.name}`;
+							inventory_[itemType][itemName] -= minusAmount;
+						}
+					}
+					if (footerText.length > 0) { embed.setFooter({ text: footerText }); }
+
+					serverData = await serverModel.findOneAndUpdate(
+						s => s._id === serverData._id,
+						(s) => { s.inventory = inventory_; },
+					);
+
+					try {
+
+						const fifteenMinutesInMs = 900_000;
+						if (SnowflakeUtil.deconstruct(interaction.id).timestamp < Date.now() - fifteenMinutesInMs) { throw new Error('Interaction is older than 15 minutes'); }
+						await respond(interaction, { embeds: [embed] });
+					}
+					catch {
+
+						const channel = botReply instanceof Message ? botReply.channel : botReply.interaction.channel ?? (botReply.interaction.isRepliable() ? (await botReply.interaction.fetchReply()).channel : null);
+						if (!channel) { throw new TypeError('channel is null'); }
+						await channel.send({ embeds: [embed] });
+					}
+				}
+				catch (error) {
+
+					await sendErrorMessage(interaction, error)
+						.catch(e => { console.error(e); });
+				}
+			}, 60_000);
+			serverAttackInfo.stealInterval = interval;
+
 			serverAttackInfo.endingTimeout = setTimeout(async function() {
 				try {
 
 					const serverAttackInfo = serverMap.get(interaction.guildId);
 					if (!serverAttackInfo) { return; }
+
 					serverAttackInfo.endingTimeout = null;
+					if (serverAttackInfo.stealInterval) { clearInterval(serverAttackInfo.stealInterval); }
+
 					if (serverAttackInfo.ongoingFights <= 0) { await remainingHumans(interaction, botReply, serverAttackInfo); }
 				}
 				catch (error) {
