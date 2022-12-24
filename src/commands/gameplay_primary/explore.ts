@@ -12,7 +12,7 @@ import { changeCondition, userFindsQuest } from '../../utils/changeCondition';
 import { sendQuestMessage } from './start-quest';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
-import { calculateInventorySize, pickMaterial, pickMeat, pickPlant, simulateMeatUse, simulatePlantUse } from '../../utils/simulateItemUse';
+import { pickMaterial, pickMeat, pickPlant, simulateMeatUse, simulatePlantUse } from '../../utils/simulateItemUse';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
 import { RankType, UserData } from '../../typings/data/user';
@@ -308,20 +308,10 @@ async function executeExploring(
 	let exploreComponent: ActionRowBuilder<ButtonBuilder> | null = null;
 
 	messageContent = remindOfAttack(interaction.guildId);
-	const highRankProfilesCount = (await userModel.find(
-		(u) => {
-			return Object.values(u.quids).filter(q => {
-				const p = q.profiles[interaction.guildId];
-				return p && p.rank !== RankType.Youngling;
-			}).length > 0;
-		},
-	))
-		.map(user => Object.values(user.quids).filter(q => {
-			const p = q.profiles[interaction.guildId];
-			return p && p.rank !== RankType.Youngling;
-		}).length)
-		.reduce((a, b) => a + b, 0);
-	const serverInventoryCount = calculateInventorySize(serverData.inventory, ([key]) => key !== 'materials');
+
+	const plantUse = await simulatePlantUse(serverData, true);
+	const meatUse = await simulateMeatUse(serverData, true);
+	const itemUse = (plantUse + meatUse) / 2;
 
 	let foundQuest = false;
 	let foundSapling = false;
@@ -331,13 +321,13 @@ async function executeExploring(
 
 		foundQuest = true;
 	}
-	// If the server has more items than 8 per profile (It's 2 more than counted when the humans spawn, to give users a bit of leeway), there is no attack, and the next possible attack is possible, start an attack
-	else if (serverInventoryCount > highRankProfilesCount * 8
+	// If the server has 6 or more items in the inventory than needed, there is no attack, and the next possible attack is possible, start an attack
+	else if (itemUse >= 6
 		&& remindOfAttack(interaction.guildId) === null
 		&& serverData.nextPossibleAttack <= Date.now()) {
 
-		// The numerator is the amount of items above 7 per profile, the denominator is the amount of profiles
-		const humanCount = Math.round((serverInventoryCount - (highRankProfilesCount * 7)) / highRankProfilesCount);
+		// It should be at least two humans, or more if there are more people active
+		const humanCount = getBiggerNumber(2, serverActiveUsersMap.get(interaction.guildId)?.length ?? 0);
 		await startAttack(buttonInteraction ?? interaction, humanCount);
 
 		messageContent = serverActiveUsersMap.get(interaction.guildId)?.map(user => `<@${user}>`).join(' ') ?? '';
