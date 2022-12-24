@@ -1,7 +1,8 @@
 import { DiscordEvent } from '../typings/main';
 import { ActivityType } from 'discord.js';
 import { client } from '..';
-import { applicationCommands, applicationCommandsGuilds } from '../handlers/commands';
+import { readdirSync } from 'fs';
+import path from 'path';
 
 export const event: DiscordEvent = {
 	name: 'ready',
@@ -12,10 +13,11 @@ export const event: DiscordEvent = {
 		console.log('Paw and Paper is online!');
 		client.user?.setActivity('/help', { type: ActivityType.Listening });
 
-		if (!client.isReady()) { return; }
-		await client.application.commands.set(applicationCommands);
-		for (const [guildId, applicationCommandsGuild] of applicationCommandsGuilds) {
-			await client.application.commands.set(applicationCommandsGuild, guildId);
-		}
+		/* It's loading all the files in the handlers folder. */
+		readdirSync(path.join(__dirname, '../handlers')).forEach(function(fileName) {
+
+			console.log(`Execute handler ${fileName}...`);
+			import(`../handlers/${fileName}`).then(function(module) { module.execute(); });
+		});
 	},
 };

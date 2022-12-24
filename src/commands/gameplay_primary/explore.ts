@@ -12,7 +12,7 @@ import { changeCondition, userFindsQuest } from '../../utils/changeCondition';
 import { sendQuestMessage } from './start-quest';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
-import { calculateInventorySize, pickMaterial, pickMeat, pickPlant, simulateMeatUse, simulatePlantUse } from '../../utils/simulateItemUse';
+import { pickMaterial, pickMeat, pickPlant, simulateMeatUse, simulatePlantUse } from '../../utils/simulateItemUse';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
 import { RankType, UserData } from '../../typings/data/user';
@@ -308,20 +308,10 @@ async function executeExploring(
 	let exploreComponent: ActionRowBuilder<ButtonBuilder> | null = null;
 
 	messageContent = remindOfAttack(interaction.guildId);
-	const highRankProfilesCount = (await userModel.find(
-		(u) => {
-			return Object.values(u.quids).filter(q => {
-				const p = q.profiles[interaction.guildId];
-				return p && p.rank !== RankType.Youngling;
-			}).length > 0;
-		},
-	))
-		.map(user => Object.values(user.quids).filter(q => {
-			const p = q.profiles[interaction.guildId];
-			return p && p.rank !== RankType.Youngling;
-		}).length)
-		.reduce((a, b) => a + b, 0);
-	const serverInventoryCount = calculateInventorySize(serverData.inventory, ([key]) => key !== 'materials');
+
+	const plantUse = await simulatePlantUse(serverData, true);
+	const meatUse = await simulateMeatUse(serverData, true);
+	const itemUse = (plantUse + meatUse) / 2;
 
 	let foundQuest = false;
 	let foundSapling = false;
@@ -331,13 +321,13 @@ async function executeExploring(
 
 		foundQuest = true;
 	}
-	// If the server has more items than 8 per profile (It's 2 more than counted when the humans spawn, to give users a bit of leeway), there is no attack, and the next possible attack is possible, start an attack
-	else if (serverInventoryCount > highRankProfilesCount * 8
-		&& remindOfAttack(interaction.guildId) === null
+	// If the server has 6 or more items in the inventory than needed, there is no attack, and the next possible attack is possible, start an attack
+	else if (itemUse >= 6
+		&& remindOfAttack(interaction.guildId) === ''
 		&& serverData.nextPossibleAttack <= Date.now()) {
 
-		// The numerator is the amount of items above 7 per profile, the denominator is the amount of profiles
-		const humanCount = Math.round((serverInventoryCount - (highRankProfilesCount * 7)) / highRankProfilesCount);
+		// It should be at least two humans, or more if there are more people active
+		const humanCount = (serverActiveUsersMap.get(interaction.guildId)?.length ?? 1) + 1;
 		await startAttack(buttonInteraction ?? interaction, humanCount);
 
 		messageContent = serverActiveUsersMap.get(interaction.guildId)?.map(user => `<@${user}>`).join(' ') ?? '';
@@ -395,7 +385,7 @@ async function executeExploring(
 	else if (pullFromWeightedTable({ 0: userData.quid.profile.rank === RankType.Healer ? 2 : 1, 1: userData.quid.profile.rank === RankType.Hunter ? 2 : 1 }) === 0) {
 
 		/* First we are calculating needed plants - existing plants through simulatePlantUse three times, of which two it is calculated for active users only. The results of these are added together and divided by 3 to get their average. This is then used to get a random number that can be between 1 higher and 1 lower than that. The user's level is added with this, and it is limited to not be below 1. */
-		const simAverage = Math.round((await simulatePlantUse(serverData, true) + await simulatePlantUse(serverData, true) + await simulatePlantUse(serverData, false)) / 3);
+		const simAverage = Math.round((plantUse + await simulatePlantUse(serverData, true) + await simulatePlantUse(serverData, false)) / 3);
 		const environmentLevel = getBiggerNumber(1, userData.quid.profile.levels + getRandomNumber(3, simAverage - 1));
 
 		const foundItem = await pickPlant(chosenBiomeNumber, serverData);
@@ -644,7 +634,7 @@ async function executeExploring(
 	else {
 
 		/* First we are calculating needed meat - existing meat through simulateMeatUse three times, of which two it is calculated for active users only. The results of these are added together and divided by 3 to get their average. This is then used to get a random number that can be between 1 higher and 1 lower than that. The user's level is added with this, and it is limited to not be below 1. */
-		const simAverage = Math.round((await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, false)) / 3);
+		const simAverage = Math.round((meatUse + await simulateMeatUse(serverData, true) + await simulateMeatUse(serverData, false)) / 3);
 		const opponentLevel = getBiggerNumber(1, userData.quid.profile.levels + getRandomNumber(3, simAverage - 1));
 
 		const opponentsArray = speciesInfo[userData.quid.species].biome1OpponentArray.concat([

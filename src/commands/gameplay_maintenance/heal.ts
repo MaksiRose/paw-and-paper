@@ -529,8 +529,8 @@ export async function getHealResponse(
 	}
 
 	const experiencePoints = isSuccessful === false ? 0 : userData.quid.profile.rank == RankType.Elderly ? getRandomNumber(41, 20) : userData.quid.profile.rank == RankType.Healer ? getRandomNumber(21, 10) : getRandomNumber(11, 5);
-	const changedCondition = await changeCondition(userData, experiencePoints);
-	const infectedEmbed = await infectWithChance(userData, userToHeal);
+	const changedCondition = await changeCondition(userData._id === userToHeal._id ? userToHeal : userData, experiencePoints); // userToHeal is used here when a user is healing themselves to take into account the changes to the injuries & health
+	const infectedEmbed = userData._id === userToHeal._id ? await infectWithChance(userData, userToHeal) : [];
 	const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
 
 	const content = (userData._id !== userToHeal._id && isSuccessful === true ? `<@${Object.keys(userToHeal.userIds)[0]}>\n` : '') + messageContent;
