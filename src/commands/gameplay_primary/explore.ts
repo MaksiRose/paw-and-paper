@@ -327,7 +327,7 @@ async function executeExploring(
 		&& serverData.nextPossibleAttack <= Date.now()) {
 
 		// It should be at least two humans, or more if there are more people active
-		const humanCount = getBiggerNumber(2, serverActiveUsersMap.get(interaction.guildId)?.length ?? 0);
+		const humanCount = (serverActiveUsersMap.get(interaction.guildId)?.length ?? 1) + 1;
 		await startAttack(buttonInteraction ?? interaction, humanCount);
 
 		messageContent = serverActiveUsersMap.get(interaction.guildId)?.map(user => `<@${user}>`).join(' ') ?? '';
