@@ -205,8 +205,8 @@ async function executeAttacking(
 
 		let minusItemText = '';
 		let injuryText = '';
-		if (winLoseRatio < 0) { winLoseRatio = 0; }
-		winLoseRatio = pullFromWeightedTable({ 0: 5 - winLoseRatio, 1: 5, 2: winLoseRatio });
+		if (winLoseRatio < 0) { winLoseRatio = -1; }
+		else { winLoseRatio = pullFromWeightedTable({ 0: 5 - winLoseRatio, 1: 5, 2: winLoseRatio }); }
 
 		if (winLoseRatio === 2) {
 
@@ -214,23 +214,26 @@ async function executeAttacking(
 		}
 		else {
 
-			const inventory_ = widenValues(serverData.inventory);
-			const { itemType, itemName } = getHighestItem(inventory_);
-			if (itemType && itemName) {
+			if (winLoseRatio < 1) {
 
-				const minusAmount = Math.ceil(inventory_[itemType][itemName] / 10);
-				minusItemText += `\n-${minusAmount} ${itemName} for ${interaction.guild.name}`;
-				inventory_[itemType][itemName] -= minusAmount;
+				const inventory_ = widenValues(serverData.inventory);
+				const { itemType, itemName } = getHighestItem(inventory_);
+				if (itemType && itemName) {
+
+					const minusAmount = Math.ceil(inventory_[itemType][itemName] / 10);
+					minusItemText += `\n-${minusAmount} ${itemName} for ${interaction.guild.name}`;
+					inventory_[itemType][itemName] -= minusAmount;
+				}
+
+				serverData = await serverModel.findOneAndUpdate(
+					s => s._id === serverData._id,
+					(s) => s.inventory = inventory_,
+				);
 			}
 
-			serverData = await serverModel.findOneAndUpdate(
-				s => s._id === serverData._id,
-				(s) => s.inventory = inventory_,
-			);
+			embed.setDescription(`*The battle between the human and ${userData.quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${userData.quid.getDisplayspecies()} tries to jump at them, but the human manages to dodge. ${winLoseRatio < 1 ? `Quickly they run in the direction of the food den. They escaped from ${userData.quid.pronoun(1)}!*` : 'Quickly they back off from the tricky situation.'}`);
 
-			embed.setDescription(`*The battle between the human and ${userData.quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${userData.quid.getDisplayspecies()} tries to jump at them, but the human manages to dodge. Quickly they run in the direction of the food den. They escaped from ${userData.quid.pronoun(1)}!*`);
-
-			if (winLoseRatio == 0) {
+			if (winLoseRatio === -1) {
 
 				const healthPoints = getSmallerNumber(userData.quid.profile.health, getRandomNumber(5, 3));
 
@@ -426,7 +429,7 @@ export async function startAttack(
 					await sendErrorMessage(interaction, error)
 						.catch(e => { console.error(e); });
 				}
-			}, 300_000);
+			}, 300_500); // 500 ms delay to allow for the 5th stealInterval to play out first
 		}
 		catch (error) {
 
