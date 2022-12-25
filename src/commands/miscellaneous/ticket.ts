@@ -37,7 +37,7 @@ export const command: SlashCommand = {
 				.setDescription('Optional picture or video to add context'))
 		.toJSON(),
 	category: 'page5',
-	position: 2,
+	position: 3,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (interaction) => {

@@ -18,7 +18,7 @@ export const command: SlashCommand = {
 		.setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels + PermissionFlagsBits.ManageRoles)
 		.toJSON(),
 	category: 'page5',
-	position: 1,
+	position: 2,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
 	sendCommand: async (interaction, userData, serverData) => {
