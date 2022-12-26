@@ -411,6 +411,17 @@ export const specialPlantsInfo: { [key in SpecialPlantNames]: PlantInfo } = {
 		givesEnergy: false,
 		increasesMaxCondition: true,
 	},
+	'red clover': {
+		description: 'A plant so rich in nutrients that it can be planted next to saplings to keep them from dying.',
+		edibility: PlantEdibilityType.Edible,
+		healsWounds: false,
+		healsInfections: false,
+		healsColds: false,
+		healsSprains: false,
+		healsPoison: false,
+		givesEnergy: false,
+		increasesMaxCondition: false,
+	},
 };
 
 export const materialsInfo: { [key in MaterialNames]: MaterialInfo } = {
