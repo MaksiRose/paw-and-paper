@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, Interaction, RepliableInteraction } from 'discord.js';
+import { EmbedBuilder, Interaction, RepliableInteraction } from 'discord.js';
 import { createNewTicket } from '../commands/miscellaneous/ticket';
 import serverModel from '../models/serverModel';
 import { userModel, getUserData } from '../models/userModel';
@@ -13,7 +13,6 @@ import { missingPermissions } from '../utils/permissionHandler';
 import { client, handle } from '../index';
 import { ErrorStacks } from '../typings/data/general';
 import { hasNameAndSpecies } from '../utils/checkUserState';
-import { sendReminder, stopReminder } from '../commands/gameplay_maintenance/water-tree';
 import { deconstructCustomId } from '../utils/customId';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
@@ -251,89 +250,6 @@ export const event: DiscordEvent = {
 						delete errorStacks[errorId];
 						writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
 						return;
-					}
-
-					if (interaction.customId.startsWith('settings_')) {
-
-						if (!isCommandCreator && !isMentioned) {
-
-							// This should always be a reply to the message with the setting-button
-							await respond(interaction, {
-								content: 'Sorry, I only listen to the person that created the command 😣',
-								ephemeral: true,
-							});
-							return;
-						}
-
-						if (interaction.customId.includes('reminders')) {
-
-							if (userData === null || _userData === null) { throw new TypeError('userData is null'); }
-							if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
-
-							const isOn = interaction.customId.includes('on');
-
-							if (interaction.customId.includes('water')) {
-
-								await userData.update(
-									(u) => {
-										u.settings.reminders.water = isOn;
-									},
-								);
-
-								/* This executes the sendReminder function for each profile for which the sapling exists and where lastMessageChannelId is a string, if the user has enabled water reminders. */
-								if (userData.settings.reminders.water === true) {
-									for (const quid of userData.quids.values()) {
-										for (const profile of Object.values(quid.profiles)) {
-											if (isOn) {
-
-												const user = getUserData(_userData, profile.serverId, quid);
-												if (hasNameAndSpecies(user) && user.quid.profile.sapling.exists && typeof user.quid.profile.sapling.lastMessageChannelId === 'string' && !user.quid.profile.sapling.sentReminder) { sendReminder(user); }
-											}
-											else { stopReminder(quid._id, interaction.guildId); }
-										}
-									}
-								}
-
-								// This should always update the message with the settings-button
-								await respond(interaction, {
-									components: [new ActionRowBuilder<ButtonBuilder>()
-										.setComponents(new ButtonBuilder()
-											.setCustomId(`settings_reminders_water_${isOn ? 'off' : 'on'}_@${userData._id}`)
-											.setLabel(`Turn water reminders ${isOn ? 'off' : 'on'}`)
-											.setStyle(ButtonStyle.Secondary))],
-								}, 'update', '@original');
-
-								// This should always be a followUp to the updated error message
-								await respond(interaction, {
-									content: `You turned reminders for watering ${isOn ? 'on' : 'off'}!`,
-									ephemeral: true,
-								});
-							}
-
-							if (interaction.customId.includes('resting')) {
-
-								await userData.update(
-									(u) => {
-										u.settings.reminders.resting = isOn;
-									},
-								);
-
-								// This should always update the message with the settings-button
-								await respond(interaction, {
-									components: [new ActionRowBuilder<ButtonBuilder>()
-										.setComponents(new ButtonBuilder()
-											.setCustomId(`settings_reminders_resting_${isOn ? 'off' : 'on'}_@${userData._id}`)
-											.setLabel(`Turn automatic resting pings ${isOn ? 'off' : 'on'}`)
-											.setStyle(ButtonStyle.Secondary))],
-								}, 'update', '@original');
-
-								// This should always be a followUp to the updated error message
-								await respond(interaction, {
-									content: `You turned pings for automatic resting ${isOn ? 'on' : 'off'}!`,
-									ephemeral: true,
-								});
-							}
-						}
 					}
 				}
 

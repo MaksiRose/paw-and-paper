@@ -132,7 +132,7 @@ export const command: SlashCommand = {
 			embeds: [...restEmbed, embed, ...levelUpEmbed],
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId(`settings_reminders_water_${userData.settings.reminders.water === true ? 'off' : 'on'}_@${userData._id}`)
+					.setCustomId(`user-settings_reminders_water_${userData.settings.reminders.water === true ? 'off' : 'on'}_@${userData._id}`)
 					.setLabel(`Turn water reminders ${userData.settings.reminders.water === true ? 'off' : 'on'}`)
 					.setStyle(ButtonStyle.Secondary))],
 		});

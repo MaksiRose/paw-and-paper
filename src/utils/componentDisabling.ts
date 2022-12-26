@@ -74,6 +74,7 @@ export async function disableCommandComponent(
 		if (!botReply) {
 
 			console.error(new TypeError(`Unable to disable command-component because the message with ID ${serverInfo.componentDisablingMessageId} could not be fetched`));
+			deleteCommandDisablingInfo(userData, channel.isDMBased() ? 'DMs' : channel.guildId);
 			return;
 		}
 

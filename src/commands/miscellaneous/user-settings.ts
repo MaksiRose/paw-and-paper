@@ -1,12 +1,14 @@
 import { ActionRowBuilder, AnySelectMenuInteraction, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionUpdateOptions, MessageEditOptions, RestOrArray, SelectMenuComponentOptionData, SlashCommandBuilder, StringSelectMenuBuilder } from 'discord.js';
+import { getUserData, userModel } from '../../models/userModel';
 import { UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
-import { hasName } from '../../utils/checkUserState';
+import { hasName, hasNameAndSpecies } from '../../utils/checkUserState';
 import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';
 import { respond } from '../../utils/helperFunctions';
+import { sendReminder, stopReminder } from '../gameplay_maintenance/water-tree';
 const { default_color } = require('../../../config.json');
 
-type CustomIdArgs = ['options'] | ['mainpage'] | ['mentions'] | ['accessibility']
+type CustomIdArgs = ['options'] | ['mainpage'] | ['mentions'] | ['accessibility'] | ['reminders', 'resting' | 'water', 'on' | 'off']
 type SelectOptionArgs = ['mentions'] | ['accessibility'] | ['water' | 'resting'] | ['replaceEmojis']
 
 export const command: SlashCommand = {
@@ -38,7 +40,7 @@ export const command: SlashCommand = {
 	},
 	async sendMessageComponentResponse(interaction, userData) {
 
-		const selectOptionId = interaction.isAnySelectMenu() ? deconstructSelectOptions<SelectOptionArgs>(interaction)[0] : null;
+		const selectOptionId = interaction.isAnySelectMenu() ? deconstructSelectOptions<SelectOptionArgs>(interaction) : null;
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
 		if (customId === null) { throw new TypeError('customId is null'); }
 		if (userData === null) { throw new TypeError('userData is null'); }
@@ -49,16 +51,111 @@ export const command: SlashCommand = {
 			await respond(interaction, getOriginalMessage(interaction), 'update', '@original');
 		}
 
-		if (customId.args[0] === 'options' && selectOptionId?.[0] === 'mentions') {
+		const isMentionsChange = customId.args[0] === 'mentions' && interaction.isStringSelectMenu();
+		if (isMentionsChange || (customId.args[0] === 'options' && selectOptionId?.[0]?.[0] === 'mentions')) {
+
+			if (isMentionsChange) {
+
+				userData.update(
+					u => {
+						u.settings.reminders = {
+							resting: selectOptionId?.flat().includes('resting') ?? false,
+							water: selectOptionId?.flat().includes('water') ?? false,
+						};
+					},
+				);
+			}
 
 			// This is always an update
 			await respond(interaction, getMentionsMessage(interaction, userData), 'update', '@original');
 		}
 
-		if (customId.args[0] === 'options' && selectOptionId?.[0] === 'accessibility') {
+		const isAccessibilityChange = customId.args[0] === 'accessibility' && interaction.isStringSelectMenu();
+		if (isAccessibilityChange || (customId.args[0] === 'options' && selectOptionId?.[0]?.[0] === 'accessibility')) {
+
+			if (isAccessibilityChange) {
+
+				userData.update(
+					u => {
+						u.settings.accessibility = {
+							replaceEmojis: selectOptionId?.flat().includes('replaceEmojis') ?? false,
+						};
+					},
+				);
+			}
 
 			// This is always an update
 			await respond(interaction, getAccessibilityMessage(interaction, userData), 'update', '@original');
+		}
+
+		if (customId.args[0] === 'reminders') {
+
+			const isOn = customId.args[2] === 'on';
+
+			if (customId.args[1] === 'water') {
+
+				await userData.update(
+					(u) => {
+						u.settings.reminders.water = isOn;
+					},
+				);
+
+				/* This executes the sendReminder function for each profile for which the sapling exists and where lastMessageChannelId is a string, if the user has enabled water reminders. */
+				if (userData.settings.reminders.water === true) {
+
+					const _userData = userModel.findOne(u => Object.keys(u.userIds).includes(interaction.user.id));
+
+					for (const quid of userData.quids.values()) {
+						for (const profile of Object.values(quid.profiles)) {
+							if (isOn) {
+
+								const user = getUserData(_userData, profile.serverId, quid);
+								if (hasNameAndSpecies(user) && user.quid.profile.sapling.exists && typeof user.quid.profile.sapling.lastMessageChannelId === 'string' && !user.quid.profile.sapling.sentReminder) { sendReminder(user); }
+							}
+							else { stopReminder(quid._id, profile.serverId); }
+						}
+					}
+				}
+
+				// This should always update the message with the settings-button
+				await respond(interaction, {
+					components: [new ActionRowBuilder<ButtonBuilder>()
+						.setComponents(new ButtonBuilder()
+							.setCustomId(`user-settings_reminders_water_${isOn ? 'off' : 'on'}_@${userData._id}`)
+							.setLabel(`Turn water reminders ${isOn ? 'off' : 'on'}`)
+							.setStyle(ButtonStyle.Secondary))],
+				}, 'update', '@original');
+
+				// This should always be a followUp to the updated error message
+				await respond(interaction, {
+					content: `You turned reminders for watering ${isOn ? 'on' : 'off'}!`,
+					ephemeral: true,
+				});
+			}
+
+			if (customId.args[1] === 'resting') {
+
+				await userData.update(
+					(u) => {
+						u.settings.reminders.resting = isOn;
+					},
+				);
+
+				// This should always update the message with the settings-button
+				await respond(interaction, {
+					components: [new ActionRowBuilder<ButtonBuilder>()
+						.setComponents(new ButtonBuilder()
+							.setCustomId(`user-settings_reminders_resting_${isOn ? 'off' : 'on'}_@${userData._id}`)
+							.setLabel(`Turn automatic resting pings ${isOn ? 'off' : 'on'}`)
+							.setStyle(ButtonStyle.Secondary))],
+				}, 'update', '@original');
+
+				// This should always be a followUp to the updated error message
+				await respond(interaction, {
+					content: `You turned pings for automatic resting ${isOn ? 'on' : 'off'}!`,
+					ephemeral: true,
+				});
+			}
 		}
 	},
 };

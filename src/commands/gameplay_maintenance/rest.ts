@@ -92,7 +92,7 @@ export async function startResting(
 
 	const component = new ActionRowBuilder<ButtonBuilder>()
 		.setComponents(new ButtonBuilder()
-			.setCustomId(`settings_reminders_resting_${userData.settings.reminders.resting === true ? 'off' : 'on'}_@${userData._id}`)
+			.setCustomId(`user-settings_reminders_resting_${userData.settings.reminders.resting === true ? 'off' : 'on'}_@${userData._id}`)
 			.setLabel(`Turn automatic resting pings ${userData.settings.reminders.resting === true ? 'off' : 'on'}`)
 			.setStyle(ButtonStyle.Secondary));
 	const prePreviousRegionText = 'You are now at the ';
@@ -161,7 +161,10 @@ export async function startResting(
 		);
 	}
 
-	stopResting(userData); // This is just a safety net to make absolutely sure that no two restingIntervals are running at the same time
+	// This is just a safety net to make absolutely sure that no two restingIntervals are running at the same time
+	clearInterval(restingIntervalMap.get(userData._id + userData.quid.profile.serverId));
+	restingIntervalMap.delete(userData._id + userData.quid.profile.serverId);
+
 	const intervalId = setInterval(async function(): Promise<void> {
 		try {
 
