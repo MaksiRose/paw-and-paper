@@ -63,6 +63,7 @@ export const command: SlashCommand = {
 						global: { autoproxy: false, stickymode: false },
 						servers: {},
 					},
+					accessibility: { replaceEmojis: false },
 				},
 				quids: {},
 				currentQuid: {},

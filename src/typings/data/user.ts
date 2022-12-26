@@ -213,6 +213,9 @@ export interface UserSchema {
 				};
 			};
 		};
+		accessibility: {
+			replaceEmojis: boolean;
+		}
 	};
 	/** Object of names of quids as the key and the quids this user has created as value */
 	quids: { [key in string]: QuidSchema<''> };

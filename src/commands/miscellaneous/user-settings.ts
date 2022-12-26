@@ -1,12 +1,13 @@
-import { ActionRowBuilder, AnySelectMenuInteraction, ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionUpdateOptions, MessageEditOptions, SlashCommandBuilder, StringSelectMenuBuilder } from 'discord.js';
+import { ActionRowBuilder, AnySelectMenuInteraction, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionUpdateOptions, MessageEditOptions, RestOrArray, SelectMenuComponentOptionData, SlashCommandBuilder, StringSelectMenuBuilder } from 'discord.js';
+import { UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasName } from '../../utils/checkUserState';
-import { constructCustomId, constructSelectOptions } from '../../utils/customId';
+import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';
 import { respond } from '../../utils/helperFunctions';
 const { default_color } = require('../../../config.json');
 
-type CustomIdArgs = ['options']
-type SelectOptionArgs = ['mentions'] | ['accessibility']
+type CustomIdArgs = ['options'] | ['mainpage'] | ['mentions'] | ['accessibility']
+type SelectOptionArgs = ['mentions'] | ['accessibility'] | ['water' | 'resting'] | ['replaceEmojis']
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -35,9 +36,36 @@ export const command: SlashCommand = {
 		await respond(interaction, getOriginalMessage(interaction));
 		return;
 	},
+	async sendMessageComponentResponse(interaction, userData) {
+
+		const selectOptionId = interaction.isAnySelectMenu() ? deconstructSelectOptions<SelectOptionArgs>(interaction) : null;
+		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
+		if (customId === null) { throw new TypeError('customId is null'); }
+		if (userData === null) { throw new TypeError('userData is null'); }
+
+		if (customId.args[0] === 'mainpage') {
+
+			// This is always an update
+			await respond(interaction, getOriginalMessage(interaction), 'update', '@original');
+		}
+
+		if (customId.args[0] === 'options' && selectOptionId?.[0] === 'mentions') {
+
+			// This is always an update
+			await respond(interaction, getMentionsMessage(interaction, userData), 'update', '@original');
+		}
+
+		if (customId.args[0] === 'options' && selectOptionId?.[0] === 'accessibility') {
+
+			// This is always an update
+			await respond(interaction, getAccessibilityMessage(interaction, userData), 'update', '@original');
+		}
+	},
 };
 
-function getOriginalMessage(interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction): InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions {
+function getOriginalMessage(
+	interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction,
+): InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions {
 
 	return {
 		embeds: [new EmbedBuilder()
@@ -46,10 +74,67 @@ function getOriginalMessage(interaction: ChatInputCommandInteraction | ButtonInt
 		components: [new ActionRowBuilder<StringSelectMenuBuilder>()
 			.setComponents([new StringSelectMenuBuilder()
 				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, interaction.user.id, ['options']))
-				.setPlaceholder('Select an option to configure')
+				.setPlaceholder('Select a category to configure')
 				.setOptions(
 					{ value: constructSelectOptions<SelectOptionArgs>(['mentions']), label: 'Mentions', description: 'Manage what you get pinged for' },
 					{ value: constructSelectOptions<SelectOptionArgs>(['accessibility']), label: 'Accessibility', description: 'Configure accessibility options' },
 				)])],
+	};
+}
+
+function getMentionsMessage(
+	interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction,
+	userData: UserData<undefined, ''>,
+): InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions {
+
+	const menuOptions: RestOrArray<SelectMenuComponentOptionData> = [
+		{ label: 'Send watering reminders', value: constructSelectOptions<SelectOptionArgs>(['water']), default: userData.settings.reminders.water },
+		{ label: 'Ping when automatic resting is finished', value: constructSelectOptions<SelectOptionArgs>(['resting']), default: userData.settings.reminders.resting },
+	];
+
+	return {
+		embeds: [new EmbedBuilder()
+			.setColor(default_color)
+			.setTitle('Settings ➜ Mentions')],
+		components: [new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, interaction.user.id, ['mainpage']))
+				.setLabel('Back')
+				.setEmoji('⬅️')
+				.setStyle(ButtonStyle.Secondary)]),
+		new ActionRowBuilder<StringSelectMenuBuilder>()
+			.setComponents([new StringSelectMenuBuilder()
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, interaction.user.id, ['mentions']))
+				.setOptions(menuOptions)
+				.setMinValues(0)
+				.setMaxValues(menuOptions.length)])],
+	};
+}
+
+function getAccessibilityMessage(
+	interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction,
+	userData: UserData<undefined, ''>,
+): InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions {
+
+	const menuOptions: RestOrArray<SelectMenuComponentOptionData> = [
+		{ label: 'Replace emojis with letters and numbers in games', value: constructSelectOptions<SelectOptionArgs>(['replaceEmojis']), default: userData.settings.accessibility.replaceEmojis },
+	];
+
+	return {
+		embeds: [new EmbedBuilder()
+			.setColor(default_color)
+			.setTitle('Settings ➜ Accessibility')],
+		components: [new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, interaction.user.id, ['mainpage']))
+				.setLabel('Back')
+				.setEmoji('⬅️')
+				.setStyle(ButtonStyle.Secondary)]),
+		new ActionRowBuilder<StringSelectMenuBuilder>()
+			.setComponents([new StringSelectMenuBuilder()
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, interaction.user.id, ['accessibility']))
+				.setOptions(menuOptions)
+				.setMinValues(0)
+				.setMaxValues(menuOptions.length)])],
 	};
 }

@@ -102,6 +102,12 @@ export const userModel = new Model<UserSchema>('./database/profiles', {
 					},
 				},
 			},
+			accessibility: {
+				type: 'object',
+				default: {
+					replaceEmojis: { type: 'boolean', default: false },
+				},
+			},
 		},
 	},
 	quids: {
@@ -309,6 +315,7 @@ export function getUserData<T extends '' | never, U extends QuidSchema<T> | unde
 				global: userData.settings.proxy.global,
 				server: userData.settings.proxy.servers[server_id],
 			},
+			accessibility: userData.settings.accessibility,
 		},
 		quid: (quidData === undefined ? undefined : {
 			_id: quidData._id,
