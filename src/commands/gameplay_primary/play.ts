@@ -12,7 +12,7 @@ import { hasFullInventory, isInteractable, isInvalid, isPassedOut } from '../../
 import { disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
-import { createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
+import { accessiblePlantEmojis, createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
 import { capitalizeString, getArrayElement, getMapData, getSmallerNumber, keyInObject, respond, setCooldown, userDataServersObject } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
@@ -334,7 +334,8 @@ export async function executePlaying(
 	// find a plant
 	else {
 
-		const plantGame = createPlantGame(speciesInfo[userData1.quid.species].habitat);
+		const replaceEmojis = userData1.settings.accessibility.replaceEmojis;
+		const plantGame = createPlantGame(replaceEmojis ? 'accessible' : speciesInfo[userData1.quid.species].habitat);
 		const foundItem = await pickPlant(0, serverData);
 
 		playComponent = plantGame.plantComponent;
@@ -347,7 +348,7 @@ export async function executePlaying(
 		const descriptionText = `*${userData1.quid.name} bounds across the den territory, chasing a bee that is just out of reach. Without looking, the ${userData1.quid.getDisplayspecies()} crashes into a Healer, loses sight of the bee, and scurries away into the ${biome}. On ${userData1.quid.pronoun(2)} way back to the pack border, ${userData1.quid.name} sees something special on the ground. It's a ${foundItem}!*`;
 
 		embed.setDescription(descriptionText);
-		embed.setFooter({ text: `Click the button with this emoji: ${plantGame.emojiToFind}, but without the campsite (${plantEmojis.toAvoid}).` });
+		embed.setFooter({ text: `Click the button with this ${replaceEmojis ? 'character' : 'emoji'}: ${plantGame.emojiToFind}, but without the campsite (${replaceEmojis ? accessiblePlantEmojis.toAvoid : plantEmojis.toAvoid}).` });
 
 		// This is an update when forceEdit is true, which it is only for the travel-regions command, else this is a reply
 		const botReply = await respond(interaction, {
@@ -373,7 +374,7 @@ export async function executePlaying(
 			/* Here we make the button the player choses red, this will apply always except if the player choses the correct button, then this will be overwritten. */
 			playComponent = plantGame.chosenWrongButtonOverwrite(i.customId);
 
-			if (i.customId.includes(plantGame.emojiToFind) && !i.customId.includes(plantEmojis.toAvoid)) {
+			if (i.customId.includes(plantGame.emojiToFind) && !i.customId.includes(replaceEmojis ? accessiblePlantEmojis.toAvoid : plantEmojis.toAvoid)) {
 
 				/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
 				playComponent = plantGame.chosenRightButtonOverwrite(i.customId);

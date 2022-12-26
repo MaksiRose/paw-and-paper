@@ -6,7 +6,7 @@ import { remindOfAttack, startAttack } from './attack';
 import Fuse from 'fuse.js';
 import { disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { serverActiveUsersMap } from '../../events/interactionCreate';
-import { createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
+import { accessiblePlantEmojis, createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { changeCondition, userFindsQuest } from '../../utils/changeCondition';
 import { sendQuestMessage } from './start-quest';
@@ -403,7 +403,8 @@ async function executeExploring(
 			embed.setDescription(`*For a while, ${userData.quid.name} has been swimming through the water, searching in vain for something useful. ${capitalizeString(userData.quid.pronounAndPlural(0, 'was', 'were'))} about to give up when ${userData.quid.pronounAndPlural(0, 'discover')} a ${foundItem} among large algae. Now ${userData.quid.pronounAndPlural(0, 'just need')} to pick it up gently...*`);
 		}
 		else { throw new Error('userData.quid species habitat not found'); }
-		embed.setFooter({ text: `The ${foundItem} is in an environment of difficulty level ${environmentLevel}.\nYou will be presented five buttons with five emojis each. The footer will show you an emoji, and you have to find the button with that emoji, but without the campsite (${plantEmojis.toAvoid}).` });
+		const replaceEmojis = userData.settings.accessibility.replaceEmojis;
+		embed.setFooter({ text: `The ${foundItem} is in an environment of difficulty level ${environmentLevel}.\nYou will be presented five buttons with five emojis each. The footer will show you an emoji, and you have to find the button with that emoji, but without the campsite (${replaceEmojis ? accessiblePlantEmojis.toAvoid : plantEmojis.toAvoid}).` });
 
 		// This is either an update or an editReply if there is a buttonInteraction, or an editReply if it's an interaction
 		botReply = await respond(buttonInteraction ?? interaction, {
@@ -455,10 +456,10 @@ async function executeExploring(
 			): Promise<void> {
 
 
-				const plantGame = createPlantGame(speciesInfo[userData.quid.species].habitat);
+				const plantGame = createPlantGame(replaceEmojis ? 'accessible' : speciesInfo[userData.quid.species].habitat);
 
 				exploreComponent = plantGame.plantComponent;
-				embed.setFooter({ text: `Click the button with this emoji: ${plantGame.emojiToFind}, but without the campsite (${plantEmojis.toAvoid}).` });
+				embed.setFooter({ text: `Click the button with this ${replaceEmojis ? 'character' : 'emoji'}: ${plantGame.emojiToFind}, but without the campsite (${replaceEmojis ? accessiblePlantEmojis.toAvoid : plantEmojis.toAvoid}).` });
 
 				// This is always an update to the message with the button
 				botReply = await respond(newInteraction, {
@@ -483,7 +484,7 @@ async function executeExploring(
 
 						if (i.customId.includes(plantGame.emojiToFind)) {
 
-							if (!i.customId.includes(plantEmojis.toAvoid)) {
+							if (!i.customId.includes(replaceEmojis ? accessiblePlantEmojis.toAvoid : plantEmojis.toAvoid)) {
 								/* The button the player choses is overwritten to be green here, only because we are sure that they actually chose corectly. */
 								exploreComponent = plantGame.chosenRightButtonOverwrite(i.customId);
 
