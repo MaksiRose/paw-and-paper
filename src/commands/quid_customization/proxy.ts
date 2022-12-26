@@ -144,7 +144,8 @@ export const command: SlashCommand = {
 		if (interaction.isStringSelectMenu() && customId.args[0] === 'always' && customId.args[1] === 'options') {
 
 			let page = 0;
-			const selectOptionId = deconstructSelectOptions<SelectOptionArgs>(interaction);
+			const selectOptionId = deconstructSelectOptions<SelectOptionArgs>(interaction)[0];
+			if (selectOptionId === undefined) { throw new TypeError('selectOptionId is undefined'); }
 
 			/* If the user clicked the next page option, increment the page. */
 			if (selectOptionId[0] === 'nextpage') {

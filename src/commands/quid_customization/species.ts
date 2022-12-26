@@ -90,7 +90,8 @@ export const command: SlashCommand = {
 		}
 		else if (interaction.isButton()) { return; }
 
-		const selectOptionId = deconstructSelectOptions<SelectOptionArgs>(interaction);
+		const selectOptionId = deconstructSelectOptions<SelectOptionArgs>(interaction)[0];
+		if (selectOptionId === undefined) { throw new TypeError('selectOptionId is undefined'); }
 
 		if (interaction.isStringSelectMenu() && customId.args[0] === 'speciesselect' && selectOptionId[0] === 'nextpage') {
 

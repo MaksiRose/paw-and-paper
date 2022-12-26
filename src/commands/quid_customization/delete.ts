@@ -214,7 +214,8 @@ export const command: SlashCommand = {
 		}
 
 		if (interaction.isButton()) { return; }
-		const selectOptionId = deconstructSelectOptions<SelectOptionArgs>(interaction);
+		const selectOptionId = deconstructSelectOptions<SelectOptionArgs>(interaction)[0];
+		if (selectOptionId === undefined) { throw new TypeError('selectOptionId is undefined'); }
 
 		/* Checking if the interaction is a select menu and if the value starts with delete_individual_nextpage_. If it is, it increments the page number, and if the page number is greater than the number of pages, it sets the page number to 0. It will then edit the reply to have the new page of quids. */
 		if (interaction.isStringSelectMenu() && customId.args[0] === 'individual' && customId.args[1] === 'options' && selectOptionId[0] === 'nextpage') {

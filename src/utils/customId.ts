@@ -1,5 +1,4 @@
 import { AnySelectMenuInteraction } from 'discord.js';
-import { getArrayElement } from './helperFunctions';
 
 export type DeconstructedCustomId<T extends string[]> = {
 	/** This equals the name of the slash command this interaction belongs to */
@@ -53,9 +52,9 @@ export function constructCustomId<T extends string[]>(
  */
 export function deconstructSelectOptions<T extends string[]>(
 	interaction: AnySelectMenuInteraction,
-): T {
+): T[] {
 
-	return getArrayElement(interaction.values, 0).split('_') as T;
+	return interaction.values.map(value => value.split('_') as T);
 }
 
 /**

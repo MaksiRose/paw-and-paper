@@ -38,7 +38,7 @@ export const command: SlashCommand = {
 	},
 	async sendMessageComponentResponse(interaction, userData) {
 
-		const selectOptionId = interaction.isAnySelectMenu() ? deconstructSelectOptions<SelectOptionArgs>(interaction) : null;
+		const selectOptionId = interaction.isAnySelectMenu() ? deconstructSelectOptions<SelectOptionArgs>(interaction)[0] : null;
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
 		if (customId === null) { throw new TypeError('customId is null'); }
 		if (userData === null) { throw new TypeError('userData is null'); }

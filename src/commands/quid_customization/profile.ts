@@ -97,7 +97,8 @@ export const command: SlashCommand = {
 
 		if (interaction.isButton()) { return; }
 
-		const selectOptionId = deconstructSelectOptions<SelectOptionArgs>(interaction);
+		const selectOptionId = deconstructSelectOptions<SelectOptionArgs>(interaction)[0];
+		if (selectOptionId === undefined) { throw new TypeError('selectOptionId is undefined'); }
 
 		/* Checking if the user has clicked on the "Show more accounts" button, and if they have, it will increase the page number by 1, and if the page number is greater than the total number of pages, it will set the page number to 0. Then, it will edit the bot reply to show the next page of accounts. */
 		if (interaction.isStringSelectMenu() && selectOptionId[0] === 'nextpage') {

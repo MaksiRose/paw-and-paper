@@ -55,7 +55,8 @@ export const command: SlashCommand = {
 		if (interaction.isStringSelectMenu() && customId.args[0] === 'selectmodal') {
 
 			/* Getting the position of the pronoun in the array, and the existing pronoun in that place */
-			const pronounNumber = deconstructSelectOptions<SelectOptionArgs>(interaction)[0];
+			const pronounNumber = deconstructSelectOptions<SelectOptionArgs>(interaction)[0]?.[0];
+			if (pronounNumber === undefined) { throw new TypeError('pronounNumber is undefined'); }
 			const pronounSet = pronounNumber === 'add' ? [] : (userData.quid.pronounSets[Number(pronounNumber)]);
 			if (pronounSet === undefined) { throw new TypeError('pronounSet is undefined'); }
 

@@ -55,7 +55,8 @@ export const command: SlashCommand = {
 		if (userData === null) { throw new Error('userData is null'); }
 		if (serverData === null) { throw new Error('serverData is null'); }
 
-		const selectOptionId = deconstructSelectOptions(interaction);
+		const selectOptionId = deconstructSelectOptions<SelectOptionArgs>(interaction)[0];
+		if (selectOptionId === undefined) { throw new TypeError('selectOptionId is undefined'); }
 
 		if (selectOptionId[0] === 'nextpage') {
 
