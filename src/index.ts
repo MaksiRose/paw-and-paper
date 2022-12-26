@@ -1,24 +1,16 @@
-import { Client, Collection, GatewayIntentBits, Options, RESTPostAPIApplicationCommandsJSONBody, Snowflake } from 'discord.js';
-import { existsSync, lstatSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { Client, Collection, GatewayIntentBits, Options, Snowflake } from 'discord.js';
+import { readdirSync, readFileSync } from 'fs';
 import { Api } from '@top-gg/sdk';
 import { ContextMenuCommand, SlashCommand, Votes } from './typings/handle';
-import { BanList, CommonPlantNames, DeleteList, GivenIdList, MaterialNames, RarePlantNames, SpecialPlantNames, SpeciesNames, UncommonPlantNames, VoteList, WebhookMessages } from './typings/data/general';
-import { DiscordEvent, MaterialInfo, PlantEdibilityType, PlantInfo, SpeciesDietType, SpeciesHabitatType, SpeciesInfo } from './typings/main';
+import { CommonPlantNames, MaterialNames, RarePlantNames, SpecialPlantNames, SpeciesNames, UncommonPlantNames } from './typings/data/general';
+import { MaterialInfo, PlantEdibilityType, PlantInfo, SpeciesDietType, SpeciesHabitatType, SpeciesInfo } from './typings/main';
 import { UserSchema } from './typings/data/user';
 import { Octokit } from '@octokit/rest';
-import path from 'path';
+import { execute as executeCommandHandler } from './handlers/commands';
+import { execute as executeEventHandler } from './handlers/events';
+import { execute as executeDatabaseHandler } from './handlers/database';
 const { token, bfd_token, bfd_authorization, top_token, top_authorization, dbl_token, dbl_authorization, github_token } = require('../config.json');
 const bfd = require('bfd-api-redux/src/main');
-
-process.on('unhandledRejection', async (err) => {
-	console.error('Unhandled Promise Rejection:\n', err);
-});
-process.on('uncaughtException', async (err) => {
-	console.error('Uncaught Promise Exception:\n', err);
-});
-process.on('uncaughtExceptionMonitor', async (err) => {
-	console.error('Uncaught Promise Exception (Monitor):\n', err);
-});
 
 function sweepFilter(something: {id: Snowflake, client: Client<true>}) {
 	const allDocumentNames = readdirSync('./database/profiles').filter(f => f.endsWith('.json'));
@@ -924,124 +916,11 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 	},
 };
 
-export const applicationCommands: Array<RESTPostAPIApplicationCommandsJSONBody> = [];
-export const applicationCommandsGuilds: Map<string, Array<RESTPostAPIApplicationCommandsJSONBody>> = new Map();
+executeDatabaseHandler();
 
-if (existsSync('./database/bannedList.json') == false) {
+executeEventHandler()
+	.then(function() {
 
-	writeFileSync('./database/bannedList.json', JSON.stringify(({ users: [], servers: [] }) as BanList, null, '\t'));
-}
-
-if (existsSync('./database/errorStacks.json') == false) {
-
-	writeFileSync('./database/errorStacks.json', JSON.stringify(({}) as WebhookMessages, null, '\t'));
-}
-
-if (existsSync('./database/givenIds.json') == false) {
-
-	writeFileSync('./database/givenIds.json', JSON.stringify(([]) as GivenIdList, null, '\t'));
-}
-
-if (existsSync('./database/toDeleteList.json') == false) {
-
-	writeFileSync('./database/toDeleteList.json', JSON.stringify(({}) as DeleteList, null, '\t'));
-}
-
-if (existsSync('./database/voteCache.json') == false) {
-
-	writeFileSync('./database/voteCache.json', JSON.stringify(({}) as VoteList, null, '\t'));
-}
-
-if (existsSync('./database/webhookCache.json') == false) {
-
-	writeFileSync('./database/webhookCache.json', JSON.stringify(({}) as WebhookMessages, null, '\t'));
-}
-
-Promise.all(
-	readdirSync(path.join(__dirname, './events')).map((file) => import(`./events/${file}`)),
-).then(function(modules) {
-
-	modules.forEach(function({ event }: {event: DiscordEvent}) {
-
-		console.log(`Activated ${event.name} event`);
-		if (event.once) {
-
-			client.once(event.name, (...args) => {
-				try { event.execute(...args); }
-				catch (error) { console.error(error); }
-			});
-		}
-		else {
-
-			client.on(event.name, (...args) => {
-				try { event.execute(...args); }
-				catch (error) { console.error(error); }
-			});
-		}
+		executeCommandHandler();
+		client.login(token);
 	});
-
-	// The following is done seperately from the command handler files since all the handlers need to be called after the client is ready, while the below needs to be run beforehand due to the importing taking up a lot of CPU and preventing heartbeats from being set and received properly.
-
-	/* Adds all commands to client.commands property, and to the applicationCommands array if the command.data is not undefined. */
-	Promise.all(
-		getFiles('./commands').map((commandPath) => import(commandPath)),
-	).then(modules => modules.forEach(function({ command }: { command: SlashCommand; }) {
-
-		if (command.data !== undefined) { applicationCommands.push(command.data); }
-		handle.slashCommands.set(command.data.name, command);
-		console.log(`Added ${command.data.name} to the slash commands`);
-	}));
-
-	Promise.all(
-		getFiles('./contextmenu').map((commandPath) => import(commandPath)),
-	).then(modules => modules.forEach(function({ command }: { command: ContextMenuCommand; }) {
-
-		if (command.data !== undefined) { applicationCommands.push(command.data); }
-		handle.contextMenuCommands.set(command.data.name, command);
-		console.log(`Added ${command.data.name} to the context menu commands`);
-	}));
-
-	/* Registers the applicationCommands array to Discord. */
-	for (const folderName of readdirSync(path.join(__dirname, './commands_guild'))) {
-
-		if (!lstatSync(path.join(__dirname, `./commands_guild/${folderName}`)).isDirectory()) { continue; }
-
-		const applicationCommandsGuild: Array<RESTPostAPIApplicationCommandsJSONBody> = [];
-
-		Promise.all(
-			getFiles(`./commands_guild/${folderName}`).map((commandPath) => import(commandPath)),
-		).then(modules => modules.forEach(function({ command }: { command: SlashCommand; }) {
-
-			if (command.data !== undefined) { applicationCommandsGuild.push(command.data); }
-			handle.slashCommands.set(command.data.name, command);
-			console.log(`Added ${command.data.name} to the slash commands of guild ${folderName}`);
-		})).finally(function() { applicationCommandsGuilds.set(folderName, applicationCommandsGuild); });
-	}
-
-	client.login(token);
-});
-
-/** Adds all file paths in a directory to an array and returns it */
-function getFiles(
-	directory: string,
-): Array<string> {
-
-	let commandFiles: Array<string> = [];
-
-	for (const content of readdirSync(path.join(__dirname, directory))) {
-
-		if (lstatSync(path.join(__dirname, `${directory}/${content}`)).isDirectory()) {
-
-			commandFiles = [
-				...commandFiles,
-				...getFiles(`${directory}/${content}`),
-			];
-		}
-		else if (content.endsWith('.js') || content.endsWith('.ts')) {
-
-			commandFiles.push(`${directory}/${content.slice(0, -3)}`);
-		}
-	}
-
-	return commandFiles;
-}
