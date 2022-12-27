@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, SlashCommandBuilder, Snowflake } from 'discord.js';
-import { getArrayElement, getSmallerNumber, keyInObject, KeyOfUnion, respond, sendErrorMessage, setCooldown, widenValues } from '../../utils/helperFunctions';
+import { delay, getArrayElement, getSmallerNumber, keyInObject, KeyOfUnion, respond, sendErrorMessage, setCooldown, widenValues } from '../../utils/helperFunctions';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
@@ -17,6 +17,7 @@ import { userModel, getUserData } from '../../models/userModel';
 import { ServerSchema } from '../../typings/data/server';
 import { CurrentRegionType, UserData } from '../../typings/data/user';
 import { Inventory, SpecialPlantNames } from '../../typings/data/general';
+import { AsyncQueue } from '@sapphire/async-queue';
 const { error_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -213,12 +214,15 @@ export const command: SlashCommand = {
 			idle: 120_000,
 			filter: (i => i.customId.includes('board') && Object.keys(userDataCurrent.userIds).includes(i.user.id)),
 		});
+		const queue = new AsyncQueue();
 
 		collector.on('collect', async (i) => {
+			await queue.wait();
 			try {
 
 				if (!i.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
 				lastInteraction = i;
+				if (!Object.keys(userDataCurrent.userIds).includes(i.user.id)) { return; }
 
 				/* The column and row of the current card are updated with their position */
 				const column = Number(i.customId.split('_')[1]);
@@ -252,57 +256,48 @@ export const command: SlashCommand = {
 					finishedRounds += 1;
 					chosenCardPositions.current = 'first';
 
-					setTimeout(async () => {
-						try {
+					await delay(3_000);
 
-							/* Getting the column and row from the first selected button */
-							const firstPickColumn = chosenCardPositions.first.column;
-							if (firstPickColumn === null) { return collector.stop('error_Error: firstPickColumn is null'); }
-							const firstPickRow = chosenCardPositions.first.row;
-							if (firstPickRow === null) { return collector.stop('error_Error: firstPickRow is null'); }
+					/* Getting the column and row from the first selected button */
+					const firstPickColumn = chosenCardPositions.first.column;
+					if (firstPickColumn === null) { return collector.stop('error_Error: firstPickColumn is null'); }
+					const firstPickRow = chosenCardPositions.first.row;
+					if (firstPickRow === null) { return collector.stop('error_Error: firstPickRow is null'); }
 
-							/* Getting the column and row from the second selected button */
-							const secondPickColumn = chosenCardPositions.second.column;
-							if (secondPickColumn === null) { return collector.stop('error_Error: secondPickColumn is null'); }
-							const secondPickRow = chosenCardPositions.second.row;
-							if (secondPickRow === null) { return collector.stop('error_Error: secondPickRow is null'); }
+					/* Getting the column and row from the second selected button */
+					const secondPickColumn = chosenCardPositions.second.column;
+					if (secondPickColumn === null) { return collector.stop('error_Error: secondPickColumn is null'); }
+					const secondPickRow = chosenCardPositions.second.row;
+					if (secondPickRow === null) { return collector.stop('error_Error: secondPickRow is null'); }
 
-							/* If there are no emojis or the emojis don't match, set both buttons emojis to covered fields and enable them */
-							const firstPickEmoji = componentArray[firstPickColumn]?.components[firstPickRow]?.toJSON().emoji?.name;
-							const secondPickEmoji = componentArray[secondPickColumn]?.components[secondPickRow]?.toJSON().emoji?.name;
-							if (firstPickEmoji === undefined || secondPickEmoji === undefined || firstPickEmoji !== secondPickEmoji) {
+					/* If there are no emojis or the emojis don't match, set both buttons emojis to covered fields and enable them */
+					const firstPickEmoji = componentArray[firstPickColumn]?.components[firstPickRow]?.toJSON().emoji?.name;
+					const secondPickEmoji = componentArray[secondPickColumn]?.components[secondPickRow]?.toJSON().emoji?.name;
+					if (firstPickEmoji === undefined || secondPickEmoji === undefined || firstPickEmoji !== secondPickEmoji) {
 
-								componentArray[firstPickColumn]?.components[firstPickRow]?.setEmoji(coveredField);
-								componentArray[firstPickColumn]?.components[firstPickRow]?.setDisabled(false);
+						componentArray[firstPickColumn]?.components[firstPickRow]?.setEmoji(coveredField);
+						componentArray[firstPickColumn]?.components[firstPickRow]?.setDisabled(false);
 
-								componentArray[secondPickColumn]?.components[secondPickRow]?.setEmoji(coveredField);
-								componentArray[secondPickColumn]?.components[secondPickRow]?.setDisabled(false);
-							}
-							else {
+						componentArray[secondPickColumn]?.components[secondPickRow]?.setEmoji(coveredField);
+						componentArray[secondPickColumn]?.components[secondPickRow]?.setDisabled(false);
+					}
+					else {
 
-								user1IsPlaying ? uncoveredCardsUser1 += 1 : uncoveredCardsUser2 += 1;
-							}
+						user1IsPlaying ? uncoveredCardsUser1 += 1 : uncoveredCardsUser2 += 1;
+					}
 
-							chosenCardPositions = { first: { column: null, row: null }, second: { column: null, row: null }, current: 'first' }; // This is updated here because above, we are using chosenCardPositions to decide whether the buttons are going to be reset or not
+					chosenCardPositions = { first: { column: null, row: null }, second: { column: null, row: null }, current: 'first' }; // This is updated here because above, we are using chosenCardPositions to decide whether the buttons are going to be reset or not
 
-							user1IsPlaying = !user1IsPlaying; // This is changed here because above, we are using user1IsPlaying to decide whether user1 should get +1 for uncovered cards or user2
-							userDataCurrent = user1IsPlaying ? userData1 : userData2;
+					user1IsPlaying = !user1IsPlaying; // This is changed here because above, we are using user1IsPlaying to decide whether user1 should get +1 for uncovered cards or user2
+					userDataCurrent = user1IsPlaying ? userData1 : userData2;
 
-							if (componentArray.every(actionRow => actionRow.components.every(button => button.toJSON().disabled === true))) { collector.stop('success'); }
-							else if (finishedRounds >= 20) { collector.stop('roundLimit'); }
-							else {
+					if (componentArray.every(actionRow => actionRow.components.every(button => button.toJSON().disabled === true))) { collector.stop('success'); }
+					else if (finishedRounds >= 20) { collector.stop('roundLimit'); }
+					else {
 
-								// This is always a followUp
-								lastMessageId = await sendNextRoundMessage(i, user1IsPlaying ? userId1 : userId2, userData1, userData2, componentArray, i.replied);
-
-							}
-						}
-						catch (error) {
-
-							await sendErrorMessage(i, error)
-								.catch(e => { console.error(e); });
-						}
-					}, 3_000);
+						// This is always a followUp
+						lastMessageId = await sendNextRoundMessage(i, user1IsPlaying ? userId1 : userId2, userData1, userData2, componentArray, i.replied);
+					}
 				}
 			}
 			catch (error) {
@@ -310,9 +305,13 @@ export const command: SlashCommand = {
 				await sendErrorMessage(i, error)
 					.catch(e => { console.error(e); });
 			}
+			finally {
+				queue.shift();
+			}
 		});
 
 		collector.on('end', async (collected, reason) => {
+			queue.abortAll();
 			try {
 
 				/* Set both user's cooldown to false */
