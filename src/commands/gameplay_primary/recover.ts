@@ -1,3 +1,4 @@
+import { AsyncQueue } from '@sapphire/async-queue';
 import { ActionRowBuilder, APIActionRowComponent, APIButtonComponent, APISelectMenuComponent, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
 import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo } from '../..';
 import { Inventory } from '../../typings/data/general';
@@ -223,10 +224,14 @@ export const command: SlashCommand = {
 					filter: i => i.user.id === interaction.user.id,
 					idle: 10_000,
 				});
+				const queue = new AsyncQueue();
 				let thisRoundEmojisClicked = 0;
 
 				collector.on('collect', async (int) => {
+					await queue.wait();
 					try {
+
+						if (collector.ended) { return; }
 
 						thisRoundEmojisClicked += 1;
 						choosingEmoji += 1;
@@ -255,9 +260,13 @@ export const command: SlashCommand = {
 						await sendErrorMessage(interaction, error)
 							.catch(e => { console.error(e); });
 					}
+					finally {
+						queue.shift();
+					}
 				});
 
 				collector.on('end', async (interactions, reason) => {
+					queue.abortAll();
 					try {
 
 						const lastInteraction = interactions.last() ?? interaction;
