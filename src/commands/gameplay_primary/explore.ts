@@ -21,6 +21,7 @@ import { speciesInfo } from '../..';
 import { ServerSchema } from '../../typings/data/server';
 import { userModel } from '../../models/userModel';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
+import { AsyncQueue } from '@sapphire/async-queue';
 
 type CustomIdArgs = ['new'] | ['new', string]
 type Position = { row: number, column: number; };
@@ -233,16 +234,20 @@ async function executeExploring(
 		componentType: ComponentType.Button,
 		time: 15_000,
 	});
+	const queue = new AsyncQueue();
 
 	collector.on('collect', async int => {
+		await queue.wait();
 		try {
+
+			if (collector.ended) { return; }
 
 			const oldPlayerPos = { ...playerPos };
 
-			if (int.customId.includes('left')) { playerPos.column -= 1; }
-			if (int.customId.includes('up')) { playerPos.row -= 1; }
-			if (int.customId.includes('down')) { playerPos.row += 1; }
-			if (int.customId.includes('right')) { playerPos.column += 1; }
+			if (int.customId.includes('left') && playerPos.column > 0) { playerPos.column -= 1; }
+			if (int.customId.includes('up') && playerPos.row > 0) { playerPos.row -= 1; }
+			if (int.customId.includes('down') && playerPos.row < 4) { playerPos.row += 1; }
+			if (int.customId.includes('right') && playerPos.column < 6) { playerPos.column += 1; }
 
 			_row = waitingGameField.findIndex(v => v.some(e => e === goal));
 			let goalPos: Position = { row: _row, column: waitingGameField[_row]?.findIndex(e => e === goal) ?? -1 };
@@ -289,6 +294,9 @@ async function executeExploring(
 			await sendErrorMessage(interaction, error)
 				.catch(e => { console.error(e); });
 		}
+		finally {
+			queue.shift();
+		}
 	});
 
 	await new Promise<void>(resolve => {
@@ -297,6 +305,7 @@ async function executeExploring(
 
 		setTimeout(() => { resolve(); }, 20_000);
 	});
+	queue.abortAll();
 
 	const experiencePoints = chosenBiomeNumber == 2 ? getRandomNumber(41, 20) : chosenBiomeNumber == 1 ? getRandomNumber(21, 10) : getRandomNumber(11, 5);
 	const changedCondition = await changeCondition(userData, experiencePoints);
