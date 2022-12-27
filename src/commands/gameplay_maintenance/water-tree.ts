@@ -6,7 +6,7 @@ import { UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
-import { getMapData, respond } from '../../utils/helperFunctions';
+import { getMapData, getSmallerNumber, respond } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { hasPermission } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -102,7 +102,7 @@ export const command: SlashCommand = {
 			userData.quid.profile.sapling.health += saplingHealthPoints;
 			userData.quid.profile.sapling.waterCycles += 1;
 
-			experiencePoints = userData.quid.profile.sapling.waterCycles;
+			experiencePoints = getSmallerNumber(userData.quid.profile.sapling.waterCycles, userData.quid.profile.levels * 5);
 			healthPoints = pullFromWeightedTable({ 1: 5, 2: 4, 3: 3, 4: 2, 5: 1 }) + getRandomNumber(Math.round(userData.quid.profile.sapling.waterCycles / 4));
 			if (userData.quid.profile.health + healthPoints > userData.quid.profile.maxHealth) { healthPoints = userData.quid.profile.maxHealth - userData.quid.profile.health; }
 
@@ -113,8 +113,8 @@ export const command: SlashCommand = {
 		/* This is the second of three `if` statements that check the time difference between the current timestamp and the timestamp of the perfect watering time. If the time difference is less than or equal to 3 hours, the number of watering cycles is increased by 1, the experience points are set to the number of watering cycles, and the embed's description and footer are set. */
 		else if (timeDifference <= threeHours || usesRedClover) {
 
-			userData.quid.profile.sapling.waterCycles += 1;
-			experiencePoints = userData.quid.profile.sapling.waterCycles;
+			if (timeDifference <= threeHours) { userData.quid.profile.sapling.waterCycles += 1; }
+			experiencePoints = getSmallerNumber(userData.quid.profile.sapling.waterCycles, userData.quid.profile.levels * 5);
 
 			embed.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Good.png');
 			embed.setDescription(`*${userData.quid.name} waters the seedling, and it look like the sapling needs it. Although the ginkgo tree looks healthy, with leaves of beautiful green color and a light scent, the soil seems to be already quite dry.*`);
