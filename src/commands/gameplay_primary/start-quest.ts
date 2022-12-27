@@ -323,9 +323,9 @@ async function startQuest(
 			return component;
 		}));
 
-		embed.setFooter({ text: 'Type "/rank-up" to rank up.' });
 		if (hitValue >= 10) {
 
+			embed.setFooter({ text: 'Type "/rank-up" to rank up.' });
 			await setCooldown(userData, interaction.guildId, false);
 
 			if (userData.quid.profile.unlockedRanks < 3) {
