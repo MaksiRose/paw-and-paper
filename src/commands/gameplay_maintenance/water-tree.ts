@@ -1,5 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { client } from '../..';
+import serverModel from '../../models/serverModel';
 import { userModel, getUserData } from '../../models/userModel';
 import { UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
@@ -22,6 +23,9 @@ export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
 		.setName('water-tree')
 		.setDescription('If you have a ginkgo sapling, you can water it using this command.')
+		.addBooleanOption(option =>
+			option.setName('use_red_clover')
+				.setDescription('This will prevent your tree from losing health when not being watered for a long time'))
 		.setDMPermission(false)
 		.toJSON(),
 	category: 'page3',
@@ -55,6 +59,31 @@ export const command: SlashCommand = {
 			return;
 		}
 
+		const usesRedClover = interaction.options.getBoolean('use_red_clover') === true;
+		if (usesRedClover && serverData.inventory.specialPlants['red clover'] <= 0) {
+
+			// This is always a reply
+			await respond(interaction, {
+				content: messageContent,
+				embeds: [...restEmbed, new EmbedBuilder()
+					.setColor(userData.quid.color)
+					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+					.setDescription(`*${userData.quid.name} searches for a red clover, but can't find one in the storage...*`)
+					.setFooter({ text: 'Red clovers prevent your tree from losing health when it has not been watered for too long. Go adventuring to find a red clover, and make sure to store it away. Run the command again without this option enabled to water your tree without using a red clover.' })],
+				ephemeral: true,
+			});
+			return;
+		}
+		else if (usesRedClover) {
+
+			serverData = serverModel.findOneAndUpdate(
+				s => s._id === serverData!._id,
+				(s) => {
+					s.inventory.specialPlants['red clover'] -= 1;
+				},
+			);
+		}
+
 		const currentTimestamp = interaction.createdTimestamp;
 		const timeDifference = Math.abs(currentTimestamp - (userData.quid.profile.sapling.nextWaterTimestamp ?? 0));
 		const timeDifferenceInMinutes = Math.round(timeDifference / oneMinute);
@@ -82,7 +111,7 @@ export const command: SlashCommand = {
 			embed.setFooter({ text: `+${experiencePoints} XP (${userData.quid.profile.experience + experiencePoints}/${userData.quid.profile.levels * 50})${healthPoints > 0 ? `\n+${healthPoints} health (${userData.quid.profile.health + healthPoints}/${userData.quid.profile.maxEnergy})` : ''}\n\n+${saplingHealthPoints} health for ginkgo sapling\nCome back to water it in 24 hours.` });
 		}
 		/* This is the second of three `if` statements that check the time difference between the current timestamp and the timestamp of the perfect watering time. If the time difference is less than or equal to 3 hours, the number of watering cycles is increased by 1, the experience points are set to the number of watering cycles, and the embed's description and footer are set. */
-		else if (timeDifference <= threeHours) {
+		else if (timeDifference <= threeHours || usesRedClover) {
 
 			userData.quid.profile.sapling.waterCycles += 1;
 			experiencePoints = userData.quid.profile.sapling.waterCycles;
