@@ -406,3 +406,14 @@ export async function setCooldown(
 		},
 	);
 }
+
+/**
+ * Delay returns a promise that resolves after the given number of milliseconds.
+ * @param {number} ms - number - The number of milliseconds to delay.
+ * @returns A function that returns a promise that resolves after a delay.
+ */
+export function delay(
+	ms: number,
+): Promise<void> {
+	return new Promise((resolve: () => void) => setTimeout(resolve, ms));
+}

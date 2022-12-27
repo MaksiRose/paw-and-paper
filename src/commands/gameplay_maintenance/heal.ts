@@ -330,7 +330,7 @@ export async function getHealResponse(
 		const botReply = await respond(interaction, {
 			content: messageContent,
 			embeds: [...embedArray, quidConditionEmbed, inventoryEmbed],
-			components: [quidsSelectMenu, pagesButtons, inventorySelectMenu],
+			components: [quidsSelectMenu, pagesButtons, ...(selectMenuOptions.length > 0 ? [inventorySelectMenu] : [])],
 			fetchReply: true,
 		}, 'update', '@original');
 

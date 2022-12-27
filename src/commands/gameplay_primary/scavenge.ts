@@ -1,3 +1,4 @@
+import { AsyncQueue } from '@sapphire/async-queue';
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
 import { speciesInfo } from '../..';
 import { ServerSchema } from '../../typings/data/server';
@@ -142,9 +143,13 @@ async function executeScavenging(
 			componentType: ComponentType.Button,
 			time: isHumanTrap ? 12_000 : 120_000,
 		});
+		const queue = new AsyncQueue();
 
 		collector.on('collect', async int => {
+			await queue.wait();
 			try {
+
+				if (collector.ended) { return; }
 
 				/* It's checking if the customId of the button includes the word `board-`, which means that it is part of the scavenge game, or if the customId of the button includes the  word `humantrap-`, which means that it is part of the humantrap game. */
 				if (int.customId.includes('board_')) {
@@ -238,9 +243,13 @@ async function executeScavenging(
 				await sendErrorMessage(interaction, error)
 					.catch(e => { console.error(e); });
 			}
+			finally {
+				queue.shift();
+			}
 		});
 
 		collector.on('end', async (interactions, reason) => {
+			queue.abortAll();
 			try {
 
 				/* The below code is checking if the user has finished the game or not. If the user has finished the game, it will check if the server has enough meat and materials. If it doesn't, it will give the user meat or  materials. If it does, it will do nothing. If the user has lost the game, it will check if the user has lost the human trap game as well. If they did, it will add an injury to the user. If the game is not finished, start the human trap game. */
