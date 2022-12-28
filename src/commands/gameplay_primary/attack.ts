@@ -104,7 +104,7 @@ async function executeAttacking(
 	serverAttackInfo.idleHumans -= 1;
 	serverAttackInfo.ongoingFights += 1;
 
-	const experiencePoints = getRandomNumber(10, 11);
+	const experiencePoints = userData.quid.profile.rank === RankType.Youngling ? 0 : getRandomNumber(10, 11);
 	const changedCondition = await changeCondition(userData, experiencePoints);
 
 	const embed = new EmbedBuilder()

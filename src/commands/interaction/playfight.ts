@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
 import { userModel, getUserData } from '../../models/userModel';
 import { ServerSchema } from '../../typings/data/server';
-import { CurrentRegionType, UserData } from '../../typings/data/user';
+import { CurrentRegionType, RankType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition } from '../../utils/changeCondition';
@@ -373,7 +373,7 @@ export const command: SlashCommand = {
 
 					const x = getBiggerNumber(userDataOther.quid.profile.levels - userDataCurrent.quid.profile.levels, 0);
 					const extraExperience = Math.round((80 / (1 + Math.pow(Math.E, -0.09375 * x))) - 40);
-					const experiencePoints = getRandomNumber(11, 10) + extraExperience;
+					const experiencePoints = userDataCurrent.quid.profile.rank === RankType.Youngling ? 0 : (getRandomNumber(11, 10) + extraExperience);
 
 					(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText = `\n+${experiencePoints} XP (${userDataCurrent.quid.profile.experience + experiencePoints}/${userDataCurrent.quid.profile.levels * 50}) for ${userDataCurrent.quid.name}${(user1IsPlaying ? decreasedStatsData1 : decreasedStatsData2).statsUpdateText}`;
 
@@ -387,21 +387,23 @@ export const command: SlashCommand = {
 				else {
 
 					const experiencePoints = getRandomNumber(11, 5);
+					const experiencePointsCurrent = userDataCurrent.quid.profile.rank === RankType.Youngling ? 0 : experiencePoints;
+					const experiencePointsOther = userDataOther.quid.profile.rank === RankType.Youngling ? 0 : experiencePoints;
 
-					decreasedStatsData1.statsUpdateText = `\n+${experiencePoints} XP (${userDataCurrent.quid.profile.experience + experiencePoints}/${userDataCurrent.quid.profile.levels * 50}) for ${userDataCurrent.quid.name}${decreasedStatsData1.statsUpdateText}`;
-					decreasedStatsData2.statsUpdateText = `\n+${experiencePoints} XP (${userDataOther.quid.profile.experience + experiencePoints}/${userDataOther.quid.profile.levels * 50}) for ${userDataOther.quid.name}${decreasedStatsData2.statsUpdateText}`;
+					decreasedStatsData1.statsUpdateText = `\n+${experiencePointsCurrent} XP (${userDataCurrent.quid.profile.experience + experiencePointsCurrent}/${userDataCurrent.quid.profile.levels * 50}) for ${userDataCurrent.quid.name}${decreasedStatsData1.statsUpdateText}`;
+					decreasedStatsData2.statsUpdateText = `\n+${experiencePointsOther} XP (${userDataOther.quid.profile.experience + experiencePointsOther}/${userDataOther.quid.profile.levels * 50}) for ${userDataOther.quid.name}${decreasedStatsData2.statsUpdateText}`;
 
 					await userDataCurrent.update(
 						(u) => {
 							const p = getMapData(getMapData(u.quids, getMapData(u.servers, i.guildId).currentQuid ?? '').profiles, i.guildId);
-							p.experience += experiencePoints;
+							p.experience += experiencePointsCurrent;
 						},
 					);
 
 					await userDataOther.update(
 						(u) => {
 							const p = getMapData(getMapData(u.quids, getMapData(u.servers, i.guildId).currentQuid ?? '').profiles, i.guildId);
-							p.experience += experiencePoints;
+							p.experience += experiencePointsOther;
 						},
 					);
 				}
