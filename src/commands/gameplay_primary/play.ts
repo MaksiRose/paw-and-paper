@@ -151,8 +151,7 @@ export async function executePlaying(
 
 	await setCooldown(userData1, interaction.guildId, true);
 
-	const experiencePoints = userData1.quid.profile.rank === RankType.Youngling ? getRandomNumber(9, 1) : userData1.quid.profile.rank === RankType.Apprentice ? getRandomNumber(11, 5) : 0;
-	const changedCondition = await changeCondition(userData1, experiencePoints, CurrentRegionType.Prairie);
+	const changedCondition = await changeCondition(userData1, 0, CurrentRegionType.Prairie);
 
 	const responseTime = userData1.quid.profile.rank === RankType.Youngling ? (tutorialMapEntry === 1 || tutorialMapEntry === 2) ? 3_600_000 : 10_000 : 5_000;
 	const embed = new EmbedBuilder()
