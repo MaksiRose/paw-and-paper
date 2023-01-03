@@ -88,7 +88,7 @@ export const command: SlashCommand = {
 		const timeDifference = Math.abs(currentTimestamp - (userData.quid.profile.sapling.nextWaterTimestamp ?? 0));
 		const timeDifferenceInMinutes = Math.round(timeDifference / oneMinute);
 
-		let experiencePoints = 0;
+		let experiencePoints = getSmallerNumber(userData.quid.profile.sapling.waterCycles, userData.quid.profile.levels * 5);
 		let healthPoints = 0;
 
 		const embed = new EmbedBuilder()
@@ -102,7 +102,6 @@ export const command: SlashCommand = {
 			userData.quid.profile.sapling.health += saplingHealthPoints;
 			userData.quid.profile.sapling.waterCycles += 1;
 
-			experiencePoints = getSmallerNumber(userData.quid.profile.sapling.waterCycles, userData.quid.profile.levels * 5);
 			healthPoints = pullFromWeightedTable({ 1: 5, 2: 4, 3: 3, 4: 2, 5: 1 }) + getRandomNumber(Math.round(userData.quid.profile.sapling.waterCycles / 4));
 			if (userData.quid.profile.health + healthPoints > userData.quid.profile.maxHealth) { healthPoints = userData.quid.profile.maxHealth - userData.quid.profile.health; }
 
@@ -114,7 +113,6 @@ export const command: SlashCommand = {
 		else if (timeDifference <= threeHours || usesRedClover) {
 
 			if (timeDifference <= threeHours) { userData.quid.profile.sapling.waterCycles += 1; }
-			experiencePoints = getSmallerNumber(userData.quid.profile.sapling.waterCycles, userData.quid.profile.levels * 5);
 
 			embed.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Good.png');
 			embed.setDescription(`*${userData.quid.name} waters the seedling, and it look like the sapling needs it. Although the ginkgo tree looks healthy, with leaves of beautiful green color and a light scent, the soil seems to be already quite dry.*`);
@@ -123,6 +121,7 @@ export const command: SlashCommand = {
 		/* Checking if the sapling is overdue for watering, and if it is, it is calculating how much health it has lost. */
 		else {
 
+			experiencePoints = 0;
 			const weeksAlive = Math.floor(userData.quid.profile.sapling.waterCycles / 7);
 			const overdueHours = Math.ceil(timeDifference / oneHour) - 3;
 			const percentage = (overdueHours * 3) / 100;

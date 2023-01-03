@@ -1,7 +1,7 @@
 import { EmbedBuilder, SlashCommandBuilder, SnowflakeUtil } from 'discord.js';
 import { client } from '../..';
 import { userModel, getUserData } from '../../models/userModel';
-import { CurrentRegionType, QuidSchema, UserSchema } from '../../typings/data/user';
+import { CurrentRegionType, QuidSchema, RankType, UserSchema } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition, infectWithChance } from '../../utils/changeCondition';
@@ -145,6 +145,19 @@ export const command: SlashCommand = {
 		/* Check if the user is interactable, and if they are, define quid data and profile data. */
 		const userData2 = _userData2 ? getUserData(_userData2, interaction.guildId, _userData2.quids[_userData2.servers[interaction.guildId]?.currentQuid ?? '']) : null;
 		if (!isInteractable(interaction, userData2, messageContent, restEmbed)) { return; }
+		if (userData2.quid.profile.rank === RankType.Youngling) {
+
+			// This is always a reply
+			await respond(interaction, {
+				content: messageContent,
+				embeds: [...restEmbed, new EmbedBuilder()
+					.setColor(userData1.quid.color)
+					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
+					.setDescription(`*${userData1.quid.name} wants to share a story with ${userData2.quid.name}, but the ${userData2.quid.getDisplayspecies()} is too young to sit down and listen and runs away to play.*`),
+				],
+			});
+			return;
+		}
 
 		/* Add the sharing cooldown to user */
 		sharingCooldownAccountsMap.set(userData1.quid._id + interaction.guildId, Date.now());
@@ -153,7 +166,7 @@ export const command: SlashCommand = {
 		const decreasedStatsData = await changeCondition(userData1, 0, CurrentRegionType.Ruins);
 
 		/* Give user 2 experience */
-		const experienceIncrease = getRandomNumber(Math.round((userData2.quid.profile.levels * 50) * 0.15), Math.round((userData2.quid.profile.levels * 50) * 0.05));
+		const experienceIncrease = getRandomNumber(Math.round(userData2.quid.profile.levels * 7.5), Math.round(userData2.quid.profile.levels * 2.5));
 		await userData2.update(
 			(u) => {
 				const p = getMapData(getMapData(u.quids, userData2.quid._id).profiles, interaction.guildId);
@@ -201,5 +214,5 @@ function isEligableForSharing(
 ): quid is QuidSchema<never> {
 
 	const user = getUserData(userData, guildId, quid);
-	return hasNameAndSpecies(user) && user.quid.profile !== undefined && user.quid.profile.currentRegion === CurrentRegionType.Ruins && user.quid.profile.energy > 0 && user.quid.profile.health > 0 && user.quid.profile.hunger > 0 && user.quid.profile.thirst > 0 && user.quid.profile.injuries.cold === false && user.serverInfo?.hasCooldown !== true && isResting(user) === false;
+	return hasNameAndSpecies(user) && user.quid.profile !== undefined && user.quid.profile.rank !== RankType.Youngling && user.quid.profile.currentRegion === CurrentRegionType.Ruins && user.quid.profile.energy > 0 && user.quid.profile.health > 0 && user.quid.profile.hunger > 0 && user.quid.profile.thirst > 0 && user.quid.profile.injuries.cold === false && user.serverInfo?.hasCooldown !== true && isResting(user) === false;
 }

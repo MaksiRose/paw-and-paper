@@ -196,6 +196,21 @@ export type DecreasedStatsData = {
 	injuryUpdateEmbed: EmbedBuilder[]
 };
 
+export function addExperience(
+	userData: UserData<never, never>,
+	experienceIncrease: number,
+): string {
+
+	userData.update(
+		(u) => {
+			const p = getMapData(getMapData(u.quids, userData.quid._id).profiles, userData.quid.profile.serverId);
+			p.experience += experienceIncrease;
+		},
+	);
+
+	return `+${experienceIncrease} XP (${userData.quid.profile.experience}/${userData.quid.profile.levels * 50})`;
+}
+
 /**
  * It changes the user's experience, energy, hunger, thirst and returns a string based on these changes, decreases the health of a profile based on its injuries, and returns an embed containing those changes if so, and returns an updated profileData.
  * @param userData - UserSchema - The user's data

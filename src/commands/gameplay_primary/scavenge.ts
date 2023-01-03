@@ -5,7 +5,7 @@ import { ServerSchema } from '../../typings/data/server';
 import { RankType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
-import { changeCondition } from '../../utils/changeCondition';
+import { addExperience, changeCondition } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
@@ -78,8 +78,8 @@ async function executeScavenging(
 
 	await setCooldown(userData, interaction.guildId, true);
 
-	const experiencePoints = getRandomNumber(11, 5);
-	const changedCondition = await changeCondition(userData, experiencePoints);
+	let experiencePoints = getRandomNumber(5, userData.quid.profile.levels);
+	const changedCondition = await changeCondition(userData, 0);
 
 	const embed = new EmbedBuilder()
 		.setColor(userData.quid.color)
@@ -186,7 +186,7 @@ async function executeScavenging(
 							}
 
 							embed.setDescription(`*After a while, ${userData.quid.name} can indeed find something useful: On the floor is a ${foundCarcass} that seems to have recently lost a fight fatally. Although the animal has a few injuries, it can still serve as great nourishment. What a success!*\n${playingField}`);
-							embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundCarcass}` });
+							embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${foundCarcass}` });
 
 							await userData.update(
 								(u) => {
@@ -205,7 +205,7 @@ async function executeScavenging(
 							}
 
 							embed.setDescription(`*${userData.quid.name} searches in vain for edible remains of deceased animals. But the expedition is not without success: the ${userData.quid.getDisplayspecies()} sees a ${foundMaterial}, which can serve as a great material for repairs and work in the pack. ${capitalizeString(userData.quid.pronoun(0))} happily takes it home with ${userData.quid.pronoun(1)}.*\n${playingField}`);
-							embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundMaterial}` });
+							embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${foundMaterial}` });
 
 							await userData.update(
 								(u) => {
@@ -217,7 +217,7 @@ async function executeScavenging(
 						else {
 
 							embed.setDescription(`*Although ${userData.quid.name} searches everything very thoroughly, there doesn't seem to be anything in the area that can be used at the moment. Probably everything has already been found. The ${userData.quid.getDisplayspecies()} decides to look again later.*\n${playingField}`);
-							if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
+							if (changedCondition.statsUpdateText) { embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}` }); }
 						}
 
 						await sendFinalMessage(int, userData, serverData);
@@ -261,8 +261,9 @@ async function executeScavenging(
 					/* Checking if the user is hurt or not. If the user is hurt, it will subtract health points from the user and give them an injury. */
 					if (isHurt == 0) {
 
+						experiencePoints = Math.round(experiencePoints / 2);
 						embed.setDescription(`*After ${userData.quid.name} gets over the initial shock, the ${userData.quid.getDisplayspecies()} quickly manages to free ${userData.quid.pronoun(4)} from the net. That was close!*`);
-						if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
+						embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}` });
 					}
 					else {
 

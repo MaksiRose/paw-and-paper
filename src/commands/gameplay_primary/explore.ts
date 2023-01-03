@@ -8,7 +8,7 @@ import { disableAllComponents, disableCommandComponent } from '../../utils/compo
 import { serverActiveUsersMap } from '../../events/interactionCreate';
 import { accessiblePlantEmojis, createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
-import { changeCondition, userFindsQuest } from '../../utils/changeCondition';
+import { addExperience, changeCondition, userFindsQuest } from '../../utils/changeCondition';
 import { sendQuestMessage } from './start-quest';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
@@ -307,8 +307,7 @@ async function executeExploring(
 	});
 	queue.abortAll();
 
-	const experiencePoints = chosenBiomeNumber == 2 ? getRandomNumber(41, 20) : chosenBiomeNumber == 1 ? getRandomNumber(21, 10) : getRandomNumber(11, 5);
-	const changedCondition = await changeCondition(userData, experiencePoints);
+	const changedCondition = await changeCondition(userData, 0);
 
 	const responseTime = chosenBiomeNumber === 2 ? 3_000 : chosenBiomeNumber === 1 ? 4_000 : 5_000;
 	const embed = new EmbedBuilder()
@@ -521,6 +520,7 @@ async function executeExploring(
 				}
 				buttonInteraction = newInteraction;
 
+				let experiencePoints = getRandomNumber(5, environmentLevel);
 				const levelDifference = userData.quid.profile.levels - environmentLevel;
 				points += levelDifference; // It doesn't matter if this is higher than 6 or lower than -6, it will not affect the weighted table
 				const outcome = pullFromWeightedTable({ 0: -1 * points, 1: 6 - Math.abs(points), 2: points });
@@ -538,10 +538,11 @@ async function executeExploring(
 
 					embed.setDescription(`*${userData.quid.name} gently lowers ${userData.quid.pronoun(2)} head, picking up the ${foundItem} and carrying it back in ${userData.quid.pronoun(2)} mouth. What a success!*`);
 
-					embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundItem}` });
+					embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${foundItem}` });
 				}
 				else if (outcome === 1) {
 
+					experiencePoints = Math.round(experiencePoints / 2);
 					if (speciesInfo[userData.quid.species].habitat === SpeciesHabitatType.Warm) {
 
 						embed.setDescription(`*${userData.quid.name} tries really hard to pick up the ${foundItem} that ${userData.quid.pronoun(0)} discovered in a small, lone bush. But as the ${userData.quid.getDisplayspecies()} tries to pick it up, it just breaks into little pieces.*`);
@@ -555,7 +556,7 @@ async function executeExploring(
 						embed.setDescription(`*${userData.quid.name} tries really hard to pick up the ${foundItem} that ${userData.quid.pronoun(0)} discovered among large algae. But as the ${userData.quid.getDisplayspecies()} tries to pick it up, it just breaks into little pieces.*`);
 					}
 					else { throw new Error('userData.quid species habitat not found'); }
-					if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
+					embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}` });
 				}
 				else {
 
@@ -607,7 +608,6 @@ async function executeExploring(
 						}
 						else { throw new Error('userData.quid species habitat not found'); }
 						embed.setFooter({ text: `-${healthPoints} HP (from cold)\n${changedCondition.statsUpdateText}` });
-
 					}
 					else {
 
@@ -807,6 +807,7 @@ async function executeExploring(
 				}
 				buttonInteraction = newInteraction;
 
+				let experiencePoints = getRandomNumber(5, opponentLevel);
 				const levelDifference = userData.quid.profile.levels - opponentLevel;
 				points += levelDifference; // It doesn't matter if this is higher than 6 or lower than -6, it will not affect the weighted table
 				const outcome = pullFromWeightedTable({ 0: -1 * points, 1: 6 - Math.abs(points), 2: points });
@@ -833,10 +834,11 @@ async function executeExploring(
 						embed.setDescription(`*The ${userData.quid.getDisplayspecies()} swims quickly to the surface, trying to stay as stealthy and unnoticed as possible. ${capitalizeString(userData.quid.pronounAndPlural(0, 'break'))} the surface, gain ${userData.quid.pronoun(2)} bearing, and the ${userData.quid.getDisplayspecies()} begins swimming to the shore, dragging the dead ${opponentSpecies} up the shore to the camp.*`);
 					}
 					else { throw new Error('userData.quid species habitat not found'); }
-					embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${opponentSpecies}` });
+					embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}\n\n+1 ${opponentSpecies}` });
 				}
 				else if (outcome === 1) {
 
+					experiencePoints = Math.round(experiencePoints / 2);
 					if (speciesInfo[userData.quid.species].habitat === SpeciesHabitatType.Warm) {
 
 						embed.setDescription(`*${userData.quid.name} and the ${opponentSpecies} are snarling at one another as they retreat to the opposite sides of the hill, now stirred up and filled with sticks from the surrounding bushes. The ${userData.quid.getDisplayspecies()} runs back to camp, ${userData.quid.pronoun(2)} mouth empty as before.*`);
@@ -850,7 +852,7 @@ async function executeExploring(
 						embed.setDescription(`*${userData.quid.name} and the ${opponentSpecies} glance at one another as they swim in opposite directions from the kelp, now cloudy from the stirred up dirt. The ${userData.quid.getDisplayspecies()} swims back to camp, ${userData.quid.pronoun(2)} mouth empty as before.*`);
 					}
 					else { throw new Error('userData.quid species habitat not found'); }
-					if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
+					embed.setFooter({ text: `${addExperience(userData, experiencePoints)}\n${changedCondition.statsUpdateText}` });
 				}
 				else {
 
