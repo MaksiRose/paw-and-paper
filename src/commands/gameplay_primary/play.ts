@@ -6,7 +6,7 @@ import { CurrentRegionType, QuidSchema, RankType, UserData, UserSchema } from '.
 import { SlashCommand } from '../../typings/handle';
 import { SpeciesHabitatType } from '../../typings/main';
 import { coloredButtonsAdvice, drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
-import { userFindsQuest, changeCondition, infectWithChance } from '../../utils/changeCondition';
+import { userFindsQuest, changeCondition, infectWithChance, addExperience } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableCommandComponent } from '../../utils/componentDisabling';
@@ -81,8 +81,8 @@ export async function executePlaying(
 
 	if (await hasFullInventory(interaction, userData1, restEmbed, messageContent)) { return; }
 
-	const mentionedUserId = interaction.isChatInputCommand() ? interaction.options.getUser('user')?.id : deconstructCustomId<CustomIdArgs>(interaction.customId)?.args[1];
 	const tutorialMapEntry = tutorialMap.get(userData1.quid._id + userData1.quid.profile.serverId);
+	const mentionedUserId = tutorialMapEntry === 2 ? undefined : interaction.isChatInputCommand() ? interaction.options.getUser('user')?.id : deconstructCustomId<CustomIdArgs>(interaction.customId)?.args[1];
 	if (userData1.quid.profile.tutorials.play === false && userData1.quid.profile.rank === RankType.Youngling && (tutorialMapEntry === undefined || tutorialMapEntry === 0)) {
 
 		// This is an update when forceEdit is true, which it is only for the travel-regions command, else this is a reply
@@ -184,14 +184,14 @@ export async function executePlaying(
 
 			const partnerHealthPoints = getSmallerNumber(userData2.quid.profile.maxHealth - userData2.quid.profile.health, getRandomNumber(5, 1));
 
-			await userData2.update(
-				(u) => {
-					const p = getMapData(getMapData(u.quids, userData2!.quid!._id).profiles, interaction.guildId);
-					p.health += partnerHealthPoints;
-				},
-			);
-
 			if (partnerHealthPoints > 0) {
+
+				await userData2.update(
+					(u) => {
+						const p = getMapData(getMapData(u.quids, userData2!.quid!._id).profiles, interaction.guildId);
+						p.health += partnerHealthPoints;
+					},
+				);
 
 				changedCondition.statsUpdateText += `\n\n+${partnerHealthPoints} HP for ${userData2.quid.name} (${userData2.quid.profile.health}/${userData2.quid.profile.maxHealth})`;
 			}
@@ -263,7 +263,11 @@ export async function executePlaying(
 					tutorialMap.delete(userData1.quid._id + userData1.quid.profile.serverId);
 
 					whoWinsChance = 0;
+
+					if (userData1.quid.profile.rank === RankType.Youngling) { changedCondition.statsUpdateText = `${addExperience(userData1, getRandomNumber(4, 5))}\n${changedCondition.statsUpdateText}`; }
 				}
+				else if (i.customId.includes(fightGame.cycleKind) && userData1.quid.profile.rank === RankType.Youngling) { changedCondition.statsUpdateText = `${addExperience(userData1, getRandomNumber(2, 1))}\n${changedCondition.statsUpdateText}`; }
+
 				buttonInteraction = i;
 			}
 
@@ -274,12 +278,12 @@ export async function executePlaying(
 			messageContent = `${messageContent}\n\n<@${mentionedUserId}>`;
 		}
 
-		if (whoWinsChance === 0) {
+		if (whoWinsChance === 0) { // User wins
 
 			embed.setDescription(`*${userData1.quid.name} trails behind ${userData2?.quid?.name ?? 'an Elderly'}'s rear end, preparing for a play attack. The ${userData1.quid.getDisplayspecies()} launches forward, landing on top of ${userData2?.quid === undefined ? 'them' : userData2.quid.pronoun(1)}.* "I got you${!userData2 ? '' : ', ' + userData1.quid.name}!" *${userData1.quid.pronounAndPlural(0, 'say')}. Both creatures bounce away from each other, laughing.*`);
 			embed.setImage('https://external-preview.redd.it/iUqJpDGv2YSDitYREfnTvsUkl9GG6oPMCRogvilkIrg.gif?s=9b0ea7faad7624ec00b5f8975e2cf3636f689e27');
 		}
-		else {
+		else { // Opponent wins
 
 			embed.setDescription(`*${userData1.quid.name} trails behind ${userData2?.quid?.name ?? 'an Elderly'}'s rear end, preparing for a play attack. Right when the ${userData1.quid.getDisplayspecies()} launches forward, ${userData2?.quid?.name ?? 'the Elderly'} dashes sideways, followed by a precise jump right on top of ${userData1.quid.name}.* "I got you, ${userData1.quid.name}!" *${userData2?.quid === undefined ? 'they say' : userData2.quid.pronounAndPlural(0, 'say')}. Both creatures bounce away from each other, laughing.*`);
 			embed.setImage('https://i.pinimg.com/originals/7e/e4/01/7ee4017f0152c7b7c573a3dfe2c6673f.gif');
@@ -358,7 +362,6 @@ export async function executePlaying(
 
 		/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 		playComponent = plantGame.correctButtonOverwrite();
-		if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 
 		const i = await (botReply as Message<true> | InteractionResponse<true>)
 			.awaitMessageComponent({
@@ -367,6 +370,7 @@ export async function executePlaying(
 				time: responseTime,
 			})
 			.catch(() => { return null; });
+		let isWin = false;
 
 		if (i !== null) {
 
@@ -388,14 +392,20 @@ export async function executePlaying(
 						else { p.inventory.rarePlants[foundItem] += 1; }
 					},
 				);
-				embed.setFooter({ text: `${changedCondition.statsUpdateText}\n\n+1 ${foundItem}` });
+				isWin = true;
+
+				if (userData1.quid.profile.rank === RankType.Youngling) { changedCondition.statsUpdateText = `${addExperience(userData1, getRandomNumber(4, 5))}\n${changedCondition.statsUpdateText}`; }
 			}
 			else {
+
+				if (!i.customId.includes(plantGame.emojiToFind) && userData1.quid.profile.rank === RankType.Youngling) { changedCondition.statsUpdateText = `${addExperience(userData1, getRandomNumber(2, 1))}\n${changedCondition.statsUpdateText}`; }
 
 				embed.setDescription(descriptionText.substring(0, descriptionText.length - 1) + ` But as the ${userData1.quid.getDisplayspecies()} tries to pick it up, it just breaks into little pieces.*`);
 			}
 			buttonInteraction = i;
 		}
+
+		if (changedCondition.statsUpdateText) { embed.setFooter({ text: `${changedCondition.statsUpdateText}${isWin ? `\n\n+ 1 ${ foundItem }` : ''} ` }); }
 
 		playComponent.setComponents(playComponent.components.map(c => c.setDisabled(true)));
 	}
