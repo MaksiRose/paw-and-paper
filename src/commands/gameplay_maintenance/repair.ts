@@ -129,7 +129,7 @@ export const command: SlashCommand = {
 				},
 			);
 
-			const experiencePoints = isSuccessful === false ? 0 : userData.quid.profile.rank == RankType.Elderly ? getRandomNumber(41, 20) : userData.quid.profile.rank == RankType.Healer ? getRandomNumber(21, 10) : getRandomNumber(11, 5);
+			const experiencePoints = isSuccessful === false ? 0 : getRandomNumber(5, userData.quid.profile.levels + 8);
 			const changedCondition = await changeCondition(userData, experiencePoints);
 			const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
 

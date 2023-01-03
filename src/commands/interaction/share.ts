@@ -166,7 +166,7 @@ export const command: SlashCommand = {
 		const decreasedStatsData = await changeCondition(userData1, 0, CurrentRegionType.Ruins);
 
 		/* Give user 2 experience */
-		const experienceIncrease = getRandomNumber(Math.round((userData2.quid.profile.levels * 50) * 0.15), Math.round((userData2.quid.profile.levels * 50) * 0.05));
+		const experienceIncrease = getRandomNumber(Math.round(userData2.quid.profile.levels * 7.5), Math.round(userData2.quid.profile.levels * 2.5));
 		await userData2.update(
 			(u) => {
 				const p = getMapData(getMapData(u.quids, userData2.quid._id).profiles, interaction.guildId);

@@ -190,9 +190,8 @@ export const command: SlashCommand = {
 		await setCooldown(userData2, interaction.guildId, true);
 		deleteCommandDisablingInfo(userData1, interaction.guildId);
 		deleteCommandDisablingInfo(userData2, interaction.guildId);
-		const experiencePoints = getRandomNumber(11, 5);
-		const decreasedStatsData1 = await changeCondition(userData1, userData1.quid.profile.rank === RankType.Youngling ? 0 : experiencePoints, CurrentRegionType.Prairie, true);
-		const decreasedStatsData2 = await changeCondition(userData2, userData2.quid.profile.rank === RankType.Youngling ? 0 : experiencePoints, CurrentRegionType.Prairie, true);
+		const decreasedStatsData1 = await changeCondition(userData1, userData1.quid.profile.rank === RankType.Youngling ? 0 : getRandomNumber(5, userData1.quid.profile.levels + 8), CurrentRegionType.Prairie, true);
+		const decreasedStatsData2 = await changeCondition(userData2, userData2.quid.profile.rank === RankType.Youngling ? 0 : getRandomNumber(5, userData2.quid.profile.levels + 8), CurrentRegionType.Prairie, true);
 
 		/* Define number of rounds, and the uncovered card amount for both users. */
 		let finishedRounds = 0;

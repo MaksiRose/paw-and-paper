@@ -386,9 +386,8 @@ export const command: SlashCommand = {
 				}
 				else {
 
-					const experiencePoints = getRandomNumber(11, 5);
-					const experiencePointsCurrent = userDataCurrent.quid.profile.rank === RankType.Youngling ? 0 : experiencePoints;
-					const experiencePointsOther = userDataOther.quid.profile.rank === RankType.Youngling ? 0 : experiencePoints;
+					const experiencePointsCurrent = userDataCurrent.quid.profile.rank === RankType.Youngling ? 0 : getRandomNumber(5, userDataCurrent.quid.profile.levels + 8);
+					const experiencePointsOther = userDataOther.quid.profile.rank === RankType.Youngling ? 0 : getRandomNumber(5, userDataOther.quid.profile.levels + 8);
 
 					decreasedStatsData1.statsUpdateText = `\n+${experiencePointsCurrent} XP (${userDataCurrent.quid.profile.experience + experiencePointsCurrent}/${userDataCurrent.quid.profile.levels * 50}) for ${userDataCurrent.quid.name}${decreasedStatsData1.statsUpdateText}`;
 					decreasedStatsData2.statsUpdateText = `\n+${experiencePointsOther} XP (${userDataOther.quid.profile.experience + experiencePointsOther}/${userDataOther.quid.profile.levels * 50}) for ${userDataOther.quid.name}${decreasedStatsData2.statsUpdateText}`;
