@@ -1,11 +1,12 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { client } from '../..';
+import serverModel from '../../models/serverModel';
 import { userModel, getUserData } from '../../models/userModel';
 import { UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
-import { getMapData, respond } from '../../utils/helperFunctions';
+import { getMapData, getSmallerNumber, respond } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { hasPermission } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -22,6 +23,9 @@ export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
 		.setName('water-tree')
 		.setDescription('If you have a ginkgo sapling, you can water it using this command.')
+		.addBooleanOption(option =>
+			option.setName('use_red_clover')
+				.setDescription('This will prevent your tree from losing health when not being watered for a long time'))
 		.setDMPermission(false)
 		.toJSON(),
 	category: 'page3',
@@ -32,7 +36,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		const restEmbed = await isInvalid(interaction, userData);
@@ -42,6 +46,7 @@ export const command: SlashCommand = {
 
 		if (userData.quid.profile.sapling.exists === false) {
 
+			// This is always a reply
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
@@ -50,15 +55,40 @@ export const command: SlashCommand = {
 					.setDescription(`*${userData.quid.name} has already fetched water when ${userData.quid.pronounAndPlural(0, 'remember')} that ${userData.quid.pronounAndPlural(0, 'has', 'have')} nothing to water.*`)
 					.setFooter({ text: 'Go exploring to find a ginkgo tree to water!' })],
 				ephemeral: true,
-			}, false);
+			});
 			return;
+		}
+
+		const usesRedClover = interaction.options.getBoolean('use_red_clover') === true;
+		if (usesRedClover && serverData.inventory.specialPlants['red clover'] <= 0) {
+
+			// This is always a reply
+			await respond(interaction, {
+				content: messageContent,
+				embeds: [...restEmbed, new EmbedBuilder()
+					.setColor(userData.quid.color)
+					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+					.setDescription(`*${userData.quid.name} searches for a red clover, but can't find one in the storage...*`)
+					.setFooter({ text: 'Red clovers prevent your tree from losing health when it has not been watered for too long. Go adventuring to find a red clover, and make sure to store it away. Run the command again without this option enabled to water your tree without using a red clover.' })],
+				ephemeral: true,
+			});
+			return;
+		}
+		else if (usesRedClover) {
+
+			serverData = serverModel.findOneAndUpdate(
+				s => s._id === serverData!._id,
+				(s) => {
+					s.inventory.specialPlants['red clover'] -= 1;
+				},
+			);
 		}
 
 		const currentTimestamp = interaction.createdTimestamp;
 		const timeDifference = Math.abs(currentTimestamp - (userData.quid.profile.sapling.nextWaterTimestamp ?? 0));
 		const timeDifferenceInMinutes = Math.round(timeDifference / oneMinute);
 
-		let experiencePoints = 0;
+		let experiencePoints = getSmallerNumber(userData.quid.profile.sapling.waterCycles, userData.quid.profile.levels * 5);
 		let healthPoints = 0;
 
 		const embed = new EmbedBuilder()
@@ -72,7 +102,6 @@ export const command: SlashCommand = {
 			userData.quid.profile.sapling.health += saplingHealthPoints;
 			userData.quid.profile.sapling.waterCycles += 1;
 
-			experiencePoints = userData.quid.profile.sapling.waterCycles;
 			healthPoints = pullFromWeightedTable({ 1: 5, 2: 4, 3: 3, 4: 2, 5: 1 }) + getRandomNumber(Math.round(userData.quid.profile.sapling.waterCycles / 4));
 			if (userData.quid.profile.health + healthPoints > userData.quid.profile.maxHealth) { healthPoints = userData.quid.profile.maxHealth - userData.quid.profile.health; }
 
@@ -81,10 +110,9 @@ export const command: SlashCommand = {
 			embed.setFooter({ text: `+${experiencePoints} XP (${userData.quid.profile.experience + experiencePoints}/${userData.quid.profile.levels * 50})${healthPoints > 0 ? `\n+${healthPoints} health (${userData.quid.profile.health + healthPoints}/${userData.quid.profile.maxEnergy})` : ''}\n\n+${saplingHealthPoints} health for ginkgo sapling\nCome back to water it in 24 hours.` });
 		}
 		/* This is the second of three `if` statements that check the time difference between the current timestamp and the timestamp of the perfect watering time. If the time difference is less than or equal to 3 hours, the number of watering cycles is increased by 1, the experience points are set to the number of watering cycles, and the embed's description and footer are set. */
-		else if (timeDifference <= threeHours) {
+		else if (timeDifference <= threeHours || usesRedClover) {
 
-			userData.quid.profile.sapling.waterCycles += 1;
-			experiencePoints = userData.quid.profile.sapling.waterCycles;
+			if (timeDifference <= threeHours) { userData.quid.profile.sapling.waterCycles += 1; }
 
 			embed.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Good.png');
 			embed.setDescription(`*${userData.quid.name} waters the seedling, and it look like the sapling needs it. Although the ginkgo tree looks healthy, with leaves of beautiful green color and a light scent, the soil seems to be already quite dry.*`);
@@ -93,6 +121,7 @@ export const command: SlashCommand = {
 		/* Checking if the sapling is overdue for watering, and if it is, it is calculating how much health it has lost. */
 		else {
 
+			experiencePoints = 0;
 			const weeksAlive = Math.floor(userData.quid.profile.sapling.waterCycles / 7);
 			const overdueHours = Math.ceil(timeDifference / oneHour) - 3;
 			const percentage = (overdueHours * 3) / 100;
@@ -117,7 +146,7 @@ export const command: SlashCommand = {
 
 		await userData.update(
 			(u) => {
-				const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+				const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 				p.sapling = userData!.quid!.profile.sapling;
 				p.experience += experiencePoints;
 				p.health += healthPoints;
@@ -125,31 +154,33 @@ export const command: SlashCommand = {
 		);
 
 		const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
+		// This is always a reply
 		await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, embed, ...levelUpEmbed],
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents(new ButtonBuilder()
-					.setCustomId(`settings_reminders_water_${userData.settings.reminders.water === true ? 'off' : 'on'}_@${userData._id}`)
+					.setCustomId(`user-settings_reminders_water_${userData.settings.reminders.water === true ? 'off' : 'on'}_@${userData._id}`)
 					.setLabel(`Turn water reminders ${userData.settings.reminders.water === true ? 'off' : 'on'}`)
 					.setStyle(ButtonStyle.Secondary))],
-		}, true);
+		});
 
 		if (userData.settings.reminders.water) { await sendReminder(userData); }
 
 		if (userData.quid.profile.sapling.health <= 0) {
 
+			// This is always a followUp
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(userData.quid.color)
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 					.setDescription(`*No matter what ${userData.quid.name} does, all the leaves on the ginkgo tree have either fallen off, or are dark brown and hang limply. It's time to say goodbye to the tree.*`)
 					.setImage('https://raw.githubusercontent.com/MaksiRose/paw-and-paper/main/pictures/ginkgo_tree/Dead.png')],
-			}, false);
+			});
 
 			await userData.update(
 				(u) => {
-					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+					const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 					p.sapling = { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, lastMessageChannelId: null, sentReminder: false, sentGentleReminder: false };
 				},
 			);
@@ -201,10 +232,10 @@ export async function sendReminder(
 				if (await hasPermission(member || channel.client.user.id, channel.id, 'ViewChannel') === false || await hasPermission(member || channel.client.user.id, channel.id, channel.isThread() ? 'SendMessagesInThreads' : 'SendMessages') === false || await hasPermission(member || channel.client.user.id, channel.id, 'EmbedLinks') === false) { return; } // Needed for channel.send call
 
 				/* This has to be changed when multiple users are introduced. First idea is to also store, as part of the sapling object, which user last watered. Then, if that user fails, try again for all the other users. */
-				const isInactive = _userData.currentQuid[userData.quid.profile.serverId] !== userData.quid._id;
+				const isInactive = _userData.servers[userData.quid.profile.serverId]?.currentQuid !== userData.quid._id;
 
 				await channel.send({
-					content: `<@${userData.userId[0]}>`,
+					content: `<@${Object.keys(userData.userIds)[0]}>`,
 					embeds: [new EmbedBuilder()
 						.setColor(userData.quid.color)
 						.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })

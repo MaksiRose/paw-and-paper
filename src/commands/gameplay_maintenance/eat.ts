@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, EmbedBuilder, FormattingPatterns, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, EmbedBuilder, FormattingPatterns, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import Fuse from 'fuse.js';
 import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../..';
 import serverModel from '../../models/serverModel';
@@ -10,7 +10,7 @@ import { PlantEdibilityType, SpeciesDietType } from '../../typings/main';
 import { hasName, hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
-import { capitalizeString, getBiggerNumber, getMapData, getSmallerNumber, keyInObject, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
+import { capitalizeString, getBiggerNumber, getMapData, getSmallerNumber, keyInObject, respond, unsafeKeys, widenValues } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
 import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -60,7 +60,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		const restEmbed = await isInvalid(interaction, userData);
@@ -70,13 +70,14 @@ export const command: SlashCommand = {
 
 		if (userData.quid.profile.hunger >= userData.quid.profile.maxHunger) {
 
+			// This is always a reply
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 					.setDescription(`*${userData.quid.name}'s stomach bloats as ${userData.quid.pronounAndPlural(0, 'roll')} around camp, stuffing food into ${userData.quid.pronoun(2)} mouth. The ${userData.quid.getDisplayspecies()} might need to take a break from food before ${userData.quid.pronounAndPlural(0, 'goes', 'go')} into a food coma.*`)],
-			}, true);
+			});
 			return;
 		}
 
@@ -87,7 +88,7 @@ export const command: SlashCommand = {
 };
 
 export async function sendEatMessage(
-	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	chosenFood: string,
 	userData: UserData<never, never>,
 	serverData: ServerSchema,
@@ -102,17 +103,19 @@ export async function sendEatMessage(
 	const mentionedUserMatch = chosenFood.match(FormattingPatterns.User);
 	if (mentionedUserMatch) {
 
-		const _taggedUserData = userModel.findOne(u => u.userId.includes(mentionedUserMatch[1] || ''));
-		const taggedUserData = getUserData(_taggedUserData, interaction.guildId, _taggedUserData.quids[_taggedUserData.currentQuid[interaction.guildId ?? ''] ?? '']);
+		const _taggedUserData = userModel.findOne(u => Object.keys(u.userIds).includes(mentionedUserMatch[1] || ''));
+		const taggedUserData = getUserData(_taggedUserData, interaction.guildId, _taggedUserData.quids[_taggedUserData.servers[interaction.guildId ?? '']?.currentQuid ?? '']);
 
 		if (hasName(taggedUserData)) {
 
 			embed.setDescription(`*${taggedUserData.quid.name} looks down at ${taggedUserData.quid.name} as ${taggedUserData.quid.pronounAndPlural(0, 'nom')} on the ${taggedUserData.quid.getDisplayspecies()}'s leg.* "No eating packmates here!" *${taggedUserData.quid.name} chuckled, shaking off ${taggedUserData.quid.name}.*`);
-			await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+
+			// If the interaction is a ChatInputCommand, this is a reply, else this is an update to the message with the component
+			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, embed],
-				components: interaction.isSelectMenu() ? disableAllComponents(interaction.message.components) : [],
-			});
+				components: interaction.isStringSelectMenu() ? disableAllComponents(interaction.message.components) : [],
+			}, 'update', '@original');
 			return;
 		}
 	}
@@ -159,7 +162,7 @@ export async function sendEatMessage(
 
 			await userData.update(
 				(u) => {
-					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+					const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 					p.temporaryStatIncrease[Date.now()] = increasedMaxStatType!;
 				},
 			);
@@ -168,6 +171,7 @@ export async function sendEatMessage(
 
 		if (inventory_[plantType][chosenFood] <= 0) {
 
+			// If this is a ChatInputCommand, this is a reply, else this is an update to the message with the component
 			await sendNoItemMessage(embed, userData, chosenFood, interaction, messageContent, restEmbed);
 			return;
 		}
@@ -220,6 +224,7 @@ export async function sendEatMessage(
 
 		if (inventory_.meat[chosenFood] <= 0) {
 
+			// If this is a ChatInputCommand, this is a reply, else this is an update to the message with the component
 			await sendNoItemMessage(embed, userData, chosenFood, interaction, messageContent, restEmbed);
 			return;
 		}
@@ -248,7 +253,7 @@ export async function sendEatMessage(
 	await userData.update(
 		(u) => {
 			u.advice.eating = true;
-			const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+			const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 			p.currentRegion = CurrentRegionType.FoodDen;
 			p.hunger += finalHungerPoints;
 			p.energy += finalEnergyPoints;
@@ -272,11 +277,12 @@ export async function sendEatMessage(
 	if (previousRegion !== CurrentRegionType.FoodDen) { footerText += '\nYou are now at the food den'; }
 	embed.setFooter({ text: `${footerText}\n\n${await wearDownDen(serverData, CurrentRegionType.FoodDen)}\n-1 ${chosenFood} for ${interaction.guild.name}` });
 
-	await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+	// If interaction is a ChatInputCommand, this is a reply, else this is an update to the message with the component
+	await respond(interaction, {
 		content: messageContent,
 		embeds: [...restEmbed, embed],
-		components: interaction.isSelectMenu() ? disableAllComponents(interaction.message.components) : [],
-	});
+		components: interaction.isStringSelectMenu() ? disableAllComponents(interaction.message.components) : [],
+	}, 'update', '@original');
 	return;
 }
 
@@ -284,17 +290,19 @@ async function sendNoItemMessage(
 	embed: EmbedBuilder,
 	userData: UserData<never, never>,
 	chosenFood: string,
-	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	messageContent: string,
 	restEmbed: EmbedBuilder[],
 ): Promise<void> {
 
 	embed.setDescription(`*${userData.quid.name} searches for a ${chosenFood} all over the pack, but couldn't find one...*`);
-	await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+
+	// If this is a ChatInputCommand, this is a reply, else this is an update to the message with the component
+	await respond(interaction, {
 		content: messageContent,
 		embeds: [...restEmbed, embed],
-		components: interaction.isSelectMenu() ? disableAllComponents(interaction.message.components) : [],
-	});
+		components: interaction.isStringSelectMenu() ? disableAllComponents(interaction.message.components) : [],
+	}, 'update', '@original');
 }
 
 function addIncorrectDietHungerPoints() { return getRandomNumber(5, 1); }

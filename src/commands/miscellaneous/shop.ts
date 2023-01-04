@@ -1,5 +1,5 @@
-import { ActionRowBuilder, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
-import { respond, update } from '../../utils/helperFunctions';
+import { ActionRowBuilder, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { respond } from '../../utils/helperFunctions';
 import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
 import { hasName, hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
@@ -26,8 +26,8 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction, userData, serverData) => {
 
-		if (!isInGuild(interaction)) { return; }
-		if (!hasName(userData, interaction)) { return; }
+		if (!isInGuild(interaction)) { return; } // This is always a reply
+		if (!hasName(userData, interaction)) { return; } // This is always a reply
 		if (serverData === null) { throw new Error('serverData is null'); }
 
 		const shopInfo = getShopInfo(serverData);
@@ -36,34 +36,36 @@ export const command: SlashCommand = {
 
 		if (serverData.shop.length === 0 || shopKindPage === null) {
 
+			// This is always a reply
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('There are currently no roles in the shop!')],
 				ephemeral: true,
-			}, false);
+			});
 			return;
 		}
 
-		await getShopResponse(interaction, serverData, userData, shopKindPage, nestedPage);
+		await getShopResponse(interaction, serverData, userData, shopKindPage, nestedPage); // This is always a reply
 	},
 	async sendMessageComponentResponse(interaction, userData, serverData) {
 
-		if (!interaction.isSelectMenu()) { return; }
+		if (!interaction.isStringSelectMenu()) { return; }
 		if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
 		if (userData === null) { throw new Error('userData is null'); }
 		if (serverData === null) { throw new Error('serverData is null'); }
 
-		const selectOptionId = deconstructSelectOptions(interaction);
+		const selectOptionId = deconstructSelectOptions<SelectOptionArgs>(interaction)[0];
+		if (selectOptionId === undefined) { throw new TypeError('selectOptionId is undefined'); }
 
 		if (selectOptionId[0] === 'nextpage') {
 
-			if (!hasName(userData, interaction)) { return; }
+			if (!hasName(userData, interaction)) { return; } // This is always a reply
 			const shopKindPage = Number(selectOptionId[1]);
 			const nestedPage = Number(selectOptionId[2]);
 			const { newShopKindPage, newNestedPage } = getShopInfo(serverData).nextPage(shopKindPage, nestedPage);
 
-			await getShopResponse(interaction, serverData, userData, newShopKindPage, newNestedPage);
+			await getShopResponse(interaction, serverData, userData, newShopKindPage, newNestedPage); // This is always an update to the message with the select menu
 			return;
 		}
 		else {
@@ -74,7 +76,7 @@ export const command: SlashCommand = {
 			const roleId = selectOptionId[0];
 			const buyItem = serverData.shop.find((shopRole) => shopRole.roleId === roleId);
 			if (buyItem === undefined) { throw new Error('roleId is undefined or could not be found in server shop'); }
-			if (!hasNameAndSpecies(userData, interaction)) { return; }
+			if (!hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 			if (userData.quid.profile.roles.some(role => role.roleId === buyItem.roleId && role.wayOfEarning === 'experience')) {
 
@@ -85,7 +87,7 @@ export const command: SlashCommand = {
 
 					userData.update(
 						(u) => {
-							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+							const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 							p.experience += userRole.requirement as number;
 							p.roles = p.roles.filter(r => r.roleId !== userRole.roleId);
 						},
@@ -95,6 +97,7 @@ export const command: SlashCommand = {
 
 					const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
 
+					// This is always a reply
 					await respond(interaction, {
 						embeds: [
 							new EmbedBuilder()
@@ -103,7 +106,7 @@ export const command: SlashCommand = {
 								.setDescription(`You refunded the <@&${buyItem.roleId}> role!`),
 							...levelUpEmbed,
 						],
-					}, false);
+					});
 				}
 				catch (error) {
 
@@ -133,7 +136,7 @@ export const command: SlashCommand = {
 
 					await userData.update(
 						(u) => {
-							const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+							const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 							p.experience = userData!.quid!.profile.experience;
 							p.levels = userData!.quid!.profile.levels;
 							p.roles.push({
@@ -146,12 +149,13 @@ export const command: SlashCommand = {
 
 					if (!interaction.member.roles.cache.has(buyItem.roleId)) { await interaction.member.roles.add(buyItem.roleId); }
 
+					// This is always a reply
 					await respond(interaction, {
 						embeds: [new EmbedBuilder()
 							.setColor(default_color)
 							.setAuthor({ name: serverData.name, iconURL: interaction.guild.iconURL() || undefined })
 							.setDescription(`You bought the <@&${buyItem.roleId}> role for ${buyItem.requirement} experience!`)],
-					}, false);
+					});
 
 
 					const roles = userData.quid.profile.roles.filter(role => role.wayOfEarning === WayOfEarningType.Levels && role.requirement > userData.quid.profile.levels);
@@ -160,7 +164,7 @@ export const command: SlashCommand = {
 
 						await userData.update(
 							(u) => {
-								const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+								const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 								p.roles.filter(r => r.roleId !== role.roleId);
 							},
 						);
@@ -169,12 +173,13 @@ export const command: SlashCommand = {
 
 							await interaction.member.roles.remove(role.roleId);
 
+							// This is always a reply
 							await respond(interaction, {
 								embeds: [new EmbedBuilder()
 									.setColor(default_color)
 									.setAuthor({ name: serverData.name, iconURL: interaction.guild.iconURL() || undefined })
 									.setDescription(`You lost the <@&${role.roleId}> role because of a lack of levels!`)],
-							}, false);
+							});
 						}
 					}
 				}
@@ -185,10 +190,11 @@ export const command: SlashCommand = {
 			}
 			else {
 
+				// This is always a reply
 				await respond(interaction, {
 					content: `You don't have the experience to buy the <@&${buyItem.roleId}> role!`,
 					ephemeral: true,
-				}, false);
+				});
 			}
 
 			return;
@@ -198,7 +204,7 @@ export const command: SlashCommand = {
 };
 
 async function getShopResponse(
-	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	serverData: ServerSchema,
 	userData: UserData<never, ''>,
 	shopKindPage: number,
@@ -259,17 +265,17 @@ async function getShopResponse(
 		});
 	}
 
-	await (async function(messageObject) { return interaction.isSelectMenu() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+	await respond(interaction, {
 		embeds: [new EmbedBuilder()
 			.setColor(default_color)
 			.setAuthor({ name: serverData.name, iconURL: interaction.guild?.iconURL() || undefined })
 			.setDescription(descriptionArray.join('\n'))],
-		components: [new ActionRowBuilder<SelectMenuBuilder>()
-			.setComponents(new SelectMenuBuilder()
+		components: [new ActionRowBuilder<StringSelectMenuBuilder>()
+			.setComponents(new StringSelectMenuBuilder()
 				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, []))
 				.setPlaceholder('Select a shop item')
 				.setOptions(shopMenuOptions))],
-	});
+	}, interaction.isStringSelectMenu() ? 'update' : 'reply', '@original');
 }
 
 function getShopInfo(serverData: ServerSchema) {

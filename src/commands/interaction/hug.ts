@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { getArrayElement, respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, respond } from '../../utils/helperFunctions';
 import { disableAllComponents } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { getRandomNumber } from '../../utils/randomizers';
@@ -33,12 +33,13 @@ export const command: SlashCommand = {
 		const mentionedUser = interaction.options.getUser('user');
 		if (!mentionedUser) {
 
+			// This is always a reply
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('Please mention a user that you want to hug!')],
 				ephemeral: true,
-			}, false);
+			});
 			return;
 		}
 
@@ -51,6 +52,7 @@ export const command: SlashCommand = {
 				'https://c.tenor.com/P5lPftY1nzUAAAAd/tired-exhausted.gif',
 			];
 
+			// This is always a reply
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(userData?.quid?.color || member?.displayColor || interaction.user.accentColor || '#ffffff')
@@ -59,10 +61,11 @@ export const command: SlashCommand = {
 						iconURL: userData?.quid?.avatarURL || member?.displayAvatarURL() || interaction.user.avatarURL() || undefined,
 					})
 					.setImage(selfHugURLs[getRandomNumber(selfHugURLs.length)] || null)],
-			}, true);
+			});
 			return;
 		}
 
+		// This is always a reply
 		await respond(interaction, {
 			content: mentionedUser.toString(),
 			embeds: [new EmbedBuilder()
@@ -84,7 +87,7 @@ export const command: SlashCommand = {
 						.setLabel('Decline')
 						.setStyle(ButtonStyle.Danger),
 				])],
-		}, true);
+		});
 	},
 	async sendMessageComponentResponse(interaction, partnerUserData) {
 
@@ -98,18 +101,19 @@ export const command: SlashCommand = {
 		const originalMember = interaction.inCachedGuild() && originalUserId ? await interaction.guild.members.fetch(originalUserId).catch(() => { return undefined; }) : undefined;
 		if (originalUser === undefined || originalUserId === interaction.user.id) {
 
+			// This is always a reply
 			await respond(interaction, {
 				content: 'You can\'t accept or decline this hug!',
 				ephemeral: true,
-			}, false);
+			});
 			return;
 		}
 
 		const _userData = (() => {
-			try { return userModel.findOne(u => u.userId.includes(originalUserId)); }
+			try { return userModel.findOne(u => Object.keys(u.userIds).includes(originalUserId)); }
 			catch { return null; }
 		})();
-		const userData = _userData === null ? null : getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[_userData.currentQuid[interaction.guildId || 'DMs'] || '']);
+		const userData = _userData === null ? null : getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[_userData.servers[interaction.guildId || 'DMs']?.currentQuid ?? '']);
 
 		if (interaction.customId.includes('accept')) {
 
@@ -134,8 +138,9 @@ export const command: SlashCommand = {
 				'https://c.tenor.com/cQN_bn443gMAAAAS/fast-quick.gif',
 			];
 
-			await update(interaction, {
-				content: null,
+			// This is always an update to the message with the button
+			await respond(interaction, {
+				content: '', // This is converted to null within the function
 				embeds: [new EmbedBuilder()
 					.setColor(userData?.quid?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
 					.setAuthor({
@@ -144,7 +149,7 @@ export const command: SlashCommand = {
 					})
 					.setImage(hugURLs[getRandomNumber(hugURLs.length)] || null)],
 				components: [],
-			});
+			}, 'update', '@original');
 
 			if (hasNameAndSpecies(userData) && hasNameAndSpecies(partnerUserData)) { await addFriendshipPoints(interaction.message, userData, partnerUserData); }
 			return;
@@ -152,8 +157,9 @@ export const command: SlashCommand = {
 
 		if (interaction.customId.includes('decline')) {
 
-			await update(interaction, {
-				content: null,
+			// This is always an update to the message with the button
+			await respond(interaction, {
+				content: '', // This is converted to null within the function
 				embeds: [new EmbedBuilder()
 					.setColor(userData?.quid?.color || originalMember?.displayColor || originalUser.accentColor || '#ffffff')
 					.setAuthor({
@@ -162,7 +168,7 @@ export const command: SlashCommand = {
 					})
 					.setDescription(`${interaction.user.toString()} did not accept the hug.`)],
 				components: disableAllComponents(interaction.message.components),
-			});
+			}, 'update', '@original');
 			return;
 		}
 

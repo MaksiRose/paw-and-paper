@@ -1,5 +1,5 @@
 // @ts-check
-import { ButtonInteraction, ChatInputCommandInteraction, SelectMenuInteraction } from 'discord.js';
+import { ButtonInteraction, ChatInputCommandInteraction, AnySelectMenuInteraction } from 'discord.js';
 import { UserData } from '../typings/data/user';
 import { respond } from './helperFunctions';
 
@@ -11,7 +11,7 @@ import { respond } from './helperFunctions';
  * @param profileData - The user's profile on the server they are using the command on
  */
 export async function restAdvice(
-	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	userData: UserData<never, never>,
 ): Promise<void> {
 
@@ -23,9 +23,10 @@ export async function restAdvice(
 			},
 		);
 
+		// This is always a followUp
 		await respond(interaction, {
 			content: `${interaction.user.toString()} ❓ **Tip:**\nRest via \`/rest\` to fill up your energy. Resting takes a while, so be patient!\nYou can also do \`/vote\` to get +30 energy per vote!`,
-		}, false);
+		});
 	}
 }
 
@@ -36,7 +37,7 @@ export async function restAdvice(
  * @param profileData - The user's profile on the server they are using the command on
  */
 export async function drinkAdvice(
-	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	userData: UserData<never, never>,
 ): Promise<void> {
 
@@ -48,9 +49,10 @@ export async function drinkAdvice(
 			},
 		);
 
+		// This is always a followUp
 		await respond(interaction, {
 			content: `${interaction.user.toString()} ❓ **Tip:**\nDrink via \`/drink\` to fill up your thirst.`,
-		}, false);
+		});
 	}
 }
 
@@ -61,7 +63,7 @@ export async function drinkAdvice(
  * @param profileData - The user's profile on the server they are using the command on
  */
 export async function eatAdvice(
-	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	userData: UserData<never, never>,
 ): Promise<void> {
 
@@ -73,9 +75,10 @@ export async function eatAdvice(
 			},
 		);
 
+		// This is always a followUp
 		await respond(interaction, {
 			content: `${interaction.user.toString()} ❓ **Tip:**\nEat via \`/eat\` to fill up your hunger. Carnivores prefer meat, and herbivores prefer plants! Omnivores can eat both.`,
-		}, false);
+		});
 	}
 }
 
@@ -97,8 +100,9 @@ export async function coloredButtonsAdvice(
 			},
 		);
 
+		// This is always a followUp
 		await respond(interaction, {
 			content: `${interaction.user.toString()} ❓ **Tip:**\nA red button means that you picked wrong, the blue button is what you should've picked instead. A green button means that you picked correct.`,
-		}, false);
+		});
 	}
 }

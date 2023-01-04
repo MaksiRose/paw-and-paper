@@ -16,9 +16,16 @@ export const plantEmojis = {
 	toAvoid: '🏕️' as const,
 };
 
+// "o", "m", "1", "c", "8", "g", "T", "n", "4", "G", "r", "B", "J", "M"
+export const accessiblePlantEmojis = {
+	findable: ['x', 't', 'Q', '3', 'd', 'e', 'b', 'Y', 'h', 'A', 'H', 'X', '9', 'L', 'f', 'E', 'z'] as const,
+	habitat: ['7', 'y', 'K', 'a', 'R', 'F', 'P', 's', 'k', 'N', '6', 'D', 'i'] as const,
+	toAvoid: 'C' as const,
+};
+
 export type PlantGame = {
 	thisRoundEmojiIndex: number;
-	emojiToFind: (typeof plantEmojis.findable)[number];
+	emojiToFind: (typeof plantEmojis.findable)[number] | (typeof accessiblePlantEmojis.findable)[number];
 	plantComponent: ActionRowBuilder<ButtonBuilder>;
 	correctButtonOverwrite: () => ActionRowBuilder<ButtonBuilder>;
 	chosenRightButtonOverwrite: (customId: string) => ActionRowBuilder<ButtonBuilder>;
@@ -26,19 +33,19 @@ export type PlantGame = {
 }
 
 export function createPlantGame(
-	playerHabitat: SpeciesHabitatType,
+	playerHabitat: SpeciesHabitatType | 'accessible',
 	lastRoundEmojiIndex?: number,
 ): PlantGame {
 
-	const thisRoundEmojiIndex = getRandomNumber(plantEmojis.findable.length, 0, lastRoundEmojiIndex);
-	const emojiToFind = plantEmojis.findable[thisRoundEmojiIndex]; // emojiToFind can be undefined, which is unintended
+	const thisRoundEmojiIndex = getRandomNumber((playerHabitat === 'accessible' ? accessiblePlantEmojis : plantEmojis).findable.length, 0, lastRoundEmojiIndex);
+	const emojiToFind = (playerHabitat === 'accessible' ? accessiblePlantEmojis : plantEmojis).findable[thisRoundEmojiIndex]; // emojiToFind can be undefined, which is unintended
 	if (emojiToFind === undefined) { throw new TypeError('emojiToFind is undefined'); }
 
 	const neutralEmojis = [
-		...plantEmojis.findable,
-		...plantEmojis.findable,
-		...plantEmojis.habitat[playerHabitat],
-		...plantEmojis.habitat[playerHabitat],
+		...(playerHabitat === 'accessible' ? accessiblePlantEmojis : plantEmojis).findable,
+		...(playerHabitat === 'accessible' ? accessiblePlantEmojis : plantEmojis).findable,
+		...playerHabitat === 'accessible' ? accessiblePlantEmojis.habitat : plantEmojis.habitat[playerHabitat],
+		...playerHabitat === 'accessible' ? accessiblePlantEmojis.habitat : plantEmojis.habitat[playerHabitat],
 	].filter(value => value !== emojiToFind);
 
 	const correctButtonIndex = getRandomNumber(5);
@@ -61,7 +68,7 @@ export function createPlantGame(
 			}
 			else if (i === incorrectButtonIndex && j === incorrectButtonEmojiToAvoidIndex) {
 
-				emojisInButton.push(plantEmojis.toAvoid);
+				emojisInButton.push((playerHabitat === 'accessible' ? accessiblePlantEmojis : plantEmojis).toAvoid);
 			}
 			else {
 
@@ -85,7 +92,7 @@ export function createPlantGame(
 
 			const data = component.toJSON();
 
-			if (data.style !== ButtonStyle.Link && data.custom_id.includes(emojiToFind) && !data.custom_id.includes(plantEmojis.toAvoid)) { component.setStyle(ButtonStyle.Primary); }
+			if (data.style !== ButtonStyle.Link && data.custom_id.includes(emojiToFind) && !data.custom_id.includes((playerHabitat === 'accessible' ? accessiblePlantEmojis : plantEmojis).toAvoid)) { component.setStyle(ButtonStyle.Primary); }
 			return component;
 		})),
 		chosenRightButtonOverwrite: (customId) => plantComponent.setComponents(plantComponent.components.map(component => {

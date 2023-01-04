@@ -1,5 +1,5 @@
-import { ActionRowBuilder, EmbedBuilder, ModalBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { respond, update } from '../../utils/helperFunctions';
+import { ActionRowBuilder, EmbedBuilder, ModalBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { respond } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
@@ -31,29 +31,32 @@ export const command: SlashCommand = {
 			'ViewChannel', // Needed because of createCommandComponentDisabler
 		]) === true) { return; }
 
-		if (!hasName(userData, interaction)) { return; }
+		if (!hasName(userData, interaction)) { return; } // this would always be a reply
 
-		const botReply = await respond(interaction, {
+		// This should always be a reply
+		const { id: messageId } = await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setTitle(`What pronouns does ${userData.quid.name} have?`)
 				.setDescription('To change your quids pronouns, select an existing one from the drop-down menu below to edit it, or select "Add another pronoun" to add another one. A pop-up with a text box will open.\n\nTo set the pronouns to they/them for example, type `they/them/their/theirs/themselves/plural`.\nThe 6th spot should be either `singular` ("he/she __is__") or `plural` ("they __are__").\nTo set the pronouns to your own name, you can type `none`.\nTo delete the pronouns, leave the text box empty.\n\nThis is how it would look during roleplay:\n> **They** and the friend that came with **them** laid in **their** den. It was **theirs** because they built it **themselves**. \nYou can use this as reference when thinking about how to add your own (neo-)pronouns.')],
-			components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData)])],
-		}, true);
+			components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([getPronounsMenu(userData)])],
+			fetchReply: true,
+		});
 
-		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, botReply.id, interaction);
+		saveCommandDisablingInfo(userData, interaction.guildId || 'DMs', interaction.channelId, messageId, interaction);
 		return;
 	},
 	async sendMessageComponentResponse(interaction, userData) {
 
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
-		if (!hasName(userData) || !customId) { return; }
+		if (!hasName(userData) || !customId) { return; } // this would always be a reply
 
-		if (interaction.isSelectMenu() && customId.args[0] === 'selectmodal') {
+		if (interaction.isStringSelectMenu() && customId.args[0] === 'selectmodal') {
 
 			/* Getting the position of the pronoun in the array, and the existing pronoun in that place */
-			const pronounNumber = deconstructSelectOptions<SelectOptionArgs>(interaction)[0];
+			const pronounNumber = deconstructSelectOptions<SelectOptionArgs>(interaction)[0]?.[0];
+			if (pronounNumber === undefined) { throw new TypeError('pronounNumber is undefined'); }
 			const pronounSet = pronounNumber === 'add' ? [] : (userData.quid.pronounSets[Number(pronounNumber)]);
 			if (pronounSet === undefined) { throw new TypeError('pronounSet is undefined'); }
 
@@ -79,9 +82,10 @@ export const command: SlashCommand = {
 					),
 				);
 
-			await update(interaction, {
-				components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData)])],
-			});
+			// This is always editReply of the message the StringSelectMenu comes from
+			await respond(interaction, {
+				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([getPronounsMenu(userData)])],
+			}, 'update', '@original');
 			return;
 		}
 
@@ -90,7 +94,7 @@ export const command: SlashCommand = {
 
 		if (!interaction.isFromMessage()) { return; }
 		const customId = deconstructCustomId<SelectOptionArgs>(interaction.customId); // here it is SelectOptionArgs instead of CustomIdArgs because 'selectmodal' is only a customId for the select menu
-		if (!hasName(userData) || !customId) { return; }
+		if (!hasName(userData) || !customId) { return; } // this would always be a reply
 
 		/* Getting the array position of the pronoun that is being edited, the pronouns that are being set, whether the pronouns are being deleted, and whether the pronouns are being set to none. */
 		const pronounNumber = Number(customId.args[0]);
@@ -107,36 +111,39 @@ export const command: SlashCommand = {
 			chosenPronouns.forEach((pronoun, value) => chosenPronouns[value] = `"${pronoun}"`);
 			chosenPronouns[chosenPronouns.length - 1] = `and ${chosenPronouns[chosenPronouns.length - 1]}`;
 
+			// This is always a reply
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setDescription(`You provided **${chosenPronouns.length}** arguments: ${chosenPronouns.join(', ')}.\nThe first 5 arguments should be of the pronoun you want, and the 6th argument should be either "singular" or "plural".`)],
 				ephemeral: true,
-			}, false);
+			});
 			return;
 		}
 
 		/* Checking if the 6th spot is either singular or plural. */
 		if (!willBeDeleted && !isNone && chosenPronouns[5] !== 'singular' && chosenPronouns[5] !== 'plural') {
 
+			// This is always a reply
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setDescription(`For the 6th spot, you wrote "${chosenPronouns[5]}". The 6th spot should be either "singular" or "plural".`)],
 				ephemeral: true,
-			}, false);
+			});
 			return;
 		}
 
 		/* It checks if the quid already has the pronouns that are being set. */
 		if (!willBeDeleted && userData.quid.pronounSets.map(pronounSet => pronounSet.join('/')).includes(chosenPronouns.join('/'))) {
 
+			// This is always a reply
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setDescription('The quid already has this pronoun!')],
 				ephemeral: true,
-			}, false);
+			});
 			return;
 		}
 
@@ -148,12 +155,13 @@ export const command: SlashCommand = {
 
 				if (pronoun.length < 1 || pronoun.length > maxPronounLength) {
 
+					// This is always a reply
 					await respond(interaction, {
 						embeds: [new EmbedBuilder()
 							.setColor(error_color)
 							.setDescription(`Each pronoun must be between 1 and ${maxPronounLength} characters long.`)],
 						ephemeral: true,
-					}, false);
+					});
 					return;
 				}
 			}
@@ -173,17 +181,19 @@ export const command: SlashCommand = {
 			},
 		);
 
-		await update(interaction, {
-			components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getPronounsMenu(userData)])],
-		});
+		// This is always an update to the message that the modal is associated with
+		await respond(interaction, {
+			components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([getPronounsMenu(userData)])],
+		}, 'update', '@original');
 
 		const addedOrEditedTo = isNaN(pronounNumber) ? 'added pronoun' : `edited pronoun from ${oldPronounSet?.join('/')} to`;
+		// This is always a followUp
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setTitle(`Successfully ${willBeDeleted ? `deleted pronoun ${oldPronounSet?.join('/')}` : `${addedOrEditedTo} ${chosenPronouns.join('/')}`}!`)],
-		}, false);
+		});
 		return;
 	},
 };
@@ -191,7 +201,7 @@ export const command: SlashCommand = {
 /** Creating a drop - down menu with all the pronouns the quid has. */
 function getPronounsMenu(
 	userData: UserData<never, ''>,
-): SelectMenuBuilder {
+): StringSelectMenuBuilder {
 
 	/* Getting the remaining length for the pronoun field in the profile command. */
 	const profilePronounFieldLengthLeft = 1024 - userData.quid.pronounSets.map(pronounSet => `${pronounSet[0]}/${pronounSet[1]} (${pronounSet[2]}/${pronounSet[3]}/${pronounSet[4]})`).join('\n').length;
@@ -216,7 +226,7 @@ function getPronounsMenu(
 		});
 	}
 
-	return new SelectMenuBuilder()
+	return new StringSelectMenuBuilder()
 		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, ['selectmodal']))
 		.setPlaceholder('Select a pronoun to change')
 		.setOptions(pronounsMenuOptions);

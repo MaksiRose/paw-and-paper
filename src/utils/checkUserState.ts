@@ -1,4 +1,4 @@
-import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, MessageContextMenuCommandInteraction, SelectMenuInteraction } from 'discord.js';
+import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, MessageContextMenuCommandInteraction, AnySelectMenuInteraction } from 'discord.js';
 import { respond } from './helperFunctions';
 import { UserData } from '../typings/data/user';
 const { default_color } = require('../../config.json');
@@ -8,18 +8,19 @@ const { default_color } = require('../../config.json');
  */
 export function hasName(
 	userData: UserData<undefined, ''> | null | undefined,
-	interaction?: ChatInputCommandInteraction | ButtonInteraction | SelectMenuInteraction,
+	interaction?: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction,
 ): userData is UserData<never, ''> {
 
 	if (userData?.quid === undefined || userData.quid.name === '') {
 
 		if (interaction) {
 
+			// This is always a reply
 			respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
 					.setDescription(Object.keys(userData?.quids || {}).length > 0 ? 'Please type "/profile" to switch to a quid!' : 'Please type "/name" to create a new quid!')],
-			}, true);
+			});
 		}
 
 		return false;
@@ -33,7 +34,7 @@ export function hasName(
  */
 export function hasNameAndSpecies(
 	userData: UserData<undefined, ''> | null | undefined,
-	interaction?: ChatInputCommandInteraction | ButtonInteraction | SelectMenuInteraction,
+	interaction?: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction,
 ): userData is UserData<never, never> {
 
 	if (!hasName(userData, interaction)) { return false; }
@@ -41,11 +42,12 @@ export function hasNameAndSpecies(
 
 		if (interaction) {
 
+			// This is always a reply
 			respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
 					.setDescription(`To access this command, you need to choose ${userData.quid.name}'s species (with "/species")!`)],
-			}, true);
+			});
 		}
 
 		return false;
@@ -54,11 +56,12 @@ export function hasNameAndSpecies(
 
 		if (interaction) {
 
+			// This is always a reply
 			respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
 					.setDescription('Uh-oh, an error occurred and some data is missing. Please use "/profile" to select another quid (or an empty slot) and then re-select this quid. If this error persists, open a ticket with "/ticket".')],
-			}, true);
+			});
 		}
 
 		return false;
@@ -77,26 +80,27 @@ export function isInGuild(
 	interaction: ButtonInteraction
 ): interaction is ButtonInteraction<'cached'>
 export function isInGuild(
-	interaction: SelectMenuInteraction
-): interaction is SelectMenuInteraction<'cached'>
+	interaction: AnySelectMenuInteraction
+): interaction is AnySelectMenuInteraction<'cached'>
 export function isInGuild(
 	interaction: MessageContextMenuCommandInteraction
 ): interaction is MessageContextMenuCommandInteraction<'cached'>
 export function isInGuild(
-	interaction: ChatInputCommandInteraction | ButtonInteraction | SelectMenuInteraction | MessageContextMenuCommandInteraction
-): interaction is ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'> | MessageContextMenuCommandInteraction<'cached'>
+	interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction | MessageContextMenuCommandInteraction
+): interaction is ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'> | MessageContextMenuCommandInteraction<'cached'>
 export function isInGuild(
-	interaction: ChatInputCommandInteraction | ButtonInteraction | SelectMenuInteraction | MessageContextMenuCommandInteraction,
-): interaction is ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'> | MessageContextMenuCommandInteraction <'cached'> {
+	interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction | MessageContextMenuCommandInteraction,
+): interaction is ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'> | MessageContextMenuCommandInteraction <'cached'> {
 
 	if (!interaction.inCachedGuild()) {
 
+		// This is always a reply
 		respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
 				.setDescription('This command cannot be executed in DMs!')],
 			ephemeral: true,
-		}, false);
+		});
 
 		return false;
 	}

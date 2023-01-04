@@ -15,8 +15,8 @@ function calculateEnergyDecrease(
 	/* Calculate energy point decrease based on health, which is lowest (0) when health is highest, and highest (10) when health is lowest. */
 	const healthDependentEnergyDecrease = Math.round(10 - (userData.quid.profile.health / (userData.quid.profile.maxHealth / 10)));
 
-	/* If energyDependentHungerDecrease is 0, return 0. If it's not 0, randomize a number between half of healthDependentEnergyDecrease and 1 higher than that, compare it with the profiles energy and return the smaller number. */
-	return healthDependentEnergyDecrease > 0 ? getSmallerNumber(getRandomNumber(2, Math.round(healthDependentEnergyDecrease / 2)), userData.quid.profile.energy) : 0;
+	/* If energyDependentHungerDecrease is 0, return 0. If it's not 0, compare healthDependentEnergyDecrease with the profiles energy and return the smaller number. */
+	return healthDependentEnergyDecrease > 0 ? getSmallerNumber(healthDependentEnergyDecrease, userData.quid.profile.energy) : 0;
 }
 
 /**
@@ -195,6 +195,21 @@ export type DecreasedStatsData = {
 	statsUpdateText: string,
 	injuryUpdateEmbed: EmbedBuilder[]
 };
+
+export function addExperience(
+	userData: UserData<never, never>,
+	experienceIncrease: number,
+): string {
+
+	userData.update(
+		(u) => {
+			const p = getMapData(getMapData(u.quids, userData.quid._id).profiles, userData.quid.profile.serverId);
+			p.experience += experienceIncrease;
+		},
+	);
+
+	return `+${experienceIncrease} XP (${userData.quid.profile.experience}/${userData.quid.profile.levels * 50})`;
+}
 
 /**
  * It changes the user's experience, energy, hunger, thirst and returns a string based on these changes, decreases the health of a profile based on its injuries, and returns an embed containing those changes if so, and returns an updated profileData.

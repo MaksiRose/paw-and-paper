@@ -32,9 +32,10 @@ export async function execute(
 
 				const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8')) as VoteList;
 
-				let user = voteCache['id_' + request.body.user];
-				if (!user) { user = {}; }
-				user.lastRecordedDiscordsVote = Date.now();
+				voteCache['id_' + request.body.user] = {
+					...voteCache['id_' + request.body.user],
+					lastRecordedDiscordsVote: Date.now(),
+				};
 
 				writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 			}
@@ -46,7 +47,7 @@ export async function execute(
 			console.error(err);
 		});
 
-		bfdApp.listen(3002);
+		bfdApp.listen(3002, () => { console.log('Now listening to discords.com requests.'); });
 	}
 
 	if (handle.votes.top && handle.votes.top.token !== '' && handle.votes.top.authorization !== '') {
@@ -65,9 +66,10 @@ export async function execute(
 
 			const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8')) as VoteList;
 
-			let user = voteCache['id_' + vote.user];
-			if (!user) { user = {}; }
-			user.lastRecordedTopVote = Date.now();
+			voteCache['id_' + vote.user] = {
+				...voteCache['id_' + vote.user],
+				lastRecordedTopVote: Date.now(),
+			};
 
 			writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 		}));
@@ -76,7 +78,7 @@ export async function execute(
 			console.error(err);
 		});
 
-		topApp.listen(3000);
+		topApp.listen(3000, () => { console.log('Now listening to top.gg requests.'); });
 	}
 
 	if (handle.votes.dbl && handle.votes.dbl.token !== '' && handle.votes.dbl.authorization !== '') {
@@ -92,9 +94,10 @@ export async function execute(
 
 				const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8')) as VoteList;
 
-				let user = voteCache['id_' + request.body.id];
-				if (!user) { user = {}; }
-				user.lastRecordedDblVote = Date.now();
+				voteCache['id_' + request.body.id] = {
+					...voteCache['id_' + request.body.id],
+					lastRecordedDblVote: Date.now(),
+				};
 
 				writeFileSync('./database/voteCache.json', JSON.stringify(voteCache, null, '\t'));
 			}
@@ -106,6 +109,6 @@ export async function execute(
 			console.error(err);
 		});
 
-		dblApp.listen(3001);
+		dblApp.listen(3001, () => { console.log('Now listening to top.gg requests.'); });
 	}
 }

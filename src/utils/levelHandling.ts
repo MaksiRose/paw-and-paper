@@ -1,4 +1,4 @@
-import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, SelectMenuInteraction } from 'discord.js';
+import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, AnySelectMenuInteraction } from 'discord.js';
 import { capitalizeString, respond, unsafeKeys, widenValues } from './helperFunctions';
 import { checkLevelRequirements, checkRoleCatchBlock } from './checkRoleRequirements';
 import { getMapData } from './helperFunctions';
@@ -11,7 +11,7 @@ const { default_color } = require('../../config.json');
  * Checks if the user is eligable for a level up, and sends an embed and updated profileData if so.
  */
 export async function checkLevelUp(
-	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	userData: UserData<never, never>,
 	serverData: ServerSchema,
 ): Promise<EmbedBuilder[]> {
@@ -50,7 +50,7 @@ export async function checkLevelUp(
  */
 export async function decreaseLevel(
 	userData: UserData<never, never>,
-	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'> | SelectMenuInteraction<'cached' | 'raw'>,
+	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'> | AnySelectMenuInteraction<'cached' | 'raw'>,
 ): Promise<string> {
 
 	/* newUserLevel is nine tenths of current profile level. */
@@ -111,13 +111,14 @@ export async function decreaseLevel(
 				]) === true) { continue; }
 				await member.roles.remove(role.roleId);
 
+				// This is a followUp
 				await respond(interaction, {
 					content: member.toString(),
 					embeds: [new EmbedBuilder()
 						.setColor(default_color)
 						.setAuthor({ name: guild.name, iconURL: guild.iconURL() || undefined })
 						.setDescription(`You lost the <@&${role.roleId}> role because of a lack of levels!`)],
-				}, false);
+				});
 			}
 		}
 		catch (error) {

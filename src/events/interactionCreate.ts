@@ -1,12 +1,11 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, Interaction, RepliableInteraction } from 'discord.js';
+import { EmbedBuilder, Interaction, RepliableInteraction } from 'discord.js';
 import { createNewTicket } from '../commands/miscellaneous/ticket';
 import serverModel from '../models/serverModel';
 import { userModel, getUserData } from '../models/userModel';
 import { DiscordEvent } from '../typings/main';
 import { disableCommandComponent, disableAllComponents } from '../utils/componentDisabling';
-import { getMapData, keyInObject, update, userDataServersObject } from '../utils/helperFunctions';
+import { getMapData, keyInObject, respond, userDataServersObject } from '../utils/helperFunctions';
 import { createGuild } from '../utils/updateGuild';
-import { respond } from '../utils/helperFunctions';
 import { sendErrorMessage } from '../utils/helperFunctions';
 import { generateId } from 'crystalid';
 import { readFileSync, writeFileSync } from 'fs';
@@ -14,7 +13,6 @@ import { missingPermissions } from '../utils/permissionHandler';
 import { client, handle } from '../index';
 import { ErrorStacks } from '../typings/data/general';
 import { hasNameAndSpecies } from '../utils/checkUserState';
-import { sendReminder, stopReminder } from '../commands/gameplay_maintenance/water-tree';
 import { deconstructCustomId } from '../utils/customId';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
@@ -32,10 +30,10 @@ export const event: DiscordEvent = {
 			if (!interaction.channel) { await client.channels.fetch(interaction.channelId || ''); }
 
 			const _userData = (() => {
-				try { return userModel.findOne(u => u.userId.includes(interaction.user.id)); }
+				try { return userModel.findOne(u => Object.keys(u.userIds).includes(interaction.user.id)); }
 				catch { return null; }
 			})();
-			const userData = _userData === null ? null : getUserData(_userData, interaction.guildId ?? 'DMs', _userData.quids[_userData.currentQuid[interaction.guildId ?? 'DMs'] ?? '']);
+			const userData = _userData === null ? null : getUserData(_userData, interaction.guildId ?? 'DMs', _userData.quids[_userData.servers[interaction.guildId ?? 'DMs']?.currentQuid ?? '']);
 			let serverData = (() => {
 				try { return serverModel.findOne(s => s.serverId === interaction.guildId); }
 				catch { return null; }
@@ -162,7 +160,7 @@ export const event: DiscordEvent = {
 						});
 
 					await userModel.findOneAndUpdate(
-						u => u.userId.includes(interaction.user.id),
+						u => Object.keys(u.userIds).includes(interaction.user.id),
 						(u) => {
 							u.lastPlayedVersion = version.split('.').slice(0, -1).join('.');
 						},
@@ -206,9 +204,9 @@ export const event: DiscordEvent = {
 				const isCommandCreator = interaction.message.interaction !== null && interaction.message.interaction.user.id === interaction.user.id;
 				const isMentioned = interaction.customId.includes('@' + interaction.user.id) || interaction.customId.includes('@EVERYONE') || (_userData && (interaction.customId.includes(_userData._id) || Object.keys(_userData.quids).some(q => interaction.customId.includes('@' + q))));
 
-				if (interaction.isSelectMenu()) {
+				if (interaction.isAnySelectMenu()) {
 
-					console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully selected \x1b[31m${interaction.values[0]} \x1b[0mfrom the menu \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+					console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m successfully selected \x1b[31m${interaction.values.join(', ')} \x1b[0mfrom the menu \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 				}
 
 				if (interaction.isButton()) {
@@ -219,16 +217,18 @@ export const event: DiscordEvent = {
 
 						if (!isCommandCreator && !isMentioned) {
 
+							// This should always be a reply to the error message
 							await respond(interaction, {
 								content: 'Sorry, I only listen to the person that created the command 😣',
 								ephemeral: true,
-							}, false);
+							});
 							return;
 						}
 
-						await update(interaction, {
+						// This should always update the error message
+						await respond(interaction, {
 							components: disableAllComponents(interaction.message.components),
-						});
+						}, 'update', '@original');
 
 						const errorId = interaction.customId.split('_')[2] || generateId();
 						const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
@@ -236,12 +236,13 @@ export const event: DiscordEvent = {
 
 						if (!description) {
 
+							// This should always be a followUp to the updated error message
 							await respond(interaction, {
 								embeds: [new EmbedBuilder()
 									.setColor(error_color)
 									.setDescription('There was an error trying to report the error... Ironic! Maybe you can try opening a ticket via `/ticket` instead?')],
 								ephemeral: true,
-							}, false);
+							});
 							return;
 						}
 
@@ -249,84 +250,6 @@ export const event: DiscordEvent = {
 						delete errorStacks[errorId];
 						writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
 						return;
-					}
-
-					if (interaction.customId.startsWith('settings_')) {
-
-						if (!isCommandCreator && !isMentioned) {
-
-							await respond(interaction, {
-								content: 'Sorry, I only listen to the person that created the command 😣',
-								ephemeral: true,
-							}, false);
-							return;
-						}
-
-						if (interaction.customId.includes('reminders')) {
-
-							if (userData === null || _userData === null) { throw new TypeError('userData is null'); }
-							if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild'); }
-
-							const isOn = interaction.customId.includes('on');
-
-							if (interaction.customId.includes('water')) {
-
-								await userData.update(
-									(u) => {
-										u.settings.reminders.water = isOn;
-									},
-								);
-
-								/* This executes the sendReminder function for each profile for which the sapling exists and where lastMessageChannelId is a string, if the user has enabled water reminders. */
-								if (userData.settings.reminders.water === true) {
-									for (const quid of userData.quids.values()) {
-										for (const profile of Object.values(quid.profiles)) {
-											if (isOn) {
-
-												const user = getUserData(_userData, profile.serverId, quid);
-												if (hasNameAndSpecies(user) && user.quid.profile.sapling.exists && typeof user.quid.profile.sapling.lastMessageChannelId === 'string' && !user.quid.profile.sapling.sentReminder) { sendReminder(user); }
-											}
-											else { stopReminder(quid._id, interaction.guildId); }
-										}
-									}
-								}
-
-								await update(interaction, {
-									components: [new ActionRowBuilder<ButtonBuilder>()
-										.setComponents(new ButtonBuilder()
-											.setCustomId(`settings_reminders_water_${isOn ? 'off' : 'on'}_@${userData._id}`)
-											.setLabel(`Turn water reminders ${isOn ? 'off' : 'on'}`)
-											.setStyle(ButtonStyle.Secondary))],
-								});
-
-								await respond(interaction, {
-									content: `You turned reminders for watering ${isOn ? 'on' : 'off'}!`,
-									ephemeral: true,
-								}, false);
-							}
-
-							if (interaction.customId.includes('resting')) {
-
-								await userData.update(
-									(u) => {
-										u.settings.reminders.resting = isOn;
-									},
-								);
-
-								await update(interaction, {
-									components: [new ActionRowBuilder<ButtonBuilder>()
-										.setComponents(new ButtonBuilder()
-											.setCustomId(`settings_reminders_resting_${isOn ? 'off' : 'on'}_@${userData._id}`)
-											.setLabel(`Turn automatic resting pings ${isOn ? 'off' : 'on'}`)
-											.setStyle(ButtonStyle.Secondary))],
-								});
-
-								await respond(interaction, {
-									content: `You turned pings for automatic resting ${isOn ? 'on' : 'off'}!`,
-									ephemeral: true,
-								}, false);
-							}
-						}
 					}
 				}
 
@@ -338,10 +261,11 @@ export const event: DiscordEvent = {
 
 				if (!isCommandCreator && !isMentioned) {
 
+					// This should always be a reply to the message with the component
 					await respond(interaction, {
 						content: 'Sorry, I only listen to the person that created the command 😣',
 						ephemeral: true,
-					}, false);
+					});
 					return;
 				}
 

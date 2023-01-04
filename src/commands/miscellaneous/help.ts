@@ -1,9 +1,10 @@
-import { ActionRowBuilder, APIEmbedField, EmbedBuilder, SelectMenuBuilder, SlashCommandBuilder } from 'discord.js';
-import { getArrayElement, respond, update } from '../../utils/helperFunctions';
-import { client, handle } from '../..';
+import { ActionRowBuilder, APIEmbedField, EmbedBuilder, StringSelectMenuBuilder, SlashCommandBuilder, ButtonStyle } from 'discord.js';
+import { getArrayElement, respond } from '../../utils/helperFunctions';
+import { client, handle, octokit } from '../..';
 import { SlashCommand } from '../../typings/handle';
+import { ButtonBuilder } from '@discordjs/builders';
 
-const { default_color, maksi, ezra, ren, jags, elliott, hazenith, johanna, sky, asriel } = require('../../../config.json');
+const { default_color } = require('../../../config.json');
 const { version } = require('../../../package.json');
 
 export const command: SlashCommand = {
@@ -17,28 +18,30 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction, userData) => {
 
+		const tag = `v${version.split('.').slice(0, -1).join('.')}.0`;
+		const release = await octokit.rest.repos.getReleaseByTag({
+			owner: 'MaksiRose',
+			repo: 'paw-and-paper',
+			tag: tag,
+		});
+
+		console.log();
+
+		// This is always a reply
 		await respond(interaction, {
-			embeds: [new EmbedBuilder()
-				.setColor(default_color)
-				.setTitle('Welcome to Paw and Paper!')
-				.setDescription('This bot has powerful tools to help make your roleplay more immersive, or to express your mental shifts.\nAdditionally, it features a community-driven RPG about animals surviving in the wild. Your goal is to go up the ranks, level up, find items, help your friends and keep your stats high.\n\nClick on the menu options below to get an overview of the available commands!\n**If you are new, start with `/name (name)`!**')],
-			components: [new ActionRowBuilder<SelectMenuBuilder>()
-				.setComponents([new SelectMenuBuilder()
-					.setCustomId(`help_options_@${userData?._id ?? interaction.user.id}`)
-					.setPlaceholder('Select a page')
-					.setOptions([
-						{ label: 'Page 1', value: 'help_page1', description: 'Quid Customization', emoji: '📝' },
-						{ label: 'Page 2', value: 'help_page2', description: 'Gameplay (Primary)', emoji: '🎲' },
-						{ label: 'Page 3', value: 'help_page3', description: 'Gameplay (Maintenance)', emoji: '🍗' },
-						{ label: 'Page 4', value: 'help_page4', description: 'Interaction', emoji: '👥' },
-						{ label: 'Page 5', value: 'help_page5', description: 'Miscellaneous', emoji: '⚙️' },
-					])])],
-		}, true);
+			embeds: [
+				new EmbedBuilder()
+					.setColor(default_color)
+					.setTitle('Welcome to Paw and Paper!')
+					.setDescription(`This bot has powerful tools to help make your roleplay more immersive, or to express your mental shifts.\nAdditionally, it features a community-driven RPG about animals surviving in the wild. Your goal is to go up the ranks, level up, find items, help your friends and keep your stats high.\n\nClick on the menu options below to get an overview of the available commands!\n**If you are new, start with \`/name (name)\`!**\n\n*Latest changes:*\n> ${release.data.body?.split('\n').slice(1, 4).join('\n> ')}\n> [Full changelog](https://github.com/MaksiRose/paw-and-paper/releases/tag/${tag})`),
+			],
+			components: [buildPageSelect(userData?._id ?? interaction.user.id)],
+		});
 		return;
 	},
 	async sendMessageComponentResponse(interaction) {
 
-		if (!interaction.isSelectMenu()) { return; }
+		if (!interaction.isStringSelectMenu()) { return; }
 		const value = getArrayElement(interaction.values, 0);
 
 		const titles = ['📝 Quid Customization', '🎲 Gameplay (Primary)', '🍗 Gameplay (Maintenance)', '👥 Interaction', '⚙️ Miscellaneous'];
@@ -59,32 +62,76 @@ export const command: SlashCommand = {
 		let fields: APIEmbedField[] = [];
 		if (titleNr === '5') {
 
-			const maksiUser = await client.users.fetch(maksi).catch(() => { return null; });
-			const ezraUser = await client.users.fetch(ezra).catch(() => { return null; });
-			const renUser = await client.users.fetch(ren).catch(() => { return null; });
-			const jagsUser = await client.users.fetch(jags).catch(() => { return null; });
-			const elliottUser = await client.users.fetch(elliott).catch(() => { return null; });
-			const hazenithUser = await client.users.fetch(hazenith).catch(() => { return null; });
-			const johannaUser = await client.users.fetch(johanna).catch(() => { return null; });
-			const skyUser = await client.users.fetch(sky).catch(() => { return null; });
-			const asrielUser = await client.users.fetch(asriel).catch(() => { return null; });
+			const maksiUser = await client.users.fetch('268402976844939266').catch(() => { return null; });
+			const ezraUser = await client.users.fetch('669725936840736840').catch(() => { return null; });
+			const renUser = await client.users.fetch('794320272723410955').catch(() => { return null; });
+			const jagsUser = await client.users.fetch('840108230176145410').catch(() => { return null; });
+			const elliottUser = await client.users.fetch('422145578676256779').catch(() => { return null; });
+			const hazenithUser = await client.users.fetch('708943555305144367').catch(() => { return null; });
+			const johannaUser = await client.users.fetch('442125304794841099').catch(() => { return null; });
+			const skyUser = await client.users.fetch('642963515098923015').catch(() => { return null; });
+			const asrielUser = await client.users.fetch('625469376145129502').catch(() => { return null; });
 
 			fields = [
 				{ name: '\n**__CREDITS:__**', value: `This bot was made with love by **${maksiUser?.tag}**. Special thanks goes out to:\n\`${elliottUser?.tag}\` - RPG texts, testing, ideas\n\`${ezraUser?.tag}\` - RPG texts, testing\n\`${hazenithUser?.tag}\` - testing, ideas\n\`${skyUser?.tag}\` - testing, \`${asrielUser?.tag}\` - ideas, \`${renUser?.tag}\` - RPG texts\n\`${jagsUser?.tag}\` - drawing the profile picture, \`${johannaUser?.tag}\` - drawing the ginkgo tree.\n\nThis bot was originally created for a Discord server called [Rushing River Pack](https://disboard.org/server/854522091328110595). If you are therian, otherkin, or supporter of those, you are welcome to join.` },
-				{ name: '\n**__OTHER:__**', value: `If you want to support me, you can donate [here](https://streamlabs.com/maksirose/tip)! :)\nYou can find the GitHub repository for this project [here](https://github.com/MaksiRose/paw-and-paper).\nBy using this bot, you agree to its [Terms and Service](https://github.com/MaksiRose/paw-and-paper/blob/stable/Terms%20of%20Service.md) and [Privacy Policy](https://github.com/MaksiRose/paw-and-paper/blob/stable/Privacy%20Policy.md).\nThe bot is currently running on version ${version}.` },
+				{ name: '\n**__OTHER:__**', value: `Uptime: ${Math.floor(interaction.client.uptime / 3600000)} hours ${Math.floor(interaction.client.uptime / 60000) % 60} minutes\nPing: ${client.ws.ping} ms\nServer count: ${client.guilds.cache.size}\nVersion: ${version}` },
 			];
-
 		}
 
-		await update(interaction, {
+		// This is always an update to the message with the select menu
+		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
 				.setTitle(title)
 				.setDescription(description)
 				.setFields(fields)],
-		});
+			components: [
+				interaction.message.components[0] ?? buildPageSelect(interaction.user.id),
+				...titleNr === '5' ? [new ActionRowBuilder<ButtonBuilder>()
+					.setComponents([
+						new ButtonBuilder()
+							.setStyle(ButtonStyle.Link)
+							.setURL('https://discord.gg/9DENgj8q5Q')
+							.setLabel('Support Server'),
+						new ButtonBuilder()
+							.setStyle(ButtonStyle.Link)
+							.setURL('https://streamlabs.com/maksirose/tip')
+							.setLabel('Donate'),
+						new ButtonBuilder()
+							.setStyle(ButtonStyle.Link)
+							.setURL('https://github.com/MaksiRose/paw-and-paper')
+							.setLabel('Source Code'),
+						new ButtonBuilder()
+							.setStyle(ButtonStyle.Link)
+							.setURL('https://github.com/MaksiRose/paw-and-paper/blob/stable/Terms%20of%20Service.md')
+							.setLabel('ToS'),
+						new ButtonBuilder()
+							.setStyle(ButtonStyle.Link)
+							.setURL('https://github.com/MaksiRose/paw-and-paper/blob/stable/Privacy%20Policy.md')
+							.setLabel('Privacy Policy'),
+					])] : [],
+			],
+		}, 'update', '@original');
 
 		return;
 
 	},
 };
+
+function buildPageSelect(
+	userId: string,
+) {
+	return new ActionRowBuilder<StringSelectMenuBuilder>()
+		.setComponents([
+			new StringSelectMenuBuilder()
+				.setCustomId(`help_options_@${userId}`)
+				.setPlaceholder('Select a page')
+				.setOptions([
+					{ label: 'Page 1', value: 'help_page1', description: 'Quid Customization', emoji: '📝' },
+					{ label: 'Page 2', value: 'help_page2', description: 'Gameplay (Primary)', emoji: '🎲' },
+					{ label: 'Page 3', value: 'help_page3', description: 'Gameplay (Maintenance)', emoji: '🍗' },
+					{ label: 'Page 4', value: 'help_page4', description: 'Interaction', emoji: '👥' },
+					{ label: 'Page 5', value: 'help_page5', description: 'Miscellaneous', emoji: '⚙️' },
+				]),
+		]);
+}

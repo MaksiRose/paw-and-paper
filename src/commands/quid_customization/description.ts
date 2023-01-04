@@ -20,24 +20,25 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction, userData) => {
 
-		if (!hasName(userData, interaction)) { return; }
+		if (!hasName(userData, interaction)) { return; } // This is always a reply
 
 		const desc = interaction.options.getString('description') || '';
 
 		await userData.update(
 			(u) => {
-				const q = getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId || 'DMs'));
+				const q = getMapData(u.quids, getMapData(u.servers, interaction.guildId || 'DMs').currentQuid ?? '');
 				q.description = desc;
 			},
 		);
 
+		// This is always a reply
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setTitle(userData.quid.description === '' ? 'Your description has been reset!' : `Description for ${userData.quid.name} set:`)
 				.setDescription(userData.quid.description || null)],
-		}, true);
+		});
 		return;
 	},
 };

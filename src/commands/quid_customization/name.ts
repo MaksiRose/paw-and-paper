@@ -37,10 +37,11 @@ export const command: SlashCommand = {
 			const bannedList = JSON.parse(readFileSync('./database/bannedList.json', 'utf-8')) as BanList;
 			if (bannedList.users.includes(interaction.user.id)) {
 
+				// This should always be a reply
 				await respond(interaction, {
 					content: 'I am sorry to inform you that you have been banned from using this bot.',
 					ephemeral: true,
-				}, false);
+				});
 				return;
 			}
 
@@ -62,6 +63,7 @@ export const command: SlashCommand = {
 						global: { autoproxy: false, stickymode: false },
 						servers: {},
 					},
+					accessibility: { replaceEmojis: false },
 				},
 				quids: {},
 				currentQuid: {},
@@ -69,7 +71,7 @@ export const command: SlashCommand = {
 				lastPlayedVersion: `${version.split('.').slice(0, -1).join('.')}`,
 				_id: generateId(),
 			});
-			userData = getUserData(_userData, interaction.guildId ?? 'DMs', _userData.quids[_userData.currentQuid[interaction.guildId ?? 'DMs'] ?? '']);
+			userData = getUserData(_userData, interaction.guildId ?? 'DMs', _userData.quids[_userData.servers[interaction.guildId ?? 'DMs']?.currentQuid ?? '']);
 		}
 
 		const name = interaction.options.getString('name');
@@ -77,12 +79,13 @@ export const command: SlashCommand = {
 		/* This is checking if the user has inputted a name for their quid. If they haven't, it will send them an error message. If they have, it will check if the name is too long. If it is, it will send them an error message. */
 		if (!name) {
 
+			// This should always be a reply
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(error_color)
 					.setTitle('Please input a name for your quid.')],
 				ephemeral: true,
-			}, false);
+			});
 			return;
 		}
 
@@ -146,12 +149,14 @@ export const command: SlashCommand = {
 								roles: [],
 								skills: { global: {}, personal: {} },
 								lastActiveTimestamp: 0,
+								passedOutTimestamp: 0,
 							},
 						} : {},
 					};
 				}
 				else { q.name = name; }
 
+				// eslint-disable-next-line deprecation/deprecation
 				u.currentQuid[interaction.guildId || 'DMs'] = _id;
 				u.servers[interaction.guildId || 'DMs'] = {
 					...userDataServersObject(u, interaction.guildId || 'DMs'),
@@ -160,13 +165,14 @@ export const command: SlashCommand = {
 			},
 		);
 
+		// This should always be a reply
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
 				.setTitle(userData.quid === undefined ? `You successfully created the quid ${name}!` : `You successfully renamed your quid to ${name}!`)
 				.setDescription(newAccount === false ? null : '__What is a quid?__\nTo avoid using limiting words like "character" or "person", Paw and Paper uses the made-up word quid. It is based off of the word [Quiddity](https://en.wikipedia.org/wiki/Quiddity), which means "what makes something what it is". Quid then means "someone who is what they are", which is vague on purpose because it changes based on what they are.')
 				.setFooter(userData.quid === undefined ? { text: 'To continue setting up your profile for the RPG, type "/species". For other options, review "/help".' } : null)],
-		}, true);
+		}, 'reply', '@original');
 
 		/* This is checking if the user is in a guild, if the server has data saved in the database, and if the guildmember data is cached. If all of these are true, it will check if the user has reached the requirements to get roles based on their rank and level. */
 		if (interaction.inGuild() && serverData && (interaction.member instanceof GuildMember)) {

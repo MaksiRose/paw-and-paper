@@ -88,7 +88,8 @@ export async function missingPermissions(
 
 	if (displayed.length <= 0) { return false; }
 
-	await respond(interaction, getMissingPermissionContent(addCommasAndAnd(displayed)), false);
+	// This is always a reply
+	await respond(interaction, getMissingPermissionContent(addCommasAndAnd(displayed)));
 	return true;
 }
 

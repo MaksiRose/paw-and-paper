@@ -1,11 +1,11 @@
 {
 	"name": "paw-and-paper",
-	"version": "3.1.5",
+	"version": "3.2.0",
 	"description": "A Discord Bot for roleplay communities, featuring a community-based interactive RPG and powerful tools to roleplay",
 	"main": "index.ts",
 	"scripts": {
-		"start": "git pull origin stable && npm update && tsc -p tsconfig.json && pm2 start dist/index.js --name paw --time",
-		"reload": "git pull origin stable && npm update && tsc -p tsconfig.json && pm2 reload paw",
+		"start": "git pull origin stable && npm update && rm -r dist && tsc -p tsconfig.json && pm2 start dist/index.js --name paw --time",
+		"reload": "git pull origin stable && npm update && rm -r dist && tsc -p tsconfig.json && pm2 reload paw",
 		"stop": "pm2 stop paw",
 		"logs": "pm2 logs --timestamp --lines 0 paw",
 		"test": "ts-node src/index.ts"
@@ -14,12 +14,14 @@
 	"license": "ISC",
 	"dependencies": {
 		"@octokit/rest": "^19.0.5",
+		"@sapphire/async-queue": "^1.5.0",
 		"@top-gg/sdk": "^3.1.3",
 		"bfd-api-redux": "^1.2.2",
 		"crystalid": "^1.0.1",
-		"discord.js": "^14.6.0",
+		"discord.js": "^14.7.1",
+		"eslint-plugin-deprecation": "^1.3.3",
 		"express": "^4.18.2",
-		"express-rate-limit": "^6.6.0",
+		"express-rate-limit": "^6.7.0",
 		"fs": "^0.0.1-security",
 		"fuse.js": "^6.6.2",
 		"hoatzin": "^2.0.0",
@@ -27,9 +29,9 @@
 	},
 	"devDependencies": {
 		"@types/express": "^4.17.14",
-		"@typescript-eslint/eslint-plugin": "^5.41.0",
-		"@typescript-eslint/parser": "^5.41.0",
-		"eslint": "^8.26.0",
+		"@typescript-eslint/eslint-plugin": "^5.45.0",
+		"@typescript-eslint/parser": "^5.45.0",
+		"eslint": "^8.28.0",
 		"ts-node": "^10.9.1"
 	}
 }

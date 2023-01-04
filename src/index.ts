@@ -1,23 +1,16 @@
 import { Client, Collection, GatewayIntentBits, Options, Snowflake } from 'discord.js';
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
-import path from 'path';
+import { readdirSync, readFileSync } from 'fs';
 import { Api } from '@top-gg/sdk';
 import { ContextMenuCommand, SlashCommand, Votes } from './typings/handle';
-import { BanList, CommonPlantNames, DeleteList, GivenIdList, MaterialNames, RarePlantNames, SpecialPlantNames, SpeciesNames, UncommonPlantNames, VoteList, WebhookMessages } from './typings/data/general';
-import { DiscordEvent, MaterialInfo, PlantEdibilityType, PlantInfo, SpeciesDietType, SpeciesHabitatType, SpeciesInfo } from './typings/main';
+import { CommonPlantNames, MaterialNames, RarePlantNames, SpecialPlantNames, SpeciesNames, UncommonPlantNames } from './typings/data/general';
+import { MaterialInfo, PlantEdibilityType, PlantInfo, SpeciesDietType, SpeciesHabitatType, SpeciesInfo } from './typings/main';
 import { UserSchema } from './typings/data/user';
-const { token, bfd_token, bfd_authorization, top_token, top_authorization, dbl_token, dbl_authorization } = require('../config.json');
+import { Octokit } from '@octokit/rest';
+import { execute as executeCommandHandler } from './handlers/commands';
+import { execute as executeEventHandler } from './handlers/events';
+import { execute as executeDatabaseHandler } from './handlers/database';
+const { token, bfd_token, bfd_authorization, top_token, top_authorization, dbl_token, dbl_authorization, github_token } = require('../config.json');
 const bfd = require('bfd-api-redux/src/main');
-
-process.on('unhandledRejection', async (err) => {
-	console.error('Unhandled Promise Rejection:\n', err);
-});
-process.on('uncaughtException', async (err) => {
-	console.error('Uncaught Promise Exception:\n', err);
-});
-process.on('uncaughtExceptionMonitor', async (err) => {
-	console.error('Uncaught Promise Exception (Monitor):\n', err);
-});
 
 function sweepFilter(something: {id: Snowflake, client: Client<true>}) {
 	const allDocumentNames = readdirSync('./database/profiles').filter(f => f.endsWith('.json'));
@@ -25,7 +18,7 @@ function sweepFilter(something: {id: Snowflake, client: Client<true>}) {
 		.map(documentName => {
 			return JSON.parse(readFileSync(`./database/profiles/${documentName}`, 'utf-8')) as UserSchema;
 		})
-		.filter(v => v.userId.includes(something.id))
+		.filter(u => Object.keys(u.userIds).includes(something.id))
 		.length <= 0);
 }
 
@@ -94,6 +87,11 @@ export const handle: {
 		dbl: { token: dbl_token, authorization: dbl_authorization, client: null },
 	},
 };
+
+export const octokit = new Octokit({
+	auth: github_token,
+	userAgent: 'paw-and-paper',
+});
 
 export const commonPlantsInfo: { [key in CommonPlantNames]: PlantInfo; } = {
 	'raspberry': {
@@ -412,6 +410,17 @@ export const specialPlantsInfo: { [key in SpecialPlantNames]: PlantInfo } = {
 		healsPoison: false,
 		givesEnergy: false,
 		increasesMaxCondition: true,
+	},
+	'red clover': {
+		description: 'A plant so rich in nutrients that it can be planted next to saplings to keep them from dying.',
+		edibility: PlantEdibilityType.Edible,
+		healsWounds: false,
+		healsInfections: false,
+		healsColds: false,
+		healsSprains: false,
+		healsPoison: false,
+		givesEnergy: false,
+		increasesMaxCondition: false,
 	},
 };
 
@@ -749,7 +758,7 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 		habitat: SpeciesHabitatType.Cold,
 		biome1OpponentArray: ['wolf', 'bear', 'maned wolf'],
 		biome2OpponentArray: ['fox', 'eagle'],
-		biome3OpponentArray: ['dog', 'coyote'],
+		biome3OpponentArray: ['dog', 'coyote', 'snow leopard'],
 	},
 	'kinkajou': {
 		diet: SpeciesDietType.Omnivore,
@@ -812,7 +821,7 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 		habitat: SpeciesHabitatType.Cold,
 		biome1OpponentArray: ['beetle', 'moth', 'cricket'],
 		biome2OpponentArray: ['squirrel', 'rabbit'],
-		biome3OpponentArray: ['hawk', 'eagle'],
+		biome3OpponentArray: ['hawk', 'eagle', 'gila monster'],
 	},
 	'king cobra': {
 		diet: SpeciesDietType.Carnivore,
@@ -833,7 +842,7 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 		habitat: SpeciesHabitatType.Cold,
 		biome1OpponentArray: ['beetle', 'cricket', 'praying mantis'],
 		biome2OpponentArray: ['frog', 'rat', 'squirrel'],
-		biome3OpponentArray: ['owl', 'eagle', 'weasel'],
+		biome3OpponentArray: ['vampire bat', 'eagle', 'weasel'],
 	},
 	// actual diet: plants
 	// actual predators: felids, canids and bears, hawks, sometimes otters
@@ -859,7 +868,7 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 		diet: SpeciesDietType.Carnivore,
 		habitat: SpeciesHabitatType.Cold,
 		biome1OpponentArray: ['beetle', 'cricket', 'moth'],
-		biome2OpponentArray: ['salmon', 'frog', 'owl'],
+		biome2OpponentArray: ['salmon', 'frog', 'gila monster'],
 		biome3OpponentArray: ['weasel', 'king cobra', 'raccoon'],
 	},
 	// actual diet: lizard, grub
@@ -914,84 +923,42 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 		habitat: SpeciesHabitatType.Warm,
 		biome1OpponentArray: ['frog', 'rat', 'hedgehog'],
 		biome2OpponentArray: ['owl', 'deer', 'dog'],
-		biome3OpponentArray: ['leopard', 'hawk', 'lion'],
+		biome3OpponentArray: ['snow leopard', 'hawk', 'lion'],
+	},
+	// actual diet: small mammals (such as young rabbits, hares, mice, ground squirrels, and other rodents), small birds, snakes, lizards, frogs, insects, other invertebrates, carrion, and the eggs of birds, lizards, snakes, and tortoises
+	// actual predators: foxes, mountain lions, coyotes and birds of prey
+	'gila monster': {
+		diet: SpeciesDietType.Carnivore,
+		habitat: SpeciesHabitatType.Warm,
+		biome1OpponentArray: ['crow', 'rat', 'beaver'],
+		biome2OpponentArray: ['fox', 'frog', 'anole'],
+		biome3OpponentArray: ['lion', 'hawk', 'coyote'],
+	},
+	// actual diet: blood from cows, pigs, horses, goats, chickens, tapirs, small wild mammals, wild birds
+	// actual predators: Eagles, Hawks, humans
+	'vampire bat': {
+		diet: SpeciesDietType.Carnivore,
+		habitat: SpeciesHabitatType.Warm,
+		biome1OpponentArray: ['beetle', 'moth', 'cricket'],
+		biome2OpponentArray: ['rat', 'frog', 'hedgehog'],
+		biome3OpponentArray: ['eagle', 'hawk'],
+	},
+	// actual diet: Wild goat, domestic goats, blue sheep, ibex, Himalayan tahr, marmot, pika, hares, small rodents and game birds. domestic livestock. Sometimes eat vegetation is food is hard to find
+	// actual predators: Hawks, other snow leopards
+	'snow leopard': {
+		diet: SpeciesDietType.Carnivore,
+		habitat: SpeciesHabitatType.Cold,
+		biome1OpponentArray: ['rat', 'beaver', 'rabbit'],
+		biome2OpponentArray: ['goat', 'deer', 'warthog'],
+		biome3OpponentArray: ['hawk', 'snow leopard'],
 	},
 };
 
-start();
+executeDatabaseHandler();
 
-async function start(
-): Promise<void> {
+executeEventHandler()
+	.then(function() {
 
-	if (existsSync('./database/bannedList.json') == false) {
-
-		writeFileSync('./database/bannedList.json', JSON.stringify(({ users: [], servers: [] }) as BanList, null, '\t'));
-	}
-
-	if (existsSync('./database/errorStacks.json') == false) {
-
-		writeFileSync('./database/errorStacks.json', JSON.stringify(({}) as WebhookMessages, null, '\t'));
-	}
-
-	if (existsSync('./database/givenIds.json') == false) {
-
-		writeFileSync('./database/givenIds.json', JSON.stringify(([]) as GivenIdList, null, '\t'));
-	}
-
-	if (existsSync('./database/toDeleteList.json') == false) {
-
-		writeFileSync('./database/toDeleteList.json', JSON.stringify(({}) as DeleteList, null, '\t'));
-	}
-
-	if (existsSync('./database/voteCache.json') == false) {
-
-		writeFileSync('./database/voteCache.json', JSON.stringify(({}) as VoteList, null, '\t'));
-	}
-
-	if (existsSync('./database/webhookCache.json') == false) {
-
-		writeFileSync('./database/webhookCache.json', JSON.stringify(({}) as WebhookMessages, null, '\t'));
-	}
-
-	const allProfileNames = readdirSync('./database/profiles').filter(f => f.endsWith('.json'));
-	for (const documentName of allProfileNames) {
-		const doc = JSON.parse(readFileSync(`./database/profiles/${documentName}`, 'utf-8'));
-		if (Object.hasOwn(doc, 'uuid')) {
-			doc._id = doc.uuid;
-			delete doc.uuid;
-			writeFileSync(`./database/profiles/${documentName}`, JSON.stringify(doc, null, '\t'));
-		}
-	}
-
-	const allServerNames = readdirSync('./database/servers').filter(f => f.endsWith('.json'));
-	for (const documentName of allServerNames) {
-		const doc = JSON.parse(readFileSync(`./database/servers/${documentName}`, 'utf-8'));
-		if (Object.hasOwn(doc, 'uuid')) {
-			doc._id = doc.uuid;
-			delete doc.uuid;
-			writeFileSync(`./database/servers/${documentName}`, JSON.stringify(doc, null, '\t'));
-		}
-	}
-
-	for (const file of readdirSync(path.join(__dirname, './events'))) {
-
-		const { event } = require(`./events/${file}`) as { event: DiscordEvent; };
-
-		if (event.once) {
-
-			client.once(event.name, async (...args) => {
-				try { await event.execute(...args); }
-				catch (error) { console.error(error); }
-			});
-		}
-		else {
-
-			client.on(event.name, async (...args) => {
-				try { await event.execute(...args); }
-				catch (error) { console.error(error); }
-			});
-		}
-	}
-
-	await client.login(token);
-}
+		executeCommandHandler();
+		client.login(token);
+	});

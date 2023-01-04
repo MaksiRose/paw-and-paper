@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, AnySelectMenuInteraction, SlashCommandBuilder, SnowflakeUtil } from 'discord.js';
 import Fuse from 'fuse.js';
 import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, uncommonPlantsInfo } from '../..';
 import serverModel from '../../models/serverModel';
@@ -12,10 +12,10 @@ import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';
 import { changeCondition, infectWithChance } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
+import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo, componentDisablingInteractions } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import getInventoryElements from '../../utils/getInventoryElements';
-import { capitalizeString, getArrayElement, getMapData, getSmallerNumber, keyInObject, respond, unsafeKeys, update, widenValues } from '../../utils/helperFunctions';
+import { capitalizeString, getArrayElement, getMapData, getSmallerNumber, keyInObject, respond, unsafeKeys, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -70,7 +70,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		const restEmbed = await isInvalid(interaction, userData);
@@ -80,20 +80,21 @@ export const command: SlashCommand = {
 
 		if (userData.quid.profile.rank === RankType.Youngling) {
 
+			// This is always a reply
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 					.setDescription(`*A healer rushes into the medicine den in fury.*\n"${userData.quid.name}, you are not trained to heal yourself, and especially not to heal others! I don't ever wanna see you again in here without supervision!"\n*${userData.quid.name} lowers ${userData.quid.pronoun(2)} head and leaves in shame.*`)],
-			}, true);
+			});
 			return;
 		}
 
 		// Make a function that makes a message for you. If you give it a valid user or quid, it will give you the problems the user has + a list of herbs. if you give it a page (1 | 2), it will give you a list of herbs from that page. If you give it an available herb as well, it will check whether there was an existing message where a problem was mentioned that the user already not has anymore (in which case it will refresh the info and tell the user to pick again) and if not, apply the herb.
 		const chosenUser = interaction.options.getUser('user');
 		const _chosenUserData = !chosenUser ? null : (() => {
-			try { return userModel.findOne(u => u.userId.includes(chosenUser.id)); }
+			try { return userModel.findOne(u => Object.keys(u.userIds).includes(chosenUser.id)); }
 			catch { return null; }
 		})();
 		const chosenUserData = _chosenUserData === null ? undefined : getUserData(_chosenUserData, interaction.guildId, _chosenUserData.quids[_chosenUserData.servers[interaction.guildId]?.currentQuid ?? '']);
@@ -110,7 +111,7 @@ export const command: SlashCommand = {
 		if (serverData === null) { throw new Error('serverData is null'); }
 		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
 
-		if (interaction.isSelectMenu() && interaction.customId.startsWith('heal_quids_options')) {
+		if (interaction.isStringSelectMenu() && interaction.customId.startsWith('heal_quids_options')) {
 
 			const value = getArrayElement(interaction.values, 0);
 			if (value.startsWith('newpage_')) {
@@ -141,7 +142,7 @@ export const command: SlashCommand = {
 
 			await getHealResponse(interaction, userData, serverData, '', [], 0, userToHeal, inventoryPage);
 		}
-		else if (interaction.isSelectMenu() && interaction.customId.startsWith('heal_inventory_options_')) {
+		else if (interaction.isStringSelectMenu() && interaction.customId.startsWith('heal_inventory_options_')) {
 
 			const quidId = getArrayElement(interaction.customId.split('_'), 3);
 			if (quidId === undefined) { throw new TypeError('quidId is undefined'); }
@@ -198,7 +199,7 @@ function stringIsAvailableItem(
 }
 
 export async function getHealResponse(
-	interaction: ChatInputCommandInteraction<'cached'> | SelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | AnySelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>,
 	userData: UserData<never, never>,
 	serverData: ServerSchema,
 	messageContent: string,
@@ -231,15 +232,16 @@ export async function getHealResponse(
 		quidsSelectMenuOptions.push({ label: 'Show more user options', value: `newpage_${newQuidPage}`, description: `You are currently on page ${quidPage + 1}`, emoji: '📋' });
 	}
 
-	const quidsSelectMenu = new ActionRowBuilder<SelectMenuBuilder>()
-		.setComponents(new SelectMenuBuilder()
+	const quidsSelectMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
+		.setComponents(new StringSelectMenuBuilder()
 			.setCustomId(`heal_quids_options_@${userData._id}`)
 			.setPlaceholder('Select a quid to heal')
 			.setOptions(quidsSelectMenuOptions));
 
 	if (!hasNameAndSpecies(userToHeal)) {
 
-		const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+		// If this is a ChatInputCommand, this is a reply, else this is an update to the message with the component
+		const botReply = await respond(interaction, {
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(userData.quid.color)
@@ -247,7 +249,8 @@ export async function getHealResponse(
 				.setDescription(`*${userData.quid.name} sits in front of the medicine den, looking if anyone needs help with injuries or illnesses.*`)
 				.setFooter({ text: 'Tip: Healing yourself has a lower chance of being successful than healing others. Healers and Elderlies are more often successful than Apprentices and Hunters.' })],
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
-		});
+			fetchReply: true,
+		}, 'update', '@original');
 
 		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 		return;
@@ -281,14 +284,16 @@ export async function getHealResponse(
 
 		if (healUserConditionText === '') {
 
-			const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+			// If this is a ChatInputCommand, this is a reply, else this is an update to the message with the component
+			const botReply = await respond(interaction, {
 				content: messageContent,
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(userData.quid.color)
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 					.setDescription(`*${userData.quid.name} approaches ${userToHeal.quid.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${userData.quid.getDisplayspecies()} asks.\n${userToHeal.quid.name} shakes ${userToHeal.quid.pronoun(2)} head.* "Not that I know of, no."\n*Disappointed, ${userData.quid.name} goes back to the medicine den.*`)],
 				components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
-			});
+				fetchReply: true,
+			}, 'update', '@original');
 
 			saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 			return;
@@ -315,17 +320,19 @@ export async function getHealResponse(
 			.setColor(userData.quid.color)
 			.setTitle(`Inventory of ${interaction.guild.name} - Page ${inventoryPage}`)
 			.setDescription(embedDescription || null);
-		const inventorySelectMenu = new ActionRowBuilder<SelectMenuBuilder>()
-			.setComponents(new SelectMenuBuilder()
+		const inventorySelectMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
+			.setComponents(new StringSelectMenuBuilder()
 				.setCustomId(`heal_inventory_options_${userToHeal.quid._id}_@${userData._id}`)
 				.setPlaceholder('Select an item')
 				.setOptions(selectMenuOptions));
 
-		const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+		// If this is a ChatInputCommand, this is a reply, else this is an update to the message with the component
+		const botReply = await respond(interaction, {
 			content: messageContent,
 			embeds: [...embedArray, quidConditionEmbed, inventoryEmbed],
-			components: [quidsSelectMenu, pagesButtons, inventorySelectMenu],
-		});
+			components: [quidsSelectMenu, pagesButtons, ...(selectMenuOptions.length > 0 ? [inventorySelectMenu] : [])],
+			fetchReply: true,
+		}, 'update', '@original');
 
 		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 		return;
@@ -335,13 +342,15 @@ export async function getHealResponse(
 
 	if (!hurtQuids.some(user => user.quid._id === userToHeal.quid._id)) {
 
-		const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+		// If this is a ChatInputCommand, this is a reply, else this is an update to the message with the component
+		const botReply = await respond(interaction, {
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setTitle(`${userToHeal.quid.name} doesn't need to be healed anymore. Please select another quid to heal if available.`)],
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
-		});
+			fetchReply: true,
+		}, 'update', '@original');
 
 		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 		return;
@@ -443,12 +452,14 @@ export async function getHealResponse(
 
 	if (isSuccessful === false && userHasChangedCondition === true) {
 
-		const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+		// If this is a ChatInputCommand, this is a reply, else this is an update to the message with the component
+		const botReply = await respond(interaction, {
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setTitle(`${userToHeal.quid.name}'s condition changed before you healed them. Please try again.`)],
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
-		});
+			fetchReply: true,
+		}, 'update', '@original');
 
 		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 		return;
@@ -517,19 +528,14 @@ export async function getHealResponse(
 		embedDescription = `*${userData.quid.name} takes a ${item}. After a bit of preparation, ${userData.quid.pronounAndPlural(0, 'give')} it to ${userToHeal.quid.name}. But no matter how long ${userData.quid.pronoun(0)} wait, it does not seem to help. Looks like ${userData.quid.name} has to try again...*`;
 	}
 
-	const experiencePoints = isSuccessful === false ? 0 : userData.quid.profile.rank == RankType.Elderly ? getRandomNumber(41, 20) : userData.quid.profile.rank == RankType.Healer ? getRandomNumber(21, 10) : getRandomNumber(11, 5);
-	const changedCondition = await changeCondition(userData, experiencePoints);
-	const infectedEmbed = await infectWithChance(userData, userToHeal);
+	const experiencePoints = isSuccessful === false ? 0 : getRandomNumber(5, userData.quid.profile.levels + 8);
+	const changedCondition = await changeCondition(userData._id === userToHeal._id ? userToHeal : userData, experiencePoints); // userToHeal is used here when a user is healing themselves to take into account the changes to the injuries & health
+	const infectedEmbed = userData._id === userToHeal._id ? await infectWithChance(userData, userToHeal) : [];
 	const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
 
-	const content = (userData._id !== userToHeal._id && isSuccessful === true ? `<@${userToHeal.userId[0]}>\n` : '') + messageContent;
+	const content = (userData._id !== userToHeal._id && isSuccessful === true ? `<@${Object.keys(userToHeal.userIds)[0]}>\n` : '') + messageContent;
 
-	if (interaction.isMessageComponent()) {
-
-		deleteCommandDisablingInfo(userData, interaction.guildId);
-		await interaction.message.delete(); // Maybe a way to make an API call that doesn't count towards the limit is to move this a line higher, create a new InteractionWebhook based on componentDisablingToken and call delete on that based on componentDisablingMessageId, and then delete these things afterwards. This method could be a backup in case the previous interaction is older than 15 minutes
-	}
-
+	// This is always a reply
 	const botReply = await respond(interaction, {
 		content: content,
 		embeds: [
@@ -544,7 +550,25 @@ export async function getHealResponse(
 			...levelUpEmbed,
 		],
 		components: interaction.isMessageComponent() ? disableAllComponents(interaction.message.components) : [],
-	}, true);
+	});
+
+	/* If the interaction is a message component, delete the message it comes from. Tries to delete it by getting the componentDisablingInteraction and calling the webhook.deleteMessage function, which saves an API call. As a backup, it will try to delete it by getting the message directly. */
+	if (interaction.isMessageComponent()) {
+
+		const disablingInteraction = componentDisablingInteractions.get(userData._id + interaction.guildId);
+		const fifteenMinutesInMs = 900_000;
+		if (disablingInteraction !== undefined && userData.serverInfo?.componentDisablingMessageId != null && SnowflakeUtil.deconstruct(disablingInteraction.id).timestamp > Date.now() - fifteenMinutesInMs) {
+
+			await disablingInteraction.webhook.deleteMessage(userData.serverInfo.componentDisablingMessageId)
+				.catch(async error => {
+					await interaction.message.delete();
+					console.error(error);
+				});
+		}
+		else { await interaction.message.delete(); }
+
+		deleteCommandDisablingInfo(userData, interaction.guildId);
+	}
 
 	await isPassedOut(interaction, userData, true);
 
@@ -552,7 +576,9 @@ export async function getHealResponse(
 	await drinkAdvice(interaction, userData);
 	await eatAdvice(interaction, userData);
 
-	if (userToHeal._id !== userData._id) { await addFriendshipPoints(botReply, userData, userToHeal); }
+	const channel = interaction.channel ?? await interaction.client.channels.fetch(interaction.channelId);
+	if (channel === null || !channel.isTextBased()) { throw new TypeError('interaction.channel is null or not text based'); }
+	if (userToHeal._id !== userData._id) { await addFriendshipPoints({ createdTimestamp: SnowflakeUtil.timestampFrom(botReply.id), channel: channel }, userData, userToHeal); } // I have to call SnowflakeUtil since InteractionResponse wrongly misses the createdTimestamp which is hopefully added in the future
 
 	return;
 }

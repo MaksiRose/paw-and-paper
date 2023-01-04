@@ -102,6 +102,12 @@ export const userModel = new Model<UserSchema>('./database/profiles', {
 					},
 				},
 			},
+			accessibility: {
+				type: 'object',
+				default: {
+					replaceEmojis: { type: 'boolean', default: false },
+				},
+			},
 		},
 	},
 	quids: {
@@ -255,6 +261,7 @@ export const userModel = new Model<UserSchema>('./database/profiles', {
 								},
 							},
 							lastActiveTimestamp: { type: 'number', default: 0 },
+							passedOutTimestamp: { type: 'number', default: 0 },
 						},
 					},
 				},
@@ -296,7 +303,6 @@ export function getUserData<T extends '' | never, U extends QuidSchema<T> | unde
 
 	const user: UserData<U extends QuidSchema<T> ? never : undefined, T> = {
 		_id: userData._id,
-		userId: userData.userId,
 		userIds: userData.userIds,
 		tag: {
 			global: userData.tag.global,
@@ -309,6 +315,7 @@ export function getUserData<T extends '' | never, U extends QuidSchema<T> | unde
 				global: userData.settings.proxy.global,
 				server: userData.settings.proxy.servers[server_id],
 			},
+			accessibility: userData.settings.accessibility,
 		},
 		quid: (quidData === undefined ? undefined : {
 			_id: quidData._id,

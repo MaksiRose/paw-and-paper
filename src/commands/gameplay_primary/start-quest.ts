@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder, Snowflake } from 'discord.js';
 import { speciesInfo } from '../..';
 import { ServerSchema } from '../../typings/data/server';
 import { RankType, UserData } from '../../typings/data/user';
@@ -7,7 +7,7 @@ import { SpeciesHabitatType } from '../../typings/main';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
-import { capitalizeString, getMapData, respond, setCooldown, update } from '../../utils/helperFunctions';
+import { capitalizeString, getMapData, respond, setCooldown } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
@@ -31,7 +31,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		const restEmbed = await isInvalid(interaction, userData);
@@ -41,6 +41,7 @@ export const command: SlashCommand = {
 
 		if (!userData.quid.profile.hasQuest) {
 
+			// This is always a reply
 			await respond(interaction, {
 				content: messageContent,
 				embeds: [
@@ -50,23 +51,24 @@ export const command: SlashCommand = {
 						.setTitle('You have no open quests at the moment :(')
 						.setFooter({ text: `Go ${userData.quid.profile.rank === RankType.Youngling ? 'playing' : 'exploring'} for a chance to get a quest!` }),
 				],
-			}, true);
+			});
 			return;
 		}
 
-		await sendQuestMessage(interaction, userData, serverData, messageContent, restEmbed);
+		await sendQuestMessage(interaction, 'reply', userData, serverData, messageContent, restEmbed);
 	},
 };
 
 export async function sendQuestMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
+	respondType: 'update' | 'reply',
 	userData: UserData<never, never>,
 	serverData: ServerSchema,
 	messageContent: string,
 	restEmbed: EmbedBuilder[],
 	afterEmbedArray: EmbedBuilder[] = [],
 	footerText = '',
-): Promise<Message> {
+): Promise<Snowflake> {
 
 	const embed = new EmbedBuilder()
 		.setColor(userData.quid.color)
@@ -128,21 +130,25 @@ export async function sendQuestMessage(
 
 	embed.setFooter({ text: `${footerText}\n\nClick the button or type "/start-quest" to continue.\n\nTip: Read the bottom text during the game carefully to find out which button to click. The button you chose will get a "radio button"-emoji, and the correct button will get a checkmark emoji. If you do not choose something fast enough, you will lose the round and no emoji is displayed.` });
 
+	const components = [new ActionRowBuilder<ButtonBuilder>()
+		.setComponents(new ButtonBuilder()
+			.setCustomId('quest_start')
+			.setLabel('Start quest')
+			.setEmoji('⭐')
+			.setStyle(ButtonStyle.Success))];
+
+	// This can be a reply, an update or an editReply depending on where this function was called from.
 	const botReply = await respond(interaction, {
 		content: `<@${interaction.user.id}>\n${messageContent}`,
 		embeds: [...restEmbed, embed, ...afterEmbedArray],
-		components: [new ActionRowBuilder<ButtonBuilder>()
-			.setComponents(new ButtonBuilder()
-				.setCustomId('quest_start')
-				.setLabel('Start quest')
-				.setEmoji('⭐')
-				.setStyle(ButtonStyle.Success))],
-	}, true);
+		components: components,
+		fetchReply: true,
+	}, respondType, '@original');
 
 	/* The View Channels permissions that are needed for this function to work properly should be checked in all places that reference sendQuestMessage. It can't be checked for in here directly because a botReply must be returned. */
 	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 
-	return await (botReply as Message<true>)
+	return await (botReply as Message<true> | InteractionResponse<true>)
 		.awaitMessageComponent({
 			filter: (i) => i.user.id === interaction.user.id,
 			componentType: ComponentType.Button,
@@ -151,11 +157,12 @@ export async function sendQuestMessage(
 
 			await setCooldown(userData, interaction.guildId, true);
 			deleteCommandDisablingInfo(userData, interaction.guildId);
-			return await startQuest(int, userData, serverData, messageContent, restEmbed, afterEmbedArray, botReply);
+			return await startQuest(int, userData, serverData, messageContent, restEmbed, afterEmbedArray);
 		})
 		.catch(async () => {
 
-			return await respond(interaction, { components: disableAllComponents(botReply.components) }, true);
+			// This is always an editReply
+			return (await respond(interaction, { components: disableAllComponents(components) }, respondType, '@original')).id;
 		});
 }
 
@@ -166,8 +173,7 @@ async function startQuest(
 	messageContent: string,
 	embedArray: EmbedBuilder[],
 	afterEmbedArray: EmbedBuilder[],
-	botReply: Message,
-): Promise<Message> {
+): Promise<Snowflake> {
 	// this would be called from /quest, /explore and /play
 	// Quest would send in the main interaction so that it would edit it, while for explore and play it would send in the button interaction so it would respond to the button click, which also has the side effect that the stats you lost etc would already be displayed under the original "you found a quest" message.
 
@@ -222,7 +228,7 @@ async function startQuest(
 		cycleIndex: number,
 		previousQuestComponents?: ActionRowBuilder<ButtonBuilder>,
 		newInteraction?: ButtonInteraction<'cached'>,
-	): Promise<Message> {
+	): Promise<Snowflake> {
 
 		const buttonTextOrColor = getRandomNumber(2) === 0 ? 'color' : 'text';
 		const buttonColorKind = getRandomNumber(3) === 0 ? 'green' : getRandomNumber(2) === 0 ? 'blue' : 'red';
@@ -270,13 +276,14 @@ async function startQuest(
 		embed.setDescription(`${drawProgressbar(hitValue, hitEmoji)}\n${drawProgressbar(missValue, missEmoji)}`);
 		embed.setFooter({ text: `Click the ${(buttonTextOrColor === 'color' ? `${buttonColorKind} button` : `button labeled as ${buttonColorKind}`)}.` });
 
-		botReply = await update(newInteraction ?? interaction, {
+		// This is always an update or an editReply
+		const botReply = await respond(newInteraction ?? interaction, {
 			content: messageContent,
 			embeds: [...embedArray, embed, ...afterEmbedArray],
 			components: [...previousQuestComponents ? [previousQuestComponents] : [], questComponents],
-		});
+		}, 'update', '@original');
 
-		newInteraction = await (botReply as Message<true>)
+		newInteraction = await (botReply as Message<true> | InteractionResponse<true>)
 			.awaitMessageComponent({
 				filter: i => i.user.id === interaction.user.id,
 				componentType: ComponentType.Button,
@@ -316,9 +323,9 @@ async function startQuest(
 			return component;
 		}));
 
-		embed.setFooter({ text: 'Type "/rank-up" to rank up.' });
 		if (hitValue >= 10) {
 
+			embed.setFooter({ text: 'Type "/rank-up" to rank up.' });
 			await setCooldown(userData, interaction.guildId, false);
 
 			if (userData.quid.profile.unlockedRanks < 3) {
@@ -417,15 +424,17 @@ async function startQuest(
 			}
 			else { throw new Error('No rank type found'); }
 
-			botReply = await update(interaction, {
+			// This is always an update or an editReply
+			const { id } = await respond(newInteraction ?? interaction, {
 				content: messageContent,
 				embeds: [...embedArray, embed, ...afterEmbedArray],
 				components: [questComponents],
-			});
+			}, 'update', '@original');
 
-			if (userData.quid.profile.rank === RankType.Youngling) { await apprenticeAdvice(interaction); }
-			else if (userData.quid.profile.rank === RankType.Apprentice) { await hunterhealerAdvice(interaction); }
-			else if (userData.quid.profile.rank === RankType.Hunter || userData.quid.profile.rank === RankType.Healer) { await elderlyAdvice(interaction); }
+			if (userData.quid.profile.rank === RankType.Youngling) { await apprenticeAdvice(newInteraction ?? interaction); }
+			else if (userData.quid.profile.rank === RankType.Apprentice) { await hunterhealerAdvice(newInteraction ?? interaction); }
+			else if (userData.quid.profile.rank === RankType.Hunter || userData.quid.profile.rank === RankType.Healer) { await elderlyAdvice(newInteraction ?? interaction); }
+			return id;
 		}
 		else if (missValue >= 10) {
 
@@ -477,19 +486,17 @@ async function startQuest(
 			}
 			else { throw new Error('No rank type found'); }
 
-			botReply = await update(interaction, {
+			// This is always an update or an editReply
+			return (await respond(newInteraction ?? interaction, {
 				content: messageContent,
 				embeds: [...embedArray, embed, ...afterEmbedArray],
 				components: [questComponents],
-			});
-
-			return botReply;
+			}, 'update', '@original')).id;
 		}
 		else {
 
-			botReply = await interactionCollector(interaction, userData, serverData, cycleIndex += 1, questComponents, newInteraction);
+			return await interactionCollector(interaction, userData, serverData, cycleIndex += 1, questComponents, newInteraction);
 		}
-		return botReply;
 	}
 }
 
@@ -515,9 +522,10 @@ async function apprenticeAdvice(
 	interaction: ButtonInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
 ) {
 
+	// This is always a followUp
 	await respond(interaction, {
 		content: `${interaction.user.toString()} ❓ **Tip:**\nAs apprentice, you unlock new commands: \`explore\`, \`/scavenge\`, \`heal\`, \`practice\`, and \`repair\`.\nCheck \`/help\` to see what they do!\nGo exploring via \`/explore\` to find more quests and rank up higher!`,
-	}, false);
+	});
 }
 
 /**
@@ -527,9 +535,10 @@ async function hunterhealerAdvice(
 	interaction: ButtonInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
 ) {
 
+	// This is always a followUp
 	await respond(interaction, {
 		content: `${interaction.user.toString()} ❓ **Tip:**\nHunters and Healers have different strengths and weaknesses!\nHealers can \`heal\` perfectly and find more plants when \`exploring\`, but they are not so good at \`repairing\`.\nHunters can \`repair\` perfectly and find more enemies when \`exploring\`, but they are not so good at \`healing\`.\nHunters and Healers don't get advantages from the \`play\` command.`,
-	}, false);
+	});
 }
 
 /**
@@ -539,7 +548,8 @@ async function elderlyAdvice(
 	interaction: ButtonInteraction<'cached'> | ChatInputCommandInteraction<'cached'>,
 ) {
 
+	// This is always a followUp
 	await respond(interaction, {
 		content: `${interaction.user.toString()} ❓ **Tip:**\nElderlies have the abilities of both Hunters and Healers!\nAdditionally, they can use the \`share\` command.`,
-	}, false);
+	});
 }

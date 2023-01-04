@@ -1,8 +1,11 @@
-import { readdirSync } from 'fs';
 import { DiscordEvent } from '../typings/main';
 import { ActivityType } from 'discord.js';
-import path from 'path';
 import { client } from '..';
+import { applicationCommands, applicationCommandsGuilds } from '../handlers/commands';
+import { execute as executeIntervalHandler } from '../handlers/interval';
+import { execute as executeVotesHandler } from '../handlers/votes';
+import { execute as executeServersHandler } from '../handlers/servers';
+import { execute as executeUsersHandler } from '../handlers/users';
 
 export const event: DiscordEvent = {
 	name: 'ready',
@@ -13,11 +16,17 @@ export const event: DiscordEvent = {
 		console.log('Paw and Paper is online!');
 		client.user?.setActivity('/help', { type: ActivityType.Listening });
 
-		/* It's loading all the files in the handlers folder. */
-		for (const file of readdirSync(path.join(__dirname, '../handlers'))) {
+		// A check should be added that compares the current commands with the existing commands and only sets the commands when they differ from the existing commands
+		if (!client.isReady()) { return; }
 
-			try { await require(`../handlers/${file}`).execute(); }
-			catch (error) { console.error(error); }
+		await client.application.commands.set(applicationCommands);
+		for (const [guildId, applicationCommandsGuild] of applicationCommandsGuilds) {
+			await client.application.commands.set(applicationCommandsGuild, guildId);
 		}
+
+		executeIntervalHandler();
+		executeVotesHandler();
+		executeServersHandler();
+		executeUsersHandler();
 	},
 };

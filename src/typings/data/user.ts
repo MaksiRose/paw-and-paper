@@ -114,6 +114,8 @@ export interface ProfileSchema {
 	};
 	/** A timestamp for when the profile was last used */
 	lastActiveTimestamp: number;
+	/** A timestamp for when the user last passed out */
+	passedOutTimestamp: number;
 }
 
 export interface QuidSchema<Completed extends ''> {
@@ -211,6 +213,9 @@ export interface UserSchema {
 				};
 			};
 		};
+		accessibility: {
+			replaceEmojis: boolean;
+		}
 	};
 	/** Object of names of quids as the key and the quids this user has created as value */
 	quids: { [key in string]: QuidSchema<''> };
@@ -222,12 +227,14 @@ export interface UserSchema {
 		[key in string]: {
 			currentQuid: string | null,
 			lastInteractionTimestamp: number | null,
+			/** @deprecated */
 			lastInteractionToken: string | null,
 			lastInteractionChannelId: string | null,
 			restingMessageId: string | null,
 			restingChannelId: string | null,
 			componentDisablingChannelId: string | null,
 			componentDisablingMessageId: string | null,
+			/** @deprecated */
 			componentDisablingToken: string | null,
 			hasCooldown: boolean
 		}
@@ -249,7 +256,7 @@ export interface Quid<Completed extends ''> extends Omit<QuidSchema<Completed>, 
 	pronounAndPlural: (pronounNumber: 0 | 1 | 2 | 3 | 4 | 5, string1: string, string2?: string) => string;
 }
 
-export interface UserData<QuidExists extends undefined, QuidCompleted extends ''> extends Omit<UserSchema, 'quids' | 'currentQuid' | 'servers' | 'tag' | 'settings'> {
+export interface UserData<QuidExists extends undefined, QuidCompleted extends ''> extends Omit<UserSchema, 'quids' | 'currentQuid' | 'servers' | 'tag' | 'settings' | 'userId'> {
 	tag: Omit<UserSchema['tag'], 'servers'> & {
 		server: UserSchema['tag']['servers'][string] | undefined;
 	},

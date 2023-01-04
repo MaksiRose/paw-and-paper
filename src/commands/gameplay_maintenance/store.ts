@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, Embed, EmbedBuilder, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, Embed, EmbedBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
 import serverModel from '../../models/serverModel';
 import { CommonPlantNames, MaterialNames, RarePlantNames, SpecialPlantNames, SpeciesNames, UncommonPlantNames } from '../../typings/data/general';
 import { ServerSchema } from '../../typings/data/server';
@@ -7,7 +7,7 @@ import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents } from '../../utils/componentDisabling';
-import { getMapData, widenValues, unsafeKeys, respond, update, getArrayElement, capitalizeString } from '../../utils/helperFunctions';
+import { getMapData, widenValues, unsafeKeys, getArrayElement, capitalizeString, respond } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { calculateInventorySize } from '../../utils/simulateItemUse';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -32,7 +32,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		const restEmbed = await isInvalid(interaction, userData);
@@ -44,9 +44,9 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
-		if (interaction.isSelectMenu()) {
+		if (interaction.isStringSelectMenu()) {
 
 			if (interaction.customId === 'store_options') {
 
@@ -71,15 +71,16 @@ export const command: SlashCommand = {
 
 				const itemSelectMenu = getOriginalComponents(userData, chosenFood).itemSelectMenu;
 
-				const amountSelectMenu = new ActionRowBuilder<SelectMenuBuilder>()
-					.setComponents(new SelectMenuBuilder()
+				const amountSelectMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
+					.setComponents(new StringSelectMenuBuilder()
 						.setCustomId(`store_amount_@${userData._id}`)
 						.setPlaceholder('Select the amount to store away')
 						.setOptions(amountSelectMenuOptions));
 
-				await update(interaction, {
+				// This is an update to the message with the select menu
+				await respond(interaction, {
 					components: [itemSelectMenu, amountSelectMenu],
-				});
+				}, 'update', '@original');
 				return;
 			}
 
@@ -102,7 +103,7 @@ export const command: SlashCommand = {
 
 				await userData.update(
 					(u) => {
-						const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+						const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 						p.inventory = userInventory;
 					},
 				);
@@ -121,10 +122,11 @@ export const command: SlashCommand = {
 				footerText += `\n+${chosenAmount} ${chosenFood} for ${interaction.guild.name}`;
 				embed.setFooter({ text: footerText });
 
-				await update(interaction, {
+				// This is an update to the message with the select menu
+				await respond(interaction, {
 					embeds: [...interaction.message.embeds, embed],
 					components: itemSelectMenu.components[0]?.options.length === 0 ? disableAllComponents(interaction.message.components) : [itemSelectMenu, storeAllButton],
-				});
+				}, 'update', '@original');
 				return;
 			}
 		}
@@ -133,10 +135,10 @@ export const command: SlashCommand = {
 
 			await storeAll(interaction, userData, serverData, interaction.message.embeds.splice(-1, 1)[0], interaction.message.embeds);
 		}
-
 	},
 };
 
+// This can either be called directly from the store command, the stats command, or the travel-regions command
 export async function sendStoreMessage(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'>,
 	userData: UserData<never, never>,
@@ -152,7 +154,8 @@ export async function sendStoreMessage(
 
 	if (calculateInventorySize(userData.quid.profile.inventory) === 0) {
 
-		await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+		// This is a reply if the interaction is a ChatInputCommand, and an update to the message with the button if the interaction is a button
+		await respond(interaction, {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData.quid.color)
@@ -160,7 +163,7 @@ export async function sendStoreMessage(
 				.setDescription(`*${userData.quid.name} goes to the food den to store ${userData.quid.pronoun(2)} findings away, but ${userData.quid.pronoun(2)} mouth is empty...*`),
 			],
 			components: [],
-		});
+		}, 'update', '@original');
 		return;
 	}
 
@@ -172,11 +175,13 @@ export async function sendStoreMessage(
 
 	const { itemSelectMenu, storeAllButton } = getOriginalComponents(userData);
 
-	const botReply = await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+	// This is a reply if the interaction is a ChatInputCommand, and an update to the message with the button if the interaction is a button
+	const botReply = await respond(interaction, {
 		content: messageContent,
 		embeds: [...restEmbed, getOriginalEmbed(userData)],
 		components: [itemSelectMenu, storeAllButton],
-	});
+		fetchReply: true,
+	}, 'update', '@original');
 
 	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 }
@@ -207,8 +212,8 @@ function getOriginalComponents(
 		}
 	}
 
-	const itemSelectMenu = new ActionRowBuilder<SelectMenuBuilder>()
-		.setComponents(new SelectMenuBuilder()
+	const itemSelectMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
+		.setComponents(new StringSelectMenuBuilder()
 			.setCustomId(`store_options_@${userData._id}`)
 			.setPlaceholder('Select an item to store away')
 			.setOptions(itemSelectMenuOptions));
@@ -252,7 +257,7 @@ async function storeAll(
 
 	await userData.update(
 		(u) => {
-			const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+			const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 			p.inventory = userInventory;
 		},
 	);
@@ -264,9 +269,10 @@ async function storeAll(
 		},
 	);
 
-	await (async function(messageObject) { return interaction.isButton() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+	// This is a reply if the interaction is a ChatInputCommand, and an update to the message with the button if the interaction is a button
+	await respond(interaction, {
 		embeds: [...(otherEmbeds ?? []), embed],
 		components: interaction.isButton() ? disableAllComponents(interaction.message.components) : [],
-	});
+	}, 'update', '@original');
 	return;
 }

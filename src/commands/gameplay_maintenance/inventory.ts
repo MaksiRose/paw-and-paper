@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, SelectMenuBuilder, SelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, StringSelectMenuBuilder, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import { ServerSchema } from '../../typings/data/server';
 import { UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
@@ -6,7 +6,7 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import getInventoryElements from '../../utils/getInventoryElements';
-import { getArrayElement, respond, update } from '../../utils/helperFunctions';
+import { getArrayElement, respond } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { remindOfAttack } from '../gameplay_primary/attack';
 import { sendEatMessage } from './eat';
@@ -26,7 +26,7 @@ export const command: SlashCommand = {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 		/* Checks if the profile is resting, on a cooldown or passed out. */
 		const restEmbed = await isInvalid(interaction, userData);
@@ -36,10 +36,10 @@ export const command: SlashCommand = {
 	},
 	async sendMessageComponentResponse(interaction, userData, serverData) {
 
-		if (!interaction.isSelectMenu()) { return; }
+		if (!interaction.isStringSelectMenu()) { return; }
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 		const selectOptionId = getArrayElement(interaction.values, 0);
 
@@ -70,12 +70,11 @@ export const command: SlashCommand = {
 				return;
 			}
 		}
-
 	},
 };
 
 export async function showInventoryMessage(
-	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | SelectMenuInteraction<'cached'>,
+	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
 	userData: UserData<never, never>,
 	serverData: ServerSchema,
 	page: 1 | 2 | 3 | 4,
@@ -89,8 +88,8 @@ export async function showInventoryMessage(
 
 	const messageContent = remindOfAttack(interaction.guildId);
 
-	const inventorySelectMenu = new ActionRowBuilder<SelectMenuBuilder>()
-		.setComponents(new SelectMenuBuilder()
+	const inventorySelectMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
+		.setComponents(new StringSelectMenuBuilder()
 			.setCustomId(`inventory_pages_${showMaterialsPage}_@${userData._id}`)
 			.setPlaceholder('Select a page')
 			.setOptions([
@@ -112,7 +111,8 @@ export async function showInventoryMessage(
 		foodSelectMenuOptions.push({ label: 'Show more meat options', value: `newpage_${newSubPage}_${showMaterialsPage}`, description: `You are currently on page ${(subPage ?? 0) + 1}`, emoji: '📋' });
 	}
 
-	const botReply = await (async function(messageObject) { return interaction.isMessageComponent() ? await update(interaction, messageObject) : await respond(interaction, messageObject, true); })({
+	// This is an update to the message with the component (either being "View Inventory" from travel-regions command or selecting a different page), and a reply when doing the inventory command or the eat command without selecting food
+	const botReply = await respond(interaction, {
 		content: messageContent,
 		embeds: [new EmbedBuilder()
 			.setColor(default_color)
@@ -122,14 +122,15 @@ export async function showInventoryMessage(
 		components: [
 			inventorySelectMenu,
 			...userData.quid.profile.hunger < userData.quid.profile.maxHunger && foodSelectMenuOptions.length > 0
-				? [new ActionRowBuilder<SelectMenuBuilder>()
-					.setComponents(new SelectMenuBuilder()
+				? [new ActionRowBuilder<StringSelectMenuBuilder>()
+					.setComponents(new StringSelectMenuBuilder()
 						.setCustomId(`inventory_eat_@${userData._id}`)
 						.setPlaceholder('Select an item to eat')
 						.setOptions(foodSelectMenuOptions))]
 				: [],
 		],
-	});
+		fetchReply: true,
+	}, 'update', '@original');
 
 	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 }

@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SelectMenuBuilder, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, StringSelectMenuBuilder, SlashCommandBuilder } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 import { handle } from '../..';
 import { VoteList } from '../../typings/data/general';
@@ -26,7 +26,7 @@ export const command: SlashCommand = {
 			'ViewChannel', // Needed because of createCommandComponentDisabler
 		]) === true) { return; }
 
-		if (!hasNameAndSpecies(userData, interaction)) { return; }
+		if (!hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 		let restEmbed: EmbedBuilder[] = [];
 		if (interaction.inGuild()) {
@@ -36,6 +36,7 @@ export const command: SlashCommand = {
 			else { restEmbed = restEmbedOrFalse; }
 		}
 
+		// This is always a reply
 		const botReply = await respond(interaction, {
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(default_color)
@@ -56,8 +57,8 @@ export const command: SlashCommand = {
 							.setURL('https://discordbotlist.com/bots/paw-and-paper')
 							.setStyle(ButtonStyle.Link),
 					]),
-				new ActionRowBuilder<SelectMenuBuilder>()
-					.setComponents(new SelectMenuBuilder()
+				new ActionRowBuilder<StringSelectMenuBuilder>()
+					.setComponents(new StringSelectMenuBuilder()
 						.setCustomId(`vote_options_@${userData._id}`)
 						.setPlaceholder('Select the site on which you voted')
 						.setOptions([
@@ -68,15 +69,16 @@ export const command: SlashCommand = {
 						.setDisabled(!interaction.inGuild()),
 					),
 			],
-		}, true);
+			fetchReply: interaction.inGuild() ? true : false,
+		});
 
 		if (interaction.inGuild()) { saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction); }
 	},
 	async sendMessageComponentResponse(interaction, userData) {
 
-		if (!interaction.isSelectMenu()) { return; }
+		if (!interaction.isStringSelectMenu()) { return; }
 		/* This ensures that the user is in a guild and has a completed account. */
-		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; }
+		if (!isInGuild(interaction) || !hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
 		const voteCache = JSON.parse(readFileSync('./database/voteCache.json', 'utf-8')) as VoteList;
 		const twelveHoursInMs = 43_200_000;
@@ -107,10 +109,11 @@ export const command: SlashCommand = {
 
 			if (redeemedTopVote || redeemedDiscordsVote || redeemedDblVote) {
 
+				// This is always a reply
 				await respond(interaction, {
 					content: 'You already collected your reward for this vote!',
 					ephemeral: true,
-				}, false);
+				});
 				return;
 			}
 
@@ -127,25 +130,26 @@ export const command: SlashCommand = {
 
 			await userData.update(
 				(u) => {
-					const p = getMapData(getMapData(u.quids, getMapData(u.currentQuid, interaction.guildId)).profiles, interaction.guildId);
+					const p = getMapData(getMapData(u.quids, getMapData(u.servers, interaction.guildId).currentQuid ?? '').profiles, interaction.guildId);
 					p.energy += energyPoints;
 				},
 			);
 
+			// This is always a reply
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
 					.setTitle('Thank you for voting ☺️')
 					.setFooter({ text: `+${energyPoints} energy (${userData.quid.profile.energy}/${userData.quid.profile.maxEnergy})` })],
-			}, false);
+			});
 			return;
 		}
 
+		// This is always a reply
 		await respond(interaction, {
 			content: 'You haven\'t voted on this website in the last 12 hours! (If this is not right, please open a ticket with /ticket)',
 			ephemeral: true,
-		}, false);
+		});
 		return;
-
 	},
 };

@@ -1,5 +1,5 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder, Guild, SelectMenuBuilder, SlashCommandBuilder } from 'discord.js';
-import { respond, update } from '../../utils/helperFunctions';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder, Guild, StringSelectMenuBuilder, SlashCommandBuilder } from 'discord.js';
+import { respond } from '../../utils/helperFunctions';
 import { isInGuild } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
 import { SlashCommand } from '../../typings/handle';
@@ -22,16 +22,17 @@ export const command: SlashCommand = {
 	modifiesServerProfile: false,
 	sendCommand: async (interaction) => {
 
-		if (!isInGuild(interaction)) { return; }
+		if (!isInGuild(interaction)) { return; } // This is always a reply
 
 		/* Creating a message with up to 25 profiles of a certain rank, a select menu to select another rank and buttons to go back and fourth a page if the rank as more than 25 profiles. */
-		await respond(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild, RankType.Youngling), true);
+		// This is always a reply
+		await respond(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild, RankType.Youngling));
 	},
 	async sendMessageComponentResponse(interaction) {
 
 		if (!interaction.inCachedGuild()) { throw new Error('Interaction is not in cached guild.'); }
 
-		if (interaction.isSelectMenu() && interaction.customId.startsWith('profilelist_rank_options')) {
+		if (interaction.isStringSelectMenu() && interaction.customId.startsWith('profilelist_rank_options')) {
 
 			const rankName = (interaction.values[0] === 'profilelist_elderlies') ?
 				RankType.Elderly :
@@ -43,7 +44,8 @@ export const command: SlashCommand = {
 
 			const profilesText = await getProfilesTexts(interaction.guild, rankName, rankName === RankType.Hunter ? RankType.Healer : undefined);
 
-			await update(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild, rankName, profilesText));
+			// This is always an update to the message with the select menu
+			await respond(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild, rankName, profilesText), 'update', '@original');
 			return;
 		}
 
@@ -72,7 +74,8 @@ export const command: SlashCommand = {
 			if (page >= Math.ceil(profilesText.length / 25)) { page = 0; }
 		}
 
-		await respond(interaction, await getProfilesMessage(interaction.user.id, page, interaction.guild, rankName, profilesText), true);
+		// This is always an update to the message with the component
+		await respond(interaction, await getProfilesMessage(interaction.user.id, page, interaction.guild, rankName, profilesText), 'update', '@original');
 		return;
 
 	},
@@ -153,7 +156,7 @@ async function getProfilesMessage(
 	profilesText?: string[],
 ): Promise<{
 	embeds: EmbedBuilder[];
-	components: ActionRowBuilder<ButtonBuilder | SelectMenuBuilder>[];
+	components: ActionRowBuilder<ButtonBuilder | StringSelectMenuBuilder>[];
 }> {
 
 	/* Getting an array of strings for all the profiles with that rank. */
@@ -183,8 +186,8 @@ async function getProfilesMessage(
 				profilesText.slice(page * 25, (page + 1) * 25).join('\n') :
 				'There are no profiles with this rank on this server :(')],
 		components: [
-			new ActionRowBuilder<SelectMenuBuilder>()
-				.setComponents(new SelectMenuBuilder()
+			new ActionRowBuilder<StringSelectMenuBuilder>()
+				.setComponents(new StringSelectMenuBuilder()
 					.setCustomId(`profilelist_rank_options_@${_id}`)
 					.setPlaceholder('Select a rank')
 					.setOptions([

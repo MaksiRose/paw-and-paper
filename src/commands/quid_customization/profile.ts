@@ -1,5 +1,5 @@
-import { ActionRowBuilder, EmbedBuilder, GuildMember, InteractionReplyOptions, RestOrArray, SelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
-import { capitalizeString, respond, update, userDataServersObject } from '../../utils/helperFunctions';
+import { ActionRowBuilder, EmbedBuilder, GuildMember, InteractionReplyOptions, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
+import { capitalizeString, respond, userDataServersObject } from '../../utils/helperFunctions';
 import { userModel, getUserData } from '../../models/userModel';
 import { hasName, hasNameAndSpecies } from '../../utils/checkUserState';
 import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
@@ -34,35 +34,37 @@ export const command: SlashCommand = {
 		/* Getting userData and userData.quid either for mentionedUser if there is one or for interaction user otherwise */
 		const mentionedUser = interaction.options.getUser('user');
 		const _userData = (() => {
-			try { return userModel.findOne(u => u.userId.includes(!mentionedUser ? interaction.user.id : mentionedUser.id)); }
+			try { return userModel.findOne(u => Object.keys(u.userIds).includes(!mentionedUser ? interaction.user.id : mentionedUser.id)); }
 			catch { return null; }
 		})();
-		userData = _userData === null ? null : getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[_userData.currentQuid[interaction.guildId || 'DMs'] || '']);
+		userData = _userData === null ? null : getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[_userData.servers[interaction.guildId || 'DMs']?.currentQuid ?? '']);
 
 		/* Responding if there is no userData */
 		if (!userData) {
 
-			if (!mentionedUser) { hasName(userData, interaction); }
+			if (!mentionedUser) { hasName(userData, interaction); } // This is always a reply
 			else {
 
+				// Thix is always a reply
 				await respond(interaction, {
 					embeds: [new EmbedBuilder()
 						.setColor(error_color)
 						.setTitle('This user has no account!')],
-				}, true);
+				});
 			}
 			return;
 		}
 		/* Checking if the user has a cooldown. */
-		else if (hasNameAndSpecies(userData) && interaction.inCachedGuild() && await hasCooldown(interaction, userData)) { return; }
+		else if (hasNameAndSpecies(userData) && interaction.inCachedGuild() && await hasCooldown(interaction, userData)) { return; } // This is always a reply
 
-		const response = await getProfileMessageOptions(mentionedUser?.id || interaction.user.id, userData, userData.userId.includes(interaction.user.id));
-		const selectMenu = getQuidSelectMenu(userData, mentionedUser?.id || interaction.user.id, interaction.user.id, 0, userData.userId.includes(interaction.user.id));
+		const response = await getProfileMessageOptions(mentionedUser?.id || interaction.user.id, userData, Object.keys(userData.userIds).includes(interaction.user.id));
+		const selectMenu = getQuidSelectMenu(userData, mentionedUser?.id || interaction.user.id, interaction.user.id, 0, Object.keys(userData.userIds).includes(interaction.user.id));
 
+		// This is always a reply
 		await respond(interaction, {
 			...response,
-			components: (selectMenu.options.length > 0) ? [new ActionRowBuilder<SelectMenuBuilder>().setComponents([selectMenu])] : [],
-		}, true);
+			components: (selectMenu.options.length > 0) ? [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([selectMenu])] : [],
+		});
 	},
 	async sendMessageComponentResponse(interaction) {
 
@@ -74,56 +76,57 @@ export const command: SlashCommand = {
 		if (!customId) { return; }
 
 		/* Getting the userData from the customId */
-		let _userData = await userModel.findOne(u => u.userId.includes(customId.args[1]));
-		let userData = getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[_userData.currentQuid[interaction.guildId || 'DMs'] || '']);
+		let _userData = await userModel.findOne(u => Object.keys(u.userIds).includes(customId.args[1]));
+		let userData = getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[_userData.servers[interaction.guildId || 'DMs']?.currentQuid ?? '']);
 
 		/* Checking if the user clicked the "Learn more" button, and if they did, copy the message to their DMs, but with the select Menu as a component instead of the button. */
 		if (interaction.isButton() && customId.args[0] === 'learnabout') {
 
-			/* Getting the DM channel, the select menu, and sending the message to the DM channel. */
-			const dmChannel = await interaction.user.createDM();
+			const selectMenu = getQuidSelectMenu(userData, customId.args[1], interaction.user.id, 0, Object.keys(userData.userIds).includes(interaction.user.id));
 
-			const selectMenu = getQuidSelectMenu(userData, customId.args[1], interaction.user.id, 0, userData.userId.includes(interaction.user.id));
-
-			dmChannel.send({
-				content: interaction.message.content || undefined,
-				embeds: interaction.message.embeds,
-				components: (selectMenu.options.length > 0) ? [new ActionRowBuilder<SelectMenuBuilder>().setComponents([selectMenu])] : [],
-			});
-
-			await interaction.deferUpdate();
+			await Promise.all([
+				interaction.deferUpdate(),
+				interaction.user.send({ // This should automatically call createDM
+					content: interaction.message.content || undefined,
+					embeds: interaction.message.embeds,
+					components: (selectMenu.options.length > 0) ? [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([selectMenu])] : [],
+				}),
+			]);
 			return;
 		}
 
 		if (interaction.isButton()) { return; }
 
-		const selectOptionId = deconstructSelectOptions<SelectOptionArgs>(interaction);
+		const selectOptionId = deconstructSelectOptions<SelectOptionArgs>(interaction)[0];
+		if (selectOptionId === undefined) { throw new TypeError('selectOptionId is undefined'); }
 
 		/* Checking if the user has clicked on the "Show more accounts" button, and if they have, it will increase the page number by 1, and if the page number is greater than the total number of pages, it will set the page number to 0. Then, it will edit the bot reply to show the next page of accounts. */
-		if (interaction.isSelectMenu() && selectOptionId[0] === 'nextpage') {
+		if (interaction.isStringSelectMenu() && selectOptionId[0] === 'nextpage') {
 
 			/* Getting the quidsPage from the value Id, incrementing it by one or setting it to zero if the page number is bigger than the total amount of pages. */
 			let quidsPage = Number(selectOptionId[1]) + 1;
 			if (quidsPage >= Math.ceil((Object.keys(userData.quids).length + 1) / 24)) { quidsPage = 0; }
 
-			await update(interaction, {
-				components: [new ActionRowBuilder<SelectMenuBuilder>().setComponents([getQuidSelectMenu(userData, customId.args[1], interaction.user.id, quidsPage, userData.userId.includes(interaction.user.id))])],
-			});
+			// This is always an update to the message with the select menu
+			await respond(interaction, {
+				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([getQuidSelectMenu(userData, customId.args[1], interaction.user.id, quidsPage, Object.keys(userData.userIds).includes(interaction.user.id))])],
+			}, 'update', '@original');
 			return;
 		}
 
 		/* Checking if the user has clicked on a switchto button, and if they have, it will switch the user's current quid to the quid they have clicked on. */
-		if (interaction.isSelectMenu() && selectOptionId[0] === 'switchto') {
+		if (interaction.isStringSelectMenu() && selectOptionId[0] === 'switchto') {
 
 			await interaction.deferUpdate();
 
 			/* Checking if the user is on a cooldown, and if they are, it will respond that they can't switch quids. */
 			if (userData.serverInfo?.hasCooldown === true) {
 
+				// This is always an editReply to the message with the select menu (due to deferUpdate)
 				await respond(interaction, {
 					content: 'You can\'t switch quids because your current quid is busy!',
 					ephemeral: true,
-				}, false);
+				}, 'update', '@original');
 				return;
 			}
 
@@ -147,8 +150,10 @@ export const command: SlashCommand = {
 						currentQuid: quidId || null,
 					};
 					if (quidId) {
+						// eslint-disable-next-line deprecation/deprecation
 						u.currentQuid[interaction.guildId || 'DMs'] = quidId;
 					}
+					// eslint-disable-next-line deprecation/deprecation
 					else { delete u.currentQuid[interaction.guildId || 'DMs']; }
 				},
 			);
@@ -201,6 +206,7 @@ export const command: SlashCommand = {
 									roles: [],
 									skills: { global: {}, personal: {} },
 									lastActiveTimestamp: 0,
+									passedOutTimestamp: 0,
 								};
 							}
 						},
@@ -233,32 +239,33 @@ export const command: SlashCommand = {
 				catch (error) { await checkRoleCatchBlock(error, interaction, member); }
 			}
 
-			/* This has to be editReply because we do deferUpdate earlier. We do that because sorting out the roles might take a while. */
-			await interaction
-				.editReply({
+			// This is always an editReply to the message with the select menu (due to deferUpdate)
+			await respond(interaction, {
 				// we can interaction.user.id because the "switchto" option is only available to yourself
-					...await getProfileMessageOptions(interaction.user.id, userData, userData.userId.includes(interaction.user.id)),
-					components: interaction.message.components,
-				});
+				...await getProfileMessageOptions(interaction.user.id, userData, Object.keys(userData.userIds).includes(interaction.user.id)),
+				components: interaction.message.components,
+			}, 'update', '@original');
 
-			respond(interaction, {
+			// This is always a followUp
+			await respond(interaction, {
 				content: `You successfully switched to \`${userData.quid?.name || 'Empty Slot'}\`!`,
 				ephemeral: true,
-			}, false);
+			});
 			return;
 		}
 
 		/* Checking if the user has clicked on the view button, and if they have, it will edit the message to show the quid they have clicked on. */
-		if (interaction.isSelectMenu() && customId.args[0] === 'accountselect' && selectOptionId[0] === 'view') {
+		if (interaction.isStringSelectMenu() && customId.args[0] === 'accountselect' && selectOptionId[0] === 'view') {
 
 			/* Getting the userData from the customId */
 			const quidId = selectOptionId[1];
 			userData = getUserData(_userData, interaction.guildId || 'DMs', _userData.quids[quidId]);
 
-			await update(interaction, {
-				...await getProfileMessageOptions(customId.args[1], userData, userData.userId.includes(interaction.user.id)),
+			// This is always an update to the message with the select menu
+			await respond(interaction, {
+				...await getProfileMessageOptions(customId.args[1], userData, Object.keys(userData.userIds).includes(interaction.user.id)),
 				components: interaction.message.components,
-			});
+			}, 'update', '@original');
 			return;
 		}
 
@@ -307,7 +314,7 @@ export async function getProfileMessageOptions(
  * @param executorId - The user ID of the user who executed the command. This is used to know who whether the person selecting from the select menu can do so.
  * @param quidsPage - The current page of quids the user is on.
  * @param isYourself - Whether the profile belongs to the person requesting the info.
- * @returns A SelectMenuBuilder object
+ * @returns A StringSelectMenuBuilder object
  */
 function getQuidSelectMenu(
 	userData: UserData<undefined, ''>,
@@ -315,7 +322,7 @@ function getQuidSelectMenu(
 	executorId: string,
 	quidsPage: number,
 	isYourself: boolean,
-): SelectMenuBuilder {
+): StringSelectMenuBuilder {
 
 	let quidOptions: RestOrArray<SelectMenuComponentOptionData> = userData.quids.map(quid => ({
 		label: quid.name,
@@ -341,7 +348,7 @@ function getQuidSelectMenu(
 		});
 	}
 
-	return new SelectMenuBuilder()
+	return new StringSelectMenuBuilder()
 		.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, executorId, ['accountselect', userId]))
 		.setPlaceholder(`Select a quid to ${isYourself ? 'switch to' : 'view'}`)
 		.setOptions(quidOptions);
