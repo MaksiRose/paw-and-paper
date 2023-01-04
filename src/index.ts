@@ -758,7 +758,7 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 		habitat: SpeciesHabitatType.Cold,
 		biome1OpponentArray: ['wolf', 'bear', 'maned wolf'],
 		biome2OpponentArray: ['fox', 'eagle'],
-		biome3OpponentArray: ['dog', 'coyote'],
+		biome3OpponentArray: ['dog', 'coyote', 'snow leopard'],
 	},
 	'kinkajou': {
 		diet: SpeciesDietType.Omnivore,
@@ -923,7 +923,7 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 		habitat: SpeciesHabitatType.Warm,
 		biome1OpponentArray: ['frog', 'rat', 'hedgehog'],
 		biome2OpponentArray: ['owl', 'deer', 'dog'],
-		biome3OpponentArray: ['leopard', 'hawk', 'lion'],
+		biome3OpponentArray: ['snow leopard', 'hawk', 'lion'],
 	},
 	// actual diet: small mammals (such as young rabbits, hares, mice, ground squirrels, and other rodents), small birds, snakes, lizards, frogs, insects, other invertebrates, carrion, and the eggs of birds, lizards, snakes, and tortoises
 	// actual predators: foxes, mountain lions, coyotes and birds of prey
@@ -942,6 +942,15 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 		biome1OpponentArray: ['beetle', 'moth', 'cricket'],
 		biome2OpponentArray: ['rat', 'frog', 'hedgehog'],
 		biome3OpponentArray: ['eagle', 'hawk'],
+	},
+	// actual diet: Wild goat, domestic goats, blue sheep, ibex, Himalayan tahr, marmot, pika, hares, small rodents and game birds. domestic livestock. Sometimes eat vegetation is food is hard to find
+	// actual predators: Hawks, other snow leopards
+	'snow leopard': {
+		diet: SpeciesDietType.Carnivore,
+		habitat: SpeciesHabitatType.Cold,
+		biome1OpponentArray: ['rat', 'beaver', 'rabbit'],
+		biome2OpponentArray: ['goat', 'deer', 'warthog'],
+		biome3OpponentArray: ['hawk', 'snow leopard'],
 	},
 };
 
