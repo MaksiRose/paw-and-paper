@@ -821,7 +821,7 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 		habitat: SpeciesHabitatType.Cold,
 		biome1OpponentArray: ['beetle', 'moth', 'cricket'],
 		biome2OpponentArray: ['squirrel', 'rabbit'],
-		biome3OpponentArray: ['hawk', 'eagle'],
+		biome3OpponentArray: ['hawk', 'eagle', 'gila monster'],
 	},
 	'king cobra': {
 		diet: SpeciesDietType.Carnivore,
@@ -868,7 +868,7 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 		diet: SpeciesDietType.Carnivore,
 		habitat: SpeciesHabitatType.Cold,
 		biome1OpponentArray: ['beetle', 'cricket', 'moth'],
-		biome2OpponentArray: ['salmon', 'frog', 'owl'],
+		biome2OpponentArray: ['salmon', 'frog', 'gila monster'],
 		biome3OpponentArray: ['weasel', 'king cobra', 'raccoon'],
 	},
 	// actual diet: lizard, grub
@@ -924,6 +924,15 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 		biome1OpponentArray: ['frog', 'rat', 'hedgehog'],
 		biome2OpponentArray: ['owl', 'deer', 'dog'],
 		biome3OpponentArray: ['leopard', 'hawk', 'lion'],
+	},
+	// actual diet: small mammals (such as young rabbits, hares, mice, ground squirrels, and other rodents), small birds, snakes, lizards, frogs, insects, other invertebrates, carrion, and the eggs of birds, lizards, snakes, and tortoises
+	// actual predators: foxes, mountain lions, coyotes and birds of prey
+	'gila monster': {
+		diet: SpeciesDietType.Carnivore,
+		habitat: SpeciesHabitatType.Warm,
+		biome1OpponentArray: ['crow', 'rat', 'beaver'],
+		biome2OpponentArray: ['fox', 'frog', 'anole'],
+		biome3OpponentArray: ['lion', 'hawk', 'coyote'],
 	},
 };
 
