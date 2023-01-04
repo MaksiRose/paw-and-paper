@@ -842,7 +842,7 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 		habitat: SpeciesHabitatType.Cold,
 		biome1OpponentArray: ['beetle', 'cricket', 'praying mantis'],
 		biome2OpponentArray: ['frog', 'rat', 'squirrel'],
-		biome3OpponentArray: ['owl', 'eagle', 'weasel'],
+		biome3OpponentArray: ['vampire bat', 'eagle', 'weasel'],
 	},
 	// actual diet: plants
 	// actual predators: felids, canids and bears, hawks, sometimes otters
@@ -933,6 +933,15 @@ export const speciesInfo: { [key in SpeciesNames]: SpeciesInfo } = {
 		biome1OpponentArray: ['crow', 'rat', 'beaver'],
 		biome2OpponentArray: ['fox', 'frog', 'anole'],
 		biome3OpponentArray: ['lion', 'hawk', 'coyote'],
+	},
+	// actual diet: blood from cows, pigs, horses, goats, chickens, tapirs, small wild mammals, wild birds
+	// actual predators: Eagles, Hawks, humans
+	'vampire bat': {
+		diet: SpeciesDietType.Carnivore,
+		habitat: SpeciesHabitatType.Warm,
+		biome1OpponentArray: ['beetle', 'moth', 'cricket'],
+		biome2OpponentArray: ['rat', 'frog', 'hedgehog'],
+		biome3OpponentArray: ['eagle', 'hawk'],
 	},
 };
 
