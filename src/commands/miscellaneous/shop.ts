@@ -275,7 +275,7 @@ async function getShopResponse(
 				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, []))
 				.setPlaceholder('Select a shop item')
 				.setOptions(shopMenuOptions))],
-	}, interaction.isStringSelectMenu() ? 'update' : 'reply', '@original');
+	}, interaction.isStringSelectMenu() ? 'update' : 'reply', interaction.isMessageComponent() ? interaction.message.id : undefined);
 }
 
 function getShopInfo(serverData: ServerSchema) {

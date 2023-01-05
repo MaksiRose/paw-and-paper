@@ -4,7 +4,7 @@ import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
-import { getMapData, getSmallerNumber, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
+import { getMapData, getMessageId, getSmallerNumber, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from '../gameplay_primary/attack';
 const { default_color } = require('../../../config.json');
@@ -51,7 +51,7 @@ export async function sendDrinkMessage(
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setDescription(`*Water sounds churned in ${userData.quid.name}'s ear, ${userData.quid.pronoun(2)} mouth longing for just one more drink. It seems like ${userData.quid.pronoun(0)} can never be as hydrated as ${userData.quid.pronounAndPlural(0, 'want')}, but  ${userData.quid.pronoun(0)} had plenty of water today.*`)],
-		}, 'update', '@original');
+		}, 'update', interaction.isButton() ? interaction.message.id : undefined);
 		return;
 	}
 
@@ -70,7 +70,7 @@ export async function sendDrinkMessage(
 			.setColor(default_color)
 			.setDescription('For the next 15 seconds, click the button as many times as you can!')],
 		components: components,
-	}, 'update', '@original');
+	}, 'update', interaction.isButton() ? interaction.message.id : undefined);
 
 	const collector = botReply.createMessageComponentCollector({
 		componentType: ComponentType.Button,
@@ -107,7 +107,7 @@ export async function sendDrinkMessage(
 				},
 			);
 
-			// This is a reply if interaction is a ChatInputCommand, and an update if it's a button
+			// This is an editReply
 			await respond(interaction, {
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
@@ -115,7 +115,7 @@ export async function sendDrinkMessage(
 					.setDescription(`*${userData.quid.name} scurries over to the river and takes hasty gulps. The fresh water runs down ${userData.quid.pronoun(2)} throat and fills ${userData.quid.pronoun(2)} body with new energy.*`)
 					.setFooter({ text: `+${thirstPoints} thirst (${userData.quid.profile.thirst}/${userData.quid.profile.maxThirst})${(currentRegion !== CurrentRegionType.Lake) ? '\nYou are now at the lake' : ''}\n\nDon't forget to stay hydrated in real life too! :)` })],
 				components: disableAllComponents(components),
-			}, 'update', '@original');
+			}, 'update', getMessageId(botReply));
 		}
 		catch (error) {
 

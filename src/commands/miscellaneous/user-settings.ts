@@ -48,7 +48,7 @@ export const command: SlashCommand = {
 		if (customId.args[0] === 'mainpage') {
 
 			// This is always an update
-			await respond(interaction, getOriginalMessage(interaction), 'update', '@original');
+			await respond(interaction, getOriginalMessage(interaction), 'update', interaction.message.id);
 		}
 
 		const isMentionsChange = customId.args[0] === 'mentions' && interaction.isStringSelectMenu();
@@ -67,7 +67,7 @@ export const command: SlashCommand = {
 			}
 
 			// This is always an update
-			await respond(interaction, getMentionsMessage(interaction, userData), 'update', '@original');
+			await respond(interaction, getMentionsMessage(interaction, userData), 'update', interaction.message.id);
 		}
 
 		const isAccessibilityChange = customId.args[0] === 'accessibility' && interaction.isStringSelectMenu();
@@ -85,7 +85,7 @@ export const command: SlashCommand = {
 			}
 
 			// This is always an update
-			await respond(interaction, getAccessibilityMessage(interaction, userData), 'update', '@original');
+			await respond(interaction, getAccessibilityMessage(interaction, userData), 'update', interaction.message.id);
 		}
 
 		if (customId.args[0] === 'reminders') {
@@ -124,7 +124,7 @@ export const command: SlashCommand = {
 							.setCustomId(`user-settings_reminders_water_${isOn ? 'off' : 'on'}_@${userData._id}`)
 							.setLabel(`Turn water reminders ${isOn ? 'off' : 'on'}`)
 							.setStyle(ButtonStyle.Secondary))],
-				}, 'update', '@original');
+				}, 'update', interaction.message.id);
 
 				// This should always be a followUp to the updated error message
 				await respond(interaction, {
@@ -148,7 +148,7 @@ export const command: SlashCommand = {
 							.setCustomId(`user-settings_reminders_resting_${isOn ? 'off' : 'on'}_@${userData._id}`)
 							.setLabel(`Turn automatic resting pings ${isOn ? 'off' : 'on'}`)
 							.setStyle(ButtonStyle.Secondary))],
-				}, 'update', '@original');
+				}, 'update', interaction.message.id);
 
 				// This should always be a followUp to the updated error message
 				await respond(interaction, {

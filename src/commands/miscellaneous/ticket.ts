@@ -128,7 +128,7 @@ export const command: SlashCommand = {
 		// This is always an update to the message with the button
 		await respond(interaction, {
 			components: disableAllComponents(interaction.message.components),
-		}, 'update', '@original');
+		}, 'update', interaction.message.id);
 
 	},
 	async sendModalResponse(interaction) {
@@ -294,7 +294,7 @@ export async function createNewTicket(
 			.setDescription('You help improve the bot.\nNote: To suggest a species [use this form](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement%2Cnon-code&template=species_request.yaml&title=New+species%3A+). To get easier help, [join the support server](https://discord.gg/9DENgj8q5Q).')
 			.setFooter({ text: 'We might need to get in contact with you for clarification regarding your ticket. If we have no way of contacting you (i.e. DMs being closed, not allowing friend requests and not being in the support server), your ticket might not be considered.' }),
 		...dmIsSuccessful ? [] : [ticketEmbed]],
-	}, 'reply', '@original');
+	}, 'reply', interaction.isMessageComponent() ? interaction.message.id : undefined);
 }
 
 export function getRespondButton(

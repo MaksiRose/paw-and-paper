@@ -12,7 +12,7 @@ import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { createFightGame } from '../../utils/gameBuilder';
-import { getMapData, getSmallerNumber, KeyOfUnion, respond, sendErrorMessage, setCooldown, unsafeKeys, ValueOf, widenValues } from '../../utils/helperFunctions';
+import { getMapData, getMessageId, getSmallerNumber, KeyOfUnion, respond, sendErrorMessage, setCooldown, unsafeKeys, ValueOf, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -152,7 +152,7 @@ async function executeAttacking(
 		botReply = await respond(newInteraction ?? interaction, {
 			embeds: [...restEmbed, embed],
 			components: [...previousFightComponents ? [previousFightComponents] : [], fightGame.fightComponent],
-		}, newInteraction !== undefined ? 'update' : 'reply', '@original');
+		}, newInteraction !== undefined ? 'update' : 'reply', newInteraction !== undefined ? newInteraction.message.id : undefined);
 
 		/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 		fightGame.fightComponent = fightGame.correctButtonOverwrite();
@@ -281,7 +281,7 @@ async function executeAttacking(
 						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['new']))
 						.setLabel('Attack again')
 						.setStyle(ButtonStyle.Primary))],
-		}, 'update', '@original');
+		}, 'update', getMessageId(botReply));
 
 		await isPassedOut(interaction, userData, true);
 

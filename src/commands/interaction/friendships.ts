@@ -46,7 +46,7 @@ export const command: SlashCommand = {
 		}
 
 		// This is always an update to the message with the button
-		await respond(interaction, await getFriendshipMessage(userData, interaction.guildId ?? '', page, friendshipTexts), 'update', '@original');
+		await respond(interaction, await getFriendshipMessage(userData, interaction.guildId ?? '', page, friendshipTexts), 'update', interaction.message.id);
 	},
 };
 

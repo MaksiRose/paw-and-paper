@@ -1,5 +1,5 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { respond } from '../../utils/helperFunctions';
+import { getMessageId, respond } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
 import { SlashCommand } from '../../typings/handle';
@@ -23,7 +23,7 @@ export const command: SlashCommand = {
 		if (!channel.isTextBased()) { throw new TypeError('channel is not text based'); }
 
 		// This is always a reply
-		await respond(interaction, {
+		const botReply = await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
 				.setDescription('Please upload an image to this channel within the next 60 seconds to set as your quids avatar!')],
@@ -82,7 +82,7 @@ export const command: SlashCommand = {
 						.setColor(error_color)
 						.setTitle('An image has not been uploaded to this channel in time!')],
 					ephemeral: true,
-				}, 'reply', '@original');
+				}, 'reply', getMessageId(botReply));
 			});
 	},
 };

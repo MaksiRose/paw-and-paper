@@ -80,7 +80,7 @@ export const command: SlashCommand = {
 				// This is an update to the message with the select menu
 				await respond(interaction, {
 					components: [itemSelectMenu, amountSelectMenu],
-				}, 'update', '@original');
+				}, 'update', interaction.message.id);
 				return;
 			}
 
@@ -126,7 +126,7 @@ export const command: SlashCommand = {
 				await respond(interaction, {
 					embeds: [...interaction.message.embeds, embed],
 					components: itemSelectMenu.components[0]?.options.length === 0 ? disableAllComponents(interaction.message.components) : [itemSelectMenu, storeAllButton],
-				}, 'update', '@original');
+				}, 'update', interaction.message.id);
 				return;
 			}
 		}
@@ -163,7 +163,7 @@ export async function sendStoreMessage(
 				.setDescription(`*${userData.quid.name} goes to the food den to store ${userData.quid.pronoun(2)} findings away, but ${userData.quid.pronoun(2)} mouth is empty...*`),
 			],
 			components: [],
-		}, 'update', '@original');
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
 		return;
 	}
 
@@ -181,7 +181,7 @@ export async function sendStoreMessage(
 		embeds: [...restEmbed, getOriginalEmbed(userData)],
 		components: [itemSelectMenu, storeAllButton],
 		fetchReply: true,
-	}, 'update', '@original');
+	}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
 
 	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 }
@@ -273,6 +273,6 @@ async function storeAll(
 	await respond(interaction, {
 		embeds: [...(otherEmbeds ?? []), embed],
 		components: interaction.isButton() ? disableAllComponents(interaction.message.components) : [],
-	}, 'update', '@original');
+	}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
 	return;
 }

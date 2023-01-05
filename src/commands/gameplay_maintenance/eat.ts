@@ -115,7 +115,7 @@ export async function sendEatMessage(
 				content: messageContent,
 				embeds: [...restEmbed, embed],
 				components: interaction.isStringSelectMenu() ? disableAllComponents(interaction.message.components) : [],
-			}, 'update', '@original');
+			}, 'update', interaction.isAnySelectMenu() ? interaction.message.id : undefined);
 			return;
 		}
 	}
@@ -282,7 +282,7 @@ export async function sendEatMessage(
 		content: messageContent,
 		embeds: [...restEmbed, embed],
 		components: interaction.isStringSelectMenu() ? disableAllComponents(interaction.message.components) : [],
-	}, 'update', '@original');
+	}, 'update', interaction.isAnySelectMenu() ? interaction.message.id : undefined);
 	return;
 }
 
@@ -302,7 +302,7 @@ async function sendNoItemMessage(
 		content: messageContent,
 		embeds: [...restEmbed, embed],
 		components: interaction.isStringSelectMenu() ? disableAllComponents(interaction.message.components) : [],
-	}, 'update', '@original');
+	}, 'update', interaction.isAnySelectMenu() ? interaction.message.id : undefined);
 }
 
 function addIncorrectDietHungerPoints() { return getRandomNumber(5, 1); }

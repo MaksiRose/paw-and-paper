@@ -65,7 +65,7 @@ export const command: SlashCommand = {
 					new ActionRowBuilder<StringSelectMenuBuilder>()
 						.setComponents([getQuidsPage(0, userData)]),
 				],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 			return;
 		}
 
@@ -82,7 +82,7 @@ export const command: SlashCommand = {
 					new ActionRowBuilder<StringSelectMenuBuilder>()
 						.setComponents([getServersPage(0, userData)]),
 				],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 			return;
 		}
 
@@ -111,7 +111,7 @@ export const command: SlashCommand = {
 								.setStyle(ButtonStyle.Secondary),
 						]),
 				],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 			return;
 		}
 
@@ -141,7 +141,7 @@ export const command: SlashCommand = {
 				);
 
 				// This is always an update to the message with the button
-				await respond(interaction, sendOriginalMessage(userData), 'update', '@original');
+				await respond(interaction, sendOriginalMessage(userData), 'update', interaction.message.id);
 
 				// This is always a followUp
 				await respond(interaction, {
@@ -174,7 +174,7 @@ export const command: SlashCommand = {
 				const server = await serverModel.findOne(s => s.serverId === serverId);
 
 				// This is always an update to the message with the button
-				await respond(interaction, sendOriginalMessage(userData), 'update', '@original');
+				await respond(interaction, sendOriginalMessage(userData), 'update', interaction.message.id);
 
 				// This is always a followUp
 				await respond(interaction, {
@@ -192,7 +192,7 @@ export const command: SlashCommand = {
 				// This is always an update to the message with the button
 				await respond(interaction, {
 					components: disableAllComponents(interaction.message.components),
-				}, 'update', '@original');
+				}, 'update', interaction.message.id);
 
 				// This is always a followUp
 				await respond(interaction, {
@@ -209,7 +209,7 @@ export const command: SlashCommand = {
 		if (interaction.isButton() && customId.args[0] === 'cancel') {
 
 			// This is always an update to the message with the button
-			await respond(interaction, sendOriginalMessage(userData), 'update', '@original');
+			await respond(interaction, sendOriginalMessage(userData), 'update', interaction.message.id);
 			return;
 		}
 
@@ -230,7 +230,7 @@ export const command: SlashCommand = {
 					new ActionRowBuilder<StringSelectMenuBuilder>()
 						.setComponents([getQuidsPage(deletePage, userData)]),
 				],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 			return;
 		}
 
@@ -261,7 +261,7 @@ export const command: SlashCommand = {
 								.setStyle(ButtonStyle.Secondary),
 						]),
 				],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 			return;
 		}
 
@@ -278,7 +278,7 @@ export const command: SlashCommand = {
 					new ActionRowBuilder<StringSelectMenuBuilder>()
 						.setComponents([getServersPage(deletePage, userData)]),
 				],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 			return;
 		}
 
@@ -313,7 +313,7 @@ export const command: SlashCommand = {
 								.setStyle(ButtonStyle.Secondary),
 						]),
 				],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 			return;
 		}
 	},

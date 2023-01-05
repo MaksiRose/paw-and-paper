@@ -110,7 +110,7 @@ export const command: SlashCommand = {
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
 				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([getQuidSelectMenu(userData, customId.args[1], interaction.user.id, quidsPage, Object.keys(userData.userIds).includes(interaction.user.id))])],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 			return;
 		}
 
@@ -126,7 +126,7 @@ export const command: SlashCommand = {
 				await respond(interaction, {
 					content: 'You can\'t switch quids because your current quid is busy!',
 					ephemeral: true,
-				}, 'update', '@original');
+				}, 'update', interaction.message.id);
 				return;
 			}
 
@@ -244,7 +244,7 @@ export const command: SlashCommand = {
 				// we can interaction.user.id because the "switchto" option is only available to yourself
 				...await getProfileMessageOptions(interaction.user.id, userData, Object.keys(userData.userIds).includes(interaction.user.id)),
 				components: interaction.message.components,
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 
 			// This is always a followUp
 			await respond(interaction, {
@@ -265,7 +265,7 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				...await getProfileMessageOptions(customId.args[1], userData, Object.keys(userData.userIds).includes(interaction.user.id)),
 				components: interaction.message.components,
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 			return;
 		}
 

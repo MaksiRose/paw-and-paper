@@ -10,7 +10,7 @@ import { changeCondition, DecreasedStatsData } from '../../utils/changeCondition
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
-import { getArrayElement, getMapData, respond, sendErrorMessage, setCooldown, unsafeKeys, widenValues } from '../../utils/helperFunctions';
+import { getArrayElement, getMapData, getMessageId, respond, sendErrorMessage, setCooldown, unsafeKeys, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
@@ -122,7 +122,7 @@ export const command: SlashCommand = {
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 					.setDescription(`*After careful consideration, ${userData.quid.name} decides that none of ${userData.quid.pronoun(2)} injuries are urgent enough to use the grotto to regenerate. The ${userData.quid.getDisplayspecies()} might inspect the medicine den for useful plants instead.*`)],
 				components: disableAllComponents(components),
-			}, 'reply', '@original');
+			}, 'reply', getMessageId(botReply));
 			return;
 		}
 
@@ -156,7 +156,7 @@ export const command: SlashCommand = {
 		botReply = await respond(buttonInteraction, {
 			content: messageContent,
 			components: components,
-		}, 'update', '@original');
+		}, 'update', buttonInteraction.message.id);
 
 		startNewRound(buttonInteraction, userData, serverData, []);
 
@@ -202,7 +202,7 @@ export const command: SlashCommand = {
 							.setDescription(drawEmojibar(displayingEmoji, emojisToClick))
 							.setFooter({ text: 'After a list of emojis is displayed to you one by one, choose the same emojis from the buttons below in the same order.' })],
 						components: displayingEmoji === emojisToClick.length ? enableAllComponents(componentArray.map(c => c.toJSON())) : components,
-					}, 'reply', '@original');
+					}, 'reply', getMessageId(botReply));
 
 					if (displayingEmoji === emojisToClick.length) {
 
@@ -246,7 +246,7 @@ export const command: SlashCommand = {
 									.setDescription('✅'.repeat(choosingEmoji - 1) + '✅')
 									.setFooter({ text: 'After a list of emojis is displayed to you one by one, choose the same emojis from the buttons below in the same order.' })],
 								components: choosingEmoji === emojisToClick.length ? disableAllComponents(componentArray) : undefined,
-							}, 'update', '@original');
+							}, 'update', int.message.id);
 							if (emojisToClick.length >= thisRoundEmojisClicked) { collector.stop('max'); }
 						}
 						else {
@@ -350,7 +350,7 @@ export const command: SlashCommand = {
 								...levelUpEmbed,
 							],
 							components: disableAllComponents(componentArray),
-						}, 'update', '@original');
+						}, 'update', lastInteraction.message.id);
 
 						await isPassedOut(lastInteraction, userData, true);
 

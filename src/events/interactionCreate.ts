@@ -228,7 +228,7 @@ export const event: DiscordEvent = {
 						// This should always update the error message
 						await respond(interaction, {
 							components: disableAllComponents(interaction.message.components),
-						}, 'update', '@original');
+						}, 'update', interaction.message.id);
 
 						const errorId = interaction.customId.split('_')[2] || generateId();
 						const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;

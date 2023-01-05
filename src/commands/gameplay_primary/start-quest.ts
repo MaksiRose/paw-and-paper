@@ -7,7 +7,7 @@ import { SpeciesHabitatType } from '../../typings/main';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
-import { capitalizeString, getMapData, respond, setCooldown } from '../../utils/helperFunctions';
+import { capitalizeString, getMapData, getMessageId, respond, setCooldown } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
 import { remindOfAttack } from './attack';
@@ -143,7 +143,7 @@ export async function sendQuestMessage(
 		embeds: [...restEmbed, embed, ...afterEmbedArray],
 		components: components,
 		fetchReply: true,
-	}, respondType, '@original');
+	}, respondType, interaction.isMessageComponent() ? interaction.message.id : '@original');
 
 	/* The View Channels permissions that are needed for this function to work properly should be checked in all places that reference sendQuestMessage. It can't be checked for in here directly because a botReply must be returned. */
 	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
@@ -162,7 +162,7 @@ export async function sendQuestMessage(
 		.catch(async () => {
 
 			// This is always an editReply
-			return (await respond(interaction, { components: disableAllComponents(components) }, respondType, '@original')).id;
+			return (await respond(interaction, { components: disableAllComponents(components) }, respondType, getMessageId(botReply))).id;
 		});
 }
 
@@ -281,7 +281,7 @@ async function startQuest(
 			content: messageContent,
 			embeds: [...embedArray, embed, ...afterEmbedArray],
 			components: [...previousQuestComponents ? [previousQuestComponents] : [], questComponents],
-		}, 'update', '@original');
+		}, 'update', newInteraction?.message.id ?? interaction.message.id);
 
 		newInteraction = await (botReply as Message<true> | InteractionResponse<true>)
 			.awaitMessageComponent({
@@ -429,7 +429,7 @@ async function startQuest(
 				content: messageContent,
 				embeds: [...embedArray, embed, ...afterEmbedArray],
 				components: [questComponents],
-			}, 'update', '@original');
+			}, 'update', newInteraction?.message.id ?? interaction.message.id);
 
 			if (userData.quid.profile.rank === RankType.Youngling) { await apprenticeAdvice(newInteraction ?? interaction); }
 			else if (userData.quid.profile.rank === RankType.Apprentice) { await hunterhealerAdvice(newInteraction ?? interaction); }
@@ -491,7 +491,7 @@ async function startQuest(
 				content: messageContent,
 				embeds: [...embedArray, embed, ...afterEmbedArray],
 				components: [questComponents],
-			}, 'update', '@original')).id;
+			}, 'update', newInteraction?.message.id ?? interaction.message.id)).id;
 		}
 		else {
 

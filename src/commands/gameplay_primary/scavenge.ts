@@ -10,7 +10,7 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
-import { capitalizeString, getArrayElement, getMapData, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
+import { capitalizeString, getArrayElement, getMapData, getMessageId, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
 import { pickMaterial, pickMeat, simulateMaterialUse, simulateMeatUse } from '../../utils/simulateItemUse';
@@ -226,7 +226,7 @@ async function executeScavenging(
 					else {
 
 						// This is always an update
-						botReply = await respond(int, { components: correctButtonPresses < 4 ? componentArray : disableAllComponents(componentArray) }, 'update', '@original');
+						botReply = await respond(int, { components: correctButtonPresses < 4 ? componentArray : disableAllComponents(componentArray) }, 'update', int.message.id);
 						if (correctButtonPresses >= 4) { collector.stop(); }
 					}
 				}
@@ -352,7 +352,7 @@ async function executeScavenging(
 				...levelUpEmbed,
 			],
 			components: newComponents,
-		}, 'update', '@original');
+		}, 'update', getMessageId(botReply));
 
 		await isPassedOut(int, userData, true);
 
@@ -396,6 +396,6 @@ async function executeScavenging(
 				.setDescription(`*${userData!.quid!.name} has been searching for quite some time now, when a mishap happens to ${userData!.quid!.pronoun(1)}. ${capitalizeString(userData!.quid!.pronounAndPlural(0, '\'s', '\'re'))} not paying attention for only a moment, and suddenly everything happens very quickly. The ${userData!.quid!.getDisplayspecies()} has fallen into a trap that a human must have set here! Now ${userData!.quid!.pronoun(0)} must catch ${userData!.quid!.pronoun(4)} again quickly and try to get free before there is an accident.*`)
 				.setFooter({ text: `Click the "${humanTrapCorrectEmoji}" as many times as you can!` })],
 			components: componentArray,
-		}, 'update', '@original');
+		}, 'update', getMessageId(botReply));
 	}
 }

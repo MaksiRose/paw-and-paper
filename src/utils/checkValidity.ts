@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, AnySelectMenuInteraction, time, Message } from 'discord.js';
-import { capitalizeString, getMapData, respond, sendErrorMessage } from './helperFunctions';
+import { capitalizeString, getMapData, getMessageId, respond, sendErrorMessage } from './helperFunctions';
 import { decreaseLevel } from './levelHandling';
 import { stopResting, isResting } from '../commands/gameplay_maintenance/rest';
 import { calculateInventorySize } from './simulateItemUse';
@@ -90,7 +90,7 @@ export async function hasCooldown(
 		setTimeout(async function() {
 
 			await interaction
-				.deleteReply(botReply instanceof Message ? botReply.id : '@original')
+				.deleteReply(getMessageId(botReply))
 				.catch (async error => {
 
 					try {

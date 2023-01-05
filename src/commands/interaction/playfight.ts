@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { userModel, getUserData } from '../../models/userModel';
 import { ServerSchema } from '../../typings/data/server';
 import { CurrentRegionType, RankType, UserData } from '../../typings/data/user';
@@ -9,7 +9,7 @@ import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
-import { capitalizeString, getArrayElement, getBiggerNumber, getMapData, getSmallerNumber, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
+import { capitalizeString, getArrayElement, getBiggerNumber, getMapData, getMessageId, getSmallerNumber, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
@@ -350,7 +350,7 @@ export const command: SlashCommand = {
 							...(levelUpEmbeds?.levelUpEmbed2 ?? []),
 						],
 						components: disableAllComponents(componentArray),
-					}, 'reply', botReply instanceof Message ? botReply.id : '@original')
+					}, 'reply', getMessageId(botReply))
 						.catch(async (error) => {
 
 							return await sendErrorMessage(interaction, error)
@@ -433,7 +433,7 @@ export const command: SlashCommand = {
 						...(levelUpEmbeds?.levelUpEmbed2 ?? []),
 					],
 					components: disableAllComponents(componentArray),
-				}, 'update', '@original')
+				}, 'update', i.message.id)
 					.catch((error) => { sendErrorMessage(i, error); });
 
 				await checkAfterGameChanges(interaction, userData1, userData2)

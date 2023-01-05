@@ -98,7 +98,7 @@ export async function executePlaying(
 						.setLabel('I understand, let\'s try it out!')
 						.setStyle(ButtonStyle.Success)),
 			],
-		}, forceEdit ? 'update' : 'reply', '@original');
+		}, forceEdit ? 'update' : 'reply', (forceEdit && interaction.isMessageComponent()) ? interaction.message.id : undefined);
 		tutorialMap.set(userData1.quid._id + userData1.quid.profile.serverId, 1);
 		return;
 	}
@@ -112,7 +112,7 @@ export async function executePlaying(
 				.setColor(userData1.quid.color)
 				.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
 				.setDescription(`*${userData1.quid.name} plays with ${userData1.quid.pronoun(4)}. The rest of the pack looks away in embarrassment.*`)],
-		}, forceEdit ? 'update' : 'reply', '@original');
+		}, forceEdit ? 'update' : 'reply', (forceEdit && interaction.isMessageComponent()) ? interaction.message.id : undefined);
 		return;
 	}
 
@@ -228,7 +228,7 @@ export async function executePlaying(
 				content: messageContent,
 				embeds: [...restEmbed, embed],
 				components: [playComponent],
-			}, forceEdit ? 'update' : 'reply', '@original');
+			}, forceEdit ? 'update' : 'reply', (forceEdit && interaction.isMessageComponent()) ? interaction.message.id : undefined);
 
 			/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 			playComponent = fightGame.correctButtonOverwrite();
@@ -358,7 +358,7 @@ export async function executePlaying(
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [playComponent],
-		}, forceEdit ? 'update' : 'reply', '@original');
+		}, forceEdit ? 'update' : 'reply', (forceEdit && interaction.isMessageComponent()) ? interaction.message.id : undefined);
 
 		/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 		playComponent = plantGame.correctButtonOverwrite();
@@ -446,7 +446,7 @@ export async function executePlaying(
 						.setLabel((tutorialMapEntry === 1 && tutorialMapEntry_ === 1) || (tutorialMapEntry === 2 && tutorialMapEntry_ === 2) ? 'Try again' : tutorialMapEntry === 1 && tutorialMapEntry_ === 2 ? 'Try another game' : 'Play again')
 						.setStyle(ButtonStyle.Primary)),
 			],
-		}, (forceEdit || buttonInteraction !== null) ? 'update' : 'reply', '@original'));
+		}, (forceEdit || buttonInteraction !== null) ? 'update' : 'reply', buttonInteraction !== null ? buttonInteraction.message.id : (forceEdit && interaction.isMessageComponent()) ? interaction.message.id : undefined));
 
 		if (tutorialMapEntry === 2 && tutorialMapEntry_ === undefined) {
 

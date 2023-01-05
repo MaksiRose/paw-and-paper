@@ -131,6 +131,18 @@ export async function respond(
 }
 
 /**
+ * It returns the message id of a message or interaction response, or a '@original' if the message is not a message
+ * @param {InteractionResponse<boolean> | Message<boolean>} message - The message that you want to get the ID from.
+ * @returns The message id or the backup id.
+ */
+export function getMessageId(
+	message: InteractionResponse<boolean> | Message<boolean>,
+): string {
+
+	return message instanceof Message ? message.id : '@original';
+}
+
+/**
  * It sends an error message to the user who executed the command, and logs the error to the console
  * @param interaction - The interaction that caused the error.
  * @param error - The error that was thrown.

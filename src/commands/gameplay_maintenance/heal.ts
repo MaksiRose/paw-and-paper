@@ -250,7 +250,7 @@ export async function getHealResponse(
 				.setFooter({ text: 'Tip: Healing yourself has a lower chance of being successful than healing others. Healers and Elderlies are more often successful than Apprentices and Hunters.' })],
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 			fetchReply: true,
-		}, 'update', '@original');
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
 
 		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 		return;
@@ -293,7 +293,7 @@ export async function getHealResponse(
 					.setDescription(`*${userData.quid.name} approaches ${userToHeal.quid.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${userData.quid.getDisplayspecies()} asks.\n${userToHeal.quid.name} shakes ${userToHeal.quid.pronoun(2)} head.* "Not that I know of, no."\n*Disappointed, ${userData.quid.name} goes back to the medicine den.*`)],
 				components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 				fetchReply: true,
-			}, 'update', '@original');
+			}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
 
 			saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 			return;
@@ -332,7 +332,7 @@ export async function getHealResponse(
 			embeds: [...embedArray, quidConditionEmbed, inventoryEmbed],
 			components: [quidsSelectMenu, pagesButtons, ...(selectMenuOptions.length > 0 ? [inventorySelectMenu] : [])],
 			fetchReply: true,
-		}, 'update', '@original');
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
 
 		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 		return;
@@ -350,7 +350,7 @@ export async function getHealResponse(
 				.setTitle(`${userToHeal.quid.name} doesn't need to be healed anymore. Please select another quid to heal if available.`)],
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 			fetchReply: true,
-		}, 'update', '@original');
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
 
 		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 		return;
@@ -459,7 +459,7 @@ export async function getHealResponse(
 				.setTitle(`${userToHeal.quid.name}'s condition changed before you healed them. Please try again.`)],
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 			fetchReply: true,
-		}, 'update', '@original');
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
 
 		saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 		return;

@@ -46,7 +46,7 @@ export const command: SlashCommand = {
 		if (interaction.isButton() && interaction.customId.includes('mainpage')) {
 
 			// This is always an update to the message with the button
-			await respond(interaction, getOriginalMessage(interaction, serverData), 'update', '@original');
+			await respond(interaction, getOriginalMessage(interaction, serverData), 'update', interaction.message.id);
 			return;
 		}
 
@@ -58,7 +58,7 @@ export const command: SlashCommand = {
 			]) === true) { return; }
 
 			// This is always an update to the message with the component
-			await respond(interaction, await getShopMessage(interaction, serverData, 0), 'update', '@original');
+			await respond(interaction, await getShopMessage(interaction, serverData, 0), 'update', interaction.message.id);
 			return;
 		}
 
@@ -71,7 +71,7 @@ export const command: SlashCommand = {
 				const page = Number(selectOptionId.split('_')[3]);
 
 				// This is always an update to the message with the select menu
-				await respond(interaction, await getShopMessage(interaction, serverData, page), 'update', '@original');
+				await respond(interaction, await getShopMessage(interaction, serverData, page), 'update', interaction.message.id);
 				return;
 			}
 			else {
@@ -90,7 +90,7 @@ export const command: SlashCommand = {
 				}();
 
 				// This is always an update to the message with the select menu
-				await respond(interaction, getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role), 'update', '@original');
+				await respond(interaction, getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, serverData, wayOfEarning, requirement, role), 'update', interaction.message.id);
 
 				const modalCollector = new InteractionCollector(interaction.client, { channel: interaction.channel || undefined, interactionType: InteractionType.ModalSubmit, message: interaction.message });
 
@@ -112,7 +112,7 @@ export const command: SlashCommand = {
 							role = collectorSelectOptionId;
 
 							// This is always an update to the message with the select menu
-							await respond(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role), 'update', '@original')
+							await respond(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role), 'update', interaction.message.id)
 								.catch(error => { console.error(error); });
 						}
 
@@ -122,7 +122,7 @@ export const command: SlashCommand = {
 							requirement = null;
 
 							// This is always an update to the message with the select menu
-							await respond(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role), 'update', '@original')
+							await respond(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role), 'update', interaction.message.id)
 								.catch(error => { console.error(error); });
 						}
 
@@ -131,7 +131,7 @@ export const command: SlashCommand = {
 							requirement = collectorSelectOptionId.replace('server-settings_shop_requirements_', '') as RankType;
 
 							// This is always an update to the message with the select menu
-							await respond(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role), 'update', '@original')
+							await respond(i, getShopRoleMessage(i, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role), 'update', interaction.message.id)
 								.catch(error => { console.error(error); });
 						}
 
@@ -348,7 +348,7 @@ export const command: SlashCommand = {
 
 							requirement = modalTextInput;
 							// This is always an update to the message the modal was called from
-							await respond(i, getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role), 'update', '@original')
+							await respond(i, getShopRoleMessage(interaction, roleMenu, roleIdOrAdd, serverData!, wayOfEarning, requirement, role), 'update', interaction.message.id)
 								.catch(error => { console.error(error); });
 							return;
 						}
@@ -368,7 +368,7 @@ export const command: SlashCommand = {
 						if (reason !== 'back') {
 
 							// This is an update to "interaction" rather than "i", therefore this will always be an editReply to the original message which is an update to the message with the component
-							await respond(interaction, await getShopMessage(interaction, serverData!, 0), 'update', '@original')
+							await respond(interaction, await getShopMessage(interaction, serverData!, 0), 'update', interaction.message.id)
 								.catch((error) => {
 									if (error.httpStatus !== 404) { console.error(error); }
 								});
@@ -392,7 +392,7 @@ export const command: SlashCommand = {
 			]) === true) { return; }
 
 			// This is always an update to the message with the select menu
-			await respond(interaction, await getUpdateMessage(interaction, serverData), 'update', '@original');
+			await respond(interaction, await getUpdateMessage(interaction, serverData), 'update', interaction.message.id);
 			return;
 		}
 
@@ -407,7 +407,7 @@ export const command: SlashCommand = {
 			await announcementChannel.addFollower(channelId);
 
 			// This is always an update to the message with the select menu
-			await respond(interaction, getOriginalMessage(interaction, serverData), 'update', '@original')
+			await respond(interaction, getOriginalMessage(interaction, serverData), 'update', interaction.message.id)
 				.catch((error) => {
 					if (error.httpStatus !== 404) { console.error(error); }
 				});
@@ -428,7 +428,7 @@ export const command: SlashCommand = {
 			]) === true) { return; }
 
 			// This is always an update to the message with the select menu
-			await respond(interaction, await getVisitsMessage(interaction, serverData, 0), 'update', '@original');
+			await respond(interaction, await getVisitsMessage(interaction, serverData, 0), 'update', interaction.message.id);
 			return;
 		}
 
@@ -436,7 +436,7 @@ export const command: SlashCommand = {
 		if (interaction.isChannelSelectMenu() && interaction.customId.includes('visits_options')) {
 
 			// This is always an update to the message with the select menu
-			await respond(interaction, getOriginalMessage(interaction, serverData), 'update', '@original')
+			await respond(interaction, getOriginalMessage(interaction, serverData), 'update', interaction.message.id)
 				.catch((error) => {
 					if (error.httpStatus !== 404) { console.error(error); }
 				});
@@ -478,7 +478,7 @@ export const command: SlashCommand = {
 		if (interaction.isStringSelectMenu() && interaction.values[0] === 'server-settings_proxying') {
 
 			// This is always an update to the message with the select menu
-			await respond(interaction, await getProxyingMessage(interaction, serverData, 0), 'update', '@original');
+			await respond(interaction, await getProxyingMessage(interaction, serverData, 0), 'update', interaction.message.id);
 			return;
 		}
 
@@ -492,7 +492,7 @@ export const command: SlashCommand = {
 			);
 
 			// This is always an update to the message with the select menu
-			await respond(interaction, await getProxyingMessage(interaction, serverData, 0), 'update', '@original')
+			await respond(interaction, await getProxyingMessage(interaction, serverData, 0), 'update', interaction.message.id)
 				.catch((error) => {
 					if (error.httpStatus !== 404) { console.error(error); }
 				});
@@ -516,7 +516,7 @@ export const command: SlashCommand = {
 				const page = Number(selectOptionId.split('_')[3]);
 
 				// This is always an update to the message with the select menu
-				await respond(interaction, await getProxyingMessage(interaction, serverData, page), 'update', '@original');
+				await respond(interaction, await getProxyingMessage(interaction, serverData, page), 'update', interaction.message.id);
 				return;
 			}
 			else {
@@ -534,7 +534,7 @@ export const command: SlashCommand = {
 				);
 
 				// This is always an update to the message with the select menu
-				await respond(interaction, await getProxyingMessage(interaction, serverData, 0), 'update', '@original')
+				await respond(interaction, await getProxyingMessage(interaction, serverData, 0), 'update', interaction.message.id)
 					.catch((error) => {
 						if (error.httpStatus !== 404) { console.error(error); }
 					});

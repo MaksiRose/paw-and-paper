@@ -81,7 +81,7 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				content: getSkillList(userData),
 				components: interaction.message.components,
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 			return;
 		}
 		/* Creating a modal that allows the user to add a skill. */
@@ -116,7 +116,7 @@ export const command: SlashCommand = {
 					getOriginalComponents(userData, serverData, interaction.member),
 					type === 'edit' ? getEditMenu(userData?._id ?? interaction.user.id, userData, serverData, category, 0) : getRemoveMenu(userData?._id ?? interaction.user.id, userData, serverData, category, 0),
 				],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 			return;
 		}
 		/* Add two buttons "personal" and "global". */
@@ -142,7 +142,7 @@ export const command: SlashCommand = {
 								.setStyle(ButtonStyle.Secondary),
 							]),
 				],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 			return;
 		}
 		/* Add a new select menu to select a skill to modify. */
@@ -154,7 +154,7 @@ export const command: SlashCommand = {
 					getOriginalComponents(userData, serverData, interaction.member),
 					getModifyMenu(userData?._id ?? interaction.user.id, userData, 0),
 				],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 			return;
 		}
 		/* Change the page of the select menu. */
@@ -172,7 +172,7 @@ export const command: SlashCommand = {
 						getOriginalComponents(userData, serverData, interaction.member),
 						getModifyMenu(userData?._id ?? interaction.user.id, userData, page),
 					],
-				}, 'update', '@original');
+				}, 'update', interaction.message.id);
 				return;
 			}
 
@@ -189,7 +189,7 @@ export const command: SlashCommand = {
 						getOriginalComponents(userData, serverData, interaction.member),
 						getEditMenu(userData?._id ?? interaction.user.id, userData, serverData, category, page),
 					],
-				}, 'update', '@original');
+				}, 'update', interaction.message.id);
 				return;
 			}
 
@@ -206,7 +206,7 @@ export const command: SlashCommand = {
 						getOriginalComponents(userData, serverData, interaction.member),
 						getRemoveMenu(userData?._id ?? interaction.user.id, userData, serverData, category, page),
 					],
-				}, 'update', '@original');
+				}, 'update', interaction.message.id);
 				return;
 			}
 			return;
@@ -283,7 +283,7 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				content: getSkillList(userData),
 				components: [getOriginalComponents(userData, serverData, interaction.member)],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 
 			// This is always a followUp
 			await respond(interaction, {
@@ -370,7 +370,7 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				content: getSkillList(userData),
 				components: [getOriginalComponents(userData, serverData, interaction.member)],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 
 			// This is always a followUp
 			await respond(interaction, {
@@ -449,7 +449,7 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				content: getSkillList(userData),
 				components: [getOriginalComponents(userData, serverData, interaction.member)],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 
 			// This is always a followUp
 			await respond(interaction, {
@@ -487,7 +487,7 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				content: getSkillList(userData),
 				components: [getOriginalComponents(userData, serverData, interaction.member)],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 
 			// This is always a followUp
 			await respond(interaction, {

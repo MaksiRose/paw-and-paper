@@ -115,7 +115,7 @@ export const command: SlashCommand = {
 							.setLabel('Privacy Policy'),
 					])] : [],
 			],
-		}, 'update', '@original');
+		}, 'update', interaction.message.id);
 
 		return;
 

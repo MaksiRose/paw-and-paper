@@ -243,7 +243,7 @@ export const command: SlashCommand = {
 				componentArray[column]?.components[row]?.setDisabled(true);
 
 				// This is always an update to the message with the button
-				const updatedInteraction = await respond(i, { components: chosenCardPositions.current === 'first' ? componentArray : disableAllComponents(componentArray) }, 'update', '@original')
+				const updatedInteraction = await respond(i, { components: chosenCardPositions.current === 'first' ? componentArray : disableAllComponents(componentArray) }, 'update', i.message.id)
 					.catch((error) => {
 						collector.stop(`error_${error}`);
 						return undefined;

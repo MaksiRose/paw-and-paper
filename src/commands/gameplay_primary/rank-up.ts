@@ -156,7 +156,7 @@ export const command: SlashCommand = {
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setDescription(`*${userData.quid.name} stands before one of the eldest, excited to hear their following words.* "Congratulations, ${userData.quid.name}, you are now a fully-fledged ${rank}. I am certain you will contribute greatly to the pack in this role."\n*The ${userData.quid.getDisplayspecies()} grins from ear to ear.*`)],
 			components: [],
-		}, 'update', '@original');
+		}, 'update', interaction.message.id);
 
 		await checkRankRequirements(serverData, interaction, interaction.member, rank, true);
 		return;
