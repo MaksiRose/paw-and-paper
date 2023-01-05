@@ -168,14 +168,16 @@ export const command: SlashCommand = {
 		const _userData1 = await userModel.findOne(u => Object.keys(u.userIds).includes(userId1));
 		const userData1 = getUserData(_userData1, interaction.guildId, getMapData(_userData1.quids, getMapData(_userData1.servers, interaction.guildId).currentQuid ?? ''));
 		if (!hasNameAndSpecies(userData1)) { throw new Error('userData1.quid.species is empty string'); }
+		if (userData1.serverInfo?.hasCooldown === true) { return; }
 
 		/* Gets the current active quid and the server profile from the partners account */
 		const userId2 = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
 		const _userData2 = await userModel.findOne(u => Object.keys(u.userIds).includes(userId2));
 		const userData2 = getUserData(_userData2, interaction.guildId, getMapData(_userData2.quids, getMapData(_userData2.servers, interaction.guildId).currentQuid ?? ''));
 		if (!hasNameAndSpecies(userData2)) { throw new Error('userData2.quid.species is empty string'); }
+		if (userData2.serverInfo?.hasCooldown === true) { return; }
 
-		if (interaction.user.id === userId1) {
+		if (Object.keys(userData1.userIds).includes(interaction.user.id)) {
 
 			// This is always a reply
 			await respond(interaction, {
