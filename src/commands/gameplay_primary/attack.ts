@@ -231,7 +231,7 @@ async function executeAttacking(
 				);
 			}
 
-			embed.setDescription(`*The battle between the human and ${userData.quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${userData.quid.getDisplayspecies()} tries to jump at them, but the human manages to dodge. ${winLoseRatio < 1 ? `Quickly they run in the direction of the food den. They escaped from ${userData.quid.pronoun(1)}!*` : 'Quickly they back off from the tricky situation.'}`);
+			embed.setDescription(`*The battle between the human and ${userData.quid.name} is intense. Both are putting up a good fight and it doesn't look like either of them can get the upper hand. The ${userData.quid.getDisplayspecies()} tries to jump at them, but the human manages to dodge. ${winLoseRatio < 1 ? `Quickly they run in the direction of the food den. They escaped from ${userData.quid.pronoun(1)}!*` : 'Quickly they back off from the tricky situation.*'}`);
 
 			if (winLoseRatio === -1) {
 
