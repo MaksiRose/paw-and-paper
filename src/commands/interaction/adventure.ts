@@ -230,6 +230,8 @@ export const command: SlashCommand = {
 				if (isNaN(column)) { return collector.stop('error_Error: column is Not a Number'); }
 				const row = Number(i.customId.split('_')[2]);
 				if (isNaN(row)) { return collector.stop('error_Error: column is Not a Number'); }
+				/* This ensures that if the user clicks the same position twice, the second one isn't counted */
+				if (chosenCardPositions.current === 'second' && column === chosenCardPositions.first.column && row === chosenCardPositions.first.row) { return; }
 				chosenCardPositions[chosenCardPositions.current].column = column;
 				chosenCardPositions[chosenCardPositions.current].row = row;
 
