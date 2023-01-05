@@ -493,7 +493,7 @@ export const command: SlashCommand = {
 
 							extraHealthPoints = getSmallerNumber(maxHP, winningUserData.quid.profile.maxHealth - winningUserData.quid.profile.health);
 						}
-						else if (Object.keys(winningUserData.quid.profile.temporaryStatIncrease).length <= 1 && pullFromWeightedTable({ 0: 20 - finishedRounds, 1: finishedRounds - 10 }) === 0) {
+						else if (pullFromWeightedTable({ 0: 20 - finishedRounds, 1: finishedRounds - 10 }) === 0) {
 
 							const specialPlants = Object.keys(serverData.inventory.specialPlants) as SpecialPlantNames[];
 							foundItem = specialPlants[getRandomNumber(specialPlants.length)]!;
