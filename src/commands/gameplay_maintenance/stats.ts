@@ -149,5 +149,5 @@ async function sendStatsMessage(
 			(userData.quid.profile.sapling.exists === false ? '' : `\n🌱 Ginkgo Sapling: ${userData.quid.profile.sapling.waterCycles} days alive - ${userData.quid.profile.sapling.health} health - Next watering <t:${Math.floor((userData.quid.profile.sapling.nextWaterTimestamp || 0) / 1000)}:R>`) +
 			(userData.quid.profile.hasQuest ? `\n${userData.quid.name} has one open quest!` : '') + (canRankUp ? `\n${userData.quid.name} can rank up!` : ''),
 		components: [components],
-	}, 'update', '@original');
+	}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
 }

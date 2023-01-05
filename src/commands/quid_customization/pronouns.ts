@@ -85,7 +85,7 @@ export const command: SlashCommand = {
 			// This is always editReply of the message the StringSelectMenu comes from
 			await respond(interaction, {
 				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([getPronounsMenu(userData)])],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 			return;
 		}
 
@@ -184,7 +184,7 @@ export const command: SlashCommand = {
 		// This is always an update to the message that the modal is associated with
 		await respond(interaction, {
 			components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([getPronounsMenu(userData)])],
-		}, 'update', '@original');
+		}, 'update', interaction.message.id);
 
 		const addedOrEditedTo = isNaN(pronounNumber) ? 'added pronoun' : `edited pronoun from ${oldPronounSet?.join('/')} to`;
 		// This is always a followUp

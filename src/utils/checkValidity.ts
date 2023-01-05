@@ -1,5 +1,5 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, AnySelectMenuInteraction, time } from 'discord.js';
-import { capitalizeString, getMapData, respond, sendErrorMessage } from './helperFunctions';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, AnySelectMenuInteraction, time, Message } from 'discord.js';
+import { capitalizeString, getMapData, getMessageId, respond, sendErrorMessage } from './helperFunctions';
 import { decreaseLevel } from './levelHandling';
 import { stopResting, isResting } from '../commands/gameplay_maintenance/rest';
 import { calculateInventorySize } from './simulateItemUse';
@@ -79,8 +79,8 @@ export async function hasCooldown(
 
 	if (userData.serverInfo?.hasCooldown === true) {
 
-		// This is always a followUp
-		const { id } = await respond(interaction, {
+		// This is always a reply
+		const botReply = await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
@@ -90,11 +90,20 @@ export async function hasCooldown(
 		setTimeout(async function() {
 
 			await interaction
-				.deleteReply(id)
+				.deleteReply(getMessageId(botReply))
 				.catch (async error => {
 
-					await sendErrorMessage(interaction, error)
-						.catch(e => { console.error(e); });
+					try {
+
+						console.error(error);
+						if (botReply instanceof Message) { botReply.delete(); }
+						else { throw error; }
+					}
+					catch (newError) {
+
+						await sendErrorMessage(interaction, newError)
+							.catch(e => { console.error(e); });
+					}
 				});
 		}, 10_000);
 

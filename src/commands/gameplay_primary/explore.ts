@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder } from 'discord.js';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasFullInventory, isInvalid, isPassedOut } from '../../utils/checkValidity';
-import { capitalizeString, getBiggerNumber, getMapData, getSmallerNumber, keyInObject, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
+import { capitalizeString, getBiggerNumber, getMapData, getMessageId, getSmallerNumber, keyInObject, respond, sendErrorMessage, setCooldown } from '../../utils/helperFunctions';
 import { remindOfAttack, startAttack } from './attack';
 import Fuse from 'fuse.js';
 import { disableAllComponents, disableCommandComponent } from '../../utils/componentDisabling';
@@ -161,24 +161,21 @@ async function executeExploring(
 			components: [biomeComponent],
 		});
 
-		chosenBiome = await (getBiomeMessage as Message<true> | InteractionResponse<true>)
+		const int = await (getBiomeMessage as Message<true> | InteractionResponse<true>)
 			.awaitMessageComponent({
 				filter: (i) => i.user.id === interaction.user.id,
 				componentType: ComponentType.Button,
 				time: 30_000,
 			})
-			.then(async int => {
+			.catch(() => { return null; });
 
-				buttonInteraction = int;
-				return int.customId;
-			})
-			.catch(async () => {
+		chosenBiome = int?.customId ?? null;
+		if (int !== null) { buttonInteraction = int; }
+		else {
 
-				await setCooldown(userData, interaction.guildId, false);
-				await respond(interaction, { components: disableAllComponents([biomeComponent]) }, 'reply', '@original'); // This is always an editReply
-
-				return null;
-			});
+			await setCooldown(userData, interaction.guildId, false);
+			await respond(interaction, { components: disableAllComponents([biomeComponent]) }, 'reply', getMessageId(getBiomeMessage)); // This is always an editReply
+		}
 	}
 
 	/* chosenBiomeNumber is defined based on the index position of the chosenBiome in availableBiomes. chosenBiome should now either be found in availableBiomes, or it should be null, in which case chosenBiomeNumber is -1 and the explore command ends. */
@@ -226,7 +223,7 @@ async function executeExploring(
 	let waitingComponent = getWaitingComponent(waitingGameField, playerPos, empty, goal);
 
 	// This is a reply to "interaction" if a biome was already pre-chosen, or an update to the message with the button ("buttonInteraction") otherwise
-	let botReply = await respond(buttonInteraction ?? interaction, getWaitingMessageObject(messageContent, restEmbed, userData, waitingString, waitingGameField, waitingComponent), buttonInteraction !== null ? 'update' : 'reply', buttonInteraction !== null ? '@original' : undefined);
+	let botReply = await respond(buttonInteraction ?? interaction, getWaitingMessageObject(messageContent, restEmbed, userData, waitingString, waitingGameField, waitingComponent), buttonInteraction !== null ? 'update' : 'reply', buttonInteraction !== null ? buttonInteraction.message.id : undefined);
 
 
 	const collector = (botReply as Message<true> | InteractionResponse<true>).createMessageComponentCollector({
@@ -287,7 +284,7 @@ async function executeExploring(
 			waitingComponent = getWaitingComponent(waitingGameField, playerPos, empty, goal);
 
 			// This is an update to the message with the button
-			botReply = await respond(int, getWaitingMessageObject(messageContent, restEmbed, userData!, waitingString, waitingGameField, waitingComponent), 'update', '@original');
+			botReply = await respond(int, getWaitingMessageObject(messageContent, restEmbed, userData!, waitingString, waitingGameField, waitingComponent), 'update', int.message.id);
 		}
 		catch (error) {
 
@@ -429,7 +426,7 @@ async function executeExploring(
 					.setLabel('Leave')
 					.setEmoji('💨')
 					.setStyle(ButtonStyle.Primary))],
-		}, 'update', '@original');
+		}, 'update', getMessageId(botReply));
 
 		const int = await (botReply as Message<true> | InteractionResponse<true>)
 			.awaitMessageComponent({
@@ -474,7 +471,7 @@ async function executeExploring(
 					content: messageContent,
 					embeds: [...restEmbed, embed],
 					components: [...previousExploreComponents ? [previousExploreComponents] : [], exploreComponent],
-				}, 'update', '@original');
+				}, 'update', newInteraction.message.id);
 
 				/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 				exploreComponent = plantGame.correctButtonOverwrite();
@@ -683,7 +680,7 @@ async function executeExploring(
 					.setLabel('Flee')
 					.setEmoji('💨')
 					.setStyle(ButtonStyle.Primary))],
-		}, 'update', '@original');
+		}, 'update', getMessageId(botReply));
 
 		const int = await (botReply as Message<true> | InteractionResponse<true>)
 			.awaitMessageComponent({
@@ -756,7 +753,7 @@ async function executeExploring(
 					content: messageContent,
 					embeds: [...restEmbed, embed],
 					components: [...previousExploreComponents ? [previousExploreComponents] : [], exploreComponent],
-				}, 'update', '@original');
+				}, 'update', newInteraction.message.id);
 
 				/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 				exploreComponent = fightGame.correctButtonOverwrite();
@@ -944,7 +941,7 @@ async function executeExploring(
 						.setLabel('Explore again')
 						.setStyle(ButtonStyle.Primary)),
 			],
-		}, 'update', '@original');
+		}, 'update', getMessageId(botReply));
 	}
 
 	await isPassedOut(interaction, userData, true);

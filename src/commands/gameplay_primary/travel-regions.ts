@@ -149,7 +149,7 @@ async function sendTravelMessage(
 					.setCustomId(`travel-regions_rest_@${userData._id}`)
 					.setLabel('Rest')
 					.setStyle(ButtonStyle.Primary))],
-		}, 'update', '@original')).id;
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original')).id;
 	}
 	else if (chosenRegion === CurrentRegionType.FoodDen) {
 
@@ -178,7 +178,7 @@ async function sendTravelMessage(
 						.setLabel('Store items away')
 						.setStyle(ButtonStyle.Primary),
 				])],
-		}, 'update', '@original')).id;
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original')).id;
 	}
 	else if (chosenRegion === CurrentRegionType.MedicineDen) {
 
@@ -213,7 +213,7 @@ async function sendTravelMessage(
 						.setLabel('Heal')
 						.setStyle(ButtonStyle.Primary))]),
 			],
-		}, 'update', '@original')).id;
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original')).id;
 	}
 	else if (chosenRegion === CurrentRegionType.Ruins) {
 
@@ -232,7 +232,7 @@ async function sendTravelMessage(
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [travelComponent],
-		}, 'update', '@original')).id;
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original')).id;
 	}
 	else if (chosenRegion === CurrentRegionType.Lake) {
 
@@ -246,7 +246,7 @@ async function sendTravelMessage(
 					.setCustomId(`travel-regions_drink_@${userData._id}`)
 					.setLabel('Drink')
 					.setStyle(ButtonStyle.Primary))],
-		}, 'update', '@original')).id;
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original')).id;
 	}
 	else if (chosenRegion === CurrentRegionType.Prairie) {
 
@@ -269,7 +269,7 @@ async function sendTravelMessage(
 					.setCustomId(`travel-regions_play_@${userData._id}`)
 					.setLabel('Play')
 					.setStyle(ButtonStyle.Primary))],
-		}, 'update', '@original')).id;
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original')).id;
 	}
 	else {
 
@@ -287,6 +287,6 @@ async function sendTravelMessage(
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [travelComponent],
-		}, 'update', '@original')).id;
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original')).id;
 	}
 }

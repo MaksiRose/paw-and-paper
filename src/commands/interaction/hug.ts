@@ -149,7 +149,7 @@ export const command: SlashCommand = {
 					})
 					.setImage(hugURLs[getRandomNumber(hugURLs.length)] || null)],
 				components: [],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 
 			if (hasNameAndSpecies(userData) && hasNameAndSpecies(partnerUserData)) { await addFriendshipPoints(interaction.message, userData, partnerUserData); }
 			return;
@@ -168,7 +168,7 @@ export const command: SlashCommand = {
 					})
 					.setDescription(`${interaction.user.toString()} did not accept the hug.`)],
 				components: disableAllComponents(interaction.message.components),
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 			return;
 		}
 

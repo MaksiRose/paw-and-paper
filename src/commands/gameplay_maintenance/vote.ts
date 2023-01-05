@@ -89,7 +89,7 @@ export const command: SlashCommand = {
 			|| await handle.votes.top?.client?.hasVoted(interaction.user.id)
 		);
 		const redeemedTopVote = successfulTopVote
-		&& Date.now() <= (voteCache['id_' + interaction.user.id]?.nextRedeemableTopVote || Date.now());
+		&& Date.now() <= (voteCache['id_' + interaction.user.id]?.nextRedeemableTopVote ?? 0);
 
 		const discordsVote: { voted: boolean, votes: Array<{ expires: number; }>; } | undefined = await handle.votes.bfd?.client?.checkVote(interaction.user.id);
 		const successfulDiscordsVote = interaction.values[0] === 'discords.com'
@@ -98,12 +98,12 @@ export const command: SlashCommand = {
 			|| discordsVote?.voted
 		);
 		const redeemedDiscordsVote = successfulDiscordsVote
-		&& Date.now() <= (voteCache['id_' + interaction.user.id]?.nextRedeemableDiscordsVote ?? Date.now());
+		&& Date.now() <= (voteCache['id_' + interaction.user.id]?.nextRedeemableDiscordsVote ?? 0);
 
 		const successfulDblVote = interaction.values[0] === 'discordbotlist.com'
 		&& (voteCache['id_' + interaction.user.id]?.lastRecordedDblVote ?? 0) > Date.now() - twelveHoursInMs;
 		const redeemedDblVote = successfulDblVote
-		&& Date.now() <= (voteCache['id_' + interaction.user.id]?.nextRedeemableDblVote ?? Date.now());
+		&& Date.now() <= (voteCache['id_' + interaction.user.id]?.nextRedeemableDblVote ?? 0);
 
 		if (successfulTopVote || successfulDiscordsVote || successfulDblVote) {
 

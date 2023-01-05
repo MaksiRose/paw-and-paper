@@ -139,14 +139,14 @@ export const event: DiscordEvent = {
 							},
 						);
 
-						await interaction
-							.followUp({
-								embeds: [new EmbedBuilder()
-									.setColor(userData.quid.color)
-									.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-									.setDescription(`*Engrossed in ${userData.quid.pronoun(2)} work, ${userData.quid.name} suddenly remembers that ${userData.quid.pronounAndPlural(0, 'has', 'have')} not yet watered ${userData.quid.pronoun(2)} plant today. The ${userData.quid.getDisplayspecies()} should really do it soon!*`)
-									.setFooter({ text: 'Type "/water-tree" to water your ginkgo sapling!' })],
-							});
+						// This is always a followUp
+						await respond(interaction, {
+							embeds: [new EmbedBuilder()
+								.setColor(userData.quid.color)
+								.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+								.setDescription(`*Engrossed in ${userData.quid.pronoun(2)} work, ${userData.quid.name} suddenly remembers that ${userData.quid.pronounAndPlural(0, 'has', 'have')} not yet watered ${userData.quid.pronoun(2)} plant today. The ${userData.quid.getDisplayspecies()} should really do it soon!*`)
+								.setFooter({ text: 'Type "/water-tree" to water your ginkgo sapling!' })],
+						});
 					}
 				}
 
@@ -154,10 +154,10 @@ export const event: DiscordEvent = {
 				send them a message telling them that there is a new update. */
 				if (Number(userData?.lastPlayedVersion) < Number(version.split('.').slice(0, -1).join('.'))) {
 
-					await interaction
-						.followUp({
-							content: `A new update has come out since you last used the bot! You can view the changelog here: <https://github.com/MaksiRose/paw-and-paper/releases/tag/v${version.split('.').slice(0, -1).join('.')}.0>`,
-						});
+					// This is always a followUp
+					await respond(interaction, {
+						content: `A new update has come out since you last used the bot! You can view the changelog here: <https://github.com/MaksiRose/paw-and-paper/releases/tag/v${version.split('.').slice(0, -1).join('.')}.0>`,
+					});
 
 					await userModel.findOneAndUpdate(
 						u => Object.keys(u.userIds).includes(interaction.user.id),
@@ -228,7 +228,7 @@ export const event: DiscordEvent = {
 						// This should always update the error message
 						await respond(interaction, {
 							components: disableAllComponents(interaction.message.components),
-						}, 'update', '@original');
+						}, 'update', interaction.message.id);
 
 						const errorId = interaction.customId.split('_')[2] || generateId();
 						const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;

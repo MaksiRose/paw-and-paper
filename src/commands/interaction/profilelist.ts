@@ -45,7 +45,7 @@ export const command: SlashCommand = {
 			const profilesText = await getProfilesTexts(interaction.guild, rankName, rankName === RankType.Hunter ? RankType.Healer : undefined);
 
 			// This is always an update to the message with the select menu
-			await respond(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild, rankName, profilesText), 'update', '@original');
+			await respond(interaction, await getProfilesMessage(interaction.user.id, 0, interaction.guild, rankName, profilesText), 'update', interaction.message.id);
 			return;
 		}
 
@@ -75,7 +75,7 @@ export const command: SlashCommand = {
 		}
 
 		// This is always an update to the message with the component
-		await respond(interaction, await getProfilesMessage(interaction.user.id, page, interaction.guild, rankName, profilesText), 'update', '@original');
+		await respond(interaction, await getProfilesMessage(interaction.user.id, page, interaction.guild, rankName, profilesText), 'update', interaction.message.id);
 		return;
 
 	},

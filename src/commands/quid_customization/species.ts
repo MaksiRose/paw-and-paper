@@ -105,7 +105,7 @@ export const command: SlashCommand = {
 					new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([getSpeciesSelectMenu(speciesPage, customId.executorId)]),
 					new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(customId.executorId)]),
 				],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 			return;
 		}
 		else if (interaction.isStringSelectMenu() && customId.args[0] === 'speciesselect' && keyInObject(speciesInfo, selectOptionId[0])) {
@@ -128,7 +128,7 @@ export const command: SlashCommand = {
 				components: [
 					new ActionRowBuilder<ButtonBuilder>().setComponents([getDisplayedSpeciesButton(customId.executorId)]),
 				],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 
 			// This should always be a followUp
 			await respond(interaction, {

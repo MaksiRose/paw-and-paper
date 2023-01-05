@@ -168,14 +168,16 @@ export const command: SlashCommand = {
 		const _userData1 = await userModel.findOne(u => Object.keys(u.userIds).includes(userId1));
 		const userData1 = getUserData(_userData1, interaction.guildId, getMapData(_userData1.quids, getMapData(_userData1.servers, interaction.guildId).currentQuid ?? ''));
 		if (!hasNameAndSpecies(userData1)) { throw new Error('userData1.quid.species is empty string'); }
+		if (userData1.serverInfo?.hasCooldown === true) { return; }
 
 		/* Gets the current active quid and the server profile from the partners account */
 		const userId2 = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
 		const _userData2 = await userModel.findOne(u => Object.keys(u.userIds).includes(userId2));
 		const userData2 = getUserData(_userData2, interaction.guildId, getMapData(_userData2.quids, getMapData(_userData2.servers, interaction.guildId).currentQuid ?? ''));
 		if (!hasNameAndSpecies(userData2)) { throw new Error('userData2.quid.species is empty string'); }
+		if (userData2.serverInfo?.hasCooldown === true) { return; }
 
-		if (interaction.user.id === userId1) {
+		if (Object.keys(userData1.userIds).includes(interaction.user.id)) {
 
 			// This is always a reply
 			await respond(interaction, {
@@ -228,6 +230,8 @@ export const command: SlashCommand = {
 				if (isNaN(column)) { return collector.stop('error_Error: column is Not a Number'); }
 				const row = Number(i.customId.split('_')[2]);
 				if (isNaN(row)) { return collector.stop('error_Error: column is Not a Number'); }
+				/* This ensures that if the user clicks the same position twice, the second one isn't counted */
+				if (chosenCardPositions.current === 'second' && column === chosenCardPositions.first.column && row === chosenCardPositions.first.row) { return; }
 				chosenCardPositions[chosenCardPositions.current].column = column;
 				chosenCardPositions[chosenCardPositions.current].row = row;
 
@@ -239,7 +243,7 @@ export const command: SlashCommand = {
 				componentArray[column]?.components[row]?.setDisabled(true);
 
 				// This is always an update to the message with the button
-				const updatedInteraction = await respond(i, { components: chosenCardPositions.current === 'first' ? componentArray : disableAllComponents(componentArray) }, 'update', '@original')
+				const updatedInteraction = await respond(i, { components: chosenCardPositions.current === 'first' ? componentArray : disableAllComponents(componentArray) }, 'update', i.message.id)
 					.catch((error) => {
 						collector.stop(`error_${error}`);
 						return undefined;
@@ -493,7 +497,7 @@ export const command: SlashCommand = {
 
 							extraHealthPoints = getSmallerNumber(maxHP, winningUserData.quid.profile.maxHealth - winningUserData.quid.profile.health);
 						}
-						else if (Object.keys(winningUserData.quid.profile.temporaryStatIncrease).length <= 1 && pullFromWeightedTable({ 0: 20 - finishedRounds, 1: finishedRounds - 10 }) === 0) {
+						else if (pullFromWeightedTable({ 0: 20 - finishedRounds, 1: finishedRounds - 10 }) === 0) {
 
 							const specialPlants = Object.keys(serverData.inventory.specialPlants) as SpecialPlantNames[];
 							foundItem = specialPlants[getRandomNumber(specialPlants.length)]!;

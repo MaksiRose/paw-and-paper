@@ -130,7 +130,7 @@ export async function showInventoryMessage(
 				: [],
 		],
 		fetchReply: true,
-	}, 'update', '@original');
+	}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
 
 	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);
 }

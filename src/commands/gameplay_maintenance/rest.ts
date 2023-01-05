@@ -60,7 +60,7 @@ export async function executeResting(
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setDescription(`*${userData.quid.name} dreams of resting on a beach, out in the sun. The imaginary wind rocked the also imaginative hammock. ${capitalizeString(userData.quid.pronoun(0))} must be really tired to dream of sleeping!*`),
 			],
-		}, 'update', '@original');
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
 		return;
 	}
 
@@ -74,7 +74,7 @@ export async function executeResting(
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setDescription(`*${userData.quid.name} trots around the dens eyeing ${userData.quid.pronoun(2)} comfortable moss-covered bed. A nap looks nice, but ${userData.quid.pronounAndPlural(0, 'has', 'have')} far too much energy to rest!*`),
 			],
-		}, 'update', '@original');
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
 		return;
 	}
 
@@ -137,7 +137,7 @@ export async function startResting(
 
 			// This is always a reply, except if it's from the button from the travel-regions command (aka, a button and non-automatic), in which case it's an update to the message with the button
 			const shouldUpdate = interaction.isButton() && isAutomatic === false;
-			botReply = await respond(interaction, { ...messageOptions, fetchReply: true }, shouldUpdate ? 'update' : 'reply', shouldUpdate ? '@original' : undefined);
+			botReply = await respond(interaction, { ...messageOptions, fetchReply: true }, shouldUpdate ? 'update' : 'reply', (shouldUpdate && interaction.isMessageComponent()) ? interaction.message.id : undefined);
 		}
 		else if (userData.serverInfo?.lastInteractionChannelId) {
 

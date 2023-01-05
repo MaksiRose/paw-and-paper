@@ -102,7 +102,7 @@ export const command: SlashCommand = {
 			if (chosenDen !== 'sleepingDens' && chosenDen !== 'medicineDen' && chosenDen !== 'foodDen') { throw new Error('chosenDen is not a den'); }
 
 			// This is always an update to the message with the button
-			await respond(interaction, getMaterials(userData, serverData, chosenDen, [], ''), 'update', '@original');
+			await respond(interaction, getMaterials(userData, serverData, chosenDen, [], ''), 'update', interaction.message.id);
 			return;
 		}
 
@@ -147,7 +147,7 @@ export const command: SlashCommand = {
 					...levelUpEmbed,
 				],
 				components: disableAllComponents(interaction.message.components),
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 
 			await isPassedOut(interaction, userData, true);
 

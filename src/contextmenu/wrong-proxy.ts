@@ -71,7 +71,7 @@ export const command: ContextMenuCommand = {
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
 				components: quidMenu.options.length > 0 ? [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(quidMenu)] : [],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 			return;
 		}
 
@@ -114,7 +114,7 @@ export const command: ContextMenuCommand = {
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
 				components: disableAllComponents(interaction.message.components),
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 		}
 
 	},

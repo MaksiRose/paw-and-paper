@@ -103,7 +103,7 @@ export const command: SlashCommand = {
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 					.setDescription(`*After a bit of thinking, ${userData.quid.name} decides that now is not a good time to practice ${userData.quid.pronoun(2)} fighting skills. Politely, ${userData.quid.pronounAndPlural(0, 'decline')} the Elderlies offer.*`)],
 				components: disableAllComponents(components),
-			}, int !== undefined ? 'update' : 'reply', '@original');
+			}, int !== undefined ? 'update' : 'reply', int?.message.id);
 			return;
 		}
 
@@ -155,7 +155,7 @@ export const command: SlashCommand = {
 			botReply = await respond(newInteraction, {
 				embeds: [...restEmbed, embed],
 				components: [...previousFightComponents ? [previousFightComponents] : [], fightGame.fightComponent],
-			}, 'update', '@original');
+			}, 'update', newInteraction.message.id);
 
 			/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 			fightGame.fightComponent = fightGame.correctButtonOverwrite();
@@ -231,7 +231,7 @@ export const command: SlashCommand = {
 					...levelUpEmbed,
 				],
 				components: [fightGame.fightComponent],
-			}, 'update', '@original');
+			}, 'update', newInteraction.message.id);
 
 			await isPassedOut(interaction, userData, true);
 

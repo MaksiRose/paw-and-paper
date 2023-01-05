@@ -81,7 +81,7 @@ export const command: SlashCommand = {
 						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, ['set', 'modal']))
 						.setLabel('Set proxy')
 						.setStyle(ButtonStyle.Success)])],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 			return;
 		}
 
@@ -136,7 +136,7 @@ export const command: SlashCommand = {
 					.setFields()],
 				components: [new ActionRowBuilder<StringSelectMenuBuilder>()
 					.setComponents([alwaysSelectMenu])],
-			}, 'update', '@original');
+			}, 'update', interaction.message.id);
 			return;
 		}
 
@@ -158,7 +158,7 @@ export const command: SlashCommand = {
 				await respond(interaction, {
 					components: [new ActionRowBuilder<StringSelectMenuBuilder>()
 						.setComponents([alwaysSelectMenu])],
-				}, 'update', '@original');
+				}, 'update', interaction.message.id);
 			}
 			/* If the user clicked an always subcommand option, add/remove the channel and send a success message. */
 			else {
@@ -192,7 +192,7 @@ export const command: SlashCommand = {
 				await respond(interaction, {
 					components: [new ActionRowBuilder<StringSelectMenuBuilder>()
 						.setComponents([alwaysSelectMenu])],
-				}, 'update', '@original');
+				}, 'update', interaction.message.id);
 
 				// This is always a followUp
 				await respond(interaction, {
