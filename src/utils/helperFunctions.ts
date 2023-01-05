@@ -102,12 +102,25 @@ export async function respond(
 		if (isObject(error) && (error.code === 'ECONNRESET' || error.code === 10062)) {
 
 			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
-			if ((interaction.replied || interaction.deferred) && editId !== undefined) { // Error code 10062 can never lead to this since an Unknown Interaction can't also be replied or deferred. Therefore, it is safe to call respond again
+			if (editId !== undefined) {
 
-				botReply = await respond(interaction, options, type, editId);
+				if ((interaction.replied || interaction.deferred)) { // Error code 10062 can never lead to this since an Unknown Interaction can't also be replied or deferred. Therefore, it is safe to call respond again
+					botReply = await respond(interaction, options, type, editId);
+				}
+				else {
+
+					const channel = interaction.channel || (interaction.channelId ? await interaction.client.channels.fetch(interaction.channelId, { force: false }) : null);
+					if (channel && channel.isTextBased()) {
+
+						botReply = await channel.messages.fetch(editId);
+						botReply = await botReply.edit({ ...options, content: options.content === '' ? undefined : options.content, flags: undefined });
+					}
+					else { throw error; }
+				}
+
+
 			}
 			else if (!interaction.replied && !interaction.deferred && interaction.isMessageComponent() && type === 'update') {
-
 				botReply = await interaction.message.edit({ ...options, content: options.content === '' ? null : options.content, flags: undefined });
 			}
 			else {
