@@ -152,7 +152,7 @@ async function executeAttacking(
 		botReply = await respond(newInteraction ?? interaction, {
 			embeds: [...restEmbed, embed],
 			components: [...previousFightComponents ? [previousFightComponents] : [], fightGame.fightComponent],
-		}, newInteraction !== undefined ? 'update' : 'reply', newInteraction !== undefined ? newInteraction.message.id : undefined);
+		}, newInteraction !== undefined ? 'update' : 'reply', newInteraction?.message.id ?? (botReply ? getMessageId(botReply) : undefined));
 
 		/* Here we are making sure that the correct button will be blue by default. If the player choses the correct button, this will be overwritten. */
 		fightGame.fightComponent = fightGame.correctButtonOverwrite();
@@ -281,7 +281,7 @@ async function executeAttacking(
 						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData._id, ['new']))
 						.setLabel('Attack again')
 						.setStyle(ButtonStyle.Primary))],
-		}, 'update', getMessageId(botReply));
+		}, 'update', newInteraction?.message.id ?? getMessageId(botReply));
 
 		await isPassedOut(interaction, userData, true);
 
