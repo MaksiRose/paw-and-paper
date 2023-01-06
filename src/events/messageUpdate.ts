@@ -4,6 +4,7 @@ import serverModel from '../models/serverModel';
 import { userModel, getUserData } from '../models/userModel';
 import { DiscordEvent } from '../typings/main';
 import { hasName } from '../utils/checkUserState';
+import { userDataServersObject } from '../utils/helperFunctions';
 import { getMissingPermissionContent, hasPermission, permissionDisplay } from '../utils/permissionHandler';
 import { checkForProxy } from './messageCreate';
 
@@ -35,6 +36,16 @@ export const event: DiscordEvent = {
 						...(u.userIds[newMessage.author.id] ?? {}),
 						[newMessage.guildId]: { isMember: true, lastUpdatedTimestamp: Date.now() },
 					};
+					if (replaceMessage) {
+						u.servers[newMessage.guildId ?? 'DMs'] = {
+							...userDataServersObject(u, newMessage.guildId ?? 'DMs'),
+							lastProxied: quidId,
+						};
+						u.servers['DMs'] = {
+							...userDataServersObject(u, 'DMs'),
+							lastProxied: quidId,
+						};
+					}
 				},
 				{ log: false },
 			);

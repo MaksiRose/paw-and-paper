@@ -5,9 +5,10 @@ import serverModel from '../models/serverModel';
 import { userModel, getUserData } from '../models/userModel';
 import { ProxyListType } from '../typings/data/general';
 import { ServerSchema } from '../typings/data/server';
-import { AutoproxyConfigType, UserData } from '../typings/data/user';
+import { AutoproxyConfigType, StickymodeConfigType, UserData } from '../typings/data/user';
 import { DiscordEvent } from '../typings/main';
 import { hasName } from '../utils/checkUserState';
+import { userDataServersObject } from '../utils/helperFunctions';
 import { getMissingPermissionContent, hasPermission, permissionDisplay } from '../utils/permissionHandler';
 import { createGuild } from '../utils/updateGuild';
 
@@ -55,6 +56,16 @@ export const event: DiscordEvent = {
 						...(u.userIds[message.author.id] ?? {}),
 						[message.guildId]: { isMember: true, lastUpdatedTimestamp: Date.now() },
 					};
+					if (replaceMessage) {
+						u.servers[message.guildId] = {
+							...userDataServersObject(u, message.guildId),
+							lastProxied: quidId,
+						};
+						u.servers['DMs'] = {
+							...userDataServersObject(u, 'DMs'),
+							lastProxied: quidId,
+						};
+					}
 				},
 				{ log: false },
 			);
@@ -102,8 +113,37 @@ export function checkForProxy(
 		&& serverData.proxySettings.channels.blacklist.includes(message.channelId)
 	) || (
 		serverData.proxySettings.channels.setTo === ProxyListType.Whitelist
-		&& !serverData.proxySettings.channels.whitelist.includes(message.channelId)
+			&& !serverData.proxySettings.channels.whitelist.includes(message.channelId)
 	);
+
+	/* Checking if the user has autoproxy enabled in the current channel, and if so, it is adding the
+	prefix to the message. */
+	const autoproxyIsToggled = (
+		userData.settings.proxy.server?.autoproxy.setTo === AutoproxyConfigType.Whitelist
+		&& userData.settings.proxy.server?.autoproxy.channels.whitelist.includes(message.channelId)
+	) || (
+		userData.settings.proxy.server?.autoproxy.setTo === AutoproxyConfigType.Blacklist
+			&& !userData.settings.proxy.server?.autoproxy.channels.blacklist.includes(message.channelId)
+	) || (
+		(
+			userData.settings.proxy.server === undefined
+				|| userData.settings.proxy.server?.autoproxy.setTo === AutoproxyConfigType.FollowGlobal
+		) && userData.settings.proxy.global.autoproxy === true
+	);
+
+	const stickymodeIsToggledLocally = userData.settings.proxy.server?.stickymode === StickymodeConfigType.Enabled;
+	const stickymodeIsToggledGlobally = (
+		userData.settings.proxy.server === undefined
+		|| userData.settings.proxy.server.stickymode === StickymodeConfigType.FollowGlobal
+	) && userData.settings.proxy.global.stickymode === true;
+
+	if (autoproxyIsToggled && !proxyIsDisabled) {
+
+		replaceMessage = true;
+
+		if (stickymodeIsToggledLocally) { quidId = userData.servers.get(serverData.serverId)?.lastProxied ?? userData.servers.get('DMs')?.lastProxied ?? quidId; }
+		if (stickymodeIsToggledGlobally) { quidId = userData.servers.get('DMs')?.lastProxied ?? quidId; }
+	}
 
 	/* Checking if the message starts with the quid's proxy start and ends with the quid's
 	proxy end. If it does, it will set the current quid to the quid that the message is
@@ -126,24 +166,6 @@ export function checkForProxy(
 
 			replaceMessage = true;
 		}
-	}
-
-	/* Checking if the user has autoproxy enabled in the current channel, and if so, it is adding the
-	prefix to the message. */
-	const autoproxyIsToggled = (
-		userData.settings.proxy.server?.autoproxy.setTo === AutoproxyConfigType.Whitelist
-		&& userData.settings.proxy.server?.autoproxy.channels.whitelist.includes(message.channelId)
-	) || (
-		userData.settings.proxy.server?.autoproxy.setTo === AutoproxyConfigType.Blacklist
-		&& !userData.settings.proxy.server?.autoproxy.channels.blacklist.includes(message.channelId)
-	) || (
-		userData.settings.proxy.server?.autoproxy.setTo === AutoproxyConfigType.FollowGlobal
-		&& userData.settings.proxy.global.autoproxy === true
-	);
-
-	if (autoproxyIsToggled && !proxyIsDisabled) {
-
-		replaceMessage = true;
 	}
 
 	return { replaceMessage, quidId };
