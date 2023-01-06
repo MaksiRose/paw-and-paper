@@ -413,6 +413,7 @@ export function userDataServersObject(
 		componentDisablingMessageId: u.servers[guildId]?.componentDisablingMessageId ?? null,
 		componentDisablingToken: null,
 		hasCooldown: u.servers[guildId]?.hasCooldown ?? false,
+		lastProxied: u.servers[guildId]?.lastProxied ?? null,
 	};
 }
 

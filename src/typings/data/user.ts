@@ -238,7 +238,8 @@ export interface UserSchema {
 			componentDisablingMessageId: string | null,
 			/** @deprecated */
 			componentDisablingToken: string | null,
-			hasCooldown: boolean
+			hasCooldown: boolean,
+			lastProxied: string | null
 		}
 	};
 	/** Last major version that the user played on */

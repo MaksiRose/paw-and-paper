@@ -286,6 +286,7 @@ export const userModel = new Model<UserSchema>('./database/profiles', {
 				componentDisablingMessageId: { type: 'string?', default: null },
 				componentDisablingToken: { type: 'string?', default: null },
 				hasCooldown: { type: 'boolean', default: false },
+				lastProxied: { type: 'string?', default: null },
 			},
 		},
 	},
