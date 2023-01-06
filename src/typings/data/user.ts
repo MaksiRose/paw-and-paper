@@ -151,15 +151,16 @@ export interface QuidSchema<Completed extends ''> {
 	profiles: { [key in string]: ProfileSchema; };
 }
 
-export enum ProxyListType {
-	Whitelist = 1,
-	Blacklist = 2
-}
-
-export enum ProxyConfigType {
+export enum StickymodeConfigType {
 	FollowGlobal = 1,
 	Enabled = 2,
 	Disabled = 3
+}
+
+export enum AutoproxyConfigType {
+	FollowGlobal = 1,
+	Whitelist = 2,
+	Blacklist = 3
 }
 
 export interface UserSchema {
@@ -201,15 +202,16 @@ export interface UserSchema {
 			};
 			/** Object of the server IDs as the key and object of proxy settings as the value */
 			servers: {
+				// IMPORTANT: Once the database gets converted away from JSON, this should change where "autoproxy" just equals AutoproxyType, and the autoproxy.channels.whitelist and autoproxy.channels.blacklist paths get brought to the same level as "autoproxy" and "stickymode". This should also not be under settings.proxy.servers, but under the top-level "servers" property
 				[index: string]: {
 					/** Object of autoproxy settings to follow */
 					autoproxy: {
 						/** The config for this setting */
-						setTo: ProxyConfigType;
-						channels: ProxyLimitedList;
+						setTo: AutoproxyConfigType;
+						channels: Omit<ProxyLimitedList, 'setTo'>;
 					};
 					/** The config for this setting */
-					stickymode: ProxyConfigType;
+					stickymode: StickymodeConfigType;
 				};
 			};
 		};

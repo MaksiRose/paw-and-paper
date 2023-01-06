@@ -2,7 +2,7 @@
 import { Collection } from 'discord.js';
 import { Model } from 'hoatzin';
 import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '..';
-import { ProxyConfigType, ProxyListType, Quid, QuidSchema, RankType, UserData, UserSchema } from '../typings/data/user';
+import { AutoproxyConfigType, Quid, QuidSchema, RankType, StickymodeConfigType, UserData, UserSchema } from '../typings/data/user';
 import { getArrayElement } from '../utils/helperFunctions';
 import { getRandomNumber } from '../utils/randomizers';
 const config = require('../../config.json');
@@ -79,11 +79,10 @@ export const userModel = new Model<UserSchema>('./database/profiles', {
 								autoproxy: {
 									type: 'object',
 									default: {
-										setTo: { type: 'number', default: ProxyConfigType.FollowGlobal },
+										setTo: { type: 'number', default: AutoproxyConfigType.FollowGlobal },
 										channels: {
 											type: 'object',
 											default: {
-												setTo: { type: 'number', default: ProxyListType.Whitelist },
 												whitelist: {
 													type: 'array',
 													of: { type: 'string', default: '' },
@@ -96,7 +95,7 @@ export const userModel = new Model<UserSchema>('./database/profiles', {
 										},
 									},
 								},
-								stickymode: { type: 'number', default: ProxyConfigType.FollowGlobal },
+								stickymode: { type: 'number', default: StickymodeConfigType.FollowGlobal },
 							},
 						},
 					},

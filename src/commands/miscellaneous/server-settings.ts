@@ -7,7 +7,8 @@ import { getMapData } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
 import { ServerSchema } from '../../typings/data/server';
-import { ProxyListType, RankType, WayOfEarningType } from '../../typings/data/user';
+import { RankType, WayOfEarningType } from '../../typings/data/user';
+import { ProxyListType } from '../../typings/data/general';
 const { default_color, update_channel_id } = require('../../../config.json');
 
 export const command: SlashCommand = {

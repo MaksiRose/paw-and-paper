@@ -3,8 +3,9 @@ import { sendMessage } from '../commands/interaction/say';
 // import { sendVisitMessage } from '../commands/interaction/requestvisit';
 import serverModel from '../models/serverModel';
 import { userModel, getUserData } from '../models/userModel';
+import { ProxyListType } from '../typings/data/general';
 import { ServerSchema } from '../typings/data/server';
-import { ProxyConfigType, ProxyListType, UserData } from '../typings/data/user';
+import { AutoproxyConfigType, UserData } from '../typings/data/user';
 import { DiscordEvent } from '../typings/main';
 import { hasName } from '../utils/checkUserState';
 import { getMissingPermissionContent, hasPermission, permissionDisplay } from '../utils/permissionHandler';
@@ -130,16 +131,13 @@ export function checkForProxy(
 	/* Checking if the user has autoproxy enabled in the current channel, and if so, it is adding the
 	prefix to the message. */
 	const autoproxyIsToggled = (
-		userData.settings.proxy.server?.autoproxy.setTo === ProxyConfigType.Enabled
-		&& (
-			userData.settings.proxy.server?.autoproxy.channels.setTo === ProxyListType.Blacklist
-			&& !userData.settings.proxy.server?.autoproxy.channels.blacklist.includes(message.channelId)
-		) || (
-			userData.settings.proxy.server?.autoproxy.channels.setTo === ProxyListType.Whitelist
-			&& userData.settings.proxy.server?.autoproxy.channels.whitelist.includes(message.channelId)
-		)
+		userData.settings.proxy.server?.autoproxy.setTo === AutoproxyConfigType.Whitelist
+		&& userData.settings.proxy.server?.autoproxy.channels.whitelist.includes(message.channelId)
 	) || (
-		userData.settings.proxy.server?.autoproxy.setTo === ProxyConfigType.FollowGlobal
+		userData.settings.proxy.server?.autoproxy.setTo === AutoproxyConfigType.Blacklist
+		&& !userData.settings.proxy.server?.autoproxy.channels.blacklist.includes(message.channelId)
+	) || (
+		userData.settings.proxy.server?.autoproxy.setTo === AutoproxyConfigType.FollowGlobal
 		&& userData.settings.proxy.global.autoproxy === true
 	);
 

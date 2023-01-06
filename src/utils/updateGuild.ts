@@ -3,9 +3,8 @@ import { Guild } from 'discord.js';
 import { readdirSync, readFileSync, renameSync, writeFileSync } from 'fs';
 import { client, commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '..';
 import serverModel from '../models/serverModel';
-import { BanList, DeleteList } from '../typings/data/general';
+import { BanList, DeleteList, ProxyListType } from '../typings/data/general';
 import { ServerSchema } from '../typings/data/server';
-import { ProxyListType } from '../typings/data/user';
 
 /**
  * This creates a new guild if the guild isn't on the ban list, or restores it from the guilds that are to be deleted.
