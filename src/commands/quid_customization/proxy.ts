@@ -9,7 +9,7 @@ import { AutoproxyConfigType, StickymodeConfigType, UserData } from '../../typin
 import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';
 const { error_color } = require('../../../config.json');
 
-type CustomIdArgs = [] | ['set', 'learnmore' | 'modal'] | ['auto', 'learnmore' | 'options' | 'setTo']
+type CustomIdArgs = [] | ['set', 'learnmore' | 'modal'] | ['auto', 'learnmore' | 'options' | 'setTo' | 'stickymode']
 type SelectOptionArgs = [string] | ['nextpage', `${number}`]
 
 export const command: SlashCommand = {
@@ -131,7 +131,7 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				embeds: [new EmbedBuilder(interaction.message.embeds[0]?.toJSON())
 					.setTitle('Here is how to use the auto subcommand:')
-					.setDescription('Auto-proxying means that every message you send will be treated as if it was proxied, even if the proxy isn\'t included.\n\nPressing the first button allows you to toggle between the global setting, a blacklist and a whitelist. When this is set to blacklist, auto-proxying is *only disabled* in the selected channels. When it is set to whitelist, auto-proxying is *only enabled* in the selected channels.\n\nUsing the drop-down menu, you can select the channels for the black-/whitelist.')
+					.setDescription('Auto-proxying means that every message you send will be treated as if it was proxied, even if the proxy isn\'t included.\n\nPressing the first button allows you to toggle between the global setting, a blacklist and a whitelist. When this is set to blacklist, auto-proxying is *only disabled* in the selected channels. When it is set to whitelist, auto-proxying is *only enabled* in the selected channels.\n\nUsing the drop-down menu, you can select the channels for the black-/whitelist.\n\nUse the last button to toggle sticky mode. When enabled, a different quid will be auto-proxied when their proxy is used once. Sticky mode will only work cross-server when enabled globally and following global settings.')
 					.setFields()
 					.setFooter({ text: 'Tip: Use this command in DMs to change global proxy settings.' })],
 				components: getAutoproxyComponents(allChannels, userData, 0),
@@ -175,6 +175,45 @@ export const command: SlashCommand = {
 					.setColor(userData.quid.color)
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 					.setTitle(`Auto-proxying ${(newSetting === AutoproxyConfigType.FollowGlobal) ? 'now follows the global setting' : `is now only ${newSetting === AutoproxyConfigType.Blacklist ? 'disabled' : 'enabled'} in the ${newSetting === AutoproxyConfigType.Blacklist ? 'blacklisted' : 'whitelisted'} channels`}!`)],
+				ephemeral: true,
+			});
+		}
+
+		if (interaction.isButton() && customId.args[0] === 'auto' && customId.args[1] === 'stickymode') {
+
+			const oldSetting = userData.settings.proxy.server?.stickymode ?? StickymodeConfigType.FollowGlobal;
+			const newSetting = oldSetting === StickymodeConfigType.FollowGlobal ? StickymodeConfigType.Enabled : oldSetting === StickymodeConfigType.Enabled ? StickymodeConfigType.Disabled : StickymodeConfigType.FollowGlobal;
+
+			userData.update(
+				(u) => {
+					const sps = u.settings.proxy.servers[interaction.guildId];
+					if (!sps) {
+						u.settings.proxy.servers[interaction.guildId] = {
+							autoproxy: {
+								setTo: AutoproxyConfigType.FollowGlobal,
+								channels: {
+									whitelist: [],
+									blacklist: [],
+								},
+							},
+							stickymode: newSetting,
+						};
+					}
+					else { sps.stickymode = newSetting; }
+				},
+			);
+
+			// This is always an update to the message with the select menu
+			await respond(interaction, {
+				components: getAutoproxyComponents(allChannels, userData, 0),
+			}, 'update', interaction.message.id);
+
+			// This is always a followUp
+			await respond(interaction, {
+				embeds: [new EmbedBuilder()
+					.setColor(userData.quid.color)
+					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+					.setTitle(`Sticky mode ${(newSetting === StickymodeConfigType.FollowGlobal) ? 'now follows the global setting' : `is now ${newSetting === StickymodeConfigType.Disabled ? 'disabled' : 'enabled'} in this server`}!`)],
 				ephemeral: true,
 			});
 		}
@@ -326,5 +365,10 @@ function getAutoproxyComponents(
 				.setPlaceholder(`Select channels to ${userData.settings.proxy.server?.autoproxy.setTo === AutoproxyConfigType.Whitelist ? 'enable' : 'disable'} auto-proxying in`)
 				.setOptions(selectMenuOptions)
 				.setDisabled(userData.settings.proxy.server === undefined || userData.settings.proxy.server.autoproxy.setTo === AutoproxyConfigType.FollowGlobal)]),
+		new ActionRowBuilder<ButtonBuilder>()
+			.setComponents([new ButtonBuilder()
+				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, ['auto', 'stickymode']))
+				.setLabel(`Sticky mode ${userData.settings.proxy.server?.stickymode === StickymodeConfigType.Disabled ? 'is disabled' : userData.settings.proxy.server?.stickymode === StickymodeConfigType.Enabled ? 'is enabled' : 'follows global setting'}`)
+				.setStyle(ButtonStyle.Secondary)]),
 	];
 }

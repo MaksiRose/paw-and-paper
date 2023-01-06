@@ -36,6 +36,7 @@ export const event: DiscordEvent = {
 						[newMessage.guildId]: { isMember: true, lastUpdatedTimestamp: Date.now() },
 					};
 				},
+				{ log: false },
 			);
 
 		if (hasName(userData) && replaceMessage && (newMessage.content.length > 0 || newMessage.attachments.size > 0)) {
