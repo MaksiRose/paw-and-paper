@@ -86,6 +86,7 @@ export const event: DiscordEvent = {
 			const isSuccessful = await sendMessage(message.channel, message.content, userData, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
 				.catch(error => { console.error(error); });
 			if (!isSuccessful) { return; }
+			console.log(`\x1b[32m${message.author.tag} (${message.author.id})\x1b[0m successfully \x1b[31m$proxied \x1b[0m a new message in \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 			if (await hasPermission(message.guild.members.me || await message.channel.guild.members.fetchMe({ force: false }) || message.client.user.id, message.channel, 'ManageMessages')) {
 
