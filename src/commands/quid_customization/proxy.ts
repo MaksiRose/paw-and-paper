@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder, ModalBuilder, NonThreadGuildBasedChannel, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
-import { hasName, isInGuild } from '../../utils/checkUserState';
+import { hasName } from '../../utils/checkUserState';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
 import { getMapData } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
@@ -41,10 +41,10 @@ export const command: SlashCommand = {
 					{
 						name: 'set proxy',
 						value: 'This sets an indicator to the bot you want your message to be proxied. Only messages with those indicators will be proxied. Click the "Set?" button below to learn more.',
-					}, ...(interaction.inGuild() ? [{
+					}, {
 						name: 'auto proxy',
 						value: 'This will treat every message in a specific channel as if it was proxied, even if the proxy isn\'t included. Click the "Auto?" button below to learn more.',
-					}] : []),
+					},
 				])],
 			components: [new ActionRowBuilder<ButtonBuilder>()
 				.setComponents([
@@ -52,10 +52,10 @@ export const command: SlashCommand = {
 						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, ['set', 'learnmore']))
 						.setLabel('Set?')
 						.setStyle(ButtonStyle.Success),
-					...(interaction.inGuild() ? [new ButtonBuilder()
+					new ButtonBuilder()
 						.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, ['auto', 'learnmore']))
 						.setLabel('Auto?')
-						.setStyle(ButtonStyle.Success)] : []),
+						.setStyle(ButtonStyle.Success),
 				])],
 			fetchReply: true,
 		});
@@ -117,23 +117,18 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		/* Everything after this point relates to autoproxy and can only be executed in guilds */
-		if (!isInGuild(interaction)) { return; }
-
-		const allChannels = (await interaction.guild?.channels?.fetch() ?? new Collection()).filter((c): c is NonThreadGuildBasedChannel => c !== null && c.permissionsFor(interaction.client.user.id)?.has('ViewChannel') != false && c.permissionsFor(interaction.client.user.id)?.has('SendMessages') != false && c.permissionsFor(interaction.user.id)?.has('ViewChannel') != false && c.permissionsFor(interaction.user.id)?.has('SendMessages') != false);
+		const allChannels = interaction.inGuild() ? (await interaction.guild?.channels?.fetch() ?? new Collection()).filter((c): c is NonThreadGuildBasedChannel => c !== null && c.permissionsFor(interaction.client.user.id)?.has('ViewChannel') != false && c.permissionsFor(interaction.client.user.id)?.has('SendMessages') != false && c.permissionsFor(interaction.user.id)?.has('ViewChannel') != false && c.permissionsFor(interaction.user.id)?.has('SendMessages') != false) : null;
 
 		/* If the user pressed the button to learn more about the auto subcommand, explain it with a select menu to select channels. */
 		if (interaction.isButton() && customId.args[0] === 'auto' && customId.args[1] === 'learnmore') {
-
-			if (!interaction.inGuild()) { throw new Error('Interaction is not in guild'); }
 
 			// This is always an update to the message with the button
 			await respond(interaction, {
 				embeds: [new EmbedBuilder(interaction.message.embeds[0]?.toJSON())
 					.setTitle('Here is how to use the auto subcommand:')
-					.setDescription('Auto-proxying means that every message you send will be treated as if it was proxied, even if the proxy isn\'t included.\n\nPressing the first button allows you to toggle between the global setting, a blacklist and a whitelist. When this is set to blacklist, auto-proxying is *only disabled* in the selected channels. When it is set to whitelist, auto-proxying is *only enabled* in the selected channels.\n\nUsing the drop-down menu, you can select the channels for the black-/whitelist.\n\nUse the last button to toggle sticky mode. When enabled, a different quid will be auto-proxied when their proxy is used once. Sticky mode will only work cross-server when enabled globally and following global settings.')
+					.setDescription(`${interaction.inGuild() ? '' : '**IMPORTANT:** Due to discord limitations, this feature only works in servers.\n\n'}Auto-proxying means that every message you send will be treated as if it was proxied, even if the proxy isn\`t included.\n\nPressing the first button allows you to ${interaction.inGuild() ? 'toggle between the global setting, a blacklist and a whitelist. When this is set to blacklist, auto-proxying is *only disabled* in the selected channels. When it is set to whitelist, auto-proxying is *only enabled* in the selected channels.\n\nUsing the drop-down menu, you can select the channels for the black-/whitelist.' : 'enable or disable this globally.'}\n\nUse the second button to toggle sticky mode. When enabled, a different quid will be auto-proxied when their proxy is used once. Sticky mode will only work cross-server when enabled globally and following global settings in the server.`)
 					.setFields()
-					.setFooter({ text: 'Tip: Use this command in DMs to change global proxy settings.' })],
+					.setFooter({ text: interaction.inGuild() ? 'Tip: Use this command in DMs to change global proxy settings.' : 'Tip: Use this command in a server to overwrite these global proxy settings for that server.' })],
 				components: getAutoproxyComponents(allChannels, userData, 0),
 			}, 'update', interaction.message.id);
 			return;
@@ -147,20 +142,25 @@ export const command: SlashCommand = {
 
 			userData.update(
 				(u) => {
-					const sps = u.settings.proxy.servers[interaction.guildId];
-					if (!sps) {
-						u.settings.proxy.servers[interaction.guildId] = {
-							autoproxy: {
-								setTo: newSetting,
-								channels: {
-									whitelist: [],
-									blacklist: [],
+					if (interaction.inGuild()) {
+						const sps = u.settings.proxy.servers[interaction.guildId];
+						if (!sps) {
+							u.settings.proxy.servers[interaction.guildId] = {
+								autoproxy: {
+									setTo: newSetting,
+									channels: {
+										whitelist: [],
+										blacklist: [],
+									},
 								},
-							},
-							stickymode: StickymodeConfigType.FollowGlobal,
-						};
+								stickymode: StickymodeConfigType.FollowGlobal,
+							};
+						}
+						else { sps.autoproxy.setTo = newSetting; }
 					}
-					else { sps.autoproxy.setTo = newSetting; }
+					else {
+						u.settings.proxy.global.autoproxy = !u.settings.proxy.global.autoproxy;
+					}
 				},
 			);
 
@@ -174,7 +174,7 @@ export const command: SlashCommand = {
 				embeds: [new EmbedBuilder()
 					.setColor(userData.quid.color)
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-					.setTitle(`Auto-proxying ${(newSetting === AutoproxyConfigType.FollowGlobal) ? 'now follows the global setting' : `is now only ${newSetting === AutoproxyConfigType.Blacklist ? 'disabled' : 'enabled'} in the ${newSetting === AutoproxyConfigType.Blacklist ? 'blacklisted' : 'whitelisted'} channels`}!`)],
+					.setTitle(`Auto-proxying ${interaction.inGuild() ? ((newSetting === AutoproxyConfigType.FollowGlobal) ? 'now follows the global setting' : `is now only ${newSetting === AutoproxyConfigType.Blacklist ? 'disabled' : 'enabled'} in the ${newSetting === AutoproxyConfigType.Blacklist ? 'blacklisted' : 'whitelisted'} channels`) : `is now ${userData.settings.proxy.global.autoproxy === true ? 'enabled' : 'disabled'} globally`}!`)],
 				ephemeral: true,
 			});
 		}
@@ -186,20 +186,23 @@ export const command: SlashCommand = {
 
 			userData.update(
 				(u) => {
-					const sps = u.settings.proxy.servers[interaction.guildId];
-					if (!sps) {
-						u.settings.proxy.servers[interaction.guildId] = {
-							autoproxy: {
-								setTo: AutoproxyConfigType.FollowGlobal,
-								channels: {
-									whitelist: [],
-									blacklist: [],
+					if (interaction.inGuild()) {
+						const sps = u.settings.proxy.servers[interaction.guildId];
+						if (!sps) {
+							u.settings.proxy.servers[interaction.guildId] = {
+								autoproxy: {
+									setTo: AutoproxyConfigType.FollowGlobal,
+									channels: {
+										whitelist: [],
+										blacklist: [],
+									},
 								},
-							},
-							stickymode: newSetting,
-						};
+								stickymode: newSetting,
+							};
+						}
+						else { sps.stickymode = newSetting; }
 					}
-					else { sps.stickymode = newSetting; }
+					else { u.settings.proxy.global.stickymode = !u.settings.proxy.global.stickymode; }
 				},
 			);
 
@@ -213,12 +216,12 @@ export const command: SlashCommand = {
 				embeds: [new EmbedBuilder()
 					.setColor(userData.quid.color)
 					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-					.setTitle(`Sticky mode ${(newSetting === StickymodeConfigType.FollowGlobal) ? 'now follows the global setting' : `is now ${newSetting === StickymodeConfigType.Disabled ? 'disabled' : 'enabled'} in this server`}!`)],
+					.setTitle(`Sticky mode ${interaction.inGuild() ? ((newSetting === StickymodeConfigType.FollowGlobal) ? 'now follows the global setting' : `is now ${newSetting === StickymodeConfigType.Disabled ? 'disabled' : 'enabled'} in this server`) : `is now ${userData.settings.proxy.global.stickymode === true ? 'enabled' : 'disabled'} globally`}!`)],
 				ephemeral: true,
 			});
 		}
 
-		if (interaction.isStringSelectMenu() && customId.args[0] === 'auto' && customId.args[1] === 'options') {
+		if (interaction.inCachedGuild() && interaction.isStringSelectMenu() && customId.args[0] === 'auto' && customId.args[1] === 'options') {
 
 			let page = 0;
 			const selectOptionId = deconstructSelectOptions<SelectOptionArgs>(interaction)[0];
@@ -228,7 +231,7 @@ export const command: SlashCommand = {
 			if (selectOptionId[0] === 'nextpage') {
 
 				page = Number(selectOptionId[1]) + 1;
-				if (page >= Math.ceil((allChannels.size + 1) / 24)) { page = 0; }
+				if (page >= Math.ceil((allChannels!.size + 1) / 24)) { page = 0; }
 
 				// This is always an update to the message with the select menu
 				await respond(interaction, {
@@ -331,19 +334,19 @@ export const command: SlashCommand = {
 };
 
 function getAutoproxyComponents(
-	allChannels: Collection<string, NonThreadGuildBasedChannel>,
+	allChannels: Collection<string, NonThreadGuildBasedChannel> | null,
 	userData: UserData<never, ''>,
 	page: number,
 ): (ActionRowBuilder<ButtonBuilder> | ActionRowBuilder<StringSelectMenuBuilder>)[] {
 
 	// If ChannelSelects ever allow for default values, then this could be implemented here. Right now, using default values clashes with the "Show more channels" feature
-	let selectMenuOptions: RestOrArray<SelectMenuComponentOptionData> = allChannels.map((channel, channelId) => ({
+	let selectMenuOptions: RestOrArray<SelectMenuComponentOptionData> | undefined = allChannels?.map((channel, channelId) => ({
 		label: channel.name,
 		value: constructSelectOptions<SelectOptionArgs>([channelId]),
 		emoji: userData.settings.proxy.server?.autoproxy.channels[userData.settings.proxy.server.autoproxy.setTo === AutoproxyConfigType.Whitelist ? 'whitelist' : 'blacklist'].includes(channelId) ? '🔘' : undefined,
 	}));
 
-	if (selectMenuOptions.length > 25) {
+	if (selectMenuOptions !== undefined && selectMenuOptions.length > 25) {
 
 		selectMenuOptions = selectMenuOptions.splice(page * 24, 24);
 		selectMenuOptions.push({
@@ -357,18 +360,18 @@ function getAutoproxyComponents(
 		new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
 				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, ['auto', 'setTo']))
-				.setLabel(`Currently ${userData.settings.proxy.server?.autoproxy.setTo === AutoproxyConfigType.Blacklist ? 'set to blacklist' : userData.settings.proxy.server?.autoproxy.setTo === AutoproxyConfigType.Whitelist ? 'set to whitelist' : 'follows global setting'}`)
+				.setLabel(selectMenuOptions !== undefined ? `Currently ${userData.settings.proxy.server?.autoproxy.setTo === AutoproxyConfigType.Blacklist ? 'set to blacklist' : userData.settings.proxy.server?.autoproxy.setTo === AutoproxyConfigType.Whitelist ? 'set to whitelist' : 'follows global setting'}` : `Auto-proxying is ${userData.settings.proxy.global.autoproxy === true ? 'enabled' : 'disabled'}`)
 				.setStyle(ButtonStyle.Secondary)]),
-		new ActionRowBuilder<StringSelectMenuBuilder>()
+		...selectMenuOptions !== undefined ? [new ActionRowBuilder<StringSelectMenuBuilder>()
 			.setComponents([new StringSelectMenuBuilder()
 				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, ['auto', 'options']))
 				.setPlaceholder(`Select channels to ${userData.settings.proxy.server?.autoproxy.setTo === AutoproxyConfigType.Whitelist ? 'enable' : 'disable'} auto-proxying in`)
 				.setOptions(selectMenuOptions)
-				.setDisabled(userData.settings.proxy.server === undefined || userData.settings.proxy.server.autoproxy.setTo === AutoproxyConfigType.FollowGlobal)]),
+				.setDisabled(userData.settings.proxy.server === undefined || userData.settings.proxy.server.autoproxy.setTo === AutoproxyConfigType.FollowGlobal)])] : [],
 		new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
 				.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, ['auto', 'stickymode']))
-				.setLabel(`Sticky mode ${userData.settings.proxy.server?.stickymode === StickymodeConfigType.Disabled ? 'is disabled' : userData.settings.proxy.server?.stickymode === StickymodeConfigType.Enabled ? 'is enabled' : 'follows global setting'}`)
+				.setLabel(`Sticky mode ${(selectMenuOptions !== undefined ? userData.settings.proxy.server?.stickymode === StickymodeConfigType.Disabled : userData.settings.proxy.global.stickymode === false) ? 'is disabled' : (selectMenuOptions !== undefined ? userData.settings.proxy.server?.stickymode === StickymodeConfigType.Enabled : userData.settings.proxy.global.stickymode === true) ? 'is enabled' : 'follows global setting'}`)
 				.setStyle(ButtonStyle.Secondary)]),
 	];
 }
