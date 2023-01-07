@@ -291,6 +291,13 @@ export const userModel = new Model<UserSchema>('./database/profiles', {
 		},
 	},
 	lastPlayedVersion: { type: 'string', default: pkg.version },
+	antiproxy: {
+		type: 'object',
+		default: {
+			startsWith: { type: 'string', default: '' },
+			endsWith: { type: 'string', default: '' },
+		},
+	},
 	_id: { type: 'string', default: '', locked: true },
 }, true);
 
@@ -365,6 +372,7 @@ export function getUserData<T extends '' | never, U extends QuidSchema<T> | unde
 		quids: new Collection(Object.entries(userData.quids)),
 		servers: new Collection(Object.entries(userData.servers)),
 		lastPlayedVersion: userData.lastPlayedVersion,
+		antiproxy: userData.antiproxy,
 		update: function(
 			updateFunction: (value: UserSchema) => void,
 			options: { log?: boolean } = {},

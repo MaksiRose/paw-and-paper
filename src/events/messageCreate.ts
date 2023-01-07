@@ -5,7 +5,7 @@ import serverModel from '../models/serverModel';
 import { userModel, getUserData } from '../models/userModel';
 import { ProxyListType } from '../typings/data/general';
 import { ServerSchema } from '../typings/data/server';
-import { AutoproxyConfigType, StickymodeConfigType, UserData } from '../typings/data/user';
+import { AutoproxyConfigType, StickymodeConfigType, UserData, UserSchema } from '../typings/data/user';
 import { DiscordEvent } from '../typings/main';
 import { hasName } from '../utils/checkUserState';
 import { userDataServersObject } from '../utils/helperFunctions';
@@ -46,29 +46,7 @@ export const event: DiscordEvent = {
 
 		if (_userData === null || serverData === null) { return; }
 
-		let { replaceMessage, quidId } = checkForProxy(message, getUserData(_userData, message.guildId, _userData.quids[_userData.servers[message.guildId]?.currentQuid ?? '']), serverData);
-		const userData = getUserData(_userData, message.guildId, _userData.quids[quidId]);
-
-		await userData
-			.update(
-				(u) => {
-					u.userIds[message.author.id] = {
-						...(u.userIds[message.author.id] ?? {}),
-						[message.guildId]: { isMember: true, lastUpdatedTimestamp: Date.now() },
-					};
-					if (replaceMessage) {
-						u.servers[message.guildId] = {
-							...userDataServersObject(u, message.guildId),
-							lastProxied: quidId,
-						};
-						u.servers['DMs'] = {
-							...userDataServersObject(u, 'DMs'),
-							lastProxied: quidId,
-						};
-					}
-				},
-				{ log: false },
-			);
+		let { replaceMessage, userData } = checkForProxy(message, _userData, serverData);
 
 		if (serverData.currentlyVisiting !== null && message.channel.id === serverData.visitChannelId) {
 
@@ -86,7 +64,7 @@ export const event: DiscordEvent = {
 			const isSuccessful = await sendMessage(message.channel, message.content, userData, message.author.id, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
 				.catch(error => { console.error(error); });
 			if (!isSuccessful) { return; }
-			console.log(`\x1b[32m${message.author.tag} (${message.author.id})\x1b[0m successfully \x1b[31m$proxied \x1b[0m a new message in \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			console.log(`\x1b[32m${message.author.tag} (${message.author.id})\x1b[0m successfully \x1b[31mproxied \x1b[0ma new message in \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 			if (await hasPermission(message.guild.members.me || await message.channel.guild.members.fetchMe({ force: false }) || message.client.user.id, message.channel, 'ManageMessages')) {
 
@@ -102,12 +80,12 @@ export const event: DiscordEvent = {
 
 export function checkForProxy(
 	message: Message<true> & Message<boolean>,
-	userData: UserData<undefined, ''>,
+	_userData: UserSchema,
 	serverData: ServerSchema,
-): { replaceMessage: boolean, quidId: string; } {
+): { replaceMessage: boolean, userData: UserData<undefined, ''>; } {
 
 	let replaceMessage = false;
-	let quidId = userData.quid?._id || '';
+	let quidId = _userData.servers[message.guildId]?.currentQuid ?? null;
 
 	const proxyIsDisabled = (
 		serverData.proxySettings.channels.setTo === ProxyListType.Blacklist
@@ -116,43 +94,40 @@ export function checkForProxy(
 		serverData.proxySettings.channels.setTo === ProxyListType.Whitelist
 			&& !serverData.proxySettings.channels.whitelist.includes(message.channelId)
 	);
+	const serverProxySettings = _userData.settings.proxy.servers[message.guildId];
 
-	/* Checking if the user has autoproxy enabled in the current channel, and if so, it is adding the
-	prefix to the message. */
+	/* Checking if the user has autoproxy enabled in the current channel, and if so, it is adding the prefix to the message. */
 	const autoproxyIsToggled = (
-		userData.settings.proxy.server?.autoproxy.setTo === AutoproxyConfigType.Whitelist
-		&& userData.settings.proxy.server?.autoproxy.channels.whitelist.includes(message.channelId)
+		serverProxySettings?.autoproxy.setTo === AutoproxyConfigType.Whitelist
+		&& serverProxySettings?.autoproxy.channels.whitelist.includes(message.channelId)
 	) || (
-		userData.settings.proxy.server?.autoproxy.setTo === AutoproxyConfigType.Blacklist
-			&& !userData.settings.proxy.server?.autoproxy.channels.blacklist.includes(message.channelId)
+		serverProxySettings?.autoproxy.setTo === AutoproxyConfigType.Blacklist
+			&& !serverProxySettings?.autoproxy.channels.blacklist.includes(message.channelId)
 	) || (
 		(
-			userData.settings.proxy.server === undefined
-				|| userData.settings.proxy.server?.autoproxy.setTo === AutoproxyConfigType.FollowGlobal
-		) && userData.settings.proxy.global.autoproxy === true
+			serverProxySettings === undefined
+				|| serverProxySettings?.autoproxy.setTo === AutoproxyConfigType.FollowGlobal
+		) && _userData.settings.proxy.global.autoproxy === true
 	);
 
-	const stickymodeIsToggledLocally = userData.settings.proxy.server?.stickymode === StickymodeConfigType.Enabled;
+	const stickymodeIsToggledLocally = serverProxySettings?.stickymode === StickymodeConfigType.Enabled;
 	const stickymodeIsToggledGlobally = (
-		userData.settings.proxy.server === undefined
-		|| userData.settings.proxy.server.stickymode === StickymodeConfigType.FollowGlobal
-	) && userData.settings.proxy.global.stickymode === true;
+		serverProxySettings === undefined
+		|| serverProxySettings.stickymode === StickymodeConfigType.FollowGlobal
+	) && _userData.settings.proxy.global.stickymode === true;
 
 	if (autoproxyIsToggled && !proxyIsDisabled) {
 
 		replaceMessage = true;
 
-		if (stickymodeIsToggledLocally) { quidId = userData.servers.get(serverData.serverId)?.lastProxied ?? userData.servers.get('DMs')?.lastProxied ?? quidId; }
-		if (stickymodeIsToggledGlobally) { quidId = userData.servers.get('DMs')?.lastProxied ?? quidId; }
+		if (stickymodeIsToggledLocally) { quidId = _userData.servers[serverData.serverId]?.lastProxied ?? _userData.servers['DMs']?.lastProxied ?? quidId; }
+		if (stickymodeIsToggledGlobally) { quidId = _userData.servers['DMs']?.lastProxied ?? quidId; }
 	}
 
-	/* Checking if the message starts with the quid's proxy start and ends with the quid's
-	proxy end. If it does, it will set the current quid to the quid that the message is
-	being sent from. */
-	for (const quid of userData.quids.values()) {
+	/* Checking if the message starts with the quid's proxy start and ends with the quid's proxy end. If it does, it will set the current quid to the quid that the message is being sent from. */
+	for (const quid of Object.values(_userData.quids)) {
 
-		/* Checking if the message includes the proxy. If it does, it will change the message content
-		to the prefix + 'say ' + the message content without the proxy. */
+		/* Checking if the message includes the proxy. If it does, it will change the message content to the prefix + 'say ' + the message content without the proxy. */
 		const hasProxy = quid.proxy.startsWith !== ''
 			|| quid.proxy.endsWith !== '';
 
@@ -169,5 +144,41 @@ export function checkForProxy(
 		}
 	}
 
-	return { replaceMessage, quidId };
+
+	let isAntiProxied = false;
+
+	const hasAntiProxy = _userData.antiproxy.startsWith !== ''
+		|| _userData.antiproxy.endsWith !== '';
+	const messageIncludesAntiProxy = message.content.startsWith(_userData.antiproxy.startsWith)
+			&& message.content.endsWith(_userData.antiproxy.endsWith);
+	if (hasAntiProxy && messageIncludesAntiProxy) {
+
+		quidId = null;
+		replaceMessage = false;
+		isAntiProxied = true;
+	}
+
+	const userData = getUserData(_userData, message.guildId, _userData.quids[quidId ?? '']);
+
+	userData.update(
+		(u) => {
+			u.userIds[message.author.id] = {
+				...(u.userIds[message.author.id] ?? {}),
+				[message.guildId]: { isMember: true, lastUpdatedTimestamp: Date.now() },
+			};
+			if (replaceMessage || isAntiProxied) {
+				u.servers[message.guildId] = {
+					...userDataServersObject(u, message.guildId),
+					lastProxied: quidId,
+				};
+				u.servers['DMs'] = {
+					...userDataServersObject(u, 'DMs'),
+					lastProxied: quidId,
+				};
+			}
+		},
+		{ log: false },
+	);
+
+	return { replaceMessage, userData };
 }

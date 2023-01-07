@@ -244,6 +244,11 @@ export interface UserSchema {
 	};
 	/** Last major version that the user played on */
 	lastPlayedVersion: string;
+	/** The antiproxy the account uses to escape auto-proxying */
+	antiproxy: {
+		startsWith: string,
+		endsWith: string;
+	};
 	readonly _id: string;
 }
 

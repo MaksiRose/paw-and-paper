@@ -69,6 +69,7 @@ export const command: SlashCommand = {
 				currentQuid: {},
 				servers: {},
 				lastPlayedVersion: `${version.split('.').slice(0, -1).join('.')}`,
+				antiproxy: { startsWith: '', endsWith: '' },
 				_id: generateId(),
 			});
 			userData = getUserData(_userData, interaction.guildId ?? 'DMs', _userData.quids[_userData.servers[interaction.guildId ?? 'DMs']?.currentQuid ?? '']);

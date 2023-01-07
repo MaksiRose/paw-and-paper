@@ -1,10 +1,9 @@
 import { Message } from 'discord.js';
 import { sendMessage } from '../commands/interaction/say';
 import serverModel from '../models/serverModel';
-import { userModel, getUserData } from '../models/userModel';
+import { userModel } from '../models/userModel';
 import { DiscordEvent } from '../typings/main';
 import { hasName } from '../utils/checkUserState';
-import { userDataServersObject } from '../utils/helperFunctions';
 import { getMissingPermissionContent, hasPermission, permissionDisplay } from '../utils/permissionHandler';
 import { checkForProxy } from './messageCreate';
 
@@ -26,36 +25,14 @@ export const event: DiscordEvent = {
 
 		if (_userData === null || serverData === null) { return; }
 
-		const { replaceMessage, quidId } = checkForProxy(newMessage, getUserData(_userData, newMessage.guildId, _userData.quids[_userData.servers[newMessage.guildId]?.currentQuid ?? '']), serverData);
-		const userData = getUserData(_userData, newMessage.guildId, _userData.quids[quidId]);
-
-		userData
-			.update(
-				(u) => {
-					u.userIds[newMessage.author.id] = {
-						...(u.userIds[newMessage.author.id] ?? {}),
-						[newMessage.guildId]: { isMember: true, lastUpdatedTimestamp: Date.now() },
-					};
-					if (replaceMessage) {
-						u.servers[newMessage.guildId ?? 'DMs'] = {
-							...userDataServersObject(u, newMessage.guildId ?? 'DMs'),
-							lastProxied: quidId,
-						};
-						u.servers['DMs'] = {
-							...userDataServersObject(u, 'DMs'),
-							lastProxied: quidId,
-						};
-					}
-				},
-				{ log: false },
-			);
+		const { replaceMessage, userData } = checkForProxy(newMessage, _userData, serverData);
 
 		if (hasName(userData) && replaceMessage && (newMessage.content.length > 0 || newMessage.attachments.size > 0)) {
 
 			const isSuccessful = await sendMessage(newMessage.channel, newMessage.content, userData, newMessage.author.id, newMessage.attachments.size > 0 ? Array.from(newMessage.attachments.values()) : undefined, newMessage.reference ?? undefined)
 				.catch(error => { console.error(error); });
 			if (!isSuccessful) { return; }
-			console.log(`\x1b[32m${newMessage.author.tag} (${newMessage.author.id})\x1b[0m successfully \x1b[31m$proxied \x1b[0m an edited message in \x1b[32m${newMessage.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
+			console.log(`\x1b[32m${newMessage.author.tag} (${newMessage.author.id})\x1b[0m successfully \x1b[31mproxied \x1b[0man edited message in \x1b[32m${newMessage.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
 			if (await hasPermission(newMessage.guild.members.me || newMessage.client.user.id, newMessage.channel, 'ManageMessages')) {
 
