@@ -149,6 +149,8 @@ export interface QuidSchema<Completed extends ''> {
 	mentions: { [key in string]: number[]; };
 	/** Object of server IDs this quid has been used on as the key and the information associated with it as the value */
 	profiles: { [key in string]: ProfileSchema; };
+	/** ID of the main group or null */
+	mainGroup: string | null;
 }
 
 export enum StickymodeConfigType {
@@ -163,9 +165,21 @@ export enum AutoproxyConfigType {
 	Blacklist = 3
 }
 
+export interface GroupSchema {
+	/** Unique ID of the group */
+	readonly _id: string;
+	/** Name of the group */
+	name: string;
+	/** Tag of the group */
+	tag: {
+		global: string,
+		servers: { [index: string]: string; };
+	};
+}
+
 export interface UserSchema {
 	/** Array of IDs of the users associated with this account
-	 * @deprecated use userIds instead
+	 * @deboprecated use userIds instead
 	 */
 	userId: Array<string>;
 	/** Object with discord user IDs as keys and values that are objects with discord server IDs as keys and values that are objects of whether the user is a member and when this was last updated */
@@ -249,6 +263,10 @@ export interface UserSchema {
 		startsWith: string,
 		endsWith: string;
 	};
+	/** Object of IDs of groups as the key and the groups this user has created as value */
+	groups: { [key in string]: GroupSchema };
+	/** Array of objects that hold one group ID and one quid ID */
+	group_quid: { groupId: string; quidId: string; }[]
 	readonly _id: string;
 }
 
@@ -264,7 +282,7 @@ export interface Quid<Completed extends ''> extends Omit<QuidSchema<Completed>, 
 	pronounAndPlural: (pronounNumber: 0 | 1 | 2 | 3 | 4 | 5, string1: string, string2?: string) => string;
 }
 
-export interface UserData<QuidExists extends undefined, QuidCompleted extends ''> extends Omit<UserSchema, 'quids' | 'currentQuid' | 'servers' | 'tag' | 'settings' | 'userId'> {
+export interface UserData<QuidExists extends undefined, QuidCompleted extends ''> extends Omit<UserSchema, 'quids' | 'currentQuid' | 'servers' | 'tag' | 'settings' | 'userId' | 'groups'> {
 	tag: Omit<UserSchema['tag'], 'servers'> & {
 		server: UserSchema['tag']['servers'][string] | undefined;
 	},
@@ -277,5 +295,6 @@ export interface UserData<QuidExists extends undefined, QuidCompleted extends ''
 			server: UserSchema['settings']['proxy']['servers'][string] | undefined;
 		};
 	};
+	groups: Collection<keyof UserSchema['groups'], ValueOf<UserSchema['groups']>>,
 	update: OmitFirstArgAndChangeReturn<typeof userModel['findOneAndUpdate'], void>;
 }

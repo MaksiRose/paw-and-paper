@@ -264,6 +264,7 @@ export const userModel = new Model<UserSchema>('./database/profiles', {
 						},
 					},
 				},
+				mainGroup: { type: 'string?', default: null },
 			},
 		},
 	},
@@ -296,6 +297,36 @@ export const userModel = new Model<UserSchema>('./database/profiles', {
 		default: {
 			startsWith: { type: 'string', default: '' },
 			endsWith: { type: 'string', default: '' },
+		},
+	},
+	groups: {
+		type: 'map',
+		of: {
+			type: 'object',
+			default: {
+				_id: { type: 'string', default: '' },
+				name: { type: 'string', default: '' },
+				tag: {
+					type: 'object',
+					default: {
+						global: { type: 'string', default: '' },
+						servers: {
+							type: 'map',
+							of: { type: 'string', default: '' },
+						},
+					},
+				},
+			},
+		},
+	},
+	group_quid: {
+		type: 'array',
+		of: {
+			type: 'object',
+			default: {
+				groupId: { type: 'string', default: '' },
+				quidId: { type: 'string', default: '' },
+			},
 		},
 	},
 	_id: { type: 'string', default: '', locked: true },
@@ -340,6 +371,7 @@ export function getUserData<T extends '' | never, U extends QuidSchema<T> | unde
 			color: quidData.color,
 			mentions: quidData.mentions,
 			profile: quidData.profiles[server_id],
+			mainGroup: quidData.mainGroup,
 			getDisplayname: function(): string {
 
 				const tag = user.tag.server || user.tag.global || '';
@@ -373,6 +405,8 @@ export function getUserData<T extends '' | never, U extends QuidSchema<T> | unde
 		servers: new Collection(Object.entries(userData.servers)),
 		lastPlayedVersion: userData.lastPlayedVersion,
 		antiproxy: userData.antiproxy,
+		groups: new Collection(Object.entries(userData.groups)),
+		group_quid: userData.group_quid,
 		update: function(
 			updateFunction: (value: UserSchema) => void,
 			options: { log?: boolean } = {},

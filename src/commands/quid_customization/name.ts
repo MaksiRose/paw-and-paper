@@ -70,6 +70,8 @@ export const command: SlashCommand = {
 				servers: {},
 				lastPlayedVersion: `${version.split('.').slice(0, -1).join('.')}`,
 				antiproxy: { startsWith: '', endsWith: '' },
+				groups: {},
+				group_quid: [],
 				_id: generateId(),
 			});
 			userData = getUserData(_userData, interaction.guildId ?? 'DMs', _userData.quids[_userData.servers[interaction.guildId ?? 'DMs']?.currentQuid ?? '']);
@@ -153,6 +155,7 @@ export const command: SlashCommand = {
 								passedOutTimestamp: 0,
 							},
 						} : {},
+						mainGroup: null,
 					};
 				}
 				else { q.name = name; }
