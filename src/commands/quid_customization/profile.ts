@@ -302,6 +302,7 @@ export async function getProfileMessageOptions(
 				{ name: '**🦑 Species**', value: capitalizeString(userData.quid.getDisplayspecies()) || '/', inline: true },
 				{ name: '**🔑 Proxy**', value: !userData.quid.proxy.startsWith && !userData.quid.proxy.endsWith ? 'No proxy set' : `${userData.quid.proxy.startsWith}text${userData.quid.proxy.endsWith}`, inline: true },
 				{ name: '**🍂 Pronouns**', value: userData.quid.pronounSets.map(pronounSet => pronounCompromiser(pronounSet)).join('\n') || '/' },
+				{ name: '**👥 Groups**', value: userData.group_quid.filter(g => g.quidId === userData.quid!._id).map(g => `\`${userData.groups.get(g.groupId)?.name ?? '' }\``).filter(g => g !== '').join('\n') },
 			])
 			.setFooter({ text: `Quid ID: ${userData.quid._id}` })],
 	};
