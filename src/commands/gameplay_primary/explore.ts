@@ -920,7 +920,7 @@ async function executeExploring(
 		);
 
 		// This is either an update or an editReply if there is a buttonInteraction, or an editReply if it's an interaction
-		await sendQuestMessage(buttonInteraction ?? interaction, 'update', userData, serverData, messageContent, restEmbed, [...changedCondition.injuryUpdateEmbed, ...levelUpEmbed], changedCondition.statsUpdateText);
+		await sendQuestMessage(buttonInteraction ?? interaction, 'update', userData, serverData, messageContent, restEmbed, [...changedCondition.injuryUpdateEmbed, ...levelUpEmbed], changedCondition.statsUpdateText, (botReply ? getMessageId(botReply) : undefined));
 	}
 	else {
 

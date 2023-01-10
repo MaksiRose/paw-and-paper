@@ -117,8 +117,6 @@ export async function respond(
 					}
 					else { throw error; }
 				}
-
-
 			}
 			else if (!interaction.replied && !interaction.deferred && interaction.isMessageComponent() && type === 'update') {
 				botReply = await interaction.message.edit({ ...options, content: options.content === '' ? null : options.content, flags: undefined });
