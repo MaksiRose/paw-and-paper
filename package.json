@@ -1,6 +1,6 @@
 {
 	"name": "paw-and-paper",
-	"version": "3.2.1",
+	"version": "3.3.0",
 	"description": "A Discord Bot for roleplay communities, featuring a community-based interactive RPG and powerful tools to roleplay",
 	"main": "index.ts",
 	"scripts": {
@@ -28,10 +28,10 @@
 		"topgg-autoposter": "^2.0.1"
 	},
 	"devDependencies": {
-		"@types/express": "^4.17.14",
-		"@typescript-eslint/eslint-plugin": "^5.45.0",
-		"@typescript-eslint/parser": "^5.45.0",
-		"eslint": "^8.28.0",
+		"@types/express": "^4.17.15",
+		"@typescript-eslint/eslint-plugin": "^5.48.1",
+		"@typescript-eslint/parser": "^5.48.1",
+		"eslint": "^8.31.0",
 		"ts-node": "^10.9.1"
 	}
 }

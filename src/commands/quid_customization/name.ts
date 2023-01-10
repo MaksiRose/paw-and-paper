@@ -69,6 +69,9 @@ export const command: SlashCommand = {
 				currentQuid: {},
 				servers: {},
 				lastPlayedVersion: `${version.split('.').slice(0, -1).join('.')}`,
+				antiproxy: { startsWith: '', endsWith: '' },
+				groups: {},
+				group_quid: [],
 				_id: generateId(),
 			});
 			userData = getUserData(_userData, interaction.guildId ?? 'DMs', _userData.quids[_userData.servers[interaction.guildId ?? 'DMs']?.currentQuid ?? '']);
@@ -152,6 +155,7 @@ export const command: SlashCommand = {
 								passedOutTimestamp: 0,
 							},
 						} : {},
+						mainGroup: null,
 					};
 				}
 				else { q.name = name; }
@@ -186,7 +190,7 @@ export const command: SlashCommand = {
 /**
  * Creates a unique 6-character ID.
  */
-async function createId(): Promise<string> {
+export async function createId(): Promise<string> {
 
 	const legend = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 	let _id = '';

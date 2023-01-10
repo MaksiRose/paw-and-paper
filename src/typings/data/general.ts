@@ -1,4 +1,4 @@
-import { ProxyListType, RankType, WayOfEarningType } from './user';
+import { RankType, WayOfEarningType } from './user';
 
 /** This object holds references to guilds and users that cannot make accounts in their respective Arrays. */
 export interface BanList {
@@ -30,6 +30,11 @@ export type VoteList = {
 /** This object holds references to webhook messages and who the original author is, with the webhook message ID as the key, and the orginal user ID as the variable. */
 export type WebhookMessages = { [key: string]: string; };
 
+
+export enum ProxyListType {
+	Whitelist = 1,
+	Blacklist = 2
+}
 
 /** Object with a whitelist and blacklist and which one it is set to */
 export interface ProxyLimitedList {

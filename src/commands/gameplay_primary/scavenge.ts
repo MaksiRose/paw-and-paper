@@ -352,7 +352,7 @@ async function executeScavenging(
 				...levelUpEmbed,
 			],
 			components: newComponents,
-		}, 'update', getMessageId(botReply));
+		}, 'update', int.isMessageComponent() ? int.message.id : getMessageId(botReply));
 
 		await isPassedOut(int, userData, true);
 
@@ -396,6 +396,6 @@ async function executeScavenging(
 				.setDescription(`*${userData!.quid!.name} has been searching for quite some time now, when a mishap happens to ${userData!.quid!.pronoun(1)}. ${capitalizeString(userData!.quid!.pronounAndPlural(0, '\'s', '\'re'))} not paying attention for only a moment, and suddenly everything happens very quickly. The ${userData!.quid!.getDisplayspecies()} has fallen into a trap that a human must have set here! Now ${userData!.quid!.pronoun(0)} must catch ${userData!.quid!.pronoun(4)} again quickly and try to get free before there is an accident.*`)
 				.setFooter({ text: `Click the "${humanTrapCorrectEmoji}" as many times as you can!` })],
 			components: componentArray,
-		}, 'update', getMessageId(botReply));
+		}, 'update', int.isMessageComponent() ? int.message.id : getMessageId(botReply));
 	}
 }

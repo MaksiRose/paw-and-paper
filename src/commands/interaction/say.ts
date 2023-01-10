@@ -98,7 +98,7 @@ export async function sendMessage(
 
 	await userData.update(
 		(u) => {
-			const p = getMapData(getMapData(u.quids, getMapData(u.servers, webhookChannel.guildId).currentQuid ?? '').profiles, webhookChannel.guildId);
+			const p = getMapData(getMapData(u.quids, userData.quid._id).profiles, webhookChannel.guildId);
 			p.currentRegion = CurrentRegionType.Ruins;
 		},
 	);

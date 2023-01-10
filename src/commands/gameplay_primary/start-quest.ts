@@ -68,6 +68,7 @@ export async function sendQuestMessage(
 	restEmbed: EmbedBuilder[],
 	afterEmbedArray: EmbedBuilder[] = [],
 	footerText = '',
+	alternativeEditId?: string,
 ): Promise<Snowflake> {
 
 	const embed = new EmbedBuilder()
@@ -143,7 +144,7 @@ export async function sendQuestMessage(
 		embeds: [...restEmbed, embed, ...afterEmbedArray],
 		components: components,
 		fetchReply: true,
-	}, respondType, interaction.isMessageComponent() ? interaction.message.id : '@original');
+	}, respondType, respondType === 'reply' ? undefined : interaction.isMessageComponent() ? interaction.message.id : alternativeEditId);
 
 	/* The View Channels permissions that are needed for this function to work properly should be checked in all places that reference sendQuestMessage. It can't be checked for in here directly because a botReply must be returned. */
 	saveCommandDisablingInfo(userData, interaction.guildId, interaction.channelId, botReply.id, interaction);

@@ -117,8 +117,6 @@ export async function respond(
 					}
 					else { throw error; }
 				}
-
-
 			}
 			else if (!interaction.replied && !interaction.deferred && interaction.isMessageComponent() && type === 'update') {
 				botReply = await interaction.message.edit({ ...options, content: options.content === '' ? null : options.content, flags: undefined });
@@ -201,7 +199,7 @@ export async function sendErrorMessage(
 			component_type: interaction.isMessageComponent() ? interaction.componentType : undefined,
 			custom_id: interaction.customId,
 			values: interaction.isAnySelectMenu() ? interaction.values : undefined,
-			fields: interaction.isModalSubmit() ? interaction.fields.fields.map(f => f.toJSON()) : undefined,
+			fields: interaction.isModalSubmit() ? interaction.fields.fields.values() : undefined,
 			components: interaction.isModalSubmit() ? interaction.components : undefined,
 		},
 		guild_id: interaction.guildId ?? undefined,
@@ -413,6 +411,7 @@ export function userDataServersObject(
 		componentDisablingMessageId: u.servers[guildId]?.componentDisablingMessageId ?? null,
 		componentDisablingToken: null,
 		hasCooldown: u.servers[guildId]?.hasCooldown ?? false,
+		lastProxied: u.servers[guildId]?.lastProxied ?? null,
 	};
 }
 

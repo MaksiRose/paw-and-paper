@@ -1,7 +1,7 @@
 import { Model } from 'hoatzin';
 import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '..';
 import { ServerSchema } from '../typings/data/server';
-import { ProxyListType } from '../typings/data/user';
+import { ProxyListType } from '../typings/data/general';
 
 const denType = {
 	type: 'object',

@@ -2,7 +2,7 @@
 import { Collection } from 'discord.js';
 import { Model } from 'hoatzin';
 import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '..';
-import { ProxyConfigType, ProxyListType, Quid, QuidSchema, RankType, UserData, UserSchema } from '../typings/data/user';
+import { AutoproxyConfigType, Quid, QuidSchema, RankType, StickymodeConfigType, UserData, UserSchema } from '../typings/data/user';
 import { getArrayElement } from '../utils/helperFunctions';
 import { getRandomNumber } from '../utils/randomizers';
 const config = require('../../config.json');
@@ -79,11 +79,10 @@ export const userModel = new Model<UserSchema>('./database/profiles', {
 								autoproxy: {
 									type: 'object',
 									default: {
-										setTo: { type: 'number', default: ProxyConfigType.FollowGlobal },
+										setTo: { type: 'number', default: AutoproxyConfigType.FollowGlobal },
 										channels: {
 											type: 'object',
 											default: {
-												setTo: { type: 'number', default: ProxyListType.Whitelist },
 												whitelist: {
 													type: 'array',
 													of: { type: 'string', default: '' },
@@ -96,7 +95,7 @@ export const userModel = new Model<UserSchema>('./database/profiles', {
 										},
 									},
 								},
-								stickymode: { type: 'number', default: ProxyConfigType.FollowGlobal },
+								stickymode: { type: 'number', default: StickymodeConfigType.FollowGlobal },
 							},
 						},
 					},
@@ -265,6 +264,7 @@ export const userModel = new Model<UserSchema>('./database/profiles', {
 						},
 					},
 				},
+				mainGroup: { type: 'string?', default: null },
 			},
 		},
 	},
@@ -287,10 +287,48 @@ export const userModel = new Model<UserSchema>('./database/profiles', {
 				componentDisablingMessageId: { type: 'string?', default: null },
 				componentDisablingToken: { type: 'string?', default: null },
 				hasCooldown: { type: 'boolean', default: false },
+				lastProxied: { type: 'string?', default: null },
 			},
 		},
 	},
 	lastPlayedVersion: { type: 'string', default: pkg.version },
+	antiproxy: {
+		type: 'object',
+		default: {
+			startsWith: { type: 'string', default: '' },
+			endsWith: { type: 'string', default: '' },
+		},
+	},
+	groups: {
+		type: 'map',
+		of: {
+			type: 'object',
+			default: {
+				_id: { type: 'string', default: '' },
+				name: { type: 'string', default: '' },
+				tag: {
+					type: 'object',
+					default: {
+						global: { type: 'string', default: '' },
+						servers: {
+							type: 'map',
+							of: { type: 'string', default: '' },
+						},
+					},
+				},
+			},
+		},
+	},
+	group_quid: {
+		type: 'array',
+		of: {
+			type: 'object',
+			default: {
+				groupId: { type: 'string', default: '' },
+				quidId: { type: 'string', default: '' },
+			},
+		},
+	},
 	_id: { type: 'string', default: '', locked: true },
 }, true);
 
@@ -333,9 +371,13 @@ export function getUserData<T extends '' | never, U extends QuidSchema<T> | unde
 			color: quidData.color,
 			mentions: quidData.mentions,
 			profile: quidData.profiles[server_id],
+			mainGroup: quidData.mainGroup,
 			getDisplayname: function(): string {
 
-				const tag = user.tag.server || user.tag.global || '';
+				const group = user.groups.get(this.mainGroup ?? '');
+				const groupTag = group?.tag.servers[server_id] || group?.tag.global || '';
+				const userTag = user.tag.server || user.tag.global || '';
+				const tag = userTag || groupTag;
 				return (this.nickname.server || this.nickname.global || this.name) + (tag ? ` ${tag}` : '');
 			},
 			getDisplayspecies: function(): string { return this.displayedSpecies || this.species; },
@@ -365,6 +407,9 @@ export function getUserData<T extends '' | never, U extends QuidSchema<T> | unde
 		quids: new Collection(Object.entries(userData.quids)),
 		servers: new Collection(Object.entries(userData.servers)),
 		lastPlayedVersion: userData.lastPlayedVersion,
+		antiproxy: userData.antiproxy,
+		groups: new Collection(Object.entries(userData.groups)),
+		group_quid: userData.group_quid,
 		update: function(
 			updateFunction: (value: UserSchema) => void,
 			options: { log?: boolean } = {},

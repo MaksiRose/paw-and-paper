@@ -426,7 +426,7 @@ async function executeExploring(
 					.setLabel('Leave')
 					.setEmoji('💨')
 					.setStyle(ButtonStyle.Primary))],
-		}, 'update', getMessageId(botReply));
+		}, 'update', buttonInteraction?.message.id ?? (botReply ? getMessageId(botReply) : undefined));
 
 		const int = await (botReply as Message<true> | InteractionResponse<true>)
 			.awaitMessageComponent({
@@ -680,7 +680,7 @@ async function executeExploring(
 					.setLabel('Flee')
 					.setEmoji('💨')
 					.setStyle(ButtonStyle.Primary))],
-		}, 'update', getMessageId(botReply));
+		}, 'update', buttonInteraction?.message.id ?? (botReply ? getMessageId(botReply) : undefined));
 
 		const int = await (botReply as Message<true> | InteractionResponse<true>)
 			.awaitMessageComponent({
@@ -920,7 +920,7 @@ async function executeExploring(
 		);
 
 		// This is either an update or an editReply if there is a buttonInteraction, or an editReply if it's an interaction
-		await sendQuestMessage(buttonInteraction ?? interaction, 'update', userData, serverData, messageContent, restEmbed, [...changedCondition.injuryUpdateEmbed, ...levelUpEmbed], changedCondition.statsUpdateText);
+		await sendQuestMessage(buttonInteraction ?? interaction, 'update', userData, serverData, messageContent, restEmbed, [...changedCondition.injuryUpdateEmbed, ...levelUpEmbed], changedCondition.statsUpdateText, (botReply ? getMessageId(botReply) : undefined));
 	}
 	else {
 
@@ -941,7 +941,7 @@ async function executeExploring(
 						.setLabel('Explore again')
 						.setStyle(ButtonStyle.Primary)),
 			],
-		}, 'update', getMessageId(botReply));
+		}, 'update', buttonInteraction?.message.id ?? (botReply ? getMessageId(botReply) : undefined));
 	}
 
 	await isPassedOut(interaction, userData, true);

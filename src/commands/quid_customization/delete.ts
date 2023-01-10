@@ -18,7 +18,7 @@ export const command: SlashCommand = {
 		.setDescription('Delete parts of or your entire account.')
 		.toJSON(),
 	category: 'page1',
-	position: 10,
+	position: 11,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false,
 	sendCommand: async (interaction, userData) => {
