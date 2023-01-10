@@ -190,7 +190,7 @@ export const command: SlashCommand = {
 /**
  * Creates a unique 6-character ID.
  */
-async function createId(): Promise<string> {
+export async function createId(): Promise<string> {
 
 	const legend = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 	let _id = '';

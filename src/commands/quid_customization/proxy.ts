@@ -135,7 +135,7 @@ export const command: SlashCommand = {
 					.setTitle('Here is how to use the auto subcommand:')
 					.setDescription(`${interaction.inGuild() ? '' : '**IMPORTANT:** Due to discord limitations, this feature only works in servers.\n\n'}Auto-proxying means that every message you send will be treated as if it was proxied, even if the proxy isn\`t included.\n\nPressing the first button allows you to ${interaction.inGuild() ? 'toggle between the global setting, a blacklist and a whitelist. When this is set to blacklist, auto-proxying is *only disabled* in the selected channels. When it is set to whitelist, auto-proxying is *only enabled* in the selected channels.\n\nUsing the drop-down menu, you can select the channels for the black-/whitelist.' : 'enable or disable this globally.'}\n\nUse the second button to toggle sticky mode. When enabled, a different quid will be auto-proxied when their proxy is used once. Sticky mode will only work cross-server when enabled globally and following global settings in the server.`)
 					.setFields()
-					.setFooter({ text: interaction.inGuild() ? 'Tip: Use this command in DMs to change global proxy settings.' : 'Tip: Use this command in a server to overwrite these global proxy settings for that server.' })],
+					.setFooter({ text: interaction.inGuild() ? 'Tip: Use this command in DMs to change global (cross-server) proxy settings.' : 'Tip: Use this command in a server to overwrite these global (cross-server) proxy settings for that server.' })],
 				components: getAutoproxyComponents(allChannels, userData, 0),
 			}, 'update', interaction.message.id);
 			return;

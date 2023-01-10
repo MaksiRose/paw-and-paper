@@ -374,7 +374,10 @@ export function getUserData<T extends '' | never, U extends QuidSchema<T> | unde
 			mainGroup: quidData.mainGroup,
 			getDisplayname: function(): string {
 
-				const tag = user.tag.server || user.tag.global || '';
+				const group = user.groups.get(this.mainGroup ?? '');
+				const groupTag = group?.tag.servers[server_id] || group?.tag.global || '';
+				const userTag = user.tag.server || user.tag.global || '';
+				const tag = userTag || groupTag;
 				return (this.nickname.server || this.nickname.global || this.name) + (tag ? ` ${tag}` : '');
 			},
 			getDisplayspecies: function(): string { return this.displayedSpecies || this.species; },

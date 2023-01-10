@@ -105,7 +105,7 @@ export const command: SlashCommand = {
 
 			/* Getting the quidsPage from the value Id, incrementing it by one or setting it to zero if the page number is bigger than the total amount of pages. */
 			let quidsPage = Number(selectOptionId[1]) + 1;
-			if (quidsPage >= Math.ceil((Object.keys(userData.quids).length + 1) / 24)) { quidsPage = 0; }
+			if (quidsPage >= Math.ceil((userData.quids.size + 1) / 24)) { quidsPage = 0; }
 
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
@@ -243,7 +243,7 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				// we can interaction.user.id because the "switchto" option is only available to yourself
 				...await getProfileMessageOptions(interaction.user.id, userData, Object.keys(userData.userIds).includes(interaction.user.id)),
-				components: interaction.message.components,
+				components: [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents([getQuidSelectMenu(userData, customId.args[1], interaction.user.id, 0, Object.keys(userData.userIds).includes(interaction.user.id))])],
 			}, 'update', interaction.message.id);
 
 			// This is always a followUp
@@ -302,7 +302,18 @@ export async function getProfileMessageOptions(
 				{ name: '**🦑 Species**', value: capitalizeString(userData.quid.getDisplayspecies()) || '/', inline: true },
 				{ name: '**🔑 Proxy**', value: !userData.quid.proxy.startsWith && !userData.quid.proxy.endsWith ? 'No proxy set' : `${userData.quid.proxy.startsWith}text${userData.quid.proxy.endsWith}`, inline: true },
 				{ name: '**🍂 Pronouns**', value: userData.quid.pronounSets.map(pronounSet => pronounCompromiser(pronounSet)).join('\n') || '/' },
-				{ name: '**👥 Groups**', value: userData.group_quid.filter(g => g.quidId === userData.quid!._id).map(g => `\`${userData.groups.get(g.groupId)?.name ?? '' }\``).filter(g => g !== '').join('\n') },
+				{
+					name: '**🗂️ Groups**',
+					value: userData.group_quid
+						.filter(g => g.quidId === userData.quid!._id)
+						.map(g => {
+
+							const group = userData.groups.get(g.groupId);
+							return group === undefined ? '' : `\`${group.name ?? ''}\`${g.groupId === userData.quid?.mainGroup ? ' (Main group)' : ''}`;
+						})
+						.filter(g => g !== '')
+						.join('\n') || 'Ungrouped',
+				},
 			])
 			.setFooter({ text: `Quid ID: ${userData.quid._id}` })],
 	};
@@ -328,6 +339,7 @@ function getQuidSelectMenu(
 	let quidOptions: RestOrArray<SelectMenuComponentOptionData> = userData.quids.map(quid => ({
 		label: quid.name,
 		value: constructSelectOptions<SelectOptionArgs>([isYourself ? 'switchto' : 'view', quid._id]),
+		default: userData.quid?._id === quid._id ? true : false,
 	}));
 
 	if (isYourself) {
@@ -335,6 +347,7 @@ function getQuidSelectMenu(
 		quidOptions.push({
 			label: 'Empty Slot',
 			value: constructSelectOptions<SelectOptionArgs>(['switchto', '']),
+			default: userData.quid === undefined ? true : false,
 		});
 	}
 

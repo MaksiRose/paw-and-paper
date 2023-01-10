@@ -35,7 +35,7 @@ export const command: SlashCommand = {
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
 				.setTitle(serverData ? `Tag ${userData.tag.server ? `set to ${userData.tag.server}` : 'removed'} in ${serverData.name}!` : `Tag ${userData.tag.global ? `set to ${userData.tag.global}` : 'removed'} globally!`)
-				.setDescription(serverData ? 'Tip: Tags can be set globally too by executing the command in DMs. The global tag will be displayed when no server-specific tag has been chosen.' : 'Tip: Tags can be set server-specific too by executing the command in the server. The server-specific tag will overwrite the global tag for that server.')],
+				.setDescription(serverData ? 'Tip: Tags can be set globally (cross-server) too by executing the command in DMs. The global tag will be displayed when no server-specific tag has been chosen.' : 'Tip: Tags can be set server-specific too by executing the command in the server. The server-specific tag will overwrite the global tag for that server.')],
 		});
 		return;
 	},

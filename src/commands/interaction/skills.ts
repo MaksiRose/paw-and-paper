@@ -136,7 +136,7 @@ export const command: SlashCommand = {
 								.setStyle(ButtonStyle.Secondary),
 							new ButtonBuilder()
 								.setCustomId(`${interaction.customId}_global${interaction.customId.includes('add') ? '_modal' : ''}`)
-								.setLabel('Global')
+								.setLabel('Global (server-wide)')
 								.setEmoji('👥')
 								.setDisabled(interaction.member.permissions.has(PermissionFlagsBits.Administrator) === false)
 								.setStyle(ButtonStyle.Secondary),
