@@ -193,25 +193,33 @@ export const command: SlashCommand = {
 
 				const viewingInterval = setInterval(async function() {
 
-					// This is always editReply;
-					botReply = await respond(interaction, {
-						content: messageContent,
-						embeds: [new EmbedBuilder()
-							.setColor(userData.quid.color)
-							.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-							.setDescription(drawEmojibar(displayingEmoji, emojisToClick))
-							.setFooter({ text: 'After a list of emojis is displayed to you one by one, choose the same emojis from the buttons below in the same order.' })],
-						components: displayingEmoji === emojisToClick.length ? enableAllComponents(componentArray.map(c => c.toJSON())) : components,
-					}, 'reply', getMessageId(botReply));
+					try {
+						// This is always editReply;
+						botReply = await respond(interaction, {
+							content: messageContent,
+							embeds: [new EmbedBuilder()
+								.setColor(userData.quid.color)
+								.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+								.setDescription(drawEmojibar(displayingEmoji, emojisToClick))
+								.setFooter({ text: 'After a list of emojis is displayed to you one by one, choose the same emojis from the buttons below in the same order.' })],
+							components: displayingEmoji === emojisToClick.length ? enableAllComponents(componentArray.map(c => c.toJSON())) : components,
+						}, 'reply', getMessageId(botReply));
 
-					if (displayingEmoji === emojisToClick.length) {
+						if (displayingEmoji === emojisToClick.length) {
 
-						clearInterval(viewingInterval);
-						callback(interaction, userData, serverData);
-						return;
+							clearInterval(viewingInterval);
+							callback(interaction, userData, serverData);
+							return;
+						}
+
+						displayingEmoji += 1;
 					}
+					catch (error) {
 
-					displayingEmoji += 1;
+						await sendErrorMessage(interaction, error)
+							.catch(e => { console.error(e); });
+						clearInterval(viewingInterval);
+					}
 				}, 2_000);
 			})(interaction, userData, serverData, async function(
 				interaction: ButtonInteraction<'cached'>,
