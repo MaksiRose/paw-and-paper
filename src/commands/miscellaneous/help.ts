@@ -29,8 +29,6 @@ export const command: SlashCommand = {
 				return { data: { body: undefined } };
 			});
 
-		console.log();
-
 		// This is always a reply
 		await respond(interaction, {
 			embeds: [
