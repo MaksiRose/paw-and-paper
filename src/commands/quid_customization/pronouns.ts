@@ -63,23 +63,22 @@ export const command: SlashCommand = {
 			/* Getting the remaining length for the pronoun field in the profile command. */
 			const profilePronounFieldLengthLeft = 1024 - userData.quid.pronounSets.map(pSet => pronounCompromiser(pSet)).join('\n').length + pronounCompromiser(pronounSet).length;
 
+			const textInput = new TextInputBuilder()
+				.setCustomId('pronounInput')
+				.setLabel('Text')
+				.setStyle(TextInputStyle.Short)
+				.setMinLength(userData.quid.pronounSets.length > 1 ? 0 : 4)
+				// Max Length is either maxModalLength or, if that would exceed the max field value length, make it what is left for a field value length.
+				.setMaxLength((profilePronounFieldLengthLeft < maxModalLength) ? profilePronounFieldLengthLeft : maxModalLength)
+				.setRequired(userData.quid.pronounSets.length < 2 || pronounNumber === 'add');
+			if (pronounNumber !== 'add') { textInput.setValue(pronounSet.join('/')); }
+
 			await interaction
 				.showModal(new ModalBuilder()
 					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, [pronounNumber]))
 					.setTitle('Change pronouns')
-					.addComponents(
-						new ActionRowBuilder<TextInputBuilder>()
-							.setComponents([new TextInputBuilder()
-								.setCustomId('pronounInput')
-								.setLabel('Text')
-								.setStyle(TextInputStyle.Short)
-								.setMinLength(userData.quid.pronounSets.length > 1 ? 0 : 4)
-								// Max Length is either maxModalLength or, if that would exceed the max field value length, make it what is left for a field value length.
-								.setMaxLength((profilePronounFieldLengthLeft < maxModalLength) ? profilePronounFieldLengthLeft : maxModalLength)
-								.setRequired(userData.quid.pronounSets.length <= 0)
-								.setValue(pronounSet.join('/')),
-							]),
-					),
+					.addComponents(new ActionRowBuilder<TextInputBuilder>()
+						.setComponents([textInput])),
 				);
 
 			// This is always editReply of the message the StringSelectMenu comes from
@@ -173,7 +172,7 @@ export const command: SlashCommand = {
 			(u) => {
 				const q = getMapData(u.quids, userData.quid._id);
 				if (willBeDeleted) {
-					q.pronounSets.splice(pronounNumber, 1);
+					if (!isNaN(pronounNumber)) { q.pronounSets.splice(pronounNumber, 1); }
 				}
 				else {
 					q.pronounSets[isNaN(pronounNumber) ? userData.quid.pronounSets.length : pronounNumber] = chosenPronouns;

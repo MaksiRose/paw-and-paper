@@ -112,8 +112,7 @@ export async function respond(
 					const channel = interaction.channel || (interaction.channelId ? await interaction.client.channels.fetch(interaction.channelId, { force: false }) : null);
 					if (channel && channel.isTextBased()) {
 
-						botReply = await channel.messages.fetch(editId);
-						botReply = await botReply.edit({ ...options, content: options.content === '' ? undefined : options.content, flags: undefined });
+						botReply = await channel.messages.edit(editId, { ...options, content: options.content === '' ? undefined : options.content, flags: undefined });
 					}
 					else { throw error; }
 				}
