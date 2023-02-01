@@ -73,8 +73,11 @@ export const command: SlashCommand = {
 		}
 
 		/* Define the partners user data, check if the user is interactable, and if they are, define quid data and profile data. */
-		const _userData2 = await userModel.findOne(u => Object.keys(u.userIds).includes(mentionedUser.id));
-		const userData2 = getUserData(_userData2, interaction.guildId, getMapData(_userData2.quids, getMapData(_userData2.servers, interaction.guildId).currentQuid ?? ''));
+		const _userData2 = (() => {
+			try { return userModel.findOne(u => Object.keys(u.userIds).includes(mentionedUser.id)); }
+			catch { return null; }
+		})();
+		const userData2 = _userData2 === null ? null : getUserData(_userData2, interaction.guildId, getMapData(_userData2.quids, getMapData(_userData2.servers, interaction.guildId).currentQuid ?? ''));
 		if (!isInteractable(interaction, userData2, messageContent, restEmbed)) { return; } // This is always a reply
 
 		/* Check how many friendship hearts the players have and if it is less than the required amount, send an error message. */

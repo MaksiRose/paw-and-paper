@@ -287,6 +287,6 @@ async function sendTravelMessage(
 			content: messageContent,
 			embeds: [...restEmbed, embed],
 			components: [travelComponent],
-		}, 'update', interaction.isMessageComponent() ? interaction.message.id : '@original')).id;
+		}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined)).id;
 	}
 }

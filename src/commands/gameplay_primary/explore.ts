@@ -238,6 +238,7 @@ async function executeExploring(
 		try {
 
 			if (collector.ended) { return; }
+			buttonInteraction = int;
 
 			const oldPlayerPos = { ...playerPos };
 
@@ -276,7 +277,6 @@ async function executeExploring(
 				)
 			) {
 
-				buttonInteraction = int;
 				collector.stop();
 				return;
 			}

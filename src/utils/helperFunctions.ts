@@ -102,31 +102,26 @@ export async function respond(
 		if (isObject(error) && (error.code === 'ECONNRESET' || error.code === 10062)) {
 
 			console.trace(error.code || error.message || error.name || error.cause || error.status || error.httpStatus);
-			if (editId !== undefined) {
-
-				if ((interaction.replied || interaction.deferred)) { // Error code 10062 can never lead to this since an Unknown Interaction can't also be replied or deferred. Therefore, it is safe to call respond again
-					botReply = await respond(interaction, options, type, editId);
-				}
-				else {
-
-					const channel = interaction.channel || (interaction.channelId ? await interaction.client.channels.fetch(interaction.channelId, { force: false }) : null);
-					if (channel && channel.isTextBased()) {
-
-						botReply = await channel.messages.fetch(editId);
-						botReply = await botReply.edit({ ...options, content: options.content === '' ? undefined : options.content, flags: undefined });
-					}
-					else { throw error; }
-				}
+			if (interaction.replied || interaction.deferred) { // Error code 10062 can never lead to this since an Unknown Interaction can't also be replied or deferred. Therefore, it is safe to call respond again
+				botReply = await respond(interaction, options, type, editId);
 			}
-			else if (!interaction.replied && !interaction.deferred && interaction.isMessageComponent() && type === 'update') {
+			if (interaction.isMessageComponent() && type === 'update' && (editId === undefined || editId === '@original' || editId === interaction.message.id)) {
 				botReply = await interaction.message.edit({ ...options, content: options.content === '' ? null : options.content, flags: undefined });
+			}
+			else if (editId !== undefined && editId !== '@original') {
+
+				const channel = interaction.channel || (interaction.channelId ? await interaction.client.channels.fetch(interaction.channelId, { force: false }) : null);
+				if (channel && channel.isTextBased()) {
+
+					botReply = await channel.messages.edit(editId, { ...options, content: options.content === '' ? undefined : options.content, flags: undefined });
+				}
+				else { throw error; }
 			}
 			else {
 
 				const channel = interaction.channel || (interaction.channelId ? await interaction.client.channels.fetch(interaction.channelId, { force: false }) : null);
 				if (channel && channel.isTextBased()) { botReply = await channel.send({ ...options, content: options.content === '' ? undefined : options.content, flags: undefined }); }
 				else { throw error; }
-
 			}
 		}
 		else if (isObject(error) && error.code === 40060) {
