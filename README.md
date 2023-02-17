@@ -28,9 +28,9 @@ https://discord.gg/9DENgj8q5Q
 
 If you just want to suggest a species, [fill out this form](https://github.com/MaksiRose/paw-and-paper/issues/new?assignees=&labels=improvement%2Cnon-code&template=species_request.yaml&title=New+species%3A+).
 
-If you want to add a species, [click here to open the appropriate file.](https://github.com/MaksiRose/paw-and-paper/blob/main/src/typedef.ts)
+If you want to add a species, [click here to open the appropriate file.](https://github.com/MaksiRose/paw-and-paper/blob/main/src/index.ts)
 
-First click the edit button (in form of a pencil) at the top right of the screen. Then go to the bottom of the file, and paste this "species block" behind the last one of those species blocks:
+First click the edit button (in form of a pencil) at the top right of the screen. Then go to the part of the file that starts with `export const speciesInfo`, and at the bottom of it, paste this "species block" behind the last one of those species blocks:
 ```
 'NAME': {
 	diet: 'SpeciesDietType.Herbivore/SpeciesDietType.Omnivore/SpeciesDietType.Carnivore',
@@ -88,7 +88,8 @@ This needs to include the following information:
 	"default_color": "#b4a257",
 	"error_color": "#d0342c",
 	"update_channel_id": "channel users can receive updates from",
-	"ticket_channel_id": "channel tickets are sent to"
+	"ticket_channel_id": "channel tickets are sent to",
+	"database_password": "your database password"
 }
 ```
 > Anything that you don't have or need from this list can be left as an empty string.
@@ -97,7 +98,11 @@ To get a Discord Token, [create a Discord Application](https://discordjs.guide/p
 Generate a GitHub Token [here](https://github.com/settings/tokens).
 The colors can be modified by will.
 
-After you saved the config.json file, go back to the terminal, and type either `npm run localstart` or `npm run localtest`.
+Before the config.json file can be closed, the database needs to be installed. First, [download PostgreSQL](https://www.postgresql.org/download/). Keep the server "localhost", the port "5432" and the username "postgres", the password for that username can be picked by yourself and should be added to the config.json under "database_password".
+
+After everything is installed, open a new terminal window and type `psql` to open the SQL Shell (on Mac, a new Application should be available to do the same). In the shell, type `create database pnp;`, then `grant all privileges on database pnp to postgres;`. Don't forget the semicolons.
+
+Save the config.json file, go back to the terminal, and type `npm run test`.
 Alternatively, you can also [install pm2](https://pm2.keymetrics.io/docs/usage/quick-start/) and run `npm run start`, then `npm run logs`. Other command are `npm run reload` and `npm run stop`.
 If you don't use pm2, make sure to keep the terminal window open, otherwise the Bot will go offline.
 If you turn off the PC that is running the Bot, the Bot will go offline. I recommend running it on a server or on a raspberry pi for this reason.
@@ -106,59 +111,52 @@ If you turn off the PC that is running the Bot, the Bot will go offline. I recom
 
 The repository is structured in the following way:
 
+// THIS NEEDS UPDATING
 ```
-project
-│   paw.js    
-│   index.js    
-│   testindex.js    
+src  
+│   index.ts    
 │
 └───handlers
-│   │   events.js
-│   │   commands.js
-│   │   profiles.js
-│   │   servers.js
-│   │   votes.js
+│   │   events.ts
+│   │   commands.ts
+│   │   users.ts
+│   │   servers.ts
+│   │   votes.ts
+│   │   ...
+
 │   
 └───events
-│   │   ready.js
-│   │   messageCreate.js
-│   │   interactionCreate.js
+│   │   ready.ts
+│   │   messageCreate.ts
+│   │   interactionCreate.ts
 │   │   ...
 │   
 └───models
-│   │   constructor.js
-│   │   profileModel.js
-│   │   serverModel.js
+│   │   profileModel.ts
+│   │   serverModel.ts
 │   
 └───commands
-│   └───bot
-│   │   │   help.js
-│   │   │   ticket.js
+│   └───miscellanious
+│   │   │   help.ts
+│   │   │   ticket.ts
 │   │   │   ...
 │   │
-│   └───gameplay
-│   │   │   play.js
-│   │   │   explore.js
+│   └───gameplay_primary
+│   │   │   play.ts
+│   │   │   explore.ts
 │   │   │   ...
 │   │
-│   └───interaction
-│   │   │   playfight.js
-│   │   │   say.js
+│   └───...
+│  
+└───commands_guild
+│   └───(guildId...)
 │   │   │   ...
-│   │
-│   └───maintenance
-│   │   │   rest.js
-│   │   │   stats.js
-│   │   │   ...
-│   │
-│   └───profile
-│   │   │   name.js
-│   │   │   species.js
-│   │   │   ...
-│   │
-│   
+│  
+└───contextmenu
+│   │   ...
+│  
 └───utils
-│   ...
+│   │   ...
 │
 └───database
 │   └───profiles
@@ -176,13 +174,13 @@ project
 │   └───webhookCache.json
 ```
 
-- `paw.js` and the index files are the main files. This is where the discord js are started, and the events handler is called.
-- `handlers`
-    - `events.js`: Creates a listener for every event file that is in the `events` folder. [More on event listeners](https://developer.mozilla.org/en-US/docs/Web/Events/Event_handlers). Once discords 'ready' event is fired, it will call the following handlers.
-    - `commands.js`: In `paw.js`, a commands object was created. All the files within the subfolders of the `commands` folder are added to that object.
-	- `profiles.js` & `servers.js`: Updates the database profiles and servers.
-	- `votes.js`: Creates a listener for the event that the bot has been voted for on top.gg, discords.com or discordbotlist.com.
-- `models`: This contains the `constructor.js`, which is called in `profileModel.js` and `serverModel.js`. This creates a schema and the functions to find or update something in the database.
+- `index.ts` is the main files. This is where the bot is connected to discord, and the handlers are called.
+- `handlers` handles different aspects of the bot that need to be started up
+    - `events.ts`: Creates a listener for every event file that is in the `events` folder. [More on event listeners](https://developer.mozilla.org/en-US/docs/Web/Events/Event_handlers). Once discords 'ready' event is fired, it will call the following handlers.
+    - `commands.ts`: In `index.ts`, a commands object was created. All the files within the subfolders of the `commands` folder are added to that object.
+	- `users.ts` & `servers.ts`: Updates the database users and servers.
+	- `votes.ts`: Creates a listener for the event that the bot has been voted for on top.gg, discords.com or discordbotlist.com.
+- `models`: This creates a schema and the functions to find or update something in the database.
 - `commands` is separated based on how the commands are used. It contains files for all the commands.
 - `utils` contains files with code that is used in several files to reduce code length and increase consistency.
 - `database` contains `profiles` and `servers`, which then contain the documents of all servers and users, as well as `toDelete` and `toDeleteList.json`, which is responsible for storing files that will be deleted at a later point (when the bot leaves a server or a member leaves a server for example). It also has `bannedList.json` which contains users and servers that are banned from using the bot, `voteCache.json` which contains data about which users votes where and when, and `webhookCache.json` which contains data about which webhook messages were created because of which user.

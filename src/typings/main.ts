@@ -78,3 +78,45 @@ export interface SpeciesInfo {
 
 
 export type OmitFirstArgAndChangeReturn<F, Return> = F extends (x: any, ...args: infer P) => any ? (...args: P) => Return : never
+
+
+export type Schema<T> = {
+	[K in keyof T]: SchemaType<T[K]>
+};
+type SchemaType<T> = [T] extends [string] ? StringSchema :
+	[T] extends [string | null] ? OptionalStringSchema :
+	[T] extends [number] ? NumberSchema :
+	[T] extends [number | null] ? OptionalNumberSchema :
+	[T] extends [boolean] ? BooleanSchema :
+	[T] extends [boolean | null] ? OptionalBooleanSchema :
+[T] extends [Array<infer U>] ? ArraySchema<SchemaType<U>> :
+	Record<string, never> extends Required<T> ? JsonSchema :
+	never;
+interface StringSchema {
+    type: 'string';
+    locked?: boolean;
+}
+interface OptionalStringSchema {
+    type: 'string?';
+}
+interface NumberSchema {
+    type: 'number';
+    locked?: boolean;
+}
+interface OptionalNumberSchema {
+    type: 'number?';
+}
+interface BooleanSchema {
+    type: 'boolean';
+    locked?: boolean;
+}
+interface OptionalBooleanSchema {
+    type: 'boolean?';
+}
+interface ArraySchema<T> {
+    type: 'array';
+    of: T;
+}
+interface JsonSchema {
+	type: 'JSON'
+}

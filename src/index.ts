@@ -1,4 +1,5 @@
 import { Client, Collection, GatewayIntentBits, Options, Snowflake } from 'discord.js';
+import { Sequelize } from 'sequelize';
 import { readdirSync, readFileSync } from 'fs';
 import { Api } from '@top-gg/sdk';
 import { ContextMenuCommand, SlashCommand, Votes } from './typings/handle';
@@ -9,7 +10,7 @@ import { Octokit } from '@octokit/rest';
 import { execute as executeCommandHandler } from './handlers/commands';
 import { execute as executeEventHandler } from './handlers/events';
 import { execute as executeDatabaseHandler } from './handlers/database';
-const { token, bfd_token, bfd_authorization, top_token, top_authorization, dbl_token, dbl_authorization, github_token } = require('../config.json');
+const { token, bfd_token, bfd_authorization, top_token, top_authorization, dbl_token, dbl_authorization, github_token, database_password } = require('../config.json');
 const bfd = require('bfd-api-redux/src/main');
 
 function sweepFilter(something: {id: Snowflake, client: Client<true>}) {
@@ -21,6 +22,20 @@ function sweepFilter(something: {id: Snowflake, client: Client<true>}) {
 		.filter(u => Object.keys(u.userIds).includes(something.id))
 		.length <= 0);
 }
+
+
+export const sequelize = new Sequelize('pnp', 'postgres', database_password, {
+	host: 'localhost',
+	dialect: 'postgres',
+	define: {
+		freezeTableName: true,
+	},
+});
+
+sequelize.authenticate()
+	.then(function() { console.log('Connection has been established successfully.'); })
+	.catch(function(error) { console.error('Unable to connect to the database:', error); });
+
 
 /* Note: Once slash commands replace message commands, DIRECT_MESSAGES intent and CHANNEL partial can be removed */
 export const client = new Client({
