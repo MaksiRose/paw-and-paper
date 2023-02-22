@@ -1,4 +1,4 @@
-import { BelongsTo, BelongsToMany, Column, DataType, Model, Table } from 'sequelize-typescript';
+import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import QuidToServer from './quidToServer';
 import QuidToServerToShopRole from './quidToServerToShopRole';
 import Server from './server';
@@ -8,6 +8,7 @@ export default class ShopRole extends Model {
 	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: number;
 
+	@ForeignKey(() => Server)
 	@Column({ type: DataType.STRING })
 	declare serverId: string;
 

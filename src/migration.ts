@@ -1,7 +1,7 @@
 import { Sequelize } from 'sequelize-typescript';
 // import { userModel } from './models/userModel';
 // import serverModel from './models/serverModel';
-import Server from './tables/server';
+// import Server from './tables/server';
 import path from 'path';
 import { readdirSync } from 'fs';
 const { database_password } = require('../config.json');
@@ -26,9 +26,9 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 
 	// }
 
-	await Server.create({
-	});
+	// await Server.create({
+	// });
 
-	console.log(await Server.findOne());
+	// console.log(await Server.findOne());
 
 })();

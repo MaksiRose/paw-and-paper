@@ -1,4 +1,4 @@
-import { Column, DataType, Table, Model, BelongsTo, BelongsToMany } from 'sequelize-typescript';
+import { Column, DataType, Table, Model, BelongsTo, BelongsToMany, ForeignKey } from 'sequelize-typescript';
 import Server from './server';
 import ServerToDiscordUser from './serverToDiscordUser';
 import User from './user';
@@ -8,6 +8,7 @@ export default class DiscordUser extends Model {
 	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
 
+	@ForeignKey(() => User)
 	@Column({ type: DataType.STRING })
 	declare userId: string;
 

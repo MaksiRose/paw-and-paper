@@ -16,12 +16,14 @@ export default class UserToServer extends Model {
 	@Column({ type: DataType.STRING })
 	declare serverId: string;
 
+	@ForeignKey(() => Quid)
 	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
 	declare lastProxiedQuidId: string | null;
 
 	@BelongsTo(() => Quid, { foreignKey: 'lastProxiedQuidId' })
 	declare lastProxiedQuid: Quid;
 
+	@ForeignKey(() => Quid)
 	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
 	declare activeQuidId: string | null;
 

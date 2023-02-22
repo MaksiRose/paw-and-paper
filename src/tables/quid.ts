@@ -1,4 +1,4 @@
-import { BelongsTo, BelongsToMany, Column, DataType, HasMany, Model, Table } from 'sequelize-typescript';
+import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
 import Friendship from './friendship';
 import Group from './group';
 import GroupToQuid from './groupToQuid';
@@ -13,16 +13,18 @@ export default class Quid extends Model {
 	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
 
+	@ForeignKey(() => User)
 	@Column({ type: DataType.STRING })
 	declare userId: string;
 
 	@BelongsTo(() => User, { foreignKey: 'userId' })
 	declare user: User;
 
+	@ForeignKey(() => Group)
 	@Column({ type: DataType.STRING })
 	declare mainGroupId: string | null;
 
-	@BelongsTo(() => Group, { foreignKey: 'mainGroupId' })
+	@BelongsTo(() => Group)
 	declare group: Group;
 
 	@Column({ type: DataType.STRING })

@@ -1,4 +1,4 @@
-import { BelongsTo, BelongsToMany, Column, DataType, HasMany, Model, Table } from 'sequelize-typescript';
+import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
 import Den from './den';
 import DiscordUser from './discordUser';
 import Group from './group';
@@ -43,33 +43,38 @@ export default class Server extends Model {
 	@Column({ type: DataType.ARRAY(DataType.STRING), defaultValue: [] })
 	declare proxy_possibleTags: string[];
 
+	@ForeignKey(() => ProxyLimits)
 	@Column({ type: DataType.INTEGER.UNSIGNED })
 	declare proxy_channelLimitsId: number;
 
-	@BelongsTo(() => Den, { foreignKey: 'proxy_channelLimitsId' })
+	@BelongsTo(() => ProxyLimits, { foreignKey: 'proxy_channelLimitsId' })
 	declare channelLimits: ProxyLimits;
 
+	@ForeignKey(() => ProxyLimits)
 	@Column({ type: DataType.INTEGER.UNSIGNED })
 	declare proxy_roleLimitsId: number;
 
-	@BelongsTo(() => Den, { foreignKey: 'proxy_roleLimitsId' })
+	@BelongsTo(() => ProxyLimits, { foreignKey: 'proxy_roleLimitsId' })
 	declare roleLimits: ProxyLimits;
 
 	@Column({ type: DataType.ARRAY(DataType.STRING), defaultValue: [] })
 	declare inventory: string[];
 
+	@ForeignKey(() => Den)
 	@Column({ type: DataType.INTEGER.UNSIGNED })
 	declare sleepingDenId: number;
 
 	@BelongsTo(() => Den, { foreignKey: 'sleepingDenId' })
 	declare sleepingDen: Den;
 
+	@ForeignKey(() => Den)
 	@Column({ type: DataType.INTEGER.UNSIGNED })
 	declare medicineDenId: number;
 
 	@BelongsTo(() => Den, { foreignKey: 'medicineDenId' })
 	declare medicineDen: Den;
 
+	@ForeignKey(() => Den)
 	@Column({ type: DataType.INTEGER.UNSIGNED })
 	declare foodDenId: number;
 

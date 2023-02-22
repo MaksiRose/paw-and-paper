@@ -1,4 +1,4 @@
-import { BelongsTo, BelongsToMany, Column, DataType, HasMany, Model, Table } from 'sequelize-typescript';
+import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
 import GroupToQuid from './groupToQuid';
 import GroupToServer from './groupToServer';
 import Quid from './quid';
@@ -10,6 +10,7 @@ export default class Group extends Model {
 	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
 
+	@ForeignKey(() => User)
 	@Column({ type: DataType.STRING })
 	declare userId: string;
 
@@ -28,6 +29,6 @@ export default class Group extends Model {
 	@BelongsToMany(() => Server, () => GroupToServer)
 	declare groups: Server[];
 
-	@HasMany(() => Quid, { foreignKey: 'mainGroupId' })
+	@HasMany(() => Quid)
 	declare mainGroupFor: Quid[];
 }
