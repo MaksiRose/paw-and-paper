@@ -82,7 +82,7 @@ export default class Server extends Model {
 	declare foodDen: Den;
 
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
-	declare isSilly: boolean;
+	declare isWhitelisted: boolean;
 
 	@BelongsToMany(() => User, () => UserToServer)
 	declare users: User[];
