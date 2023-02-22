@@ -2,7 +2,7 @@ import { generateId } from 'crystalid';
 import { Guild } from 'discord.js';
 import { readdirSync, readFileSync, renameSync, writeFileSync } from 'fs';
 import { client, commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '..';
-import serverModel from '../models/serverModel';
+import serverModel from '../oldModels/serverModel';
 import { BanList, DeleteList, ProxyListType } from '../typings/data/general';
 import { ServerSchema } from '../typings/data/server';
 

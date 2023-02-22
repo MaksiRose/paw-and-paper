@@ -19,7 +19,7 @@ import { RankType, UserData } from '../../typings/data/user';
 import { SpeciesHabitatType } from '../../typings/main';
 import { speciesInfo } from '../..';
 import { ServerSchema } from '../../typings/data/server';
-import { userModel } from '../../models/userModel';
+import { userModel } from '../../oldModels/userModel';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { AsyncQueue } from '@sapphire/async-queue';
 

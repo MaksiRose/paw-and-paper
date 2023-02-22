@@ -1,6 +1,6 @@
 import { ActionRowBuilder, EmbedBuilder, GuildMember, InteractionReplyOptions, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
 import { capitalizeString, respond, userDataServersObject } from '../../utils/helperFunctions';
-import { userModel, getUserData } from '../../models/userModel';
+import { userModel, getUserData } from '../../oldModels/userModel';
 import { hasName, hasNameAndSpecies } from '../../utils/checkUserState';
 import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
 import { hasCooldown, checkResting } from '../../utils/checkValidity';

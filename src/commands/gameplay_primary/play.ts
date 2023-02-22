@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionResponse, Message, SlashCommandBuilder, Snowflake, SnowflakeUtil } from 'discord.js';
 import { speciesInfo } from '../..';
-import { userModel, getUserData } from '../../models/userModel';
+import { userModel, getUserData } from '../../oldModels/userModel';
 import { ServerSchema } from '../../typings/data/server';
 import { CurrentRegionType, QuidSchema, RankType, UserData, UserSchema } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';

@@ -1,5 +1,5 @@
 import { sendReminder } from '../commands/gameplay_maintenance/water-tree';
-import { userModel, getUserData } from '../models/userModel';
+import { userModel, getUserData } from '../oldModels/userModel';
 import { hasNameAndSpecies } from '../utils/checkUserState';
 
 /** It updates each profile to have no cooldown, not rest, and maximum energy, and then it executes the sendReminder function for each profile for which the sapling exists and where lastMessageChannelId is a string, if the user has enabled water reminders */

@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import { client } from '../..';
-import serverModel from '../../models/serverModel';
-import { userModel, getUserData } from '../../models/userModel';
+import serverModel from '../../oldModels/serverModel';
+import { userModel, getUserData } from '../../oldModels/userModel';
 import { UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';

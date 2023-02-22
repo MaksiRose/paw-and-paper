@@ -1,5 +1,5 @@
 import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, GuildMember, AnySelectMenuInteraction } from 'discord.js';
-import { userModel, getUserData } from '../models/userModel';
+import { userModel, getUserData } from '../oldModels/userModel';
 import { ServerSchema } from '../typings/data/server';
 import { RankType, WayOfEarningType } from '../typings/data/user';
 import { respond, sendErrorMessage } from './helperFunctions';

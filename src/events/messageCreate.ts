@@ -1,8 +1,8 @@
 import { Message } from 'discord.js';
 import { sendMessage } from '../commands/interaction/say';
 // import { sendVisitMessage } from '../commands/interaction/requestvisit';
-import serverModel from '../models/serverModel';
-import { userModel, getUserData } from '../models/userModel';
+import serverModel from '../oldModels/serverModel';
+import { userModel, getUserData } from '../oldModels/userModel';
 import { ProxyListType } from '../typings/data/general';
 import { ServerSchema } from '../typings/data/server';
 import { AutoproxyConfigType, StickymodeConfigType, UserData, UserSchema } from '../typings/data/user';

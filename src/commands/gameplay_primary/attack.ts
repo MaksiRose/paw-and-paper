@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, Message, AnySelectMenuInteraction, SlashCommandBuilder, InteractionResponse, SnowflakeUtil } from 'discord.js';
 import { serverActiveUsersMap } from '../../events/interactionCreate';
-import serverModel from '../../models/serverModel';
+import serverModel from '../../oldModels/serverModel';
 import { Inventory } from '../../typings/data/general';
 import { ServerSchema } from '../../typings/data/server';
 import { RankType, UserData } from '../../typings/data/user';

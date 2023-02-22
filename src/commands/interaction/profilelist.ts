@@ -4,7 +4,7 @@ import { isInGuild } from '../../utils/checkUserState';
 import { getMapData } from '../../utils/helperFunctions';
 import { SlashCommand } from '../../typings/handle';
 import { RankType } from '../../typings/data/user';
-import { userModel } from '../../models/userModel';
+import { userModel } from '../../oldModels/userModel';
 const { default_color } = require('../../../config.json');
 
 const oneWeekInMs = 604_800_000;

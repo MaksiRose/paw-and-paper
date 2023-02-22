@@ -1,5 +1,5 @@
 import { client } from '..';
-import serverModel from '../models/serverModel';
+import serverModel from '../oldModels/serverModel';
 import { createGuild } from '../utils/updateGuild';
 
 /** It updates the database to reflect the current state of the servers */

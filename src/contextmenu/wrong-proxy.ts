@@ -1,6 +1,6 @@
 import { ActionRowBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
-import { userModel, getUserData } from '../models/userModel';
+import { userModel, getUserData } from '../oldModels/userModel';
 import { WebhookMessages } from '../typings/data/general';
 import { UserData } from '../typings/data/user';
 import { ContextMenuCommand } from '../typings/handle';

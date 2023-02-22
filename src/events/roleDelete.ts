@@ -1,6 +1,6 @@
 import { Role } from 'discord.js';
-import serverModel from '../models/serverModel';
-import { userModel } from '../models/userModel';
+import serverModel from '../oldModels/serverModel';
+import { userModel } from '../oldModels/userModel';
 import { WayOfEarningType } from '../typings/data/user';
 import { DiscordEvent } from '../typings/main';
 import { getMapData } from '../utils/helperFunctions';

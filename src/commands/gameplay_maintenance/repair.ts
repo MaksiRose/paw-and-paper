@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, StringSelectMenuBuilder, SlashCommandBuilder, WebhookEditMessageOptions } from 'discord.js';
 import { materialsInfo } from '../..';
-import serverModel from '../../models/serverModel';
+import serverModel from '../../oldModels/serverModel';
 import { MaterialNames } from '../../typings/data/general';
 import { ServerSchema } from '../../typings/data/server';
 import { RankType, UserData } from '../../typings/data/user';

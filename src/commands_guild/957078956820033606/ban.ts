@@ -1,8 +1,8 @@
 import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 import { respond } from '../../utils/helperFunctions';
-import serverModel from '../../models/serverModel';
-import { userModel } from '../../models/userModel';
+import serverModel from '../../oldModels/serverModel';
+import { userModel } from '../../oldModels/userModel';
 import { client } from '../..';
 import { SlashCommand } from '../../typings/handle';
 import { BanList } from '../../typings/data/general';

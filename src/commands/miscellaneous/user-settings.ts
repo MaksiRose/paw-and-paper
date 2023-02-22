@@ -1,5 +1,5 @@
 import { ActionRowBuilder, AnySelectMenuInteraction, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionUpdateOptions, MessageEditOptions, RestOrArray, SelectMenuComponentOptionData, SlashCommandBuilder, StringSelectMenuBuilder } from 'discord.js';
-import { getUserData, userModel } from '../../models/userModel';
+import { getUserData, userModel } from '../../oldModels/userModel';
 import { UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasName, hasNameAndSpecies } from '../../utils/checkUserState';

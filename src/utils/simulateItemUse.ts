@@ -2,7 +2,7 @@ import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncom
 import { addCorrectDietHungerPoints, removeHungerPoints } from '../commands/gameplay_maintenance/eat';
 import { getStatsPoints, isUnlucky as healingIsUnlucky, quidNeedsHealing } from '../commands/gameplay_maintenance/heal';
 import { addMaterialPoints, isUnlucky as repairingIsUnlucky } from '../commands/gameplay_maintenance/repair';
-import { userModel, getUserData } from '../models/userModel';
+import { userModel, getUserData } from '../oldModels/userModel';
 import { CommonPlantNames, Inventory, MaterialNames, RarePlantNames, SpecialPlantNames, SpeciesNames, UncommonPlantNames } from '../typings/data/general';
 import { DenSchema, ServerSchema } from '../typings/data/server';
 import { RankType, UserData, UserSchema } from '../typings/data/user';

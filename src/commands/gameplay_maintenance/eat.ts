@@ -1,8 +1,8 @@
 import { ChatInputCommandInteraction, EmbedBuilder, FormattingPatterns, AnySelectMenuInteraction, SlashCommandBuilder } from 'discord.js';
 import Fuse from 'fuse.js';
 import { commonPlantsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../..';
-import serverModel from '../../models/serverModel';
-import { userModel, getUserData } from '../../models/userModel';
+import serverModel from '../../oldModels/serverModel';
+import { userModel, getUserData } from '../../oldModels/userModel';
 import { ServerSchema } from '../../typings/data/server';
 import { CurrentRegionType, StatIncreaseType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';

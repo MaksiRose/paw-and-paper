@@ -1,7 +1,7 @@
 import { Message } from 'discord.js';
 import { sendMessage } from '../commands/interaction/say';
-import serverModel from '../models/serverModel';
-import { userModel } from '../models/userModel';
+import serverModel from '../oldModels/serverModel';
+import { userModel } from '../oldModels/userModel';
 import { DiscordEvent } from '../typings/main';
 import { hasName } from '../utils/checkUserState';
 import { getMissingPermissionContent, hasPermission, permissionDisplay } from '../utils/permissionHandler';

@@ -1,6 +1,6 @@
 import { EmbedBuilder, SlashCommandBuilder, SnowflakeUtil } from 'discord.js';
 import { client } from '../..';
-import { userModel, getUserData } from '../../models/userModel';
+import { userModel, getUserData } from '../../oldModels/userModel';
 import { CurrentRegionType, QuidSchema, RankType, UserSchema } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { drinkAdvice, eatAdvice, restAdvice } from '../../utils/adviceMessages';

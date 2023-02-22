@@ -1,7 +1,7 @@
 import { generateId } from 'crystalid';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, RepliableInteraction, WebhookEditMessageOptions, Snowflake, InteractionResponse } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
-import { userModel, getUserData } from '../models/userModel';
+import { userModel, getUserData } from '../oldModels/userModel';
 import { ErrorStacks } from '../typings/data/general';
 import { UserData, UserSchema } from '../typings/data/user';
 const { error_color } = require('../../config.json');

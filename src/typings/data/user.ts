@@ -1,5 +1,5 @@
 import { Collection } from 'discord.js';
-import { userModel } from '../../models/userModel';
+import { userModel } from '../../oldModels/userModel';
 import { ValueOf } from '../../utils/helperFunctions';
 import { OmitFirstArgAndChangeReturn } from '../main';
 import { Inventory, ProxyLimitedList, ShopRole, SpeciesNames } from './general';

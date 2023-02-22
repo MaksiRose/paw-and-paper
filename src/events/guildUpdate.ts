@@ -1,5 +1,5 @@
 import { Guild } from 'discord.js';
-import serverModel from '../models/serverModel';
+import serverModel from '../oldModels/serverModel';
 import { DiscordEvent } from '../typings/main';
 
 export const event: DiscordEvent = {

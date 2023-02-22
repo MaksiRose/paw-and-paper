@@ -1,8 +1,8 @@
 import { readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { isResting, startResting } from '../commands/gameplay_maintenance/rest';
 import { lastInteractionMap, serverActiveUsersMap } from '../events/interactionCreate';
-import serverModel from '../models/serverModel';
-import { userModel, getUserData } from '../models/userModel';
+import serverModel from '../oldModels/serverModel';
+import { userModel, getUserData } from '../oldModels/userModel';
 import { DeleteList } from '../typings/data/general';
 import { hasNameAndSpecies } from '../utils/checkUserState';
 import { getMapData, sendErrorMessage, userDataServersObject } from '../utils/helperFunctions';

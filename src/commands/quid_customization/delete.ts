@@ -1,11 +1,11 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
-import serverModel from '../../models/serverModel';
+import serverModel from '../../oldModels/serverModel';
 import { saveCommandDisablingInfo, disableAllComponents } from '../../utils/componentDisabling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
 import { UserData } from '../../typings/data/user';
-import { userModel } from '../../models/userModel';
+import { userModel } from '../../oldModels/userModel';
 import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';
 const { error_color } = require('../../../config.json');
 

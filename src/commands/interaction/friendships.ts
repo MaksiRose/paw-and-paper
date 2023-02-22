@@ -4,7 +4,7 @@ import { hasNameAndSpecies } from '../../utils/checkUserState';
 import { checkOldMentions, getFriendshipHearts, getFriendshipPoints } from '../../utils/friendshipHandling';
 import { SlashCommand } from '../../typings/handle';
 import { UserData } from '../../typings/data/user';
-import { userModel, getUserData } from '../../models/userModel';
+import { userModel, getUserData } from '../../oldModels/userModel';
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()

@@ -1,5 +1,5 @@
 // @ts-check
-import serverModel from '../models/serverModel';
+import serverModel from '../oldModels/serverModel';
 import { ServerSchema } from '../typings/data/server';
 import { CurrentRegionType } from '../typings/data/user';
 import { getSmallerNumber } from './helperFunctions';
