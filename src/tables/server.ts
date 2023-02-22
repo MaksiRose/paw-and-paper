@@ -81,9 +81,6 @@ export default class Server extends Model {
 	@BelongsTo(() => Den, { foreignKey: 'foodDenId' })
 	declare foodDen: Den;
 
-	@Column({ type: DataType.BOOLEAN, defaultValue: false })
-	declare isWhitelisted: boolean;
-
 	@BelongsToMany(() => User, () => UserToServer)
 	declare users: User[];
 
