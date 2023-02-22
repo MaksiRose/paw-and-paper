@@ -3,7 +3,7 @@ import Quid from './quid';
 
 @Table
 export default class Friendship extends Model {
-	@Column({ type: DataType.NUMBER.UNSIGNED, autoIncrement: true, primaryKey: true })
+	@Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true })
 	declare id: number;
 
 	@ForeignKey(() => Quid)

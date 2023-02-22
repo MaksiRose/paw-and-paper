@@ -1,7 +1,7 @@
 import { Sequelize } from 'sequelize-typescript';
 // import { userModel } from './models/userModel';
 // import serverModel from './models/serverModel';
-// import Server from './tables/server';
+import Server from './tables/server';
 import path from 'path';
 import { readdirSync } from 'fs';
 const { database_password } = require('../config.json');
@@ -18,17 +18,12 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 
 (async () => {
 
-	await sequelize.sync({ force: true });
+	await sequelize.sync();
 
 	// const servers = serverModel.find();
 	// for (const server of servers) {
 
 
 	// }
-
-	// await Server.create({
-	// });
-
-	// console.log(await Server.findOne());
-
+	console.table((await Server.findAll()).map(s => s.dataValues));
 })();

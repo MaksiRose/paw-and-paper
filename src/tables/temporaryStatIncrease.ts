@@ -7,7 +7,7 @@ export default class TemporaryStatIncrease extends Model {
 	declare id: number;
 
 	@ForeignKey(() => QuidToServer)
-	@Column({ type: DataType.STRING })
+	@Column({ type: DataType.INTEGER })
 	declare quidToServerId: string;
 
 	@BelongsTo(() => QuidToServer, { foreignKey: 'quidToServerId' })
