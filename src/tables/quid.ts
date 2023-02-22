@@ -1,37 +1,75 @@
-import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
-import { sequelize } from '..';
+import { BelongsTo, BelongsToMany, Column, DataType, HasMany, Model, Table } from 'sequelize-typescript';
+import Friendship from './friendship';
 import Group from './group';
+import GroupToQuid from './groupToQuid';
+import QuidToServer from './quidToServer';
+import Server from './server';
 import User from './user';
+import UserToServer from './userToServer';
 const { default_color } = require('../../config.json');
 
-export default class Quid extends Model<InferAttributes<Quid>, InferCreationAttributes<Quid>> {
+@Table
+export default class Quid extends Model {
+	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
-	declare userId: string;
-	declare mainGroupId: string | null;
-	declare name: string;
-	declare nickname: string;
-	declare species: string;
-	declare displayedSpecies: string;
-	declare description: string;
-	declare avatarURL: string;
-	declare pronouns_en: string[][];
-	declare proxy_startsWith: string;
-	declare proxy_endsWith: string;
-	declare color: string;
-}
 
-Quid.init({
-	id: { type: DataTypes.STRING, primaryKey: true },
-	userId: { type: DataTypes.STRING, references: { model: User, key: 'id' } },
-	mainGroupId: { type: DataTypes.STRING, references: { model: Group, key: 'id' } },
-	name: { type: DataTypes.STRING },
-	nickname: { type: DataTypes.STRING, defaultValue: '' },
-	species: { type: DataTypes.STRING, defaultValue: '' },
-	displayedSpecies: { type: DataTypes.STRING, defaultValue: '' },
-	description: { type: DataTypes.STRING(512), defaultValue: '' },
-	avatarURL: { type: DataTypes.STRING, defaultValue: 'https://cdn.discordapp.com/embed/avatars/1.png' },
-	pronouns_en: { type: DataTypes.ARRAY(DataTypes.ARRAY(DataTypes.STRING)), defaultValue: [['they', 'them', 'their', 'theirs', 'themselves', 'plural']] },
-	proxy_startsWith: { type: DataTypes.STRING, defaultValue: '' },
-	proxy_endsWith: { type: DataTypes.STRING, defaultValue: '' },
-	color: { type: DataTypes.STRING, defaultValue: default_color },
-}, { sequelize });
+	@Column({ type: DataType.STRING })
+	declare userId: string;
+
+	@BelongsTo(() => User, { foreignKey: 'userId' })
+	declare user: User;
+
+	@Column({ type: DataType.STRING })
+	declare mainGroupId: string | null;
+
+	@BelongsTo(() => Group, { foreignKey: 'mainGroupId' })
+	declare group: Group;
+
+	@Column({ type: DataType.STRING })
+	declare name: string;
+
+	@Column({ type: DataType.STRING, defaultValue: '' })
+	declare nickname: string;
+
+	@Column({ type: DataType.STRING, defaultValue: '' })
+	declare species: string;
+
+	@Column({ type: DataType.STRING, defaultValue: '' })
+	declare displayedSpecies: string;
+
+	@Column({ type: DataType.STRING(512), defaultValue: '' })
+	declare description: string;
+
+	@Column({ type: DataType.STRING, defaultValue: 'https://cdn.discordapp.com/embed/avatars/1.png' })
+	declare avatarURL: string;
+
+	@Column({ type: DataType.ARRAY(DataType.ARRAY(DataType.STRING)), defaultValue: [['they', 'them', 'their', 'theirs', 'themselves', 'plural']] })
+	declare pronouns_en: string[][];
+
+	@Column({ type: DataType.STRING, defaultValue: '' })
+	declare proxy_startsWith: string;
+
+	@Column({ type: DataType.STRING, defaultValue: '' })
+	declare proxy_endsWith: string;
+
+	@Column({ type: DataType.STRING, defaultValue: default_color })
+	declare color: string;
+
+	@HasMany(() => Friendship, { foreignKey: 'quidId_1' })
+	declare friendships_1: Friendship[];
+
+	@HasMany(() => Friendship, { foreignKey: 'quidId_2' })
+	declare friendships_2: Friendship[];
+
+	@BelongsToMany(() => Group, () => GroupToQuid)
+	declare groups: Group[];
+
+	@BelongsToMany(() => Server, () => QuidToServer)
+	declare servers: Server[];
+
+	@HasMany(() => UserToServer, { foreignKey: 'lastProxiedQuidId' })
+	declare lastProxiedIn: UserToServer[];
+
+	@HasMany(() => UserToServer, { foreignKey: 'activeQuidId' })
+	declare activeIn: UserToServer[];
+}

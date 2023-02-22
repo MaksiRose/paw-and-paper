@@ -1,16 +1,23 @@
-import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
-import { sequelize } from '..';
+import { BelongsTo, Column, DataType, Model, Table } from 'sequelize-typescript';
+import Quid from './quid';
 
-export default class Friendship extends Model<InferAttributes<Friendship>, InferCreationAttributes<Friendship>> {
+@Table
+export default class Friendship extends Model {
+	@Column({ type: DataType.NUMBER.UNSIGNED, autoIncrement: true, primaryKey: true })
 	declare id: number;
+
+	@Column({ type: DataType.STRING })
 	declare quidId_1: string;
+
+	@BelongsTo(() => Quid, { foreignKey: 'quidId_1' })
+	declare quid_1: Quid;
+
+	@Column({ type: DataType.STRING })
 	declare quidId_2: string;
+
+	@BelongsTo(() => Quid, { foreignKey: 'quidId_2' })
+	declare quid_2: Quid;
+
+	@Column({ type: DataType.ARRAY(DataType.BIGINT), defaultValue: [] })
 	declare mentions: number[];
 }
-
-Friendship.init({
-	id: { type: DataTypes.NUMBER.UNSIGNED, autoIncrement: true, primaryKey: true },
-	quidId_1: { type: DataTypes.STRING, references: { model: Friendship, key: 'id' } },
-	quidId_2: { type: DataTypes.STRING, references: { model: Friendship, key: 'id' } },
-	mentions: { type: DataTypes.ARRAY(DataTypes.BIGINT), defaultValue: [] },
-}, { sequelize });

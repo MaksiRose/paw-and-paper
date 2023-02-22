@@ -1,18 +1,20 @@
-import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
-import { sequelize } from '..';
-import Server from './server';
+import { Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import Group from './group';
+import Server from './server';
 
-export default class GroupToServer extends Model<InferAttributes<GroupToServer>, InferCreationAttributes<GroupToServer>> {
+@Table
+export default class GroupToServer extends Model {
+	@Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true })
 	declare id: number;
+
+	@ForeignKey(() => Group)
+	@Column({ type: DataType.STRING })
 	declare groupId: string;
+
+	@ForeignKey(() => Server)
+	@Column({ type: DataType.STRING })
 	declare serverId: string;
+
+	@Column({ type: DataType.STRING, defaultValue: '' })
 	declare tag: string;
 }
-
-GroupToServer.init({
-	id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-	groupId: { type: DataTypes.STRING, references: { model: Group, key: 'id' } },
-	serverId: { type: DataTypes.STRING, references: { model: Server, key: 'id' } },
-	tag: { type: DataTypes.STRING, defaultValue: '' },
-}, { sequelize });

@@ -1,85 +1,126 @@
-import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
-import { sequelize } from '..';
-import Server from './server';
-import Quid from './quid';
+import { BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
 import { CurrentRegionType } from '../typings/data/user';
+import TemporaryStatIncrease from './temporaryStatIncrease';
+import ShopRole from './shopRole';
+import QuidToServerToShopRole from './quidToServerToShopRole';
+import Quid from './quid';
+import Server from './server';
 
-export default class QuidToServer extends Model<InferAttributes<QuidToServer>, InferCreationAttributes<QuidToServer>> {
+@Table
+export default class QuidToServer extends Model {
+	@Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true })
 	declare id: number;
-	declare quidId: string;
-	declare serverId: string;
-	declare nickname: string;
-	declare rank: string;
-	declare levels: number;
-	declare experience: number;
-	declare health: number;
-	declare energy: number;
-	declare hunger: number;
-	declare thirst: number;
-	declare maxHealth: number;
-	declare maxEnergy: number;
-	declare maxHunger: number;
-	declare maxThirst: number;
-	declare hasQuest: boolean;
-	declare unlockedRanks: number;
-	declare tutorials_play: boolean;
-	declare tutorials_explore: boolean;
-	declare currentRegion: string;
-	declare sapling_exists: boolean;
-	declare sapling_waterCycles: number;
-	declare sapling_nextWaterTimestamp: number;
-	declare sapling_lastChannelId: string;
-	declare sapling_sentReminder: boolean;
-	declare sapling_sentGentleReminder: boolean;
-	declare injuries_wounds: number;
-	declare injuries_infections: number;
-	declare injuries_cold: boolean;
-	declare injuries_sprains: number;
-	declare injuries_poison: boolean;
-	declare inventory: string[];
-	declare roles: string[];
-	declare skills_global: { [key in string]: number };
-	declare skills_personal: { [key in string]: number };
-	declare lastActiveTimestamp: number;
-	declare passedOutTimestamp: number;
-}
 
-QuidToServer.init({
-	id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-	quidId: { type: DataTypes.STRING, references: { model: Quid, key: 'id' } },
-	serverId: { type: DataTypes.STRING, references: { model: Server, key: 'id' } },
-	nickname: { type: DataTypes.STRING, defaultValue: '' },
-	rank: { type: DataTypes.STRING, defaultValue: '' },
-	levels: { type: DataTypes.SMALLINT.UNSIGNED, defaultValue: 1 },
-	experience: { type: DataTypes.SMALLINT.UNSIGNED, defaultValue: 0 },
-	health: { type: DataTypes.SMALLINT.UNSIGNED, defaultValue: 100 },
-	energy: { type: DataTypes.SMALLINT.UNSIGNED, defaultValue: 100 },
-	hunger: { type: DataTypes.SMALLINT.UNSIGNED, defaultValue: 100 },
-	thirst: { type: DataTypes.SMALLINT.UNSIGNED, defaultValue: 100 },
-	maxHealth: { type: DataTypes.SMALLINT.UNSIGNED, defaultValue: 100 },
-	maxEnergy: { type: DataTypes.SMALLINT.UNSIGNED, defaultValue: 100 },
-	maxHunger: { type: DataTypes.SMALLINT.UNSIGNED, defaultValue: 100 },
-	maxThirst: { type: DataTypes.SMALLINT.UNSIGNED, defaultValue: 100 },
-	hasQuest: { type: DataTypes.BOOLEAN, defaultValue: false },
-	unlockedRanks: { type: DataTypes.SMALLINT.UNSIGNED, defaultValue: 0 },
-	tutorials_play: { type: DataTypes.BOOLEAN, defaultValue: false },
-	tutorials_explore: { type: DataTypes.BOOLEAN, defaultValue: false },
-	currentRegion: { type: DataTypes.STRING, defaultValue: CurrentRegionType.Ruins },
-	sapling_exists: { type: DataTypes.BOOLEAN, defaultValue: false },
-	sapling_waterCycles: { type: DataTypes.SMALLINT.UNSIGNED, defaultValue: 0 },
-	sapling_nextWaterTimestamp: { type: DataTypes.BIGINT, defaultValue: 0 },
-	sapling_lastChannelId: { type: DataTypes.STRING, defaultValue: '' },
-	sapling_sentReminder: { type: DataTypes.BOOLEAN, defaultValue: false },
-	sapling_sentGentleReminder: { type: DataTypes.BOOLEAN, defaultValue: false },
-	injuries_wounds: { type: DataTypes.SMALLINT.UNSIGNED, defaultValue: 0 },
-	injuries_infections: { type: DataTypes.SMALLINT.UNSIGNED, defaultValue: 0 },
-	injuries_cold: { type: DataTypes.BOOLEAN, defaultValue: false },
-	injuries_sprains: { type: DataTypes.SMALLINT.UNSIGNED, defaultValue: 0 },
-	injuries_poison: { type: DataTypes.BOOLEAN, defaultValue: false },
-	inventory: { type: DataTypes.ARRAY(DataTypes.STRING), defaultValue: [] },
-	roles: { type: DataTypes.ARRAY(DataTypes.STRING), defaultValue: [] },
-	skills_global: { type: DataTypes.JSON },
-	skills_personal: { type: DataTypes.JSON },
-	lastActiveTimestamp: { type: DataTypes.BIGINT, defaultValue: 0 },
-	passedOutTimestamp: { type: DataTypes.BIGINT, defaultValue: 0 },
-}, { sequelize });
+	@ForeignKey(() => Quid)
+	@Column({ type: DataType.STRING })
+	declare quidId: string;
+
+	@ForeignKey(() => Server)
+	@Column({ type: DataType.STRING })
+	declare serverId: string;
+
+	@Column({ type: DataType.STRING, defaultValue: '' })
+	declare nickname: string;
+
+	@Column({ type: DataType.STRING, defaultValue: '' })
+	declare rank: string;
+
+	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 1 })
+	declare levels: number;
+
+	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 0 })
+	declare experience: number;
+
+	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	declare health: number;
+
+	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	declare energy: number;
+
+	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	declare hunger: number;
+
+	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	declare thirst: number;
+
+	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	declare maxHealth: number;
+
+	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	declare maxEnergy: number;
+
+	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	declare maxHunger: number;
+
+	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	declare maxThirst: number;
+
+	@Column({ type: DataType.BOOLEAN, defaultValue: false })
+	declare hasQuest: boolean;
+
+	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 0 })
+	declare unlockedRanks: number;
+
+	@Column({ type: DataType.BOOLEAN, defaultValue: false })
+	declare tutorials_play: boolean;
+
+	@Column({ type: DataType.BOOLEAN, defaultValue: false })
+	declare tutorials_explore: boolean;
+
+	@Column({ type: DataType.STRING, defaultValue: CurrentRegionType.Ruins })
+	declare currentRegion: string;
+
+	@Column({ type: DataType.BOOLEAN, defaultValue: false })
+	declare sapling_exists: boolean;
+
+	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 0 })
+	declare sapling_waterCycles: number;
+
+	@Column({ type: DataType.BIGINT, defaultValue: 0 })
+	declare sapling_nextWaterTimestamp: number;
+
+	@Column({ type: DataType.STRING, defaultValue: '' })
+	declare sapling_lastChannelId: string;
+
+	@Column({ type: DataType.BOOLEAN, defaultValue: false })
+	declare sapling_sentReminder: boolean;
+
+	@Column({ type: DataType.BOOLEAN, defaultValue: false })
+	declare sapling_sentGentleReminder: boolean;
+
+	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 0 })
+	declare injuries_wounds: number;
+
+	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 0 })
+	declare injuries_infections: number;
+
+	@Column({ type: DataType.BOOLEAN, defaultValue: false })
+	declare injuries_cold: boolean;
+
+	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 0 })
+	declare injuries_sprains: number;
+
+	@Column({ type: DataType.BOOLEAN, defaultValue: false })
+	declare injuries_poison: boolean;
+
+	@Column({ type: DataType.ARRAY(DataType.STRING), defaultValue: [] })
+	declare inventory: string[];
+
+	@Column({ type: DataType.JSON })
+	declare skills_global: { [key in string]: number };
+
+	@Column({ type: DataType.JSON })
+	declare skills_personal: { [key in string]: number };
+
+	@Column({ type: DataType.BIGINT, defaultValue: 0 })
+	declare lastActiveTimestamp: number;
+
+	@Column({ type: DataType.BIGINT, defaultValue: 0 })
+	declare passedOutTimestamp: number;
+
+	@HasMany(() => TemporaryStatIncrease, { foreignKey: 'quidToServerId' })
+	declare temporaryStatIncreases: TemporaryStatIncrease[];
+
+	@BelongsToMany(() => ShopRole, () => QuidToServerToShopRole)
+	declare shopRoles: ShopRole[];
+}

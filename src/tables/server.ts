@@ -1,42 +1,93 @@
-import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
-import { sequelize } from '..';
+import { BelongsTo, BelongsToMany, Column, DataType, HasMany, Model, Table } from 'sequelize-typescript';
 import Den from './den';
+import DiscordUser from './discordUser';
+import Group from './group';
+import GroupToServer from './groupToServer';
 import ProxyLimits from './proxyLimits';
+import Quid from './quid';
+import QuidToServer from './quidToServer';
+import ServerToDiscordUser from './serverToDiscordUser';
+import ShopRole from './shopRole';
+import User from './user';
+import UserToServer from './userToServer';
 
-export default class Server extends Model<InferAttributes<Server>, InferCreationAttributes<Server>> {
+@Table
+export default class Server extends Model {
+	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
-	declare name: string;
-	declare nextPossibleAttackTimestamp: number;
-	declare visitChannelId: string | null;
-	declare currentlyVisitingChannelId: string | null;
-	declare skills: string[];
-	declare proxy_logChannelId: string | null;
-	declare proxy_requireTag: boolean;
-	declare proxy_requireTagInDisplayname: boolean;
-	declare proxy_possibleTags: string[];
-	declare proxy_channelLimitsId: number;
-	declare proxy_roleLimitsId: number;
-	declare inventory: string[];
-	declare sleepingDenId: number;
-	declare medicineDenId: number;
-	declare foodDenId: number;
-}
 
-Server.init({
-	id: { type: DataTypes.STRING, primaryKey: true },
-	name: { type: DataTypes.STRING },
-	nextPossibleAttackTimestamp: { type: DataTypes.BIGINT, defaultValue: 0 },
-	visitChannelId: { type: DataTypes.STRING, allowNull: true, defaultValue: null },
-	currentlyVisitingChannelId: { type: DataTypes.STRING, allowNull: true, defaultValue: null },
-	skills: { type: DataTypes.ARRAY(DataTypes.STRING), defaultValue: ['strength', 'dexterity', 'constitution', 'charisma', 'wisdom', 'intelligence'] },
-	proxy_logChannelId: { type: DataTypes.STRING, allowNull: true, defaultValue: null },
-	proxy_requireTag: { type: DataTypes.BOOLEAN, defaultValue: false },
-	proxy_requireTagInDisplayname: { type: DataTypes.BOOLEAN, defaultValue: false },
-	proxy_possibleTags: { type: DataTypes.ARRAY(DataTypes.STRING), defaultValue: [] },
-	proxy_channelLimitsId: { type: DataTypes.INTEGER.UNSIGNED, references: { model: ProxyLimits, key: 'id' } },
-	proxy_roleLimitsId: { type: DataTypes.INTEGER.UNSIGNED, references: { model: ProxyLimits, key: 'id' } },
-	inventory: { type: DataTypes.ARRAY(DataTypes.STRING), defaultValue: [] },
-	sleepingDenId: { type: DataTypes.INTEGER.UNSIGNED, references: { model: Den, key: 'id' } },
-	medicineDenId: { type: DataTypes.INTEGER.UNSIGNED, references: { model: Den, key: 'id' } },
-	foodDenId: { type: DataTypes.INTEGER.UNSIGNED, references: { model: Den, key: 'id' } },
-}, { sequelize });
+	@Column({ type: DataType.STRING })
+	declare name: string;
+
+	@Column({ type: DataType.BIGINT, defaultValue: 0 })
+	declare nextPossibleAttackTimestamp: number;
+
+	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
+	declare visitChannelId: string | null;
+
+	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
+	declare currentlyVisitingChannelId: string | null;
+
+	@Column({ type: DataType.ARRAY(DataType.STRING), defaultValue: ['strength', 'dexterity', 'constitution', 'charisma', 'wisdom', 'intelligence'] })
+	declare skills: string[];
+
+	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
+	declare proxy_logChannelId: string | null;
+
+	@Column({ type: DataType.BOOLEAN, defaultValue: false })
+	declare proxy_requireTag: boolean;
+
+	@Column({ type: DataType.BOOLEAN, defaultValue: false })
+	declare proxy_requireTagInDisplayname: boolean;
+
+	@Column({ type: DataType.ARRAY(DataType.STRING), defaultValue: [] })
+	declare proxy_possibleTags: string[];
+
+	@Column({ type: DataType.INTEGER.UNSIGNED })
+	declare proxy_channelLimitsId: number;
+
+	@BelongsTo(() => Den, { foreignKey: 'proxy_channelLimitsId' })
+	declare channelLimits: ProxyLimits;
+
+	@Column({ type: DataType.INTEGER.UNSIGNED })
+	declare proxy_roleLimitsId: number;
+
+	@BelongsTo(() => Den, { foreignKey: 'proxy_roleLimitsId' })
+	declare roleLimits: ProxyLimits;
+
+	@Column({ type: DataType.ARRAY(DataType.STRING), defaultValue: [] })
+	declare inventory: string[];
+
+	@Column({ type: DataType.INTEGER.UNSIGNED })
+	declare sleepingDenId: number;
+
+	@BelongsTo(() => Den, { foreignKey: 'sleepingDenId' })
+	declare sleepingDen: Den;
+
+	@Column({ type: DataType.INTEGER.UNSIGNED })
+	declare medicineDenId: number;
+
+	@BelongsTo(() => Den, { foreignKey: 'medicineDenId' })
+	declare medicineDen: Den;
+
+	@Column({ type: DataType.INTEGER.UNSIGNED })
+	declare foodDenId: number;
+
+	@BelongsTo(() => Den, { foreignKey: 'foodDenId' })
+	declare foodDen: Den;
+
+	@BelongsToMany(() => User, () => UserToServer)
+	declare users: User[];
+
+	@HasMany(() => ShopRole, { foreignKey: 'serverId' })
+	declare shopRoles: ShopRole[];
+
+	@BelongsToMany(() => Group, () => GroupToServer)
+	declare groups: Group[];
+
+	@BelongsToMany(() => Quid, () => QuidToServer)
+	declare servers: Quid[];
+
+	@BelongsToMany(() => DiscordUser, () => ServerToDiscordUser)
+	declare discordUsers: DiscordUser[];
+}

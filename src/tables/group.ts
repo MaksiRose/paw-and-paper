@@ -1,17 +1,33 @@
-import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
-import { sequelize } from '..';
+import { BelongsTo, BelongsToMany, Column, DataType, HasMany, Model, Table } from 'sequelize-typescript';
+import GroupToQuid from './groupToQuid';
+import GroupToServer from './groupToServer';
+import Quid from './quid';
+import Server from './server';
 import User from './user';
 
-export default class Group extends Model<InferAttributes<Group>, InferCreationAttributes<Group>> {
+@Table
+export default class Group extends Model {
+	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
-	declare userId: string;
-	declare name: string;
-	declare tag: string;
-}
 
-Group.init({
-	id: { type: DataTypes.STRING, primaryKey: true },
-	userId: { type: DataTypes.STRING, references: { model: User, key: 'id' } },
-	name: { type: DataTypes.STRING },
-	tag: { type: DataTypes.STRING },
-}, { sequelize });
+	@Column({ type: DataType.STRING })
+	declare userId: string;
+
+	@BelongsTo(() => User, { foreignKey: 'userId' })
+	declare user: User;
+
+	@Column({ type: DataType.STRING })
+	declare name: string;
+
+	@Column({ type: DataType.STRING })
+	declare tag: string;
+
+	@BelongsToMany(() => Quid, () => GroupToQuid)
+	declare quids: Quid[];
+
+	@BelongsToMany(() => Server, () => GroupToServer)
+	declare groups: Server[];
+
+	@HasMany(() => Quid, { foreignKey: 'mainGroupId' })
+	declare mainGroupFor: Quid[];
+}

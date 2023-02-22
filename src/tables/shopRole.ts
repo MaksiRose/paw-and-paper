@@ -1,21 +1,28 @@
-import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
-import { sequelize } from '..';
+import { BelongsTo, BelongsToMany, Column, DataType, Model, Table } from 'sequelize-typescript';
+import QuidToServer from './quidToServer';
+import QuidToServerToShopRole from './quidToServerToShopRole';
 import Server from './server';
 
-export default class ShopRole extends Model<InferAttributes<ShopRole>, InferCreationAttributes<ShopRole>> {
+@Table
+export default class ShopRole extends Model {
+	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: number;
-	declare serverId: string;
-	declare roleId: string;
-	declare wayOfEarning: string;
-	declare requirementNumber: number | null;
-	declare requirementRank: string | null;
-}
 
-ShopRole.init({
-	id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-	serverId: { type: DataTypes.STRING, references: { model: Server, key: 'id' } },
-	roleId: { type: DataTypes.STRING },
-	wayOfEarning: { type: DataTypes.STRING },
-	requirementNumber: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
-	requirementRank: { type: DataTypes.STRING, allowNull: true },
-}, { sequelize });
+	@Column({ type: DataType.STRING })
+	declare serverId: string;
+
+	@BelongsTo(() => Server, { foreignKey: 'serverId' })
+	declare server: Server;
+
+	@Column({ type: DataType.STRING })
+	declare wayOfEarning: string;
+
+	@Column({ type: DataType.INTEGER.UNSIGNED, allowNull: true })
+	declare requirementNumber: number | null;
+
+	@Column({ type: DataType.STRING, allowNull: true })
+	declare requirementRank: string | null;
+
+	@BelongsToMany(() => QuidToServer, () => QuidToServerToShopRole)
+	declare quidToServers: QuidToServer[];
+}

@@ -1,13 +1,19 @@
-import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
-import { sequelize } from '..';
+import { Column, DataType, Table, Model, BelongsTo, BelongsToMany } from 'sequelize-typescript';
+import Server from './server';
+import ServerToDiscordUser from './serverToDiscordUser';
 import User from './user';
 
-export default class DiscordUser extends Model<InferAttributes<DiscordUser>, InferCreationAttributes<DiscordUser>> {
+@Table
+export default class DiscordUser extends Model {
+	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
-	declare userId: string;
-}
 
-DiscordUser.init({
-	id: { type: DataTypes.STRING, primaryKey: true },
-	userId: { type: DataTypes.STRING, references: { model: User, key: 'id' } },
-}, { sequelize });
+	@Column({ type: DataType.STRING })
+	declare userId: string;
+
+	@BelongsTo(() => User, { foreignKey: 'userId' })
+	declare user: User;
+
+	@BelongsToMany(() => Server, () => ServerToDiscordUser)
+	declare servers: Server[];
+}

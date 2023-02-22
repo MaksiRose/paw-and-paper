@@ -1,18 +1,29 @@
-import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
-import { sequelize } from '..';
+import { Column, DataType, HasOne, Model, Table } from 'sequelize-typescript';
+import Server from './server';
 
-export default class Den extends Model<InferAttributes<Den>, InferCreationAttributes<Den>> {
+@Table
+export default class Den extends Model {
+	@Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true })
 	declare id: number;
-	declare structure: number;
-	declare bedding: number;
-	declare thickness: number;
-	declare evenness: number;
-}
 
-Den.init({
-	id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-	structure: { type: DataTypes.SMALLINT.UNSIGNED, defaultValue: 100 },
-	bedding: { type: DataTypes.SMALLINT.UNSIGNED, defaultValue: 100 },
-	thickness: { type: DataTypes.SMALLINT.UNSIGNED, defaultValue: 100 },
-	evenness: { type: DataTypes.SMALLINT.UNSIGNED, defaultValue: 100 },
-}, { sequelize: sequelize });
+	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	declare structure: number;
+
+	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	declare bedding: number;
+
+	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	declare thickness: number;
+
+	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
+	declare evenness: number;
+
+	@HasOne(() => Server, { foreignKey: 'sleepingDenId' })
+	declare server_1: Server;
+
+	@HasOne(() => Server, { foreignKey: 'medicineDenId' })
+	declare server_2: Server;
+
+	@HasOne(() => Server, { foreignKey: 'foodDenId' })
+	declare server_3: Server;
+}

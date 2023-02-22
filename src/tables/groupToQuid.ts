@@ -1,16 +1,17 @@
-import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
-import { sequelize } from '..';
-import Quid from './quid';
+import { Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import Group from './group';
+import Quid from './quid';
 
-export default class GroupToQuid extends Model<InferAttributes<GroupToQuid>, InferCreationAttributes<GroupToQuid>> {
+@Table
+export default class GroupToQuid extends Model {
+	@Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true })
 	declare id: number;
+
+	@ForeignKey(() => Group)
+	@Column({ type: DataType.STRING })
 	declare groupId: string;
+
+	@ForeignKey(() => Quid)
+	@Column({ type: DataType.STRING })
 	declare quidId: string;
 }
-
-GroupToQuid.init({
-	id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-	groupId: { type: DataTypes.STRING, references: { model: Group, key: 'id' } },
-	quidId: { type: DataTypes.STRING, references: { model: Quid, key: 'id' } },
-}, { sequelize });

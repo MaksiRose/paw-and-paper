@@ -1,45 +1,66 @@
-import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
-import { sequelize } from '..';
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import Quid from './quid';
 import Server from './server';
 import User from './user';
 
-export default class UserToServer extends Model<InferAttributes<UserToServer>, InferCreationAttributes<UserToServer>> {
+@Table
+export default class UserToServer extends Model {
+	@Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true })
 	declare id: number;
+
+	@ForeignKey(() => User)
+	@Column({ type: DataType.STRING })
 	declare userId: string;
+
+	@ForeignKey(() => Server)
+	@Column({ type: DataType.STRING })
 	declare serverId: string;
+
+	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
 	declare lastProxiedQuidId: string | null;
+
+	@BelongsTo(() => Quid, { foreignKey: 'lastProxiedQuidId' })
+	declare lastProxiedQuid: Quid;
+
+	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
 	declare activeQuidId: string | null;
+
+	@BelongsTo(() => Quid, { foreignKey: 'activeQuidId' })
+	declare activeQuid: Quid;
+
+	@Column({ type: DataType.BOOLEAN, allowNull: true, defaultValue: null })
 	declare autoproxy_setToWhitelist: boolean | null;
+
+	@Column({ type: DataType.ARRAY(DataType.STRING), defaultValue: [] })
 	declare autoproxy_whitelist: string[];
+
+	@Column({ type: DataType.ARRAY(DataType.STRING), defaultValue: [] })
 	declare autoproxy_blacklist: string[];
+
+	@Column({ type: DataType.BOOLEAN, allowNull: true, defaultValue: null })
 	declare stickymode_setTo: boolean | null;
+
+	@Column({ type: DataType.STRING, defaultValue: '' })
 	declare tag: string;
+
+	@Column({ type: DataType.BIGINT, allowNull: true, defaultValue: null })
 	declare lastInteraction_timestamp: number | null;
+
+	@Column({ type: DataType.INTEGER, allowNull: true, defaultValue: null })
 	declare lastInteraction_channelId: string | null;
+
+	@Column({ type: DataType.INTEGER, allowNull: true, defaultValue: null })
 	declare resting_messageId: string | null;
+
+	@Column({ type: DataType.INTEGER, allowNull: true, defaultValue: null })
 	declare resting_channelId: string | null;
+
+	@Column({ type: DataType.INTEGER, allowNull: true, defaultValue: null })
 	declare componentDisabling_channelId: string | null;
+
+	@Column({ type: DataType.INTEGER, allowNull: true, defaultValue: null })
 	declare componentDisabling_messageId: string | null;
+
+	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	declare hasCooldown: boolean;
 }
-
-UserToServer.init({
-	id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-	userId: { type: DataTypes.STRING, references: { model: User, key: 'id' } },
-	serverId: { type: DataTypes.STRING, references: { model: Server, key: 'id' } },
-	lastProxiedQuidId: { type: DataTypes.STRING, allowNull: true, defaultValue: null, references: { model: Quid, key: 'id' } },
-	activeQuidId: { type: DataTypes.STRING, allowNull: true, defaultValue: null, references: { model: Quid, key: 'id' } },
-	autoproxy_setToWhitelist: { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: null },
-	autoproxy_whitelist: { type: DataTypes.ARRAY(DataTypes.STRING), defaultValue: [] },
-	autoproxy_blacklist: { type: DataTypes.ARRAY(DataTypes.STRING), defaultValue: [] },
-	stickymode_setTo: { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: null },
-	tag: { type: DataTypes.STRING, defaultValue: '' },
-	lastInteraction_timestamp: { type: DataTypes.BIGINT, allowNull: true, defaultValue: null },
-	lastInteraction_channelId: { type: DataTypes.INTEGER, allowNull: true, defaultValue: null },
-	resting_messageId: { type: DataTypes.INTEGER, allowNull: true, defaultValue: null },
-	resting_channelId: { type: DataTypes.INTEGER, allowNull: true, defaultValue: null },
-	componentDisabling_channelId: { type: DataTypes.INTEGER, allowNull: true, defaultValue: null },
-	componentDisabling_messageId: { type: DataTypes.INTEGER, allowNull: true, defaultValue: null },
-	hasCooldown: { type: DataTypes.BOOLEAN, defaultValue: false },
-}, { sequelize });

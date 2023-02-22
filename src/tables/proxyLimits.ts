@@ -1,16 +1,23 @@
-import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
-import { sequelize } from '..';
+import { Column, DataType, HasOne, Model, Table } from 'sequelize-typescript';
+import Server from './server';
 
-export default class ProxyLimits extends Model<InferAttributes<ProxyLimits>, InferCreationAttributes<ProxyLimits>> {
+@Table
+export default class ProxyLimits extends Model {
+	@Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true })
 	declare id: number;
-	declare setToWhitelist: boolean;
-	declare whitelist: string[];
-	declare blacklist: string[];
-}
 
-ProxyLimits.init({
-	id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
-	setToWhitelist: { type: DataTypes.BOOLEAN, defaultValue: false },
-	whitelist: { type: DataTypes.ARRAY(DataTypes.STRING), defaultValue: [] },
-	blacklist: { type: DataTypes.ARRAY(DataTypes.STRING), defaultValue: [] },
-}, { sequelize });
+	@Column({ type: DataType.BOOLEAN, defaultValue: false })
+	declare setToWhitelist: boolean;
+
+	@Column({ type: DataType.ARRAY(DataType.STRING), defaultValue: [] })
+	declare whitelist: string[];
+
+	@Column({ type: DataType.ARRAY(DataType.STRING), defaultValue: [] })
+	declare blacklist: string[];
+
+	@HasOne(() => Server, { foreignKey: 'proxy_channelLimitsId' })
+	declare server_1: Server;
+
+	@HasOne(() => Server, { foreignKey: 'proxy_roleLimitsId' })
+	declare server_2: Server;
+}

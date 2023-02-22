@@ -1,6 +1,7 @@
 import { Client, Collection, GatewayIntentBits, Options, Snowflake } from 'discord.js';
-import { Sequelize } from 'sequelize';
+import { Sequelize } from 'sequelize-typescript';
 import { readdirSync, readFileSync } from 'fs';
+import path from 'path';
 import { Api } from '@top-gg/sdk';
 import { ContextMenuCommand, SlashCommand, Votes } from './typings/handle';
 import { CommonPlantNames, MaterialNames, RarePlantNames, SpecialPlantNames, SpeciesNames, UncommonPlantNames } from './typings/data/general';
@@ -24,12 +25,14 @@ function sweepFilter(something: {id: Snowflake, client: Client<true>}) {
 }
 
 
+const tablePath = path.join(__dirname, './tables/');
 export const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 	host: 'localhost',
 	dialect: 'postgres',
 	define: {
 		freezeTableName: true,
 	},
+	models: readdirSync(tablePath).map(el => tablePath + el),
 });
 
 sequelize.authenticate()
