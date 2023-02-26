@@ -1,3 +1,4 @@
+import { Optional } from 'sequelize';
 import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, HasOne, Model, Table } from 'sequelize-typescript';
 import Friendship from './friendship';
 import Group from './group';
@@ -9,8 +10,27 @@ import UserToServer from './userToServer';
 import Webhook from './webhook';
 const { default_color } = require('../../config.json');
 
+interface QuidAttributes {
+	id: string;
+	userId: string;
+	mainGroupId: string | null;
+	name: string;
+	nickname: string;
+	species: string;
+	displayedSpecies: string;
+	description: string;
+	avatarURL: string;
+	pronouns_en: string[][];
+	noPronouns_en: boolean;
+	proxy_startsWith: string;
+	proxy_endsWith: string;
+	color: string;
+}
+
+type QuidCreationAttributes = Optional<QuidAttributes, 'mainGroupId' | 'nickname' | 'species' | 'displayedSpecies' | 'description' | 'avatarURL' | 'pronouns_en' | 'noPronouns_en' | 'proxy_startsWith' | 'proxy_endsWith' | 'color'>
+
 @Table
-export default class Quid extends Model {
+export default class Quid extends Model<QuidAttributes, QuidCreationAttributes> {
 	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
 
@@ -22,7 +42,7 @@ export default class Quid extends Model {
 	declare user: User;
 
 	@ForeignKey(() => Group)
-	@Column({ type: DataType.STRING })
+	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
 	declare mainGroupId: string | null;
 
 	@BelongsTo(() => Group)

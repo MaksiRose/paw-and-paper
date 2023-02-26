@@ -5,8 +5,15 @@ import Quid from './quid';
 import Server from './server';
 import User from './user';
 
+interface GroupAttributes {
+	id: string;
+	userId: string;
+	name: string;
+	tag: string;
+}
+
 @Table
-export default class Group extends Model {
+export default class Group extends Model<GroupAttributes, GroupAttributes> {
 	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
 

@@ -1,3 +1,4 @@
+import { Optional } from 'sequelize';
 import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
 import DiscordUser from './discordUser';
 import Group from './group';
@@ -5,8 +6,36 @@ import Quid from './quid';
 import Server from './server';
 import UserToServer from './userToServer';
 
+interface UserAttributes {
+	id: string;
+advice_resting: boolean;
+advice_eating: boolean;
+advice_drinking: boolean;
+advice_passingOut: boolean;
+advice_coloredButtons: boolean;
+advice_sapling: boolean;
+reminders_water: boolean;
+reminders_resting: boolean;
+proxy_globalAutoproxy: boolean;
+proxy_globalStickymode: boolean;
+proxy_lastGlobalProxiedQuidId: string | null;
+accessibility_replaceEmojis: boolean;
+tag: string;
+lastPlayedVersion: string;
+antiproxy_startsWith: string;
+antiproxy_endsWith: string;
+lastRecordedTopVote: number;
+nextRedeemableTopVote: number;
+lastRecordedDiscordsVote: number;
+nextRedeemableDiscordsVote: number;
+lastRecordedDblVote: number;
+nextRedeemableDblVote: number;
+}
+
+type UserCreationAttributes = Optional<UserAttributes, 'advice_resting' | 'advice_eating' | 'advice_drinking' | 'advice_passingOut' | 'advice_coloredButtons' | 'advice_sapling' | 'reminders_water' | 'reminders_resting' | 'proxy_globalAutoproxy' | 'proxy_globalStickymode' | 'accessibility_replaceEmojis' | 'tag' | 'antiproxy_startsWith' | 'antiproxy_endsWith' | 'lastRecordedTopVote' | 'nextRedeemableTopVote' | 'lastRecordedDiscordsVote' | 'nextRedeemableDiscordsVote' | 'lastRecordedDblVote' | 'nextRedeemableDblVote'>
+
 @Table
-export default class User extends Model {
+export default class User extends Model<UserAttributes, UserCreationAttributes> {
 	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
 
@@ -53,7 +82,7 @@ export default class User extends Model {
 	@Column({ type: DataType.STRING, defaultValue: '' })
 	declare tag: string;
 
-	@Column({ type: DataType.STRING, defaultValue: '' })
+	@Column({ type: DataType.STRING })
 	declare lastPlayedVersion: string;
 
 	@Column({ type: DataType.STRING, defaultValue: '' })

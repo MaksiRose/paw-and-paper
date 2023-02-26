@@ -1,3 +1,4 @@
+import { Optional } from 'sequelize';
 import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
 import Den from './den';
 import DiscordUser from './discordUser';
@@ -11,8 +12,29 @@ import ShopRole from './shopRole';
 import User from './user';
 import UserToServer from './userToServer';
 
+interface ServerAttributes {
+	id: string;
+	name: string;
+	nextPossibleAttackTimestamp: number;
+	visitChannelId: string | null;
+	currentlyVisitingChannelId: string | null;
+	skills: string[];
+	proxy_logChannelId: string | null;
+	proxy_requireTag: boolean;
+	proxy_requireTagInDisplayname: boolean;
+	proxy_possibleTags: string[];
+	proxy_channelLimitsId: number;
+	proxy_roleLimitsId: number;
+	inventory: string[];
+	sleepingDenId: number;
+	medicineDenId: number;
+	foodDenId: number;
+}
+
+type ServerCreationAttributes = Optional<ServerAttributes, 'nextPossibleAttackTimestamp' | 'visitChannelId' | 'currentlyVisitingChannelId' | 'skills' | 'proxy_logChannelId' | 'proxy_requireTag' | 'proxy_requireTagInDisplayname' | 'proxy_possibleTags' | 'inventory'>
+
 @Table
-export default class Server extends Model {
+export default class Server extends Model<ServerAttributes, ServerCreationAttributes> {
 	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
 

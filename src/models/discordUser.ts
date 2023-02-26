@@ -3,8 +3,13 @@ import Server from './server';
 import ServerToDiscordUser from './serverToDiscordUser';
 import User from './user';
 
+interface DiscordUserAttributes {
+	id: string;
+	userId: string;
+}
+
 @Table
-export default class DiscordUser extends Model {
+export default class DiscordUser extends Model<DiscordUserAttributes, DiscordUserAttributes> {
 	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
 

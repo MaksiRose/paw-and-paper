@@ -92,7 +92,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 			proxy_possibleTags: server.proxySettings.requiredInTag,
 			proxy_channelLimitsId: channelLimits.id,
 			proxy_roleLimitsId: roleLimits.id,
-			inventory: Object.entries(Object.assign({}, ...Object.values(server.inventory))).flatMap(([key, value]) => Array(value).fill(key)),
+			inventory: Object.entries(Object.assign({}, ...Object.values(server.inventory))).flatMap(([key, value]) => Array(value).fill(key)) as string[],
 			sleepingDenId: sleepingDen.id,
 			medicineDenId: medicineDen.id,
 			foodDenId: foodDen.id,
@@ -249,9 +249,9 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 					injuries_cold: profile.injuries.cold,
 					injuries_sprains: profile.injuries.sprains,
 					injuries_poison: profile.injuries.poison,
-					inventory: Object.entries(Object.assign({}, ...Object.values(profile.inventory))).flatMap(([key, value]) => Array(value).fill(key)),
-					skills_global: JSON.stringify(profile.skills.global),
-					skills_personal: JSON.stringify(profile.skills.global),
+					inventory: Object.entries(Object.assign({}, ...Object.values(profile.inventory))).flatMap(([key, value]) => Array(value).fill(key)) as string[],
+					skills_global: profile.skills.global,
+					skills_personal: profile.skills.global,
 					lastActiveTimestamp: profile.lastActiveTimestamp,
 					passedOutTimestamp: profile.passedOutTimestamp,
 				});
@@ -262,7 +262,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 					await TemporaryStatIncrease.create({
 						quidToServerId: quidToServer.id,
 						startedTimestamp: Number(timestamp),
-						type: statKind,
+						type: statKind as string,
 					});
 				}
 

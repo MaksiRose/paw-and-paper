@@ -1,8 +1,19 @@
+import { Optional } from 'sequelize';
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import Quid from './quid';
 
+interface FriendshipAttributes {
+	id: number;
+	quidId_1: string;
+	quidId_2: string;
+	quid_1_mentions: number[];
+	quid_2_mentions: number[];
+}
+
+type FriendshipCreationAttributes = Optional<FriendshipAttributes, 'id' | 'quid_1_mentions' | 'quid_2_mentions'>
+
 @Table
-export default class Friendship extends Model {
+export default class Friendship extends Model<FriendshipAttributes, FriendshipCreationAttributes> {
 	@Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true })
 	declare id: number;
 

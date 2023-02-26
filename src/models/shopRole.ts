@@ -3,10 +3,18 @@ import QuidToServer from './quidToServer';
 import QuidToServerToShopRole from './quidToServerToShopRole';
 import Server from './server';
 
+interface ShopRoleAttributes {
+	id: string;
+	serverId: string;
+	wayOfEarning: string;
+	requirementNumber: number | null;
+	requirementRank: string | null;
+}
+
 @Table
-export default class ShopRole extends Model {
+export default class ShopRole extends Model<ShopRoleAttributes, ShopRoleAttributes> {
 	@Column({ type: DataType.STRING, primaryKey: true })
-	declare id: number;
+	declare id: string;
 
 	@ForeignKey(() => Server)
 	@Column({ type: DataType.STRING })

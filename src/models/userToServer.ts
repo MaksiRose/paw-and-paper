@@ -1,10 +1,33 @@
+import { Optional } from 'sequelize';
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import Quid from './quid';
 import Server from './server';
 import User from './user';
 
+interface UserToServerAttributes {
+	id: number;
+	userId: string;
+	serverId: string;
+	lastProxiedQuidId: string | null;
+	activeQuidId: string | null;
+autoproxy_setToWhitelist: boolean | null;
+autoproxy_whitelist: string[];
+autoproxy_blacklist: string[];
+stickymode_setTo: boolean | null;
+tag: string;
+lastInteraction_timestamp: number | null;
+lastInteraction_channelId: string | null;
+resting_messageId: string | null;
+resting_channelId: string | null;
+componentDisabling_channelId: string | null;
+componentDisabling_messageId: string | null;
+hasCooldown: boolean;
+}
+
+type UserToServerCreationAttributes = Optional<UserToServerAttributes, 'id' | 'autoproxy_setToWhitelist' | 'autoproxy_whitelist' | 'autoproxy_blacklist' | 'stickymode_setTo' | 'tag' | 'lastInteraction_timestamp' | 'lastInteraction_channelId' | 'resting_messageId' | 'resting_channelId' | 'componentDisabling_channelId' | 'componentDisabling_messageId' | 'hasCooldown'>
+
 @Table
-export default class UserToServer extends Model {
+export default class UserToServer extends Model<UserToServerAttributes, UserToServerCreationAttributes> {
 	@Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true })
 	declare id: number;
 
