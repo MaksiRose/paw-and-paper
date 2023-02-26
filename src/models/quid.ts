@@ -40,7 +40,7 @@ export default class Quid extends Model {
 	@Column({ type: DataType.STRING, defaultValue: '' })
 	declare displayedSpecies: string;
 
-	@Column({ type: DataType.STRING(512), defaultValue: '' })
+	@Column({ type: DataType.TEXT, defaultValue: '' })
 	declare description: string;
 
 	@Column({ type: DataType.STRING, defaultValue: 'https://cdn.discordapp.com/embed/avatars/1.png' })
