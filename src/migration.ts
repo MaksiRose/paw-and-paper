@@ -93,7 +93,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 			foodDenId: foodDen.id,
 		});
 
-		await Promise.all(server.roles.map((r: any) => ShopRole.create({
+		await Promise.all(server.shop.map((r: any) => ShopRole.create({
 			id: r.roleId,
 			serverId: server.serverId,
 			wayOfEarning: r.wayOfEarning,
