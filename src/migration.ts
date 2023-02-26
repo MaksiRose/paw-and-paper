@@ -221,6 +221,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 				const quidToServer = await QuidToServer.create({
 					quidId: quidId,
 					serverId: profile.serverId,
+					nickname: quid.nickname.servers[profile.serverId],
 					rank: profile.rank,
 					levels: profile.levels,
 					experience: profile.experience,

@@ -1,28 +1,17 @@
-import { Client, Collection, GatewayIntentBits, Options, Snowflake } from 'discord.js';
+import { Client, Collection, GatewayIntentBits, Options } from 'discord.js';
 import { Sequelize } from 'sequelize-typescript';
-import { readdirSync, readFileSync } from 'fs';
+import { readdirSync } from 'fs';
 import path from 'path';
 import { Api } from '@top-gg/sdk';
 import { ContextMenuCommand, SlashCommand, Votes } from './typings/handle';
 import { CommonPlantNames, MaterialNames, RarePlantNames, SpecialPlantNames, SpeciesNames, UncommonPlantNames } from './typings/data/general';
 import { MaterialInfo, PlantEdibilityType, PlantInfo, SpeciesDietType, SpeciesHabitatType, SpeciesInfo } from './typings/main';
-import { UserSchema } from './typings/data/user';
 import { Octokit } from '@octokit/rest';
 import { execute as executeCommandHandler } from './handlers/commands';
 import { execute as executeEventHandler } from './handlers/events';
 import { execute as executeDatabaseHandler } from './handlers/database';
 const { token, bfd_token, bfd_authorization, top_token, top_authorization, dbl_token, dbl_authorization, github_token, database_password } = require('../config.json');
 const bfd = require('bfd-api-redux/src/main');
-
-function sweepFilter(something: {id: Snowflake, client: Client<true>}) {
-	const allDocumentNames = readdirSync('./database/profiles').filter(f => f.endsWith('.json'));
-	return (something.id !== something.client.user.id) && (allDocumentNames
-		.map(documentName => {
-			return JSON.parse(readFileSync(`./database/profiles/${documentName}`, 'utf-8')) as UserSchema;
-		})
-		.filter(u => Object.keys(u.userIds).includes(something.id))
-		.length <= 0);
-}
 
 
 const tablePath = path.join(__dirname, './tables/');
@@ -66,26 +55,6 @@ export const client = new Client({
 		StageInstanceManager: 0,
 		VoiceStateManager: 0,
 	}),
-	sweepers: {
-		...Options.DefaultSweeperSettings,
-		guildMembers: {
-			interval: 3600, // Every hour
-			filter: () => sweepFilter,
-		},
-		threadMembers: {
-			interval: 3600, // Every hour
-			filter: () => sweepFilter,
-		},
-		users: {
-			interval: 3600, // Every hour
-			filter: () => sweepFilter,
-		},
-		messages: {
-			interval: 3600, // Every hour
-			filter: () => ((message) => { return message.author.id !== message.client.user.id; }),
-		},
-	},
-
 });
 
 export const handle: {

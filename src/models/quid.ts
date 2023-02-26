@@ -45,8 +45,8 @@ export default class Quid extends Model<QuidAttributes, QuidCreationAttributes> 
 	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
 	declare mainGroupId: string | null;
 
-	@BelongsTo(() => Group)
-	declare group: Group;
+	@BelongsTo(() => Group, { foreignKey: 'mainGroupId' })
+	declare mainGroup: Group | null;
 
 	@Column({ type: DataType.STRING })
 	declare name: string;

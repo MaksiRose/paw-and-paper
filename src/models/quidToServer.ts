@@ -11,6 +11,7 @@ interface QuidToServerAttributes {
 	id: number;
 	quidId: string;
 	serverId: string;
+	nickname: string;
 	rank: string;
 	levels: string;
 	experience: string;
@@ -46,7 +47,7 @@ interface QuidToServerAttributes {
 	passedOutTimestamp: number;
 }
 
-type QuidToServerOptionalAttributes = Optional<QuidToServerAttributes, 'id' | 'rank' | 'levels' | 'experience' | 'health' | 'energy' | 'hunger' | 'thirst' | 'maxHealth' | 'maxEnergy' | 'maxHunger' | 'maxThirst' | 'hasQuest' | 'unlockedRanks' | 'tutorials_play' | 'tutorials_explore' | 'currentRegion' | 'sapling_exists' | 'sapling_health' | 'sapling_waterCycles' | 'sapling_nextWaterTimestamp' | 'sapling_lastChannelId' | 'sapling_sentReminder' | 'sapling_sentGentleReminder' | 'injuries_wounds' | 'injuries_infections' | 'injuries_cold' | 'injuries_sprains' | 'injuries_poison' | 'inventory' | 'skills_global' | 'skills_personal' | 'passedOutTimestamp'>
+type QuidToServerOptionalAttributes = Optional<QuidToServerAttributes, 'id' | 'nickname' | 'rank' | 'levels' | 'experience' | 'health' | 'energy' | 'hunger' | 'thirst' | 'maxHealth' | 'maxEnergy' | 'maxHunger' | 'maxThirst' | 'hasQuest' | 'unlockedRanks' | 'tutorials_play' | 'tutorials_explore' | 'currentRegion' | 'sapling_exists' | 'sapling_health' | 'sapling_waterCycles' | 'sapling_nextWaterTimestamp' | 'sapling_lastChannelId' | 'sapling_sentReminder' | 'sapling_sentGentleReminder' | 'injuries_wounds' | 'injuries_infections' | 'injuries_cold' | 'injuries_sprains' | 'injuries_poison' | 'inventory' | 'skills_global' | 'skills_personal' | 'passedOutTimestamp'>
 
 @Table
 export default class QuidToServer extends Model<QuidToServerAttributes, QuidToServerOptionalAttributes> {
@@ -60,6 +61,9 @@ export default class QuidToServer extends Model<QuidToServerAttributes, QuidToSe
 	@ForeignKey(() => Server)
 	@Column({ type: DataType.STRING })
 	declare serverId: string;
+
+	@Column({ type: DataType.STRING, defaultValue: '' })
+	declare nickname: string;
 
 	@Column({ type: DataType.STRING, defaultValue: '' })
 	declare rank: string;

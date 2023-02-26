@@ -34,7 +34,7 @@ export default class Group extends Model<GroupAttributes, GroupAttributes> {
 	declare quids: Quid[];
 
 	@BelongsToMany(() => Server, () => GroupToServer)
-	declare groups: Server[];
+	declare servers: Server[];
 
 	@HasMany(() => Quid)
 	declare mainGroupFor: Quid[];
