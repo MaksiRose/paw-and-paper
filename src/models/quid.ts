@@ -1,4 +1,4 @@
-import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
+import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, HasOne, Model, Table } from 'sequelize-typescript';
 import Friendship from './friendship';
 import Group from './group';
 import GroupToQuid from './groupToQuid';
@@ -68,6 +68,9 @@ export default class Quid extends Model {
 
 	@BelongsToMany(() => Server, () => QuidToServer)
 	declare servers: Server[];
+
+	@HasOne(() => User, { foreignKey: 'proxy_lastGlobalProxiedQuidId', onDelete: 'SET NULL' })
+	declare lastGlobalProxyOf?: User;
 
 	@HasMany(() => UserToServer, { foreignKey: 'lastProxiedQuidId' })
 	declare lastProxiedIn: UserToServer[];

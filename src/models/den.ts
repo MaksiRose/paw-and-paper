@@ -18,12 +18,12 @@ export default class Den extends Model {
 	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
 	declare evenness: number;
 
-	@HasOne(() => Server, { foreignKey: 'sleepingDenId' })
-	declare server_1: Server;
+	@HasOne(() => Server, { foreignKey: 'sleepingDenId', onDelete: 'SET NULL' })
+	declare server_1?: Server;
 
-	@HasOne(() => Server, { foreignKey: 'medicineDenId' })
-	declare server_2: Server;
+	@HasOne(() => Server, { foreignKey: 'medicineDenId', onDelete: 'SET NULL' })
+	declare server_2?: Server;
 
-	@HasOne(() => Server, { foreignKey: 'foodDenId' })
-	declare server_3: Server;
+	@HasOne(() => Server, { foreignKey: 'foodDenId', onDelete: 'SET NULL' })
+	declare server_3?: Server;
 }

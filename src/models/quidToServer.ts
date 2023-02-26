@@ -20,9 +20,6 @@ export default class QuidToServer extends Model {
 	declare serverId: string;
 
 	@Column({ type: DataType.STRING, defaultValue: '' })
-	declare nickname: string;
-
-	@Column({ type: DataType.STRING, defaultValue: '' })
 	declare rank: string;
 
 	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 1 })
@@ -73,14 +70,17 @@ export default class QuidToServer extends Model {
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	declare sapling_exists: boolean;
 
+	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 50 })
+	declare sapling_health: number;
+
 	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 0 })
 	declare sapling_waterCycles: number;
 
-	@Column({ type: DataType.BIGINT, defaultValue: 0 })
-	declare sapling_nextWaterTimestamp: number;
+	@Column({ type: DataType.BIGINT, allowNull: true, defaultValue: null })
+	declare sapling_nextWaterTimestamp: number | null;
 
-	@Column({ type: DataType.STRING, defaultValue: '' })
-	declare sapling_lastChannelId: string;
+	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
+	declare sapling_lastChannelId: string | null;
 
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	declare sapling_sentReminder: boolean;

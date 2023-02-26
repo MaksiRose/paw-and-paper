@@ -15,9 +15,9 @@ export default class ProxyLimits extends Model {
 	@Column({ type: DataType.ARRAY(DataType.STRING), defaultValue: [] })
 	declare blacklist: string[];
 
-	@HasOne(() => Server, { foreignKey: 'proxy_channelLimitsId' })
-	declare server_1: Server;
+	@HasOne(() => Server, { foreignKey: 'proxy_channelLimitsId', onDelete: 'SET NULL' })
+	declare server_1?: Server;
 
-	@HasOne(() => Server, { foreignKey: 'proxy_roleLimitsId' })
-	declare server_2: Server;
+	@HasOne(() => Server, { foreignKey: 'proxy_roleLimitsId', onDelete: 'SET NULL' })
+	declare server_2?: Server;
 }

@@ -21,5 +21,8 @@ export default class Friendship extends Model {
 	declare quid_2: Quid;
 
 	@Column({ type: DataType.ARRAY(DataType.BIGINT), defaultValue: [] })
-	declare mentions: number[];
+	declare quid_1_mentions: number[];
+
+	@Column({ type: DataType.ARRAY(DataType.BIGINT), defaultValue: [] })
+	declare quid_2_mentions: number[];
 }

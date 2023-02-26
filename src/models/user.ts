@@ -1,4 +1,4 @@
-import { BelongsToMany, Column, DataType, HasMany, Model, Table } from 'sequelize-typescript';
+import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
 import DiscordUser from './discordUser';
 import Group from './group';
 import Quid from './quid';
@@ -39,6 +39,13 @@ export default class User extends Model {
 
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	declare proxy_globalStickymode: boolean;
+
+	@ForeignKey(() => Quid)
+	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
+	declare proxy_lastGlobalProxiedQuidId: string | null;
+
+	@BelongsTo(() => Quid, { foreignKey: 'proxy_lastGlobalProxiedQuidId' })
+	declare lastGlobalProxiedQuid: Quid;
 
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	declare accessibility_replaceEmojis: boolean;
