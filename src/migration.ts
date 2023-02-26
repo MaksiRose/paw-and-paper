@@ -19,6 +19,9 @@ import QuidToServerToShopRole from './models/quidToServerToShopRole';
 import GroupToQuid from './models/groupToQuid';
 import UserToServer from './models/userToServer';
 import Friendship from './models/friendship';
+import Webhook from './models/webhook';
+import BannedUsers from './models/bannedUsers';
+import BannedServers from './models/bannedServers';
 const { database_password } = require('../config.json');
 
 const tablePath = path.join(__dirname, './models/');
@@ -99,6 +102,8 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 		})));
 	}
 
+	const voteCache = JSON.parse(readFileSync(path.join(__dirname, '../database/voteCache.json'), 'utf-8'));
+
 	const userPath = path.join(__dirname, '../database/profiles');
 	const allUserFileNames = readdirSync(userPath).filter(f => f.endsWith('.json'));
 	const allMentions: Record<string, Record<string, number[]>> = {};
@@ -124,6 +129,12 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 			lastPlayedVersion: user.lastPlayedVersion,
 			antiproxy_startsWith: user.antiproxy.startsWith,
 			antiproxy_endsWith: user.antiproxy.endsWith,
+			lastRecordedTopVote: voteCache[`id_${user.userId[0]}`]?.lastRecordedTopVote ?? 0,
+			nextRedeemableTopVote: voteCache[`id_${user.userId[0]}`]?.nextRedeemableTopVote ?? 0,
+			lastRecordedDiscordsVote: voteCache[`id_${user.userId[0]}`]?.lastRecordedDiscordsVote ?? 0,
+			nextRedeemableDiscordsVote: voteCache[`id_${user.userId[0]}`]?.nextRedeemableDiscordsVote ?? 0,
+			lastRecordedDblVote: voteCache[`id_${user.userId[0]}`]?.lastRecordedDblVote ?? 0,
+			nextRedeemableDblVote: voteCache[`id_${user.userId[0]}`]?.nextRedeemableDblVote ?? 0,
 		});
 
 		for (const [discordUserId, server] of Object.entries(user.userIds)) {
@@ -284,6 +295,18 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 		}
 	}
 
+	const webhookCache = JSON.parse(readFileSync(path.join(__dirname, '../database/webhookCache.json'), 'utf-8'));
+	for (const [messageId, quidId] of Object.entries(webhookCache) as [string, string][]) {
+
+		const newQuidId = quidId.split('_')[1];
+		if (newQuidId === undefined) { continue; }
+
+		await Webhook.create({
+			id: messageId,
+			quidId: newQuidId,
+		});
+	}
+
 	// edit friendship, for this all friendships must be collected from above
 	for (const [id_1, relationships] of Object.entries(allMentions)) {
 
@@ -302,8 +325,17 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 		}
 	}
 
-	// voteCache needs to be added to the User model
-	// webhookCache needs to be added, where the messageId is the main ID and there is only one other column which is a quidId (this is a one to many relationship)
-	// bannedList needs to be added
-	// errorStacks needs to be created (but not migrated), but this table should also have "isReported" and "version" columns. This way, repeating errors don't need to be stored twice, if the same error happens several times within the same version, it can just use the same id. When someone reports it, it gets updated, and every other person that tries to report it gets a message saying it's already been reported, and if the error occurs after it's been reported, it can just say a known error has occured and a fix is being worked on. also if i click reject. it isReported goes back to false
+	const bannedList = JSON.parse(readFileSync(path.join(__dirname, '../database/bannedList.json'), 'utf-8'));
+	for (const userId of bannedList.users) {
+
+		await BannedUsers.create({
+			id: userId,
+		});
+	}
+	for (const serverId of bannedList.servers) {
+
+		await BannedServers.create({
+			id: serverId,
+		});
+	}
 })();

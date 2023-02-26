@@ -6,6 +6,7 @@ import QuidToServer from './quidToServer';
 import Server from './server';
 import User from './user';
 import UserToServer from './userToServer';
+import Webhook from './webhook';
 const { default_color } = require('../../config.json');
 
 @Table
@@ -77,4 +78,7 @@ export default class Quid extends Model {
 
 	@HasMany(() => UserToServer, { foreignKey: 'activeQuidId' })
 	declare activeIn: UserToServer[];
+
+	@HasMany(() => Webhook, { foreignKey: 'quidId' })
+	declare webhooks: Webhook[];
 }

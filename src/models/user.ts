@@ -62,6 +62,24 @@ export default class User extends Model {
 	@Column({ type: DataType.STRING, defaultValue: '' })
 	declare antiproxy_endsWith: string;
 
+	@Column({ type: DataType.BIGINT, defaultValue: 0 })
+	declare lastRecordedTopVote: number;
+
+	@Column({ type: DataType.BIGINT, defaultValue: 0 })
+	declare nextRedeemableTopVote: number;
+
+	@Column({ type: DataType.BIGINT, defaultValue: 0 })
+	declare lastRecordedDiscordsVote: number;
+
+	@Column({ type: DataType.BIGINT, defaultValue: 0 })
+	declare nextRedeemableDiscordsVote: number;
+
+	@Column({ type: DataType.BIGINT, defaultValue: 0 })
+	declare lastRecordedDblVote: number;
+
+	@Column({ type: DataType.BIGINT, defaultValue: 0 })
+	declare nextRedeemableDblVote: number;
+
 	@BelongsToMany(() => Server, () => UserToServer)
 	declare servers: Server[];
 
