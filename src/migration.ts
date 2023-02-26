@@ -333,8 +333,10 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 	// edit friendship, for this all friendships must be collected from above
 	for (const [id_1, relationships] of Object.entries(allMentions)) {
 
+		if (!quidList.includes(id_1)) { continue; }
 		for (const [id_2, mentions_array] of Object.entries(relationships)) {
 
+			if (!quidList.includes(id_2)) { continue; }
 			const mentions_array_2 = allMentions[id_2]?.[id_1] ?? [];
 
 			await Friendship.create({
