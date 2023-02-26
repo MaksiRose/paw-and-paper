@@ -158,6 +158,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 
 			for (const [serverId, information] of Object.entries(server!)) {
 
+				if (!serverList.includes(serverId)) { continue; }
 				await ServerToDiscordUser.create({
 					discordUserId: discordUserId,
 					serverId: serverId,
@@ -178,6 +179,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 
 			for (const [serverId, tag] of Object.entries(group.tag.servers) as [string, string][]) {
 
+				if (!serverList.includes(serverId)) { continue; }
 				await GroupToServer.create({
 					groupId: groupId,
 					serverId: serverId,
@@ -209,6 +211,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 			// quidToServer
 			for (const profile of Object.values(quid.profiles) as any[]) {
 
+				if (!serverList.includes(profile.serverId)) { continue; }
 				const quidToServer = await QuidToServer.create({
 					quidId: quidId,
 					serverId: profile.serverId,
@@ -284,6 +287,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 				await newUser.save();
 				continue;
 			}
+			if (!serverList.includes(serverId)) { continue; }
 
 			// userToServer
 			await UserToServer.create({
