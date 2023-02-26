@@ -7,8 +7,7 @@ interface ShopRoleAttributes {
 	id: string;
 	serverId: string;
 	wayOfEarning: string;
-	requirementNumber: number | null;
-	requirementRank: string | null;
+	requirement: string;
 }
 
 @Table
@@ -26,11 +25,8 @@ export default class ShopRole extends Model<ShopRoleAttributes, ShopRoleAttribut
 	@Column({ type: DataType.STRING })
 	declare wayOfEarning: string;
 
-	@Column({ type: DataType.INTEGER.UNSIGNED, allowNull: true })
-	declare requirementNumber: number | null;
-
-	@Column({ type: DataType.STRING, allowNull: true })
-	declare requirementRank: string | null;
+	@Column({ type: DataType.STRING })
+	declare requirement: string;
 
 	@BelongsToMany(() => QuidToServer, () => QuidToServerToShopRole)
 	declare quidToServers: QuidToServer[];

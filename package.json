@@ -24,7 +24,6 @@
 		"express-rate-limit": "^6.7.0",
 		"fs": "^0.0.1-security",
 		"fuse.js": "^6.6.2",
-		"hoatzin": "^2.0.0",
 		"pg": "^8.9.0",
 		"pg-hstore": "^2.3.4",
 		"reflect-metadata": "^0.1.13",

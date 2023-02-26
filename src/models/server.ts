@@ -70,14 +70,14 @@ export default class Server extends Model<ServerAttributes, ServerCreationAttrib
 	declare proxy_channelLimitsId: number;
 
 	@BelongsTo(() => ProxyLimits, { foreignKey: 'proxy_channelLimitsId' })
-	declare channelLimits: ProxyLimits;
+	declare proxy_channelLimits: ProxyLimits;
 
 	@ForeignKey(() => ProxyLimits)
 	@Column({ type: DataType.INTEGER.UNSIGNED })
 	declare proxy_roleLimitsId: number;
 
 	@BelongsTo(() => ProxyLimits, { foreignKey: 'proxy_roleLimitsId' })
-	declare roleLimits: ProxyLimits;
+	declare proxy_roleLimits: ProxyLimits;
 
 	@Column({ type: DataType.ARRAY(DataType.STRING), defaultValue: [] })
 	declare inventory: string[];

@@ -7,6 +7,10 @@ import { canManageWebhooks, getMissingPermissionContent, hasPermission, missingP
 import { CurrentRegionType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { WebhookMessages } from '../../typings/data/general';
+import QuidToServer from '../../models/quidToServer';
+import Quid from '../../models/quid';
+import { getDisplayname } from '../../utils/getQuidInfo';
+import Webhook from '../../models/webhook';
 const { error_color } = require('../../../config.json');
 
 export const command: SlashCommand = {
@@ -83,8 +87,7 @@ export const command: SlashCommand = {
 export async function sendMessage(
 	channel: GuildTextBasedChannel,
 	text: string,
-	userData: UserData<never, ''>,
-	authorId: string,
+	quid: Quid,
 	attachments?: Array<Attachment>,
 	reference?: MessageReference,
 ): Promise<boolean> {
@@ -96,15 +99,8 @@ export async function sendMessage(
 	const webhook = (await webhookChannel.fetchWebhooks()).find(webhook => webhook.name === 'PnP Profile Webhook')
 		|| await webhookChannel.createWebhook({ name: 'PnP Profile Webhook' });
 
-	await userData.update(
-		(u) => {
-			const p = getMapData(getMapData(u.quids, userData.quid._id).profiles, webhookChannel.guildId);
-			p.currentRegion = CurrentRegionType.Ruins;
-		},
-	);
+	await QuidToServer.update({ currentRegion: CurrentRegionType.Ruins }, { where: { quidId: quid.id, serverId: webhookChannel.guildId } });
 
-	const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8')) as WebhookMessages;
-	/** @type {Array<import('discord.js').MessageEmbedOptions>} */
 	const embeds: Array<EmbedBuilder> = [];
 
 	if (reference && reference.messageId) {
@@ -137,16 +133,15 @@ export async function sendMessage(
 
 	const botMessage = await webhook
 		.send({
-			username: userData.quid.getDisplayname(),
-			avatarURL: userData.quid.avatarURL,
+			username: await getDisplayname(quid, { serverId: webhookChannel.guildId }),
+			avatarURL: quid.avatarURL,
 			content: text || undefined,
 			files: attachments,
 			embeds: embeds,
 			threadId: channel.isThread() ? channel.id : undefined,
 		});
 
-	webhookCache[botMessage.id] = `${authorId}_${userData.quid._id}`;
-	writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
+	await Webhook.create({ id: botMessage.id, quidId: quid.id });
 
 	return true;
 }

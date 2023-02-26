@@ -102,8 +102,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 			id: r.roleId,
 			serverId: server.serverId,
 			wayOfEarning: r.wayOfEarning,
-			requirementNumber: typeof r.requirement === 'number' ? r.requirement : null,
-			requirementRank: typeof r.requirement === 'number' ? null : r.requirement,
+			requirement: typeof r.requirement === 'number' ? r.requirement.toString() : r.requirement,
 		})));
 	}
 

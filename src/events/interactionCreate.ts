@@ -1,7 +1,5 @@
 import { EmbedBuilder, Interaction, RepliableInteraction } from 'discord.js';
 import { createNewTicket } from '../commands/miscellaneous/ticket';
-import serverModel from '../oldModels/serverModel';
-import { userModel, getUserData } from '../oldModels/userModel';
 import { DiscordEvent } from '../typings/main';
 import { disableCommandComponent, disableAllComponents } from '../utils/componentDisabling';
 import { getMapData, keyInObject, respond, userDataServersObject } from '../utils/helperFunctions';

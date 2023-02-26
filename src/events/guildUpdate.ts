@@ -1,5 +1,5 @@
 import { Guild } from 'discord.js';
-import serverModel from '../oldModels/serverModel';
+import Server from '../models/server';
 import { DiscordEvent } from '../typings/main';
 
 export const event: DiscordEvent = {
@@ -7,11 +7,7 @@ export const event: DiscordEvent = {
 	once: false,
 	async execute(oldGuild: Guild, newGuild: Guild) {
 
-		await serverModel.findOneAndUpdate(
-			s => s.serverId === newGuild.id,
-			(s) => {
-				s.name = newGuild.name;
-			},
-		);
+		if (oldGuild.name === newGuild.name) { return; }
+		await Server.update({ name: newGuild.name }, { where: { id: newGuild.id } });
 	},
 };

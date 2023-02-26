@@ -9,7 +9,7 @@ interface ProxyLimitsAttributes {
 	blacklist: string[];
 }
 
-type ProxyLimitsCreationAttributes = Optional<ProxyLimitsAttributes, 'id'>;
+type ProxyLimitsCreationAttributes = Optional<ProxyLimitsAttributes, 'id' | 'setToWhitelist' | 'whitelist' | 'blacklist'>;
 
 @Table
 export default class ProxyLimits extends Model<ProxyLimitsAttributes, ProxyLimitsCreationAttributes> {

@@ -74,7 +74,7 @@ export default class User extends Model<UserAttributes, UserCreationAttributes> 
 	declare proxy_lastGlobalProxiedQuidId: string | null;
 
 	@BelongsTo(() => Quid, { foreignKey: 'proxy_lastGlobalProxiedQuidId' })
-	declare lastGlobalProxiedQuid: Quid | null;
+	declare proxy_lastGlobalProxiedQuid: Quid | null;
 
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	declare accessibility_replaceEmojis: boolean;

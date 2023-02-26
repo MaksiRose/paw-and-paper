@@ -1,17 +1,18 @@
 import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, MessageContextMenuCommandInteraction, AnySelectMenuInteraction } from 'discord.js';
 import { respond } from './helperFunctions';
 import { UserData } from '../typings/data/user';
+import Quid from '../models/quid';
 const { default_color } = require('../../config.json');
 
 /**
  * Checks if there is an account and if the account has a name, returns false if they do, and if not, sends a message telling the user to create an account and return true.
  */
 export function hasName(
-	userData: UserData<undefined, ''> | null | undefined,
+	quid: Quid | null,
 	interaction?: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction,
-): userData is UserData<never, ''> {
+): quid is Quid {
 
-	if (userData?.quid === undefined || userData.quid.name === '') {
+	if (quid === null || quid.name === '') {
 
 		if (interaction) {
 
