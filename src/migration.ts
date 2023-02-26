@@ -192,6 +192,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 
 			allMentions[quidId] = quid.mentions;
 
+			const newPronouns = (quid.pronounSets as string[][]).filter(set => set.length === 6);
 			await Quid.create({
 				id: quidId,
 				userId: user._id,
@@ -202,7 +203,8 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 				displayedSpecies: quid.displayedSpecies,
 				description: quid.description,
 				avatarURL: quid.avatarURL,
-				pronouns_en: quid.pronounSets,
+				pronouns_en: newPronouns,
+				noPronouns_en: quid.pronounSets.length > newPronouns.length,
 				proxy_startsWith: quid.proxy.startsWith,
 				proxy_endsWith: quid.proxy.endsWith,
 				color: quid.color,

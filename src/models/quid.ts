@@ -49,6 +49,9 @@ export default class Quid extends Model {
 	@Column({ type: DataType.ARRAY(DataType.ARRAY(DataType.STRING)), defaultValue: [['they', 'them', 'their', 'theirs', 'themselves', 'plural']] })
 	declare pronouns_en: string[][];
 
+	@Column({ type: DataType.BOOLEAN, defaultValue: false })
+	declare noPronouns_en: boolean;
+
 	@Column({ type: DataType.STRING, defaultValue: '' })
 	declare proxy_startsWith: string;
 
