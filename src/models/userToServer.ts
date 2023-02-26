@@ -17,18 +17,18 @@ export default class UserToServer extends Model {
 	declare serverId: string;
 
 	@ForeignKey(() => Quid)
-	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
+	@Column({ type: DataType.STRING, allowNull: true })
 	declare lastProxiedQuidId: string | null;
 
 	@BelongsTo(() => Quid, { foreignKey: 'lastProxiedQuidId' })
-	declare lastProxiedQuid: Quid;
+	declare lastProxiedQuid: Quid | null;
 
 	@ForeignKey(() => Quid)
-	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
+	@Column({ type: DataType.STRING, allowNull: true })
 	declare activeQuidId: string | null;
 
 	@BelongsTo(() => Quid, { foreignKey: 'activeQuidId' })
-	declare activeQuid: Quid;
+	declare activeQuid: Quid | null;
 
 	@Column({ type: DataType.BOOLEAN, allowNull: true, defaultValue: null })
 	declare autoproxy_setToWhitelist: boolean | null;
