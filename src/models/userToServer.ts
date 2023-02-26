@@ -48,19 +48,19 @@ export default class UserToServer extends Model {
 	@Column({ type: DataType.BIGINT, allowNull: true, defaultValue: null })
 	declare lastInteraction_timestamp: number | null;
 
-	@Column({ type: DataType.INTEGER, allowNull: true, defaultValue: null })
+	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
 	declare lastInteraction_channelId: string | null;
 
-	@Column({ type: DataType.INTEGER, allowNull: true, defaultValue: null })
+	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
 	declare resting_messageId: string | null;
 
-	@Column({ type: DataType.INTEGER, allowNull: true, defaultValue: null })
+	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
 	declare resting_channelId: string | null;
 
-	@Column({ type: DataType.INTEGER, allowNull: true, defaultValue: null })
+	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
 	declare componentDisabling_channelId: string | null;
 
-	@Column({ type: DataType.INTEGER, allowNull: true, defaultValue: null })
+	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
 	declare componentDisabling_messageId: string | null;
 
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
