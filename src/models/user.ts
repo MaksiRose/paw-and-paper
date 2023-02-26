@@ -41,11 +41,11 @@ export default class User extends Model {
 	declare proxy_globalStickymode: boolean;
 
 	@ForeignKey(() => Quid)
-	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
+	@Column({ type: DataType.STRING, allowNull: true })
 	declare proxy_lastGlobalProxiedQuidId: string | null;
 
 	@BelongsTo(() => Quid, { foreignKey: 'proxy_lastGlobalProxiedQuidId' })
-	declare lastGlobalProxiedQuid: Quid;
+	declare lastGlobalProxiedQuid: Quid | null;
 
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	declare accessibility_replaceEmojis: boolean;

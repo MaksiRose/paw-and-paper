@@ -36,7 +36,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 
 (async () => {
 
-	await sequelize.sync();
+	await sequelize.sync({ force: true });
 
 	const serverPath = path.join(__dirname, '../database/servers');
 	const allServerFileNames = readdirSync(serverPath).filter(f => f.endsWith('.json'));
