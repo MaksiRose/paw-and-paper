@@ -114,6 +114,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 	const allMentions: Record<string, Record<string, number[]>> = {};
 	const userList: string[] = [];
 	const discordUserList: string[] = [];
+	const quidList: string[] = [];
 	for (const fileName of allUserFileNames) {
 
 		const user = JSON.parse(readFileSync(`${userPath}/${fileName}`, 'utf-8'));
@@ -189,6 +190,9 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 		}
 
 		for (const [quidId, quid] of Object.entries(user.quids) as [string, any][]) {
+
+			if (quidList.includes(quidId)) { continue; }
+			quidList.push(quidId);
 
 			allMentions[quidId] = quid.mentions;
 
@@ -318,6 +322,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 
 		const newQuidId = quidId.split('_')[1];
 		if (newQuidId === undefined) { continue; }
+		if (!quidList.includes(newQuidId)) { continue; }
 
 		await Webhook.create({
 			id: messageId,
