@@ -40,8 +40,13 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 
 	const serverPath = path.join(__dirname, '../database/servers');
 	const allServerFileNames = readdirSync(serverPath).filter(f => f.endsWith('.json'));
+	const serverList: string[] = [];
 	for (const fileName of allServerFileNames) {
+
 		const server = JSON.parse(readFileSync(`${serverPath}/${fileName}`, 'utf-8'));
+
+		if (serverList.includes(server.serverId)) { continue; }
+		serverList.push(server.serverId);
 
 		const sleepingDen = await Den.create({
 			structure: server.dens.sleepingDens.structure,
@@ -107,9 +112,13 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 	const userPath = path.join(__dirname, '../database/profiles');
 	const allUserFileNames = readdirSync(userPath).filter(f => f.endsWith('.json'));
 	const allMentions: Record<string, Record<string, number[]>> = {};
+	const userList: string[] = [];
+	const discordUserList: string[] = [];
 	for (const fileName of allUserFileNames) {
 
 		const user = JSON.parse(readFileSync(`${userPath}/${fileName}`, 'utf-8'));
+		if (userList.includes(user._id)) { continue; }
+		userList.push(user._id);
 
 		const newUser = await User.create({
 			id: user._id,
@@ -138,6 +147,9 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 		});
 
 		for (const [discordUserId, server] of Object.entries(user.userIds)) {
+
+			if (discordUserList.includes(discordUserId)) { continue; }
+			discordUserList.push(discordUserId);
 
 			await DiscordUser.create({
 				id: discordUserId,
