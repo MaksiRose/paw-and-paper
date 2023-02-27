@@ -10,15 +10,15 @@ export const event: DiscordEvent = {
 	once: false,
 	async execute(role: Role) {
 
-		const shopRole = await ShopRole.findOne({ where: { id: role.id } });
-		if (shopRole?.wayOfEarning === WayOfEarningType.Experience) {
+		const shopRole = await ShopRole.findByPk(role.id);
+		if (shopRole && shopRole.wayOfEarning === WayOfEarningType.Experience) {
 
-			const profileShopRoleRelations = await QuidToServerToShopRole.findAll({ where: { shopRoleId: role.id } });
+			const profileToRoleRelations = await QuidToServerToShopRole.findAll({ where: { shopRoleId: role.id } });
 
-			for (const relation of profileShopRoleRelations) {
+			for (const relation of profileToRoleRelations) {
 
-				const profile = await QuidToServer.findOne({ where: { id: relation.quidToServerId } });
-				await profile?.update({ experience: profile.experience + Number(shopRole.requirement) || 0 });
+				const quidToServer = await QuidToServer.findByPk(relation.quidToServerId);
+				await quidToServer?.update({ experience: quidToServer.experience + Number(shopRole.requirement) || 0 });
 			}
 		}
 

@@ -12,7 +12,7 @@ export async function createGuild(
 	guild: Guild,
 ): Promise<Server> {
 
-	const banned = await BannedServers.findOne({ where: { id: guild.id } });
+	const banEntry = await BannedServers.findByPk(guild.id);
 
 	const owner = await client.users.fetch(guild.ownerId);
 
@@ -22,7 +22,7 @@ export async function createGuild(
 
 	/* This is checking if the guild is on the ban list. If it is, then the bot will leave the guild and
 	send a message to the owner of the guild. */
-	if (banned !== null) {
+	if (banEntry !== null) {
 
 		await owner
 			.send({ content: `I am sorry to inform you that your guild \`${guild.name}\` has been banned from using this bot.` })

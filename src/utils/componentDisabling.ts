@@ -1,6 +1,5 @@
 import { ComponentType, ButtonStyle, APIActionRowComponent, ActionRowBuilder, ActionRow, MessageActionRowComponent, APIMessageActionRowComponent, MessageActionRowComponentBuilder, ButtonBuilder, ButtonComponent, APIButtonComponent, StringSelectMenuBuilder, SelectMenuComponent, APISelectMenuComponent, isJSONEncodable, SnowflakeUtil, RepliableInteraction, RoleSelectMenuBuilder, UserSelectMenuBuilder, ChannelSelectMenuBuilder, MentionableSelectMenuBuilder } from 'discord.js';
 import { client } from '..';
-import User from '../models/user';
 import UserToServer from '../models/userToServer';
 
 export const componentDisablingInteractions = new Map<string, RepliableInteraction>();
@@ -27,17 +26,16 @@ export function deleteCommandDisablingInfo(
  * @returns A promise that resolves when the command-component has been disabled.
  */
 export async function disableCommandComponent(
-	user: User,
 	userToServer: UserToServer,
 ): Promise<void> {
 
-	const interaction = componentDisablingInteractions.get(user.id + userToServer.serverId);
+	const interaction = componentDisablingInteractions.get(userToServer.userId + userToServer.serverId);
 	const fifteenMinutesInMs = 900_000;
 	if (interaction !== undefined && userToServer.componentDisabling_messageId !== null && client.isReady() && SnowflakeUtil.deconstruct(interaction.id).timestamp > Date.now() - fifteenMinutesInMs) {
 
 		const botReply = await interaction.webhook.fetchMessage(userToServer.componentDisabling_messageId)
 			.catch(error => {
-				componentDisablingInteractions.delete(user.id + userToServer.serverId);
+				componentDisablingInteractions.delete(userToServer.userId + userToServer.serverId);
 				console.error(error);
 				return undefined;
 			});
@@ -46,7 +44,7 @@ export async function disableCommandComponent(
 		await interaction.webhook.editMessage(userToServer.componentDisabling_messageId, {
 			components: disableAllComponents(botReply.components),
 		}).catch(error => {
-			componentDisablingInteractions.delete(user.id + userToServer.serverId);
+			componentDisablingInteractions.delete(userToServer.userId + userToServer.serverId);
 			console.error(error);
 		});
 

@@ -1,7 +1,6 @@
 import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, MessageContextMenuCommandInteraction, AnySelectMenuInteraction } from 'discord.js';
 import { respond } from './helperFunctions';
 import Quid from '../models/quid';
-import User from '../models/user';
 const { default_color } = require('../../config.json');
 
 /**
@@ -9,7 +8,7 @@ const { default_color } = require('../../config.json');
  */
 export function hasName(
 	quid: Quid | null | undefined,
-	options?: {interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction, user: User},
+	options?: {interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction, hasQuids: boolean},
 ): quid is Quid {
 
 	if (quid === null || quid === undefined || quid.name === '') {
@@ -20,7 +19,7 @@ export function hasName(
 			respond(options.interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(default_color)
-					.setDescription(options.user.quids.length > 0 ? 'Please type "/profile" to switch to a quid!' : 'Please type "/name" to create a new quid!')],
+					.setDescription(options.hasQuids ? 'Please type "/profile" to switch to a quid!' : 'Please type "/name" to create a new quid!')],
 			});
 		}
 
@@ -35,7 +34,7 @@ export function hasName(
  */
 export function hasNameAndSpecies(
 	quid: Quid | null | undefined,
-	options?: {interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction, user: User},
+	options?: {interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction, hasQuids: boolean},
 ): quid is Quid<true> {
 
 	if (!hasName(quid, options)) { return false; }

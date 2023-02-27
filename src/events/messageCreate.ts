@@ -1,6 +1,7 @@
 import { Message } from 'discord.js';
 import { sendMessage } from '../commands/interaction/say';
 import DiscordUser from '../models/discordUser';
+import ProxyLimits from '../models/proxyLimits';
 import Quid from '../models/quid';
 import Server from '../models/server';
 import ServerToDiscordUser from '../models/serverToDiscordUser';
@@ -25,12 +26,12 @@ export const event: DiscordEvent = {
 			return;
 		}
 
-		const server = (await Server.findOne({ where: { id: message.guildId } })) ?? await createGuild(message.guild)
-			.catch(async (error) => {
-				console.error(error);
-				return null;
-			});
-		const user = (await DiscordUser.findOne({ where: { id: message.author.id } }))?.user;
+		const discordUser = await DiscordUser.findByPk(message.author.id, {
+			include: [{ model: User, as: 'user' }],
+		});
+		const user = discordUser?.user;
+
+		const server = (await Server.findByPk(message.guildId)) ?? await createGuild(message.guild);
 
 		if (user === undefined || server === null) { return; }
 
@@ -51,6 +52,7 @@ export const event: DiscordEvent = {
 
 			const isSuccessful = await sendMessage(message.channel, message.content, quid, message.attachments.size > 0 ? Array.from(message.attachments.values()) : undefined, message.reference ?? undefined)
 				.catch(error => { console.error(error); });
+
 			if (!isSuccessful) { return; }
 			console.log(`\x1b[32m${message.author.tag} (${message.author.id})\x1b[0m successfully \x1b[31mproxied \x1b[0ma new message in \x1b[32m${message.guild.name} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 
@@ -73,15 +75,24 @@ export async function checkForProxy(
 ): Promise<{ replaceMessage: boolean, quid: Quid | null }> {
 
 	let replaceMessage = false;
-	const userToServer = await UserToServer.findOne({ where: { serverId: message.guildId, userId: user.id } });
+	const userToServer = await UserToServer.findOne({
+		where: { serverId: message.guildId, userId: user.id },
+		include: [{ model: Quid, as: 'activeQuid' }],
+	});
 	let chosenQuid = userToServer?.activeQuid ?? null;
 
+	let channelLimits = await ProxyLimits.findByPk(server.proxy_channelLimitsId);
+	if (!channelLimits) {
+		channelLimits = await ProxyLimits.create();
+		server.update({ proxy_channelLimitsId: channelLimits.id });
+	}
+
 	const proxyIsDisabled = (
-		server.proxy_channelLimits.setToWhitelist === false
-		&& server.proxy_channelLimits.blacklist.includes(message.channelId)
+		channelLimits.setToWhitelist === false
+		&& channelLimits.blacklist.includes(message.channelId)
 	) || (
-		server.proxy_channelLimits.setToWhitelist === true
-			&& !server.proxy_channelLimits.whitelist.includes(message.channelId)
+		channelLimits.setToWhitelist === true
+			&& !channelLimits.whitelist.includes(message.channelId)
 	);
 
 	/* Checking if the user has autoproxy enabled in the current channel, and if so, it is adding the prefix to the message. */
@@ -149,8 +160,8 @@ export async function checkForProxy(
 	await ServerToDiscordUser.update({ isMember: true, lastUpdatedTimestamp: Date.now() }, { where: { discordUserId: message.author.id, serverId: message.guildId } });
 	if (replaceMessage || isAntiProxied) {
 
-		await userToServer?.update({ lastProxiedQuidId: chosenQuid?.id ?? null });
-		await user.update({ proxy_lastGlobalProxiedQuidId: chosenQuid?.id ?? null });
+		await userToServer?.update({ lastProxiedQuidId: chosenQuid?.id ?? null }, { logging: false });
+		await user.update({ proxy_lastGlobalProxiedQuidId: chosenQuid?.id ?? null }, { logging: false });
 	}
 
 	return { replaceMessage, quid: chosenQuid };

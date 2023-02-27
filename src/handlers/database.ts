@@ -86,7 +86,7 @@ export async function execute(
 	// Server.hasOne(ProxyLimits, { foreignKey: 'proxy_roleLimitsId' });
 	// ProxyLimits.belongsTo(Server);
 
-	await sequelize.sync({ force: true });
+	await sequelize.sync();
 
 
 	if (existsSync('./database/bannedList.json') == false) {

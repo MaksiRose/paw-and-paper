@@ -1,10 +1,13 @@
 import { generateId } from 'crystalid';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, RepliableInteraction, WebhookEditMessageOptions, Snowflake, InteractionResponse } from 'discord.js';
-import { readFileSync, writeFileSync } from 'fs';
-import { userModel, getUserData } from '../oldModels/userModel';
-import { ErrorStacks } from '../typings/data/general';
-import { UserData, UserSchema } from '../typings/data/user';
+import DiscordUser from '../models/discordUser';
+import ErrorStack from '../models/errorStack';
+import Server from '../models/server';
+import User from '../models/user';
+import UserToServer from '../models/userToServer';
+import { UserSchema } from '../typings/data/user';
 const { error_color } = require('../../config.json');
+const { version } = require('../../package.json');
 
 /**
  * It takes a map and a key, and returns the value associated with the key. If the value is undefined, it throws a type error instead.
@@ -157,13 +160,28 @@ export function getMessageId(
 export async function sendErrorMessage(
 	interaction: RepliableInteraction,
 	error: unknown,
+	userToServer?: UserToServer,
 ): Promise<any> {
 
 	try {
 
-		const _userData = await userModel.findOne(u => Object.keys(u.userIds).includes(interaction.user.id));
-		const userData = getUserData(_userData, interaction.guildId || 'DMs', undefined);
-		await setCooldown(userData, interaction.guildId || 'DMs', false);
+		if (!userToServer) {
+			const discordUser = await DiscordUser.findByPk(interaction.user.id, {
+				include: [{ model: User, as: 'user' }],
+			});
+			const user = discordUser?.user;
+
+			const server = interaction.inCachedGuild()
+				? ((await Server.findByPk(interaction.guildId)))
+				: undefined;
+
+			userToServer = (user && server)
+				? (await UserToServer.findOrCreate({
+					where: { userId: user.id, serverId: server.id },
+				}))[0]
+				: undefined;
+		}
+		if (userToServer) { await setCooldown(userToServer, false); }
 	}
 	catch (newError) { console.error(newError); }
 
@@ -236,15 +254,20 @@ export async function sendErrorMessage(
 
 		try {
 
-			const errorStacks = JSON.parse(readFileSync('./database/errorStacks.json', 'utf-8')) as ErrorStacks;
-			errorId = generateId();
-			errorStacks[errorId] = `${(isObject(error) && error.stack) || JSON.stringify(error, null, '\t')}\n${JSON.stringify(jsonInteraction, null, '\t')}`;
-			writeFileSync('./database/errorStacks.json', JSON.stringify(errorStacks, null, '\t'));
+			const stack = `${(isObject(error) && error.stack) || JSON.stringify(error, null, '\t')}\n${JSON.stringify(jsonInteraction, null, '\t')}`;
+			const errorStack = await ErrorStack.findOne({ where: { stack } });
+
+			if (errorStack) { errorId = errorStack.id; }
+			else {
+
+				errorId = generateId();
+				await ErrorStack.create({ id: errorId, stack, version });
+			}
 		}
 		catch (e) {
 
 			errorId = undefined;
-			console.error('Cannot edit file ', e);
+			console.error(e);
 		}
 	}
 
@@ -411,19 +434,13 @@ export function userDataServersObject(
 }
 
 export async function setCooldown(
-	userData: UserData<undefined, ''>,
-	guildId: string,
+	userToServer: UserToServer,
 	setTo: boolean,
 ) {
 
-	await userData.update(
-		u => {
-			u.servers[guildId] = {
-				...userDataServersObject(u, guildId),
-				hasCooldown: setTo,
-			};
-		},
-	);
+	await userToServer.update({
+		hasCooldown: setTo,
+	});
 }
 
 /**

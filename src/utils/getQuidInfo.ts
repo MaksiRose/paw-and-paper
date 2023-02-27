@@ -1,16 +1,18 @@
+import Group from '../models/group';
 import GroupToServer from '../models/groupToServer';
 import Quid from '../models/quid';
 import QuidToServer from '../models/quidToServer';
+import User from '../models/user';
 import UserToServer from '../models/userToServer';
 import { getArrayElement } from './helperFunctions';
 import { getRandomNumber } from './randomizers';
 
 export async function getDisplayname(
 	quid: Quid,
-	options: { serverId?: string; groupToServer?: GroupToServer; userToServer?: UserToServer; quidToServer?: QuidToServer },
+	options: { serverId?: string; groupToServer?: GroupToServer; userToServer?: UserToServer; quidToServer?: QuidToServer, user?: User; },
 ): Promise<string> {
 
-	const group = quid.mainGroup;
+	const group = quid.mainGroupId === null ? null : await Group.findByPk(quid.mainGroupId);
 	const groupToServer = options.groupToServer ?? ((group !== null && options.serverId !== undefined) ? await GroupToServer.findOne({
 		where: {
 			groupId: group.id,
@@ -25,7 +27,8 @@ export async function getDisplayname(
 			serverId: options.serverId,
 		},
 	}) : null);
-	const userTag = userToServer?.tag || quid.user.tag || '';
+	if (options.user === undefined) { options.user = await User.findByPk(quid.userId) ?? undefined; }
+	const userTag = userToServer?.tag || options.user?.tag || '';
 
 	const tag = userTag || groupTag;
 
@@ -39,7 +42,7 @@ export async function getDisplayname(
 }
 
 export function getDisplayspecies(
-	quid: Quid,
+	quid: Quid<true>,
 ): string {
 
 	return quid.displayedSpecies || quid.species;
