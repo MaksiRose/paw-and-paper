@@ -2,10 +2,10 @@ import { DiscordEvent } from '../typings/main';
 import { ActivityType } from 'discord.js';
 import { client } from '..';
 import { applicationCommands, applicationCommandsGuilds } from '../handlers/commands';
-import { execute as executeIntervalHandler } from '../handlers/interval';
-import { execute as executeVotesHandler } from '../handlers/votes';
-import { execute as executeServersHandler } from '../handlers/servers';
-import { execute as executeUsersHandler } from '../handlers/users';
+// import { execute as executeIntervalHandler } from '../handlers/interval';
+// import { execute as executeVotesHandler } from '../handlers/votes';
+// import { execute as executeServersHandler } from '../handlers/servers';
+// import { execute as executeUsersHandler } from '../handlers/users';
 
 export const event: DiscordEvent = {
 	name: 'ready',
@@ -24,9 +24,9 @@ export const event: DiscordEvent = {
 			await client.application.commands.set(applicationCommandsGuild, guildId);
 		}
 
-		executeIntervalHandler();
-		executeVotesHandler();
-		executeServersHandler();
-		executeUsersHandler();
+		// executeIntervalHandler();
+		// executeVotesHandler();
+		// executeServersHandler();
+		// executeUsersHandler();
 	},
 };

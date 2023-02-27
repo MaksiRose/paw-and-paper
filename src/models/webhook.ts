@@ -11,7 +11,7 @@ export default class Webhook extends Model<WebhookAttributes, WebhookAttributes>
 	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
 
-	@ForeignKey(() => Quid)
+	@ForeignKey(() => Quid<false>)
 	@Column({ type: DataType.STRING })
 	declare quidId: string;
 

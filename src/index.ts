@@ -7,7 +7,7 @@ import { ContextMenuCommand, SlashCommand, Votes } from './typings/handle';
 import { CommonPlantNames, MaterialNames, RarePlantNames, SpecialPlantNames, SpeciesNames, UncommonPlantNames } from './typings/data/general';
 import { MaterialInfo, PlantEdibilityType, PlantInfo, SpeciesDietType, SpeciesHabitatType, SpeciesInfo } from './typings/main';
 import { Octokit } from '@octokit/rest';
-import { execute as executeCommandHandler } from './handlers/commands';
+// import { execute as executeCommandHandler } from './handlers/commands';
 import { execute as executeEventHandler } from './handlers/events';
 import { execute as executeDatabaseHandler } from './handlers/database';
 const { token, bfd_token, bfd_authorization, top_token, top_authorization, dbl_token, dbl_authorization, github_token, database_password } = require('../config.json');
@@ -946,6 +946,6 @@ executeDatabaseHandler();
 executeEventHandler()
 	.then(function() {
 
-		executeCommandHandler();
+		// executeCommandHandler();
 		client.login(token);
 	});

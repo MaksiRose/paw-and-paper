@@ -1,7 +1,7 @@
-import { Collection } from 'discord.js';
-import { userModel } from '../../oldModels/userModel';
-import { ValueOf } from '../../utils/helperFunctions';
-import { OmitFirstArgAndChangeReturn } from '../main';
+// import { Collection } from 'discord.js';
+// import { userModel } from '../../oldModels/userModel';
+// import { ValueOf } from '../../utils/helperFunctions';
+// import { OmitFirstArgAndChangeReturn } from '../main';
 import { Inventory, ProxyLimitedList, ShopRole, SpeciesNames } from './general';
 
 export enum WayOfEarningType {
@@ -282,19 +282,19 @@ export interface Quid<Completed extends ''> extends Omit<QuidSchema<Completed>, 
 	pronounAndPlural: (pronounNumber: 0 | 1 | 2 | 3 | 4 | 5, string1: string, string2?: string) => string;
 }
 
-export interface UserData<QuidExists extends undefined, QuidCompleted extends ''> extends Omit<UserSchema, 'quids' | 'currentQuid' | 'servers' | 'tag' | 'settings' | 'userId' | 'groups'> {
-	tag: Omit<UserSchema['tag'], 'servers'> & {
-		server: UserSchema['tag']['servers'][string] | undefined;
-	},
-	quid: Quid<QuidCompleted> | QuidExists,
-	serverInfo: ValueOf<UserSchema['servers']> | undefined,
-	quids: Collection<keyof UserSchema['quids'], ValueOf<UserSchema['quids']>>,
-	servers: Collection<keyof UserSchema['servers'], ValueOf<UserSchema['servers']>>,
-	settings: Omit<UserSchema['settings'], 'proxy'> & {
-		proxy: Omit<UserSchema['settings']['proxy'], 'servers'> & {
-			server: UserSchema['settings']['proxy']['servers'][string] | undefined;
-		};
-	};
-	groups: Collection<keyof UserSchema['groups'], ValueOf<UserSchema['groups']>>,
-	update: OmitFirstArgAndChangeReturn<typeof userModel['findOneAndUpdate'], void>;
-}
+// export interface UserData<QuidExists extends undefined, QuidCompleted extends ''> extends Omit<UserSchema, 'quids' | 'currentQuid' | 'servers' | 'tag' | 'settings' | 'userId' | 'groups'> {
+// 	tag: Omit<UserSchema['tag'], 'servers'> & {
+// 		server: UserSchema['tag']['servers'][string] | undefined;
+// 	},
+// 	quid: Quid<QuidCompleted> | QuidExists,
+// 	serverInfo: ValueOf<UserSchema['servers']> | undefined,
+// 	quids: Collection<keyof UserSchema['quids'], ValueOf<UserSchema['quids']>>,
+// 	servers: Collection<keyof UserSchema['servers'], ValueOf<UserSchema['servers']>>,
+// 	settings: Omit<UserSchema['settings'], 'proxy'> & {
+// 		proxy: Omit<UserSchema['settings']['proxy'], 'servers'> & {
+// 			server: UserSchema['settings']['proxy']['servers'][string] | undefined;
+// 		};
+// 	};
+// 	groups: Collection<keyof UserSchema['groups'], ValueOf<UserSchema['groups']>>,
+// 	update: OmitFirstArgAndChangeReturn<typeof userModel['findOneAndUpdate'], void>;
+// }

@@ -10,13 +10,13 @@ import UserToServer from './userToServer';
 import Webhook from './webhook';
 const { default_color } = require('../../config.json');
 
-interface QuidAttributes {
+interface QuidAttributes<Completed extends boolean = boolean> {
 	id: string;
 	userId: string;
 	mainGroupId: string | null;
-	name: string;
+	name: string
 	nickname: string;
-	species: string;
+	species: Completed extends true ? string : string | null;
 	displayedSpecies: string;
 	description: string;
 	avatarURL: string;
@@ -24,13 +24,13 @@ interface QuidAttributes {
 	noPronouns_en: boolean;
 	proxy_startsWith: string;
 	proxy_endsWith: string;
-	color: string;
+	color: `#${number}`;
 }
 
-type QuidCreationAttributes = Optional<QuidAttributes, 'mainGroupId' | 'nickname' | 'species' | 'displayedSpecies' | 'description' | 'avatarURL' | 'pronouns_en' | 'noPronouns_en' | 'proxy_startsWith' | 'proxy_endsWith' | 'color'>
+type QuidCreationAttributes<Completed extends boolean = boolean> = Optional<QuidAttributes<Completed>, 'mainGroupId' | 'nickname' | 'species' | 'displayedSpecies' | 'description' | 'avatarURL' | 'pronouns_en' | 'noPronouns_en' | 'proxy_startsWith' | 'proxy_endsWith' | 'color'>
 
 @Table
-export default class Quid extends Model<QuidAttributes, QuidCreationAttributes> {
+export default class Quid<Completed extends boolean = boolean> extends Model<QuidAttributes<Completed>, QuidCreationAttributes<Completed>> {
 	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
 
@@ -42,7 +42,7 @@ export default class Quid extends Model<QuidAttributes, QuidCreationAttributes> 
 	declare user: User;
 
 	@ForeignKey(() => Group)
-	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
+	@Column({ type: DataType.STRING, allowNull: true })
 	declare mainGroupId: string | null;
 
 	@BelongsTo(() => Group, { foreignKey: 'mainGroupId' })
@@ -54,8 +54,8 @@ export default class Quid extends Model<QuidAttributes, QuidCreationAttributes> 
 	@Column({ type: DataType.STRING, defaultValue: '' })
 	declare nickname: string;
 
-	@Column({ type: DataType.STRING, defaultValue: '' })
-	declare species: string;
+	@Column({ type: DataType.STRING, allowNull: true, defaultValue: null })
+	declare species: Completed extends true ? string : string | null;
 
 	@Column({ type: DataType.STRING, defaultValue: '' })
 	declare displayedSpecies: string;
@@ -79,7 +79,7 @@ export default class Quid extends Model<QuidAttributes, QuidCreationAttributes> 
 	declare proxy_endsWith: string;
 
 	@Column({ type: DataType.STRING, defaultValue: default_color })
-	declare color: string;
+	declare color: `#${number}`;
 
 	@HasMany(() => Friendship, { foreignKey: 'quidId_1' })
 	declare friendships_1: Friendship[];
@@ -92,6 +92,10 @@ export default class Quid extends Model<QuidAttributes, QuidCreationAttributes> 
 
 	@BelongsToMany(() => Server, () => QuidToServer)
 	declare servers: Server[];
+
+	// Not sure if this is legal
+	@HasMany(() => QuidToServer, { foreignKey: 'quidId' })
+	declare quidToServers: QuidToServer[];
 
 	@HasOne(() => User, { foreignKey: 'proxy_lastGlobalProxiedQuidId', onDelete: 'SET NULL' })
 	declare lastGlobalProxyOf?: User;

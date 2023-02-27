@@ -10,21 +10,21 @@ interface UserToServerAttributes {
 	serverId: string;
 	lastProxiedQuidId: string | null;
 	activeQuidId: string | null;
-autoproxy_setToWhitelist: boolean | null;
-autoproxy_whitelist: string[];
-autoproxy_blacklist: string[];
-stickymode_setTo: boolean | null;
-tag: string;
-lastInteraction_timestamp: number | null;
-lastInteraction_channelId: string | null;
-resting_messageId: string | null;
-resting_channelId: string | null;
-componentDisabling_channelId: string | null;
-componentDisabling_messageId: string | null;
-hasCooldown: boolean;
+	autoproxy_setToWhitelist: boolean | null;
+	autoproxy_whitelist: string[];
+	autoproxy_blacklist: string[];
+	stickymode_setTo: boolean | null;
+	tag: string;
+	lastInteraction_timestamp: number | null;
+	lastInteraction_channelId: string | null;
+	resting_messageId: string | null;
+	resting_channelId: string | null;
+	componentDisabling_channelId: string | null;
+	componentDisabling_messageId: string | null;
+	hasCooldown: boolean;
 }
 
-type UserToServerCreationAttributes = Optional<UserToServerAttributes, 'id' | 'autoproxy_setToWhitelist' | 'autoproxy_whitelist' | 'autoproxy_blacklist' | 'stickymode_setTo' | 'tag' | 'lastInteraction_timestamp' | 'lastInteraction_channelId' | 'resting_messageId' | 'resting_channelId' | 'componentDisabling_channelId' | 'componentDisabling_messageId' | 'hasCooldown'>
+type UserToServerCreationAttributes = Optional<UserToServerAttributes, 'id' | 'autoproxy_setToWhitelist' | 'autoproxy_whitelist' | 'autoproxy_blacklist' | 'stickymode_setTo' | 'tag' | 'lastInteraction_timestamp' | 'lastInteraction_channelId' | 'resting_messageId' | 'resting_channelId' | 'componentDisabling_channelId' | 'componentDisabling_messageId' | 'hasCooldown'>;
 
 @Table
 export default class UserToServer extends Model<UserToServerAttributes, UserToServerCreationAttributes> {
@@ -39,14 +39,14 @@ export default class UserToServer extends Model<UserToServerAttributes, UserToSe
 	@Column({ type: DataType.STRING })
 	declare serverId: string;
 
-	@ForeignKey(() => Quid)
+	@ForeignKey(() => Quid<false>)
 	@Column({ type: DataType.STRING, allowNull: true })
 	declare lastProxiedQuidId: string | null;
 
 	@BelongsTo(() => Quid, { foreignKey: 'lastProxiedQuidId' })
 	declare lastProxiedQuid: Quid | null;
 
-	@ForeignKey(() => Quid)
+	@ForeignKey(() => Quid<false>)
 	@Column({ type: DataType.STRING, allowNull: true })
 	declare activeQuidId: string | null;
 

@@ -113,7 +113,11 @@ export default class Server extends Model<ServerAttributes, ServerCreationAttrib
 	declare groups: Group[];
 
 	@BelongsToMany(() => Quid, () => QuidToServer)
-	declare servers: Quid[];
+	declare quids: Quid[];
+
+	// Not sure if this is legal
+	@HasMany(() => QuidToServer, { foreignKey: 'serverId' })
+	declare quidToServers: QuidToServer[];
 
 	@BelongsToMany(() => DiscordUser, () => ServerToDiscordUser)
 	declare discordUsers: DiscordUser[];

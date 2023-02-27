@@ -144,7 +144,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 			nextRedeemableDiscordsVote: voteCache[`id_${user.userId[0]}`]?.nextRedeemableDiscordsVote ?? 0,
 			lastRecordedDblVote: voteCache[`id_${user.userId[0]}`]?.lastRecordedDblVote ?? 0,
 			nextRedeemableDblVote: voteCache[`id_${user.userId[0]}`]?.nextRedeemableDblVote ?? 0,
-		});
+		}, { include: [Quid] });
 
 		for (const [discordUserId, server] of Object.entries(user.userIds)) {
 
@@ -202,7 +202,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 				mainGroupId: quid.mainGroup,
 				name: quid.name,
 				nickname: quid.nickname.global,
-				species: quid.species,
+				species: quid.species === '' ? null : quid.species,
 				displayedSpecies: quid.displayedSpecies,
 				description: quid.description,
 				avatarURL: quid.avatarURL,

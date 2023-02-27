@@ -1,4 +1,4 @@
-import { BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
+import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
 import { CurrentRegionType } from '../typings/data/user';
 import TemporaryStatIncrease from './temporaryStatIncrease';
 import ShopRole from './shopRole';
@@ -54,13 +54,21 @@ export default class QuidToServer extends Model<QuidToServerAttributes, QuidToSe
 	@Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true })
 	declare id: number;
 
-	@ForeignKey(() => Quid)
+	@ForeignKey(() => Quid<false>)
 	@Column({ type: DataType.STRING })
 	declare quidId: string;
+
+	// Not sure if this is legal
+	@BelongsTo(() => Quid, { foreignKey: 'quidId' })
+	declare quid: Quid;
 
 	@ForeignKey(() => Server)
 	@Column({ type: DataType.STRING })
 	declare serverId: string;
+
+	// Not sure if this works
+	@BelongsTo(() => Server, { foreignKey: 'serverId' })
+	declare server: Server;
 
 	@Column({ type: DataType.STRING, defaultValue: '' })
 	declare nickname: string;

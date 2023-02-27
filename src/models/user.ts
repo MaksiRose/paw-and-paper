@@ -69,7 +69,7 @@ export default class User extends Model<UserAttributes, UserCreationAttributes> 
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	declare proxy_globalStickymode: boolean;
 
-	@ForeignKey(() => Quid)
+	@ForeignKey(() => Quid<false>)
 	@Column({ type: DataType.STRING, allowNull: true })
 	declare proxy_lastGlobalProxiedQuidId: string | null;
 

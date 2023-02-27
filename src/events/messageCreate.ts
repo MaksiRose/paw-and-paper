@@ -81,7 +81,7 @@ export async function checkForProxy(
 		&& server.proxy_channelLimits.blacklist.includes(message.channelId)
 	) || (
 		server.proxy_channelLimits.setToWhitelist === true
-			&& server.proxy_channelLimits.whitelist.includes(message.channelId)
+			&& !server.proxy_channelLimits.whitelist.includes(message.channelId)
 	);
 
 	/* Checking if the user has autoproxy enabled in the current channel, and if so, it is adding the prefix to the message. */
@@ -95,7 +95,7 @@ export async function checkForProxy(
 		&& userToServer.autoproxy_whitelist.includes(message.channelId)
 	) || (
 		userToServer?.autoproxy_setToWhitelist === false
-			&& userToServer.autoproxy_blacklist.includes(message.channelId)
+			&& !userToServer.autoproxy_blacklist.includes(message.channelId)
 	);
 
 	const stickymodeIsToggledLocally = userToServer?.stickymode_setTo === true;

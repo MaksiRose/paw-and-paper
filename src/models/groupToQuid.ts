@@ -20,7 +20,7 @@ export default class GroupToQuid extends Model<GroupToQuidAttributes, GroupToQui
 	@Column({ type: DataType.STRING })
 	declare groupId: string;
 
-	@ForeignKey(() => Quid)
+	@ForeignKey(() => Quid<false>)
 	@Column({ type: DataType.STRING })
 	declare quidId: string;
 }

@@ -1,7 +1,7 @@
 import { ComponentType, ButtonStyle, APIActionRowComponent, ActionRowBuilder, ActionRow, MessageActionRowComponent, APIMessageActionRowComponent, MessageActionRowComponentBuilder, ButtonBuilder, ButtonComponent, APIButtonComponent, StringSelectMenuBuilder, SelectMenuComponent, APISelectMenuComponent, isJSONEncodable, SnowflakeUtil, RepliableInteraction, RoleSelectMenuBuilder, UserSelectMenuBuilder, ChannelSelectMenuBuilder, MentionableSelectMenuBuilder } from 'discord.js';
 import { client } from '..';
-import { UserData } from '../typings/data/user';
-import { userDataServersObject } from './helperFunctions';
+import User from '../models/user';
+import UserToServer from '../models/userToServer';
 
 export const componentDisablingInteractions = new Map<string, RepliableInteraction>();
 
@@ -11,70 +11,61 @@ export const componentDisablingInteractions = new Map<string, RepliableInteracti
  * @param {string} guildId - The ID of the guild that the command disabling info is being deleted from.
  */
 export function deleteCommandDisablingInfo(
-	userData: UserData<undefined, ''>,
-	guildId: string,
+	userToServer: UserToServer,
 ): void {
 
-	componentDisablingInteractions.delete(userData._id + guildId);
-	userData.update(
-		(u) => {
-			u.servers[guildId] = {
-				...userDataServersObject(u, guildId),
-				componentDisablingChannelId: null,
-				componentDisablingMessageId: null,
-				componentDisablingToken: null,
-			};
-		},
-	);
+	componentDisablingInteractions.delete(userToServer.userId + userToServer.serverId);
+	userToServer.update({
+		componentDisabling_channelId: null,
+		componentDisabling_messageId: null,
+	});
 }
 
 /**
  * It disables the command-component by editing the bot's reply to the user's message
- * @param userData - The user's database entry.
+ * @param user - The user's database entry.
  * @returns A promise that resolves when the command-component has been disabled.
  */
 export async function disableCommandComponent(
-	userData: UserData<undefined, ''>,
+	user: User,
+	userToServer: UserToServer,
 ): Promise<void> {
 
-	const { serverInfo } = userData;
-	if (serverInfo === undefined) { return; }
-
-	const interaction = componentDisablingInteractions.get(userData._id + userData.quid?.profile?.serverId);
+	const interaction = componentDisablingInteractions.get(user.id + userToServer.serverId);
 	const fifteenMinutesInMs = 900_000;
-	if (interaction !== undefined && serverInfo.componentDisablingMessageId !== null && client.isReady() && SnowflakeUtil.deconstruct(interaction.id).timestamp > Date.now() - fifteenMinutesInMs) {
+	if (interaction !== undefined && userToServer.componentDisabling_messageId !== null && client.isReady() && SnowflakeUtil.deconstruct(interaction.id).timestamp > Date.now() - fifteenMinutesInMs) {
 
-		const botReply = await interaction.webhook.fetchMessage(serverInfo.componentDisablingMessageId)
+		const botReply = await interaction.webhook.fetchMessage(userToServer.componentDisabling_messageId)
 			.catch(error => {
-				componentDisablingInteractions.delete(userData._id + userData.quid?.profile?.serverId);
+				componentDisablingInteractions.delete(user.id + userToServer.serverId);
 				console.error(error);
 				return undefined;
 			});
 		if (botReply === undefined) { return; }
 
-		await interaction.webhook.editMessage(serverInfo.componentDisablingMessageId, {
+		await interaction.webhook.editMessage(userToServer.componentDisabling_messageId, {
 			components: disableAllComponents(botReply.components),
 		}).catch(error => {
-			componentDisablingInteractions.delete(userData._id + userData.quid?.profile?.serverId);
+			componentDisablingInteractions.delete(user.id + userToServer.serverId);
 			console.error(error);
 		});
 
-		deleteCommandDisablingInfo(userData, botReply.guildId || 'DMs');
+		deleteCommandDisablingInfo(userToServer);
 	}
-	else if (serverInfo.componentDisablingChannelId !== null && serverInfo.componentDisablingMessageId !== null) {
+	else if (userToServer.componentDisabling_channelId !== null && userToServer.componentDisabling_messageId !== null) {
 
-		const channel = await client.channels.fetch(serverInfo.componentDisablingChannelId).catch(() => null);
+		const channel = await client.channels.fetch(userToServer.componentDisabling_channelId).catch(() => null);
 		if (!channel || !channel.isTextBased()) {
 
-			console.error(new TypeError(`Unable to disable command-component because the channel with ID ${serverInfo.componentDisablingChannelId} could not be fetched or is not text based`));
+			console.error(new TypeError(`Unable to disable command-component because the channel with ID ${userToServer.componentDisabling_channelId} could not be fetched or is not text based`));
 			return;
 		}
 
-		const botReply = await channel.messages.fetch(serverInfo.componentDisablingMessageId).catch(() => null);
+		const botReply = await channel.messages.fetch(userToServer.componentDisabling_messageId).catch(() => null);
 		if (!botReply) {
 
-			console.error(new TypeError(`Unable to disable command-component because the message with ID ${serverInfo.componentDisablingMessageId} could not be fetched`));
-			deleteCommandDisablingInfo(userData, channel.isDMBased() ? 'DMs' : channel.guildId);
+			console.error(new TypeError(`Unable to disable command-component because the message with ID ${userToServer.componentDisabling_messageId} could not be fetched`));
+			deleteCommandDisablingInfo(userToServer);
 			return;
 		}
 
@@ -82,7 +73,7 @@ export async function disableCommandComponent(
 			components: disableAllComponents(botReply.components),
 		});
 
-		deleteCommandDisablingInfo(userData, botReply.guildId || 'DMs');
+		deleteCommandDisablingInfo(userToServer);
 	}
 }
 
@@ -94,23 +85,17 @@ export async function disableCommandComponent(
  * @param {string} messageId - The ID of the message to disable the components of.
  */
 export function saveCommandDisablingInfo(
-	userData: UserData<undefined, ''>,
-	guildId: string,
+	userToServer: UserToServer,
+	interaction: RepliableInteraction,
 	channelId: string,
 	messageId: string,
-	interaction: RepliableInteraction,
 ): void {
 
-	componentDisablingInteractions.set(userData._id + guildId, interaction);
-	userData.update(
-		(u) => {
-			u.servers[guildId] = {
-				...userDataServersObject(u, guildId),
-				componentDisablingChannelId: channelId,
-				componentDisablingMessageId: messageId,
-			};
-		},
-	);
+	componentDisablingInteractions.set(userToServer.userId + userToServer.serverId, interaction);
+	userToServer.update({
+		componentDisabling_channelId: channelId,
+		componentDisabling_messageId: messageId,
+	});
 }
 
 /**

@@ -17,14 +17,14 @@ export default class Friendship extends Model<FriendshipAttributes, FriendshipCr
 	@Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true })
 	declare id: number;
 
-	@ForeignKey(() => Quid)
+	@ForeignKey(() => Quid<false>)
 	@Column({ type: DataType.STRING })
 	declare quidId_1: string;
 
 	@BelongsTo(() => Quid, { foreignKey: 'quidId_1' })
 	declare quid_1: Quid;
 
-	@ForeignKey(() => Quid)
+	@ForeignKey(() => Quid<false>)
 	@Column({ type: DataType.STRING })
 	declare quidId_2: string;
 
