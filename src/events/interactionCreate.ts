@@ -16,7 +16,7 @@ import ServerToDiscordUser from '../models/serverToDiscordUser';
 import QuidToServer from '../models/quidToServer';
 import { getDisplayname, getDisplayspecies, pronoun, pronounAndPlural } from '../utils/getQuidInfo';
 import User from '../models/user';
-import ErrorStack from '../models/errorStack';
+import ErrorInfo from '../models/errorInfo';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
@@ -56,7 +56,7 @@ export const event: DiscordEvent = {
 				userToServer = await userToServer.update({
 					lastInteraction_timestamp: interaction.createdTimestamp,
 					lastInteraction_channelId: interaction.channelId,
-				});
+				}, { logging: false });
 
 				const serverActiveUsers = serverActiveUsersMap.get(userToServer.serverId);
 				if (!serverActiveUsers) { serverActiveUsersMap.set(userToServer.serverId, [interaction.user.id]); }
@@ -65,13 +65,13 @@ export const event: DiscordEvent = {
 
 			/* It's updating the info for the discord user in the server */
 			const serverToDiscordUser = (discordUser && server) ? await ServerToDiscordUser.findOrCreate({ where: { discordUserId: discordUser.id, serverId: server.id } })
-				.then(([row]) => row.update({ isMember: true, lastUpdatedTimestamp: Date.now() })) : undefined;
+				.then(([row]) => row.update({ isMember: true, lastUpdatedTimestamp: Date.now() }, { logging: false })) : undefined;
 
 			/* It's updating the info for the quid in the server, if it exists */
 			const quidToServer = userToServer?.activeQuidId ? await QuidToServer.findOrCreate({
 				where: { quidId: userToServer.activeQuidId, serverId: userToServer.serverId },
 			})
-				.then(([row]) => row.update({ lastActiveTimestamp: Date.now() })) : undefined;
+				.then(([row]) => row.update({ lastActiveTimestamp: Date.now() }, { logging: false })) : undefined;
 
 			if (interaction.isRepliable() && interaction.inRawGuild()) {
 
@@ -215,10 +215,10 @@ export const event: DiscordEvent = {
 						}, 'update', interaction.message.id);
 
 						const errorId = interaction.customId.split('_')[2];
-						const errorStack = await ErrorStack.findByPk(errorId);
-						const description = errorStack ? `\`\`\`\n${errorStack.stack.substring(0, 4090)}\n\`\`\`` : null;
+						const errorInfo = await ErrorInfo.findByPk(errorId);
+						const description = errorInfo ? `Stack:\n\`\`\`\n${errorInfo.stack}\n\`\`\`\nInteraction info:\`\`\`json\n${JSON.stringify(errorInfo.interactionInfo, null, '\t')}\n\`\`\``.substring(0, 4096) : null;
 
-						if (!errorId || !errorStack || !description) {
+						if (!errorId || !errorInfo || !description) {
 
 							// This should always be a followUp to the updated error message
 							await respond(interaction, {
@@ -230,8 +230,18 @@ export const event: DiscordEvent = {
 							return;
 						}
 
+						if (errorInfo.isReported) {
+
+							// This should always be a followUp to the updated error message
+							await respond(interaction, {
+								content: 'Thank you for attempting to report this error. Fortunately, it already got reported by another user.\nIf you still have questions, you can join our support server (Link is in the help command page 5), or use the ticket command.\nIf you want to know when the bot gets updated, you can again join our support server, or ask an admin of this server to enable getting updates via the server-settings command',
+								ephemeral: true,
+							});
+							return;
+						}
+
 						await createNewTicket(interaction, `Error ${errorId}`, description, 'bug', null, errorId);
-						await errorStack.update({ isReported: true });
+						await errorInfo.update({ isReported: true });
 						return;
 					}
 				}
@@ -253,7 +263,7 @@ export const event: DiscordEvent = {
 				}
 
 				/* It's sending the autocomplete message. */
-				await command.sendMessageComponentResponse(interaction, { });
+				await command.sendMessageComponentResponse(interaction, { user, userToServer, quidToServer });
 				return;
 			}
 		}

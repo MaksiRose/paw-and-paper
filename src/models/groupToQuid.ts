@@ -1,5 +1,5 @@
 import { Optional } from 'sequelize';
-import { Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import Group from './group';
 import Quid from './quid';
 
@@ -20,7 +20,13 @@ export default class GroupToQuid extends Model<GroupToQuidAttributes, GroupToQui
 	@Column({ type: DataType.STRING })
 	declare groupId: string;
 
+	@BelongsTo(() => Group, { foreignKey: 'groupId' })
+	declare group: Group;
+
 	@ForeignKey(() => Quid<false>)
 	@Column({ type: DataType.STRING })
 	declare quidId: string;
+
+	@BelongsTo(() => Quid, { foreignKey: 'quidId' })
+	declare quid: Quid;
 }

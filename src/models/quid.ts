@@ -97,6 +97,9 @@ export default class Quid<Completed extends boolean = boolean> extends Model<Qui
 	@HasMany(() => QuidToServer, { foreignKey: 'quidId' })
 	declare quidToServers: QuidToServer[];
 
+	@HasMany(() => GroupToQuid, { foreignKey: 'quidId' })
+	declare groupToQuids: GroupToQuid[];
+
 	@HasOne(() => User, { foreignKey: 'proxy_lastGlobalProxiedQuidId', onDelete: 'SET NULL' })
 	declare lastGlobalProxyOf?: User;
 

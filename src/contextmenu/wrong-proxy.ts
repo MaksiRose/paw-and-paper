@@ -1,11 +1,12 @@
 import { ActionRowBuilder, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData } from 'discord.js';
-import { readFileSync, writeFileSync } from 'fs';
-import { userModel, getUserData } from '../oldModels/userModel';
-import { WebhookMessages } from '../typings/data/general';
-import { UserData } from '../typings/data/user';
+import DiscordUser from '../models/discordUser';
+import Quid from '../models/quid';
+import User from '../models/user';
+import Webhook from '../models/webhook';
 import { ContextMenuCommand } from '../typings/handle';
 import { hasName, isInGuild } from '../utils/checkUserState';
 import { disableAllComponents } from '../utils/componentDisabling';
+import { getDisplayname } from '../utils/getQuidInfo';
 import { getArrayElement, respond } from '../utils/helperFunctions';
 import { canManageWebhooks, missingPermissions } from '../utils/permissionHandler';
 
@@ -20,16 +21,21 @@ export const command: ContextMenuCommand = {
 		/* This shouldn't happen as dm_permission is false. */
 		if (!isInGuild(interaction)) { return; }
 
-		/* This gets the webhookCache and userData */
-		const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8')) as WebhookMessages;
-		const _userData = (() => {
-			try { return userModel.findOne(u => Object.keys(u.userIds).includes(webhookCache[interaction.targetId]?.split('_')[0] || '')); }
-			catch { return null; }
-		})();
-		const userData = _userData === null ? null : getUserData(_userData, interaction.guildId, undefined);
+		/* This gets the webhookData and discordUsers */
+		const webhookData = await Webhook.findByPk(interaction.targetId, {
+			attributes: [], include: [{
+				model: Quid, as: 'quid', attributes: ['userId'], include: [{
+					model: User, as: 'user', attributes: ['id'], include: [{
+						model: DiscordUser, as: 'discordUsers', attributes: ['id'],
+					}],
+				}],
+			}],
+		});
+		const discordUsers = webhookData?.quid?.user?.discordUsers ?? [];
+		const user = webhookData?.quid?.user;
 
-		/* This is checking if the user who is trying to edit the message is the same user who sent the message. */
-		if (userData === null || !Object.keys(userData.userIds).includes(interaction.user.id)) {
+		/* This is checking if the user who is trying to delete the message is the same user who sent the message. */
+		if (!user || !discordUsers.some(du => du.id === interaction.user.id)) {
 
 			await interaction
 				.reply({
@@ -39,7 +45,8 @@ export const command: ContextMenuCommand = {
 			return;
 		}
 
-		const quidMenu = getQuidsPage(userData, 0, interaction.targetId);
+		const quids = await Quid.findAll({ where: { userId: user.id } });
+		const quidMenu = getQuidsPage(quids, 0, interaction.targetId);
 		// This is always a reply
 		await respond(interaction, {
 			content: 'Select a quid that you want the proxied message to be from instead.\n⚠️ CAUTION! This does *not edit* the message, but deletes it and sends a new one with the new avatar and username, but same content. It is therefore not adviced to use this feature on older messages.',
@@ -47,7 +54,7 @@ export const command: ContextMenuCommand = {
 			ephemeral: true,
 		});
 	},
-	async sendMessageComponentResponse(interaction, userData) {
+	async sendMessageComponentResponse(interaction, { user, userToServer, quidToServer }) {
 
 		if (!interaction.isStringSelectMenu()) { return; }
 		if (await missingPermissions(interaction, [
@@ -56,18 +63,20 @@ export const command: ContextMenuCommand = {
 		]) === true) { return; }
 
 		if (!interaction.inCachedGuild()) { throw new Error('interaction is not in cached guild'); }
-		if (userData === null) { throw new TypeError('userData is null'); }
+		if (user === undefined) { throw new TypeError('user is undefined'); }
 		const selectOptionId = getArrayElement(interaction.values, 0);
 		const targetMessageId = getArrayElement(interaction.customId.split('_'), 2).replace('@', '');
 
 		/* Checking if the user has clicked on the "Show more accounts" button, and if they have, it will increase the page number by 1, and if the page number is greater than the total number of pages, it will set the page number to 0. Then, it will edit the bot reply to show the next page of accounts. */
 		if (selectOptionId.includes('nextpage')) {
 
+			const quids = await Quid.findAll({ where: { userId: user.id } });
+
 			/* Getting the quidsPage from the value Id, incrementing it by one or setting it to zero if the page number is bigger than the total amount of pages. */
 			let quidsPage = Number(selectOptionId.split('_')[2]) + 1;
-			if (quidsPage >= Math.ceil((Object.keys(userData.quids).length + 1) / 24)) { quidsPage = 0; }
+			if (quidsPage >= Math.ceil((quids.length + 1) / 24)) { quidsPage = 0; }
 
-			const quidMenu = getQuidsPage(userData, quidsPage, targetMessageId);
+			const quidMenu = getQuidsPage(quids, quidsPage, targetMessageId);
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
 				components: quidMenu.options.length > 0 ? [new ActionRowBuilder<StringSelectMenuBuilder>().setComponents(quidMenu)] : [],
@@ -79,7 +88,8 @@ export const command: ContextMenuCommand = {
 
 			/* Getting the quid form the value Id */
 			const quidId = getArrayElement(selectOptionId.split('_'), 2);
-			if (!hasName(userData) || userData.quid._id !== quidId) { return; }
+			const quid = await Quid.findByPk(quidId);
+			if (!hasName(quid)) { return; }
 
 			const channel = interaction.channel;
 
@@ -92,24 +102,20 @@ export const command: ContextMenuCommand = {
 			const previousMessage = await channel.messages.fetch(targetMessageId);
 			if (previousMessage === undefined) { throw new TypeError('previousMessage is undefined'); }
 
-			/* This gets the webhookCache and userData */
-			const webhookCache = JSON.parse(readFileSync('./database/webhookCache.json', 'utf-8')) as WebhookMessages;
-
 			const botMessage = await webhook
 				.send({
-					username: userData.quid.getDisplayname(),
-					avatarURL: userData.quid.avatarURL,
+					username: await getDisplayname(quid, { serverId: interaction.guildId, userToServer, quidToServer, user }),
+					avatarURL: quid.avatarURL,
 					content: previousMessage.content || undefined,
 					files: previousMessage.attachments.toJSON(),
 					embeds: previousMessage.embeds,
 					threadId: channel.isThread() ? channel.id : undefined,
 				});
-
-			webhookCache[botMessage.id] = `${interaction.user.id}_${userData.quid._id}`;
-			writeFileSync('./database/webhookCache.json', JSON.stringify(webhookCache, null, '\t'));
+			await Webhook.create({ id: botMessage.id, quidId: quid.id });
 
 			/* Deleting the message. */
 			await webhook.deleteMessage(targetMessageId, channel.isThread() ? channel.id : undefined);
+			await Webhook.destroy({ where: { id: previousMessage.id } });
 
 			// This is always an update to the message with the select menu
 			await respond(interaction, {
@@ -128,12 +134,12 @@ export const command: ContextMenuCommand = {
  * @returns A StringSelectMenuBuilder object
  */
 function getQuidsPage(
-	userData: UserData<undefined, ''>,
+	quids: Quid[],
 	quidsPage: number,
 	targetMessageId: string,
 ): StringSelectMenuBuilder {
 
-	let quidMenuOptions: RestOrArray<SelectMenuComponentOptionData> = userData.quids.map(quid => ({ label: quid.name, value: `wrongproxy_replace_${quid._id}` }));
+	let quidMenuOptions: RestOrArray<SelectMenuComponentOptionData> = quids.map(quid => ({ label: quid.name, value: `wrongproxy_replace_${quid.id}` }));
 
 	if (quidMenuOptions.length > 25) {
 

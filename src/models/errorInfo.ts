@@ -1,22 +1,26 @@
 import { Optional } from 'sequelize';
 import { Column, DataType, Model, Table } from 'sequelize-typescript';
 
-interface ErrorStackAttributes {
+interface ErrorInfoAttributes {
 	id: string;
 	stack: string;
+	interactionInfo: Record<string, any>;
 	isReported: boolean;
 	version: string;
 }
 
-type ErrorStackOptionalAttributes = Optional<ErrorStackAttributes, 'isReported'>
+type ErrorInfoOptionalAttributes = Optional<ErrorInfoAttributes, 'isReported'>
 
 @Table
-export default class ErrorStack extends Model<ErrorStackAttributes, ErrorStackOptionalAttributes> {
+export default class ErrorInfo extends Model<ErrorInfoAttributes, ErrorInfoOptionalAttributes> {
 	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
 
 	@Column({ type: DataType.TEXT })
 	declare stack: string;
+
+	@Column({ type: DataType.JSON })
+	declare interactionInfo: Record<string, any>;
 
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	declare isReported: boolean;

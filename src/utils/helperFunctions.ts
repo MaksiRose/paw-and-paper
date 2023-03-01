@@ -1,7 +1,7 @@
 import { generateId } from 'crystalid';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, RepliableInteraction, WebhookEditMessageOptions, Snowflake, InteractionResponse } from 'discord.js';
 import DiscordUser from '../models/discordUser';
-import ErrorStack from '../models/errorStack';
+import ErrorInfo from '../models/errorInfo';
 import Server from '../models/server';
 import User from '../models/user';
 import UserToServer from '../models/userToServer';
@@ -198,7 +198,7 @@ export async function sendErrorMessage(
 		console.log(`\x1b[32m${interaction.user.tag} (${interaction.user.id})\x1b[0m unsuccessfully tried to submit the modal \x1b[31m${interaction.customId} \x1b[0min \x1b[32m${interaction.guild?.name || 'DMs'} \x1b[0mat \x1b[3m${new Date().toLocaleString()} \x1b[0m`);
 	}
 
-	const jsonInteraction = {
+	const interactionInfo = {
 		id: interaction.id,
 		application_id: interaction.applicationId,
 		type: interaction.type,
@@ -246,22 +246,27 @@ export async function sendErrorMessage(
 		console.error('Error 400 - An error is not being sent to the user:', error);
 		return;
 	}
-	console.error(error, jsonInteraction);
+	console.error(error, interactionInfo);
 
 	let errorId: string | undefined = undefined;
+	let errorIsReported = false;
 
 	if (!isECONNRESET) {
 
 		try {
 
-			const stack = `${(isObject(error) && error.stack) || JSON.stringify(error, null, '\t')}\n${JSON.stringify(jsonInteraction, null, '\t')}`;
-			const errorStack = await ErrorStack.findOne({ where: { stack } });
+			const stack = `${(isObject(error) && error.stack) || JSON.stringify(error, null, '\t')}`;
+			const errorInfo = await ErrorInfo.findOne({ where: { stack } });
 
-			if (errorStack) { errorId = errorStack.id; }
+			if (errorInfo) {
+
+				errorId = errorInfo.id;
+				if (errorInfo.isReported) { errorIsReported = true; }
+			}
 			else {
 
 				errorId = generateId();
-				await ErrorStack.create({ id: errorId, stack, version });
+				await ErrorInfo.create({ id: errorId, stack, interactionInfo, version });
 			}
 		}
 		catch (e) {
@@ -276,8 +281,8 @@ export async function sendErrorMessage(
 			.setColor(error_color)
 			.setTitle(isECONNRESET ? 'The connection was abruptly closed. Apologies for the inconvenience.' : 'There was an unexpected error executing this command:')
 			.setDescription(isECONNRESET ? null : `\`\`\`\n${String(error).substring(0, 4090)}\n\`\`\``)
-			.setFooter(isECONNRESET ? null : { text: 'If this is the first time you encountered the issue, please report it using the button below. After that, only report it again if the issue was supposed to be fixed after an update came out. To receive updates, ask a server administrator to do the "getupdates" command.' })],
-		components: isECONNRESET ? [] : [new ActionRowBuilder<ButtonBuilder>()
+			.setFooter(isECONNRESET ? null : { text: errorIsReported ? 'This error already got reported and the devs are working hard to resolve it.\nIf you want to know when the bot gets updated, you can join our support server (Link is in the help command page 5), or ask an admin of this server to enable getting updates via the server-settings command.' : 'Please report this error using the button below to help us improving the bot and keeping it bug-free. We might get in touch with you for some context if we have trouble reproducing the bug.' })],
+		components: (isECONNRESET || errorIsReported) ? [] : [new ActionRowBuilder<ButtonBuilder>()
 			.setComponents([new ButtonBuilder()
 				.setCustomId(`report_@${interaction.user.id}${errorId ? `_${errorId}` : ''}`)
 				.setLabel('Report')

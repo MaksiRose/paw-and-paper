@@ -38,4 +38,7 @@ export default class Group extends Model<GroupAttributes, GroupAttributes> {
 
 	@HasMany(() => Quid)
 	declare mainGroupFor: Quid[];
+
+	@HasMany(() => GroupToQuid, { foreignKey: 'groupId' })
+	declare groupToQuids: GroupToQuid[];
 }
