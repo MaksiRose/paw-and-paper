@@ -34,7 +34,7 @@ export const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 					before: sequelizeLogParams.instance._previousDataValues[columnName],
 					after: sequelizeLogParams.instance.dataValues[columnName],
 				}));
-				console.log(`${sequelizeLogParams.instance.constructor.name} ${sequelizeLogParams.instance.id} changed:`, changes);
+				console.log(`${sequelizeLogParams.instance.constructor.name} ${sequelizeLogParams.instance.id} updated:`, changes);
 			}
 			else if (sequelizeLogParams.type === 'INSERT') {
 				const changes: Record<string, any> = { id: sequelizeLogParams.instance.dataValues.id };
@@ -42,6 +42,9 @@ export const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 					changes[columnName] = sequelizeLogParams.instance.dataValues[columnName];
 				});
 				console.log(`Created ${sequelizeLogParams.instance.constructor.name}:`, changes);
+			}
+			else if (sequelizeLogParams.type === 'DELETE') {
+				console.log(`Deleted ${sequelizeLogParams.instance.constructor.name} ${sequelizeLogParams.instance.id}`);
 			}
 		}
 	},

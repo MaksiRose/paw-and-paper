@@ -12,14 +12,14 @@ export async function execute(
 ): Promise<void> {
 
 	/* Adds all commands to client.commands property, and to the applicationCommands array if the command.data is not undefined. */
-	// Promise.all(
-	// 	getFiles('../commands').map((commandPath) => import(commandPath)),
-	// ).then(modules => modules.forEach(function({ command }: { command: SlashCommand; }) {
+	Promise.all(
+		getFiles('../commands').map((commandPath) => import(commandPath)),
+	).then(modules => modules.forEach(function({ command }: { command: SlashCommand; }) {
 
-	// 	if (command.data !== undefined) { applicationCommands.push(command.data); }
-	// 	handle.slashCommands.set(command.data.name, command);
-	// 	console.log(`Added ${command.data.name} to the slash commands`);
-	// }));
+		if (command.data !== undefined) { applicationCommands.push(command.data); }
+		handle.slashCommands.set(command.data.name, command);
+		console.log(`Added ${command.data.name} to the slash commands`);
+	}));
 
 	Promise.all(
 		getFiles('../contextmenu').map((commandPath) => import(commandPath)),
@@ -30,22 +30,22 @@ export async function execute(
 		console.log(`Added ${command.data.name} to the context menu commands`);
 	}));
 
-	// /* Registers the applicationCommands array to Discord. */
-	// for (const folderName of readdirSync(path.join(__dirname, '../commands_guild'))) {
+	/* Registers the applicationCommands array to Discord. */
+	for (const folderName of readdirSync(path.join(__dirname, '../commands_guild'))) {
 
-	// 	if (!lstatSync(path.join(__dirname, `../commands_guild/${folderName}`)).isDirectory()) { continue; }
+		if (!lstatSync(path.join(__dirname, `../commands_guild/${folderName}`)).isDirectory()) { continue; }
 
-	// 	const applicationCommandsGuild: Array<RESTPostAPIApplicationCommandsJSONBody> = [];
+		const applicationCommandsGuild: Array<RESTPostAPIApplicationCommandsJSONBody> = [];
 
-	// 	Promise.all(
-	// 		getFiles(`../commands_guild/${folderName}`).map((commandPath) => import(commandPath)),
-	// 	).then(modules => modules.forEach(function({ command }: { command: SlashCommand; }) {
+		Promise.all(
+			getFiles(`../commands_guild/${folderName}`).map((commandPath) => import(commandPath)),
+		).then(modules => modules.forEach(function({ command }: { command: SlashCommand; }) {
 
-	// 		if (command.data !== undefined) { applicationCommandsGuild.push(command.data); }
-	// 		handle.slashCommands.set(command.data.name, command);
-	// 		console.log(`Added ${command.data.name} to the slash commands of guild ${folderName}`);
-	// 	})).finally(function() { applicationCommandsGuilds.set(folderName, applicationCommandsGuild); });
-	// }
+			if (command.data !== undefined) { applicationCommandsGuild.push(command.data); }
+			handle.slashCommands.set(command.data.name, command);
+			console.log(`Added ${command.data.name} to the slash commands of guild ${folderName}`);
+		})).finally(function() { applicationCommandsGuilds.set(folderName, applicationCommandsGuild); });
+	}
 }
 
 /** Adds all file paths in a directory to an array and returns it */

@@ -71,7 +71,7 @@ export async function hasPermission(
 
 export function getMissingPermissionContent(
 	permissionKind: string,
-) { return { content: `I need permission to ${permissionKind} for this 😣` }; }
+) { return { content: `I need permission to ${permissionKind} for this 😣`, failIfNotExists: false }; }
 
 export async function missingPermissions(
 	interaction: RepliableInteraction,
