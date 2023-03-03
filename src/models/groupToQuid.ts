@@ -1,20 +1,17 @@
-import { Optional } from 'sequelize';
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import Group from './group';
 import Quid from './quid';
 
 interface GroupToQuidAttributes {
-	id: number;
+	id: string;
 	groupId: string;
 	quidId: string;
 }
 
-type GroupToQuidCreationAttributes = Optional<GroupToQuidAttributes, 'id'>
-
 @Table
-export default class GroupToQuid extends Model<GroupToQuidAttributes, GroupToQuidCreationAttributes> {
-	@Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true })
-	declare id: number;
+export default class GroupToQuid extends Model<GroupToQuidAttributes, GroupToQuidAttributes> {
+	@Column({ type: DataType.STRING, primaryKey: true })
+	declare id: string;
 
 	@ForeignKey(() => Group)
 	@Column({ type: DataType.STRING })

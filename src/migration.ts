@@ -20,8 +20,9 @@ import GroupToQuid from './models/groupToQuid';
 import UserToServer from './models/userToServer';
 import Friendship from './models/friendship';
 import Webhook from './models/webhook';
-import BannedUsers from './models/bannedUsers';
-import BannedServers from './models/bannedServers';
+import BannedUser from './models/bannedUser';
+import BannedServer from './models/bannedServer';
+import { generateId } from 'crystalid';
 const { database_password } = require('../config.json');
 
 const tablePath = path.join(__dirname, './models/');
@@ -49,18 +50,21 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 		serverList.push(server.serverId);
 
 		const sleepingDen = await Den.create({
+			id: generateId(),
 			structure: server.dens.sleepingDens.structure,
 			bedding: server.dens.sleepingDens.bedding,
 			thickness: server.dens.sleepingDens.thickness,
 			evenness: server.dens.sleepingDens.evenness,
 		});
 		const medicineDen = await Den.create({
+			id: generateId(),
 			structure: server.dens.medicineDen.structure,
 			bedding: server.dens.medicineDen.bedding,
 			thickness: server.dens.medicineDen.thickness,
 			evenness: server.dens.medicineDen.evenness,
 		});
 		const foodDen = await Den.create({
+			id: generateId(),
 			structure: server.dens.foodDen.structure,
 			bedding: server.dens.foodDen.bedding,
 			thickness: server.dens.foodDen.thickness,
@@ -68,12 +72,14 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 		});
 
 		const channelLimits = await ProxyLimits.create({
+			id: generateId(),
 			setToWhitelist: server.proxySettings.channels.setTo === 1,
 			whitelist: server.proxySettings.channels.whitelist,
 			blacklist: server.proxySettings.channels.blacklist,
 		});
 
 		const roleLimits = await ProxyLimits.create({
+			id: generateId(),
 			setToWhitelist: server.proxySettings.roles.setTo === 1,
 			whitelist: server.proxySettings.roles.whitelist,
 			blacklist: server.proxySettings.roles.blacklist,
@@ -81,7 +87,6 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 
 		await Server.create({
 			id: server.serverId,
-			name: server.name,
 			nextPossibleAttackTimestamp: server.nextPossibleAttack,
 			visitChannelId: server.visitChannelId,
 			currentlyVisitingChannelId: server.currentlyVisiting,
@@ -160,6 +165,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 
 				if (!serverList.includes(serverId)) { continue; }
 				await ServerToDiscordUser.create({
+					id: generateId(),
 					discordUserId: discordUserId,
 					serverId: serverId,
 					isMember: information.isMember,
@@ -181,6 +187,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 
 				if (!serverList.includes(serverId)) { continue; }
 				await GroupToServer.create({
+					id: generateId(),
 					groupId: groupId,
 					serverId: serverId,
 					tag: tag,
@@ -218,6 +225,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 
 				if (!serverList.includes(profile.serverId)) { continue; }
 				const quidToServer = await QuidToServer.create({
+					id: generateId(),
 					quidId: quidId,
 					serverId: profile.serverId,
 					nickname: quid.nickname.servers[profile.serverId],
@@ -260,6 +268,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 				for (const [timestamp, statKind] of Object.entries(profile.temporaryStatIncrease)) {
 
 					await TemporaryStatIncrease.create({
+						id: generateId(),
 						quidToServerId: quidToServer.id,
 						startedTimestamp: Number(timestamp),
 						type: statKind as string,
@@ -269,6 +278,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 				for (const shopRole of profile.roles) {
 
 					await QuidToServerToShopRole.create({
+						id: generateId(),
 						quidToServerId: quidToServer.id,
 						shopRoleId: shopRole.roleId,
 					});
@@ -280,6 +290,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 		for (const groupQuid of user.group_quid) {
 
 			await GroupToQuid.create({
+				id: generateId(),
 				groupId: groupQuid.groupId,
 				quidId: groupQuid.quidId,
 			});
@@ -297,6 +308,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 
 			// userToServer
 			await UserToServer.create({
+				id: generateId(),
 				userId: user._id,
 				serverId: serverId,
 				lastProxiedQuidId: server.lastProxied,
@@ -340,6 +352,7 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 			const mentions_array_2 = allMentions[id_2]?.[id_1] ?? [];
 
 			await Friendship.create({
+				id: generateId(),
 				quidId_1: id_1,
 				quidId_2: id_2,
 				quid_1_mentions: mentions_array,
@@ -353,13 +366,13 @@ const sequelize = new Sequelize('pnp', 'postgres', database_password, {
 	const bannedList = JSON.parse(readFileSync(path.join(__dirname, '../database/bannedList.json'), 'utf-8'));
 	for (const userId of bannedList.users) {
 
-		await BannedUsers.create({
+		await BannedUser.create({
 			id: userId,
 		});
 	}
 	for (const serverId of bannedList.servers) {
 
-		await BannedServers.create({
+		await BannedServer.create({
 			id: serverId,
 		});
 	}

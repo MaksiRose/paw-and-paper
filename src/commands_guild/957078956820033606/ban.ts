@@ -2,7 +2,7 @@ import { PermissionFlagsBits, SlashCommandBuilder, User } from 'discord.js';
 import { respond } from '../../utils/helperFunctions';
 import { client } from '../..';
 import { SlashCommand } from '../../typings/handle';
-import BannedUsers from '../../models/bannedUsers';
+import BannedUser from '../../models/bannedUser';
 import DiscordUser from '../../models/discordUser';
 import UserModel from '../../models/user';
 import ServerToDiscordUser from '../../models/serverToDiscordUser';
@@ -21,7 +21,7 @@ import Server from '../../models/server';
 import Den from '../../models/den';
 import ProxyLimits from '../../models/proxyLimits';
 import ShopRole from '../../models/shopRole';
-import BannedServers from '../../models/bannedServers';
+import BannedServer from '../../models/bannedServer';
 
 export const command: SlashCommand = {
 	data: new SlashCommandBuilder()
@@ -65,7 +65,7 @@ export const command: SlashCommand = {
 
 			for (const discordUserId of discordUserIds) {
 
-				await BannedUsers.create({ id: discordUserId }, { ignoreDuplicates: true });
+				await BannedUser.create({ id: discordUserId }, { ignoreDuplicates: true });
 				await ServerToDiscordUser.destroy({ where: { discordUserId: discordUserId } });
 				await DiscordUser.destroy({ where: { id: discordUserId } });
 
@@ -116,7 +116,7 @@ export const command: SlashCommand = {
 
 		if (type === 'server') {
 
-			await BannedServers.create({ id: id }, { ignoreDuplicates: true });
+			await BannedServer.create({ id: id }, { ignoreDuplicates: true });
 			const serverData = await Server.findByPk(id);
 
 			if (serverData) {

@@ -1,6 +1,7 @@
+import { generateId } from 'crystalid';
 import { Guild } from 'discord.js';
 import { client } from '..';
-import BannedServers from '../models/bannedServers';
+import BannedServer from '../models/bannedServer';
 import Den from '../models/den';
 import ProxyLimits from '../models/proxyLimits';
 import Server from '../models/server';
@@ -12,7 +13,7 @@ export async function createGuild(
 	guild: Guild,
 ): Promise<Server> {
 
-	const banEntry = await BannedServers.findByPk(guild.id);
+	const banEntry = await BannedServer.findByPk(guild.id);
 
 	const owner = await client.users.fetch(guild.ownerId);
 
@@ -39,11 +40,10 @@ export async function createGuild(
 
 	return await Server.create({
 		id: guild.id,
-		name: guild.name,
-		proxy_channelLimitsId: (await ProxyLimits.create()).id,
-		proxy_roleLimitsId: (await ProxyLimits.create()).id,
-		sleepingDenId: (await Den.create()).id,
-		medicineDenId: (await Den.create()).id,
-		foodDenId: (await Den.create()).id,
+		proxy_channelLimitsId: (await ProxyLimits.create({ id: generateId() })).id,
+		proxy_roleLimitsId: (await ProxyLimits.create({ id: generateId() })).id,
+		sleepingDenId: (await Den.create({ id: generateId() })).id,
+		medicineDenId: (await Den.create({ id: generateId() })).id,
+		foodDenId: (await Den.create({ id: generateId() })).id,
 	});
 }

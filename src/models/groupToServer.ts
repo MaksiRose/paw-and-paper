@@ -4,18 +4,18 @@ import Group from './group';
 import Server from './server';
 
 interface GroupToServerAttributes {
-	id: number;
+	id: string;
 	groupId: string;
 	serverId: string;
 	tag: string;
 }
 
-type GroupToServerOptionalAttributes = Optional<GroupToServerAttributes, 'id' | 'tag'>
+type GroupToServerOptionalAttributes = Optional<GroupToServerAttributes, 'tag'>
 
 @Table
 export default class GroupToServer extends Model<GroupToServerAttributes, GroupToServerOptionalAttributes> {
-	@Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true })
-	declare id: number;
+	@Column({ type: DataType.STRING, primaryKey: true })
+	declare id: string;
 
 	@ForeignKey(() => Group)
 	@Column({ type: DataType.STRING })

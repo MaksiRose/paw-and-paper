@@ -1,14 +1,18 @@
 import { EmbedBuilder, GuildMember, SlashCommandBuilder } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
-import { respond, userDataServersObject } from '../../utils/helperFunctions';
+import { respond } from '../../utils/helperFunctions';
 import { checkLevelRequirements, checkRankRequirements } from '../../utils/checkRoleRequirements';
 import { getRandomNumber } from '../../utils/randomizers';
 import { generateId } from 'crystalid';
 import { SlashCommand } from '../../typings/handle';
-import { BanList, GivenIdList } from '../../typings/data/general';
-import { userModel, getUserData } from '../../oldModels/userModel';
-import { CurrentRegionType, RankType } from '../../typings/data/user';
-import { commonPlantsInfo, materialsInfo, rarePlantsInfo, specialPlantsInfo, speciesInfo, uncommonPlantsInfo } from '../..';
+import { GivenIdList } from '../../typings/data/general';
+import BannedUser from '../../models/bannedUser';
+import User from '../../models/user';
+import DiscordUser from '../../models/discordUser';
+import ServerToDiscordUser from '../../models/serverToDiscordUser';
+import Quid from '../../models/quid';
+import QuidToServer from '../../models/quidToServer';
+import UserToServer from '../../models/userToServer';
 const { version } = require('../../../package.json');
 const { default_color, error_color } = require('../../../config.json');
 
@@ -26,16 +30,16 @@ export const command: SlashCommand = {
 	position: 0,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (interaction, userData, serverData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
-		let newAccount = false;
+		let isNewAccount = false;
 		/* This is checking if the user has any data saved in the database. If they don't, it will create a new user. */
-		if (!userData) {
+		if (!user) {
 
-			newAccount = true;
+			isNewAccount = true;
 			/* Checking if the user is banned from using the bot. */
-			const bannedList = JSON.parse(readFileSync('./database/bannedList.json', 'utf-8')) as BanList;
-			if (bannedList.users.includes(interaction.user.id)) {
+			const bannedUser = await BannedUser.findByPk(interaction.user.id);
+			if (bannedUser !== null) {
 
 				// This should always be a reply
 				await respond(interaction, {
@@ -45,36 +49,17 @@ export const command: SlashCommand = {
 				return;
 			}
 
-			const _userData = await userModel.create({
-				userId: [interaction.user.id],
-				userIds: {
-					[interaction.user.id]: interaction.inGuild() ? {
-						[interaction.guildId]: { isMember: true, lastUpdatedTimestamp: Date.now() },
-					} : {},
-				},
-				tag: {
-					global: '',
-					servers: {},
-				},
-				advice: { resting: false, drinking: false, eating: false, passingout: false, coloredbuttons: false, ginkgosapling: false },
-				settings: {
-					reminders: { water: true, resting: true },
-					proxy: {
-						global: { autoproxy: false, stickymode: false },
-						servers: {},
-					},
-					accessibility: { replaceEmojis: false },
-				},
-				quids: {},
-				currentQuid: {},
-				servers: {},
+			user = await User.create({
 				lastPlayedVersion: `${version.split('.').slice(0, -1).join('.')}`,
-				antiproxy: { startsWith: '', endsWith: '' },
-				groups: {},
-				group_quid: [],
-				_id: generateId(),
+				id: generateId(),
 			});
-			userData = getUserData(_userData, interaction.guildId ?? 'DMs', _userData.quids[_userData.servers[interaction.guildId ?? 'DMs']?.currentQuid ?? '']);
+
+			await DiscordUser.create({ id: interaction.user.id, userId: user.id });
+
+			if (interaction.inGuild()) {
+
+				await ServerToDiscordUser.create({ id: generateId(), discordUserId: interaction.user.id, serverId: interaction.guildId, isMember: true, lastUpdatedTimestamp: Date.now() });
+			}
 		}
 
 		const name = interaction.options.getString('name');
@@ -92,97 +77,53 @@ export const command: SlashCommand = {
 			return;
 		}
 
-		/* This is checking if the user has a quid in the database. If they don't, it will create a new user. */
-		const _id = userData.servers.get(interaction.guildId || 'DMs')?.currentQuid || await createId();
+		let isNewQuid = false;
+		if (quid) { quid = await quid.update({ name }); }
+		else {
 
+			isNewQuid = true;
+			quid = await Quid.create({
+				id: await createId(),
+				name,
+				userId: user.id,
+			});
+		}
 
-		await userData.update(
-			(u) => {
-				const q = u.quids[_id];
-				if (!q) {
+		if (!quidToServer && interaction.inGuild()) {
 
-					u.quids[_id] = {
-						_id: _id,
-						name: name,
-						nickname: {
-							global: '',
-							servers: {},
-						},
-						species: '',
-						displayedSpecies: '',
-						description: '',
-						avatarURL: 'https://cdn.discordapp.com/embed/avatars/1.png',
-						pronounSets: [['they', 'them', 'their', 'theirs', 'themselves', 'plural']],
-						proxy: {
-							startsWith: '',
-							endsWith: '',
-						},
-						color: default_color,
-						mentions: {},
-						profiles: interaction.inGuild() ? {
-							[interaction.guildId]: {
-								serverId: interaction.guildId,
-								rank: RankType.Youngling,
-								levels: 1,
-								experience: 0,
-								health: 100,
-								energy: 100,
-								hunger: 100,
-								thirst: 100,
-								maxHealth: 100,
-								maxEnergy: 100,
-								maxHunger: 100,
-								maxThirst: 100,
-								temporaryStatIncrease: {},
-								isResting: false,
-								hasQuest: false,
-								currentRegion: CurrentRegionType.Ruins,
-								unlockedRanks: 0,
-								tutorials: { play: false, explore: false },
-								sapling: { exists: false, health: 50, waterCycles: 0, nextWaterTimestamp: null, lastMessageChannelId: null, sentReminder: false, sentGentleReminder: false },
-								injuries: { wounds: 0, infections: 0, cold: false, sprains: 0, poison: false },
-								inventory: {
-									commonPlants: Object.fromEntries(Object.keys(commonPlantsInfo).map(k => [k, 0]).sort()) as Record<keyof typeof commonPlantsInfo, number>,
-									uncommonPlants: Object.fromEntries(Object.keys(uncommonPlantsInfo).map(k => [k, 0]).sort()) as Record<keyof typeof uncommonPlantsInfo, number>,
-									rarePlants: Object.fromEntries(Object.keys(rarePlantsInfo).map(k => [k, 0]).sort()) as Record<keyof typeof rarePlantsInfo, number>,
-									specialPlants: Object.fromEntries(Object.keys(specialPlantsInfo).map(k => [k, 0]).sort()) as Record<keyof typeof specialPlantsInfo, number>,
-									meat: Object.fromEntries(Object.keys(speciesInfo).map(k => [k, 0]).sort()) as Record<keyof typeof speciesInfo, number>,
-									materials: Object.fromEntries(Object.keys(materialsInfo).map(k => [k, 0]).sort()) as Record<keyof typeof materialsInfo, number>,
-								},
-								roles: [],
-								skills: { global: {}, personal: {} },
-								lastActiveTimestamp: 0,
-								passedOutTimestamp: 0,
-							},
-						} : {},
-						mainGroup: null,
-					};
-				}
-				else { q.name = name; }
+			quidToServer = await QuidToServer.create({ id: generateId(), serverId: interaction.guildId, quidId: quid.id });
+		}
 
-				// eslint-disable-next-line deprecation/deprecation
-				u.currentQuid[interaction.guildId || 'DMs'] = _id;
-				u.servers[interaction.guildId || 'DMs'] = {
-					...userDataServersObject(u, interaction.guildId || 'DMs'),
-					currentQuid: _id,
-				};
-			},
-		);
+		if (interaction.inGuild()) {
+
+			if (userToServer) { await userToServer.update({ activeQuidId: quid.id }); }
+			else { userToServer = await UserToServer.create({ id: generateId(), userId: user.id, serverId: interaction.guildId, activeQuidId: quid.id }); }
+		}
+		else { await user.update({ lastGlobalActiveQuidId: quid.id }); }
 
 		// This should always be a reply
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(default_color)
-				.setTitle(userData.quid === undefined ? `You successfully created the quid ${name}!` : `You successfully renamed your quid to ${name}!`)
-				.setDescription(newAccount === false ? null : '__What is a quid?__\nTo avoid using limiting words like "character" or "person", Paw and Paper uses the made-up word quid. It is based off of the word [Quiddity](https://en.wikipedia.org/wiki/Quiddity), which means "what makes something what it is". Quid then means "someone who is what they are", which is vague on purpose because it changes based on what they are.')
-				.setFooter(userData.quid === undefined ? { text: 'To continue setting up your profile for the RPG, type "/species". For other options, review "/help".' } : null)],
+				.setTitle(isNewQuid ? `You successfully created the quid ${name}!` : `You successfully renamed your quid to ${name}!`)
+				.setDescription(isNewAccount === false ? null : '__What is a quid?__\nTo avoid using limiting words like "character" or "person", Paw and Paper uses the made-up word quid. It is based off of the word [Quiddity](https://en.wikipedia.org/wiki/Quiddity), which means "what makes something what it is". Quid then means "someone who is what they are", which is vague on purpose because it changes based on what they are.')
+				.setFooter(isNewQuid ? { text: 'To continue setting up your profile for the RPG, type "/species". For other options, review "/help".' } : null)],
 		});
 
 		/* This is checking if the user is in a guild, if the server has data saved in the database, and if the guildmember data is cached. If all of these are true, it will check if the user has reached the requirements to get roles based on their rank and level. */
-		if (interaction.inGuild() && serverData && (interaction.member instanceof GuildMember)) {
+		if (interaction.inCachedGuild() && quidToServer && (interaction.member instanceof GuildMember)) {
 
-			await checkRankRequirements(serverData, interaction, interaction.member, RankType.Youngling);
-			await checkLevelRequirements(serverData, interaction, interaction.member, 1);
+			const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
+			const serverDiscordUsers = (await Promise.all(discordUsers.map(async (du) => (await ServerToDiscordUser.findOne({ where: { discordUserId: du.id, serverId: interaction.guildId, isMember: true } }))))).filter(function(v): v is ServerToDiscordUser { return v !== null; });
+
+			const members = (await Promise.all(serverDiscordUsers
+				.map(async (v) => (await interaction.guild.members.fetch(v.discordUserId).catch(() => {
+					v.update({ isMember: false });
+					return null;
+				}))))).filter(function(v): v is GuildMember { return v !== null; });
+
+			await checkRankRequirements(interaction, members, quidToServer, true);
+			await checkLevelRequirements(interaction, members, quidToServer, true);
 		}
 	},
 };

@@ -176,9 +176,11 @@ export async function sendErrorMessage(
 				: undefined;
 
 			userToServer = (user && server)
-				? (await UserToServer.findOrCreate({
+				? ((await UserToServer.findOne({
 					where: { userId: user.id, serverId: server.id },
-				}))[0]
+				})) ?? (await UserToServer.create({
+					id: generateId(), userId: user.id, serverId: server.id,
+				})))
 				: undefined;
 		}
 		if (userToServer) { await setCooldown(userToServer, false); }

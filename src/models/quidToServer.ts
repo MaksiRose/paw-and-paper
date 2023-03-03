@@ -8,7 +8,7 @@ import Server from './server';
 import { Optional } from 'sequelize';
 
 interface QuidToServerAttributes {
-	id: number;
+	id: string;
 	quidId: string;
 	serverId: string;
 	nickname: string;
@@ -47,12 +47,12 @@ interface QuidToServerAttributes {
 	passedOutTimestamp: number;
 }
 
-type QuidToServerOptionalAttributes = Optional<QuidToServerAttributes, 'id' | 'nickname' | 'rank' | 'levels' | 'experience' | 'health' | 'energy' | 'hunger' | 'thirst' | 'maxHealth' | 'maxEnergy' | 'maxHunger' | 'maxThirst' | 'hasQuest' | 'unlockedRanks' | 'tutorials_play' | 'tutorials_explore' | 'currentRegion' | 'sapling_exists' | 'sapling_health' | 'sapling_waterCycles' | 'sapling_nextWaterTimestamp' | 'sapling_lastChannelId' | 'sapling_sentReminder' | 'sapling_sentGentleReminder' | 'injuries_wounds' | 'injuries_infections' | 'injuries_cold' | 'injuries_sprains' | 'injuries_poison' | 'inventory' | 'skills_global' | 'skills_personal' | 'passedOutTimestamp'>
+type QuidToServerOptionalAttributes = Optional<QuidToServerAttributes, 'nickname' | 'rank' | 'levels' | 'experience' | 'health' | 'energy' | 'hunger' | 'thirst' | 'maxHealth' | 'maxEnergy' | 'maxHunger' | 'maxThirst' | 'hasQuest' | 'unlockedRanks' | 'tutorials_play' | 'tutorials_explore' | 'currentRegion' | 'sapling_exists' | 'sapling_health' | 'sapling_waterCycles' | 'sapling_nextWaterTimestamp' | 'sapling_lastChannelId' | 'sapling_sentReminder' | 'sapling_sentGentleReminder' | 'injuries_wounds' | 'injuries_infections' | 'injuries_cold' | 'injuries_sprains' | 'injuries_poison' | 'inventory' | 'skills_global' | 'skills_personal' | 'lastActiveTimestamp' | 'passedOutTimestamp'>
 
 @Table
 export default class QuidToServer extends Model<QuidToServerAttributes, QuidToServerOptionalAttributes> {
-	@Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true })
-	declare id: number;
+	@Column({ type: DataType.STRING, primaryKey: true })
+	declare id: string;
 
 	@ForeignKey(() => Quid<false>)
 	@Column({ type: DataType.STRING })
@@ -166,7 +166,7 @@ export default class QuidToServer extends Model<QuidToServerAttributes, QuidToSe
 	@Column({ type: DataType.JSON, defaultValue: '{}' })
 	declare skills_personal: { [key in string]: number };
 
-	@Column({ type: DataType.BIGINT })
+	@Column({ type: DataType.BIGINT, defaultValue: 0 })
 	declare lastActiveTimestamp: number;
 
 	@Column({ type: DataType.BIGINT, defaultValue: 0 })

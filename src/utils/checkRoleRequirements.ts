@@ -1,3 +1,4 @@
+import { generateId } from 'crystalid';
 import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, GuildMember, AnySelectMenuInteraction } from 'discord.js';
 import QuidToServer from '../models/quidToServer';
 import QuidToServerToShopRole from '../models/quidToServerToShopRole';
@@ -37,7 +38,7 @@ export async function checkRankRequirements(
 					/* It's checking if the role is in the database. If it's not, it will add it to the database. */
 					if (roles.some(r => r.shopRoleId === role.id) === false) {
 
-						await QuidToServerToShopRole.create({ shopRoleId: role.id, quidToServerId: quidToServer.id });
+						await QuidToServerToShopRole.create({ id: generateId(), shopRoleId: role.id, quidToServerId: quidToServer.id });
 					}
 
 					/* It's checking if the member has the role. If they don't, it will add it to their roles. */
@@ -100,7 +101,7 @@ export async function checkLevelRequirements(
 					/* It's checking if the role is in the database. If it's not, it will add it to the database. */
 					if (roles.some(r => r.shopRoleId === role.id) === false) {
 
-						await QuidToServerToShopRole.create({ shopRoleId: role.id, quidToServerId: quidToServer.id });
+						await QuidToServerToShopRole.create({ id: generateId(), shopRoleId: role.id, quidToServerId: quidToServer.id });
 					}
 
 					/* It's checking if the member has the role. If they don't, it will add it to their roles. */

@@ -22,12 +22,12 @@ interface ServerAttributes {
 	proxy_requireTag: boolean;
 	proxy_requireTagInDisplayname: boolean;
 	proxy_possibleTags: string[];
-	proxy_channelLimitsId: number;
-	proxy_roleLimitsId: number;
+	proxy_channelLimitsId: string;
+	proxy_roleLimitsId: string;
 	inventory: string[];
-	sleepingDenId: number;
-	medicineDenId: number;
-	foodDenId: number;
+	sleepingDenId: string;
+	medicineDenId: string;
+	foodDenId: string;
 }
 
 type ServerCreationAttributes = Optional<ServerAttributes, 'nextPossibleAttackTimestamp' | 'visitChannelId' | 'currentlyVisitingChannelId' | 'skills' | 'proxy_logChannelId' | 'proxy_requireTag' | 'proxy_requireTagInDisplayname' | 'proxy_possibleTags' | 'inventory'>
@@ -62,15 +62,15 @@ export default class Server extends Model<ServerAttributes, ServerCreationAttrib
 	declare proxy_possibleTags: string[];
 
 	@ForeignKey(() => ProxyLimits)
-	@Column({ type: DataType.INTEGER.UNSIGNED })
-	declare proxy_channelLimitsId: number;
+	@Column({ type: DataType.STRING })
+	declare proxy_channelLimitsId: string;
 
 	@BelongsTo(() => ProxyLimits, { foreignKey: 'proxy_channelLimitsId' })
 	declare proxy_channelLimits: ProxyLimits;
 
 	@ForeignKey(() => ProxyLimits)
-	@Column({ type: DataType.INTEGER.UNSIGNED })
-	declare proxy_roleLimitsId: number;
+	@Column({ type: DataType.STRING })
+	declare proxy_roleLimitsId: string;
 
 	@BelongsTo(() => ProxyLimits, { foreignKey: 'proxy_roleLimitsId' })
 	declare proxy_roleLimits: ProxyLimits;
@@ -79,22 +79,22 @@ export default class Server extends Model<ServerAttributes, ServerCreationAttrib
 	declare inventory: string[];
 
 	@ForeignKey(() => Den)
-	@Column({ type: DataType.INTEGER.UNSIGNED })
-	declare sleepingDenId: number;
+	@Column({ type: DataType.STRING })
+	declare sleepingDenId: string;
 
 	@BelongsTo(() => Den, { foreignKey: 'sleepingDenId' })
 	declare sleepingDen: Den;
 
 	@ForeignKey(() => Den)
-	@Column({ type: DataType.INTEGER.UNSIGNED })
-	declare medicineDenId: number;
+	@Column({ type: DataType.STRING })
+	declare medicineDenId: string;
 
 	@BelongsTo(() => Den, { foreignKey: 'medicineDenId' })
 	declare medicineDen: Den;
 
 	@ForeignKey(() => Den)
-	@Column({ type: DataType.INTEGER.UNSIGNED })
-	declare foodDenId: number;
+	@Column({ type: DataType.STRING })
+	declare foodDenId: string;
 
 	@BelongsTo(() => Den, { foreignKey: 'foodDenId' })
 	declare foodDen: Den;

@@ -3,18 +3,18 @@ import { Column, DataType, HasOne, Model, Table } from 'sequelize-typescript';
 import Server from './server';
 
 interface ProxyLimitsAttributes {
-	id: number;
+	id: string;
 	setToWhitelist: boolean;
 	whitelist: string[];
 	blacklist: string[];
 }
 
-type ProxyLimitsCreationAttributes = Optional<ProxyLimitsAttributes, 'id' | 'setToWhitelist' | 'whitelist' | 'blacklist'>;
+type ProxyLimitsCreationAttributes = Optional<ProxyLimitsAttributes, 'setToWhitelist' | 'whitelist' | 'blacklist'>;
 
 @Table
 export default class ProxyLimits extends Model<ProxyLimitsAttributes, ProxyLimitsCreationAttributes> {
-	@Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true })
-	declare id: number;
+	@Column({ type: DataType.STRING, primaryKey: true })
+	declare id: string;
 
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	declare setToWhitelist: boolean;

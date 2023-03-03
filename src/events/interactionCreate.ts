@@ -17,6 +17,7 @@ import QuidToServer from '../models/quidToServer';
 import { getDisplayname, getDisplayspecies, pronoun, pronounAndPlural } from '../utils/getQuidInfo';
 import User from '../models/user';
 import ErrorInfo from '../models/errorInfo';
+import { generateId } from 'crystalid';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 
@@ -42,12 +43,20 @@ export const event: DiscordEvent = {
 				: undefined;
 
 			let userToServer = (user && server)
-				? (await UserToServer.findOrCreate({
-					where: { userId: user.id, serverId: server.id },
-					include: [{ model: Quid, as: 'activeQuid' }],
-				}))[0]
+				? (
+					(await UserToServer.findOne({
+						where: { userId: user.id, serverId: server.id },
+						include: [{ model: Quid, as: 'activeQuid' }],
+					}))
+					?? (await UserToServer.create({
+						id: generateId(), userId: user.id, serverId: server.id,
+					}, { include: [{ model: Quid, as: 'activeQuid' }] }))
+				)
 				: undefined;
-			const quid: Quid | undefined = userToServer?.activeQuid ?? undefined;
+
+			const quid: Quid | undefined = (user && !server)
+				? (user.lastGlobalActiveQuidId ? ((await Quid.findByPk(user.lastGlobalActiveQuidId)) ?? undefined) : undefined)
+				: (userToServer?.activeQuid ?? undefined);
 
 			/* It's updating the last interaction info for the user in the server. */
 			if (userToServer && interaction.inCachedGuild() && interaction.isRepliable()) {
@@ -64,14 +73,20 @@ export const event: DiscordEvent = {
 			}
 
 			/* It's updating the info for the discord user in the server */
-			const serverToDiscordUser = (discordUser && server) ? await ServerToDiscordUser.findOrCreate({ where: { discordUserId: discordUser.id, serverId: server.id } })
-				.then(([row]) => row.update({ isMember: true, lastUpdatedTimestamp: Date.now() }, { logging: false })) : undefined;
+			const serverToDiscordUser = (discordUser && server)
+				? await ServerToDiscordUser.findOne({ where: { discordUserId: discordUser.id, serverId: server.id } }).then((row) => {
+					if (row) { return row.update({ isMember: true, lastUpdatedTimestamp: Date.now() }, { logging: false }); }
+					else { return ServerToDiscordUser.create({ id: generateId(), discordUserId: discordUser.id, serverId: server.id, isMember: true, lastUpdatedTimestamp: Date.now() }); }
+				}) : undefined;
 
 			/* It's updating the info for the quid in the server, if it exists */
-			const quidToServer = userToServer?.activeQuidId ? await QuidToServer.findOrCreate({
-				where: { quidId: userToServer.activeQuidId, serverId: userToServer.serverId },
-			})
-				.then(([row]) => row.update({ lastActiveTimestamp: Date.now() }, { logging: false })) : undefined;
+			const quidToServer = userToServer?.activeQuidId
+				? await QuidToServer.findOne({
+					where: { quidId: userToServer.activeQuidId, serverId: userToServer.serverId },
+				}).then((row) => {
+					if (row) { return row.update({ lastActiveTimestamp: Date.now() }, { logging: false }); }
+					else { return QuidToServer.create({ id: generateId(), quidId: userToServer!.activeQuidId!, serverId: userToServer!.serverId, lastActiveTimestamp: Date.now() }); }
+				}) : undefined;
 
 			if (interaction.isRepliable() && interaction.inRawGuild()) {
 

@@ -5,7 +5,7 @@ import Server from './server';
 import User from './user';
 
 interface UserToServerAttributes {
-	id: number;
+	id: string;
 	userId: string;
 	serverId: string;
 	lastProxiedQuidId: string | null;
@@ -24,12 +24,12 @@ interface UserToServerAttributes {
 	hasCooldown: boolean;
 }
 
-type UserToServerCreationAttributes = Optional<UserToServerAttributes, 'id' | 'autoproxy_setToWhitelist' | 'autoproxy_whitelist' | 'autoproxy_blacklist' | 'stickymode_setTo' | 'tag' | 'lastInteraction_timestamp' | 'lastInteraction_channelId' | 'resting_messageId' | 'resting_channelId' | 'componentDisabling_channelId' | 'componentDisabling_messageId' | 'hasCooldown'>;
+type UserToServerCreationAttributes = Optional<UserToServerAttributes, 'autoproxy_setToWhitelist' | 'autoproxy_whitelist' | 'autoproxy_blacklist' | 'stickymode_setTo' | 'tag' | 'lastInteraction_timestamp' | 'lastInteraction_channelId' | 'resting_messageId' | 'resting_channelId' | 'componentDisabling_channelId' | 'componentDisabling_messageId' | 'hasCooldown'>;
 
 @Table
 export default class UserToServer extends Model<UserToServerAttributes, UserToServerCreationAttributes> {
-	@Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true })
-	declare id: number;
+	@Column({ type: DataType.STRING, primaryKey: true })
+	declare id: string;
 
 	@ForeignKey(() => User)
 	@Column({ type: DataType.STRING })

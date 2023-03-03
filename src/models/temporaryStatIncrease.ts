@@ -1,24 +1,21 @@
-import { Optional } from 'sequelize';
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
 import QuidToServer from './quidToServer';
 
 interface TemporaryStatIncreaseAttributes {
-	id: number;
-	quidToServerId: number;
+	id: string;
+	quidToServerId: string;
 	startedTimestamp: number;
 	type: string;
 }
 
-type TemporaryStatIncreaseCreationAttributes = Optional<TemporaryStatIncreaseAttributes, 'id'>
-
 @Table
-export default class TemporaryStatIncrease extends Model<TemporaryStatIncreaseAttributes, TemporaryStatIncreaseCreationAttributes> {
-	@Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true })
-	declare id: number;
+export default class TemporaryStatIncrease extends Model<TemporaryStatIncreaseAttributes, TemporaryStatIncreaseAttributes> {
+	@Column({ type: DataType.STRING, primaryKey: true })
+	declare id: string;
 
 	@ForeignKey(() => QuidToServer)
-	@Column({ type: DataType.INTEGER })
-	declare quidToServerId: number;
+	@Column({ type: DataType.STRING })
+	declare quidToServerId: string;
 
 	@BelongsTo(() => QuidToServer, { foreignKey: 'quidToServerId' })
 	declare quidToServer: QuidToServer;

@@ -4,19 +4,19 @@ import DiscordUser from './discordUser';
 import Server from './server';
 
 interface ServerToDiscordUserAttributes {
-	id: number;
+	id: string;
 	discordUserId: string;
 	serverId: string;
 	isMember: boolean;
 	lastUpdatedTimestamp: number
 }
 
-type ServerToDiscordUserCreationAttributes = Optional<ServerToDiscordUserAttributes, 'id' | 'isMember' | 'lastUpdatedTimestamp'>
+type ServerToDiscordUserCreationAttributes = Optional<ServerToDiscordUserAttributes, 'isMember' | 'lastUpdatedTimestamp'>
 
 @Table
 export default class ServerToDiscordUser extends Model<ServerToDiscordUserAttributes, ServerToDiscordUserCreationAttributes> {
-	@Column({ type: DataType.SMALLINT.UNSIGNED, autoIncrement: true, primaryKey: true })
-	declare id: number;
+	@Column({ type: DataType.STRING, primaryKey: true })
+	declare id: string;
 
 	@ForeignKey(() => DiscordUser)
 	@Column({ type: DataType.STRING })

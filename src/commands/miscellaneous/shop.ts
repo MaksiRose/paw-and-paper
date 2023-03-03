@@ -13,6 +13,7 @@ import QuidToServerToShopRole from '../../models/quidToServerToShopRole';
 import QuidToServer from '../../models/quidToServer';
 import DiscordUser from '../../models/discordUser';
 import ServerToDiscordUser from '../../models/serverToDiscordUser';
+import { generateId } from 'crystalid';
 const { error_color, default_color } = require('../../../config.json');
 
 type CustomIdArgs = []
@@ -156,7 +157,7 @@ export const command: SlashCommand = {
 						experience: quidToServer.experience,
 						levels: quidToServer.levels,
 					});
-					await QuidToServerToShopRole.create({ quidToServerId: quidToServer.id, shopRoleId: roleToBuy.id });
+					await QuidToServerToShopRole.create({ id: generateId(), quidToServerId: quidToServer.id, shopRoleId: roleToBuy.id });
 
 					const discordUsers = await DiscordUser.findAll({ where: { userId: user.id } });
 					const serverDiscordUsers = (await Promise.all(discordUsers.map(async (du) => (await ServerToDiscordUser.findOne({ where: { discordUserId: du.id, serverId: interaction.guildId, isMember: true } }))))).filter(function(v): v is ServerToDiscordUser { return v !== null; });

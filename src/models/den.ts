@@ -3,19 +3,19 @@ import { Column, DataType, HasOne, Model, Table } from 'sequelize-typescript';
 import Server from './server';
 
 interface DenAttributes {
-	id: number;
+	id: string;
 	structure: number;
 	bedding: number;
 	thickness: number;
 	evenness: number;
 }
 
-type DenCreationAttributes = Optional<DenAttributes, 'id' | 'structure' | 'bedding' | 'thickness' | 'evenness'>;
+type DenCreationAttributes = Optional<DenAttributes, 'structure' | 'bedding' | 'thickness' | 'evenness'>;
 
 @Table
 export default class Den extends Model<DenAttributes, DenCreationAttributes> {
-	@Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true })
-	declare id: number;
+	@Column({ type: DataType.STRING, primaryKey: true })
+	declare id: string;
 
 	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 100 })
 	declare structure: number;
