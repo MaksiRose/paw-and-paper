@@ -78,7 +78,7 @@ export const command: SlashCommand = {
 		}
 
 		let isNewQuid = false;
-		if (quid) { quid = await quid.update({ name }); }
+		if (quid) { quid = await quid.update({ name: name }); }
 		else {
 
 			isNewQuid = true;

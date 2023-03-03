@@ -18,7 +18,7 @@ export const event: DiscordEvent = {
 			for (const relation of profileToRoleRelations) {
 
 				const quidToServer = await QuidToServer.findByPk(relation.quidToServerId);
-				await quidToServer?.update({ experience: quidToServer.experience + Number(shopRole.requirement) || 0 });
+				await quidToServer?.update({ experience: quidToServer.experience + (Number(shopRole.requirement) || 0) });
 			}
 		}
 
