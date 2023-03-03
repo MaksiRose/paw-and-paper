@@ -24,7 +24,7 @@ interface QuidAttributes<Completed extends boolean = boolean> {
 	noPronouns_en: boolean;
 	proxy_startsWith: string;
 	proxy_endsWith: string;
-	color: `#${number}`;
+	color: `#${string}`;
 }
 
 type QuidCreationAttributes<Completed extends boolean = boolean> = Optional<QuidAttributes<Completed>, 'mainGroupId' | 'nickname' | 'species' | 'displayedSpecies' | 'description' | 'avatarURL' | 'pronouns_en' | 'noPronouns_en' | 'proxy_startsWith' | 'proxy_endsWith' | 'color'>
@@ -79,7 +79,7 @@ export default class Quid<Completed extends boolean = boolean> extends Model<Qui
 	declare proxy_endsWith: string;
 
 	@Column({ type: DataType.STRING, defaultValue: default_color })
-	declare color: `#${number}`;
+	declare color: `#${string}`;
 
 	@HasMany(() => Friendship, { foreignKey: 'quidId_1' })
 	declare friendships_1: Friendship[];

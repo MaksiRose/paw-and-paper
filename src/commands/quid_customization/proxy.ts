@@ -180,7 +180,10 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(userData.quid.color)
-					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+					.setAuthor({
+						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+						iconURL: quid.avatarURL,
+					})
 					.setTitle(`Auto-proxying ${interaction.inGuild() ? ((newSetting === AutoproxyConfigType.FollowGlobal) ? 'now follows the global setting' : `is now only ${newSetting === AutoproxyConfigType.Blacklist ? 'disabled' : 'enabled'} in the ${newSetting === AutoproxyConfigType.Blacklist ? 'blacklisted' : 'whitelisted'} channels`) : `is now ${userData.settings.proxy.global.autoproxy === true ? 'enabled' : 'disabled'} globally`}!`)],
 				ephemeral: true,
 			});
@@ -222,7 +225,10 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(userData.quid.color)
-					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+					.setAuthor({
+						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+						iconURL: quid.avatarURL,
+					})
 					.setTitle(`Sticky mode ${interaction.inGuild() ? ((newSetting === StickymodeConfigType.FollowGlobal) ? 'now follows the global setting' : `is now ${newSetting === StickymodeConfigType.Disabled ? 'disabled' : 'enabled'} in this server`) : `is now ${userData.settings.proxy.global.stickymode === true ? 'enabled' : 'disabled'} globally`}!`)],
 				ephemeral: true,
 			});
@@ -281,7 +287,10 @@ export const command: SlashCommand = {
 				await respond(interaction, {
 					embeds: [new EmbedBuilder()
 						.setColor(userData.quid.color)
-						.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+						.setAuthor({
+							name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+							iconURL: quid.avatarURL,
+						})
 						.setTitle(`${hasChannel ? 'Removed' : 'Added'} ${interaction.guild.channels.cache.get(channelId)?.name} ${hasChannel ? 'from' : 'to'} the auto-proxy ${listType}!`)],
 					ephemeral: true,
 				});

@@ -57,7 +57,10 @@ export async function executeResting(
 			content: messageContent,
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
-				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setAuthor({
+					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					iconURL: quid.avatarURL,
+				})
 				.setDescription(`*${userData.quid.name} dreams of resting on a beach, out in the sun. The imaginary wind rocked the also imaginative hammock. ${capitalize(userData.quid.pronoun(0))} must be really tired to dream of sleeping!*`),
 			],
 		}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
@@ -71,7 +74,10 @@ export async function executeResting(
 			content: messageContent,
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
-				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setAuthor({
+					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					iconURL: quid.avatarURL,
+				})
 				.setDescription(`*${userData.quid.name} trots around the dens eyeing ${userData.quid.pronoun(2)} comfortable moss-covered bed. A nap looks nice, but ${userData.quid.pronounAndPlural(0, 'has', 'have')} far too much energy to rest!*`),
 			],
 		}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
@@ -240,7 +246,10 @@ function getRestingEmbed(
 
 	return new EmbedBuilder()
 		.setColor(userData.quid.color)
-		.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+		.setAuthor({
+			name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+			iconURL: quid.avatarURL,
+		})
 		.setDescription(`*${userData.quid.name}'s chest rises and falls with the crickets. Snoring bounces off each wall, finally exiting the den and rising free to the clouds.*`)
 		.setFooter({ text: `+${energyPoints} energy (${userData.quid.profile.energy}/${userData.quid.profile.maxEnergy})${(previousRegion !== CurrentRegionType.SleepingDens) ? `\n${prePreviousRegionText}sleeping dens` : ''}${isAutomatic ? '\nYour quid started resting because you were inactive for 10 minutes' : ''}\n\n${weardownText}\n\nTip: You can also do "/vote" to get +30 energy per vote!` });
 }

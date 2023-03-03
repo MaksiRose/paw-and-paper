@@ -134,7 +134,10 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(userData.quid.color)
-					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+					.setAuthor({
+						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+						iconURL: quid.avatarURL,
+					})
 					.setTitle(`${userData.quid.name} joined the group ${group.name}!`)
 					.setDescription(!hasMainGroup ? 'This is now this quids main group. The main group determines which groups tag is going to displayed. If your quid has an individual tag, it will overwrite the group tag. To change the quids main group, just select another group from the command and click "Make this the main group".' : null)],
 				ephemeral: true,
@@ -162,7 +165,10 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(userData.quid.color)
-					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+					.setAuthor({
+						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+						iconURL: quid.avatarURL,
+					})
 					.setTitle(`${userData.quid.name} left the group ${group.name}!`)
 					.setDescription((isMainGroup && userData.quid.mainGroup !== null) ? `This was this quids main group, so the main group has been changed to ${userData.groups.get(userData.quid.mainGroup)?.name}. The main group determines which groups tag is going to displayed. If your quid has an individual tag, it will overwrite the group tag. To change the quids main group, just select another group from the command and click "Make this the main group".` : null)],
 				ephemeral: true,
@@ -188,7 +194,10 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(userData.quid.color)
-					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+					.setAuthor({
+						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+						iconURL: quid.avatarURL,
+					})
 					.setTitle(`${group.name} is now the main group for ${userData.quid.name}!`)
 					.setDescription('The main group determines which groups tag is going to displayed. If your quid has an individual tag, it will overwrite the group tag.')],
 				ephemeral: true,
@@ -275,7 +284,10 @@ export const command: SlashCommand = {
 			await respond(interaction, {
 				embeds: [new EmbedBuilder()
 					.setColor(userData.quid.color)
-					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+					.setAuthor({
+						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+						iconURL: quid.avatarURL,
+					})
 					.setTitle(`Tag ${tag ? `set to ${tag}` : 'removed'} ${serverData ? `in ${serverData.name}!` : 'globally!'}`)
 					.setDescription(serverData ? 'Tip: Tags can be set globally (cross-server) too by executing the /group command in DMs. The global tag will be displayed when no server-specific tag has been chosen.' : 'Tip: Tags can be set server-specific too by executing the command in the server. The server-specific tag will overwrite the global tag for that server.' + ' You can remove the tag again by leaving the text box empty.')],
 				ephemeral: true,
@@ -332,7 +344,10 @@ export function getGroupMessage(
 		content: currentGroup === undefined ? 'You are on an Empty Slot. Select a group to view below.' : '',
 		embeds: currentGroup === undefined ? [] : [new EmbedBuilder()
 			.setColor(userData.quid.color)
-			.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+			.setAuthor({
+				name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+				iconURL: quid.avatarURL,
+			})
 			.setTitle(currentGroup.name)
 			.setFields([
 				{ name: '**🏷️ Tag**', value: currentGroup.tag.servers[userData.quid.profile?.serverId ?? ''] || currentGroup.tag.global || '/' },

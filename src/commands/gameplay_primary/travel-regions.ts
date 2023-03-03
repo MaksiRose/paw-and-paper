@@ -112,7 +112,10 @@ async function sendTravelMessage(
 
 	const embed = new EmbedBuilder()
 		.setColor(userData.quid.color)
-		.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL });
+		.setAuthor({
+			name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+			iconURL: quid.avatarURL,
+		});
 	const travelComponent = new ActionRowBuilder<StringSelectMenuBuilder>()
 		.setComponents(new StringSelectMenuBuilder()
 			.setCustomId(`travel-regions_options_@${userData._id}`)

@@ -159,7 +159,10 @@ export async function sendStoreMessage(
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData.quid.color)
-				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setAuthor({
+					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					iconURL: quid.avatarURL,
+				})
 				.setDescription(`*${userData.quid.name} goes to the food den to store ${userData.quid.pronoun(2)} findings away, but ${userData.quid.pronoun(2)} mouth is empty...*`),
 			],
 			components: [],
@@ -192,7 +195,10 @@ function getOriginalEmbed(
 
 	return new EmbedBuilder()
 		.setColor(userData.quid.color)
-		.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+		.setAuthor({
+			name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+			iconURL: quid.avatarURL,
+		})
 		.setDescription(`*${userData.quid.name} wanders to the food den, ready to store away ${userData.quid.pronoun(2)} findings. ${capitalize(userData.quid.pronounAndPlural(0, 'circle'))} the food pile…*`);
 }
 

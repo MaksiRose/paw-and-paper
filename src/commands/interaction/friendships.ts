@@ -123,7 +123,10 @@ async function getFriendshipMessage(
 	return {
 		embeds: [new EmbedBuilder()
 			.setColor(userData.quid.color)
-			.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+			.setAuthor({
+				name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+				iconURL: quid.avatarURL,
+			})
 			.setTitle(`${userData.quid.name}'s friendships - Page ${page + 1}`)
 			.setDescription(friendshipTexts.length > 0 ?
 				friendshipTexts.slice(page * 25, (page + 1) * 25).join('\n') :

@@ -103,7 +103,10 @@ async function executeExploring(
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData.quid.color)
-				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setAuthor({
+					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					iconURL: quid.avatarURL,
+				})
 				.setDescription(`*A hunter cuts ${userData.quid.name} as they see ${userData.quid.pronoun(1)} running towards the pack borders.* "You don't have enough experience to go into the wilderness, ${userData.quid.profile.rank}," *they say.*`)],
 		});
 		return;
@@ -156,7 +159,10 @@ async function executeExploring(
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData.quid.color)
-				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setAuthor({
+					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					iconURL: quid.avatarURL,
+				})
 				.setDescription(`*${userData.quid.name} is longing for adventure as ${userData.quid.pronounAndPlural(0, 'look')} into the wild outside of camp. All there is to decide is where the journey will lead ${userData.quid.pronoun(1)}.*`)],
 			components: [biomeComponent],
 		});
@@ -309,7 +315,10 @@ async function executeExploring(
 	const responseTime = chosenBiomeNumber === 2 ? 3_000 : chosenBiomeNumber === 1 ? 4_000 : 5_000;
 	const embed = new EmbedBuilder()
 		.setColor(userData.quid.color)
-		.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL });
+		.setAuthor({
+			name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+			iconURL: quid.avatarURL,
+		});
 	let exploreComponent: ActionRowBuilder<ButtonBuilder> | null = null;
 
 	messageContent = remindOfAttack(interaction.guildId);
@@ -979,7 +988,10 @@ function getWaitingMessageObject(
 		content: messageContent,
 		embeds: [...restEmbed, new EmbedBuilder()
 			.setColor(userData.quid.color)
-			.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+			.setAuthor({
+				name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+				iconURL: quid.avatarURL,
+			})
 			.setDescription(waitingString + waitingGameField.map(v => v.join('')).join('\n'))
 			.setFooter({ text: 'This game is voluntary to skip waiting time. If you don\'t mind waiting, you can ignore this game.' })],
 		components: [waitingComponent],

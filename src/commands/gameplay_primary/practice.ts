@@ -47,7 +47,10 @@ export const command: SlashCommand = {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
-					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+					.setAuthor({
+						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+						iconURL: quid.avatarURL,
+					})
 					.setDescription(`*The Elderly shakes their head as they see ${userData.quid.name} approaching.*\n"At your age, you shouldn't prepare for fights. Go play with your friends instead!"`)],
 			});
 			return;
@@ -73,7 +76,10 @@ export const command: SlashCommand = {
 			content: messageContent,
 			embeds: [...restEmbed, new EmbedBuilder()
 				.setColor(userData.quid.color)
-				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setAuthor({
+					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					iconURL: quid.avatarURL,
+				})
 				.setDescription(`*A very experienced Elderly approaches ${userData.quid.name}.* "I've seen that you have not performed well in fights lately. Do you want to practice with me for a bit to strengthen your skills?"`)
 				.setFooter({ text: 'You will be presented three buttons: Attack, dodge and defend. Your opponent chooses one of them, and you have to choose which button is the correct response. The footer will provide hints as to which button you should click. This is a memory game, so try to remember which button to click in which situation.' })],
 			components: components,
@@ -100,7 +106,10 @@ export const command: SlashCommand = {
 			botReply = await respond(int ?? interaction, {
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
-					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+					.setAuthor({
+						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+						iconURL: quid.avatarURL,
+					})
 					.setDescription(`*After a bit of thinking, ${userData.quid.name} decides that now is not a good time to practice ${userData.quid.pronoun(2)} fighting skills. Politely, ${userData.quid.pronounAndPlural(0, 'decline')} the Elderlies offer.*`)],
 				components: disableAllComponents(components),
 			}, int !== undefined ? 'update' : 'reply', int?.message.id);
@@ -115,7 +124,10 @@ export const command: SlashCommand = {
 
 		const embed = new EmbedBuilder()
 			.setColor(userData.quid.color)
-			.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL });
+			.setAuthor({
+				name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+				iconURL: quid.avatarURL,
+			});
 
 		let totalCycles: 0 | 1 | 2 = 0;
 		let winLoseRatio = 0;

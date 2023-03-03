@@ -35,7 +35,10 @@ export const command: SlashCommand = {
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
-				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setAuthor({
+					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					iconURL: quid.avatarURL,
+				})
 				.setTitle(userData.quid.description === '' ? 'Your description has been reset!' : `Description for ${userData.quid.name} set:`)
 				.setDescription(userData.quid.description || null)],
 		});

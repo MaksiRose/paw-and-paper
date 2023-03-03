@@ -73,7 +73,10 @@ export async function sendQuestMessage(
 
 	const embed = new EmbedBuilder()
 		.setColor(userData.quid.color)
-		.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL });
+		.setAuthor({
+			name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+			iconURL: quid.avatarURL,
+		});
 
 	if (userData.quid.profile.rank === RankType.Youngling) {
 
@@ -187,7 +190,10 @@ async function startQuest(
 
 	const embed = new EmbedBuilder()
 		.setColor(userData.quid.color)
-		.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL });
+		.setAuthor({
+			name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+			iconURL: quid.avatarURL,
+		});
 
 	let hitEmoji = '';
 	let missEmoji = '';

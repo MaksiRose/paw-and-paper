@@ -34,7 +34,10 @@ export const command: SlashCommand = {
 		await respond(interaction, {
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
-				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setAuthor({
+					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					iconURL: quid.avatarURL,
+				})
 				.setTitle(serverData ? `Nickname for ${userData.quid.name} ${userData.quid.nickname.server ? `set to ${userData.quid.nickname.server}` : 'removed'} in ${serverData.name}!` : `Nickname for ${userData.quid.name} ${userData.quid.nickname.global ? `set to ${userData.quid.nickname.global}` : 'removed'} globally!`)
 				.setDescription(serverData ? 'Tip: Nicknames can be set globally too by executing the command in DMs. The global nickname will be displayed when no server-specific nickname has been chosen.' : 'Tip: Nicknames can be set server-specific too by executing the command in the server. The server-specific nickname will overwrite the global nickname for that server.')],
 		});

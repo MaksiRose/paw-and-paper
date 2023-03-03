@@ -85,7 +85,10 @@ export const command: SlashCommand = {
 				content: messageContent,
 				embeds: [...restEmbed, new EmbedBuilder()
 					.setColor(userData.quid.color)
-					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+					.setAuthor({
+						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+						iconURL: quid.avatarURL,
+					})
 					.setDescription(`*A healer rushes into the medicine den in fury.*\n"${userData.quid.name}, you are not trained to heal yourself, and especially not to heal others! I don't ever wanna see you again in here without supervision!"\n*${userData.quid.name} lowers ${userData.quid.pronoun(2)} head and leaves in shame.*`)],
 			});
 			return;
@@ -245,7 +248,10 @@ export async function getHealResponse(
 			content: messageContent,
 			embeds: [...embedArray, new EmbedBuilder()
 				.setColor(userData.quid.color)
-				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setAuthor({
+					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					iconURL: quid.avatarURL,
+				})
 				.setDescription(`*${userData.quid.name} sits in front of the medicine den, looking if anyone needs help with injuries or illnesses.*`)
 				.setFooter({ text: 'Tip: Healing yourself has a lower chance of being successful than healing others. Healers and Elderlies are more often successful than Apprentices and Hunters.' })],
 			components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
@@ -289,7 +295,10 @@ export async function getHealResponse(
 				content: messageContent,
 				embeds: [...embedArray, new EmbedBuilder()
 					.setColor(userData.quid.color)
-					.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+					.setAuthor({
+						name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+						iconURL: quid.avatarURL,
+					})
 					.setDescription(`*${userData.quid.name} approaches ${userToHeal.quid.name}, desperately searching for someone to help.*\n"Do you have any injuries or illnesses you know of?" *the ${userData.quid.getDisplayspecies()} asks.\n${userToHeal.quid.name} shakes ${userToHeal.quid.pronoun(2)} head.* "Not that I know of, no."\n*Disappointed, ${userData.quid.name} goes back to the medicine den.*`)],
 				components: hurtQuids.length > 0 && quidsSelectMenuOptions.length > 0 ? [quidsSelectMenu] : [],
 				fetchReply: true,
@@ -301,7 +310,10 @@ export async function getHealResponse(
 
 		const quidConditionEmbed = new EmbedBuilder()
 			.setColor(userData.quid.color)
-			.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+			.setAuthor({
+				name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+				iconURL: quid.avatarURL,
+			})
 			.setDescription(userToHeal._id === userData._id
 				? `*${userToHeal.quid.name} pushes aside the leaves acting as the entrance to the healer's den. With tired eyes ${userToHeal.quid.pronounAndPlural(0, 'inspect')} the rows of herbs, hoping to find one that can ease ${userToHeal.quid.pronoun(2)} pain.*`
 				: userToHeal.quid.profile.energy <= 0 || userToHeal.quid.profile.health <= 0 || userToHeal.quid.profile.hunger <= 0 || userToHeal.quid.profile.thirst <= 0
@@ -542,7 +554,10 @@ export async function getHealResponse(
 			...embedArray,
 			new EmbedBuilder()
 				.setColor(userData.quid.color)
-				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
+				.setAuthor({
+					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
+					iconURL: quid.avatarURL,
+				})
 				.setDescription(embedDescription)
 				.setFooter({ text: `${changedCondition.statsUpdateText}${statsUpdateText === '' ? '' : `\n${statsUpdateText}`}\n\n${denCondition}${item !== 'water' ? `\n-1 ${item} for ${interaction.guild.name}` : ''}` }),
 			...infectedEmbed,
