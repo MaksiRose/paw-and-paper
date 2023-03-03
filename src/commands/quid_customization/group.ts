@@ -19,9 +19,10 @@ export const command: SlashCommand = {
 	position: 10,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (interaction, userData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
-		if (!hasName(userData, interaction)) { return; } // This is always a reply
+		if (!user) { throw new TypeError('user is undefined'); }
+		if (!hasName(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // this would always be a reply
 
 		// This is always a reply
 		await respond(interaction, getGroupMessage(userData, 0));

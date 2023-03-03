@@ -40,7 +40,7 @@ export const command: SlashCommand = {
 	position: 0,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendCommand: async (interaction, userData, serverData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
 
 		await executePlaying(interaction, userData, serverData);
 	},

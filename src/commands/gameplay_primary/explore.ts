@@ -55,7 +55,7 @@ export const command: SlashCommand = {
 			choices.slice(0, 25).map(choice => ({ name: choice, value: choice })),
 		);
 	},
-	sendCommand: async (interaction, userData, serverData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
 
 		await executeExploring(interaction, userData, serverData);
 	},

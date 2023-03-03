@@ -28,7 +28,7 @@ export const command: SlashCommand = {
 	position: 3,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendCommand: async (interaction, userData, serverData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
 
 		await executeScavenging(interaction, userData, serverData);
 	},

@@ -28,7 +28,7 @@ export const command: SlashCommand = {
 	position: 2,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendCommand: async (interaction, userData, serverData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }

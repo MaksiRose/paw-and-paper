@@ -54,7 +54,7 @@ export const command: SlashCommand = {
 			choices.slice(0, 25).map(choice => ({ name: choice, value: choice })),
 		);
 	},
-	sendCommand: async (interaction, userData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
 		const sides = interaction.options.getNumber('sides') ?? 6;
 		const multiplier = interaction.options.getNumber('multiplier') ?? 1;

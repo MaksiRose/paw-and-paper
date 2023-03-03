@@ -32,7 +32,7 @@ export const command: SlashCommand = {
 	position: 9,
 	disablePreviousCommand: false, // This command has checks in place that only change something if no other command is active
 	modifiesServerProfile: false,
-	sendCommand: async (interaction, userData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
 		/* Getting userData and userData.quid either for mentionedUser if there is one or for interaction user otherwise */
 		const mentionedUser = interaction.options.getUser('user');

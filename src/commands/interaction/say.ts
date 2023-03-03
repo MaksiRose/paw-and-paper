@@ -29,7 +29,7 @@ const { error_color } = require('../../../config.json');
 // 	position: 3,
 // 	disablePreviousCommand: false,
 // 	modifiesServerProfile: false,
-// 	sendCommand: async (interaction, userData) => {
+// 	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
 // 		if (await missingPermissions(interaction, [
 // 			'ManageWebhooks', // Needed for webhook interaction

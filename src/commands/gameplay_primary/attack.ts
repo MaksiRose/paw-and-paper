@@ -33,7 +33,7 @@ export const command: SlashCommand = {
 	position: 5,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendCommand: async (interaction, userData, serverData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
 
 		await executeAttacking(interaction, userData, serverData);
 	},

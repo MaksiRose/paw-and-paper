@@ -32,7 +32,7 @@ export const command: SlashCommand = {
 	position: 9,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false, // This is technically true, but it's set to false because it's a task that you get reminded to do daily and does not reflect your actual activity
-	sendCommand: async (interaction, userData, serverData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
 
 		/* This ensures that the user is in a guild and has a completed account. */
 		if (serverData === null) { throw new Error('serverData is null'); }

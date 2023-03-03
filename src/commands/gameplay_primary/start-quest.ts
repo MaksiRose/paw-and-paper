@@ -23,7 +23,7 @@ export const command: SlashCommand = {
 	position: 7,
 	disablePreviousCommand: true,
 	modifiesServerProfile: true,
-	sendCommand: async (interaction, userData, serverData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
 
 		if (await missingPermissions(interaction, [
 			'ViewChannel', // Needed because of createCommandComponentDisabler in sendQuestMessage

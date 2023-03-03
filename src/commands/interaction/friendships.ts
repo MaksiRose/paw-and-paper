@@ -15,7 +15,7 @@ export const command: SlashCommand = {
 	position: 6,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (interaction, userData) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
 		if (!hasNameAndSpecies(userData, interaction)) { return; } // This is always a reply
 
