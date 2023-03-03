@@ -290,8 +290,10 @@ export async function getProfileMessageOptions(
 	options: Parameters<typeof getDisplayname>[1],
 ): Promise<InteractionReplyOptions> {
 
+	const pronouns = quid ? JSON.parse(JSON.stringify(quid.pronouns_en)) as string[][] : [];
+	if (quid && quid.noPronouns_en === true) { pronouns.push(['none']); }
+
 	const user = await client.users.fetch(userId);
-	if (quid && quid.noPronouns_en === true) { quid.pronouns_en.push([quid.name, quid.name, `${quid.name}s`, `${quid.name}s`, `${quid.name}self`, 'singular']); }
 	const groupToQuids = quid ? await GroupToQuid.findAll({
 		where: { quidId: quid.id },
 		include: [{ model: Group }],
@@ -310,7 +312,7 @@ export async function getProfileMessageOptions(
 				{ name: '**🏷️ Displayname**', value: await getDisplayname(quid, options) },
 				{ name: '**🦑 Species**', value: capitalize(getDisplayspecies(quid)) || '/', inline: true },
 				{ name: '**🔑 Proxy**', value: !quid.proxy_startsWith && !quid.proxy_endsWith ? 'No proxy set' : `${quid.proxy_startsWith}text${quid.proxy_endsWith}`, inline: true },
-				{ name: '**🍂 Pronouns**', value: quid.pronouns_en.map(pronoun => `${pronoun[0]}/${pronoun[1]} (${pronoun[2]}/${pronoun[3]}/${pronoun[4]})`).join('\n') || '/' },
+				{ name: '**🍂 Pronouns**', value: pronouns.map(pronoun => pronoun.length === 1 ? pronoun[0]! : `${pronoun[0]}/${pronoun[1]} (${pronoun[2]}/${pronoun[3]}/${pronoun[4]})`).join('\n') || '/' },
 				{
 					name: '**🗂️ Groups**',
 					value: groups
