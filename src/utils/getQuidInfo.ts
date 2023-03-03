@@ -75,7 +75,7 @@ export function pronounAndPlural(
 	string2?: string,
 ): string {
 
-	const pronounSet = getRandomPronounSet(quid.pronouns_en, quid.noPronouns_en, quid.name);
+	const pronounSet = getRandomPronounSet(quid);
 
 	const pronoun = getArrayElement(pronounSet, pronounNumber);
 	const isPlural = pronounSet[5] === 'plural';
