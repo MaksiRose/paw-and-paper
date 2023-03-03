@@ -10,7 +10,7 @@ import { PlantEdibilityType, SpeciesDietType } from '../../typings/main';
 import { hasName, hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { disableAllComponents } from '../../utils/componentDisabling';
-import { capitalizeString, getBiggerNumber, getMapData, getSmallerNumber, keyInObject, respond, unsafeKeys, widenValues } from '../../utils/helperFunctions';
+import { capitalize, getBiggerNumber, getMapData, getSmallerNumber, keyInObject, respond, unsafeKeys, widenValues } from '../../utils/helperFunctions';
 import { getRandomNumber } from '../../utils/randomizers';
 import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -182,7 +182,7 @@ export async function sendEatMessage(
 			finalHungerPoints = getBiggerNumber(-userData.quid.profile.hunger, getRandomNumber(3, -5) - removeHungerPoints(serverData));
 			finalHealthPoints = getBiggerNumber(-userData.quid.profile.health, getRandomNumber(3, -10));
 
-			embed.setDescription(`*A yucky feeling drifts down ${userData.quid.name}'s throat. ${capitalizeString(userData.quid.pronounAndPlural(0, 'shakes and spits', 'shake and spit'))} it out, trying to rid ${userData.quid.pronoun(2)} mouth of the taste. The plant is poisonous!*`);
+			embed.setDescription(`*A yucky feeling drifts down ${userData.quid.name}'s throat. ${capitalize(userData.quid.pronounAndPlural(0, 'shakes and spits', 'shake and spit'))} it out, trying to rid ${userData.quid.pronoun(2)} mouth of the taste. The plant is poisonous!*`);
 		}
 
 		if (allPlantsInfo[chosenFood].edibility === PlantEdibilityType.Inedible) {

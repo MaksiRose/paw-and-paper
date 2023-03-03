@@ -15,7 +15,7 @@ import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidit
 import { saveCommandDisablingInfo, disableAllComponents, deleteCommandDisablingInfo, componentDisablingInteractions } from '../../utils/componentDisabling';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import getInventoryElements from '../../utils/getInventoryElements';
-import { capitalizeString, getArrayElement, getMapData, getSmallerNumber, keyInObject, respond, unsafeKeys, widenValues } from '../../utils/helperFunctions';
+import { capitalize, getArrayElement, getMapData, getSmallerNumber, keyInObject, respond, unsafeKeys, widenValues } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -497,11 +497,11 @@ export async function getHealResponse(
 		}
 		else if (userData.quid._id === userToHeal.quid._id) {
 
-			embedDescription = `*${userData.quid.name} takes a ${item}. After a bit of preparation, the ${userData.quid.getDisplayspecies()} can apply it correctly. Immediately you can see the effect. ${capitalizeString(userData.quid.pronounAndPlural(0, 'feel'))} much better!*`;
+			embedDescription = `*${userData.quid.name} takes a ${item}. After a bit of preparation, the ${userData.quid.getDisplayspecies()} can apply it correctly. Immediately you can see the effect. ${capitalize(userData.quid.pronounAndPlural(0, 'feel'))} much better!*`;
 		}
 		else {
 
-			embedDescription = `*${userData.quid.name} takes a ${item}. After a bit of preparation, ${userData.quid.pronounAndPlural(0, 'give')} it to ${userToHeal.quid.name}. Immediately you can see the effect. ${capitalizeString(userToHeal.quid.pronounAndPlural(0, 'feel'))} much better!*`;
+			embedDescription = `*${userData.quid.name} takes a ${item}. After a bit of preparation, ${userData.quid.pronounAndPlural(0, 'give')} it to ${userToHeal.quid.name}. Immediately you can see the effect. ${capitalize(userToHeal.quid.pronounAndPlural(0, 'feel'))} much better!*`;
 		}
 	}
 	else if (item === 'water') {
@@ -516,7 +516,7 @@ export async function getHealResponse(
 		}
 		else {
 
-			embedDescription = `*${userData.quid.name} takes ${userToHeal.quid.name}'s body and tries to drag it over to the river. The ${userData.quid.getDisplayspecies()} attempts to position the ${userToHeal.quid.getDisplayspecies()}'s head right over the water, but every attempt fails miserably. ${capitalizeString(userData.quid.pronounAndPlural(0, 'need'))} to concentrate and try again.*`;
+			embedDescription = `*${userData.quid.name} takes ${userToHeal.quid.name}'s body and tries to drag it over to the river. The ${userData.quid.getDisplayspecies()} attempts to position the ${userToHeal.quid.getDisplayspecies()}'s head right over the water, but every attempt fails miserably. ${capitalize(userData.quid.pronounAndPlural(0, 'need'))} to concentrate and try again.*`;
 		}
 	}
 	else if (userData.quid._id === userToHeal.quid._id) {

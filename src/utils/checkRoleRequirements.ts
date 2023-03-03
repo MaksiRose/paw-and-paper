@@ -14,8 +14,8 @@ export async function checkRankRequirements(
 	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'>,
 	members: GuildMember[],
 	quidToServer: QuidToServer,
-	shopRoles?: ShopRole[],
 	sendMessage = false,
+	shopRoles?: ShopRole[],
 ): Promise<void> {
 
 	/* Defining a rankList and a shop of items with the wayOfEarning being rank.
@@ -79,8 +79,8 @@ export async function checkLevelRequirements(
 	interaction: ChatInputCommandInteraction<'cached' | 'raw'> | ButtonInteraction<'cached' | 'raw'> | AnySelectMenuInteraction<'cached' | 'raw'>,
 	members: GuildMember[],
 	quidToServer: QuidToServer,
-	shopRoles?: ShopRole[],
 	sendMessage = false,
+	shopRoles?: ShopRole[],
 ): Promise<void> {
 
 	/* Defining a shop of items with the wayOfEarning being levels. */

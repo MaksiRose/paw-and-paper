@@ -1,10 +1,12 @@
-import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, AnySelectMenuInteraction } from 'discord.js';
-import { capitalizeString, respond, unsafeKeys, widenValues } from './helperFunctions';
+import { ButtonInteraction, ChatInputCommandInteraction, EmbedBuilder, AnySelectMenuInteraction, GuildMember } from 'discord.js';
+import { capitalize, respond, unsafeKeys, widenValues } from './helperFunctions';
 import { checkLevelRequirements, checkRoleCatchBlock } from './checkRoleRequirements';
 import { getMapData } from './helperFunctions';
 import { missingPermissions } from './permissionHandler';
-import { UserData, WayOfEarningType } from '../typings/data/user';
-import { ServerSchema } from '../typings/data/server';
+import { WayOfEarningType } from '../typings/data/user';
+import QuidToServer from '../models/quidToServer';
+import Quid from '../models/quid';
+import { pronounAndPlural } from './getQuidInfo';
 const { default_color } = require('../../config.json');
 
 /**
@@ -12,34 +14,27 @@ const { default_color } = require('../../config.json');
  */
 export async function checkLevelUp(
 	interaction: ChatInputCommandInteraction<'cached'> | ButtonInteraction<'cached'> | AnySelectMenuInteraction<'cached'>,
-	userData: UserData<never, never>,
-	serverData: ServerSchema,
+	quid: Quid,
+	quidToServer: QuidToServer,
+	members: GuildMember[],
 ): Promise<EmbedBuilder[]> {
 
 	let embed: EmbedBuilder[] = [];
 
 	/* It's checking if the user has enough experience to level up. If they do, it will level them up and then check if they leveled up again. */
-	const requiredExperiencePoints = userData.quid.profile.levels * 50;
-	if (userData.quid.profile.experience >= requiredExperiencePoints) {
+	const requiredExperiencePoints = quidToServer.levels * 50;
+	if (quidToServer.experience >= requiredExperiencePoints) {
 
-		await userData.update(
-			(u) => {
-				const p = getMapData(getMapData(u.quids, userData.quid._id).profiles, interaction.guildId);
-				p.experience -= requiredExperiencePoints;
-				p.levels += 1;
-			},
-		);
+		quidToServer = await quidToServer.update({ experience: quidToServer.experience - requiredExperiencePoints, levels: quidToServer.levels + 1 });
 
 		embed = [new EmbedBuilder()
-			.setColor(userData.quid.color)
-			.setTitle(`${userData.quid.name} just leveled up! ${capitalizeString(userData.quid.pronounAndPlural(0, 'is', 'are'))} now level ${userData.quid.profile.levels}.`)];
+			.setColor(quid.color)
+			.setTitle(`${quid.name} just leveled up! ${capitalize(pronounAndPlural(quid, 0, 'is', 'are'))} now level ${quidToServer.levels}.`)];
 
-		const levelUpEmbed = await checkLevelUp(interaction, userData, serverData);
+		const levelUpEmbed = await checkLevelUp(interaction, quid, quidToServer, members);
 		if (levelUpEmbed.length > 0) { embed = levelUpEmbed; }
 
-		const guild = interaction.guild || await interaction.client.guilds.fetch(interaction.guildId);
-		const member = await guild.members.fetch(interaction.user.id);
-		await checkLevelRequirements(serverData, interaction, member, userData.quid.profile.levels);
+		await checkLevelRequirements(interaction, members, quidToServer, true);
 	}
 
 	return embed;

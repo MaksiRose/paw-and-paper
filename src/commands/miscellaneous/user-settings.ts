@@ -1,6 +1,7 @@
 import { ActionRowBuilder, AnySelectMenuInteraction, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, InteractionReplyOptions, InteractionUpdateOptions, MessageEditOptions, RestOrArray, SelectMenuComponentOptionData, SlashCommandBuilder, StringSelectMenuBuilder } from 'discord.js';
-import { getUserData, userModel } from '../../oldModels/userModel';
-import { UserData } from '../../typings/data/user';
+import Quid from '../../models/quid';
+import QuidToServer from '../../models/quidToServer';
+import User from '../../models/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasName, hasNameAndSpecies } from '../../utils/checkUserState';
 import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';
@@ -20,7 +21,7 @@ export const command: SlashCommand = {
 	position: 1,
 	disablePreviousCommand: true,
 	modifiesServerProfile: false,
-	sendCommand: async (interaction, userData) => {
+	sendCommand: async (interaction, { user }) => {
 
 		// It should give you a message with a drop-down of options:
 		// mentions (which has watering and auto-resting), accessibility (option to replace emojis with letters & numbers)
@@ -28,9 +29,9 @@ export const command: SlashCommand = {
 		// If the command is nested (as in, you need to click another option to be brought into a sub-sub-setting), the "⬅️ Back" button should only bring you back one level
 		// That way you can basically go through the command as if it was a folder
 
-		if (userData === null) {
+		if (user === undefined) {
 
-			hasName(userData, interaction);
+			hasName(undefined, { interaction, hasQuids: false });
 			return;
 		}
 
@@ -38,12 +39,12 @@ export const command: SlashCommand = {
 		await respond(interaction, getOriginalMessage(interaction));
 		return;
 	},
-	async sendMessageComponentResponse(interaction, userData) {
+	async sendMessageComponentResponse(interaction, { user }) {
 
 		const selectOptionId = interaction.isAnySelectMenu() ? deconstructSelectOptions<SelectOptionArgs>(interaction) : null;
 		const customId = deconstructCustomId<CustomIdArgs>(interaction.customId);
 		if (customId === null) { throw new TypeError('customId is null'); }
-		if (userData === null) { throw new TypeError('userData is null'); }
+		if (user === undefined) { throw new TypeError('userData is undefined'); }
 
 		if (customId.args[0] === 'mainpage') {
 
@@ -56,18 +57,14 @@ export const command: SlashCommand = {
 
 			if (isMentionsChange) {
 
-				userData.update(
-					u => {
-						u.settings.reminders = {
-							resting: selectOptionId?.flat().includes('resting') ?? false,
-							water: selectOptionId?.flat().includes('water') ?? false,
-						};
-					},
-				);
+				user = await user.update({
+					reminders_resting: selectOptionId?.flat().includes('resting') ?? false,
+					reminders_water: selectOptionId?.flat().includes('water') ?? false,
+				});
 			}
 
 			// This is always an update
-			await respond(interaction, getMentionsMessage(interaction, userData), 'update', interaction.message.id);
+			await respond(interaction, getMentionsMessage(interaction, user), 'update', interaction.message.id);
 		}
 
 		const isAccessibilityChange = customId.args[0] === 'accessibility' && interaction.isStringSelectMenu();
@@ -75,17 +72,11 @@ export const command: SlashCommand = {
 
 			if (isAccessibilityChange) {
 
-				userData.update(
-					u => {
-						u.settings.accessibility = {
-							replaceEmojis: selectOptionId?.flat().includes('replaceEmojis') ?? false,
-						};
-					},
-				);
+				user = await user.update({ accessibility_replaceEmojis: selectOptionId?.flat().includes('replaceEmojis') ?? false });
 			}
 
 			// This is always an update
-			await respond(interaction, getAccessibilityMessage(interaction, userData), 'update', interaction.message.id);
+			await respond(interaction, getAccessibilityMessage(interaction, user), 'update', interaction.message.id);
 		}
 
 		if (customId.args[0] === 'reminders') {
@@ -94,25 +85,22 @@ export const command: SlashCommand = {
 
 			if (customId.args[1] === 'water') {
 
-				await userData.update(
-					(u) => {
-						u.settings.reminders.water = isOn;
-					},
-				);
+				user = await user.update({ reminders_water: isOn });
 
 				/* This executes the sendReminder function for each profile for which the sapling exists and where lastMessageChannelId is a string, if the user has enabled water reminders. */
-				if (userData.settings.reminders.water === true) {
+				if (user.reminders_water === true) {
 
-					const _userData = userModel.findOne(u => Object.keys(u.userIds).includes(interaction.user.id));
+					const quids = await Quid.findAll({ where: { userId: user.id } });
+					for (const quid of quids) {
 
-					for (const quid of userData.quids.values()) {
-						for (const profile of Object.values(quid.profiles)) {
+						const quidToServers = await QuidToServer.findAll({ where: { quidId: quid.id } });
+						for (const quidToServer of quidToServers) {
+
 							if (isOn) {
 
-								const user = getUserData(_userData, profile.serverId, quid);
-								if (hasNameAndSpecies(user) && user.quid.profile.sapling.exists && typeof user.quid.profile.sapling.lastMessageChannelId === 'string' && !user.quid.profile.sapling.sentReminder) { sendReminder(user); }
+								if (hasNameAndSpecies(quid) && quidToServer.sapling_exists && typeof quidToServer.sapling_lastChannelId === 'string' && !quidToServer.sapling_sentReminder) { sendReminder(user); }
 							}
-							else { stopReminder(quid._id, profile.serverId); }
+							else { stopReminder(quid.id, quidToServer.serverId); }
 						}
 					}
 				}
@@ -121,7 +109,7 @@ export const command: SlashCommand = {
 				await respond(interaction, {
 					components: [new ActionRowBuilder<ButtonBuilder>()
 						.setComponents(new ButtonBuilder()
-							.setCustomId(`user-settings_reminders_water_${isOn ? 'off' : 'on'}_@${userData._id}`)
+							.setCustomId(`user-settings_reminders_water_${isOn ? 'off' : 'on'}_@${user.id}`)
 							.setLabel(`Turn water reminders ${isOn ? 'off' : 'on'}`)
 							.setStyle(ButtonStyle.Secondary))],
 				}, 'update', interaction.message.id);
@@ -135,17 +123,13 @@ export const command: SlashCommand = {
 
 			if (customId.args[1] === 'resting') {
 
-				await userData.update(
-					(u) => {
-						u.settings.reminders.resting = isOn;
-					},
-				);
+				await user.update({ reminders_resting: isOn });
 
 				// This should always update the message with the settings-button
 				await respond(interaction, {
 					components: [new ActionRowBuilder<ButtonBuilder>()
 						.setComponents(new ButtonBuilder()
-							.setCustomId(`user-settings_reminders_resting_${isOn ? 'off' : 'on'}_@${userData._id}`)
+							.setCustomId(`user-settings_reminders_resting_${isOn ? 'off' : 'on'}_@${user.id}`)
 							.setLabel(`Turn automatic resting pings ${isOn ? 'off' : 'on'}`)
 							.setStyle(ButtonStyle.Secondary))],
 				}, 'update', interaction.message.id);
@@ -181,12 +165,12 @@ function getOriginalMessage(
 
 function getMentionsMessage(
 	interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction,
-	userData: UserData<undefined, ''>,
+	user: User,
 ): InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions {
 
 	const menuOptions: RestOrArray<SelectMenuComponentOptionData> = [
-		{ label: 'Send watering reminders', value: constructSelectOptions<SelectOptionArgs>(['water']), default: userData.settings.reminders.water },
-		{ label: 'Ping when automatic resting is finished', value: constructSelectOptions<SelectOptionArgs>(['resting']), default: userData.settings.reminders.resting },
+		{ label: 'Send watering reminders', value: constructSelectOptions<SelectOptionArgs>(['water']), default: user.reminders_water },
+		{ label: 'Ping when automatic resting is finished', value: constructSelectOptions<SelectOptionArgs>(['resting']), default: user.reminders_resting },
 	];
 
 	return {
@@ -210,11 +194,11 @@ function getMentionsMessage(
 
 function getAccessibilityMessage(
 	interaction: ChatInputCommandInteraction | ButtonInteraction | AnySelectMenuInteraction,
-	userData: UserData<undefined, ''>,
+	user: User,
 ): InteractionReplyOptions & MessageEditOptions & InteractionUpdateOptions {
 
 	const menuOptions: RestOrArray<SelectMenuComponentOptionData> = [
-		{ label: 'Replace emojis with letters and numbers in games', value: constructSelectOptions<SelectOptionArgs>(['replaceEmojis']), default: userData.settings.accessibility.replaceEmojis },
+		{ label: 'Replace emojis with letters and numbers in games', value: constructSelectOptions<SelectOptionArgs>(['replaceEmojis']), default: user.accessibility_replaceEmojis },
 	];
 
 	return {

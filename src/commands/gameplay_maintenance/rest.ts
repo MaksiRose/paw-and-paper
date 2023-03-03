@@ -6,7 +6,7 @@ import { CurrentRegionType, UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { hasCooldown, isPassedOut } from '../../utils/checkValidity';
-import { capitalizeString, getMapData, respond, sendErrorMessage, userDataServersObject } from '../../utils/helperFunctions';
+import { capitalize, getMapData, respond, sendErrorMessage, userDataServersObject } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { wearDownDen } from '../../utils/wearDownDen';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -58,7 +58,7 @@ export async function executeResting(
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-				.setDescription(`*${userData.quid.name} dreams of resting on a beach, out in the sun. The imaginary wind rocked the also imaginative hammock. ${capitalizeString(userData.quid.pronoun(0))} must be really tired to dream of sleeping!*`),
+				.setDescription(`*${userData.quid.name} dreams of resting on a beach, out in the sun. The imaginary wind rocked the also imaginative hammock. ${capitalize(userData.quid.pronoun(0))} must be really tired to dream of sleeping!*`),
 			],
 		}, 'update', interaction.isMessageComponent() ? interaction.message.id : undefined);
 		return;

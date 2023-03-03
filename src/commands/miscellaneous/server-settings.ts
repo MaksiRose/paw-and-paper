@@ -213,7 +213,7 @@ export const command: SlashCommand = {
 								// for each discorduser, get the member and also put it in the list, then do the loop except if its already in the list
 								for (const [, u] of users) {
 
-									const stdu = (await Promise.all(u.discordUsers.map(async (du) => (await ServerToDiscordUser.findOne({ where: { discordUserId: du.id, serverId: i.guildId } }))))).filter(function(v): v is ServerToDiscordUser { return v !== null && v.isMember === true; });
+									const stdu = (await Promise.all(u.discordUsers.map(async (du) => (await ServerToDiscordUser.findOne({ where: { discordUserId: du.id, serverId: i.guildId, isMember: true } }))))).filter(function(v): v is ServerToDiscordUser { return v !== null; });
 									const members = (await Promise.all(stdu
 										.map(async (v) => (await i.guild.members.fetch(v.discordUserId).catch(() => {
 											v.update({ isMember: false });
@@ -225,12 +225,12 @@ export const command: SlashCommand = {
 										/* Giving users the role if they meet the requirements. */
 										if (wayOfEarning === WayOfEarningType.Levels) {
 
-											await checkLevelRequirements(i, members, qts, [shopRole], false);
+											await checkLevelRequirements(i, members, qts, false, [shopRole]);
 										}
 
 										if (wayOfEarning === WayOfEarningType.Rank) {
 
-											await checkRankRequirements(i, members, qts, [shopRole], false);
+											await checkRankRequirements(i, members, qts, false, [shopRole]);
 										}
 									}
 								}

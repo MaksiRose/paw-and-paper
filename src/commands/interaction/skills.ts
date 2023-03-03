@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, GuildMember, ModalBuilder, PermissionFlagsBits, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { capitalizeString, getArrayElement, respond } from '../../utils/helperFunctions';
+import { capitalize, getArrayElement, respond } from '../../utils/helperFunctions';
 import serverModel from '../../oldModels/serverModel';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
@@ -220,7 +220,7 @@ export const command: SlashCommand = {
 
 			await interaction.showModal(new ModalBuilder()
 				.setCustomId(`skills_${type}_${category}_${skillName}`)
-				.setTitle(`${capitalizeString(type)} ${category} skill "${skillName}"`)
+				.setTitle(`${capitalize(type)} ${category} skill "${skillName}"`)
 				.addComponents(
 					new ActionRowBuilder<TextInputBuilder>()
 						.setComponents(new TextInputBuilder()

@@ -1,5 +1,5 @@
 import { ActionRowBuilder, EmbedBuilder, GuildMember, InteractionReplyOptions, RestOrArray, StringSelectMenuBuilder, SelectMenuComponentOptionData, SlashCommandBuilder } from 'discord.js';
-import { capitalizeString, respond, userDataServersObject } from '../../utils/helperFunctions';
+import { capitalize, respond, userDataServersObject } from '../../utils/helperFunctions';
 import { hasName, hasNameAndSpecies } from '../../utils/checkUserState';
 import { checkRoleCatchBlock } from '../../utils/checkRoleRequirements';
 import { hasCooldown, checkResting } from '../../utils/checkValidity';
@@ -308,7 +308,7 @@ export async function getProfileMessageOptions(
 			.setThumbnail(quid.avatarURL)
 			.setFields([
 				{ name: '**🏷️ Displayname**', value: await getDisplayname(quid, options) },
-				{ name: '**🦑 Species**', value: capitalizeString(getDisplayspecies(quid)) || '/', inline: true },
+				{ name: '**🦑 Species**', value: capitalize(getDisplayspecies(quid)) || '/', inline: true },
 				{ name: '**🔑 Proxy**', value: !quid.proxy_startsWith && !quid.proxy_endsWith ? 'No proxy set' : `${quid.proxy_startsWith}text${quid.proxy_endsWith}`, inline: true },
 				{ name: '**🍂 Pronouns**', value: quid.pronouns_en.map(pronoun => `${pronoun[0]}/${pronoun[1]} (${pronoun[2]}/${pronoun[3]}/${pronoun[4]})`).join('\n') || '/' },
 				{

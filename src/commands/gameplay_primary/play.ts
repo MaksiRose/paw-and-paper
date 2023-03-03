@@ -13,7 +13,7 @@ import { disableCommandComponent } from '../../utils/componentDisabling';
 import { constructCustomId, deconstructCustomId } from '../../utils/customId';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
 import { accessiblePlantEmojis, createFightGame, createPlantGame, plantEmojis } from '../../utils/gameBuilder';
-import { capitalizeString, getArrayElement, getMapData, getSmallerNumber, keyInObject, respond, setCooldown, userDataServersObject } from '../../utils/helperFunctions';
+import { capitalize, getArrayElement, getMapData, getSmallerNumber, keyInObject, respond, setCooldown, userDataServersObject } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber, pullFromWeightedTable } from '../../utils/randomizers';
@@ -300,7 +300,7 @@ export async function executePlaying(
 	else if (userData1.quid.profile.rank !== RankType.Youngling
 		&& pullFromWeightedTable({ 0: 90, 1: 10 + userData1.quid.profile.sapling.waterCycles }) === 0) {
 
-		embed.setDescription(`*${userData1.quid.name} bounces around camp, watching the busy hustle and blurs of hunters and healers at work. ${capitalizeString(userData1.quid.pronounAndPlural(0, 'splashes', 'splash'))} into the stream that splits the pack in half, chasing the minnows with ${userData1.quid.pronoun(2)} eyes.*`);
+		embed.setDescription(`*${userData1.quid.name} bounces around camp, watching the busy hustle and blurs of hunters and healers at work. ${capitalize(userData1.quid.pronounAndPlural(0, 'splashes', 'splash'))} into the stream that splits the pack in half, chasing the minnows with ${userData1.quid.pronoun(2)} eyes.*`);
 		if (changedCondition.statsUpdateText) { embed.setFooter({ text: changedCondition.statsUpdateText }); }
 	}
 	// if the user is not a youngling, and either the user is also not an apprentice or with a 90% chance, get hurt
@@ -314,7 +314,7 @@ export async function executePlaying(
 
 			userData1.quid.profile.injuries.cold = true;
 
-			embed.setDescription(`*${userData1.quid.name} tumbles around camp, weaving through dens and packmates at work. ${capitalizeString(userData1.quid.pronounAndPlural(0, 'pause'))} for a moment, having a sneezing and coughing fit. It looks like ${userData1.quid.name} has caught a cold.*`);
+			embed.setDescription(`*${userData1.quid.name} tumbles around camp, weaving through dens and packmates at work. ${capitalize(userData1.quid.pronounAndPlural(0, 'pause'))} for a moment, having a sneezing and coughing fit. It looks like ${userData1.quid.name} has caught a cold.*`);
 			embed.setFooter({ text: `-${healthPoints} HP (from cold)\n${changedCondition.statsUpdateText}` });
 
 		}
@@ -322,7 +322,7 @@ export async function executePlaying(
 
 			userData1.quid.profile.injuries.wounds += 1;
 
-			embed.setDescription(`*${userData1.quid.name} strays from camp, playing near the pack borders. ${capitalizeString(userData1.quid.pronounAndPlural(0, 'hop'))} on rocks and pebbles, trying to keep ${userData1.quid.pronoun(2)} balance, but the rock ahead of ${userData1.quid.pronoun(1)} is steeper and more jagged. ${capitalizeString(userData1.quid.pronounAndPlural(0, 'land'))} with an oomph and a gash slicing through ${userData1.quid.pronoun(2)} feet from the sharp edges.*`);
+			embed.setDescription(`*${userData1.quid.name} strays from camp, playing near the pack borders. ${capitalize(userData1.quid.pronounAndPlural(0, 'hop'))} on rocks and pebbles, trying to keep ${userData1.quid.pronoun(2)} balance, but the rock ahead of ${userData1.quid.pronoun(1)} is steeper and more jagged. ${capitalize(userData1.quid.pronounAndPlural(0, 'land'))} with an oomph and a gash slicing through ${userData1.quid.pronoun(2)} feet from the sharp edges.*`);
 			embed.setFooter({ text: `-${healthPoints} HP (from wound)\n${changedCondition.statsUpdateText}` });
 		}
 

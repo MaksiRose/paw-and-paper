@@ -7,7 +7,7 @@ import { SlashCommand } from '../../typings/handle';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInvalid } from '../../utils/checkValidity';
 import { saveCommandDisablingInfo, disableAllComponents } from '../../utils/componentDisabling';
-import { getMapData, widenValues, unsafeKeys, getArrayElement, capitalizeString, respond } from '../../utils/helperFunctions';
+import { getMapData, widenValues, unsafeKeys, getArrayElement, capitalize, respond } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { calculateInventorySize } from '../../utils/simulateItemUse';
 import { remindOfAttack } from '../gameplay_primary/attack';
@@ -193,7 +193,7 @@ function getOriginalEmbed(
 	return new EmbedBuilder()
 		.setColor(userData.quid.color)
 		.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-		.setDescription(`*${userData.quid.name} wanders to the food den, ready to store away ${userData.quid.pronoun(2)} findings. ${capitalizeString(userData.quid.pronounAndPlural(0, 'circle'))} the food pile…*`);
+		.setDescription(`*${userData.quid.name} wanders to the food den, ready to store away ${userData.quid.pronoun(2)} findings. ${capitalize(userData.quid.pronounAndPlural(0, 'circle'))} the food pile…*`);
 }
 
 function getOriginalComponents(

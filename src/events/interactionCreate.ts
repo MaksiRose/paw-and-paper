@@ -16,7 +16,7 @@ import ServerToDiscordUser from '../models/serverToDiscordUser';
 import QuidToServer from '../models/quidToServer';
 import { getDisplayname, getDisplayspecies, pronoun, pronounAndPlural } from '../utils/getQuidInfo';
 import User from '../models/user';
-import ErrorInfo from '../models/errorInfo';
+import ErrorInfo from '../models/errorStack';
 const { version } = require('../../package.json');
 const { error_color } = require('../../config.json');
 

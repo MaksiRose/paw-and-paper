@@ -8,7 +8,7 @@ import { changeCondition, infectWithChance } from '../../utils/changeCondition';
 import { hasNameAndSpecies, isInGuild } from '../../utils/checkUserState';
 import { isInteractable, isInvalid, isPassedOut } from '../../utils/checkValidity';
 import { addFriendshipPoints } from '../../utils/friendshipHandling';
-import { capitalizeString, getMapData, respond, userDataServersObject } from '../../utils/helperFunctions';
+import { capitalize, getMapData, respond, userDataServersObject } from '../../utils/helperFunctions';
 import { checkLevelUp } from '../../utils/levelHandling';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { getRandomNumber } from '../../utils/randomizers';
@@ -186,7 +186,7 @@ export const command: SlashCommand = {
 				new EmbedBuilder()
 					.setColor(userData1.quid.color)
 					.setAuthor({ name: userData1.quid.getDisplayname(), iconURL: userData1.quid.avatarURL })
-					.setDescription(`*${userData2.quid.name} comes running to the old wooden trunk at the ruins where ${userData1.quid.name} sits, ready to tell an exciting story from long ago. ${capitalizeString(userData2.quid.pronoun(2))} eyes are sparkling as the ${userData1.quid.getDisplayspecies()} recounts great adventures and the lessons to be learned from them.*`)
+					.setDescription(`*${userData2.quid.name} comes running to the old wooden trunk at the ruins where ${userData1.quid.name} sits, ready to tell an exciting story from long ago. ${capitalize(userData2.quid.pronoun(2))} eyes are sparkling as the ${userData1.quid.getDisplayspecies()} recounts great adventures and the lessons to be learned from them.*`)
 					.setFooter({ text: `${decreasedStatsData.statsUpdateText}\n\n+${experienceIncrease} XP (${userData2.quid.profile.experience}/${userData2.quid.profile.levels * 50}) for ${userData2.quid.name}` }),
 				...decreasedStatsData.injuryUpdateEmbed,
 				...infectedEmbed,

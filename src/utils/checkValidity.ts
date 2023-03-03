@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, AnySelectMenuInteraction, time, Message } from 'discord.js';
-import { capitalizeString, getMapData, getMessageId, respond, sendErrorMessage } from './helperFunctions';
+import { capitalize, getMapData, getMessageId, respond, sendErrorMessage } from './helperFunctions';
 import { decreaseLevel } from './levelHandling';
 import { stopResting, isResting } from '../commands/gameplay_maintenance/rest';
 import { calculateInventorySize } from './simulateItemUse';
@@ -84,7 +84,7 @@ export async function hasCooldown(
 			embeds: [new EmbedBuilder()
 				.setColor(userData.quid.color)
 				.setAuthor({ name: userData.quid.getDisplayname(), iconURL: userData.quid.avatarURL })
-				.setDescription(`*${userData.quid.name} is so eager to get things done today that ${userData.quid.pronounAndPlural(0, 'is', 'are')} somersaulting. ${capitalizeString(userData.quid.pronoun(0))} should probably take a few seconds to calm down.*`)],
+				.setDescription(`*${userData.quid.name} is so eager to get things done today that ${userData.quid.pronounAndPlural(0, 'is', 'are')} somersaulting. ${capitalize(userData.quid.pronoun(0))} should probably take a few seconds to calm down.*`)],
 		});
 
 		setTimeout(async function() {

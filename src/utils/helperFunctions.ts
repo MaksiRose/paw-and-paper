@@ -1,7 +1,7 @@
 import { generateId } from 'crystalid';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, RepliableInteraction, WebhookEditMessageOptions, Snowflake, InteractionResponse } from 'discord.js';
 import DiscordUser from '../models/discordUser';
-import ErrorInfo from '../models/errorInfo';
+import ErrorInfo from '../models/errorStack';
 import Server from '../models/server';
 import User from '../models/user';
 import UserToServer from '../models/userToServer';
@@ -406,7 +406,7 @@ export function getSmallerNumber(
  * @param {string} string - The string to capitalize.
  * @returns The first character of the string is being capitalized and then the rest of the string is being added to it.
  */
-export function capitalizeString(
+export function capitalize(
 	string: string,
 ): string { return string.charAt(0).toUpperCase() + string.slice(1); }
 

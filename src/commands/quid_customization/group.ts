@@ -4,7 +4,7 @@ import { UserData } from '../../typings/data/user';
 import { SlashCommand } from '../../typings/handle';
 import { hasName } from '../../utils/checkUserState';
 import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';
-import { capitalizeString, getMapData, respond } from '../../utils/helperFunctions';
+import { capitalize, getMapData, respond } from '../../utils/helperFunctions';
 import { createId } from './name';
 
 type CustomIdArgs = ['groupselect', `${number}`] | ['create'] | ['rename' | 'delete' | 'tag' | 'confirm' | 'cancel' | 'join' | 'leave' | 'maingroup', string]
@@ -38,7 +38,7 @@ export const command: SlashCommand = {
 			await interaction
 				.showModal(new ModalBuilder()
 					.setCustomId(constructCustomId<CustomIdArgs>(command.data.name, userData.quid._id, customId.args))
-					.setTitle(`${capitalizeString(customId.args[0])} a group`)
+					.setTitle(`${capitalize(customId.args[0])} a group`)
 					.addComponents(
 						new ActionRowBuilder<TextInputBuilder>()
 							.setComponents([new TextInputBuilder()
