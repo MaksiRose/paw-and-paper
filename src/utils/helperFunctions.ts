@@ -1,7 +1,7 @@
 import { generateId } from 'crystalid';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, InteractionReplyOptions, InteractionType, Message, RepliableInteraction, WebhookEditMessageOptions, Snowflake, InteractionResponse } from 'discord.js';
 import DiscordUser from '../models/discordUser';
-import ErrorInfo from '../models/errorStack';
+import ErrorInfo from '../models/errorInfo';
 import Server from '../models/server';
 import User from '../models/user';
 import UserToServer from '../models/userToServer';
