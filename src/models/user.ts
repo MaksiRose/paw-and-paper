@@ -19,6 +19,7 @@ interface UserAttributes {
 	proxy_globalAutoproxy: boolean;
 	proxy_globalStickymode: boolean;
 	proxy_lastGlobalProxiedQuidId: string | null;
+	lastGlobalActiveQuidId: string | null;
 	accessibility_replaceEmojis: boolean;
 	tag: string;
 	lastPlayedVersion: string;
@@ -75,6 +76,13 @@ export default class User extends Model<UserAttributes, UserCreationAttributes> 
 
 	@BelongsTo(() => Quid, { foreignKey: 'proxy_lastGlobalProxiedQuidId' })
 	declare proxy_lastGlobalProxiedQuid: Quid | null;
+
+	@ForeignKey(() => Quid<false>)
+	@Column({ type: DataType.STRING, allowNull: true })
+	declare lastGlobalActiveQuidId: string | null;
+
+	@BelongsTo(() => Quid, { foreignKey: 'proxy_lastGlobalProxiedQuidId' })
+	declare lastGlobalActiveQuid: Quid | null;
 
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	declare accessibility_replaceEmojis: boolean;
