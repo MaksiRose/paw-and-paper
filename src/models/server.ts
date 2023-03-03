@@ -14,7 +14,6 @@ import UserToServer from './userToServer';
 
 interface ServerAttributes {
 	id: string;
-	name: string;
 	nextPossibleAttackTimestamp: number;
 	visitChannelId: string | null;
 	currentlyVisitingChannelId: string | null;
@@ -37,9 +36,6 @@ type ServerCreationAttributes = Optional<ServerAttributes, 'nextPossibleAttackTi
 export default class Server extends Model<ServerAttributes, ServerCreationAttributes> {
 	@Column({ type: DataType.STRING, primaryKey: true })
 	declare id: string;
-
-	@Column({ type: DataType.STRING })
-	declare name: string;
 
 	@Column({ type: DataType.BIGINT, defaultValue: 0 })
 	declare nextPossibleAttackTimestamp: number;

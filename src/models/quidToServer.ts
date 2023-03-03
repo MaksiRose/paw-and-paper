@@ -1,5 +1,5 @@
 import { BelongsTo, BelongsToMany, Column, DataType, ForeignKey, HasMany, Model, Table } from 'sequelize-typescript';
-import { CurrentRegionType } from '../typings/data/user';
+import { CurrentRegionType, RankType } from '../typings/data/user';
 import TemporaryStatIncrease from './temporaryStatIncrease';
 import ShopRole from './shopRole';
 import QuidToServerToShopRole from './quidToServerToShopRole';
@@ -12,7 +12,7 @@ interface QuidToServerAttributes {
 	quidId: string;
 	serverId: string;
 	nickname: string;
-	rank: string;
+	rank: RankType;
 	levels: number;
 	experience: number;
 	health: number;
@@ -74,7 +74,7 @@ export default class QuidToServer extends Model<QuidToServerAttributes, QuidToSe
 	declare nickname: string;
 
 	@Column({ type: DataType.STRING, defaultValue: '' })
-	declare rank: string;
+	declare rank: RankType;
 
 	@Column({ type: DataType.SMALLINT.UNSIGNED, defaultValue: 1 })
 	declare levels: number;
