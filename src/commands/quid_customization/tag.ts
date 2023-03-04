@@ -1,6 +1,8 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import Quid from '../../models/quid';
 import { SlashCommand } from '../../typings/handle';
 import { hasName } from '../../utils/checkUserState';
+import { getDisplayname } from '../../utils/getQuidInfo';
 import { respond } from '../../utils/helperFunctions';
 
 export const command: SlashCommand = {
@@ -16,19 +18,19 @@ export const command: SlashCommand = {
 	position: 8,
 	disablePreviousCommand: false,
 	modifiesServerProfile: false,
-	sendCommand: async (interaction, { user, quid, userToServer, quidToServer, server }) => {
+	sendCommand: async (interaction, { user, quid, userToServer, quidToServer }) => {
 
 		if (!user) { throw new TypeError('user is undefined'); }
 		if (!hasName(quid, { interaction, hasQuids: quid !== undefined || (await Quid.count({ where: { userId: user.id } })) > 0 })) { return; } // this would always be a reply
 
 		const tag = interaction.options.getString('tag') || '';
 
-		await userData.update(
-			(u) => {
-				if (serverData) { u.tag.servers[serverData.serverId] = tag; }
-				else { u.tag.global = tag; }
-			},
-		);
+		if (interaction.inGuild()) {
+
+			if (!userToServer) { throw new TypeError('userToServer is undefined'); }
+			userToServer = await userToServer.update({ tag: tag });
+		}
+		else { user = await user.update({ tag: tag }); }
 
 		// This is always a reply
 		await respond(interaction, {
@@ -38,8 +40,8 @@ export const command: SlashCommand = {
 					name: await getDisplayname(quid, { serverId: interaction?.guildId ?? undefined, userToServer, quidToServer, user }),
 					iconURL: quid.avatarURL,
 				})
-				.setTitle(serverData ? `Tag ${userData.tag.server ? `set to ${userData.tag.server}` : 'removed'} in ${serverData.name}!` : `Tag ${userData.tag.global ? `set to ${userData.tag.global}` : 'removed'} globally!`)
-				.setDescription(serverData ? 'Tip: Tags can be set globally (cross-server) too by executing the command in DMs. The global tag will be displayed when no server-specific tag has been chosen.' : 'Tip: Tags can be set server-specific too by executing the command in the server. The server-specific tag will overwrite the global tag for that server.')],
+				.setTitle(userToServer ? `Tag ${userToServer.tag ? `set to ${userToServer.tag}` : 'removed'} in ${interaction.guild?.name}!` : `Tag ${user.tag ? `set to ${user.tag}` : 'removed'} globally!`)
+				.setDescription(userToServer ? 'Tip: Tags can be set globally (cross-server) too by executing the command in DMs. The global tag will be displayed when no server-specific tag has been chosen.' : 'Tip: Tags can be set server-specific too by executing the command in the server. The server-specific tag will overwrite the global tag for that server.')],
 		});
 		return;
 	},
