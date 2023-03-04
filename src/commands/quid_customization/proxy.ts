@@ -2,7 +2,6 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder,
 import { respond } from '../../utils/helperFunctions';
 import { hasName } from '../../utils/checkUserState';
 import { saveCommandDisablingInfo } from '../../utils/componentDisabling';
-import { getMapData } from '../../utils/helperFunctions';
 import { missingPermissions } from '../../utils/permissionHandler';
 import { SlashCommand } from '../../typings/handle';
 import { constructCustomId, constructSelectOptions, deconstructCustomId, deconstructSelectOptions } from '../../utils/customId';
@@ -11,7 +10,6 @@ import UserToServer from '../../models/userToServer';
 import Quid from '../../models/quid';
 import User from '../../models/user';
 import { generateId } from 'crystalid';
-import e from 'express';
 const { error_color, default_color } = require('../../../config.json');
 
 type CustomIdArgs = [] | ['set', 'learnmore' | 'modal'] | ['auto', 'learnmore' | 'options' | 'setTo' | 'stickymode']
